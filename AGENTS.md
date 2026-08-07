@@ -274,7 +274,43 @@ preserve state
 
 ---
 
-## 11. Relationship to Runtime Adapters and the Skill
+## 11. Skill Consumer Branch Policy
+
+This section governs branch discipline for Agents *consuming* the Code
+Review Agent Skill against a target repository (the repository being
+reviewed) — as distinct from section 3, which governs development of
+*this* repository.
+
+The Code Review Agent must understand the distinction between:
+
+- **external PR review** — reviewing a Pull Request that already exists
+  on a remote GitHub repository, opened by some other Agent or developer;
+- **local implementation review** — reviewing an implementation branch in
+  a local working copy, before or during PR creation.
+
+For local implementation workflows, formal review occurs on a dedicated
+implementation branch, not directly on the repository's protected/default
+branch, unless that repository's own rules explicitly permit it. Before
+beginning a local implementation review, the reviewer verifies that:
+
+- the target is a valid Git repository;
+- the current branch is identifiable;
+- the implementation scope is not accidentally being performed directly
+  on a protected/default branch unless repository rules explicitly permit
+  it;
+- the branch actually contains the implementation intended for review
+  (see [`policies/local-review.md`](policies/local-review.md));
+- base and branch state are understood (base branch, base SHA, local
+  HEAD, and any divergence from a remote tracking branch).
+
+**The reviewer must not create arbitrary branches just to make review
+possible.** Branch creation is owned by the implementing workflow, not by
+the Code Review Agent. The reviewer's role is limited to validating branch
+state and reviewing what already exists.
+
+---
+
+## 12. Relationship to Runtime Adapters and the Skill
 
 ```text
 CLAUDE.md (or any other runtime adapter)

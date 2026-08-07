@@ -5,6 +5,6 @@
 review:
   # Maximum number of passive review/fix/re-review iterations to run
   # automatically against a local implementation before stopping and
-  # returning any remaining blocking findings. See SKILL.md section
-  # "Local Review Loop" and "Review Loop Exhaustion".
+  # returning any remaining blocking findings. See
+  # runbooks/review-loop.md.
   max_loops: 3
