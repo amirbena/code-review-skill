@@ -1,0 +1,10 @@
+# Runtime-neutral configuration contract for the Code Review Agent Skill.
+# Consumed conceptually by SKILL.md — do not hardcode these values
+# inside procedural sections of the Skill definition.
+
+review:
+  # Maximum number of passive review/fix/re-review iterations to run
+  # automatically against a local implementation before stopping and
+  # returning any remaining blocking findings. See SKILL.md section
+  # "Local Review Loop" and "Review Loop Exhaustion".
+  max_loops: 3
