@@ -15,6 +15,16 @@ include optional runtime adapters that do not change review behavior.
 ## Prerequisites
 
 - Git — required for both Skills
+- Python 3 (`python3`) — required to run this repository's validation and
+  packaging tooling (`scripts/validate-skill-metadata.py`,
+  `scripts/package-skills.sh` / `scripts/package-skills.ps1`,
+  `scripts/test_reviewer_ownership.py`). No minimum version is currently
+  enforced; check availability with:
+
+  ```bash
+  python3 --version
+  ```
+
 - authenticated GitHub access — required for GitHub-connected PR state
 - sufficient review permissions — required only for *active* publication
 
