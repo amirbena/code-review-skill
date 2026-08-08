@@ -239,6 +239,7 @@ if ($Skill -eq "local" -or $Skill -eq "all") {
   Package-Skill -SkillName "local-code-review" -ArchiveStem "local-code-review-skill" -SkillFiles @(
     "agents/openai.yaml",
     "metadata/skill.yaml",
+    "policies/invocation-approval.md",
     "runbooks/local-review.md",
     "templates/local-review-report.md"
   )

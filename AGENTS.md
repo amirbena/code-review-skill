@@ -110,6 +110,72 @@ required vendor-specific implementation. A concrete integration or command
 may appear as an optional example or fallback when it implements the same
 capability contract.
 
+### Packaged Skills Are Independent of Repository-Level `AGENTS.md`
+
+This file governs development and orchestration of *this* source
+repository. A distributed Skill archive (built by
+[`scripts/package-skills.sh`](scripts/package-skills.sh) /
+[`scripts/package-skills.ps1`](scripts/package-skills.ps1)) never contains
+this file, `ARCHITECTURE.md`, or this repository's `README.md` — so no
+file that is part of a packaged Skill (`SKILL.md`, a packaged policy, a
+runbook, a template, or shared/-packaged resource) may use this
+repository's own `AGENTS.md` as a runtime dependency or canonical source
+required for understanding or executing that Skill:
+
+```text
+AGENTS.md
+→ repository development/orchestration rules
+
+packaged Skill
+→ SKILL.md
+→ packaged policies
+→ packaged runbooks
+→ packaged templates/shared resources
+```
+
+Not:
+
+```text
+packaged Skill resource
+→ ../../AGENTS.md
+```
+
+If a rule a packaged Skill relies on must remain available after
+packaging, its canonical portable form belongs inside a packaged
+resource, using the resource type that best fits the rule — prefer the
+most specific one that avoids duplicating the same rule across multiple
+files:
+
+```text
+normative reusable invariant  → policy (skills/<skill>/policies/ or shared/policies/)
+operational procedure         → runbook
+reusable output/content shape → template
+Skill-level responsibility     → SKILL.md
+```
+
+When this file also needs to mention such a rule for repository-development
+context, prefer pointing toward the packaged canonical resource rather than
+the reverse:
+
+```text
+AGENTS.md → references the packaged canonical policy/runbook/template/SKILL.md   (preferred)
+packaged Skill → references AGENTS.md                                            (prohibited)
+```
+
+`AGENTS.md` may summarize a rule's repository-development implications, but
+the portable Skill must remain fully correct and self-explanatory with
+`AGENTS.md`, `ARCHITECTURE.md`, and this repository's `README.md` deleted
+from the consumer's environment entirely.
+
+This prohibition is narrowly about *this source repository's own*
+`AGENTS.md`. It does not extend to either Skill's own behavior: both
+`local-code-review` and `github-pr-review` legitimately discover and read
+an `AGENTS.md` (or `CLAUDE.md`) that belongs to the *target* repository
+being reviewed — see
+[`shared/policies/repository-instructions.md`](shared/policies/repository-instructions.md).
+That target-repository instruction discovery is valid, packaged, portable
+behavior and is unaffected by this rule.
+
 ---
 
 ## 3. Repository Branch Policy
@@ -575,7 +641,53 @@ this approval gate fits into the overall implementation lifecycle.
 
 ---
 
-## 15. Relationship to Runtime Adapters and the Skills
+## 15. Shell / PowerShell Script Parity
+
+This repository intentionally ships genuine cross-platform counterpart
+scripts for the same repository capability — currently
+[`scripts/package-skills.sh`](scripts/package-skills.sh) and
+[`scripts/package-skills.ps1`](scripts/package-skills.ps1). When the
+functionality represented by both a `.sh` script and its corresponding
+`.ps1` script changes, both implementations MUST be updated in the same
+task so they remain behaviorally equivalent — including their packaged
+resource lists, validation steps, and guard behavior:
+
+```text
+change shell implementation
+    ↓
+inspect PowerShell counterpart
+    ↓
+update PowerShell counterpart
+
+or
+
+change PowerShell implementation
+    ↓
+inspect shell counterpart
+    ↓
+update shell counterpart
+```
+
+This holds even when only one runtime is available for execution in the
+current environment — the inability to execute one platform-specific
+script is a **validation limitation to report**, never a reason to leave
+that counterpart stale:
+
+```text
+update by inspection
+    ↓
+perform static/equivalence checks where possible
+    ↓
+report the execution limitation
+```
+
+This rule applies to genuine counterpart scripts that implement the same
+repository capability on two platforms, not to unrelated `.sh` and `.ps1`
+files that happen to share a naming pattern.
+
+---
+
+## 16. Relationship to Runtime Adapters and the Skills
 
 ```text
 CLAUDE.md (or any other runtime adapter)
