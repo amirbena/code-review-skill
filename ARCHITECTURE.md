@@ -227,7 +227,33 @@ relative depth is unchanged by removing the shared `skills/<name>/`
 wrapper. The canonical source files in `skills/<name>/` remain the single
 source of truth; only the staged copies are rewritten.
 
-## 8. Reasoning vs. Delivery vs. Ownership
+## 8. Agent Skills Discovery vs. Operational Behavior
+
+Each `SKILL.md`'s YAML frontmatter (`name`, `description`, `compatibility`)
+is Agent Skills discovery metadata only — it exists so a runtime can find
+and activate the right Skill without loading anything else. It carries no
+review policy of its own.
+
+```text
+SKILL.md frontmatter
+    ↓
+Skill discovery (name, description, compatibility)
+
+SKILL.md body
+    ↓
+core operating instructions (identity, inputs, workflow, mutation boundary)
+
+shared/policies/, runbooks/, templates/
+    ↓
+detailed review rules, procedures, and output contracts, loaded as needed
+```
+
+`skills/<name>/metadata/skill.yaml` remains separate package metadata
+(version, capabilities, packaged-file manifest) for consumers outside the
+Agent Skills discovery path; its `name`/`description` are a mirror of the
+canonical values in `SKILL.md`'s frontmatter, not a second source of truth.
+
+## 9. Reasoning vs. Delivery vs. Ownership
 
 - **Review reasoning** is Skill-agnostic and delivery-mode-agnostic: the
   same shared policies and severity model apply in `local-code-review`

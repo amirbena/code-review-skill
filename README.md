@@ -1,6 +1,8 @@
 # code-review-skill
 
-This repository contains two portable **Code Review Agent Skills**.
+This repository contains two portable **Code Review Agent Skills**, each
+packaged as a spec-compliant [Agent Skills](https://agentskills.io/specification)
+`SKILL.md` (YAML frontmatter + Markdown body).
 
 ## What this repository contains
 

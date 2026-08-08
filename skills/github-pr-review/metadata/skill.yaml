@@ -1,6 +1,11 @@
 # Portable metadata for the github-pr-review Skill.
 # Describes the package; it is not itself executable behavior.
 # See SKILL.md for the operational entry point.
+#
+# Canonical Agent Skills discovery metadata (name/description) lives in
+# ../SKILL.md's YAML frontmatter. The name/description below are a
+# package-metadata mirror for non-Agent-Skills consumers of this file;
+# keep them identical to ../SKILL.md if either changes.
 
 name: github-pr-review
 description: >-
