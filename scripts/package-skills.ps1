@@ -49,6 +49,47 @@ $sharedTemplates = @(
 # depth 3: runbooks/, templates/, policies/) becomes "../shared/". This
 # is a narrow, deterministic substitution scoped to the exact link
 # prefixes that point into shared/ — it never touches any other text.
+# Guard against a regression stripping/corrupting the Agent Skills YAML
+# frontmatter of a packaged root SKILL.md. Narrow structural check (line
+# 1 is the opening delimiter, a closing delimiter exists, required
+# name/description fields are present with the expected name) — not a
+# full YAML validator; kept in sync with the equivalent guard in
+# scripts/package-skills.sh.
+function Test-SkillFrontmatter {
+  param(
+    [string]$SkillMdPath,
+    [string]$ExpectedName
+  )
+
+  $lines = Get-Content -Path $SkillMdPath
+  if ($lines.Count -eq 0 -or $lines[0] -ne "---") {
+    Write-Error "$SkillMdPath does not start with '---' frontmatter delimiter on line 1"
+    exit 1
+  }
+
+  $closingIndex = -1
+  for ($i = 1; $i -lt $lines.Count; $i++) {
+    if ($lines[$i] -eq "---") {
+      $closingIndex = $i
+      break
+    }
+  }
+  if ($closingIndex -eq -1) {
+    Write-Error "$SkillMdPath frontmatter has no closing '---' delimiter"
+    exit 1
+  }
+
+  $fmBody = $lines[1..($closingIndex - 1)] -join "`n"
+  if ($fmBody -notmatch "(?m)^name:\s*$([regex]::Escape($ExpectedName))\s*$") {
+    Write-Error "$SkillMdPath frontmatter missing 'name: $ExpectedName'"
+    exit 1
+  }
+  if ($fmBody -notmatch "(?m)^description:") {
+    Write-Error "$SkillMdPath frontmatter missing required 'description'"
+    exit 1
+  }
+}
+
 function Adapt-SharedLinks {
   param([string]$FilePath)
   $content = Get-Content -Path $FilePath -Raw
@@ -144,6 +185,7 @@ function Package-Skill {
     Write-Error "staged root SKILL.md does not identify as '$SkillName'"
     exit 1
   }
+  Test-SkillFrontmatter -SkillMdPath (Join-Path $stageDir "SKILL.md") -ExpectedName $SkillName
 
   if (Test-Path $archivePath) {
     Remove-Item -Force $archivePath

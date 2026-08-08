@@ -1,3 +1,16 @@
+---
+name: local-code-review
+description: >-
+  Reviews the local implementation state of a Git repository — committed
+  delta, local-only commits, staged, unstaged, and relevant untracked
+  changes — and returns evidence-backed P0/P1/P2 findings. Read-only: it
+  never edits files, commits, pushes, or touches GitHub. Use before a
+  push or PR, or whenever an implementing agent wants an independent
+  review of local/uncommitted changes. Not for reviewing an existing
+  GitHub Pull Request — use the sibling github-pr-review skill for that.
+compatibility: Requires a local Git repository.
+---
+
 # SKILL.md — local-code-review
 
 A small, bounded, **stateless** Code Review Skill that reviews a local

@@ -1,3 +1,16 @@
+---
+name: github-pr-review
+description: >-
+  Reviews an existing GitHub Pull Request and returns evidence-backed
+  P0/P1/P2 findings — passively as a report, or, with authenticated
+  GitHub access, actively by publishing inline findings and a final
+  Approve/Request Changes decision. It never edits implementation code
+  and never merges. Use when the user references a GitHub PR by URL or
+  number, or asks to review, approve, or request changes on a pull
+  request — not for reviewing local/uncommitted changes with no PR.
+compatibility: Requires Git; active (publishing) review additionally requires an authenticated GitHub CLI (gh) session.
+---
+
 # SKILL.md — github-pr-review
 
 A portable Code Review Skill that reviews GitHub Pull Requests and,
