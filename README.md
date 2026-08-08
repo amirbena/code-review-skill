@@ -1,8 +1,9 @@
 # code-review-skill
 
-This repository contains two portable **Code Review Agent Skills**, each
-packaged as a spec-compliant [Agent Skills](https://agentskills.io/specification)
-`SKILL.md` (YAML frontmatter + Markdown body).
+This repository contains two portable **Code Review Agent Skills** for
+Agent Skills-compatible runtimes. Each is packaged around a canonical
+[Agent Skills](https://agentskills.io/specification) `SKILL.md` and may
+include optional runtime adapters that do not change review behavior.
 
 ## What this repository contains
 
@@ -14,18 +15,12 @@ packaged as a spec-compliant [Agent Skills](https://agentskills.io/specification
 ## Prerequisites
 
 - Git — required for both Skills
-- GitHub CLI (`gh`) — required only for `github-pr-review`; not needed to
-  package or run `local-code-review`
-- an authenticated `gh` session — required only for *active* GitHub
-  review
+- authenticated GitHub access — required for GitHub-connected PR state
+- sufficient review permissions — required only for *active* publication
 
 The authenticated account must be eligible to submit the intended formal
 review action. A complete review can still report findings when GitHub does
 not permit that account to submit Approve or Request Changes.
-
-```bash
-gh auth status
-```
 
 Credentials come from the environment and are never stored in either
 Skill.
@@ -63,7 +58,7 @@ Output: `dist/local-code-review-skill.zip`
 For reviewing an existing GitHub Pull Request — passively, or actively
 (inline P0/P1/P2 comments, a human-readable summary, Approve/Request
 Changes) when GitHub-connected behavior is needed. Active review
-requires an authenticated `gh` session.
+requires authenticated GitHub access with sufficient permissions.
 
 Shell:
 

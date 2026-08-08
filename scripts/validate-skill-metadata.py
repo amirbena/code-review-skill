@@ -14,6 +14,12 @@ except ImportError as exc:  # pragma: no cover - environment prerequisite
 
 
 RESOURCE_FIELDS = ("shared", "resources", "config")
+PORTABLE_FRONTMATTER_FIELDS = {"name", "description"}
+OPENAI_INTERFACE_FIELDS = {
+    "display_name",
+    "short_description",
+    "default_prompt",
+}
 
 
 def load_yaml(path: Path) -> dict:
@@ -71,12 +77,48 @@ def validate(skill_root: Path, containment_root: Path) -> None:
     frontmatter = load_frontmatter(skill_md)
     metadata = load_yaml(metadata_path)
 
+    unexpected_frontmatter = set(frontmatter) - PORTABLE_FRONTMATTER_FIELDS
+    if unexpected_frontmatter:
+        unexpected = ", ".join(sorted(unexpected_frontmatter))
+        raise SystemExit(
+            f"error: {skill_md} has non-portable frontmatter field(s): {unexpected}"
+        )
+
     for field in ("name", "description"):
         if not frontmatter.get(field):
             raise SystemExit(f"error: {skill_md} frontmatter missing {field!r}")
         if metadata.get(field) != frontmatter[field]:
             raise SystemExit(
                 f"error: {metadata_path} {field} does not exactly match SKILL.md frontmatter"
+            )
+
+    adapter_path = skill_root / "agents" / "openai.yaml"
+    if adapter_path.exists():
+        adapter = load_yaml(adapter_path)
+        if set(adapter) != {"interface"}:
+            raise SystemExit(
+                f"error: {adapter_path} must contain only optional UI interface metadata"
+            )
+        interface = adapter.get("interface")
+        if not isinstance(interface, dict) or set(interface) != OPENAI_INTERFACE_FIELDS:
+            raise SystemExit(
+                f"error: {adapter_path} interface must contain exactly "
+                "display_name, short_description, and default_prompt"
+            )
+        for field in OPENAI_INTERFACE_FIELDS:
+            if not isinstance(interface[field], str) or not interface[field]:
+                raise SystemExit(
+                    f"error: {adapter_path} interface.{field} must be a string"
+                )
+        short_description = interface["short_description"]
+        if not 25 <= len(short_description) <= 64:
+            raise SystemExit(
+                f"error: {adapter_path} interface.short_description must be 25-64 characters"
+            )
+        if f"${frontmatter['name']}" not in interface["default_prompt"]:
+            raise SystemExit(
+                f"error: {adapter_path} interface.default_prompt must mention "
+                f"${frontmatter['name']}"
             )
 
     entrypoint = metadata.get("entrypoint")

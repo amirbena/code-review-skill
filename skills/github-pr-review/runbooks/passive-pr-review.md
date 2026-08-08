@@ -32,8 +32,9 @@ return human-readable report
 
 1. Resolve the repository and PR from the given input (PR URL, PR number
    + repository context, or repository + PR number).
-2. Using `gh` where available, retrieve PR metadata, base/head SHA, the
-   complete paginated changed-file set, and a complete diff per
+2. Through an available authenticated GitHub integration, retrieve PR
+   metadata, base/head SHA, the complete paginated changed-file set, and a
+   complete diff per
    [`github-review.md`](../policies/github-review.md), "Complete PR scope and
    pagination." If completeness cannot be established, return an incomplete
    review state rather than claiming the full PR was reviewed.
@@ -67,8 +68,8 @@ return human-readable report
 
 - No inline comments, Approve, Request Changes, or PR metadata mutation
   of any kind.
-- If `gh` is unavailable or unauthenticated, report the missing
-  capability explicitly rather than inventing PR state (see
+- If no available integration can retrieve the required PR state, report
+  the missing capability explicitly rather than inventing PR state (see
   [`../policies/github-review.md`](../policies/github-review.md)).
 
 This runbook is the safe default for inspecting a PR when active

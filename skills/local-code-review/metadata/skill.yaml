@@ -24,7 +24,7 @@ modes:
 
 capabilities:
   git: required
-  github_cli: not-required
+  local_repository_access: required
 
 output:
   mutates_github: false

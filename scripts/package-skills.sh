@@ -240,6 +240,7 @@ mkdir -p "${dist_dir}"
 
 if [[ "${target}" == "local" || "${target}" == "all" ]]; then
   package_skill "local-code-review" "local-code-review-skill" \
+    "agents/openai.yaml" \
     "metadata/skill.yaml" \
     "runbooks/local-review.md" \
     "templates/local-review-report.md"
@@ -247,6 +248,7 @@ fi
 
 if [[ "${target}" == "github" || "${target}" == "all" ]]; then
   package_skill "github-pr-review" "github-pr-review-skill" \
+    "agents/openai.yaml" \
     "metadata/skill.yaml" \
     "policies/github-review.md" \
     "runbooks/passive-pr-review.md" \

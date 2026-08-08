@@ -25,7 +25,8 @@ modes:
 
 capabilities:
   git: required
-  github_cli: required
+  github_access: required-for-github-state
+  github_review_permissions: required-for-active-publication
 
 output:
   mutates_github: conditional # true only in active mode, and only after access verification

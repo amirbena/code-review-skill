@@ -237,6 +237,7 @@ New-Item -ItemType Directory -Path $distDir -Force | Out-Null
 
 if ($Skill -eq "local" -or $Skill -eq "all") {
   Package-Skill -SkillName "local-code-review" -ArchiveStem "local-code-review-skill" -SkillFiles @(
+    "agents/openai.yaml",
     "metadata/skill.yaml",
     "runbooks/local-review.md",
     "templates/local-review-report.md"
@@ -245,6 +246,7 @@ if ($Skill -eq "local" -or $Skill -eq "all") {
 
 if ($Skill -eq "github" -or $Skill -eq "all") {
   Package-Skill -SkillName "github-pr-review" -ArchiveStem "github-pr-review-skill" -SkillFiles @(
+    "agents/openai.yaml",
     "metadata/skill.yaml",
     "policies/github-review.md",
     "runbooks/passive-pr-review.md",

@@ -49,8 +49,9 @@ stop
 1. Check for an existing Code Review Agent owner of this scope per
    [`../../../shared/policies/review-ownership.md`](../../../shared/policies/review-ownership.md).
    If owned elsewhere, return `REVIEW ALREADY OWNED` and stop.
-2. Resolve the repository and PR; verify `gh` authentication and resolve
-   the authenticated identity and the PR author's account identity.
+2. Resolve the repository and PR through an available authenticated GitHub
+   integration; verify authentication and resolve the authenticated identity
+   and the PR author's account identity.
 3. **Verify repository/review access** for that identity against the
    target repository/PR (see
    [`../policies/github-review.md`](../policies/github-review.md),

@@ -230,16 +230,17 @@ atomically in a single review operation, that is also acceptable provided
 the visible ordering and resulting review semantics remain equivalent
 (developer sees issues, then a coherent summary, then the review state).
 
-## GitHub CLI contract
+## GitHub integration contract
 
-`gh` is the preferred integration mechanism:
+Use an available authenticated GitHub integration when it can retrieve the
+complete required state and perform the permitted publication action. If it
+cannot, use another supported GitHub API or CLI mechanism. When no available
+mechanism can establish complete state, degrade honestly to the supported
+passive or `REVIEW INCOMPLETE` behavior.
 
-- final review decisions use the equivalent of
-  `gh pr review --approve` / `gh pr review --request-changes`;
-- line-specific inline comments, where higher-level `gh pr` commands are
-  insufficient, may use `gh api` against the GitHub Pull Request review
-  APIs.
-
-The canonical contract is described conceptually; it does not hardcode
-one specific API version when the runtime can use the currently supported
-API.
+Concrete tools are implementations of this capability contract, not canonical
+requirements. For example, when GitHub CLI is the available integration,
+final decisions may use `gh pr review --approve` /
+`gh pr review --request-changes`, and line-specific comments may use `gh api`.
+Equivalent authenticated integrations are valid. Do not hardcode one API
+version when the available integration supports a current equivalent.

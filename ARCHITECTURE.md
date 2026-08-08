@@ -238,15 +238,15 @@ source of truth; only the staged copies are rewritten.
 
 ## 8. Agent Skills Discovery vs. Operational Behavior
 
-Each `SKILL.md`'s YAML frontmatter (`name`, `description`, `compatibility`)
-is Agent Skills discovery metadata only — it exists so a runtime can find
-and activate the right Skill without loading anything else. It carries no
-review policy of its own.
+Each `SKILL.md`'s YAML frontmatter (`name` and `description`) is Agent Skills
+discovery metadata only — it exists so a runtime can find and activate the
+right Skill without loading anything else. It carries no review policy of
+its own.
 
 ```text
 SKILL.md frontmatter
     ↓
-Skill discovery (name, description, compatibility)
+Skill discovery (name, description)
 
 SKILL.md body
     ↓
@@ -284,3 +284,45 @@ in staged package metadata, then checked for containment and existence.
   calling workflow — see section 4.
 - **Implementation ownership** always belongs to the implementing Agent
   or developer, never to either Skill.
+
+## 10. Portable Core, Optional Runtime Adapters
+
+The portable core is `SKILL.md` plus the canonical package-relative policies,
+runbooks, templates, shared resources, and portable package metadata. It owns
+all normative review semantics and expresses external dependencies as
+capabilities rather than vendor-specific tools.
+
+Runtime adapters are subordinate optional resources. They may improve
+discovery, UI presentation, or runtime configuration, but they cannot redefine
+review scope, severity, mutation boundaries, output contracts, or dependency
+requirements. Ignoring or removing an adapter leaves a coherent Skill. The
+current `agents/openai.yaml` files contain only optional Codex UI metadata and
+are not referenced by the portable core.
+
+Installation location is a consumer concern, not a package format. The same
+standalone package can be placed under a runtime-supported destination such as
+`.agents/skills/<name>/`, `.claude/skills/<name>/`,
+`.cursor/skills/<name>/`, or `.opencode/skills/<name>/`; each archive still
+keeps `SKILL.md` at its own root.
+
+### Documentation-backed compatibility matrix
+
+This matrix records format conclusions from current product documentation. It
+is not a claim that every runtime loaded these packages during validation.
+
+| Concern | Claude | Codex | Cursor | OpenCode |
+|---|---|---|---|---|
+| Canonical directory-based `SKILL.md` | documented | documented/static validation | documented | documented |
+| Canonical `name` / `description` | documented | documented/static validation | documented | documented |
+| Package-relative supporting files | documented | documented/static validation | documented | documented |
+| Runtime-specific adapter required | no | no | no | no |
+| Optional adapter used here | none | `agents/openai.yaml` | none | none |
+
+The common canonical frontmatter deliberately contains only `name` and
+`description`. Although the open Agent Skills specification defines additional
+optional keys, the current Codex validation guidance accepts a narrower set;
+keeping capability requirements in the Skill body avoids coupling canonical
+validity to optional-field handling. Claude- or Cursor-specific frontmatter is
+not required, and OpenCode documents both directory-based supporting resources
+and `.agents/skills` discovery. Actual runtime loading is reported separately
+from documentation and static package validation.

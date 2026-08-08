@@ -1,0 +1,4 @@
+interface:
+  display_name: "Local Code Review"
+  short_description: "Review local implementation changes safely"
+  default_prompt: "Use $local-code-review to review the current local implementation state."
