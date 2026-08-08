@@ -518,124 +518,36 @@ orchestration honoring the rule above.
 ## 14. Explicit User Approval Required for `local-code-review` Invocation
 
 `local-code-review` MUST NOT be invoked automatically at any point in an
-implementation workflow — not after implementation finishes, not after
-validation, not after a fix, and not immediately after a previous
-review. Every individual invocation requires fresh, explicit user
-approval scoped to that specific run:
+implementation workflow. Each invocation — the first review and any
+later re-review after fixes — requires fresh, explicit user approval
+scoped to that specific run; approval for review N never authorizes
+review N+1. Obtaining that approval is entirely the responsibility of
+the caller, Team Lead, runtime, or implementing workflow — never of the
+Skill itself:
 
 ```text
-implementation finished (or fixes applied)
+implementation complete (or a fix just applied)
     ↓
-ask user whether to run local-code-review
+caller asks the user for approval to run local-code-review
     ↓
-explicit approval for this run?
-├── yes → invoke local-code-review once
-└── no  → do not invoke, continue without review
+fresh approval for this run?
+├── yes → one local-code-review invocation
+└── no  → do not invoke; continue without review
+
+another review desired afterward → fresh approval required again
 ```
 
-**Approval is not persistent.** Approval obtained for one invocation
-authorizes exactly that one invocation. It must never be treated as:
+`local-code-review` is optional and user-authorized, never a mandatory
+terminal gate before commit, push, or PR creation.
 
-- approval for the rest of the task;
-- approval for all future reviews;
-- approval for a review/fix loop;
-- approval to automatically re-run after findings are fixed;
-- approval to invoke whenever the implementation changes.
-
-```text
-user approves review #1
-    ↓
-local-code-review runs once
-    ↓
-findings returned
-    ↓
-Agent fixes findings
-    ↓
-review #2 desired
-    ↓
-ask user again — the approval for review #1 does not authorize review #2
-```
-
-The following flows are prohibited:
-
-```text
-implement → validate → automatically invoke local-code-review            ✗ prohibited
-
-user approved local review once → review → fix findings
-    → automatically review again                                        ✗ prohibited
-
-local-code-review finds issues → reviewer triggers itself again
-    after fixes                                                          ✗ prohibited
-
-implementation workflow decides review is "best practice"
-    → invokes local-code-review without asking                          ✗ prohibited
-```
-
-Even when this repository or a target repository generally prefers
-review, that preference never substitutes for asking the user before
-each specific invocation.
-
-**Caller/reviewer responsibility boundary.** Approval orchestration
-belongs to the caller, Team Lead, runtime, or implementing workflow:
-
-```text
-caller/orchestrator
-    ↓
-determines whether review is desired
-    ↓
-asks user
-    ↓
-receives explicit approval for this run
-    ↓
-invokes local-code-review once
-```
-
-`local-code-review` itself is not responsible for, and must not attempt,
-any of the following:
-
-- asking the user for permission;
-- deciding whether another review iteration should happen;
-- automatically scheduling a re-review;
-- continuing a review/fix/review loop on its own.
-
-The Skill only reviews the scope it was explicitly invoked to review —
-see [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md),
-"Statelessness and Orchestration Boundary."
-
-**Scope of explicit approval.** Approval must be unambiguous and
-specific to the current review run — for example, an instruction
-equivalent to "run local-code-review now," "yes, review the current
-implementation," or "perform one local review before pushing." A
-previous approval earlier in the task must never be reused. General
-statements such as "review things carefully," or a repository policy
-that merely recommends review, do not create standing authorization for
-repeated invocations.
-
-**Re-review after findings.** If `local-code-review` returns findings
-and the implementing Agent fixes them, no automatic re-review is
-permitted:
-
-```text
-review #1 → findings → fixes → validation → ask user whether to run review #2
-```
-
-Only a new, explicit approval permits review #2. This applies to every
-subsequent iteration — approval for review N never authorizes review
-N+1.
-
-Implementation workflows remain valid whether or not review is approved:
-
-```text
-implement → validate → ask whether to run local-code-review
-
-user says no  → continue implementation delivery workflow
-user says yes → local-code-review once → return findings → (fixes, if any)
-    → ask again before another local-code-review
-```
-
-`local-code-review` remains optional and user-authorized; it is not a
-mandatory terminal gate before commit, push, or PR creation unless the
-user explicitly chooses to run it for that specific invocation. See
+This is a repository-level orchestration summary only. The complete
+portable contract — approval scope, prohibited invocation flows, the
+caller/orchestrator responsibility boundary, and what the Skill itself
+must never do — is owned by
+[`skills/local-code-review/policies/invocation-approval.md`](skills/local-code-review/policies/invocation-approval.md),
+which this rule does not duplicate. See also
+[`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md),
+"Statelessness and Orchestration Boundary," and
 [`ARCHITECTURE.md`](ARCHITECTURE.md), "Handoff Between Skills," for how
 this approval gate fits into the overall implementation lifecycle.
 
