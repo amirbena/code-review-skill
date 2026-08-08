@@ -67,6 +67,8 @@ Always: [`review-scope.md`](../../shared/policies/review-scope.md),
 [`git-safety.md`](../../shared/policies/git-safety.md). In orchestrated/
 multi-Agent contexts, also
 [`review-ownership.md`](../../shared/policies/review-ownership.md).
+For every changed-file category, including generated or opaque content,
+apply [`file-reviewability.md`](../../shared/policies/file-reviewability.md).
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.

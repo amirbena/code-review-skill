@@ -26,6 +26,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..")
 $distDir = Join-Path $repoRoot "dist"
 $stagingRoot = Join-Path $distDir ".staging"
+$metadataValidator = Join-Path $scriptDir "validate-skill-metadata.py"
 
 # Shared files, by package-relative destination path — kept in sync with
 # scripts/package-skills.sh.
@@ -35,7 +36,8 @@ $sharedPolicies = @(
   "evidence.md",
   "repository-instructions.md",
   "git-safety.md",
-  "review-ownership.md"
+  "review-ownership.md",
+  "file-reviewability.md"
 )
 $sharedTemplates = @(
   "finding.md"
@@ -98,6 +100,15 @@ function Adapt-SharedLinks {
   Set-Content -Path $FilePath -Value $content -NoNewline
 }
 
+# Keep source metadata repository-relative, but adapt the exact known shared
+# resource prefix in the staged standalone package copy.
+function Adapt-MetadataPaths {
+  param([string]$MetadataPath)
+  $content = Get-Content -Path $MetadataPath -Raw
+  $content = $content -replace '(?m)^(\s*-\s*)\.\./\.\./\.\./shared/', '$1../shared/'
+  Set-Content -Path $MetadataPath -Value $content -NoNewline
+}
+
 function Package-Skill {
   param(
     [string]$SkillName,      # e.g. local-code-review
@@ -117,6 +128,8 @@ function Package-Skill {
     Write-Error "required Skill entry point missing: skills/$SkillName/SKILL.md"
     exit 1
   }
+  & python3 $metadataValidator $skillSrc --containment-root $repoRoot
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   foreach ($f in $SkillFiles) {
     $path = Join-Path $skillSrc $f
     if (-not (Test-Path $path -PathType Leaf)) {
@@ -170,6 +183,7 @@ function Package-Skill {
   Get-ChildItem -Path $stageDir -Filter "*.md" -Recurse | ForEach-Object {
     Adapt-SharedLinks -FilePath $_.FullName
   }
+  Adapt-MetadataPaths -MetadataPath (Join-Path $stageDir "metadata/skill.yaml")
 
   # --- Validate staged package structure before archiving ---
   if (-not (Test-Path (Join-Path $stageDir "SKILL.md") -PathType Leaf)) {
@@ -186,6 +200,8 @@ function Package-Skill {
     exit 1
   }
   Test-SkillFrontmatter -SkillMdPath (Join-Path $stageDir "SKILL.md") -ExpectedName $SkillName
+  & python3 $metadataValidator $stageDir --containment-root $stageDir
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   if (Test-Path $archivePath) {
     Remove-Item -Force $archivePath

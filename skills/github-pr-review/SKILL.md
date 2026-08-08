@@ -20,7 +20,11 @@ decision. It behaves like an external senior reviewer.
 ```text
 resolve PR
     ↓
-resolve changed files
+resolve authenticated identity and PR author
+    ↓
+retrieve complete paginated PR scope
+    ↓
+determine formal-review capability
     ↓
 discover applicable AGENTS.md / CLAUDE.md
     ↓
@@ -28,11 +32,14 @@ inspect diff and surrounding code
     ↓
 apply repository conventions
     ↓
+deduplicate same-HEAD findings when active
+    ↓
 publish inline findings when active
     ↓
 publish human-readable summary
     ↓
-Approve or Request Changes
+submit permitted Approve/Request Changes
+or report formal-review unavailability
     ↓
 stop
 ```
@@ -74,11 +81,12 @@ Shared, always: [`review-scope.md`](../../shared/policies/review-scope.md),
 [`evidence.md`](../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),
 [`git-safety.md`](../../shared/policies/git-safety.md),
-[`review-ownership.md`](../../shared/policies/review-ownership.md).
+[`review-ownership.md`](../../shared/policies/review-ownership.md), and
+[`file-reviewability.md`](../../shared/policies/file-reviewability.md).
 
 This Skill's own: [`policies/github-review.md`](policies/github-review.md)
-(PR HEAD authority, inline/summary/decision contract, access
-verification, HEAD revalidation, submission ordering, `gh` contract).
+(PR HEAD authority, scope completeness, event capability, publication
+idempotency, HEAD revalidation, submission ordering, `gh` contract).
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.
@@ -98,7 +106,8 @@ retrieved.
 ## 5. Active Review Access Check
 
 Before active review, resolve the authenticated GitHub identity, verify
-the target repository/PR is accessible to it, and verify it has
+the PR author, compare their account identities, verify the target
+repository/PR is accessible to the authenticated identity, and verify it has
 sufficient capability to submit the intended review action.
 **Authentication alone is not sufficient evidence of review capability**
 — see [`policies/github-review.md`](policies/github-review.md), "Review/
@@ -114,8 +123,12 @@ to passive review.
   ([`templates/inline-finding.md`](templates/inline-finding.md)) →
   one final summary
   ([`templates/external-review-summary.md`](templates/external-review-summary.md))
-  → Approve or Request Changes. Human-readable content always precedes
-  any machine-oriented metadata.
+  → a permitted Approve or Request Changes event, or an explicit reason
+  that no formal final review can be submitted. Human-readable content
+  always precedes any machine-oriented metadata. A self-review never claims
+  an independent approval; see
+  [`policies/github-review.md`](policies/github-review.md), "Self-review
+  capability."
 
 ## 7. Mutation Boundary
 

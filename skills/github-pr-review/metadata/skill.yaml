@@ -9,10 +9,13 @@
 
 name: github-pr-review
 description: >-
-  Reviews GitHub Pull Requests. Passive mode returns a report without
-  publishing anything; active mode publishes inline P0/P1/P2 findings, a
-  human-readable summary, and a final Approve/Request Changes decision.
-  Never merges, deletes branches, or edits implementation code.
+  Reviews an existing GitHub Pull Request and returns evidence-backed
+  P0/P1/P2 findings — passively as a report, or, with authenticated
+  GitHub access, actively by publishing inline findings and a final
+  Approve/Request Changes decision. It never edits implementation code
+  and never merges. Use when the user references a GitHub PR by URL or
+  number, or asks to review, approve, or request changes on a pull
+  request — not for reviewing local/uncommitted changes with no PR.
 version: 0.1.0
 entrypoint: SKILL.md
 
@@ -33,11 +36,12 @@ output:
 
 shared:
   policies:
-    - ../../shared/policies/review-scope.md
-    - ../../shared/policies/severity.md
-    - ../../shared/policies/evidence.md
-    - ../../shared/policies/repository-instructions.md
-    - ../../shared/policies/git-safety.md
-    - ../../shared/policies/review-ownership.md
+    - ../../../shared/policies/review-scope.md
+    - ../../../shared/policies/severity.md
+    - ../../../shared/policies/evidence.md
+    - ../../../shared/policies/repository-instructions.md
+    - ../../../shared/policies/git-safety.md
+    - ../../../shared/policies/review-ownership.md
+    - ../../../shared/policies/file-reviewability.md
   templates:
-    - ../../shared/templates/finding.md
+    - ../../../shared/templates/finding.md
