@@ -5,13 +5,15 @@ Git repository's implementation state and returns structured P0/P1/P2
 findings. It is a reviewer only.
 
 ```text
-local repository state
+resolve local review scope
     ↓
-identify implementation delta
+discover applicable AGENTS.md / CLAUDE.md
     ↓
-inspect changed implementation
+inspect Git delta
     ↓
-apply shared review policies
+inspect relevant surrounding code
+    ↓
+review against code + repository conventions
     ↓
 return P0/P1/P2 findings
     ↓

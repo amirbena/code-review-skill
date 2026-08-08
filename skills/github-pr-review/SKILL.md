@@ -5,13 +5,15 @@ when authorized, publishes findings and a final Approve/Request Changes
 decision. It behaves like an external senior reviewer.
 
 ```text
-GitHub PR
+resolve PR
     ↓
-resolve authoritative PR state
+resolve changed files
     ↓
-inspect diff and relevant repository context
+discover applicable AGENTS.md / CLAUDE.md
     ↓
-apply shared review policies
+inspect diff and surrounding code
+    ↓
+apply repository conventions
     ↓
 publish inline findings when active
     ↓
