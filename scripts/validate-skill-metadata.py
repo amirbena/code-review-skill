@@ -160,11 +160,11 @@ def validate(skill_root: Path, containment_root: Path) -> None:
     if metadata.get("name") == "github-pr-review":
         policy = (skill_root / "policies" / "github-review.md").read_text(encoding="utf-8")
         runbook = (skill_root / "runbooks" / "active-pr-review.md").read_text(encoding="utf-8")
+        passive_runbook = (skill_root / "runbooks" / "passive-pr-review.md").read_text(encoding="utf-8")
         required_policy = (
             "## Self-review capability",
-            "authenticated reviewer is the PR author",
-            "Final GitHub approval was not submitted",
-            "never fabricate a successful",
+            "REVIEW SKIPPED",
+            "Self-review is intentionally not performed.",
             "## Capability matrix",
             "## Complete PR scope and pagination",
             "same identity for the same PR and HEAD",
@@ -175,19 +175,30 @@ def validate(skill_root: Path, containment_root: Path) -> None:
         for marker in required_policy:
             if marker not in policy:
                 raise SystemExit(f"error: GitHub review policy missing marker: {marker!r}")
-        author_step = runbook.find("resolve PR author")
+        author_step = runbook.find("resolve authenticated identity and PR author")
+        skip_step = runbook.find("REVIEW SKIPPED")
+        ownership_step = runbook.find("check review ownership")
         access_step = runbook.find("verify repository/review access")
         scope_step = runbook.find("retrieve complete paginated PR scope")
         capability_step = runbook.find("determine event-specific review capability")
         dedupe_step = runbook.find("deduplicate same-HEAD findings")
         decision_step = runbook.find("submit permitted Approve/Request Changes")
         if not (
-            0 <= author_step < access_step < scope_step < capability_step
-            < dedupe_step < decision_step
+            0 <= author_step < skip_step < ownership_step < access_step < scope_step
+            < capability_step < dedupe_step < decision_step
         ):
             raise SystemExit(
-                "error: active review flow must establish complete scope and capability, "
-                "then deduplicate before a formal review decision"
+                "error: active review flow must resolve the self-review guard before "
+                "ownership, access, or scope; then establish complete scope and "
+                "capability, then deduplicate before a formal review decision"
+            )
+        passive_author_step = passive_runbook.find("resolve authenticated identity and PR author")
+        passive_skip_step = passive_runbook.find("REVIEW SKIPPED")
+        passive_scope_step = passive_runbook.find("resolve changed files")
+        if not (0 <= passive_author_step < passive_skip_step < passive_scope_step):
+            raise SystemExit(
+                "error: passive review flow must resolve the self-review guard before "
+                "retrieving PR scope"
             )
 
 

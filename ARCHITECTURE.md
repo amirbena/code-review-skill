@@ -130,6 +130,15 @@ Agent is responsible for:
 - deciding when to open/update a PR;
 - deciding when to invoke `github-pr-review`, and in which mode.
 
+This discretion is bounded, not open-ended: it never extends to an
+implementing Agent invoking `github-pr-review` against the PR it just
+opened or updated for its own implementation work. Opening/updating that
+PR is the terminal step of the implementation workflow — see
+[`AGENTS.md`](AGENTS.md) section 13, "Implementation Workflow Termination
+and Reviewer/Author Separation." `github-pr-review` is a reviewer-role
+Skill invoked by a genuinely separate reviewer or review task, not a
+post-implementation validation step chained onto the same workflow.
+
 ```text
 Orchestrator
     ↓
@@ -162,16 +171,24 @@ optional Local Code Review Skill re-run
     ↓
 local implementation accepted by orchestrator
     ↓
-push / open PR
+push / open or update PR
+    ↓
+STOP (implementation workflow ends here)
+
+— separate reviewer / review task —
     ↓
 GitHub PR Review Skill
 ```
 
-`local-code-review` does not automatically invoke `github-pr-review`.
-`github-pr-review` does not assume `local-code-review` was previously
-run — it reviews the PR's actual current state regardless of history.
-They are independently invokable, and each may be used without the
-other.
+`local-code-review` does not automatically invoke `github-pr-review`,
+and neither does the implementing Agent that just opened or updated the
+PR — see [`AGENTS.md`](AGENTS.md) section 13. `github-pr-review` is
+invoked by a genuinely separate reviewer (a different Agent/identity, or
+a dedicated review task against an existing PR), never as an automatic
+continuation of the same implementation workflow. `github-pr-review`
+does not assume `local-code-review` was previously run — it reviews the
+PR's actual current state regardless of history. They are independently
+invokable, and each may be used without the other.
 
 ## 6. External PR Workflow (`github-pr-review`)
 

@@ -16,9 +16,11 @@ plus this Skill's own
 ```text
 PR
     ↓
-verify authenticated identity
+resolve authenticated identity and PR author
     ↓
-resolve PR author
+same identity? → yes → REVIEW SKIPPED → stop
+    ↓ no
+check review ownership
     ↓
 verify repository/review access
     ↓
@@ -46,14 +48,19 @@ stop
 
 ## Steps
 
-1. Check for an existing Code Review Agent owner of this scope per
+1. **Before any other step**, resolve the repository and PR, then resolve
+   the authenticated GitHub identity and the PR author and compare them,
+   per [`../policies/github-review.md`](../policies/github-review.md),
+   "Self-review capability." If they are the same account, terminate
+   immediately with `REVIEW SKIPPED` — do not check review ownership,
+   verify access, retrieve PR scope, review the diff, or produce any
+   finding. This check precedes and is independent of the ownership check
+   in step 2.
+2. Check for an existing Code Review Agent owner of this scope per
    [`../../../shared/policies/review-ownership.md`](../../../shared/policies/review-ownership.md).
    If owned elsewhere, return `REVIEW ALREADY OWNED` and stop.
-2. Resolve the repository and PR through an available authenticated GitHub
-   integration; verify authentication and resolve the authenticated identity
-   and the PR author's account identity.
-3. **Verify repository/review access** for that identity against the
-   target repository/PR (see
+3. **Verify repository/review access** for the authenticated identity
+   against the target repository/PR (see
    [`../policies/github-review.md`](../policies/github-review.md),
    "Review/repository access prerequisite"). Successful authentication
    alone is not sufficient.
@@ -67,12 +74,12 @@ stop
    available. If any material scope remains missing or truncated, return
    `REVIEW INCOMPLETE`, report the missing scope, and do not submit a formal
    decision.
-5. Compare the authenticated identity with the PR author and determine
-   event-specific capability, including self-review, draft, fork,
+5. Determine event-specific capability, including draft, fork,
    comment-only, and permission-limited states, per
    [`../policies/github-review.md`](../policies/github-review.md),
-   "Capability matrix." Do not treat authentication or repository
-   access as proof that a formal review event is permitted.
+   "Capability matrix." (Self-review was already resolved and excluded in
+   step 1.) Do not treat authentication or repository access as proof
+   that a formal review event is permitted.
 6. Retrieve all pages of relevant prior reviews, review comments, and issue
    comments needed for review state and same-HEAD duplicate detection. If
    that history is incomplete, report the limitation rather than claiming
@@ -106,11 +113,11 @@ stop
     revalidation"). If it changed, do not submit a decision for the stale
     SHA — review the new delta first.
 13. Submit the permitted **Approve** or **Request Changes** event per
-    [`../policies/github-review.md`](../policies/github-review.md). If the
-    authenticated reviewer is the PR author or GitHub otherwise disallows
-    the formal event, preserve the clean/blocking reasoning result and
-    report why no final formal review was submitted. Never claim a GitHub
-    mutation that did not succeed.
+    [`../policies/github-review.md`](../policies/github-review.md). (Self-
+    review was already excluded in step 1 and never reaches this step.) If
+    GitHub otherwise disallows the formal event, preserve the
+    clean/blocking reasoning result and report why no final formal review
+    was submitted. Never claim a GitHub mutation that did not succeed.
 14. Return separate reasoning, comments-publication, and decision-publication
     statuses per "Final decision," whether or not GitHub mutation succeeded.
 15. Stop. Never merge, never delete branches, never modify implementation
