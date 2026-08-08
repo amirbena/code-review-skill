@@ -91,12 +91,24 @@ stop
   Boundary."
 - Must not otherwise mutate the repository beyond read-only inspection
   (see [`git-safety.md`](../../../shared/policies/git-safety.md)).
+- Must not ask the user for approval, and must not be invoked as a
+  self-triggered re-run. This runbook assumes the caller has already
+  obtained fresh, explicit user approval scoped to this specific
+  invocation before entering this flow — see
+  [`../../../AGENTS.md`](../../../AGENTS.md), "Explicit User Approval
+  Required for `local-code-review` Invocation." This runbook does not
+  verify that approval was obtained; that responsibility belongs
+  entirely to the caller.
 
 ## Re-review discipline (recommended, not enforced by this Skill)
 
-Each invocation of this runbook is independent and stateless. When an
-orchestrator chooses to invoke it again against updated implementation
-state, it should primarily verify:
+Each invocation of this runbook is independent and stateless. Every
+invocation, including a re-review immediately after fixes, requires its
+own separate, fresh, explicit user approval — the approval that
+authorized a previous invocation never authorizes this one. When an
+orchestrator has obtained that new approval and chooses to invoke this
+runbook again against updated implementation state, it should primarily
+verify:
 
 - whether previously reported blocking findings were resolved;
 - whether the fix introduced a regression;

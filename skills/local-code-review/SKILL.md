@@ -34,6 +34,17 @@ return P0/P1/P2 findings
 stop
 ```
 
+**This Skill MUST NOT be invoked automatically.** Every invocation — the
+first review of an implementation and any later re-review after fixes —
+requires the caller to have already obtained fresh, explicit user
+approval scoped to that one run before invoking this Skill. An approval
+that authorized one invocation never authorizes another. See
+[`AGENTS.md`](../../AGENTS.md), "Explicit User Approval Required for
+`local-code-review` Invocation," for the orchestration-level rule, and
+"Statelessness and Orchestration Boundary" below for this Skill's own
+side of that boundary: it does not ask for approval, does not track
+prior approvals, and does not decide whether a re-review should happen.
+
 See [`runbooks/local-review.md`](runbooks/local-review.md) for the full
 procedure and [`templates/local-review-report.md`](templates/local-review-report.md)
 for the output contract.
@@ -102,15 +113,31 @@ this is review pass 1, 2, 3, or later. Specifically, this Skill does
 - decide whether another review iteration should run;
 - count review-loop attempts or track a maximum;
 - control or instruct the implementing Agent;
-- commit fixes, push changes, or open PRs.
+- commit fixes, push changes, or open PRs;
+- ask the user for approval to run;
+- assume a prior approval extends to this invocation, or to any future
+  one.
+
+**Every invocation requires fresh, explicit user approval scoped to
+that one run**, obtained by the caller before invoking this Skill — see
+[`AGENTS.md`](../../AGENTS.md), "Explicit User Approval Required for
+`local-code-review` Invocation." This Skill has no mechanism to verify
+that approval occurred and does not need one: obtaining and scoping
+approval is entirely the caller's/orchestrator's responsibility, never
+this Skill's. In particular, this Skill must never be treated as
+self-triggering: returning findings from one invocation is never, by
+itself, authorization for the caller to invoke this Skill again after
+fixes are applied. A separate, explicit approval is required for every
+subsequent invocation.
 
 **Loop limits, re-invocation timing, and workflow progression are
 entirely an orchestration concern**, owned by the calling
 runtime/Team Lead/implementing workflow — not by this Skill. A caller
-that wants an iterative review/fix loop invokes this Skill repeatedly and
-enforces its own maximum; see this repository's own `ARCHITECTURE.md` for
-the recommended handoff shape. For recommended (not enforced)
-re-review discipline across repeated invocations, see
+that wants an iterative review/fix loop must obtain a new, explicit user
+approval before each individual invocation in that loop; see this
+repository's own `ARCHITECTURE.md` for the recommended handoff shape. For
+recommended (not enforced) re-review discipline across repeated,
+separately-approved invocations, see
 [`runbooks/local-review.md`](runbooks/local-review.md).
 
 ## 6. Mutation Boundary

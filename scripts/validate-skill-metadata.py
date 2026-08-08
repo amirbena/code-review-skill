@@ -201,6 +201,33 @@ def validate(skill_root: Path, containment_root: Path) -> None:
                 "retrieving PR scope"
             )
 
+    if metadata.get("name") == "local-code-review":
+        local_runbook = (skill_root / "runbooks" / "local-review.md").read_text(encoding="utf-8")
+        required_skill_markers = (
+            "MUST NOT be invoked automatically",
+            "fresh, explicit user approval",
+            "it does not ask for approval, does not track\nprior approvals",
+            "is never, by\nitself, authorization for the caller to invoke this Skill again",
+            "A separate, explicit approval is required for every\nsubsequent invocation",
+            "ask the user for approval to run",
+        )
+        for marker in required_skill_markers:
+            if marker not in skill_text:
+                raise SystemExit(
+                    f"error: local-code-review SKILL.md missing marker: {marker!r}"
+                )
+        required_runbook_markers = (
+            "Must not ask the user for approval",
+            "must not be invoked as a\n  self-triggered re-run",
+            "This runbook does not\n  verify that approval was obtained",
+            "own separate, fresh, explicit user approval",
+        )
+        for marker in required_runbook_markers:
+            if marker not in local_runbook:
+                raise SystemExit(
+                    f"error: local-code-review runbook missing marker: {marker!r}"
+                )
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
