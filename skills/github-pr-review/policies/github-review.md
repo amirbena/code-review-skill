@@ -16,19 +16,150 @@ The exact PR HEAD SHA under review must be recorded at the start of
 review. Any final decision must apply to that same SHA — see "HEAD
 revalidation" below.
 
-## Inline comments
+## Analysis phase vs. publication phase
 
-Findings are attached to the narrowest relevant changed line whenever
-possible, using [`../templates/inline-finding.md`](../templates/inline-finding.md).
-Cross-cutting findings that cannot attach meaningfully to one line go into
-the final summary instead.
+These are strictly separate, and publication never begins until analysis
+is complete:
+
+```text
+analysis phase                          publication phase
+───────────────                         ─────────────────
+inspect file                            all reviewable files processed
+    ↓                                       ↓
+discover candidate finding              evidence verified
+    ↓                                       ↓
+record internally, keep reviewing       findings deduplicated
+    ↓                                       ↓
+    ...                                 severity finalized
+    ↓                                       ↓
+scope complete                         inline locations resolved
+                                            ↓
+                                        decision finalized
+                                            ↓
+                                        submit one review
+```
+
+A candidate finding may be confirmed, downgraded, upgraded, merged with
+another finding, discarded after further evidence, or have its location
+changed at any point during the analysis phase. Nothing is published
+during this phase — no comment, no partial review, no decision. Only the
+finalized set of findings, produced once analysis is complete, is
+eligible for publication. This prevents noisy comment streams,
+contradictory or duplicate comments, publishing findings that are later
+discovered to be false, and unnecessary notification spam.
+
+## Inline comment eligibility
+
+Not every finding is forced inline. During finalization, resolve each
+finding's placement:
+
+- **Inline** — prefer this when the finding maps to a specific changed
+  file, a specific changed line or narrow changed range represents the
+  issue, that location is valid in the PR diff, and inline placement
+  materially improves understanding. Rendered with
+  [`../templates/inline-finding.md`](../templates/inline-finding.md).
+- **Review body** — used when the issue spans multiple files, is
+  architectural/systemic, concerns missing behavior with no natural
+  changed-line anchor, the relevant location falls outside the changed
+  diff, GitHub cannot attach a comment there, the finding concerns review
+  completeness itself, or forcing an inline location would mislead.
+  Rendered with the full-finding form in
+  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md)
+  inside [`../templates/external-review-summary.md`](../templates/external-review-summary.md).
+
+No valid inline anchor is never a reason to drop a finding — it changes
+where the finding's one authoritative full representation lives, never
+whether it is represented at all.
+
+## Batched review construction and submission
+
+`github-pr-review` MUST NOT publish a comment, or any part of a review,
+as each finding is discovered. Findings accumulate internally during
+analysis (see "Analysis phase vs. publication phase") and are published
+together, once, as a single coherent GitHub review submission:
+
+```text
+finalized findings
+    ↓
+resolve inline eligibility (above)
+    ↓
+one review body                one inline comment per
+(review-summary.md shape,      inline-eligible finding
+full findings only for              (inline-finding.md)
+non-inline findings, summary-
+pointers for inline ones)
+    ↓                                ↓
+        one GitHub review submission
+        (body + inline comments + event)
+```
+
+**Default path — atomic submission.** When the available GitHub
+integration supports creating a review with a body, an array of inline
+comments, and an event in a single request (for example, the GitHub REST
+"create a review for a pull request" operation, which accepts `body`,
+`comments[]`, and `event` together), use it. This is the default and
+preferred mechanism: it produces exactly one review object and one
+notification, containing every finalized inline finding at once.
+
+**Fallback path — still one review.** If the available integration
+cannot submit body, comments, and event atomically, use the minimum
+number of calls that still yield exactly one review object from the PR
+author's perspective: open one pending/draft review, attach every
+finalized inline comment to that same pending review, then submit it
+once with the body and event. Do not create standalone comments outside
+a review object, and do not submit more than one review event for one
+finalized set of findings.
+
+**Prohibited shapes**, regardless of which path is used:
+
+```text
+inspect file A → publish comment
+inspect file B → publish another comment
+inspect file C → publish another comment
+...                                                    ✗ prohibited
+
+finding discovered → notification
+finding discovered → notification
+finding discovered → notification                     ✗ prohibited
+```
+
+The author receives one coherent review event, not a stream of
+interruptions.
+
+## Rejected inline location fallback
+
+If GitHub rejects a resolved inline location while constructing or
+submitting the review (for example, the line is outside the diff's
+commentable range, or a side/position mismatch), the finding MUST NOT be
+dropped and MUST NOT be silently reattached to an unrelated line.
+Instead, move that finding's full representation into the review body
+(the same full-finding form used for non-inline findings) and continue
+constructing/submitting the rest of the review normally. Prefer
+completing one coherent review submission over abandoning the whole
+submission; if the integration cannot recover mid-submission, retry the
+review construction once with the affected finding moved to the body,
+rather than repeatedly retrying the same rejected inline location.
+
+## No duplicate findings
+
+Each finding has exactly one authoritative full representation, per
+[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+"Rules." When a finding is published in full as an inline comment, the
+review body's Findings section uses only the summary-pointer form
+(severity, title, file:line) for it — never the full evidence/impact/
+recommended-direction text a second time. When a finding has no inline
+comment (no valid anchor, or a rejected location moved to the body per
+above), its full representation appears once, in the body.
 
 ## Final summary
 
-A single human-readable review summary, using
-[`../templates/external-review-summary.md`](../templates/external-review-summary.md),
-is always produced after inline findings and before the final decision. It is
-published when permitted; otherwise it is returned with publication status.
+A single human-readable review body, using
+[`../templates/external-review-summary.md`](../templates/external-review-summary.md)
+(the shared shape in
+[`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md)),
+is constructed from the finalized findings and submitted as part of the
+one review submission above. When publication is unavailable, it is
+instead returned to the caller with publication status.
 
 ## Final decision
 
@@ -238,24 +369,24 @@ approval or duplicate identity never authorizes the new HEAD.
 ## Submission ordering
 
 ```text
-review PR
+review complete PR scope
     ↓
-collect findings
-    ↓
-publish inline P0/P1/P2 comments
-    ↓
-publish final human-readable review summary
+finalize findings (dedupe, severity, inline eligibility)
     ↓
 verify current PR HEAD
     ↓
-submit the permitted Approve / Request Changes event
+construct one review: body + inline comments + event
+    ↓
+submit that one review submission
 or report why no formal review can be submitted
 ```
 
-If the GitHub API permits submitting comments and the final review
-atomically in a single review operation, that is also acceptable provided
-the visible ordering and resulting review semantics remain equivalent
-(developer sees issues, then a coherent summary, then the review state).
+Verifying HEAD happens immediately before constructing/submitting the
+review, not after — see "HEAD revalidation" below. The review body and
+inline comments are always submitted together as one review submission
+per "Batched review construction and submission" above; there is no
+separate "publish inline comments" step followed later by a separate
+"publish summary" step.
 
 ## GitHub integration contract
 

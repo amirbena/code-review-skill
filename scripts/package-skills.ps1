@@ -40,7 +40,8 @@ $sharedPolicies = @(
   "file-reviewability.md"
 )
 $sharedTemplates = @(
-  "finding.md"
+  "finding.md",
+  "review-summary.md"
 )
 
 # Rewrite relative links into shared/ so they resolve from the archive

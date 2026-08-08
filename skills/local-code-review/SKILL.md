@@ -82,6 +82,9 @@ multi-Agent contexts, also
 For every changed-file category, including generated or opaque content,
 apply [`file-reviewability.md`](../../shared/policies/file-reviewability.md).
 
+Also always: [`review-summary.md`](../../shared/templates/review-summary.md)
+(the shared human-facing review body shape).
+
 This Skill's own: [`policies/invocation-approval.md`](policies/invocation-approval.md)
 (the complete per-invocation, explicit-user-approval contract — see
 section 5 below).
@@ -92,9 +95,15 @@ consumes the shared ones so both Skills apply one review standard.
 ## 4. Output Contract
 
 Exactly one [`templates/local-review-report.md`](templates/local-review-report.md)
-per invocation, containing Review State, Blocking Findings, Non-Blocking
-Findings, and a Result of `REVIEW CLEAN` or `CHANGES REQUIRED`. Returned
-to the caller — never published anywhere.
+per invocation, rendering the shared human-facing shape in
+[`review-summary.md`](../../shared/templates/review-summary.md): a
+Result, What changed, What was done well, Findings, Validation, and a
+Decision of `REVIEW CLEAN` or `CHANGES REQUIRED`. Machine-oriented detail
+(base/HEAD SHAs, synchronization status, raw P0/P1/P2 counts) is
+subordinate, appearing only in a trailing metadata block — never ahead of
+the human-facing review. Returned to the caller as one complete report —
+never published anywhere, and never streamed finding-by-finding as
+findings are discovered.
 
 ## 5. Statelessness and Orchestration Boundary
 

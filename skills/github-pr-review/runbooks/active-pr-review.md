@@ -34,11 +34,11 @@ review
     ↓
 deduplicate same-HEAD findings
     ↓
-publish permitted inline findings
-    ↓
-publish final summary
+finalize findings and resolve inline eligibility
     ↓
 re-check HEAD
+    ↓
+construct one review: body + inline comments
     ↓
 submit permitted Approve/Request Changes
 or report why formal submission is unavailable
@@ -101,23 +101,46 @@ stop
    [`severity.md`](../../../shared/policies/severity.md) with evidence per
    [`evidence.md`](../../../shared/policies/evidence.md).
 9. Compute the stable internal identity defined by "Existing review
-   awareness" for every finding. Keep `F1`, `F2`, ... as display IDs. Suppress
-   publication only when the same authenticated reviewer/workflow already
-   published the same finding identity for this same PR HEAD.
-10. Publish permitted, non-duplicate inline findings using
-   [`../templates/inline-finding.md`](../templates/inline-finding.md).
-11. Publish the final human-readable summary when permitted using
-   [`../templates/external-review-summary.md`](../templates/external-review-summary.md).
-12. Re-check the current PR HEAD against the recorded HEAD (see
+   awareness" for every finding. Keep `F1`, `F2`, ... as display IDs. Mark
+   a finding as suppressed (not for publication, though it may still
+   appear in returned reasoning) only when the same authenticated
+   reviewer/workflow already published the same finding identity for this
+   same PR HEAD.
+10. **Finalize findings** — this is the boundary between analysis and
+    publication (see
+    [`../policies/github-review.md`](../policies/github-review.md),
+    "Analysis phase vs. publication phase"): the finding set is now fixed.
+    For each non-suppressed finding, resolve inline eligibility per
+    [`../policies/github-review.md`](../policies/github-review.md),
+    "Inline comment eligibility" — inline-eligible findings render with
+    [`../templates/inline-finding.md`](../templates/inline-finding.md);
+    the rest render in full within the review body. No publication has
+    occurred yet.
+11. Re-check the current PR HEAD against the recorded HEAD (see
     [`../policies/github-review.md`](../policies/github-review.md), "HEAD
-    revalidation"). If it changed, do not submit a decision for the stale
-    SHA — review the new delta first.
-13. Submit the permitted **Approve** or **Request Changes** event per
-    [`../policies/github-review.md`](../policies/github-review.md). (Self-
-    review was already excluded in step 1 and never reaches this step.) If
-    GitHub otherwise disallows the formal event, preserve the
-    clean/blocking reasoning result and report why no final formal review
-    was submitted. Never claim a GitHub mutation that did not succeed.
+    revalidation"), immediately before constructing the review. If it
+    changed, do not construct or submit a review for the stale SHA —
+    review the new delta first and re-finalize findings against it.
+12. Construct **one** review from the finalized findings: the body using
+    [`../templates/external-review-summary.md`](../templates/external-review-summary.md)
+    (full findings for non-inline ones, summary-pointers for inline ones —
+    never both, per
+    [`../policies/github-review.md`](../policies/github-review.md), "No
+    duplicate findings") plus the array of inline comments for
+    inline-eligible findings.
+13. Submit that one review — body, inline comments, and the permitted
+    **Approve** or **Request Changes** event together — per
+    [`../policies/github-review.md`](../policies/github-review.md),
+    "Batched review construction and submission." (Self-review was
+    already excluded in step 1 and never reaches this step.) If GitHub
+    rejects a specific resolved inline location during this step, apply
+    the "Rejected inline location fallback" (move that finding's full
+    form into the body) and complete the submission — do not drop the
+    finding and do not abandon the rest of the review. If GitHub
+    otherwise disallows the formal event, preserve the clean/blocking
+    reasoning result and report why no final formal review was submitted.
+    Never claim a GitHub mutation that did not succeed, and never submit
+    more than one review for this finalized finding set.
 14. Return separate reasoning, comments-publication, and decision-publication
     statuses per "Final decision," whether or not GitHub mutation succeeded.
 15. Stop. Never merge, never delete branches, never modify implementation

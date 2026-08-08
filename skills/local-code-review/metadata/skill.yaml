@@ -42,3 +42,4 @@ shared:
     - ../../../shared/policies/file-reviewability.md
   templates:
     - ../../../shared/templates/finding.md
+    - ../../../shared/templates/review-summary.md

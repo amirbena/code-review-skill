@@ -38,6 +38,7 @@ shared_policies=(
 )
 shared_templates=(
   "finding.md"
+  "review-summary.md"
 )
 
 # Rewrite relative links into shared/ so they resolve from the archive

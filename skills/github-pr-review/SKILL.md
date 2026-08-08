@@ -38,15 +38,23 @@ apply repository conventions
     ↓
 deduplicate same-HEAD findings when active
     ↓
-publish inline findings when active
+finalize findings: classify severity, resolve inline eligibility
     ↓
-publish human-readable summary
+construct one coherent review: human-facing body + inline comments
     ↓
-submit permitted Approve/Request Changes
+submit that one review (body + inline comments + event) when active
 or report formal-review unavailability
     ↓
 stop
 ```
+
+Findings accumulate silently during analysis and are never published
+individually as they are discovered. Publication is a deliberate
+finalization step: once analysis is complete, the entire finalized
+finding set is submitted together as a single GitHub review whenever the
+platform capability permits it — see
+[`policies/github-review.md`](policies/github-review.md), "Batched review
+construction and submission."
 
 **This Skill is a reviewer role, not an implementation-completion step.**
 It is intended for genuine reviewer/author separation — a different
@@ -100,9 +108,13 @@ Shared, always: [`review-scope.md`](../../shared/policies/review-scope.md),
 [`review-ownership.md`](../../shared/policies/review-ownership.md), and
 [`file-reviewability.md`](../../shared/policies/file-reviewability.md).
 
+Also always: [`review-summary.md`](../../shared/templates/review-summary.md)
+(the shared human-facing review body shape).
+
 This Skill's own: [`policies/github-review.md`](policies/github-review.md)
 (PR HEAD authority, scope completeness, event capability, publication
-idempotency, HEAD revalidation, submission ordering, integration contract).
+idempotency, HEAD revalidation, submission ordering, integration contract,
+batched review construction).
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.
@@ -134,15 +146,21 @@ to passive review.
 
 ## 6. Output Contract
 
-- **Passive:** a human-readable report using the same structure as the
-  active templates, returned to the caller, not published.
-- **Active:** inline findings
-  ([`templates/inline-finding.md`](templates/inline-finding.md)) →
-  one final summary
+- **Passive:** a human-readable report using the same shared shape as
+  active review ([`review-summary.md`](../../shared/templates/review-summary.md)),
+  returned to the caller, not published.
+- **Active:** the finalized findings, once analysis completes, are
+  submitted together as **one** GitHub review: a human-readable body
   ([`templates/external-review-summary.md`](templates/external-review-summary.md))
-  → a permitted Approve or Request Changes event, or an explicit reason
-  that no formal final review can be submitted. Human-readable content
-  always precedes any machine-oriented metadata. A self-review never claims
+  plus the inline comments for inline-eligible findings
+  ([`templates/inline-finding.md`](templates/inline-finding.md)), and a
+  permitted Approve or Request Changes event — or an explicit reason that
+  no formal final review can be submitted. This Skill never publishes a
+  standalone comment as each finding is discovered, and never splits one
+  finalized finding set across multiple review submissions; see
+  [`policies/github-review.md`](policies/github-review.md), "Batched
+  review construction and submission." Human-readable content always
+  precedes any machine-oriented metadata. A self-review never claims
   an independent approval; see
   [`policies/github-review.md`](policies/github-review.md), "Self-review
   capability."

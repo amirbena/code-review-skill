@@ -70,10 +70,15 @@ return human-readable report
    [`evidence.md`](../../../shared/policies/evidence.md), using the shared
    finding shape in
    [`finding.md`](../../../shared/templates/finding.md).
-7. Render a human-readable report using the same structure as
+7. Finalize the complete set of findings before composing the report —
+   do not report findings piecemeal as they are discovered. Render one
+   human-readable report using the shared shape in
+   [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+   the same structure
    [`../templates/external-review-summary.md`](../templates/external-review-summary.md)
-   and [`../templates/inline-finding.md`](../templates/inline-finding.md)
-   (as a plain-text/return-value report, not published to GitHub).
+   uses for active review (as a plain-text/return-value report, not
+   published to GitHub), with findings rendered per
+   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md).
 
 ## Constraints
 
