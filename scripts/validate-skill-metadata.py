@@ -283,6 +283,36 @@ def validate(skill_root: Path, containment_root: Path) -> None:
             "### Escalating from delta to full review",
             "does not inherit another reviewer's judgment",
             "NO NEW DELTA",
+            "## Review reasoning flow",
+            "PR intent → diff → logical cohorts → impacted dependency surface → findings",
+            "resolve first, before this reasoning flow begins",
+            "this reasoning flow applies to the reviewed delta and any "
+            "surrounding context required to validate it",
+            "## Logical Cohort Review",
+            "group related changed files and hunks into logical cohorts when useful",
+            "file-by-file review is not the primary reasoning model",
+            "Do not label output `Cohort 1`, `Cohort 2`, etc. unless exposing "
+            "the grouping materially improves the clarity of the review",
+            "A small or single-purpose change needs only one cohort and no "
+            "added ceremony",
+            "## Code Impact / Dependency Analysis",
+            "inspect relevant dependency paths beyond the raw diff",
+            "no dedicated code-graph tool or vendor is required for this analysis",
+            "### Impact exploration boundaries",
+            "Stop exploring once the realistic blast radius is sufficiently "
+            "understood to evaluate the correctness of the PR",
+            "Do not recursively traverse dependencies merely because more "
+            "references exist",
+            "### Unchanged code as evidence, not automatic scope",
+            "Unchanged code is an evidence source, not automatic scope expansion",
+            "Do not report unrelated legacy problems merely because they were "
+            "encountered while following dependencies",
+            "### Findings still require concrete evidence",
+            "Do not create a finding merely because another dependent file or "
+            "symbol exists",
+            "### Small and isolated changes",
+            "trivial/single-purpose PRs are not forced into unnecessary "
+            "cohort or graph-analysis ceremony",
         )
         # Compared through normalize_prose() rather than as raw substrings:
         # a marker's presence must not depend on exactly where the source
@@ -301,6 +331,15 @@ def validate(skill_root: Path, containment_root: Path) -> None:
                 "before reviewer ownership and delta re-review, so the "
                 "self-review guard remains authoritative and unbypassable by "
                 "review-mode resolution"
+            )
+        cohort_index = policy.find("## Logical Cohort Review")
+        impact_index = policy.find("## Code Impact / Dependency Analysis")
+        if not (0 <= reviewer_ownership_index < cohort_index < impact_index):
+            raise SystemExit(
+                "error: GitHub review policy must define logical cohort review "
+                "and code impact/dependency analysis after reviewer ownership "
+                "and delta re-review, so review-mode resolution remains "
+                "authoritative before this reasoning flow begins"
             )
         author_step = runbook.find("resolve authenticated identity and PR author")
         skip_step = runbook.find("REVIEW SKIPPED")

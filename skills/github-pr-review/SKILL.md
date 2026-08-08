@@ -38,7 +38,9 @@ determine formal-review capability
     ↓
 discover applicable AGENTS.md / CLAUDE.md
     ↓
-inspect diff and surrounding code
+inspect diff and surrounding code, reasoning about related changes as
+logical cohorts and inspecting relevant dependency paths beyond the
+diff, bounded to the PR's realistic blast radius
     ↓
 apply repository conventions
     ↓
@@ -120,7 +122,8 @@ Also always: [`review-summary.md`](../../shared/templates/review-summary.md)
 This Skill's own: [`policies/github-review.md`](policies/github-review.md)
 (PR HEAD authority, scope completeness, event capability, publication
 idempotency, HEAD revalidation, submission ordering, integration contract,
-batched review construction).
+batched review construction, logical cohort review, and bounded
+code-impact/dependency analysis).
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.
