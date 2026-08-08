@@ -26,7 +26,13 @@ resolve authenticated identity and PR author
     ↓
 same identity? → yes → REVIEW SKIPPED → stop
     ↓ no
-retrieve complete paginated PR scope
+resolve review mode: same reviewer as immediately preceding
+completed review? → yes → delta re-review of the bounded SHA range
+                           (escalates to full review if the delta
+                           materially changes scope)
+                        → no  → normal review of current PR state
+    ↓
+retrieve required PR scope for that mode
     ↓
 determine formal-review capability
     ↓
@@ -187,7 +193,29 @@ invariant as `local-code-review` — see
 If another Code Review Agent already owns this PR, return
 `REVIEW ALREADY OWNED` and do not launch a competing review.
 
-## 10. Configuration
+## 10. Reviewer Ownership and Delta Re-Review
+
+Distinct from section 9's Agent-level scope ownership, this section
+governs *review-mode* selection for a single already-owned PR review:
+whether this invocation may perform a bounded delta re-review or must
+perform a normal full review of the current PR state. The complete rule
+— reviewer identity resolution, the delta boundary, escalation
+conditions, and edge cases — is owned by
+[`policies/github-review.md`](policies/github-review.md), "Reviewer
+ownership and delta re-review"; this section does not duplicate it.
+
+In summary: delta-only re-review is allowed only when the current
+authenticated reviewer is the same identity as the reviewer of the
+immediately preceding completed review of this PR, and that review's
+reviewed SHA can be established reliably. A different reviewer, no prior
+completed review, or any ambiguity in reviewer identity or the reviewed
+SHA all default to a normal full review. The self-review guard in
+section 5 runs first and is authoritative; review-mode resolution never
+bypasses it. This applies identically to passive and active review — see
+[`runbooks/passive-pr-review.md`](runbooks/passive-pr-review.md) and
+[`runbooks/active-pr-review.md`](runbooks/active-pr-review.md).
+
+## 11. Configuration
 
 No runtime-specific configuration is required. This Skill has no loop/
 iteration concept — each invocation reviews the PR's current authoritative

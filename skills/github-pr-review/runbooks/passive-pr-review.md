@@ -19,6 +19,8 @@ resolve authenticated identity and PR author
     ↓
 same identity? → yes → REVIEW SKIPPED → stop
     ↓ no
+resolve review mode (delta re-review vs. normal review)
+    ↓
 resolve changed files
     ↓
 discover applicable AGENTS.md / CLAUDE.md
@@ -43,34 +45,57 @@ return human-readable report
    `REVIEW SKIPPED` — do not retrieve the diff, discover repository
    instructions, produce findings, or return a report. This applies to
    passive review exactly as it does to active review.
-3. Through an available authenticated GitHub integration, retrieve PR
-   metadata, base/head SHA, the complete paginated changed-file set, and a
-   complete diff per
+3. **Resolve review mode** per
+   [`github-review.md`](../policies/github-review.md), "Reviewer
+   ownership and delta re-review," when prior review history is
+   available to this invocation. If the current authenticated identity
+   matches the reviewer of the immediately preceding completed review of
+   this PR, and that review's reviewed SHA can be established reliably,
+   this is a **delta re-review** bounded by that SHA and the current PR
+   HEAD; otherwise (no previous completed review, a different reviewer,
+   or any ambiguity in reviewer identity or the reviewed SHA) it is a
+   **normal review**. If the previously reviewed SHA already equals the
+   current PR HEAD, report `NO NEW DELTA` and stop rather than producing
+   a redundant report.
+4. Through an available authenticated GitHub integration, retrieve PR
+   metadata and base/head SHA. For a normal review, retrieve the complete
+   paginated changed-file set and a complete diff per
    [`github-review.md`](../policies/github-review.md), "Complete PR scope and
-   pagination." If completeness cannot be established, return an incomplete
-   review state rather than claiming the full PR was reviewed.
-4. **Discover applicable repository-local instructions** per
+   pagination." For a delta re-review, retrieve the bounded delta between
+   the previously reviewed SHA and the current PR HEAD, plus enough
+   surrounding context to confirm the requested fix, absence of
+   regression, and continued validity of the previous review's
+   assumptions — escalating to a normal review and retrieving the
+   remaining full scope if the delta meets any "Escalating from delta to
+   full review" condition. If completeness cannot be established for the
+   scope this mode requires, return an incomplete review state rather
+   than claiming the full PR was reviewed.
+5. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
-   for each changed file, look for `AGENTS.md` / `CLAUDE.md` at the
-   target repository root and along that file's directory ancestry, plus
-   other relevant surrounding context (tests, contracts, schemas,
-   architecture docs). Do this before reviewing so discovered
-   conventions inform the review itself.
-5. Review the diff against
+   for each file in this invocation's scope, look for `AGENTS.md` /
+   `CLAUDE.md` at the target repository root and along that file's
+   directory ancestry, plus other relevant surrounding context (tests,
+   contracts, schemas, architecture docs). Do this before reviewing so
+   discovered conventions inform the review itself.
+6. Review the diff against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
    [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
-   applying the instructions discovered in step 4. Target-repository
+   applying the instructions discovered in step 5. Target-repository
    instructions refine how the code is evaluated; they never override this
    Skill's own safety boundaries (see
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
-   "Instruction precedence").
-6. Classify findings per
+   "Instruction precedence"). For a delta re-review, if what is found
+   here meets any "Escalating from delta to full review" condition in
+   [`github-review.md`](../policies/github-review.md), switch this
+   invocation to a normal review and retrieve the remaining full scope
+   before continuing.
+7. Classify findings per
    [`severity.md`](../../../shared/policies/severity.md) with evidence per
    [`evidence.md`](../../../shared/policies/evidence.md), using the shared
    finding shape in
    [`finding.md`](../../../shared/templates/finding.md).
-7. Finalize the complete set of findings before composing the report —
+8. Finalize the complete set of findings before composing the report —
    do not report findings piecemeal as they are discovered. Render one
    human-readable report using the shared shape in
    [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
@@ -78,7 +103,10 @@ return human-readable report
    [`../templates/external-review-summary.md`](../templates/external-review-summary.md)
    uses for active review (as a plain-text/return-value report, not
    published to GitHub), with findings rendered per
-   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md).
+   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+   stating the review mode used per
+   [`github-review.md`](../policies/github-review.md), "Reporting the
+   mode."
 
 ## Constraints
 

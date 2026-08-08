@@ -17,6 +17,9 @@ findings use the shared shape in
 
 Reviewed <n> changed files at commit `<sha>`.
 
+Review mode: Full review
+Reason: no previous completed review by this reviewer
+
 ### What changed
 <concise summary of what the Pull Request implements and its intent>
 
@@ -40,6 +43,10 @@ No P0, P1, or P2 findings were identified in the reviewed HEAD.
 or, when there are findings:
 
 ```markdown
+Review mode: Delta re-review
+Previous reviewed SHA: `abc1234`
+Current HEAD: `def5678`
+
 ### Findings
 - **P1 — Incomplete pagination can produce a false clean review**
   `runbooks/active-pr-review.md:84`
@@ -87,6 +94,13 @@ append it after the human-facing review, clearly subordinate, per
 
 ## Rules
 
+- **Review mode** states plainly whether this invocation used a normal
+  full review or a delta re-review, and why, per
+  [`../policies/github-review.md`](../policies/github-review.md),
+  "Reviewer ownership and delta re-review." For a delta re-review,
+  include the previously reviewed SHA and current HEAD. Keep this line
+  concise; do not expose additional internal reviewer-identity-matching
+  mechanics as primary output.
 - **Result** and **Decision** state the outcome in plain language; a
   reader never infers the outcome from raw counts.
 - "What was done well" only mentions strengths actually supported by the

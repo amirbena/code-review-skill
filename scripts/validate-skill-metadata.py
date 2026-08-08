@@ -261,6 +261,17 @@ def validate(skill_root: Path, containment_root: Path) -> None:
             "## Rejected inline location fallback",
             "## No duplicate findings",
             "MUST NOT publish a comment, or any part of a review, as each finding is discovered",
+            "## Reviewer ownership and delta re-review",
+            "Delta-only re-review is allowed only when the current reviewer owns "
+            "the immediately preceding review context. A different reviewer must "
+            "independently review the current PR state.",
+            "Fail conservative",
+            "previously reviewed SHA → current PR HEAD",
+            "Never define this boundary merely as the latest commit, the last "
+            "push, the last local commit, or \"commits since task start\"",
+            "### Escalating from delta to full review",
+            "does not inherit another reviewer's judgment",
+            "NO NEW DELTA",
         )
         # Compared through normalize_prose() rather than as raw substrings:
         # a marker's presence must not depend on exactly where the source
@@ -271,6 +282,15 @@ def validate(skill_root: Path, containment_root: Path) -> None:
         for marker in required_policy:
             if normalize_prose(marker) not in policy_normalized:
                 raise SystemExit(f"error: GitHub review policy missing marker: {marker!r}")
+        self_review_index = policy.find("## Self-review capability")
+        reviewer_ownership_index = policy.find("## Reviewer ownership and delta re-review")
+        if not (0 <= self_review_index < reviewer_ownership_index):
+            raise SystemExit(
+                "error: GitHub review policy must define the self-review guard "
+                "before reviewer ownership and delta re-review, so the "
+                "self-review guard remains authoritative and unbypassable by "
+                "review-mode resolution"
+            )
         author_step = runbook.find("resolve authenticated identity and PR author")
         skip_step = runbook.find("REVIEW SKIPPED")
         ownership_step = runbook.find("check review ownership")
