@@ -209,9 +209,12 @@ authenticated reviewer is the same identity as the reviewer of the
 immediately preceding completed review of this PR, and that review's
 reviewed SHA can be established reliably. A different reviewer, no prior
 completed review, or any ambiguity in reviewer identity or the reviewed
-SHA all default to a normal full review. The self-review guard in
-section 5 runs first and is authoritative; review-mode resolution never
-bypasses it. This applies identically to passive and active review — see
+SHA all default to a normal full review. The self-review guard described
+at the top of this file and in
+[`policies/github-review.md`](policies/github-review.md), "Self-review
+capability," runs first and is authoritative; review-mode resolution
+never bypasses it. This applies identically to passive and active
+review — see
 [`runbooks/passive-pr-review.md`](runbooks/passive-pr-review.md) and
 [`runbooks/active-pr-review.md`](runbooks/active-pr-review.md).
 

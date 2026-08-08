@@ -31,12 +31,24 @@ NO_NEW_DELTA = "no_new_delta"
 class ReviewModeInput:
     """Already-resolved facts a caller supplies to the decision rule.
 
-    None / False values represent "unresolved" or "not established" —
-    the rule always fails conservative on missing or ambiguous evidence.
+    current_reviewer and pr_author are required: self-review identity
+    resolution is its own upstream incapability (see
+    skills/github-pr-review/policies/github-review.md, "Self-review
+    capability" — "treat resolution failure as its own explicit
+    incapability rather than silently defaulting to a full review"),
+    handled by the caller before this decision table ever runs. Making
+    these fields optional here would let an unresolved identity silently
+    fall through to a normal-full-review result, which is exactly the
+    outcome that policy forbids.
+
+    The remaining None / False values represent "unresolved" or "not
+    established" for the *review-mode* facts this table does own — the
+    rule fails conservative (normal full review) on missing or ambiguous
+    evidence for those.
     """
 
-    current_reviewer: Optional[str]
-    pr_author: Optional[str]
+    current_reviewer: str
+    pr_author: str
     previous_review_exists: bool
     previous_reviewer: Optional[str] = None
     previous_reviewer_ambiguous: bool = False
@@ -61,22 +73,16 @@ def resolve_review_mode(inp: ReviewModeInput) -> ReviewModeResult:
     """
 
     # Self-review guard runs first and is authoritative; it can never be
-    # bypassed by review-mode resolution.
-    if (
-        inp.current_reviewer is not None
-        and inp.pr_author is not None
-        and inp.current_reviewer == inp.pr_author
-    ):
+    # bypassed by review-mode resolution. current_reviewer/pr_author are
+    # required fields (see ReviewModeInput), so there is no unresolved-
+    # identity case to silently fall through here.
+    if inp.current_reviewer == inp.pr_author:
         return ReviewModeResult(SELF_REVIEW_SKIPPED, "current reviewer is the PR author")
 
     if not inp.previous_review_exists:
         return ReviewModeResult(NORMAL_FULL_REVIEW, "no previous completed review")
 
-    if (
-        inp.previous_reviewer_ambiguous
-        or inp.previous_reviewer is None
-        or inp.current_reviewer is None
-    ):
+    if inp.previous_reviewer_ambiguous or inp.previous_reviewer is None:
         return ReviewModeResult(
             NORMAL_FULL_REVIEW, "previous reviewer identity unavailable or ambiguous"
         )
