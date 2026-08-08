@@ -41,6 +41,36 @@ shared_templates=(
   "review-summary.md"
 )
 
+# Runtime assets that must be present in the packaged github-pr-review
+# archive, verified independently of the general skill_files allowlist
+# passed to package_skill below — so a future edit that drops an entry
+# from that allowlist still fails packaging instead of silently shipping
+# an incomplete archive. external-review-summary.md is a required
+# runtime dependency (referenced by SKILL.md and both runbooks), not
+# repository-only documentation.
+github_required_runtime_templates=(
+  "templates/external-review-summary.md"
+)
+
+require_source_file() {
+  local skill_name="$1"
+  local skill_src="$2"
+  local rel_path="$3"
+  if [[ ! -f "${skill_src}/${rel_path}" ]]; then
+    echo "error: required runtime template missing for ${skill_name}: skills/${skill_name}/${rel_path}" >&2
+    exit 1
+  fi
+}
+
+require_archive_entry() {
+  local archive_path="$1"
+  local rel_path="$2"
+  if ! unzip -l "${archive_path}" | awk '{print $4}' | grep -qx "${rel_path}"; then
+    echo "error: archive missing required runtime asset: ${archive_path} (${rel_path})" >&2
+    exit 1
+  fi
+}
+
 # Rewrite relative links into shared/ so they resolve from the archive
 # root instead of from skills/<name>/. Packaging strips exactly the two
 # path segments ("skills/<name>/"), so every "../../shared/" (used by
@@ -249,6 +279,9 @@ if [[ "${target}" == "local" || "${target}" == "all" ]]; then
 fi
 
 if [[ "${target}" == "github" || "${target}" == "all" ]]; then
+  for f in "${github_required_runtime_templates[@]}"; do
+    require_source_file "github-pr-review" "${repo_root}/skills/github-pr-review" "${f}"
+  done
   package_skill "github-pr-review" "github-pr-review-skill" \
     "agents/openai.yaml" \
     "metadata/skill.yaml" \
@@ -257,6 +290,9 @@ if [[ "${target}" == "github" || "${target}" == "all" ]]; then
     "runbooks/active-pr-review.md" \
     "templates/inline-finding.md" \
     "templates/external-review-summary.md"
+  for f in "${github_required_runtime_templates[@]}"; do
+    require_archive_entry "${dist_dir}/github-pr-review-skill.zip" "${f}"
+  done
 fi
 
 # Remove the now-empty staging root if packaging left nothing behind.

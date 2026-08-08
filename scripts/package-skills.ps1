@@ -44,6 +44,49 @@ $sharedTemplates = @(
   "review-summary.md"
 )
 
+# Runtime assets that must be present in the packaged github-pr-review
+# archive, verified independently of the general -SkillFiles allowlist
+# passed to Package-Skill below — so a future edit that drops an entry
+# from that allowlist still fails packaging instead of silently shipping
+# an incomplete archive. external-review-summary.md is a required
+# runtime dependency (referenced by SKILL.md and both runbooks), not
+# repository-only documentation. Kept in sync with the equivalent guard
+# in scripts/package-skills.sh.
+$githubRequiredRuntimeTemplates = @(
+  "templates/external-review-summary.md"
+)
+
+function Require-SourceFile {
+  param(
+    [string]$SkillName,
+    [string]$SkillSrc,
+    [string]$RelPath
+  )
+  $path = Join-Path $SkillSrc $RelPath
+  if (-not (Test-Path $path -PathType Leaf)) {
+    Write-Error "required runtime template missing for $SkillName`: skills/$SkillName/$RelPath"
+    exit 1
+  }
+}
+
+function Require-ArchiveEntry {
+  param(
+    [string]$ArchivePath,
+    [string]$RelPath
+  )
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $zip = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
+  try {
+    $entryNames = $zip.Entries | ForEach-Object { $_.FullName }
+  } finally {
+    $zip.Dispose()
+  }
+  if (-not ($entryNames -contains $RelPath)) {
+    Write-Error "archive missing required runtime asset: $ArchivePath ($RelPath)"
+    exit 1
+  }
+}
+
 # Rewrite relative links into shared/ so they resolve from the archive
 # root instead of from skills/<name>/. Packaging strips exactly the two
 # path segments ("skills/<name>/"), so every "../../shared/" (used by
@@ -247,6 +290,10 @@ if ($Skill -eq "local" -or $Skill -eq "all") {
 }
 
 if ($Skill -eq "github" -or $Skill -eq "all") {
+  $githubSkillSrc = Join-Path $repoRoot "skills/github-pr-review"
+  foreach ($f in $githubRequiredRuntimeTemplates) {
+    Require-SourceFile -SkillName "github-pr-review" -SkillSrc $githubSkillSrc -RelPath $f
+  }
   Package-Skill -SkillName "github-pr-review" -ArchiveStem "github-pr-review-skill" -SkillFiles @(
     "agents/openai.yaml",
     "metadata/skill.yaml",
@@ -256,6 +303,10 @@ if ($Skill -eq "github" -or $Skill -eq "all") {
     "templates/inline-finding.md",
     "templates/external-review-summary.md"
   )
+  $githubArchivePath = Join-Path $distDir "github-pr-review-skill.zip"
+  foreach ($f in $githubRequiredRuntimeTemplates) {
+    Require-ArchiveEntry -ArchivePath $githubArchivePath -RelPath $f
+  }
 }
 
 # Remove the now-empty staging root if packaging left nothing behind.

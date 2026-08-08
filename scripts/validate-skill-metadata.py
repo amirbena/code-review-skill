@@ -245,7 +245,18 @@ def validate(skill_root: Path, containment_root: Path) -> None:
         policy = (skill_root / "policies" / "github-review.md").read_text(encoding="utf-8")
         runbook = (skill_root / "runbooks" / "active-pr-review.md").read_text(encoding="utf-8")
         passive_runbook = (skill_root / "runbooks" / "passive-pr-review.md").read_text(encoding="utf-8")
-        summary_template = (skill_root / "templates" / "external-review-summary.md").read_text(encoding="utf-8")
+        # external-review-summary.md is a required runtime asset of the
+        # bundled Skill (referenced by SKILL.md and both runbooks), not
+        # merely repository documentation — check it explicitly, with a
+        # clear packaging error, rather than let a missing file surface
+        # as an unguarded FileNotFoundError.
+        summary_template_path = skill_root / "templates" / "external-review-summary.md"
+        if not summary_template_path.is_file():
+            raise SystemExit(
+                "error: github-pr-review package missing required runtime "
+                f"template: {summary_template_path}"
+            )
+        summary_template = summary_template_path.read_text(encoding="utf-8")
         required_policy = (
             "## Self-review capability",
             "REVIEW SKIPPED",
@@ -261,6 +272,17 @@ def validate(skill_root: Path, containment_root: Path) -> None:
             "## Rejected inline location fallback",
             "## No duplicate findings",
             "MUST NOT publish a comment, or any part of a review, as each finding is discovered",
+            "## Reviewer ownership and delta re-review",
+            "Delta-only re-review is allowed only when the current reviewer owns "
+            "the immediately preceding review context. A different reviewer must "
+            "independently review the current PR state.",
+            "Fail conservative",
+            "previously reviewed SHA → current PR HEAD",
+            "Never define this boundary merely as the latest commit, the last "
+            "push, the last local commit, or \"commits since task start\"",
+            "### Escalating from delta to full review",
+            "does not inherit another reviewer's judgment",
+            "NO NEW DELTA",
         )
         # Compared through normalize_prose() rather than as raw substrings:
         # a marker's presence must not depend on exactly where the source
@@ -271,6 +293,15 @@ def validate(skill_root: Path, containment_root: Path) -> None:
         for marker in required_policy:
             if normalize_prose(marker) not in policy_normalized:
                 raise SystemExit(f"error: GitHub review policy missing marker: {marker!r}")
+        self_review_index = policy.find("## Self-review capability")
+        reviewer_ownership_index = policy.find("## Reviewer ownership and delta re-review")
+        if not (0 <= self_review_index < reviewer_ownership_index):
+            raise SystemExit(
+                "error: GitHub review policy must define the self-review guard "
+                "before reviewer ownership and delta re-review, so the "
+                "self-review guard remains authoritative and unbypassable by "
+                "review-mode resolution"
+            )
         author_step = runbook.find("resolve authenticated identity and PR author")
         skip_step = runbook.find("REVIEW SKIPPED")
         ownership_step = runbook.find("check review ownership")
