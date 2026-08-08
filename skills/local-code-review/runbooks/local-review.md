@@ -6,8 +6,11 @@ The single runbook for `local-code-review`. Applies shared policies:
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
-[`git-safety.md`](../../../shared/policies/git-safety.md), plus this
-Skill's own [`../policies/invocation-approval.md`](../policies/invocation-approval.md)
+[`git-safety.md`](../../../shared/policies/git-safety.md), and the shared
+human-facing output shape in
+[`review-summary.md`](../../../shared/templates/review-summary.md), plus
+this Skill's own
+[`../policies/invocation-approval.md`](../policies/invocation-approval.md)
 (the invocation-approval precondition assumed below).
 
 ## Flow
@@ -73,12 +76,24 @@ stop
    "Instruction precedence").
 7. Classify findings per
    [`severity.md`](../../../shared/policies/severity.md), each backed by
-   evidence per [`evidence.md`](../../../shared/policies/evidence.md), using
-   the shared finding shape in
-   [`finding.md`](../../../shared/templates/finding.md).
-8. Render
+   evidence and impact per
+   [`evidence.md`](../../../shared/policies/evidence.md), using the shared
+   finding shape in
+   [`finding.md`](../../../shared/templates/finding.md). Finalize the
+   complete set of findings — including any that were revised, merged, or
+   discarded during review — before composing the report. Do not report
+   findings piecemeal as they are discovered; the report in step 9 is
+   composed once, from the finalized set.
+8. Compose the human-facing body per
+   [`review-summary.md`](../../../shared/templates/review-summary.md):
+   a concrete "What changed" summary, an evidence-backed "What was done
+   well" (omit or keep to one line if nothing concrete stands out), the
+   finalized findings, and a "Validation" section listing only what was
+   actually inspected or executed by this review — do not claim a
+   validation step ran if it did not.
+9. Render
    [`../templates/local-review-report.md`](../templates/local-review-report.md)
-   and return it. **Stop.**
+   as one complete report and return it. **Stop.**
 
 ## Constraints
 

@@ -39,6 +39,12 @@ shared/templates/finding.md
     ↓
 one canonical finding shape, rendered differently per delivery surface
 
+shared/templates/review-summary.md
+    ↓
+one canonical human-facing review body shape (result, what changed,
+strengths, findings, validation, decision), rendered differently per
+delivery surface — machine metadata stays subordinate to it
+
 skills/local-code-review/
     ↓
 SKILL.md (stateless, bounded) + its own runbook/template/metadata

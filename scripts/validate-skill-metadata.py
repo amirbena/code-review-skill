@@ -176,6 +176,37 @@ def validate(skill_root: Path, containment_root: Path) -> None:
                     f"error: metadata path {nested_field} does not exist: {declared}"
                 )
 
+    finding_template = (containment_root / "shared" / "templates" / "finding.md")
+    if not finding_template.is_file():
+        raise SystemExit("error: Skill package missing shared finding template")
+    review_summary_template = (containment_root / "shared" / "templates" / "review-summary.md")
+    if not review_summary_template.is_file():
+        raise SystemExit("error: Skill package missing shared review-summary template")
+    finding_text = finding_template.read_text(encoding="utf-8")
+    for marker in (
+        "**impact**",
+        "## Finding quality contract",
+        "## Canonical full rendering",
+        "## Canonical summary-pointer rendering",
+        "one authoritative full representation",
+    ):
+        if marker not in finding_text:
+            raise SystemExit(f"error: shared finding template missing marker: {marker!r}")
+    review_summary_text = review_summary_template.read_text(encoding="utf-8")
+    for marker in (
+        "**Result:",
+        "### What changed",
+        "### What was done well",
+        "### Findings",
+        "### Validation",
+        "### Decision",
+        "## Machine metadata is subordinate",
+    ):
+        if marker not in review_summary_text:
+            raise SystemExit(
+                f"error: shared review-summary template missing marker: {marker!r}"
+            )
+
     reviewability = (containment_root / "shared" / "policies" / "file-reviewability.md")
     if not reviewability.is_file():
         raise SystemExit("error: Skill package missing shared file-reviewability policy")
@@ -199,6 +230,7 @@ def validate(skill_root: Path, containment_root: Path) -> None:
         policy = (skill_root / "policies" / "github-review.md").read_text(encoding="utf-8")
         runbook = (skill_root / "runbooks" / "active-pr-review.md").read_text(encoding="utf-8")
         passive_runbook = (skill_root / "runbooks" / "passive-pr-review.md").read_text(encoding="utf-8")
+        summary_template = (skill_root / "templates" / "external-review-summary.md").read_text(encoding="utf-8")
         required_policy = (
             "## Self-review capability",
             "REVIEW SKIPPED",
@@ -209,6 +241,11 @@ def validate(skill_root: Path, containment_root: Path) -> None:
             "A changed HEAD starts a new authoritative review state",
             "at\nmost 3,000 files",
             "REVIEW INCOMPLETE",
+            "## Analysis phase vs. publication phase",
+            "## Batched review construction and submission",
+            "## Rejected inline location fallback",
+            "## No duplicate findings",
+            "MUST NOT publish a comment, or any part of a review,\nas each finding is discovered",
         )
         for marker in required_policy:
             if marker not in policy:
@@ -220,15 +257,18 @@ def validate(skill_root: Path, containment_root: Path) -> None:
         scope_step = runbook.find("retrieve complete paginated PR scope")
         capability_step = runbook.find("determine event-specific review capability")
         dedupe_step = runbook.find("deduplicate same-HEAD findings")
+        finalize_step = runbook.find("finalize findings and resolve inline eligibility")
+        construct_step = runbook.find("construct one review: body + inline comments")
         decision_step = runbook.find("submit permitted Approve/Request Changes")
         if not (
             0 <= author_step < skip_step < ownership_step < access_step < scope_step
-            < capability_step < dedupe_step < decision_step
+            < capability_step < dedupe_step < finalize_step < construct_step < decision_step
         ):
             raise SystemExit(
                 "error: active review flow must resolve the self-review guard before "
                 "ownership, access, or scope; then establish complete scope and "
-                "capability, then deduplicate before a formal review decision"
+                "capability, then deduplicate and finalize findings, then construct "
+                "one review before submitting a formal review decision"
             )
         passive_author_step = passive_runbook.find("resolve authenticated identity and PR author")
         passive_skip_step = passive_runbook.find("REVIEW SKIPPED")
@@ -238,9 +278,27 @@ def validate(skill_root: Path, containment_root: Path) -> None:
                 "error: passive review flow must resolve the self-review guard before "
                 "retrieving PR scope"
             )
+        if "**Result:" not in summary_template:
+            raise SystemExit(
+                "error: external-review-summary.md must lead with a human-facing Result"
+            )
+        if "### Decision" not in summary_template:
+            raise SystemExit(
+                "error: external-review-summary.md must contain a Decision section"
+            )
 
     if metadata.get("name") == "local-code-review":
         local_runbook = (skill_root / "runbooks" / "local-review.md").read_text(encoding="utf-8")
+        local_report_template = (
+            skill_root / "templates" / "local-review-report.md"
+        ).read_text(encoding="utf-8")
+        result_index = local_report_template.find("**Result:")
+        details_index = local_report_template.find("<details>")
+        if result_index < 0 or details_index < 0 or not (result_index < details_index):
+            raise SystemExit(
+                "error: local-review-report.md must lead with a human-facing Result "
+                "and keep machine metadata subordinate inside a trailing <details> block"
+            )
         required_skill_markers = (
             "MUST NOT be invoked automatically",
             "fresh, explicit user approval",

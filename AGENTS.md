@@ -599,7 +599,71 @@ files that happen to share a naming pattern.
 
 ---
 
-## 16. Relationship to Runtime Adapters and the Skills
+## 16. Human-Facing Review Publication
+
+Preserved as a canonical repository-wide principle, applying
+independently to both Skills:
+
+```text
+analyze complete review scope
+    ↓
+collect candidate findings
+    ↓
+verify evidence
+    ↓
+finalize severity
+    ↓
+deduplicate findings
+    ↓
+determine decision
+    ↓
+publish one organized review
+```
+
+Each Skill's output is a finalized review artifact, not a stream of
+intermediate reviewer observations. A candidate finding may still be
+revised, merged, upgraded, downgraded, or discarded during analysis —
+publishing it before finalization would expose reasoning that has not
+yet settled, and risks noisy, contradictory, or duplicate output. Neither
+Skill publishes a finding, comment, or partial review as it is
+discovered; both publish once, after the review scope is complete and
+findings are finalized.
+
+`local-code-review` always returns exactly one organized report per
+invocation, never a sequence of separately surfaced findings followed by
+a summary — see
+[`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md),
+"Statelessness and Orchestration Boundary," and
+[`skills/local-code-review/runbooks/local-review.md`](skills/local-code-review/runbooks/local-review.md).
+
+`github-pr-review`, whenever the GitHub review capability supports a
+submission carrying both a review body and multiple inline comments,
+submits finalized inline findings together as part of one coherent
+GitHub review rather than one standalone comment per discovered finding.
+When a resolved inline location is unavailable or rejected, the finding
+remains represented in the review body rather than being dropped or
+attached to an arbitrary line. The complete batching, inline-eligibility,
+and fallback contract is owned by
+[`skills/github-pr-review/policies/github-review.md`](skills/github-pr-review/policies/github-review.md)
+— see "Analysis phase vs. publication phase," "Batched review
+construction and submission," and "Rejected inline location fallback."
+This file does not duplicate that contract.
+
+The complete human-facing output shape (result, what changed, meaningful
+strengths, findings, validation, decision) and the finding contract
+(what/where/evidence/impact/recommended direction) are owned by
+[`shared/templates/review-summary.md`](shared/templates/review-summary.md)
+and [`shared/templates/finding.md`](shared/templates/finding.md),
+consumed identically by both Skills — this file does not duplicate their
+complete templates. Machine-oriented state (reviewed HEAD, finding
+counts, a normalized decision value, internal identifiers) may remain
+available where genuinely required by orchestration, but stays
+subordinate to that human-facing output in both Skills' published and
+returned review artifacts.
+
+---
+
+## 17. Relationship to Runtime Adapters and the Skills
 
 ```text
 CLAUDE.md (or any other runtime adapter)
