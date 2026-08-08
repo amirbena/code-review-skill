@@ -245,7 +245,18 @@ def validate(skill_root: Path, containment_root: Path) -> None:
         policy = (skill_root / "policies" / "github-review.md").read_text(encoding="utf-8")
         runbook = (skill_root / "runbooks" / "active-pr-review.md").read_text(encoding="utf-8")
         passive_runbook = (skill_root / "runbooks" / "passive-pr-review.md").read_text(encoding="utf-8")
-        summary_template = (skill_root / "templates" / "external-review-summary.md").read_text(encoding="utf-8")
+        # external-review-summary.md is a required runtime asset of the
+        # bundled Skill (referenced by SKILL.md and both runbooks), not
+        # merely repository documentation — check it explicitly, with a
+        # clear packaging error, rather than let a missing file surface
+        # as an unguarded FileNotFoundError.
+        summary_template_path = skill_root / "templates" / "external-review-summary.md"
+        if not summary_template_path.is_file():
+            raise SystemExit(
+                "error: github-pr-review package missing required runtime "
+                f"template: {summary_template_path}"
+            )
+        summary_template = summary_template_path.read_text(encoding="utf-8")
         required_policy = (
             "## Self-review capability",
             "REVIEW SKIPPED",
