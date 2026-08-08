@@ -5,9 +5,9 @@
   repository). Cross-platform equivalent of scripts/package-skills.sh.
 
   Usage:
-    ./scripts/package-skills.ps1 -Skill local
-    ./scripts/package-skills.ps1 -Skill github
-    ./scripts/package-skills.ps1 -Skill all      # default
+    ./scripts/package-skills.ps1 local
+    ./scripts/package-skills.ps1 github
+    ./scripts/package-skills.ps1 all      # default
 #>
 
 param(
