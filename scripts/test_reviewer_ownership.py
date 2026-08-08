@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
-"""Regression coverage for the reviewer-ownership / delta re-review rule.
+"""Regression coverage for reviewer_ownership.resolve_review_mode.
 
-Exercises scripts/reviewer_ownership.py against the scenarios required by
-the reviewer-ownership hardening task, mirroring
-skills/github-pr-review/policies/github-review.md, "Reviewer ownership
-and delta re-review". Deterministic, fixture-based, no Git/GitHub or
-network dependency.
+Mirrors skills/github-pr-review/policies/reviewer-delta-review.md.
 
 Run with:
     python3 scripts/test_reviewer_ownership.py

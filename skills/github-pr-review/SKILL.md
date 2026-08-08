@@ -61,7 +61,7 @@ individually as they are discovered. Publication is a deliberate
 finalization step: once analysis is complete, the entire finalized
 finding set is submitted together as a single GitHub review whenever the
 platform capability permits it — see
-[`policies/github-review.md`](policies/github-review.md), "Batched review
+[`policies/review-output.md`](policies/review-output.md), "Batched review
 construction and submission."
 
 **This Skill is a reviewer role, not an implementation-completion step.**
@@ -72,7 +72,7 @@ opening or updating its own PR. Preventing that chaining in the first
 place is the calling system's orchestration responsibility, not this
 Skill's own — but this Skill does not depend on that orchestration
 being honored: "Self-review capability" below and in
-[`policies/github-review.md`](policies/github-review.md) defines this
+[`policies/review-authority.md`](policies/review-authority.md) defines this
 Skill's own complete, self-contained defensive guard (`REVIEW SKIPPED`)
 for the case where it is invoked against a PR it authored anyway.
 
@@ -119,11 +119,17 @@ Shared, always: [`review-scope.md`](../../shared/policies/review-scope.md),
 Also always: [`review-summary.md`](../../shared/templates/review-summary.md)
 (the shared human-facing review body shape).
 
-This Skill's own: [`policies/github-review.md`](policies/github-review.md)
-(PR HEAD authority, scope completeness, event capability, publication
-idempotency, HEAD revalidation, submission ordering, integration contract,
-batched review construction, logical cohort review, and bounded
-code-impact/dependency analysis).
+This Skill's own: [`policies/github-review.md`](policies/github-review.md),
+the canonical policy index, and its sub-policies —
+[`review-authority.md`](policies/review-authority.md) (identity,
+self-review guard, publication capability),
+[`reviewer-delta-review.md`](policies/reviewer-delta-review.md) (delta
+vs. full review mode), [`pr-scope.md`](policies/pr-scope.md) (complete PR
+scope, pagination, prior-review awareness),
+[`review-reasoning.md`](policies/review-reasoning.md) (logical cohorts,
+code-impact/dependency analysis), [`finding-policy.md`](policies/finding-policy.md)
+(inline vs. body placement), and [`review-output.md`](policies/review-output.md)
+(analysis/publication boundary, batching, HEAD revalidation, decision).
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.
@@ -148,7 +154,7 @@ the PR author, compare their account identities, verify the target
 repository/PR is accessible to the authenticated identity, and verify it has
 sufficient capability to submit the intended review action.
 **Authentication alone is not sufficient evidence of review capability**
-— see [`policies/github-review.md`](policies/github-review.md), "Review/
+— see [`policies/review-authority.md`](policies/review-authority.md), "Review/
 repository access prerequisite." If active publication is unavailable, do
 not fake success or claim comments/decisions were submitted — fall back
 to passive review.
@@ -167,11 +173,11 @@ to passive review.
   no formal final review can be submitted. This Skill never publishes a
   standalone comment as each finding is discovered, and never splits one
   finalized finding set across multiple review submissions; see
-  [`policies/github-review.md`](policies/github-review.md), "Batched
+  [`policies/review-output.md`](policies/review-output.md), "Batched
   review construction and submission." Human-readable content always
   precedes any machine-oriented metadata. A self-review never claims
   an independent approval; see
-  [`policies/github-review.md`](policies/github-review.md), "Self-review
+  [`policies/review-authority.md`](policies/review-authority.md), "Self-review
   capability."
 
 ## 7. Mutation Boundary
@@ -184,9 +190,9 @@ behalf of the repository owner. Maximum positive action is **Approve**.
 
 The reviewed PR HEAD SHA is recorded at the start of review. Immediately
 before the final decision, it is revalidated against the current PR HEAD
-— see [`policies/github-review.md`](policies/github-review.md). A stale
-HEAD is never approved; a changed HEAD triggers re-review of the new
-delta before any decision is submitted.
+— see [`policies/review-output.md`](policies/review-output.md), "HEAD
+revalidation." A stale HEAD is never approved; a changed HEAD triggers
+re-review of the new delta before any decision is submitted.
 
 ## 9. Review Ownership
 
@@ -204,8 +210,8 @@ whether this invocation may perform a bounded delta re-review or must
 perform a normal full review of the current PR state. The complete rule
 — reviewer identity resolution, the delta boundary, escalation
 conditions, and edge cases — is owned by
-[`policies/github-review.md`](policies/github-review.md), "Reviewer
-ownership and delta re-review"; this section does not duplicate it.
+[`policies/reviewer-delta-review.md`](policies/reviewer-delta-review.md);
+this section does not duplicate it.
 
 In summary: delta-only re-review is allowed only when the current
 authenticated reviewer is the same identity as the reviewer of the
@@ -214,7 +220,7 @@ reviewed SHA can be established reliably. A different reviewer, no prior
 completed review, or any ambiguity in reviewer identity or the reviewed
 SHA all default to a normal full review. The self-review guard described
 at the top of this file and in
-[`policies/github-review.md`](policies/github-review.md), "Self-review
+[`policies/review-authority.md`](policies/review-authority.md), "Self-review
 capability," runs first and is authoritative; review-mode resolution
 never bypasses it. This applies identically to passive and active
 review — see
