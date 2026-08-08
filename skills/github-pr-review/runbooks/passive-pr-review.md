@@ -1,10 +1,13 @@
 # Runbook — Passive PR Review
 
 Reviews an existing GitHub Pull Request **without publishing anything**.
-Applies policies: [`review-scope.md`](../policies/review-scope.md),
-[`severity.md`](../policies/severity.md), [`evidence.md`](../policies/evidence.md),
-[`github-review.md`](../policies/github-review.md),
-[`repository-instructions.md`](../policies/repository-instructions.md).
+Applies shared policies:
+[`review-scope.md`](../../../shared/policies/review-scope.md),
+[`severity.md`](../../../shared/policies/severity.md),
+[`evidence.md`](../../../shared/policies/evidence.md),
+[`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
+plus this Skill's own
+[`github-review.md`](../policies/github-review.md).
 
 ## Flow
 
@@ -32,9 +35,13 @@ return human-readable report
    changed files, and the full diff.
 3. Load applicable repository-local instructions and relevant surrounding
    context (tests, contracts, schemas, architecture docs).
-4. Review per [`../policies/review-scope.md`](../policies/review-scope.md).
-5. Classify findings per [`../policies/severity.md`](../policies/severity.md)
-   with evidence per [`../policies/evidence.md`](../policies/evidence.md).
+4. Review per
+   [`review-scope.md`](../../../shared/policies/review-scope.md).
+5. Classify findings per
+   [`severity.md`](../../../shared/policies/severity.md) with evidence per
+   [`evidence.md`](../../../shared/policies/evidence.md), using the shared
+   finding shape in
+   [`finding.md`](../../../shared/templates/finding.md).
 6. Render a human-readable report using the same structure as
    [`../templates/external-review-summary.md`](../templates/external-review-summary.md)
    and [`../templates/inline-finding.md`](../templates/inline-finding.md)

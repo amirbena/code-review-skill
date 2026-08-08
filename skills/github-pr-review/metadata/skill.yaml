@@ -1,0 +1,38 @@
+# Portable metadata for the github-pr-review Skill.
+# Describes the package; it is not itself executable behavior.
+# See SKILL.md for the operational entry point.
+
+name: github-pr-review
+description: >-
+  Reviews GitHub Pull Requests. Passive mode returns a report without
+  publishing anything; active mode publishes inline P0/P1/P2 findings, a
+  human-readable summary, and a final Approve/Request Changes decision.
+  Never merges, deletes branches, or edits implementation code.
+version: 0.1.0
+entrypoint: SKILL.md
+
+modes:
+  - passive-pr
+  - active-pr
+
+capabilities:
+  git: required
+  github_cli: required
+
+output:
+  mutates_github: conditional # true only in active mode, and only after access verification
+  mutates_repository: false
+  can_approve: true
+  can_request_changes: true
+  can_merge: false
+
+shared:
+  policies:
+    - ../../shared/policies/review-scope.md
+    - ../../shared/policies/severity.md
+    - ../../shared/policies/evidence.md
+    - ../../shared/policies/repository-instructions.md
+    - ../../shared/policies/git-safety.md
+    - ../../shared/policies/review-ownership.md
+  templates:
+    - ../../shared/templates/finding.md

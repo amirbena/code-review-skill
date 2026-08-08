@@ -4,10 +4,25 @@ This is the **canonical, runtime-neutral, repository-wide instruction
 source** for this repository. Every implementation task — regardless of
 which runtime executes it — follows the definitions and lifecycle below.
 
-This repository hosts a portable **Code Review Agent Skill**. This file
-governs *development of this repository itself* (branching, commits, PRs,
-merges). It is distinct from how the Code Review Skill reviews *external*
-repositories — that behavior is defined in [`SKILL.md`](SKILL.md).
+This repository hosts **two portable Code Review Agent Skills** that
+share one review standard:
+
+- [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md)
+  — reviews local Git implementation state and returns findings;
+- [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md)
+  — reviews GitHub Pull Requests and, when active, publishes findings and
+  a final decision.
+
+Both consume the same shared review rules in
+[`shared/policies/`](shared/policies/) and
+[`shared/templates/`](shared/templates/), so P0/P1/P2 review semantics
+never diverge between them — see [`ARCHITECTURE.md`](ARCHITECTURE.md) for
+the module map.
+
+This file governs *development of this repository itself* (branching,
+commits, PRs, merges). It is distinct from how either Skill reviews an
+*external* repository — that behavior is defined in each Skill's own
+`SKILL.md`.
 
 ---
 
@@ -40,19 +55,29 @@ Runtime
 Agent via Skill
 ```
 
-The Code Review Agent is defined by [`SKILL.md`](SKILL.md). It is **not**
+Each Code Review Agent is defined by its own `SKILL.md`
+([`local-code-review`](skills/local-code-review/SKILL.md),
+[`github-pr-review`](skills/github-pr-review/SKILL.md)). Neither is
 defined as a Claude-specific subagent, a Codex-specific agent, a
 Cursor-specific agent, an Anthropic API workflow, or any runtime-specific
-worker syntax. Runtime adapters (e.g. `CLAUDE.md`) may exist separately, but
-never redefine the Agent — they only bootstrap a runtime into reading the
-canonical Skill.
+worker syntax. Runtime adapters (e.g. `CLAUDE.md`) may exist separately,
+but never redefine an Agent — they only bootstrap a runtime into reading
+the canonical Skills.
+
+**Review orchestration is external to the individual review Skills.**
+Deciding when to invoke a Skill, whether to invoke it again, how many
+review/fix iterations to run, and when to progress from local review to
+opening a PR to GitHub review is the responsibility of the calling
+runtime, Team Lead, or implementing workflow — never of
+`local-code-review` or `github-pr-review` themselves. See
+[`ARCHITECTURE.md`](ARCHITECTURE.md), "Orchestration Boundary."
 
 ---
 
 ## 2. Runtime Neutrality
 
-Canonical repository behavior — this file and `SKILL.md` — must not depend
-on:
+Canonical repository behavior — this file, `shared/`, and each Skill's
+own `SKILL.md` — must not depend on:
 
 - Claude-specific tools or conventions
 - Anthropic APIs
@@ -164,7 +189,8 @@ clean final state
 ```
 
 These rules govern development of *this* repository. They are distinct from
-how the Code Review Skill reviews external repositories (see `SKILL.md`).
+how `local-code-review` or `github-pr-review` reviews external repositories
+(see each Skill's own `SKILL.md`).
 
 ---
 
@@ -276,8 +302,8 @@ preserve state
 
 ## 11. Skill Consumer Branch Policy
 
-This section governs branch discipline for Agents *consuming* the Code
-Review Agent Skill against a target repository (the repository being
+This section governs branch discipline for Agents *consuming* either
+Code Review Agent Skill against a target repository (the repository being
 reviewed) — as distinct from section 3, which governs development of
 *this* repository.
 
@@ -299,7 +325,7 @@ beginning a local implementation review, the reviewer verifies that:
   on a protected/default branch unless repository rules explicitly permit
   it;
 - the branch actually contains the implementation intended for review
-  (see [`policies/local-review.md`](policies/local-review.md));
+  (see [`skills/local-code-review/runbooks/local-review.md`](skills/local-code-review/runbooks/local-review.md));
 - base and branch state are understood (base branch, base SHA, local
   HEAD, and any divergence from a remote tracking branch).
 
@@ -310,14 +336,35 @@ state and reviewing what already exists.
 
 ---
 
-## 12. Relationship to Runtime Adapters and the Skill
+## 12. Review Ownership
+
+Preserved as a canonical repository-wide principle, applying
+independently to both Skills:
+
+```text
+One review scope → one Code Review Agent owner
+```
+
+The full invariant — including the "Access vs. Ownership" distinction and
+the multi-Agent/parallel-review guards — is defined once, in
+[`shared/policies/review-ownership.md`](shared/policies/review-ownership.md),
+so it is packaged with either Skill rather than living only in this
+repository-development document. Both `local-code-review` and
+`github-pr-review` reference that file directly.
+
+---
+
+## 13. Relationship to Runtime Adapters and the Skills
 
 ```text
 CLAUDE.md (or any other runtime adapter)
     ↓
 AGENTS.md   (this file — canonical, runtime-neutral)
     ↓
-SKILL.md    (portable Code Review Agent definition)
+shared/     (review policies/templates common to both Skills)
+    ↓
+skills/local-code-review/SKILL.md
+skills/github-pr-review/SKILL.md
 ```
 
 Runtime adapters bootstrap a specific runtime into these canonical rules.

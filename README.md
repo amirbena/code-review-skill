@@ -1,58 +1,88 @@
 # code-review-skill
 
-A private, portable **Code Review Agent Skill** for GitHub repositories.
+Two private, portable **Code Review Agent Skills**, sharing one review
+standard.
 
-> **Status: first full modular implementation.** This repository defines
-> the complete Code Review Agent Skill as a modular package. See
-> [`SKILL.md`](SKILL.md) for the operational entry point.
+| Skill | Purpose |
+|---|---|
+| [`local-code-review`](skills/local-code-review/SKILL.md) | Review local implementation state (committed, staged, unstaged, relevant untracked changes) and return structured findings. |
+| [`github-pr-review`](skills/github-pr-review/SKILL.md) | Review a GitHub Pull Request and, when authorized, publish inline findings and Approve/Request Changes. |
 
-## What this Skill does
+Both behave like a traditional senior code reviewer: they identify
+problems, explain them, suggest corrections, and — where invoked again —
+re-review. **Neither implements fixes, and neither merges anything.**
 
-The Code Review Agent behaves like a traditional senior code reviewer. It
-can:
+## Why two Skills
 
-- review an existing GitHub Pull Request;
-- review a local implementation branch, before or during PR creation;
-- inspect committed, staged, unstaged, and relevant untracked changes;
-- review arbitrary file types and mixed technology stacks — no assumption
-  about language, framework, or repository layout;
-- classify findings as **P0** (critical/blocking), **P1**
-  (significant/blocking), or **P2** (non-blocking improvement);
-- publish inline GitHub review comments and a final review decision in
-  active mode;
-- run passive review loops against a local implementation, returning
-  findings to the implementing Agent for it to fix;
-- stop automatically after the configured maximum review-loop count
-  (see [`review-config.yaml`](review-config.yaml), default `max_loops: 3`).
+Each Skill is small, bounded, and independently invokable:
 
-## What this Skill does not do
+- `local-code-review` is a **stateless** reviewer of local Git state. It
+  has no concept of review iterations, no loop limit, and never touches
+  GitHub.
+- `github-pr-review` reviews an existing GitHub PR — passively (report
+  only) or actively (publishes comments and a decision) — and never owns
+  implementation fixes or repository lifecycle cleanup.
 
-- It **suggests** fixes; it does not directly implement them. Fixing
+They share one review standard via [`shared/`](shared/) — the same
+P0/P1/P2 severity model, evidence requirements, review scope, repository
+instruction awareness, and Git safety apply to both. Neither Skill
+defines its own copy of these rules.
+
+## How they connect
+
+```text
+Local
+implementation
+    → local-code-review
+    → findings
+    → caller decides next action (fix, re-run, or proceed)
+```
+
+```text
+GitHub
+PR
+    → github-pr-review
+    → findings/comments
+    → Approve / Request Changes
+```
+
+`local-code-review` does **not** automatically invoke `github-pr-review`,
+and `github-pr-review` does **not** assume `local-code-review` was
+previously run — they are independently invokable. See
+[`ARCHITECTURE.md`](ARCHITECTURE.md) for the full handoff diagram and the
+orchestration boundary.
+
+## What neither Skill does
+
+- **Suggests** fixes; neither directly implements them. Fixing
   implementation code is the responsibility of the implementing Agent or
   developer.
-- It never merges a Pull Request. Its maximum positive action on an
-  external PR is **Approve**. Merge ownership stays with the developer or
-  owning workflow.
-- It never deletes branches, rewrites history, or performs repository
-  lifecycle operations beyond reviewing.
+- Owns review-loop iteration count, retries, or workflow progression —
+  that belongs to the orchestrating runtime/Team Lead, not to either
+  Skill (see [`ARCHITECTURE.md`](ARCHITECTURE.md), "Orchestration
+  Boundary").
+- Merges a Pull Request, deletes branches, or performs repository
+  lifecycle cleanup. `github-pr-review`'s maximum positive action is
+  **Approve**.
 
 ## Prerequisites
 
 ```text
 - Git
-- GitHub CLI (`gh`)
-- an authenticated GitHub CLI session, for remote PR operations
+- GitHub CLI (`gh`)                    -- required only for github-pr-review
+- an authenticated GitHub CLI session  -- required only for active PR review
 ```
 
-- **Local passive review** works from Git data alone and does not require
-  `gh` or any remote GitHub mutation.
-- **External active review** (publishing comments and a final decision)
-  requires an authenticated `gh` session with actual review access to the
-  target repository/PR — authentication alone is not sufficient (see
-  [`policies/github-review.md`](policies/github-review.md)). If active
-  review isn't possible, the Skill falls back to passive reporting rather
-  than faking publication.
-- `gh` credentials belong to the environment. The Skill never stores,
+- `local-code-review` only needs Git — it works entirely from local
+  repository data and never requires `gh`.
+- `github-pr-review`'s passive mode needs `gh` to retrieve PR data; its
+  active mode additionally needs an authenticated `gh` session with
+  actual review access to the target repository/PR — authentication
+  alone is not sufficient (see
+  [`skills/github-pr-review/policies/github-review.md`](skills/github-pr-review/policies/github-review.md)).
+  If active review isn't possible, it falls back to passive reporting
+  rather than faking publication.
+- `gh` credentials belong to the environment. Neither Skill stores,
   embeds, or invents credentials.
 
 Verify GitHub CLI authentication before requesting active review:
@@ -61,118 +91,102 @@ Verify GitHub CLI authentication before requesting active review:
 gh auth status
 ```
 
-## How it integrates with GitHub
+## Local review loop is an orchestration concern
 
-`gh` is the preferred integration mechanism. Final review decisions use
-the equivalent of `gh pr review --approve` / `gh pr review
---request-changes`; line-specific inline comments may use `gh api`
-against the GitHub Pull Request review APIs when needed. See
-[`policies/github-review.md`](policies/github-review.md) for the full
-contract.
+`local-code-review` is stateless: each invocation reviews the current
+implementation state once and returns findings. It does not decide
+whether to run again, does not count iterations, and ships with no
+`review-config.yaml` or `max_loops` setting of its own. A caller that
+wants an iterative review/fix/re-review loop invokes the Skill repeatedly
+and owns its own maximum iteration count and stopping logic. See
+[`ARCHITECTURE.md`](ARCHITECTURE.md), "Orchestration Boundary."
 
-## Review modes
-
-- **passive local** — reviews a local branch/working tree, returns
-  findings to the implementing Agent, never touches GitHub.
-- **passive PR** — reviews an existing GitHub PR and returns a
-  human-readable report without publishing anything.
-- **active PR** — reviews an existing GitHub PR and publishes inline
-  P0/P1/P2 findings, a final human-readable summary, and an
-  Approve/Request Changes decision.
-
-See [`SKILL.md`](SKILL.md) section 1 for the full entry-point table.
-
-## Local review loop
-
-Local review can run iteratively with an implementing Agent (review → fix
-→ re-review) up to a configured maximum — default **3** iterations (see
-[`review-config.yaml`](review-config.yaml) and
-[`runbooks/review-loop.md`](runbooks/review-loop.md)). It stops
-immediately once clean, and reports `REVIEW LOOP LIMIT REACHED` rather
-than claiming success if blocking findings remain at the limit.
-
-## External PR behavior
+## External PR behavior (`github-pr-review`)
 
 - inline findings are labeled `[P0]` / `[P1]` / `[P2]` and kept short
-  (see [`templates/inline-finding.md`](templates/inline-finding.md));
+  (see [`skills/github-pr-review/templates/inline-finding.md`](skills/github-pr-review/templates/inline-finding.md));
 - a final human-readable summary (what changed, what was done well, what
   needs improvement, decision) is always published after inline findings
   and before the final decision (see
-  [`templates/external-review-summary.md`](templates/external-review-summary.md));
+  [`skills/github-pr-review/templates/external-review-summary.md`](skills/github-pr-review/templates/external-review-summary.md));
 - the review ends in **Approve** or **Request Changes** — never a merge;
 - the PR HEAD is revalidated immediately before the final decision so a
   stale review is never submitted.
 
 ## Runtime neutrality
 
-This Skill is runtime-neutral. It is defined as a portable operational
-specification (`SKILL.md` plus `policies/`, `runbooks/`, and
-`templates/`), not as a Claude-specific subagent, a Codex-specific agent,
-a Cursor-specific agent, or any other runtime-specific worker. Any
-runtime capable of following these files and invoking `git`/`gh` can
-execute it. See [`AGENTS.md`](AGENTS.md) for the full **Agent via Skill**
-vocabulary and this repository's own development rules.
+Both Skills are runtime-neutral. Each is defined as a portable
+operational specification (its own `SKILL.md` plus shared/per-Skill
+policies, runbooks, and templates), not as a Claude-specific subagent, a
+Codex-specific agent, a Cursor-specific agent, or any other
+runtime-specific worker. Any runtime capable of following these files and
+invoking `git`/`gh` can execute them. See [`AGENTS.md`](AGENTS.md) for the
+full **Agent via Skill** vocabulary and this repository's own development
+rules.
 
 ## Repository structure
 
 ```text
 .
 ├── AGENTS.md              canonical repo-wide rules (this repo's own development)
-├── CLAUDE.md               thin adapter → AGENTS.md / SKILL.md
+├── CLAUDE.md               thin adapter → AGENTS.md / applicable Skill
 ├── README.md               this file
 ├── ARCHITECTURE.md         conceptual design and module boundaries
-├── SKILL.md                concise operational entry point
-├── review-config.yaml      local review-loop configuration (max_loops)
 │
-├── metadata/
-│   └── skill.yaml          package identity/capabilities
+├── shared/
+│   ├── policies/            review-scope, severity, evidence,
+│   │                         repository-instructions, git-safety
+│   └── templates/
+│       └── finding.md       canonical finding shape
 │
-├── policies/                stable review rules and invariants
-├── runbooks/                 step-by-step execution procedures
-├── templates/                 human-facing review output contracts
+├── skills/
+│   ├── local-code-review/
+│   │   ├── SKILL.md          entry point (stateless, bounded)
+│   │   ├── metadata/skill.yaml
+│   │   ├── runbooks/local-review.md
+│   │   └── templates/local-review-report.md
+│   │
+│   └── github-pr-review/
+│       ├── SKILL.md          entry point
+│       ├── metadata/skill.yaml
+│       ├── policies/github-review.md
+│       ├── runbooks/{passive-pr-review,active-pr-review}.md
+│       └── templates/{inline-finding,external-review-summary}.md
 │
 └── scripts/
-    ├── package-skill.sh      packages the Skill (POSIX shell)
-    └── package-skill.ps1     packages the Skill (PowerShell)
+    ├── package-skills.sh      packages either or both Skills (POSIX shell)
+    └── package-skills.ps1     packages either or both Skills (PowerShell)
 ```
 
-See [`ARCHITECTURE.md`](ARCHITECTURE.md) for how these pieces fit
-together.
+There is no root `SKILL.md` — each Skill's canonical entry point lives
+under `skills/<name>/SKILL.md`. See [`ARCHITECTURE.md`](ARCHITECTURE.md)
+for how these pieces fit together.
 
 ## Packaging
 
-The Skill can be packaged into a distributable archive containing only
-what's needed to *consume* it (not this repository's own development
-files):
+Each Skill can be packaged independently into a self-contained
+distributable archive — consumers of one Skill are never required to
+install the whole repository:
 
 ```bash
-./scripts/package-skill.sh
+./scripts/package-skills.sh local     # dist/local-code-review-skill.zip
+./scripts/package-skills.sh github    # dist/github-pr-review-skill.zip
+./scripts/package-skills.sh all       # both
 ```
 
 ```powershell
-./scripts/package-skill.ps1
+./scripts/package-skills.ps1 -Skill local
+./scripts/package-skills.ps1 -Skill github
+./scripts/package-skills.ps1 -Skill all
 ```
 
 Both scripts implement equivalent behavior: they validate required files
-exist, stage an explicit allowlist (`SKILL.md`, `review-config.yaml`,
-`metadata/`, `policies/`, `runbooks/`, `templates/`) into `dist/`, and
-produce `dist/github-code-review-skill.zip`. `README.md`, `AGENTS.md`,
-`ARCHITECTURE.md`, and `CLAUDE.md` are intentionally excluded — they are
-this repository's own development/adapter documentation, not canonical
-Skill behavior consumed at runtime. Neither script touches anything
-outside `dist/`.
-
-## Configuration
-
-Local review-loop behavior is controlled by
-[`review-config.yaml`](review-config.yaml):
-
-```yaml
-review:
-  max_loops: 3
-```
-
-The Skill reads this value from configuration rather than hardcoding it;
-raising or lowering `max_loops` changes how many automatic passive
-review/fix iterations run before the Skill stops and reports remaining
-findings.
+exist, stage an explicit allowlist for the requested Skill(s) — its
+`SKILL.md`, metadata, policies/runbooks/templates, plus the
+`shared/policies/` and `shared/templates/` files it actually depends on,
+copied into the package rather than left as external references — into
+`dist/`, and produce a self-contained `.zip` per Skill. `README.md`,
+`AGENTS.md`, `ARCHITECTURE.md`, and `CLAUDE.md` are intentionally
+excluded — they are this repository's own development/adapter
+documentation, not canonical Skill behavior consumed at runtime. Neither
+script touches anything outside `dist/`.

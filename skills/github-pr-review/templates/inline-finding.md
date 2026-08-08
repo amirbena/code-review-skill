@@ -1,7 +1,10 @@
 # Template — Inline Finding
 
 Canonical form for a single inline GitHub review comment (see
-[`../policies/github-review.md`](../policies/github-review.md)):
+[`../policies/github-review.md`](../policies/github-review.md)), rendering
+the shared finding shape from
+[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md)
+for GitHub's inline-comment surface:
 
 ```text
 [P1] Short finding title
@@ -15,9 +18,9 @@ Canonical form for a single inline GitHub review comment (see
 
 - severity always visible first, in the `[P0]` / `[P1]` / `[P2]` form;
 - title is concise (a few words, not a sentence);
-- description is short — normally no more than **five short lines**
-  total;
-- evidence-based (see [`../policies/evidence.md`](../policies/evidence.md))
+- description is short — approximately **five short lines maximum**;
+- evidence-based (see
+  [`../../../shared/policies/evidence.md`](../../../shared/policies/evidence.md))
   — no generic "this could be improved" comments with no concrete basis;
 - no duplicated findings across multiple lines or against an
   already-reviewed, unchanged HEAD (see

@@ -2,9 +2,9 @@
 
 Published once, after all inline findings, before the final Approve /
 Request Changes decision (see
-[`../policies/github-review.md`](../policies/github-review.md)). Human-readable
-content always precedes any machine-oriented metadata — see `SKILL.md`
-"Output Contract."
+[`../policies/github-review.md`](../policies/github-review.md)).
+Human-readable content always precedes any machine-oriented metadata —
+see [`../SKILL.md`](../SKILL.md), "Output Contract."
 
 ```markdown
 ## Code Review Summary

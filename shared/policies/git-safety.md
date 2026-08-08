@@ -1,15 +1,16 @@
-# Policy — Git Safety
+# Shared Policy — Git Safety
 
-Applies both to how the Code Review Agent inspects a target repository
-and, where this Skill's own repository is being developed, to
-[`../AGENTS.md`](../AGENTS.md).
+Applies to how both Code Review Skills inspect a target repository, and,
+where this Skill repository's own development is concerned, to this
+repository's own `AGENTS.md`.
 
 ## Preserve repository state
 
-The Code Review Agent performs read-only inspection of Git state. It does
-not commit, push, rebase, reset, or otherwise mutate the repository it is
-reviewing, beyond what an explicit runbook (e.g. opening or updating a PR
-once local review is clean) authorizes.
+Both Skills perform read-only inspection of Git state. Neither commits,
+pushes, rebases, resets, or otherwise mutates the repository it is
+reviewing. (`github-pr-review` may publish comments/review decisions to
+GitHub — that is a delivery action, not a Git mutation, and is governed by
+that Skill's own `policies/github-review.md`.)
 
 ## Prohibited shortcuts
 

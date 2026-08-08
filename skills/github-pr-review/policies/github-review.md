@@ -1,9 +1,14 @@
 # Policy — GitHub Review
 
-Governs how the Code Review Agent interacts with GitHub Pull Requests,
+Governs how `github-pr-review` interacts with GitHub Pull Requests,
 independent of the specific runbook in use (see
 [`../runbooks/passive-pr-review.md`](../runbooks/passive-pr-review.md) and
 [`../runbooks/active-pr-review.md`](../runbooks/active-pr-review.md)).
+Builds on the shared
+[`review-scope.md`](../../../shared/policies/review-scope.md),
+[`severity.md`](../../../shared/policies/severity.md), and
+[`evidence.md`](../../../shared/policies/evidence.md) policies — this file
+adds only what is specific to GitHub delivery.
 
 ## Authoritative PR HEAD
 
@@ -32,10 +37,10 @@ is always published after inline findings and before the final decision.
 - **Request Changes** — used when an unresolved P0 or unresolved blocking
   P1 exists.
 
-Maximum automated positive action is **Approve**. The Code Review Agent
-never merges automatically, never deletes branches, never modifies
-implementation code, and never takes ownership of repository lifecycle
-cleanup for an externally supplied PR.
+Maximum automated positive action is **Approve**. This Skill never merges
+automatically, never deletes branches, never modifies implementation
+code, and never takes ownership of repository lifecycle cleanup for an
+externally supplied PR.
 
 ## HEAD revalidation
 
@@ -58,22 +63,29 @@ the current HEAD.
 
 Successful GitHub authentication alone does not imply the authenticated
 identity has legitimate review access to the target repository/PR. Before
-posting comments or submitting a review decision, verify sufficient
-repository access using GitHub metadata/capabilities available to the
-authenticated identity (see
+posting comments or submitting a review decision, verify:
+
+- the authenticated GitHub identity;
+- that the target repository/PR is accessible to that identity;
+- that the identity has sufficient capability to submit the intended
+  review action (comment, Approve, Request Changes).
+
+This may be established through GitHub metadata/capabilities available to
+the authenticated identity (see
 [`../runbooks/active-pr-review.md`](../runbooks/active-pr-review.md)).
 
 If active review permissions are unavailable:
 
 - do not fake successful publication;
+- do not claim comments were submitted;
 - do not claim Approve or Request Changes was submitted;
 - fall back to passive review when possible;
 - return the review report and clearly state that GitHub publication was
   unavailable.
 
 This is a separate concern from Agent review *ownership* — see
-[`review-ownership.md`](review-ownership.md) section "Access vs.
-Ownership."
+[`../../../shared/policies/review-ownership.md`](../../../shared/policies/review-ownership.md),
+"Access vs. Ownership."
 
 ## Existing review awareness
 

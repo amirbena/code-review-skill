@@ -1,8 +1,9 @@
-# Policy — Evidence
+# Shared Policy — Evidence
 
-Every finding must be supported by concrete repository evidence: changed
-lines, surrounding code, tests, repository instructions, contracts,
-schemas, configuration, architecture documentation, or CI behavior.
+Every finding, in either Skill, must be supported by concrete repository
+evidence: changed lines, surrounding code, tests, repository
+instructions, contracts, schemas, configuration, architecture
+documentation, or CI behavior.
 
 ## Required distinctions
 
