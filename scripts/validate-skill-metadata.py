@@ -96,6 +96,25 @@ def validate(skill_root: Path, containment_root: Path) -> None:
                     f"error: metadata path {nested_field} does not exist: {declared}"
                 )
 
+    reviewability = (containment_root / "shared" / "policies" / "file-reviewability.md")
+    if not reviewability.is_file():
+        raise SystemExit("error: Skill package missing shared file-reviewability policy")
+    skill_text = skill_md.read_text(encoding="utf-8")
+    if "file-reviewability.md" not in skill_text:
+        raise SystemExit(f"error: {skill_md} does not reference file-reviewability policy")
+    reviewability_text = reviewability.read_text(encoding="utf-8")
+    for marker in (
+        "generated status is never a blanket exemption",
+        "## Vendored dependencies",
+        "## Manifests and lockfiles",
+        "## Minified files and bundles",
+        "## Binary files",
+        "opaque replacement is materially risky",
+        "## Snapshots",
+    ):
+        if marker not in reviewability_text:
+            raise SystemExit(f"error: file-reviewability policy missing marker: {marker!r}")
+
     if metadata.get("name") == "github-pr-review":
         policy = (skill_root / "policies" / "github-review.md").read_text(encoding="utf-8")
         runbook = (skill_root / "runbooks" / "active-pr-review.md").read_text(encoding="utf-8")
@@ -104,18 +123,29 @@ def validate(skill_root: Path, containment_root: Path) -> None:
             "authenticated reviewer is the PR author",
             "Final GitHub approval was not submitted",
             "never fabricate a successful",
+            "## Capability matrix",
+            "## Complete PR scope and pagination",
+            "same identity for the same PR and HEAD",
+            "A changed HEAD starts a new authoritative review state",
+            "at\nmost 3,000 files",
+            "REVIEW INCOMPLETE",
         )
         for marker in required_policy:
             if marker not in policy:
-                raise SystemExit(f"error: GitHub self-review policy missing marker: {marker!r}")
+                raise SystemExit(f"error: GitHub review policy missing marker: {marker!r}")
         author_step = runbook.find("resolve PR author")
         access_step = runbook.find("verify repository/review access")
-        capability_step = runbook.find("determine self-review submission capability")
+        scope_step = runbook.find("retrieve complete paginated PR scope")
+        capability_step = runbook.find("determine event-specific review capability")
+        dedupe_step = runbook.find("deduplicate same-HEAD findings")
         decision_step = runbook.find("submit permitted Approve/Request Changes")
-        if not (0 <= author_step < access_step < capability_step < decision_step):
+        if not (
+            0 <= author_step < access_step < scope_step < capability_step
+            < dedupe_step < decision_step
+        ):
             raise SystemExit(
-                "error: active review flow must check PR-author identity and self-review "
-                "capability before a formal review decision"
+                "error: active review flow must establish complete scope and capability, "
+                "then deduplicate before a formal review decision"
             )
 
 

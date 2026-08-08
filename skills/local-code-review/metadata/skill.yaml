@@ -39,5 +39,6 @@ shared:
     - ../../../shared/policies/repository-instructions.md
     - ../../../shared/policies/git-safety.md
     - ../../../shared/policies/review-ownership.md
+    - ../../../shared/policies/file-reviewability.md
   templates:
     - ../../../shared/templates/finding.md

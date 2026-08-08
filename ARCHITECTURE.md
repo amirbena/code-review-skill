@@ -30,6 +30,11 @@ review-scope, severity, evidence, repository-instructions, git-safety,
 review-ownership — one copy each, consumed by both Skills (and packaged
 with either, so each archive is self-contained)
 
+shared/policies/file-reviewability.md
+    ↓
+evidence-based handling for generated, vendored, lock, minified, binary,
+snapshot, and other opaque or machine-produced changes
+
 shared/templates/finding.md
     ↓
 one canonical finding shape, rendered differently per delivery surface
@@ -47,9 +52,9 @@ Neither Skill owns a copy of the severity model, evidence requirements,
 or review-scope rules — both reference [`shared/policies/`](shared/policies/)
 directly. `github-pr-review` additionally has its own
 [`policies/github-review.md`](skills/github-pr-review/policies/github-review.md)
-for GitHub-specific delivery rules (PR HEAD authority, access
-verification, self-review capability, submission ordering) that have no
-local-review analogue.
+for GitHub-specific delivery rules (PR HEAD authority, access and event
+capability, complete-scope pagination, publication idempotency, submission
+ordering) that have no local-review analogue.
 `local-code-review` has no analogous per-Skill policy file — its only
 Skill-specific rules are the local-delta procedure in its own runbook.
 

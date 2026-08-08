@@ -36,7 +36,8 @@ $sharedPolicies = @(
   "evidence.md",
   "repository-instructions.md",
   "git-safety.md",
-  "review-ownership.md"
+  "review-ownership.md",
+  "file-reviewability.md"
 )
 $sharedTemplates = @(
   "finding.md"

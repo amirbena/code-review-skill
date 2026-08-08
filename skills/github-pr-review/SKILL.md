@@ -22,15 +22,17 @@ resolve PR
     ↓
 resolve authenticated identity and PR author
     ↓
-determine formal-review capability
+retrieve complete paginated PR scope
     ↓
-resolve changed files
+determine formal-review capability
     ↓
 discover applicable AGENTS.md / CLAUDE.md
     ↓
 inspect diff and surrounding code
     ↓
 apply repository conventions
+    ↓
+deduplicate same-HEAD findings when active
     ↓
 publish inline findings when active
     ↓
@@ -79,11 +81,12 @@ Shared, always: [`review-scope.md`](../../shared/policies/review-scope.md),
 [`evidence.md`](../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),
 [`git-safety.md`](../../shared/policies/git-safety.md),
-[`review-ownership.md`](../../shared/policies/review-ownership.md).
+[`review-ownership.md`](../../shared/policies/review-ownership.md), and
+[`file-reviewability.md`](../../shared/policies/file-reviewability.md).
 
 This Skill's own: [`policies/github-review.md`](policies/github-review.md)
-(PR HEAD authority, inline/summary/decision contract, access
-verification, HEAD revalidation, submission ordering, `gh` contract).
+(PR HEAD authority, scope completeness, event capability, publication
+idempotency, HEAD revalidation, submission ordering, `gh` contract).
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.

@@ -34,6 +34,7 @@ shared_policies=(
   "repository-instructions.md"
   "git-safety.md"
   "review-ownership.md"
+  "file-reviewability.md"
 )
 shared_templates=(
   "finding.md"
