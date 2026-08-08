@@ -109,12 +109,13 @@ This is a separate concern from Agent review *ownership* — see
 ## Self-review capability
 
 `github-pr-review` is a reviewer role that requires genuine
-reviewer/author separation to mean anything — see
-[`../../../AGENTS.md`](../../../AGENTS.md), "Implementation Workflow
-Termination and Reviewer/Author Separation." Orchestration is expected to
-prevent an implementing Agent from ever invoking this Skill against its
-own PR. This guard exists as a fallback for the case where that
-orchestration boundary is not honored and this Skill is invoked anyway.
+reviewer/author separation to mean anything. Preventing an implementing
+Agent from ever invoking this Skill against its own PR is primarily the
+calling system's orchestration responsibility, not this Skill's own. This
+guard is this Skill's complete, self-contained fallback for the case
+where that orchestration boundary is not honored and this Skill is
+invoked anyway — understanding and enforcing it requires nothing beyond
+this policy.
 
 This check runs **first, before any other step** — before retrieving the
 paginated diff, before discovering repository instructions, before any

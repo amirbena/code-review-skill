@@ -242,6 +242,7 @@ if [[ "${target}" == "local" || "${target}" == "all" ]]; then
   package_skill "local-code-review" "local-code-review-skill" \
     "agents/openai.yaml" \
     "metadata/skill.yaml" \
+    "policies/invocation-approval.md" \
     "runbooks/local-review.md" \
     "templates/local-review-report.md"
 fi

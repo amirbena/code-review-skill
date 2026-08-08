@@ -130,14 +130,26 @@ Agent is responsible for:
 - deciding when to open/update a PR;
 - deciding when to invoke `github-pr-review`, and in which mode.
 
-This discretion is bounded, not open-ended: it never extends to an
-implementing Agent invoking `github-pr-review` against the PR it just
-opened or updated for its own implementation work. Opening/updating that
-PR is the terminal step of the implementation workflow — see
-[`AGENTS.md`](AGENTS.md) section 13, "Implementation Workflow Termination
-and Reviewer/Author Separation." `github-pr-review` is a reviewer-role
-Skill invoked by a genuinely separate reviewer or review task, not a
-post-implementation validation step chained onto the same workflow.
+This discretion is bounded, not open-ended in two independent ways.
+
+First, invoking `local-code-review` at all is never automatic. Every
+single invocation — the first review of an implementation and any later
+re-review after fixes — requires the orchestrator to have already
+obtained fresh, explicit user approval scoped to that one run. An
+approval that authorized one invocation never authorizes another; the
+orchestrator must ask again before each subsequent invocation, including
+immediately after fixing findings from the previous one. See
+[`AGENTS.md`](AGENTS.md) section 14, "Explicit User Approval Required for
+`local-code-review` Invocation."
+
+Second, it never extends to an implementing Agent invoking
+`github-pr-review` against the PR it just opened or updated for its own
+implementation work. Opening/updating that PR is the terminal step of the
+implementation workflow — see [`AGENTS.md`](AGENTS.md) section 13,
+"Implementation Workflow Termination and Reviewer/Author Separation."
+`github-pr-review` is a reviewer-role Skill invoked by a genuinely
+separate reviewer or review task, not a post-implementation validation
+step chained onto the same workflow.
 
 ```text
 Orchestrator
@@ -159,15 +171,21 @@ iterations, but that default lives outside these Skills.
 ## 5. Handoff Between Skills
 
 ```text
-Implementation Agent
+Implementation Agent (implementation finished, or a fix just applied)
     ↓
-Local Code Review Skill
+ask user: run local-code-review for this run?
     ↓
-findings
-    ↓
-Implementation Agent fixes
-    ↓
-optional Local Code Review Skill re-run
+explicit approval for this run?
+├── no  → continue without review
+└── yes
+     ↓
+   Local Code Review Skill (single invocation — this run only)
+     ↓
+   findings
+     ↓
+   Implementation Agent fixes (if any)
+     ↓
+   [no automatic re-run — ask the user again before another invocation]
     ↓
 local implementation accepted by orchestrator
     ↓
@@ -179,6 +197,14 @@ STOP (implementation workflow ends here)
     ↓
 GitHub PR Review Skill
 ```
+
+Each `Local Code Review Skill` box above represents exactly one
+invocation, gated by its own fresh, explicit user approval obtained
+immediately beforehand. Approval for one invocation never carries over
+to a later one — see [`AGENTS.md`](AGENTS.md) section 14, "Explicit User
+Approval Required for `local-code-review` Invocation." A "no" at any
+approval gate is a fully valid outcome: the implementation workflow
+continues straight to local acceptance, push, and PR without review.
 
 `local-code-review` does not automatically invoke `github-pr-review`,
 and neither does the implementing Agent that just opened or updated the

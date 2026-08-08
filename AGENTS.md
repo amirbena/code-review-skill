@@ -74,7 +74,11 @@ runtime, Team Lead, or implementing workflow — never of
 discretion is bounded, not open-ended: it never extends to an
 implementing Agent invoking `github-pr-review` on the PR it just opened
 or updated for its own implementation work — see section 13,
-"Implementation Workflow Termination and Reviewer/Author Separation."
+"Implementation Workflow Termination and Reviewer/Author Separation." Nor
+does it extend to invoking `local-code-review` automatically — every
+invocation requires fresh, explicit user approval scoped to that one run
+— see section 14, "Explicit User Approval Required for
+`local-code-review` Invocation."
 
 ---
 
@@ -105,6 +109,72 @@ authenticated GitHub access with sufficient review permissions), not as a
 required vendor-specific implementation. A concrete integration or command
 may appear as an optional example or fallback when it implements the same
 capability contract.
+
+### Packaged Skills Are Independent of Repository-Level `AGENTS.md`
+
+This file governs development and orchestration of *this* source
+repository. A distributed Skill archive (built by
+[`scripts/package-skills.sh`](scripts/package-skills.sh) /
+[`scripts/package-skills.ps1`](scripts/package-skills.ps1)) never contains
+this file, `ARCHITECTURE.md`, or this repository's `README.md` — so no
+file that is part of a packaged Skill (`SKILL.md`, a packaged policy, a
+runbook, a template, or shared/-packaged resource) may use this
+repository's own `AGENTS.md` as a runtime dependency or canonical source
+required for understanding or executing that Skill:
+
+```text
+AGENTS.md
+→ repository development/orchestration rules
+
+packaged Skill
+→ SKILL.md
+→ packaged policies
+→ packaged runbooks
+→ packaged templates/shared resources
+```
+
+Not:
+
+```text
+packaged Skill resource
+→ ../../AGENTS.md
+```
+
+If a rule a packaged Skill relies on must remain available after
+packaging, its canonical portable form belongs inside a packaged
+resource, using the resource type that best fits the rule — prefer the
+most specific one that avoids duplicating the same rule across multiple
+files:
+
+```text
+normative reusable invariant  → policy (skills/<skill>/policies/ or shared/policies/)
+operational procedure         → runbook
+reusable output/content shape → template
+Skill-level responsibility     → SKILL.md
+```
+
+When this file also needs to mention such a rule for repository-development
+context, prefer pointing toward the packaged canonical resource rather than
+the reverse:
+
+```text
+AGENTS.md → references the packaged canonical policy/runbook/template/SKILL.md   (preferred)
+packaged Skill → references AGENTS.md                                            (prohibited)
+```
+
+`AGENTS.md` may summarize a rule's repository-development implications, but
+the portable Skill must remain fully correct and self-explanatory with
+`AGENTS.md`, `ARCHITECTURE.md`, and this repository's `README.md` deleted
+from the consumer's environment entirely.
+
+This prohibition is narrowly about *this source repository's own*
+`AGENTS.md`. It does not extend to either Skill's own behavior: both
+`local-code-review` and `github-pr-review` legitimately discover and read
+an `AGENTS.md` (or `CLAUDE.md`) that belongs to the *target* repository
+being reviewed — see
+[`shared/policies/repository-instructions.md`](shared/policies/repository-instructions.md).
+That target-repository instruction discovery is valid, packaged, portable
+behavior and is unaffected by this rule.
 
 ---
 
@@ -420,9 +490,10 @@ existing external PR → github-pr-review
 
 If local review is wanted for implementation work in progress, that
 belongs to `local-code-review`, invoked before or during implementation
-completion, subject to its own invocation conditions and any required
-user approval — never to `github-pr-review` used as a substitute
-completion check:
+completion, subject to its own invocation conditions — see section 14,
+"Explicit User Approval Required for `local-code-review` Invocation" —
+and never invoked automatically, and never to `github-pr-review` used as
+a substitute completion check:
 
 ```text
 implementation
@@ -442,7 +513,181 @@ nevertheless invoked against a PR authored by the authenticated identity
 "Self-review capability." That guard is a fallback, not a substitute for
 orchestration honoring the rule above.
 
-## 14. Relationship to Runtime Adapters and the Skills
+---
+
+## 14. Explicit User Approval Required for `local-code-review` Invocation
+
+`local-code-review` MUST NOT be invoked automatically at any point in an
+implementation workflow — not after implementation finishes, not after
+validation, not after a fix, and not immediately after a previous
+review. Every individual invocation requires fresh, explicit user
+approval scoped to that specific run:
+
+```text
+implementation finished (or fixes applied)
+    ↓
+ask user whether to run local-code-review
+    ↓
+explicit approval for this run?
+├── yes → invoke local-code-review once
+└── no  → do not invoke, continue without review
+```
+
+**Approval is not persistent.** Approval obtained for one invocation
+authorizes exactly that one invocation. It must never be treated as:
+
+- approval for the rest of the task;
+- approval for all future reviews;
+- approval for a review/fix loop;
+- approval to automatically re-run after findings are fixed;
+- approval to invoke whenever the implementation changes.
+
+```text
+user approves review #1
+    ↓
+local-code-review runs once
+    ↓
+findings returned
+    ↓
+Agent fixes findings
+    ↓
+review #2 desired
+    ↓
+ask user again — the approval for review #1 does not authorize review #2
+```
+
+The following flows are prohibited:
+
+```text
+implement → validate → automatically invoke local-code-review            ✗ prohibited
+
+user approved local review once → review → fix findings
+    → automatically review again                                        ✗ prohibited
+
+local-code-review finds issues → reviewer triggers itself again
+    after fixes                                                          ✗ prohibited
+
+implementation workflow decides review is "best practice"
+    → invokes local-code-review without asking                          ✗ prohibited
+```
+
+Even when this repository or a target repository generally prefers
+review, that preference never substitutes for asking the user before
+each specific invocation.
+
+**Caller/reviewer responsibility boundary.** Approval orchestration
+belongs to the caller, Team Lead, runtime, or implementing workflow:
+
+```text
+caller/orchestrator
+    ↓
+determines whether review is desired
+    ↓
+asks user
+    ↓
+receives explicit approval for this run
+    ↓
+invokes local-code-review once
+```
+
+`local-code-review` itself is not responsible for, and must not attempt,
+any of the following:
+
+- asking the user for permission;
+- deciding whether another review iteration should happen;
+- automatically scheduling a re-review;
+- continuing a review/fix/review loop on its own.
+
+The Skill only reviews the scope it was explicitly invoked to review —
+see [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md),
+"Statelessness and Orchestration Boundary."
+
+**Scope of explicit approval.** Approval must be unambiguous and
+specific to the current review run — for example, an instruction
+equivalent to "run local-code-review now," "yes, review the current
+implementation," or "perform one local review before pushing." A
+previous approval earlier in the task must never be reused. General
+statements such as "review things carefully," or a repository policy
+that merely recommends review, do not create standing authorization for
+repeated invocations.
+
+**Re-review after findings.** If `local-code-review` returns findings
+and the implementing Agent fixes them, no automatic re-review is
+permitted:
+
+```text
+review #1 → findings → fixes → validation → ask user whether to run review #2
+```
+
+Only a new, explicit approval permits review #2. This applies to every
+subsequent iteration — approval for review N never authorizes review
+N+1.
+
+Implementation workflows remain valid whether or not review is approved:
+
+```text
+implement → validate → ask whether to run local-code-review
+
+user says no  → continue implementation delivery workflow
+user says yes → local-code-review once → return findings → (fixes, if any)
+    → ask again before another local-code-review
+```
+
+`local-code-review` remains optional and user-authorized; it is not a
+mandatory terminal gate before commit, push, or PR creation unless the
+user explicitly chooses to run it for that specific invocation. See
+[`ARCHITECTURE.md`](ARCHITECTURE.md), "Handoff Between Skills," for how
+this approval gate fits into the overall implementation lifecycle.
+
+---
+
+## 15. Shell / PowerShell Script Parity
+
+This repository intentionally ships genuine cross-platform counterpart
+scripts for the same repository capability — currently
+[`scripts/package-skills.sh`](scripts/package-skills.sh) and
+[`scripts/package-skills.ps1`](scripts/package-skills.ps1). When the
+functionality represented by both a `.sh` script and its corresponding
+`.ps1` script changes, both implementations MUST be updated in the same
+task so they remain behaviorally equivalent — including their packaged
+resource lists, validation steps, and guard behavior:
+
+```text
+change shell implementation
+    ↓
+inspect PowerShell counterpart
+    ↓
+update PowerShell counterpart
+
+or
+
+change PowerShell implementation
+    ↓
+inspect shell counterpart
+    ↓
+update shell counterpart
+```
+
+This holds even when only one runtime is available for execution in the
+current environment — the inability to execute one platform-specific
+script is a **validation limitation to report**, never a reason to leave
+that counterpart stale:
+
+```text
+update by inspection
+    ↓
+perform static/equivalence checks where possible
+    ↓
+report the execution limitation
+```
+
+This rule applies to genuine counterpart scripts that implement the same
+repository capability on two platforms, not to unrelated `.sh` and `.ps1`
+files that happen to share a naming pattern.
+
+---
+
+## 16. Relationship to Runtime Adapters and the Skills
 
 ```text
 CLAUDE.md (or any other runtime adapter)

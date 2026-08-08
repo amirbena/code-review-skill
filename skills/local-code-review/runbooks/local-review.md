@@ -6,7 +6,9 @@ The single runbook for `local-code-review`. Applies shared policies:
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
-[`git-safety.md`](../../../shared/policies/git-safety.md).
+[`git-safety.md`](../../../shared/policies/git-safety.md), plus this
+Skill's own [`../policies/invocation-approval.md`](../policies/invocation-approval.md)
+(the invocation-approval precondition assumed below).
 
 ## Flow
 
@@ -32,11 +34,9 @@ stop
    status, current branch, and HEAD.
 2. Resolve the base branch and base SHA. Verify the implementation scope
    is not accidentally being reviewed directly on a protected/default
-   branch unless the target repository's own rules explicitly permit it
-   (this repository's own development documentation calls this the
-   "Skill Consumer Branch Policy"). **Do not create a branch** — validate
-   what already exists; branch creation belongs to the implementing
-   workflow.
+   branch unless the target repository's own rules explicitly permit it.
+   **Do not create a branch** — validate what already exists; branch
+   creation belongs to the implementing workflow.
 3. Determine the **complete** local delta — do not assume local `HEAD`
    contains the whole task:
    - the committed branch delta relative to base;
@@ -91,12 +91,24 @@ stop
   Boundary."
 - Must not otherwise mutate the repository beyond read-only inspection
   (see [`git-safety.md`](../../../shared/policies/git-safety.md)).
+- Must not ask the user for approval, and must not be invoked as a
+  self-triggered re-run. This runbook assumes the caller has already
+  obtained fresh, explicit user approval scoped to this specific
+  invocation before entering this flow — see
+  [`../policies/invocation-approval.md`](../policies/invocation-approval.md)
+  for the complete, self-contained contract. This runbook does not
+  verify that approval was obtained; that responsibility belongs
+  entirely to the caller.
 
 ## Re-review discipline (recommended, not enforced by this Skill)
 
-Each invocation of this runbook is independent and stateless. When an
-orchestrator chooses to invoke it again against updated implementation
-state, it should primarily verify:
+Each invocation of this runbook is independent and stateless. Every
+invocation, including a re-review immediately after fixes, requires its
+own separate, fresh, explicit user approval — the approval that
+authorized a previous invocation never authorizes this one. When an
+orchestrator has obtained that new approval and chooses to invoke this
+runbook again against updated implementation state, it should primarily
+verify:
 
 - whether previously reported blocking findings were resolved;
 - whether the fix introduced a regression;

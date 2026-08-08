@@ -52,11 +52,13 @@ stop
 It is intended for genuine reviewer/author separation — a different
 Agent or identity reviewing someone else's PR, or review of an existing
 external PR — never as something an implementing Agent chains onto after
-opening or updating its own PR. See
-[`AGENTS.md`](../../AGENTS.md), "Implementation Workflow Termination and
-Reviewer/Author Separation," for the orchestration-level rule, and
-"Self-review capability" below for this Skill's own defensive guard when
-that rule is not honored.
+opening or updating its own PR. Preventing that chaining in the first
+place is the calling system's orchestration responsibility, not this
+Skill's own — but this Skill does not depend on that orchestration
+being honored: "Self-review capability" below and in
+[`policies/github-review.md`](policies/github-review.md) defines this
+Skill's own complete, self-contained defensive guard (`REVIEW SKIPPED`)
+for the case where it is invoked against a PR it authored anyway.
 
 See [`runbooks/passive-pr-review.md`](runbooks/passive-pr-review.md) and
 [`runbooks/active-pr-review.md`](runbooks/active-pr-review.md) for the
