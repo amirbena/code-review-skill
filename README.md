@@ -26,7 +26,10 @@ Skill.
 
 ## Packaging
 
-Choose the package based on how the reviewer will be used.
+Choose the package based on how the reviewer will be used. Each archive
+is standalone and contains its Skill's `SKILL.md` at the archive root
+(not nested under a `skills/` path) — a consumer never needs to know
+this repository's source layout.
 
 ### Local code review
 

@@ -1,8 +1,12 @@
 #!/usr/bin/env pwsh
 <#
-  Package one or both Code Review Agent Skills into self-contained
-  distributable archives, using explicit allowlists (never the whole
-  repository). Cross-platform equivalent of scripts/package-skills.sh.
+  Package one or both Code Review Agent Skills into self-contained,
+  standalone distributable archives, using explicit allowlists (never the
+  whole repository). Each archive has its own SKILL.md at the archive
+  ROOT (not nested under skills/<name>/), so a consumer never needs to
+  know this repository's source layout. All generated output (staging
+  and final zips) stays strictly under dist/. Cross-platform equivalent
+  of scripts/package-skills.sh.
 
   Usage:
     ./scripts/package-skills.ps1 local
@@ -21,6 +25,7 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..")
 $distDir = Join-Path $repoRoot "dist"
+$stagingRoot = Join-Path $distDir ".staging"
 
 # Shared files, by package-relative destination path — kept in sync with
 # scripts/package-skills.sh.
@@ -36,6 +41,22 @@ $sharedTemplates = @(
   "finding.md"
 )
 
+# Rewrite relative links into shared/ so they resolve from the archive
+# root instead of from skills/<name>/. Packaging strips exactly the two
+# path segments ("skills/<name>/"), so every "../../shared/" (used by
+# SKILL.md, at source depth 2) becomes "shared/", and every
+# "../../../shared/" (used by files one level under the Skill, at source
+# depth 3: runbooks/, templates/, policies/) becomes "../shared/". This
+# is a narrow, deterministic substitution scoped to the exact link
+# prefixes that point into shared/ — it never touches any other text.
+function Adapt-SharedLinks {
+  param([string]$FilePath)
+  $content = Get-Content -Path $FilePath -Raw
+  $content = $content -replace [regex]::Escape("../../../shared/"), "../shared/"
+  $content = $content -replace [regex]::Escape("../../shared/"), "shared/"
+  Set-Content -Path $FilePath -Value $content -NoNewline
+}
+
 function Package-Skill {
   param(
     [string]$SkillName,      # e.g. local-code-review
@@ -44,11 +65,15 @@ function Package-Skill {
   )
 
   $skillSrc = Join-Path $repoRoot "skills/$SkillName"
-  $stageDir = Join-Path $distDir $ArchiveStem
+  $stageDir = Join-Path $stagingRoot $ArchiveStem
   $archivePath = Join-Path $distDir "$ArchiveStem.zip"
 
   if (-not (Test-Path $skillSrc -PathType Container)) {
     Write-Error "required Skill directory missing: skills/$SkillName"
+    exit 1
+  }
+  if (-not (Test-Path (Join-Path $skillSrc "SKILL.md") -PathType Leaf)) {
+    Write-Error "required Skill entry point missing: skills/$SkillName/SKILL.md"
     exit 1
   }
   foreach ($f in $SkillFiles) {
@@ -73,13 +98,13 @@ function Package-Skill {
     }
   }
 
-  # Only ever clean our own controlled staging/output location.
+  # Only ever clean our own controlled staging/output location, and only
+  # ever write generated content under dist/.
   if (Test-Path $stageDir) {
     Remove-Item -Recurse -Force $stageDir
   }
   New-Item -ItemType Directory -Path (Join-Path $stageDir "shared/policies") -Force | Out-Null
   New-Item -ItemType Directory -Path (Join-Path $stageDir "shared/templates") -Force | Out-Null
-  New-Item -ItemType Directory -Path (Join-Path $stageDir "skills/$SkillName") -Force | Out-Null
 
   foreach ($f in $sharedPolicies) {
     Copy-Item -Path (Join-Path $repoRoot "shared/policies/$f") -Destination (Join-Path $stageDir "shared/policies/$f")
@@ -88,18 +113,64 @@ function Package-Skill {
     Copy-Item -Path (Join-Path $repoRoot "shared/templates/$f") -Destination (Join-Path $stageDir "shared/templates/$f")
   }
 
-  foreach ($f in $SkillFiles) {
-    $destPath = Join-Path $stageDir "skills/$SkillName/$f"
+  # Copy SKILL.md to the archive root, and every other Skill-specific
+  # file to its package-root-relative location (dropping the
+  # skills/<SkillName>/ source prefix).
+  $allFiles = @("SKILL.md") + $SkillFiles
+  foreach ($f in $allFiles) {
+    $destPath = Join-Path $stageDir $f
     New-Item -ItemType Directory -Path (Split-Path -Parent $destPath) -Force | Out-Null
     Copy-Item -Path (Join-Path $skillSrc $f) -Destination $destPath
+  }
+
+  # Adapt relative links into shared/ across every packaged Markdown
+  # file (skill-local links like ../SKILL.md or runbooks/... need no
+  # change, since skill-internal relative depth is unchanged).
+  Get-ChildItem -Path $stageDir -Filter "*.md" -Recurse | ForEach-Object {
+    Adapt-SharedLinks -FilePath $_.FullName
+  }
+
+  # --- Validate staged package structure before archiving ---
+  if (-not (Test-Path (Join-Path $stageDir "SKILL.md") -PathType Leaf)) {
+    Write-Error "staged package missing root SKILL.md: $stageDir/SKILL.md"
+    exit 1
+  }
+  if (Test-Path (Join-Path $stageDir "skills")) {
+    Write-Error "staged package must not contain a nested skills/ directory: $stageDir/skills"
+    exit 1
+  }
+  $rootSkillMdContent = Get-Content -Path (Join-Path $stageDir "SKILL.md") -Raw
+  if ($rootSkillMdContent -notmatch [regex]::Escape($SkillName)) {
+    Write-Error "staged root SKILL.md does not identify as '$SkillName'"
+    exit 1
   }
 
   if (Test-Path $archivePath) {
     Remove-Item -Force $archivePath
   }
-  Compress-Archive -Path $stageDir -DestinationPath $archivePath -Force
+  # Compress the staged package's *contents* (not the staging folder
+  # itself) so SKILL.md lands at the archive root.
+  Compress-Archive -Path (Join-Path $stageDir "*") -DestinationPath $archivePath -Force
 
-  Write-Host "Package staged at: $stageDir"
+  # --- Verify archive contents ---
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $zip = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
+  try {
+    $entryNames = $zip.Entries | ForEach-Object { $_.FullName }
+  } finally {
+    $zip.Dispose()
+  }
+  if (-not ($entryNames -contains "SKILL.md")) {
+    Write-Error "archive missing root SKILL.md: $archivePath"
+    exit 1
+  }
+  if ($entryNames | Where-Object { $_ -like "skills/*" }) {
+    Write-Error "archive must not contain a nested skills/ directory: $archivePath"
+    exit 1
+  }
+
+  Remove-Item -Recurse -Force $stageDir
+
   Write-Host "Archive created at: $archivePath"
 }
 
@@ -108,7 +179,6 @@ New-Item -ItemType Directory -Path $distDir -Force | Out-Null
 
 if ($Skill -eq "local" -or $Skill -eq "all") {
   Package-Skill -SkillName "local-code-review" -ArchiveStem "local-code-review-skill" -SkillFiles @(
-    "SKILL.md",
     "metadata/skill.yaml",
     "runbooks/local-review.md",
     "templates/local-review-report.md"
@@ -117,7 +187,6 @@ if ($Skill -eq "local" -or $Skill -eq "all") {
 
 if ($Skill -eq "github" -or $Skill -eq "all") {
   Package-Skill -SkillName "github-pr-review" -ArchiveStem "github-pr-review-skill" -SkillFiles @(
-    "SKILL.md",
     "metadata/skill.yaml",
     "policies/github-review.md",
     "runbooks/passive-pr-review.md",
@@ -125,4 +194,9 @@ if ($Skill -eq "github" -or $Skill -eq "all") {
     "templates/inline-finding.md",
     "templates/external-review-summary.md"
   )
+}
+
+# Remove the now-empty staging root if packaging left nothing behind.
+if ((Test-Path $stagingRoot) -and ((Get-ChildItem -Path $stagingRoot -Force | Measure-Object).Count -eq 0)) {
+  Remove-Item -Force $stagingRoot
 }
