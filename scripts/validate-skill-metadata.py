@@ -323,24 +323,29 @@ def validate(skill_root: Path, containment_root: Path) -> None:
         required_skill_markers = (
             "MUST NOT be invoked automatically",
             "fresh, explicit user approval",
-            "it does not ask for approval, does not track\nprior approvals",
-            "is never, by\nitself, authorization for the caller to invoke this Skill again",
-            "A separate, explicit approval is required for every\nsubsequent invocation",
+            "it does not ask for approval, does not track prior approvals",
+            "is never, by itself, authorization for the caller to invoke this Skill again",
+            "A separate, explicit approval is required for every subsequent invocation",
             "ask the user for approval to run",
         )
+        # Compared through normalize_prose(), matching the github-pr-review
+        # policy checks above: a marker's presence must not depend on
+        # exactly where the source Markdown wraps a line.
+        skill_text_normalized = normalize_prose(skill_text)
         for marker in required_skill_markers:
-            if marker not in skill_text:
+            if normalize_prose(marker) not in skill_text_normalized:
                 raise SystemExit(
                     f"error: local-code-review SKILL.md missing marker: {marker!r}"
                 )
         required_runbook_markers = (
             "Must not ask the user for approval",
-            "must not be invoked as a\n  self-triggered re-run",
-            "This runbook does not\n  verify that approval was obtained",
+            "must not be invoked as a self-triggered re-run",
+            "This runbook does not verify that approval was obtained",
             "own separate, fresh, explicit user approval",
         )
+        local_runbook_normalized = normalize_prose(local_runbook)
         for marker in required_runbook_markers:
-            if marker not in local_runbook:
+            if normalize_prose(marker) not in local_runbook_normalized:
                 raise SystemExit(
                     f"error: local-code-review runbook missing marker: {marker!r}"
                 )
