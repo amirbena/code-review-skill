@@ -1,0 +1,35 @@
+# Portable metadata for the local-code-review Skill.
+# Describes the package; it is not itself executable behavior.
+# See SKILL.md for the operational entry point.
+
+name: local-code-review
+description: >-
+  Stateless, bounded reviewer for local Git implementation state. Reviews
+  committed, staged, unstaged, and relevant untracked changes and returns
+  structured P0/P1/P2 findings. Passive output only; never mutates the
+  reviewed repository or GitHub.
+version: 0.1.0
+entrypoint: SKILL.md
+
+modes:
+  - passive-local
+
+capabilities:
+  git: required
+  github_cli: not-required
+
+output:
+  mutates_github: false
+  mutates_repository: false
+  manages_review_loop: false
+
+shared:
+  policies:
+    - ../../shared/policies/review-scope.md
+    - ../../shared/policies/severity.md
+    - ../../shared/policies/evidence.md
+    - ../../shared/policies/repository-instructions.md
+    - ../../shared/policies/git-safety.md
+    - ../../shared/policies/review-ownership.md
+  templates:
+    - ../../shared/templates/finding.md
