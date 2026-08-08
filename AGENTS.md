@@ -70,7 +70,11 @@ review/fix iterations to run, and when to progress from local review to
 opening a PR to GitHub review is the responsibility of the calling
 runtime, Team Lead, or implementing workflow — never of
 `local-code-review` or `github-pr-review` themselves. See
-[`ARCHITECTURE.md`](ARCHITECTURE.md), "Orchestration Boundary."
+[`ARCHITECTURE.md`](ARCHITECTURE.md), "Orchestration Boundary." This
+discretion is bounded, not open-ended: it never extends to an
+implementing Agent invoking `github-pr-review` on the PR it just opened
+or updated for its own implementation work — see section 13,
+"Implementation Workflow Termination and Reviewer/Author Separation."
 
 ---
 
@@ -368,7 +372,77 @@ repository-development document. Both `local-code-review` and
 
 ---
 
-## 13. Relationship to Runtime Adapters and the Skills
+## 13. Implementation Workflow Termination and Reviewer/Author Separation
+
+An implementing Agent's normal workflow ends when it opens or updates the
+Pull Request containing its own implementation work. Opening/updating
+that PR is the **terminal step** of the implementation workflow, not a
+step that automatically chains into review:
+
+```text
+implement
+    ↓
+validate
+    ↓
+commit
+    ↓
+push
+    ↓
+open or update PR
+    ↓
+STOP
+```
+
+The following flow is prohibited: an implementing Agent must never invoke
+`github-pr-review` against the PR it just created or updated as part of
+its own implementation workflow.
+
+```text
+implement → validate → commit → push → open PR → invoke github-pr-review on that PR   ✗ prohibited
+```
+
+This holds regardless of whether the implementing Agent technically has
+access to the `github-pr-review` Skill. `github-pr-review` is a reviewer
+role, not a post-implementation validation step, and it requires a
+genuine reviewer/author separation to mean anything — see
+[`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md)
+and [`skills/github-pr-review/policies/github-review.md`](skills/github-pr-review/policies/github-review.md),
+"Self-review capability."
+
+Valid shapes keep implementer and reviewer distinct:
+
+```text
+Agent A implements → opens PR → STOP
+Agent B / a dedicated reviewer → invokes github-pr-review
+
+existing external PR → github-pr-review
+```
+
+If local review is wanted for implementation work in progress, that
+belongs to `local-code-review`, invoked before or during implementation
+completion, subject to its own invocation conditions and any required
+user approval — never to `github-pr-review` used as a substitute
+completion check:
+
+```text
+implementation
+├─ optional local-code-review, if its invocation conditions are satisfied
+└─ commit / push / PR
+   └─ STOP
+
+review assignment (separate task, separate identity)
+    ↓
+github-pr-review
+```
+
+Orchestration is the primary safeguard here. `github-pr-review` also
+carries its own defensive self-review guard for the case where it is
+nevertheless invoked against a PR authored by the authenticated identity
+— see [`skills/github-pr-review/policies/github-review.md`](skills/github-pr-review/policies/github-review.md),
+"Self-review capability." That guard is a fallback, not a substitute for
+orchestration honoring the rule above.
+
+## 14. Relationship to Runtime Adapters and the Skills
 
 ```text
 CLAUDE.md (or any other runtime adapter)

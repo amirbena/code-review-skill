@@ -108,26 +108,52 @@ This is a separate concern from Agent review *ownership* — see
 
 ## Self-review capability
 
-Before active publication, resolve both the authenticated GitHub identity
-and the PR author and compare their account identities. Authentication,
-repository access, review ownership, and eligibility to submit a formal
-review are distinct states.
+`github-pr-review` is a reviewer role that requires genuine
+reviewer/author separation to mean anything — see
+[`../../../AGENTS.md`](../../../AGENTS.md), "Implementation Workflow
+Termination and Reviewer/Author Separation." Orchestration is expected to
+prevent an implementing Agent from ever invoking this Skill against its
+own PR. This guard exists as a fallback for the case where that
+orchestration boundary is not honored and this Skill is invoked anyway.
 
-When the authenticated reviewer is the PR author, perform the complete
-review and, where GitHub permits, publish inline findings and the
-human-readable summary. Do not submit or claim an independent approval of
-the reviewer's own PR. For an otherwise clean review, report:
+This check runs **first, before any other step** — before retrieving the
+paginated diff, before discovering repository instructions, before any
+review reasoning — for both passive and active review, regardless of
+which runbook was entered:
 
 ```text
-REVIEW CLEAN
-Final GitHub approval was not submitted because the authenticated reviewer is the PR author.
+resolve authenticated GitHub identity
+resolve PR author
+    ↓
+same identity?
+    ↓ yes
+SKIP immediately — no diff analysis, no findings, no comments,
+no summary, no decision
 ```
 
-When blocking P0/P1 findings exist, publish/report the findings and summary,
-state that the recommendation is Request Changes, and submit that event only
-if GitHub explicitly permits it for this identity and PR. Otherwise report
-that no formal final review was submitted; never fabricate a successful
-Request Changes mutation.
+When the authenticated identity and the PR author are the same account,
+this Skill terminates immediately with `REVIEW SKIPPED`. It must not
+proceed to: read or analyze the diff, generate findings, generate a
+review summary, emit `REVIEW CLEAN`, create inline comments, submit
+general comments, approve the PR, or request changes. Output is short and
+explicit:
+
+```text
+REVIEW SKIPPED
+
+The authenticated GitHub user is the PR author.
+Self-review is intentionally not performed.
+```
+
+This is a hard stop, not a degraded review: it is distinct from the
+"Can inspect, cannot mutate" or "Comment-capable, decision-ineligible"
+capability states below, which still complete reasoning and report a
+recommendation. Self-review completes no reasoning at all.
+
+If the authenticated identity cannot be resolved with confidence, do not
+assume it differs from the PR author merely for convenience; treat
+resolution failure as its own explicit incapability rather than silently
+defaulting to a full review.
 
 ## Capability matrix
 
@@ -137,7 +163,7 @@ and intended event. Do not infer it from authentication or a broad role alone.
 | State | Reasoning | Comments | Formal decision |
 |---|---|---|---|
 | Eligible external reviewer | Complete when scope is complete | Publish when authorized | Submit `APPROVE` or `REQUEST_CHANGES` as reasoned |
-| PR author | Complete when scope is complete | Publish when authorized | Never claim independent approval; submit another event only if GitHub accepts it |
+| PR author (self-review) | **None performed** — `REVIEW SKIPPED` at entry, before scope retrieval | None published | None submitted |
 | Can inspect, cannot mutate | Complete when scope is complete | Do not publish | Return recommendation and `REVIEW NOT SUBMITTED` |
 | Comment-capable, decision-ineligible | Complete when scope is complete | May publish permitted comments | Return recommendation and `REVIEW NOT SUBMITTED` |
 | Draft PR | Review work-in-progress; complete only if scope is complete | May publish permitted feedback | Intentionally do not submit Approve/Request Changes until ready for review |

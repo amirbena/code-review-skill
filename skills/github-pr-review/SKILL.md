@@ -24,6 +24,8 @@ resolve PR
     ↓
 resolve authenticated identity and PR author
     ↓
+same identity? → yes → REVIEW SKIPPED → stop
+    ↓ no
 retrieve complete paginated PR scope
     ↓
 determine formal-review capability
@@ -45,6 +47,16 @@ or report formal-review unavailability
     ↓
 stop
 ```
+
+**This Skill is a reviewer role, not an implementation-completion step.**
+It is intended for genuine reviewer/author separation — a different
+Agent or identity reviewing someone else's PR, or review of an existing
+external PR — never as something an implementing Agent chains onto after
+opening or updating its own PR. See
+[`AGENTS.md`](../../AGENTS.md), "Implementation Workflow Termination and
+Reviewer/Author Separation," for the orchestration-level rule, and
+"Self-review capability" below for this Skill's own defensive guard when
+that rule is not honored.
 
 See [`runbooks/passive-pr-review.md`](runbooks/passive-pr-review.md) and
 [`runbooks/active-pr-review.md`](runbooks/active-pr-review.md) for the
