@@ -39,8 +39,8 @@ first review of an implementation and any later re-review after fixes —
 requires the caller to have already obtained fresh, explicit user
 approval scoped to that one run before invoking this Skill. An approval
 that authorized one invocation never authorizes another. See
-[`AGENTS.md`](../../AGENTS.md), "Explicit User Approval Required for
-`local-code-review` Invocation," for the orchestration-level rule, and
+[`policies/invocation-approval.md`](policies/invocation-approval.md) for
+this Skill's complete, self-contained invocation-approval contract, and
 "Statelessness and Orchestration Boundary" below for this Skill's own
 side of that boundary: it does not ask for approval, does not track
 prior approvals, and does not decide whether a re-review should happen.
@@ -82,6 +82,10 @@ multi-Agent contexts, also
 For every changed-file category, including generated or opaque content,
 apply [`file-reviewability.md`](../../shared/policies/file-reviewability.md).
 
+This Skill's own: [`policies/invocation-approval.md`](policies/invocation-approval.md)
+(the complete per-invocation, explicit-user-approval contract — see
+section 5 below).
+
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.
 
@@ -120,11 +124,11 @@ this is review pass 1, 2, 3, or later. Specifically, this Skill does
 
 **Every invocation requires fresh, explicit user approval scoped to
 that one run**, obtained by the caller before invoking this Skill — see
-[`AGENTS.md`](../../AGENTS.md), "Explicit User Approval Required for
-`local-code-review` Invocation." This Skill has no mechanism to verify
-that approval occurred and does not need one: obtaining and scoping
-approval is entirely the caller's/orchestrator's responsibility, never
-this Skill's. In particular, this Skill must never be treated as
+[`policies/invocation-approval.md`](policies/invocation-approval.md) for
+the complete, self-contained contract. This Skill has no mechanism to
+verify that approval occurred and does not need one: obtaining and
+scoping approval is entirely the caller's/orchestrator's responsibility,
+never this Skill's. In particular, this Skill must never be treated as
 self-triggering: returning findings from one invocation is never, by
 itself, authorization for the caller to invoke this Skill again after
 fixes are applied. A separate, explicit approval is required for every
@@ -134,8 +138,8 @@ subsequent invocation.
 entirely an orchestration concern**, owned by the calling
 runtime/Team Lead/implementing workflow — not by this Skill. A caller
 that wants an iterative review/fix loop must obtain a new, explicit user
-approval before each individual invocation in that loop; see this
-repository's own `ARCHITECTURE.md` for the recommended handoff shape. For
+approval before each individual invocation in that loop — see
+[`policies/invocation-approval.md`](policies/invocation-approval.md). For
 recommended (not enforced) re-review discipline across repeated,
 separately-approved invocations, see
 [`runbooks/local-review.md`](runbooks/local-review.md).

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 import sys
 
@@ -20,6 +21,17 @@ OPENAI_INTERFACE_FIELDS = {
     "short_description",
     "default_prompt",
 }
+
+# A packaged Skill archive never contains this source repository's own
+# development documentation (see AGENTS.md, "Runtime Neutrality" /
+# ARCHITECTURE.md packaging boundary). Any packaged Markdown link whose
+# target resolves to one of these basenames is, by construction, a
+# reference that escapes the distributed package — regardless of how
+# many "../" segments it takes to get there. This is deliberately
+# depth-agnostic: it must catch "../AGENTS.md", "../../AGENTS.md",
+# "../../../AGENTS.md", and any deeper form the same way.
+REPO_ROOT_ONLY_DOC_BASENAMES = {"AGENTS.md", "ARCHITECTURE.md", "README.md"}
+MARKDOWN_LINK_RE = re.compile(r"\]\(([^)]+)\)")
 
 
 def load_yaml(path: Path) -> dict:
@@ -62,6 +74,30 @@ def iter_paths(value: object, field: str):
         raise SystemExit(f"error: metadata resource field {field} must contain paths")
 
 
+def check_no_repo_root_doc_links(skill_root: Path) -> None:
+    """Reject packaged Markdown links to this source repository's own
+    root-level development documentation (AGENTS.md, ARCHITECTURE.md,
+    README.md). A distributed Skill archive never contains these files,
+    so any link to one — at any relative depth — is a packaging-boundary
+    violation, not merely a broken link."""
+    for md_file in sorted(skill_root.rglob("*.md")):
+        text = md_file.read_text(encoding="utf-8")
+        for link in MARKDOWN_LINK_RE.findall(text):
+            if link.startswith(("http://", "https://")):
+                continue
+            target = link.split("#", 1)[0].strip()
+            if not target:
+                continue
+            basename = Path(target).name
+            if basename in REPO_ROOT_ONLY_DOC_BASENAMES:
+                raise SystemExit(
+                    f"error: {md_file} contains a packaged link to "
+                    f"repository-root {basename!r} ({link!r}); a distributed "
+                    "Skill must be self-contained and must not depend on "
+                    "source-repository documentation"
+                )
+
+
 def require_inside(path: Path, root: Path, label: str) -> Path:
     resolved = path.resolve()
     try:
@@ -72,6 +108,8 @@ def require_inside(path: Path, root: Path, label: str) -> Path:
 
 
 def validate(skill_root: Path, containment_root: Path) -> None:
+    check_no_repo_root_doc_links(skill_root)
+
     skill_md = skill_root / "SKILL.md"
     metadata_path = skill_root / "metadata" / "skill.yaml"
     frontmatter = load_frontmatter(skill_md)
