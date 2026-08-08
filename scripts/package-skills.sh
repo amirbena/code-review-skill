@@ -15,6 +15,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
 dist_dir="${repo_root}/dist"
 staging_root="${dist_dir}/.staging"
+metadata_validator="${script_dir}/validate-skill-metadata.py"
 
 target="${1:-all}"
 case "${target}" in
@@ -117,6 +118,18 @@ adapt_shared_links() {
   mv "${tmp}" "${file}"
 }
 
+# metadata/skill.yaml remains source-relative in the repository. Adapt only
+# its known shared-resource prefix in the staged copy, where metadata/ is one
+# level below the standalone package root.
+adapt_metadata_paths() {
+  local metadata_file="$1"
+  local tmp
+  tmp="$(mktemp)"
+  sed -e 's#^\([[:space:]]*- [[:space:]]*\)\.\./\.\./\.\./shared/#\1../shared/#' \
+      "${metadata_file}" > "${tmp}"
+  mv "${tmp}" "${metadata_file}"
+}
+
 package_skill() {
   local skill_name="$1"       # e.g. local-code-review
   local archive_stem="$2"     # e.g. local-code-review-skill
@@ -135,6 +148,7 @@ package_skill() {
     echo "error: required Skill entry point missing: skills/${skill_name}/SKILL.md" >&2
     exit 1
   fi
+  python3 "${metadata_validator}" "${skill_src}" --containment-root "${repo_root}"
   for f in "${skill_files[@]}"; do
     if [[ ! -f "${skill_src}/${f}" ]]; then
       echo "error: required Skill file missing: skills/${skill_name}/${f}" >&2
@@ -181,6 +195,7 @@ package_skill() {
   while IFS= read -r -d '' md_file; do
     adapt_shared_links "${md_file}"
   done < <(find "${stage_dir}" -name '*.md' -print0)
+  adapt_metadata_paths "${stage_dir}/metadata/skill.yaml"
 
   # --- Validate staged package structure before archiving ---
   if [[ ! -f "${stage_dir}/SKILL.md" ]]; then
@@ -196,6 +211,7 @@ package_skill() {
     exit 1
   fi
   validate_skill_frontmatter "${stage_dir}/SKILL.md" "${skill_name}"
+  python3 "${metadata_validator}" "${stage_dir}" --containment-root "${stage_dir}"
 
   rm -f "${archive_path}"
   (

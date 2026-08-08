@@ -19,6 +19,10 @@ packaged as a spec-compliant [Agent Skills](https://agentskills.io/specification
 - an authenticated `gh` session — required only for *active* GitHub
   review
 
+The authenticated account must be eligible to submit the intended formal
+review action. A complete review can still report findings when GitHub does
+not permit that account to submit Approve or Request Changes.
+
 ```bash
 gh auth status
 ```

@@ -20,6 +20,10 @@ decision. It behaves like an external senior reviewer.
 ```text
 resolve PR
     ↓
+resolve authenticated identity and PR author
+    ↓
+determine formal-review capability
+    ↓
 resolve changed files
     ↓
 discover applicable AGENTS.md / CLAUDE.md
@@ -32,7 +36,8 @@ publish inline findings when active
     ↓
 publish human-readable summary
     ↓
-Approve or Request Changes
+submit permitted Approve/Request Changes
+or report formal-review unavailability
     ↓
 stop
 ```
@@ -98,7 +103,8 @@ retrieved.
 ## 5. Active Review Access Check
 
 Before active review, resolve the authenticated GitHub identity, verify
-the target repository/PR is accessible to it, and verify it has
+the PR author, compare their account identities, verify the target
+repository/PR is accessible to the authenticated identity, and verify it has
 sufficient capability to submit the intended review action.
 **Authentication alone is not sufficient evidence of review capability**
 — see [`policies/github-review.md`](policies/github-review.md), "Review/
@@ -114,8 +120,12 @@ to passive review.
   ([`templates/inline-finding.md`](templates/inline-finding.md)) →
   one final summary
   ([`templates/external-review-summary.md`](templates/external-review-summary.md))
-  → Approve or Request Changes. Human-readable content always precedes
-  any machine-oriented metadata.
+  → a permitted Approve or Request Changes event, or an explicit reason
+  that no formal final review can be submitted. Human-readable content
+  always precedes any machine-oriented metadata. A self-review never claims
+  an independent approval; see
+  [`policies/github-review.md`](policies/github-review.md), "Self-review
+  capability."
 
 ## 7. Mutation Boundary
 

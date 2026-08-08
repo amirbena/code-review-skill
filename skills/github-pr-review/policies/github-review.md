@@ -31,11 +31,17 @@ is always published after inline findings and before the final decision.
 
 ## Final decision
 
+- **Review reasoning result** is computed independently: either clean, or
+  blocking findings (unresolved P0/P1).
 - **Approve** — allowed when no unresolved P0 exists, no unresolved
   blocking P1 exists, and the current PR HEAD equals the reviewed HEAD.
   P2 findings may remain.
 - **Request Changes** — used when an unresolved P0 or unresolved blocking
   P1 exists.
+
+Approve or Request Changes is submitted only when the authenticated
+reviewer is eligible to submit that formal event. The reasoning result is
+still reported when GitHub submission is unavailable.
 
 Maximum automated positive action is **Approve**. This Skill never merges
 automatically, never deletes branches, never modifies implementation
@@ -87,6 +93,29 @@ This is a separate concern from Agent review *ownership* — see
 [`../../../shared/policies/review-ownership.md`](../../../shared/policies/review-ownership.md),
 "Access vs. Ownership."
 
+## Self-review capability
+
+Before active publication, resolve both the authenticated GitHub identity
+and the PR author and compare their account identities. Authentication,
+repository access, review ownership, and eligibility to submit a formal
+review are distinct states.
+
+When the authenticated reviewer is the PR author, perform the complete
+review and, where GitHub permits, publish inline findings and the
+human-readable summary. Do not submit or claim an independent approval of
+the reviewer's own PR. For an otherwise clean review, report:
+
+```text
+REVIEW CLEAN
+Final GitHub approval was not submitted because the authenticated reviewer is the PR author.
+```
+
+When blocking P0/P1 findings exist, publish/report the findings and summary,
+state that the recommendation is Request Changes, and submit that event only
+if GitHub explicitly permits it for this identity and PR. Otherwise report
+that no formal final review was submitted; never fabricate a successful
+Request Changes mutation.
+
 ## Existing review awareness
 
 Before publishing an active review, inspect existing review activity
@@ -108,7 +137,8 @@ publish final human-readable review summary
     ↓
 verify current PR HEAD
     ↓
-submit Approve / Request Changes
+submit the permitted Approve / Request Changes event
+or report why no formal review can be submitted
 ```
 
 If the GitHub API permits submitting comments and the final review

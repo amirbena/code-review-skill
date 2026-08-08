@@ -9,10 +9,13 @@
 
 name: local-code-review
 description: >-
-  Stateless, bounded reviewer for local Git implementation state. Reviews
-  committed, staged, unstaged, and relevant untracked changes and returns
-  structured P0/P1/P2 findings. Passive output only; never mutates the
-  reviewed repository or GitHub.
+  Reviews the local implementation state of a Git repository — committed
+  delta, local-only commits, staged, unstaged, and relevant untracked
+  changes — and returns evidence-backed P0/P1/P2 findings. Read-only: it
+  never edits files, commits, pushes, or touches GitHub. Use before a
+  push or PR, or whenever an implementing agent wants an independent
+  review of local/uncommitted changes. Not for reviewing an existing
+  GitHub Pull Request — use the sibling github-pr-review skill for that.
 version: 0.1.0
 entrypoint: SKILL.md
 
@@ -30,11 +33,11 @@ output:
 
 shared:
   policies:
-    - ../../shared/policies/review-scope.md
-    - ../../shared/policies/severity.md
-    - ../../shared/policies/evidence.md
-    - ../../shared/policies/repository-instructions.md
-    - ../../shared/policies/git-safety.md
-    - ../../shared/policies/review-ownership.md
+    - ../../../shared/policies/review-scope.md
+    - ../../../shared/policies/severity.md
+    - ../../../shared/policies/evidence.md
+    - ../../../shared/policies/repository-instructions.md
+    - ../../../shared/policies/git-safety.md
+    - ../../../shared/policies/review-ownership.md
   templates:
-    - ../../shared/templates/finding.md
+    - ../../../shared/templates/finding.md

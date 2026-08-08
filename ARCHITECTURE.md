@@ -48,7 +48,8 @@ or review-scope rules — both reference [`shared/policies/`](shared/policies/)
 directly. `github-pr-review` additionally has its own
 [`policies/github-review.md`](skills/github-pr-review/policies/github-review.md)
 for GitHub-specific delivery rules (PR HEAD authority, access
-verification, submission ordering) that have no local-review analogue.
+verification, self-review capability, submission ordering) that have no
+local-review analogue.
 `local-code-review` has no analogous per-Skill policy file — its only
 Skill-specific rules are the local-delta procedure in its own runbook.
 
@@ -172,6 +173,8 @@ other.
 ```text
 External GitHub PR
     ↓
+Resolve reviewer identity + PR author
+    ↓
 Inspect authoritative PR HEAD
     ↓
 Review
@@ -180,7 +183,8 @@ Inline findings
     ↓
 P0 / P1 / P2
     ↓
-Approve or Request Changes
+Permitted Approve/Request Changes event
+or explicit formal-review unavailability
     ↓
 Stop
 ```
@@ -252,12 +256,18 @@ detailed review rules, procedures, and output contracts, loaded as needed
 (version, capabilities, packaged-file manifest) for consumers outside the
 Agent Skills discovery path; its `name`/`description` are a mirror of the
 canonical values in `SKILL.md`'s frontmatter, not a second source of truth.
+Packaging fails unless both values are exactly equal. Resource paths remain
+repository-relative in canonical source metadata and are narrowly adapted
+in staged package metadata, then checked for containment and existence.
 
 ## 9. Reasoning vs. Delivery vs. Ownership
 
 - **Review reasoning** is Skill-agnostic and delivery-mode-agnostic: the
   same shared policies and severity model apply in `local-code-review`
   and in both modes of `github-pr-review`.
+- **GitHub submission capability** is separate from reasoning. A clean or
+  blocking result remains valid even when the authenticated account (for
+  example, the PR author) cannot submit the corresponding formal review.
 - **Git/GitHub state inspection** is read-only and never assumes GitHub
   is authoritative when local state diverges from it — see
   [`skills/local-code-review/runbooks/local-review.md`](skills/local-code-review/runbooks/local-review.md).
