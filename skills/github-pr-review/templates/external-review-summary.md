@@ -1,7 +1,7 @@
 # Template — External Review Summary
 
 The review body submitted as part of one batched GitHub review (see
-[`../policies/github-review.md`](../policies/github-review.md), "Batched
+[`../policies/review-output.md`](../policies/review-output.md), "Batched
 review construction and submission"). It is constructed once, from the
 finalized set of findings, after analysis completes — never assembled
 incrementally as findings are discovered. It follows the shared
@@ -96,8 +96,8 @@ append it after the human-facing review, clearly subordinate, per
 
 - **Review mode** states plainly whether this invocation used a normal
   full review or a delta re-review, and why, per
-  [`../policies/github-review.md`](../policies/github-review.md),
-  "Reviewer ownership and delta re-review." For a delta re-review,
+  [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md).
+  For a delta re-review,
   include the previously reviewed SHA and current HEAD. Keep this line
   concise; do not expose additional internal reviewer-identity-matching
   mechanics as primary output.
@@ -110,7 +110,7 @@ append it after the human-facing review, clearly subordinate, per
   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md))
   when this body is its only representation, or the summary-pointer form
   when its full form was already published as an inline comment (see
-  [`../policies/github-review.md`](../policies/github-review.md), "No
+  [`../policies/finding-placement.md`](../policies/finding-placement.md), "No
   duplicate findings"). Do not repeat a full inline finding here.
 - **Validation** reports only what was actually observed; state
   explicitly when something could not be executed.

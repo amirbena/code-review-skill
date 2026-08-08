@@ -286,6 +286,12 @@ if [[ "${target}" == "github" || "${target}" == "all" ]]; then
     "agents/openai.yaml" \
     "metadata/skill.yaml" \
     "policies/github-review.md" \
+    "policies/review-authority.md" \
+    "policies/reviewer-delta-review.md" \
+    "policies/pr-scope.md" \
+    "policies/review-reasoning.md" \
+    "policies/finding-placement.md" \
+    "policies/review-output.md" \
     "runbooks/passive-pr-review.md" \
     "runbooks/active-pr-review.md" \
     "templates/inline-finding.md" \

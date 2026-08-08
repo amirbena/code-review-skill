@@ -56,11 +56,13 @@ SKILL.md + its own GitHub-specific policy/runbooks/templates/metadata
 
 Neither Skill owns a copy of the severity model, evidence requirements,
 or review-scope rules — both reference [`shared/policies/`](shared/policies/)
-directly. `github-pr-review` additionally has its own
-[`policies/github-review.md`](skills/github-pr-review/policies/github-review.md)
-for GitHub-specific delivery rules (PR HEAD authority, access and event
-capability, complete-scope pagination, publication idempotency, submission
-ordering) that have no local-review analogue.
+directly. `github-pr-review` additionally has its own policy family,
+indexed from
+[`policies/github-review.md`](skills/github-pr-review/policies/github-review.md),
+for GitHub-specific delivery rules with no local-review analogue: review
+authority and self-review, reviewer delta re-review, PR scope and
+pagination, review reasoning (logical cohorts, code-impact/dependency
+analysis), finding placement, and batched publication/decision.
 `local-code-review` has no analogous per-Skill policy file — its only
 Skill-specific rules are the local-delta procedure in its own runbook.
 

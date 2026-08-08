@@ -476,7 +476,7 @@ access to the `github-pr-review` Skill. `github-pr-review` is a reviewer
 role, not a post-implementation validation step, and it requires a
 genuine reviewer/author separation to mean anything — see
 [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md)
-and [`skills/github-pr-review/policies/github-review.md`](skills/github-pr-review/policies/github-review.md),
+and [`skills/github-pr-review/policies/review-authority.md`](skills/github-pr-review/policies/review-authority.md),
 "Self-review capability."
 
 Valid shapes keep implementer and reviewer distinct:
@@ -509,7 +509,7 @@ github-pr-review
 Orchestration is the primary safeguard here. `github-pr-review` also
 carries its own defensive self-review guard for the case where it is
 nevertheless invoked against a PR authored by the authenticated identity
-— see [`skills/github-pr-review/policies/github-review.md`](skills/github-pr-review/policies/github-review.md),
+— see [`skills/github-pr-review/policies/review-authority.md`](skills/github-pr-review/policies/review-authority.md),
 "Self-review capability." That guard is a fallback, not a substitute for
 orchestration honoring the rule above.
 
@@ -644,9 +644,12 @@ When a resolved inline location is unavailable or rejected, the finding
 remains represented in the review body rather than being dropped or
 attached to an arbitrary line. The complete batching, inline-eligibility,
 and fallback contract is owned by
-[`skills/github-pr-review/policies/github-review.md`](skills/github-pr-review/policies/github-review.md)
-— see "Analysis phase vs. publication phase," "Batched review
-construction and submission," and "Rejected inline location fallback."
+[`skills/github-pr-review/policies/review-output.md`](skills/github-pr-review/policies/review-output.md)
+("Analysis phase vs. publication phase," "Batched review construction
+and submission") and
+[`skills/github-pr-review/policies/finding-placement.md`](skills/github-pr-review/policies/finding-placement.md)
+("Rejected inline location fallback"), indexed from
+[`skills/github-pr-review/policies/github-review.md`](skills/github-pr-review/policies/github-review.md).
 This file does not duplicate that contract.
 
 The complete human-facing output shape (result, what changed, meaningful

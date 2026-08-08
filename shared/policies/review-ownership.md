@@ -34,7 +34,7 @@ Keep these two concepts strictly separate:
 
 - **Repository review access** — can this authenticated GitHub identity
   actually review this PR? (a GitHub-permissions question, governed by
-  the `github-pr-review` Skill's own `policies/github-review.md`; only
+  the `github-pr-review` Skill's own `policies/review-authority.md`; only
   relevant to `github-pr-review`)
 - **Agent review ownership** — has another Code Review Agent already
   been assigned this review scope? (an orchestration question, governed

@@ -2,7 +2,7 @@
 
 Canonical form for a single inline GitHub review comment, submitted only
 as part of one batched review submission (see
-[`../policies/github-review.md`](../policies/github-review.md), "Batched
+[`../policies/review-output.md`](../policies/review-output.md), "Batched
 review construction and submission" — never published individually as
 findings are discovered). Renders the shared finding shape from
 [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md)
@@ -36,12 +36,12 @@ Recommended direction: <concrete correction direction, when useful>
   "Rules") rather than repeating it;
 - no duplicated findings across multiple lines or against an
   already-reviewed, unchanged HEAD (see
-  [`../policies/github-review.md`](../policies/github-review.md), "Existing
+  [`../policies/pr-scope.md`](../policies/pr-scope.md), "Existing
   review awareness");
 - attach to the narrowest relevant changed line; if a finding is
   cross-cutting, spans multiple files, or otherwise cannot attach
   meaningfully to one line, it belongs in the review body instead (see
-  [`../policies/github-review.md`](../policies/github-review.md), "Inline
+  [`../policies/finding-placement.md`](../policies/finding-placement.md), "Inline
   comment eligibility").
 
 ## Example

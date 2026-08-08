@@ -1,19 +1,10 @@
 #!/usr/bin/env python3
 """Deterministic reference implementation of the reviewer-ownership rule.
 
-Governs whether a `github-pr-review` invocation may perform a bounded
-delta-only re-review or must perform a normal full review of the current
-PR state, per
-skills/github-pr-review/policies/github-review.md, "Reviewer ownership
-and delta re-review". This module has no Git/GitHub or network
-dependency: it operates purely on already-resolved identity/SHA facts,
-so the decision rule itself can be exercised deterministically in
-scripts/test_reviewer_ownership.py without live GitHub calls.
-
-This is a reference/test aid, not part of either packaged Skill archive
-(see scripts/package-skills.sh / scripts/package-skills.ps1) — the
-Skills themselves are prompt-driven and reason about this rule directly
-from the canonical policy text.
+Mirrors skills/github-pr-review/policies/reviewer-delta-review.md. Pure
+logic (no Git/GitHub calls) so test_reviewer_ownership.py can exercise it
+deterministically. Not part of either packaged Skill archive — the
+Skills reason from the canonical policy text directly.
 """
 
 from __future__ import annotations
@@ -29,22 +20,12 @@ NO_NEW_DELTA = "no_new_delta"
 
 @dataclass(frozen=True)
 class ReviewModeInput:
-    """Already-resolved facts a caller supplies to the decision rule.
+    """Already-resolved facts for the decision rule.
 
-    current_reviewer and pr_author are required: self-review identity
-    resolution is its own upstream incapability (see
-    skills/github-pr-review/policies/github-review.md, "Self-review
-    capability" — "treat resolution failure as its own explicit
-    incapability rather than silently defaulting to a full review"),
-    handled by the caller before this decision table ever runs. Making
-    these fields optional here would let an unresolved identity silently
-    fall through to a normal-full-review result, which is exactly the
-    outcome that policy forbids.
-
-    The remaining None / False values represent "unresolved" or "not
-    established" for the *review-mode* facts this table does own — the
-    rule fails conservative (normal full review) on missing or ambiguous
-    evidence for those.
+    current_reviewer/pr_author are required: unresolved identity is the
+    caller's own incapability to handle, not a case that should silently
+    fall through to normal-full-review here. Other None/False fields mean
+    "unresolved" and fail conservative (normal full review).
     """
 
     current_reviewer: str
@@ -66,16 +47,12 @@ class ReviewModeResult:
 def resolve_review_mode(inp: ReviewModeInput) -> ReviewModeResult:
     """Resolve the review mode per the canonical decision table.
 
-    Order matters and mirrors the policy's "Review Mode Resolution":
-    self-review guard first and authoritative, then previous-review
-    existence, then reviewer-identity ambiguity, then reviewer match,
-    then SHA availability/equality, then material-delta escalation.
+    Order: self-review guard first (authoritative), then previous-review
+    existence, reviewer-identity ambiguity, reviewer match, SHA
+    availability/equality, then material-delta escalation.
     """
 
-    # Self-review guard runs first and is authoritative; it can never be
-    # bypassed by review-mode resolution. current_reviewer/pr_author are
-    # required fields (see ReviewModeInput), so there is no unresolved-
-    # identity case to silently fall through here.
+    # Self-review guard is authoritative and can never be bypassed below.
     if inp.current_reviewer == inp.pr_author:
         return ReviewModeResult(SELF_REVIEW_SKIPPED, "current reviewer is the PR author")
 

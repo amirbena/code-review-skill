@@ -7,7 +7,7 @@ Applies shared policies:
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
-plus this Skill's own
+plus this Skill's own policy family starting at
 [`github-review.md`](../policies/github-review.md).
 
 ## Flow
@@ -40,36 +40,36 @@ return human-readable report
    + repository context, or repository + PR number).
 2. **Before any other step**, resolve the authenticated GitHub identity and
    the PR author and compare them, per
-   [`github-review.md`](../policies/github-review.md), "Self-review
-   capability." If they are the same account, terminate immediately with
-   `REVIEW SKIPPED` — do not retrieve the diff, discover repository
-   instructions, produce findings, or return a report. This applies to
-   passive review exactly as it does to active review.
+   [`../policies/review-authority.md`](../policies/review-authority.md),
+   "Self-review capability." If they are the same account, terminate
+   immediately with `REVIEW SKIPPED` — do not retrieve the diff, discover
+   repository instructions, produce findings, or return a report. This
+   applies to passive review exactly as it does to active review.
 3. **Resolve review mode** per
-   [`github-review.md`](../policies/github-review.md), "Reviewer
-   ownership and delta re-review," when prior review history is
-   available to this invocation. If the current authenticated identity
-   matches the reviewer of the immediately preceding completed review of
-   this PR, and that review's reviewed SHA can be established reliably,
-   this is a **delta re-review** bounded by that SHA and the current PR
-   HEAD; otherwise (no previous completed review, a different reviewer,
-   or any ambiguity in reviewer identity or the reviewed SHA) it is a
-   **normal review**. If the previously reviewed SHA already equals the
-   current PR HEAD, report `NO NEW DELTA` and stop rather than producing
-   a redundant report.
+   [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
+   when prior review history is available to this invocation. If the
+   current authenticated identity matches the reviewer of the immediately
+   preceding completed review of this PR, and that review's reviewed SHA
+   can be established reliably, this is a **delta re-review** bounded by
+   that SHA and the current PR HEAD; otherwise (no previous completed
+   review, a different reviewer, or any ambiguity in reviewer identity or
+   the reviewed SHA) it is a **normal review**. If the previously reviewed
+   SHA already equals the current PR HEAD, report `NO NEW DELTA` and stop
+   rather than producing a redundant report.
 4. Through an available authenticated GitHub integration, retrieve PR
    metadata and base/head SHA. For a normal review, retrieve the complete
    paginated changed-file set and a complete diff per
-   [`github-review.md`](../policies/github-review.md), "Complete PR scope and
-   pagination." For a delta re-review, retrieve the bounded delta between
-   the previously reviewed SHA and the current PR HEAD, plus enough
-   surrounding context to confirm the requested fix, absence of
+   [`../policies/pr-scope.md`](../policies/pr-scope.md), "Complete PR scope
+   and pagination." For a delta re-review, retrieve the bounded delta
+   between the previously reviewed SHA and the current PR HEAD, plus
+   enough surrounding context to confirm the requested fix, absence of
    regression, and continued validity of the previous review's
    assumptions — escalating to a normal review and retrieving the
-   remaining full scope if the delta meets any "Escalating from delta to
-   full review" condition. If completeness cannot be established for the
-   scope this mode requires, return an incomplete review state rather
-   than claiming the full PR was reviewed.
+   remaining full scope if the delta meets any
+   [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md)
+   "Escalating from delta to full review" condition. If completeness
+   cannot be established for the scope this mode requires, return an
+   incomplete review state rather than claiming the full PR was reviewed.
 5. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
    for each file in this invocation's scope, look for `AGENTS.md` /
@@ -81,15 +81,19 @@ return human-readable report
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
    [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
-   applying the instructions discovered in step 5. Target-repository
+   applying the instructions discovered in step 5. When this invocation's
+   scope contains multiple related changes, reason about them per
+   [`../policies/review-reasoning.md`](../policies/review-reasoning.md),
+   "Logical Cohort Review," and inspect the relevant dependency surface
+   per "Code Impact / Dependency Analysis" in the same file. Target-repository
    instructions refine how the code is evaluated; they never override this
    Skill's own safety boundaries (see
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
    "Instruction precedence"). For a delta re-review, if what is found
    here meets any "Escalating from delta to full review" condition in
-   [`github-review.md`](../policies/github-review.md), switch this
-   invocation to a normal review and retrieve the remaining full scope
-   before continuing.
+   [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
+   switch this invocation to a normal review and retrieve the remaining full
+   scope before continuing.
 7. Classify findings per
    [`severity.md`](../../../shared/policies/severity.md) with evidence per
    [`evidence.md`](../../../shared/policies/evidence.md), using the shared
@@ -105,8 +109,8 @@ return human-readable report
    published to GitHub), with findings rendered per
    [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
    stating the review mode used per
-   [`github-review.md`](../policies/github-review.md), "Reporting the
-   mode."
+   [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
+   "Reporting the mode."
 
 ## Constraints
 
