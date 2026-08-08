@@ -148,7 +148,7 @@ stop
     [`../policies/review-output.md`](../policies/review-output.md),
     "Analysis phase vs. publication phase"): the finding set is now fixed.
     For each non-suppressed finding, resolve inline eligibility per
-    [`../policies/finding-policy.md`](../policies/finding-policy.md),
+    [`../policies/finding-placement.md`](../policies/finding-placement.md),
     "Inline comment eligibility" — inline-eligible findings render with
     [`../templates/inline-finding.md`](../templates/inline-finding.md);
     the rest render in full within the review body. No publication has
@@ -163,7 +163,7 @@ stop
     [`../templates/external-review-summary.md`](../templates/external-review-summary.md)
     (full findings for non-inline ones, summary-pointers for inline ones —
     never both, per
-    [`../policies/finding-policy.md`](../policies/finding-policy.md), "No
+    [`../policies/finding-placement.md`](../policies/finding-placement.md), "No
     duplicate findings") plus the array of inline comments for
     inline-eligible findings. State the review mode used (full review or
     delta re-review, with the previously reviewed SHA and current HEAD
@@ -176,7 +176,7 @@ stop
     "Batched review construction and submission." (Self-review was
     already excluded in step 1 and never reaches this step.) If GitHub
     rejects a specific resolved inline location during this step, apply
-    the [`../policies/finding-policy.md`](../policies/finding-policy.md)
+    the [`../policies/finding-placement.md`](../policies/finding-placement.md)
     "Rejected inline location fallback" (move that finding's full
     form into the body) and complete the submission — do not drop the
     finding and do not abandon the rest of the review. If GitHub

@@ -24,7 +24,7 @@ pr-scope.md                 complete PR scope, pagination, prior-review awarenes
         ↓
 review-reasoning.md         logical cohorts, code impact / dependency analysis
         ↓
-finding-policy.md           inline vs. body placement, one representation per finding
+finding-placement.md        inline vs. body placement, one representation per finding
         ↓
 review-output.md            analysis/publication boundary, batching, decision
 ```

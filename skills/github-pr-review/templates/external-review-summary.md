@@ -110,7 +110,7 @@ append it after the human-facing review, clearly subordinate, per
   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md))
   when this body is its only representation, or the summary-pointer form
   when its full form was already published as an inline comment (see
-  [`../policies/finding-policy.md`](../policies/finding-policy.md), "No
+  [`../policies/finding-placement.md`](../policies/finding-placement.md), "No
   duplicate findings"). Do not repeat a full inline finding here.
 - **Validation** reports only what was actually observed; state
   explicitly when something could not be executed.

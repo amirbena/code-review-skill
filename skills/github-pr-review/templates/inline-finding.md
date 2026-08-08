@@ -41,7 +41,7 @@ Recommended direction: <concrete correction direction, when useful>
 - attach to the narrowest relevant changed line; if a finding is
   cross-cutting, spans multiple files, or otherwise cannot attach
   meaningfully to one line, it belongs in the review body instead (see
-  [`../policies/finding-policy.md`](../policies/finding-policy.md), "Inline
+  [`../policies/finding-placement.md`](../policies/finding-placement.md), "Inline
   comment eligibility").
 
 ## Example

@@ -39,7 +39,7 @@ GITHUB_POLICY_ORDER = (
     "reviewer-delta-review.md",
     "pr-scope.md",
     "review-reasoning.md",
-    "finding-policy.md",
+    "finding-placement.md",
     "review-output.md",
 )
 
@@ -53,7 +53,7 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "reviewer-delta-review.md",
         "pr-scope.md",
         "review-reasoning.md",
-        "finding-policy.md",
+        "finding-placement.md",
         "review-output.md",
         "PR intent → diff → logical cohorts → impacted dependency surface → findings",
     ),
@@ -103,7 +103,7 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "trivial/single-purpose PRs are not forced into unnecessary "
         "cohort or graph-analysis ceremony",
     ),
-    "finding-policy.md": (
+    "finding-placement.md": (
         "## Inline comment eligibility",
         "## No duplicate findings",
         "## Rejected inline location fallback",
@@ -142,7 +142,7 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
         "## Logical Cohort Review",
         "## Code Impact / Dependency Analysis",
     ),
-    "finding-policy.md": (
+    "finding-placement.md": (
         "## Inline comment eligibility",
         "## No duplicate findings",
         "## Rejected inline location fallback",

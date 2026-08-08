@@ -647,7 +647,7 @@ and fallback contract is owned by
 [`skills/github-pr-review/policies/review-output.md`](skills/github-pr-review/policies/review-output.md)
 ("Analysis phase vs. publication phase," "Batched review construction
 and submission") and
-[`skills/github-pr-review/policies/finding-policy.md`](skills/github-pr-review/policies/finding-policy.md)
+[`skills/github-pr-review/policies/finding-placement.md`](skills/github-pr-review/policies/finding-placement.md)
 ("Rejected inline location fallback"), indexed from
 [`skills/github-pr-review/policies/github-review.md`](skills/github-pr-review/policies/github-review.md).
 This file does not duplicate that contract.

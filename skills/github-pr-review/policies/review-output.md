@@ -47,7 +47,7 @@ together, once, as a single coherent GitHub review submission:
 ```text
 finalized findings
     ↓
-resolve inline eligibility (see finding-policy.md)
+resolve inline eligibility (see finding-placement.md)
     ↓
 one review body                one inline comment per
 (review-summary.md shape,      inline-eligible finding

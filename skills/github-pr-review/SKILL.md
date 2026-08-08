@@ -127,7 +127,7 @@ self-review guard, publication capability),
 vs. full review mode), [`pr-scope.md`](policies/pr-scope.md) (complete PR
 scope, pagination, prior-review awareness),
 [`review-reasoning.md`](policies/review-reasoning.md) (logical cohorts,
-code-impact/dependency analysis), [`finding-policy.md`](policies/finding-policy.md)
+code-impact/dependency analysis), [`finding-placement.md`](policies/finding-placement.md)
 (inline vs. body placement), and [`review-output.md`](policies/review-output.md)
 (analysis/publication boundary, batching, HEAD revalidation, decision).
 
