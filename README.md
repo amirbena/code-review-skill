@@ -11,9 +11,11 @@ This repository contains two portable **Code Review Agent Skills**.
 
 ## Prerequisites
 
-- Git
-- GitHub CLI (`gh`) — for GitHub PR review
-- an authenticated `gh` session — for active GitHub operations
+- Git — required for both Skills
+- GitHub CLI (`gh`) — required only for `github-pr-review`; not needed to
+  package or run `local-code-review`
+- an authenticated `gh` session — required only for *active* GitHub
+  review
 
 ```bash
 gh auth status
@@ -24,24 +26,69 @@ Skill.
 
 ## Packaging
 
+Choose the package based on how the reviewer will be used.
+
+### Local code review
+
+For reviewing local branch/worktree changes without publishing to
+GitHub. Typical use: implementation review before push, or review from
+an implementing Agent — covers committed, staged, unstaged, and relevant
+untracked changes, returning P0/P1/P2 findings without mutating GitHub.
+
+Shell:
+
 ```bash
 ./scripts/package-skills.sh local
-./scripts/package-skills.sh github
-./scripts/package-skills.sh all
 ```
+
+PowerShell:
 
 ```powershell
 ./scripts/package-skills.ps1 local
+```
+
+Output: `dist/local-code-review-skill.zip`
+
+### GitHub PR review
+
+For reviewing an existing GitHub Pull Request — passively, or actively
+(inline P0/P1/P2 comments, a human-readable summary, Approve/Request
+Changes) when GitHub-connected behavior is needed. Active review
+requires an authenticated `gh` session.
+
+Shell:
+
+```bash
+./scripts/package-skills.sh github
+```
+
+PowerShell:
+
+```powershell
 ./scripts/package-skills.ps1 github
+```
+
+Output: `dist/github-pr-review-skill.zip`
+
+### Package both
+
+Only when the consuming environment needs both review entry points — not
+the typical case.
+
+Shell:
+
+```bash
+./scripts/package-skills.sh all
+```
+
+PowerShell:
+
+```powershell
 ./scripts/package-skills.ps1 all
 ```
 
-Produces:
-
-```text
-dist/local-code-review-skill.zip
-dist/github-pr-review-skill.zip
-```
+Output: `dist/local-code-review-skill.zip` and
+`dist/github-pr-review-skill.zip`
 
 ## Where to read more
 
