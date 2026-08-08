@@ -191,7 +191,43 @@ following `AGENTS.md`'s merge-strategy rules when this repository's own
 PRs are the ones being merged. See
 [`skills/github-pr-review/runbooks/active-pr-review.md`](skills/github-pr-review/runbooks/active-pr-review.md).
 
-## 7. Reasoning vs. Delivery vs. Ownership
+## 7. Packaging: Source Layout vs. Distribution Layout
+
+Source layout and distribution layout are intentionally different:
+
+```text
+source repository layout            standalone Skill archive
+(skills/<name>/, shared/)                (dist/*.zip)
+    ↓                                        ↓
+skills/<name>/SKILL.md              →   SKILL.md            (archive root)
+skills/<name>/runbooks/…            →   runbooks/…
+skills/<name>/templates/…           →   templates/…
+skills/<name>/policies/…            →   policies/…
+skills/<name>/metadata/…            →   metadata/…
+shared/policies/…, shared/templates/…  →  shared/policies/…, shared/templates/…
+```
+
+`scripts/package-skills.sh` / `scripts/package-skills.ps1` assemble this
+distribution layout by staging each Skill's files under `dist/.staging/`,
+dropping the `skills/<name>/` source prefix so `SKILL.md` lands at the
+archive root, then zipping the staged tree's *contents* (not the staging
+folder itself) into `dist/*.zip`. Staging is removed after a successful
+build, so normal output is just the two zips under `dist/`.
+
+Because `SKILL.md` moves from `skills/<name>/SKILL.md` (source depth 2)
+to the archive root (depth 0), its relative links into `shared/` change
+from `../../shared/...` to `shared/...`; nested files one level under the
+Skill (`runbooks/`, `templates/`, `policies/`, source depth 3) change
+from `../../../shared/...` to `../shared/...`. The packaging scripts
+apply this as a narrow, deterministic text substitution across the
+staged Markdown files — scoped to exactly those two link prefixes — after
+copying and before archiving. Skill-internal links (`../SKILL.md`,
+`runbooks/...`, etc.) are untouched, since a Skill's own internal
+relative depth is unchanged by removing the shared `skills/<name>/`
+wrapper. The canonical source files in `skills/<name>/` remain the single
+source of truth; only the staged copies are rewritten.
+
+## 8. Reasoning vs. Delivery vs. Ownership
 
 - **Review reasoning** is Skill-agnostic and delivery-mode-agnostic: the
   same shared policies and severity model apply in `local-code-review`

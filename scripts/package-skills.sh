@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Package one or both Code Review Agent Skills into self-contained
-# distributable archives, using explicit allowlists (never the whole
-# repository). Each archive mirrors the repository's shared/ + skills/
-# layout for exactly the files that Skill depends on, so its internal
-# relative links resolve without requiring the rest of the repository.
+# Package one or both Code Review Agent Skills into self-contained,
+# standalone distributable archives, using explicit allowlists (never the
+# whole repository). Each archive has its own SKILL.md at the archive
+# ROOT (not nested under skills/<name>/), so a consumer never needs to
+# know this repository's source layout. All generated output (staging
+# and final zips) stays strictly under dist/.
 #
 # Usage:
 #   scripts/package-skills.sh [local|github|all]
@@ -13,6 +14,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
 dist_dir="${repo_root}/dist"
+staging_root="${dist_dir}/.staging"
 
 target="${1:-all}"
 case "${target}" in
@@ -36,6 +38,24 @@ shared_templates=(
   "finding.md"
 )
 
+# Rewrite relative links into shared/ so they resolve from the archive
+# root instead of from skills/<name>/. Packaging strips exactly the two
+# path segments ("skills/<name>/"), so every "../../shared/" (used by
+# SKILL.md, at source depth 2) becomes "shared/", and every
+# "../../../shared/" (used by files one level under the Skill, at source
+# depth 3: runbooks/, templates/, policies/) becomes "../shared/". This
+# is a narrow, deterministic substitution scoped to the exact link
+# prefixes that point into shared/ — it never touches any other text.
+adapt_shared_links() {
+  local file="$1"
+  local tmp
+  tmp="$(mktemp)"
+  sed -e 's#\.\./\.\./\.\./shared/#../shared/#g' \
+      -e 's#\.\./\.\./shared/#shared/#g' \
+      "${file}" > "${tmp}"
+  mv "${tmp}" "${file}"
+}
+
 package_skill() {
   local skill_name="$1"       # e.g. local-code-review
   local archive_stem="$2"     # e.g. local-code-review-skill
@@ -43,11 +63,15 @@ package_skill() {
   local skill_files=("$@")    # paths relative to skills/<skill_name>/
 
   local skill_src="${repo_root}/skills/${skill_name}"
-  local stage_dir="${dist_dir}/${archive_stem}"
+  local stage_dir="${staging_root}/${archive_stem}"
   local archive_path="${dist_dir}/${archive_stem}.zip"
 
   if [[ ! -d "${skill_src}" ]]; then
     echo "error: required Skill directory missing: skills/${skill_name}" >&2
+    exit 1
+  fi
+  if [[ ! -f "${skill_src}/SKILL.md" ]]; then
+    echo "error: required Skill entry point missing: skills/${skill_name}/SKILL.md" >&2
     exit 1
   fi
   for f in "${skill_files[@]}"; do
@@ -69,10 +93,10 @@ package_skill() {
     fi
   done
 
-  # Only ever clean our own controlled staging/output location.
+  # Only ever clean our own controlled staging/output location, and only
+  # ever write generated content under dist/.
   rm -rf "${stage_dir}"
   mkdir -p "${stage_dir}/shared/policies" "${stage_dir}/shared/templates"
-  mkdir -p "${stage_dir}/skills/${skill_name}"
 
   for f in "${shared_policies[@]}"; do
     cp "${repo_root}/shared/policies/${f}" "${stage_dir}/shared/policies/${f}"
@@ -81,18 +105,54 @@ package_skill() {
     cp "${repo_root}/shared/templates/${f}" "${stage_dir}/shared/templates/${f}"
   done
 
-  for f in "${skill_files[@]}"; do
-    mkdir -p "${stage_dir}/skills/${skill_name}/$(dirname "${f}")"
-    cp "${skill_src}/${f}" "${stage_dir}/skills/${skill_name}/${f}"
+  # Copy SKILL.md to the archive root, and every other Skill-specific
+  # file to its package-root-relative location (dropping the
+  # skills/<skill_name>/ source prefix).
+  for f in "SKILL.md" "${skill_files[@]}"; do
+    dest="${stage_dir}/${f}"
+    mkdir -p "$(dirname "${dest}")"
+    cp "${skill_src}/${f}" "${dest}"
   done
+
+  # Adapt relative links into shared/ across every packaged Markdown
+  # file (skill-local links like ../SKILL.md or runbooks/... need no
+  # change, since skill-internal relative depth is unchanged).
+  while IFS= read -r -d '' md_file; do
+    adapt_shared_links "${md_file}"
+  done < <(find "${stage_dir}" -name '*.md' -print0)
+
+  # --- Validate staged package structure before archiving ---
+  if [[ ! -f "${stage_dir}/SKILL.md" ]]; then
+    echo "error: staged package missing root SKILL.md: ${stage_dir}/SKILL.md" >&2
+    exit 1
+  fi
+  if [[ -d "${stage_dir}/skills" ]]; then
+    echo "error: staged package must not contain a nested skills/ directory: ${stage_dir}/skills" >&2
+    exit 1
+  fi
+  if ! grep -q "${skill_name}" "${stage_dir}/SKILL.md"; then
+    echo "error: staged root SKILL.md does not identify as '${skill_name}'" >&2
+    exit 1
+  fi
 
   rm -f "${archive_path}"
   (
-    cd "${dist_dir}"
-    zip -r -q "$(basename "${archive_path}")" "${archive_stem}"
+    cd "${stage_dir}"
+    zip -r -q "${archive_path}" .
   )
 
-  echo "Package staged at: ${stage_dir}"
+  # --- Verify archive contents ---
+  if ! unzip -l "${archive_path}" | awk '{print $4}' | grep -qx "SKILL.md"; then
+    echo "error: archive missing root SKILL.md: ${archive_path}" >&2
+    exit 1
+  fi
+  if unzip -l "${archive_path}" | awk '{print $4}' | grep -q '^skills/'; then
+    echo "error: archive must not contain a nested skills/ directory: ${archive_path}" >&2
+    exit 1
+  fi
+
+  rm -rf "${stage_dir}"
+
   echo "Archive created at: ${archive_path}"
 }
 
@@ -101,7 +161,6 @@ mkdir -p "${dist_dir}"
 
 if [[ "${target}" == "local" || "${target}" == "all" ]]; then
   package_skill "local-code-review" "local-code-review-skill" \
-    "SKILL.md" \
     "metadata/skill.yaml" \
     "runbooks/local-review.md" \
     "templates/local-review-report.md"
@@ -109,7 +168,6 @@ fi
 
 if [[ "${target}" == "github" || "${target}" == "all" ]]; then
   package_skill "github-pr-review" "github-pr-review-skill" \
-    "SKILL.md" \
     "metadata/skill.yaml" \
     "policies/github-review.md" \
     "runbooks/passive-pr-review.md" \
@@ -117,3 +175,6 @@ if [[ "${target}" == "github" || "${target}" == "all" ]]; then
     "templates/inline-finding.md" \
     "templates/external-review-summary.md"
 fi
+
+# Remove the now-empty staging root if packaging left nothing behind.
+rmdir "${staging_root}" 2>/dev/null || true
