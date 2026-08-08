@@ -8,7 +8,6 @@ description: >-
   and never merges. Use when the user references a GitHub PR by URL or
   number, or asks to review, approve, or request changes on a pull
   request — not for reviewing local/uncommitted changes with no PR.
-compatibility: Requires Git; active (publishing) review additionally requires an authenticated GitHub CLI (gh) session.
 ---
 
 # SKILL.md — github-pr-review
@@ -16,6 +15,9 @@ compatibility: Requires Git; active (publishing) review additionally requires an
 A portable Code Review Skill that reviews GitHub Pull Requests and,
 when authorized, publishes findings and a final Approve/Request Changes
 decision. It behaves like an external senior reviewer.
+
+**Compatibility:** requires Git; active review additionally requires
+authenticated GitHub access with sufficient review permissions.
 
 ```text
 resolve PR
@@ -86,7 +88,7 @@ Shared, always: [`review-scope.md`](../../shared/policies/review-scope.md),
 
 This Skill's own: [`policies/github-review.md`](policies/github-review.md)
 (PR HEAD authority, scope completeness, event capability, publication
-idempotency, HEAD revalidation, submission ordering, `gh` contract).
+idempotency, HEAD revalidation, submission ordering, integration contract).
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.
@@ -94,12 +96,13 @@ consumes the shared ones so both Skills apply one review standard.
 ## 4. Prerequisites
 
 - Git
-- GitHub CLI (`gh`)
-- an authenticated `gh` session, for any GitHub-connected operation
+- an available authenticated GitHub integration for GitHub-connected
+  operations
 
 Authentication comes entirely from the environment; this Skill never
-embeds or invents credentials. If `gh` is unavailable or unauthenticated,
-active review cannot proceed — report the capability failure clearly.
+embeds or invents credentials. If no available integration can retrieve
+the required PR state, report the capability failure clearly. Active review
+requires sufficient permission for each intended publication action.
 Passive review may still be possible where sufficient PR data can be
 retrieved.
 
@@ -154,6 +157,6 @@ If another Code Review Agent already owns this PR, return
 
 ## 10. Configuration
 
-None required beyond `gh` authentication in the environment. This Skill
-has no loop/iteration concept — each invocation reviews the PR's current
-authoritative state once, per mode.
+No runtime-specific configuration is required. This Skill has no loop/
+iteration concept — each invocation reviews the PR's current authoritative
+state once, per mode.

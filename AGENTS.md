@@ -88,6 +88,20 @@ own `SKILL.md` — must not depend on:
 Runtime adapters may exist separately (e.g. `CLAUDE.md`) but must never
 duplicate or fork these canonical rules.
 
+### Portable Core, Optional Runtime Adapters
+
+The canonical Skill (`SKILL.md` plus its canonical package-relative
+resources) **MUST** remain usable without runtime-specific metadata or
+runtime-specific tool names. Runtime-specific adapter files **MAY** improve
+discovery, presentation, configuration, or execution for one consumer, but
+they **MUST NOT** redefine core semantics or become necessary for correctness.
+
+External dependencies are expressed primarily as capabilities (for example,
+authenticated GitHub access with sufficient review permissions), not as a
+required vendor-specific implementation. A concrete integration or command
+may appear as an optional example or fallback when it implements the same
+capability contract.
+
 ---
 
 ## 3. Repository Branch Policy

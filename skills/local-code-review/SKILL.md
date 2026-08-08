@@ -8,7 +8,6 @@ description: >-
   push or PR, or whenever an implementing agent wants an independent
   review of local/uncommitted changes. Not for reviewing an existing
   GitHub Pull Request — use the sibling github-pr-review skill for that.
-compatibility: Requires a local Git repository.
 ---
 
 # SKILL.md — local-code-review
@@ -16,6 +15,8 @@ compatibility: Requires a local Git repository.
 A small, bounded, **stateless** Code Review Skill that reviews a local
 Git repository's implementation state and returns structured P0/P1/P2
 findings. It is a reviewer only.
+
+**Compatibility:** requires access to a local Git repository.
 
 ```text
 resolve local review scope
