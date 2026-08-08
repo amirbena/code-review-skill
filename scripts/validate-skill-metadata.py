@@ -114,9 +114,11 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "## Batched review construction and submission",
         "MUST NOT publish a comment, or any part of a review, as each "
         "finding is discovered",
+        "## Final summary",
         "## Final decision",
         "NO NEW DELTA",
         "## HEAD revalidation",
+        "## Submission ordering",
     ),
 }
 
@@ -150,8 +152,10 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
     "review-output.md": (
         "## Analysis phase vs. publication phase",
         "## Batched review construction and submission",
+        "## Final summary",
         "## Final decision",
         "## HEAD revalidation",
+        "## Submission ordering",
     ),
 }
 
