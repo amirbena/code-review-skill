@@ -32,6 +32,21 @@ OPENAI_INTERFACE_FIELDS = {
 # "../../../AGENTS.md", and any deeper form the same way.
 REPO_ROOT_ONLY_DOC_BASENAMES = {"AGENTS.md", "ARCHITECTURE.md", "README.md"}
 MARKDOWN_LINK_RE = re.compile(r"\]\(([^)]+)\)")
+WHITESPACE_RE = re.compile(r"\s+")
+
+
+def normalize_prose(text: str) -> str:
+    """Collapse whitespace runs (including newlines) to a single space.
+
+    Required-marker checks that span more than a few words must not
+    depend on exactly where the source Markdown happens to wrap a line —
+    reflowing a sentence is not a semantic change. Comparing both the
+    marker and the source text through this normalization makes such
+    checks reflow-insensitive while still requiring the full wording to
+    be present, so a real regression that actually removes or contradicts
+    the required semantics still fails validation.
+    """
+    return WHITESPACE_RE.sub(" ", text).strip()
 
 
 def load_yaml(path: Path) -> dict:
@@ -239,16 +254,22 @@ def validate(skill_root: Path, containment_root: Path) -> None:
             "## Complete PR scope and pagination",
             "same identity for the same PR and HEAD",
             "A changed HEAD starts a new authoritative review state",
-            "at\nmost 3,000 files",
+            "at most 3,000 files",
             "REVIEW INCOMPLETE",
             "## Analysis phase vs. publication phase",
             "## Batched review construction and submission",
             "## Rejected inline location fallback",
             "## No duplicate findings",
-            "MUST NOT publish a comment, or any part of a review,\nas each finding is discovered",
+            "MUST NOT publish a comment, or any part of a review, as each finding is discovered",
         )
+        # Compared through normalize_prose() rather than as raw substrings:
+        # a marker's presence must not depend on exactly where the source
+        # Markdown wraps a line. Ordinary reflow of policy prose is not a
+        # semantic change and must not fail packaging; a marker that is
+        # genuinely missing or altered in meaning still fails.
+        policy_normalized = normalize_prose(policy)
         for marker in required_policy:
-            if marker not in policy:
+            if normalize_prose(marker) not in policy_normalized:
                 raise SystemExit(f"error: GitHub review policy missing marker: {marker!r}")
         author_step = runbook.find("resolve authenticated identity and PR author")
         skip_step = runbook.find("REVIEW SKIPPED")
