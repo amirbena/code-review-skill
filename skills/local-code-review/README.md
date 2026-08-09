@@ -3,27 +3,30 @@
 ## Purpose
 
 A small, stateless Code Review Agent Skill that reviews a local Git
-repository's implementation state — committed delta, local-only commits,
-staged, unstaged, and relevant untracked changes — and returns
-evidence-backed P0/P1/P2 findings. It is read-only: it never edits
-files, commits, pushes, or touches GitHub.
+repository's implementation state — committed delta, staged, unstaged,
+and untracked changes, each an explicit, separately detected category —
+and returns evidence-backed P0/P1/P2 findings. It is read-only: it never
+edits files, commits, pushes, or touches GitHub.
 
 ## When to Use
 
 Use this Skill to review local/uncommitted implementation state before
-a push or PR — for example, an implementing Agent seeking an independent
-review of its own work in progress. It is not for reviewing an existing
-GitHub Pull Request — see the sibling
-[`github-pr-review`](../github-pr-review/SKILL.md) Skill for that.
+a push or PR. It is not for reviewing an existing GitHub Pull Request —
+see the sibling [`github-pr-review`](../github-pr-review/SKILL.md) Skill
+for that.
 
-**Every invocation requires fresh, explicit user approval scoped to that
-one run**, obtained by the caller before invoking this Skill:
+**This Skill is opt-in, end-user-controlled, per invocation** — even
+when an implementing Agent invokes it as a delegated Agent/Sub-Agent:
 
-- approval is per invocation, including any later re-review after fixes;
-- an approval that authorized one invocation never authorizes another;
+- the end user, not the implementing Agent, decides whether a given
+  review or re-review runs at all;
+- an approval that authorized one invocation never authorizes another —
+  every re-review requires its own fresh, explicit user opt-in;
 - this Skill does not track prior approvals or decide whether a
   re-review should happen — that is the caller's/orchestrator's
-  responsibility.
+  responsibility;
+- the orchestration mechanism used to invoke this Skill (direct call vs.
+  delegated Agent/Sub-Agent) never changes who owns that decision.
 
 The complete rule is owned by
 [`policies/invocation-approval.md`](policies/invocation-approval.md) —
@@ -31,26 +34,34 @@ this is a summary, not a restatement.
 
 ## Review Context
 
-This Skill reasons from local Git state, not GitHub PR state. It may
-inspect: current branch, base branch, base SHA, local `HEAD`,
-committed branch changes, local-only commits, staged changes, unstaged
-changes, relevant untracked files, relevant surrounding repository code,
-tests, and repository instructions (`AGENTS.md`/`CLAUDE.md`).
+This Skill reasons from local Git state, not GitHub PR state. It
+distinguishes explicit repository-state categories — committed delta
+relative to a base, staged (tracked, indexed), unstaged (tracked,
+working-tree-only), and untracked — each detected with its own Git
+command, never blended into one undifferentiated set; see
+[`policies/repository-state.md`](policies/repository-state.md). It may
+also inspect current branch, base branch, base SHA, local `HEAD`,
+relevant surrounding repository code, tests, and repository instructions
+(`AGENTS.md`/`CLAUDE.md`).
 
 ## Review Model
 
 ```text
 resolve local review scope
 → discover applicable AGENTS.md / CLAUDE.md
-→ inspect Git delta
+→ detect committed / staged / unstaged / untracked separately
+→ compute staged-delta fingerprint (SHA-256 of `git diff --cached --raw -M -z`)
 → inspect relevant surrounding code
 → review against code + repository conventions
-→ return P0/P1/P2 findings
+→ return P0/P1/P2 findings, attributed to source category
 → stop
 ```
 
 Each invocation is a single, stateless pass — no loop/iteration concept,
-no memory of prior invocations. See [`SKILL.md`](SKILL.md) for the full
+no memory of prior invocations. On re-review, a matching staged
+fingerprint means the staged delta is unchanged; it never implies
+unstaged or untracked state is unchanged — those are re-detected
+independently every time. See [`SKILL.md`](SKILL.md) for the full
 statelessness and orchestration boundary.
 
 ## Findings / Severity
@@ -69,6 +80,9 @@ The report resolves to `REVIEW CLEAN` or `CHANGES REQUIRED`.
 - [`SKILL.md`](SKILL.md) — canonical entry point and identity
 - [`policies/invocation-approval.md`](policies/invocation-approval.md) —
   per-invocation approval contract
+- [`policies/repository-state.md`](policies/repository-state.md) —
+  committed/staged/unstaged/tracked/untracked category definitions,
+  detection commands, and the staged-delta fingerprint
 - [`runbooks/local-review.md`](runbooks/local-review.md) — full procedure
 - [`templates/local-review-report.md`](templates/local-review-report.md) —
   output contract

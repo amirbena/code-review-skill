@@ -284,6 +284,7 @@ if ($Skill -eq "local" -or $Skill -eq "all") {
     "agents/openai.yaml",
     "metadata/skill.yaml",
     "policies/invocation-approval.md",
+    "policies/repository-state.md",
     "runbooks/local-review.md",
     "templates/local-review-report.md"
   )

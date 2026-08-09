@@ -274,6 +274,7 @@ if [[ "${target}" == "local" || "${target}" == "all" ]]; then
     "agents/openai.yaml" \
     "metadata/skill.yaml" \
     "policies/invocation-approval.md" \
+    "policies/repository-state.md" \
     "runbooks/local-review.md" \
     "templates/local-review-report.md"
 fi
