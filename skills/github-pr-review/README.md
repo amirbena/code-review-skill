@@ -10,20 +10,26 @@ final summary, and an Approve/Request Changes decision.
 
 ## When to Use
 
-Use this Skill to review an existing GitHub Pull Request referenced by
-URL or number. It is not for reviewing local/uncommitted changes with no
-PR — see the sibling [`local-code-review`](../local-code-review/SKILL.md)
+Use this Skill to review an existing GitHub Pull Request, authored by
+someone other than the local user or calling Agent, referenced by URL or
+number. It is not for reviewing local/uncommitted changes with no PR —
+see the sibling [`local-code-review`](../local-code-review/SKILL.md)
 Skill for that.
 
-This Skill preserves a strict reviewer/author separation:
+This Skill preserves a strict reviewer/author separation, enforced at
+two layers:
 
-- an implementing Agent that opens its own PR must not invoke this
-  Skill to review that PR;
-- self-review by the authenticated PR author is skipped
-  (`REVIEW SKIPPED`);
-- independent review authority is required for a review to proceed.
+- **Selection/invocation boundary (primary):** this Skill's own
+  `description` states it is not applicable — and must not be selected
+  or invoked — when the local user authored the code or PR under
+  review, or when an implementing Agent has just opened its own PR for
+  the change it made.
+- **Runtime defensive guard (fallback, unchanged):** if invoked anyway,
+  self-review by the authenticated PR author is skipped
+  (`REVIEW SKIPPED`) before any diff analysis or publication.
 
-The complete rule is owned by
+Independent review authority is required for a review to proceed. The
+complete rule is owned by
 [`policies/review-authority.md`](policies/review-authority.md) — this is
 a summary, not a restatement.
 

@@ -1,13 +1,14 @@
 ---
 name: github-pr-review
 description: >-
-  Reviews an existing GitHub Pull Request and returns evidence-backed
-  P0/P1/P2 findings — passively as a report, or, with authenticated
-  GitHub access, actively by publishing inline findings and a final
-  Approve/Request Changes decision. It never edits implementation code
-  and never merges. Use when the user references a GitHub PR by URL or
-  number, or asks to review, approve, or request changes on a pull
-  request — not for reviewing local/uncommitted changes with no PR.
+  Reviews an existing GitHub Pull Request authored by someone other than
+  the local user or calling Agent — passively as a report, or, with
+  authenticated GitHub access, actively by publishing inline PR review
+  comments, one consolidated final summary, and an Approve/Request
+  Changes decision. Never edits implementation code and never merges.
+  Not applicable, and must not be selected, for a PR or code the local
+  user or calling Agent authored — use `local-code-review` for
+  local/uncommitted changes with no PR.
 ---
 
 # SKILL.md — github-pr-review
@@ -64,17 +65,28 @@ platform capability permits it — see
 [`policies/review-output.md`](policies/review-output.md), "Batched review
 construction and submission."
 
-**This Skill is a reviewer role, not an implementation-completion step.**
-It is intended for genuine reviewer/author separation — a different
-Agent or identity reviewing someone else's PR, or review of an existing
-external PR — never as something an implementing Agent chains onto after
-opening or updating its own PR. Preventing that chaining in the first
-place is the calling system's orchestration responsibility, not this
-Skill's own — but this Skill does not depend on that orchestration
-being honored: "Self-review capability" below and in
-[`policies/review-authority.md`](policies/review-authority.md) defines this
-Skill's own complete, self-contained defensive guard (`REVIEW SKIPPED`)
-for the case where it is invoked against a PR it authored anyway.
+**This Skill is a reviewer role, not an implementation-completion step,
+and not a self-review mechanism.** It is intended for genuine
+reviewer/author separation — a different Agent or identity reviewing
+someone else's PR, or review of an existing external PR — never as
+something an implementing Agent chains onto after opening or updating
+its own PR. This exclusion applies at two layers:
+
+1. **Selection/invocation boundary (primary).** The `description` in
+   this file's frontmatter already states that this Skill is not
+   applicable, and must not be selected or invoked, when the local
+   user authored the code or PR under review, or when an implementing
+   Agent has just opened its own PR for the change it made. A calling
+   system choosing which Skill to invoke should never select this one
+   for that case in the first place.
+2. **Runtime defensive guard (fallback, unchanged).** If this Skill is
+   invoked anyway against a PR it (or the authenticated identity)
+   authored, "Self-review capability" below and in
+   [`policies/review-authority.md`](policies/review-authority.md)
+   defines this Skill's own complete, self-contained guard
+   (`REVIEW SKIPPED`) that stops before any diff analysis, finding, or
+   publication occurs. This guard is defense in depth — it remains in
+   place regardless of layer 1 and is never weakened by it.
 
 See [`runbooks/passive-pr-review.md`](runbooks/passive-pr-review.md) and
 [`runbooks/active-pr-review.md`](runbooks/active-pr-review.md) for the
@@ -160,6 +172,13 @@ not fake success or claim comments/decisions were submitted — fall back
 to passive review.
 
 ## 6. Output Contract
+
+When active review succeeds, GitHub itself — not this Skill's returned
+response — is the authoritative, durable review record: targeted inline
+PR review comments for inline-eligible findings, plus the one
+consolidated final review summary below, both actually published to the
+Pull Request. The structured result returned to the caller complements
+that record; it is never the review's only representation.
 
 - **Passive:** a human-readable report using the same shared shape as
   active review ([`review-summary.md`](../../shared/templates/review-summary.md)),
