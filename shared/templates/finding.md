@@ -62,6 +62,33 @@ anchor exists:
 <concrete correction direction, not a patch>
 ```
 
+### Optional Skill-specific trailing annotation
+
+A Skill may append a short, parenthetical annotation after the File
+line's required `` `<path>:<line-or-range>` `` value, when it has its
+own concept that meaningfully classifies *where the finding's evidence
+came from* within that Skill's source-state model:
+
+```markdown
+**File:** `<path>:<line-or-range>` _(<annotation>)_
+```
+
+This never replaces, reorders, or hides the required
+`` `<path>:<line-or-range>` `` value — it is a strict trailing addition.
+For example, `local-code-review` appends the repository-state category a
+finding was attributed to (`(committed)`, `(staged)`, `(unstaged)`, or
+`(untracked)`) — see that Skill's own `policies/repository-state.md`,
+"Attribution in findings" (not linked from here: this shared template is
+packaged standalone into every consuming Skill's own archive, and must
+never depend on another Skill's directory existing alongside it). This
+concept is specific to a local Git working tree and has no equivalent
+for a GitHub Pull Request, whose findings are already anchored to a
+specific commit/diff location by GitHub itself — `github-pr-review` is
+not required to add one, and must not force repository-state categories
+onto PR findings that don't have them. A Skill that has no such concept
+simply renders the File line without a trailing annotation, exactly as
+before.
+
 ## Canonical summary-pointer rendering
 
 Used when the finding's full representation is published elsewhere (for

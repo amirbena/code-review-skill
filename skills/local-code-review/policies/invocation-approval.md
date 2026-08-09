@@ -87,6 +87,21 @@ be reused. General statements such as "review things carefully," or a
 policy that merely recommends review, do not create standing
 authorization for repeated invocations.
 
+## Orchestration mechanics never transfer the decision
+
+`local-code-review` may be executed as an Agent/Sub-Agent according to
+whatever orchestration model the implementing Agent uses — that is a
+mechanical detail of how the invocation is technically carried out.
+Invocation authority is unaffected by it: the end user is always the
+one who chooses to run a specific review or re-review, never the
+implementing Agent on its own initiative, regardless of whether the
+Skill is invoked directly, through a Sub-Agent call, or through any
+other delegation mechanism. An implementing Agent that has the
+technical means to invoke this Skill as a delegated Agent/Sub-Agent
+still must not exercise that capability without the same fresh,
+explicit, per-run user approval required above — the ability to
+delegate the call is not authorization to make the call.
+
 ## Caller/orchestrator responsibility boundary
 
 Obtaining approval is entirely the responsibility of the caller, Team

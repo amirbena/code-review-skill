@@ -18,8 +18,9 @@ finding could already be published to.
 
 **Result: ⚠️ Changes Requested**
 
-Reviewed the current implementation state (committed delta, local-only
-commits, and relevant uncommitted changes) against `<base>`.
+Reviewed the current implementation state (committed delta, staged,
+unstaged, and untracked changes — see the Review Scope below for what
+was included) against `<base>`.
 
 ### What changed
 <concise, concrete implementation summary>
@@ -31,7 +32,7 @@ commits, and relevant uncommitted changes) against `<base>`.
 
 #### F1 [P1] Retry can duplicate processing
 
-**File:** `src/...:<line>`
+**File:** `src/...:<line>` _(staged)_
 
 **Evidence**
 <concrete evidence>
@@ -58,10 +59,21 @@ proceed.
 - base SHA: <sha>
 - local HEAD: <sha>
 - remote HEAD: <sha | none>
-- committed delta: <base..HEAD summary>
-- uncommitted state: staged=<yes/no>, unstaged=<yes/no>, untracked=<relevant files or none>
 - synchronization status: <in sync | local ahead | local behind | diverged | no tracking branch>
 - P0: <n>, P1: <n>, P2: <n>
+
+**Review scope contract** (per
+[`../policies/repository-state.md`](../policies/repository-state.md)) —
+states plainly what was inspected; a category marked "excluded" is a
+deliberate, stated exclusion, never a silent omission:
+
+- committed delta relative to base: <included, `<base>..HEAD` summary | excluded, reason>
+- staged: <included, files/delta summary | excluded, reason>
+- unstaged: <included, files/delta summary | excluded, reason>
+- untracked: <included, files | excluded, reason>
+- staged-delta fingerprint (SHA-256 of `git diff --cached --raw -M -z`): `<hex digest>`
+- review kind: <initial review | re-review>
+- previously reviewed state changed: <staged: unchanged/changed — fingerprint compared; unstaged: unchanged/changed — re-detected; untracked: unchanged/changed — re-detected | not applicable, initial review>
 
 </details>
 ```
@@ -96,7 +108,17 @@ state.
 - Every finding uses the full rendering in
   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md):
   a stable ID (`F1`, `F2`, ...), severity, a concrete title, file/line
-  where available, evidence, impact, and a recommended direction.
+  where available, evidence, impact, and a recommended direction. The
+  file line also carries this Skill's optional trailing annotation
+  naming the finding's source category — `(committed)`, `(staged)`,
+  `(unstaged)`, or `(untracked)` — per
+  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+  "Optional Skill-specific trailing annotation," and
+  [`../policies/repository-state.md`](../policies/repository-state.md),
+  "Attribution in findings," so the report says precisely where each
+  finding came from. This annotation is specific to this Skill's local
+  Git working-tree model; it is not part of the shared template's
+  required fields.
 - **Validation** reports only what was actually inspected or executed.
   If this Skill did not run tests/commands, say so rather than implying
   they passed.
@@ -104,6 +126,15 @@ state.
   counts) is machine/orchestration-oriented detail — it is subordinate,
   appearing only inside the trailing `<details>` block, never ahead of
   the human-facing review.
+- **Review scope contract** is required in every report, initial or
+  re-review: state plainly whether committed/staged/unstaged/untracked
+  state was included, the staged-delta fingerprint, whether this is an
+  initial review or a re-review, and — for a re-review — whether the
+  staged delta changed (by fingerprint comparison) and whether unstaged
+  or untracked state changed (by independent re-detection, never
+  inferred from the staged fingerprint). A category intentionally
+  excluded from scope is stated as excluded with a reason, never
+  silently dropped.
 - **No loop/orchestration metadata.** This report does not track review
   iteration count, a configured maximum, or whether another iteration is
   allowed — that information belongs to the orchestrator, never to this
