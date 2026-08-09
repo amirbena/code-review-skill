@@ -19,14 +19,23 @@ for that.
 when an implementing Agent invokes it as a delegated Agent/Sub-Agent:
 
 - the end user, not the implementing Agent, decides whether a given
-  review or re-review runs at all;
+  review or re-review runs at all, via an explicit request — made in
+  the current interaction — whose meaning unambiguously asks for a
+  local code review; naming `local-code-review` is one sufficient form
+  of that, never a required magic phrase;
+- generic validation/completion language ("check your work," "make sure
+  this is correct"), a remembered or standing user preference,
+  repository/orchestration policy, and silence/non-objection are all
+  explicitly insufficient by themselves — unless the utterance as a
+  whole otherwise unambiguously requests a local code review;
 - an approval that authorized one invocation never authorizes another —
   every re-review requires its own fresh, explicit user opt-in;
 - this Skill does not track prior approvals or decide whether a
   re-review should happen — that is the caller's/orchestrator's
   responsibility;
 - the orchestration mechanism used to invoke this Skill (direct call vs.
-  delegated Agent/Sub-Agent) never changes who owns that decision.
+  delegated Agent/Sub-Agent) never changes who owns that decision, and
+  never broadens or extends the scope/duration of what was authorized.
 
 The complete rule is owned by
 [`policies/invocation-approval.md`](policies/invocation-approval.md) —

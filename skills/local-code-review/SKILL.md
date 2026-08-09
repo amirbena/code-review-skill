@@ -41,16 +41,22 @@ stop
 **This Skill MUST NOT be invoked automatically.** Every invocation — the
 first review of an implementation and any later re-review after fixes —
 requires the caller to have already obtained fresh, explicit user
-approval scoped to that one run before invoking this Skill. An approval
-that authorized one invocation never authorizes another. This holds
-regardless of whether the implementing Agent invokes this Skill directly
-or delegates it as an Agent/Sub-Agent call — the orchestration mechanism
-never changes who owns the decision, which is always the end user, never
-the implementing Agent. See
-[`policies/invocation-approval.md`](policies/invocation-approval.md) for
-this Skill's complete, self-contained invocation-approval contract, and
-"Statelessness and Orchestration Boundary" below for this Skill's own
-side of that boundary: it does not ask for approval, does not track
+approval scoped to that one run before invoking this Skill. That
+approval must have a meaning that unambiguously requests a local code
+review in the current interaction — naming this Skill is one sufficient
+form of that, never a required phrase. Generic validation/completion
+language ("check your work," "make sure this is correct"), a remembered
+or standing user preference, repository/orchestration policy, or
+silence/non-objection never qualify by themselves, regardless of how
+strongly they imply review would be welcome. An approval that authorized one
+invocation never authorizes another. This holds regardless of whether
+the implementing Agent invokes this Skill directly or delegates it as an
+Agent/Sub-Agent call — the orchestration mechanism never changes who
+owns the decision, which is always the end user, never the implementing
+Agent. See [`policies/invocation-approval.md`](policies/invocation-approval.md)
+for this Skill's complete, self-contained invocation-approval contract,
+and "Statelessness and Orchestration Boundary" below for this Skill's
+own side of that boundary: it does not ask for approval, does not track
 prior approvals, and does not decide whether a re-review should happen.
 
 See [`runbooks/local-review.md`](runbooks/local-review.md) for the full

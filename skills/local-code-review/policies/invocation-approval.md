@@ -79,13 +79,171 @@ user before each specific invocation.
 
 ## Scope of explicit approval
 
-Approval must be unambiguous and specific to the current review run —
-for example, an instruction equivalent to "run local-code-review now,"
-"yes, review the current implementation," or "perform one local review
-before pushing." A previous approval from earlier in the task must never
-be reused. General statements such as "review things carefully," or a
+Authorization exists when the user's request, interpreted as a whole in
+its conversational context, unambiguously asks for the specific local
+code review under consideration — not merely implies that some form of
+quality assurance is desired. Naming `local-code-review`, or saying
+"local code review" explicitly, is *one* sufficient form of that — never
+a requirement. There is no magic phrase; see "Classification is by
+meaning, not by keyword" below for the complete test.
+
+**Sufficient** — clearly requests a local review of the current
+implementation, for example:
+
+```text
+"run a local code review"
+"review this locally"
+"run local-code-review"
+"yes, do the local review"
+"yes, review the current implementation"
+"perform one local review before pushing"
+```
+
+**Insufficient by itself** — generic validation, testing, or
+completion-quality language whose complete meaning does not clearly
+request a local code review, for example:
+
+```text
+"validate the implementation"
+"check your work"
+"verify this"
+"make sure this is correct"
+"run the tests"
+"review things carefully"
+```
+
+These generic instructions may call for ordinary implementation-side
+validation, testing, inspection, or reasoning by the implementing
+Agent — but they must never be interpreted, upgraded, or reinterpreted
+as a request to invoke `local-code-review`. An Agent that judges a local
+review would nonetheless be valuable may say so and ask the user
+whether to run one; it must not treat the user's original generic
+instruction as if it had already authorized that invocation. A previous
+approval from earlier in the task, review, or conversation must never be
+reused (see "Authorization must originate in the current interaction"
+below). General statements such as "review things carefully," or a
 policy that merely recommends review, do not create standing
 authorization for repeated invocations.
+
+### Classification is by meaning, not by keyword
+
+The lists above are illustrative, not exhaustive, and not a literal
+whitelist/blacklist of words or phrases. There is no magic phrase and no
+requirement to name "local code review" or `local-code-review` verbatim
+— naming the Skill is *one* sufficient form, never the only one.
+Authorization is classified from the meaning of the user's complete
+utterance in its conversational context, never from whether it happens
+to contain (or avoid) any individual word that also appears in an
+example above. Concretely:
+
+- `"check the local diff as a code reviewer"` qualifies — despite
+  opening with "check," the same word used in the insufficient example
+  "check your work," its full meaning unambiguously requests a review
+  of the local diff, framed explicitly as a reviewer activity.
+- `"review the current implementation before we commit"` qualifies —
+  its full meaning unambiguously requests a review of the current local
+  work before it moves forward.
+- A semantically equivalent request in a language other than English
+  qualifies exactly as its English equivalent would; the examples above
+  are illustrations of the underlying English-language meaning, not a
+  required vocabulary or a translation requirement.
+- `"check your work,"` `"validate this,"` and `"make sure this is
+  correct"` remain insufficient precisely because, taken as a whole,
+  they do not unambiguously ask for a *review* of the *local
+  implementation* — they ask for generic correctness assurance, which
+  could just as easily mean "run the tests" or "re-read your own code"
+  as it could mean "invoke `local-code-review`." The presence or
+  absence of any one word (including "check," "review," or "verify")
+  is never itself decisive; the complete utterance's meaning is.
+
+This is a classification instruction for the Agent applying this
+policy, not a specification for a keyword-matching algorithm or a
+runtime classifier — no such mechanism is required or implied.
+
+### Bare contextual affirmatives
+
+A short affirmative reply — `"yes,"` `"כן,"` or an equivalent in any
+language — can itself be sufficient authorization, but only by virtue of
+the context it answers, never as a word considered in isolation:
+
+```text
+Agent: "Should I run a local code review of the current changes now?"
+User:  "Yes."
+    ↓
+sufficient — the immediately preceding turn clearly proposed one
+specific local review, and "Yes." unambiguously accepts exactly that
+proposal
+```
+
+```text
+Agent: "Anything else before I keep going?"
+User:  "Yes."
+    ↓
+insufficient — nothing in the preceding context proposed a local code
+review, so "Yes." has no local-review meaning to inherit
+```
+
+The meaning comes from the proposal and the reply *together*, never from
+the affirmative word by itself — this is the same "meaning in context"
+test as above, not a special case or a new keyword to match. When it
+does qualify, that authorization is scoped exactly like any other:
+
+- it authorizes only the one specific invocation the preceding turn
+  proposed;
+- it does not carry forward to a later review or re-review, even within
+  the same interaction — see "Approval is not persistent" above;
+- it must never be detached from the proposal that gave it meaning and
+  replayed later as if it were standing consent for a different or
+  future invocation.
+
+## Authorization must originate in the current interaction
+
+Valid approval is a fresh, explicit local-review request made by the end
+user within the current interaction, addressed to the invocation being
+considered right now. The following are explicitly **not** substitutes
+for that, no matter how genuinely they reflect the user's views, and
+must never be treated as authorizing an invocation:
+
+- a remembered user preference from a prior session or an earlier point
+  in a long-running context;
+- approval granted in an earlier, separate conversation or session;
+- repository configuration or settings (however phrased);
+- `AGENTS.md`, `CLAUDE.md`, or any other standing repository or
+  organizational policy that recommends or expects review;
+- an orchestration/runtime default (e.g. "this workflow always reviews
+  before push");
+- approval that was given for a *different* review (a different scope,
+  a different point in the task, or an earlier fix cycle);
+- a persistent instruction such as "always run a local review before
+  you finish" or "always review my work," however explicit it was when
+  originally given.
+
+A standing preference of this kind may legitimately inform whether the
+implementing Agent proactively *offers* or *asks about* running a local
+review — but the offer/ask and the user's live answer to it are what
+create authorization, never the standing preference by itself. Only a
+request made in the current interaction, about the invocation under
+consideration, counts.
+
+## Silence and non-objection are not approval
+
+Announcing an intended invocation and proceeding unless the user objects
+is not a valid authorization flow:
+
+```text
+"I'll run a local code review now unless you object."
+    ↓
+no response / silence / user continues talking about something else
+    ↓
+invoke local-code-review anyway                                      ✗ prohibited
+```
+
+No response, silence, a delay before replying, continuing the
+conversation without addressing the proposal, or any other form of
+non-objection ever constitutes approval. Authorization requires an
+affirmative instruction from the user requesting the review — see
+"Scope of explicit approval" above for what that instruction must
+contain.
 
 ## Orchestration mechanics never transfer the decision
 
@@ -100,7 +258,12 @@ other delegation mechanism. An implementing Agent that has the
 technical means to invoke this Skill as a delegated Agent/Sub-Agent
 still must not exercise that capability without the same fresh,
 explicit, per-run user approval required above — the ability to
-delegate the call is not authorization to make the call.
+delegate the call is not authorization to make the call. Delegation is
+purely a mechanical execution detail: it must never create authorization
+that does not otherwise exist, never broaden the scope the user actually
+authorized (e.g. a request to review one file does not authorize
+reviewing the whole repository), and never persist that authorization
+beyond the one invocation it was obtained for.
 
 ## Caller/orchestrator responsibility boundary
 
