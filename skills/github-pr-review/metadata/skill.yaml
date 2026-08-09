@@ -9,13 +9,14 @@
 
 name: github-pr-review
 description: >-
-  Reviews an existing GitHub Pull Request and returns evidence-backed
-  P0/P1/P2 findings — passively as a report, or, with authenticated
-  GitHub access, actively by publishing inline findings and a final
-  Approve/Request Changes decision. It never edits implementation code
-  and never merges. Use when the user references a GitHub PR by URL or
-  number, or asks to review, approve, or request changes on a pull
-  request — not for reviewing local/uncommitted changes with no PR.
+  Reviews an existing GitHub Pull Request authored by someone other than
+  the local user or calling Agent — passively as a report, or, with
+  authenticated GitHub access, actively by publishing inline PR review
+  comments, one consolidated final summary, and an Approve/Request
+  Changes decision. Never edits implementation code and never merges.
+  Not applicable, and must not be selected, for a PR or code the local
+  user or calling Agent authored — use `local-code-review` for
+  local/uncommitted changes with no PR.
 version: 0.1.0
 entrypoint: SKILL.md
 

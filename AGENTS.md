@@ -180,8 +180,39 @@ behavior and is unaffected by this rule.
 
 ## 3. Repository Branch Policy
 
-Every materially separate implementation task uses a dedicated task branch.
-Implementation is never done directly on `main`.
+Every materially separate implementation task uses a dedicated,
+freshly created task branch. Implementation is never done directly on
+`main`, and never continued on a branch created for a different,
+previous task.
+
+**Required order — no implementation/documentation file may be modified
+before step 6 completes:**
+
+1. inspect repository state (current branch, working-tree status, local
+   HEAD)
+2. verify/synchronize the intended base branch (identify the default/
+   base branch, fetch/prune if remote access exists, compare against
+   `origin/main`)
+3. ensure the working tree is clean, or safely preserve any legitimate
+   existing work (never discard it silently)
+4. create a new task-specific branch from the synchronized base
+5. switch to that branch
+6. only then modify implementation or documentation files
+
+An implementing Agent must not:
+
+- modify files directly on `main`;
+- continue a new, unrelated task on a branch created for a previous
+  task — including a branch that already carries a previous task's
+  commits or an already-open PR;
+- reuse an already-open PR branch for unrelated work;
+- begin implementation and only create or switch branches afterward.
+
+If the current branch is `main`, a previous task's feature/fix branch,
+or any branch not created specifically for the task at hand, step 4
+(fresh branch creation) is mandatory before any edit — do not treat
+continuing on that branch as an acceptable shortcut, even if the branch
+is already synchronized with the base.
 
 Preferred naming:
 
@@ -200,16 +231,6 @@ chore/<clear-chore-name>
 ```
 
 Do not reuse an already-merged task branch for unrelated work.
-
-Before creating a task branch:
-
-- inspect current branch
-- inspect working-tree state
-- identify the default/base branch
-- inspect local and remote HEAD
-- fetch/prune if remote access exists
-- verify base synchronization
-- preserve unrelated work (never discard it silently)
 
 ---
 
