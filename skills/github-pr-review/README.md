@@ -6,7 +6,9 @@ A portable Code Review Agent Skill that reviews an existing GitHub Pull
 Request with repository-aware reasoning and returns evidence-backed
 P0/P1/P2 findings — passively as a report, or, with sufficient
 authenticated GitHub access, actively by publishing inline findings, a
-final summary, and an Approve/Request Changes decision.
+final summary, and an Approve/Request Changes decision. For why this
+Skill exists alongside native and third-party PR reviewers, see
+[`../../CODE_REVIEW_COMPARISON.md`](../../CODE_REVIEW_COMPARISON.md).
 
 ## When to Use
 

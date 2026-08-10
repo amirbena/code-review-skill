@@ -86,22 +86,13 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
     "review-reasoning.md": (
         "applies only after review authority",
         "## Logical Cohort Review",
-        "group related changed files and hunks into logical cohorts when useful",
-        "file-by-file review is not the primary reasoning model",
+        "review related changes together rather than treating files or hunks "
+        "as isolated units",
         "## Code Impact / Dependency Analysis",
-        "inspect relevant dependency paths beyond the raw diff",
-        "no dedicated code-graph tool or vendor is required for this analysis",
-        "### Impact exploration boundaries",
-        "Stop exploring once the realistic blast radius is sufficiently "
-        "understood to evaluate the correctness of the PR",
-        "### Unchanged code as evidence, not automatic scope",
-        "Unchanged code is an evidence source, not automatic scope expansion",
-        "### Findings still require concrete evidence",
-        "Do not create a finding merely because another dependent file or "
-        "symbol exists",
-        "### Small and isolated changes",
-        "trivial/single-purpose PRs are not forced into unnecessary "
-        "cohort or graph-analysis ceremony",
+        "never as an unrelated pre-existing-defect audit",
+        "No dedicated code-graph tool or vendor capability is required for "
+        "this analysis.",
+        "never merely because a dependent file or symbol exists",
     ),
     "finding-placement.md": (
         "## Inline comment eligibility",

@@ -106,6 +106,9 @@ Output: `dist/local-code-review-skill.zip` and
 
 ## Where to read more
 
+- [`CODE_REVIEW_COMPARISON.md`](CODE_REVIEW_COMPARISON.md) — why these Skills
+  exist alongside Claude Code, GitHub-native, and third-party reviewers, and
+  what they add
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — design, module boundaries, and
   the orchestration boundary between the Skills and their caller
 - [`AGENTS.md`](AGENTS.md) — this repository's own canonical development

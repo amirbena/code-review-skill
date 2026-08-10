@@ -566,7 +566,12 @@ portable contract — approval scope, prohibited invocation flows, the
 caller/orchestrator responsibility boundary, and what the Skill itself
 must never do — is owned by
 [`skills/local-code-review/policies/invocation-approval.md`](skills/local-code-review/policies/invocation-approval.md),
-which this rule does not duplicate. See also
+which this rule does not duplicate. Unlike `github-pr-review`'s self-review
+guard, `local-code-review` has no external fact it can check to verify
+approval actually occurred — see that policy's "Structural limitation: this
+Skill cannot verify that approval occurred," which is why obtaining and
+scoping approval correctly is entirely the orchestrator's responsibility
+here, with no Skill-side defensive fallback. See also
 [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md),
 "Statelessness and Orchestration Boundary," and
 [`ARCHITECTURE.md`](ARCHITECTURE.md), "Handoff Between Skills," for how

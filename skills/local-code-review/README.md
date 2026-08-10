@@ -6,7 +6,9 @@ A small, stateless Code Review Agent Skill that reviews a local Git
 repository's implementation state — committed delta, staged, unstaged,
 and untracked changes, each an explicit, separately detected category —
 and returns evidence-backed P0/P1/P2 findings. It is read-only: it never
-edits files, commits, pushes, or touches GitHub.
+edits files, commits, pushes, or touches GitHub. For why this Skill
+exists alongside native and third-party reviewers, see
+[`../../CODE_REVIEW_COMPARISON.md`](../../CODE_REVIEW_COMPARISON.md).
 
 ## When to Use
 
