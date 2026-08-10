@@ -143,9 +143,26 @@ class SharedTemplateDefersPresentationChoice(unittest.TestCase):
         ]
         self.assertEqual(tags, [])
 
-    def test_explains_presentation_is_per_skill(self) -> None:
-        self.assertIn("local-review-report.md", self.text)
-        self.assertIn("external-review-summary.md", self.text)
+    def test_metadata_section_does_not_prescribe_concrete_markup(self) -> None:
+        # The "subordinate, appended last" rule is shared semantics; the
+        # concrete rendering (Markdown heading vs. HTML <details>) is
+        # each consuming Skill's own choice. If this section hardcoded
+        # one fenced example, it would be prescribing a single renderer's
+        # presentation onto both Skills again.
+        section = re.search(
+            r"## Machine metadata is subordinate\n(.*?)(?=\n## |\Z)",
+            self.text,
+            re.S,
+        )
+        self.assertIsNotNone(section)
+        body = section.group(1)
+        self.assertNotIn("```markdown", body)
+        # A real rendered wrapper puts the tag alone on its own line
+        # (as it must, to open/close an HTML block); prose that merely
+        # names the tag as an example does so inline within a sentence,
+        # inside single backticks, and never satisfies this pattern.
+        live_wrapper = re.compile(r"^\s*</?(?:details|summary)>\s*$", re.M | re.I)
+        self.assertIsNone(live_wrapper.search(body))
 
 
 if __name__ == "__main__":
