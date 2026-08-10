@@ -4,7 +4,9 @@ This document describes the conceptual architecture of this repository's
 two Code Review Agent Skills. It is intentionally decoupled from any
 specific runtime implementation — see [`AGENTS.md`](AGENTS.md) section 2
 ("Runtime Neutrality") and the **Agent via Skill** vocabulary in section
-1.
+1. For why this architecture exists — how it differs from Claude Code's
+own native review, GitHub-native review, and third-party reviewers — see
+[`CODE_REVIEW_COMPARISON.md`](CODE_REVIEW_COMPARISON.md).
 
 ## 1. Module Map
 

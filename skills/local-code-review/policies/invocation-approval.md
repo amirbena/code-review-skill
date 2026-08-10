@@ -296,6 +296,32 @@ this Skill. This Skill only reviews the scope it was explicitly invoked
 to review, once, per invocation; see
 [`../SKILL.md`](../SKILL.md), "Statelessness and Orchestration Boundary."
 
+## Structural limitation: this Skill cannot verify that approval occurred
+
+Unlike `github-pr-review`'s self-review guard — which checks an external,
+queryable fact (the authenticated GitHub identity against the PR author) and
+can therefore refuse to proceed on its own — user approval for
+`local-code-review` is a conversational fact with no external state this
+Skill can query. This Skill has no mechanism to confirm, from inside a given
+invocation, that a fresh, explicit, current-interaction approval actually
+preceded it; see "Caller/orchestrator responsibility boundary" above.
+
+This is an accepted structural limitation, not a reason to weaken or relax
+this policy's requirements. It does not change any of the following:
+
+- the caller/orchestrator remains entirely responsible for obtaining valid,
+  fresh, per-invocation approval before invoking this Skill;
+- this policy's approval contract (scope, non-persistence, the meaning-based
+  authorization test) remains fully normative and unchanged;
+- this Skill still must not ask for approval, verify it occurred, or treat
+  its own invocation as evidence that approval existed.
+
+Nothing here introduces an approval token, an approval file, hidden state, or
+any other mechanism to persist or verify authorization — no such mechanism
+exists in this Skill, and none is being added. The absence of a defensive,
+self-verifiable guard is a known asymmetry with `github-pr-review`, not a gap
+this policy attempts to close by other means.
+
 ## Why this exists
 
 Without this invariant, a caller could treat `local-code-review` as an

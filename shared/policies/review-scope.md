@@ -26,6 +26,25 @@ infrastructure behavior, CI/CD behavior, test adequacy, missing regression
 tests, operational risk, maintainability, repository conventions, and
 documentation correctness.
 
+## Related changes as one unit
+
+Review semantically related changes together rather than treating individual
+files or hunks as isolated review units — file-by-file review in isolation is
+not the reviewing model this policy expects. When a change spans multiple
+files or hunks that together implement one behavioral or architectural
+concern — for example, an API contract with its DTO/schema and controller, a
+producer with its consumer, a persistence model with its repository and
+migration, or an implementation with its corresponding tests — reason about
+that group as a single unit and check for cross-file consistency, not just
+each file on its own.
+
+This invariant applies identically to any Code Review Skill built on this
+policy, local or PR-based, and regardless of which review engine or model
+executes it. The examples above are illustrative, not a required checklist; a
+reviewer capable of holding related changes in view needs no further
+prescribed procedure, and a small, single-purpose change needs no grouping
+ceremony at all.
+
 ## Technology neutrality
 
 Every Skill built on this policy must remain technology-neutral. It must

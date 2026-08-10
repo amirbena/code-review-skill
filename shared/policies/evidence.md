@@ -26,3 +26,21 @@ Every finding must be labeled, implicitly or explicitly, as one of:
   and do not treat green checks as a substitute for review.
 - A missing validation step may itself be a finding where materially
   relevant.
+
+## Findings beyond the changed lines
+
+Changed lines are the starting point of review, not necessarily its complete
+boundary — relevant surrounding or dependent code may need examination to
+judge a change correctly. A finding located outside the changed lines is
+valid only when the reviewed change introduces, activates, exposes, breaks,
+or materially affects it — never merely because a pre-existing, unrelated
+defect was noticed while reading nearby or dependent code. Do not turn
+impact/dependency reasoning into an unrelated audit of the existing
+codebase.
+
+Scale this to the change: a small, clearly isolated change needs little or
+no dependency exploration beyond confirming it doesn't affect anything else;
+a change with a wide realistic blast radius (a shared contract, schema, or
+widely depended-on symbol) warrants more. This invariant applies identically
+to any Code Review Skill built on this policy, local or PR-based, and
+regardless of which review engine or model executes it.
