@@ -115,3 +115,8 @@ Output: `dist/local-code-review-skill.zip` and
   rules, plus the shared review-ownership invariant
 - [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md)
 - [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md)
+
+Opening a PR against this repository? GitHub applies
+[`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md)
+automatically — it walks through change surface, behavioral change,
+governance impact, and reviewer focus.
