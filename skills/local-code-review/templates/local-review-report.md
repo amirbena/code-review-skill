@@ -52,14 +52,13 @@ was included) against `<base>`.
 1 P1 finding must be addressed before this implementation should
 proceed.
 
-<details>
-<summary>Review metadata</summary>
+### Review Metadata
 
-- base branch: <name>
-- base SHA: <sha>
-- local HEAD: <sha>
-- remote HEAD: <sha | none>
-- synchronization status: <in sync | local ahead | local behind | diverged | no tracking branch>
+- Base branch: `<name>`
+- Base SHA: `<sha>`
+- Local HEAD: `<sha>`
+- Remote HEAD: `<sha | none>`
+- Synchronization status: <in sync | local ahead | local behind | diverged | no tracking branch>
 - P0: <n>, P1: <n>, P2: <n>
 
 **Review scope contract** (per
@@ -67,15 +66,13 @@ proceed.
 states plainly what was inspected; a category marked "excluded" is a
 deliberate, stated exclusion, never a silent omission:
 
-- committed delta relative to base: <included, `<base>..HEAD` summary | excluded, reason>
-- staged: <included, files/delta summary | excluded, reason>
-- unstaged: <included, files/delta summary | excluded, reason>
-- untracked: <included, files | excluded, reason>
-- staged-delta fingerprint (SHA-256 of `git diff --cached --raw -M -z`): `<hex digest>`
-- review kind: <initial review | re-review>
-- previously reviewed state changed: <staged: unchanged/changed — fingerprint compared; unstaged: unchanged/changed — re-detected; untracked: unchanged/changed — re-detected | not applicable, initial review>
-
-</details>
+- Committed delta relative to base: <included, `<base>..HEAD` summary | excluded, reason>
+- Staged: <included, files/delta summary | excluded, reason>
+- Unstaged: <included, files/delta summary | excluded, reason>
+- Untracked: <included, files | excluded, reason>
+- Staged-delta fingerprint (SHA-256 of `git diff --cached --raw -M -z`): `<hex digest>`
+- Review kind: <initial review | re-review>
+- Previously reviewed state changed: <staged: unchanged/changed — fingerprint compared; unstaged: unchanged/changed — re-detected; untracked: unchanged/changed — re-detected | not applicable, initial review>
 ```
 
 or, when clean:
@@ -124,8 +121,10 @@ state.
   they passed.
 - **Review State** (base/HEAD SHAs, synchronization status, raw
   counts) is machine/orchestration-oriented detail — it is subordinate,
-  appearing only inside the trailing `<details>` block, never ahead of
-  the human-facing review.
+  appearing only inside the trailing "Review Metadata" section as plain
+  Markdown, never ahead of the human-facing review and never wrapped in
+  GitHub-oriented HTML (e.g. `<details>`/`<summary>`), which offers no
+  benefit for a report read directly in a terminal or chat surface.
 - **Review scope contract** is required in every report, initial or
   re-review: state plainly whether committed/staged/unstaged/untracked
   state was included, the staged-delta fingerprint, whether this is an

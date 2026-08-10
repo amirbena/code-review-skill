@@ -86,6 +86,12 @@ Findings use the shared P0/P1/P2 model
 
 The report resolves to `REVIEW CLEAN` or `CHANGES REQUIRED`.
 
+The final report is rendered as native Markdown, including its Review
+Metadata section — no GitHub-specific HTML presentation wrappers (e.g.
+`<details>`/`<summary>`), since it is read directly in a terminal or
+chat surface rather than rendered by GitHub. See
+[`templates/local-review-report.md`](templates/local-review-report.md).
+
 ## Key Files
 
 - [`SKILL.md`](SKILL.md) — canonical entry point and identity

@@ -75,22 +75,20 @@ P0/P1/P2 counts, a normalized machine decision code, internal finding
 identifiers, or other automation state) is never part of the primary
 human-facing body above. Where publishing it is genuinely useful to a
 caller or automation, append it after the human-facing body, clearly
-subordinate:
+subordinate — always last, always visually secondary to the Result →
+... → Decision body above it.
 
-```markdown
-<details>
-<summary>Review metadata</summary>
-
-- reviewed_head: `<sha>`
-- P0: <n>
-- P1: <n>
-- P2: <n>
-- decision: `<machine decision code>`
-
-</details>
-```
-
-Do not publish machine metadata merely because it is available — include
-only fields with a genuine downstream consumer (orchestration, automated
-re-review, audit). If nothing needs it, omit the block entirely rather
+This shared template fixes *that* the metadata is subordinate and
+appended last; it does not fix the concrete markup used to render it.
+Each consuming Skill's own template owns that choice for its own
+delivery surface — see
+`local-code-review`'s own `templates/local-review-report.md` (native
+Markdown, since its delivery surface is a returned report read directly
+in a terminal/chat, where a collapsible section provides no benefit) and
+`github-pr-review`'s own `templates/external-review-summary.md` (a
+collapsible `<details>` block, since its delivery surface is a rendered
+GitHub review body where GitHub natively supports collapsing it). Do not
+publish machine metadata merely because it is available — include only
+fields with a genuine downstream consumer (orchestration, automated
+re-review, audit). If nothing needs it, omit the section entirely rather
 than padding the review with unused state.
