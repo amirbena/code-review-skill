@@ -13,10 +13,9 @@ The reasoning-quality invariants below are owned once, in this Skill's shared
 [`evidence.md`](../../../shared/policies/evidence.md) policies, and shared
 identically with `local-code-review` so both Skills apply one review-quality
 standard — this file does not restate their full text. What follows is this
-Skill's own
-PR-specific application: where each invariant fits in the PR review flow, and
-light fallback guidance for a reviewing engine with no native full-codebase
-context.
+Skill's own PR-specific application: where each invariant fits in the PR
+review flow, and light fallback guidance for a reviewing engine with no
+native full-codebase context.
 
 ## Logical Cohort Review
 
