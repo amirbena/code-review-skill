@@ -8,8 +8,12 @@ description: >-
   explicitly select each specific review, even when an implementing
   Agent invokes it as a delegated Agent/Sub-Agent; it never runs merely
   because implementation finished, and every re-review requires its own
-  fresh opt-in. Not for an existing GitHub Pull Request — use the
-  sibling github-pr-review Skill for that.
+  fresh opt-in. Optionally accepts a reference to an associated GitHub
+  PR to reconcile against existing reviewer findings and settled
+  architectural decisions — the local delta remains the review scope
+  and behavior is unchanged when no PR is given. Not for an existing
+  GitHub Pull Request as the review target — use the sibling
+  github-pr-review Skill for that.
 ---
 
 # SKILL.md — local-code-review
@@ -18,7 +22,8 @@ A small, bounded, **stateless** Code Review Skill that reviews a local
 Git repository's implementation state and returns structured P0/P1/P2
 findings. It is a reviewer only.
 
-**Compatibility:** requires access to a local Git repository.
+**Compatibility:** requires access to a local Git repository; an
+optional PR reference additionally requires read-only GitHub access.
 
 ```text
 resolve local review scope
@@ -28,6 +33,11 @@ discover applicable AGENTS.md / CLAUDE.md
 inspect Git delta by category: committed, staged, unstaged, untracked
     ↓
 compute staged-delta fingerprint
+    ↓
+optional PR reference supplied? → yes → read/classify/reconcile
+                                          relevant PR context against
+                                          this delta (never expands scope)
+                                       → no  → unchanged
     ↓
 inspect relevant surrounding code
     ↓
@@ -93,6 +103,14 @@ The full implementation state is reviewed — local `HEAD` alone is never
 assumed to contain everything, and no category is silently skipped
 without saying so in the report.
 
+**Optional:** a reference to an associated GitHub PR (a PR URL, or a PR
+number when the repository can be inferred unambiguously). When supplied,
+this Skill reconciles the local delta against relevant existing reviewer
+findings and settled architectural/design decisions from that PR before
+performing the rest of its own review — see
+[`policies/pr-context.md`](policies/pr-context.md). When omitted, this
+Skill's behavior is exactly as if this input did not exist.
+
 ## 3. Required Policy Loading
 
 Always: [`review-scope.md`](../../shared/policies/review-scope.md),
@@ -114,17 +132,31 @@ section 5 below) and
 [`policies/repository-state.md`](policies/repository-state.md) (the
 committed/staged/unstaged/tracked/untracked category definitions,
 per-category detection commands, and the staged-delta fingerprint).
+Additionally, only when a PR reference is supplied per section 2:
+[`policies/pr-context.md`](policies/pr-context.md) (retrieval scope,
+classification, finding reconciliation, and architectural-decision
+handling for that optional PR context). This policy is never loaded or
+applied when no PR reference is supplied.
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.
+
+None of the files above depend on another's content to be read — load
+them together in a single batched/parallel operation rather than one at a
+time in sequence. This changes only retrieval speed, never which policies
+apply or what they require.
 
 ## 4. Output Contract
 
 Exactly one [`templates/local-review-report.md`](templates/local-review-report.md)
 per invocation, rendering the shared human-facing shape in
 [`review-summary.md`](../../shared/templates/review-summary.md): a
-Result, What changed, What was done well, Findings, Validation, and a
-Decision of `REVIEW CLEAN` or `CHANGES REQUIRED`. Machine-oriented detail
+Result, What changed, What was done well, an optional PR Context section
+(present only when a PR reference was supplied per section 2 and it
+materially shaped the review — see
+[`policies/pr-context.md`](policies/pr-context.md), "Output"), Findings,
+Validation, and a Decision of `REVIEW CLEAN` or `CHANGES REQUIRED`.
+Machine-oriented detail
 (base/HEAD SHAs, synchronization status, raw P0/P1/P2 counts, per-category
 inclusion/exclusion, and the staged-delta fingerprint per
 [`policies/repository-state.md`](policies/repository-state.md)) is
@@ -196,7 +228,12 @@ separately-approved invocations, see
 This Skill must never: edit files, apply patches, commit, push, rebase,
 create branches, open PRs, approve anything, or request changes on
 GitHub. The implementing Agent owns remediation; the orchestrator owns
-workflow progression; this Skill only reviews and reports.
+workflow progression; this Skill only reviews and reports. This holds
+identically when an optional PR reference is supplied per section 2:
+reading PR review context is read-only and never becomes GitHub
+publication, an Approve/Request Changes decision, or any other GitHub
+mutation — see [`policies/pr-context.md`](policies/pr-context.md),
+"Boundary with `github-pr-review`."
 
 ## 7. Review Ownership
 

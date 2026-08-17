@@ -28,6 +28,19 @@ was included) against `<base>`.
 ### What was done well
 - **<theme>:** <concrete, evidence-backed strength>
 
+### PR Context
+<only present when a PR reference was supplied AND it materially shaped
+this review — see
+[`../policies/pr-context.md`](../policies/pr-context.md), "Output";
+omitted entirely otherwise, including whenever no PR reference was
+supplied>
+- Reconciled against PR `<url-or-#number>`.
+- Existing reviewer findings: `<n>` still valid (reflected in Findings
+  below), `<n>` resolved, `<n>` required re-evaluation (reflected below).
+- Architectural decisions: `<n>` violated/regressed (reported as a
+  finding below) | `<n>` intentionally superseded with new evidence
+  (briefly noted here) — omit this line if none apply.
+
 ### Findings
 
 #### F1 [P1] Retry can duplicate processing
@@ -95,9 +108,19 @@ state.
 ## Rules
 
 - The human-facing body (Result → What changed → What was done well →
-  Findings → Validation → Decision) is primary and always appears first
-  — see
+  [PR Context, when applicable] → Findings → Validation → Decision) is
+  primary and always appears first — see
   [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md).
+- **PR Context** is entirely optional and appears only when the caller
+  supplied a PR reference and it materially shaped the review (a
+  reconciled finding, a violated or superseded decision) — see
+  [`../policies/pr-context.md`](../policies/pr-context.md), "Output." It
+  is omitted completely, with no placeholder or empty section, whenever
+  no PR reference was supplied — this is the no-PR backward-compatible
+  case and the default. A reconciled finding's provenance (e.g. "still
+  valid per PR review, evidence reused") belongs in that finding's own
+  **Evidence** field, not as a duplicate entry here — this section is a
+  concise pointer, never a second listing of the findings themselves.
 - Decision is exactly `REVIEW CLEAN` or `CHANGES REQUIRED`, stated
   plainly with a one-sentence rationale — `REVIEW CLEAN` only when no
   blocking findings (P0/P1) remain; P2s alone never block it (see

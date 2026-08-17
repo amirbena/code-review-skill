@@ -16,9 +16,13 @@ description: >-
   explicitly select each specific review, even when an implementing
   Agent invokes it as a delegated Agent/Sub-Agent; it never runs merely
   because implementation finished, and every re-review requires its own
-  fresh opt-in. Not for an existing GitHub Pull Request — use the
-  sibling github-pr-review Skill for that.
-version: 0.1.0
+  fresh opt-in. Optionally accepts a reference to an associated GitHub
+  PR to reconcile against existing reviewer findings and settled
+  architectural decisions — the local delta remains the review scope
+  and behavior is unchanged when no PR is given. Not for an existing
+  GitHub Pull Request as the review target — use the sibling
+  github-pr-review Skill for that.
+version: 0.2.0
 entrypoint: SKILL.md
 
 modes:
@@ -27,6 +31,7 @@ modes:
 capabilities:
   git: required
   local_repository_access: required
+  github_read_access: optional  # only used when a PR reference is supplied; see ../policies/pr-context.md
 
 output:
   mutates_github: false

@@ -55,6 +55,17 @@ also inspect current branch, base branch, base SHA, local `HEAD`,
 relevant surrounding repository code, tests, and repository instructions
 (`AGENTS.md`/`CLAUDE.md`).
 
+**Optionally**, the caller may supply a reference to an associated
+GitHub PR (URL, or number when the repository is unambiguous). When
+given, this Skill reconciles the already-established local delta against
+relevant existing reviewer findings and settled architectural/design
+decisions from that PR — reusing valid evidence, avoiding duplicate
+findings, and never reopening a settled decision without concrete new
+evidence — before performing the rest of its own review. This never
+expands review scope beyond the local delta, never grants any GitHub
+write capability, and is a no-op when omitted; see
+[`policies/pr-context.md`](policies/pr-context.md).
+
 ## Review Model
 
 ```text
@@ -100,6 +111,9 @@ chat surface rather than rendered by GitHub. See
 - [`policies/repository-state.md`](policies/repository-state.md) —
   committed/staged/unstaged/tracked/untracked category definitions,
   detection commands, and the staged-delta fingerprint
+- [`policies/pr-context.md`](policies/pr-context.md) — optional PR
+  reference retrieval, classification, finding reconciliation, and
+  architectural-decision handling
 - [`runbooks/local-review.md`](runbooks/local-review.md) — full procedure
 - [`templates/local-review-report.md`](templates/local-review-report.md) —
   output contract

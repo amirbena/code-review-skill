@@ -138,10 +138,18 @@ reason from this policy text directly, not from that script).
 
 ## Fingerprint scope and re-review comparison
 
-The fingerprint represents **only the staged category** at the moment it
-was computed. See
+The fingerprint represents **only the staged category's content** at the
+moment it was computed — it carries no information about whether the
+*review standard applied to that content* is also unchanged. See
 [`../runbooks/local-review.md`](../runbooks/local-review.md),
-"Re-review discipline," for how a re-review invocation uses it:
+"Re-review discipline," "Precondition: the applicable review standard
+must be unchanged," for the complete precondition this Skill's own
+`SKILL.md`, runbook, Skill-owned policies, shared review policies, and
+applicable target-repository instructions must satisfy before a matching
+fingerprint may be used as a short-circuit at all; that runbook is the
+single canonical owner of that precondition and this file does not
+duplicate it. Given that precondition holds, comparison of the content
+fingerprint itself works as follows:
 
 - **Same fingerprint as the previously reported one** → the staged
   delta is unchanged since the prior review; it does not need to be
@@ -150,6 +158,12 @@ was computed. See
   resolved or not, per the runbook).
 - **Different fingerprint** → the staged delta changed and must be
   reviewed as new delta.
+
+If the precondition does not hold (the applicable review standard
+changed, or the caller cannot confirm it did not), treat the staged
+category as requiring fresh review exactly as if the fingerprint had
+differed, regardless of what the content comparison above would
+otherwise indicate.
 
 **The fingerprint must never be used to conclude that unstaged or
 untracked state is unchanged.** It carries no information about those
