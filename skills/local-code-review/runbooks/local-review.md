@@ -15,7 +15,10 @@ this Skill's own
 [`../policies/repository-state.md`](../policies/repository-state.md)
 (the committed/staged/unstaged/tracked/untracked category definitions,
 per-category detection commands, and the staged-delta fingerprint used
-below).
+below). When the caller supplies a PR reference, also
+[`../policies/pr-context.md`](../policies/pr-context.md) (retrieval
+scope, classification, finding reconciliation, and architectural-decision
+handling) — never loaded or applied otherwise.
 
 ## Flow
 
@@ -28,6 +31,11 @@ detect each category separately: committed, staged, unstaged, untracked
     ↓
 compute staged-delta fingerprint
     ↓
+PR reference supplied? → yes → read/classify/reconcile relevant PR
+                                 context against the delta established
+                                 above (scope never expands to the PR)
+                               → no  → unchanged
+    ↓
 inspect relevant surrounding code
     ↓
 review against code + repository conventions
@@ -36,6 +44,44 @@ return P0/P1/P2 findings, each attributed to its source category
     ↓
 stop
 ```
+
+## Execution efficiency (does not change what is inspected)
+
+Steps 1–5 below are read-only Git inspection commands, but they are not
+all mutually independent — batch only the commands that have no data
+dependency on another command's output, and never batch a command
+concurrently with the command that resolves a value it needs:
+
+- **Step 1** (verify the repository, inspect branch/HEAD) depends on
+  nothing below and may always be issued first, on its own or batched
+  with step 4 and/or step 5 (see below).
+- **Step 2** (resolve `<base>` and the base SHA) depends on step 1 having
+  established a valid repository and current branch, and must complete
+  — with `<base>` actually resolved — before any command that references
+  `<base>` is issued. In particular, step 3's committed-delta detection
+  (`git log <base>..HEAD`, `git diff <base>...HEAD`) requires a resolved
+  `<base>` as a literal command argument; it cannot be batched concurrently
+  with step 2 itself, only after step 2 completes.
+- **Step 3's four category-detection commands** (committed, staged,
+  unstaged, untracked) do not depend on one another's output. Once `<base>`
+  is resolved (after step 2), issue all four together as a single
+  batched/parallel operation (e.g. one combined shell invocation, or
+  parallel tool calls in one turn) rather than one command at a time in
+  sequence.
+- **Step 4** (staged fingerprint) and **step 5** (sync status) reference
+  no value resolved by steps 2 or 3 — `git diff --cached --raw -M -z` and
+  the `@{u}`-relative commands are self-contained. Both may be batched
+  with step 1, with each other, or with step 3's batch, at the caller's
+  discretion; neither needs to wait for `<base>` resolution.
+
+Concretely: batch {1, 4, 5} freely at any point; resolve `<base>` in step
+2 before issuing step 3's `<base>`-dependent command; batch step 3's four
+commands together once `<base>` is known. This changes only how many
+round-trips retrieving this state costs and in what groupings — never
+which categories are detected, which commands are used, the order in
+which a value must be resolved before it is used, or what is reported —
+every category below is still independently detected and independently
+attributed exactly as written.
 
 ## Steps
 
@@ -108,10 +154,42 @@ stop
 6. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
    for each changed file, look for `AGENTS.md` / `CLAUDE.md` at the
-   target repository root and along that file's directory ancestry. Do
-   this before reviewing so discovered conventions inform the review
-   itself, not just a post-hoc check.
-7. Review the complete delta against
+   target repository root and along that file's directory ancestry, using
+   that policy's "Deduplicated discovery" procedure — compute the union of
+   candidate paths across all changed files first, read each unique
+   candidate at most once, then apply results per file by ancestry
+   membership, rather than repeating a read for every file that happens to
+   share an ancestor directory. Do this before reviewing so discovered
+   conventions inform the review itself, not just a post-hoc check.
+7. **If, and only if, the caller supplied a PR reference:** apply
+   [`../policies/pr-context.md`](../policies/pr-context.md) now, after
+   the local delta (steps 1-4) and repository-instruction discovery
+   (step 6) are both established, and before the review step below:
+   1. Resolve the PR reference; if it cannot be resolved or no GitHub
+      read capability is available, note the limitation and continue as
+      if no PR reference had been supplied.
+   2. Retrieve only PR review threads/comments relevant to the current
+      local delta — never the PR's full historical diff or unrelated
+      metadata.
+   3. Classify each relevant thread per
+      [`../policies/pr-context.md`](../policies/pr-context.md),
+      "Classifying PR review context," reasoning over each thread as a
+      whole and preferring its latest explicit resolution.
+   4. Map relevant findings and settled architectural/design decisions
+      onto the current local delta — status per "Reconciling existing
+      reviewer findings" and "Architectural/design decisions" in that
+      policy.
+   5. Determine what still needs independent (re-)evaluation: a
+      reconciled "still present" or "requires re-evaluation" finding, or
+      a violated decision, feeds into this Skill's own review below
+      rather than being independently rediscovered from scratch; a
+      "resolved" finding or a followed/intentionally-superseded decision
+      needs no further action.
+
+   If no PR reference was supplied, skip this step entirely — proceed
+   directly to the review step below exactly as this runbook already
+   did before this step existed.
+8. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
    [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
@@ -128,7 +206,7 @@ stop
    never override this Skill's own safety boundaries (see
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
    "Instruction precedence").
-8. Classify findings per
+9. Classify findings per
    [`severity.md`](../../../shared/policies/severity.md), each backed by
    evidence and impact per
    [`evidence.md`](../../../shared/policies/evidence.md), using the shared
@@ -137,19 +215,29 @@ stop
    finding to the source category it came from — committed, staged,
    unstaged, or untracked — per
    [`../policies/repository-state.md`](../policies/repository-state.md),
-   "Attribution in findings." Finalize the complete set of findings —
-   including any that were revised, merged, or discarded during review —
-   before composing the report. Do not report findings piecemeal as they
-   are discovered; the report in step 10 is composed once, from the
-   finalized set.
-9. Compose the human-facing body per
-   [`review-summary.md`](../../../shared/templates/review-summary.md):
-   a concrete "What changed" summary, an evidence-backed "What was done
-   well" (omit or keep to one line if nothing concrete stands out), the
-   finalized findings, and a "Validation" section listing only what was
-   actually inspected or executed by this review — do not claim a
-   validation step ran if it did not.
-10. Render
+   "Attribution in findings." When step 7 ran, a finding reconciled from
+   PR context (still-present or requiring re-evaluation) says so in its
+   evidence rather than presenting itself as newly discovered, and a
+   violated architectural decision is reported as its own finding per
+   [`../policies/pr-context.md`](../policies/pr-context.md); do not
+   report the same underlying issue twice merely because both PR context
+   and this review independently identified it. Finalize the complete
+   set of findings — including any that were revised, merged, or
+   discarded during review — before composing the report. Do not report
+   findings piecemeal as they are discovered; the report in step 11 is
+   composed once, from the finalized set.
+10. Compose the human-facing body per
+    [`review-summary.md`](../../../shared/templates/review-summary.md):
+    a concrete "What changed" summary, an evidence-backed "What was done
+    well" (omit or keep to one line if nothing concrete stands out), the
+    finalized findings, and a "Validation" section listing only what was
+    actually inspected or executed by this review — do not claim a
+    validation step ran if it did not. When step 7 ran and materially
+    shaped the review, include the terse "PR Context" note per
+    [`../templates/local-review-report.md`](../templates/local-review-report.md)
+    — omit it entirely when no PR reference was supplied or it had no
+    material effect.
+11. Render
     [`../templates/local-review-report.md`](../templates/local-review-report.md)
     as one complete report — including the review scope contract fields
     (review base, per-category inclusion/exclusion, staged fingerprint,
@@ -195,17 +283,75 @@ said, a newly discovered P0/P1 with concrete evidence must still be
 reported even if it wasn't visible in an earlier pass — do not suppress a
 real finding merely because it is new.
 
+### Precondition: the applicable review standard must be unchanged
+
+The staged-delta fingerprint proves only that the *reviewed content* is
+byte-identical to what a prior invocation fingerprinted — it says
+nothing about whether the *review standard applied to that content* is
+also unchanged. A matching content fingerprint is **not by itself**
+sufficient to reuse prior reasoning; before applying the short-circuit
+below, the caller/orchestrator must first establish that everything this
+Skill's review reasoning actually depends on is materially unchanged
+since the prior review whose fingerprint is being compared against:
+
+- this Skill's own [`../SKILL.md`](../SKILL.md);
+- this runbook ([`local-review.md`](local-review.md));
+- this Skill's own policies
+  ([`../policies/invocation-approval.md`](../policies/invocation-approval.md),
+  [`../policies/repository-state.md`](../policies/repository-state.md),
+  and, when applicable,
+  [`../policies/pr-context.md`](../policies/pr-context.md));
+- the shared review policies
+  ([`review-scope.md`](../../../shared/policies/review-scope.md),
+  [`severity.md`](../../../shared/policies/severity.md),
+  [`evidence.md`](../../../shared/policies/evidence.md),
+  [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
+  [`git-safety.md`](../../../shared/policies/git-safety.md),
+  [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
+  and, in orchestrated/multi-Agent contexts,
+  [`review-ownership.md`](../../../shared/policies/review-ownership.md));
+- the target repository's own applicable instructions (`AGENTS.md`,
+  `CLAUDE.md`, and any other repository-local context discovered in step
+  6) for the files in the staged category.
+
+This does not require a new persisted cryptographic fingerprint over
+those files. Establishing "materially unchanged" is the
+caller's/orchestrator's responsibility — for example, because nothing in
+this list was touched between the two invocations in the same
+session/task, or because the caller has otherwise confirmed their
+content is identical. If any of these materially changed, the
+fingerprint-match short-circuit below **does not apply** to the staged
+category: treat it as requiring fresh reasoning under the current
+standard, exactly as if the fingerprint had not matched, regardless of
+what the content fingerprint alone reports. This precondition narrows
+when the short-circuit may be used; it never narrows what steps 1–11
+above require, and it never substitutes for re-verifying previously
+reported blocking findings, discovering new P0/P1s, or independently
+(re-)detecting unstaged/untracked state — see those existing
+requirements below and in step 3.
+
 When the caller supplies the previously reported staged-delta
-fingerprint as re-review context, compare it against the fingerprint
-freshly computed in step 4 above, per
+fingerprint as re-review context **and the precondition above holds**,
+compare it against the fingerprint freshly computed in step 4 above, per
 [`../policies/repository-state.md`](../policies/repository-state.md),
 "Fingerprint scope and re-review comparison":
 
-- **Match** — treat the staged delta as unchanged; focus staged-scope
-  effort on verifying previously reported findings in that delta rather
-  than re-reviewing it as new content.
+- **Match** — this is a safe, testable short-circuit: skip re-deriving
+  review reasoning for the staged category from scratch, and instead
+  spend that effort verifying whether each previously reported blocking
+  finding in the staged delta was actually resolved. This never shrinks
+  scope — the staged category is still fully accounted for in the
+  report, and a newly discovered P0/P1 in that same staged delta (found
+  while verifying) is still reported. It only avoids repeating settled
+  reasoning over content that provably has not changed, under a review
+  standard that has also provably not changed.
 - **Differ** — the staged delta changed and must be reviewed as new
   delta, same as any other newly detected content.
+- **Precondition not established** (the applicable review standard
+  changed, or the caller cannot confirm it did not) — treat this
+  exactly as a fingerprint **Differ**: review the staged category as new
+  content under the current standard, regardless of what the content
+  fingerprint itself reports.
 
 This comparison is scoped to the staged category only. Unstaged and
 untracked state carry no fingerprint and must be independently

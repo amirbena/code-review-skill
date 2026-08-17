@@ -6,6 +6,21 @@ evidence-based, using repository instructions, generated-file headers,
 `.gitattributes`, build/output paths, nearby generator configuration, and
 manifest conventions. Never classify or skip a file by extension alone.
 
+## Scope of applicability (safe short-circuit)
+
+The sections below — Generated files, Vendored dependencies, Manifests
+and lockfiles, Minified files and bundles, Binary files, and Snapshots —
+each apply only when at least one changed file in the current delta is
+evidence-based classifiable into that category (per the classification
+rule above: never by extension alone). When no changed file in the delta
+matches a given section's category, that section contributes nothing to
+this review and may be skipped without walking its checklist. This
+narrows which type-specific handling is applied; it never narrows the
+Completeness invariant below, which still governs every changed file
+regardless of type. All six type-specific sections below are covered by
+this same short-circuit — none of them requires being walked when the
+delta contains no file evidence-classifiable into it.
+
 ## Completeness invariant
 
 Every changed file remains in review scope. A reviewer may choose the most

@@ -48,6 +48,22 @@ A change under `backend/` accounts for root `AGENTS.md` **and**
 instructions to files outside that directory's ancestry — unrelated
 directory-specific instructions are not applied globally.
 
+## Deduplicated discovery
+
+Discovery is scoped per changed file conceptually, but must not cost one
+read per file. Before reading anything, compute the **union** of
+candidate instruction-file paths across every changed file's directory
+ancestry (repository root plus each ancestor directory up to, but not
+past, the file's own directory) — the same root `AGENTS.md`/`CLAUDE.md`
+candidate path appears only once in that union even if a hundred changed
+files share it. Read each unique candidate path at most once, note
+whether it exists, and then apply whatever was found to every changed
+file whose ancestry includes that path. This is a pure retrieval-order
+optimization: it must discover and apply the identical set of instruction
+files to the identical set of changed files as reading per-file would —
+it only removes redundant reads of a path already read for this
+invocation, never a path that has not yet been checked.
+
 ## AGENTS.md vs. CLAUDE.md
 
 `CLAUDE.md` in a target repository is review context, not automatically
