@@ -1,22 +1,15 @@
 ---
 name: local-code-review
 description: >-
-  Reviews local, not-yet-PR'd Git implementation state — committed
-  delta, staged, unstaged, and untracked changes — and returns
-  evidence-backed P0/P1/P2 findings. Read-only: never edits files,
-  commits, pushes, or touches GitHub. Opt-in only: the end user must
-  explicitly select each specific review, even when an implementing
-  Agent invokes it as a delegated Agent/Sub-Agent; it never runs merely
-  because implementation finished, and every re-review requires its own
-  fresh opt-in. Optionally accepts free-form review context (requirements,
-  a Jira ticket/acceptance criteria, an HLD/ADR, an implementation plan,
-  or similar) to focus the review on whether the implementation satisfies
-  the intended change, and/or a reference to an associated GitHub PR to
-  reconcile against existing reviewer findings and settled architectural
-  decisions — the local delta remains the review scope and behavior is
-  unchanged when neither is given. Not for an existing GitHub Pull
-  Request as the review target — use the sibling github-pr-review Skill
-  for that.
+  Reviews local, not-yet-PR'd Git changes (committed delta, staged,
+  unstaged, and untracked) and returns evidence-backed P0/P1/P2 findings.
+  Read-only and opt-in only: never edits, commits, pushes, or touches
+  GitHub, and every review or re-review requires explicit user selection.
+  Optionally accepts free-form context such as requirements, Jira/HLD/ADR,
+  acceptance criteria, or implementation plans to focus the review, plus
+  an associated GitHub PR reference for reconciling prior findings and
+  architectural decisions. The local delta always remains the review
+  scope. For reviewing an existing PR itself, use github-pr-review.
 ---
 
 # SKILL.md — local-code-review
