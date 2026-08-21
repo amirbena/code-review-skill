@@ -66,7 +66,12 @@ metadata is subordinate" below.
   executed, say so explicitly rather than implying it passed.
 - **Decision** — an unambiguous label plus one sentence tying it to the
   findings. Never leave the reader to compute the outcome from raw P0/P1/P2
-  counts.
+  counts. The decision itself is derived mechanically from blocking
+  severities per [`severity.md`](../policies/severity.md), "Decision
+  derivation (mechanical)" — it is never an independent judgment call
+  that can contradict that derivation, and a non-blocking finding (P2)
+  never produces a blocking decision no matter how strongly it is
+  recommended.
 
 ## Machine metadata is subordinate
 

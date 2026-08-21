@@ -15,7 +15,11 @@ this Skill's own
 [`../policies/repository-state.md`](../policies/repository-state.md)
 (the committed/staged/unstaged/tracked/untracked category definitions,
 per-category detection commands, and the staged-delta fingerprint used
-below). When the caller supplies a PR reference, also
+below). When the caller supplies review context, also
+[`../policies/review-context.md`](../policies/review-context.md)
+(interpretation, evidence hierarchy, and review-focus mapping for that
+optional input) — never loaded or applied otherwise. When the caller
+supplies a PR reference, also
 [`../policies/pr-context.md`](../policies/pr-context.md) (retrieval
 scope, classification, finding reconciliation, and architectural-decision
 handling) — never loaded or applied otherwise.
@@ -31,6 +35,11 @@ detect each category separately: committed, staged, unstaged, untracked
     ↓
 compute staged-delta fingerprint
     ↓
+review context supplied? → yes → understand intended change, extract
+                                   requirements/invariants/non-goals, map
+                                   onto the delta established above
+                                 → no  → unchanged
+    ↓
 PR reference supplied? → yes → read/classify/reconcile relevant PR
                                  context against the delta established
                                  above (scope never expands to the PR)
@@ -38,7 +47,12 @@ PR reference supplied? → yes → read/classify/reconcile relevant PR
     ↓
 inspect relevant surrounding code
     ↓
-review against code + repository conventions
+review against code + repository conventions, focused per any supplied
+review context
+    ↓
+classify findings by severity (source never changes the classification)
+    ↓
+derive decision mechanically from blocking severities (P0/P1)
     ↓
 return P0/P1/P2 findings, each attributed to its source category
     ↓
@@ -161,10 +175,37 @@ attributed exactly as written.
    membership, rather than repeating a read for every file that happens to
    share an ancestor directory. Do this before reviewing so discovered
    conventions inform the review itself, not just a post-hoc check.
-7. **If, and only if, the caller supplied a PR reference:** apply
+7. **If, and only if, the caller supplied review context:** apply
+   [`../policies/review-context.md`](../policies/review-context.md) now,
+   after the local delta (steps 1-4) and repository-instruction
+   discovery (step 6) are both established, and before PR-context
+   reconciliation (step 8, if applicable) and the review step below —
+   this is the "Context understanding" phase:
+   1. Read the supplied context in full.
+   2. Identify the intended change it describes.
+   3. Extract the important requirements, acceptance criteria, and
+      invariants it states.
+   4. Identify any explicit non-goals it states.
+   5. Map those requirements/invariants onto the relevant areas of the
+      current local delta established in steps 1-4 — never onto files or
+      concerns outside that delta.
+   6. Carry that mapping into the review step below as focus, per
+      [`../policies/review-context.md`](../policies/review-context.md),
+      "Using context to focus review attention" — it directs *where to
+      look carefully*, never a conclusion the review is forced to reach;
+      the implementation is still inspected to determine whether
+      described behavior actually exists, per that policy's "Evidence
+      hierarchy."
+
+   If no review context was supplied, skip this step entirely — proceed
+   directly to step 8 exactly as this runbook already did before this
+   step existed. This step never prompts the user for context when none
+   was supplied.
+8. **If, and only if, the caller supplied a PR reference:** apply
    [`../policies/pr-context.md`](../policies/pr-context.md) now, after
-   the local delta (steps 1-4) and repository-instruction discovery
-   (step 6) are both established, and before the review step below:
+   the local delta (steps 1-4), repository-instruction discovery (step
+   6), and review-context understanding (step 7, if applicable) are
+   established, and before the review step below:
    1. Resolve the PR reference; if it cannot be resolved or no GitHub
       read capability is available, note the limitation and continue as
       if no PR reference had been supplied.
@@ -189,15 +230,23 @@ attributed exactly as written.
    If no PR reference was supplied, skip this step entirely — proceed
    directly to the review step below exactly as this runbook already
    did before this step existed.
-8. Review the complete delta against
+9. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
    [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
-   applying the instructions discovered in step 6 and inspecting relevant
-   surrounding repository code and tests. In particular, apply
-   [`review-scope.md`](../../../shared/policies/review-scope.md), "Related
-   changes as one unit" — review related files/hunks in the delta together
-   rather than in isolation — and
+   applying **all applicable upstream context established above** —
+   repository instructions (step 6), the review-focus mapping from
+   supplied review context (step 7, if applicable), and reconciled
+   PR-context findings/decisions (step 8, if applicable) — and inspecting
+   relevant surrounding repository code and tests. This is a
+   cross-reference to those steps' own output, not a restatement of them:
+   review context and PR context still only ever *focus* this step, per
+   their own policies' scope-discipline rules — they never expand review
+   scope beyond the current local delta and never substitute for the
+   evidence this step itself gathers from the actual code. In particular,
+   apply [`review-scope.md`](../../../shared/policies/review-scope.md),
+   "Related changes as one unit" — review related files/hunks in the
+   delta together rather than in isolation — and
    [`evidence.md`](../../../shared/policies/evidence.md), "Findings beyond
    the changed lines," when a finding depends on code outside the delta.
    These are the same shared review-quality invariants `github-pr-review`
@@ -206,38 +255,65 @@ attributed exactly as written.
    never override this Skill's own safety boundaries (see
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
    "Instruction precedence").
-9. Classify findings per
+10. Classify findings per
    [`severity.md`](../../../shared/policies/severity.md), each backed by
    evidence and impact per
    [`evidence.md`](../../../shared/policies/evidence.md), using the shared
    finding shape in
-   [`finding.md`](../../../shared/templates/finding.md). Attribute each
+   [`finding.md`](../../../shared/templates/finding.md). Severity is
+   independent of a finding's source: a finding derived from a target
+   repository's own convention (step 6) is classified against the same
+   P0/P1/P2 definitions as any other finding, never automatically
+   escalated to a blocking severity merely because the source repository
+   states the convention emphatically — see
+   [`severity.md`](../../../shared/policies/severity.md), "Repository
+   conventions and severity." Attribute each
    finding to the source category it came from — committed, staged,
    unstaged, or untracked — per
    [`../policies/repository-state.md`](../policies/repository-state.md),
-   "Attribution in findings." When step 7 ran, a finding reconciled from
+   "Attribution in findings." When step 8 ran, a finding reconciled from
    PR context (still-present or requiring re-evaluation) says so in its
    evidence rather than presenting itself as newly discovered, and a
    violated architectural decision is reported as its own finding per
    [`../policies/pr-context.md`](../policies/pr-context.md); do not
    report the same underlying issue twice merely because both PR context
-   and this review independently identified it. Finalize the complete
-   set of findings — including any that were revised, merged, or
-   discarded during review — before composing the report. Do not report
-   findings piecemeal as they are discovered; the report in step 11 is
-   composed once, from the finalized set.
-10. Compose the human-facing body per
+   and this review independently identified it. Likewise, when step 7
+   ran, a finding that materially traces back to supplied review context
+   says so in its evidence per
+   [`../policies/review-context.md`](../policies/review-context.md),
+   "Tracing findings back to context" — used sparingly, not on every
+   finding. Finalize the complete set of findings — including any that
+   were revised, merged, or discarded during review — before composing
+   the report. Do not report findings piecemeal as they are discovered;
+   the report in step 12 is composed once, from the finalized set.
+11. Derive the Decision mechanically per
+    [`severity.md`](../../../shared/policies/severity.md), "Decision
+    derivation (mechanical)": compute `blocking_findings` as the
+    finalized findings whose severity is `P0` or `P1`; the decision is
+    `REVIEW CLEAN` when that set is empty and `CHANGES REQUIRED`
+    otherwise. This is the only path to the decision — do not layer an
+    independent, subjective "should this really block" judgment on top
+    of it, and do not let a strongly-worded repository convention, a
+    strongly recommended P2, or reconciled context (step 7/8) push the
+    decision to `CHANGES REQUIRED` when `blocking_findings` is empty. All
+    finalized findings, including any P2s, remain reported in Findings
+    regardless of the decision — a clean decision never means the
+    findings list is emptied or downgraded to obtain it.
+12. Compose the human-facing body per
     [`review-summary.md`](../../../shared/templates/review-summary.md):
     a concrete "What changed" summary, an evidence-backed "What was done
     well" (omit or keep to one line if nothing concrete stands out), the
-    finalized findings, and a "Validation" section listing only what was
-    actually inspected or executed by this review — do not claim a
-    validation step ran if it did not. When step 7 ran and materially
-    shaped the review, include the terse "PR Context" note per
-    [`../templates/local-review-report.md`](../templates/local-review-report.md)
-    — omit it entirely when no PR reference was supplied or it had no
-    material effect.
-11. Render
+    finalized findings, the Decision derived in step 11, and a
+    "Validation" section listing only what was actually inspected or
+    executed by this review — do not claim a validation step ran if it
+    did not. When step 7 (review context) materially shaped the review,
+    include the terse "Context" note per
+    [`../templates/local-review-report.md`](../templates/local-review-report.md);
+    when step 8 (PR context) ran and materially shaped the review,
+    include the terse "PR Context" note per that same template — each is
+    omitted entirely when its respective input was not supplied or had
+    no material effect.
+13. Render
     [`../templates/local-review-report.md`](../templates/local-review-report.md)
     as one complete report — including the review scope contract fields
     (review base, per-category inclusion/exclusion, staged fingerprint,
@@ -300,6 +376,7 @@ since the prior review whose fingerprint is being compared against:
   ([`../policies/invocation-approval.md`](../policies/invocation-approval.md),
   [`../policies/repository-state.md`](../policies/repository-state.md),
   and, when applicable,
+  [`../policies/review-context.md`](../policies/review-context.md) and
   [`../policies/pr-context.md`](../policies/pr-context.md));
 - the shared review policies
   ([`review-scope.md`](../../../shared/policies/review-scope.md),

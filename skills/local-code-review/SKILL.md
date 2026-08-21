@@ -8,12 +8,15 @@ description: >-
   explicitly select each specific review, even when an implementing
   Agent invokes it as a delegated Agent/Sub-Agent; it never runs merely
   because implementation finished, and every re-review requires its own
-  fresh opt-in. Optionally accepts a reference to an associated GitHub
-  PR to reconcile against existing reviewer findings and settled
-  architectural decisions — the local delta remains the review scope
-  and behavior is unchanged when no PR is given. Not for an existing
-  GitHub Pull Request as the review target — use the sibling
-  github-pr-review Skill for that.
+  fresh opt-in. Optionally accepts free-form review context (requirements,
+  a Jira ticket/acceptance criteria, an HLD/ADR, an implementation plan,
+  or similar) to focus the review on whether the implementation satisfies
+  the intended change, and/or a reference to an associated GitHub PR to
+  reconcile against existing reviewer findings and settled architectural
+  decisions — the local delta remains the review scope and behavior is
+  unchanged when neither is given. Not for an existing GitHub Pull
+  Request as the review target — use the sibling github-pr-review Skill
+  for that.
 ---
 
 # SKILL.md — local-code-review
@@ -34,6 +37,12 @@ inspect Git delta by category: committed, staged, unstaged, untracked
     ↓
 compute staged-delta fingerprint
     ↓
+optional review context supplied? → yes → understand intended change,
+                                            extract requirements/
+                                            invariants/non-goals, map onto
+                                            the delta (never expands scope)
+                                         → no  → unchanged
+    ↓
 optional PR reference supplied? → yes → read/classify/reconcile
                                           relevant PR context against
                                           this delta (never expands scope)
@@ -41,7 +50,12 @@ optional PR reference supplied? → yes → read/classify/reconcile
     ↓
 inspect relevant surrounding code
     ↓
-review against code + repository conventions
+review against code + repository conventions, focused per any supplied
+review context
+    ↓
+classify findings by severity (source never changes classification)
+    ↓
+derive decision mechanically from blocking severities (P0/P1)
     ↓
 return P0/P1/P2 findings
     ↓
@@ -103,6 +117,20 @@ The full implementation state is reviewed — local `HEAD` alone is never
 assumed to contain everything, and no category is silently skipped
 without saying so in the report.
 
+**Optional:** free-form review context describing the intended change —
+requirements, a Jira (or equivalent tracker) ticket and/or its acceptance
+criteria, an HLD/architecture document/ADR, an implementation plan, a bug
+or incident description, a PR/task description, or migration/security/
+performance/rollout requirements. No source requires a dedicated
+integration; the caller supplies the text and this Skill treats it
+uniformly. When supplied, this Skill uses it to understand the intended
+change and focus review attention accordingly — never as an authority
+that overrides actual implementation evidence — before performing the
+rest of its own review; see
+[`policies/review-context.md`](policies/review-context.md). When
+omitted, this Skill's behavior is exactly as if this input did not exist,
+and this Skill never asks for it.
+
 **Optional:** a reference to an associated GitHub PR (a PR URL, or a PR
 number when the repository can be inferred unambiguously). When supplied,
 this Skill reconciles the local delta against relevant existing reviewer
@@ -110,6 +138,10 @@ findings and settled architectural/design decisions from that PR before
 performing the rest of its own review — see
 [`policies/pr-context.md`](policies/pr-context.md). When omitted, this
 Skill's behavior is exactly as if this input did not exist.
+
+These two optional inputs are independent — either, both, or neither may
+be supplied in a given invocation, with no ordering requirement between
+them from the caller's side.
 
 ## 3. Required Policy Loading
 
@@ -132,11 +164,17 @@ section 5 below) and
 [`policies/repository-state.md`](policies/repository-state.md) (the
 committed/staged/unstaged/tracked/untracked category definitions,
 per-category detection commands, and the staged-delta fingerprint).
-Additionally, only when a PR reference is supplied per section 2:
-[`policies/pr-context.md`](policies/pr-context.md) (retrieval scope,
-classification, finding reconciliation, and architectural-decision
-handling for that optional PR context). This policy is never loaded or
-applied when no PR reference is supplied.
+Additionally, only when review context is supplied per section 2:
+[`policies/review-context.md`](policies/review-context.md) (input forms,
+the evidence hierarchy, review-focus mapping, and scope discipline for
+that optional context). This policy is never loaded or applied when no
+review context is supplied. Additionally, only when a PR reference is
+supplied per section 2: [`policies/pr-context.md`](policies/pr-context.md)
+(retrieval scope, classification, finding reconciliation, and
+architectural-decision handling for that optional PR context). This
+policy is never loaded or applied when no PR reference is supplied. Each
+of these two policies is loaded and applied independently of the other,
+and only when its own respective input is supplied — never otherwise.
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.
@@ -151,11 +189,17 @@ apply or what they require.
 Exactly one [`templates/local-review-report.md`](templates/local-review-report.md)
 per invocation, rendering the shared human-facing shape in
 [`review-summary.md`](../../shared/templates/review-summary.md): a
-Result, What changed, What was done well, an optional PR Context section
-(present only when a PR reference was supplied per section 2 and it
+Result, What changed, What was done well, an optional Context section
+(present only when review context was supplied per section 2 and it
 materially shaped the review — see
+[`policies/review-context.md`](policies/review-context.md), "Output"), an
+optional PR Context section (present only when a PR reference was
+supplied per section 2 and it materially shaped the review — see
 [`policies/pr-context.md`](policies/pr-context.md), "Output"), Findings,
-Validation, and a Decision of `REVIEW CLEAN` or `CHANGES REQUIRED`.
+Validation, and a Decision of `REVIEW CLEAN` or `CHANGES REQUIRED`
+derived mechanically from blocking (P0/P1) severities — see
+[`../../shared/policies/severity.md`](../../shared/policies/severity.md),
+"Decision derivation (mechanical)."
 Machine-oriented detail
 (base/HEAD SHAs, synchronization status, raw P0/P1/P2 counts, per-category
 inclusion/exclusion, and the staged-delta fingerprint per

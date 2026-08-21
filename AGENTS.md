@@ -214,6 +214,40 @@ or any branch not created specifically for the task at hand, step 4
 continuing on that branch as an acceptable shortcut, even if the branch
 is already synchronized with the base.
 
+### Continuing on an already-correct task branch
+
+The converse also holds: if the current branch is already clearly
+associated with the task/context at hand (for example, an Agent resuming
+its own in-progress task branch), step 4 is **not** re-triggered —
+continue on that branch rather than creating an unnecessary nested or
+replacement branch. "Dedicated task branch" means one branch per task,
+not one branch per work session on that task.
+
+### Preserving local changes when switching (stash discipline)
+
+Step 3 ("ensure the working tree is clean, or safely preserve any
+legitimate existing work") is a `git stash` obligation whenever the
+current branch is unrelated to the task at hand and the working tree is
+not already clean:
+
+1. inspect the local changes before doing anything else — never assume
+   what they are;
+2. never discard them (no `git reset --hard`, `git checkout .`, `git
+   clean -fd`, or equivalent) merely to reach a clean state for the
+   branch switch;
+3. `git stash` them (including untracked content, via `-u`, when
+   relevant) before creating/switching to the task branch;
+4. create/switch to the branch that actually belongs to the current
+   task;
+5. `git stash pop` only when the stashed changes are determined to
+   belong to the current task — never automatically, and never merely
+   because a stash exists.
+
+If the stashed changes belong to a different task, leave them stashed,
+report that a stash exists and what it contains, and do not mix it into
+the current task branch. Branch hygiene is never a reason to discard or
+blend unrelated working-tree changes.
+
 Preferred naming:
 
 ```text

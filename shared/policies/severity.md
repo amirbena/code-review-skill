@@ -41,5 +41,50 @@ stylistic taste with no engineering cost).
 - P2 findings alone never block a clean/approved result; they may
   coexist with `REVIEW CLEAN` (local) or `Approve` (GitHub).
 
+## Decision derivation (mechanical)
+
+The formal review decision is derived mechanically from the severities
+already assigned above — it is never a separate, independent judgment
+call that can contradict that derivation:
+
+```text
+blocking_findings = { f in findings : severity(f) in {P0, P1} }
+
+blocking_findings is empty      → clean/approved decision
+                                    (`REVIEW CLEAN` local, `Approve` GitHub)
+blocking_findings is non-empty  → blocking decision
+                                    (`CHANGES REQUIRED` local,
+                                     `Request Changes` GitHub)
+```
+
+There is no reviewer discretion in this step. A P2 finding — no matter
+how strongly it is recommended, how many P2 findings exist, or where it
+originated (a repository convention, reconciled PR context, supplied
+review context, or the reviewer's own judgment) — never by itself
+produces a blocking decision. A strong recommendation belongs in that
+finding's own Impact/Recommended direction text; it never substitutes
+for, or overrides, severity when the decision is derived. Conversely, a
+finding that actually warrants blocking must be classified P0 or P1
+under the definitions above — the fix for "this should really block" is
+to assign the correct severity, never to make the decision diverge from
+the severity it was actually given.
+
+## Repository conventions and severity
+
+A target repository's own instructions (`AGENTS.md`, `CLAUDE.md`, or
+other repository-local convention — see
+[`repository-instructions.md`](repository-instructions.md)) may
+legitimately make something a finding. They never, by themselves,
+determine that finding's severity or blocking status. A
+repository-convention finding is classified under the P0/P1/P2
+definitions above using exactly the same standard as any other finding:
+it blocks only when it independently meets the P0 or P1 bar (an actual
+correctness, security, reliability, or contract defect), never merely
+because it originates from a stated repository convention or is phrased
+emphatically ("must", "never", "always"). A style or convention finding
+with no such independent defect is P2, and P2 alone never blocks per the
+rule above — regardless of how firmly the source repository states the
+convention.
+
 This is the single canonical severity model. Neither Skill defines its
 own copy — both reference this file.
