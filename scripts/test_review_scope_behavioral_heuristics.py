@@ -19,6 +19,14 @@ conditions, and cross-file wiring — never on a parallel reimplementation of
 the rules, and never by freezing large exact prose blocks where a shorter,
 more robust substring captures the same invariant.
 
+This suite is scoped to the behavioral heuristics themselves — ownership/
+reuse, failure/retry/recovery, contract/exception semantics, observability
+applicability, and shared-policy wiring across both Skills. Git-mechanics
+ownership (category detection, push/sync status, the staged-fingerprint
+precondition/comparison contract) is a different domain with its own
+canonical test owner, scripts/test_latency_optimizations_docs.py, and is
+intentionally not duplicated here.
+
 Run with:
     python3 scripts/test_review_scope_behavioral_heuristics.py
 """
@@ -139,38 +147,6 @@ class RunbookDoesNotDuplicateBehavioralPolicyTextTests(unittest.TestCase):
         hierarchy_phrase = "never a generic \"add more logs\" recommendation"
         self.assertIn(hierarchy_phrase, self.policy_text)
         self.assertNotIn(hierarchy_phrase, self.runbook_text)
-
-
-class GitReReviewSemanticsOwnedByRepositoryStateTests(unittest.TestCase):
-    """(4) Git/re-review semantics remain owned by the canonical
-    repository-state policy, not restated in the runbook."""
-
-    def setUp(self) -> None:
-        self.runbook_text = _text(LOCAL_RUNBOOK)
-        self.policy_text = _text(
-            LOCAL_SKILL_DIR / "policies/repository-state.md"
-        )
-
-    def test_fingerprint_contract_is_sole_owned_by_repository_state(self) -> None:
-        self.assertIn(
-            "This policy is the single canonical owner of the complete "
-            "fingerprint-comparison contract",
-            self.policy_text,
-        )
-        self.assertNotIn("this is a safe, testable short-circuit", self.runbook_text)
-
-    def test_push_sync_status_section_exists_in_repository_state(self) -> None:
-        self.assertIn("## Push / synchronization status", self.policy_text)
-
-    def test_runbook_points_to_repository_state_for_category_detection(self) -> None:
-        self.assertIn("Detection commands per category", self.runbook_text)
-        # The full per-category command table lives only in the policy.
-        self.assertIn(
-            "git ls-files --others --exclude-standard", self.policy_text
-        )
-        self.assertNotIn(
-            "git ls-files --others --exclude-standard", self.runbook_text
-        )
 
 
 class OwnershipReuseIsTargetedTests(unittest.TestCase):

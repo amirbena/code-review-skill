@@ -123,6 +123,20 @@ class RunbookBatchingTests(unittest.TestCase):
             self.text,
         )
 
+    def test_runbook_points_to_repository_state_for_category_detection(self) -> None:
+        # The full per-category command table lives only in the policy.
+        self.assertIn("Detection commands per category", self.text)
+        self.assertIn(
+            "git ls-files --others --exclude-standard",
+            _text(REPOSITORY_STATE_POLICY),
+        )
+        self.assertNotIn(
+            "git ls-files --others --exclude-standard", self.text
+        )
+
+    def test_push_sync_status_section_exists_in_repository_state(self) -> None:
+        self.assertIn("## Push / synchronization status", _text(REPOSITORY_STATE_POLICY))
+
 
 class ReReviewShortCircuitTests(unittest.TestCase):
     """The complete fingerprint precondition/comparison contract is owned

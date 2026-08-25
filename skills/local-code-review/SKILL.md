@@ -197,8 +197,13 @@ Machine-oriented detail
 (base/HEAD SHAs, synchronization status, raw P0/P1/P2 counts, per-category
 inclusion/exclusion, and the staged-delta fingerprint per
 [`policies/repository-state.md`](policies/repository-state.md)) is
-subordinate, appearing only in a trailing metadata block — never ahead of
-the human-facing review. Returned to the caller as one complete report —
+subordinate, appearing only in a trailing metadata block, in plain
+Markdown, never ahead of the human-facing review. The fingerprint and the
+previously-reviewed-state comparison are always computed regardless of
+whether they are shown, but their *display* is relevance-gated per
+[`templates/local-review-report.md`](templates/local-review-report.md),
+"Relevance-aware metadata rendering" — every other metadata field above
+renders unconditionally. Returned to the caller as one complete report —
 never published anywhere, and never streamed finding-by-finding as
 findings are discovered.
 

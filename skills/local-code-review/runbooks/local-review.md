@@ -221,9 +221,10 @@ which a value must be resolved before it is used, or what is reported.
 13. Render
     [`../templates/local-review-report.md`](../templates/local-review-report.md)
     as one complete report — including the review scope contract fields
-    (review base, per-category inclusion/exclusion, staged fingerprint,
-    initial-review-vs-re-review, and whether previously reviewed state
-    changed) — and return it. **Stop.**
+    (review base, per-category inclusion/exclusion, initial-review-vs-
+    re-review, and, per that template's own "Relevance-aware metadata
+    rendering," the staged fingerprint and whether previously reviewed
+    state changed) — and return it. **Stop.**
 
 ## Constraints
 

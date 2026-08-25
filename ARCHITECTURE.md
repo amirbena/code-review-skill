@@ -378,6 +378,24 @@ in staged package metadata, then checked for containment and existence.
 - **Review reasoning** is Skill-agnostic and delivery-mode-agnostic: the
   same shared policies and severity model apply in `local-code-review`
   and in both modes of `github-pr-review`.
+- **Human-facing report formatting is not implied by shared reasoning.**
+  Each Skill's own template owns the presentation appropriate to its own
+  delivery surface, per
+  [`shared/templates/review-summary.md`](shared/templates/review-summary.md),
+  "Machine metadata is subordinate": `local-code-review`'s
+  [`templates/local-review-report.md`](skills/local-code-review/templates/local-review-report.md)
+  renders its trailing metadata as plain Markdown and relevance-gates
+  which fields appear (a report read directly in a terminal/chat has no
+  use for a collapsible widget, and an initial review with nothing
+  staged has no use for a fixed, empty-input fingerprint every time),
+  while `github-pr-review`'s
+  [`templates/external-review-summary.md`](skills/github-pr-review/templates/external-review-summary.md)
+  legitimately wraps its own optional subordinate metadata in a
+  collapsible `<details>` block, since GitHub natively renders and
+  collapses it. Neither choice is more "correct" than the other — they
+  are Skill-specific answers to different delivery surfaces, and a
+  change to one Skill's presentation must not be read as implying the
+  other should match it.
 - **GitHub submission capability** is separate from reasoning. A clean or
   blocking result remains valid even when the authenticated account (for
   example, the PR author) cannot submit the corresponding formal review.
