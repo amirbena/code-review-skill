@@ -246,11 +246,20 @@ attributed exactly as written.
    evidence this step itself gathers from the actual code. In particular,
    apply [`review-scope.md`](../../../shared/policies/review-scope.md),
    "Related changes as one unit" — review related files/hunks in the
-   delta together rather than in isolation — and
+   delta together rather than in isolation, including following a changed
+   contract/return value/exception to its actual callers — and
    [`evidence.md`](../../../shared/policies/evidence.md), "Findings beyond
    the changed lines," when a finding depends on code outside the delta.
-   These are the same shared review-quality invariants `github-pr-review`
-   applies to a PR; this runbook does not restate their full text.
+   When the delta's own shape gives concrete reason to, also apply
+   [`review-scope.md`](../../../shared/policies/review-scope.md),
+   "Existing behavior ownership" (a targeted search for whether this delta
+   duplicates an existing canonical owner of the behavior it introduces)
+   and "Failure state, retry safety, and recovery" (partial-failure state,
+   retry/idempotency safety, evidenced recovery, and proportional
+   observability, reasoned about as one signal-triggered move, per that
+   section's own trigger conditions). These are the same shared
+   review-quality invariants `github-pr-review` applies to a PR; this
+   runbook does not restate their full text.
    Target-repository instructions refine how the code is evaluated; they
    never override this Skill's own safety boundaries (see
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),

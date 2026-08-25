@@ -92,9 +92,17 @@ reviewed together rather than file-by-file, and [`evidence.md`](shared/policies/
 invariant that findings outside the changed lines must be tied to what the reviewed change
 actually affects — establish engine-neutral review-quality expectations, but they are
 intentionally kept concise: a capable reviewing engine is expected to satisfy them without a
-detailed, prescribed reasoning procedure. The governance layer, by contrast, is specified in
-full detail, because it is not the kind of thing any review engine is expected to reconstruct on
-its own.
+detailed, prescribed reasoning procedure. A small number of exceptions target recurring,
+high-value failure modes that are otherwise easy for a capable reviewer to skip past even while
+reading the diff carefully — [`review-scope.md`](shared/policies/review-scope.md)'s "Existing
+behavior ownership" (does this change duplicate an existing canonical implementation of the same
+business/validation/state semantics rather than reusing it) and "Failure state, retry safety, and
+recovery" (partial-failure state, retry/idempotency safety, evidenced recovery, and proportional
+observability, as one signal-triggered reasoning move). These remain local-first and
+signal-triggered, not a general checklist: each activates only when the diff's own shape gives
+concrete reason to, and neither licenses a repository-wide audit — see those sections' own text.
+The governance layer, by contrast, is specified in full detail, because it is not the kind of
+thing any review engine is expected to reconstruct on its own.
 
 ## 5. Defense in Depth
 

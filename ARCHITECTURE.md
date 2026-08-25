@@ -109,7 +109,22 @@ Delivery Mode
   related tests, contracts, schemas, and conventions.
 - **Core Code Review Engine** — the single review reasoning model defined
   by `shared/policies/review-scope.md`. Identical regardless of which
-  Skill or delivery mode invokes it.
+  Skill or delivery mode invokes it. Beyond the baseline concern list, this
+  model reasons in the same local-first, signal-triggered style about four
+  higher-value behavioral concerns when the diff's own shape makes them
+  relevant: whether new business/validation/state-transition logic
+  duplicates an existing canonical owner rather than reusing it; whether a
+  multi-step, retryable, or externally re-triggerable flow leaves safe or
+  stranded state on partial failure, and whether any claimed recovery path
+  is actually evidenced; whether a changed contract, return value, or
+  exception is followed to its real callers, including exceptions that are
+  now swallowed, translated, or masked by a fallback; and whether a
+  meaningful new failure path stays diagnosable through the repository's
+  own established metrics/alerts or logging convention. None of these
+  expand the model into a repository-wide audit — each is gated on a
+  concrete signal in the diff and scaled to blast radius exactly like the
+  model's other reasoning, per `shared/policies/review-scope.md` and
+  `shared/policies/evidence.md`.
 - **Finding Classification** — every actionable finding is assigned
   exactly one severity: P0, P1, or P2, per
   [`shared/policies/severity.md`](shared/policies/severity.md).

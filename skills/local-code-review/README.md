@@ -76,6 +76,29 @@ The authoritative, numbered procedure is
 [`runbooks/local-review.md`](runbooks/local-review.md); this is a
 compact overview, not a substitute for it.
 
+## Behavioral review signals (step 4)
+
+Step 4's review reasoning is defined once in
+[`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md)
+(shared identically with `github-pr-review`, so it never diverges between
+the two Skills). Beyond the baseline concern list, it includes a small,
+signal-triggered set of heuristics for recurring, high-value review gaps:
+whether new business/validation/state-transition logic duplicates an
+existing canonical owner rather than reusing it ("Existing behavior
+ownership"); whether a multi-step, retryable, or externally re-triggerable
+flow leaves safe or stranded state on partial failure, whether any claimed
+recovery is actually evidenced, and whether the failure would stay
+diagnosable through the repository's own established observability
+convention ("Failure state, retry safety, and recovery"); and whether a
+changed contract, return value, or exception — including one now swallowed,
+translated, or masked by a fallback — is followed to its actual callers
+(a tightening of "Related changes as one unit"). Each activates only when
+the diff's own shape gives concrete reason to and stays scaled to blast
+radius per
+[`../../shared/policies/evidence.md`](../../shared/policies/evidence.md) —
+none of them turns a review into a repository-wide audit or a mandatory
+checklist.
+
 ## Key files
 
 - [`SKILL.md`](SKILL.md) — the Skill contract (identity, inputs, output contract)
