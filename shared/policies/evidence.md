@@ -44,3 +44,11 @@ a change with a wide realistic blast radius (a shared contract, schema, or
 widely depended-on symbol) warrants more. This invariant applies identically
 to any Code Review Skill built on this policy, local or PR-based, and
 regardless of which review engine or model executes it.
+
+This same scaling — investigate no further than the change's own realistic
+blast radius — governs the targeted searches in
+[`review-scope.md`](review-scope.md), "Existing behavior ownership" and
+"Failure state, retry safety, and recovery," identically to any other
+cross-file reasoning: neither is a license for a repository-wide audit, and
+a finding under either still requires the same confirmed-defect /
+credible-risk / optional-improvement evidence labeling above.

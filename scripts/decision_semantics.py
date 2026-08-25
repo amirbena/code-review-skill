@@ -81,6 +81,26 @@ def derive_decision(findings: Sequence[Finding]) -> Decision:
     return Decision.CLEAN if not blocking_findings(findings) else Decision.CHANGES_REQUIRED
 
 
+#: Per severity.md, "Decision derivation (mechanical)": a report's `Result`
+#: line and its `Decision` section are two textual renderings of one
+#: already-derived value. `Decision.value` (e.g. `"REVIEW CLEAN"`) already
+#: *is* the canonical Decision-section text, so no separate mapping is
+#: needed for that rendering. Only the Result line's phrasing genuinely
+#: differs (an emoji plus human-friendly wording) and needs a derived
+#: mapping of its own — keyed off the same `Decision` enum, so there is no
+#: code path here that could produce a Result for one Decision value and a
+#: Decision-section label for another.
+RESULT_LABELS: dict[Decision, str] = {
+    Decision.CLEAN: "✅ Review Clean",
+    Decision.CHANGES_REQUIRED: "⚠️ Changes Requested",
+}
+
+
+def render_result_label(decision: Decision) -> str:
+    """The report's top-level `Result` line for an already-derived decision."""
+    return RESULT_LABELS[decision]
+
+
 def clean_report_retains_non_blocking_findings(findings: Sequence[Finding]) -> tuple[Finding, ...]:
     """A clean decision never means findings are hidden or discarded.
 
@@ -112,5 +132,22 @@ PROHIBITED_OVERRIDE_PARAM_FRAGMENTS: frozenset[str] = frozenset(
         "manual_decision",
         "recommend_block",
         "should_block",
+    }
+)
+
+#: Name fragments that would indicate a second, correctable/provisional
+#: decision path has crept into this module — e.g. a function that renders
+#: a decision before findings are finalized, or "corrects" an already-
+#: rendered one. Checked the same way as PROHIBITED_OVERRIDE_PARAM_FRAGMENTS
+#: above; see severity.md, "Decision derivation (mechanical)": a report
+#: publishes exactly one decision, never a provisional one later replaced.
+PROHIBITED_CORRECTION_FRAGMENTS: frozenset[str] = frozenset(
+    {
+        "correction",
+        "correct_decision",
+        "provisional",
+        "supersede",
+        "resubmit_decision",
+        "revise_decision",
     }
 )

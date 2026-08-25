@@ -65,8 +65,42 @@ for GitHub-specific delivery rules with no local-review analogue: review
 authority and self-review, reviewer delta re-review, PR scope and
 pagination, review reasoning (logical cohorts, code-impact/dependency
 analysis), finding placement, and batched publication/decision.
-`local-code-review` has no analogous per-Skill policy file — its only
-Skill-specific rules are the local-delta procedure in its own runbook.
+`local-code-review` has its own analogous policy family under
+`skills/local-code-review/policies/`, for local-Git-specific rules with no
+PR analogue: invocation approval, the repository-state category
+definitions (including push/synchronization status and the staged-delta
+fingerprint re-review contract), and the optional review-context/
+PR-context handling.
+
+### Thin runbooks, canonical policy owners
+
+A runbook is an execution document, not a second policy store — see
+[`AGENTS.md`](AGENTS.md) section 18, "Runbook Design," for the canonical
+rule. It defines flow, phase ordering, and which policy governs each
+phase; it does not restate that policy's decision tables, edge-case
+semantics, or state-interpretation rules. Concretely:
+
+```text
+Shared policy (shared/policies/)
+    → reusable review semantics (scope, evidence, severity, and the
+      behavioral heuristics below), identical across both Skills
+
+Skill-specific policy (skills/<name>/policies/)
+    → semantics unique to that Skill (local Git-state mechanics and
+      optional-input handling for local-code-review; GitHub delivery
+      mechanics for github-pr-review)
+
+Runbook (skills/<name>/runbooks/)
+    → execution flow and phase ordering only; each step names the
+      policy that governs it rather than repeating that policy's text
+```
+
+`skills/local-code-review/runbooks/local-review.md` and
+`skills/local-code-review/policies/repository-state.md` are the clearest
+example: Git category detection, push/sync status, and the complete
+staged-fingerprint precondition/comparison contract live entirely in the
+policy; the runbook states only when each is resolved and applied in the
+execution flow.
 
 ## 2. Core Pipeline (per Skill)
 
@@ -109,7 +143,28 @@ Delivery Mode
   related tests, contracts, schemas, and conventions.
 - **Core Code Review Engine** — the single review reasoning model defined
   by `shared/policies/review-scope.md`. Identical regardless of which
-  Skill or delivery mode invokes it.
+  Skill or delivery mode invokes it. Beyond the baseline concern list, this
+  model reasons in the same local-first, signal-triggered style about four
+  higher-value behavioral concerns when the diff's own shape makes them
+  relevant: whether new business/validation/state-transition logic
+  duplicates an existing canonical owner rather than reusing it; whether a
+  multi-step, retryable, or externally re-triggerable flow leaves safe or
+  stranded state on partial failure, and whether any claimed recovery path
+  is actually evidenced; whether a changed contract, return value, or
+  exception is followed to its real callers, including exceptions that are
+  now swallowed, translated, or masked by a fallback; and, only once a
+  change actually has a production-operational failure mode worth
+  detecting or diagnosing (an explicit applicability gate — commonly
+  backend/service/queue/integration/retry/background-job changes,
+  conditionally frontend changes with an established client telemetry
+  convention, usually not agent-instruction/prompt/policy/static-doc
+  changes unless they carry runtime behavior of their own), whether that
+  failure path stays diagnosable through the repository's own established
+  metrics/alerts or logging convention. None of these expand the model
+  into a repository-wide audit — each is gated on a concrete signal in the
+  diff and scaled to blast radius exactly like the model's other
+  reasoning, per `shared/policies/review-scope.md` and
+  `shared/policies/evidence.md`.
 - **Finding Classification** — every actionable finding is assigned
   exactly one severity: P0, P1, or P2, per
   [`shared/policies/severity.md`](shared/policies/severity.md).
@@ -323,6 +378,24 @@ in staged package metadata, then checked for containment and existence.
 - **Review reasoning** is Skill-agnostic and delivery-mode-agnostic: the
   same shared policies and severity model apply in `local-code-review`
   and in both modes of `github-pr-review`.
+- **Human-facing report formatting is not implied by shared reasoning.**
+  Each Skill's own template owns the presentation appropriate to its own
+  delivery surface, per
+  [`shared/templates/review-summary.md`](shared/templates/review-summary.md),
+  "Machine metadata is subordinate": `local-code-review`'s
+  [`templates/local-review-report.md`](skills/local-code-review/templates/local-review-report.md)
+  renders its trailing metadata as plain Markdown and relevance-gates
+  which fields appear (a report read directly in a terminal/chat has no
+  use for a collapsible widget, and an initial review with nothing
+  staged has no use for a fixed, empty-input fingerprint every time),
+  while `github-pr-review`'s
+  [`templates/external-review-summary.md`](skills/github-pr-review/templates/external-review-summary.md)
+  legitimately wraps its own optional subordinate metadata in a
+  collapsible `<details>` block, since GitHub natively renders and
+  collapses it. Neither choice is more "correct" than the other — they
+  are Skill-specific answers to different delivery surfaces, and a
+  change to one Skill's presentation must not be read as implying the
+  other should match it.
 - **GitHub submission capability** is separate from reasoning. A clean or
   blocking result remains valid even when the authenticated account (for
   example, the PR author) cannot submit the corresponding formal review.

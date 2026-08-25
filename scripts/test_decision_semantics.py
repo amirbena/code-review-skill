@@ -17,9 +17,20 @@ Run with:
 from __future__ import annotations
 
 import inspect
+import re
 import unittest
+from pathlib import Path
 
 import decision_semantics as ds
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SEVERITY_POLICY = REPO_ROOT / "shared" / "policies" / "severity.md"
+REVIEW_SUMMARY_TEMPLATE = REPO_ROOT / "shared" / "templates" / "review-summary.md"
+
+
+def _text(path: Path) -> str:
+    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
+    return re.sub(r"\s+", " ", raw)
 
 
 class CaseATests(unittest.TestCase):
@@ -155,6 +166,84 @@ class GovernanceInvariantTests(unittest.TestCase):
     def test_decision_enum_has_exactly_the_two_canonical_labels(self) -> None:
         labels = {member.value for member in ds.Decision}
         self.assertEqual(labels, {"REVIEW CLEAN", "CHANGES REQUIRED"})
+
+    def test_no_function_accepts_a_correction_or_provisional_parameter(self) -> None:
+        for name, obj in inspect.getmembers(ds):
+            if not inspect.isfunction(obj):
+                continue
+            for param_name in inspect.signature(obj).parameters:
+                lowered = param_name.lower()
+                for fragment in ds.PROHIBITED_CORRECTION_FRAGMENTS:
+                    self.assertNotIn(
+                        fragment,
+                        lowered,
+                        f"{name}() must not accept a correction/provisional "
+                        f"decision parameter, found: {param_name}",
+                    )
+
+
+class SingleDecisionSourceTests(unittest.TestCase):
+    """A report's Result line and Decision section render one
+    already-derived value — never two independently-derived outcomes, and
+    never a provisional decision later superseded. `Decision.value` is
+    already the canonical Decision-section text (see decision_semantics.py,
+    the comment above RESULT_LABELS), so Result and Decision agreeing is
+    structural whenever both come from the same `derive_decision(...)`
+    call, as they always do here — there is no separate "do these two
+    values match" check to maintain on top of that. The actual protection
+    against a report ever disagreeing with itself lives in the policy
+    prose pinned below (severity.md / review-summary.md), which governs
+    the one thing Python code here cannot: how a report is actually
+    composed. Mirrors severity.md, "Decision derivation (mechanical)" —
+    the canonical test owner for decision semantics, extended rather than
+    duplicated into a second test module."""
+
+    def test_p2_only_findings_yield_clean_rendered_consistently(self) -> None:
+        findings = [ds.Finding("F1", ds.Severity.P2)]
+        decision = ds.derive_decision(findings)
+        self.assertEqual(decision, ds.Decision.CLEAN)
+        self.assertIn("Clean", ds.render_result_label(decision))
+        self.assertEqual(decision.value, "REVIEW CLEAN")
+
+    def test_any_p0_or_p1_yields_changes_required_rendered_consistently(self) -> None:
+        for severity in (ds.Severity.P0, ds.Severity.P1):
+            with self.subTest(severity=severity):
+                findings = [ds.Finding("F1", severity)]
+                decision = ds.derive_decision(findings)
+                self.assertEqual(decision, ds.Decision.CHANGES_REQUIRED)
+                self.assertIn("Changes", ds.render_result_label(decision))
+                self.assertEqual(decision.value, "CHANGES REQUIRED")
+
+    def test_severity_policy_states_decision_is_derived_and_rendered_once(self) -> None:
+        text = _text(SEVERITY_POLICY)
+        self.assertIn(
+            "This derivation runs exactly once per invocation, after the "
+            "finding set is finalized, and produces exactly one decision "
+            "value",
+            text,
+        )
+        self.assertIn(
+            "A report must never show a provisional decision that is "
+            "later superseded",
+            text,
+        )
+
+    def test_review_summary_requires_result_and_decision_to_agree(self) -> None:
+        text = _text(REVIEW_SUMMARY_TEMPLATE)
+        self.assertIn(
+            "Result and Decision render the same single, "
+            "already-finalized decision value",
+            text,
+        )
+        self.assertIn(
+            "never a Result that disagrees with the Decision section",
+            text,
+        )
+        self.assertIn(
+            "never correction prose narrating that an earlier rendering "
+            "was wrong",
+            text,
+        )
 
 
 if __name__ == "__main__":

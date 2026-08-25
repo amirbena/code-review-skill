@@ -95,17 +95,25 @@ class RunbookBatchingTests(unittest.TestCase):
         )
 
     def test_all_four_categories_still_individually_detected(self) -> None:
+        # The runbook still names all four categories (it orders/gates
+        # detection); the full per-category command table is owned by
+        # repository-state.md and is not restated here.
+        for category in ("committed", "staged", "unstaged", "untracked"):
+            self.assertIn(category, self.text.lower())
         for category in ("Committed", "Staged", "Unstaged", "Untracked"):
-            self.assertIn(category, self.text)
+            self.assertIn(category, _text(REPOSITORY_STATE_POLICY))
 
     def test_dedup_discovery_reference_present_in_step_6(self) -> None:
+        # The runbook points to repository-instructions.md's "Deduplicated
+        # discovery" procedure rather than restating its mechanics; the
+        # full "compute the union of candidate paths" text lives only in
+        # that policy (checked in RepositoryInstructionsDedupPolicyTests
+        # below via test_dedup_is_scoped_to_retrieval_order_only).
+        self.assertIn("Deduplicated discovery", self.text)
         self.assertIn(
-            'using that policy\'s "Deduplicated discovery" procedure', self.text
-        )
-        self.assertIn(
-            "compute the union of candidate paths across all changed files "
-            "first",
-            self.text,
+            "compute the union of candidate instruction-file paths across "
+            "every changed file's directory ancestry",
+            _text(REPOSITORY_INSTRUCTIONS_POLICY),
         )
 
     def test_dedup_discovery_still_happens_before_review(self) -> None:
@@ -115,16 +123,35 @@ class RunbookBatchingTests(unittest.TestCase):
             self.text,
         )
 
+    def test_runbook_points_to_repository_state_for_category_detection(self) -> None:
+        # The full per-category command table lives only in the policy.
+        self.assertIn("Detection commands per category", self.text)
+        self.assertIn(
+            "git ls-files --others --exclude-standard",
+            _text(REPOSITORY_STATE_POLICY),
+        )
+        self.assertNotIn(
+            "git ls-files --others --exclude-standard", self.text
+        )
+
+    def test_push_sync_status_section_exists_in_repository_state(self) -> None:
+        self.assertIn("## Push / synchronization status", _text(REPOSITORY_STATE_POLICY))
+
 
 class ReReviewShortCircuitTests(unittest.TestCase):
+    """The complete fingerprint precondition/comparison contract is owned
+    by repository-state.md (Git-mechanics/state-interpretation policy per
+    AGENTS.md's runbook-design rule); the runbook only points to it."""
+
     def setUp(self) -> None:
-        self.text = _text(RUNBOOK)
+        self.policy_text = _text(REPOSITORY_STATE_POLICY)
+        self.runbook_text = _text(RUNBOOK)
 
     def test_fingerprint_match_short_circuit_is_explicit_and_testable(self) -> None:
         self.assertIn(
             "this is a safe, testable short-circuit: skip re-deriving "
             "review reasoning for the staged category from scratch",
-            self.text,
+            self.policy_text,
         )
 
     def test_short_circuit_still_requires_blocking_finding_reverification(
@@ -133,19 +160,20 @@ class ReReviewShortCircuitTests(unittest.TestCase):
         self.assertIn(
             "spend that effort verifying whether each previously reported "
             "blocking finding in the staged delta was actually resolved",
-            self.text,
+            self.policy_text,
         )
 
     def test_short_circuit_does_not_suppress_new_findings(self) -> None:
         self.assertIn(
             "a newly discovered P0/P1 in that same staged delta (found "
             "while verifying) is still reported",
-            self.text,
+            self.policy_text,
         )
 
     def test_fingerprint_differ_case_still_requires_full_review(self) -> None:
         self.assertIn(
-            "the staged delta changed and must be reviewed as new", self.text
+            "the staged delta changed and must be reviewed as new",
+            self.policy_text,
         )
 
     def test_unstaged_untracked_unaffected_by_staged_fingerprint(self) -> None:
@@ -153,7 +181,7 @@ class ReReviewShortCircuitTests(unittest.TestCase):
         self.assertIn(
             "The fingerprint must never be used to conclude that unstaged "
             "or untracked state is unchanged",
-            _text(REPOSITORY_STATE_POLICY),
+            self.policy_text,
         )
 
     def test_content_fingerprint_match_alone_is_explicitly_insufficient(self) -> None:
@@ -162,18 +190,18 @@ class ReReviewShortCircuitTests(unittest.TestCase):
         self.assertIn(
             "A matching content fingerprint is not by itself sufficient "
             "to reuse prior reasoning",
-            self.text,
+            self.policy_text,
         )
 
     def test_precondition_enumerates_skill_and_shared_policy_surface(self) -> None:
         for surface in (
             "this Skill's own",  # SKILL.md
-            "this runbook",
+            "the runbook",
             "this Skill's own policies",
             "the shared review policies",
             "the target repository's own applicable instructions",
         ):
-            self.assertIn(surface, self.text)
+            self.assertIn(surface, self.policy_text)
         for shared_policy in (
             "review-scope.md",
             "severity.md",
@@ -183,18 +211,16 @@ class ReReviewShortCircuitTests(unittest.TestCase):
             "file-reviewability.md",
             "review-ownership.md",
         ):
-            self.assertIn(shared_policy, self.text)
-        self.assertIn("AGENTS.md", self.text)
-        self.assertIn("CLAUDE.md", self.text)
+            self.assertIn(shared_policy, self.policy_text)
+        self.assertIn("AGENTS.md", self.policy_text)
+        self.assertIn("CLAUDE.md", self.policy_text)
 
     def test_precondition_failure_is_treated_as_a_fingerprint_differ(self) -> None:
+        self.assertIn("Precondition not established", self.policy_text)
         self.assertIn(
-            "Precondition not established", self.text
-        )
-        self.assertIn(
-            "treat this exactly as a fingerprint Differ: review the "
+            "treat this exactly as a fingerprint difference: review the "
             "staged category as new content under the current standard",
-            self.text,
+            self.policy_text,
         )
 
     def test_precondition_does_not_require_a_new_persisted_fingerprint(self) -> None:
@@ -203,28 +229,44 @@ class ReReviewShortCircuitTests(unittest.TestCase):
         self.assertIn(
             "This does not require a new persisted cryptographic "
             "fingerprint over those files",
-            self.text,
+            self.policy_text,
         )
 
     def test_precondition_does_not_weaken_existing_re_review_guarantees(self) -> None:
         self.assertIn(
-            "it never substitutes for re-verifying previously reported "
+            "never substitutes for re-verifying previously reported "
             "blocking findings, discovering new P0/P1s, or independently "
             "(re-)detecting unstaged/untracked state",
-            self.text,
+            self.policy_text,
         )
 
-    def test_repository_state_policy_cross_references_the_precondition(self) -> None:
-        policy_text = _text(REPOSITORY_STATE_POLICY)
+    def test_repository_state_policy_is_the_sole_canonical_owner(self) -> None:
         self.assertIn(
-            "Precondition: the applicable review standard must be "
-            "unchanged",
-            policy_text,
+            "This policy is the single canonical owner of the complete "
+            "fingerprint-comparison contract",
+            self.policy_text,
+        )
+        # The old two-way deferral (policy -> runbook -> policy) must not
+        # come back: the runbook must not claim to own this contract.
+        self.assertNotIn(
+            "single canonical owner of that precondition", self.runbook_text
+        )
+
+    def test_runbook_points_to_repository_state_policy_without_restating_it(
+        self,
+    ) -> None:
+        self.assertIn(
+            "Fingerprint scope and re-review comparison", self.runbook_text
         )
         self.assertIn(
-            "that runbook is the single canonical owner of that "
-            "precondition and this file does not duplicate it",
-            policy_text,
+            "That policy is the single canonical owner of this contract; "
+            "this runbook does not duplicate it",
+            self.runbook_text,
+        )
+        # The detailed Match/Differ/precondition-not-established prose
+        # itself must live only in the policy, not be copy-pasted here too.
+        self.assertNotIn(
+            "this is a safe, testable short-circuit", self.runbook_text
         )
 
 

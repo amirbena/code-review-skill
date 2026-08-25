@@ -69,6 +69,20 @@ under the definitions above — the fix for "this should really block" is
 to assign the correct severity, never to make the decision diverge from
 the severity it was actually given.
 
+This derivation runs exactly once per invocation, after the finding set
+is finalized, and produces exactly one decision value. Every place that
+value appears in a published report or review — a summary `Result` label,
+a later `Decision` section, or any other rendering — presents that same
+single value; none of them re-derives it independently. A report must
+never show a provisional decision that is later superseded, correction
+prose explaining that an earlier rendered decision was wrong, or two
+`Result`/`Decision` renderings that disagree with each other. If a
+decision needs to change, that means the finding set was not actually
+finalized yet — finalize it first, per
+[`evidence.md`](evidence.md) and the consuming Skill's own runbook
+(finalize findings → derive decision → compose the report, in that
+order, once), and only then derive and render the decision.
+
 ## Repository conventions and severity
 
 A target repository's own instructions (`AGENTS.md`, `CLAUDE.md`, or

@@ -764,3 +764,44 @@ skills/github-pr-review/SKILL.md
 
 Runtime adapters bootstrap a specific runtime into these canonical rules.
 They must never duplicate or override them.
+
+---
+
+## 18. Runbook Design
+
+Applies to every runbook in either Skill (and any future one added under
+`skills/`):
+
+```text
+Runbook       = flow, ordering, orchestration, and policy handoff points
+Shared policy = reusable review semantics
+Skill policy  = semantics unique to that Skill
+Repository-state / Git policy = Git mechanics and state interpretation
+```
+
+A runbook tells the Skill runner **when** to invoke a rule and **which
+policy governs it** — it does not re-document the rule itself. It must not
+duplicate substantial policy semantics, decision tables, validation rules,
+or state interpretation when a canonical policy already owns them; where a
+runbook step names a policy, that policy's own text is authoritative, and
+the runbook states only the ordering/handoff, not a second copy of the
+rule. A small amount of local explanation is acceptable where needed to
+make ordering or orchestration itself unambiguous — the target is a thin
+runbook, not a vague one; it must remain fully executable end to end.
+
+When new Skill behavior is introduced:
+
+1. place reusable review semantics in the appropriate `shared/policies/`
+   file;
+2. place Skill-specific semantics in that Skill's own `policies/`;
+3. update the runbook only enough to wire the new/changed policy into the
+   normal execution path — when it runs, in what order, on what input;
+4. avoid creating a second textual or executable source of truth for the
+   same rule (in another runbook, another policy, or a hand-maintained
+   script mirroring the policy's own decision logic).
+
+See [`skills/local-code-review/runbooks/local-review.md`](skills/local-code-review/runbooks/local-review.md)
+and [`skills/local-code-review/policies/repository-state.md`](skills/local-code-review/policies/repository-state.md)
+for a worked example of this separation: Git category detection, push/sync
+status, and the staged-fingerprint re-review contract live entirely in the
+policy; the runbook states only when each is resolved and applied.

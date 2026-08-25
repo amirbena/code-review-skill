@@ -58,6 +58,21 @@ evidence-backed findings, and either publish one finalized GitHub review
 [`policies/github-review.md`](policies/github-review.md) for each
 stage's canonical rule.
 
+## Behavioral review signals
+
+The "reason about related changes" and "impact analysis" stages above
+apply [`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md)
+in full — the same file `local-code-review` applies, never a forked copy.
+Beyond the baseline concern list, that shared policy includes a small,
+signal-triggered set of heuristics for recurring, high-value review gaps
+(existing behavior ownership/reuse, failure-state/retry/recovery safety
+with applicability-gated observability, and contract/exception semantics
+followed to actual callers). This Skill consumes them exactly as
+`local-code-review` does; see that Skill's own README, "Behavioral review
+signals," for the conceptual summary (not linked here: a packaged Skill
+archive is self-contained and does not depend on a sibling Skill's own
+README) — it is not repeated here.
+
 ## Review Outcomes / Severity
 
 Findings use the shared P0/P1/P2 model

@@ -51,7 +51,16 @@ metadata is subordinate" below.
 
 - **Result** — states the outcome in plain language immediately, e.g.
   `✅ Review Clean` or `⚠️ Changes Requested`. A reader must never have to
-  infer the outcome from counts.
+  infer the outcome from counts. **Result and Decision render the same
+  single, already-finalized decision value** — per
+  [`severity.md`](../policies/severity.md), "Decision derivation
+  (mechanical)," that value is derived exactly once, after findings are
+  finalized, and both sections present it; neither is a second,
+  independently-derived outcome. A published report contains exactly one
+  such value throughout — never a Result that disagrees with the Decision
+  section, never a provisional Result later replaced by a corrected one,
+  and never correction prose narrating that an earlier rendering was
+  wrong.
 - **What changed** — a concrete implementation summary, not a diff dump.
 - **What was done well** — only concrete, evidence-backed strengths.
   Omit the section (or keep it to one line) rather than invent generic

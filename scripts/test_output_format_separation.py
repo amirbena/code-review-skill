@@ -101,6 +101,95 @@ class LocalReportIsPlainMarkdown(unittest.TestCase):
         ):
             self.assertIn(field, self.text)
 
+    def test_rules_list_is_not_interrupted_by_relevance_aware_subsection(self) -> None:
+        rules_start = self.text.index("## Rules")
+        subsection_start = self.text.index(
+            "### Relevance-aware metadata rendering"
+        )
+        # Everything between the start of the Rules list and the
+        # subsection heading must be exactly one uninterrupted block —
+        # no other heading (of any level) may appear in between, which
+        # would otherwise split the bullet list into two disconnected
+        # lists under CommonMark.
+        between = self.text[rules_start:subsection_start]
+        self.assertNotIn("\n## ", between[len("## Rules") :])
+        self.assertNotIn("\n### ", between[len("## Rules") :])
+
+    def test_relevance_aware_subsection_follows_the_full_rules_list(self) -> None:
+        last_rules_bullet = self.text.index(
+            "Return only what the implementing Agent needs to act."
+        )
+        subsection_start = self.text.index(
+            "### Relevance-aware metadata rendering"
+        )
+        self.assertLess(last_rules_bullet, subsection_start)
+
+    def _relevance_section(self) -> str:
+        section = re.search(
+            r"### Relevance-aware metadata rendering\n(.*?)(?=\n## |\Z)",
+            self.text,
+            re.S,
+        )
+        self.assertIsNotNone(section)
+        # Normalize markdown emphasis and line wrapping so assertions on
+        # phrasing survive reflow, matching the convention already used
+        # by the other doc-pinning test modules in this repository.
+        return re.sub(r"\s+", " ", section.group(1).replace("**", "").replace("`", ""))
+
+    def test_relevance_aware_metadata_rendering_section_exists(self) -> None:
+        self.assertIn("### Relevance-aware metadata rendering", self.text)
+
+    def test_fingerprint_remains_mandatory_internal_state(self) -> None:
+        # Rendering is conditional; computing it never is — see
+        # policies/repository-state.md, "Staged delta fingerprint," which
+        # this test does not restate, only confirms is still cross-linked.
+        body = self._relevance_section()
+        self.assertIn("is still always computed", body)
+        self.assertIn(
+            "nothing here changes what this Skill must determine internally, "
+            "only what it prints",
+            body,
+        )
+
+    def test_fingerprint_display_conditions_are_stated(self) -> None:
+        body = self._relevance_section()
+        for trigger in (
+            "the staged category is non-empty",
+            "this is a re-review",
+            "the caller supplied a previously reported fingerprint",
+            "the fingerprint comparison materially affected review behavior",
+        ):
+            self.assertIn(trigger, body)
+
+    def test_initial_empty_staged_review_does_not_require_the_fingerprint_line(
+        self,
+    ) -> None:
+        body = self._relevance_section()
+        self.assertIn(
+            "an initial review with nothing staged, where the fingerprint "
+            "is the well-known SHA-256 of empty input and adds no human "
+            "value",
+            body,
+        )
+
+    def test_previously_reviewed_state_is_omitted_not_marked_not_applicable(
+        self,
+    ) -> None:
+        body = self._relevance_section()
+        self.assertIn("omit the line entirely", body)
+        # The template must not fall back to a fixed not-applicable
+        # placeholder anywhere in its rendered examples.
+        for block in re.findall(r"```markdown\n(.*?)\n```", self.text, re.S):
+            self.assertNotIn("not applicable, initial review", block)
+
+    def test_relevance_gating_never_affects_decision_or_findings(self) -> None:
+        body = self._relevance_section()
+        self.assertIn(
+            "This never affects the Decision, the findings, or any other "
+            "internal review requirement",
+            body,
+        )
+
     def test_preserves_decision_semantics(self) -> None:
         self.assertIn("REVIEW CLEAN", self.text)
         self.assertIn("CHANGES REQUIRED", self.text)
@@ -122,6 +211,14 @@ class GithubReportKeepsHtmlPresentation(unittest.TestCase):
     def test_preserves_decision_semantics(self) -> None:
         self.assertIn("APPROVE", self.text)
         self.assertIn("REQUEST CHANGES", self.text)
+
+    def test_not_coupled_to_local_relevance_aware_rendering_change(self) -> None:
+        # Cross-Skill distinction: local-code-review's relevance-gated
+        # metadata rendering is a local-only presentation choice. This
+        # Skill's own template must not have been made to adopt it, and
+        # this suite must never assert it should — shared review
+        # reasoning does not imply identical human-facing formatting.
+        self.assertNotIn("Relevance-aware metadata rendering", self.text)
 
 
 class SharedTemplateDefersPresentationChoice(unittest.TestCase):

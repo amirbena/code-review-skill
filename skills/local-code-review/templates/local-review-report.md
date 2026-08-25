@@ -98,9 +98,9 @@ deliberate, stated exclusion, never a silent omission:
 - Staged: <included, files/delta summary | excluded, reason>
 - Unstaged: <included, files/delta summary | excluded, reason>
 - Untracked: <included, files | excluded, reason>
-- Staged-delta fingerprint (SHA-256 of `git diff --cached --raw -M -z`): `<hex digest>`
 - Review kind: <initial review | re-review>
-- Previously reviewed state changed: <staged: unchanged/changed — fingerprint compared; unstaged: unchanged/changed — re-detected; untracked: unchanged/changed — re-detected | not applicable, initial review>
+- Staged-delta fingerprint (SHA-256 of `git diff --cached --raw -M -z`): `<hex digest>` — shown when relevant per "Relevance-aware metadata rendering" below; omitted otherwise
+- Previously reviewed state changed: <staged: unchanged/changed — fingerprint compared; unstaged: unchanged/changed — re-detected; untracked: unchanged/changed — re-detected> — re-review only; omitted entirely for an initial review
 ```
 
 or, when clean:
@@ -225,18 +225,60 @@ strongly it is recommended before commit.
   appearing only inside the trailing "Review Metadata" section as plain
   Markdown, never ahead of the human-facing review and never wrapped in
   GitHub-oriented HTML (e.g. `<details>`/`<summary>`), which offers no
-  benefit for a report read directly in a terminal or chat surface.
+  benefit for a report read directly in a terminal or chat surface. This
+  is a deliberate, Skill-specific presentation choice, not an implication
+  that every Code Review Skill in this repository must render metadata
+  identically — see "Relevance-aware metadata rendering" below and
+  [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+  "Machine metadata is subordinate," for why `github-pr-review`'s own
+  template legitimately renders its own optional subordinate metadata as
+  a collapsible `<details>` block instead: shared review reasoning does
+  not imply identical human-facing formatting, and each Skill's template
+  owns the presentation appropriate to its own delivery surface.
 - **Review scope contract** is required in every report, initial or
   re-review: state plainly whether committed/staged/unstaged/untracked
-  state was included, the staged-delta fingerprint, whether this is an
-  initial review or a re-review, and — for a re-review — whether the
-  staged delta changed (by fingerprint comparison) and whether unstaged
-  or untracked state changed (by independent re-detection, never
-  inferred from the staged fingerprint). A category intentionally
-  excluded from scope is stated as excluded with a reason, never
-  silently dropped.
+  state was included and whether this is an initial review or a
+  re-review. A category intentionally excluded from scope is stated as
+  excluded with a reason, never silently dropped.
 - **No loop/orchestration metadata.** This report does not track review
   iteration count, a configured maximum, or whether another iteration is
   allowed — that information belongs to the orchestrator, never to this
   Skill (see [`../SKILL.md`](../SKILL.md)).
 - Return only what the implementing Agent needs to act.
+
+### Relevance-aware metadata rendering
+
+Every value in "Review Metadata" — including the staged-delta fingerprint
+and the previously-reviewed-state comparison — is still **always
+computed** exactly as [`../policies/repository-state.md`](../policies/repository-state.md)
+requires; nothing here changes what this Skill must determine internally,
+only what it prints. The fingerprint remains mandatory internal state
+because a future re-review needs the *current* value to compare against
+regardless of whether it was rendered this time, and because "previously
+reviewed state changed" cannot be answered without it having been
+computed.
+
+Rendering the two fields below is relevance-gated rather than
+unconditional, so an initial review of an empty staged delta doesn't pad
+the report with a fixed, information-free hash:
+
+- **Staged-delta fingerprint** — render it when it is operationally
+  relevant: the staged category is non-empty, this is a re-review, the
+  caller supplied a previously reported fingerprint for comparison, or
+  the fingerprint comparison materially affected review behavior (the
+  short-circuit in
+  [`../policies/repository-state.md`](../policies/repository-state.md),
+  "Fingerprint scope and re-review comparison," was actually used or
+  explicitly did not apply). Omit it when none of these hold — most
+  commonly, an initial review with nothing staged, where the fingerprint
+  is the well-known SHA-256 of empty input and adds no human value.
+- **Previously reviewed state changed** — render it only for a re-review,
+  where a previous invocation's reported state is the actual comparison
+  baseline. For an initial review, omit the line entirely rather than
+  printing a fixed not-applicable placeholder — "Review kind: initial
+  review" already says everything a reader needs to know about why no
+  comparison is shown.
+
+This never affects the Decision, the findings, or any other internal
+review requirement — it is a rendering choice applied after every
+required value has already been determined.

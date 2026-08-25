@@ -476,11 +476,26 @@ def validate(skill_root: Path, containment_root: Path) -> None:
             skill_root / "templates" / "local-review-report.md"
         ).read_text(encoding="utf-8")
         result_index = local_report_template.find("**Result:")
-        details_index = local_report_template.find("<details>")
-        if result_index < 0 or details_index < 0 or not (result_index < details_index):
+        metadata_index = local_report_template.find("### Review Metadata")
+        if result_index < 0 or metadata_index < 0 or not (result_index < metadata_index):
             raise SystemExit(
                 "error: local-review-report.md must lead with a human-facing Result "
-                "and keep machine metadata subordinate inside a trailing <details> block"
+                "and keep machine metadata subordinate inside a trailing "
+                "'### Review Metadata' plain-Markdown section"
+            )
+        # local-code-review's delivery surface is a returned report read
+        # directly in a terminal/chat, not a rendered GitHub review body —
+        # it must never use an HTML disclosure widget for that metadata,
+        # unlike github-pr-review's own template (see
+        # shared/templates/review-summary.md, "Machine metadata is
+        # subordinate"). Check for actual HTML-block usage (the tag alone
+        # on its own line), not merely the substring appearing inside
+        # backtick-quoted prose that documents this prohibition.
+        if "\n<details>\n" in local_report_template.replace("\r\n", "\n"):
+            raise SystemExit(
+                "error: local-review-report.md must not render metadata as an "
+                "HTML <details> block — that presentation is github-pr-review-"
+                "specific; local-code-review must use plain Markdown"
             )
         check_markers(
             skill_text,
