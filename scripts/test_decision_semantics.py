@@ -183,23 +183,27 @@ class GovernanceInvariantTests(unittest.TestCase):
 
 
 class SingleDecisionSourceTests(unittest.TestCase):
-    """A report's Result label and Decision section render one
+    """A report's Result line and Decision section render one
     already-derived value — never two independently-derived outcomes, and
-    never a provisional decision later superseded. Mirrors
-    severity.md, "Decision derivation (mechanical)" (the paragraph
-    covering this), and review-summary.md's Result/Decision section
-    rules — the canonical test owner for decision semantics, extended
-    rather than duplicated into a second test module."""
+    never a provisional decision later superseded. `Decision.value` is
+    already the canonical Decision-section text (see decision_semantics.py,
+    the comment above RESULT_LABELS), so Result and Decision agreeing is
+    structural whenever both come from the same `derive_decision(...)`
+    call, as they always do here — there is no separate "do these two
+    values match" check to maintain on top of that. The actual protection
+    against a report ever disagreeing with itself lives in the policy
+    prose pinned below (severity.md / review-summary.md), which governs
+    the one thing Python code here cannot: how a report is actually
+    composed. Mirrors severity.md, "Decision derivation (mechanical)" —
+    the canonical test owner for decision semantics, extended rather than
+    duplicated into a second test module."""
 
     def test_p2_only_findings_yield_clean_rendered_consistently(self) -> None:
         findings = [ds.Finding("F1", ds.Severity.P2)]
         decision = ds.derive_decision(findings)
         self.assertEqual(decision, ds.Decision.CLEAN)
-        result_label = ds.render_result_label(decision)
-        decision_label = ds.render_decision_label(decision)
-        self.assertIn("Clean", result_label)
-        self.assertEqual(decision_label, "REVIEW CLEAN")
-        self.assertTrue(ds.report_is_single_decision(decision, decision))
+        self.assertIn("Clean", ds.render_result_label(decision))
+        self.assertEqual(decision.value, "REVIEW CLEAN")
 
     def test_any_p0_or_p1_yields_changes_required_rendered_consistently(self) -> None:
         for severity in (ds.Severity.P0, ds.Severity.P1):
@@ -207,51 +211,8 @@ class SingleDecisionSourceTests(unittest.TestCase):
                 findings = [ds.Finding("F1", severity)]
                 decision = ds.derive_decision(findings)
                 self.assertEqual(decision, ds.Decision.CHANGES_REQUIRED)
-                result_label = ds.render_result_label(decision)
-                decision_label = ds.render_decision_label(decision)
-                self.assertIn("Changes", result_label)
-                self.assertEqual(decision_label, "CHANGES REQUIRED")
-                self.assertTrue(ds.report_is_single_decision(decision, decision))
-
-    def test_result_and_decision_rendered_from_one_derive_decision_call_always_agree(
-        self,
-    ) -> None:
-        # A real, valid report calls derive_decision(...) exactly once and
-        # uses that one value for both renderings — this is the only path
-        # available, so it can never disagree with itself.
-        for findings in (
-            [],
-            [ds.Finding("F1", ds.Severity.P2)],
-            [ds.Finding("F1", ds.Severity.P1)],
-            [ds.Finding("F1", ds.Severity.P0), ds.Finding("F2", ds.Severity.P2)],
-        ):
-            with self.subTest(findings=findings):
-                decision = ds.derive_decision(findings)
-                self.assertTrue(
-                    ds.report_is_single_decision(decision, decision)
-                )
-
-    def test_report_is_single_decision_detects_a_disagreeing_pair(self) -> None:
-        # There is no legitimate report state with two different decision
-        # values; this proves the check would actually catch it if one
-        # somehow occurred (e.g. Result computed from one derivation,
-        # Decision from a stale/re-derived one) rather than vacuously
-        # passing everything.
-        self.assertFalse(
-            ds.report_is_single_decision(
-                ds.Decision.CLEAN, ds.Decision.CHANGES_REQUIRED
-            )
-        )
-
-    def test_no_valid_report_state_has_both_decisions_as_competing_outcomes(
-        self,
-    ) -> None:
-        # Every decision value this module can produce, rendered once and
-        # reused everywhere it appears, is internally consistent by
-        # construction — there is no code path that could legitimately
-        # produce a report state matching the assertion above.
-        for decision in ds.Decision:
-            self.assertTrue(ds.report_is_single_decision(decision))
+                self.assertIn("Changes", ds.render_result_label(decision))
+                self.assertEqual(decision.value, "CHANGES REQUIRED")
 
     def test_severity_policy_states_decision_is_derived_and_rendered_once(self) -> None:
         text = _text(SEVERITY_POLICY)

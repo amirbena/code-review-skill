@@ -81,46 +81,24 @@ def derive_decision(findings: Sequence[Finding]) -> Decision:
     return Decision.CLEAN if not blocking_findings(findings) else Decision.CHANGES_REQUIRED
 
 
-#: Per severity.md, "Decision derivation (mechanical)" (the paragraph
-#: added alongside this constant): a report's `Result` label and its
-#: `Decision` section are two textual renderings of one already-derived
-#: value, never two independently-derived outcomes. Keying both label maps
-#: off the same `Decision` enum makes that structural — there is no code
-#: path here that could format a Result for one Decision value while
-#: formatting the Decision section for a different one.
+#: Per severity.md, "Decision derivation (mechanical)": a report's `Result`
+#: line and its `Decision` section are two textual renderings of one
+#: already-derived value. `Decision.value` (e.g. `"REVIEW CLEAN"`) already
+#: *is* the canonical Decision-section text, so no separate mapping is
+#: needed for that rendering. Only the Result line's phrasing genuinely
+#: differs (an emoji plus human-friendly wording) and needs a derived
+#: mapping of its own — keyed off the same `Decision` enum, so there is no
+#: code path here that could produce a Result for one Decision value and a
+#: Decision-section label for another.
 RESULT_LABELS: dict[Decision, str] = {
     Decision.CLEAN: "✅ Review Clean",
     Decision.CHANGES_REQUIRED: "⚠️ Changes Requested",
-}
-DECISION_LABELS: dict[Decision, str] = {
-    Decision.CLEAN: "REVIEW CLEAN",
-    Decision.CHANGES_REQUIRED: "CHANGES REQUIRED",
 }
 
 
 def render_result_label(decision: Decision) -> str:
     """The report's top-level `Result` line for an already-derived decision."""
     return RESULT_LABELS[decision]
-
-
-def render_decision_label(decision: Decision) -> str:
-    """The report's trailing `Decision` section label for the same value."""
-    return DECISION_LABELS[decision]
-
-
-def report_is_single_decision(*rendered: Decision) -> bool:
-    """Whether every decision value used across one published report agrees.
-
-    Pass every place a decision was rendered in one report (e.g. the value
-    behind the Result line and the value behind the Decision section). A
-    valid, finalized report always calls this with a set of *identical*
-    values — because both were formatted from the same single
-    `derive_decision(...)` call, never recomputed — so this returns True
-    for any real report. It exists to make the invariant checkable: there
-    is no legitimate report state where this returns False, because there
-    is no legitimate report state with more than one decision value.
-    """
-    return len(set(rendered)) <= 1
 
 
 def clean_report_retains_non_blocking_findings(findings: Sequence[Finding]) -> tuple[Finding, ...]:
