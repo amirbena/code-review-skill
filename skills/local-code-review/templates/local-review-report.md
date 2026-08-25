@@ -240,6 +240,11 @@ strongly it is recommended before commit.
   state was included and whether this is an initial review or a
   re-review. A category intentionally excluded from scope is stated as
   excluded with a reason, never silently dropped.
+- **No loop/orchestration metadata.** This report does not track review
+  iteration count, a configured maximum, or whether another iteration is
+  allowed — that information belongs to the orchestrator, never to this
+  Skill (see [`../SKILL.md`](../SKILL.md)).
+- Return only what the implementing Agent needs to act.
 
 ### Relevance-aware metadata rendering
 
@@ -277,8 +282,3 @@ the report with a fixed, information-free hash:
 This never affects the Decision, the findings, or any other internal
 review requirement — it is a rendering choice applied after every
 required value has already been determined.
-- **No loop/orchestration metadata.** This report does not track review
-  iteration count, a configured maximum, or whether another iteration is
-  allowed — that information belongs to the orchestrator, never to this
-  Skill (see [`../SKILL.md`](../SKILL.md)).
-- Return only what the implementing Agent needs to act.

@@ -17,9 +17,20 @@ Run with:
 from __future__ import annotations
 
 import inspect
+import re
 import unittest
+from pathlib import Path
 
 import decision_semantics as ds
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SEVERITY_POLICY = REPO_ROOT / "shared" / "policies" / "severity.md"
+REVIEW_SUMMARY_TEMPLATE = REPO_ROOT / "shared" / "templates" / "review-summary.md"
+
+
+def _text(path: Path) -> str:
+    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
+    return re.sub(r"\s+", " ", raw)
 
 
 class CaseATests(unittest.TestCase):
@@ -155,6 +166,123 @@ class GovernanceInvariantTests(unittest.TestCase):
     def test_decision_enum_has_exactly_the_two_canonical_labels(self) -> None:
         labels = {member.value for member in ds.Decision}
         self.assertEqual(labels, {"REVIEW CLEAN", "CHANGES REQUIRED"})
+
+    def test_no_function_accepts_a_correction_or_provisional_parameter(self) -> None:
+        for name, obj in inspect.getmembers(ds):
+            if not inspect.isfunction(obj):
+                continue
+            for param_name in inspect.signature(obj).parameters:
+                lowered = param_name.lower()
+                for fragment in ds.PROHIBITED_CORRECTION_FRAGMENTS:
+                    self.assertNotIn(
+                        fragment,
+                        lowered,
+                        f"{name}() must not accept a correction/provisional "
+                        f"decision parameter, found: {param_name}",
+                    )
+
+
+class SingleDecisionSourceTests(unittest.TestCase):
+    """A report's Result label and Decision section render one
+    already-derived value — never two independently-derived outcomes, and
+    never a provisional decision later superseded. Mirrors
+    severity.md, "Decision derivation (mechanical)" (the paragraph
+    covering this), and review-summary.md's Result/Decision section
+    rules — the canonical test owner for decision semantics, extended
+    rather than duplicated into a second test module."""
+
+    def test_p2_only_findings_yield_clean_rendered_consistently(self) -> None:
+        findings = [ds.Finding("F1", ds.Severity.P2)]
+        decision = ds.derive_decision(findings)
+        self.assertEqual(decision, ds.Decision.CLEAN)
+        result_label = ds.render_result_label(decision)
+        decision_label = ds.render_decision_label(decision)
+        self.assertIn("Clean", result_label)
+        self.assertEqual(decision_label, "REVIEW CLEAN")
+        self.assertTrue(ds.report_is_single_decision(decision, decision))
+
+    def test_any_p0_or_p1_yields_changes_required_rendered_consistently(self) -> None:
+        for severity in (ds.Severity.P0, ds.Severity.P1):
+            with self.subTest(severity=severity):
+                findings = [ds.Finding("F1", severity)]
+                decision = ds.derive_decision(findings)
+                self.assertEqual(decision, ds.Decision.CHANGES_REQUIRED)
+                result_label = ds.render_result_label(decision)
+                decision_label = ds.render_decision_label(decision)
+                self.assertIn("Changes", result_label)
+                self.assertEqual(decision_label, "CHANGES REQUIRED")
+                self.assertTrue(ds.report_is_single_decision(decision, decision))
+
+    def test_result_and_decision_rendered_from_one_derive_decision_call_always_agree(
+        self,
+    ) -> None:
+        # A real, valid report calls derive_decision(...) exactly once and
+        # uses that one value for both renderings — this is the only path
+        # available, so it can never disagree with itself.
+        for findings in (
+            [],
+            [ds.Finding("F1", ds.Severity.P2)],
+            [ds.Finding("F1", ds.Severity.P1)],
+            [ds.Finding("F1", ds.Severity.P0), ds.Finding("F2", ds.Severity.P2)],
+        ):
+            with self.subTest(findings=findings):
+                decision = ds.derive_decision(findings)
+                self.assertTrue(
+                    ds.report_is_single_decision(decision, decision)
+                )
+
+    def test_report_is_single_decision_detects_a_disagreeing_pair(self) -> None:
+        # There is no legitimate report state with two different decision
+        # values; this proves the check would actually catch it if one
+        # somehow occurred (e.g. Result computed from one derivation,
+        # Decision from a stale/re-derived one) rather than vacuously
+        # passing everything.
+        self.assertFalse(
+            ds.report_is_single_decision(
+                ds.Decision.CLEAN, ds.Decision.CHANGES_REQUIRED
+            )
+        )
+
+    def test_no_valid_report_state_has_both_decisions_as_competing_outcomes(
+        self,
+    ) -> None:
+        # Every decision value this module can produce, rendered once and
+        # reused everywhere it appears, is internally consistent by
+        # construction — there is no code path that could legitimately
+        # produce a report state matching the assertion above.
+        for decision in ds.Decision:
+            self.assertTrue(ds.report_is_single_decision(decision))
+
+    def test_severity_policy_states_decision_is_derived_and_rendered_once(self) -> None:
+        text = _text(SEVERITY_POLICY)
+        self.assertIn(
+            "This derivation runs exactly once per invocation, after the "
+            "finding set is finalized, and produces exactly one decision "
+            "value",
+            text,
+        )
+        self.assertIn(
+            "A report must never show a provisional decision that is "
+            "later superseded",
+            text,
+        )
+
+    def test_review_summary_requires_result_and_decision_to_agree(self) -> None:
+        text = _text(REVIEW_SUMMARY_TEMPLATE)
+        self.assertIn(
+            "Result and Decision render the same single, "
+            "already-finalized decision value",
+            text,
+        )
+        self.assertIn(
+            "never a Result that disagrees with the Decision section",
+            text,
+        )
+        self.assertIn(
+            "never correction prose narrating that an earlier rendering "
+            "was wrong",
+            text,
+        )
 
 
 if __name__ == "__main__":

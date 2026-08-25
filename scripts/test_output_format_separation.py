@@ -101,6 +101,29 @@ class LocalReportIsPlainMarkdown(unittest.TestCase):
         ):
             self.assertIn(field, self.text)
 
+    def test_rules_list_is_not_interrupted_by_relevance_aware_subsection(self) -> None:
+        rules_start = self.text.index("## Rules")
+        subsection_start = self.text.index(
+            "### Relevance-aware metadata rendering"
+        )
+        # Everything between the start of the Rules list and the
+        # subsection heading must be exactly one uninterrupted block —
+        # no other heading (of any level) may appear in between, which
+        # would otherwise split the bullet list into two disconnected
+        # lists under CommonMark.
+        between = self.text[rules_start:subsection_start]
+        self.assertNotIn("\n## ", between[len("## Rules") :])
+        self.assertNotIn("\n### ", between[len("## Rules") :])
+
+    def test_relevance_aware_subsection_follows_the_full_rules_list(self) -> None:
+        last_rules_bullet = self.text.index(
+            "Return only what the implementing Agent needs to act."
+        )
+        subsection_start = self.text.index(
+            "### Relevance-aware metadata rendering"
+        )
+        self.assertLess(last_rules_bullet, subsection_start)
+
     def _relevance_section(self) -> str:
         section = re.search(
             r"### Relevance-aware metadata rendering\n(.*?)(?=\n## |\Z)",
