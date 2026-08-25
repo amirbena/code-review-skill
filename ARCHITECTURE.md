@@ -65,8 +65,42 @@ for GitHub-specific delivery rules with no local-review analogue: review
 authority and self-review, reviewer delta re-review, PR scope and
 pagination, review reasoning (logical cohorts, code-impact/dependency
 analysis), finding placement, and batched publication/decision.
-`local-code-review` has no analogous per-Skill policy file — its only
-Skill-specific rules are the local-delta procedure in its own runbook.
+`local-code-review` has its own analogous policy family under
+`skills/local-code-review/policies/`, for local-Git-specific rules with no
+PR analogue: invocation approval, the repository-state category
+definitions (including push/synchronization status and the staged-delta
+fingerprint re-review contract), and the optional review-context/
+PR-context handling.
+
+### Thin runbooks, canonical policy owners
+
+A runbook is an execution document, not a second policy store — see
+[`AGENTS.md`](AGENTS.md) section 18, "Runbook Design," for the canonical
+rule. It defines flow, phase ordering, and which policy governs each
+phase; it does not restate that policy's decision tables, edge-case
+semantics, or state-interpretation rules. Concretely:
+
+```text
+Shared policy (shared/policies/)
+    → reusable review semantics (scope, evidence, severity, and the
+      behavioral heuristics below), identical across both Skills
+
+Skill-specific policy (skills/<name>/policies/)
+    → semantics unique to that Skill (local Git-state mechanics and
+      optional-input handling for local-code-review; GitHub delivery
+      mechanics for github-pr-review)
+
+Runbook (skills/<name>/runbooks/)
+    → execution flow and phase ordering only; each step names the
+      policy that governs it rather than repeating that policy's text
+```
+
+`skills/local-code-review/runbooks/local-review.md` and
+`skills/local-code-review/policies/repository-state.md` are the clearest
+example: Git category detection, push/sync status, and the complete
+staged-fingerprint precondition/comparison contract live entirely in the
+policy; the runbook states only when each is resolved and applied in the
+execution flow.
 
 ## 2. Core Pipeline (per Skill)
 
@@ -118,12 +152,18 @@ Delivery Mode
   stranded state on partial failure, and whether any claimed recovery path
   is actually evidenced; whether a changed contract, return value, or
   exception is followed to its real callers, including exceptions that are
-  now swallowed, translated, or masked by a fallback; and whether a
-  meaningful new failure path stays diagnosable through the repository's
-  own established metrics/alerts or logging convention. None of these
-  expand the model into a repository-wide audit — each is gated on a
-  concrete signal in the diff and scaled to blast radius exactly like the
-  model's other reasoning, per `shared/policies/review-scope.md` and
+  now swallowed, translated, or masked by a fallback; and, only once a
+  change actually has a production-operational failure mode worth
+  detecting or diagnosing (an explicit applicability gate — commonly
+  backend/service/queue/integration/retry/background-job changes,
+  conditionally frontend changes with an established client telemetry
+  convention, usually not agent-instruction/prompt/policy/static-doc
+  changes unless they carry runtime behavior of their own), whether that
+  failure path stays diagnosable through the repository's own established
+  metrics/alerts or logging convention. None of these expand the model
+  into a repository-wide audit — each is gated on a concrete signal in the
+  diff and scaled to blast radius exactly like the model's other
+  reasoning, per `shared/policies/review-scope.md` and
   `shared/policies/evidence.md`.
 - **Finding Classification** — every actionable finding is assigned
   exactly one severity: P0, P1, or P2, per

@@ -86,18 +86,27 @@ signal-triggered set of heuristics for recurring, high-value review gaps:
 whether new business/validation/state-transition logic duplicates an
 existing canonical owner rather than reusing it ("Existing behavior
 ownership"); whether a multi-step, retryable, or externally re-triggerable
-flow leaves safe or stranded state on partial failure, whether any claimed
-recovery is actually evidenced, and whether the failure would stay
-diagnosable through the repository's own established observability
-convention ("Failure state, retry safety, and recovery"); and whether a
-changed contract, return value, or exception — including one now swallowed,
-translated, or masked by a fallback — is followed to its actual callers
-(a tightening of "Related changes as one unit"). Each activates only when
-the diff's own shape gives concrete reason to and stays scaled to blast
-radius per
+flow leaves safe or stranded state on partial failure, and whether any
+claimed recovery is actually evidenced ("Failure state, retry safety, and
+recovery"); and whether a changed contract, return value, or exception —
+including one now swallowed, translated, or masked by a fallback — is
+followed to its actual callers (a tightening of "Related changes as one
+unit"). Each activates only when the diff's own shape gives concrete
+reason to and stays scaled to blast radius per
 [`../../shared/policies/evidence.md`](../../shared/policies/evidence.md) —
 none of them turns a review into a repository-wide audit or a mandatory
 checklist.
+
+Observability is itself applicability-gated within that same section: it
+only applies once a change actually has a production-operational failure
+mode worth detecting or diagnosing (commonly backend/service runtime
+behavior, payments, queues/events/webhooks, external integrations,
+retries, or background jobs; conditionally frontend changes with an
+established client telemetry convention; usually not agent-instruction,
+prompt, policy, or static-doc changes unless they carry runtime behavior
+of their own). Only then does it prefer the repository's own established
+metrics/alerts or logging convention over inventing new observability —
+never a blanket "add a metric" or "add more logs" recommendation.
 
 ## Key files
 
@@ -107,10 +116,33 @@ checklist.
 - [`templates/local-review-report.md`](templates/local-review-report.md) — the output contract
 - [`../../shared/policies/severity.md`](../../shared/policies/severity.md) — the canonical P0/P1/P2 and decision-derivation model, shared with `github-pr-review`
 
+### Thin runbook, canonical policy owners
+
+`runbooks/local-review.md` is intentionally a thin execution document: it
+defines flow, phase ordering, and which policy governs each phase, and it
+does not restate that policy's own semantics — this source repository's
+own `AGENTS.md`, "Runbook Design," states the general rule this follows
+(not linked here: a packaged Skill archive never depends on this source
+repository's own root-level development docs). In particular, all
+Git-mechanics detail
+— the four repository-state categories, push/synchronization status, and
+the complete staged-fingerprint re-review precondition/comparison contract
+— is owned entirely by
+[`policies/repository-state.md`](policies/repository-state.md); the
+runbook only says when each is resolved and applied. Optional
+review-context and PR-context handling are owned the same way by
+[`policies/review-context.md`](policies/review-context.md) and
+[`policies/pr-context.md`](policies/pr-context.md) respectively.
+
 The Python modules under this repository's `scripts/` directory (e.g.
 `review_context.py`, `decision_semantics.py`) are this repository's own
 validation/reference helpers — they mirror a policy's decision tables for
-this repo's test suite and are not packaged Skill runtime logic.
+this repo's test suite and are not packaged Skill runtime logic. The
+behavioral heuristics in `review-scope.md` have no such module: an earlier
+iteration added one purely for testability and it was removed as a
+duplicate source of truth (see `AGENTS.md` section 18) — that policy's
+Markdown text is tested directly instead (see
+[`../../scripts/test_review_scope_behavioral_heuristics.py`](../../scripts/test_review_scope_behavioral_heuristics.py)).
 
 ## Development / validation
 

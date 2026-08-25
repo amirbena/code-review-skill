@@ -93,8 +93,37 @@ repository and actually covers this new state — never accepted merely
 because "another process will eventually fix it," with no evidence that
 such a process exists or handles this case.
 
+### Observability is applicability-gated, not universal
+
 Where this reasoning surfaces a meaningful, hard-to-detect failure mode,
-also weigh whether it would be operationally visible, preferring the
+weigh whether it would be operationally visible — but only after first
+asking whether the change actually has a production-operational failure
+mode for which detection or diagnosis is materially relevant. Observability
+is not equally important for every kind of change:
+
+- **Commonly relevant**: backend/service runtime behavior, payments or
+  other high-impact business operations, queues/events/webhooks, external
+  integrations, asynchronous processing, persistence combined with side
+  effects, retries/redelivery, background jobs, and production
+  orchestration.
+- **Conditionally relevant for frontend/client changes**: only when the
+  application already has an established client telemetry/error-reporting
+  convention, the change introduces an operationally important runtime
+  failure, and that failure would otherwise be materially difficult to
+  diagnose. Do not turn an ordinary frontend review into a search for
+  backend-style metrics.
+- **Usually secondary or not applicable**: changes primarily to agent
+  instructions, prompts, review Skills, policy Markdown, static docs, or
+  non-runtime configuration — unless the changed system actually has
+  runtime behavior of its own (agent orchestration, tool-invocation
+  failures, persistent execution state, retries, scheduled/background
+  execution, production telemetry), in which case the reasoning below
+  applies to that runtime behavior specifically, not to the surrounding
+  static content.
+
+Concretely: does this diff introduce or modify a production-operational
+failure mode for which detection or diagnosis is materially relevant? Only
+when the answer is yes does the hierarchy below apply, preferring the
 repository's own established mechanism over inventing a new one:
 
 - If the surrounding system already uses metrics, counters,

@@ -60,28 +60,35 @@ those commits have been pushed to a remote. Do not describe `<base>..HEAD`
 output as "local-only" or "not yet pushed": once a branch has been
 pushed at all, `<base>..HEAD` still returns every commit unique to the
 branch, including ones that already exist on the remote, which would
-mislabel already-public commits as unpushed.
+mislabel already-public commits as unpushed. Push/synchronization status
+is a distinct concern — see "Push / synchronization status" below, this
+policy's single source of truth for it; the runbook only says when in the
+execution order it is resolved.
 
-Push/synchronization status is a **distinct concern**, resolved against
-the branch's own configured upstream, never against the review base:
+## Push / synchronization status
+
+Resolved against the branch's own configured upstream, never against the
+review base:
 
 ```text
 git log @{u}..HEAD --oneline
 ```
 
-If the branch has no configured upstream, report that fact explicitly
-(for example, because resolving `@{u}` fails) — never guess or
-substitute an assumed `origin/<branch>` ref, since no such remote
-tracking relationship may actually exist.
+(local-only, unpushed commits) and
 
-This is not a sixth repository-state category alongside
-Committed/Staged/Unstaged/Tracked/Untracked above — it is the existing
-synchronization-status concern owned by
-[`../runbooks/local-review.md`](../runbooks/local-review.md), step 5,
-which is this Skill's single source of truth for push/sync status. This
-section exists only to prevent that status from being reintroduced here,
-incorrectly, as a byproduct of the committed-delta-relative-to-base
-command above.
+```text
+git log HEAD..@{u} --oneline
+```
+
+(remote-only commits not yet merged locally), or the equivalent
+ahead/behind counts. If the branch has no configured upstream (resolving
+`@{u}` fails), report "no tracking branch configured" explicitly — never
+guess or substitute an assumed `origin/<branch>` ref, since no such remote
+tracking relationship may actually exist. This is informational for the
+report and the caller, not a decision this Skill makes on its own, and it
+is not a sixth repository-state category alongside
+Committed/Staged/Unstaged/Tracked/Untracked above — it is the "Committed
+delta is not push status" distinction made operational.
 
 ## Attribution in findings
 
@@ -140,30 +147,66 @@ reason from this policy text directly, not from that script).
 
 The fingerprint represents **only the staged category's content** at the
 moment it was computed — it carries no information about whether the
-*review standard applied to that content* is also unchanged. See
-[`../runbooks/local-review.md`](../runbooks/local-review.md),
-"Re-review discipline," "Precondition: the applicable review standard
-must be unchanged," for the complete precondition this Skill's own
-`SKILL.md`, runbook, Skill-owned policies, shared review policies, and
-applicable target-repository instructions must satisfy before a matching
-fingerprint may be used as a short-circuit at all; that runbook is the
-single canonical owner of that precondition and this file does not
-duplicate it. Given that precondition holds, comparison of the content
-fingerprint itself works as follows:
+*review standard applied to that content* is also unchanged. This policy
+is the single canonical owner of the complete fingerprint-comparison
+contract, including the precondition below; the runbook only says when in
+the execution order a re-review applies it.
 
-- **Same fingerprint as the previously reported one** → the staged
-  delta is unchanged since the prior review; it does not need to be
-  re-reviewed as new content (though a previously reported blocking
-  finding in that unchanged staged delta still must be re-verified as
-  resolved or not, per the runbook).
+### Precondition: the applicable review standard must be unchanged
+
+A matching content fingerprint is **not by itself** sufficient to reuse
+prior reasoning. Before comparing fingerprints at all, the
+caller/orchestrator must first establish that everything this Skill's
+review reasoning actually depends on is materially unchanged since the
+prior review whose fingerprint is being compared against: this Skill's own
+[`../SKILL.md`](../SKILL.md); the runbook
+([`../runbooks/local-review.md`](../runbooks/local-review.md)); this
+Skill's own policies
+([`invocation-approval.md`](invocation-approval.md),
+this file, and, when applicable, [`review-context.md`](review-context.md)
+and [`pr-context.md`](pr-context.md)); the shared review policies
+([`review-scope.md`](../../../shared/policies/review-scope.md),
+[`severity.md`](../../../shared/policies/severity.md),
+[`evidence.md`](../../../shared/policies/evidence.md),
+[`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
+[`git-safety.md`](../../../shared/policies/git-safety.md),
+[`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
+and, in orchestrated/multi-Agent contexts,
+[`review-ownership.md`](../../../shared/policies/review-ownership.md)); and
+the target repository's own applicable instructions (`AGENTS.md`,
+`CLAUDE.md`, and any other repository-local context discovered for the
+files in the staged category).
+
+This does not require a new persisted cryptographic fingerprint over those
+files — establishing "materially unchanged" is the caller's/
+orchestrator's responsibility (for example, because nothing in this list
+was touched between the two invocations in the same session/task, or
+because the caller has otherwise confirmed their content is identical). If
+any of these materially changed, or the caller cannot confirm they did
+not, the short-circuit below **does not apply**: treat the staged category
+as requiring fresh reasoning under the current standard, exactly as if the
+fingerprint had not matched, regardless of what the content fingerprint
+alone reports. This precondition never narrows what the runbook's review
+steps otherwise require, and never substitutes for re-verifying previously
+reported blocking findings, discovering new P0/P1s, or independently
+(re-)detecting unstaged/untracked state.
+
+### Comparison, given the precondition holds
+
+- **Same fingerprint as the previously reported one** → this is a safe,
+  testable short-circuit: skip re-deriving review reasoning for the
+  staged category from scratch, and instead spend that effort verifying
+  whether each previously reported blocking finding in the staged delta
+  was actually resolved. This never shrinks scope — the staged category
+  is still fully accounted for in the report, and a newly discovered
+  P0/P1 in that same staged delta (found while verifying) is still
+  reported.
 - **Different fingerprint** → the staged delta changed and must be
-  reviewed as new delta.
-
-If the precondition does not hold (the applicable review standard
-changed, or the caller cannot confirm it did not), treat the staged
-category as requiring fresh review exactly as if the fingerprint had
-differed, regardless of what the content comparison above would
-otherwise indicate.
+  reviewed as new delta, same as any other newly detected content.
+- **Precondition not established** → treat this exactly as a fingerprint
+  difference: review the staged category as new content under the
+  current standard, regardless of what the content fingerprint itself
+  reports.
 
 **The fingerprint must never be used to conclude that unstaged or
 untracked state is unchanged.** It carries no information about those

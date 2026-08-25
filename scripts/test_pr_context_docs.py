@@ -241,9 +241,8 @@ class RunbookConditionalStepTests(unittest.TestCase):
             "If, and only if, the caller supplied a PR reference", self.text
         )
         self.assertIn(
-            "If no PR reference was supplied, skip this step entirely — "
-            "proceed directly to the review step below exactly as this "
-            "runbook already did before this step existed",
+            "If no PR reference was supplied, skip this step entirely and "
+            "proceed directly to the review step below",
             self.text,
         )
 
@@ -252,10 +251,19 @@ class RunbookConditionalStepTests(unittest.TestCase):
         self.assertIn("scope never expands to the PR", self.text)
 
     def test_dedup_guidance_appears_in_finding_classification_step(self) -> None:
+        # The runbook no longer restates the full dedup rule inline — it
+        # points to pr-context.md's own "Avoiding duplicate findings" (the
+        # canonical owner) instead of repeating its text.
         self.assertIn(
-            "do not report the same underlying issue twice merely because "
-            "both PR context and this review independently identified it",
+            "reconciled PR context per those policies' own", self.text
+        )
+        self.assertIn(
+            "rather than reporting the same underlying issue twice",
             self.text,
+        )
+        self.assertIn(
+            "Avoiding duplicate findings",
+            _text(PR_CONTEXT_POLICY),
         )
 
     def test_constraints_still_forbid_github_mutation(self) -> None:
