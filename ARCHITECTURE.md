@@ -32,6 +32,20 @@ review-scope, severity, evidence, repository-instructions, git-safety,
 review-ownership — one copy each, consumed by both Skills (and packaged
 with either, so each archive is self-contained)
 
+shared/policies/review-context.md
+    ↓
+the review-target / review-context / repository-context /
+existing-review-evidence model, plus requirement-context semantics
+(evidence hierarchy, focus mapping, scope-boundary reasoning, explicit
+non-goals) — consumed by both Skills
+
+shared/policies/review-evidence.md
+    ↓
+Existing Review Evidence: classifying prior findings/comments as
+still-relevant, resolved, stale, duplicate, settled decision, or
+speculative discussion, and reconciling without blind inheritance —
+consumed by both Skills
+
 shared/policies/file-reviewability.md
     ↓
 evidence-based handling for generated, vendored, lock, minified, binary,
@@ -57,20 +71,29 @@ SKILL.md + its own GitHub-specific policy/runbooks/templates/metadata
 ```
 
 Neither Skill owns a copy of the severity model, evidence requirements,
-or review-scope rules — both reference [`shared/policies/`](shared/policies/)
-directly. `github-pr-review` additionally has its own policy family,
-indexed from
+review-scope rules, or the review-context / existing-review-evidence model
+— all reference [`shared/policies/`](shared/policies/) directly.
+`github-pr-review` additionally has its own policy family, indexed from
 [`policies/github-review.md`](skills/github-pr-review/policies/github-review.md),
 for GitHub-specific delivery rules with no local-review analogue: review
 authority and self-review, reviewer delta re-review, PR scope and
 pagination, review reasoning (logical cohorts, code-impact/dependency
-analysis), finding placement, and batched publication/decision.
+analysis), finding placement, and batched publication/decision — plus two
+**thin PR applications** of the shared model
+(`policies/review-context.md`: the PR is the review target, scope-boundary
+reasoning for a PR; `policies/review-evidence.md`: the PR's own prior
+reviews/comments as Existing Review Evidence).
 `local-code-review` has its own analogous policy family under
 `skills/local-code-review/policies/`, for local-Git-specific rules with no
 PR analogue: invocation approval, the repository-state category
 definitions (including push/synchronization status and the staged-delta
-fingerprint re-review contract), and the optional review-context/
-PR-context handling.
+fingerprint re-review contract), and two thin local applications of the
+shared model (`policies/review-context.md`: the local delta is the review
+target; `policies/pr-context.md`: an optional associated PR's prior
+findings/decisions as Existing Review Evidence). The optional review
+context accepts, uniformly, free-form requirements, explicit user
+instructions, a Jira/tracker ticket, an explicitly supplied GitHub Issue
+(no automatic PR↔Issue discovery), an HLD/ADR, or an implementation plan.
 
 ### Thin runbooks, canonical policy owners
 
@@ -105,9 +128,16 @@ execution flow.
 ## 2. Core Pipeline (per Skill)
 
 ```text
-Input
+Review Invocation
     ↓
-Review Context Resolver
+Normalize Inputs
+    ├── Review Target        (local delta | GitHub PR delta)
+    ├── Review Context        (optional: user instructions / Jira / GitHub
+    │                          Issue / HLD / ADR / plan / PR description)
+    ├── Repository Context   (AGENTS.md, architecture, surrounding code,
+    │                          tests, invariants)
+    └── Existing Review Evidence (optional: prior findings, resolved
+                                  findings, settled decisions, prior comments)
     ↓
 Git / GitHub State Inspector
     ↓
@@ -115,34 +145,57 @@ Review Delta Resolver
     ↓
 Repository Context Loader
     ↓
-Core Code Review Engine  (shared/policies/)
+Shared Review Policies / Semantics  (shared/policies/)
+    ├── scope validation (incl. scope-boundary reasoning against context)
+    ├── correctness
+    ├── regression analysis
+    ├── architecture / repository invariants
+    └── severity classification  (shared/policies/severity.md)
     ↓
-Finding Classification   (shared/policies/severity.md)
-    ↓
-Delivery Mode
+Skill-Specific Output
     ├── local-code-review  → structured report (always)
     └── github-pr-review   → Passive Report | Active GitHub Review
 ```
 
+This flow is conceptual guidance, not a required implementation shape — the
+Skills are natural-language instruction packages, and the ordering above is
+the reading order their `SKILL.md` and runbooks already imply.
+
 ### Stage responsibilities
 
-- **Input** — for `local-code-review`: "review this local repository." For
-  `github-pr-review`: a PR URL, a PR number with repository context, or a
-  repository + PR number.
-- **Review Context Resolver** — resolves the repository, base branch, and
-  (for `github-pr-review`) the PR itself.
+- **Review Invocation** — for `local-code-review`: "review this local
+  implementation state," optionally with review context and/or an
+  associated PR reference. For `github-pr-review`: a PR URL, a PR number
+  with repository context, or a repository + PR number, optionally with
+  review context and/or an explicitly supplied GitHub Issue.
+- **Normalize Inputs** — resolves the repository, base branch, and (for
+  `github-pr-review`) the PR itself, and separates the four concepts owned
+  by [`shared/policies/review-context.md`](shared/policies/review-context.md)
+  and [`shared/policies/review-evidence.md`](shared/policies/review-evidence.md):
+  the **review target** (never widened by anything below it), optional
+  **review context** (intended scope/requirements — focuses attention and
+  enables scope-boundary reasoning), **repository context**, and optional
+  **existing review evidence** (prior findings/decisions, reconciled not
+  inherited). Missing optional inputs change nothing.
 - **Git / GitHub State Inspector** — read-only inspection of Git state
   (branch, HEAD, staged/unstaged/untracked) and, for `github-pr-review`,
-  GitHub state (PR metadata, base/head SHA, checks, existing comments).
-  Never mutates state.
+  GitHub state (PR metadata, base/head SHA, checks, existing comments,
+  prior reviews/review comments/issue comments). Never mutates state.
 - **Review Delta Resolver** — computes exactly what must be reviewed: the
   committed delta relative to base, plus any local-only commits, staged
-  changes, unstaged changes, and relevant untracked files.
+  changes, unstaged changes, and relevant untracked files (local), or the
+  PR's full or bounded-delta diff (GitHub).
 - **Repository Context Loader** — loads relevant surrounding context
   beyond the raw diff: repository-local instructions, architecture docs,
-  related tests, contracts, schemas, and conventions.
-- **Core Code Review Engine** — the single review reasoning model defined
-  by `shared/policies/review-scope.md`. Identical regardless of which
+  related tests, contracts, schemas, and conventions. For `github-pr-review`
+  this is limited to API-retrievable context in the current implementation —
+  a temporary local checkout of the PR is future work (see "Future work"
+  below).
+- **Shared Review Policies / Semantics** — the single review reasoning
+  model defined by `shared/policies/review-scope.md`, plus scope validation
+  against any supplied review context per
+  [`shared/policies/review-context.md`](shared/policies/review-context.md),
+  "Scope-boundary reasoning." Identical regardless of which
   Skill or delivery mode invokes it. Beyond the baseline concern list, this
   model reasons in the same local-first, signal-triggered style about four
   higher-value behavioral concerns when the diff's own shape makes them
@@ -165,13 +218,36 @@ Delivery Mode
   diff and scaled to blast radius exactly like the model's other
   reasoning, per `shared/policies/review-scope.md` and
   `shared/policies/evidence.md`.
-- **Finding Classification** — every actionable finding is assigned
+- **Severity classification** — every actionable finding is assigned
   exactly one severity: P0, P1, or P2, per
-  [`shared/policies/severity.md`](shared/policies/severity.md).
-- **Delivery Mode** — `local-code-review` always returns a structured
-  report. `github-pr-review` either returns a report (passive) or
+  [`shared/policies/severity.md`](shared/policies/severity.md). The final
+  decision is derived mechanically from blocking severities; supplied
+  context and reconciled prior evidence inform which findings exist and at
+  what severity, never a separate decision path.
+- **Skill-Specific Output** — `local-code-review` always returns a
+  structured report. `github-pr-review` either returns a report (passive) or
   publishes to GitHub (active). The delivery adapter never changes the
   underlying findings or severities.
+
+### Future work (not implemented)
+
+The following are deliberately **not** part of the current architecture and
+are documented here only to mark them as future phases — no code, policy, or
+runbook implements them today:
+
+- **Temporary local checkout / repository-backed GitHub PR review** — a
+  mode where `github-pr-review` clones or checks out the PR into an
+  isolated temporary location to run repository-aware inspection against a
+  real working tree. Today `github-pr-review` uses API-retrievable PR state
+  only.
+- **Parallel / spawned execution** — no Skill spawns workers or runs review
+  sub-tasks concurrently; orchestration and any parallelism remain external.
+- **GitHub merge-blocking / required status checks** — neither Skill
+  creates a GitHub status check, a required check, a ruleset, or any
+  branch-protection state. `github-pr-review`'s maximum positive action
+  remains **Approve**; it never blocks merges through GitHub machinery.
+- **Automatic execution of PR code** — neither Skill runs the target
+  repository's tests, linters, build, or arbitrary commands.
 
 ## 3. Separation of Concerns
 

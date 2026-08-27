@@ -118,12 +118,45 @@ for the output contracts.
 Both modes apply identical review standards (the same shared policies,
 below). Only delivery differs.
 
+### Inputs
+
+**Required:** a PR URL, a PR number with repository context, or a
+repository + PR number.
+
+**Optional:** free-form review context describing the intended change —
+explicit user instructions/requirements, a Jira (or equivalent tracker)
+ticket and/or its acceptance criteria, an associated GitHub Issue (supplied
+explicitly — a reference or its text; **no automatic PR↔Issue discovery**),
+an HLD/architecture document/ADR, an implementation plan, or migration/
+security/performance/rollout constraints. The caller supplies the text or
+reference; this Skill treats it uniformly per the shared
+[`review-context.md`](../../shared/policies/review-context.md) and its thin
+PR application [`policies/review-context.md`](policies/review-context.md). It
+focuses review attention and enables scope-boundary reasoning about the PR;
+it never converts a ticket, Issue, ADR, or the PR description into an
+additional review target, and never widens the PR delta. When omitted, this
+Skill behaves exactly as before this input existed and never asks for it.
+
+**Always considered when available:** the PR's own prior reviews, review
+comments, and issue comments — as Existing Review Evidence, per the shared
+[`review-evidence.md`](../../shared/policies/review-evidence.md) and its thin
+PR application [`policies/review-evidence.md`](policies/review-evidence.md).
+Used to avoid repeating settled findings, contradicting settled decisions
+without new evidence, and missing an unresolved previously identified issue —
+never blindly inherited. Absent prior activity changes nothing.
+
 ## 3. Required Policy Loading
 
 Shared, always: [`review-scope.md`](../../shared/policies/review-scope.md),
 [`severity.md`](../../shared/policies/severity.md),
 [`evidence.md`](../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),
+[`review-context.md`](../../shared/policies/review-context.md) (the shared
+review-target / review-context / repository-context / existing-review-evidence
+model and scope-boundary reasoning — its requirement-context sections bind
+only when context is supplied),
+[`review-evidence.md`](../../shared/policies/review-evidence.md) (the shared
+Existing Review Evidence model),
 [`git-safety.md`](../../shared/policies/git-safety.md),
 [`review-ownership.md`](../../shared/policies/review-ownership.md), and
 [`file-reviewability.md`](../../shared/policies/file-reviewability.md).
@@ -138,7 +171,11 @@ self-review guard, publication capability),
 [`reviewer-delta-review.md`](policies/reviewer-delta-review.md) (delta
 vs. full review mode), [`pr-scope.md`](policies/pr-scope.md) (complete PR
 scope, pagination, prior-review awareness),
-[`review-reasoning.md`](policies/review-reasoning.md) (logical cohorts,
+[`review-context.md`](policies/review-context.md) (thin PR application of
+the shared review-context model; scope-boundary reasoning for a PR),
+[`review-evidence.md`](policies/review-evidence.md) (thin PR application of
+the shared Existing Review Evidence model; prior reviews/comments on this
+PR), [`review-reasoning.md`](policies/review-reasoning.md) (logical cohorts,
 code-impact/dependency analysis), [`finding-placement.md`](policies/finding-placement.md)
 (inline vs. body placement), and [`review-output.md`](policies/review-output.md)
 (analysis/publication boundary, batching, HEAD revalidation, decision).

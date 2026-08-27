@@ -167,6 +167,52 @@ This repository is not trying to:
 - perform implementation work while reviewing — neither Skill edits, commits, or pushes code;
 - create multiple competing reviewers for the same review scope.
 
+## 9. `local-code-review` vs. `github-pr-review`
+
+The two Skills are distinct entry points that share one review standard. They
+differ in *what* they review and *how* they deliver; they do **not** differ in
+severity semantics, decision derivation, or read-only reasoning. Everything
+marked "shared" below is one file under [`shared/policies/`](shared/policies/)
+consumed identically by both.
+
+| Capability | `local-code-review` | `github-pr-review` |
+|---|---|---|
+| **Review target** | the local implementation delta | the GitHub Pull Request delta |
+| **Local repository access** | required | not used (API PR state only; a temporary checkout is future work — §10) |
+| **GitHub PR access** | read-only, only when an optional PR reference is supplied | required for PR state; write only in active mode |
+| **Committed / staged / unstaged / untracked scope** | all four, detected separately ([`repository-state.md`](skills/local-code-review/policies/repository-state.md)) | n/a — the PR diff (full, or a bounded delta re-review) |
+| **Review context** (optional) | shared model ([`review-context.md`](shared/policies/review-context.md)); local application maps context onto the local delta | shared model; thin PR application ([`review-context.md`](skills/github-pr-review/policies/review-context.md)) — the PR stays the target |
+| **Jira / ticket / acceptance-criteria context** | yes, as free-form text or a reference (no integration) | yes, same shared model |
+| **GitHub Issue context** | yes — supplied explicitly (reference or text); no automatic PR↔Issue discovery | yes — same, explicit only |
+| **HLD / ADR / implementation-plan context** | yes | yes |
+| **PR description as intent context** | via a supplied PR reference / free-form text | always available for the PR under review |
+| **Existing Review Evidence** | prior findings / comments / settled decisions from an optional associated PR ([`pr-context.md`](skills/local-code-review/policies/pr-context.md)) | the PR's own prior reviews / review comments / issue comments ([`review-evidence.md`](skills/github-pr-review/policies/review-evidence.md)) |
+| — classification | shared: still-relevant / resolved / stale / duplicate / settled decision / speculative discussion — never blindly inherited | shared, same |
+| **Repository context** | shared ([`repository-instructions.md`](shared/policies/repository-instructions.md), surrounding code, invariants) | shared, same |
+| **Scope-boundary reasoning** | shared ([`review-context.md`](shared/policies/review-context.md), "Scope-boundary reasoning") — missing behavior, contradicted acceptance criteria, unrelated scope expansion, valid-but-out-of-scope findings, repo-policy violations regardless of ticket scope | shared, same, applied to the PR |
+| **Severity model** | shared P0 / P1 / P2 ([`severity.md`](shared/policies/severity.md)) | shared, identical |
+| **Final decision semantics** | `REVIEW CLEAN` / `CHANGES REQUIRED`, derived mechanically from blocking (P0/P1) severities | `Approve` / `Request Changes`, same mechanical derivation |
+| **Opt-in behavior** | every invocation needs fresh explicit user approval ([`invocation-approval.md`](skills/local-code-review/policies/invocation-approval.md)) | selection boundary + defensive self-review guard ([`review-authority.md`](skills/github-pr-review/policies/review-authority.md)); no per-run approval gate |
+| **Re-review behavior** | stateless; fresh approval each run; staged-delta fingerprint short-circuit | SHA-bound reviewer-owned delta re-review; `NO NEW DELTA`; escalation to full review |
+| **Publishing behavior** | returns one structured report to the caller; never publishes | passive: returns a report; active: one batched GitHub review (inline comments + body + Approve/Request Changes) |
+| **Mutation / read-only boundaries** | read-only; never edits, commits, pushes, or performs any GitHub mutation — even with a PR reference | read-only on Git and implementation; GitHub mutation only in active mode; max positive action is **Approve**; never merges |
+| **Delegated Agent / Sub-Agent execution** | mechanics never transfer the approval decision — the user owns it | reviewer/author separation required; orchestration external |
+
+## 10. Planned / not yet implemented
+
+These are future phases. No code, policy, or runbook in this repository
+implements them today, and this document does not claim they are supported:
+
+- **Temporary GitHub PR repository checkout / repository-backed PR review** —
+  cloning or checking out a PR into an isolated temporary location so
+  `github-pr-review` can run repository-aware inspection against a real
+  working tree.
+- **Parallel / spawned execution** — concurrent review workers or sub-tasks.
+- **GitHub blocking status checks / merge enforcement** — required checks,
+  rulesets, branch-protection changes, or any GitHub-side merge blocking.
+- **Automatic execution of PR code** — running the target repository's tests,
+  linters, build, or arbitrary commands as part of review.
+
 ## See also
 
 - [`AGENTS.md`](AGENTS.md) — repository-wide orchestration rules, including the

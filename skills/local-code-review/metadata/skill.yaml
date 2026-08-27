@@ -28,8 +28,8 @@ modes:
 capabilities:
   git: required
   local_repository_access: required
-  external_review_context: optional # free-form context; see ../policies/review-context.md
-  github_read_access: optional # only used when a PR reference is supplied; see ../policies/pr-context.md
+  external_review_context: optional # free-form requirements / Jira / GitHub Issue (explicit) / HLD / ADR / plan; see ../../../shared/policies/review-context.md and ../policies/review-context.md
+  github_read_access: optional # only used when a PR reference is supplied; prior review evidence per ../../../shared/policies/review-evidence.md and ../policies/pr-context.md
 
 output:
   mutates_github: false
@@ -45,6 +45,8 @@ shared:
     - ../../../shared/policies/git-safety.md
     - ../../../shared/policies/review-ownership.md
     - ../../../shared/policies/file-reviewability.md
+    - ../../../shared/policies/review-context.md
+    - ../../../shared/policies/review-evidence.md
   templates:
     - ../../../shared/templates/finding.md
     - ../../../shared/templates/review-summary.md

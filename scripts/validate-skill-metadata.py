@@ -38,6 +38,8 @@ GITHUB_POLICY_ORDER = (
     "review-authority.md",
     "reviewer-delta-review.md",
     "pr-scope.md",
+    "review-context.md",
+    "review-evidence.md",
     "review-reasoning.md",
     "finding-placement.md",
     "review-output.md",
@@ -82,6 +84,20 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "REVIEW INCOMPLETE",
         "## Existing review awareness",
         "A changed HEAD starts a new authoritative review state",
+    ),
+    "review-context.md": (
+        "## The PR remains the review target",
+        "## Scope-boundary reasoning for a PR",
+        "no rigid global priority order",
+        "The review target stays the",
+        "no automatic PR",
+    ),
+    "review-evidence.md": (
+        "## Use it to avoid three failures",
+        "## Do not blindly inherit",
+        "## HEAD changes reset applicability",
+        "A changed PR HEAD starts a new authoritative review state",
+        "evidence and context, not authority",
     ),
     "review-reasoning.md": (
         "applies only after review authority",
@@ -130,6 +146,14 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
     "pr-scope.md": (
         "## Complete PR scope and pagination",
         "## Existing review awareness",
+    ),
+    "review-context.md": (
+        "## Scope-boundary reasoning for a PR",
+        "## The PR remains the review target",
+    ),
+    "review-evidence.md": (
+        "## Use it to avoid three failures",
+        "## HEAD changes reset applicability",
     ),
     "review-reasoning.md": (
         "## Logical Cohort Review",

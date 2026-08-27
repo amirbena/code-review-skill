@@ -26,13 +26,18 @@ verify repository/review access
     ↓
 resolve review mode (delta re-review vs. normal review)
     ↓
+resolve optional supplied review context / GitHub Issue (if any)
+    ↓
 resolve authoritative HEAD
     ↓
-retrieve complete paginated PR scope
+retrieve complete paginated PR scope (incl. prior reviews / comments)
     ↓
 determine event-specific review capability
     ↓
-review
+classify prior review comments as Existing Review Evidence
+(still-relevant / resolved / stale / duplicate / settled / speculative)
+    ↓
+review (incl. scope-boundary reasoning against supplied context)
     ↓
 deduplicate same-HEAD findings
     ↓
@@ -82,6 +87,16 @@ stop
    previously reviewed SHA already equals the current PR HEAD, stop here
    with the `NO NEW DELTA` reasoning result — do not manufacture a new
    review.
+
+   **If the caller supplied review context** (requirements, explicit user
+   instructions, a Jira ticket, an explicitly supplied GitHub Issue, an
+   HLD/ADR, an implementation plan) — or to use the PR description as a
+   statement of intent — resolve and normalize it now per
+   [`../policies/review-context.md`](../policies/review-context.md) and the
+   shared [`review-context.md`](../../../shared/policies/review-context.md),
+   "Input form." This is optional; absence changes nothing. It never changes
+   the review mode resolved above, never widens the PR delta, and never adds
+   a review target. No automatic PR↔Issue discovery.
 5. Resolve and record the authoritative PR HEAD SHA. For a normal
    review, retrieve the complete paginated changed-file set and complete
    diff per [`../policies/pr-scope.md`](../policies/pr-scope.md), "Complete
@@ -105,7 +120,16 @@ stop
 7. Retrieve all pages of relevant prior reviews, review comments, and issue
    comments needed for review state and same-HEAD duplicate detection. If
    that history is incomplete, report the limitation rather than claiming
-   idempotent publication.
+   idempotent publication. Classify each relevant prior review/comment as
+   **Existing Review Evidence** per
+   [`../policies/review-evidence.md`](../policies/review-evidence.md) and the
+   shared [`review-evidence.md`](../../../shared/policies/review-evidence.md)
+   — still-relevant, resolved, stale, duplicate, settled decision, or
+   speculative discussion — reasoning over each thread as a whole. Prior
+   findings are evidence, not authority: do not blindly inherit their
+   conclusions or severities. The same-HEAD duplicate-suppression mechanics
+   remain [`../policies/pr-scope.md`](../policies/pr-scope.md)'s ("Existing
+   review awareness").
 8. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
    for each file in this invocation's scope (the full changed-file set for
@@ -128,7 +152,22 @@ stop
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
    "Instruction precedence"); classify findings per
    [`severity.md`](../../../shared/policies/severity.md) with evidence per
-   [`evidence.md`](../../../shared/policies/evidence.md). For a delta
+   [`evidence.md`](../../../shared/policies/evidence.md). When review context
+   is available, also apply the shared
+   [`review-context.md`](../../../shared/policies/review-context.md),
+   "Scope-boundary reasoning," to the PR: detect required behavior missing
+   from the PR, the PR contradicting acceptance criteria, unrelated scope
+   expansion, a valid-but-out-of-scope finding, and repository-policy
+   violations that hold regardless of the ticket's stated scope — using that
+   policy's precedence notes (repository policy/invariants can constrain the
+   PR even when a ticket says otherwise; an accepted ADR/HLD generally
+   outweighs speculative ticket discussion; newer explicit maintainer
+   clarification supersedes stale discussion), not a rigid priority order;
+   report an unresolved material conflict as an ambiguity. Use the prior
+   Existing Review Evidence classified in step 7 to avoid repeating a
+   settled finding, contradicting a settled decision without concrete new
+   evidence, or missing an unresolved previously identified issue that still
+   holds against the current HEAD. For a delta
    re-review, if what is found here meets any "Escalating from delta to
    full review" condition in
    [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),

@@ -21,11 +21,13 @@ same identity? → yes → REVIEW SKIPPED → stop
     ↓ no
 resolve review mode (delta re-review vs. normal review)
     ↓
-resolve changed files
+resolve optional supplied review context / GitHub Issue (if any)
+    ↓
+resolve changed files (incl. prior reviews / comments as Existing Review Evidence)
     ↓
 discover applicable AGENTS.md / CLAUDE.md
     ↓
-inspect diff and surrounding code
+inspect diff and surrounding code (incl. scope-boundary reasoning)
     ↓
 apply repository conventions
     ↓
@@ -56,6 +58,16 @@ return human-readable report
    the reviewed SHA) it is a **normal review**. If the previously reviewed
    SHA already equals the current PR HEAD, report `NO NEW DELTA` and stop
    rather than producing a redundant report.
+
+   **If the caller supplied review context** (requirements, explicit user
+   instructions, a Jira ticket, an explicitly supplied GitHub Issue, an
+   HLD/ADR, an implementation plan) — or to use the PR description as intent
+   — resolve and normalize it now per
+   [`../policies/review-context.md`](../policies/review-context.md) and the
+   shared [`review-context.md`](../../../shared/policies/review-context.md).
+   Optional; absence changes nothing; it never changes the review mode,
+   never widens the PR delta, and never adds a review target. No automatic
+   PR↔Issue discovery.
 4. Through an available authenticated GitHub integration, retrieve PR
    metadata and base/head SHA. For a normal review, retrieve the complete
    paginated changed-file set and a complete diff per
@@ -70,6 +82,13 @@ return human-readable report
    "Escalating from delta to full review" condition. If completeness
    cannot be established for the scope this mode requires, return an
    incomplete review state rather than claiming the full PR was reviewed.
+   Where prior reviews, review comments, and issue comments on this PR are
+   available, classify each relevant one as **Existing Review Evidence** per
+   [`../policies/review-evidence.md`](../policies/review-evidence.md) and the
+   shared [`review-evidence.md`](../../../shared/policies/review-evidence.md)
+   — still-relevant, resolved, stale, duplicate, settled decision, or
+   speculative discussion — without blindly inheriting it. Absent prior
+   activity changes nothing.
 5. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
    for each file in this invocation's scope, look for `AGENTS.md` /
@@ -89,8 +108,19 @@ return human-readable report
    instructions refine how the code is evaluated; they never override this
    Skill's own safety boundaries (see
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
-   "Instruction precedence"). For a delta re-review, if what is found
-   here meets any "Escalating from delta to full review" condition in
+   "Instruction precedence"). When review context is available, also apply
+   the shared
+   [`review-context.md`](../../../shared/policies/review-context.md),
+   "Scope-boundary reasoning," to the PR: detect required behavior missing
+   from the PR, the PR contradicting acceptance criteria, unrelated scope
+   expansion, a valid-but-out-of-scope finding, and repository-policy
+   violations that hold regardless of the ticket's stated scope — using that
+   policy's precedence notes, not a rigid priority order. Use the prior
+   Existing Review Evidence classified in step 4 to avoid repeating a
+   settled finding, contradicting a settled decision without concrete new
+   evidence, or missing an unresolved previously identified issue that still
+   holds against the current PR HEAD. For a delta re-review, if what is
+   found here meets any "Escalating from delta to full review" condition in
    [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
    switch this invocation to a normal review and retrieve the remaining full
    scope before continuing.

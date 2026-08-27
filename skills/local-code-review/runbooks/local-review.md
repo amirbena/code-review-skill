@@ -14,8 +14,11 @@ Applies shared policies:
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
-[`git-safety.md`](../../../shared/policies/git-safety.md), and the shared
-human-facing output shape in
+[`git-safety.md`](../../../shared/policies/git-safety.md),
+[`review-context.md`](../../../shared/policies/review-context.md) (the shared
+review-target / review-context / repository-context / existing-review-evidence
+model — its requirement-context and scope-boundary sections bind only when
+context is supplied), and the shared human-facing output shape in
 [`review-summary.md`](../../../shared/templates/review-summary.md), plus
 this Skill's own
 [`../policies/invocation-approval.md`](../policies/invocation-approval.md)
@@ -26,13 +29,17 @@ per-category detection commands, push/synchronization status, and the
 staged-delta fingerprint and its re-review comparison contract — this
 runbook's single source for all of that Git-mechanics detail). When the
 caller supplies review context, also
-[`../policies/review-context.md`](../policies/review-context.md)
-(interpretation, evidence hierarchy, and review-focus mapping for that
-optional input) — never loaded or applied otherwise. When the caller
-supplies a PR reference, also
-[`../policies/pr-context.md`](../policies/pr-context.md) (retrieval
-scope, classification, finding reconciliation, and architectural-decision
-handling) — never loaded or applied otherwise.
+[`../policies/review-context.md`](../policies/review-context.md) (this
+Skill's thin local application of the shared model — mapping supplied
+requirements/Jira/GitHub-Issue/HLD/ADR/plan context onto the local delta and
+reasoning about the requested change's scope boundary) — never loaded or
+applied otherwise. When the caller supplies a PR reference, also
+[`review-evidence.md`](../../../shared/policies/review-evidence.md) (the
+shared Existing Review Evidence model) and
+[`../policies/pr-context.md`](../policies/pr-context.md) (this Skill's thin
+local application: retrieval scope and reconciliation of prior findings,
+prior review comments, and settled decisions against the local delta) —
+never loaded or applied otherwise.
 
 ## Flow
 
@@ -143,29 +150,36 @@ which a value must be resolved before it is used, or what is reported.
    "Deduplicated discovery," for every changed file. Do this before
    reviewing so discovered conventions inform the review itself, not just
    a post-hoc check.
-7. **If, and only if, the caller supplied review context:** apply
-   [`../policies/review-context.md`](../policies/review-context.md) in
-   full now — after the local delta (steps 1–4) and repository-instruction
+7. **If, and only if, the caller supplied review context:** apply the
+   shared [`review-context.md`](../../../shared/policies/review-context.md)
+   and this Skill's thin
+   [`../policies/review-context.md`](../policies/review-context.md) in full
+   now — after the local delta (steps 1–4) and repository-instruction
    discovery (step 6), and before PR-context reconciliation (step 8, if
-   applicable) and the review step below. That policy owns the complete
-   context-understanding procedure (reading the context, extracting
-   requirements/invariants/non-goals, and mapping them onto the delta
-   established above — never onto files or concerns outside it) and how
-   the result focuses the review step; this runbook does not restate it.
-   If no review context was supplied, skip this step entirely and proceed
-   directly to step 8 — this step never prompts the user for context when
-   none was supplied.
-8. **If, and only if, the caller supplied a PR reference:** apply
+   applicable) and the review step below. Those policies own the complete
+   context-understanding procedure (reading the context — free-form
+   requirements, explicit user instructions, a Jira ticket, an explicitly
+   supplied GitHub Issue, an HLD/ADR, or an implementation plan — extracting
+   requirements/invariants/non-goals, mapping them onto the delta
+   established above, and reasoning about the requested change's scope
+   boundary per the shared policy's "Scope-boundary reasoning"); this
+   runbook does not restate them. If no review context was supplied, skip
+   this step entirely and proceed directly to step 8 — this step never
+   prompts the user for context when none was supplied.
+8. **If, and only if, the caller supplied a PR reference:** apply the shared
+   [`review-evidence.md`](../../../shared/policies/review-evidence.md) and
+   this Skill's thin
    [`../policies/pr-context.md`](../policies/pr-context.md) in full now —
    after the local delta (steps 1–4), repository-instruction discovery
    (step 6), and review-context understanding (step 7, if applicable),
-   and before the review step below. That policy owns the complete
+   and before the review step below. Those policies own the complete
    retrieval, classification, and reconciliation procedure (resolving the
-   PR reference; retrieving only relevant threads; classifying and
-   reconciling findings and settled decisions against the current local
-   delta); this runbook does not restate it. If no PR reference was
-   supplied, skip this step entirely and proceed directly to the review
-   step below.
+   PR reference; retrieving only relevant threads; classifying each prior
+   finding/comment as still-relevant, resolved, stale, duplicate, a settled
+   decision, or speculative discussion; and reconciling it against the
+   current local delta without blindly inheriting it); this runbook does
+   not restate them. If no PR reference was supplied, skip this step
+   entirely and proceed directly to the review step below.
 9. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

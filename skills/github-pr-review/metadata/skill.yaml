@@ -28,6 +28,8 @@ capabilities:
   git: required
   github_access: required-for-github-state
   github_review_permissions: required-for-active-publication
+  external_review_context: optional # caller-supplied requirements / Jira / GitHub Issue (explicit) / HLD / ADR / plan; see ../../../shared/policies/review-context.md and ../policies/review-context.md
+  prior_review_evidence: considered-when-available # the PR's own prior reviews/comments; see ../../../shared/policies/review-evidence.md and ../policies/review-evidence.md
 
 output:
   mutates_github: conditional # true only in active mode, and only after access verification
@@ -45,6 +47,8 @@ shared:
     - ../../../shared/policies/git-safety.md
     - ../../../shared/policies/review-ownership.md
     - ../../../shared/policies/file-reviewability.md
+    - ../../../shared/policies/review-context.md
+    - ../../../shared/policies/review-evidence.md
   templates:
     - ../../../shared/templates/finding.md
     - ../../../shared/templates/review-summary.md

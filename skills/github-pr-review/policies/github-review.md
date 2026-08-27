@@ -22,6 +22,12 @@ reviewer-delta-review.md    delta re-review vs. normal review mode
         ↓
 pr-scope.md                 complete PR scope, pagination, prior-review awareness
         ↓
+review-context.md           optional supplied context (Jira / Issue / HLD / ADR /
+                            plan / PR description); scope-boundary reasoning
+        ↓
+review-evidence.md          prior reviews/comments as Existing Review Evidence;
+                            settled vs. speculative; no blind inheritance
+        ↓
 review-reasoning.md         logical cohorts, code impact / dependency analysis
         ↓
 finding-placement.md        inline vs. body placement, one representation per finding
@@ -34,11 +40,18 @@ assume every earlier file's gates have already resolved for this
 invocation. [`review-authority.md`](review-authority.md) resolves first
 and is never bypassed by anything downstream —
 [`reviewer-delta-review.md`](reviewer-delta-review.md) explicitly runs
-after its self-review guard, and
-[`review-reasoning.md`](review-reasoning.md) explicitly reasons only
-once review-authority and reviewer-mode resolution have already run. See
-each file for its own cross-references; this list is not restated
-per-section elsewhere.
+after its self-review guard;
+[`review-context.md`](review-context.md) and
+[`review-evidence.md`](review-evidence.md) are optional and run after
+review-authority and reviewer-mode resolution, informing but never widening
+the scope [`pr-scope.md`](pr-scope.md) establishes; and
+[`review-reasoning.md`](review-reasoning.md) explicitly reasons only once
+review-authority and reviewer-mode resolution have already run. See each
+file for its own cross-references; this list is not restated per-section
+elsewhere. The shared semantics behind the two optional files live in
+[`review-context.md`](../../../shared/policies/review-context.md) and
+[`review-evidence.md`](../../../shared/policies/review-evidence.md);
+`local-code-review` applies the same shared model.
 
 ## Authoritative PR HEAD
 

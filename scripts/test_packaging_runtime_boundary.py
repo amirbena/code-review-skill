@@ -1,36 +1,17 @@
 #!/usr/bin/env python3
-"""Regression coverage for the packaging/runtime boundary of this
-repository's Python reference/test modules (review_context.py,
-decision_semantics.py, pr_context_reconciliation.py,
-reviewer_ownership.py, staged_fingerprint.py).
+"""Guards the packaging/runtime boundary for the scripts/*.py
+reference/test modules (review_context.py, decision_semantics.py,
+pr_context_reconciliation.py, reviewer_ownership.py, staged_fingerprint.py).
 
-This repository's Code Review Agent Skills are natural-language
-instruction packages (Markdown policies/runbooks/templates plus a YAML
-metadata file) consumed by an LLM runtime — they contain no Python and
-execute no Python at runtime. The Python modules under scripts/ that
-"mirror" a policy file (see each module's own docstring) exist solely so
-this repository's own test suite can verify that policy's decision
-tables are internally consistent; they are deliberately excluded from
-both packaged Skill archives.
+The Skills are Markdown/YAML instruction packages — no Python at runtime.
+These modules only mirror a policy's decision tables for this test suite and
+are excluded from both archives. Fails if a refactor: adds one to a package
+file list without it being a real runtime dependency; makes a packaged file
+import/invoke one (a hidden dependency packaging would omit); or lets a
+module's documented contract drift out of the packaged policy that carries
+the same behavior at runtime.
 
-This test file establishes **Contract A** (see each module's docstring
-and skills/local-code-review/policies/review-context.md /
-shared/policies/severity.md): these modules are not required at runtime,
-and the packaged Skill contains every file it actually depends on. It is
-designed to fail if a future refactor accidentally:
-
-- adds one of these modules to a package file list without also making
-  it a genuine runtime dependency (packaging boundary drift), or
-- makes a packaged Skill file (SKILL.md, a policy, a runbook, a
-  template, or metadata) textually invoke/import one of these modules
-  (a hidden runtime dependency packaging would silently omit), or
-- lets a module's documented contract diverge from the packaged policy
-  text that is supposed to carry the same behavior at runtime (i.e. the
-  module quietly becomes the *only* place the logic lives).
-
-Building the actual archive requires `zip`/`unzip` on PATH; if
-unavailable, the archive-content checks are skipped with an explicit
-message rather than silently passing.
+Archive-content checks need zip/unzip on PATH and skip explicitly otherwise.
 
 Run with:
     python3 scripts/test_packaging_runtime_boundary.py
@@ -71,7 +52,7 @@ REFERENCE_TEST_MODULES = (
 #: module, is where a runtime reader actually finds this logic.
 MODULE_TO_PACKAGED_POLICY_HEADINGS = {
     "review_context.py": (
-        LOCAL_SKILL_DIR / "policies" / "review-context.md",
+        REPO_ROOT / "shared" / "policies" / "review-context.md",
         (
             "## Evidence hierarchy",
             "## Explicit non-goals",
@@ -173,18 +154,13 @@ _LIST_ITEM_START_RE = re.compile(r"^[ \t]*(?:[-*+]|\d+[.)])\s")
 
 
 def _split_into_scoped_blocks(text: str) -> list[str]:
-    """Split `text` into proximity units: blank-line-delimited paragraphs,
-    further split at each Markdown list-item boundary.
+    """Split into proximity units: blank-line paragraphs, further split at
+    each Markdown list-item boundary.
 
-    A blank line alone is not sufficient: a "tight" Markdown list (list
-    items with no blank line between them, e.g. two adjacent `-` bullets)
-    is one blank-line-delimited paragraph but two distinct logical
-    statements — a disclaimer in one bullet must not excuse an
-    undisclaimed mention in the next bullet. Splitting additionally on
-    lines that start a new list item (while keeping a bullet's own
-    wrapped continuation lines, which don't start with a marker, attached
-    to it) keeps this deterministic and parser-free while covering both
-    plain-paragraph and tight-list documentation styles.
+    A tight list (adjacent bullets, no blank line) is one paragraph but
+    several statements, so a disclaimer on one bullet must not cover the
+    next. Wrapped continuation lines (no list marker) stay with their
+    bullet. Deterministic and parser-free.
     """
     blocks: list[str] = []
     for paragraph in re.split(r"\n[ \t]*\n", text):
@@ -205,23 +181,14 @@ def find_undisclaimed_module_references_in_text(
     modules: Sequence[str] = REFERENCE_TEST_MODULES,
     disclaimer_phrases: Sequence[str] = DISCLAIMER_PHRASES,
 ) -> list[str]:
-    """Module mentions in `text` with no disclaimer in the same
-    paragraph/list-item.
+    """Module mentions with no disclaimer in the same block.
 
-    Proximity-scoped rather than file-wide: see `_split_into_scoped_blocks`
-    for the deterministic, parser-free scoping unit this uses in place of
-    "the same logical documentation block." A disclaimer phrase in one
-    block never excuses an undisclaimed module mention in a different
-    block of the same file — this is what distinguishes a legitimate,
-    disclaimed mention (disclaimer and mention in the same block) from an
-    unrelated disclaimer elsewhere in the file masking a real hidden
-    reference.
+    Proximity-scoped, not file-wide: a disclaimer in one block must not
+    excuse an undisclaimed mention in another block of the same file.
     """
     offenders: list[str] = []
     for block in _split_into_scoped_blocks(text):
-        # A disclaimer phrase may itself wrap across lines within the
-        # block — compare against whitespace-normalized text rather than
-        # requiring it verbatim on one line.
+        # Disclaimer phrases may wrap across lines; normalize before matching.
         normalized = re.sub(r"\s+", " ", block)
         has_disclaimer = any(phrase in normalized for phrase in disclaimer_phrases)
         if has_disclaimer:
@@ -432,6 +399,8 @@ class BuiltArchiveContentTests(unittest.TestCase):
             "runbooks/local-review.md",
             "templates/local-review-report.md",
             "shared/policies/severity.md",
+            "shared/policies/review-context.md",
+            "shared/policies/review-evidence.md",
         }
         missing = required - self.archive_names
         self.assertEqual(missing, set(), f"archive missing required runtime file(s): {missing}")

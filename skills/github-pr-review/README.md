@@ -58,6 +58,31 @@ evidence-backed findings, and either publish one finalized GitHub review
 [`policies/github-review.md`](policies/github-review.md) for each
 stage's canonical rule.
 
+## Review context and prior review evidence
+
+The PR is always the review target. Two optional/contextual inputs shape *how*
+it is reviewed, never *what* is reviewed:
+
+- **Review context** — caller-supplied requirements, explicit user
+  instructions, a Jira/ticket, an explicitly supplied GitHub Issue (no
+  automatic PR↔Issue discovery), HLD/ADR content, an implementation plan, or
+  the PR description read as intent. Reused from the shared
+  [`../../shared/policies/review-context.md`](../../shared/policies/review-context.md)
+  (the same model `local-code-review` applies), with a thin PR application in
+  [`policies/review-context.md`](policies/review-context.md). Enables
+  scope-boundary reasoning — required behavior missing from the PR, the PR
+  contradicting acceptance criteria, unrelated scope expansion,
+  valid-but-out-of-scope findings, and repository-policy violations that hold
+  regardless of ticket scope. Absent context changes nothing.
+- **Existing Review Evidence** — the PR's own prior reviews, review comments,
+  and issue comments, per the shared
+  [`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md)
+  and [`policies/review-evidence.md`](policies/review-evidence.md). Classified
+  as still-relevant / resolved / stale / duplicate / settled decision /
+  speculative discussion, then used to avoid repeating settled findings,
+  contradicting settled decisions without new evidence, and missing an
+  unresolved previously identified issue — never blindly inherited.
+
 ## Behavioral review signals
 
 The "reason about related changes" and "impact analysis" stages above
@@ -94,6 +119,10 @@ Maximum positive action is **Approve**; this Skill never merges.
 - [`policies/reviewer-delta-review.md`](policies/reviewer-delta-review.md) —
   full vs. delta re-review mode
 - [`policies/pr-scope.md`](policies/pr-scope.md) — complete PR scope
+- [`policies/review-context.md`](policies/review-context.md) — thin PR
+  application of the shared review-context model; scope-boundary reasoning
+- [`policies/review-evidence.md`](policies/review-evidence.md) — thin PR
+  application of the shared Existing Review Evidence model
 - [`policies/review-reasoning.md`](policies/review-reasoning.md) — logical
   cohorts, impact/dependency analysis
 - [`policies/finding-placement.md`](policies/finding-placement.md) — inline

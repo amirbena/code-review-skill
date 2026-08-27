@@ -12,6 +12,22 @@ include optional runtime adapters that do not change review behavior.
 | [`local-code-review`](skills/local-code-review/SKILL.md) | Reviews local implementation changes and returns P0/P1/P2 findings. Does not modify code or GitHub state. |
 | [`github-pr-review`](skills/github-pr-review/SKILL.md) | Reviews GitHub Pull Requests. Can operate passively, or, when active review access is available, publish inline P0/P1/P2 findings, publish a concise final review summary, Approve, or Request Changes. It never merges the Pull Request. |
 
+Both Skills share one review standard and one context model: an optional
+**review context** (requirements, user instructions, a Jira/tracker ticket,
+an explicitly supplied GitHub Issue — no automatic PR↔Issue discovery — an
+HLD/ADR, or an implementation plan) focuses attention and enables
+scope-boundary reasoning without ever widening the review target, and
+relevant **prior review evidence** (previous findings, resolved findings,
+settled decisions) is reconciled rather than blindly inherited. Both are
+defined once in
+[`shared/policies/review-context.md`](shared/policies/review-context.md) and
+[`shared/policies/review-evidence.md`](shared/policies/review-evidence.md).
+Missing optional context never fails or degrades a review.
+
+A temporary PR checkout, parallel execution, and GitHub merge-blocking checks
+are **not** implemented — see
+[`CODE_REVIEW_COMPARISON.md`](CODE_REVIEW_COMPARISON.md) §10.
+
 ## Prerequisites
 
 - Git — required for both Skills

@@ -805,3 +805,28 @@ and [`skills/local-code-review/policies/repository-state.md`](skills/local-code-
 for a worked example of this separation: Git category detection, push/sync
 status, and the staged-fingerprint re-review contract live entirely in the
 policy; the runbook states only when each is resolved and applied.
+
+### Shared review-context model
+
+The review-target / review-context / repository-context / existing-review-evidence
+model and the requirement-context and Existing-Review-Evidence semantics are
+reusable review semantics: they live in
+[`shared/policies/review-context.md`](shared/policies/review-context.md) and
+[`shared/policies/review-evidence.md`](shared/policies/review-evidence.md),
+consumed by both Skills. Each Skill keeps only a thin policy naming its own
+review target and prior-evidence source
+(`skills/local-code-review/policies/review-context.md` and `pr-context.md`;
+`skills/github-pr-review/policies/review-context.md` and `review-evidence.md`).
+Do not re-document the shared semantics in a Skill's own policy.
+
+## 19. Python Authoring
+
+This repository's own Python (`scripts/*.py`) follows the repository Python
+authoring policy in [`PYTHON_AUTHORING.md`](PYTHON_AUTHORING.md): prefer
+self-explanatory code, keep comments concise (generally 1–3 lines) and
+focused on non-obvious intent, decision-path rationale, invariants, safety
+constraints, compatibility requirements, and external-system quirks; move
+durable architectural explanation into a policy or doc rather than a long
+prose block in a module. That file is a repository-development policy and is
+not packaged into either Skill archive. Apply it to Python files a change
+touches.
