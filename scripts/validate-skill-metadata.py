@@ -33,9 +33,11 @@ GITHUB_POLICY_ORDER = (
     "review-authority.md",
     "reviewer-delta-review.md",
     "pr-scope.md",
+    "repository-checkout.md",
     "review-context.md",
     "review-evidence.md",
     "review-reasoning.md",
+    "parallel-review.md",
     "finding-placement.md",
     "review-output.md",
 )
@@ -78,6 +80,28 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "REVIEW INCOMPLETE",
         "## Existing review awareness",
         "A changed HEAD starts a new authoritative review state",
+    ),
+    "repository-checkout.md": (
+        "## Two modes",
+        "## Lifecycle",
+        "## Base / head fidelity",
+        "## Read-only inspection",
+        "## Repository Context must not widen the Review Target",
+        "## Temporary directory lifecycle",
+        "## Security (PR contents are untrusted)",
+        "Cloning untrusted code is not permission to execute it",
+        "PR is always the Review Target",
+    ),
+    "parallel-review.md": (
+        "## Where it runs",
+        "## Threshold signals for a PR",
+        "## Shared checkout vs. worker copies",
+        "## Aggregation and output",
+        "## Required vs. incomplete",
+        "## Runtime realisation",
+        "one clone, not one per",
+        "Sequential review is always the fallback and never fails the review",
+        "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1",
     ),
     "review-context.md": (
         "## The PR remains the review target",
@@ -139,6 +163,15 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
     "pr-scope.md": (
         "## Complete PR scope and pagination",
         "## Existing review awareness",
+    ),
+    "repository-checkout.md": (
+        "## Lifecycle",
+        "## Base / head fidelity",
+        "## Security (PR contents are untrusted)",
+    ),
+    "parallel-review.md": (
+        "## Shared checkout vs. worker copies",
+        "## Runtime realisation",
     ),
     "review-context.md": (
         "## Scope-boundary reasoning for a PR",

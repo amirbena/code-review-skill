@@ -58,6 +58,41 @@ evidence-backed findings, and either publish one finalized GitHub review
 [`policies/github-review.md`](policies/github-review.md) for each
 stage's canonical rule.
 
+## Repository-backed inspection (opt-in)
+
+By default the review uses GitHub API state only. When repository-backed
+inspection is requested, the Skill additionally materialises an **isolated,
+read-only, detached temporary checkout at the PR head** so it can read
+surrounding implementation, interfaces, tests, config, and architecture as
+Repository Context. The **PR stays the Review Target** — findings stay
+causally connected to the PR delta
+(`merge-base(base, head)..head`); the checkout never turns surrounding files
+into independent targets. It is read-only: the target repository's tests,
+builds, linters, hooks, and scripts are never run. The temporary directory is
+created under a safe scratch parent, unique per invocation, and is **always**
+cleaned up (success, any failure, interruption), guarded so no unconstrained
+recursive delete is possible. If the remote is unreachable / unauthenticated
+/ unreadable, review continues in API-only mode. See
+[`policies/repository-checkout.md`](policies/repository-checkout.md).
+
+## Parallel review (opt-in execution optimisation)
+
+When the runtime exposes a reliable multi-agent / sub-agent capability
+**and** the PR is complex enough to benefit, the review is split across
+independent **read-only** workers by dimension (scope, architecture,
+correctness, tests/config, existing-review reconciliation). Parallelism is an
+optimisation, never a semantic change: sequential and parallel execution must
+reach the **same** findings and decision, and sequential is always a valid
+fallback — a review is never failed because parallelism is unavailable. One
+aggregating reviewer normalizes, deduplicates, reconciles, applies canonical
+severity, derives the one decision, and submits the one GitHub review;
+workers publish nothing and a missing required dimension yields `REVIEW
+INCOMPLETE`, never `REVIEW CLEAN`. Portable contract:
+[`../../shared/policies/parallel-review.md`](../../shared/policies/parallel-review.md);
+PR application + per-runtime realisation (Claude Code Agent Teams / Cursor
+subagents / Codex concurrent agents, with capability detection and fallback):
+[`policies/parallel-review.md`](policies/parallel-review.md).
+
 ## Review context and prior review evidence
 
 The PR is always the review target. Two optional/contextual inputs shape *how*
@@ -129,12 +164,16 @@ Maximum positive action is **Approve**; this Skill never merges.
 - [`policies/reviewer-delta-review.md`](policies/reviewer-delta-review.md) —
   full vs. delta re-review mode
 - [`policies/pr-scope.md`](policies/pr-scope.md) — complete PR scope
+- [`policies/repository-checkout.md`](policies/repository-checkout.md) —
+  opt-in isolated temporary checkout; base/head fidelity; read-only; cleanup
 - [`policies/review-context.md`](policies/review-context.md) — thin PR
   application of the shared review-context model; scope-boundary reasoning
 - [`policies/review-evidence.md`](policies/review-evidence.md) — thin PR
   application of the shared Existing Review Evidence model
 - [`policies/review-reasoning.md`](policies/review-reasoning.md) — logical
   cohorts, impact/dependency analysis
+- [`policies/parallel-review.md`](policies/parallel-review.md) — thin PR
+  application of the shared parallel contract; runtime realisation
 - [`policies/finding-placement.md`](policies/finding-placement.md) — inline
   vs. body placement
 - [`policies/review-output.md`](policies/review-output.md) — publication

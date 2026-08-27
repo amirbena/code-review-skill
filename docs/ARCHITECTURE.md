@@ -46,6 +46,13 @@ still-relevant, resolved, stale, duplicate, settled decision, or
 speculative discussion, and reconciling without blind inheritance —
 consumed by both Skills
 
+shared/policies/parallel-review.md
+    ↓
+portable parallel-review contract: sequential/parallel equivalence,
+capability detection, worker input/output, complexity threshold,
+centralized aggregation, failure handling — packaged with both Skills,
+wired into github-pr-review
+
 shared/policies/file-reviewability.md
     ↓
 evidence-based handling for generated, vendored, lock, minified, binary,
@@ -78,11 +85,15 @@ review-scope rules, or the review-context / existing-review-evidence model
 for GitHub-specific delivery rules with no local-review analogue: review
 authority and self-review, reviewer delta re-review, PR scope and
 pagination, review reasoning (logical cohorts, code-impact/dependency
-analysis), finding placement, and batched publication/decision — plus two
-**thin PR applications** of the shared model
-(`policies/review-context.md`: the PR is the review target, scope-boundary
-reasoning for a PR; `policies/review-evidence.md`: the PR's own prior
-reviews/comments as Existing Review Evidence).
+analysis), finding placement, batched publication/decision, the opt-in
+**repository-backed checkout** lifecycle (`policies/repository-checkout.md`:
+isolated temporary clone, base/head fidelity, read-only inspection,
+security, guaranteed cleanup) — plus three **thin PR applications** of a
+shared model (`policies/review-context.md`: the PR is the review target,
+scope-boundary reasoning for a PR; `policies/review-evidence.md`: the PR's
+own prior reviews/comments as Existing Review Evidence;
+`policies/parallel-review.md`: threshold signals, shared checkout vs. worker
+copies, and per-runtime realisation for the shared parallel contract).
 `local-code-review` has its own analogous policy family under
 `skills/local-code-review/policies/`, for local-Git-specific rules with no
 PR analogue: invocation approval, the repository-state category
@@ -151,7 +162,23 @@ Git / GitHub State Inspector
     ↓
 Review Delta Resolver
     ↓
-Repository Context Loader
+Prepare Repository Context
+    ├── GitHub/API-only mode         (default)
+    └── Temporary repository-backed mode  (github-pr-review, opt-in):
+          mkdtemp → blobless clone → fetch base/head → detached checkout at
+          head_sha; read-only; PR delta stays merge-base(base,head)..head
+    ↓
+Plan Review Execution
+    ├── Sequential                   (always valid)
+    └── Parallel when supported/useful  (read-only workers per dimension,
+          same PR base/head snapshot; execution optimisation only)
+    ↓
+Review workers  (each: Review Target, Review Context, Repository Context
+                 location, Existing Review Evidence, assigned dimension,
+                 applicable policies → candidate findings only)
+    ↓
+Reconcile findings  (normalize → deduplicate → reconcile overlapping/
+                     conflicting → canonical severity)
     ↓
 Shared Review Semantics  (shared/policies/)
     ├── scope validation (incl. scope-boundary reasoning against context)
@@ -160,14 +187,23 @@ Shared Review Semantics  (shared/policies/)
     ├── architecture / repository invariants
     └── severity classification  (shared/policies/severity.md)
     ↓
+Canonical final decision  (one aggregator; worker order never matters;
+                           required dimension missing → REVIEW INCOMPLETE)
+    ↓
 Skill-Specific Output
     ├── local-code-review  → structured report (always)
     └── github-pr-review   → Passive Report | Active GitHub Review
+    ↓
+Cleanup  (github-pr-review: remove the temporary checkout on every exit
+          path — success, failure, interruption — guarded delete only)
 ```
 
 This flow is conceptual guidance, not a required implementation shape — the
 Skills are natural-language instruction packages, and the ordering above is
-the reading order their `SKILL.md` and runbooks already imply.
+the reading order their `SKILL.md` and runbooks already imply. Repository-backed
+mode and parallel workers are **opt-in** for `github-pr-review` only;
+`local-code-review` and API-only `github-pr-review` skip those stages entirely
+with no loss of correctness.
 
 ### Stage responsibilities
 
@@ -217,12 +253,62 @@ the reading order their `SKILL.md` and runbooks already imply.
   committed delta relative to base, plus any local-only commits, staged
   changes, unstaged changes, and relevant untracked files (local), or the
   PR's full or bounded-delta diff (GitHub).
+- **Prepare Repository Context** — in **API-only mode** (default, and the
+  only mode for `local-code-review`), surrounding context comes from
+  API/working-tree reads. In **temporary repository-backed mode**
+  (`github-pr-review`, opt-in — [`skills/github-pr-review/policies/repository-checkout.md`](../skills/github-pr-review/policies/repository-checkout.md)),
+  the Skill also materialises an isolated, read-only, detached checkout at
+  the PR head: `mkdtemp` under a safe scratch parent → blobless clone
+  (`--no-checkout --no-tags --filter=blob:none`) → fetch base/head refs
+  (SHA fallback) → detached checkout of the immutable `head_sha`, verified.
+  Both real GitHub metadata and the repository's local PR simulation resolve
+  to one `NormalizedPrSource` the checkout consumes. It stays **read-only** —
+  no target-repository tests/builds/linters/hooks/scripts run; the PR delta
+  remains `merge-base(base_sha, head_sha)..head_sha` and surrounding files
+  never become independent review targets. Every Git call runs with
+  `core.hooksPath=/dev/null`, `GIT_CONFIG_NOSYSTEM=1`, `--no-tags`, no
+  submodule update. On any clone/fetch failure the Skill degrades to
+  API-only mode without failing the review. The temporary directory is owned
+  by one lifecycle with guarded cleanup on every exit path (see "Cleanup").
+- **Plan Review Execution** — detect the runtime's parallel capability
+  (`none` / isolated sub-agents / experimental agent teams, usable only when
+  already enabled / native concurrent agents; uncertain → `none`). Use
+  parallel **read-only** workers only when a capability exists **and** the
+  PR is complex enough (changed-file count, distinct components, an
+  architecture/CI/config change, substantial supplied context, or a
+  cross-cutting change). Otherwise sequential. Parallelism is an execution
+  optimisation only — [`shared/policies/parallel-review.md`](../shared/policies/parallel-review.md)
+  requires that sequential and parallel runs reach the same findings and
+  decision, and the Skill never mutates the user's configuration to obtain a
+  capability.
+- **Review workers** — each worker gets one bounded, normalized input
+  (identical Review Target, Review Context, Repository Context location, and
+  Existing Review Evidence across a run; its own assigned dimension and
+  policies) and returns **structured candidate findings only**. It never
+  publishes and never derives the final decision.
+- **Reconcile findings** — one centralized aggregation stage: normalize →
+  deduplicate (same location + normalized claim; carry the higher candidate
+  severity, report once) → reconcile overlapping/conflicting findings. Worker
+  completion order never affects the result.
 - **Repository Context Loader** — loads relevant surrounding context
   beyond the raw diff: repository-local instructions, architecture docs,
-  related tests, contracts, schemas, and conventions. For `github-pr-review`
-  this is limited to API-retrievable context in the current implementation —
-  a temporary local checkout of the PR is future work (see "Future work"
-  below).
+  related tests, contracts, schemas, and conventions — from the temporary
+  checkout when repository-backed mode prepared one, otherwise from
+  API/working-tree reads.
+- **Canonical final decision** — only the aggregating reviewer applies
+  [`shared/policies/severity.md`](../shared/policies/severity.md)'s
+  mechanical derivation to produce the one P0/P1/P2 set and one
+  `REVIEW CLEAN` / `CHANGES REQUIRED` (local) or `Approve` / `Request
+  Changes` (GitHub). A **required** review dimension that no worker produced
+  and the parent could not recover yields `REVIEW INCOMPLETE` — never a
+  clean/approved result. Parallelism cannot manufacture `REVIEW CLEAN`.
+- **Cleanup** — for `github-pr-review` repository-backed mode, the temporary
+  checkout is removed on **every** exit path (success, review/worker
+  failure, context-resolution failure after allocation, publication failure,
+  interruption the runtime surfaces), in a `finally`/equivalent. Deletion is
+  refused unless the target resolves inside the scratch parent, is not the
+  scratch parent itself, and carries this Skill's ownership marker — no
+  unconstrained recursive delete.
 - **Shared Review Semantics** — the single review reasoning
   model defined by `shared/policies/review-scope.md`, plus scope validation
   against any supplied review context per
@@ -261,25 +347,33 @@ the reading order their `SKILL.md` and runbooks already imply.
   publishes to GitHub (active). The delivery adapter never changes the
   underlying findings or severities.
 
+### Implemented since the initial design
+
+- **Temporary repository-backed GitHub PR review** — `github-pr-review` has
+  an opt-in mode that materialises an isolated, read-only, detached checkout
+  at the PR head (`skills/github-pr-review/policies/repository-checkout.md`).
+  It is context only: the PR stays the Review Target and no target-repository
+  code runs.
+- **Portable parallel review** — an opt-in execution optimisation with
+  capability detection and a sequential fallback
+  (`shared/policies/parallel-review.md`), realised via Claude Code Agent
+  Teams, Cursor subagents, or Codex concurrent agents where available.
+  Semantics are unchanged: one aggregator, one decision.
+
 ### Future work (not implemented)
 
 The following are deliberately **not** part of the current architecture and
 are documented here only to mark them as future phases — no code, policy, or
 runbook implements them today:
 
-- **Temporary local checkout / repository-backed GitHub PR review** — a
-  mode where `github-pr-review` clones or checks out the PR into an
-  isolated temporary location to run repository-aware inspection against a
-  real working tree. Today `github-pr-review` uses API-retrievable PR state
-  only.
-- **Parallel / spawned execution** — no Skill spawns workers or runs review
-  sub-tasks concurrently; orchestration and any parallelism remain external.
 - **GitHub merge-blocking / required status checks** — neither Skill
   creates a GitHub status check, a required check, a ruleset, or any
   branch-protection state. `github-pr-review`'s maximum positive action
   remains **Approve**; it never blocks merges through GitHub machinery.
 - **Automatic execution of PR code** — neither Skill runs the target
-  repository's tests, linters, build, or arbitrary commands.
+  repository's tests, linters, build, hooks, or arbitrary commands, even in
+  repository-backed mode. Cloning untrusted PR code is not permission to
+  execute it.
 
 ## 3. Separation of Concerns
 

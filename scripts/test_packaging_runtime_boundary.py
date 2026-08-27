@@ -31,6 +31,9 @@ REFERENCE_TEST_MODULES = (
     "reviewer_ownership.py",
     "staged_fingerprint.py",
     "jira_context.py",
+    "pr_checkout.py",
+    "pr_simulation.py",
+    "parallel_review.py",
 )
 
 # module -> (packaged policy that must carry the same contract, headings that
@@ -49,6 +52,24 @@ MODULE_TO_PACKAGED_POLICY_HEADINGS = {
         (
             "## Decision derivation (mechanical)",
             "## Repository conventions and severity",
+        ),
+    ),
+    "pr_checkout.py": (
+        REPO_ROOT / "skills" / "github-pr-review" / "policies" / "repository-checkout.md",
+        (
+            "## Lifecycle",
+            "## Base / head fidelity",
+            "## Temporary directory lifecycle",
+            "## Security (PR contents are untrusted)",
+        ),
+    ),
+    "parallel_review.py": (
+        REPO_ROOT / "shared" / "policies" / "parallel-review.md",
+        (
+            "## Parallelism threshold",
+            "## Worker contract",
+            "## Worker output format",
+            "## Centralized aggregation",
         ),
     ),
 }
@@ -135,12 +156,17 @@ class PackagingScriptParityTests(unittest.TestCase):
         )
 
     def test_new_shared_policies_are_in_both(self) -> None:
-        for name in ("review-context.md", "review-evidence.md"):
+        for name in ("review-context.md", "review-evidence.md", "parallel-review.md"):
             self.assertIn(name, _sh_array(self.sh, "shared_policies"))
             self.assertIn(name, _ps1_array(self.ps1, "sharedPolicies"))
 
     def test_new_github_policies_are_in_both(self) -> None:
-        for name in ("policies/review-context.md", "policies/review-evidence.md"):
+        for name in (
+            "policies/review-context.md",
+            "policies/review-evidence.md",
+            "policies/repository-checkout.md",
+            "policies/parallel-review.md",
+        ):
             self.assertIn(name, _sh_skill_files(self.sh, "github-pr-review"))
             self.assertIn(name, _ps1_skill_files(self.ps1, "github-pr-review"))
 
@@ -460,6 +486,51 @@ class BuiltArchiveContentTests(unittest.TestCase):
             with self.subTest(module=module):
                 matches = {n for n in self.archive_names if n.endswith(module)}
                 self.assertEqual(matches, set())
+
+
+@unittest.skipUnless(
+    shutil.which("zip") and shutil.which("unzip"),
+    "zip/unzip not available on PATH — cannot build/inspect the archive",
+)
+class GitHubArchiveContentTests(unittest.TestCase):
+    """The packaged github-pr-review archive carries every policy needed to
+    instruct repository-backed review and portable concurrency, and no
+    Python."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        result = subprocess.run(
+            [str(PACKAGE_SCRIPT), "github"],
+            cwd=REPO_ROOT, capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode != 0:
+            raise AssertionError(
+                f"package-skills.sh github failed:\n{result.stdout}\n{result.stderr}"
+            )
+        with zipfile.ZipFile(DIST_DIR / "github-pr-review-skill.zip") as zf:
+            cls.names = set(zf.namelist())
+
+    def test_no_python_and_no_reference_modules(self) -> None:
+        self.assertEqual({n for n in self.names if n.endswith(".py")}, set())
+        for module in REFERENCE_TEST_MODULES:
+            self.assertEqual({n for n in self.names if n.endswith(module)}, set())
+
+    def test_repository_backed_and_parallel_policies_are_packaged(self) -> None:
+        required = {
+            "SKILL.md",
+            "policies/github-review.md",
+            "policies/repository-checkout.md",
+            "policies/parallel-review.md",
+            "runbooks/active-pr-review.md",
+            "runbooks/passive-pr-review.md",
+            "shared/policies/parallel-review.md",
+        }
+        self.assertEqual(required - self.names, set())
+
+    def test_repo_dev_docs_are_not_packaged(self) -> None:
+        for n in self.names:
+            self.assertNotIn("runtime-parallelism.md", n)
+            self.assertNotIn("ARCHITECTURE.md", n)
 
 
 if __name__ == "__main__":

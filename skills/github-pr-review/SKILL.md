@@ -41,15 +41,27 @@ Jira reference supplied? → yes → resolve via Jira MCP/connector (read-only)
     ↓
 retrieve required PR scope for that mode
     ↓
+repository-backed inspection requested? → yes → mkdtemp → blobless clone →
+       fetch base/head → detached checkout at head_sha (read-only)
+       (remote unreachable/unauthenticated → API-only mode)
+                                        → no  → API-only mode
+    ↓
 determine formal-review capability
     ↓
 discover applicable AGENTS.md / CLAUDE.md
+    ↓
+plan review execution: parallel capability present AND PR complex enough?
+       → yes → workers per dimension (read-only, same PR base/head snapshot)
+       → no  → sequential
     ↓
 inspect diff and surrounding code, reasoning about related changes as
 logical cohorts and inspecting relevant dependency paths beyond the
 diff, bounded to the PR's realistic blast radius
     ↓
 apply repository conventions
+    ↓
+aggregate worker findings (normalize → dedupe → reconcile); a required
+dimension missing → REVIEW INCOMPLETE, never REVIEW CLEAN
     ↓
 deduplicate same-HEAD findings when active
     ↓
@@ -59,6 +71,8 @@ construct one coherent review: human-facing body + inline comments
     ↓
 submit that one review (body + inline comments + event) when active
 or report formal-review unavailability
+    ↓
+finally: remove the temporary checkout (success, any failure, interruption)
     ↓
 stop
 ```
@@ -124,6 +138,31 @@ for the output contracts.
 Both modes apply identical review standards (the same shared policies,
 below). Only delivery differs.
 
+**Repository-backed inspection** is an opt-in add-on to either mode: an
+isolated, read-only, detached temporary checkout at the PR head that gives
+the review richer **Repository Context** (surrounding implementation,
+interfaces, tests, config, architecture) than the GitHub diff/API alone. The
+**PR stays the Review Target**; the checkout never widens it. It is
+read-only — the target repository's tests, builds, linters, hooks, and
+scripts are never run. The temporary directory is created under a safe
+scratch parent, unique per invocation, and is **always** cleaned up (success,
+any failure, or interruption), guarded so no unconstrained recursive delete
+can occur. When it is not requested or cannot be prepared (unreachable /
+unauthenticated / unreadable remote), review continues in API-only mode. See
+[`policies/repository-checkout.md`](policies/repository-checkout.md).
+
+**Parallel review** is an opt-in execution optimisation: when the runtime
+exposes a reliable multi-agent / sub-agent capability and the PR is complex
+enough to benefit, the review is split across independent read-only workers
+by dimension (scope, architecture, correctness, tests/config, existing-review
+reconciliation). Sequential and parallel execution must reach the **same**
+findings and decision; sequential is always the fallback and a review is
+never failed because parallelism is unavailable. One aggregating reviewer
+normalizes, deduplicates, reconciles, applies canonical severity, derives the
+one decision, and submits the one GitHub review. See the shared
+[`parallel-review.md`](../../shared/policies/parallel-review.md) and
+[`policies/parallel-review.md`](policies/parallel-review.md).
+
 ### Inputs
 
 **Required:** a PR URL, a PR number with repository context, or a
@@ -185,8 +224,12 @@ only when context is supplied),
 [`review-evidence.md`](../../shared/policies/review-evidence.md) (the shared
 Existing Review Evidence model),
 [`git-safety.md`](../../shared/policies/git-safety.md),
-[`review-ownership.md`](../../shared/policies/review-ownership.md), and
-[`file-reviewability.md`](../../shared/policies/file-reviewability.md).
+[`review-ownership.md`](../../shared/policies/review-ownership.md),
+[`file-reviewability.md`](../../shared/policies/file-reviewability.md), and —
+whenever parallel workers are used —
+[`parallel-review.md`](../../shared/policies/parallel-review.md) (the
+portable parallel-review contract: sequential/parallel equivalence, worker
+input/output, centralized aggregation, failure handling).
 
 Also always: [`review-summary.md`](../../shared/templates/review-summary.md)
 (the shared human-facing review body shape).
@@ -198,12 +241,20 @@ self-review guard, publication capability),
 [`reviewer-delta-review.md`](policies/reviewer-delta-review.md) (delta
 vs. full review mode), [`pr-scope.md`](policies/pr-scope.md) (complete PR
 scope, pagination, prior-review awareness),
+[`repository-checkout.md`](policies/repository-checkout.md) (the opt-in
+isolated temporary checkout lifecycle, base/head fidelity, read-only
+inspection, security, guaranteed cleanup — loaded only when
+repository-backed inspection is requested),
 [`review-context.md`](policies/review-context.md) (thin PR application of
 the shared review-context model; scope-boundary reasoning for a PR),
 [`review-evidence.md`](policies/review-evidence.md) (thin PR application of
 the shared Existing Review Evidence model; prior reviews/comments on this
 PR), [`review-reasoning.md`](policies/review-reasoning.md) (logical cohorts,
-code-impact/dependency analysis), [`finding-placement.md`](policies/finding-placement.md)
+code-impact/dependency analysis),
+[`parallel-review.md`](policies/parallel-review.md) (thin PR application of
+the shared parallel contract: threshold signals, shared checkout vs. worker
+copies, runtime realisation — loaded only when parallel workers are used),
+[`finding-placement.md`](policies/finding-placement.md)
 (inline vs. body placement), and [`review-output.md`](policies/review-output.md)
 (analysis/publication boundary, batching, HEAD revalidation, decision).
 

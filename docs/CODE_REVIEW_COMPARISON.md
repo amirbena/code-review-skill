@@ -199,23 +199,32 @@ consumed identically by both.
 | **Opt-in behavior** | every invocation needs fresh explicit user approval ([`invocation-approval.md`](../skills/local-code-review/policies/invocation-approval.md)) | selection boundary + defensive self-review guard ([`review-authority.md`](../skills/github-pr-review/policies/review-authority.md)); no per-run approval gate |
 | **Re-review behavior** | stateless; fresh approval each run; staged-delta fingerprint short-circuit | SHA-bound reviewer-owned delta re-review; `NO NEW DELTA`; escalation to full review |
 | **Publishing behavior** | returns one structured report to the caller; never publishes | passive: returns a report; active: one batched GitHub review (inline comments + body + Approve/Request Changes) |
-| **Mutation / read-only boundaries** | read-only; never edits, commits, pushes, or performs any GitHub mutation — even with a PR reference | read-only on Git and implementation; GitHub mutation only in active mode; max positive action is **Approve**; never merges |
-| **Delegated Agent / Sub-Agent execution** | mechanics never transfer the approval decision — the user owns it | reviewer/author separation required; orchestration external |
+| **Repository-backed inspection** | n/a — already has the local working tree | **opt-in**: isolated temporary checkout gives richer Repository Context ([`repository-checkout.md`](../skills/github-pr-review/policies/repository-checkout.md)); default is GitHub API-only |
+| — temporary checkout | n/a | `mkdtemp` → blobless clone (`--no-checkout --no-tags --filter=blob:none`) → fetch base/head (SHA fallback) → detached checkout at `head_sha`; one clone shared by all workers, not one per worker |
+| — base/head fidelity | committed/staged/unstaged/untracked vs. resolved base | resolves repo identity + base ref/SHA + head ref/SHA + merge-base from a `NormalizedPrSource`; prefers immutable SHAs; PR delta = `merge-base(base,head)..head`, correct even when base advanced after branch-off; verifies the fetched head matches `head_sha` |
+| — cleanup | n/a | one lifecycle, guarded delete (inside scratch parent, not the parent, ownership marker present) on **every** exit path — success, failure, interruption |
+| — read-only repository inspection | inherent | reads files and safe Git commands only; target-repo tests/builds/linters/hooks/scripts are **never** run; surrounding files never become independent review targets |
+| — private-repo auth | runtime Git identity | runtime's existing Git/GitHub credentials; no token in generated files, no secret in logs/output, no credential persisted in the checkout; clone/fetch auth failure → API-only mode |
+| **Parallel review capability** | not wired (would apply equally) | **opt-in**: split review by dimension across read-only workers when the runtime exposes a reliable multi-agent capability and the PR is complex enough ([`parallel-review.md`](../shared/policies/parallel-review.md)) |
+| — sequential fallback | always sequential today | sequential is always valid; a review is never failed because parallelism is unavailable; capability uncertain → sequential |
+| — centralized aggregation | single reviewer | one aggregator: normalize → deduplicate → reconcile → canonical severity → one decision; worker completion order never matters; workers derive nothing final; missing **required** dimension → `REVIEW INCOMPLETE`, never `REVIEW CLEAN` |
+| — runtime portability | n/a | capability *names* only in policy; per-runtime facts (Claude Code Agent Teams + `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, Cursor subagents, Codex concurrent agents) isolated in `docs/runtime-parallelism.md`; the Skill never mutates user config |
+| — simulated PR testing | n/a | a deterministic local bare-repo + branches + `refs/pull/123/head` harness (`scripts/pr_simulation.py`) exercises the checkout with real Git; a live GitHub PR is not required for coverage |
+| **Mutation / read-only boundaries** | read-only; never edits, commits, pushes, or performs any GitHub mutation — even with a PR reference | read-only on Git and implementation; the repository-backed checkout is an isolated throwaway clone, never the target repo, and read-only; GitHub mutation only in active mode; max positive action is **Approve**; never merges; never executes target-repo code |
+| **Delegated Agent / Sub-Agent execution** | mechanics never transfer the approval decision — the user owns it | reviewer/author separation required; parallel workers are read-only and non-authoritative; orchestration external |
 
 ## 10. Planned / not yet implemented
 
 These are future phases. No code, policy, or runbook in this repository
 implements them today, and this document does not claim they are supported:
 
-- **Temporary GitHub PR repository checkout / repository-backed PR review** —
-  cloning or checking out a PR into an isolated temporary location so
-  `github-pr-review` can run repository-aware inspection against a real
-  working tree.
-- **Parallel / spawned execution** — concurrent review workers or sub-tasks.
 - **GitHub blocking status checks / merge enforcement** — required checks,
-  rulesets, branch-protection changes, or any GitHub-side merge blocking.
+  rulesets, branch-protection changes, or any GitHub-side merge blocking. A
+  blocking P0/P1 result never enforces a merge block; `github-pr-review`'s
+  maximum positive action stays **Approve**.
 - **Automatic execution of PR code** — running the target repository's tests,
-  linters, build, or arbitrary commands as part of review.
+  linters, build, hooks, or arbitrary commands, in any mode including
+  repository-backed. Cloning untrusted PR code is not permission to run it.
 
 ## See also
 
@@ -223,6 +232,8 @@ implements them today, and this document does not claim they are supported:
   implementer/reviewer separation and the local-review approval gate summarized in §5 above.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — module map and the orchestration/reasoning/delivery
   boundary these Skills are built on.
+- [`runtime-parallelism.md`](runtime-parallelism.md) — the isolated per-runtime facts
+  (Claude Code / Cursor / Codex) behind the portable parallel-review contract.
 - [`skills/github-pr-review/SKILL.md`](../skills/github-pr-review/SKILL.md) and
   [`skills/local-code-review/SKILL.md`](../skills/local-code-review/SKILL.md) — the complete,
   normative Skill definitions this document summarizes.

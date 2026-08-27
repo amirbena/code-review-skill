@@ -34,12 +34,23 @@ resolve authoritative HEAD
     ↓
 retrieve complete paginated PR scope (incl. prior reviews / comments)
     ↓
+repository-backed inspection requested? → yes → mkdtemp → blobless clone →
+   fetch base/head → detached checkout at head_sha (read-only; remote
+   unreachable/unauthenticated → API-only mode) → no → API-only mode
+    ↓
 determine event-specific review capability
     ↓
 classify prior review comments as Existing Review Evidence
 (still-relevant / resolved / stale / duplicate / settled / speculative)
     ↓
+plan review execution: parallel capability present AND PR complex enough
+   → workers per dimension (read-only, same PR base/head snapshot); else
+   sequential
+    ↓
 review (incl. scope-boundary reasoning against supplied context)
+    ↓
+aggregate worker findings (normalize → dedupe → reconcile); required
+dimension missing → REVIEW INCOMPLETE, never REVIEW CLEAN
     ↓
 deduplicate same-HEAD findings
     ↓
@@ -51,6 +62,8 @@ construct one review: body + inline comments
     ↓
 submit permitted Approve/Request Changes
 or report why formal submission is unavailable
+    ↓
+finally: remove the temporary checkout (success, any failure, interruption)
     ↓
 stop
 ```
@@ -140,6 +153,28 @@ stop
    with PR metadata where available for a normal review. If any material
    scope remains missing or truncated, return `REVIEW INCOMPLETE`, report
    the missing scope, and do not submit a formal decision.
+
+   **If, and only if, repository-backed inspection was requested:** now
+   prepare an isolated temporary checkout per
+   [`../policies/repository-checkout.md`](../policies/repository-checkout.md).
+   Resolve the `NormalizedPrSource` (repo identity, base ref/SHA, head
+   ref/SHA, pull ref if any) from the PR metadata already retrieved — do not
+   assume the current checkout is the target repo, that local `main` is the
+   PR base, or that the head exists locally. Then, owned by one lifecycle
+   with cleanup in a `finally`: mkdtemp under a safe scratch parent (never a
+   user working directory) → blobless clone (`--no-checkout --no-tags
+   --filter=blob:none`) → fetch `pull_ref`/`base_ref`/`head_ref`, falling
+   back to fetching `base_sha`/`head_sha` directly → detached checkout of the
+   immutable `head_sha`, verifying it matches. Every Git call runs with
+   `core.hooksPath=/dev/null`, `GIT_CONFIG_NOSYSTEM=1`, `--no-tags`, no
+   submodule update, no fsmonitor. The checkout is **read-only** context
+   only — the PR delta remains
+   `merge-base(base_sha, head_sha)..head_sha`, never an arbitrary repo diff,
+   and never a run of the target repo's tests/builds/linters/hooks/scripts.
+   If the clone or a required fetch fails (unreachable, unauthenticated, or
+   unreadable remote; missing ref; head SHA mismatch), clean up and continue
+   in **API-only mode** — this never fails the review itself. See step 16
+   for the mandatory cleanup on every exit path.
 6. Determine event-specific capability, including draft, fork,
    comment-only, and permission-limited states, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
@@ -167,6 +202,23 @@ stop
    `CLAUDE.md` at the target repository root and along that file's
    directory ancestry. Do this before reviewing so discovered conventions
    inform the review itself.
+
+   **Plan review execution** per
+   [`../policies/parallel-review.md`](../policies/parallel-review.md) and the
+   shared [`parallel-review.md`](../../../shared/policies/parallel-review.md).
+   Detect whether this runtime exposes a reliable multi-agent / sub-agent
+   capability (never enable an experimental one by mutating the user's
+   configuration). If it does **and** the PR is complex enough — many
+   changed files, several distinct components, an architecture/CI/config
+   change, substantial supplied context, or a cross-cutting change — split
+   the review into read-only workers by dimension (scope/requirements,
+   architecture/invariants, correctness/regression, tests/config,
+   existing-review reconciliation); each worker gets the identical
+   normalized input (same PR base/head snapshot, same Review Context,
+   same Repository Context location, same Existing Review Evidence) and its
+   dimension's policies, and returns candidate findings only. Otherwise
+   review sequentially. Sequential and parallel execution must reach the
+   same findings and decision.
 9. Review per
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
@@ -204,7 +256,18 @@ stop
    scope per [`../policies/pr-scope.md`](../policies/pr-scope.md),
    "Complete PR scope and pagination," and continue reviewing from there
    rather than completing the review as delta-only.
-10. Compute the stable internal identity defined by
+10. **If parallel workers were used, aggregate first** per the shared
+    [`parallel-review.md`](../../../shared/policies/parallel-review.md),
+    "Centralized aggregation": normalize → deduplicate (same location + same
+    normalized claim; carry the higher candidate severity, report once) →
+    reconcile overlapping/conflicting findings into the single reviewer's
+    candidate set. Worker completion order must not affect the result, and
+    workers derive nothing final. If a **required** dimension could not be
+    produced by a worker or recovered by the parent reviewer, stop with the
+    `REVIEW INCOMPLETE` reasoning result — never `REVIEW CLEAN` / `Approve`.
+    An **optional** dimension the parent redoes itself does not degrade the
+    result. Then continue with the finding-identity step below.
+    Compute the stable internal identity defined by
     [`../policies/pr-scope.md`](../policies/pr-scope.md), "Existing review
     awareness" for every finding. Keep `F1`, `F2`, ... as display IDs. Mark
     a finding as suppressed (not for publication, though it may still
@@ -255,5 +318,16 @@ stop
 15. Return separate reasoning, comments-publication, and decision-publication
     statuses per [`../policies/review-output.md`](../policies/review-output.md),
     "Final decision," whether or not GitHub mutation succeeded.
-16. Stop. Never merge, never delete branches, never modify implementation
-    code, never take ownership of repository lifecycle cleanup.
+16. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
+    step 5, remove it now — and on **every** other exit path: a `REVIEW
+    SKIPPED` / `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any
+    context-resolution failure after the checkout was allocated, any review
+    or worker failure, any publication failure, or an interruption the
+    runtime surfaces. This runs in a `finally` (or the runtime's
+    equivalent). Before deleting, verify the target resolves inside the
+    scratch parent, is not the scratch parent itself, and carries this
+    Skill's ownership marker — never an unconstrained recursive delete. Then
+    stop. Never merge, never delete branches in the target repository, never
+    modify implementation code, never take ownership of repository lifecycle
+    cleanup, and never run the target repository's tests, builds, linters,
+    hooks, or scripts.

@@ -283,31 +283,46 @@ class DocsReflectCurrentCapabilitiesTests(unittest.TestCase):
         ):
             self.assertIn(row, t)
 
-    def test_comparison_marks_future_work_as_not_implemented(self) -> None:
+    def test_comparison_keeps_only_merge_enforcement_and_pr_code_as_future(self) -> None:
         t = _text(REPO_ROOT / "docs" / "CODE_REVIEW_COMPARISON.md")
         self.assertIn("Planned / not yet implemented", t)
-        for future in (
-            "Temporary GitHub PR repository checkout",
-            "Parallel / spawned execution",
-            "GitHub blocking status checks",
-            "Automatic execution of PR code",
-        ):
-            self.assertIn(future, t)
+        self.assertIn("GitHub blocking status checks / merge enforcement", t)
+        self.assertIn("Automatic execution of PR code", t)
+        # Phase 2 shipped these — they must no longer be listed as future.
+        future_block = t.split("Planned / not yet implemented", 1)[1].split("See also", 1)[0]
+        self.assertNotIn("Temporary GitHub PR repository checkout", future_block)
+        self.assertNotIn("Parallel / spawned execution", future_block)
 
-    def test_architecture_normalizes_four_inputs_and_marks_future_work(self) -> None:
+    def test_comparison_shows_repository_backed_and_parallel_as_implemented(self) -> None:
+        t = _text(REPO_ROOT / "docs" / "CODE_REVIEW_COMPARISON.md")
+        for row in (
+            "Repository-backed inspection",
+            "temporary checkout",
+            "base/head fidelity",
+            "Parallel review capability",
+            "sequential fallback",
+            "centralized aggregation",
+            "runtime portability",
+            "simulated PR testing",
+        ):
+            self.assertIn(row, t)
+
+    def test_architecture_shows_repository_backed_and_parallel_stages(self) -> None:
         t = _text(REPO_ROOT / "docs" / "ARCHITECTURE.md")
         self.assertIn("Normalize Inputs", t)
         self.assertIn("Existing Review Evidence", t)
+        self.assertIn("Prepare Repository Context", t)
+        self.assertIn("Temporary repository-backed mode", t)
+        self.assertIn("Plan Review Execution", t)
+        self.assertIn("Reconcile findings", t)
         self.assertIn("Future work (not implemented)", t)
-        self.assertIn(
-            "Temporary local checkout / repository-backed GitHub PR review", t
-        )
-        self.assertIn("limited to API-retrievable context", t)
 
-    def test_architecture_does_not_claim_checkout_is_implemented(self) -> None:
+    def test_architecture_keeps_merge_and_pr_code_execution_as_future(self) -> None:
         t = _text(REPO_ROOT / "docs" / "ARCHITECTURE.md")
-        self.assertNotIn("clones the PR into", t)
-        self.assertNotIn("mkdtemp", t)
+        future_block = t.split("Future work (not implemented)", 1)[1].split("## 3.", 1)[0]
+        self.assertIn("merge-blocking / required status checks", future_block)
+        self.assertIn("Automatic execution of PR code", future_block)
+        self.assertNotIn("repository-backed GitHub PR review", future_block)
 
 
 PY_POLICY = REPO_ROOT / "policies" / "python_scripts_coding_policy.md"

@@ -1,0 +1,87 @@
+# Policy — Parallel Review (PR application)
+
+`github-pr-review`'s application of the portable parallel-review contract.
+Canonical index: [`github-review.md`](github-review.md). The contract —
+"parallelism is an execution optimisation, never a semantic change", the
+worker input/output shape, review dimensions, the complexity threshold,
+centralized aggregation, and failure handling — is owned by the shared
+[`parallel-review.md`](../../../shared/policies/parallel-review.md) and is
+not restated here.
+
+This file adds only what is PR-specific.
+
+## Where it runs
+
+After PR scope is established and any repository-backed checkout is prepared,
+and before findings are finalized. It never changes the review mode
+([`reviewer-delta-review.md`](reviewer-delta-review.md)), the PR delta, the
+self-review guard, or the batched single-review publication
+([`review-output.md`](review-output.md)).
+
+## Threshold signals for a PR
+
+Complexity signals, from PR scope: changed-file count, number of distinct
+top-level components/directories touched, presence of an
+architecture/CI/infra/config change, amount of caller-supplied review
+context, and whether the change is cross-cutting (touches a shared
+contract/interface/schema). Small, single-component PRs are reviewed
+sequentially even when a parallel capability exists.
+
+## Shared checkout vs. worker copies
+
+In this phase workers are **read-only**, so they all inspect the **same**
+immutable, detached repository-backed checkout
+([`repository-checkout.md`](repository-checkout.md)) — one clone, not one per
+worker. Distinguish:
+
+- **runtime execution isolation** — some runtimes give each sub-agent its own
+  isolated worktree/sandbox for *execution*; that is a runtime concern;
+- **semantic repository snapshot** — every worker must analyse the **same PR
+  base/head state**. If a runtime insists on per-agent worktrees, each must
+  be checked out at the identical `head_sha`, and none may modify it.
+
+The repository-backed checkout lifecycle in
+[`repository-checkout.md`](repository-checkout.md) is independent of, and not
+owned by, any worker-isolation mechanism.
+
+## Aggregation and output
+
+The aggregating reviewer is the same one that submits the single GitHub
+review. Worker candidate findings are normalized, deduplicated, and
+reconciled, then [`severity.md`](../../../shared/policies/severity.md)'s
+mechanical derivation produces one decision — see
+[`review-output.md`](review-output.md), "Final decision." Workers publish
+nothing.
+
+## Required vs. incomplete
+
+If a required review dimension cannot be produced (worker failed and the
+parent cannot recover it), the reasoning result is `REVIEW INCOMPLETE` per
+[`review-output.md`](review-output.md), "Final decision" — never `REVIEW
+CLEAN` / `Approve`. An optional dimension the parent recovers itself does not
+degrade the result.
+
+## Runtime realisation
+
+Capability detection picks whichever mechanism the runtime actually exposes;
+the Skill never enables an experimental one by changing the user's
+configuration. Sequential review is always the fallback and never fails the
+review.
+
+| Runtime | Parallel mechanism | Prerequisite | If unavailable |
+|---|---|---|---|
+| **Claude Code** | Agent Teams (parent + parallel sub-agents) | Agent Teams are experimental and disabled by default; they require the environment/settings opt-in `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. The Skill detects it; it never sets it. | ordinary Task/sub-agent calls if available, else sequential |
+| **Cursor** | Subagents with isolated context windows, run in parallel; project agents under `.cursor/agents/` (Cursor also reads `.claude/agents/` and `.codex/agents/` for compatibility, with its own precedence) | subagent capability enabled in Cursor | sequential |
+| **Codex** | Multiple concurrent agents / tasks, with isolated worktrees available for parallel work | concurrent-agent capability in the Codex app/CLI | sequential |
+
+These product details change over time and are cited, with a "last verified"
+note, in this repository's `docs/runtime-parallelism.md` (a repository
+development doc, not part of this packaged Skill). Keeping only capability
+*names* here, and the source citations there, means a product change updates
+one doc, not this policy.
+
+## Boundary
+
+- No new mutation; the PR stays the Review Target; decision derivation is
+  unchanged (shared [`parallel-review.md`](../../../shared/policies/parallel-review.md),
+  "Boundaries").

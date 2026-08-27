@@ -27,15 +27,28 @@ GitHub Issue reference → read-only GitHub, or pasted text. Free-form → direc
     ↓
 resolve changed files (incl. prior reviews / comments as Existing Review Evidence)
     ↓
+repository-backed inspection requested? → yes → mkdtemp → blobless clone →
+   fetch base/head → detached checkout at head_sha (read-only; remote
+   unreachable/unauthenticated → API-only mode) → no → API-only mode
+    ↓
 discover applicable AGENTS.md / CLAUDE.md
+    ↓
+plan review execution: parallel capability present AND PR complex enough
+   → workers per dimension (read-only, same PR base/head snapshot); else
+   sequential
     ↓
 inspect diff and surrounding code (incl. scope-boundary reasoning)
     ↓
 apply repository conventions
     ↓
+aggregate worker findings (normalize → dedupe → reconcile); required
+dimension missing → REVIEW INCOMPLETE, never REVIEW CLEAN
+    ↓
 produce findings
     ↓
 return human-readable report
+    ↓
+finally: remove the temporary checkout (success, any failure, interruption)
 ```
 
 ## Steps
@@ -109,6 +122,21 @@ return human-readable report
    — still-relevant, resolved, stale, duplicate, settled decision, or
    speculative discussion — without blindly inheriting it. Absent prior
    activity changes nothing.
+
+   **If, and only if, repository-backed inspection was requested:** prepare
+   an isolated temporary checkout per
+   [`../policies/repository-checkout.md`](../policies/repository-checkout.md)
+   — resolve the `NormalizedPrSource` from the retrieved PR metadata (repo
+   identity, base ref/SHA, head ref/SHA, pull ref); mkdtemp under a safe
+   scratch parent → blobless clone → fetch base/head (SHA fallback) →
+   detached checkout of the immutable `head_sha`. Every Git call:
+   `core.hooksPath=/dev/null`, `GIT_CONFIG_NOSYSTEM=1`, `--no-tags`, no
+   submodule update. The checkout is **read-only** Repository Context; the
+   PR delta stays `merge-base(base_sha, head_sha)..head_sha`; the target
+   repo's tests/builds/linters/hooks/scripts are never run. On clone/fetch
+   failure (unreachable / unauthenticated / unreadable remote, missing ref,
+   head SHA mismatch), clean up and continue in **API-only mode** — never a
+   review failure. Cleanup is mandatory on every exit path (see step 8).
 5. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
    for each file in this invocation's scope, look for `AGENTS.md` /
@@ -116,6 +144,17 @@ return human-readable report
    directory ancestry, plus other relevant surrounding context (tests,
    contracts, schemas, architecture docs). Do this before reviewing so
    discovered conventions inform the review itself.
+
+   **Plan review execution** per
+   [`../policies/parallel-review.md`](../policies/parallel-review.md) and the
+   shared [`parallel-review.md`](../../../shared/policies/parallel-review.md):
+   detect the runtime's parallel capability (never enable an experimental
+   one by mutating configuration); if present **and** the PR is complex
+   enough, split into read-only workers by dimension, each with the
+   identical normalized input (same PR base/head snapshot, Review Context,
+   Repository Context location, Existing Review Evidence) and its dimension's
+   policies, returning candidate findings only; otherwise review
+   sequentially. Both forms must reach the same findings.
 6. Review the diff against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
@@ -144,7 +183,14 @@ return human-readable report
    [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
    switch this invocation to a normal review and retrieve the remaining full
    scope before continuing.
-7. Classify findings per
+7. **If parallel workers were used, aggregate first** per the shared
+   [`parallel-review.md`](../../../shared/policies/parallel-review.md),
+   "Centralized aggregation": normalize → deduplicate → reconcile into one
+   candidate set, independent of worker completion order; workers derive
+   nothing final. A **required** dimension that no worker produced and the
+   parent cannot recover → return `REVIEW INCOMPLETE`, never a clean report.
+   An **optional** dimension the parent redoes itself does not degrade the
+   result. Then classify findings per
    [`severity.md`](../../../shared/policies/severity.md) with evidence per
    [`evidence.md`](../../../shared/policies/evidence.md), using the shared
    finding shape in
@@ -161,6 +207,14 @@ return human-readable report
    stating the review mode used per
    [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
    "Reporting the mode."
+9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
+   step 4, remove it — on this path and on every other: a `REVIEW SKIPPED` /
+   `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the
+   checkout was allocated, a worker failure, or an interruption the runtime
+   surfaces. Run this in a `finally` (or equivalent). Before deleting,
+   verify the target is inside the scratch parent, is not the scratch parent
+   itself, and carries this Skill's ownership marker — never an
+   unconstrained recursive delete.
 
 ## Constraints
 

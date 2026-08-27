@@ -31,13 +31,16 @@ capabilities:
   external_review_context: optional # caller-supplied requirements / pasted Jira / GitHub Issue / HLD / ADR / plan / PR description; see ../../../shared/policies/review-context.md and ../policies/review-context.md
   jira_context_resolution: optional # only when a Jira reference is supplied; resolved via an available Jira MCP/connector, read-only; unresolved -> JIRA CONTEXT UNRESOLVED (no inference fallback); see ../../../shared/policies/review-context.md "Jira context resolution"
   prior_review_evidence: considered-when-available # the PR's own prior reviews/comments; see ../../../shared/policies/review-evidence.md and ../policies/review-evidence.md
+  repository_backed_checkout: optional # isolated temporary read-only checkout for richer Repository Context; guaranteed cleanup; see ../policies/repository-checkout.md
+  parallel_review: optional # split review across workers per dimension when the runtime exposes a reliable capability; execution optimisation only; see ../../../shared/policies/parallel-review.md and ../policies/parallel-review.md
 
 output:
   mutates_github: conditional # true only in active mode, and only after access verification
-  mutates_repository: false
+  mutates_repository: false # repository-backed checkout is an isolated temp clone, never the target repo, and read-only
   can_approve: true
   can_request_changes: true
   can_merge: false
+  executes_target_repository_code: false # never runs the target repo's tests/builds/linters/hooks/scripts
 
 shared:
   policies:
@@ -50,6 +53,7 @@ shared:
     - ../../../shared/policies/file-reviewability.md
     - ../../../shared/policies/review-context.md
     - ../../../shared/policies/review-evidence.md
+    - ../../../shared/policies/parallel-review.md
   templates:
     - ../../../shared/templates/finding.md
     - ../../../shared/templates/review-summary.md
