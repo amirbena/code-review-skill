@@ -58,8 +58,8 @@ class ThreadConclusionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             prv.classify_thread([])
 
-    def test_current_head_regression_reopens_an_earlier_resolution(self) -> None:
-        thread = [
+    def _reopened_thread(self) -> list[prv.ThreadComment]:
+        return [
             prv.ThreadComment(prv.AuthorType.HUMAN_REVIEWER, label="missing guard"),
             prv.ThreadComment(
                 prv.AuthorType.MAINTAINER,
@@ -72,14 +72,27 @@ class ThreadConclusionTests(unittest.TestCase):
                 label="guard is missing again on current HEAD",
             ),
         ]
-        governing = prv.classify_thread(thread)
-        self.assertTrue(governing.reopens_current_target)
-        self.assertEqual(governing.label, "guard is missing again on current HEAD")
 
-        outcome = prv.evaluate_possibly_regressed(
-            prv.ThreadResolution.RESOLVED, defect_present_on_current_head=True
+    def test_current_head_regression_reopens_and_emits_a_fresh_finding(self) -> None:
+        outcome = prv.reconcile_reopened_thread(
+            self._reopened_thread(),
+            historical_resolution=prv.ThreadResolution.RESOLVED,
+            defect_present_on_current_head=True,
         )
         self.assertEqual(outcome, prv.RegressionOutcome.EMIT_FRESH_FINDING_REGRESSED)
+
+    def test_reopening_rechecks_but_emits_nothing_when_defect_is_absent(self) -> None:
+        outcome = prv.reconcile_reopened_thread(
+            self._reopened_thread(),
+            historical_resolution=prv.ThreadResolution.RESOLVED,
+            defect_present_on_current_head=False,
+        )
+        self.assertEqual(outcome, prv.RegressionOutcome.NO_FINDING_STILL_FIXED)
+
+    def test_reopening_comment_becomes_the_governing_evidence(self) -> None:
+        governing = prv.classify_thread(self._reopened_thread())
+        self.assertTrue(governing.reopens_current_target)
+        self.assertEqual(governing.label, "guard is missing again on current HEAD")
 
     def test_follow_up_noise_does_not_reopen_an_explicit_resolution(self) -> None:
         resolution = prv.ThreadComment(
@@ -93,6 +106,13 @@ class ThreadConclusionTests(unittest.TestCase):
             prv.ThreadComment(prv.AuthorType.HUMAN_REVIEWER, label="thanks"),
         ]
         self.assertIs(prv.classify_thread(thread), resolution)
+        self.assertIsNone(
+            prv.reconcile_reopened_thread(
+                thread,
+                historical_resolution=prv.ThreadResolution.RESOLVED,
+                defect_present_on_current_head=True,
+            )
+        )
 
 
 class PriorFindingStillValidTests(unittest.TestCase):

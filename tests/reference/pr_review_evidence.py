@@ -208,6 +208,24 @@ def evaluate_possibly_regressed(
     return RegressionOutcome.EMIT_FINDING_NEVER_FIXED
 
 
+def reconcile_reopened_thread(
+    comments: Sequence[ThreadComment],
+    *,
+    historical_resolution: ThreadResolution,
+    defect_present_on_current_head: bool,
+) -> Optional[RegressionOutcome]:
+    """Re-evaluate only when classification finds a current-target reopening.
+
+    None preserves the historical conclusion without entering regression handling.
+    """
+    governing = classify_thread(comments)
+    if not governing.reopens_current_target:
+        return None
+    return evaluate_possibly_regressed(
+        historical_resolution, defect_present_on_current_head
+    )
+
+
 def resolved_flag_is_correctness_oracle() -> bool:
     """Never. The current HEAD determines present correctness."""
     return False
