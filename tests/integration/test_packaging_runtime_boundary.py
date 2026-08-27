@@ -482,6 +482,9 @@ class BuiltArchiveContentTests(unittest.TestCase):
             raise AssertionError(f"expected archive not found: {archive_path}")
         with zipfile.ZipFile(archive_path) as zf:
             cls.archive_names = set(zf.namelist())
+            cls.review_scope_text = zf.read(
+                "shared/policies/review-scope.md"
+            ).decode("utf-8")
 
     def test_archive_contains_no_python_files(self) -> None:
         python_files = {n for n in self.archive_names if n.endswith(".py")}
@@ -505,11 +508,17 @@ class BuiltArchiveContentTests(unittest.TestCase):
             "runbooks/local-review.md",
             "templates/local-review-report.md",
             "shared/policies/severity.md",
+            "shared/policies/review-scope.md",
             "shared/policies/review-context.md",
             "shared/policies/review-evidence.md",
         }
         missing = required - self.archive_names
         self.assertEqual(missing, set(), f"archive missing required runtime file(s): {missing}")
+
+    def test_archive_contains_root_cause_model_completeness_policy(self) -> None:
+        self.assertIn(
+            "## Root-cause and model-completeness pass", self.review_scope_text
+        )
 
     def test_archive_does_not_contain_reference_test_modules(self) -> None:
         for module in REFERENCE_TEST_MODULES:
@@ -539,6 +548,9 @@ class GitHubArchiveContentTests(unittest.TestCase):
             )
         with zipfile.ZipFile(DIST_DIR / "github-pr-review-skill.zip") as zf:
             cls.names = set(zf.namelist())
+            cls.review_scope_text = zf.read(
+                "shared/policies/review-scope.md"
+            ).decode("utf-8")
 
     def test_no_python_and_no_reference_modules(self) -> None:
         self.assertEqual({n for n in self.names if n.endswith(".py")}, set())
@@ -554,8 +566,14 @@ class GitHubArchiveContentTests(unittest.TestCase):
             "runbooks/active-pr-review.md",
             "runbooks/passive-pr-review.md",
             "shared/policies/parallel-review.md",
+            "shared/policies/review-scope.md",
         }
         self.assertEqual(required - self.names, set())
+
+    def test_root_cause_model_completeness_policy_is_packaged(self) -> None:
+        self.assertIn(
+            "## Root-cause and model-completeness pass", self.review_scope_text
+        )
 
     def test_repo_dev_docs_are_not_packaged(self) -> None:
         for n in self.names:

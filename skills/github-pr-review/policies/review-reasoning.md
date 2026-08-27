@@ -29,6 +29,15 @@ surrounding context for a delta re-review (see
 boundary and scope"). No PR-specific grouping mechanics beyond that shared
 invariant are prescribed here.
 
+## Root-Cause and Model-Completeness Review
+
+When related candidate findings indicate one shared mechanism, apply
+[`review-scope.md`](../../../shared/policies/review-scope.md), "Root-cause and
+model-completeness pass," before finalizing findings. That shared section owns
+the trigger, structural-vs-separate finding rule, model-completeness questions,
+canonical-owner and external-package guidance, evidence requirements, and
+re-review behavior; this PR-specific policy does not restate them.
+
 ## Code Impact / Dependency Analysis
 
 The durable invariant — a finding located outside the changed lines is valid
