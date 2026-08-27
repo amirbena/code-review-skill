@@ -28,8 +28,9 @@ modes:
 capabilities:
   git: required
   local_repository_access: required
-  external_review_context: optional # free-form requirements / Jira / GitHub Issue (explicit) / HLD / ADR / plan; see ../../../shared/policies/review-context.md and ../policies/review-context.md
-  github_read_access: optional # only used when a PR reference is supplied; prior review evidence per ../../../shared/policies/review-evidence.md and ../policies/pr-context.md
+  external_review_context: optional # free-form requirements / pasted Jira / GitHub Issue / HLD / ADR / plan; see ../../../shared/policies/review-context.md and ../policies/review-context.md
+  jira_context_resolution: optional # only when a Jira reference is supplied; resolved via an available Jira MCP/connector, read-only; unresolved -> JIRA CONTEXT UNRESOLVED (no inference fallback); see ../../../shared/policies/review-context.md "Jira context resolution"
+  github_read_access: optional # PR reference -> prior review evidence (../../../shared/policies/review-evidence.md, ../policies/pr-context.md); GitHub Issue reference -> read-only Issue retrieval
 
 output:
   mutates_github: false

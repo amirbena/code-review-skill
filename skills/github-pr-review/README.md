@@ -8,7 +8,7 @@ P0/P1/P2 findings — passively as a report, or, with sufficient
 authenticated GitHub access, actively by publishing inline findings, a
 final summary, and an Approve/Request Changes decision. For why this
 Skill exists alongside native and third-party PR reviewers, see
-[`../../CODE_REVIEW_COMPARISON.md`](../../CODE_REVIEW_COMPARISON.md).
+[`../../docs/CODE_REVIEW_COMPARISON.md`](../../docs/CODE_REVIEW_COMPARISON.md).
 
 ## When to Use
 
@@ -64,9 +64,9 @@ The PR is always the review target. Two optional/contextual inputs shape *how*
 it is reviewed, never *what* is reviewed:
 
 - **Review context** — caller-supplied requirements, explicit user
-  instructions, a Jira/ticket, an explicitly supplied GitHub Issue (no
-  automatic PR↔Issue discovery), HLD/ADR content, an implementation plan, or
-  the PR description read as intent. Reused from the shared
+  instructions, pasted Jira/ticket text, a GitHub Issue (no automatic
+  PR↔Issue discovery), HLD/ADR content, an implementation plan, or the PR
+  description read as intent. Reused from the shared
   [`../../shared/policies/review-context.md`](../../shared/policies/review-context.md)
   (the same model `local-code-review` applies), with a thin PR application in
   [`policies/review-context.md`](policies/review-context.md). Enables
@@ -74,6 +74,16 @@ it is reviewed, never *what* is reviewed:
   contradicting acceptance criteria, unrelated scope expansion,
   valid-but-out-of-scope findings, and repository-policy violations that hold
   regardless of ticket scope. Absent context changes nothing.
+- **Jira reference** — a bare Jira key/URL is a *pointer*, not context. When
+  supplied, it is resolved to normalized context **before** review reasoning
+  through an available Jira MCP / connector / equivalent integration
+  (**read-only** — retrieval only, no Jira mutation), per the shared policy's
+  "Jira context resolution." If it cannot be resolved (no integration,
+  auth/authz failure, ticket not found, malformed), this Skill reports the
+  `JIRA CONTEXT UNRESOLVED` reasoning result and does not perform the
+  Jira-scoped review — it never infers the ticket from its key, branch name,
+  or PR title. Jira is never mandatory; re-invoke without a Jira reference
+  for a normal unscoped review.
 - **Existing Review Evidence** — the PR's own prior reviews, review comments,
   and issue comments, per the shared
   [`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md)

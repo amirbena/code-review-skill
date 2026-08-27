@@ -116,5 +116,16 @@ append it after the human-facing review, clearly subordinate, per
   explicitly when something could not be executed.
 - The Decision line is unambiguous and matches the actual GitHub review
   action submitted.
+- **Unresolved supplied Jira reference.** If the caller supplied a Jira
+  reference that could not be resolved (see
+  [`../policies/review-context.md`](../policies/review-context.md), "Jira
+  context resolution (PR application)" and
+  [`../policies/review-output.md`](../policies/review-output.md), "Final
+  decision"), this body is not produced as a graded review: return the
+  `JIRA CONTEXT UNRESOLVED` reasoning result, naming the reference and the
+  integration(s) attempted, with `Comments`/`Decision` = `NOT REQUESTED`.
+  The Jira-scoped review is not performed and the ticket is not inferred
+  from its key/branch/PR title. Re-invoke without a Jira reference for a
+  normal unscoped review.
 - Keep the visible section concise — this is read by a person, not
   parsed by a machine.

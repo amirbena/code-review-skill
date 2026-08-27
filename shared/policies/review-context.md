@@ -40,6 +40,11 @@ covers the other three concepts and the requirement-context semantics.
 ```text
 Review Invocation
       ↓
+Resolve External Context
+      ├── Jira MCP / connector        (only when a Jira reference is supplied)
+      ├── explicit GitHub Issue        (reference → read-only GitHub, or pasted text)
+      └── supplied free-form context   (consumed directly, no resolution)
+      ↓
 Normalize Inputs
       ├── Review Target        (the delta / the PR — never widened below)
       ├── Review Context       (intended scope & requirements — optional)
@@ -54,33 +59,147 @@ Skill-specific output (local report | GitHub PR review publication)
 ## Review context is optional; its absence changes nothing
 
 Review context is opt-in. When none is supplied, each Skill behaves exactly as
-if this input did not exist, and never asks the user to provide it. A missing,
-empty, unresolved, or unavailable optional context source is **never** a
-reason to fail, block, or degrade the review — the review proceeds on
+if this input did not exist, and never asks the user to provide it. Optional
+free-form/textual context that is missing, empty, or not provided is **never**
+a reason to fail, block, or degrade the review — the review proceeds on
 repository/diff-driven reasoning alone.
+
+A **supplied reference** is different from missing context: see "Reference-based
+context requires resolution" below. A Jira reference the caller deliberately
+supplied to establish task boundaries, but which cannot be resolved, is not
+silently ignored — that invocation's Jira-scoped path stops with an explicit
+unresolved report. This does not make Jira mandatory for ordinary reviews.
 
 ## Input form
 
-Any of the following, supplied by the caller as text or a reference, is simply
-review context — the reviewer treats it uniformly regardless of which
-category it came from:
+### Textual / free-form context — consumed directly
+
+Any of the following, supplied by the caller as text, is simply review context
+— the reviewer treats it uniformly regardless of which category it came from,
+with no resolution step:
 
 - explicit user instructions describing intent or focus;
-- a Jira (or equivalent tracker) ticket's description and/or acceptance
-  criteria;
-- a GitHub Issue (description, and relevant authoritative comments — see
-  [`review-evidence.md`](review-evidence.md) for the settled-vs-speculative
-  distinction, applied identically to Issue discussion);
-- an HLD, architecture/design document, or ADR;
+- pasted requirements or acceptance criteria;
+- pasted Jira (or equivalent tracker) ticket text — description and/or
+  acceptance criteria — when the caller provides the *content*, not just a key;
+- a GitHub Issue's pasted description and relevant authoritative comments;
+- an HLD, architecture/design document, or ADR (text or excerpt);
 - an implementation plan;
 - a bug/incident description or follow-up;
 - a PR/task description;
 - migration, security, performance, or rollout requirements/constraints.
 
-No source requires a dedicated integration; the caller supplies the text
-(pasted, referenced, or otherwise made available). A caller may optionally
-label the source (e.g. `Context source: Jira BILLPAY-1234`) to aid
-traceability; an unlabeled free-form block is equally valid.
+A caller may optionally label the source (e.g. `Context source: Jira
+BILLPAY-1234`) to aid traceability; an unlabeled free-form block is equally
+valid.
+
+### Reference-based context — requires resolution
+
+A bare **reference** — a Jira ticket key or URL, or a GitHub Issue reference —
+is a *pointer to context, not the context itself*. Before it can inform review
+reasoning it must be resolved to normalized context:
+
+- a **Jira reference** is resolved per "Jira context resolution" below;
+- a **GitHub Issue reference** is resolved through available read-only GitHub
+  access (the same access `github-pr-review` uses for PR state); if no such
+  access is available, the caller may instead paste the Issue text as
+  free-form context. No automatic PR↔Issue discovery.
+
+A reference is never treated as if the identifier itself carried the ticket's
+requirements.
+
+## Jira context resolution
+
+When the caller supplies a Jira reference, Jira context is resolved **before**
+review reasoning, as an external-context-resolution step:
+
+```text
+Review Invocation
+      ↓
+optional Jira reference
+      ↓
+External Context Resolution  ──  Jira MCP / connector / equivalent Jira integration
+      ↓
+Normalized Review Context
+      ↓
+Review
+```
+
+### Capability, not a specific transport
+
+Resolution depends on the capability "resolve Jira context," satisfied by
+whatever Jira integration the runtime exposes — a Jira MCP server, a Jira
+connector, or an equivalent supported Jira tool. Do not hard-code review
+semantics to one transport. If the runtime already exposes a canonical
+connector/tool model, use that rather than inventing a new abstraction. The
+downstream shared review policies consume the **normalized** context below,
+never a raw connector payload.
+
+### Read-only
+
+Jira access here is **context retrieval only**. This never edits an issue,
+transitions it, adds a comment, changes a field, creates a ticket, or assigns
+a user. No Jira mutation of any kind is introduced by supplying a Jira
+reference.
+
+### What to retrieve and normalize
+
+When the integration supports it, retrieve the task context relevant to
+understanding intended behavior and boundaries: issue key, summary,
+description, issue type, current status, acceptance criteria, components,
+labels, priority (where relevant), parent/epic (where relevant), linked
+issues (only where materially necessary), relevant comments, linked
+architecture/design information, explicit non-goals, constraints,
+clarifications, and settled decisions.
+
+Do not inject the entire raw Jira payload into review reasoning. Normalize
+only what informs **intended behavior, task boundaries, requirements,
+acceptance criteria, constraints, exclusions, and settled decisions** — into
+the same `ReviewContext` shape used for free-form context ("Recommended
+internal normalization" below).
+
+### Jira comments
+
+Jira comments can materially improve context, but a comment is **evidence, not
+automatically an authoritative requirement**. Classify each relevant comment,
+similarly to Existing Review Evidence
+([`review-evidence.md`](review-evidence.md)):
+
+- **settled clarification** — an explicit, agreed clarification of intent;
+- **accepted decision** — a design/scope decision explicitly concluded;
+- **implementation note** — guidance or context, not a pass/fail requirement;
+- **unresolved question** — an open question with no agreed answer;
+- **speculative suggestion** — an idea floated, not adopted;
+- **rejected approach** — an option explicitly declined;
+- **superseded discussion** — overtaken by later comments or a decision.
+
+Do not promote every comment into an acceptance criterion. Only a settled
+clarification or accepted decision that states an actual pass/fail condition
+becomes an acceptance criterion. Prefer a newer explicit maintainer/product
+clarification over stale speculative discussion when repository evidence
+supports that interpretation.
+
+### Resolution is a precondition when Jira is supplied
+
+- **No Jira reference supplied** → review proceeds normally; nothing here
+  applies.
+- **Jira reference supplied and resolved** → review proceeds using the
+  normalized Jira information as Review Context.
+- **Jira reference supplied but not resolvable** — no Jira integration is
+  available, authentication/authorization fails, the ticket does not exist,
+  or the reference is malformed → **do not** silently fall back to treating
+  the key/URL as sufficient context, and **do not** infer ticket contents
+  from the ticket key, the branch name, the PR title, a commit message, or
+  surrounding text. The reviewer explicitly reports that the supplied Jira
+  context could not be resolved and does **not** perform the Jira-scoped
+  review. The concise outcome is `JIRA CONTEXT UNRESOLVED`: an explicit
+  incapability report naming the reference and the integration(s) attempted,
+  not a graded `REVIEW CLEAN` / `CHANGES REQUIRED` (local) or
+  `Approve` / `Request Changes` (GitHub) result. Re-invoking **without** a
+  Jira reference yields a normal unscoped review.
+
+This precondition applies only to the Jira-scoped path of that specific
+invocation. It never makes Jira required for reviews that do not supply one.
 
 For this phase, a GitHub Issue is supplied explicitly (a reference or its
 text). There is **no automatic PR↔Issue discovery** in this model — the
@@ -267,13 +386,20 @@ source would — see [`severity.md`](severity.md), "Decision derivation
 
 ## Boundaries
 
-- **Read-only.** This policy adds interpretation of supplied text; it never
-  grants either Skill a new capability. It can never authorize editing files,
-  applying patches, committing, pushing, or any GitHub mutation — each Skill's
-  own mutation boundary is unchanged.
-- **Invocation approval unchanged.** Supplying context (including a GitHub
-  Issue) is never itself approval to invoke a Skill and never bypasses
-  `local-code-review`'s per-invocation approval contract
+- **Read-only.** This policy adds interpretation of supplied text and
+  retrieval of referenced context; it never grants either Skill a
+  state-changing capability. It can never authorize editing files, applying
+  patches, committing, pushing, any GitHub mutation, or any **Jira mutation**
+  (editing/transitioning an issue, adding a comment, changing a field,
+  creating a ticket, assigning a user) — each Skill's own mutation boundary is
+  unchanged, and Jira access is context retrieval only.
+- **A reference is not the context.** A Jira key/URL or a GitHub Issue
+  reference is a pointer that must be resolved to normalized context before
+  use — see "Reference-based context requires resolution." Jira context
+  informs scope but never expands the Review Target.
+- **Invocation approval unchanged.** Supplying context (a Jira reference or a
+  GitHub Issue included) is never itself approval to invoke a Skill and never
+  bypasses `local-code-review`'s per-invocation approval contract
   (`skills/local-code-review/policies/invocation-approval.md`) or
   `github-pr-review`'s self-review guard
   (`skills/github-pr-review/policies/review-authority.md`).

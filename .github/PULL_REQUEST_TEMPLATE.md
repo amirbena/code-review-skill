@@ -26,8 +26,8 @@ several — do not force a single choice. -->
 - [ ] Packaging / distribution (`package-skills.sh` / `.ps1`, `metadata/skill.yaml`)
 - [ ] Runtime metadata / adapter (e.g. `agents/openai.yaml`)
 - [ ] Repository governance / agent instructions (`AGENTS.md`, `CLAUDE.md`)
-- [ ] Architecture (`ARCHITECTURE.md`)
-- [ ] README / documentation (root or Skill `README.md`, `CODE_REVIEW_COMPARISON.md`, other docs)
+- [ ] Architecture (`docs/ARCHITECTURE.md`)
+- [ ] README / documentation (root or Skill `README.md`, `docs/CODE_REVIEW_COMPARISON.md`, other docs)
 - [ ] GitHub workflow / repository configuration (`.github/`)
 - [ ] Other: <!-- describe -->
 
@@ -89,8 +89,8 @@ behavior, orchestration boundaries, or Git/branch/merge lifecycle rules.
 ## Repository Instructions / Documentation
 
 **Files affected:**
-<!-- AGENTS.md, CLAUDE.md, ARCHITECTURE.md, README.md, Skill README,
-CODE_REVIEW_COMPARISON.md, other docs, or None. -->
+<!-- AGENTS.md, CLAUDE.md, docs/ARCHITECTURE.md, README.md, Skill README,
+docs/CODE_REVIEW_COMPARISON.md, other docs, or None. -->
 
 **Documentation impact:**
 <!--
@@ -98,7 +98,7 @@ What repository behavior, architecture, usage, reviewer guidance, or
 human/Agent understanding changed? Distinguish descriptive documentation
 (explains existing behavior) from normative/operational documentation
 (itself defines behavior — e.g. AGENTS.md orchestration rules, a
-canonical policy, or an architectural contract in ARCHITECTURE.md).
+canonical policy, or an architectural contract in docs/ARCHITECTURE.md).
 -->
 
 ## Skill / Policy Contract Impact

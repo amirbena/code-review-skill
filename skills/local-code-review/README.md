@@ -7,7 +7,7 @@ P0/P1/P2 findings. Read-only: it never edits files, commits, pushes, or
 touches GitHub. For local/uncommitted state before a push or PR; for an
 existing GitHub Pull Request, use the sibling
 [`github-pr-review`](../github-pr-review/SKILL.md) Skill instead. See
-[`../../CODE_REVIEW_COMPARISON.md`](../../CODE_REVIEW_COMPARISON.md) for
+[`../../docs/CODE_REVIEW_COMPARISON.md`](../../docs/CODE_REVIEW_COMPARISON.md) for
 why this Skill exists alongside native and third-party reviewers.
 
 ## Opt-in only

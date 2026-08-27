@@ -30,6 +30,12 @@ inspect Git delta by category: committed, staged, unstaged, untracked
     ↓
 compute staged-delta fingerprint
     ↓
+Jira reference supplied? → yes → resolve via Jira MCP/connector (read-only)
+                                   → resolved → normalized Jira context
+                                   → unresolvable → JIRA CONTEXT UNRESOLVED,
+                                     stop (no key/branch inference)
+                                → no  → unchanged
+    ↓
 optional review context supplied? → yes → understand intended change,
                                             extract requirements/
                                             invariants/non-goals, map onto
@@ -110,25 +116,43 @@ The full implementation state is reviewed — local `HEAD` alone is never
 assumed to contain everything, and no category is silently skipped
 without saying so in the report.
 
-**Optional:** free-form review context describing the intended change —
-requirements, explicit user instructions, a Jira (or equivalent tracker)
-ticket and/or its acceptance criteria, an associated GitHub Issue (supplied
-explicitly — no automatic PR↔Issue discovery), an HLD/architecture
-document/ADR, an implementation plan, a bug or incident description, a
-PR/task description, or migration/security/performance/rollout
-requirements. No source requires a dedicated integration; the caller
-supplies the text (or an explicit reference) and this Skill treats it
-uniformly. When supplied, this Skill uses it to understand the intended
-change, focus review attention, and reason about the scope boundary of the
-requested change — never as an authority that overrides actual
-implementation evidence — before performing the rest of its own review.
-The shared review-target / review-context / repository-context model and
-the requirement-context semantics are defined once in
+**Optional:** review context describing the intended change. Two forms,
+per [`review-context.md`](../../shared/policies/review-context.md), "Input
+form":
+
+- **Textual / free-form** — requirements, explicit user instructions,
+  pasted Jira/ticket text and/or acceptance criteria, a pasted GitHub
+  Issue, an HLD/architecture document/ADR, an implementation plan, a bug or
+  incident description, a PR/task description, or migration/security/
+  performance/rollout requirements. Consumed directly, no resolution step.
+- **Reference-based** — a bare Jira ticket key or URL, or a GitHub Issue
+  reference. A reference is a pointer to context, not the context itself.
+  When a **Jira reference** is supplied, this Skill resolves it to
+  normalized context **before** review reasoning, through an available
+  Jira MCP / connector / equivalent Jira integration (read-only —
+  retrieval only, never a Jira mutation), per
+  [`review-context.md`](../../shared/policies/review-context.md), "Jira
+  context resolution." If the Jira reference cannot be resolved (no
+  integration, auth/authz failure, ticket not found, malformed reference),
+  this Skill does **not** infer ticket contents from the key, branch name,
+  or surrounding text and does **not** perform the Jira-scoped review — it
+  returns the explicit `JIRA CONTEXT UNRESOLVED` outcome instead. A GitHub
+  Issue reference is resolved through read-only GitHub access when
+  available, or supplied as pasted text; no automatic PR↔Issue discovery.
+
+When supplied and (for a Jira reference) resolved, this Skill uses the
+context to understand the intended change, focus review attention, and
+reason about the scope boundary of the requested change — never as an
+authority that overrides actual implementation evidence — before
+performing the rest of its own review. The shared review-target /
+review-context / repository-context model and the requirement-context
+semantics are defined once in
 [`review-context.md`](../../shared/policies/review-context.md);
 [`policies/review-context.md`](policies/review-context.md) is this Skill's
 thin local application of it (the review target stays the local delta).
 When omitted, this Skill's behavior is exactly as if this input did not
-exist, and this Skill never asks for it.
+exist, and this Skill never asks for it. Supplying no Jira reference is
+always valid; Jira is never mandatory.
 
 **Optional:** a reference to an associated GitHub PR (a PR URL, or a PR
 number when the repository can be inferred unambiguously). When supplied,

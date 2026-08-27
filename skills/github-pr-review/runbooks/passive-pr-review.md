@@ -21,7 +21,9 @@ same identity? → yes → REVIEW SKIPPED → stop
     ↓ no
 resolve review mode (delta re-review vs. normal review)
     ↓
-resolve optional supplied review context / GitHub Issue (if any)
+resolve optional external context (if any): Jira reference → Jira
+MCP/connector (read-only); unresolvable → JIRA CONTEXT UNRESOLVED, stop.
+GitHub Issue reference → read-only GitHub, or pasted text. Free-form → direct
     ↓
 resolve changed files (incl. prior reviews / comments as Existing Review Evidence)
     ↓
@@ -60,14 +62,24 @@ return human-readable report
    rather than producing a redundant report.
 
    **If the caller supplied review context** (requirements, explicit user
-   instructions, a Jira ticket, an explicitly supplied GitHub Issue, an
-   HLD/ADR, an implementation plan) — or to use the PR description as intent
-   — resolve and normalize it now per
+   instructions, pasted Jira/ticket text, a pasted or referenced GitHub
+   Issue, an HLD/ADR, an implementation plan) — or to use the PR description
+   as intent — resolve and normalize it now per
    [`../policies/review-context.md`](../policies/review-context.md) and the
    shared [`review-context.md`](../../../shared/policies/review-context.md).
-   Optional; absence changes nothing; it never changes the review mode,
-   never widens the PR delta, and never adds a review target. No automatic
-   PR↔Issue discovery.
+   A supplied **Jira reference** is resolved to normalized context via an
+   available Jira MCP / connector / equivalent Jira integration (**read-only**
+   — retrieval only, never a Jira mutation) before review reasoning; Jira
+   comments are classified per the shared policy's "Jira comments" (not every
+   comment becomes an acceptance criterion). If the Jira reference **cannot
+   be resolved**, report the `JIRA CONTEXT UNRESOLVED` reasoning result per
+   [`../policies/review-output.md`](../policies/review-output.md), "Final
+   decision," and stop — do not infer the ticket from its key/branch/PR
+   title/surrounding text, and produce no graded report. A GitHub Issue
+   reference is resolved through read-only GitHub access, or supplied as
+   pasted text; no automatic PR↔Issue discovery. Otherwise this context step
+   is optional; absence changes nothing; it never changes the review mode,
+   never widens the PR delta, and never adds a review target.
 4. Through an available authenticated GitHub integration, retrieve PR
    metadata and base/head SHA. For a normal review, retrieve the complete
    paginated changed-file set and a complete diff per

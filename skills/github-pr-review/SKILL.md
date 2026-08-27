@@ -33,6 +33,12 @@ completed review? → yes → delta re-review of the bounded SHA range
                            materially changes scope)
                         → no  → normal review of current PR state
     ↓
+Jira reference supplied? → yes → resolve via Jira MCP/connector (read-only)
+                                  → resolved → normalized Jira context
+                                  → unresolvable → JIRA CONTEXT UNRESOLVED,
+                                    stop (no key/branch/PR-title inference)
+                               → no  → unchanged
+    ↓
 retrieve required PR scope for that mode
     ↓
 determine formal-review capability
@@ -123,19 +129,36 @@ below). Only delivery differs.
 **Required:** a PR URL, a PR number with repository context, or a
 repository + PR number.
 
-**Optional:** free-form review context describing the intended change —
-explicit user instructions/requirements, a Jira (or equivalent tracker)
-ticket and/or its acceptance criteria, an associated GitHub Issue (supplied
-explicitly — a reference or its text; **no automatic PR↔Issue discovery**),
-an HLD/architecture document/ADR, an implementation plan, or migration/
-security/performance/rollout constraints. The caller supplies the text or
-reference; this Skill treats it uniformly per the shared
-[`review-context.md`](../../shared/policies/review-context.md) and its thin
-PR application [`policies/review-context.md`](policies/review-context.md). It
+**Optional:** review context describing the intended change. Two forms,
+per the shared
+[`review-context.md`](../../shared/policies/review-context.md), "Input form":
+
+- **Textual / free-form** — explicit user instructions/requirements, pasted
+  Jira/ticket text and/or acceptance criteria, a pasted GitHub Issue, an
+  HLD/architecture document/ADR, an implementation plan, the PR description
+  read as intent, or migration/security/performance/rollout constraints.
+  Consumed directly.
+- **Reference-based** — a bare Jira ticket key or URL, or a GitHub Issue
+  reference. A reference is a pointer to context, not the context itself.
+  A **Jira reference** is resolved to normalized context **before** review
+  reasoning, through an available Jira MCP / connector / equivalent Jira
+  integration — **read-only, retrieval only, never a Jira mutation** — per
+  the shared policy's "Jira context resolution." If the Jira reference
+  cannot be resolved (no integration, auth/authz failure, ticket not found,
+  malformed reference), this Skill returns the explicit
+  `JIRA CONTEXT UNRESOLVED` reasoning result and does **not** perform the
+  Jira-scoped review; it never infers the ticket from the key, the branch
+  name, the PR title, a commit message, or surrounding text. A GitHub Issue
+  reference is resolved through the same read-only GitHub access used for PR
+  state, or supplied as pasted text; **no automatic PR↔Issue discovery**.
+
+Context is consumed uniformly per the shared policy and its thin PR
+application [`policies/review-context.md`](policies/review-context.md). It
 focuses review attention and enables scope-boundary reasoning about the PR;
 it never converts a ticket, Issue, ADR, or the PR description into an
 additional review target, and never widens the PR delta. When omitted, this
-Skill behaves exactly as before this input existed and never asks for it.
+Skill behaves exactly as before this input existed and never asks for it;
+Jira is never mandatory.
 
 **Always considered when available:** the PR's own prior reviews, review
 comments, and issue comments — as Existing Review Evidence, per the shared

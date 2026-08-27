@@ -2,7 +2,7 @@
 
 This document describes the conceptual architecture of this repository's
 two Code Review Agent Skills. It is intentionally decoupled from any
-specific runtime implementation — see [`AGENTS.md`](AGENTS.md) section 2
+specific runtime implementation — see [`AGENTS.md`](../AGENTS.md) section 2
 ("Runtime Neutrality") and the **Agent via Skill** vocabulary in section
 1. For why this architecture exists — how it differs from Claude Code's
 own native review, GitHub-native review, and third-party reviewers — see
@@ -72,9 +72,9 @@ SKILL.md + its own GitHub-specific policy/runbooks/templates/metadata
 
 Neither Skill owns a copy of the severity model, evidence requirements,
 review-scope rules, or the review-context / existing-review-evidence model
-— all reference [`shared/policies/`](shared/policies/) directly.
+— all reference [`shared/policies/`](../shared/policies/) directly.
 `github-pr-review` additionally has its own policy family, indexed from
-[`policies/github-review.md`](skills/github-pr-review/policies/github-review.md),
+[`policies/github-review.md`](../skills/github-pr-review/policies/github-review.md),
 for GitHub-specific delivery rules with no local-review analogue: review
 authority and self-review, reviewer delta re-review, PR scope and
 pagination, review reasoning (logical cohorts, code-impact/dependency
@@ -98,7 +98,7 @@ instructions, a Jira/tracker ticket, an explicitly supplied GitHub Issue
 ### Thin runbooks, canonical policy owners
 
 A runbook is an execution document, not a second policy store — see
-[`AGENTS.md`](AGENTS.md) section 18, "Runbook Design," for the canonical
+[`AGENTS.md`](../AGENTS.md) section 18, "Runbook Design," for the canonical
 rule. It defines flow, phase ordering, and which policy governs each
 phase; it does not restate that policy's decision tables, edge-case
 semantics, or state-interpretation rules. Concretely:
@@ -130,10 +130,18 @@ execution flow.
 ```text
 Review Invocation
     ↓
+Resolve External Context
+    ├── Jira MCP / connector        (only when a Jira reference is supplied;
+    │                                read-only; unresolved → JIRA CONTEXT
+    │                                UNRESOLVED, stop — no key/branch inference)
+    ├── explicit GitHub Issue context (reference → read-only GitHub, or
+    │                                  pasted text; no auto PR↔Issue discovery)
+    └── supplied free-form context    (consumed directly, no resolution)
+    ↓
 Normalize Inputs
     ├── Review Target        (local delta | GitHub PR delta)
-    ├── Review Context        (optional: user instructions / Jira / GitHub
-    │                          Issue / HLD / ADR / plan / PR description)
+    ├── Review Context        (optional: user instructions / resolved Jira /
+    │                          GitHub Issue / HLD / ADR / plan / PR description)
     ├── Repository Context   (AGENTS.md, architecture, surrounding code,
     │                          tests, invariants)
     └── Existing Review Evidence (optional: prior findings, resolved
@@ -145,7 +153,7 @@ Review Delta Resolver
     ↓
 Repository Context Loader
     ↓
-Shared Review Policies / Semantics  (shared/policies/)
+Shared Review Semantics  (shared/policies/)
     ├── scope validation (incl. scope-boundary reasoning against context)
     ├── correctness
     ├── regression analysis
@@ -164,14 +172,32 @@ the reading order their `SKILL.md` and runbooks already imply.
 ### Stage responsibilities
 
 - **Review Invocation** — for `local-code-review`: "review this local
-  implementation state," optionally with review context and/or an
-  associated PR reference. For `github-pr-review`: a PR URL, a PR number
-  with repository context, or a repository + PR number, optionally with
-  review context and/or an explicitly supplied GitHub Issue.
+  implementation state," optionally with review context (free-form text or a
+  Jira / GitHub Issue reference) and/or an associated PR reference. For
+  `github-pr-review`: a PR URL, a PR number with repository context, or a
+  repository + PR number, optionally with review context (free-form text or a
+  Jira / GitHub Issue reference; the PR description is always available).
+- **Resolve External Context** — before review reasoning, turn *references*
+  into normalized context, per
+  [`shared/policies/review-context.md`](../shared/policies/review-context.md),
+  "Input form" and "Jira context resolution." Free-form text is consumed
+  directly. A **Jira reference** is resolved read-only through whatever Jira
+  integration the runtime exposes (a Jira MCP server, a Jira connector, or an
+  equivalent Jira tool — a capability, not a hard-coded transport); the
+  downstream shared policies consume the normalized context, never a raw
+  connector payload. Jira access is **retrieval only** — no issue edits,
+  transitions, comments, field changes, ticket creation, or assignment. If a
+  supplied Jira reference cannot be resolved, the Skill returns the explicit
+  `JIRA CONTEXT UNRESOLVED` outcome and does not perform the Jira-scoped
+  review — it never infers the ticket from its key, the branch name, the PR
+  title, a commit message, or surrounding text. A **GitHub Issue reference**
+  is resolved through read-only GitHub access when available, or supplied as
+  pasted text; there is **no automatic PR↔Issue discovery**. Supplying no
+  Jira reference is always valid — Jira is never mandatory.
 - **Normalize Inputs** — resolves the repository, base branch, and (for
   `github-pr-review`) the PR itself, and separates the four concepts owned
-  by [`shared/policies/review-context.md`](shared/policies/review-context.md)
-  and [`shared/policies/review-evidence.md`](shared/policies/review-evidence.md):
+  by [`shared/policies/review-context.md`](../shared/policies/review-context.md)
+  and [`shared/policies/review-evidence.md`](../shared/policies/review-evidence.md):
   the **review target** (never widened by anything below it), optional
   **review context** (intended scope/requirements — focuses attention and
   enables scope-boundary reasoning), **repository context**, and optional
@@ -191,10 +217,10 @@ the reading order their `SKILL.md` and runbooks already imply.
   this is limited to API-retrievable context in the current implementation —
   a temporary local checkout of the PR is future work (see "Future work"
   below).
-- **Shared Review Policies / Semantics** — the single review reasoning
+- **Shared Review Semantics** — the single review reasoning
   model defined by `shared/policies/review-scope.md`, plus scope validation
   against any supplied review context per
-  [`shared/policies/review-context.md`](shared/policies/review-context.md),
+  [`shared/policies/review-context.md`](../shared/policies/review-context.md),
   "Scope-boundary reasoning." Identical regardless of which
   Skill or delivery mode invokes it. Beyond the baseline concern list, this
   model reasons in the same local-first, signal-triggered style about four
@@ -220,7 +246,7 @@ the reading order their `SKILL.md` and runbooks already imply.
   `shared/policies/evidence.md`.
 - **Severity classification** — every actionable finding is assigned
   exactly one severity: P0, P1, or P2, per
-  [`shared/policies/severity.md`](shared/policies/severity.md). The final
+  [`shared/policies/severity.md`](../shared/policies/severity.md). The final
   decision is derived mechanically from blocking severities; supplied
   context and reconciled prior evidence inform which findings exist and at
   what severity, never a separate decision path.
@@ -280,13 +306,13 @@ obtained fresh, explicit user approval scoped to that one run. An
 approval that authorized one invocation never authorizes another; the
 orchestrator must ask again before each subsequent invocation, including
 immediately after fixing findings from the previous one. See
-[`AGENTS.md`](AGENTS.md) section 14, "Explicit User Approval Required for
+[`AGENTS.md`](../AGENTS.md) section 14, "Explicit User Approval Required for
 `local-code-review` Invocation."
 
 Second, it never extends to an implementing Agent invoking
 `github-pr-review` against the PR it just opened or updated for its own
 implementation work. Opening/updating that PR is the terminal step of the
-implementation workflow — see [`AGENTS.md`](AGENTS.md) section 13,
+implementation workflow — see [`AGENTS.md`](../AGENTS.md) section 13,
 "Implementation Workflow Termination and Reviewer/Author Separation."
 `github-pr-review` is a reviewer-role Skill invoked by a genuinely
 separate reviewer or review task, not a post-implementation validation
@@ -342,14 +368,14 @@ GitHub PR Review Skill
 Each `Local Code Review Skill` box above represents exactly one
 invocation, gated by its own fresh, explicit user approval obtained
 immediately beforehand. Approval for one invocation never carries over
-to a later one — see [`AGENTS.md`](AGENTS.md) section 14, "Explicit User
+to a later one — see [`AGENTS.md`](../AGENTS.md) section 14, "Explicit User
 Approval Required for `local-code-review` Invocation." A "no" at any
 approval gate is a fully valid outcome: the implementation workflow
 continues straight to local acceptance, push, and PR without review.
 
 `local-code-review` does not automatically invoke `github-pr-review`,
 and neither does the implementing Agent that just opened or updated the
-PR — see [`AGENTS.md`](AGENTS.md) section 13. `github-pr-review` is
+PR — see [`AGENTS.md`](../AGENTS.md) section 13. `github-pr-review` is
 invoked by a genuinely separate reviewer (a different Agent/identity, or
 a dedicated review task against an existing PR), never as an automatic
 continuation of the same implementation workflow. `github-pr-review`
@@ -382,7 +408,7 @@ Maximum automated positive action: **Approve**. No merge occurs — the
 repository owner or their merge workflow performs the merge separately,
 following `AGENTS.md`'s merge-strategy rules when this repository's own
 PRs are the ones being merged. See
-[`skills/github-pr-review/runbooks/active-pr-review.md`](skills/github-pr-review/runbooks/active-pr-review.md).
+[`skills/github-pr-review/runbooks/active-pr-review.md`](../skills/github-pr-review/runbooks/active-pr-review.md).
 
 ## 7. Packaging: Source Layout vs. Distribution Layout
 
@@ -457,15 +483,15 @@ in staged package metadata, then checked for containment and existence.
 - **Human-facing report formatting is not implied by shared reasoning.**
   Each Skill's own template owns the presentation appropriate to its own
   delivery surface, per
-  [`shared/templates/review-summary.md`](shared/templates/review-summary.md),
+  [`shared/templates/review-summary.md`](../shared/templates/review-summary.md),
   "Machine metadata is subordinate": `local-code-review`'s
-  [`templates/local-review-report.md`](skills/local-code-review/templates/local-review-report.md)
+  [`templates/local-review-report.md`](../skills/local-code-review/templates/local-review-report.md)
   renders its trailing metadata as plain Markdown and relevance-gates
   which fields appear (a report read directly in a terminal/chat has no
   use for a collapsible widget, and an initial review with nothing
   staged has no use for a fixed, empty-input fingerprint every time),
   while `github-pr-review`'s
-  [`templates/external-review-summary.md`](skills/github-pr-review/templates/external-review-summary.md)
+  [`templates/external-review-summary.md`](../skills/github-pr-review/templates/external-review-summary.md)
   legitimately wraps its own optional subordinate metadata in a
   collapsible `<details>` block, since GitHub natively renders and
   collapses it. Neither choice is more "correct" than the other — they
@@ -477,7 +503,7 @@ in staged package metadata, then checked for containment and existence.
   example, the PR author) cannot submit the corresponding formal review.
 - **Git/GitHub state inspection** is read-only and never assumes GitHub
   is authoritative when local state diverges from it — see
-  [`skills/local-code-review/runbooks/local-review.md`](skills/local-code-review/runbooks/local-review.md).
+  [`skills/local-code-review/runbooks/local-review.md`](../skills/local-code-review/runbooks/local-review.md).
 - **GitHub delivery** is the only stage permitted to mutate PR state
   (comments, review decisions), owned exclusively by `github-pr-review`
   in active mode.

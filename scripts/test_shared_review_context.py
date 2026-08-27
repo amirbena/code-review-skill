@@ -108,7 +108,9 @@ class SharedPolicyFilesTests(unittest.TestCase):
 
     def test_context_grants_no_mutation_and_no_new_decision_path(self) -> None:
         t = _text(SHARED_CONTEXT)
-        self.assertIn("it never grants either Skill a new capability", t)
+        self.assertIn("it never grants either Skill a state-changing capability", t)
+        self.assertIn("or any Jira mutation", t)
+        self.assertIn("Jira access is context retrieval only", t)
         self.assertIn("It never adds a separate decision path", t)
         self.assertIn("never bypasses", t)
 
@@ -268,7 +270,7 @@ class NoNewMutationOrDecisionChangeTests(unittest.TestCase):
 
 class DocsReflectCurrentCapabilitiesTests(unittest.TestCase):
     def test_comparison_has_a_two_skill_section(self) -> None:
-        t = _text(REPO_ROOT / "CODE_REVIEW_COMPARISON.md")
+        t = _text(REPO_ROOT / "docs" / "CODE_REVIEW_COMPARISON.md")
         self.assertIn("local-code-review vs. github-pr-review", t)
         for row in (
             "Review target",
@@ -282,7 +284,7 @@ class DocsReflectCurrentCapabilitiesTests(unittest.TestCase):
             self.assertIn(row, t)
 
     def test_comparison_marks_future_work_as_not_implemented(self) -> None:
-        t = _text(REPO_ROOT / "CODE_REVIEW_COMPARISON.md")
+        t = _text(REPO_ROOT / "docs" / "CODE_REVIEW_COMPARISON.md")
         self.assertIn("Planned / not yet implemented", t)
         for future in (
             "Temporary GitHub PR repository checkout",
@@ -293,7 +295,7 @@ class DocsReflectCurrentCapabilitiesTests(unittest.TestCase):
             self.assertIn(future, t)
 
     def test_architecture_normalizes_four_inputs_and_marks_future_work(self) -> None:
-        t = _text(REPO_ROOT / "ARCHITECTURE.md")
+        t = _text(REPO_ROOT / "docs" / "ARCHITECTURE.md")
         self.assertIn("Normalize Inputs", t)
         self.assertIn("Existing Review Evidence", t)
         self.assertIn("Future work (not implemented)", t)
@@ -303,14 +305,14 @@ class DocsReflectCurrentCapabilitiesTests(unittest.TestCase):
         self.assertIn("limited to API-retrievable context", t)
 
     def test_architecture_does_not_claim_checkout_is_implemented(self) -> None:
-        t = _text(REPO_ROOT / "ARCHITECTURE.md")
+        t = _text(REPO_ROOT / "docs" / "ARCHITECTURE.md")
         self.assertNotIn("clones the PR into", t)
         self.assertNotIn("mkdtemp", t)
 
 
 class PythonAuthoringPolicyWiringTests(unittest.TestCase):
     def test_python_authoring_policy_file_exists(self) -> None:
-        p = REPO_ROOT / "PYTHON_AUTHORING.md"
+        p = REPO_ROOT / "policies" / "PYTHON_AUTHORING.md"
         self.assertTrue(p.is_file())
         t = _text(p)
         self.assertIn("Prefer self-explanatory code over commentary", t)
@@ -340,6 +342,76 @@ class PackagedArchivesCarryTheSharedModelTests(unittest.TestCase):
         t = (REPO_ROOT / "scripts" / "package-skills.sh").read_text(encoding="utf-8")
         self.assertIn('"policies/review-context.md"', t)
         self.assertIn('"policies/review-evidence.md"', t)
+
+
+class DocPathMigrationTests(unittest.TestCase):
+    """The repo-level docs and the Python authoring policy moved out of the
+    repository root."""
+
+    def test_new_locations_exist(self) -> None:
+        for p in (
+            REPO_ROOT / "docs" / "ARCHITECTURE.md",
+            REPO_ROOT / "docs" / "CODE_REVIEW_COMPARISON.md",
+            REPO_ROOT / "policies" / "PYTHON_AUTHORING.md",
+        ):
+            self.assertTrue(p.is_file(), f"missing: {p}")
+
+    def test_old_root_locations_are_gone(self) -> None:
+        for p in (
+            REPO_ROOT / "ARCHITECTURE.md",
+            REPO_ROOT / "CODE_REVIEW_COMPARISON.md",
+            REPO_ROOT / "PYTHON_AUTHORING.md",
+        ):
+            self.assertFalse(p.exists(), f"stale root file still present: {p}")
+
+    def test_no_markdown_link_targets_the_old_root_paths(self) -> None:
+        # A stale link is one whose resolved path points at the old root
+        # location. Sibling links inside docs/ (ARCHITECTURE.md <->
+        # CODE_REVIEW_COMPARISON.md) are fine — they resolve within docs/.
+        link_re = re.compile(r"\]\(([^)]+)\)")
+        old_root = {
+            REPO_ROOT / "ARCHITECTURE.md",
+            REPO_ROOT / "CODE_REVIEW_COMPARISON.md",
+            REPO_ROOT / "PYTHON_AUTHORING.md",
+        }
+        stale = []
+        for md in REPO_ROOT.rglob("*.md"):
+            if ".git" in md.parts or "dist" in md.parts:
+                continue
+            for target in link_re.findall(md.read_text(encoding="utf-8")):
+                if target.startswith(("http://", "https://", "mailto:")):
+                    continue
+                rel = target.split("#", 1)[0].strip()
+                if not rel:
+                    continue
+                resolved = (md.parent / rel).resolve()
+                if resolved in old_root:
+                    stale.append(f"{md.relative_to(REPO_ROOT)} -> {target}")
+        self.assertEqual(stale, [], f"stale doc links: {stale}")
+
+    def test_every_relative_markdown_link_resolves(self) -> None:
+        link_re = re.compile(r"\]\(([^)]+)\)")
+        broken = []
+        for md in REPO_ROOT.rglob("*.md"):
+            if ".git" in md.parts or "dist" in md.parts:
+                continue
+            for target in link_re.findall(md.read_text(encoding="utf-8")):
+                if target.startswith(("http://", "https://", "mailto:")):
+                    continue
+                rel = target.split("#", 1)[0].strip()
+                if not rel:
+                    continue
+                if not (md.parent / rel).exists():
+                    broken.append(f"{md.relative_to(REPO_ROOT)} -> {target}")
+        self.assertEqual(broken, [], f"broken relative links: {broken}")
+
+    def test_agents_and_readme_reference_new_doc_paths(self) -> None:
+        agents = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("docs/ARCHITECTURE.md", agents)
+        self.assertIn("policies/PYTHON_AUTHORING.md", agents)
+        self.assertIn("docs/ARCHITECTURE.md", readme)
+        self.assertIn("docs/CODE_REVIEW_COMPARISON.md", readme)
 
 
 if __name__ == "__main__":

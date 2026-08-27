@@ -2,11 +2,12 @@
 
 This Skill's **local application** of the shared review-context model. The
 canonical semantics — the review-target / review-context / repository-context
-/ existing-review-evidence concepts, input forms (including an explicitly
-supplied GitHub Issue), the evidence hierarchy, using context to focus
-attention, context-mismatch handling, scope-boundary reasoning and its
-precedence notes, explicit non-goals, scope discipline, and tracing findings
-back to context — are owned by
+/ existing-review-evidence concepts, the textual-vs-reference input forms,
+**Jira context resolution** (Jira MCP / connector, read-only, the
+`JIRA CONTEXT UNRESOLVED` precondition), the evidence hierarchy, using context
+to focus attention, context-mismatch handling, scope-boundary reasoning and
+its precedence notes, explicit non-goals, scope discipline, and tracing
+findings back to context — are owned by
 [`review-context.md`](../../../shared/policies/review-context.md) and are not
 restated here. This file adds only what is specific to `local-code-review`:
 the review target is the **local implementation delta**, and supplied context
@@ -50,29 +51,31 @@ remains the current local delta.
 
 ## Input form
 
-Review context is optional and free-form. It may arrive as:
+Review context is optional. It may arrive as **textual / free-form** content
+(requirements, explicit user instructions, pasted Jira/ticket text and/or
+acceptance criteria, a pasted GitHub Issue, an HLD/ADR, an implementation
+plan, a bug/incident description, a PR/task description, or constraints) —
+consumed directly — or as a **reference** (a Jira ticket key or URL, or a
+GitHub Issue reference) that must be resolved first. See
+[`review-context.md`](../../../shared/policies/review-context.md), "Input
+form," and "Jira context resolution," for the full contract:
 
-- free-form text describing the intended change;
-- explicit user instructions / user-provided requirements;
-- a Jira (or equivalent tracker) ticket's description and/or acceptance
-  criteria;
-- an associated GitHub Issue, supplied explicitly (a reference or its text) —
-  no automatic PR↔Issue discovery;
-- an HLD, architecture/design document, or ADR;
-- an implementation plan;
-- a bug description or incident follow-up;
-- a PR/task description;
-- migration, security, performance, or rollout requirements/constraints.
+- a supplied **Jira reference** is resolved to normalized context via an
+  available Jira MCP / connector / equivalent integration (read-only) before
+  the local review reasons about it; if it cannot be resolved, this Skill
+  returns `JIRA CONTEXT UNRESOLVED` and does not perform the Jira-scoped
+  review — it never infers the ticket from the key, the branch name, or
+  surrounding text;
+- a supplied **GitHub Issue reference** is resolved through read-only GitHub
+  access when available, or supplied as pasted text; no automatic PR↔Issue
+  discovery;
+- for a GitHub Issue's or Jira ticket's comments, apply
+  [`review-evidence.md`](../../../shared/policies/review-evidence.md)'s
+  settled-vs-speculative distinction.
 
-See [`review-context.md`](../../../shared/policies/review-context.md), "Input
-form," for how each is normalized and treated uniformly, and, for a GitHub
-Issue's comments, [`review-evidence.md`](../../../shared/policies/review-evidence.md)'s
-settled-vs-speculative distinction.
-
-No source requires a dedicated integration. The caller supplies the text
-(pasted, referenced, or otherwise made available), and this Skill treats it
-uniformly regardless of category; an optional `Context source:` label aids
-traceability, and an unlabeled free-form block is equally valid.
+An optional `Context source:` label aids traceability; an unlabeled
+free-form block is equally valid. Supplying no Jira reference is always
+valid — Jira is never mandatory for a local review.
 
 ## What this file does not restate
 

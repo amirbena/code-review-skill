@@ -22,10 +22,8 @@ OPENAI_INTERFACE_FIELDS = {
     "default_prompt",
 }
 
-# A packaged Skill archive never contains this source repository's own
-# root-level development docs (see AGENTS.md, "Runtime Neutrality"). Any
-# packaged link to one of these basenames, at any relative depth, is a
-# packaging-boundary violation.
+# A packaged Skill never depends on this repo's own dev docs. Any packaged
+# link to one of these basenames, at any depth, is a boundary violation.
 REPO_ROOT_ONLY_DOC_BASENAMES = {"AGENTS.md", "ARCHITECTURE.md", "README.md"}
 MARKDOWN_LINK_RE = re.compile(r"\]\(([^)]+)\)")
 WHITESPACE_RE = re.compile(r"\s+")

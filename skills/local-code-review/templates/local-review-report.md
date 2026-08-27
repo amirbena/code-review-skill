@@ -161,6 +161,16 @@ strongly it is recommended before commit.
   [Context, when applicable] → [PR Context, when applicable] → Findings
   → Validation → Decision) is primary and always appears first — see
   [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md).
+- **Unresolved supplied Jira reference.** If the caller supplied a Jira
+  reference and it could not be resolved (see
+  [`../../../shared/policies/review-context.md`](../../../shared/policies/review-context.md),
+  "Jira context resolution"), this runbook stops before grading: the
+  returned report leads with `**Result: ⚠️ Jira context unresolved**`, names
+  the Jira reference and the integration(s) attempted, states that no
+  key/branch/PR-title inference was used, and omits the graded Findings and
+  Decision sections. The concise machine outcome is `JIRA CONTEXT
+  UNRESOLVED` (not a graded `REVIEW CLEAN` / `CHANGES REQUIRED`).
+  Re-invoking without a Jira reference yields a normal unscoped review.
 - **Context** is entirely optional and appears only when the caller
   supplied review context (per
   [`../policies/review-context.md`](../policies/review-context.md)) and

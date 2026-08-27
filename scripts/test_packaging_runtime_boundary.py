@@ -43,6 +43,7 @@ REFERENCE_TEST_MODULES = (
     "pr_context_reconciliation.py",
     "reviewer_ownership.py",
     "staged_fingerprint.py",
+    "jira_context.py",
 )
 
 #: For each reference/test module, the packaged policy file(s) that are
@@ -74,7 +75,6 @@ def _extract_local_skill_file_list(script_text: str) -> list[str]:
     #   package_skill "local-code-review" "local-code-review-skill" \
     #     "agents/openai.yaml" \
     #     ...
-    #     "templates/local-review-report.md"
     match = re.search(
         r'package_skill "local-code-review" "local-code-review-skill" \\\n(.*?)\nfi',
         script_text,
@@ -83,6 +83,82 @@ def _extract_local_skill_file_list(script_text: str) -> list[str]:
     if not match:
         raise AssertionError("could not locate local-code-review package_skill invocation")
     return re.findall(r'"([^"]+)"', match.group(1))
+
+
+SH = REPO_ROOT / "scripts" / "package-skills.sh"
+PS1 = REPO_ROOT / "scripts" / "package-skills.ps1"
+
+
+def _sh_array(text: str, name: str) -> list[str]:
+    m = re.search(rf'{re.escape(name)}=\((.*?)\)', text, re.S)
+    if not m:
+        raise AssertionError(f"array {name} not found in package-skills.sh")
+    return re.findall(r'"([^"]+)"', m.group(1))
+
+
+def _ps1_array(text: str, name: str) -> list[str]:
+    m = re.search(rf'\${re.escape(name)}\s*=\s*@\((.*?)\)', text, re.S)
+    if not m:
+        raise AssertionError(f"array ${name} not found in package-skills.ps1")
+    return re.findall(r'"([^"]+)"', m.group(1))
+
+
+def _sh_skill_files(text: str, skill: str) -> list[str]:
+    m = re.search(rf'package_skill "{re.escape(skill)}" "[^"]+" \\\n(.*?)\n(?:\s*for |\}}|fi)', text, re.S)
+    if not m:
+        raise AssertionError(f"package_skill {skill} not found in package-skills.sh")
+    return re.findall(r'"([^"]+)"', m.group(1))
+
+
+def _ps1_skill_files(text: str, skill: str) -> list[str]:
+    m = re.search(rf'-SkillName "{re.escape(skill)}"[^@]*-SkillFiles @\((.*?)\)', text, re.S)
+    if not m:
+        raise AssertionError(f"Package-Skill {skill} not found in package-skills.ps1")
+    return re.findall(r'"([^"]+)"', m.group(1))
+
+
+class PackagingScriptParityTests(unittest.TestCase):
+    """The shell and PowerShell packaging scripts must ship the same files.
+    pwsh may be unavailable to execute; this compares the declared lists
+    statically so a drift still fails CI."""
+
+    def setUp(self) -> None:
+        self.sh = SH.read_text(encoding="utf-8")
+        self.ps1 = PS1.read_text(encoding="utf-8")
+
+    def test_shared_policy_lists_match(self) -> None:
+        self.assertEqual(
+            _sh_array(self.sh, "shared_policies"),
+            _ps1_array(self.ps1, "sharedPolicies"),
+        )
+
+    def test_shared_template_lists_match(self) -> None:
+        self.assertEqual(
+            _sh_array(self.sh, "shared_templates"),
+            _ps1_array(self.ps1, "sharedTemplates"),
+        )
+
+    def test_local_skill_file_lists_match(self) -> None:
+        self.assertEqual(
+            _sh_skill_files(self.sh, "local-code-review"),
+            _ps1_skill_files(self.ps1, "local-code-review"),
+        )
+
+    def test_github_skill_file_lists_match(self) -> None:
+        self.assertEqual(
+            _sh_skill_files(self.sh, "github-pr-review"),
+            _ps1_skill_files(self.ps1, "github-pr-review"),
+        )
+
+    def test_new_shared_policies_are_in_both(self) -> None:
+        for name in ("review-context.md", "review-evidence.md"):
+            self.assertIn(name, _sh_array(self.sh, "shared_policies"))
+            self.assertIn(name, _ps1_array(self.ps1, "sharedPolicies"))
+
+    def test_new_github_policies_are_in_both(self) -> None:
+        for name in ("policies/review-context.md", "policies/review-evidence.md"):
+            self.assertIn(name, _sh_skill_files(self.sh, "github-pr-review"))
+            self.assertIn(name, _ps1_skill_files(self.ps1, "github-pr-review"))
 
 
 class DeclaredPackageFileListTests(unittest.TestCase):

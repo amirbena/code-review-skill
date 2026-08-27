@@ -15,9 +15,11 @@ This file adds only what is specific to reviewing a GitHub Pull Request.
 ## Optional; runs after the authority and mode gates
 
 Supplied review context is optional. When none is supplied, this Skill
-behaves exactly as before this input existed, and never asks for it. A
-missing, empty, unresolved, or unavailable context source is never a reason
-to fail, block, or degrade the review.
+behaves exactly as before this input existed, and never asks for it. Missing
+or not-provided free-form/textual context is never a reason to fail, block,
+or degrade the review. A **supplied Jira reference that cannot be resolved**
+is the one exception — see "Jira context resolution (PR application)" below —
+and it never makes Jira mandatory for reviews that do not supply one.
 
 Context is resolved **after**
 [`review-authority.md`](review-authority.md) (the self-review guard is
@@ -30,12 +32,17 @@ or how much of it is in scope — see
 
 ## Input form
 
-The caller may supply, as text or an explicit reference:
+Per the shared [`review-context.md`](../../../shared/policies/review-context.md),
+"Input form," context is either **textual / free-form** (consumed directly)
+or a **reference** (resolved first). The caller may supply:
 
-- explicit user instructions / requirements;
-- a Jira (or equivalent tracker) ticket and/or its acceptance criteria;
-- a GitHub Issue (its description and relevant authoritative comments —
-  supplied explicitly; **no automatic PR↔Issue discovery** in this phase);
+- explicit user instructions / requirements (text);
+- pasted Jira/ticket text and/or acceptance criteria, **or** a bare Jira
+  ticket key/URL that is resolved per "Jira context resolution (PR
+  application)" below;
+- a pasted GitHub Issue, **or** a GitHub Issue reference resolved through the
+  same read-only GitHub access used for PR state — supplied explicitly;
+  **no automatic PR↔Issue discovery** in this phase;
 - an HLD, architecture/design document, or ADR;
 - an implementation plan;
 - the PR description itself, read as a statement of intent;
@@ -45,6 +52,29 @@ The PR's own description is always available as review context even when the
 caller supplies nothing else. Each source is normalized and treated
 uniformly per the shared policy's "Input form" and "Recommended internal
 normalization."
+
+## Jira context resolution (PR application)
+
+The full contract — Jira MCP / connector / equivalent integration as a
+transport-agnostic capability, read-only retrieval only, the retrieve/
+normalize list, Jira-comment classification, and the
+`JIRA CONTEXT UNRESOLVED` precondition — is owned by the shared
+[`review-context.md`](../../../shared/policies/review-context.md), "Jira
+context resolution," and is not restated here. For a PR review:
+
+- resolution runs after the self-review guard and review-mode resolution and
+  before PR scope retrieval; it never changes the review mode or the PR
+  delta;
+- **read-only**: retrieving Jira context adds no Jira write capability —
+  never edit/transition an issue, add a comment, change a field, create a
+  ticket, or assign a user;
+- when a supplied Jira reference **cannot be resolved**, this Skill reports
+  the `JIRA CONTEXT UNRESOLVED` reasoning result (see
+  [`review-output.md`](review-output.md), "Final decision") and does not
+  perform the Jira-scoped review — it does not infer the ticket from the
+  key, the branch name, the PR title, a commit message, or surrounding text,
+  and it submits no Approve/Request Changes for a Jira scope it never
+  established.
 
 ## The PR remains the review target
 

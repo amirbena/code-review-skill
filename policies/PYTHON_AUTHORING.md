@@ -4,7 +4,7 @@ Authoring policy for this repository's own Python (`scripts/*.py` —
 validators, packaging helpers, reference/decision-table modules, and their
 tests). It is a repository-development policy; it is **not** packaged into
 either Skill archive and has no bearing on how the Skills review external
-code. [`AGENTS.md`](AGENTS.md) carries only a one-line pointer to this file.
+code. [`AGENTS.md`](../AGENTS.md) carries only a one-line pointer to this file.
 
 ## Comment policy
 
@@ -28,7 +28,7 @@ comment count.
   harder to understand.
 - Avoid long prose blocks inside implementation files. Durable architectural
   or contractual explanation belongs in a policy or doc
-  ([`shared/policies/`](shared/policies/), [`ARCHITECTURE.md`](ARCHITECTURE.md),
+  ([`shared/policies/`](../shared/policies/), [`ARCHITECTURE.md`](../docs/ARCHITECTURE.md),
   a Skill's own `policies/`), not in a module docstring or comment block.
 
 ### Example

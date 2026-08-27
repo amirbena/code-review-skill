@@ -52,7 +52,10 @@ detect each category separately: committed, staged, unstaged, untracked
     ↓
 compute staged-delta fingerprint
     ↓
-review context supplied? → yes → understand intended change, extract
+review context supplied? → yes → resolve any Jira reference first (Jira
+                                   MCP/connector, read-only); unresolvable →
+                                   JIRA CONTEXT UNRESOLVED, stop. Then
+                                   understand intended change, extract
                                    requirements/invariants/non-goals, map
                                    onto the delta established above
                                  → no  → unchanged
@@ -156,16 +159,34 @@ which a value must be resolved before it is used, or what is reported.
    [`../policies/review-context.md`](../policies/review-context.md) in full
    now — after the local delta (steps 1–4) and repository-instruction
    discovery (step 6), and before PR-context reconciliation (step 8, if
-   applicable) and the review step below. Those policies own the complete
-   context-understanding procedure (reading the context — free-form
-   requirements, explicit user instructions, a Jira ticket, an explicitly
-   supplied GitHub Issue, an HLD/ADR, or an implementation plan — extracting
-   requirements/invariants/non-goals, mapping them onto the delta
-   established above, and reasoning about the requested change's scope
-   boundary per the shared policy's "Scope-boundary reasoning"); this
-   runbook does not restate them. If no review context was supplied, skip
-   this step entirely and proceed directly to step 8 — this step never
-   prompts the user for context when none was supplied.
+   applicable) and the review step below.
+   - **7a. Resolve reference-based context first.** If the caller supplied a
+     **Jira reference** (key or URL), resolve it to normalized context via
+     an available Jira MCP / connector / equivalent Jira integration
+     (read-only — retrieval only, never a Jira mutation) per the shared
+     policy's "Jira context resolution": retrieve and normalize only what
+     informs intended behavior, task boundaries, requirements, acceptance
+     criteria, constraints, exclusions, and settled decisions; classify Jira
+     comments per that section (do not promote every comment to an
+     acceptance criterion). If the Jira reference **cannot be resolved** (no
+     integration available, auth/authz failure, ticket not found, malformed
+     reference), stop the Jira-scoped path: return `JIRA CONTEXT UNRESOLVED`
+     per the shared policy — name the reference and the integration(s)
+     attempted, do **not** infer the ticket from its key, the branch name,
+     the PR reference's title, a commit message, or surrounding text, and do
+     **not** grade the review. A GitHub Issue **reference** is resolved
+     through read-only GitHub access when available, or supplied as pasted
+     text; no automatic PR↔Issue discovery. Pasted/free-form context needs
+     no resolution.
+   - **7b.** With context (resolved where reference-based) in hand, follow
+     the policies' context-understanding procedure: extract requirements/
+     invariants/non-goals, map them onto the delta established above, and
+     reason about the requested change's scope boundary per the shared
+     policy's "Scope-boundary reasoning." This runbook does not restate it.
+
+   If no review context was supplied, skip this step entirely and proceed
+   directly to step 8 — this step never prompts the user for context when
+   none was supplied.
 8. **If, and only if, the caller supplied a PR reference:** apply the shared
    [`review-evidence.md`](../../../shared/policies/review-evidence.md) and
    this Skill's thin

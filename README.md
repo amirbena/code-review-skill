@@ -26,7 +26,7 @@ Missing optional context never fails or degrades a review.
 
 A temporary PR checkout, parallel execution, and GitHub merge-blocking checks
 are **not** implemented — see
-[`CODE_REVIEW_COMPARISON.md`](CODE_REVIEW_COMPARISON.md) §10.
+[`docs/CODE_REVIEW_COMPARISON.md`](docs/CODE_REVIEW_COMPARISON.md) §10.
 
 ## Prerequisites
 
@@ -122,10 +122,10 @@ Output: `dist/local-code-review-skill.zip` and
 
 ## Where to read more
 
-- [`CODE_REVIEW_COMPARISON.md`](CODE_REVIEW_COMPARISON.md) — why these Skills
+- [`docs/CODE_REVIEW_COMPARISON.md`](docs/CODE_REVIEW_COMPARISON.md) — why these Skills
   exist alongside Claude Code, GitHub-native, and third-party reviewers, and
   what they add
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — design, module boundaries, and
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — design, module boundaries, and
   the orchestration boundary between the Skills and their caller
 - [`AGENTS.md`](AGENTS.md) — this repository's own canonical development
   rules, plus the shared review-ownership invariant

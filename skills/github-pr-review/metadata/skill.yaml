@@ -28,7 +28,8 @@ capabilities:
   git: required
   github_access: required-for-github-state
   github_review_permissions: required-for-active-publication
-  external_review_context: optional # caller-supplied requirements / Jira / GitHub Issue (explicit) / HLD / ADR / plan; see ../../../shared/policies/review-context.md and ../policies/review-context.md
+  external_review_context: optional # caller-supplied requirements / pasted Jira / GitHub Issue / HLD / ADR / plan / PR description; see ../../../shared/policies/review-context.md and ../policies/review-context.md
+  jira_context_resolution: optional # only when a Jira reference is supplied; resolved via an available Jira MCP/connector, read-only; unresolved -> JIRA CONTEXT UNRESOLVED (no inference fallback); see ../../../shared/policies/review-context.md "Jira context resolution"
   prior_review_evidence: considered-when-available # the PR's own prior reviews/comments; see ../../../shared/policies/review-evidence.md and ../policies/review-evidence.md
 
 output:

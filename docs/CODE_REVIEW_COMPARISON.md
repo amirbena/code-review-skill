@@ -1,7 +1,7 @@
 # How These Code Review Skills Differ From Other Review Approaches
 
-This document explains why [`local-code-review`](skills/local-code-review/SKILL.md) and
-[`github-pr-review`](skills/github-pr-review/SKILL.md) exist as their own Skills, given that
+This document explains why [`local-code-review`](../skills/local-code-review/SKILL.md) and
+[`github-pr-review`](../skills/github-pr-review/SKILL.md) exist as their own Skills, given that
 Claude Code, GitHub-native reviewers, CodeRabbit-style third-party tools, Codex, Cursor, and other
 code-review approaches already exist. It is permanent repository documentation, not a research
 artifact — it does not track any single vendor's roadmap and should stay accurate as those
@@ -86,15 +86,15 @@ Review governance
 ```
 
 This repository intentionally owns the second category as its durable core. The shared review
-policies in [`shared/policies/`](shared/policies/) — including
-[`review-scope.md`](shared/policies/review-scope.md)'s invariant that related changes are
-reviewed together rather than file-by-file, and [`evidence.md`](shared/policies/evidence.md)'s
+policies in [`shared/policies/`](../shared/policies/) — including
+[`review-scope.md`](../shared/policies/review-scope.md)'s invariant that related changes are
+reviewed together rather than file-by-file, and [`evidence.md`](../shared/policies/evidence.md)'s
 invariant that findings outside the changed lines must be tied to what the reviewed change
 actually affects — establish engine-neutral review-quality expectations, but they are
 intentionally kept concise: a capable reviewing engine is expected to satisfy them without a
 detailed, prescribed reasoning procedure. A small number of exceptions target recurring,
 high-value failure modes that are otherwise easy for a capable reviewer to skip past even while
-reading the diff carefully — [`review-scope.md`](shared/policies/review-scope.md)'s "Existing
+reading the diff carefully — [`review-scope.md`](../shared/policies/review-scope.md)'s "Existing
 behavior ownership" (does this change duplicate an existing canonical implementation of the same
 business/validation/state semantics rather than reusing it) and "Failure state, retry safety, and
 recovery" (partial-failure state, retry/idempotency safety, evidenced recovery, and proportional
@@ -127,7 +127,7 @@ Canonical Skill behavior — `SKILL.md` plus each Skill's own packaged policies,
 templates, plus the resources shared under `shared/` — must remain runtime- and vendor-neutral. It
 must not require a specific model, a specific hosted service, or a specific tool name to function
 correctly, and must remain fully correct with only the packaged archive present, with no
-dependency on this source repository's own `AGENTS.md`, `ARCHITECTURE.md`, or `README.md`.
+dependency on this source repository's own `AGENTS.md`, `docs/ARCHITECTURE.md`, or `README.md`.
 
 A vendor-native reviewer may, in the future, become an optional execution enhancement for the
 finding-generation portion of a review. It must never become a requirement for either Skill to
@@ -172,7 +172,7 @@ This repository is not trying to:
 The two Skills are distinct entry points that share one review standard. They
 differ in *what* they review and *how* they deliver; they do **not** differ in
 severity semantics, decision derivation, or read-only reasoning. Everything
-marked "shared" below is one file under [`shared/policies/`](shared/policies/)
+marked "shared" below is one file under [`shared/policies/`](../shared/policies/)
 consumed identically by both.
 
 | Capability | `local-code-review` | `github-pr-review` |
@@ -180,19 +180,23 @@ consumed identically by both.
 | **Review target** | the local implementation delta | the GitHub Pull Request delta |
 | **Local repository access** | required | not used (API PR state only; a temporary checkout is future work — §10) |
 | **GitHub PR access** | read-only, only when an optional PR reference is supplied | required for PR state; write only in active mode |
-| **Committed / staged / unstaged / untracked scope** | all four, detected separately ([`repository-state.md`](skills/local-code-review/policies/repository-state.md)) | n/a — the PR diff (full, or a bounded delta re-review) |
-| **Review context** (optional) | shared model ([`review-context.md`](shared/policies/review-context.md)); local application maps context onto the local delta | shared model; thin PR application ([`review-context.md`](skills/github-pr-review/policies/review-context.md)) — the PR stays the target |
-| **Jira / ticket / acceptance-criteria context** | yes, as free-form text or a reference (no integration) | yes, same shared model |
-| **GitHub Issue context** | yes — supplied explicitly (reference or text); no automatic PR↔Issue discovery | yes — same, explicit only |
-| **HLD / ADR / implementation-plan context** | yes | yes |
-| **PR description as intent context** | via a supplied PR reference / free-form text | always available for the PR under review |
-| **Existing Review Evidence** | prior findings / comments / settled decisions from an optional associated PR ([`pr-context.md`](skills/local-code-review/policies/pr-context.md)) | the PR's own prior reviews / review comments / issue comments ([`review-evidence.md`](skills/github-pr-review/policies/review-evidence.md)) |
+| **Committed / staged / unstaged / untracked scope** | all four, detected separately ([`repository-state.md`](../skills/local-code-review/policies/repository-state.md)) | n/a — the PR diff (full, or a bounded delta re-review) |
+| **Review context** (optional) | shared model ([`review-context.md`](../shared/policies/review-context.md)); local application maps context onto the local delta | shared model; thin PR application ([`review-context.md`](../skills/github-pr-review/policies/review-context.md)) — the PR stays the target |
+| — generic / free-form textual context | consumed directly, no resolution step | consumed directly, no resolution step |
+| — Jira **reference** support | accepted (ticket key or URL) — a pointer to context, not the context itself | accepted, same |
+| — Jira context **resolution** | reference → resolved read-only via an available Jira MCP / connector / equivalent integration → normalized Review Context, **before** review reasoning; **precondition** — an unresolvable reference yields `JIRA CONTEXT UNRESOLVED` (no key/branch/PR-title inference), never a graded review; read-only, no Jira mutation | same shared contract; unresolvable → `JIRA CONTEXT UNRESOLVED` reasoning result, no Approve/Request Changes for a Jira scope never established |
+| — pasted Jira text | consumed directly as free-form context (no resolution needed) | same |
+| — GitHub Issue context | reference → read-only GitHub retrieval, **or** pasted text; explicit only, **no automatic PR↔Issue discovery** | same, explicit only |
+| — HLD / ADR / implementation-plan context | yes (text or excerpt) | yes |
+| — PR description as intent context | via a supplied PR reference / free-form text | always available for the PR under review |
+| — Jira is mandatory? | no — supplying none yields a normal unscoped review | no — same |
+| **Existing Review Evidence** | prior findings / comments / settled decisions from an optional associated PR ([`pr-context.md`](../skills/local-code-review/policies/pr-context.md)) | the PR's own prior reviews / review comments / issue comments ([`review-evidence.md`](../skills/github-pr-review/policies/review-evidence.md)) |
 | — classification | shared: still-relevant / resolved / stale / duplicate / settled decision / speculative discussion — never blindly inherited | shared, same |
-| **Repository context** | shared ([`repository-instructions.md`](shared/policies/repository-instructions.md), surrounding code, invariants) | shared, same |
-| **Scope-boundary reasoning** | shared ([`review-context.md`](shared/policies/review-context.md), "Scope-boundary reasoning") — missing behavior, contradicted acceptance criteria, unrelated scope expansion, valid-but-out-of-scope findings, repo-policy violations regardless of ticket scope | shared, same, applied to the PR |
-| **Severity model** | shared P0 / P1 / P2 ([`severity.md`](shared/policies/severity.md)) | shared, identical |
+| **Repository context** | shared ([`repository-instructions.md`](../shared/policies/repository-instructions.md), surrounding code, invariants) | shared, same |
+| **Scope-boundary reasoning** | shared ([`review-context.md`](../shared/policies/review-context.md), "Scope-boundary reasoning") — missing behavior, contradicted acceptance criteria, unrelated scope expansion, valid-but-out-of-scope findings, repo-policy violations regardless of ticket scope | shared, same, applied to the PR |
+| **Severity model** | shared P0 / P1 / P2 ([`severity.md`](../shared/policies/severity.md)) | shared, identical |
 | **Final decision semantics** | `REVIEW CLEAN` / `CHANGES REQUIRED`, derived mechanically from blocking (P0/P1) severities | `Approve` / `Request Changes`, same mechanical derivation |
-| **Opt-in behavior** | every invocation needs fresh explicit user approval ([`invocation-approval.md`](skills/local-code-review/policies/invocation-approval.md)) | selection boundary + defensive self-review guard ([`review-authority.md`](skills/github-pr-review/policies/review-authority.md)); no per-run approval gate |
+| **Opt-in behavior** | every invocation needs fresh explicit user approval ([`invocation-approval.md`](../skills/local-code-review/policies/invocation-approval.md)) | selection boundary + defensive self-review guard ([`review-authority.md`](../skills/github-pr-review/policies/review-authority.md)); no per-run approval gate |
 | **Re-review behavior** | stateless; fresh approval each run; staged-delta fingerprint short-circuit | SHA-bound reviewer-owned delta re-review; `NO NEW DELTA`; escalation to full review |
 | **Publishing behavior** | returns one structured report to the caller; never publishes | passive: returns a report; active: one batched GitHub review (inline comments + body + Approve/Request Changes) |
 | **Mutation / read-only boundaries** | read-only; never edits, commits, pushes, or performs any GitHub mutation — even with a PR reference | read-only on Git and implementation; GitHub mutation only in active mode; max positive action is **Approve**; never merges |
@@ -215,10 +219,10 @@ implements them today, and this document does not claim they are supported:
 
 ## See also
 
-- [`AGENTS.md`](AGENTS.md) — repository-wide orchestration rules, including the
+- [`AGENTS.md`](../AGENTS.md) — repository-wide orchestration rules, including the
   implementer/reviewer separation and the local-review approval gate summarized in §5 above.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — module map and the orchestration/reasoning/delivery
   boundary these Skills are built on.
-- [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md) and
-  [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md) — the complete,
+- [`skills/github-pr-review/SKILL.md`](../skills/github-pr-review/SKILL.md) and
+  [`skills/local-code-review/SKILL.md`](../skills/local-code-review/SKILL.md) — the complete,
   normative Skill definitions this document summarizes.

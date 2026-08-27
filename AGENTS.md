@@ -16,7 +16,7 @@ share one review standard:
 Both consume the same shared review rules in
 [`shared/policies/`](shared/policies/) and
 [`shared/templates/`](shared/templates/), so P0/P1/P2 review semantics
-never diverge between them — see [`ARCHITECTURE.md`](ARCHITECTURE.md) for
+never diverge between them — see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for
 the module map.
 
 This file governs *development of this repository itself* (branching,
@@ -70,7 +70,7 @@ review/fix iterations to run, and when to progress from local review to
 opening a PR to GitHub review is the responsibility of the calling
 runtime, Team Lead, or implementing workflow — never of
 `local-code-review` or `github-pr-review` themselves. See
-[`ARCHITECTURE.md`](ARCHITECTURE.md), "Orchestration Boundary." This
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), "Orchestration Boundary." This
 discretion is bounded, not open-ended: it never extends to an
 implementing Agent invoking `github-pr-review` on the PR it just opened
 or updated for its own implementation work — see section 13,
@@ -116,7 +116,7 @@ This file governs development and orchestration of *this* source
 repository. A distributed Skill archive (built by
 [`scripts/package-skills.sh`](scripts/package-skills.sh) /
 [`scripts/package-skills.ps1`](scripts/package-skills.ps1)) never contains
-this file, `ARCHITECTURE.md`, or this repository's `README.md` — so no
+this file, `docs/ARCHITECTURE.md`, or this repository's `README.md` — so no
 file that is part of a packaged Skill (`SKILL.md`, a packaged policy, a
 runbook, a template, or shared/-packaged resource) may use this
 repository's own `AGENTS.md` as a runtime dependency or canonical source
@@ -164,7 +164,7 @@ packaged Skill → references AGENTS.md                                         
 
 `AGENTS.md` may summarize a rule's repository-development implications, but
 the portable Skill must remain fully correct and self-explanatory with
-`AGENTS.md`, `ARCHITECTURE.md`, and this repository's `README.md` deleted
+`AGENTS.md`, `docs/ARCHITECTURE.md`, and this repository's `README.md` deleted
 from the consumer's environment entirely.
 
 This prohibition is narrowly about *this source repository's own*
@@ -631,7 +631,7 @@ scoping approval correctly is entirely the orchestrator's responsibility
 here, with no Skill-side defensive fallback. See also
 [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md),
 "Statelessness and Orchestration Boundary," and
-[`ARCHITECTURE.md`](ARCHITECTURE.md), "Handoff Between Skills," for how
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), "Handoff Between Skills," for how
 this approval gate fits into the overall implementation lifecycle.
 
 ---
@@ -822,7 +822,7 @@ Do not re-document the shared semantics in a Skill's own policy.
 ## 19. Python Authoring
 
 This repository's own Python (`scripts/*.py`) follows the repository Python
-authoring policy in [`PYTHON_AUTHORING.md`](PYTHON_AUTHORING.md): prefer
+authoring policy in [`PYTHON_AUTHORING.md`](policies/PYTHON_AUTHORING.md): prefer
 self-explanatory code, keep comments concise (generally 1–3 lines) and
 focused on non-obvious intent, decision-path rationale, invariants, safety
 constraints, compatibility requirements, and external-system quirks; move

@@ -26,7 +26,9 @@ verify repository/review access
     ↓
 resolve review mode (delta re-review vs. normal review)
     ↓
-resolve optional supplied review context / GitHub Issue (if any)
+resolve optional external context (if any): Jira reference → Jira
+MCP/connector (read-only); unresolvable → JIRA CONTEXT UNRESOLVED, stop.
+GitHub Issue reference → read-only GitHub, or pasted text. Free-form → direct
     ↓
 resolve authoritative HEAD
     ↓
@@ -89,14 +91,37 @@ stop
    review.
 
    **If the caller supplied review context** (requirements, explicit user
-   instructions, a Jira ticket, an explicitly supplied GitHub Issue, an
-   HLD/ADR, an implementation plan) — or to use the PR description as a
-   statement of intent — resolve and normalize it now per
+   instructions, pasted Jira/ticket text, a pasted or referenced GitHub
+   Issue, an HLD/ADR, an implementation plan) — or to use the PR description
+   as a statement of intent — resolve and normalize it now per
    [`../policies/review-context.md`](../policies/review-context.md) and the
    shared [`review-context.md`](../../../shared/policies/review-context.md),
-   "Input form." This is optional; absence changes nothing. It never changes
+   "Input form."
+   - **Resolve reference-based context first.** A supplied **Jira reference**
+     (key or URL) is resolved to normalized context via an available Jira
+     MCP / connector / equivalent Jira integration (**read-only** — retrieval
+     only, never a Jira mutation) per the shared policy's "Jira context
+     resolution" and this Skill's
+     [`../policies/review-context.md`](../policies/review-context.md), "Jira
+     context resolution (PR application)": retrieve and normalize only what
+     informs intended behavior, task boundaries, requirements, acceptance
+     criteria, constraints, exclusions, and settled decisions; classify Jira
+     comments per that section (do not promote every comment to an
+     acceptance criterion). If the Jira reference **cannot be resolved** (no
+     integration, auth/authz failure, ticket not found, malformed
+     reference), stop the Jira-scoped path with the `JIRA CONTEXT
+     UNRESOLVED` reasoning result per
+     [`../policies/review-output.md`](../policies/review-output.md), "Final
+     decision" — name the reference and integration(s) attempted, do **not**
+     infer the ticket from its key/branch/PR title/commit/surrounding text,
+     retrieve no PR scope for grading, and submit no formal review. A GitHub
+     Issue **reference** is resolved through the same read-only GitHub access
+     used for PR state, or supplied as pasted text. No automatic PR↔Issue
+     discovery. Pasted/free-form context needs no resolution.
+
+   This context step is optional; absence changes nothing. It never changes
    the review mode resolved above, never widens the PR delta, and never adds
-   a review target. No automatic PR↔Issue discovery.
+   a review target.
 5. Resolve and record the authoritative PR HEAD SHA. For a normal
    review, retrieve the complete paginated changed-file set and complete
    diff per [`../policies/pr-scope.md`](../policies/pr-scope.md), "Complete
