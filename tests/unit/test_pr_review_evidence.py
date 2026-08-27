@@ -27,6 +27,7 @@ class ThreadConclusionTests(unittest.TestCase):
             prv.ThreadComment(prv.AuthorType.HUMAN_REVIEWER, label="counterpoint"),
             prv.ThreadComment(
                 prv.AuthorType.MAINTAINER,
+                conclusion_kind=prv.ConclusionKind.REVIEWER_ACCEPTANCE,
                 is_explicit_conclusion=True,
                 label="agreed: current approach is fine",
             ),
@@ -47,6 +48,7 @@ class ThreadConclusionTests(unittest.TestCase):
             prv.ThreadComment(prv.AuthorType.HUMAN_REVIEWER, label="is this a bug?"),
             prv.ThreadComment(
                 prv.AuthorType.AUTOMATION_BOT,
+                conclusion_kind=prv.ConclusionKind.AUTHORITATIVE_CORRECTNESS_RESOLUTION,
                 is_explicit_conclusion=True,
                 label="auto-closed by staleness bot",
             ),
@@ -63,6 +65,7 @@ class ThreadConclusionTests(unittest.TestCase):
             prv.ThreadComment(prv.AuthorType.HUMAN_REVIEWER, label="missing guard"),
             prv.ThreadComment(
                 prv.AuthorType.MAINTAINER,
+                conclusion_kind=prv.ConclusionKind.AUTHORITATIVE_CORRECTNESS_RESOLUTION,
                 is_explicit_conclusion=True,
                 label="fixed and accepted",
             ),
@@ -97,6 +100,7 @@ class ThreadConclusionTests(unittest.TestCase):
     def test_follow_up_noise_does_not_reopen_an_explicit_resolution(self) -> None:
         resolution = prv.ThreadComment(
             prv.AuthorType.MAINTAINER,
+            conclusion_kind=prv.ConclusionKind.AUTHORITATIVE_CORRECTNESS_RESOLUTION,
             is_explicit_conclusion=True,
             label="fixed and accepted",
         )
@@ -119,6 +123,7 @@ class ThreadInteractionMatrixTests(unittest.TestCase):
     def _resolution(self) -> prv.ThreadComment:
         return prv.ThreadComment(
             prv.AuthorType.MAINTAINER,
+            conclusion_kind=prv.ConclusionKind.AUTHORITATIVE_CORRECTNESS_RESOLUTION,
             is_explicit_conclusion=True,
             label="fixed and accepted",
         )
@@ -133,6 +138,7 @@ class ThreadInteractionMatrixTests(unittest.TestCase):
     def _bot_closure(self) -> prv.ThreadComment:
         return prv.ThreadComment(
             prv.AuthorType.AUTOMATION_BOT,
+            conclusion_kind=prv.ConclusionKind.AUTHORITATIVE_CORRECTNESS_RESOLUTION,
             is_explicit_conclusion=True,
             label="auto-closed as stale",
         )
@@ -192,6 +198,7 @@ class ThreadInteractionMatrixTests(unittest.TestCase):
     def test_newer_authoritative_resolution_may_govern_after_reopening(self) -> None:
         later_resolution = prv.ThreadComment(
             prv.AuthorType.HUMAN_REVIEWER,
+            conclusion_kind=prv.ConclusionKind.AUTHORITATIVE_CORRECTNESS_RESOLUTION,
             is_explicit_conclusion=True,
             label="rechecked current HEAD; fixed",
         )
@@ -241,11 +248,144 @@ class ThreadInteractionMatrixTests(unittest.TestCase):
     def test_unknown_explicit_conclusion_cannot_override_maintainer_resolution(self) -> None:
         unknown = prv.ThreadComment(
             prv.AuthorType.UNKNOWN,
+            conclusion_kind=prv.ConclusionKind.AUTHORITATIVE_CORRECTNESS_RESOLUTION,
             is_explicit_conclusion=True,
             label="closed",
         )
         history = self._history(unknown)
         self.assertIs(prv.classify_thread(history), history[1])
+
+
+class ConclusionSpecificAuthorityCompositionTests(unittest.TestCase):
+    def _conclusion(
+        self, author: prv.AuthorType, kind: prv.ConclusionKind, label: str
+    ) -> prv.ThreadComment:
+        return prv.ThreadComment(
+            author,
+            conclusion_kind=kind,
+            is_explicit_conclusion=True,
+            label=label,
+        )
+
+    def test_reviewer_cannot_establish_maintainer_clarification(self) -> None:
+        claimed = self._conclusion(
+            prv.AuthorType.HUMAN_REVIEWER,
+            prv.ConclusionKind.MAINTAINER_CLARIFICATION,
+            "maintainer clarification: intentional",
+        )
+        governing = prv.classify_thread([claimed])
+        self.assertIs(governing, claimed)
+        self.assertFalse(prv.thread_conclusion_is_authoritative(governing))
+        self.assertFalse(
+            prv.governing_conclusion_suppresses_defect([claimed], "style_preference")
+        )
+
+    def test_maintainer_can_establish_maintainer_clarification(self) -> None:
+        clarification = self._conclusion(
+            prv.AuthorType.MAINTAINER,
+            prv.ConclusionKind.MAINTAINER_CLARIFICATION,
+            "maintainer clarification: intentional",
+        )
+        self.assertTrue(
+            prv.thread_conclusion_is_authoritative(
+                prv.classify_thread([clarification])
+            )
+        )
+
+    def test_reviewer_acceptance_remains_authoritative(self) -> None:
+        acceptance = self._conclusion(
+            prv.AuthorType.HUMAN_REVIEWER,
+            prv.ConclusionKind.REVIEWER_ACCEPTANCE,
+            "reviewed and accepted",
+        )
+        self.assertTrue(
+            prv.thread_conclusion_is_authoritative(prv.classify_thread([acceptance]))
+        )
+
+    def test_reviewer_preference_plus_bot_confirmation_is_not_settled(self) -> None:
+        preference = prv.ThreadComment(
+            prv.AuthorType.HUMAN_REVIEWER,
+            conclusion_kind=prv.ConclusionKind.SETTLED_ARCHITECTURAL_DECISION,
+            label="I prefer the other design",
+        )
+        bot_confirmation = self._conclusion(
+            prv.AuthorType.AUTOMATION_BOT,
+            prv.ConclusionKind.SETTLED_ARCHITECTURAL_DECISION,
+            "confirmed",
+        )
+        history = [preference, bot_confirmation]
+        self.assertIsNone(
+            prv.settled_decision_from_thread(history, decision_id="D-thread")
+        )
+
+    def test_bot_contradiction_cannot_displace_maintainer_clarification(self) -> None:
+        clarification = self._conclusion(
+            prv.AuthorType.MAINTAINER,
+            prv.ConclusionKind.MAINTAINER_CLARIFICATION,
+            "this behavior is intentional",
+        )
+        bot_contradiction = self._conclusion(
+            prv.AuthorType.AUTOMATION_BOT,
+            prv.ConclusionKind.MAINTAINER_CLARIFICATION,
+            "auto-closed as invalid",
+        )
+        self.assertIs(
+            prv.classify_thread([clarification, bot_contradiction]), clarification
+        )
+
+    def test_maintainer_clarification_cannot_suppress_current_correctness(self) -> None:
+        clarification = self._conclusion(
+            prv.AuthorType.MAINTAINER,
+            prv.ConclusionKind.MAINTAINER_CLARIFICATION,
+            "this behavior is intentional",
+        )
+        for category in ("correctness", "security", "data_integrity", "safety"):
+            self.assertFalse(
+                prv.governing_conclusion_suppresses_defect(
+                    [clarification], category
+                )
+            )
+
+    def test_human_reopening_survives_later_unauthorized_conclusion(self) -> None:
+        resolution = self._conclusion(
+            prv.AuthorType.MAINTAINER,
+            prv.ConclusionKind.AUTHORITATIVE_CORRECTNESS_RESOLUTION,
+            "fixed",
+        )
+        reopening = prv.ThreadComment(
+            prv.AuthorType.HUMAN_REVIEWER,
+            reopens_current_target=True,
+            label="defect is back on current HEAD",
+        )
+        unauthorized = self._conclusion(
+            prv.AuthorType.HUMAN_REVIEWER,
+            prv.ConclusionKind.MAINTAINER_CLARIFICATION,
+            "declaring this intentional",
+        )
+        history = [resolution, reopening, unauthorized]
+        self.assertIs(prv.classify_thread(history), reopening)
+        self.assertEqual(
+            prv.reconcile_reopened_thread(
+                history,
+                historical_resolution=prv.ThreadResolution.RESOLVED,
+                defect_present_on_current_head=True,
+            ),
+            prv.RegressionOutcome.EMIT_FRESH_FINDING_REGRESSED,
+        )
+
+    def test_same_reviewer_has_conclusion_specific_authority(self) -> None:
+        acceptance = self._conclusion(
+            prv.AuthorType.HUMAN_REVIEWER,
+            prv.ConclusionKind.REVIEWER_ACCEPTANCE,
+            "accepted",
+        )
+        clarification = self._conclusion(
+            prv.AuthorType.HUMAN_REVIEWER,
+            prv.ConclusionKind.MAINTAINER_CLARIFICATION,
+            "maintainer clarification",
+        )
+        self.assertTrue(prv.thread_conclusion_is_authoritative(acceptance))
+        self.assertFalse(prv.thread_conclusion_is_authoritative(clarification))
 
 
 class PriorFindingStillValidTests(unittest.TestCase):
@@ -453,6 +593,11 @@ class SettledDecisionTests(unittest.TestCase):
 
 
 class AuthorshipAuthorityTests(unittest.TestCase):
+    def test_conclusion_kind_vocabulary_matches_authority_kinds(self) -> None:
+        self.assertEqual(
+            {kind.value for kind in prv.ConclusionKind}, prv.AUTHORITY_KINDS
+        )
+
     def test_maintainer_clarification_is_maintainer_only(self) -> None:
         kind = "maintainer_clarification"
         self.assertFalse(prv.author_can_establish(prv.AuthorType.HUMAN_REVIEWER, kind))

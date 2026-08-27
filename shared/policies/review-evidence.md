@@ -184,6 +184,10 @@ authorizes a new HEAD.
 Prior review activity comes from different kinds of author, which do not
 carry equal authority over what counts as *settled*:
 
+Authority is evaluated against both the author and the kind of conclusion
+being established. Authority to establish one conclusion kind never grants
+authority to establish another.
+
 - **Human reviewer / maintainer discussion** can establish a settled
   architectural decision, reviewer acceptance of a trade-off, or an
   authoritative resolution of a correctness question — when it otherwise

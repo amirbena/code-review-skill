@@ -88,12 +88,29 @@ class ThreadResolution(Enum):
     UNKNOWN = "unknown"
 
 
+class ConclusionKind(Enum):
+    SETTLED_ARCHITECTURAL_DECISION = "settled_architectural_decision"
+    MAINTAINER_CLARIFICATION = "maintainer_clarification"
+    REVIEWER_ACCEPTANCE = "reviewer_acceptance"
+    AUTHORITATIVE_CORRECTNESS_RESOLUTION = "authoritative_correctness_resolution"
+
+
 @dataclass(frozen=True)
 class ThreadComment:
     author_type: AuthorType
+    conclusion_kind: Optional[ConclusionKind] = None
     is_explicit_conclusion: bool = False
     reopens_current_target: bool = False
     label: str = ""
+
+
+def thread_conclusion_is_authoritative(comment: ThreadComment) -> bool:
+    """Authority depends on both the author and conclusion kind."""
+    return (
+        comment.is_explicit_conclusion
+        and comment.conclusion_kind is not None
+        and author_can_establish(comment.author_type, comment.conclusion_kind.value)
+    )
 
 
 def classify_thread(comments: Sequence[ThreadComment]) -> ThreadComment:
@@ -101,16 +118,12 @@ def classify_thread(comments: Sequence[ThreadComment]) -> ThreadComment:
     if not comments:
         raise ValueError("a thread must contain at least one comment")
     for comment in reversed(comments):
-        if comment.author_type in HUMAN_AUTHOR_TYPES and (
-            comment.is_explicit_conclusion or comment.reopens_current_target
+        if thread_conclusion_is_authoritative(comment) or (
+            comment.reopens_current_target
+            and comment.author_type in HUMAN_AUTHOR_TYPES
         ):
             return comment
     return comments[-1]
-
-
-def thread_conclusion_is_authoritative(governing: ThreadComment) -> bool:
-    """A conclusion settles the thread only when a human/maintainer stated it."""
-    return governing.is_explicit_conclusion and governing.author_type in HUMAN_AUTHOR_TYPES
 
 
 # --- Reconciliation against the CURRENT PR HEAD ------------------------
@@ -288,6 +301,20 @@ def decision_is_settled(decision: SettledDecision) -> bool:
     return decision.has_explicit_agreement and decision.established_by in HUMAN_AUTHOR_TYPES
 
 
+def settled_decision_from_thread(
+    comments: Sequence[ThreadComment], *, decision_id: str
+) -> Optional[SettledDecision]:
+    """Return a settled decision only from authoritative governing evidence."""
+    governing = classify_thread(comments)
+    if (
+        governing.conclusion_kind
+        is not ConclusionKind.SETTLED_ARCHITECTURAL_DECISION
+        or not thread_conclusion_is_authoritative(governing)
+    ):
+        return None
+    return SettledDecision(decision_id, governing.author_type, True)
+
+
 @dataclass(frozen=True)
 class DecisionReconciliation:
     decision_id: str
@@ -318,6 +345,16 @@ def reconcile_settled_decision(
 def settled_decision_suppresses_defect(defect_category: str) -> bool:
     """A settled 'this is intentional' never suppresses a safety-critical defect."""
     return defect_category not in SAFETY_CRITICAL_CATEGORIES
+
+
+def governing_conclusion_suppresses_defect(
+    comments: Sequence[ThreadComment], defect_category: str
+) -> bool:
+    """Only authoritative evidence may constrain non-critical preferences."""
+    governing = classify_thread(comments)
+    return thread_conclusion_is_authoritative(
+        governing
+    ) and settled_decision_suppresses_defect(defect_category)
 
 
 # --- Retrieval completeness (pr-scope.md, "Retrieving prior review

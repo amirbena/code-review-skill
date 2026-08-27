@@ -182,6 +182,19 @@ class SharedPolicyFilesTests(unittest.TestCase):
             "no reviewer-reputation weighting, no bot allowlists", t
         )
 
+    def test_evidence_authority_is_conclusion_specific(self) -> None:
+        t = _text(SHARED_EVIDENCE)
+        self.assertIn(
+            "Authority is evaluated against both the author and the kind of "
+            "conclusion being established",
+            t,
+        )
+        self.assertIn(
+            "Authority to establish one conclusion kind never grants authority "
+            "to establish another",
+            t,
+        )
+
     def test_behavioral_reference_model_exists_for_github_evidence(self) -> None:
         # The contract must be proven behaviorally, not only in prose.
         mod = REPO_ROOT / "tests" / "reference" / "pr_review_evidence.py"
