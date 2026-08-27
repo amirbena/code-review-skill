@@ -48,8 +48,10 @@ def _validate_authority_kind(kind: str) -> None:
 
 
 def author_can_establish(author_type: AuthorType, kind: str) -> bool:
-    """Only human reviewer / maintainer discussion establishes authority."""
+    """Apply the authority level required by the conclusion type."""
     _validate_authority_kind(kind)
+    if kind == "maintainer_clarification":
+        return author_type is AuthorType.MAINTAINER
     return author_type in HUMAN_AUTHOR_TYPES
 
 
@@ -90,17 +92,26 @@ class ThreadResolution(Enum):
 class ThreadComment:
     author_type: AuthorType
     is_explicit_conclusion: bool = False
+    reopens_current_target: bool = False
     label: str = ""
 
 
 def classify_thread(comments: Sequence[ThreadComment]) -> ThreadComment:
-    """The latest explicit conclusion governs; else the most recent comment."""
+    """A conclusion governs unless later current-target evidence reopens it."""
     if not comments:
         raise ValueError("a thread must contain at least one comment")
-    for comment in reversed(comments):
+    conclusion_index: Optional[int] = None
+    for index in range(len(comments) - 1, -1, -1):
+        comment = comments[index]
         if comment.is_explicit_conclusion:
+            conclusion_index = index
+            break
+    if conclusion_index is None:
+        return comments[-1]
+    for comment in reversed(comments[conclusion_index + 1 :]):
+        if comment.reopens_current_target:
             return comment
-    return comments[-1]
+    return comments[conclusion_index]
 
 
 def thread_conclusion_is_authoritative(governing: ThreadComment) -> bool:

@@ -76,7 +76,13 @@ classify each relevant item:
 
 When a thread contains exploration followed by an explicit
 resolution/conclusion, the resolution governs; earlier comments are context
-for it, not independent findings.
+for it, not independent findings. Later activity does not reopen that
+conclusion merely because it is newer: acknowledgements, noise, and further
+exploration remain context. But a later human comment that reports the defect
+on the current target, explicitly reopens the issue, or presents concrete
+current-target evidence invalidating the conclusion requires re-evaluation;
+the historical conclusion remains past evidence but no longer governs the
+current state.
 
 ## Reconciliation outcomes
 
@@ -179,9 +185,13 @@ Prior review activity comes from different kinds of author, which do not
 carry equal authority over what counts as *settled*:
 
 - **Human reviewer / maintainer discussion** can establish a settled
-  architectural decision, a maintainer clarification, reviewer acceptance of
-  a trade-off, or an authoritative resolution of a correctness question —
-  when it otherwise meets the "Settled decisions" bar above.
+  architectural decision, reviewer acceptance of a trade-off, or an
+  authoritative resolution of a correctness question — when it otherwise
+  meets the "Settled decisions" bar above. A **maintainer clarification** is
+  maintainer-only: an ordinary human reviewer cannot establish one merely by
+  stating it. Likewise, being human does not make every reviewer statement
+  authoritative; the explicit-conclusion and settlement requirements still
+  apply.
 - **Automated / bot output** — deployment previews, coverage bots, CI status
   comments, code-scanning summaries, generated links, and bookkeeping
   comments such as "please rebase" — may contribute useful *observations*

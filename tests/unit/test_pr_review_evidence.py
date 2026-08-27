@@ -58,6 +58,42 @@ class ThreadConclusionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             prv.classify_thread([])
 
+    def test_current_head_regression_reopens_an_earlier_resolution(self) -> None:
+        thread = [
+            prv.ThreadComment(prv.AuthorType.HUMAN_REVIEWER, label="missing guard"),
+            prv.ThreadComment(
+                prv.AuthorType.MAINTAINER,
+                is_explicit_conclusion=True,
+                label="fixed and accepted",
+            ),
+            prv.ThreadComment(
+                prv.AuthorType.HUMAN_REVIEWER,
+                reopens_current_target=True,
+                label="guard is missing again on current HEAD",
+            ),
+        ]
+        governing = prv.classify_thread(thread)
+        self.assertTrue(governing.reopens_current_target)
+        self.assertEqual(governing.label, "guard is missing again on current HEAD")
+
+        outcome = prv.evaluate_possibly_regressed(
+            prv.ThreadResolution.RESOLVED, defect_present_on_current_head=True
+        )
+        self.assertEqual(outcome, prv.RegressionOutcome.EMIT_FRESH_FINDING_REGRESSED)
+
+    def test_follow_up_noise_does_not_reopen_an_explicit_resolution(self) -> None:
+        resolution = prv.ThreadComment(
+            prv.AuthorType.MAINTAINER,
+            is_explicit_conclusion=True,
+            label="fixed and accepted",
+        )
+        thread = [
+            prv.ThreadComment(prv.AuthorType.HUMAN_REVIEWER, label="missing guard"),
+            resolution,
+            prv.ThreadComment(prv.AuthorType.HUMAN_REVIEWER, label="thanks"),
+        ]
+        self.assertIs(prv.classify_thread(thread), resolution)
+
 
 class PriorFindingStillValidTests(unittest.TestCase):
     def test_present_on_current_head_is_reused_and_represented_once(self) -> None:
@@ -239,10 +275,20 @@ class SettledDecisionTests(unittest.TestCase):
 
 
 class AuthorshipAuthorityTests(unittest.TestCase):
-    def test_only_humans_establish_authority_kinds(self) -> None:
+    def test_maintainer_clarification_is_maintainer_only(self) -> None:
+        kind = "maintainer_clarification"
+        self.assertFalse(prv.author_can_establish(prv.AuthorType.HUMAN_REVIEWER, kind))
+        self.assertTrue(prv.author_can_establish(prv.AuthorType.MAINTAINER, kind))
+        self.assertFalse(prv.author_can_establish(prv.AuthorType.AUTOMATION_BOT, kind))
+
+    def test_human_reviewer_can_establish_reviewer_acceptance(self) -> None:
+        kind = "reviewer_acceptance"
+        self.assertTrue(prv.author_can_establish(prv.AuthorType.HUMAN_REVIEWER, kind))
+        self.assertTrue(prv.author_can_establish(prv.AuthorType.MAINTAINER, kind))
+        self.assertFalse(prv.author_can_establish(prv.AuthorType.AUTOMATION_BOT, kind))
+
+    def test_non_human_authors_cannot_establish_any_authority_kind(self) -> None:
         for kind in prv.AUTHORITY_KINDS:
-            self.assertTrue(prv.author_can_establish(prv.AuthorType.HUMAN_REVIEWER, kind))
-            self.assertTrue(prv.author_can_establish(prv.AuthorType.MAINTAINER, kind))
             self.assertFalse(prv.author_can_establish(prv.AuthorType.AUTOMATION_BOT, kind))
             self.assertFalse(prv.author_can_establish(prv.AuthorType.CI_STATUS, kind))
             self.assertFalse(prv.author_can_establish(prv.AuthorType.UNKNOWN, kind))
