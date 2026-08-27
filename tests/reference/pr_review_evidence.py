@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import FrozenSet, Optional, Sequence
+from typing import FrozenSet, Optional, Sequence, Union
 
 
 # --- Authorship (review-evidence.md, "Comment authorship") --------------
@@ -97,21 +97,15 @@ class ThreadComment:
 
 
 def classify_thread(comments: Sequence[ThreadComment]) -> ThreadComment:
-    """A conclusion governs unless later current-target evidence reopens it."""
+    """Latest authoritative conclusion or reopening governs the thread."""
     if not comments:
         raise ValueError("a thread must contain at least one comment")
-    conclusion_index: Optional[int] = None
-    for index in range(len(comments) - 1, -1, -1):
-        comment = comments[index]
-        if comment.is_explicit_conclusion:
-            conclusion_index = index
-            break
-    if conclusion_index is None:
-        return comments[-1]
-    for comment in reversed(comments[conclusion_index + 1 :]):
-        if comment.reopens_current_target:
+    for comment in reversed(comments):
+        if comment.author_type in HUMAN_AUTHOR_TYPES and (
+            comment.is_explicit_conclusion or comment.reopens_current_target
+        ):
             return comment
-    return comments[conclusion_index]
+    return comments[-1]
 
 
 def thread_conclusion_is_authoritative(governing: ThreadComment) -> bool:
@@ -212,8 +206,8 @@ def reconcile_reopened_thread(
     comments: Sequence[ThreadComment],
     *,
     historical_resolution: ThreadResolution,
-    defect_present_on_current_head: bool,
-) -> Optional[RegressionOutcome]:
+    defect_present_on_current_head: Optional[bool],
+) -> Optional[Union[RegressionOutcome, PriorItemClass]]:
     """Re-evaluate only when classification finds a current-target reopening.
 
     None preserves the historical conclusion without entering regression handling.
@@ -221,6 +215,8 @@ def reconcile_reopened_thread(
     governing = classify_thread(comments)
     if not governing.reopens_current_target:
         return None
+    if defect_present_on_current_head is None:
+        return PriorItemClass.STALE
     return evaluate_possibly_regressed(
         historical_resolution, defect_present_on_current_head
     )

@@ -115,6 +115,139 @@ class ThreadConclusionTests(unittest.TestCase):
         )
 
 
+class ThreadInteractionMatrixTests(unittest.TestCase):
+    def _resolution(self) -> prv.ThreadComment:
+        return prv.ThreadComment(
+            prv.AuthorType.MAINTAINER,
+            is_explicit_conclusion=True,
+            label="fixed and accepted",
+        )
+
+    def _reopening(self, label: str = "regressed on current HEAD") -> prv.ThreadComment:
+        return prv.ThreadComment(
+            prv.AuthorType.HUMAN_REVIEWER,
+            reopens_current_target=True,
+            label=label,
+        )
+
+    def _bot_closure(self) -> prv.ThreadComment:
+        return prv.ThreadComment(
+            prv.AuthorType.AUTOMATION_BOT,
+            is_explicit_conclusion=True,
+            label="auto-closed as stale",
+        )
+
+    def _history(self, *later: prv.ThreadComment) -> list[prv.ThreadComment]:
+        return [
+            prv.ThreadComment(prv.AuthorType.HUMAN_REVIEWER, label="missing guard"),
+            self._resolution(),
+            *later,
+        ]
+
+    def test_bot_closure_cannot_suppress_human_reopening_with_defect(self) -> None:
+        history = self._history(self._reopening(), self._bot_closure())
+        governing = prv.classify_thread(history)
+        self.assertTrue(governing.reopens_current_target)
+        self.assertEqual(governing.author_type, prv.AuthorType.HUMAN_REVIEWER)
+        self.assertEqual(
+            prv.reconcile_reopened_thread(
+                history,
+                historical_resolution=prv.ThreadResolution.RESOLVED,
+                defect_present_on_current_head=True,
+            ),
+            prv.RegressionOutcome.EMIT_FRESH_FINDING_REGRESSED,
+        )
+
+    def test_bot_closure_cannot_skip_recheck_when_defect_is_absent(self) -> None:
+        history = self._history(self._reopening(), self._bot_closure())
+        self.assertEqual(
+            prv.reconcile_reopened_thread(
+                history,
+                historical_resolution=prv.ThreadResolution.RESOLVED,
+                defect_present_on_current_head=False,
+            ),
+            prv.RegressionOutcome.NO_FINDING_STILL_FIXED,
+        )
+
+    def test_bot_reopening_alone_does_not_gain_reviewer_authority(self) -> None:
+        bot_reopening = prv.ThreadComment(
+            prv.AuthorType.AUTOMATION_BOT,
+            reopens_current_target=True,
+            label="scanner says issue may be back",
+        )
+        history = self._history(bot_reopening)
+        self.assertIs(prv.classify_thread(history), history[1])
+        self.assertIsNone(
+            prv.reconcile_reopened_thread(
+                history,
+                historical_resolution=prv.ThreadResolution.RESOLVED,
+                defect_present_on_current_head=True,
+            )
+        )
+
+    def test_bot_resolution_does_not_replace_human_resolution(self) -> None:
+        history = self._history(self._bot_closure())
+        self.assertIs(prv.classify_thread(history), history[1])
+
+    def test_newer_authoritative_resolution_may_govern_after_reopening(self) -> None:
+        later_resolution = prv.ThreadComment(
+            prv.AuthorType.HUMAN_REVIEWER,
+            is_explicit_conclusion=True,
+            label="rechecked current HEAD; fixed",
+        )
+        history = self._history(self._reopening(), later_resolution)
+        self.assertIs(prv.classify_thread(history), later_resolution)
+        self.assertIsNone(
+            prv.reconcile_reopened_thread(
+                history,
+                historical_resolution=prv.ThreadResolution.RESOLVED,
+                defect_present_on_current_head=False,
+            )
+        )
+
+    def test_latest_of_multiple_human_reopenings_governs_once(self) -> None:
+        latest = self._reopening("latest current-target evidence")
+        history = self._history(self._reopening("first reopening"), latest)
+        self.assertIs(prv.classify_thread(history), latest)
+        self.assertEqual(
+            prv.reconcile_reopened_thread(
+                history,
+                historical_resolution=prv.ThreadResolution.RESOLVED,
+                defect_present_on_current_head=True,
+            ),
+            prv.RegressionOutcome.EMIT_FRESH_FINDING_REGRESSED,
+        )
+
+    def test_noise_before_reopening_does_not_hide_reopening(self) -> None:
+        noise = prv.ThreadComment(prv.AuthorType.HUMAN_REVIEWER, label="thanks")
+        history = self._history(noise, self._reopening())
+        self.assertTrue(prv.classify_thread(history).reopens_current_target)
+
+    def test_noise_after_reopening_does_not_erase_reopening(self) -> None:
+        noise = prv.ThreadComment(prv.AuthorType.HUMAN_REVIEWER, label="acknowledged")
+        history = self._history(self._reopening(), noise)
+        self.assertTrue(prv.classify_thread(history).reopens_current_target)
+
+    def test_reopening_with_unclear_current_applicability_is_stale(self) -> None:
+        self.assertEqual(
+            prv.reconcile_reopened_thread(
+                self._history(self._reopening()),
+                historical_resolution=prv.ThreadResolution.RESOLVED,
+                defect_present_on_current_head=None,
+            ),
+            prv.PriorItemClass.STALE,
+        )
+
+    def test_unknown_explicit_conclusion_cannot_override_maintainer_resolution(self) -> None:
+        unknown = prv.ThreadComment(
+            prv.AuthorType.UNKNOWN,
+            is_explicit_conclusion=True,
+            label="closed",
+        )
+        history = self._history(unknown)
+        self.assertIs(prv.classify_thread(history), history[1])
+
+
 class PriorFindingStillValidTests(unittest.TestCase):
     def test_present_on_current_head_is_reused_and_represented_once(self) -> None:
         finding = prv.PriorFinding("F-PR-1", reviewed_sha=SHA_A)
@@ -239,6 +372,15 @@ class RegressionAfterResolvedThreadTests(unittest.TestCase):
         self.assertEqual(r.item_class, prv.PriorItemClass.STILL_RELEVANT)
         self.assertTrue(r.emit_in_this_review)
 
+    def test_same_resolved_defect_reintroduced_at_new_hunk_is_still_relevant(self) -> None:
+        finding = prv.PriorFinding("F-PR-9", reviewed_sha=SHA_A)
+        r = prv.reconcile_prior_finding(
+            finding, current_head_sha=SHA_B, present_on_current_head=True
+        )
+        self.assertEqual(r.item_class, prv.PriorItemClass.STILL_RELEVANT)
+        self.assertTrue(r.reuse_prior_evidence)
+        self.assertTrue(r.emit_in_this_review)
+
 
 class SettledDecisionTests(unittest.TestCase):
     def _human_decision(self) -> prv.SettledDecision:
@@ -288,6 +430,22 @@ class SettledDecisionTests(unittest.TestCase):
         r = prv.reconcile_settled_decision(bot_decision, current_delta_follows=False)
         self.assertEqual(r.status, prv.DecisionStatus.NOT_SETTLED)
 
+    def test_reviewer_preference_plus_bot_confirmation_is_not_settled(self) -> None:
+        preference = prv.SettledDecision(
+            "D-4", prv.AuthorType.HUMAN_REVIEWER, has_explicit_agreement=False
+        )
+        bot_confirmation = prv.SettledDecision(
+            "D-4", prv.AuthorType.AUTOMATION_BOT, has_explicit_agreement=True
+        )
+        for evidence in (preference, bot_confirmation):
+            self.assertFalse(prv.decision_is_settled(evidence))
+            self.assertEqual(
+                prv.reconcile_settled_decision(
+                    evidence, current_delta_follows=False
+                ).status,
+                prv.DecisionStatus.NOT_SETTLED,
+            )
+
     def test_settled_decision_cannot_suppress_safety_critical_defect(self) -> None:
         for category in ("correctness", "security", "data_integrity", "safety"):
             self.assertFalse(prv.settled_decision_suppresses_defect(category))
@@ -300,6 +458,19 @@ class AuthorshipAuthorityTests(unittest.TestCase):
         self.assertFalse(prv.author_can_establish(prv.AuthorType.HUMAN_REVIEWER, kind))
         self.assertTrue(prv.author_can_establish(prv.AuthorType.MAINTAINER, kind))
         self.assertFalse(prv.author_can_establish(prv.AuthorType.AUTOMATION_BOT, kind))
+
+    def test_bot_contradiction_cannot_displace_maintainer_clarification(self) -> None:
+        kind = "maintainer_clarification"
+        self.assertTrue(prv.author_can_establish(prv.AuthorType.MAINTAINER, kind))
+        self.assertFalse(prv.author_can_establish(prv.AuthorType.AUTOMATION_BOT, kind))
+
+    def test_maintainer_clarification_cannot_suppress_concrete_correctness(self) -> None:
+        self.assertTrue(
+            prv.author_can_establish(
+                prv.AuthorType.MAINTAINER, "maintainer_clarification"
+            )
+        )
+        self.assertFalse(prv.settled_decision_suppresses_defect("correctness"))
 
     def test_human_reviewer_can_establish_reviewer_acceptance(self) -> None:
         kind = "reviewer_acceptance"
