@@ -209,7 +209,7 @@ Cleanup  (github-pr-review: remove the temporary checkout on every exit
 This flow is conceptual guidance, not a required implementation shape — the
 Skills are natural-language instruction packages, and the ordering above is
 the reading order their `SKILL.md` and runbooks already imply. Repository-backed
-repository-backed modes and parallel workers apply to `github-pr-review` only;
+modes and parallel workers apply to `github-pr-review` only;
 `local-code-review` and API-only `github-pr-review` skip those stages entirely
 with no loss of correctness.
 

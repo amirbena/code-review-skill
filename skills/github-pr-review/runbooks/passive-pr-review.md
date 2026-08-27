@@ -31,7 +31,9 @@ repository-backed inspection requested? → yes → mkdtemp → blobless clone �
    fetch base/head → detached checkout at head_sha (read-only; remote
    unreachable/unauthenticated → API-only mode) → no → API-only mode
     ↓
-discover applicable AGENTS.md / CLAUDE.md
+resolve each changed file's normalized root-to-specific instruction context
+(hierarchical AGENTS.md + applicable CLAUDE.md; verified snapshot in
+repository-backed mode, else API-visible paths)
     ↓
 plan review execution: reliable capability AND 2+ independent dimensions
    AND expected latency benefit
@@ -142,10 +144,12 @@ finally: remove the temporary checkout (success, any failure, interruption)
    exit path (see step 8).
 5. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
-   after changed-file resolution, resolve the root-to-specific instruction
-   chain for every changed file from the working tree or verified temporary
-   snapshot. Build one normalized Repository Instruction Context before
-   reviewing; unrelated subtree instructions are not read or applied.
+   after changed-file resolution, resolve each changed file's root-to-specific
+   applicable instruction chain — the hierarchical `AGENTS.md` ancestry plus any
+   applicable `CLAUDE.md` on that ancestry — from the verified temporary
+   snapshot in repository-backed mode, or from API-visible repository paths in
+   API-only mode. Build one normalized per-file Repository Instruction Context
+   before reviewing; unrelated subtree instructions are not read or applied.
 
    **Plan review execution** per
    [`../policies/parallel-review.md`](../policies/parallel-review.md) and the

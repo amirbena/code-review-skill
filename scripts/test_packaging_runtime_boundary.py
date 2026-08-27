@@ -79,6 +79,7 @@ MODULE_TO_PACKAGED_POLICY_HEADINGS = {
             "## Directory-scoped discovery",
             "## Normalized Repository Instruction Context",
             "## Safe and explicit reads",
+            "## AGENTS.md vs. CLAUDE.md",
         ),
     ),
 }
