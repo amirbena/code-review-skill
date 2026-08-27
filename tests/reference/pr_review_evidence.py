@@ -272,21 +272,43 @@ class DecisionStatus(Enum):
     VIOLATED = "violated"
 
 
-SUPERSESSION_EVIDENCE_KINDS: FrozenSet[str] = frozenset(
+class CurrentEvidenceKind(Enum):
+    CHANGED_REQUIREMENTS = "changed_requirements"
+    CORRECTNESS_DEFECT = "correctness_defect"
+    RELIABILITY_DEFECT = "reliability_defect"
+    INVALIDATED_ASSUMPTION = "invalidated_assumption"
+    NEW_DEPENDENCY_OR_CONSTRAINT = "new_dependency_or_constraint"
+    MATERIAL_SECURITY_CONCERN = "material_security_concern"
+    MATERIAL_PERFORMANCE_CONCERN = "material_performance_concern"
+    DATA_INTEGRITY_DEFECT = "data_integrity_defect"
+    SAFETY_DEFECT = "safety_defect"
+    NEWER_EXPLICIT_DECISION = "newer_explicit_decision"
+    STYLE_PREFERENCE = "style_preference"
+    SPECULATIVE_OPTIMIZATION = "speculative_optimization"
+    NON_MATERIAL_REVIEWER_PREFERENCE = "non_material_reviewer_preference"
+
+
+OVERRIDING_CURRENT_EVIDENCE: FrozenSet[CurrentEvidenceKind] = frozenset(
     {
-        "changed_requirements",
-        "correctness_or_reliability_problem",
-        "invalidated_assumption",
-        "new_dependency_or_constraint",
-        "security_or_performance_concern",
-        "newer_explicit_decision",
+        CurrentEvidenceKind.CHANGED_REQUIREMENTS,
+        CurrentEvidenceKind.CORRECTNESS_DEFECT,
+        CurrentEvidenceKind.RELIABILITY_DEFECT,
+        CurrentEvidenceKind.INVALIDATED_ASSUMPTION,
+        CurrentEvidenceKind.NEW_DEPENDENCY_OR_CONSTRAINT,
+        CurrentEvidenceKind.MATERIAL_SECURITY_CONCERN,
+        CurrentEvidenceKind.MATERIAL_PERFORMANCE_CONCERN,
+        CurrentEvidenceKind.DATA_INTEGRITY_DEFECT,
+        CurrentEvidenceKind.SAFETY_DEFECT,
+        CurrentEvidenceKind.NEWER_EXPLICIT_DECISION,
     }
 )
 
-# A settled decision can never wave away a defect in one of these categories.
-SAFETY_CRITICAL_CATEGORIES: FrozenSet[str] = frozenset(
-    {"correctness", "security", "data_integrity", "safety"}
-)
+
+def current_evidence_overrides_historical_authority(
+    evidence: CurrentEvidenceKind,
+) -> bool:
+    """Concrete current evidence, not historical authority, governs."""
+    return evidence in OVERRIDING_CURRENT_EVIDENCE
 
 
 @dataclass(frozen=True)
@@ -326,35 +348,44 @@ def reconcile_settled_decision(
     decision: SettledDecision,
     *,
     current_delta_follows: bool,
-    supersession_evidence: FrozenSet[str] = frozenset(),
+    current_evidence: FrozenSet[CurrentEvidenceKind] = frozenset(),
 ) -> DecisionReconciliation:
     if not decision_is_settled(decision):
         return DecisionReconciliation(decision.id, DecisionStatus.NOT_SETTLED, False)
+
+    invalid = {
+        evidence
+        for evidence in current_evidence
+        if not isinstance(evidence, CurrentEvidenceKind)
+    }
+    if invalid:
+        raise ValueError(
+            f"unrecognized current evidence kind(s): {sorted(map(str, invalid))}"
+        )
+
+    if any(
+        current_evidence_overrides_historical_authority(e)
+        for e in current_evidence
+    ):
+        return DecisionReconciliation(decision.id, DecisionStatus.SUPERSEDED, False)
     if current_delta_follows:
         return DecisionReconciliation(decision.id, DecisionStatus.FOLLOWED, False)
-
-    unknown = supersession_evidence - SUPERSESSION_EVIDENCE_KINDS
-    if unknown:
-        raise ValueError(f"unrecognized supersession evidence kind(s): {sorted(unknown)}")
-
-    if supersession_evidence:
-        return DecisionReconciliation(decision.id, DecisionStatus.SUPERSEDED, False)
     return DecisionReconciliation(decision.id, DecisionStatus.VIOLATED, True)
 
 
-def settled_decision_suppresses_defect(defect_category: str) -> bool:
-    """A settled 'this is intentional' never suppresses a safety-critical defect."""
-    return defect_category not in SAFETY_CRITICAL_CATEGORIES
+def settled_decision_suppresses_evidence(evidence: CurrentEvidenceKind) -> bool:
+    """Suppression is the inverse of the canonical override classification."""
+    return not current_evidence_overrides_historical_authority(evidence)
 
 
 def governing_conclusion_suppresses_defect(
-    comments: Sequence[ThreadComment], defect_category: str
+    comments: Sequence[ThreadComment], evidence: CurrentEvidenceKind
 ) -> bool:
     """Only authoritative evidence may constrain non-critical preferences."""
     governing = classify_thread(comments)
     return thread_conclusion_is_authoritative(
         governing
-    ) and settled_decision_suppresses_defect(defect_category)
+    ) and settled_decision_suppresses_evidence(evidence)
 
 
 # --- Retrieval completeness (pr-scope.md, "Retrieving prior review

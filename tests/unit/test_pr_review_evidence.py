@@ -277,7 +277,9 @@ class ConclusionSpecificAuthorityCompositionTests(unittest.TestCase):
         self.assertIs(governing, claimed)
         self.assertFalse(prv.thread_conclusion_is_authoritative(governing))
         self.assertFalse(
-            prv.governing_conclusion_suppresses_defect([claimed], "style_preference")
+            prv.governing_conclusion_suppresses_defect(
+                [claimed], prv.CurrentEvidenceKind.STYLE_PREFERENCE
+            )
         )
 
     def test_maintainer_can_establish_maintainer_clarification(self) -> None:
@@ -339,10 +341,17 @@ class ConclusionSpecificAuthorityCompositionTests(unittest.TestCase):
             prv.ConclusionKind.MAINTAINER_CLARIFICATION,
             "this behavior is intentional",
         )
-        for category in ("correctness", "security", "data_integrity", "safety"):
+        for evidence in (
+            prv.CurrentEvidenceKind.CORRECTNESS_DEFECT,
+            prv.CurrentEvidenceKind.RELIABILITY_DEFECT,
+            prv.CurrentEvidenceKind.MATERIAL_SECURITY_CONCERN,
+            prv.CurrentEvidenceKind.MATERIAL_PERFORMANCE_CONCERN,
+            prv.CurrentEvidenceKind.DATA_INTEGRITY_DEFECT,
+            prv.CurrentEvidenceKind.SAFETY_DEFECT,
+        ):
             self.assertFalse(
                 prv.governing_conclusion_suppresses_defect(
-                    [clarification], category
+                    [clarification], evidence
                 )
             )
 
@@ -540,7 +549,9 @@ class SettledDecisionTests(unittest.TestCase):
         r = prv.reconcile_settled_decision(
             self._human_decision(),
             current_delta_follows=False,
-            supersession_evidence=frozenset({"invalidated_assumption"}),
+            current_evidence=frozenset(
+                {prv.CurrentEvidenceKind.INVALIDATED_ASSUMPTION}
+            ),
         )
         self.assertEqual(r.status, prv.DecisionStatus.SUPERSEDED)
         self.assertFalse(r.emit_finding)
@@ -550,7 +561,7 @@ class SettledDecisionTests(unittest.TestCase):
             prv.reconcile_settled_decision(
                 self._human_decision(),
                 current_delta_follows=False,
-                supersession_evidence=frozenset({"i_prefer_this"}),
+                current_evidence=frozenset({"i_prefer_this"}),
             )
 
     def test_unsettled_reviewer_preference_is_never_a_constraint(self) -> None:
@@ -586,10 +597,63 @@ class SettledDecisionTests(unittest.TestCase):
                 prv.DecisionStatus.NOT_SETTLED,
             )
 
-    def test_settled_decision_cannot_suppress_safety_critical_defect(self) -> None:
-        for category in ("correctness", "security", "data_integrity", "safety"):
-            self.assertFalse(prv.settled_decision_suppresses_defect(category))
-        self.assertTrue(prv.settled_decision_suppresses_defect("style_preference"))
+    def test_concrete_current_defects_supersede_through_reconciliation(self) -> None:
+        for evidence in (
+            prv.CurrentEvidenceKind.CORRECTNESS_DEFECT,
+            prv.CurrentEvidenceKind.RELIABILITY_DEFECT,
+            prv.CurrentEvidenceKind.MATERIAL_SECURITY_CONCERN,
+            prv.CurrentEvidenceKind.MATERIAL_PERFORMANCE_CONCERN,
+            prv.CurrentEvidenceKind.DATA_INTEGRITY_DEFECT,
+            prv.CurrentEvidenceKind.SAFETY_DEFECT,
+        ):
+            with self.subTest(evidence=evidence):
+                self.assertFalse(prv.settled_decision_suppresses_evidence(evidence))
+                result = prv.reconcile_settled_decision(
+                    self._human_decision(),
+                    current_delta_follows=True,
+                    current_evidence=frozenset({evidence}),
+                )
+                self.assertEqual(result.status, prv.DecisionStatus.SUPERSEDED)
+                self.assertFalse(result.emit_finding)
+
+    def test_non_material_preferences_do_not_supersede_settled_decision(self) -> None:
+        for evidence in (
+            prv.CurrentEvidenceKind.STYLE_PREFERENCE,
+            prv.CurrentEvidenceKind.SPECULATIVE_OPTIMIZATION,
+            prv.CurrentEvidenceKind.NON_MATERIAL_REVIEWER_PREFERENCE,
+        ):
+            with self.subTest(evidence=evidence):
+                self.assertTrue(prv.settled_decision_suppresses_evidence(evidence))
+                result = prv.reconcile_settled_decision(
+                    self._human_decision(),
+                    current_delta_follows=True,
+                    current_evidence=frozenset({evidence}),
+                )
+                self.assertEqual(result.status, prv.DecisionStatus.FOLLOWED)
+                self.assertFalse(result.emit_finding)
+
+    def test_all_override_and_suppression_paths_use_one_canonical_predicate(self) -> None:
+        import inspect
+
+        self.assertFalse(hasattr(prv, "SUPERSESSION_EVIDENCE_KINDS"))
+        self.assertFalse(hasattr(prv, "SAFETY_CRITICAL_CATEGORIES"))
+        predicate = "current_evidence_overrides_historical_authority"
+        self.assertIn(predicate, inspect.getsource(prv.reconcile_settled_decision))
+        self.assertIn(
+            predicate, inspect.getsource(prv.settled_decision_suppresses_evidence)
+        )
+
+    def test_materiality_is_part_of_performance_evidence_classification(self) -> None:
+        self.assertTrue(
+            prv.current_evidence_overrides_historical_authority(
+                prv.CurrentEvidenceKind.MATERIAL_PERFORMANCE_CONCERN
+            )
+        )
+        self.assertFalse(
+            prv.current_evidence_overrides_historical_authority(
+                prv.CurrentEvidenceKind.SPECULATIVE_OPTIMIZATION
+            )
+        )
 
 
 class AuthorshipAuthorityTests(unittest.TestCase):
@@ -615,7 +679,11 @@ class AuthorshipAuthorityTests(unittest.TestCase):
                 prv.AuthorType.MAINTAINER, "maintainer_clarification"
             )
         )
-        self.assertFalse(prv.settled_decision_suppresses_defect("correctness"))
+        self.assertFalse(
+            prv.settled_decision_suppresses_evidence(
+                prv.CurrentEvidenceKind.CORRECTNESS_DEFECT
+            )
+        )
 
     def test_human_reviewer_can_establish_reviewer_acceptance(self) -> None:
         kind = "reviewer_acceptance"
