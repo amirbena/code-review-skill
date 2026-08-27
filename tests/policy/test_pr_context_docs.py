@@ -11,7 +11,7 @@ import re
 import unittest
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+from tests.support.paths import REPO_ROOT
 LOCAL_SKILL_DIR = REPO_ROOT / "skills/local-code-review"
 PR_CONTEXT_POLICY = LOCAL_SKILL_DIR / "policies/pr-context.md"
 INVOCATION_APPROVAL_POLICY = LOCAL_SKILL_DIR / "policies/invocation-approval.md"

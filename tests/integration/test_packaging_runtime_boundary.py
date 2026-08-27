@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Guards the packaging boundary: the scripts/*.py reference modules stay
-test-only and out of both Skill archives.
+"""Guards the packaging boundary: the tests/reference/*.py reference modules
+stay test-only and out of both Skill archives.
 
 Fails if a refactor adds one to a package file list, makes a packaged file
 import/invoke one, or lets a module's contract drift out of its packaged
@@ -17,8 +17,18 @@ import zipfile
 from pathlib import Path
 from typing import Sequence
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+from tests.support.paths import REPO_ROOT
+
 PACKAGE_SCRIPT = REPO_ROOT / "scripts" / "package-skills.sh"
+
+# The test-only reference modules live in tests/reference/; the PR
+# simulation harness lives in tests/support/.
+REFERENCE_DIR = REPO_ROOT / "tests" / "reference"
+SUPPORT_DIR = REPO_ROOT / "tests" / "support"
+
+
+def _reference_module_path(name: str) -> Path:
+    return (SUPPORT_DIR if name == "pr_simulation.py" else REFERENCE_DIR) / name
 LOCAL_SKILL_DIR = REPO_ROOT / "skills" / "local-code-review"
 GITHUB_SKILL_DIR = REPO_ROOT / "skills" / "github-pr-review"
 DIST_DIR = REPO_ROOT / "dist"
@@ -215,7 +225,7 @@ class DeclaredPackageFileListTests(unittest.TestCase):
                     f"{module} must not be declared in package-skills.sh's "
                     "local-code-review file list unless it has genuinely "
                     "become a runtime dependency (Contract B) — see "
-                    "scripts/test_packaging_runtime_boundary.py module "
+                    "tests/integration/test_packaging_runtime_boundary.py module "
                     "docstring",
                 )
 
@@ -314,7 +324,7 @@ class NoHiddenRuntimeDependencyTests(unittest.TestCase):
         self.assertEqual(
             offenders,
             [],
-            "A packaged local-code-review file references a scripts/*.py "
+            "A packaged local-code-review file references a tests/reference/*.py "
             "reference/test module without a disclaimer in the same "
             "paragraph — this would be a hidden runtime dependency that "
             f"packaging currently omits: {offenders}",
@@ -335,7 +345,7 @@ class ProximityScopedDisclaimerTests(unittest.TestCase):
 
     def test_disclaimed_mention_is_not_flagged(self) -> None:
         text = (
-            "See `scripts/staged_fingerprint.py`.\n"
+            "See `tests/reference/staged_fingerprint.py`.\n"
             "Reference/test helper only — not a runtime dependency.\n"
         )
         self.assertEqual(find_undisclaimed_module_references_in_text(text), [])
@@ -382,8 +392,8 @@ class ProximityScopedDisclaimerTests(unittest.TestCase):
         # statements. The disclaimer on the first bullet must not excuse
         # the undisclaimed, functional-sounding mention on the second.
         text = (
-            "- `scripts/staged_fingerprint.py` — not a runtime dependency.\n"
-            "- `scripts/review_context.py` — invoked at runtime before "
+            "- `tests/reference/staged_fingerprint.py` — not a runtime dependency.\n"
+            "- `tests/reference/review_context.py` — invoked at runtime before "
             "reviewing the delta.\n"
         )
         offenders = find_undisclaimed_module_references_in_text(text)
@@ -395,7 +405,7 @@ class ProximityScopedDisclaimerTests(unittest.TestCase):
         # A bullet's own wrapped continuation line (no list marker) must
         # stay attached to that bullet, not become its own block.
         text = (
-            "- `scripts/staged_fingerprint.py` is a reference implementation\n"
+            "- `tests/reference/staged_fingerprint.py` is a reference implementation\n"
             "  used for deterministic testing — not a runtime dependency.\n"
         )
         self.assertEqual(find_undisclaimed_module_references_in_text(text), [])
@@ -408,7 +418,7 @@ class ModuleSelfDocumentationTests(unittest.TestCase):
 
     def test_each_reference_module_declares_it_is_not_runtime_logic(self) -> None:
         for module in REFERENCE_TEST_MODULES:
-            head = (REPO_ROOT / "scripts" / module).read_text(encoding="utf-8")[:600]
+            head = _reference_module_path(module).read_text(encoding="utf-8")[:600]
             with self.subTest(module=module):
                 self.assertIn("Test-only", head)
                 self.assertIn("not runtime logic, not packaged", head.lower())

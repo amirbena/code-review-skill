@@ -16,10 +16,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import pr_simulation as sim
-from parallel_review import ReviewDimension, build_worker_inputs
-from pr_checkout import prepare_repository_checkout
-from repository_instructions import (
+from tests.reference.parallel_review import ReviewDimension, build_worker_inputs
+from tests.reference.pr_checkout import prepare_repository_checkout
+from tests.reference.repository_instructions import (
     ConflictOutcome,
     InstructionKind,
     InstructionPrecedence,
@@ -30,6 +29,8 @@ from repository_instructions import (
     resolve_conflict,
     resolve_repository_instructions,
 )
+from tests.support import pr_simulation as sim
+from tests.support.paths import REPO_ROOT
 
 
 def _write(root: Path, rel: str, text: str) -> Path:
@@ -414,7 +415,7 @@ class PassiveRunbookHierarchyWordingTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        runbooks = Path(__file__).resolve().parent.parent / "skills" / "github-pr-review" / "runbooks"
+        runbooks = REPO_ROOT / "skills" / "github-pr-review" / "runbooks"
         cls.passive = " ".join(
             (runbooks / "passive-pr-review.md").read_text(encoding="utf-8").split()
         )

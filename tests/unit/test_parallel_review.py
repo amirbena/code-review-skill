@@ -11,9 +11,9 @@ import re
 import unittest
 from pathlib import Path
 
-import decision_semantics as ds
-import parallel_review as pr
-from parallel_review import (
+from tests.reference import decision_semantics as ds
+from tests.reference import parallel_review as pr
+from tests.reference.parallel_review import (
     AggregateOutcome,
     ParallelCapability,
     ReviewDimension,
@@ -25,8 +25,8 @@ from parallel_review import (
     build_worker_inputs,
     plan_review_execution,
 )
+from tests.support.paths import REPO_ROOT
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
 SHARED_POLICY = REPO_ROOT / "shared" / "policies" / "parallel-review.md"
 GH_POLICY = REPO_ROOT / "skills" / "github-pr-review" / "policies" / "parallel-review.md"
 

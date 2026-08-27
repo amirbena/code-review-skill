@@ -12,7 +12,7 @@ import re
 import unittest
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+from tests.support.paths import REPO_ROOT
 LOCAL_TEMPLATE = (
     REPO_ROOT / "skills/local-code-review/templates/local-review-report.md"
 )

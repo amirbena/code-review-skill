@@ -4,14 +4,14 @@
 Mirrors skills/github-pr-review/policies/reviewer-delta-review.md.
 
 Run with:
-    python3 scripts/test_reviewer_ownership.py
+    python3 -m unittest tests.unit.test_reviewer_ownership
 """
 
 from __future__ import annotations
 
 import unittest
 
-from reviewer_ownership import (
+from tests.reference.reviewer_ownership import (
     DELTA_RE_REVIEW,
     NORMAL_FULL_REVIEW,
     NO_NEW_DELTA,

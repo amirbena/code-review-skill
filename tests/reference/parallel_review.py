@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Sequence
 
-import decision_semantics as ds
+from tests.reference import decision_semantics as ds
 
 
 class ParallelCapability(Enum):

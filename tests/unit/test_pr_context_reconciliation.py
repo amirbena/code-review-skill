@@ -9,7 +9,7 @@ from __future__ import annotations
 import inspect
 import unittest
 
-import pr_context_reconciliation as prc
+from tests.reference import pr_context_reconciliation as prc
 
 
 # --- Fixtures --------------------------------------------------------------

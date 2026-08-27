@@ -15,7 +15,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from staged_fingerprint import (
+from tests.reference.staged_fingerprint import (
     STAGED_FINGERPRINT_COMMAND,
     compute_staged_fingerprint,
     run_staged_fingerprint,

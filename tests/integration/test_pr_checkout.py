@@ -13,9 +13,8 @@ import threading
 import unittest
 from pathlib import Path
 
-import pr_checkout as co
-import pr_simulation as sim
-from pr_checkout import (
+from tests.reference import pr_checkout as co
+from tests.reference.pr_checkout import (
     CheckoutError,
     InvalidShaError,
     NormalizedPrSource,
@@ -26,6 +25,7 @@ from pr_checkout import (
     prepare_repository_checkout,
     run_with_repository_access,
 )
+from tests.support import pr_simulation as sim
 
 
 class NormalizedPrSourceTests(unittest.TestCase):

@@ -10,9 +10,9 @@ import re
 import unittest
 from pathlib import Path
 
-import jira_context as jc
+from tests.reference import jira_context as jc
+from tests.support.paths import REPO_ROOT
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
 SHARED_CONTEXT = REPO_ROOT / "shared/policies/review-context.md"
 LOCAL = REPO_ROOT / "skills/local-code-review"
 GITHUB = REPO_ROOT / "skills/github-pr-review"

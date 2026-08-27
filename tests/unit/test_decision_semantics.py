@@ -12,9 +12,9 @@ import re
 import unittest
 from pathlib import Path
 
-import decision_semantics as ds
+from tests.reference import decision_semantics as ds
+from tests.support.paths import REPO_ROOT
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
 SEVERITY_POLICY = REPO_ROOT / "shared" / "policies" / "severity.md"
 REVIEW_SUMMARY_TEMPLATE = REPO_ROOT / "shared" / "templates" / "review-summary.md"
 
