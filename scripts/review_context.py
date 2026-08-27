@@ -1,27 +1,8 @@
 #!/usr/bin/env python3
-"""Reference/test implementation of review-context normalization semantics.
+"""Test-only reference for review-context normalization semantics.
 
-Mirrors skills/local-code-review/policies/review-context.md. Pure
-decision-table logic (no code understanding, no LLM reasoning) so
-test_review_context.py can exercise the contract deterministically. This
-is NOT production/runtime logic: the packaged `local-code-review` Skill
-implements this behavior entirely through its policy/runbook contract
-(review-context.md, SKILL.md section 2/3, runbook step 7) and does not import, invoke, or otherwise depend on this module at runtime.
-No packaged Skill file imports Python, and this module is not part of
-either packaged Skill archive (see scripts/package-skills.sh /
-scripts/package-skills.ps1's local-code-review file list, which omits
-scripts/). It exists solely so this repository's own test suite can
-verify the policy's decision tables are internally consistent — the same
-role pr_context_reconciliation.py plays for pr-context.md.
-
-This module never determines whether described behavior actually exists in
-the implementation, never assigns a finding's severity, and never decides
-the final review decision — those require actually reading the code and
-applying severity.md, which is `local-code-review`'s own job (see
-review-context.md, "Evidence hierarchy": actual code/diff/tests/config
-outranks supplied context). This module only encodes the normalization,
-scope, and output-inclusion decision tables that policy defines once those
-facts are known.
+Mirrors skills/local-code-review/policies/review-context.md.
+Not runtime logic, not packaged.
 """
 
 from __future__ import annotations
@@ -41,8 +22,7 @@ class EvidenceSource(Enum):
     REVIEWER_INFERENCE = 4
 
 
-#: Strongest first, per policy. A lower enum value always outranks a higher
-#: one when two sources disagree.
+# Strongest first: a lower enum value outranks a higher one.
 EVIDENCE_PRECEDENCE_ORDER: tuple[EvidenceSource, ...] = (
     EvidenceSource.CODE_DIFF_TESTS_CONFIG,
     EvidenceSource.REPOSITORY_INSTRUCTIONS,
@@ -52,24 +32,14 @@ EVIDENCE_PRECEDENCE_ORDER: tuple[EvidenceSource, ...] = (
 
 
 def stronger_source(a: EvidenceSource, b: EvidenceSource) -> EvidenceSource:
-    """Return whichever of two evidence sources outranks the other.
-
-    Per review-context.md, "Evidence hierarchy": code/diff/tests/config
-    outranks repository instructions, which outranks supplied review
-    context, which outranks reviewer inference. Supplied context never
-    outranks actual implementation evidence.
-    """
+    """The stronger of two evidence sources (code > repo instructions >
+    supplied context > inference)."""
     return a if a.value < b.value else b
 
 
 def context_outranks_code(source: EvidenceSource) -> bool:
-    """Whether `source` could legitimately override actual code evidence.
-
-    Per policy, only actual code/diff/tests/config sits above itself — no
-    other source, including supplied review context, ever outranks it. This
-    is the structural guard behind "do not state that something is
-    implemented merely because the context says it should be."
-    """
+    """Whether `source` could override actual code evidence. Always False
+    for every non-code source."""
     return (
         source != EvidenceSource.CODE_DIFF_TESTS_CONFIG
         and stronger_source(source, EvidenceSource.CODE_DIFF_TESTS_CONFIG) == source
@@ -82,11 +52,7 @@ def context_outranks_code(source: EvidenceSource) -> bool:
 
 @dataclass(frozen=True)
 class ReviewContext:
-    """Illustrative normalized shape for supplied review context.
-
-    Every field but `raw_context` is optional, per policy — a short,
-    already-concrete context block needs no further structure.
-    """
+    """Illustrative normalized shape; only `raw_context` is required."""
 
     raw_context: str
     source_type: Optional[str] = None
@@ -103,23 +69,14 @@ class ReviewContextAvailability(Enum):
 
 
 def should_block_local_review(availability: ReviewContextAvailability) -> bool:
-    """Review context — present or absent — never blocks the local review.
-
-    Mirrors pr_context_reconciliation.should_block_local_review: every state
-    maps to the same answer, by design, per review-context.md's backward-
-    compatibility guarantee.
-    """
+    """Review context never blocks the local review — every state maps to
+    the same answer."""
     del availability
     return False
 
 
 def should_prompt_user_for_context(context_supplied: bool) -> bool:
-    """This Skill never asks for context when none was supplied.
-
-    Per review-context.md, "Why this exists" / SKILL.md, section 2: review
-    context is opt-in only. This always returns False regardless of input —
-    a structural guarantee, not a conditional prompt policy.
-    """
+    """Always False — review context is opt-in; the Skill never asks."""
     del context_supplied
     return False
 
@@ -131,13 +88,8 @@ def should_prompt_user_for_context(context_supplied: bool) -> bool:
 def is_within_current_delta_scope(
     focus_area_touches: FrozenSet[str], local_delta_touches: FrozenSet[str]
 ) -> bool:
-    """Whether a context-derived focus area overlaps the current local delta.
-
-    Mirrors pr_context_reconciliation.is_relevant_to_local_delta: an empty
-    touches set is never in scope, and scope is exact-overlap, not fuzzy
-    prefix/substring matching — context narrows attention *within* the
-    delta, it never expands review scope beyond it.
-    """
+    """Exact overlap with the current local delta. An empty touch set is
+    never in scope; context never expands scope beyond the delta."""
     if not focus_area_touches:
         return False
     return bool(focus_area_touches & local_delta_touches)
@@ -151,14 +103,8 @@ class NonGoalEffect(Enum):
 def apply_explicit_non_goal(
     *, would_be_missing_implementation_finding: bool, introduces_regression: bool
 ) -> Optional[NonGoalEffect]:
-    """How a stated non-goal affects one candidate finding.
-
-    Per review-context.md, "Explicit non-goals": "A stated non-goal narrows
-    what's expected to be built; it never narrows what's expected to be
-    safe." A non-goal legitimately suppresses a *missing-implementation*
-    finding for the out-of-scope work, but never suppresses a genuine
-    regression the current change introduces.
-    """
+    """A non-goal suppresses a missing-implementation finding for the
+    out-of-scope work, but never a regression the change introduces."""
     if introduces_regression:
         return NonGoalEffect.DOES_NOT_SUPPRESS_REGRESSION_FINDING
     if would_be_missing_implementation_finding:
@@ -184,13 +130,9 @@ def classify_mismatch(
     requirement_is_ambiguous: bool,
     requirement_targets_code_outside_current_diff: bool,
 ) -> MismatchClassification:
-    """Classify a context/implementation discrepancy per policy's four cases.
-
-    Order matters and mirrors the policy's own presentation order — an
-    ambiguous requirement is checked before assuming it targets out-of-diff
-    code, and a clear implementation violation is checked first since it is
-    the only case that alone justifies an unconditional finding.
-    """
+    """Classify a context/implementation discrepancy. Check order matters:
+    a clear violation first (the only unconditional-finding case), then
+    stale context, then ambiguity, then out-of-diff."""
     if implementation_clearly_contradicts_requirement:
         return MismatchClassification.IMPLEMENTATION_VIOLATES_REQUIREMENT
     if context_conflicts_with_repository_architecture:
@@ -201,9 +143,8 @@ def classify_mismatch(
 
 
 def should_report_as_unconditional_finding(classification: MismatchClassification) -> bool:
-    """Only a clear implementation violation is reported as an unconditional
-    finding; the other three are reported as notes/uncertainty, never as an
-    automatic finding against either side."""
+    """Only a clear implementation violation is an unconditional finding;
+    the other cases are notes, not automatic findings."""
     return classification == MismatchClassification.IMPLEMENTATION_VIOLATES_REQUIREMENT
 
 
@@ -217,12 +158,8 @@ def context_section_required(
     surfaced_a_mismatch: bool = False,
     non_goal_prevented_a_false_gap: bool = False,
 ) -> bool:
-    """Whether the optional "Context" report section should appear.
-
-    Per review-context.md, "Output": omitted entirely when no context was
-    supplied, and otherwise included only when it materially shaped the
-    review — never merely because context exists.
-    """
+    """The "Context" section appears only when context was supplied *and*
+    it materially shaped the review."""
     if not context_supplied:
         return False
     return focused_a_finding or surfaced_a_mismatch or non_goal_prevented_a_false_gap

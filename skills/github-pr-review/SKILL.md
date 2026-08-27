@@ -33,17 +33,37 @@ completed review? → yes → delta re-review of the bounded SHA range
                            materially changes scope)
                         → no  → normal review of current PR state
     ↓
+Jira reference supplied? → yes → resolve via Jira MCP/connector (read-only)
+                                  → resolved → normalized Jira context
+                                  → unresolvable → JIRA CONTEXT UNRESOLVED,
+                                    stop (no key/branch/PR-title inference)
+                               → no  → unchanged
+    ↓
 retrieve required PR scope for that mode
+    ↓
+repository access mode? → API-only: no checkout
+                        → optional: verified checkout or visible API-only degradation
+                        → required: verified checkout or REVIEW INCOMPLETE
     ↓
 determine formal-review capability
     ↓
-discover applicable AGENTS.md / CLAUDE.md
+resolve changed files, then one normalized per-file AGENTS.md/CLAUDE.md
+    hierarchy from the target repository (verified checkout, or API-visible
+    paths in API-only mode)
+    ↓
+plan review execution: reliable capability AND 2+ independent dimensions
+       AND expected latency benefit?
+       → yes → workers per dimension (read-only, same PR base/head snapshot)
+       → no  → sequential
     ↓
 inspect diff and surrounding code, reasoning about related changes as
 logical cohorts and inspecting relevant dependency paths beyond the
 diff, bounded to the PR's realistic blast radius
     ↓
 apply repository conventions
+    ↓
+aggregate worker findings (normalize → dedupe → reconcile); a required
+dimension missing → REVIEW INCOMPLETE, never REVIEW CLEAN
     ↓
 deduplicate same-HEAD findings when active
     ↓
@@ -53,6 +73,8 @@ construct one coherent review: human-facing body + inline comments
     ↓
 submit that one review (body + inline comments + event) when active
 or report formal-review unavailability
+    ↓
+finally: remove the temporary checkout (success, any failure, interruption)
     ↓
 stop
 ```
@@ -118,15 +140,103 @@ for the output contracts.
 Both modes apply identical review standards (the same shared policies,
 below). Only delivery differs.
 
+**Repository-backed inspection** is available to either mode as optional
+enrichment or as an explicit requirement: an
+isolated, read-only, detached temporary checkout at the PR head that gives
+the review richer **Repository Context** (surrounding implementation,
+interfaces, tests, config, architecture, and the target repository's own
+`AGENTS.md`/`CLAUDE.md` hierarchy) than the GitHub diff/API alone —
+repository instructions are always resolved from this target-repository
+snapshot, never from the Skill's own source checkout. The
+**PR stays the Review Target**; the checkout never widens it. It is
+read-only — the target repository's tests, builds, linters, hooks, and
+scripts are never run. The temporary directory is created under a safe
+scratch parent, unique per invocation, and is **always** cleaned up (success,
+any failure, or interruption), guarded so no unconstrained recursive delete
+can occur. Optional checkout failure is a visible API-only degradation;
+required checkout failure returns an ungraded `REVIEW INCOMPLETE` /
+`REPOSITORY CONTEXT UNAVAILABLE` outcome before workers start. See
+[`policies/repository-checkout.md`](policies/repository-checkout.md).
+
+**Parallel review** is an opt-in execution optimisation: when the runtime
+exposes a reliable multi-agent / sub-agent capability and the PR is complex
+enough to benefit, the review is split across independent read-only workers
+by dimension (scope, architecture, correctness, tests/config, existing-review
+reconciliation). Sequential and parallel execution must reach the **same**
+findings and decision; sequential is always the fallback and a review is
+never failed because parallelism is unavailable. One aggregating reviewer
+normalizes, deduplicates, reconciles, applies canonical severity, derives the
+one decision, and submits the one GitHub review. See the shared
+[`parallel-review.md`](../../shared/policies/parallel-review.md) and
+[`policies/parallel-review.md`](policies/parallel-review.md).
+
+### Inputs
+
+**Required:** a PR URL, a PR number with repository context, or a
+repository + PR number.
+
+**Optional:** review context describing the intended change. Two forms,
+per the shared
+[`review-context.md`](../../shared/policies/review-context.md), "Input form":
+
+- **Textual / free-form** — explicit user instructions/requirements, pasted
+  Jira/ticket text and/or acceptance criteria, a pasted GitHub Issue, an
+  HLD/architecture document/ADR, an implementation plan, the PR description
+  read as intent, or migration/security/performance/rollout constraints.
+  Consumed directly.
+- **Reference-based** — a bare Jira ticket key or URL, or a GitHub Issue
+  reference. A reference is a pointer to context, not the context itself.
+  When a **Jira reference** is supplied, this Skill executes the shared
+  [`review-context.md`](../../shared/policies/review-context.md), "Jira
+  context resolution" → **"Resolution procedure"** **before** review
+  reasoning: identify an available Jira MCP / connector / runtime-exposed
+  Jira read tool, invoke it **read-only** to fetch the issue's contents,
+  fetch relevant comments and linked context when supported, normalize, and
+  continue only on success. If the Jira reference cannot be resolved (no
+  integration, authentication or authorization failure, issue not found,
+  malformed reference, or connector/MCP error or timeout), this Skill
+  returns the explicit `JIRA CONTEXT UNRESOLVED` reasoning result and does
+  **not** perform the Jira-scoped review; it never infers the ticket from
+  the key, the branch name, the PR title, a commit message, surrounding
+  text, or copied metadata. A GitHub Issue
+  reference is resolved through the same read-only GitHub access used for PR
+  state, or supplied as pasted text; **no automatic PR↔Issue discovery**.
+
+Context is consumed uniformly per the shared policy and its thin PR
+application [`policies/review-context.md`](policies/review-context.md). It
+focuses review attention and enables scope-boundary reasoning about the PR;
+it never converts a ticket, Issue, ADR, or the PR description into an
+additional review target, and never widens the PR delta. When omitted, this
+Skill behaves exactly as before this input existed and never asks for it;
+Jira is never mandatory.
+
+**Always considered when available:** the PR's own prior reviews, review
+comments, and issue comments — as Existing Review Evidence, per the shared
+[`review-evidence.md`](../../shared/policies/review-evidence.md) and its thin
+PR application [`policies/review-evidence.md`](policies/review-evidence.md).
+Used to avoid repeating settled findings, contradicting settled decisions
+without new evidence, and missing an unresolved previously identified issue —
+never blindly inherited. Absent prior activity changes nothing.
+
 ## 3. Required Policy Loading
 
 Shared, always: [`review-scope.md`](../../shared/policies/review-scope.md),
 [`severity.md`](../../shared/policies/severity.md),
 [`evidence.md`](../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),
+[`review-context.md`](../../shared/policies/review-context.md) (the shared
+review-target / review-context / repository-context / existing-review-evidence
+model and scope-boundary reasoning — its requirement-context sections bind
+only when context is supplied),
+[`review-evidence.md`](../../shared/policies/review-evidence.md) (the shared
+Existing Review Evidence model),
 [`git-safety.md`](../../shared/policies/git-safety.md),
-[`review-ownership.md`](../../shared/policies/review-ownership.md), and
-[`file-reviewability.md`](../../shared/policies/file-reviewability.md).
+[`review-ownership.md`](../../shared/policies/review-ownership.md),
+[`file-reviewability.md`](../../shared/policies/file-reviewability.md), and —
+whenever parallel workers are used —
+[`parallel-review.md`](../../shared/policies/parallel-review.md) (the
+portable parallel-review contract: sequential/parallel equivalence, worker
+input/output, centralized aggregation, failure handling).
 
 Also always: [`review-summary.md`](../../shared/templates/review-summary.md)
 (the shared human-facing review body shape).
@@ -138,8 +248,20 @@ self-review guard, publication capability),
 [`reviewer-delta-review.md`](policies/reviewer-delta-review.md) (delta
 vs. full review mode), [`pr-scope.md`](policies/pr-scope.md) (complete PR
 scope, pagination, prior-review awareness),
-[`review-reasoning.md`](policies/review-reasoning.md) (logical cohorts,
-code-impact/dependency analysis), [`finding-placement.md`](policies/finding-placement.md)
+[`repository-checkout.md`](policies/repository-checkout.md) (the opt-in
+isolated temporary checkout lifecycle, base/head fidelity, read-only
+inspection, security, guaranteed cleanup — loaded only when
+repository-backed inspection is requested),
+[`review-context.md`](policies/review-context.md) (thin PR application of
+the shared review-context model; scope-boundary reasoning for a PR),
+[`review-evidence.md`](policies/review-evidence.md) (thin PR application of
+the shared Existing Review Evidence model; prior reviews/comments on this
+PR), [`review-reasoning.md`](policies/review-reasoning.md) (logical cohorts,
+code-impact/dependency analysis),
+[`parallel-review.md`](policies/parallel-review.md) (thin PR application of
+the shared parallel contract: threshold signals, shared checkout vs. worker
+copies, runtime realisation — loaded only when parallel workers are used),
+[`finding-placement.md`](policies/finding-placement.md)
 (inline vs. body placement), and [`review-output.md`](policies/review-output.md)
 (analysis/publication boundary, batching, HEAD revalidation, decision).
 

@@ -119,7 +119,7 @@ still reported when GitHub submission is unavailable.
 Report reasoning and mutation separately:
 
 ```text
-Reasoning: REVIEW CLEAN | CHANGES REQUIRED | REVIEW INCOMPLETE | NO NEW DELTA
+Reasoning: REVIEW CLEAN | CHANGES REQUIRED | REVIEW INCOMPLETE | NO NEW DELTA | JIRA CONTEXT UNRESOLVED
 Comments: COMMENTS PUBLISHED | COMMENTS NOT PUBLISHED | NOT REQUESTED
 Decision: REVIEW SUBMITTED | REVIEW NOT SUBMITTED | NOT REQUESTED
 ```
@@ -129,6 +129,17 @@ identity as the immediately preceding completed review and the
 previously reviewed SHA equals the current PR HEAD — see
 [`reviewer-delta-review.md`](reviewer-delta-review.md), "Same reviewer:
 delta boundary and scope." No new review is submitted in this case.
+
+`JIRA CONTEXT UNRESOLVED` applies only when the caller supplied a Jira
+reference that could not be resolved to normalized context — see
+[`review-context.md`](review-context.md), "Jira context resolution (PR
+application)," and the shared
+[`review-context.md`](../../../shared/policies/review-context.md), "Jira
+context resolution." The Jira-scoped review is not performed: no diff
+grading, no inference of the ticket from its key/branch/PR title, and no
+Approve/Request Changes for a scope never established. Comments/Decision are
+`NOT REQUESTED`. Re-invoking without a Jira reference yields a normal
+unscoped review.
 
 `REVIEW SUBMITTED` identifies the accepted event (`APPROVE`,
 `REQUEST_CHANGES`, or `COMMENT`). It never follows merely from a successful

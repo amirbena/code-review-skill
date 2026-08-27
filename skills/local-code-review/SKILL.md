@@ -24,11 +24,18 @@ optional PR reference additionally requires read-only GitHub access.
 ```text
 resolve local review scope
     ↓
-discover applicable AGENTS.md / CLAUDE.md
+resolve changed files, then one normalized per-file AGENTS.md/CLAUDE.md
+    hierarchy from the target repository (the local repo under review)
     ↓
 inspect Git delta by category: committed, staged, unstaged, untracked
     ↓
 compute staged-delta fingerprint
+    ↓
+Jira reference supplied? → yes → resolve via Jira MCP/connector (read-only)
+                                   → resolved → normalized Jira context
+                                   → unresolvable → JIRA CONTEXT UNRESOLVED,
+                                     stop (no key/branch inference)
+                                → no  → unchanged
     ↓
 optional review context supplied? → yes → understand intended change,
                                             extract requirements/
@@ -110,27 +117,57 @@ The full implementation state is reviewed — local `HEAD` alone is never
 assumed to contain everything, and no category is silently skipped
 without saying so in the report.
 
-**Optional:** free-form review context describing the intended change —
-requirements, a Jira (or equivalent tracker) ticket and/or its acceptance
-criteria, an HLD/architecture document/ADR, an implementation plan, a bug
-or incident description, a PR/task description, or migration/security/
-performance/rollout requirements. No source requires a dedicated
-integration; the caller supplies the text and this Skill treats it
-uniformly. When supplied, this Skill uses it to understand the intended
-change and focus review attention accordingly — never as an authority
-that overrides actual implementation evidence — before performing the
-rest of its own review; see
-[`policies/review-context.md`](policies/review-context.md). When
-omitted, this Skill's behavior is exactly as if this input did not exist,
-and this Skill never asks for it.
+**Optional:** review context describing the intended change. Two forms,
+per [`review-context.md`](../../shared/policies/review-context.md), "Input
+form":
+
+- **Textual / free-form** — requirements, explicit user instructions,
+  pasted Jira/ticket text and/or acceptance criteria, a pasted GitHub
+  Issue, an HLD/architecture document/ADR, an implementation plan, a bug or
+  incident description, a PR/task description, or migration/security/
+  performance/rollout requirements. Consumed directly, no resolution step.
+- **Reference-based** — a bare Jira ticket key or URL, or a GitHub Issue
+  reference. A reference is a pointer to context, not the context itself.
+  When a **Jira reference** is supplied, this Skill executes the shared
+  [`review-context.md`](../../shared/policies/review-context.md), "Jira
+  context resolution" → **"Resolution procedure"** **before** review
+  reasoning: identify an available Jira MCP / connector / runtime-exposed
+  Jira read tool, invoke it read-only to fetch the issue's contents, fetch
+  relevant comments and linked context when supported, normalize, and
+  continue only on success. If the Jira reference cannot be resolved (no
+  integration, authentication or authorization failure, issue not found,
+  malformed reference, or connector/MCP error or timeout),
+  this Skill does **not** infer ticket contents from the key, branch name,
+  or surrounding text and does **not** perform the Jira-scoped review — it
+  returns the explicit `JIRA CONTEXT UNRESOLVED` outcome instead. A GitHub
+  Issue reference is resolved through read-only GitHub access when
+  available, or supplied as pasted text; no automatic PR↔Issue discovery.
+
+When supplied and (for a Jira reference) resolved, this Skill uses the
+context to understand the intended change, focus review attention, and
+reason about the scope boundary of the requested change — never as an
+authority that overrides actual implementation evidence — before
+performing the rest of its own review. The shared review-target /
+review-context / repository-context model and the requirement-context
+semantics are defined once in
+[`review-context.md`](../../shared/policies/review-context.md);
+[`policies/review-context.md`](policies/review-context.md) is this Skill's
+thin local application of it (the review target stays the local delta).
+When omitted, this Skill's behavior is exactly as if this input did not
+exist, and this Skill never asks for it. Supplying no Jira reference is
+always valid; Jira is never mandatory.
 
 **Optional:** a reference to an associated GitHub PR (a PR URL, or a PR
 number when the repository can be inferred unambiguously). When supplied,
 this Skill reconciles the local delta against relevant existing reviewer
-findings and settled architectural/design decisions from that PR before
-performing the rest of its own review — see
-[`policies/pr-context.md`](policies/pr-context.md). When omitted, this
-Skill's behavior is exactly as if this input did not exist.
+findings, prior review comments, and settled architectural/design decisions
+from that PR — as Existing Review Evidence, per
+[`review-evidence.md`](../../shared/policies/review-evidence.md) and this
+Skill's thin local application
+[`policies/pr-context.md`](policies/pr-context.md) — before performing the
+rest of its own review. The local delta always remains the review target.
+When omitted, this Skill's behavior is exactly as if this input did not
+exist.
 
 These two optional inputs are independent — either, both, or neither may
 be supplied in a given invocation, with no ordering requirement between
@@ -142,6 +179,10 @@ Always: [`review-scope.md`](../../shared/policies/review-scope.md),
 [`severity.md`](../../shared/policies/severity.md),
 [`evidence.md`](../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),
+[`review-context.md`](../../shared/policies/review-context.md) (the shared
+review-target / review-context / repository-context / existing-review-evidence
+model; its requirement-context and scope-boundary sections bind only when
+context is actually supplied),
 [`git-safety.md`](../../shared/policies/git-safety.md). In orchestrated/
 multi-Agent contexts, also
 [`review-ownership.md`](../../shared/policies/review-ownership.md).
@@ -157,17 +198,22 @@ section 5 below) and
 [`policies/repository-state.md`](policies/repository-state.md) (the
 committed/staged/unstaged/tracked/untracked category definitions,
 per-category detection commands, and the staged-delta fingerprint).
-Additionally, only when review context is supplied per section 2:
-[`policies/review-context.md`](policies/review-context.md) (input forms,
-the evidence hierarchy, review-focus mapping, and scope discipline for
-that optional context). This policy is never loaded or applied when no
-review context is supplied. Additionally, only when a PR reference is
-supplied per section 2: [`policies/pr-context.md`](policies/pr-context.md)
-(retrieval scope, classification, finding reconciliation, and
-architectural-decision handling for that optional PR context). This
+Additionally, only when review context is supplied per section 2: the shared
+[`review-context.md`](../../shared/policies/review-context.md) requirement-
+context and scope-boundary sections, and this Skill's thin
+[`policies/review-context.md`](policies/review-context.md) (mapping supplied
+context onto the local delta, never widening it). This policy is never
+loaded or applied when no review context is supplied. Additionally, only
+when a PR reference is supplied per section 2: the shared
+[`review-evidence.md`](../../shared/policies/review-evidence.md) (the
+Existing Review Evidence model) and
+[`policies/pr-context.md`](policies/pr-context.md) (this Skill's thin local
+application: retrieval scope and reconciliation of prior findings, prior
+review comments, and settled decisions against the local delta). This
 policy is never loaded or applied when no PR reference is supplied. Each
-of these two policies is loaded and applied independently of the other,
-and only when its own respective input is supplied — never otherwise.
+optional input's policies are loaded and applied independently of the
+other, and only when its own respective input is supplied — never
+otherwise.
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.

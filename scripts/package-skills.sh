@@ -35,6 +35,9 @@ shared_policies=(
   "git-safety.md"
   "review-ownership.md"
   "file-reviewability.md"
+  "review-context.md"
+  "review-evidence.md"
+  "parallel-review.md"
 )
 shared_templates=(
   "finding.md"
@@ -292,7 +295,11 @@ if [[ "${target}" == "github" || "${target}" == "all" ]]; then
     "policies/review-authority.md" \
     "policies/reviewer-delta-review.md" \
     "policies/pr-scope.md" \
+    "policies/repository-checkout.md" \
+    "policies/review-context.md" \
+    "policies/review-evidence.md" \
     "policies/review-reasoning.md" \
+    "policies/parallel-review.md" \
     "policies/finding-placement.md" \
     "policies/review-output.md" \
     "runbooks/passive-pr-review.md" \

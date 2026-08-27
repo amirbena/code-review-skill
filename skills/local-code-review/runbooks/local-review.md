@@ -14,8 +14,11 @@ Applies shared policies:
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
-[`git-safety.md`](../../../shared/policies/git-safety.md), and the shared
-human-facing output shape in
+[`git-safety.md`](../../../shared/policies/git-safety.md),
+[`review-context.md`](../../../shared/policies/review-context.md) (the shared
+review-target / review-context / repository-context / existing-review-evidence
+model — its requirement-context and scope-boundary sections bind only when
+context is supplied), and the shared human-facing output shape in
 [`review-summary.md`](../../../shared/templates/review-summary.md), plus
 this Skill's own
 [`../policies/invocation-approval.md`](../policies/invocation-approval.md)
@@ -26,13 +29,17 @@ per-category detection commands, push/synchronization status, and the
 staged-delta fingerprint and its re-review comparison contract — this
 runbook's single source for all of that Git-mechanics detail). When the
 caller supplies review context, also
-[`../policies/review-context.md`](../policies/review-context.md)
-(interpretation, evidence hierarchy, and review-focus mapping for that
-optional input) — never loaded or applied otherwise. When the caller
-supplies a PR reference, also
-[`../policies/pr-context.md`](../policies/pr-context.md) (retrieval
-scope, classification, finding reconciliation, and architectural-decision
-handling) — never loaded or applied otherwise.
+[`../policies/review-context.md`](../policies/review-context.md) (this
+Skill's thin local application of the shared model — mapping supplied
+requirements/Jira/GitHub-Issue/HLD/ADR/plan context onto the local delta and
+reasoning about the requested change's scope boundary) — never loaded or
+applied otherwise. When the caller supplies a PR reference, also
+[`review-evidence.md`](../../../shared/policies/review-evidence.md) (the
+shared Existing Review Evidence model) and
+[`../policies/pr-context.md`](../policies/pr-context.md) (this Skill's thin
+local application: retrieval scope and reconciliation of prior findings,
+prior review comments, and settled decisions against the local delta) —
+never loaded or applied otherwise.
 
 ## Flow
 
@@ -45,7 +52,10 @@ detect each category separately: committed, staged, unstaged, untracked
     ↓
 compute staged-delta fingerprint
     ↓
-review context supplied? → yes → understand intended change, extract
+review context supplied? → yes → resolve any Jira reference first (Jira
+                                   MCP/connector, read-only); unresolvable →
+                                   JIRA CONTEXT UNRESOLVED, stop. Then
+                                   understand intended change, extract
                                    requirements/invariants/non-goals, map
                                    onto the delta established above
                                  → no  → unchanged
@@ -140,32 +150,65 @@ which a value must be resolved before it is used, or what is reported.
    Informational for the report; not a decision this Skill makes.
 6. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
-   "Deduplicated discovery," for every changed file. Do this before
-   reviewing so discovered conventions inform the review itself, not just
-   a post-hoc check.
-7. **If, and only if, the caller supplied review context:** apply
-   [`../policies/review-context.md`](../policies/review-context.md) in
-   full now — after the local delta (steps 1–4) and repository-instruction
+   "Deduplicated discovery" and "Normalized Repository Instruction Context,"
+   for every changed file. Resolve the root-to-specific chain once from the
+   current local snapshot of the target repository (the local repository
+   whose delta is under review) — never from the reviewer's working
+   directory or an installed Skill location; unrelated subtrees are not
+   scanned and the local delta remains the Review Target. Do this before
+   reviewing so discovered conventions inform the review itself, not just a
+   post-hoc check.
+7. **If, and only if, the caller supplied review context:** apply the
+   shared [`review-context.md`](../../../shared/policies/review-context.md)
+   and this Skill's thin
+   [`../policies/review-context.md`](../policies/review-context.md) in full
+   now — after the local delta (steps 1–4) and repository-instruction
    discovery (step 6), and before PR-context reconciliation (step 8, if
-   applicable) and the review step below. That policy owns the complete
-   context-understanding procedure (reading the context, extracting
-   requirements/invariants/non-goals, and mapping them onto the delta
-   established above — never onto files or concerns outside it) and how
-   the result focuses the review step; this runbook does not restate it.
+   applicable) and the review step below.
+   - **7a. Resolve reference-based context first.** If the caller supplied a
+     **Jira reference** (key or URL), execute the shared
+     [`review-context.md`](../../../shared/policies/review-context.md), "Jira
+     context resolution" → **"Resolution procedure"** in order: (1) identify
+     an available Jira MCP / connector / runtime-exposed Jira read tool;
+     (2) invoke it **read-only** to fetch the referenced issue's contents
+     (not the key/URL/branch/PR-title/commit/copied metadata); (3) fetch
+     relevant issue comments and linked requirement context when the
+     integration supports them; (4) normalize the issue and comments into
+     Review Context (classify comments per "Jira comments" — do not promote
+     every comment to an acceptance criterion); (5) continue only after
+     successful resolution. If **any** of steps 1–4 fails — no integration
+     available, authentication failure, authorization failure, issue not
+     found, malformed reference, or connector/MCP error or timeout — stop the
+     Jira-scoped path: return `JIRA CONTEXT UNRESOLVED` naming the reference
+     and the integration(s) attempted, do **not** infer the ticket from its
+     key, the branch name, the PR reference's title, a commit message,
+     surrounding text, or copied metadata, and do **not** grade the review. A
+     GitHub Issue **reference** is resolved through read-only GitHub access
+     when available, or supplied as pasted text; no automatic PR↔Issue
+     discovery. Pasted/free-form context needs no resolution.
+   - **7b.** With context (resolved where reference-based) in hand, follow
+     the policies' context-understanding procedure: extract requirements/
+     invariants/non-goals, map them onto the delta established above, and
+     reason about the requested change's scope boundary per the shared
+     policy's "Scope-boundary reasoning." This runbook does not restate it.
+
    If no review context was supplied, skip this step entirely and proceed
    directly to step 8 — this step never prompts the user for context when
    none was supplied.
-8. **If, and only if, the caller supplied a PR reference:** apply
+8. **If, and only if, the caller supplied a PR reference:** apply the shared
+   [`review-evidence.md`](../../../shared/policies/review-evidence.md) and
+   this Skill's thin
    [`../policies/pr-context.md`](../policies/pr-context.md) in full now —
    after the local delta (steps 1–4), repository-instruction discovery
    (step 6), and review-context understanding (step 7, if applicable),
-   and before the review step below. That policy owns the complete
+   and before the review step below. Those policies own the complete
    retrieval, classification, and reconciliation procedure (resolving the
-   PR reference; retrieving only relevant threads; classifying and
-   reconciling findings and settled decisions against the current local
-   delta); this runbook does not restate it. If no PR reference was
-   supplied, skip this step entirely and proceed directly to the review
-   step below.
+   PR reference; retrieving only relevant threads; classifying each prior
+   finding/comment as still-relevant, resolved, stale, duplicate, a settled
+   decision, or speculative discussion; and reconciling it against the
+   current local delta without blindly inheriting it); this runbook does
+   not restate them. If no PR reference was supplied, skip this step
+   entirely and proceed directly to the review step below.
 9. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

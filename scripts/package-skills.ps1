@@ -37,7 +37,10 @@ $sharedPolicies = @(
   "repository-instructions.md",
   "git-safety.md",
   "review-ownership.md",
-  "file-reviewability.md"
+  "file-reviewability.md",
+  "review-context.md",
+  "review-evidence.md",
+  "parallel-review.md"
 )
 $sharedTemplates = @(
   "finding.md",
@@ -304,7 +307,11 @@ if ($Skill -eq "github" -or $Skill -eq "all") {
     "policies/review-authority.md",
     "policies/reviewer-delta-review.md",
     "policies/pr-scope.md",
+    "policies/repository-checkout.md",
+    "policies/review-context.md",
+    "policies/review-evidence.md",
     "policies/review-reasoning.md",
+    "policies/parallel-review.md",
     "policies/finding-placement.md",
     "policies/review-output.md",
     "runbooks/passive-pr-review.md",

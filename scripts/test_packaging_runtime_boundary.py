@@ -1,39 +1,10 @@
 #!/usr/bin/env python3
-"""Regression coverage for the packaging/runtime boundary of this
-repository's Python reference/test modules (review_context.py,
-decision_semantics.py, pr_context_reconciliation.py,
-reviewer_ownership.py, staged_fingerprint.py).
+"""Guards the packaging boundary: the scripts/*.py reference modules stay
+test-only and out of both Skill archives.
 
-This repository's Code Review Agent Skills are natural-language
-instruction packages (Markdown policies/runbooks/templates plus a YAML
-metadata file) consumed by an LLM runtime — they contain no Python and
-execute no Python at runtime. The Python modules under scripts/ that
-"mirror" a policy file (see each module's own docstring) exist solely so
-this repository's own test suite can verify that policy's decision
-tables are internally consistent; they are deliberately excluded from
-both packaged Skill archives.
-
-This test file establishes **Contract A** (see each module's docstring
-and skills/local-code-review/policies/review-context.md /
-shared/policies/severity.md): these modules are not required at runtime,
-and the packaged Skill contains every file it actually depends on. It is
-designed to fail if a future refactor accidentally:
-
-- adds one of these modules to a package file list without also making
-  it a genuine runtime dependency (packaging boundary drift), or
-- makes a packaged Skill file (SKILL.md, a policy, a runbook, a
-  template, or metadata) textually invoke/import one of these modules
-  (a hidden runtime dependency packaging would silently omit), or
-- lets a module's documented contract diverge from the packaged policy
-  text that is supposed to carry the same behavior at runtime (i.e. the
-  module quietly becomes the *only* place the logic lives).
-
-Building the actual archive requires `zip`/`unzip` on PATH; if
-unavailable, the archive-content checks are skipped with an explicit
-message rather than silently passing.
-
-Run with:
-    python3 scripts/test_packaging_runtime_boundary.py
+Fails if a refactor adds one to a package file list, makes a packaged file
+import/invoke one, or lets a module's contract drift out of its packaged
+policy. Archive-content checks need zip/unzip and skip explicitly otherwise.
 """
 
 from __future__ import annotations
@@ -52,26 +23,25 @@ LOCAL_SKILL_DIR = REPO_ROOT / "skills" / "local-code-review"
 GITHUB_SKILL_DIR = REPO_ROOT / "skills" / "github-pr-review"
 DIST_DIR = REPO_ROOT / "dist"
 
-#: Repository-development-only Python modules that mirror a canonical
-#: policy file for deterministic testing (see each module's own
-#: docstring). None of these are runtime dependencies of either packaged
-#: Skill — this is the exhaustive list this test enforces against.
+# The reference modules this test guards — none is a runtime dependency.
 REFERENCE_TEST_MODULES = (
     "review_context.py",
     "decision_semantics.py",
     "pr_context_reconciliation.py",
     "reviewer_ownership.py",
     "staged_fingerprint.py",
+    "jira_context.py",
+    "pr_checkout.py",
+    "pr_simulation.py",
+    "parallel_review.py",
+    "repository_instructions.py",
 )
 
-#: For each reference/test module, the packaged policy file(s) that are
-#: supposed to carry the same behavioral contract at runtime, and the
-#: section headings from that module's own docstring/comments that must
-#: still be present in the packaged text — i.e. the policy, not the
-#: module, is where a runtime reader actually finds this logic.
+# module -> (packaged policy that must carry the same contract, headings that
+# must still be present in it).
 MODULE_TO_PACKAGED_POLICY_HEADINGS = {
     "review_context.py": (
-        LOCAL_SKILL_DIR / "policies" / "review-context.md",
+        REPO_ROOT / "shared" / "policies" / "review-context.md",
         (
             "## Evidence hierarchy",
             "## Explicit non-goals",
@@ -85,6 +55,33 @@ MODULE_TO_PACKAGED_POLICY_HEADINGS = {
             "## Repository conventions and severity",
         ),
     ),
+    "pr_checkout.py": (
+        REPO_ROOT / "skills" / "github-pr-review" / "policies" / "repository-checkout.md",
+        (
+            "## Lifecycle",
+            "## Base / head fidelity",
+            "## Temporary directory lifecycle",
+            "## Security (PR contents are untrusted)",
+        ),
+    ),
+    "parallel_review.py": (
+        REPO_ROOT / "shared" / "policies" / "parallel-review.md",
+        (
+            "## Execution-policy decision",
+            "## Worker contract",
+            "## Worker output format",
+            "## Centralized aggregation",
+        ),
+    ),
+    "repository_instructions.py": (
+        REPO_ROOT / "shared" / "policies" / "repository-instructions.md",
+        (
+            "## Directory-scoped discovery",
+            "## Normalized Repository Instruction Context",
+            "## Safe and explicit reads",
+            "## AGENTS.md vs. CLAUDE.md",
+        ),
+    ),
 }
 
 
@@ -93,7 +90,6 @@ def _extract_local_skill_file_list(script_text: str) -> list[str]:
     #   package_skill "local-code-review" "local-code-review-skill" \
     #     "agents/openai.yaml" \
     #     ...
-    #     "templates/local-review-report.md"
     match = re.search(
         r'package_skill "local-code-review" "local-code-review-skill" \\\n(.*?)\nfi',
         script_text,
@@ -102,6 +98,87 @@ def _extract_local_skill_file_list(script_text: str) -> list[str]:
     if not match:
         raise AssertionError("could not locate local-code-review package_skill invocation")
     return re.findall(r'"([^"]+)"', match.group(1))
+
+
+SH = REPO_ROOT / "scripts" / "package-skills.sh"
+PS1 = REPO_ROOT / "scripts" / "package-skills.ps1"
+
+
+def _sh_array(text: str, name: str) -> list[str]:
+    m = re.search(rf'{re.escape(name)}=\((.*?)\)', text, re.S)
+    if not m:
+        raise AssertionError(f"array {name} not found in package-skills.sh")
+    return re.findall(r'"([^"]+)"', m.group(1))
+
+
+def _ps1_array(text: str, name: str) -> list[str]:
+    m = re.search(rf'\${re.escape(name)}\s*=\s*@\((.*?)\)', text, re.S)
+    if not m:
+        raise AssertionError(f"array ${name} not found in package-skills.ps1")
+    return re.findall(r'"([^"]+)"', m.group(1))
+
+
+def _sh_skill_files(text: str, skill: str) -> list[str]:
+    m = re.search(rf'package_skill "{re.escape(skill)}" "[^"]+" \\\n(.*?)\n(?:\s*for |\}}|fi)', text, re.S)
+    if not m:
+        raise AssertionError(f"package_skill {skill} not found in package-skills.sh")
+    return re.findall(r'"([^"]+)"', m.group(1))
+
+
+def _ps1_skill_files(text: str, skill: str) -> list[str]:
+    m = re.search(rf'-SkillName "{re.escape(skill)}"[^@]*-SkillFiles @\((.*?)\)', text, re.S)
+    if not m:
+        raise AssertionError(f"Package-Skill {skill} not found in package-skills.ps1")
+    return re.findall(r'"([^"]+)"', m.group(1))
+
+
+class PackagingScriptParityTests(unittest.TestCase):
+    """The shell and PowerShell packaging scripts must ship the same files.
+    pwsh may be unavailable to execute; this compares the declared lists
+    statically so a drift still fails CI."""
+
+    def setUp(self) -> None:
+        self.sh = SH.read_text(encoding="utf-8")
+        self.ps1 = PS1.read_text(encoding="utf-8")
+
+    def test_shared_policy_lists_match(self) -> None:
+        self.assertEqual(
+            _sh_array(self.sh, "shared_policies"),
+            _ps1_array(self.ps1, "sharedPolicies"),
+        )
+
+    def test_shared_template_lists_match(self) -> None:
+        self.assertEqual(
+            _sh_array(self.sh, "shared_templates"),
+            _ps1_array(self.ps1, "sharedTemplates"),
+        )
+
+    def test_local_skill_file_lists_match(self) -> None:
+        self.assertEqual(
+            _sh_skill_files(self.sh, "local-code-review"),
+            _ps1_skill_files(self.ps1, "local-code-review"),
+        )
+
+    def test_github_skill_file_lists_match(self) -> None:
+        self.assertEqual(
+            _sh_skill_files(self.sh, "github-pr-review"),
+            _ps1_skill_files(self.ps1, "github-pr-review"),
+        )
+
+    def test_new_shared_policies_are_in_both(self) -> None:
+        for name in ("review-context.md", "review-evidence.md", "parallel-review.md"):
+            self.assertIn(name, _sh_array(self.sh, "shared_policies"))
+            self.assertIn(name, _ps1_array(self.ps1, "sharedPolicies"))
+
+    def test_new_github_policies_are_in_both(self) -> None:
+        for name in (
+            "policies/review-context.md",
+            "policies/review-evidence.md",
+            "policies/repository-checkout.md",
+            "policies/parallel-review.md",
+        ):
+            self.assertIn(name, _sh_skill_files(self.sh, "github-pr-review"))
+            self.assertIn(name, _ps1_skill_files(self.ps1, "github-pr-review"))
 
 
 class DeclaredPackageFileListTests(unittest.TestCase):
@@ -143,14 +220,10 @@ class DeclaredPackageFileListTests(unittest.TestCase):
                 )
 
 
-#: Phrases that, when present in the same *paragraph* as a module mention,
-#: mark that mention as an explicit "this is not a runtime dependency"
-#: disclaimer (the established pattern in repository-state.md for
-#: staged_fingerprint.py) rather than an actual functional/import
-#: reference. A mention with no such disclaimer in its own paragraph is
-#: treated as a potential hidden runtime dependency — a disclaimer
-#: elsewhere in the file, attached to an unrelated mention, does not
-#: count (see "proximity-scoped," below).
+# A module mention in the same block as one of these phrases is a
+# disclaimer, not a runtime reference. Proximity matters (see
+# _split_into_scoped_blocks): a disclaimer elsewhere in the file does not
+# excuse an undisclaimed mention.
 DISCLAIMER_PHRASES = (
     "not part of either packaged Skill archive",
     "not part of this Skill",
@@ -173,18 +246,13 @@ _LIST_ITEM_START_RE = re.compile(r"^[ \t]*(?:[-*+]|\d+[.)])\s")
 
 
 def _split_into_scoped_blocks(text: str) -> list[str]:
-    """Split `text` into proximity units: blank-line-delimited paragraphs,
-    further split at each Markdown list-item boundary.
+    """Split into proximity units: blank-line paragraphs, further split at
+    each Markdown list-item boundary.
 
-    A blank line alone is not sufficient: a "tight" Markdown list (list
-    items with no blank line between them, e.g. two adjacent `-` bullets)
-    is one blank-line-delimited paragraph but two distinct logical
-    statements — a disclaimer in one bullet must not excuse an
-    undisclaimed mention in the next bullet. Splitting additionally on
-    lines that start a new list item (while keeping a bullet's own
-    wrapped continuation lines, which don't start with a marker, attached
-    to it) keeps this deterministic and parser-free while covering both
-    plain-paragraph and tight-list documentation styles.
+    A tight list (adjacent bullets, no blank line) is one paragraph but
+    several statements, so a disclaimer on one bullet must not cover the
+    next. Wrapped continuation lines (no list marker) stay with their
+    bullet. Deterministic and parser-free.
     """
     blocks: list[str] = []
     for paragraph in re.split(r"\n[ \t]*\n", text):
@@ -205,23 +273,14 @@ def find_undisclaimed_module_references_in_text(
     modules: Sequence[str] = REFERENCE_TEST_MODULES,
     disclaimer_phrases: Sequence[str] = DISCLAIMER_PHRASES,
 ) -> list[str]:
-    """Module mentions in `text` with no disclaimer in the same
-    paragraph/list-item.
+    """Module mentions with no disclaimer in the same block.
 
-    Proximity-scoped rather than file-wide: see `_split_into_scoped_blocks`
-    for the deterministic, parser-free scoping unit this uses in place of
-    "the same logical documentation block." A disclaimer phrase in one
-    block never excuses an undisclaimed module mention in a different
-    block of the same file — this is what distinguishes a legitimate,
-    disclaimed mention (disclaimer and mention in the same block) from an
-    unrelated disclaimer elsewhere in the file masking a real hidden
-    reference.
+    Proximity-scoped, not file-wide: a disclaimer in one block must not
+    excuse an undisclaimed mention in another block of the same file.
     """
     offenders: list[str] = []
     for block in _split_into_scoped_blocks(text):
-        # A disclaimer phrase may itself wrap across lines within the
-        # block — compare against whitespace-normalized text rather than
-        # requiring it verbatim on one line.
+        # Disclaimer phrases may wrap across lines; normalize before matching.
         normalized = re.sub(r"\s+", " ", block)
         has_disclaimer = any(phrase in normalized for phrase in disclaimer_phrases)
         if has_disclaimer:
@@ -343,22 +402,16 @@ class ProximityScopedDisclaimerTests(unittest.TestCase):
 
 
 class ModuleSelfDocumentationTests(unittest.TestCase):
-    """Each reference/test module explicitly declares its own role, so a
-    future maintainer never mistakes it for missing packaged runtime
-    logic — see the wording this repository standardized on."""
+    """Every reference/test module states, in its docstring, that it is
+    test-only and not packaged — so it is never mistaken for missing runtime
+    logic."""
 
-    def test_review_context_module_declares_it_is_not_runtime_logic(self) -> None:
-        text = (REPO_ROOT / "scripts" / "review_context.py").read_text(encoding="utf-8")
-        self.assertIn("NOT production/runtime logic", text)
-        self.assertIn("does not import, invoke, or otherwise depend on this module at runtime", text)
-
-    def test_decision_semantics_module_declares_it_is_not_runtime_logic(self) -> None:
-        text = (REPO_ROOT / "scripts" / "decision_semantics.py").read_text(encoding="utf-8")
-        self.assertIn("NOT production/runtime logic", text)
-        self.assertIn(
-            "neither packaged Skill file imports, invokes, or\notherwise depends on this module at runtime",
-            text,
-        )
+    def test_each_reference_module_declares_it_is_not_runtime_logic(self) -> None:
+        for module in REFERENCE_TEST_MODULES:
+            head = (REPO_ROOT / "scripts" / module).read_text(encoding="utf-8")[:600]
+            with self.subTest(module=module):
+                self.assertIn("Test-only", head)
+                self.assertIn("not runtime logic, not packaged", head.lower())
 
 
 class PolicyCarriesTheSameContractTests(unittest.TestCase):
@@ -432,6 +485,8 @@ class BuiltArchiveContentTests(unittest.TestCase):
             "runbooks/local-review.md",
             "templates/local-review-report.md",
             "shared/policies/severity.md",
+            "shared/policies/review-context.md",
+            "shared/policies/review-evidence.md",
         }
         missing = required - self.archive_names
         self.assertEqual(missing, set(), f"archive missing required runtime file(s): {missing}")
@@ -441,6 +496,51 @@ class BuiltArchiveContentTests(unittest.TestCase):
             with self.subTest(module=module):
                 matches = {n for n in self.archive_names if n.endswith(module)}
                 self.assertEqual(matches, set())
+
+
+@unittest.skipUnless(
+    shutil.which("zip") and shutil.which("unzip"),
+    "zip/unzip not available on PATH — cannot build/inspect the archive",
+)
+class GitHubArchiveContentTests(unittest.TestCase):
+    """The packaged github-pr-review archive carries every policy needed to
+    instruct repository-backed review and portable concurrency, and no
+    Python."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        result = subprocess.run(
+            [str(PACKAGE_SCRIPT), "github"],
+            cwd=REPO_ROOT, capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode != 0:
+            raise AssertionError(
+                f"package-skills.sh github failed:\n{result.stdout}\n{result.stderr}"
+            )
+        with zipfile.ZipFile(DIST_DIR / "github-pr-review-skill.zip") as zf:
+            cls.names = set(zf.namelist())
+
+    def test_no_python_and_no_reference_modules(self) -> None:
+        self.assertEqual({n for n in self.names if n.endswith(".py")}, set())
+        for module in REFERENCE_TEST_MODULES:
+            self.assertEqual({n for n in self.names if n.endswith(module)}, set())
+
+    def test_repository_backed_and_parallel_policies_are_packaged(self) -> None:
+        required = {
+            "SKILL.md",
+            "policies/github-review.md",
+            "policies/repository-checkout.md",
+            "policies/parallel-review.md",
+            "runbooks/active-pr-review.md",
+            "runbooks/passive-pr-review.md",
+            "shared/policies/parallel-review.md",
+        }
+        self.assertEqual(required - self.names, set())
+
+    def test_repo_dev_docs_are_not_packaged(self) -> None:
+        for n in self.names:
+            self.assertNotIn("runtime-parallelism.md", n)
+            self.assertNotIn("ARCHITECTURE.md", n)
 
 
 if __name__ == "__main__":

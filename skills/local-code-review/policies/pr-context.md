@@ -1,9 +1,17 @@
-# Policy — Optional PR Context
+# Policy — Optional PR Context (local application)
 
-This Skill's own policy for the **optional** case where the caller
-supplies a reference to an existing GitHub Pull Request alongside the
-local review request. This file is the single canonical owner of that
-behavior; [`../SKILL.md`](../SKILL.md) and
+This Skill's **local application** of the shared Existing Review Evidence
+model. The canonical semantics — what counts as existing review evidence,
+"evidence and context, not authority," the still-relevant / resolved / stale
+/ duplicate / settled-decision / speculative-discussion classification, the
+settled-decision bar, and the read-only / decision-ownership / target
+boundaries — are owned by
+[`review-evidence.md`](../../../shared/policies/review-evidence.md) and are
+not restated here. This file adds only what is specific to `local-code-review`:
+the caller optionally supplies **a reference to an existing GitHub Pull
+Request**, and its relevant prior findings, prior review comments, and settled
+decisions are reconciled against the **local delta**, which always remains the
+review target. [`../SKILL.md`](../SKILL.md) and
 [`../runbooks/local-review.md`](../runbooks/local-review.md) state the
 concise behavioral consequence and reference this file rather than
 redefining it.

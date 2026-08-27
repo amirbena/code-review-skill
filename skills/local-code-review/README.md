@@ -7,7 +7,7 @@ P0/P1/P2 findings. Read-only: it never edits files, commits, pushes, or
 touches GitHub. For local/uncommitted state before a push or PR; for an
 existing GitHub Pull Request, use the sibling
 [`github-pr-review`](../github-pr-review/SKILL.md) Skill instead. See
-[`../../CODE_REVIEW_COMPARISON.md`](../../CODE_REVIEW_COMPARISON.md) for
+[`../../docs/CODE_REVIEW_COMPARISON.md`](../../docs/CODE_REVIEW_COMPARISON.md) for
 why this Skill exists alongside native and third-party reviewers.
 
 ## Opt-in only
@@ -34,18 +34,30 @@ derivation rule live in
 ## Optional inputs
 
 Two independent, optional inputs may accompany a review request; neither
-changes behavior when omitted.
+changes behavior when omitted. Both are the local application of the
+shared context model in
+[`../../shared/policies/review-context.md`](../../shared/policies/review-context.md)
+and
+[`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md).
 
-- **Review context** — free-form requirements, Jira/HLD/ADR content,
-  acceptance criteria, or constraints/non-goals describing the intended
-  change. Used to focus attention (what to inspect carefully), never as
-  authority over the actual code: evidence precedence is code/diff/tests
-  > repository instructions > supplied context > inference, and context
-  never expands review scope beyond the current delta. See
+- **Review context** — free-form requirements, explicit user instructions,
+  Jira/ticket content, acceptance criteria, an explicitly supplied GitHub
+  Issue (no automatic PR↔Issue discovery), HLD/ADR content, an
+  implementation plan, or constraints/non-goals describing the intended
+  change. Used to focus attention (what to inspect carefully) and to reason
+  about the requested change's scope boundary — missing required behavior,
+  contradiction of acceptance criteria, unrelated scope expansion,
+  valid-but-out-of-scope findings, and repository-policy violations that
+  hold regardless of ticket scope. Never authority over the actual code:
+  evidence precedence is code/diff/tests > repository instructions >
+  supplied context > inference, and context never expands the review target
+  beyond the current delta. See
   [`policies/review-context.md`](policies/review-context.md).
-- **PR reference** — an associated GitHub PR to reconcile against
-  existing reviewer findings and settled decisions. Read-only, never
-  expands scope to the PR's full history. See
+- **PR reference** — an associated GitHub PR whose prior findings, prior
+  review comments, and settled decisions are reconciled as Existing Review
+  Evidence: still-relevant, resolved, stale, duplicate, settled decision, or
+  speculative discussion — never blindly inherited. Read-only, never expands
+  the review target to the PR's full history. See
   [`policies/pr-context.md`](policies/pr-context.md).
 
 Example invocation with review context (exact syntax depends on the

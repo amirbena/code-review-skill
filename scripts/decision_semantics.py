@@ -1,25 +1,8 @@
 #!/usr/bin/env python3
-"""Reference/test implementation of the severity → decision contract.
+"""Test-only reference for the shared severity → decision contract.
 
-Mirrors shared/policies/severity.md, "Decision derivation (mechanical)" and
-"Repository conventions and severity" — the single canonical severity model
-both `local-code-review` and `github-pr-review` consume. Pure decision-table
-logic (no code understanding, no Git/GitHub calls) so
-test_decision_semantics.py can exercise the contract deterministically.
-This is NOT production/runtime logic: both packaged Skills implement this
-behavior through severity.md's policy text itself (already packaged with
-each Skill), and neither packaged Skill file imports, invokes, or
-otherwise depends on this module at runtime — this module is not part of
-either packaged Skill archive. It exists solely so this repository's own
-test suite can verify the policy's decision table is internally
-consistent.
-
-This module never assigns a finding's severity itself — that requires
-actually judging the finding's evidence and impact against severity.md's
-P0/P1/P2 definitions, which is each Skill's own job. It only encodes the
-*mechanical* relationship between a set of already-severity-classified
-findings and the final review decision: there is no independent, subjective
-decision path in either Skill that can contradict this derivation.
+Mirrors shared/policies/severity.md ("Decision derivation (mechanical)").
+Not runtime logic, not packaged.
 """
 
 from __future__ import annotations
@@ -35,7 +18,7 @@ class Severity(Enum):
     P2 = "P2"
 
 
-# Per severity.md, "Blocking rule": P0 and P1 block; P2 alone never blocks.
+# P0/P1 block; P2 alone never does.
 BLOCKING_SEVERITIES = frozenset({Severity.P0, Severity.P1})
 
 
@@ -46,13 +29,9 @@ class Decision(Enum):
 
 @dataclass(frozen=True)
 class Finding:
-    """A single, already-classified finding.
+    """An already-classified finding.
 
-    `origin` is informational only (e.g. "repository_convention",
-    "pr_context", "review_context", "diff") — per severity.md, "Repository
-    conventions and severity," a finding's origin never changes how the
-    decision derivation below treats it. This module carries the field only
-    so tests can prove that fact, never to branch on it.
+    `origin` is informational only; the derivation below never branches on it.
     """
 
     id: str
@@ -61,35 +40,20 @@ class Finding:
 
 
 def blocking_findings(findings: Sequence[Finding]) -> tuple[Finding, ...]:
-    """blocking_findings = { f in findings : severity(f) in {P0, P1} }.
-
-    Per severity.md, "Decision derivation (mechanical)". Origin is never
-    consulted — see the `Finding.origin` docstring above.
-    """
+    """Findings with P0/P1 severity. Origin is never consulted."""
     return tuple(f for f in findings if f.severity in BLOCKING_SEVERITIES)
 
 
 def derive_decision(findings: Sequence[Finding]) -> Decision:
-    """The one, mechanical path from findings to a decision.
+    """The one mechanical path: any blocking finding → CHANGES_REQUIRED.
 
-    Per severity.md, "Decision derivation (mechanical)": empty
-    blocking_findings -> CLEAN, non-empty -> CHANGES_REQUIRED. There is no
-    parameter here for "but it's strongly recommended," "but the repository
-    convention was emphatic," or any other override — by construction, this
-    function cannot express a second decision path.
+    By construction there is no override parameter — no second decision path.
     """
     return Decision.CLEAN if not blocking_findings(findings) else Decision.CHANGES_REQUIRED
 
 
-#: Per severity.md, "Decision derivation (mechanical)": a report's `Result`
-#: line and its `Decision` section are two textual renderings of one
-#: already-derived value. `Decision.value` (e.g. `"REVIEW CLEAN"`) already
-#: *is* the canonical Decision-section text, so no separate mapping is
-#: needed for that rendering. Only the Result line's phrasing genuinely
-#: differs (an emoji plus human-friendly wording) and needs a derived
-#: mapping of its own — keyed off the same `Decision` enum, so there is no
-#: code path here that could produce a Result for one Decision value and a
-#: Decision-section label for another.
+# `Decision.value` is already the Decision-section text; only the Result line
+# needs an emoji/phrasing map, keyed off the same enum.
 RESULT_LABELS: dict[Decision, str] = {
     Decision.CLEAN: "✅ Review Clean",
     Decision.CHANGES_REQUIRED: "⚠️ Changes Requested",
@@ -102,27 +66,14 @@ def render_result_label(decision: Decision) -> str:
 
 
 def clean_report_retains_non_blocking_findings(findings: Sequence[Finding]) -> tuple[Finding, ...]:
-    """A clean decision never means findings are hidden or discarded.
-
-    Per shared/templates/local-review-report.md / review-summary.md and
-    severity.md: `REVIEW CLEAN` means "no blocking findings," not "zero
-    findings of any kind." This returns exactly the findings that must still
-    appear in the report's Findings section regardless of the decision — the
-    full input set, unchanged and undiscarded.
-    """
+    """`REVIEW CLEAN` means "no blocking findings", not "no findings" — every
+    finding still appears in the report."""
     return tuple(findings)
 
 
-# --- Governance: this module's own shape never grows a second, overridable
-# decision path -------------------------------------------------------------
-
-#: Parameter/attribute name fragments that would indicate a second,
-#: overridable decision path has crept into this module — e.g. a caller
-#: being able to force CHANGES_REQUIRED despite empty blocking_findings, or
-#: suppress it despite non-empty blocking_findings. Checked by
-#: test_decision_semantics.py via substring matching against public
-#: function signatures, mirroring pr_context_reconciliation.py's governance
-#: test pattern.
+# Governance: name fragments whose presence would mean a second, overridable
+# or provisional decision path crept in. test_decision_semantics.py checks
+# public signatures against these.
 PROHIBITED_OVERRIDE_PARAM_FRAGMENTS: frozenset[str] = frozenset(
     {
         "override",
@@ -135,12 +86,6 @@ PROHIBITED_OVERRIDE_PARAM_FRAGMENTS: frozenset[str] = frozenset(
     }
 )
 
-#: Name fragments that would indicate a second, correctable/provisional
-#: decision path has crept into this module — e.g. a function that renders
-#: a decision before findings are finalized, or "corrects" an already-
-#: rendered one. Checked the same way as PROHIBITED_OVERRIDE_PARAM_FRAGMENTS
-#: above; see severity.md, "Decision derivation (mechanical)": a report
-#: publishes exactly one decision, never a provisional one later replaced.
 PROHIBITED_CORRECTION_FRAGMENTS: frozenset[str] = frozenset(
     {
         "correction",

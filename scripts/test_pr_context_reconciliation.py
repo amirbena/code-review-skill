@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
-"""Regression coverage for optional PR-context handling in local-code-review.
+"""Coverage for optional PR-context handling (pr_context_reconciliation.py).
 
-Mirrors skills/local-code-review/policies/pr-context.md. Exercises the pure
-decision-table reference implementation in pr_context_reconciliation.py —
-see that module's docstring for why it deliberately never determines
-"is this issue still present" itself (that requires reading code, which is
-this Skill's own job, not this reconciliation layer's).
-
-Run with:
-    python3 scripts/test_pr_context_reconciliation.py
+Contract: skills/local-code-review/policies/pr-context.md.
 """
 
 from __future__ import annotations

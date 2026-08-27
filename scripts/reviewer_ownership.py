@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Deterministic reference implementation of the reviewer-ownership rule.
+"""Test-only reference for the reviewer-ownership / delta-review rule.
 
-Mirrors skills/github-pr-review/policies/reviewer-delta-review.md. Pure
-logic (no Git/GitHub calls) so test_reviewer_ownership.py can exercise it
-deterministically. Not part of either packaged Skill archive — the
-Skills reason from the canonical policy text directly.
+Mirrors skills/github-pr-review/policies/reviewer-delta-review.md.
+Not runtime logic, not packaged.
 """
 
 from __future__ import annotations
@@ -22,10 +20,8 @@ NO_NEW_DELTA = "no_new_delta"
 class ReviewModeInput:
     """Already-resolved facts for the decision rule.
 
-    current_reviewer/pr_author are required: unresolved identity is the
-    caller's own incapability to handle, not a case that should silently
-    fall through to normal-full-review here. Other None/False fields mean
-    "unresolved" and fail conservative (normal full review).
+    `current_reviewer`/`pr_author` are required; other None/False fields
+    mean "unresolved" and fail conservative (normal full review).
     """
 
     current_reviewer: str
@@ -45,12 +41,8 @@ class ReviewModeResult:
 
 
 def resolve_review_mode(inp: ReviewModeInput) -> ReviewModeResult:
-    """Resolve the review mode per the canonical decision table.
-
-    Order: self-review guard first (authoritative), then previous-review
-    existence, reviewer-identity ambiguity, reviewer match, SHA
-    availability/equality, then material-delta escalation.
-    """
+    """Resolve the review mode. Order: self-review guard, previous-review
+    existence, reviewer ambiguity/match, SHA checks, delta escalation."""
 
     # Self-review guard is authoritative and can never be bypassed below.
     if inp.current_reviewer == inp.pr_author:

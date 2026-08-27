@@ -1,17 +1,9 @@
 #!/usr/bin/env python3
-"""Regression coverage for staged_fingerprint.
+"""Coverage for staged_fingerprint against a real Git repository:
+derivation from `git diff --cached --raw -M -z`, `-M` rename detection,
+stability, and that staged equality never implies unstaged/untracked.
 
-Mirrors skills/local-code-review/policies/repository-state.md, "Staged
-delta fingerprint" and "Fingerprint scope and re-review comparison."
-Exercises the reference implementation against a real Git repository so
-the fingerprint's actual behavior (not just a mocked approximation) is
-verified: derivation from `git diff --cached --raw -M -z`, rename
-detection via `-M`, stability for an identical staged state, and the
-fact that staged-fingerprint equality never implies unstaged/untracked
-state is also unchanged.
-
-Run with:
-    python3 scripts/test_staged_fingerprint.py
+Contract: skills/local-code-review/policies/repository-state.md.
 """
 
 from __future__ import annotations

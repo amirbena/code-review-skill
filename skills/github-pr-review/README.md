@@ -8,7 +8,7 @@ P0/P1/P2 findings — passively as a report, or, with sufficient
 authenticated GitHub access, actively by publishing inline findings, a
 final summary, and an Approve/Request Changes decision. For why this
 Skill exists alongside native and third-party PR reviewers, see
-[`../../CODE_REVIEW_COMPARISON.md`](../../CODE_REVIEW_COMPARISON.md).
+[`../../docs/CODE_REVIEW_COMPARISON.md`](../../docs/CODE_REVIEW_COMPARISON.md).
 
 ## When to Use
 
@@ -58,6 +58,78 @@ evidence-backed findings, and either publish one finalized GitHub review
 [`policies/github-review.md`](policies/github-review.md) for each
 stage's canonical rule.
 
+## Repository-access modes
+
+API-only mode never prepares a checkout. Optional or explicitly required
+repository-backed inspection materialises an **isolated,
+read-only, detached temporary checkout at the PR head** so it can read
+surrounding implementation, interfaces, tests, config, and architecture as
+Repository Context. The **PR stays the Review Target** — findings stay
+causally connected to the PR delta
+(`merge-base(base, head)..head`); the checkout never turns surrounding files
+into independent targets. It is read-only: the target repository's tests,
+builds, linters, hooks, and scripts are never run. The temporary directory is
+created under a safe scratch parent, unique per invocation, and is **always**
+cleaned up (success, any failure, interruption), guarded so no unconstrained
+recursive delete is possible. Optional failure is reported and continues
+API-only. Required failure returns ungraded `REVIEW INCOMPLETE` with
+`REPOSITORY CONTEXT UNAVAILABLE`, before workers start. See
+[`policies/repository-checkout.md`](policies/repository-checkout.md).
+
+## Parallel review (opt-in execution optimisation)
+
+Sequential review is the default. When the runtime exposes a reliable
+multi-agent / sub-agent capability **and** at least two materially independent
+dimensions can run concurrently with an expected latency benefit, review may split across
+independent **read-only** workers by dimension (scope, architecture,
+correctness, tests/config, existing-review reconciliation). Parallelism is an
+optimisation, never a semantic change: sequential and parallel execution must
+reach the **same** findings and decision, and sequential is always a valid
+fallback — a review is never failed because parallelism is unavailable. One
+aggregating reviewer normalizes, deduplicates, reconciles, applies canonical
+severity, derives the one decision, and submits the one GitHub review;
+workers publish nothing and a missing required dimension yields `REVIEW
+INCOMPLETE`, never `REVIEW CLEAN`. Portable contract:
+[`../../shared/policies/parallel-review.md`](../../shared/policies/parallel-review.md);
+PR application + per-runtime realisation (Claude Code Agent Teams / Cursor
+subagents / Codex concurrent agents, with capability detection and fallback):
+[`policies/parallel-review.md`](policies/parallel-review.md).
+
+## Review context and prior review evidence
+
+The PR is always the review target. Two optional/contextual inputs shape *how*
+it is reviewed, never *what* is reviewed:
+
+- **Review context** — caller-supplied requirements, explicit user
+  instructions, pasted Jira/ticket text, a GitHub Issue (no automatic
+  PR↔Issue discovery), HLD/ADR content, an implementation plan, or the PR
+  description read as intent. Reused from the shared
+  [`../../shared/policies/review-context.md`](../../shared/policies/review-context.md)
+  (the same model `local-code-review` applies), with a thin PR application in
+  [`policies/review-context.md`](policies/review-context.md). Enables
+  scope-boundary reasoning — required behavior missing from the PR, the PR
+  contradicting acceptance criteria, unrelated scope expansion,
+  valid-but-out-of-scope findings, and repository-policy violations that hold
+  regardless of ticket scope. Absent context changes nothing.
+- **Jira reference** — a bare Jira key/URL is a *pointer*, not context. When
+  supplied, it is resolved to normalized context **before** review reasoning
+  through an available Jira MCP / connector / equivalent integration
+  (**read-only** — retrieval only, no Jira mutation), per the shared policy's
+  "Jira context resolution." If it cannot be resolved (no integration,
+  auth/authz failure, ticket not found, malformed), this Skill reports the
+  `JIRA CONTEXT UNRESOLVED` reasoning result and does not perform the
+  Jira-scoped review — it never infers the ticket from its key, branch name,
+  or PR title. Jira is never mandatory; re-invoke without a Jira reference
+  for a normal unscoped review.
+- **Existing Review Evidence** — the PR's own prior reviews, review comments,
+  and issue comments, per the shared
+  [`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md)
+  and [`policies/review-evidence.md`](policies/review-evidence.md). Classified
+  as still-relevant / resolved / stale / duplicate / settled decision /
+  speculative discussion, then used to avoid repeating settled findings,
+  contradicting settled decisions without new evidence, and missing an
+  unresolved previously identified issue — never blindly inherited.
+
 ## Behavioral review signals
 
 The "reason about related changes" and "impact analysis" stages above
@@ -94,8 +166,16 @@ Maximum positive action is **Approve**; this Skill never merges.
 - [`policies/reviewer-delta-review.md`](policies/reviewer-delta-review.md) —
   full vs. delta re-review mode
 - [`policies/pr-scope.md`](policies/pr-scope.md) — complete PR scope
+- [`policies/repository-checkout.md`](policies/repository-checkout.md) —
+  opt-in isolated temporary checkout; base/head fidelity; read-only; cleanup
+- [`policies/review-context.md`](policies/review-context.md) — thin PR
+  application of the shared review-context model; scope-boundary reasoning
+- [`policies/review-evidence.md`](policies/review-evidence.md) — thin PR
+  application of the shared Existing Review Evidence model
 - [`policies/review-reasoning.md`](policies/review-reasoning.md) — logical
   cohorts, impact/dependency analysis
+- [`policies/parallel-review.md`](policies/parallel-review.md) — thin PR
+  application of the shared parallel contract; runtime realisation
 - [`policies/finding-placement.md`](policies/finding-placement.md) — inline
   vs. body placement
 - [`policies/review-output.md`](policies/review-output.md) — publication
