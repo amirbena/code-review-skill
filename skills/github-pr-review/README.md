@@ -58,10 +58,10 @@ evidence-backed findings, and either publish one finalized GitHub review
 [`policies/github-review.md`](policies/github-review.md) for each
 stage's canonical rule.
 
-## Repository-backed inspection (opt-in)
+## Repository-access modes
 
-By default the review uses GitHub API state only. When repository-backed
-inspection is requested, the Skill additionally materialises an **isolated,
+API-only mode never prepares a checkout. Optional or explicitly required
+repository-backed inspection materialises an **isolated,
 read-only, detached temporary checkout at the PR head** so it can read
 surrounding implementation, interfaces, tests, config, and architecture as
 Repository Context. The **PR stays the Review Target** — findings stay
@@ -71,8 +71,9 @@ into independent targets. It is read-only: the target repository's tests,
 builds, linters, hooks, and scripts are never run. The temporary directory is
 created under a safe scratch parent, unique per invocation, and is **always**
 cleaned up (success, any failure, interruption), guarded so no unconstrained
-recursive delete is possible. If the remote is unreachable / unauthenticated
-/ unreadable, review continues in API-only mode. See
+recursive delete is possible. Optional failure is reported and continues
+API-only. Required failure returns ungraded `REVIEW INCOMPLETE` with
+`REPOSITORY CONTEXT UNAVAILABLE`, before workers start. See
 [`policies/repository-checkout.md`](policies/repository-checkout.md).
 
 ## Parallel review (opt-in execution optimisation)

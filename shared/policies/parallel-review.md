@@ -55,14 +55,18 @@ Worker input
 - Review Target                    (identical for all workers in a run)
 - Review Context                   (identical for all workers in a run)
 - Repository Context location      (identical for all workers in a run)
+- Repository snapshot identity     (identical for all workers in a run)
+- Resolved repository instruction context and identity (identical for all workers)
 - Existing Review Evidence         (identical for all workers in a run)
 - Assigned review dimension        (differs per worker)
 - Applicable policies              (the shared policies for that dimension)
 ```
 
-The four "identical for all workers" fields are the run's semantic snapshot:
+The identical fields are the run's semantic snapshot:
 every worker analyses the same PR base/head state and the same context. A
 worker that received a different snapshot is a bug, not a smaller review.
+The parent resolves hierarchical repository instructions exactly once before
+planning or spawning workers; workers never rediscover them.
 
 ### Review dimensions
 

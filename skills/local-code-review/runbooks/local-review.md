@@ -150,9 +150,11 @@ which a value must be resolved before it is used, or what is reported.
    Informational for the report; not a decision this Skill makes.
 6. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
-   "Deduplicated discovery," for every changed file. Do this before
-   reviewing so discovered conventions inform the review itself, not just
-   a post-hoc check.
+   "Deduplicated discovery" and "Normalized Repository Instruction Context,"
+   for every changed file. Resolve the root-to-specific chain once from the
+   current local snapshot; unrelated subtrees are not scanned and the local
+   delta remains the Review Target. Do this before reviewing so discovered
+   conventions inform the review itself, not just a post-hoc check.
 7. **If, and only if, the caller supplied review context:** apply the
    shared [`review-context.md`](../../../shared/policies/review-context.md)
    and this Skill's thin

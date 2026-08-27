@@ -31,7 +31,7 @@ capabilities:
   external_review_context: optional # caller-supplied requirements / pasted Jira / GitHub Issue / HLD / ADR / plan / PR description; see ../../../shared/policies/review-context.md and ../policies/review-context.md
   jira_context_resolution: optional # only when a Jira reference is supplied; resolved via an available Jira MCP/connector, read-only; unresolved -> JIRA CONTEXT UNRESOLVED (no inference fallback); see ../../../shared/policies/review-context.md "Jira context resolution"
   prior_review_evidence: considered-when-available # the PR's own prior reviews/comments; see ../../../shared/policies/review-evidence.md and ../policies/review-evidence.md
-  repository_backed_checkout: optional # isolated temporary read-only checkout for richer Repository Context; guaranteed cleanup; see ../policies/repository-checkout.md
+  repository_access_mode: api-only|optional-repository-backed|required-repository-backed # required checkout failure is REVIEW INCOMPLETE; see ../policies/repository-checkout.md
   parallel_review: optional # split review across workers per dimension when the runtime exposes a reliable capability; execution optimisation only; see ../../../shared/policies/parallel-review.md and ../policies/parallel-review.md
 
 output:

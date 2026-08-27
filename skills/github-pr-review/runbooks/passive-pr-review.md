@@ -123,7 +123,8 @@ finally: remove the temporary checkout (success, any failure, interruption)
    speculative discussion — without blindly inheriting it. Absent prior
    activity changes nothing.
 
-   **If, and only if, repository-backed inspection was requested:** prepare
+   Resolve the requested repository-access mode and, for optional or required
+   repository-backed inspection, prepare
    an isolated temporary checkout per
    [`../policies/repository-checkout.md`](../policies/repository-checkout.md)
    — resolve the `NormalizedPrSource` from the retrieved PR metadata (repo
@@ -134,16 +135,16 @@ finally: remove the temporary checkout (success, any failure, interruption)
    submodule update. The checkout is **read-only** Repository Context; the
    PR delta stays `merge-base(base_sha, head_sha)..head_sha`; the target
    repo's tests/builds/linters/hooks/scripts are never run. On clone/fetch
-   failure (unreachable / unauthenticated / unreadable remote, missing ref,
-   head SHA mismatch), clean up and continue in **API-only mode** — never a
-   review failure. Cleanup is mandatory on every exit path (see step 8).
+   failure, clean up. Optional mode records a visible API-only degradation;
+   required mode returns `REVIEW INCOMPLETE` / `REPOSITORY CONTEXT
+   UNAVAILABLE` and starts no review execution. Cleanup is mandatory on every
+   exit path (see step 8).
 5. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
-   for each file in this invocation's scope, look for `AGENTS.md` /
-   `CLAUDE.md` at the target repository root and along that file's
-   directory ancestry, plus other relevant surrounding context (tests,
-   contracts, schemas, architecture docs). Do this before reviewing so
-   discovered conventions inform the review itself.
+   after changed-file resolution, resolve the root-to-specific instruction
+   chain for every changed file from the working tree or verified temporary
+   snapshot. Build one normalized Repository Instruction Context before
+   reviewing; unrelated subtree instructions are not read or applied.
 
    **Plan review execution** per
    [`../policies/parallel-review.md`](../policies/parallel-review.md) and the
@@ -152,7 +153,8 @@ finally: remove the temporary checkout (success, any failure, interruption)
    one by mutating configuration); if present **and** the PR is complex
    enough, split into read-only workers by dimension, each with the
    identical normalized input (same PR base/head snapshot, Review Context,
-   Repository Context location, Existing Review Evidence) and its dimension's
+   Repository Context location and snapshot identity, identical resolved
+   instruction-context identity, Existing Review Evidence) and its dimension's
    policies, returning candidate findings only; otherwise review
    sequentially. Both forms must reach the same findings.
 6. Review the diff against

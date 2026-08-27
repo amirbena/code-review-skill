@@ -34,6 +34,7 @@ REFERENCE_TEST_MODULES = (
     "pr_checkout.py",
     "pr_simulation.py",
     "parallel_review.py",
+    "repository_instructions.py",
 )
 
 # module -> (packaged policy that must carry the same contract, headings that
@@ -70,6 +71,14 @@ MODULE_TO_PACKAGED_POLICY_HEADINGS = {
             "## Worker contract",
             "## Worker output format",
             "## Centralized aggregation",
+        ),
+    ),
+    "repository_instructions.py": (
+        REPO_ROOT / "shared" / "policies" / "repository-instructions.md",
+        (
+            "## Directory-scoped discovery",
+            "## Normalized Repository Instruction Context",
+            "## Safe and explicit reads",
         ),
     ),
 }

@@ -82,7 +82,7 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "A changed HEAD starts a new authoritative review state",
     ),
     "repository-checkout.md": (
-        "## Two modes",
+        "## Three modes",
         "## Lifecycle",
         "## Base / head fidelity",
         "## Read-only inspection",

@@ -41,14 +41,13 @@ Jira reference supplied? → yes → resolve via Jira MCP/connector (read-only)
     ↓
 retrieve required PR scope for that mode
     ↓
-repository-backed inspection requested? → yes → mkdtemp → blobless clone →
-       fetch base/head → detached checkout at head_sha (read-only)
-       (remote unreachable/unauthenticated → API-only mode)
-                                        → no  → API-only mode
+repository access mode? → API-only: no checkout
+                        → optional: verified checkout or visible API-only degradation
+                        → required: verified checkout or REVIEW INCOMPLETE
     ↓
 determine formal-review capability
     ↓
-discover applicable AGENTS.md / CLAUDE.md
+resolve changed files, then one normalized per-file AGENTS.md hierarchy
     ↓
 plan review execution: parallel capability present AND PR complex enough?
        → yes → workers per dimension (read-only, same PR base/head snapshot)
@@ -138,7 +137,8 @@ for the output contracts.
 Both modes apply identical review standards (the same shared policies,
 below). Only delivery differs.
 
-**Repository-backed inspection** is an opt-in add-on to either mode: an
+**Repository-backed inspection** is available to either mode as optional
+enrichment or as an explicit requirement: an
 isolated, read-only, detached temporary checkout at the PR head that gives
 the review richer **Repository Context** (surrounding implementation,
 interfaces, tests, config, architecture) than the GitHub diff/API alone. The
@@ -147,8 +147,9 @@ read-only — the target repository's tests, builds, linters, hooks, and
 scripts are never run. The temporary directory is created under a safe
 scratch parent, unique per invocation, and is **always** cleaned up (success,
 any failure, or interruption), guarded so no unconstrained recursive delete
-can occur. When it is not requested or cannot be prepared (unreachable /
-unauthenticated / unreadable remote), review continues in API-only mode. See
+can occur. Optional checkout failure is a visible API-only degradation;
+required checkout failure returns an ungraded `REVIEW INCOMPLETE` /
+`REPOSITORY CONTEXT UNAVAILABLE` outcome before workers start. See
 [`policies/repository-checkout.md`](policies/repository-checkout.md).
 
 **Parallel review** is an opt-in execution optimisation: when the runtime

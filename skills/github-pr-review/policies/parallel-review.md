@@ -12,8 +12,10 @@ This file adds only what is PR-specific.
 
 ## Where it runs
 
-After PR scope is established and any repository-backed checkout is prepared,
-and before findings are finalized. It never changes the review mode
+After PR scope is established, any repository-backed checkout is verified,
+changed files and their normalized repository-instruction context are
+resolved, and before findings are finalized. Required repository-context
+failure starts no workers. It never changes the review mode
 ([`reviewer-delta-review.md`](reviewer-delta-review.md)), the PR delta, the
 self-review guard, or the batched single-review publication
 ([`review-output.md`](review-output.md)).
@@ -39,6 +41,10 @@ worker. Distinguish:
 - **semantic repository snapshot** — every worker must analyse the **same PR
   base/head state**. If a runtime insists on per-agent worktrees, each must
   be checked out at the identical `head_sha`, and none may modify it.
+
+Every worker also receives the identical normalized repository-instruction
+context identity. The parent resolves that context once; workers never
+rediscover `AGENTS.md` independently.
 
 The repository-backed checkout lifecycle in
 [`repository-checkout.md`](repository-checkout.md) is independent of, and not

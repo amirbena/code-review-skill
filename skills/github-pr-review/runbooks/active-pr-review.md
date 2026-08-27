@@ -154,8 +154,8 @@ stop
    scope remains missing or truncated, return `REVIEW INCOMPLETE`, report
    the missing scope, and do not submit a formal decision.
 
-   **If, and only if, repository-backed inspection was requested:** now
-   prepare an isolated temporary checkout per
+   Resolve the requested repository-access mode. For optional or required
+   repository-backed inspection, prepare an isolated temporary checkout per
    [`../policies/repository-checkout.md`](../policies/repository-checkout.md).
    Resolve the `NormalizedPrSource` (repo identity, base ref/SHA, head
    ref/SHA, pull ref if any) from the PR metadata already retrieved — do not
@@ -171,10 +171,9 @@ stop
    only — the PR delta remains
    `merge-base(base_sha, head_sha)..head_sha`, never an arbitrary repo diff,
    and never a run of the target repo's tests/builds/linters/hooks/scripts.
-   If the clone or a required fetch fails (unreachable, unauthenticated, or
-   unreadable remote; missing ref; head SHA mismatch), clean up and continue
-   in **API-only mode** — this never fails the review itself. See step 16
-   for the mandatory cleanup on every exit path.
+   On failure, clean up. Optional mode records a visible API-only degradation;
+   required mode returns `REVIEW INCOMPLETE` / `REPOSITORY CONTEXT
+   UNAVAILABLE` and starts no workers. See step 16 for mandatory cleanup.
 6. Determine event-specific capability, including draft, fork,
    comment-only, and permission-limited states, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
@@ -196,12 +195,10 @@ stop
    review awareness").
 8. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
-   for each file in this invocation's scope (the full changed-file set for
-   a normal review, or the delta's changed files plus inspected
-   surrounding context for a delta re-review), look for `AGENTS.md` /
-   `CLAUDE.md` at the target repository root and along that file's
-   directory ancestry. Do this before reviewing so discovered conventions
-   inform the review itself.
+   after changed-file resolution, resolve the root-to-specific instruction
+   chain for every changed file from the verified snapshot (or API-visible
+   paths in API-only mode). Build one normalized Repository Instruction
+   Context before reviewing; surrounding context never widens the target.
 
    **Plan review execution** per
    [`../policies/parallel-review.md`](../policies/parallel-review.md) and the
@@ -215,7 +212,8 @@ stop
    architecture/invariants, correctness/regression, tests/config,
    existing-review reconciliation); each worker gets the identical
    normalized input (same PR base/head snapshot, same Review Context,
-   same Repository Context location, same Existing Review Evidence) and its
+   same Repository Context location and snapshot identity, same resolved
+   instruction-context identity, same Existing Review Evidence) and its
    dimension's policies, and returns candidate findings only. Otherwise
    review sequentially. Sequential and parallel execution must reach the
    same findings and decision.

@@ -153,8 +153,10 @@ Normalize Inputs
     ├── Review Target        (local delta | GitHub PR delta)
     ├── Review Context        (optional: user instructions / resolved Jira /
     │                          GitHub Issue / HLD / ADR / plan / PR description)
-    ├── Repository Context   (AGENTS.md, architecture, surrounding code,
-    │                          tests, invariants)
+    ├── Repository Context   (repository snapshot / API-accessible files;
+    │                          applicable AGENTS.md hierarchy; repository
+    │                          policies; architecture/docs; surrounding code;
+    │                          tests/config)
     └── Existing Review Evidence (optional: prior findings, resolved
                                   findings, settled decisions, prior comments)
     ↓
@@ -163,10 +165,14 @@ Git / GitHub State Inspector
 Review Delta Resolver
     ↓
 Prepare Repository Context
-    ├── GitHub/API-only mode         (default)
-    └── Temporary repository-backed mode  (github-pr-review, opt-in):
+    ├── GitHub/API-only mode         (no checkout)
+    ├── Temporary repository-backed mode (mode family)
+    ├── Optional repository-backed enrichment (failure → visible API-only degradation)
+    └── Required repository-backed review (failure → REVIEW INCOMPLETE):
           mkdtemp → blobless clone → fetch base/head → detached checkout at
           head_sha; read-only; PR delta stays merge-base(base,head)..head
+    ↓
+Resolve changed files and one normalized per-file AGENTS.md hierarchy
     ↓
 Plan Review Execution
     ├── Sequential                   (always valid)
@@ -174,7 +180,8 @@ Plan Review Execution
           same PR base/head snapshot; execution optimisation only)
     ↓
 Review workers  (each: Review Target, Review Context, Repository Context
-                 location, Existing Review Evidence, assigned dimension,
+                 location + snapshot identity, resolved instruction-context
+                 identity, Existing Review Evidence, assigned dimension,
                  applicable policies → candidate findings only)
     ↓
 Reconcile findings  (normalize → deduplicate → reconcile overlapping/
@@ -201,7 +208,7 @@ Cleanup  (github-pr-review: remove the temporary checkout on every exit
 This flow is conceptual guidance, not a required implementation shape — the
 Skills are natural-language instruction packages, and the ordering above is
 the reading order their `SKILL.md` and runbooks already imply. Repository-backed
-mode and parallel workers are **opt-in** for `github-pr-review` only;
+repository-backed modes and parallel workers apply to `github-pr-review` only;
 `local-code-review` and API-only `github-pr-review` skip those stages entirely
 with no loss of correctness.
 
@@ -255,8 +262,8 @@ with no loss of correctness.
   PR's full or bounded-delta diff (GitHub).
 - **Prepare Repository Context** — in **API-only mode** (default, and the
   only mode for `local-code-review`), surrounding context comes from
-  API/working-tree reads. In **temporary repository-backed mode**
-  (`github-pr-review`, opt-in — [`skills/github-pr-review/policies/repository-checkout.md`](../skills/github-pr-review/policies/repository-checkout.md)),
+  API/working-tree reads. In optional or required **temporary repository-backed mode**
+  (`github-pr-review` — [`skills/github-pr-review/policies/repository-checkout.md`](../skills/github-pr-review/policies/repository-checkout.md)),
   the Skill also materialises an isolated, read-only, detached checkout at
   the PR head: `mkdtemp` under a safe scratch parent → blobless clone
   (`--no-checkout --no-tags --filter=blob:none`) → fetch base/head refs
@@ -267,9 +274,16 @@ with no loss of correctness.
   remains `merge-base(base_sha, head_sha)..head_sha` and surrounding files
   never become independent review targets. Every Git call runs with
   `core.hooksPath=/dev/null`, `GIT_CONFIG_NOSYSTEM=1`, `--no-tags`, no
-  submodule update. On any clone/fetch failure the Skill degrades to
-  API-only mode without failing the review. The temporary directory is owned
+  submodule update. Optional failure visibly degrades to API-only. Required
+  failure is pre-grading `REVIEW INCOMPLETE` with repository context
+  unavailable, and no workers start. The temporary directory is owned
   by one lifecycle with guarded cleanup on every exit path (see "Cleanup").
+- **Repository Instruction Resolver** — after target/changed-file resolution,
+  resolve root-to-specific applicable `AGENTS.md` chains once from the same
+  repository snapshot. Missing files are valid; applicable unreadable or
+  unsafe paths make context incomplete. The normalized per-file mapping and
+  identity go unchanged to sequential execution or every worker and never
+  widen the Review Target.
 - **Plan Review Execution** — detect the runtime's parallel capability
   (`none` / isolated sub-agents / experimental agent teams, usable only when
   already enabled / native concurrent agents; uncertain → `none`). Use
@@ -282,8 +296,9 @@ with no loss of correctness.
   decision, and the Skill never mutates the user's configuration to obtain a
   capability.
 - **Review workers** — each worker gets one bounded, normalized input
-  (identical Review Target, Review Context, Repository Context location, and
-  Existing Review Evidence across a run; its own assigned dimension and
+  (identical Review Target, Review Context, Repository Context location and
+  snapshot identity, resolved instruction context and identity, and Existing
+  Review Evidence across a run; its own assigned dimension and
   policies) and returns **structured candidate findings only**. It never
   publishes and never derives the final decision.
 - **Reconcile findings** — one centralized aggregation stage: normalize →

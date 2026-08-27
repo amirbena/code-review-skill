@@ -21,7 +21,10 @@ from pr_checkout import (
     NormalizedPrSource,
     RefNotFoundError,
     RemoteUnavailableError,
+    RepositoryAccessMode,
+    RepositoryAccessOutcome,
     prepare_repository_checkout,
+    run_with_repository_access,
 )
 
 
@@ -128,6 +131,55 @@ class FailureTests(unittest.TestCase):
             self.assertIn("path", captured)
             self.assertFalse(captured["path"].exists())
             self.assertFalse(captured["path"].parent.exists())
+
+
+class RepositoryAccessModeTests(unittest.TestCase):
+    def test_api_only_never_prepares_checkout(self) -> None:
+        calls = []
+        result = run_with_repository_access(
+            sim.unreadable_source(), RepositoryAccessMode.API_ONLY, calls.append
+        )
+        self.assertEqual(result.outcome, RepositoryAccessOutcome.API_ONLY)
+        self.assertEqual(calls, [None])
+
+    def test_optional_success_and_visible_degradation(self) -> None:
+        calls = []
+        with sim.simulated_pr() as pr:
+            result = run_with_repository_access(
+                pr.normalized_source(), RepositoryAccessMode.OPTIONAL, calls.append
+            )
+        self.assertEqual(result.outcome, RepositoryAccessOutcome.REPOSITORY_BACKED)
+        self.assertEqual(len(calls), 1)
+        calls.clear()
+        degraded = run_with_repository_access(
+            sim.unreadable_source(), RepositoryAccessMode.OPTIONAL, calls.append
+        )
+        self.assertEqual(degraded.outcome, RepositoryAccessOutcome.API_ONLY_DEGRADED)
+        self.assertIn("repository context unavailable", degraded.detail)
+        self.assertEqual(calls, [None])
+
+    def test_required_failure_is_incomplete_and_does_not_start_review(self) -> None:
+        calls = []
+        result = run_with_repository_access(
+            sim.unreadable_source(), RepositoryAccessMode.REQUIRED, calls.append
+        )
+        self.assertEqual(result.outcome, RepositoryAccessOutcome.INCOMPLETE)
+        self.assertFalse(result.callback_called)
+        self.assertEqual(calls, [])
+
+    def test_required_sha_mismatch_is_incomplete(self) -> None:
+        calls = []
+        with sim.simulated_pr() as pr:
+            good = pr.normalized_source()
+            bad = NormalizedPrSource(
+                good.repo_url, good.pr_number, good.base_ref, good.base_sha,
+                good.head_ref, "0" * 40, None,
+            )
+            result = run_with_repository_access(
+                bad, RepositoryAccessMode.REQUIRED, calls.append
+            )
+        self.assertEqual(result.outcome, RepositoryAccessOutcome.INCOMPLETE)
+        self.assertEqual(calls, [])
 
 
 class SecurityTests(unittest.TestCase):

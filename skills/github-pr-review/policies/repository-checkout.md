@@ -1,6 +1,6 @@
 # Policy — Repository-Backed Checkout
 
-Governs the **optional** repository-backed inspection mode for
+Governs repository-access modes for
 `github-pr-review`. Canonical index: [`github-review.md`](github-review.md).
 Builds on the shared
 [`git-safety.md`](../../../shared/policies/git-safety.md) and
@@ -9,16 +9,21 @@ Builds on the shared
 The **PR is always the Review Target.** A local checkout exists only to give
 the review richer **Repository Context** (surrounding implementation,
 interfaces, tests, config, architecture, repository policies) than the GitHub
-diff/API alone provide. It is opt-in: when it is not requested or cannot be
-prepared, review proceeds in API-only mode with no loss of correctness.
+diff/API alone provide.
 
-## Two modes
+## Three modes
 
 - **API-only mode** (default) — PR state comes entirely from the GitHub
   integration (`pr-scope.md`). No local checkout.
-- **Repository-backed mode** (opt-in) — additionally materialise an isolated,
+- **Optional repository-backed enrichment** — additionally materialise an isolated,
   read-only, detached checkout at the PR head so the reviewer can read
-  surrounding files and run safe Git read commands.
+  surrounding files and run safe Git read commands. Failure is reported as a
+  visible degradation and the review continues API-only.
+- **Required repository-backed review** — the caller explicitly requires deep
+  repository inspection. Checkout preparation and verification are a
+  pre-grading requirement; failure returns `REVIEW INCOMPLETE` with reason
+  `REPOSITORY CONTEXT UNAVAILABLE`. It never silently falls back to API-only
+  and does not create a new graded decision value.
 
 Repository-backed mode never changes the review standard, the severity model,
 the decision derivation, or the publication contract. It only widens what
@@ -117,13 +122,23 @@ never persist credentials into the temporary checkout, never invent a
 credential store. Immediately after clone, re-assert
 `core.hooksPath=/dev/null` locally so nothing the remote carried can run.
 
-**Failure semantics.** A clone or fetch that fails because the remote is
+**Failure classification.** A clone or fetch that fails because the remote is
 unreachable, unauthenticated, or not readable by this identity is a
 `RemoteUnavailableError`: report that repository-backed mode is unavailable
 and continue in API-only mode. A required base/head ref that cannot be
 fetched is a `RefNotFoundError`; a head that does not match `head_sha` is an
-`InvalidShaError` — both stop the repository-backed path (not the API-only
-review) after cleaning up.
+`InvalidShaError` — both stop the repository-backed path after cleanup. Clone
+unavailability, authentication/authorization failure, remote unavailability,
+base/head fetch failure, SHA mismatch, unsafe checkout state, and cleanup-
+preparation failure are all checkout failures. Optional mode records the
+degradation and continues API-only without claiming repository policies or
+nested instructions were evaluated. Required mode returns the incomplete,
+ungraded outcome and starts no review workers.
+
+After checkout verification, resolve the PR changed files, then resolve the
+shared hierarchical repository-instruction context from this checkout before
+planning sequential or parallel execution. Instruction reads remain inside
+the checkout root.
 
 ## Temporary directory lifecycle
 

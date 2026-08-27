@@ -74,12 +74,16 @@ class SharedWorkerInputTests(unittest.TestCase):
             review_target="PR#7 delta abc..def",
             review_context="ctx",
             repository_context_location="/tmp/pr-review-x/checkout",
+            repository_snapshot_identity="head:def",
+            repository_instruction_context_identity="instructions:123",
             existing_review_evidence="prior: none",
             dimensions=dims,
             policies_by_dimension={d: (f"{d.value}.md",) for d in dims},
         )
         keys = {wi.shared_key() for wi in inputs}
         self.assertEqual(len(keys), 1, "workers received different repo/context snapshots")
+        self.assertTrue(all(wi.repository_instruction_context_identity == "instructions:123"
+                            for wi in inputs))
         self.assertEqual(sorted(wi.dimension.value for wi in inputs),
                          sorted(d.value for d in dims))
 

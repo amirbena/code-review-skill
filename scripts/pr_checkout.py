@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Iterator, Optional, Sequence
 
@@ -47,6 +48,26 @@ class RefNotFoundError(CheckoutError):
 
 class InvalidShaError(CheckoutError):
     """A supplied SHA is malformed or absent from fetched history."""
+
+
+class RepositoryAccessMode(Enum):
+    API_ONLY = "api_only"
+    OPTIONAL = "optional_repository_backed"
+    REQUIRED = "required_repository_backed"
+
+
+class RepositoryAccessOutcome(Enum):
+    API_ONLY = "api_only"
+    REPOSITORY_BACKED = "repository_backed"
+    API_ONLY_DEGRADED = "api_only_degraded"
+    INCOMPLETE = "incomplete"
+
+
+@dataclass(frozen=True)
+class RepositoryAccessResult:
+    outcome: RepositoryAccessOutcome
+    detail: str
+    callback_called: bool
 
 
 @dataclass(frozen=True)
@@ -163,6 +184,36 @@ def prepare_repository_checkout(
         yield CheckoutHandle(path=repo, source=source, base_sha=source.base_sha, head_sha=head)
     finally:
         _safe_rmtree(work, scratch_root)
+
+
+def run_with_repository_access(
+    source: NormalizedPrSource,
+    mode: RepositoryAccessMode,
+    review_callback,
+    *,
+    scratch_parent: Optional[Path] = None,
+) -> RepositoryAccessResult:
+    """Resolve repository access before invoking review execution."""
+    if mode is RepositoryAccessMode.API_ONLY:
+        review_callback(None)
+        return RepositoryAccessResult(RepositoryAccessOutcome.API_ONLY, "checkout not requested", True)
+    try:
+        with prepare_repository_checkout(source, scratch_parent=scratch_parent) as handle:
+            review_callback(handle)
+        return RepositoryAccessResult(RepositoryAccessOutcome.REPOSITORY_BACKED, "checkout verified", True)
+    except CheckoutError as exc:
+        if mode is RepositoryAccessMode.OPTIONAL:
+            review_callback(None)
+            return RepositoryAccessResult(
+                RepositoryAccessOutcome.API_ONLY_DEGRADED,
+                f"repository context unavailable: {exc}",
+                True,
+            )
+        return RepositoryAccessResult(
+            RepositoryAccessOutcome.INCOMPLETE,
+            f"required repository context unavailable: {exc}",
+            False,
+        )
 
 
 def _clone_and_fetch(source: NormalizedPrSource, repo: Path) -> None:

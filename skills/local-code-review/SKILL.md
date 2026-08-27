@@ -24,7 +24,7 @@ optional PR reference additionally requires read-only GitHub access.
 ```text
 resolve local review scope
     ↓
-discover applicable AGENTS.md / CLAUDE.md
+resolve changed files, then one normalized per-file AGENTS.md hierarchy
     ↓
 inspect Git delta by category: committed, staged, unstaged, untracked
     ↓

@@ -102,13 +102,19 @@ def simulated_pr(
         _git(work, "config", "commit.gpgsign", "false")
 
         _commit(work, "README.md", "A\n", "A: init")
-        _commit(work, "src/lib.py", "def area(r):\n    return 3.14 * r * r\n", "B: add lib")
+        _commit(work, "AGENTS.md", "Use repository error conventions.\n", "B: root instructions")
+        _commit(work, "services/AGENTS.md", "Service tests stay beside service modules.\n", "B2: service instructions")
+        _commit(work, "services/payments/AGENTS.md", "Payment handlers use PaymentError.\n", "B3: payments instructions")
+        _commit(work, "services/search/AGENTS.md", "Search handlers use SearchError.\n", "B4: search instructions")
+        _commit(work, "src/lib.py", "def area(r):\n    return 3.14 * r * r\n", "B5: add lib")
         base_sha = _commit(work, "docs/design.md", "# Design\nPI is a constant.\n", "C: docs")
         _git(work, "push", "origin", _BASE_BRANCH)
 
         _git(work, "checkout", "-b", _FEATURE_BRANCH)
         _commit(work, "src/lib.py",
                 "import math\n\n\ndef area(r):\n    return math.pi * r * r\n", "D: use math.pi")
+        _commit(work, "services/payments/src/handler.py",
+                "def handle():\n    return 'paid'\n", "D2: add payment handler")
         head_sha = _commit(work, "tests/test_lib.py",
                            "from src.lib import area\n\n\ndef test_area():\n    assert area(0) == 0\n",
                            "E: add test")

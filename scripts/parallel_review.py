@@ -84,16 +84,20 @@ class WorkerInput:
     review_target: str
     review_context: str
     repository_context_location: str
+    repository_snapshot_identity: str
+    repository_instruction_context_identity: str
     existing_review_evidence: str
     dimension: ReviewDimension
     applicable_policies: tuple[str, ...]
 
-    def shared_key(self) -> tuple[str, str, str, str]:
+    def shared_key(self) -> tuple[str, str, str, str, str, str]:
         """The parts that must be identical across a run's workers."""
         return (
             self.review_target,
             self.review_context,
             self.repository_context_location,
+            self.repository_snapshot_identity,
+            self.repository_instruction_context_identity,
             self.existing_review_evidence,
         )
 
@@ -103,6 +107,8 @@ def build_worker_inputs(
     review_target: str,
     review_context: str,
     repository_context_location: str,
+    repository_snapshot_identity: str,
+    repository_instruction_context_identity: str,
     existing_review_evidence: str,
     dimensions: Sequence[ReviewDimension],
     policies_by_dimension: dict[ReviewDimension, tuple[str, ...]],
@@ -112,6 +118,8 @@ def build_worker_inputs(
             review_target=review_target,
             review_context=review_context,
             repository_context_location=repository_context_location,
+            repository_snapshot_identity=repository_snapshot_identity,
+            repository_instruction_context_identity=repository_instruction_context_identity,
             existing_review_evidence=existing_review_evidence,
             dimension=dim,
             applicable_policies=policies_by_dimension.get(dim, ()),

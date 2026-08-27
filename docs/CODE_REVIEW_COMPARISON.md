@@ -178,7 +178,7 @@ consumed identically by both.
 | Capability | `local-code-review` | `github-pr-review` |
 |---|---|---|
 | **Review target** | the local implementation delta | the GitHub Pull Request delta |
-| **Local repository access** | required | not used (API PR state only; a temporary checkout is future work — §10) |
+| **Local repository access** | required | API-only by default; optional or required isolated temporary checkout is supported |
 | **GitHub PR access** | read-only, only when an optional PR reference is supplied | required for PR state; write only in active mode |
 | **Committed / staged / unstaged / untracked scope** | all four, detected separately ([`repository-state.md`](../skills/local-code-review/policies/repository-state.md)) | n/a — the PR diff (full, or a bounded delta re-review) |
 | **Review context** (optional) | shared model ([`review-context.md`](../shared/policies/review-context.md)); local application maps context onto the local delta | shared model; thin PR application ([`review-context.md`](../skills/github-pr-review/policies/review-context.md)) — the PR stays the target |
@@ -192,19 +192,20 @@ consumed identically by both.
 | — Jira is mandatory? | no — supplying none yields a normal unscoped review | no — same |
 | **Existing Review Evidence** | prior findings / comments / settled decisions from an optional associated PR ([`pr-context.md`](../skills/local-code-review/policies/pr-context.md)) | the PR's own prior reviews / review comments / issue comments ([`review-evidence.md`](../skills/github-pr-review/policies/review-evidence.md)) |
 | — classification | shared: still-relevant / resolved / stale / duplicate / settled decision / speculative discussion — never blindly inherited | shared, same |
-| **Repository context** | shared ([`repository-instructions.md`](../shared/policies/repository-instructions.md), surrounding code, invariants) | shared, same |
+| **Repository context** | shared: deterministic root→specific per-file `AGENTS.md` hierarchy, surrounding code, invariants; instructions shape evaluation without widening the target | shared, same semantics; repository-backed mode reads from the verified temporary snapshot |
 | **Scope-boundary reasoning** | shared ([`review-context.md`](../shared/policies/review-context.md), "Scope-boundary reasoning") — missing behavior, contradicted acceptance criteria, unrelated scope expansion, valid-but-out-of-scope findings, repo-policy violations regardless of ticket scope | shared, same, applied to the PR |
 | **Severity model** | shared P0 / P1 / P2 ([`severity.md`](../shared/policies/severity.md)) | shared, identical |
 | **Final decision semantics** | `REVIEW CLEAN` / `CHANGES REQUIRED`, derived mechanically from blocking (P0/P1) severities | `Approve` / `Request Changes`, same mechanical derivation |
 | **Opt-in behavior** | every invocation needs fresh explicit user approval ([`invocation-approval.md`](../skills/local-code-review/policies/invocation-approval.md)) | selection boundary + defensive self-review guard ([`review-authority.md`](../skills/github-pr-review/policies/review-authority.md)); no per-run approval gate |
 | **Re-review behavior** | stateless; fresh approval each run; staged-delta fingerprint short-circuit | SHA-bound reviewer-owned delta re-review; `NO NEW DELTA`; escalation to full review |
 | **Publishing behavior** | returns one structured report to the caller; never publishes | passive: returns a report; active: one batched GitHub review (inline comments + body + Approve/Request Changes) |
-| **Repository-backed inspection** | n/a — already has the local working tree | **opt-in**: isolated temporary checkout gives richer Repository Context ([`repository-checkout.md`](../skills/github-pr-review/policies/repository-checkout.md)); default is GitHub API-only |
+| **Repository-access modes** | n/a — existing local working tree | API-only; optional repository-backed enrichment (visible API-only degradation on failure); required repository-backed review (failure → ungraded `REVIEW INCOMPLETE`, no workers) ([`repository-checkout.md`](../skills/github-pr-review/policies/repository-checkout.md)) |
+| **Repository-backed inspection** | n/a — already has the local working tree | Available as optional enrichment or an explicit requirement; default remains API-only |
 | — temporary checkout | n/a | `mkdtemp` → blobless clone (`--no-checkout --no-tags --filter=blob:none`) → fetch base/head (SHA fallback) → detached checkout at `head_sha`; one clone shared by all workers, not one per worker |
 | — base/head fidelity | committed/staged/unstaged/untracked vs. resolved base | resolves repo identity + base ref/SHA + head ref/SHA + merge-base from a `NormalizedPrSource`; prefers immutable SHAs; PR delta = `merge-base(base,head)..head`, correct even when base advanced after branch-off; verifies the fetched head matches `head_sha` |
 | — cleanup | n/a | one lifecycle, guarded delete (inside scratch parent, not the parent, ownership marker present) on **every** exit path — success, failure, interruption |
 | — read-only repository inspection | inherent | reads files and safe Git commands only; target-repo tests/builds/linters/hooks/scripts are **never** run; surrounding files never become independent review targets |
-| — private-repo auth | runtime Git identity | runtime's existing Git/GitHub credentials; no token in generated files, no secret in logs/output, no credential persisted in the checkout; clone/fetch auth failure → API-only mode |
+| — private-repo auth | runtime Git identity | runtime's existing Git/GitHub credentials; no token in generated files, no secret in logs/output, no credential persisted; auth failure degrades only in optional mode and is incomplete in required mode |
 | **Parallel review capability** | not wired (would apply equally) | **opt-in**: split review by dimension across read-only workers when the runtime exposes a reliable multi-agent capability and the PR is complex enough ([`parallel-review.md`](../shared/policies/parallel-review.md)) |
 | — sequential fallback | always sequential today | sequential is always valid; a review is never failed because parallelism is unavailable; capability uncertain → sequential |
 | — centralized aggregation | single reviewer | one aggregator: normalize → deduplicate → reconcile → canonical severity → one decision; worker completion order never matters; workers derive nothing final; missing **required** dimension → `REVIEW INCOMPLETE`, never `REVIEW CLEAN` |
