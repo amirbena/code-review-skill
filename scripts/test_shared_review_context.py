@@ -310,25 +310,39 @@ class DocsReflectCurrentCapabilitiesTests(unittest.TestCase):
         self.assertNotIn("mkdtemp", t)
 
 
-class PythonAuthoringPolicyWiringTests(unittest.TestCase):
-    def test_python_authoring_policy_file_exists(self) -> None:
-        p = REPO_ROOT / "policies" / "PYTHON_AUTHORING.md"
-        self.assertTrue(p.is_file())
-        t = _text(p)
-        self.assertIn("Prefer self-explanatory code over commentary", t)
-        self.assertIn("1-3 lines", t.replace("–", "-"))
+PY_POLICY = REPO_ROOT / "policies" / "python_scripts_coding_policy.md"
+
+
+class PythonScriptsCodingPolicyWiringTests(unittest.TestCase):
+    def test_policy_file_exists_and_is_scoped(self) -> None:
+        self.assertTrue(PY_POLICY.is_file())
+        raw = PY_POLICY.read_text(encoding="utf-8")
+        self.assertIn("scripts/**/*.py", raw)
+        t = _text(PY_POLICY)
+        self.assertIn("not a universal Python style guide", t)
         self.assertIn("not packaged into either Skill archive", t)
 
-    def test_agents_md_points_to_the_python_authoring_policy(self) -> None:
+    def test_agents_md_points_to_the_new_policy_without_inlining_it(self) -> None:
         t = _text(REPO_ROOT / "AGENTS.md")
         self.assertIn("Python Authoring", t)
-        self.assertIn("PYTHON_AUTHORING.md", t)
-        self.assertIn("not packaged into either Skill archive", t)
+        self.assertIn("policies/python_scripts_coding_policy.md", t)
+        self.assertNotIn("PYTHON_AUTHORING", t)
+        # only a short invariant, not the rule list
+        self.assertNotIn("Remove or shorten a comment that mainly explains", t)
 
-    def test_agents_md_does_not_inline_the_full_comment_policy(self) -> None:
-        # Part 8: AGENTS.md carries only a short invariant, not the rules.
-        t = _text(REPO_ROOT / "AGENTS.md")
-        self.assertNotIn("Remove redundant comments that merely restate", t)
+    def test_stale_python_authoring_filename_is_gone_everywhere(self) -> None:
+        # This test file holds the old name only as fixture strings (below).
+        offenders = []
+        for path in REPO_ROOT.rglob("*"):
+            if not path.is_file() or ".git" in path.parts or "dist" in path.parts:
+                continue
+            if path.suffix not in (".md", ".py", ".sh", ".ps1", ".yaml", ".yml"):
+                continue
+            if path.name == "test_shared_review_context.py":
+                continue
+            if "PYTHON_AUTHORING" in path.read_text(encoding="utf-8"):
+                offenders.append(str(path.relative_to(REPO_ROOT)))
+        self.assertEqual(offenders, [], f"stale PYTHON_AUTHORING references: {offenders}")
 
 
 class PackagedArchivesCarryTheSharedModelTests(unittest.TestCase):
@@ -352,27 +366,28 @@ class DocPathMigrationTests(unittest.TestCase):
         for p in (
             REPO_ROOT / "docs" / "ARCHITECTURE.md",
             REPO_ROOT / "docs" / "CODE_REVIEW_COMPARISON.md",
-            REPO_ROOT / "policies" / "PYTHON_AUTHORING.md",
+            REPO_ROOT / "policies" / "python_scripts_coding_policy.md",
         ):
             self.assertTrue(p.is_file(), f"missing: {p}")
 
-    def test_old_root_locations_are_gone(self) -> None:
+    def test_old_locations_are_gone(self) -> None:
         for p in (
             REPO_ROOT / "ARCHITECTURE.md",
             REPO_ROOT / "CODE_REVIEW_COMPARISON.md",
             REPO_ROOT / "PYTHON_AUTHORING.md",
+            REPO_ROOT / "policies" / "PYTHON_AUTHORING.md",
         ):
-            self.assertFalse(p.exists(), f"stale root file still present: {p}")
+            self.assertFalse(p.exists(), f"stale file still present: {p}")
 
-    def test_no_markdown_link_targets_the_old_root_paths(self) -> None:
-        # A stale link is one whose resolved path points at the old root
-        # location. Sibling links inside docs/ (ARCHITECTURE.md <->
-        # CODE_REVIEW_COMPARISON.md) are fine — they resolve within docs/.
+    def test_no_markdown_link_targets_a_stale_doc_path(self) -> None:
+        # A stale link resolves to an old location. Sibling links inside docs/
+        # (ARCHITECTURE.md <-> CODE_REVIEW_COMPARISON.md) resolve within docs/.
         link_re = re.compile(r"\]\(([^)]+)\)")
-        old_root = {
+        stale_targets = {
             REPO_ROOT / "ARCHITECTURE.md",
             REPO_ROOT / "CODE_REVIEW_COMPARISON.md",
             REPO_ROOT / "PYTHON_AUTHORING.md",
+            REPO_ROOT / "policies" / "PYTHON_AUTHORING.md",
         }
         stale = []
         for md in REPO_ROOT.rglob("*.md"):
@@ -385,7 +400,7 @@ class DocPathMigrationTests(unittest.TestCase):
                 if not rel:
                     continue
                 resolved = (md.parent / rel).resolve()
-                if resolved in old_root:
+                if resolved in stale_targets:
                     stale.append(f"{md.relative_to(REPO_ROOT)} -> {target}")
         self.assertEqual(stale, [], f"stale doc links: {stale}")
 
@@ -409,7 +424,7 @@ class DocPathMigrationTests(unittest.TestCase):
         agents = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("docs/ARCHITECTURE.md", agents)
-        self.assertIn("policies/PYTHON_AUTHORING.md", agents)
+        self.assertIn("policies/python_scripts_coding_policy.md", agents)
         self.assertIn("docs/ARCHITECTURE.md", readme)
         self.assertIn("docs/CODE_REVIEW_COMPARISON.md", readme)
 

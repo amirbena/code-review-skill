@@ -1,34 +1,11 @@
 #!/usr/bin/env python3
-"""Regression coverage for the behavioral review-signal heuristics in
-shared/policies/review-scope.md ("Existing behavior ownership," "Failure
-state, retry safety, and recovery," and the tightened "Related changes as
-one unit"), the applicability-gated observability model within the second
-of those, and how both `local-code-review` and `github-pr-review` wire
-them into their normal execution paths.
+"""Coverage for the behavioral review-signal heuristics and their wiring
+into both Skills.
 
-Ownership model: shared/policies/review-scope.md (and its complementary
-cross-reference in evidence.md) is the sole source of truth for this
-behavioral reasoning — see AGENTS.md section 18, "Runbook Design." This
-suite intentionally contains no second executable/reference implementation
-of that reasoning (an earlier iteration added
-scripts/behavioral_review_signals.py as a hand-maintained decision-table
-mirror purely for testability; it was removed as a duplicate source of
-truth — see AGENTS.md section 18, point 4). Every check here instead reads
-the actual policy/runbook/SKILL.md prose and asserts on concepts, gating
-conditions, and cross-file wiring — never on a parallel reimplementation of
-the rules, and never by freezing large exact prose blocks where a shorter,
-more robust substring captures the same invariant.
-
-This suite is scoped to the behavioral heuristics themselves — ownership/
-reuse, failure/retry/recovery, contract/exception semantics, observability
-applicability, and shared-policy wiring across both Skills. Git-mechanics
-ownership (category detection, push/sync status, the staged-fingerprint
-precondition/comparison contract) is a different domain with its own
-canonical test owner, scripts/test_latency_optimizations_docs.py, and is
-intentionally not duplicated here.
-
-Run with:
-    python3 scripts/test_review_scope_behavioral_heuristics.py
+Contract: shared/policies/review-scope.md ("Existing behavior ownership",
+"Failure state, retry safety, and recovery", "Related changes as one unit").
+Prose checks only — there is deliberately no second implementation of the
+rules (see AGENTS.md section 18).
 """
 
 from __future__ import annotations

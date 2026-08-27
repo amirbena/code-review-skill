@@ -1,17 +1,8 @@
 #!/usr/bin/env python3
-"""Regression coverage for the severity → decision contract.
+"""Coverage for the severity → decision contract (decision_semantics.py).
 
-Mirrors shared/policies/severity.md, "Decision derivation (mechanical)" and
-"Repository conventions and severity." Exercises the pure decision-table
-reference implementation in decision_semantics.py.
-
-This is the regression suite for the motivating bug: a review containing
-only a non-blocking P2 finding (for example, a repository-style-convention
-violation) must resolve to a clean/approved decision, never a blocking one,
-regardless of how strongly that P2 is recommended or where it originated.
-
-Run with:
-    python3 scripts/test_decision_semantics.py
+Contract: shared/policies/severity.md. Regression focus: a P2-only review
+resolves clean, never blocking, whatever the P2's strength or origin.
 """
 
 from __future__ import annotations

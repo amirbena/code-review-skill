@@ -28,10 +28,7 @@ REPO_ROOT_ONLY_DOC_BASENAMES = {"AGENTS.md", "ARCHITECTURE.md", "README.md"}
 MARKDOWN_LINK_RE = re.compile(r"\]\(([^)]+)\)")
 WHITESPACE_RE = re.compile(r"\s+")
 
-# Canonical github-pr-review policy files, in the authoritative dependency
-# order github-review.md must present them in (see that file, "Canonical
-# sub-policies, in authoritative order"): each later file assumes every
-# earlier file's gates already resolved for this invocation.
+# github-pr-review sub-policies in the order github-review.md must list them.
 GITHUB_POLICY_ORDER = (
     "review-authority.md",
     "reviewer-delta-review.md",
@@ -43,9 +40,8 @@ GITHUB_POLICY_ORDER = (
     "review-output.md",
 )
 
-# Required markers per file, checked via normalize_prose() so Markdown
-# reflow never breaks validation. Keep each file's markers with the file
-# that owns the rule — do not copy a marker into another file's tuple.
+# Required markers per file (matched after whitespace normalization). Keep a
+# marker only in the tuple of the file that owns the rule.
 GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
     "github-review.md": (
         "## Canonical sub-policies, in authoritative order",
@@ -127,9 +123,8 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
     ),
 }
 
-# Section headers each sub-policy file exclusively owns. github-review.md
-# is the index and must reference these by name, never restate them —
-# guards against normative prose silently drifting back into the index.
+# Headers each sub-policy owns; github-review.md (the index) must not
+# restate them.
 GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
     "review-authority.md": (
         "## Self-review capability",
@@ -505,14 +500,9 @@ def validate(skill_root: Path, containment_root: Path) -> None:
                 "and keep machine metadata subordinate inside a trailing "
                 "'### Review Metadata' plain-Markdown section"
             )
-        # local-code-review's delivery surface is a returned report read
-        # directly in a terminal/chat, not a rendered GitHub review body —
-        # it must never use an HTML disclosure widget for that metadata,
-        # unlike github-pr-review's own template (see
-        # shared/templates/review-summary.md, "Machine metadata is
-        # subordinate"). Check for actual HTML-block usage (the tag alone
-        # on its own line), not merely the substring appearing inside
-        # backtick-quoted prose that documents this prohibition.
+        # The local report is plain Markdown — no HTML disclosure widget for
+        # metadata (that is github-pr-review-only). Match the tag on its own
+        # line, not the substring inside prose documenting this rule.
         if "\n<details>\n" in local_report_template.replace("\r\n", "\n"):
             raise SystemExit(
                 "error: local-review-report.md must not render metadata as an "

@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
-"""Regression coverage for the local-code-review latency-optimization
-contract: batched/parallel retrieval of independent Git commands and
-required policy reads, deduplicated repository-instruction discovery,
-narrowed file-reviewability applicability, and the staged-fingerprint
-re-review short-circuit.
+"""Coverage for the local-code-review latency-optimization contract:
+batched Git/policy retrieval, deduplicated instruction discovery, narrowed
+file-reviewability applicability, and the staged-fingerprint short-circuit.
 
-These are structural/behavioral checks on the documented prose, the same
-way test_pr_context_docs.py pins the PR-context contract — not
-wall-clock timing assertions, since this Skill has no runnable code path
-to benchmark (it is instructions consumed by an executing Agent).
-
-Every check here also pins that the optimization is additive: it must
-never remove a detected category, a required policy, the completeness
-invariant, or the requirement to re-verify blocking findings.
-
-Run with:
-    python3 scripts/test_latency_optimizations_docs.py
+Prose checks only. Every check also pins that the optimization is additive
+— it never drops a category, a required policy, the completeness invariant,
+or the re-verify-blocking-findings requirement.
 """
 
 from __future__ import annotations

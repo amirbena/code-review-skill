@@ -1,17 +1,8 @@
 #!/usr/bin/env python3
-"""Regression coverage pinning the documented PR-context contract in
-skills/local-code-review's own files.
+"""Prose checks pinning the PR-context contract in local-code-review's files
+(canonical category names, status vocabulary, explicit conditionality).
 
-Complements test_pr_context_reconciliation.py (pure decision-table logic)
-with structural checks on the actual policy/runbook/template/SKILL.md
-prose, the same way test_output_format_separation.py pins the local vs.
-GitHub output-format boundary. These checks are scoped to phrasing that is
-part of this Skill's documented contract (canonical category names,
-canonical status vocabulary, explicit conditionality of new steps/sections)
-— not incidental wording elsewhere in the files.
-
-Run with:
-    python3 scripts/test_pr_context_docs.py
+Complements test_pr_context_reconciliation.py (decision-table logic).
 """
 
 from __future__ import annotations

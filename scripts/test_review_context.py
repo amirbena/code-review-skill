@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
-"""Regression coverage for optional review-context handling in
-local-code-review.
+"""Coverage for optional review-context handling (review_context.py).
 
-Mirrors skills/local-code-review/policies/review-context.md. Exercises the
-pure decision-table reference implementation in review_context.py — see
-that module's docstring for why it deliberately never determines whether
-described behavior actually exists in the implementation (that requires
-reading code, which is this Skill's own job).
-
-Run with:
-    python3 scripts/test_review_context.py
+Contract: skills/local-code-review/policies/review-context.md.
 """
 
 from __future__ import annotations

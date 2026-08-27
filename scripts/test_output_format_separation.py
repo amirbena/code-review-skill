@@ -1,17 +1,9 @@
 #!/usr/bin/env python3
-"""Regression coverage for local vs. GitHub output-format separation.
+"""Coverage for local vs. GitHub output-format separation.
 
-`local-code-review`'s final report is native Markdown, read directly in
-a terminal/chat surface — it must never carry GitHub-oriented HTML
-presentation wrappers (e.g. `<details>`/`<summary>`). `github-pr-review`
-renders a GitHub review body and may keep using GitHub-compatible
-collapsible sections. This test pins that boundary so a future edit
-that reintroduces HTML into the local template, or drops it from the
-GitHub template, fails loudly. See
-shared/templates/review-summary.md, "Machine metadata is subordinate."
-
-Run with:
-    python3 scripts/test_output_format_separation.py
+The local report is native Markdown (no HTML wrappers like `<details>`);
+the GitHub review body may keep collapsible sections. Contract:
+shared/templates/review-summary.md, "Machine metadata is subordinate".
 """
 
 from __future__ import annotations

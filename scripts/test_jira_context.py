@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-"""Coverage for Jira context-resolution semantics: the decision tables in
-jira_context.py plus structural checks on the policy/Skill prose that carries
-the same contract at runtime.
+"""Jira context-resolution coverage: jira_context.py tables plus prose checks.
 
-Run with:
-    python3 scripts/test_jira_context.py
+Contract: shared/policies/review-context.md, "Jira context resolution".
 """
 
 from __future__ import annotations

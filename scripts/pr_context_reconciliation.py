@@ -1,21 +1,8 @@
 #!/usr/bin/env python3
-"""Deterministic reference implementation of optional PR-context handling.
+"""Test-only reference for optional PR-context handling.
 
-Mirrors skills/local-code-review/policies/pr-context.md. Pure decision-table
-logic (no Git/GitHub calls, no code understanding) so
-test_pr_context_reconciliation.py can exercise it deterministically. Not
-part of either packaged Skill archive — the Skill reasons from the
-canonical policy text directly.
-
-This module never determines whether an issue is "still present" in the
-current local delta, whether code was changed, or what severity a finding
-deserves — those require actually reading the code, which is
-`local-code-review`'s own job (see pr-context.md, "Reconciling existing
-reviewer findings": "Existing reviewer findings are evidence and context,
-not authority"). This module only encodes the classification/reconciliation
-*decision table* that policy defines once those facts are known, exactly
-as reviewer_ownership.py encodes github-pr-review's review-mode decision
-table rather than actually talking to GitHub.
+Mirrors skills/local-code-review/policies/pr-context.md.
+Not runtime logic, not packaged.
 """
 
 from __future__ import annotations
@@ -46,14 +33,7 @@ class ThreadComment:
 
 
 def classify_thread(comments: Sequence[ThreadComment]) -> ThreadComment:
-    """Return the governing comment for a thread.
-
-    Per pr-context.md, "Classifying PR review context": reason over a
-    thread as a whole; the latest explicit resolution/conclusion governs,
-    and earlier exploratory comments in the same thread are context for
-    it, not independent findings. Absent any comment explicitly marked as
-    a resolution, the thread's most recent comment governs.
-    """
+    """The latest explicit resolution governs; else the most recent comment."""
     if not comments:
         raise ValueError("a thread must contain at least one comment")
     for comment in reversed(comments):
@@ -68,13 +48,8 @@ def classify_thread(comments: Sequence[ThreadComment]) -> ThreadComment:
 def is_relevant_to_local_delta(
     item_touches: FrozenSet[str], local_delta_touches: FrozenSet[str]
 ) -> bool:
-    """Whether a PR thread/item overlaps the current local delta.
-
-    Per pr-context.md, "Targeted retrieval": only threads touching files,
-    hunks, or symbols that overlap the current local delta are in scope.
-    An empty item_touches set is never considered relevant — it carries no
-    evidence of overlap.
-    """
+    """Overlap with the current local delta. An empty touch set is never
+    relevant."""
     if not item_touches:
         return False
     return bool(item_touches & local_delta_touches)
@@ -101,10 +76,7 @@ class ExistingFinding:
 class FindingReconciliation:
     """Reconciliation outcome for one existing reviewer finding.
 
-    Deliberately carries no `severity` field: severity remains
-    `local-code-review`'s own, assigned independently per the shared
-    severity policy — this reconciliation step supplies status and
-    evidence-reuse guidance only, never a severity or a final decision.
+    No `severity` field by design — severity stays local-code-review's own.
     """
 
     finding_id: str
@@ -118,13 +90,10 @@ def reconcile_finding(
     *,
     issue_still_present: Optional[bool],
 ) -> FindingReconciliation:
-    """Resolve one existing finding's status against the current local delta.
+    """Resolve one finding's status against the current local delta.
 
-    `issue_still_present` is an already-resolved fact about the *current*
-    local delta (never the historical PR state) — `None` means the
-    reviewer could not determine this from PR context alone (ambiguous or
-    the surrounding code changed enough that applicability is unclear),
-    which maps to REQUIRES_REEVALUATION per policy.
+    `issue_still_present` is about the *current* delta, never historical PR
+    state; `None` (undeterminable) maps to REQUIRES_REEVALUATION.
     """
     if not is_relevant_to_local_delta(finding.touches, local_delta_touches):
         return FindingReconciliation(finding.id, FindingStatus.OUT_OF_SCOPE, reuse_evidence=False)
@@ -140,13 +109,8 @@ def reconcile_finding(
 def should_emit_separate_finding(
     reconciliation: FindingReconciliation, *, independently_discovered_same_issue: bool
 ) -> bool:
-    """Whether the local review should emit a *separate* new finding.
-
-    Per pr-context.md, "Avoiding duplicate findings": a still-valid
-    reconciled finding that the local review also independently notices is
-    reconciled into one finding, never duplicated. Any other case
-    (materially different issue, or nothing reconciled) may be reported.
-    """
+    """A still-valid finding the review also found independently is not
+    emitted again; anything else may be."""
     if (
         reconciliation.status == FindingStatus.STILL_VALID
         and independently_discovered_same_issue
@@ -167,9 +131,8 @@ class DecisionStatus(Enum):
     VIOLATED = "violated"
 
 
-# The concrete evidence categories pr-context.md lists as sufficient to
-# challenge a settled decision. Exhaustive per policy text — an unknown
-# kind is a caller error, not a silently-accepted supersession.
+# Evidence sufficient to challenge a settled decision (exhaustive per policy;
+# an unknown kind is a caller error).
 SUPERSESSION_EVIDENCE_KINDS: FrozenSet[str] = frozenset(
     {
         "changed_requirements",
@@ -203,13 +166,10 @@ def reconcile_decision(
     delta_follows_decision: bool,
     supersession_evidence: FrozenSet[str] = frozenset(),
 ) -> DecisionReconciliation:
-    """Resolve one PR-context decision's status against the current local delta.
+    """Resolve one decision's status against the current local delta.
 
-    A decision that is not `is_settled` (a single opinion, an unresolved
-    suggestion, one side of an unfinished disagreement) is never treated
-    as a constraint, regardless of whether the local delta happens to
-    agree with it — per policy, "Do not treat every reviewer opinion as
-    an architectural constraint."
+    A non-settled decision is never treated as a constraint, even if the
+    delta happens to agree with it.
     """
     if not is_relevant_to_local_delta(decision.touches, local_delta_touches):
         return DecisionReconciliation(decision.id, DecisionStatus.OUT_OF_SCOPE, emit_finding=False)
@@ -238,12 +198,9 @@ class PRContextAvailability(Enum):
 
 
 def should_block_local_review(availability: PRContextAvailability) -> bool:
-    """PR context — present, absent, or unavailable — never blocks the
-    local review itself. See pr-context.md, "Unavailable or unresolved PR
-    context": "never a reason to fail, block, or degrade the local review
-    itself."
-    """
-    del availability  # every state maps to the same answer, by design
+    """PR context never blocks the local review — every availability state
+    maps to the same answer."""
+    del availability
     return False
 
 
@@ -255,13 +212,8 @@ def pr_context_section_required(
     finding_reconciliations: Sequence[FindingReconciliation] = (),
     decision_reconciliations: Sequence[DecisionReconciliation] = (),
 ) -> bool:
-    """Whether the optional "PR Context" report section should appear.
-
-    Per pr-context.md, "Output": omitted entirely whenever no PR reference
-    was supplied, and otherwise included only when it materially shaped
-    the review (a still-valid or re-evaluated finding, or a violated/
-    superseded decision) — never merely because a PR reference exists.
-    """
+    """The "PR Context" section appears only when a PR reference was supplied
+    *and* it materially shaped the review."""
     if not pr_reference_supplied:
         return False
     material_finding = any(
@@ -278,14 +230,8 @@ def pr_context_section_required(
 # --- Governance: this module's own shape never grows GitHub-mutation or
 # authority-bearing capability ---------------------------------------------
 
-#: Substrings that must never appear (case-insensitively) in any public
-#: name this module defines — their presence would mean this read-only
-#: reconciliation layer grew a GitHub-mutating or an
-#: approval/ownership-bypassing capability, which pr-context.md prohibits
-#: (see "Boundary with `github-pr-review`"). Checked by
-#: test_pr_context_reconciliation.py via substring matching against
-#: `dir(prc)`, not exact-name matching — a name like `submit_pr_review`
-#: must be caught, not just a bare `submit`.
+# Fragments a GitHub-mutating or approval/ownership-bypassing capability
+# would use. This layer is read-only; the test checks every public name.
 PROHIBITED_CAPABILITY_NAME_FRAGMENTS: FrozenSet[str] = frozenset(
     {
         "publish",

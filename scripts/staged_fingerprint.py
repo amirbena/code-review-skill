@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-"""Reference implementation of the local-code-review staged-delta fingerprint.
+"""Test-only reference for the staged-delta fingerprint, plus a thin
+git-invoking helper.
 
-Mirrors skills/local-code-review/policies/repository-state.md, "Staged
-delta fingerprint". Pure hashing logic, plus a thin Git-invoking helper,
-so test_staged_fingerprint.py can exercise it deterministically against
-real `git diff --cached --raw -M -z` output. Not part of either packaged
-Skill archive — the Skills reason from the canonical policy text
-directly, not from this script.
+Mirrors skills/local-code-review/policies/repository-state.md,
+"Staged delta fingerprint". Not runtime logic, not packaged.
 """
 
 from __future__ import annotations
@@ -15,21 +12,16 @@ import hashlib
 import subprocess
 from typing import Optional, Sequence
 
-# The exact, documented command. Do not substitute an equivalent-looking
-# command (e.g. without -z, or with a text diff) — see
-# repository-state.md, "Staged delta fingerprint," for why each flag is
-# load-bearing.
+# Exact command — every flag is load-bearing (see repository-state.md,
+# "Staged delta fingerprint"). Do not substitute an equivalent.
 STAGED_FINGERPRINT_COMMAND: Sequence[str] = ("git", "diff", "--cached", "--raw", "-M", "-z")
 
 
 def compute_staged_fingerprint(raw_diff_bytes: bytes) -> str:
-    """Return the SHA-256 hex digest of the exact raw bytes produced by
-    STAGED_FINGERPRINT_COMMAND.
+    """SHA-256 of the command's exact raw stdout bytes.
 
-    The caller must pass the command's raw stdout bytes unmodified: do
-    not decode/re-encode, strip or convert the NUL (`-z`) separators to
-    newlines, or otherwise transform the output before hashing. Any such
-    transform silently changes what the fingerprint represents.
+    Pass the bytes unmodified — no decode/re-encode, no NUL→newline
+    conversion; any transform changes what the fingerprint represents.
     """
     if not isinstance(raw_diff_bytes, (bytes, bytearray)):
         raise TypeError(

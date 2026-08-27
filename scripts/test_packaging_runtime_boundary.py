@@ -1,20 +1,10 @@
 #!/usr/bin/env python3
-"""Guards the packaging/runtime boundary for the scripts/*.py
-reference/test modules (review_context.py, decision_semantics.py,
-pr_context_reconciliation.py, reviewer_ownership.py, staged_fingerprint.py).
+"""Guards the packaging boundary: the scripts/*.py reference modules stay
+test-only and out of both Skill archives.
 
-The Skills are Markdown/YAML instruction packages — no Python at runtime.
-These modules only mirror a policy's decision tables for this test suite and
-are excluded from both archives. Fails if a refactor: adds one to a package
-file list without it being a real runtime dependency; makes a packaged file
-import/invoke one (a hidden dependency packaging would omit); or lets a
-module's documented contract drift out of the packaged policy that carries
-the same behavior at runtime.
-
-Archive-content checks need zip/unzip on PATH and skip explicitly otherwise.
-
-Run with:
-    python3 scripts/test_packaging_runtime_boundary.py
+Fails if a refactor adds one to a package file list, makes a packaged file
+import/invoke one, or lets a module's contract drift out of its packaged
+policy. Archive-content checks need zip/unzip and skip explicitly otherwise.
 """
 
 from __future__ import annotations
@@ -33,10 +23,7 @@ LOCAL_SKILL_DIR = REPO_ROOT / "skills" / "local-code-review"
 GITHUB_SKILL_DIR = REPO_ROOT / "skills" / "github-pr-review"
 DIST_DIR = REPO_ROOT / "dist"
 
-#: Repository-development-only Python modules that mirror a canonical
-#: policy file for deterministic testing (see each module's own
-#: docstring). None of these are runtime dependencies of either packaged
-#: Skill — this is the exhaustive list this test enforces against.
+# The reference modules this test guards — none is a runtime dependency.
 REFERENCE_TEST_MODULES = (
     "review_context.py",
     "decision_semantics.py",
@@ -46,11 +33,8 @@ REFERENCE_TEST_MODULES = (
     "jira_context.py",
 )
 
-#: For each reference/test module, the packaged policy file(s) that are
-#: supposed to carry the same behavioral contract at runtime, and the
-#: section headings from that module's own docstring/comments that must
-#: still be present in the packaged text — i.e. the policy, not the
-#: module, is where a runtime reader actually finds this logic.
+# module -> (packaged policy that must carry the same contract, headings that
+# must still be present in it).
 MODULE_TO_PACKAGED_POLICY_HEADINGS = {
     "review_context.py": (
         REPO_ROOT / "shared" / "policies" / "review-context.md",
@@ -200,14 +184,10 @@ class DeclaredPackageFileListTests(unittest.TestCase):
                 )
 
 
-#: Phrases that, when present in the same *paragraph* as a module mention,
-#: mark that mention as an explicit "this is not a runtime dependency"
-#: disclaimer (the established pattern in repository-state.md for
-#: staged_fingerprint.py) rather than an actual functional/import
-#: reference. A mention with no such disclaimer in its own paragraph is
-#: treated as a potential hidden runtime dependency — a disclaimer
-#: elsewhere in the file, attached to an unrelated mention, does not
-#: count (see "proximity-scoped," below).
+# A module mention in the same block as one of these phrases is a
+# disclaimer, not a runtime reference. Proximity matters (see
+# _split_into_scoped_blocks): a disclaimer elsewhere in the file does not
+# excuse an undisclaimed mention.
 DISCLAIMER_PHRASES = (
     "not part of either packaged Skill archive",
     "not part of this Skill",
@@ -386,22 +366,16 @@ class ProximityScopedDisclaimerTests(unittest.TestCase):
 
 
 class ModuleSelfDocumentationTests(unittest.TestCase):
-    """Each reference/test module explicitly declares its own role, so a
-    future maintainer never mistakes it for missing packaged runtime
-    logic — see the wording this repository standardized on."""
+    """Every reference/test module states, in its docstring, that it is
+    test-only and not packaged — so it is never mistaken for missing runtime
+    logic."""
 
-    def test_review_context_module_declares_it_is_not_runtime_logic(self) -> None:
-        text = (REPO_ROOT / "scripts" / "review_context.py").read_text(encoding="utf-8")
-        self.assertIn("NOT production/runtime logic", text)
-        self.assertIn("does not import, invoke, or otherwise depend on this module at runtime", text)
-
-    def test_decision_semantics_module_declares_it_is_not_runtime_logic(self) -> None:
-        text = (REPO_ROOT / "scripts" / "decision_semantics.py").read_text(encoding="utf-8")
-        self.assertIn("NOT production/runtime logic", text)
-        self.assertIn(
-            "neither packaged Skill file imports, invokes, or\notherwise depends on this module at runtime",
-            text,
-        )
+    def test_each_reference_module_declares_it_is_not_runtime_logic(self) -> None:
+        for module in REFERENCE_TEST_MODULES:
+            head = (REPO_ROOT / "scripts" / module).read_text(encoding="utf-8")[:600]
+            with self.subTest(module=module):
+                self.assertIn("Test-only", head)
+                self.assertIn("not runtime logic, not packaged", head.lower())
 
 
 class PolicyCarriesTheSameContractTests(unittest.TestCase):

@@ -821,12 +821,11 @@ Do not re-document the shared semantics in a Skill's own policy.
 
 ## 19. Python Authoring
 
-This repository's own Python (`scripts/*.py`) follows the repository Python
-authoring policy in [`PYTHON_AUTHORING.md`](policies/PYTHON_AUTHORING.md): prefer
-self-explanatory code, keep comments concise (generally 1–3 lines) and
-focused on non-obvious intent, decision-path rationale, invariants, safety
-constraints, compatibility requirements, and external-system quirks; move
-durable architectural explanation into a policy or doc rather than a long
-prose block in a module. That file is a repository-development policy and is
-not packaged into either Skill archive. Apply it to Python files a change
-touches.
+Repository Python scripts (`scripts/**/*.py`) must follow
+[`policies/python_scripts_coding_policy.md`](policies/python_scripts_coding_policy.md):
+comments and docstrings are concise (1–3 lines) and focused on non-obvious
+intent — invariants, safety constraints, compatibility requirements,
+external-system quirks, ordering, and surprising branches — while durable
+architecture, packaging, and policy-ownership explanation lives in `docs/`,
+`policies/`, or `shared/policies/`, not in module prose. That file is a
+repository-development policy, not packaged into either Skill archive.
