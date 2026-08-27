@@ -39,6 +39,21 @@ class NoJiraUnchangedTests(unittest.TestCase):
         self.assertIn("This does not make Jira mandatory for ordinary reviews", t)
 
 
+RUNBOOKS = (
+    LOCAL / "runbooks/local-review.md",
+    GITHUB / "runbooks/active-pr-review.md",
+    GITHUB / "runbooks/passive-pr-review.md",
+)
+
+#: A phrase that only appears once the review reasoning proper begins, per
+#: runbook. Jira resolution wording must appear strictly before it.
+REVIEW_STEP_MARKER = {
+    LOCAL / "runbooks/local-review.md": "Review the complete delta against",
+    GITHUB / "runbooks/active-pr-review.md": "Review per",
+    GITHUB / "runbooks/passive-pr-review.md": "Review the diff against",
+}
+
+
 class ResolutionRequiredTests(unittest.TestCase):
     def test_reference_must_be_resolved_before_use(self) -> None:
         t = _text(SHARED_CONTEXT)
@@ -51,13 +66,71 @@ class ResolutionRequiredTests(unittest.TestCase):
             jc.JiraScopeOutcome.REVIEW_WITH_JIRA_CONTEXT,
         )
 
-    def test_resolution_runs_before_review_reasoning_in_both_skills(self) -> None:
-        for runbook in (
-            LOCAL / "runbooks/local-review.md",
-            GITHUB / "runbooks/active-pr-review.md",
-            GITHUB / "runbooks/passive-pr-review.md",
-        ):
-            self.assertIn("Jira MCP", _text(runbook))
+
+class OperationalProcedureTests(unittest.TestCase):
+    """The Skills must tell the Agent *how* to act, not just that resolution
+    is required."""
+
+    def test_module_defines_the_five_ordered_steps(self) -> None:
+        self.assertEqual(
+            jc.RESOLUTION_PROCEDURE_STEPS,
+            (
+                "identify_available_jira_integration",
+                "invoke_read_only_fetch_issue",
+                "fetch_relevant_comments_and_linked_context",
+                "normalize_into_review_context",
+                "continue_only_on_success",
+            ),
+        )
+
+    def test_procedure_is_usable_only_when_every_step_ran(self) -> None:
+        self.assertTrue(jc.procedure_completed(frozenset(jc.RESOLUTION_PROCEDURE_STEPS)))
+        self.assertFalse(
+            jc.procedure_completed(
+                frozenset(jc.RESOLUTION_PROCEDURE_STEPS) - {"invoke_read_only_fetch_issue"}
+            )
+        )
+
+    def test_comment_retrieval_is_an_explicit_step(self) -> None:
+        self.assertTrue(jc.comment_retrieval_is_part_of_the_procedure())
+
+    def test_shared_policy_has_a_numbered_resolution_procedure(self) -> None:
+        raw = SHARED_CONTEXT.read_text(encoding="utf-8")
+        self.assertIn("### Resolution procedure", raw)
+        t = _text(SHARED_CONTEXT)
+        # each operational step is present as an ordered instruction
+        self.assertIn("1. Identify an available Jira-capable integration", t)
+        self.assertIn("2. Invoke it in read-only mode", t)
+        self.assertIn("3. Retrieve relevant comments and linked requirement context", t)
+        self.assertIn("4. Normalize", t)
+        self.assertIn("5. Continue only after successful resolution", t)
+
+    def test_every_runbook_names_the_operational_steps(self) -> None:
+        for rb in RUNBOOKS:
+            t = _text(rb)
+            with self.subTest(runbook=rb.name):
+                self.assertIn("Resolution procedure", t)
+                self.assertIn("identify an available Jira MCP / connector", t)
+                self.assertIn("invoke it", t.lower())
+                self.assertIn("read-only", t)
+                self.assertIn("fetch the referenced issue's contents", t)
+                self.assertIn(
+                    "fetch relevant issue comments and linked requirement context", t
+                )
+                self.assertIn("continue only after successful resolution", t)
+
+    def test_jira_resolution_precedes_the_review_step_in_every_runbook(self) -> None:
+        for rb in RUNBOOKS:
+            raw = rb.read_text(encoding="utf-8")
+            jira_at = raw.find("Jira MCP")
+            review_at = raw.find(REVIEW_STEP_MARKER[rb])
+            with self.subTest(runbook=rb.name):
+                self.assertGreater(jira_at, -1)
+                self.assertGreater(review_at, -1)
+                self.assertLess(
+                    jira_at, review_at,
+                    f"{rb.name}: Jira resolution wording appears after the review step",
+                )
 
 
 class NormalizedFieldsTests(unittest.TestCase):
@@ -130,25 +203,33 @@ class ResolutionFailureTests(unittest.TestCase):
                     jc.JiraScopeOutcome.JIRA_CONTEXT_UNRESOLVED_STOP,
                 )
 
-    def test_unresolved_statuses_cover_the_four_documented_failure_modes(self) -> None:
+    def test_unresolved_statuses_cover_the_six_documented_failure_modes(self) -> None:
         names = {s.name for s in jc.UNRESOLVED_STATUSES}
         self.assertEqual(
             names,
             {
                 "UNRESOLVED_NO_INTEGRATION",
-                "UNRESOLVED_AUTH",
+                "UNRESOLVED_AUTHENTICATION",
+                "UNRESOLVED_AUTHORIZATION",
                 "UNRESOLVED_NOT_FOUND",
                 "UNRESOLVED_MALFORMED_REFERENCE",
+                "UNRESOLVED_CONNECTOR_ERROR",
             },
         )
 
-    def test_policy_enumerates_the_failure_modes_and_the_outcome_label(self) -> None:
+    def test_policy_enumerates_all_failure_modes_and_the_outcome_label(self) -> None:
         t = _text(SHARED_CONTEXT)
         self.assertIn("no Jira integration is available", t)
-        self.assertIn("authentication/authorization fails", t)
-        self.assertIn("the ticket does not exist", t)
+        self.assertIn("authentication fails", t)
+        self.assertIn("authorization fails", t)
+        self.assertIn("the issue does not exist", t)
         self.assertIn("the reference is malformed", t)
+        self.assertIn("the integration/connector errors or times out", t)
         self.assertIn("JIRA CONTEXT UNRESOLVED", t)
+
+    def test_runbooks_enumerate_the_connector_error_failure_mode(self) -> None:
+        for rb in RUNBOOKS:
+            self.assertIn("connector/MCP error or timeout", _text(rb))
 
     def test_github_review_output_declares_the_reasoning_result(self) -> None:
         t = (GITHUB / "policies/review-output.md").read_text(encoding="utf-8")
@@ -161,19 +242,32 @@ class NoInferenceFallbackTests(unittest.TestCase):
             self.assertFalse(jc.may_infer_ticket_from(source))
         self.assertEqual(
             jc.NON_INFERABLE_SOURCES,
-            {"ticket_key", "branch_name", "pr_title", "commit_message", "surrounding_text"},
+            {
+                "ticket_key",
+                "ticket_url",
+                "branch_name",
+                "pr_title",
+                "commit_message",
+                "surrounding_text",
+                "copied_metadata_without_contents",
+            },
         )
 
     def test_reference_is_a_pointer_not_contents(self) -> None:
         self.assertTrue(jc.jira_reference_is_context_pointer_not_contents())
 
-    def test_policy_forbids_inference_from_key_branch_pr_title(self) -> None:
+    def test_policy_forbids_inference_from_key_branch_pr_title_and_copied_metadata(self) -> None:
         t = _text(SHARED_CONTEXT)
         self.assertIn(
-            "do not infer ticket contents from the ticket key, the branch name, "
-            "the PR title, a commit message, or surrounding text",
+            "do not infer ticket contents from the ticket key, the branch name, the "
+            "PR title, a commit message, surrounding text, or copied issue metadata "
+            "without the ticket's actual contents",
             t,
         )
+
+    def test_runbooks_forbid_the_copied_metadata_fake_resolution(self) -> None:
+        for rb in RUNBOOKS:
+            self.assertIn("copied metadata", _text(rb))
 
 
 class TargetNotWidenedTests(unittest.TestCase):

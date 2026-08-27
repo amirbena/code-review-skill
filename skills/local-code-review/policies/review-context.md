@@ -3,8 +3,11 @@
 This Skill's **local application** of the shared review-context model. The
 canonical semantics — the review-target / review-context / repository-context
 / existing-review-evidence concepts, the textual-vs-reference input forms,
-**Jira context resolution** (Jira MCP / connector, read-only, the
-`JIRA CONTEXT UNRESOLVED` precondition), the evidence hierarchy, using context
+**Jira context resolution** (its numbered "Resolution procedure" — identify
+an available Jira MCP / connector / runtime Jira tool, read-only fetch the
+issue, fetch relevant comments/linked context when supported, normalize,
+continue only on success — and the `JIRA CONTEXT UNRESOLVED` precondition),
+the evidence hierarchy, using context
 to focus attention, context-mismatch handling, scope-boundary reasoning and
 its precedence notes, explicit non-goals, scope discipline, and tracing
 findings back to context — are owned by

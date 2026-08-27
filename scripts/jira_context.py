@@ -26,14 +26,38 @@ class JiraResolutionStatus(Enum):
     NOT_SUPPLIED = "not_supplied"
     RESOLVED = "resolved"
     UNRESOLVED_NO_INTEGRATION = "unresolved_no_integration"
-    UNRESOLVED_AUTH = "unresolved_authentication_or_authorization"
-    UNRESOLVED_NOT_FOUND = "unresolved_ticket_not_found"
+    UNRESOLVED_AUTHENTICATION = "unresolved_authentication_failure"
+    UNRESOLVED_AUTHORIZATION = "unresolved_authorization_failure"
+    UNRESOLVED_NOT_FOUND = "unresolved_issue_not_found"
     UNRESOLVED_MALFORMED_REFERENCE = "unresolved_malformed_reference"
+    UNRESOLVED_CONNECTOR_ERROR = "unresolved_connector_or_mcp_error_or_timeout"
 
 
 UNRESOLVED_STATUSES: FrozenSet[JiraResolutionStatus] = frozenset(
     s for s in JiraResolutionStatus if s.name.startswith("UNRESOLVED_")
 )
+
+#: The ordered operational steps a runbook must instruct — not just "resolve
+#: it". Structural mirror of shared/policies/review-context.md, "Jira context
+#: resolution" -> "Resolution procedure".
+RESOLUTION_PROCEDURE_STEPS: tuple[str, ...] = (
+    "identify_available_jira_integration",
+    "invoke_read_only_fetch_issue",
+    "fetch_relevant_comments_and_linked_context",
+    "normalize_into_review_context",
+    "continue_only_on_success",
+)
+
+
+def procedure_completed(steps_done: FrozenSet[str]) -> bool:
+    """Jira context is usable only when every operational step ran."""
+    return set(RESOLUTION_PROCEDURE_STEPS) <= set(steps_done)
+
+
+def comment_retrieval_is_part_of_the_procedure() -> bool:
+    """Fetching relevant comments/linked context is an explicit step, not an
+    afterthought — see RESOLUTION_PROCEDURE_STEPS[2]."""
+    return "fetch_relevant_comments_and_linked_context" in RESOLUTION_PROCEDURE_STEPS
 
 
 class JiraScopeOutcome(Enum):
@@ -62,10 +86,12 @@ def resolve_jira_scope_outcome(status: JiraResolutionStatus) -> JiraScopeOutcome
 NON_INFERABLE_SOURCES: FrozenSet[str] = frozenset(
     {
         "ticket_key",
+        "ticket_url",
         "branch_name",
         "pr_title",
         "commit_message",
         "surrounding_text",
+        "copied_metadata_without_contents",
     }
 )
 

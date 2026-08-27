@@ -67,19 +67,27 @@ return human-readable report
    as intent — resolve and normalize it now per
    [`../policies/review-context.md`](../policies/review-context.md) and the
    shared [`review-context.md`](../../../shared/policies/review-context.md).
-   A supplied **Jira reference** is resolved to normalized context via an
-   available Jira MCP / connector / equivalent Jira integration (**read-only**
-   — retrieval only, never a Jira mutation) before review reasoning; Jira
-   comments are classified per the shared policy's "Jira comments" (not every
-   comment becomes an acceptance criterion). If the Jira reference **cannot
-   be resolved**, report the `JIRA CONTEXT UNRESOLVED` reasoning result per
+   If the caller supplied a **Jira reference** (key or URL), execute the
+   shared [`review-context.md`](../../../shared/policies/review-context.md),
+   "Jira context resolution" → **"Resolution procedure"** in order before
+   review reasoning: (1) identify an available Jira MCP / connector /
+   runtime-exposed Jira read tool; (2) invoke it **read-only** to fetch the
+   referenced issue's contents (not the key/URL/branch/PR-title/commit/copied
+   metadata); (3) fetch relevant issue comments and linked requirement
+   context when the integration supports them; (4) normalize into Review
+   Context (classify comments per "Jira comments" — not every comment becomes
+   an acceptance criterion); (5) continue only after successful resolution.
+   If **any** of steps 1–4 fails — no integration, authentication failure,
+   authorization failure, issue not found, malformed reference, or
+   connector/MCP error or timeout — report the `JIRA CONTEXT UNRESOLVED`
+   reasoning result per
    [`../policies/review-output.md`](../policies/review-output.md), "Final
-   decision," and stop — do not infer the ticket from its key/branch/PR
-   title/surrounding text, and produce no graded report. A GitHub Issue
-   reference is resolved through read-only GitHub access, or supplied as
-   pasted text; no automatic PR↔Issue discovery. Otherwise this context step
-   is optional; absence changes nothing; it never changes the review mode,
-   never widens the PR delta, and never adds a review target.
+   decision," and stop: do not infer the ticket from its key/branch/PR
+   title/surrounding text/copied metadata, and produce no graded report. A
+   GitHub Issue reference is resolved through read-only GitHub access, or
+   supplied as pasted text; no automatic PR↔Issue discovery. Otherwise this
+   context step is optional; absence changes nothing; it never changes the
+   review mode, never widens the PR delta, and never adds a review target.
 4. Through an available authenticated GitHub integration, retrieve PR
    metadata and base/head SHA. For a normal review, retrieve the complete
    paginated changed-file set and a complete diff per

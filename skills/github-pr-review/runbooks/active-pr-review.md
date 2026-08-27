@@ -97,27 +97,31 @@ stop
    [`../policies/review-context.md`](../policies/review-context.md) and the
    shared [`review-context.md`](../../../shared/policies/review-context.md),
    "Input form."
-   - **Resolve reference-based context first.** A supplied **Jira reference**
-     (key or URL) is resolved to normalized context via an available Jira
-     MCP / connector / equivalent Jira integration (**read-only** — retrieval
-     only, never a Jira mutation) per the shared policy's "Jira context
-     resolution" and this Skill's
-     [`../policies/review-context.md`](../policies/review-context.md), "Jira
-     context resolution (PR application)": retrieve and normalize only what
-     informs intended behavior, task boundaries, requirements, acceptance
-     criteria, constraints, exclusions, and settled decisions; classify Jira
-     comments per that section (do not promote every comment to an
-     acceptance criterion). If the Jira reference **cannot be resolved** (no
-     integration, auth/authz failure, ticket not found, malformed
-     reference), stop the Jira-scoped path with the `JIRA CONTEXT
-     UNRESOLVED` reasoning result per
+   - **Resolve reference-based context first.** If the caller supplied a
+     **Jira reference** (key or URL), execute the shared
+     [`review-context.md`](../../../shared/policies/review-context.md), "Jira
+     context resolution" → **"Resolution procedure"** in order, and this
+     Skill's [`../policies/review-context.md`](../policies/review-context.md),
+     "Jira context resolution (PR application)": (1) identify an available
+     Jira MCP / connector / runtime-exposed Jira read tool; (2) invoke it
+     **read-only** to fetch the referenced issue's contents (not the
+     key/URL/branch/PR-title/commit/copied metadata); (3) fetch relevant
+     issue comments and linked requirement context when the integration
+     supports them; (4) normalize the issue and comments into Review Context
+     (classify comments per "Jira comments" — do not promote every comment to
+     an acceptance criterion); (5) continue only after successful resolution.
+     If **any** of steps 1–4 fails — no integration, authentication failure,
+     authorization failure, issue not found, malformed reference, or
+     connector/MCP error or timeout — stop the Jira-scoped path with the
+     `JIRA CONTEXT UNRESOLVED` reasoning result per
      [`../policies/review-output.md`](../policies/review-output.md), "Final
-     decision" — name the reference and integration(s) attempted, do **not**
-     infer the ticket from its key/branch/PR title/commit/surrounding text,
-     retrieve no PR scope for grading, and submit no formal review. A GitHub
-     Issue **reference** is resolved through the same read-only GitHub access
-     used for PR state, or supplied as pasted text. No automatic PR↔Issue
-     discovery. Pasted/free-form context needs no resolution.
+     decision": name the reference and integration(s) attempted, do **not**
+     infer the ticket from its key/branch/PR title/commit/surrounding
+     text/copied metadata, retrieve no PR scope for grading, and submit no
+     formal review. A GitHub Issue **reference** is resolved through the same
+     read-only GitHub access used for PR state, or supplied as pasted text.
+     No automatic PR↔Issue discovery. Pasted/free-form context needs no
+     resolution.
 
    This context step is optional; absence changes nothing. It never changes
    the review mode resolved above, never widens the PR delta, and never adds

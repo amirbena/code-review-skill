@@ -161,23 +161,26 @@ which a value must be resolved before it is used, or what is reported.
    discovery (step 6), and before PR-context reconciliation (step 8, if
    applicable) and the review step below.
    - **7a. Resolve reference-based context first.** If the caller supplied a
-     **Jira reference** (key or URL), resolve it to normalized context via
-     an available Jira MCP / connector / equivalent Jira integration
-     (read-only — retrieval only, never a Jira mutation) per the shared
-     policy's "Jira context resolution": retrieve and normalize only what
-     informs intended behavior, task boundaries, requirements, acceptance
-     criteria, constraints, exclusions, and settled decisions; classify Jira
-     comments per that section (do not promote every comment to an
-     acceptance criterion). If the Jira reference **cannot be resolved** (no
-     integration available, auth/authz failure, ticket not found, malformed
-     reference), stop the Jira-scoped path: return `JIRA CONTEXT UNRESOLVED`
-     per the shared policy — name the reference and the integration(s)
-     attempted, do **not** infer the ticket from its key, the branch name,
-     the PR reference's title, a commit message, or surrounding text, and do
-     **not** grade the review. A GitHub Issue **reference** is resolved
-     through read-only GitHub access when available, or supplied as pasted
-     text; no automatic PR↔Issue discovery. Pasted/free-form context needs
-     no resolution.
+     **Jira reference** (key or URL), execute the shared
+     [`review-context.md`](../../../shared/policies/review-context.md), "Jira
+     context resolution" → **"Resolution procedure"** in order: (1) identify
+     an available Jira MCP / connector / runtime-exposed Jira read tool;
+     (2) invoke it **read-only** to fetch the referenced issue's contents
+     (not the key/URL/branch/PR-title/commit/copied metadata); (3) fetch
+     relevant issue comments and linked requirement context when the
+     integration supports them; (4) normalize the issue and comments into
+     Review Context (classify comments per "Jira comments" — do not promote
+     every comment to an acceptance criterion); (5) continue only after
+     successful resolution. If **any** of steps 1–4 fails — no integration
+     available, authentication failure, authorization failure, issue not
+     found, malformed reference, or connector/MCP error or timeout — stop the
+     Jira-scoped path: return `JIRA CONTEXT UNRESOLVED` naming the reference
+     and the integration(s) attempted, do **not** infer the ticket from its
+     key, the branch name, the PR reference's title, a commit message,
+     surrounding text, or copied metadata, and do **not** grade the review. A
+     GitHub Issue **reference** is resolved through read-only GitHub access
+     when available, or supplied as pasted text; no automatic PR↔Issue
+     discovery. Pasted/free-form context needs no resolution.
    - **7b.** With context (resolved where reference-based) in hand, follow
      the policies' context-understanding procedure: extract requirements/
      invariants/non-goals, map them onto the delta established above, and

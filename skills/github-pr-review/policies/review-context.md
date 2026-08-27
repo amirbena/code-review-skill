@@ -55,16 +55,21 @@ normalization."
 
 ## Jira context resolution (PR application)
 
-The full contract — Jira MCP / connector / equivalent integration as a
-transport-agnostic capability, read-only retrieval only, the retrieve/
-normalize list, Jira-comment classification, and the
-`JIRA CONTEXT UNRESOLVED` precondition — is owned by the shared
+The full contract — the numbered **"Resolution procedure"** (identify an
+available Jira MCP / connector / runtime-exposed Jira read tool → invoke it
+read-only to fetch the issue's contents → fetch relevant comments and linked
+requirement context when supported → normalize → continue only on success),
+transport-agnosticism, read-only-retrieval-only, the retrieve/normalize list,
+Jira-comment classification, and the `JIRA CONTEXT UNRESOLVED` precondition
+(no integration / authentication failure / authorization failure / issue not
+found / malformed reference / connector or MCP error or timeout) — is owned
+by the shared
 [`review-context.md`](../../../shared/policies/review-context.md), "Jira
 context resolution," and is not restated here. For a PR review:
 
-- resolution runs after the self-review guard and review-mode resolution and
-  before PR scope retrieval; it never changes the review mode or the PR
-  delta;
+- the Resolution procedure runs after the self-review guard and review-mode
+  resolution and before PR scope retrieval; it never changes the review mode
+  or the PR delta;
 - **read-only**: retrieving Jira context adds no Jira write capability —
   never edit/transition an issue, add a comment, change a field, create a
   ticket, or assign a user;

@@ -140,15 +140,19 @@ per the shared
   Consumed directly.
 - **Reference-based** — a bare Jira ticket key or URL, or a GitHub Issue
   reference. A reference is a pointer to context, not the context itself.
-  A **Jira reference** is resolved to normalized context **before** review
-  reasoning, through an available Jira MCP / connector / equivalent Jira
-  integration — **read-only, retrieval only, never a Jira mutation** — per
-  the shared policy's "Jira context resolution." If the Jira reference
-  cannot be resolved (no integration, auth/authz failure, ticket not found,
-  malformed reference), this Skill returns the explicit
-  `JIRA CONTEXT UNRESOLVED` reasoning result and does **not** perform the
-  Jira-scoped review; it never infers the ticket from the key, the branch
-  name, the PR title, a commit message, or surrounding text. A GitHub Issue
+  When a **Jira reference** is supplied, this Skill executes the shared
+  [`review-context.md`](../../shared/policies/review-context.md), "Jira
+  context resolution" → **"Resolution procedure"** **before** review
+  reasoning: identify an available Jira MCP / connector / runtime-exposed
+  Jira read tool, invoke it **read-only** to fetch the issue's contents,
+  fetch relevant comments and linked context when supported, normalize, and
+  continue only on success. If the Jira reference cannot be resolved (no
+  integration, authentication or authorization failure, issue not found,
+  malformed reference, or connector/MCP error or timeout), this Skill
+  returns the explicit `JIRA CONTEXT UNRESOLVED` reasoning result and does
+  **not** perform the Jira-scoped review; it never infers the ticket from
+  the key, the branch name, the PR title, a commit message, surrounding
+  text, or copied metadata. A GitHub Issue
   reference is resolved through the same read-only GitHub access used for PR
   state, or supplied as pasted text; **no automatic PR↔Issue discovery**.
 

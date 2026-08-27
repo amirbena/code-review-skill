@@ -181,13 +181,19 @@ the reading order their `SKILL.md` and runbooks already imply.
   into normalized context, per
   [`shared/policies/review-context.md`](../shared/policies/review-context.md),
   "Input form" and "Jira context resolution." Free-form text is consumed
-  directly. A **Jira reference** is resolved read-only through whatever Jira
-  integration the runtime exposes (a Jira MCP server, a Jira connector, or an
-  equivalent Jira tool — a capability, not a hard-coded transport); the
-  downstream shared policies consume the normalized context, never a raw
-  connector payload. Jira access is **retrieval only** — no issue edits,
-  transitions, comments, field changes, ticket creation, or assignment. If a
-  supplied Jira reference cannot be resolved, the Skill returns the explicit
+  directly. A **Jira reference** triggers the shared policy's explicit,
+  numbered **"Resolution procedure"** — (1) identify an available Jira
+  integration (a Jira MCP server, a Jira connector, or an equivalent
+  runtime-exposed Jira read tool — a capability, not a hard-coded
+  transport); (2) invoke it read-only to fetch the issue's contents;
+  (3) fetch relevant comments and linked requirement context when supported;
+  (4) normalize into Review Context (the downstream shared policies consume
+  the normalized context, never a raw connector payload); (5) continue only
+  on success. Jira access is **retrieval only** — no issue edits,
+  transitions, comments, field changes, ticket creation, or assignment. If
+  any step fails (no integration, authentication or authorization failure,
+  issue not found, malformed reference, connector/MCP error or timeout), the
+  Skill returns the explicit
   `JIRA CONTEXT UNRESOLVED` outcome and does not perform the Jira-scoped
   review — it never infers the ticket from its key, the branch name, the PR
   title, a commit message, or surrounding text. A **GitHub Issue reference**
