@@ -22,7 +22,7 @@ several — do not force a single choice. -->
 - [ ] Shared policy (`shared/policies/`)
 - [ ] Runbook (`skills/<name>/runbooks/`)
 - [ ] Review/report template (`shared/templates/`, `skills/<name>/templates/`)
-- [ ] Script / validator / tooling (`scripts/`)
+- [ ] Script / validator / tooling (`scripts/`) or test suite (`tests/`)
 - [ ] Packaging / distribution (`package-skills.sh` / `.ps1`, `metadata/skill.yaml`)
 - [ ] Runtime metadata / adapter (e.g. `agents/openai.yaml`)
 - [ ] Repository governance / agent instructions (`AGENTS.md`, `CLAUDE.md`)
@@ -169,6 +169,7 @@ changed-files tab. Group related files by what role they play, e.g.:
 - AGENTS.md — repository orchestration rule
 - shared/policies/review-scope.md — canonical review invariant
 - skills/github-pr-review/... — GitHub-specific consumption of the above
-- scripts/... — validation enforcement
+- scripts/... — validation/packaging tooling
+- tests/... — test suite and test-only reference models
 - README.md — documentation/discovery only
 -->

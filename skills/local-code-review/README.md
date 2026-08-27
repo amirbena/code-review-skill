@@ -146,7 +146,7 @@ review-context and PR-context handling are owned the same way by
 [`policies/review-context.md`](policies/review-context.md) and
 [`policies/pr-context.md`](policies/pr-context.md) respectively.
 
-The Python modules under this repository's `scripts/` directory (e.g.
+The Python modules under this repository's `tests/reference/` directory (e.g.
 `review_context.py`, `decision_semantics.py`) are this repository's own
 validation/reference helpers — they mirror a policy's decision tables for
 this repo's test suite and are not packaged Skill runtime logic. The
@@ -154,7 +154,7 @@ behavioral heuristics in `review-scope.md` have no such module: an earlier
 iteration added one purely for testability and it was removed as a
 duplicate source of truth (see `AGENTS.md` section 18) — that policy's
 Markdown text is tested directly instead (see
-[`../../scripts/test_review_scope_behavioral_heuristics.py`](../../scripts/test_review_scope_behavioral_heuristics.py)).
+[`../../tests/policy/test_review_scope_behavioral_heuristics.py`](../../tests/policy/test_review_scope_behavioral_heuristics.py)).
 
 ## Development / validation
 
@@ -167,6 +167,9 @@ python3 scripts/validate-skill-metadata.py skills/local-code-review --containmen
 
 PowerShell counterpart: `./scripts/package-skills.ps1 local`. Output:
 `dist/local-code-review-skill.zip`.
+
+The repository's Python test suite lives under `../../tests/`; run it from
+the repository root with `python3 -m unittest discover -s tests -t .`.
 
 ## README boundary
 

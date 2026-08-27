@@ -285,8 +285,8 @@ opened as a PR) must finish with:
 ### Python cache/bytecode cleanup around commits
 
 Running this repository's validators, tests, or packaging scripts
-(`scripts/*.py`) generates local Python cache artifacts — at minimum
-`__pycache__/` directories and `*.pyc` files. These are local build
+(`scripts/*.py`, `tests/**/*.py`) generates local Python cache artifacts —
+at minimum `__pycache__/` directories and `*.pyc` files. These are local build
 byproducts, never intentionally tracked repository content, and must not be
 allowed to accumulate in the working tree or enter a commit:
 
@@ -821,7 +821,9 @@ Do not re-document the shared semantics in a Skill's own policy.
 
 ## 19. Python Authoring
 
-Repository Python scripts (`scripts/**/*.py`) must follow
+Repository-owned Python — the developer scripts under `scripts/**/*.py` and
+the test suite plus its test-only reference modules under `tests/**/*.py` —
+must follow
 [`policies/python_scripts_coding_policy.md`](policies/python_scripts_coding_policy.md):
 comments and docstrings are concise (1–3 lines) and focused on non-obvious
 intent — invariants, safety constraints, compatibility requirements,
