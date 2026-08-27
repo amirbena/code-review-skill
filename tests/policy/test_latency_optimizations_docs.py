@@ -14,7 +14,7 @@ import re
 import unittest
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+from tests.support.paths import REPO_ROOT
 SHARED_DIR = REPO_ROOT / "shared"
 LOCAL_SKILL_DIR = REPO_ROOT / "skills/local-code-review"
 

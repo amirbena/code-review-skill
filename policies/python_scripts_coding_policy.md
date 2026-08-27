@@ -1,8 +1,9 @@
 # Python Scripts Coding Policy
 
-Authoring policy for this repository's own Python tooling — `scripts/**/*.py`
-(validators, packaging helpers, reference/decision-table modules, and their
-tests) and any other repository-owned Python.
+Authoring policy for this repository's own Python — the developer scripts
+under `scripts/**/*.py` (validators, packaging helpers) and the test suite
+plus its test-only reference/decision-table modules under `tests/**/*.py`,
+along with any other repository-owned Python.
 
 This is **not** a universal Python style guide, and it is **not** packaged
 into either Skill archive. Its purpose is narrow: keep repository Python

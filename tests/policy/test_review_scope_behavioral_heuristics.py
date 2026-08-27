@@ -14,7 +14,7 @@ import re
 import unittest
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+from tests.support.paths import REPO_ROOT
 SHARED_DIR = REPO_ROOT / "shared"
 LOCAL_SKILL_DIR = REPO_ROOT / "skills/local-code-review"
 GITHUB_SKILL_DIR = REPO_ROOT / "skills/github-pr-review"
@@ -380,18 +380,20 @@ class NoSecondSourceOfTruthTests(unittest.TestCase):
     of the behavioral heuristics."""
 
     def test_behavioral_review_signals_module_was_removed(self) -> None:
-        self.assertFalse(
-            (REPO_ROOT / "scripts" / "behavioral_review_signals.py").exists()
-        )
+        for candidate in (
+            REPO_ROOT / "tests" / "reference" / "behavioral_review_signals.py",
+            REPO_ROOT / "tests" / "support" / "behavioral_review_signals.py",
+        ):
+            self.assertFalse(candidate.exists())
 
     def test_no_python_module_imports_a_behavioral_signals_mirror(self) -> None:
         this_file = Path(__file__).resolve()
-        scripts_dir = REPO_ROOT / "scripts"
-        for py_file in sorted(scripts_dir.glob("*.py")):
-            if py_file.resolve() == this_file:
-                continue  # this file's own docstring documents the removal
-            text = py_file.read_text(encoding="utf-8")
-            self.assertNotIn("behavioral_review_signals", text)
+        for base in (REPO_ROOT / "tests" / "reference", REPO_ROOT / "tests" / "support"):
+            for py_file in sorted(base.glob("*.py")):
+                if py_file.resolve() == this_file:
+                    continue  # never scanned here, but keep the guard explicit
+                text = py_file.read_text(encoding="utf-8")
+                self.assertNotIn("behavioral_review_signals", text)
 
 
 if __name__ == "__main__":

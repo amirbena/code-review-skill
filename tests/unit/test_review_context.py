@@ -9,7 +9,7 @@ from __future__ import annotations
 import inspect
 import unittest
 
-import review_context as rc
+from tests.reference import review_context as rc
 
 
 LOCAL_DELTA_TOUCHES = frozenset({"src/payments/charge.py", "src/payments/charge_test.py"})

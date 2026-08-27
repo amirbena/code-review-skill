@@ -4,7 +4,7 @@ and its wiring into both Skills, the architecture docs, and the comparison
 doc. Structural prose checks, in the same style as test_pr_context_docs.py.
 
 Run with:
-    python3 scripts/test_shared_review_context.py
+    python3 -m unittest tests.policy.test_shared_review_context
 """
 
 from __future__ import annotations
@@ -13,7 +13,8 @@ import re
 import unittest
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+from tests.support.paths import REPO_ROOT
+
 SHARED = REPO_ROOT / "shared" / "policies"
 LOCAL = REPO_ROOT / "skills" / "local-code-review"
 GITHUB = REPO_ROOT / "skills" / "github-pr-review"
@@ -333,6 +334,7 @@ class PythonScriptsCodingPolicyWiringTests(unittest.TestCase):
         self.assertTrue(PY_POLICY.is_file())
         raw = PY_POLICY.read_text(encoding="utf-8")
         self.assertIn("scripts/**/*.py", raw)
+        self.assertIn("tests/**/*.py", raw)
         t = _text(PY_POLICY)
         self.assertIn("not a universal Python style guide", t)
         self.assertIn("not packaged into either Skill archive", t)

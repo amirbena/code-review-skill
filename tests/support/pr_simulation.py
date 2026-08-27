@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Optional
 
-from pr_checkout import NormalizedPrSource
+from tests.reference.pr_checkout import NormalizedPrSource
 
 _GIT_ENV = {
     "GIT_CONFIG_NOSYSTEM": "1",

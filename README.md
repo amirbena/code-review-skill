@@ -33,13 +33,22 @@ are **not** implemented — see
 - Git — required for both Skills
 - Python 3 (`python3`) — required to run this repository's validation and
   packaging tooling (`scripts/validate-skill-metadata.py`,
-  `scripts/package-skills.sh` / `scripts/package-skills.ps1`,
-  `scripts/test_reviewer_ownership.py`). No minimum version is currently
-  enforced; check availability with:
+  `scripts/package-skills.sh` / `scripts/package-skills.ps1`) and its test
+  suite under `tests/`. No minimum version is currently enforced; check
+  availability with:
 
   ```bash
   python3 --version
   ```
+
+  Run the whole test suite from the repository root with:
+
+  ```bash
+  python3 -m unittest discover -s tests -t .
+  ```
+
+  (`python3 -m unittest discover` from the repository root also works.) Run
+  one module with, e.g., `python3 -m unittest tests.unit.test_reviewer_ownership`.
 
 - authenticated GitHub access — required for GitHub-connected PR state
 - sufficient review permissions — required only for *active* publication

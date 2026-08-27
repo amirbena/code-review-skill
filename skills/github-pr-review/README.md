@@ -199,6 +199,9 @@ python3 scripts/validate-skill-metadata.py skills/github-pr-review --containment
 PowerShell counterpart: `./scripts/package-skills.ps1 github`. Output:
 `dist/github-pr-review-skill.zip`.
 
+The repository's Python test suite lives under `tests/`; run it from the
+repository root with `python3 -m unittest discover -s tests -t .`.
+
 ## README Boundary
 
 This README is descriptive onboarding documentation. It is not a policy
