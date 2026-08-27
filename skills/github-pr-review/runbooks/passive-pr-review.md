@@ -32,8 +32,8 @@ repository-backed inspection requested? → yes → mkdtemp → blobless clone �
    unreachable/unauthenticated → API-only mode) → no → API-only mode
     ↓
 resolve each changed file's normalized root-to-specific instruction context
-(hierarchical AGENTS.md + applicable CLAUDE.md; verified snapshot in
-repository-backed mode, else API-visible paths)
+from the target repository (hierarchical AGENTS.md + applicable CLAUDE.md;
+verified checkout snapshot, else the target repo's API-visible paths)
     ↓
 plan review execution: reliable capability AND 2+ independent dimensions
    AND expected latency benefit
@@ -147,8 +147,9 @@ finally: remove the temporary checkout (success, any failure, interruption)
    after changed-file resolution, resolve each changed file's root-to-specific
    applicable instruction chain — the hierarchical `AGENTS.md` ancestry plus any
    applicable `CLAUDE.md` on that ancestry — from the verified temporary
-   snapshot in repository-backed mode, or from API-visible repository paths in
-   API-only mode. Build one normalized per-file Repository Instruction Context
+   target-repository snapshot in repository-backed mode, or from the target
+   repository's API-visible paths in API-only mode, never from the Skill's own
+   source checkout. Build one normalized per-file Repository Instruction Context
    before reviewing; unrelated subtree instructions are not read or applied.
 
    **Plan review execution** per

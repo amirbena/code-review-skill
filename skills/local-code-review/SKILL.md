@@ -24,7 +24,8 @@ optional PR reference additionally requires read-only GitHub access.
 ```text
 resolve local review scope
     ↓
-resolve changed files, then one normalized per-file AGENTS.md hierarchy
+resolve changed files, then one normalized per-file AGENTS.md/CLAUDE.md
+    hierarchy from the target repository (the local repo under review)
     ↓
 inspect Git delta by category: committed, staged, unstaged, untracked
     ↓

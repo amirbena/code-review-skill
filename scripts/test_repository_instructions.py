@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Repository-instruction discovery/resolution contract tests.
 
-Covers hierarchical AGENTS.md + CLAUDE.md discovery, repository-declared
-AGENTS/CLAUDE precedence, conservative ambiguity handling, and the
-present-but-unreadable vs. genuinely-missing distinction. Behavioral, not
-exact-paragraph string matching.
+Covers: instructions are resolved from the repository under review (never the
+Skill repo or the reviewer's cwd); hierarchical AGENTS.md + CLAUDE.md
+discovery; deterministic AGENTS/CLAUDE precedence from an explicit
+target-repository determination; the present-but-unreadable vs.
+genuinely-missing distinction. Behavioral, not exact-paragraph string
+matching.
 """
 
 from __future__ import annotations
@@ -15,6 +17,7 @@ import unittest
 from pathlib import Path
 
 import pr_simulation as sim
+from parallel_review import ReviewDimension, build_worker_inputs
 from pr_checkout import prepare_repository_checkout
 from repository_instructions import (
     ConflictOutcome,
@@ -128,53 +131,200 @@ class ClaudeMdDiscoveryTests(unittest.TestCase):
             self.assertEqual(first.identity, second.identity)
 
 
+class TargetRepositoryBoundaryTests(unittest.TestCase):
+    """Instructions come from the repository under review — never the Skill's
+    own repository, an unrelated checkout, or the reviewer's cwd."""
+
+    def _reviewer_and_target(self, stack: tempfile.TemporaryDirectory):
+        """Build a Skill-repo dir and a separate target-repo dir under one
+        parent, mirroring the task's /tmp/code-review-skill + /tmp/target-repo
+        fixture."""
+        base = Path(stack)
+        reviewer = base / "code-review-skill"
+        target = base / "target-repo"
+        _write(reviewer, "AGENTS.md", "REVIEWER REPO INSTRUCTION — MUST NOT LEAK\n")
+        _write(target, "AGENTS.md", "target root convention\n")
+        _write(target, "services/AGENTS.md", "target services convention\n")
+        _write(target, "services/pay/handler.py", "pass\n")
+        _write(target, "top.py", "pass\n")
+        return reviewer, target
+
+    def test_resolver_uses_the_explicitly_supplied_target_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            _, target = self._reviewer_and_target(tmp)
+            context = resolve_repository_instructions(
+                target, ["services/pay/handler.py", "top.py"], repository_snapshot="s"
+            )
+            self.assertEqual(
+                [i.path for i in context.chain_for("services/pay/handler.py")],
+                ["AGENTS.md", "services/AGENTS.md"],
+            )
+            self.assertEqual([i.path for i in context.chain_for("top.py")], ["AGENTS.md"])
+
+    def test_reviewer_repo_agents_md_does_not_leak_into_the_target(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            reviewer, target = self._reviewer_and_target(tmp)
+            context = resolve_repository_instructions(
+                target, ["services/pay/handler.py"], repository_snapshot="s"
+            )
+            all_content = "\n".join(
+                i.content for _, chain in context.by_changed_file for i in chain
+            )
+            self.assertNotIn("MUST NOT LEAK", all_content)
+            self.assertTrue((reviewer / "AGENTS.md").is_file())  # it exists, but is unreachable
+
+    def test_an_agents_md_outside_the_target_root_is_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            _write(base, "AGENTS.md", "OUTSIDE THE TARGET — MUST NOT APPLY\n")
+            target = base / "target-repo"
+            _write(target, "AGENTS.md", "target convention\n")
+            _write(target, "src/x.py", "pass\n")
+            context = resolve_repository_instructions(target, ["src/x.py"], repository_snapshot="s")
+            self.assertEqual([i.content.strip() for i in context.chain_for("src/x.py")],
+                             ["target convention"])
+
+    def test_current_working_directory_does_not_affect_discovery(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            reviewer, target = self._reviewer_and_target(tmp)
+            expected = resolve_repository_instructions(
+                target, ["services/pay/handler.py"], repository_snapshot="s"
+            )
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(reviewer)  # cwd is the Skill repo — must not matter
+                from_reviewer_cwd = resolve_repository_instructions(
+                    target, ["services/pay/handler.py"], repository_snapshot="s"
+                )
+            finally:
+                os.chdir(original_cwd)
+            self.assertEqual(expected.identity, from_reviewer_cwd.identity)
+            self.assertEqual(
+                [i.path for i in from_reviewer_cwd.chain_for("services/pay/handler.py")],
+                ["AGENTS.md", "services/AGENTS.md"],
+            )
+
+    def test_two_target_repos_with_different_instructions_have_different_identities(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_a, tempfile.TemporaryDirectory() as tmp_b:
+            for root, text in ((Path(tmp_a), "repo A convention\n"), (Path(tmp_b), "repo B convention\n")):
+                _write(root, "AGENTS.md", text)
+                _write(root, "x.py", "pass\n")
+            id_a = resolve_repository_instructions(Path(tmp_a), ["x.py"], repository_snapshot="snap").identity
+            id_b = resolve_repository_instructions(Path(tmp_b), ["x.py"], repository_snapshot="snap").identity
+            self.assertNotEqual(id_a, id_b)
+
+    def test_parallel_worker_inputs_carry_the_target_repo_instruction_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            _, target = self._reviewer_and_target(tmp)
+            context = resolve_repository_instructions(
+                target, ["services/pay/handler.py", "top.py"], repository_snapshot="head-sha"
+            )
+            workers = build_worker_inputs(
+                review_target="PR#1 delta",
+                review_context="",
+                repository_context_location=str(target),
+                repository_snapshot_identity="head-sha",
+                repository_instruction_context_identity=context.identity,
+                existing_review_evidence="",
+                dimensions=[
+                    ReviewDimension.ARCHITECTURE_INVARIANTS,
+                    ReviewDimension.CORRECTNESS_REGRESSION,
+                ],
+                policies_by_dimension={},
+            )
+            self.assertEqual(
+                {w.repository_instruction_context_identity for w in workers}, {context.identity}
+            )
+            self.assertEqual(len({w.shared_key() for w in workers}), 1)
+
+
 class AgentsClaudePrecedenceTests(unittest.TestCase):
-    """The policy allows AGENTS.md to win over CLAUDE.md ONLY when the target
-    repository itself declares that relationship — never as a universal rule."""
+    """AGENTS.md wins over CLAUDE.md ONLY when the target repository itself
+    establishes it — supplied to the deterministic model as an explicit
+    boolean, never inferred from prose, never a universal rule."""
 
     def _chain(self, agents_text: str, claude_text: str):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             _write(root, "AGENTS.md", agents_text)
             _write(root, "CLAUDE.md", claude_text)
-            context = resolve_repository_instructions(root, ["x.py"], repository_snapshot="s")
-            return context.chain_for("x.py")
+            return resolve_repository_instructions(
+                root, ["x.py"], repository_snapshot="s"
+            ).chain_for("x.py")
 
-    def test_repository_declared_precedence_is_respected(self) -> None:
-        chain = self._chain(
-            "Use tab indentation.\n",
-            "This file defers to AGENTS.md, which is the canonical instruction source.\n",
-        )
-        self.assertIs(declared_precedence(chain), InstructionPrecedence.CLAUDE_DEFERS_TO_AGENTS)
+    def test_declared_precedence_maps_the_explicit_determination(self) -> None:
         self.assertIs(
-            resolve_conflict(chain, materially_conflicts=True),
+            declared_precedence(repository_declares_claude_defers_to_agents=True),
+            InstructionPrecedence.CLAUDE_DEFERS_TO_AGENTS,
+        )
+        self.assertIs(
+            declared_precedence(repository_declares_claude_defers_to_agents=False),
+            InstructionPrecedence.NONE_DECLARED,
+        )
+
+    def test_explicit_target_repo_deferral_resolves_the_conflict(self) -> None:
+        chain = self._chain("Use tabs.\n", "See AGENTS.md for the canonical rules.\n")
+        self.assertIs(
+            resolve_conflict(
+                chain, materially_conflicts=True, repository_declares_claude_defers_to_agents=True
+            ),
             ConflictOutcome.RESOLVED_BY_DECLARED_PRECEDENCE,
         )
 
-    def test_material_conflict_without_declared_precedence_is_surfaced_as_ambiguous(self) -> None:
-        chain = self._chain("Use tab indentation.\n", "Use two-space indentation.\n")
-        self.assertIs(declared_precedence(chain), InstructionPrecedence.NONE_DECLARED)
+    def test_no_supplied_deferral_leaves_a_material_conflict_ambiguous(self) -> None:
+        chain = self._chain("Use tabs.\n", "Use two-space indentation.\n")
         self.assertIs(
             resolve_conflict(chain, materially_conflicts=True),
             ConflictOutcome.AMBIGUOUS_SURFACED,
         )
 
-    def test_no_conflict_when_the_two_do_not_materially_disagree(self) -> None:
-        chain = self._chain("Use tab indentation.\n", "Prefer descriptive test names.\n")
+    def test_non_material_coexistence_is_no_conflict(self) -> None:
+        chain = self._chain("Use tabs.\n", "Prefer descriptive test names.\n")
         self.assertIs(
-            resolve_conflict(chain, materially_conflicts=False),
-            ConflictOutcome.NO_CONFLICT,
+            resolve_conflict(chain, materially_conflicts=False), ConflictOutcome.NO_CONFLICT
         )
 
-    def test_agents_md_alone_never_triggers_a_precedence_decision(self) -> None:
+    def test_claude_prose_cannot_establish_precedence(self) -> None:
+        # Prose alone never sets precedence now — the first three tripped the
+        # removed keyword heuristic; the last two show even a bare mention or a
+        # genuine-sounding deferral is inert without the explicit boolean.
+        prose = (
+            "This CLAUDE.md is the canonical source of truth. AGENTS.md is generated from it.",
+            "Our style guide is authoritative. See AGENTS.md for build commands.",
+            "Read and follow the linter configuration. AGENTS.md documents the rationale.",
+            "AGENTS.md exists in this repository.",
+            "AGENTS.md is the authoritative instruction source; follow it.",
+        )
+        for claude_text in prose:
+            with self.subTest(claude_text=claude_text):
+                chain = self._chain("Use tabs.\n", claude_text + "\n")
+                self.assertIs(
+                    resolve_conflict(chain, materially_conflicts=True),
+                    ConflictOutcome.AMBIGUOUS_SURFACED,
+                )
+
+    def test_unrelated_document_wording_cannot_change_the_deterministic_output(self) -> None:
+        for claude_text in ("plain guidance\n", "AGENTS.md canonical authoritative source of truth\n"):
+            chain = self._chain("Use tabs.\n", claude_text)
+            self.assertIs(
+                resolve_conflict(
+                    chain, materially_conflicts=True, repository_declares_claude_defers_to_agents=False
+                ),
+                ConflictOutcome.AMBIGUOUS_SURFACED,
+            )
+
+    def test_no_universal_agents_over_claude_rule(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            _write(root, "AGENTS.md", "Use tab indentation.\n")
-            context = resolve_repository_instructions(root, ["x.py"], repository_snapshot="s")
-            chain = context.chain_for("x.py")
-            self.assertIs(declared_precedence(chain), InstructionPrecedence.NONE_DECLARED)
+            _write(root, "AGENTS.md", "Use tabs.\n")  # AGENTS.md only, no CLAUDE.md
+            chain = resolve_repository_instructions(
+                root, ["x.py"], repository_snapshot="s"
+            ).chain_for("x.py")
             self.assertIs(
-                resolve_conflict(chain, materially_conflicts=True), ConflictOutcome.NO_CONFLICT
+                resolve_conflict(
+                    chain, materially_conflicts=True, repository_declares_claude_defers_to_agents=True
+                ),
+                ConflictOutcome.NO_CONFLICT,
             )
 
 
@@ -259,8 +409,8 @@ class UnresolvableApplicableInstructionTests(unittest.TestCase):
 
 
 class PassiveRunbookHierarchyWordingTests(unittest.TestCase):
-    """The passive runbook must describe the same hierarchical repository-
-    instruction model as the active runbook and the shared policy."""
+    """The passive runbook must describe the same target-repository-anchored
+    hierarchical model as the active runbook and the shared policy."""
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -281,15 +431,18 @@ class PassiveRunbookHierarchyWordingTests(unittest.TestCase):
         ):
             self.assertIn(token, self.passive, f"passive runbook missing {token!r}")
 
-    def test_passive_runbook_distinguishes_api_only_and_repository_backed_sources(self) -> None:
-        self.assertIn("API-visible repository paths in API-only mode", self.passive)
-        self.assertIn("verified temporary snapshot in repository-backed mode", self.passive)
+    def test_passive_runbook_anchors_discovery_to_the_target_repository(self) -> None:
+        self.assertIn(
+            "verified temporary target-repository snapshot in repository-backed mode", self.passive
+        )
+        self.assertIn("target repository's API-visible paths in API-only mode", self.passive)
+        self.assertIn("never from the Skill's own source checkout", self.passive)
 
     def test_passive_runbook_drops_the_imprecise_working_tree_phrasing(self) -> None:
         self.assertNotIn("from the working tree or verified temporary", self.passive)
 
-    def test_active_and_passive_share_the_same_hierarchy_vocabulary(self) -> None:
-        for token in ("root-to-specific", "API-visible"):
+    def test_active_and_passive_share_the_target_repo_hierarchy_vocabulary(self) -> None:
+        for token in ("root-to-specific", "API-visible", "target-repository"):
             self.assertIn(token, self.active)
             self.assertIn(token, self.passive)
 

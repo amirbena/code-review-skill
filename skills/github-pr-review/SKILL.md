@@ -47,7 +47,9 @@ repository access mode? → API-only: no checkout
     ↓
 determine formal-review capability
     ↓
-resolve changed files, then one normalized per-file AGENTS.md hierarchy
+resolve changed files, then one normalized per-file AGENTS.md/CLAUDE.md
+    hierarchy from the target repository (verified checkout, or API-visible
+    paths in API-only mode)
     ↓
 plan review execution: reliable capability AND 2+ independent dimensions
        AND expected latency benefit?
@@ -142,7 +144,10 @@ below). Only delivery differs.
 enrichment or as an explicit requirement: an
 isolated, read-only, detached temporary checkout at the PR head that gives
 the review richer **Repository Context** (surrounding implementation,
-interfaces, tests, config, architecture) than the GitHub diff/API alone. The
+interfaces, tests, config, architecture, and the target repository's own
+`AGENTS.md`/`CLAUDE.md` hierarchy) than the GitHub diff/API alone —
+repository instructions are always resolved from this target-repository
+snapshot, never from the Skill's own source checkout. The
 **PR stays the Review Target**; the checkout never widens it. It is
 read-only — the target repository's tests, builds, linters, hooks, and
 scripts are never run. The temporary directory is created under a safe

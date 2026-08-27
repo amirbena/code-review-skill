@@ -197,9 +197,11 @@ stop
 8. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
    after changed-file resolution, resolve the root-to-specific instruction
-   chain for every changed file from the verified snapshot (or API-visible
-   paths in API-only mode). Build one normalized Repository Instruction
-   Context before reviewing; surrounding context never widens the target.
+   chain for every changed file from the verified target-repository snapshot
+   (or the target repository's API-visible paths in API-only mode) — never
+   from the Skill's own source checkout. Build one normalized Repository
+   Instruction Context before reviewing; surrounding context never widens the
+   target.
 
    **Plan review execution** per
    [`../policies/parallel-review.md`](../policies/parallel-review.md) and the

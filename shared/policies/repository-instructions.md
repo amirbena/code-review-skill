@@ -58,25 +58,40 @@ scan unrelated subtrees merely to discover instruction files.
 ## Normalized Repository Instruction Context
 
 Resolve instruction files once, after changed-file resolution and before any
-review execution. The normalized result is part of **Repository Context**, not
-Review Context, and contains:
+review execution, **anchored to the root of the repository under review** —
+the Review Target's own repository. For `local-code-review` that root is the
+local target repository whose delta is being reviewed; for repository-backed
+`github-pr-review` it is the verified temporary checkout of the PR's
+repository; for API-only `github-pr-review` it is the target GitHub repository
+reached through the permitted file-access mechanism. It is never the
+reviewer's current working directory, a globally installed Skill location,
+this Skill's own source repository, or any unrelated checkout — a Skill
+authored in a repository that has an `AGENTS.md` does not carry that
+`AGENTS.md` into an external review.
+
+The normalized result is part of **Repository Context**, not Review Context,
+and contains:
 
 ```text
-repository snapshot identity
+target repository snapshot identity
 per changed path → ordered applicable instruction files + content identities
 normalized instruction-context identity
 ```
 
-Missing `AGENTS.md` files produce an empty chain and normal review. Discovery
-does not add files to the Review Target. The instruction-context identity is
-shared by sequential execution and every parallel worker; workers must not
-rediscover or reinterpret instruction files independently.
+Missing `AGENTS.md` / `CLAUDE.md` files produce an empty chain and normal
+review. Discovery does not add files to the Review Target. The
+instruction-context identity is shared by sequential execution and every
+parallel worker; workers must not rediscover or reinterpret instruction files
+independently, and must not substitute the Skill's own repository, their
+working directory, or global agent instructions for the target repository's
+context.
 
 ## Safe and explicit reads
 
-Every candidate path is repository-relative. Reject absolute paths, `..`,
-symlink traversal, or any resolved read outside the repository snapshot. Read
-applicable files as text from the same snapshot as the changed files. An
+Every candidate path is relative to the target repository root. Reject
+absolute paths, `..`, symlink traversal, or any resolved read outside the
+target repository snapshot. Read applicable files as text from the same
+snapshot as the changed files. An
 applicable file that exists but is unreadable, malformed, disappears, or
 cannot be resolved makes Repository Context incomplete and must be surfaced;
 never invent instructions or interpret the failure as `REVIEW CLEAN`. A
@@ -113,10 +128,14 @@ and an applicable `CLAUDE.md`:
   conflicts conservatively.
 
 Do not invent a precedence the target repository itself does not
-establish. If the two instruction files conflict materially and the
-target repository defines no precedence between them, do not guess —
-report the ambiguity when it affects a finding, rather than silently
-picking one side.
+establish. That determination comes only from what the target
+repository's own instruction files actually state — never from an
+isolated keyword such as "canonical" or "authoritative", and never from
+this Skill's own `AGENTS.md`. If the two instruction files conflict
+materially and the target repository defines no precedence between them,
+do not guess — report the ambiguity when it affects a finding, rather
+than silently picking one side. There is no universal `AGENTS.md` >
+`CLAUDE.md` rule.
 
 ## Instruction precedence (Skill vs. target repository)
 

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Test-only reference for repository-instruction discovery and resolution.
 
-Mirrors shared/policies/repository-instructions.md. Not runtime logic, not packaged.
+Instructions are resolved from the repository under review (the Review
+Target's repository). Mirrors shared/policies/repository-instructions.md.
+Not runtime logic, not packaged.
 """
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ from typing import Iterable, Sequence
 
 class InstructionResolutionError(RuntimeError):
     """An applicable instruction path is unsafe and is rejected outright
-    (absolute, `..`, or a symlink resolving outside the repository snapshot)."""
+    (absolute, `..`, or a symlink resolving outside the target repository)."""
 
 
 class InstructionKind(Enum):
@@ -104,27 +106,28 @@ def _candidate_paths(path: PurePosixPath) -> tuple[tuple[PurePosixPath, Instruct
     )
 
 
-def _inside_root(resolved: Path, root: Path) -> bool:
-    return resolved == root or root in resolved.parents
+def _inside_root(resolved: Path, repository_root: Path) -> bool:
+    return resolved == repository_root or repository_root in resolved.parents
 
 
 def _read_candidate(
     candidate: PurePosixPath,
     kind: InstructionKind,
-    root: Path,
+    repository_root: Path,
     loaded: dict[PurePosixPath, InstructionFile],
     unresolved: list[UnresolvedInstruction],
 ) -> None:
-    """Resolve one candidate path. Missing -> nothing. Unsafe -> raise.
-    Present-but-unreadable -> record as unresolved (context incomplete)."""
-    target = root / candidate
+    """Resolve one candidate path under the target repository root. Missing ->
+    nothing. Unsafe -> raise. Present-but-unreadable -> record as unresolved
+    (context incomplete)."""
+    target = repository_root / candidate
     posix = candidate.as_posix()
 
     if target.is_symlink():
         resolved = target.resolve()  # follow the link chain without requiring the tail to exist
-        if not _inside_root(resolved, root):
+        if not _inside_root(resolved, repository_root):
             raise InstructionResolutionError(
-                f"instruction symlink escapes repository snapshot: {posix}"
+                f"instruction symlink escapes target repository: {posix}"
             )
         if not resolved.exists():
             unresolved.append(UnresolvedInstruction(posix, kind, UnresolvedReason.DANGLING_SYMLINK))
@@ -133,8 +136,8 @@ def _read_candidate(
         return  # genuinely missing — a valid, complete outcome
     else:
         resolved = target.resolve(strict=True)
-        if not _inside_root(resolved, root):
-            raise InstructionResolutionError(f"instruction path escapes repository snapshot: {posix}")
+        if not _inside_root(resolved, repository_root):
+            raise InstructionResolutionError(f"instruction path escapes target repository: {posix}")
 
     if not resolved.is_file():
         unresolved.append(UnresolvedInstruction(posix, kind, UnresolvedReason.NOT_A_FILE))
@@ -152,15 +155,22 @@ def _read_candidate(
 
 
 def resolve_repository_instructions(
-    root: Path,
+    repository_root: Path,
     changed_files: Iterable[str],
     *,
     repository_snapshot: str,
 ) -> RepositoryInstructionContext:
     """Resolve each changed file's root-to-specific applicable instruction
     chain (hierarchical AGENTS.md plus any applicable CLAUDE.md on the same
-    ancestry) from one snapshot, deduplicating candidate reads."""
-    root = root.resolve(strict=True)
+    ancestry), deduplicating candidate reads.
+
+    `repository_root` is the root of the repository under review — the local
+    target repo for local-code-review, the verified temporary checkout for
+    repository-backed github-pr-review. It is never `Path.cwd()`, this module's
+    location, or the code-review-skill source tree. Only paths under this root
+    are read.
+    """
+    repository_root = repository_root.resolve(strict=True)
     normalized = tuple(sorted({_normalize_changed_file(path).as_posix() for path in changed_files}))
 
     candidates: dict[PurePosixPath, InstructionKind] = {}
@@ -171,7 +181,7 @@ def resolve_repository_instructions(
     loaded: dict[PurePosixPath, InstructionFile] = {}
     unresolved: list[UnresolvedInstruction] = []
     for candidate in sorted(candidates, key=lambda item: (len(item.parts), item.as_posix())):
-        _read_candidate(candidate, candidates[candidate], root, loaded, unresolved)
+        _read_candidate(candidate, candidates[candidate], repository_root, loaded, unresolved)
 
     mapping = tuple(
         (
@@ -201,8 +211,12 @@ def resolve_repository_instructions(
 
 # --- AGENTS.md vs. CLAUDE.md precedence -------------------------------------
 #
-# The policy allows AGENTS.md to win over CLAUDE.md ONLY when the target
-# repository itself declares that relationship. There is no universal rule.
+# Per shared/policies/repository-instructions.md: AGENTS.md is canonical over
+# CLAUDE.md ONLY when the TARGET repository itself establishes that. Whether
+# it does is the runtime/LLM's reading of the target repo's own instruction
+# files, passed in here as an explicit boolean. This reference models the
+# deterministic decision only — no keyword scan of prose, no universal rule,
+# and never derived from the code-review-skill repository.
 
 
 class InstructionPrecedence(Enum):
@@ -216,50 +230,39 @@ class ConflictOutcome(Enum):
     AMBIGUOUS_SURFACED = "ambiguous_surfaced"
 
 
-# A CLAUDE.md that names AGENTS.md together with one of these establishes a
-# repository-declared deferral. Absent such a statement, precedence is undeclared.
-_DEFERRAL_SIGNALS: tuple[str, ...] = (
-    "canonical",
-    "defer to agents.md",
-    "defers to agents.md",
-    "takes precedence",
-    "authoritative",
-    "follow agents.md",
-    "read and follow",
-    "instruction source",
-    "source of truth",
-)
-
-
-def _claude_defers_to_agents(text: str) -> bool:
-    lowered = " ".join(text.lower().split())
-    if "agents.md" not in lowered:
-        return False
-    return any(signal in lowered for signal in _DEFERRAL_SIGNALS)
-
-
-def declared_precedence(chain: Sequence[InstructionFile]) -> InstructionPrecedence:
-    """Repository-declared precedence only: an applicable CLAUDE.md stating it
-    defers to AGENTS.md. Never assume AGENTS.md wins otherwise."""
-    for item in chain:
-        if item.kind is InstructionKind.CLAUDE and _claude_defers_to_agents(item.content):
-            return InstructionPrecedence.CLAUDE_DEFERS_TO_AGENTS
-    return InstructionPrecedence.NONE_DECLARED
+def declared_precedence(
+    *, repository_declares_claude_defers_to_agents: bool
+) -> InstructionPrecedence:
+    """Map the caller's explicit determination — does the target repository
+    itself state that CLAUDE.md defers to AGENTS.md — to a precedence value.
+    Nothing is inferred from file prose."""
+    return (
+        InstructionPrecedence.CLAUDE_DEFERS_TO_AGENTS
+        if repository_declares_claude_defers_to_agents
+        else InstructionPrecedence.NONE_DECLARED
+    )
 
 
 def resolve_conflict(
     chain: Sequence[InstructionFile],
     *,
     materially_conflicts: bool,
+    repository_declares_claude_defers_to_agents: bool = False,
 ) -> ConflictOutcome:
-    """Resolve an AGENTS.md/CLAUDE.md disagreement the reviewer judged
-    material. Declared deferral resolves it; otherwise it is surfaced as
-    ambiguous — never silently decided."""
+    """Deterministic AGENTS.md/CLAUDE.md conflict resolution. Resolved only
+    when the target repository explicitly established precedence; otherwise it
+    stays ambiguous — never silently decided, never a universal
+    AGENTS.md > CLAUDE.md rule."""
     has_agents = any(item.kind is InstructionKind.AGENTS for item in chain)
     has_claude = any(item.kind is InstructionKind.CLAUDE for item in chain)
     if not (has_agents and has_claude) or not materially_conflicts:
         return ConflictOutcome.NO_CONFLICT
-    if declared_precedence(chain) is InstructionPrecedence.CLAUDE_DEFERS_TO_AGENTS:
+    if (
+        declared_precedence(
+            repository_declares_claude_defers_to_agents=repository_declares_claude_defers_to_agents
+        )
+        is InstructionPrecedence.CLAUDE_DEFERS_TO_AGENTS
+    ):
         return ConflictOutcome.RESOLVED_BY_DECLARED_PRECEDENCE
     return ConflictOutcome.AMBIGUOUS_SURFACED
 
