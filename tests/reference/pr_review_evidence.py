@@ -10,10 +10,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import FrozenSet, Optional, Sequence, Union
+from typing import FrozenSet, Iterable, Optional, Sequence, Union
 
 from tests.reference.current_evidence import (
     CurrentEvidenceKind,
+    current_evidence_collection_overrides_historical_authority,
     current_evidence_overrides_historical_authority,
 )
 
@@ -314,25 +315,12 @@ def reconcile_settled_decision(
     decision: SettledDecision,
     *,
     current_delta_follows: bool,
-    current_evidence: FrozenSet[CurrentEvidenceKind] = frozenset(),
+    current_evidence: Iterable[object] = frozenset(),
 ) -> DecisionReconciliation:
     if not decision_is_settled(decision):
         return DecisionReconciliation(decision.id, DecisionStatus.NOT_SETTLED, False)
 
-    invalid = {
-        evidence
-        for evidence in current_evidence
-        if not isinstance(evidence, CurrentEvidenceKind)
-    }
-    if invalid:
-        raise ValueError(
-            f"unrecognized current evidence kind(s): {sorted(map(str, invalid))}"
-        )
-
-    if any(
-        current_evidence_overrides_historical_authority(e)
-        for e in current_evidence
-    ):
+    if current_evidence_collection_overrides_historical_authority(current_evidence):
         return DecisionReconciliation(decision.id, DecisionStatus.SUPERSEDED, False)
     if current_delta_follows:
         return DecisionReconciliation(decision.id, DecisionStatus.FOLLOWED, False)

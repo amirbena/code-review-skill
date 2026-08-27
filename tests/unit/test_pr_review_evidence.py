@@ -564,6 +564,30 @@ class SettledDecisionTests(unittest.TestCase):
                 current_evidence=frozenset({"i_prefer_this"}),
             )
 
+    def test_mixed_overriding_and_invalid_evidence_is_rejected_in_every_order(self) -> None:
+        for evidence in (
+            (prv.CurrentEvidenceKind.RELIABILITY_DEFECT, "invalid"),
+            ("invalid", prv.CurrentEvidenceKind.RELIABILITY_DEFECT),
+        ):
+            with self.subTest(evidence=evidence), self.assertRaises(ValueError):
+                prv.reconcile_settled_decision(
+                    self._human_decision(),
+                    current_delta_follows=True,
+                    current_evidence=evidence,
+                )
+
+    def test_mixed_non_overriding_and_invalid_evidence_is_rejected_in_every_order(self) -> None:
+        for evidence in (
+            (prv.CurrentEvidenceKind.SPECULATIVE_OPTIMIZATION, "invalid"),
+            ("invalid", prv.CurrentEvidenceKind.SPECULATIVE_OPTIMIZATION),
+        ):
+            with self.subTest(evidence=evidence), self.assertRaises(ValueError):
+                prv.reconcile_settled_decision(
+                    self._human_decision(),
+                    current_delta_follows=True,
+                    current_evidence=evidence,
+                )
+
     def test_unsettled_reviewer_preference_is_never_a_constraint(self) -> None:
         preference = prv.SettledDecision(
             "D-2", prv.AuthorType.HUMAN_REVIEWER, has_explicit_agreement=False
@@ -637,8 +661,13 @@ class SettledDecisionTests(unittest.TestCase):
 
         self.assertFalse(hasattr(prv, "SUPERSESSION_EVIDENCE_KINDS"))
         self.assertFalse(hasattr(prv, "SAFETY_CRITICAL_CATEGORIES"))
+        collection_predicate = (
+            "current_evidence_collection_overrides_historical_authority"
+        )
+        self.assertIn(
+            collection_predicate, inspect.getsource(prv.reconcile_settled_decision)
+        )
         predicate = "current_evidence_overrides_historical_authority"
-        self.assertIn(predicate, inspect.getsource(prv.reconcile_settled_decision))
         self.assertIn(
             predicate, inspect.getsource(prv.settled_decision_suppresses_evidence)
         )

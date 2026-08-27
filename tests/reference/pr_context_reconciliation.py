@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import FrozenSet, Optional, Sequence
+from typing import FrozenSet, Iterable, Optional, Sequence
 
 from tests.reference.current_evidence import (
     CurrentEvidenceKind,
-    current_evidence_overrides_historical_authority,
+    current_evidence_collection_overrides_historical_authority,
 )
 
 
@@ -155,7 +155,7 @@ def reconcile_decision(
     local_delta_touches: FrozenSet[str],
     *,
     delta_follows_decision: bool,
-    current_evidence: FrozenSet[CurrentEvidenceKind] = frozenset(),
+    current_evidence: Iterable[object] = frozenset(),
 ) -> DecisionReconciliation:
     """Resolve one decision's status against the current local delta.
 
@@ -166,10 +166,7 @@ def reconcile_decision(
         return DecisionReconciliation(decision.id, DecisionStatus.OUT_OF_SCOPE, emit_finding=False)
     if not decision.is_settled:
         return DecisionReconciliation(decision.id, DecisionStatus.NOT_SETTLED, emit_finding=False)
-    if any(
-        current_evidence_overrides_historical_authority(evidence)
-        for evidence in current_evidence
-    ):
+    if current_evidence_collection_overrides_historical_authority(current_evidence):
         return DecisionReconciliation(decision.id, DecisionStatus.SUPERSEDED, emit_finding=False)
     if delta_follows_decision:
         return DecisionReconciliation(decision.id, DecisionStatus.FOLLOWED, emit_finding=False)

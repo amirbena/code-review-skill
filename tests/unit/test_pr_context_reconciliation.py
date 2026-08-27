@@ -230,6 +230,38 @@ class ArchitecturalDecisionTests(unittest.TestCase):
                 current_evidence=frozenset({"i_just_prefer_this"}),
             )
 
+    def test_mixed_overriding_and_invalid_evidence_is_rejected_in_every_order(self) -> None:
+        decision = prc.ArchitecturalDecision(
+            id="D-invalid-override", touches={"src/payments/charge.py"}, is_settled=True
+        )
+        for evidence in (
+            (ce.CurrentEvidenceKind.CORRECTNESS_DEFECT, "invalid"),
+            ("invalid", ce.CurrentEvidenceKind.CORRECTNESS_DEFECT),
+        ):
+            with self.subTest(evidence=evidence), self.assertRaises(ValueError):
+                prc.reconcile_decision(
+                    decision,
+                    LOCAL_DELTA_TOUCHES,
+                    delta_follows_decision=True,
+                    current_evidence=evidence,
+                )
+
+    def test_mixed_non_overriding_and_invalid_evidence_is_rejected_in_every_order(self) -> None:
+        decision = prc.ArchitecturalDecision(
+            id="D-invalid-preference", touches={"src/payments/charge.py"}, is_settled=True
+        )
+        for evidence in (
+            (ce.CurrentEvidenceKind.STYLE_PREFERENCE, "invalid"),
+            ("invalid", ce.CurrentEvidenceKind.STYLE_PREFERENCE),
+        ):
+            with self.subTest(evidence=evidence), self.assertRaises(ValueError):
+                prc.reconcile_decision(
+                    decision,
+                    LOCAL_DELTA_TOUCHES,
+                    delta_follows_decision=True,
+                    current_evidence=evidence,
+                )
+
     def test_current_material_defects_override_even_when_delta_follows(self) -> None:
         decision = prc.ArchitecturalDecision(
             id="D-current", touches={"src/payments/charge.py"}, is_settled=True
@@ -276,13 +308,90 @@ class ArchitecturalDecisionTests(unittest.TestCase):
         self.assertIs(prc.CurrentEvidenceKind, ce.CurrentEvidenceKind)
         self.assertIs(prv.CurrentEvidenceKind, ce.CurrentEvidenceKind)
         self.assertIs(
-            prc.current_evidence_overrides_historical_authority,
-            ce.current_evidence_overrides_historical_authority,
+            prc.current_evidence_collection_overrides_historical_authority,
+            ce.current_evidence_collection_overrides_historical_authority,
         )
         self.assertIs(
-            prv.current_evidence_overrides_historical_authority,
-            ce.current_evidence_overrides_historical_authority,
+            prv.current_evidence_collection_overrides_historical_authority,
+            ce.current_evidence_collection_overrides_historical_authority,
         )
+
+    def test_local_and_github_models_reject_the_same_malformed_collections(self) -> None:
+        from tests.reference import pr_review_evidence as prv
+
+        local_decision = prc.ArchitecturalDecision(
+            id="D-parity", touches={"src/payments/charge.py"}, is_settled=True
+        )
+        github_decision = prv.SettledDecision(
+            "D-parity", prv.AuthorType.MAINTAINER, has_explicit_agreement=True
+        )
+        for evidence in (
+            (ce.CurrentEvidenceKind.SAFETY_DEFECT, "invalid"),
+            ("invalid", ce.CurrentEvidenceKind.SAFETY_DEFECT),
+            (ce.CurrentEvidenceKind.NON_MATERIAL_REVIEWER_PREFERENCE, "invalid"),
+            ("invalid", ce.CurrentEvidenceKind.NON_MATERIAL_REVIEWER_PREFERENCE),
+        ):
+            with self.subTest(model="local", evidence=evidence), self.assertRaises(ValueError):
+                prc.reconcile_decision(
+                    local_decision,
+                    LOCAL_DELTA_TOUCHES,
+                    delta_follows_decision=True,
+                    current_evidence=evidence,
+                )
+            with self.subTest(model="github", evidence=evidence), self.assertRaises(ValueError):
+                prv.reconcile_settled_decision(
+                    github_decision,
+                    current_delta_follows=True,
+                    current_evidence=evidence,
+                )
+
+    def test_local_and_github_models_preserve_valid_collection_semantics(self) -> None:
+        from tests.reference import pr_review_evidence as prv
+
+        local_decision = prc.ArchitecturalDecision(
+            id="D-valid-parity", touches={"src/payments/charge.py"}, is_settled=True
+        )
+        github_decision = prv.SettledDecision(
+            "D-valid-parity", prv.AuthorType.MAINTAINER, has_explicit_agreement=True
+        )
+        cases = (
+            (
+                (
+                    ce.CurrentEvidenceKind.STYLE_PREFERENCE,
+                    ce.CurrentEvidenceKind.RELIABILITY_DEFECT,
+                ),
+                prc.DecisionStatus.SUPERSEDED,
+                prv.DecisionStatus.SUPERSEDED,
+            ),
+            (
+                (
+                    ce.CurrentEvidenceKind.STYLE_PREFERENCE,
+                    ce.CurrentEvidenceKind.SPECULATIVE_OPTIMIZATION,
+                    ce.CurrentEvidenceKind.NON_MATERIAL_REVIEWER_PREFERENCE,
+                ),
+                prc.DecisionStatus.FOLLOWED,
+                prv.DecisionStatus.FOLLOWED,
+            ),
+        )
+        for evidence, local_status, github_status in cases:
+            with self.subTest(evidence=evidence):
+                self.assertEqual(
+                    prc.reconcile_decision(
+                        local_decision,
+                        LOCAL_DELTA_TOUCHES,
+                        delta_follows_decision=True,
+                        current_evidence=evidence,
+                    ).status,
+                    local_status,
+                )
+                self.assertEqual(
+                    prv.reconcile_settled_decision(
+                        github_decision,
+                        current_delta_follows=True,
+                        current_evidence=evidence,
+                    ).status,
+                    github_status,
+                )
 
     def test_scenario_6_unsettled_preference_is_never_a_constraint(self) -> None:
         # A reviewer preference with no agreement/resolution never becomes

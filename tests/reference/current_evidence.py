@@ -7,7 +7,7 @@ Not runtime logic, not packaged.
 from __future__ import annotations
 
 from enum import Enum
-from typing import FrozenSet
+from typing import FrozenSet, Iterable
 
 
 class CurrentEvidenceKind(Enum):
@@ -49,3 +49,14 @@ def current_evidence_overrides_historical_authority(
     if not isinstance(evidence, CurrentEvidenceKind):
         raise ValueError(f"unrecognized current evidence kind: {evidence!r}")
     return evidence in OVERRIDING_CURRENT_EVIDENCE
+
+
+def current_evidence_collection_overrides_historical_authority(
+    evidence_items: Iterable[object],
+) -> bool:
+    """Validate the complete collection before deciding whether it overrides."""
+    classifications = [
+        current_evidence_overrides_historical_authority(evidence)
+        for evidence in evidence_items
+    ]
+    return any(classifications)
