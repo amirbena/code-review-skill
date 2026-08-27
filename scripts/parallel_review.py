@@ -34,13 +34,14 @@ class ReviewDimension(Enum):
 
 @dataclass(frozen=True)
 class ReviewSignals:
-    """PR-shape inputs to the parallelism decision."""
+    """Resolved review-shape inputs to the execution-policy decision."""
 
     changed_file_count: int = 0
-    distinct_components: int = 0
-    has_architecture_or_config_change: bool = False
-    supplied_context_items: int = 0
-    cross_cutting_change: bool = False
+    material_dimensions: tuple[ReviewDimension, ...] = ()
+    dimensions_are_independent: bool = False
+    expected_latency_reduction: bool = False
+    shared_context_normalized: bool = False
+    repository_instructions_resolved: bool = False
 
 
 @dataclass(frozen=True)
@@ -50,14 +51,12 @@ class ReviewPlan:
     reason: str
 
 
-def _is_complex(s: ReviewSignals) -> bool:
-    return (
-        s.changed_file_count >= 10
-        or s.distinct_components >= 3
-        or s.has_architecture_or_config_change
-        or s.cross_cutting_change
-        or s.supplied_context_items >= 3
-    )
+def _independent_material_dimensions(
+    signals: ReviewSignals,
+    requested: tuple[ReviewDimension, ...],
+) -> tuple[ReviewDimension, ...]:
+    material = set(signals.material_dimensions)
+    return tuple(dimension for dimension in requested if dimension in material)
 
 
 def plan_review_execution(
@@ -65,15 +64,18 @@ def plan_review_execution(
     capability: ParallelCapability,
     dimensions: Sequence[ReviewDimension] = tuple(ReviewDimension),
 ) -> ReviewPlan:
-    """Decide sequential vs. parallel. Sequential is always a valid answer;
-    parallel is used only when the runtime supports it *and* the PR is
-    complex enough to benefit."""
+    """Select parallelism only for independent work with a latency benefit."""
     dims = tuple(dimensions)
     if capability is ParallelCapability.NONE:
         return ReviewPlan(False, dims, "runtime exposes no reliable parallel capability")
-    if not _is_complex(signals):
-        return ReviewPlan(False, dims, "small PR; parallel overhead not warranted")
-    return ReviewPlan(True, dims, f"complex PR and capability={capability.value}")
+    if not signals.shared_context_normalized or not signals.repository_instructions_resolved:
+        return ReviewPlan(False, dims, "shared review context is not fully resolved")
+    material = _independent_material_dimensions(signals, dims)
+    if len(material) < 2 or not signals.dimensions_are_independent:
+        return ReviewPlan(False, dims, "fewer than two materially independent dimensions")
+    if not signals.expected_latency_reduction:
+        return ReviewPlan(False, dims, "parallel overhead is not expected to reduce latency")
+    return ReviewPlan(True, dims, f"independent dimensions justify {capability.value}")
 
 
 @dataclass(frozen=True)

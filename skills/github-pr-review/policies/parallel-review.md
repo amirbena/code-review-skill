@@ -3,7 +3,7 @@
 `github-pr-review`'s application of the portable parallel-review contract.
 Canonical index: [`github-review.md`](github-review.md). The contract —
 "parallelism is an execution optimisation, never a semantic change", the
-worker input/output shape, review dimensions, the complexity threshold,
+worker input/output shape, review dimensions, the execution-policy gate,
 centralized aggregation, and failure handling — is owned by the shared
 [`parallel-review.md`](../../../shared/policies/parallel-review.md) and is
 not restated here.
@@ -20,14 +20,16 @@ failure starts no workers. It never changes the review mode
 self-review guard, or the batched single-review publication
 ([`review-output.md`](review-output.md)).
 
-## Threshold signals for a PR
+## Execution-policy signals for a PR
 
-Complexity signals, from PR scope: changed-file count, number of distinct
-top-level components/directories touched, presence of an
-architecture/CI/infra/config change, amount of caller-supplied review
-context, and whether the change is cross-cutting (touches a shared
-contract/interface/schema). Small, single-component PRs are reviewed
-sequentially even when a parallel capability exists.
+Sequential review is the default. Apply the shared two-gate decision only
+after context resolution: reliable runtime capability plus at least two
+materially independent dimensions with a credible latency benefit. PR shape
+may reveal those dimensions—requirements, architecture, correctness,
+repository policy, config/infra, independent subsystems, or prior-review
+reconciliation—but changed-file count alone never selects parallelism.
+Small/localized or mechanically broad PRs remain sequential when the parent
+can review them efficiently.
 
 ## Shared checkout vs. worker copies
 

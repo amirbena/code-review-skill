@@ -49,7 +49,7 @@ consumed by both Skills
 shared/policies/parallel-review.md
     ↓
 portable parallel-review contract: sequential/parallel equivalence,
-capability detection, worker input/output, complexity threshold,
+capability detection, worker input/output, execution-policy gate,
 centralized aggregation, failure handling — packaged with both Skills,
 wired into github-pr-review
 
@@ -175,8 +175,9 @@ Prepare Repository Context
 Resolve changed files and one normalized per-file AGENTS.md hierarchy
     ↓
 Plan Review Execution
-    ├── Sequential                   (always valid)
-    └── Parallel when supported/useful  (read-only workers per dimension,
+    ├── Sequential                   (default and always valid)
+    └── Parallel only with capability + at least two materially independent
+          dimensions + expected latency benefit (read-only workers,
           same PR base/head snapshot; execution optimisation only)
     ↓
 Review workers  (each: Review Target, Review Context, Repository Context
@@ -284,13 +285,13 @@ with no loss of correctness.
   unsafe paths make context incomplete. The normalized per-file mapping and
   identity go unchanged to sequential execution or every worker and never
   widen the Review Target.
-- **Plan Review Execution** — detect the runtime's parallel capability
+- **Plan Review Execution** — sequential is the default. Detect the runtime's parallel capability
   (`none` / isolated sub-agents / experimental agent teams, usable only when
   already enabled / native concurrent agents; uncertain → `none`). Use
-  parallel **read-only** workers only when a capability exists **and** the
-  PR is complex enough (changed-file count, distinct components, an
-  architecture/CI/config change, substantial supplied context, or a
-  cross-cutting change). Otherwise sequential. Parallelism is an execution
+  parallel **read-only** workers only when a capability exists **and** at
+  least two materially independent analysis dimensions can run from the same
+  normalized inputs with an expected latency benefit. File count alone is
+  never a gate; dependent dimensions remain sequential. Parallelism is an execution
   optimisation only — [`shared/policies/parallel-review.md`](../shared/policies/parallel-review.md)
   requires that sequential and parallel runs reach the same findings and
   decision, and the Skill never mutates the user's configuration to obtain a

@@ -67,7 +67,7 @@ MODULE_TO_PACKAGED_POLICY_HEADINGS = {
     "parallel_review.py": (
         REPO_ROOT / "shared" / "policies" / "parallel-review.md",
         (
-            "## Parallelism threshold",
+            "## Execution-policy decision",
             "## Worker contract",
             "## Worker output format",
             "## Centralized aggregation",

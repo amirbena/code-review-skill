@@ -43,7 +43,8 @@ determine event-specific review capability
 classify prior review comments as Existing Review Evidence
 (still-relevant / resolved / stale / duplicate / settled / speculative)
     ↓
-plan review execution: parallel capability present AND PR complex enough
+plan review execution: reliable capability AND 2+ independent dimensions
+   AND expected latency benefit
    → workers per dimension (read-only, same PR base/head snapshot); else
    sequential
     ↓
@@ -205,9 +206,9 @@ stop
    shared [`parallel-review.md`](../../../shared/policies/parallel-review.md).
    Detect whether this runtime exposes a reliable multi-agent / sub-agent
    capability (never enable an experimental one by mutating the user's
-   configuration). If it does **and** the PR is complex enough — many
-   changed files, several distinct components, an architecture/CI/config
-   change, substantial supplied context, or a cross-cutting change — split
+   configuration). If it does **and** at least two materially independent
+   dimensions can run from the normalized input with an expected latency
+   benefit — for example architecture and correctness — split
    the review into read-only workers by dimension (scope/requirements,
    architecture/invariants, correctness/regression, tests/config,
    existing-review reconciliation); each worker gets the identical

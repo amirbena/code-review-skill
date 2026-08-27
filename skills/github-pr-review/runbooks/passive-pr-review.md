@@ -33,7 +33,8 @@ repository-backed inspection requested? → yes → mkdtemp → blobless clone �
     ↓
 discover applicable AGENTS.md / CLAUDE.md
     ↓
-plan review execution: parallel capability present AND PR complex enough
+plan review execution: reliable capability AND 2+ independent dimensions
+   AND expected latency benefit
    → workers per dimension (read-only, same PR base/head snapshot); else
    sequential
     ↓
@@ -150,8 +151,9 @@ finally: remove the temporary checkout (success, any failure, interruption)
    [`../policies/parallel-review.md`](../policies/parallel-review.md) and the
    shared [`parallel-review.md`](../../../shared/policies/parallel-review.md):
    detect the runtime's parallel capability (never enable an experimental
-   one by mutating configuration); if present **and** the PR is complex
-   enough, split into read-only workers by dimension, each with the
+   one by mutating configuration); if present **and** at least two materially
+   independent dimensions can run from the normalized input with an expected
+   latency benefit, split into read-only workers by dimension, each with the
    identical normalized input (same PR base/head snapshot, Review Context,
    Repository Context location and snapshot identity, identical resolved
    instruction-context identity, Existing Review Evidence) and its dimension's

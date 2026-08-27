@@ -78,8 +78,9 @@ API-only. Required failure returns ungraded `REVIEW INCOMPLETE` with
 
 ## Parallel review (opt-in execution optimisation)
 
-When the runtime exposes a reliable multi-agent / sub-agent capability
-**and** the PR is complex enough to benefit, the review is split across
+Sequential review is the default. When the runtime exposes a reliable
+multi-agent / sub-agent capability **and** at least two materially independent
+dimensions can run concurrently with an expected latency benefit, review may split across
 independent **read-only** workers by dimension (scope, architecture,
 correctness, tests/config, existing-review reconciliation). Parallelism is an
 optimisation, never a semantic change: sequential and parallel execution must

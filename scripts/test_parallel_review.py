@@ -35,9 +35,25 @@ def _text(path: Path) -> str:
     return re.sub(r"\s+", " ", path.read_text(encoding="utf-8").replace("**", "").replace("`", ""))
 
 
-SMALL = ReviewSignals(changed_file_count=2, distinct_components=1)
-COMPLEX = ReviewSignals(changed_file_count=25, distinct_components=4,
-                        has_architecture_or_config_change=True)
+SMALL = ReviewSignals(
+    changed_file_count=2,
+    material_dimensions=(ReviewDimension.CORRECTNESS_REGRESSION,),
+    shared_context_normalized=True,
+    repository_instructions_resolved=True,
+)
+COMPLEX = ReviewSignals(
+    changed_file_count=4,
+    material_dimensions=(
+        ReviewDimension.SCOPE_REQUIREMENTS,
+        ReviewDimension.ARCHITECTURE_INVARIANTS,
+        ReviewDimension.CORRECTNESS_REGRESSION,
+        ReviewDimension.TESTS_CONFIG,
+    ),
+    dimensions_are_independent=True,
+    expected_latency_reduction=True,
+    shared_context_normalized=True,
+    repository_instructions_resolved=True,
+)
 
 
 class PlanningTests(unittest.TestCase):
@@ -55,16 +71,61 @@ class PlanningTests(unittest.TestCase):
                     ParallelCapability.CONCURRENT_AGENTS):
             self.assertTrue(plan_review_execution(COMPLEX, cap).parallel)
 
-    def test_each_complexity_signal_alone_triggers_parallel(self) -> None:
-        cap = ParallelCapability.SUBAGENTS
-        for sig in (
-            ReviewSignals(changed_file_count=12),
-            ReviewSignals(distinct_components=3),
-            ReviewSignals(has_architecture_or_config_change=True),
-            ReviewSignals(cross_cutting_change=True),
-            ReviewSignals(supplied_context_items=3),
-        ):
-            self.assertTrue(plan_review_execution(sig, cap).parallel, sig)
+    def test_many_trivial_files_do_not_trigger_parallelism(self) -> None:
+        signals = ReviewSignals(
+            changed_file_count=300,
+            material_dimensions=(ReviewDimension.CORRECTNESS_REGRESSION,),
+            shared_context_normalized=True,
+            repository_instructions_resolved=True,
+        )
+        self.assertFalse(plan_review_execution(signals, ParallelCapability.SUBAGENTS).parallel)
+
+    def test_small_architecture_heavy_review_may_be_parallel(self) -> None:
+        signals = ReviewSignals(
+            changed_file_count=3,
+            material_dimensions=(
+                ReviewDimension.ARCHITECTURE_INVARIANTS,
+                ReviewDimension.CORRECTNESS_REGRESSION,
+            ),
+            dimensions_are_independent=True,
+            expected_latency_reduction=True,
+            shared_context_normalized=True,
+            repository_instructions_resolved=True,
+        )
+        self.assertTrue(plan_review_execution(signals, ParallelCapability.SUBAGENTS).parallel)
+
+    def test_unresolved_context_prevents_spawn(self) -> None:
+        for context_ready, instructions_ready in ((False, True), (True, False)):
+            unresolved = ReviewSignals(
+                material_dimensions=COMPLEX.material_dimensions,
+                dimensions_are_independent=True,
+                expected_latency_reduction=True,
+                shared_context_normalized=context_ready,
+                repository_instructions_resolved=instructions_ready,
+            )
+            self.assertFalse(
+                plan_review_execution(unresolved, ParallelCapability.SUBAGENTS).parallel
+            )
+
+    def test_sequential_dependency_prevents_parallelism(self) -> None:
+        dependent = ReviewSignals(
+            material_dimensions=COMPLEX.material_dimensions,
+            dimensions_are_independent=False,
+            expected_latency_reduction=True,
+            shared_context_normalized=True,
+            repository_instructions_resolved=True,
+        )
+        self.assertFalse(plan_review_execution(dependent, ParallelCapability.SUBAGENTS).parallel)
+
+    def test_no_expected_latency_benefit_keeps_review_sequential(self) -> None:
+        no_benefit = ReviewSignals(
+            material_dimensions=COMPLEX.material_dimensions,
+            dimensions_are_independent=True,
+            expected_latency_reduction=False,
+            shared_context_normalized=True,
+            repository_instructions_resolved=True,
+        )
+        self.assertFalse(plan_review_execution(no_benefit, ParallelCapability.SUBAGENTS).parallel)
 
 
 class SharedWorkerInputTests(unittest.TestCase):

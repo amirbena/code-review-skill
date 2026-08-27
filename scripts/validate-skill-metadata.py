@@ -94,7 +94,7 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
     ),
     "parallel-review.md": (
         "## Where it runs",
-        "## Threshold signals for a PR",
+        "## Execution-policy signals for a PR",
         "## Shared checkout vs. worker copies",
         "## Aggregation and output",
         "## Required vs. incomplete",

@@ -49,7 +49,8 @@ determine formal-review capability
     ↓
 resolve changed files, then one normalized per-file AGENTS.md hierarchy
     ↓
-plan review execution: parallel capability present AND PR complex enough?
+plan review execution: reliable capability AND 2+ independent dimensions
+       AND expected latency benefit?
        → yes → workers per dimension (read-only, same PR base/head snapshot)
        → no  → sequential
     ↓

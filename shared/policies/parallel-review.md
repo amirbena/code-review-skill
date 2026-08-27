@@ -15,6 +15,9 @@ produce equivalent final findings and decisions.** Parallelism changes only
 is always a valid, complete implementation of this contract; a review is
 never failed or downgraded because parallelism is unavailable.
 
+**Sequential review is the default execution mode.** A simple review should
+remain simple even when the runtime exposes parallel workers.
+
 ## Capability detection, not assumption
 
 There is no universal "spawn agent" syntax. Before planning parallel work,
@@ -29,20 +32,43 @@ detect what the current runtime actually supports:
 
 If detection is uncertain, treat the capability as **none**.
 
-## Parallelism threshold
+## Execution-policy decision
 
-Do not spawn workers for every small change. Use parallel workers only when
-the runtime supports it **and** the change is complex enough to benefit.
-Signals of complexity (illustrative, not a precise formula):
+Select parallel review only when both gates pass:
 
-- many changed files;
-- several distinct components touched;
-- an architecture or configuration change;
-- a substantial amount of supplied review context;
-- a cross-cutting change.
+```text
+reliable runtime parallel capability?
+    no  → sequential
+    yes ↓
+at least two materially independent analysis dimensions whose concurrent
+execution is expected to reduce latency without reducing consistency?
+    no  → sequential
+    yes → parallel review
+```
 
-Absent such signals, run sequentially. Keep the rule simple; when in doubt,
-sequential.
+Do not use file count or any other single numeric threshold. Thirty renamed,
+generated, or mechanical files may be trivial; three files may carry
+independent architecture and correctness work. Relevant signals include
+requirements/scope analysis, architecture or cross-component changes,
+correctness/regression analysis, repository-policy validation,
+configuration/infrastructure changes, substantial supplied context, several
+independent subsystems, and meaningful existing-review reconciliation. No
+single signal automatically requires workers, and do not invent dimensions
+solely to justify spawning.
+
+Only split dimensions that can begin from the same normalized shared inputs.
+If one dimension needs another worker's result first, it is a sequential
+dependency. Parallelize only when the expected latency reduction exceeds the
+overhead of worker creation, context duplication, aggregation, and
+reconciliation. When uncertain about consistency, coverage, independence, or
+latency benefit, remain sequential.
+
+## Pre-spawn context gate
+
+Before selecting or starting workers, the parent resolves Review Target,
+Review Context, Repository Context, Existing Review Evidence, applicable
+repository instructions, and repository snapshot identity. Workers never
+fetch Jira/Issue context, rediscover `AGENTS.md`, or choose a snapshot.
 
 ## Worker contract
 
