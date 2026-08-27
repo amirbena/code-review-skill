@@ -210,13 +210,22 @@ additional review target, and never widens the PR delta. When omitted, this
 Skill behaves exactly as before this input existed and never asks for it;
 Jira is never mandatory.
 
-**Always considered when available:** the PR's own prior reviews, review
-comments, and issue comments — as Existing Review Evidence, per the shared
+**Always considered when available:** the PR's own prior reviews (with their
+`APPROVED` / `CHANGES_REQUESTED` / `COMMENTED` state), review comments, issue
+comments, and review-thread resolved/unresolved state where GitHub exposes it
+— retrieved paginated-to-exhaustion through an authenticated GitHub
+integration per [`policies/pr-scope.md`](policies/pr-scope.md), "Existing
+review awareness" (which carries a concrete `gh api` / GraphQL example but
+binds the Skill to no specific integration) — as Existing Review Evidence,
+per the shared
 [`review-evidence.md`](../../shared/policies/review-evidence.md) and its thin
 PR application [`policies/review-evidence.md`](policies/review-evidence.md).
 Used to avoid repeating settled findings, contradicting settled decisions
 without new evidence, and missing an unresolved previously identified issue —
-never blindly inherited. Absent prior activity changes nothing.
+never blindly inherited, always reconciled against the current PR HEAD (a
+resolved thread is evidence of a past conclusion, not proof the current HEAD
+is correct; automation-authored comments contribute observations only).
+Absent prior activity changes nothing.
 
 ## 3. Required Policy Loading
 

@@ -110,6 +110,35 @@ class PRContextPolicyExistsAndIsScopedTests(unittest.TestCase):
         ):
             self.assertIn(evidence_kind, self.text)
 
+    def test_documents_a_concrete_retrieval_example_scoped_to_the_delta(self) -> None:
+        self.assertIn("### Retrieval (integration example)", self.text)
+        self.assertIn("gh api --paginate", self.text)
+        self.assertIn("reviewThreads { isResolved }", self.text)
+        self.assertIn("this Skill is not bound to gh", self.text)
+        self.assertIn(
+            "Keep only the reviews, comments, and threads that touch files, "
+            "hunks, or symbols in the current local delta",
+            self.text,
+        )
+
+    def test_resolved_thread_is_not_proof_the_delta_is_correct(self) -> None:
+        self.assertIn("### Authorship and resolved threads", self.text)
+        self.assertIn(
+            "A resolved thread is evidence of a past conclusion, not proof the "
+            "current local delta is correct",
+            self.text,
+        )
+        self.assertIn(
+            "if the delta reintroduces the defect a resolved thread described, "
+            "that is a still present finding",
+            self.text,
+        )
+        self.assertIn(
+            "automated / bot comments provide observations only and never by "
+            "themselves settle a design decision",
+            self.text,
+        )
+
     def test_unresolved_pr_context_falls_back_without_blocking_review(self) -> None:
         self.assertIn("## Unavailable or unresolved PR context", self.text)
         self.assertIn(

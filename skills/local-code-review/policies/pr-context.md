@@ -105,6 +105,38 @@ not re-read the PR's full historical diff — the current local delta,
 established per [`repository-state.md`](repository-state.md), is what
 is actually reviewed.
 
+### Retrieval (integration example)
+
+Retrieval uses whatever authenticated GitHub read integration the
+environment provides; what to do with the result is the shared Existing
+Review Evidence model, not redefined here. One executable implementation:
+
+```text
+gh api --paginate repos/{owner}/{repo}/pulls/{pr}/reviews
+gh api --paginate repos/{owner}/{repo}/pulls/{pr}/comments
+gh api --paginate repos/{owner}/{repo}/issues/{pr}/comments
+```
+
+Keep only the reviews, comments, and threads that touch files, hunks, or
+symbols in the current local delta, or that record a design decision
+governing an area it touches; discard the rest unread. Review-thread
+resolution state, where needed, comes from a GraphQL
+`reviewThreads { isResolved }` query. An equivalent authenticated GitHub
+integration is valid — this Skill is not bound to `gh`. If retrieval
+returns nothing, is incomplete, or no integration is available, apply
+"Unavailable or unresolved PR context" below.
+
+### Authorship and resolved threads
+
+Per the shared
+[`review-evidence.md`](../../../shared/policies/review-evidence.md),
+"Comment authorship: human review vs. automation output," automated / bot
+comments provide observations only and never by themselves settle a design
+decision. A resolved thread is evidence of a past conclusion, not proof the
+current local delta is correct: if the delta reintroduces the defect a
+resolved thread described, that is a **still present** finding, reported
+with fresh evidence — the historical resolution does not suppress it.
+
 ## Classifying PR review context
 
 Classify each relevant thread/comment into one category:

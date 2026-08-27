@@ -145,6 +145,59 @@ awareness") owns the same-HEAD duplicate suppression and the deterministic
 finding-identity rule this builds on. Do not suppress another human reviewer's
 independent feedback merely because it is similar.
 
+## Interpret prior evidence against the current target
+
+Every classification and reconciliation outcome above is decided against the
+**current** review target — the current local delta for `local-code-review`,
+the current PR HEAD for `github-pr-review` — never against the code as it
+stood when the prior comment was written. Two consequences a review must not
+get wrong:
+
+- **A resolved thread, a "looks good" reply, or a prior approval is evidence
+  of a past review conclusion — not proof that the current target is
+  correct.** A GitHub review thread's `resolved` flag is such evidence, not a
+  correctness oracle. The current review still determines, from the current
+  target, whether the issue the thread described remains fixed, has
+  regressed, is no longer applicable, or requires re-evaluation.
+- **Regression after a resolved finding is a finding of this review.** When a
+  defect was reported, fixed, and its thread resolved or its finding marked
+  resolved, and a later change on the current target reintroduces it,
+  classify it as a **still-relevant finding** and report it with fresh
+  evidence from the current code. The historical resolution does not
+  suppress it.
+
+A changed PR HEAD (or a materially changed local delta) resets which prior
+findings are authoritative: they remain useful investigation evidence, but
+none is *automatically* resolved and none is *automatically* still applicable
+against the new state — re-derive each against the current target, and
+re-classify prior human findings against it. An old approval never
+authorizes a new HEAD.
+
+## Comment authorship: human review vs. automation output
+
+Prior review activity comes from different kinds of author, which do not
+carry equal authority over what counts as *settled*:
+
+- **Human reviewer / maintainer discussion** can establish a settled
+  architectural decision, a maintainer clarification, reviewer acceptance of
+  a trade-off, or an authoritative resolution of a correctness question —
+  when it otherwise meets the "Settled decisions" bar above.
+- **Automated / bot output** — deployment previews, coverage bots, CI status
+  comments, code-scanning summaries, generated links, and bookkeeping
+  comments such as "please rebase" — may contribute useful *observations*
+  (for example, a scanner pointing at a concrete line). Automation output
+  **alone** never establishes a settled architectural decision, a maintainer
+  clarification, reviewer acceptance, or an authoritative resolution of a
+  correctness question. Treat it as an observation to verify against the
+  current target — speculative discussion until a human reviewer or
+  maintainer concludes it.
+
+This is a small authority/inference rule, not a trust-scoring system: no
+reviewer-reputation weighting, no bot allowlists, no per-author trust
+levels, no general comment analytics. When authorship cannot be determined,
+treat the item as non-authoritative for "settled" purposes and re-verify it
+against the current target.
+
 ## Boundaries
 
 - **Read-only.** Using prior evidence never grants a mutation capability.

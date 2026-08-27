@@ -1,0 +1,354 @@
+#!/usr/bin/env python3
+"""Test-only decision tables for github-pr-review Existing Review Evidence.
+
+Mirrors shared/policies/review-evidence.md and
+skills/github-pr-review/policies/{review-evidence,pr-scope}.md.
+Not runtime logic, not packaged.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum
+from typing import FrozenSet, Optional, Sequence
+
+
+# --- Authorship (review-evidence.md, "Comment authorship") --------------
+
+
+class AuthorType(Enum):
+    HUMAN_REVIEWER = "human_reviewer"
+    MAINTAINER = "maintainer"
+    AUTOMATION_BOT = "automation_bot"
+    CI_STATUS = "ci_status"
+    UNKNOWN = "unknown"
+
+
+HUMAN_AUTHOR_TYPES: FrozenSet[AuthorType] = frozenset(
+    {AuthorType.HUMAN_REVIEWER, AuthorType.MAINTAINER}
+)
+AUTOMATION_AUTHOR_TYPES: FrozenSet[AuthorType] = frozenset(
+    {AuthorType.AUTOMATION_BOT, AuthorType.CI_STATUS}
+)
+
+# The authority kinds automation output must never establish on its own.
+AUTHORITY_KINDS: FrozenSet[str] = frozenset(
+    {
+        "settled_architectural_decision",
+        "maintainer_clarification",
+        "reviewer_acceptance",
+        "authoritative_correctness_resolution",
+    }
+)
+
+
+def _validate_authority_kind(kind: str) -> None:
+    if kind not in AUTHORITY_KINDS:
+        raise ValueError(f"unknown authority kind: {kind!r}")
+
+
+def author_can_establish(author_type: AuthorType, kind: str) -> bool:
+    """Only human reviewer / maintainer discussion establishes authority."""
+    _validate_authority_kind(kind)
+    return author_type in HUMAN_AUTHOR_TYPES
+
+
+def automation_can_establish(kind: str) -> bool:
+    """Automation/bot output never establishes any authority kind alone."""
+    _validate_authority_kind(kind)
+    return False
+
+
+def automation_contribution(author_type: AuthorType) -> str:
+    """Bot output is an observation to verify; human output can be authoritative."""
+    if author_type in AUTOMATION_AUTHOR_TYPES:
+        return "observation_only"
+    if author_type in HUMAN_AUTHOR_TYPES:
+        return "authoritative_capable"
+    return "non_authoritative_unknown"
+
+
+# --- Thread classification (evidence.md, "Classify each item") ----------
+
+
+class PriorItemClass(Enum):
+    STILL_RELEVANT = "still_relevant_finding"
+    RESOLVED = "resolved_finding"
+    STALE = "stale_requires_reevaluation"
+    DUPLICATE = "duplicate"
+    SETTLED_DECISION = "settled_decision"
+    SPECULATIVE = "speculative_discussion"
+
+
+class ThreadResolution(Enum):
+    RESOLVED = "resolved"
+    UNRESOLVED = "unresolved"
+    UNKNOWN = "unknown"
+
+
+@dataclass(frozen=True)
+class ThreadComment:
+    author_type: AuthorType
+    is_explicit_conclusion: bool = False
+    label: str = ""
+
+
+def classify_thread(comments: Sequence[ThreadComment]) -> ThreadComment:
+    """The latest explicit conclusion governs; else the most recent comment."""
+    if not comments:
+        raise ValueError("a thread must contain at least one comment")
+    for comment in reversed(comments):
+        if comment.is_explicit_conclusion:
+            return comment
+    return comments[-1]
+
+
+def thread_conclusion_is_authoritative(governing: ThreadComment) -> bool:
+    """A conclusion settles the thread only when a human/maintainer stated it."""
+    return governing.is_explicit_conclusion and governing.author_type in HUMAN_AUTHOR_TYPES
+
+
+# --- Reconciliation against the CURRENT PR HEAD ------------------------
+# (evidence.md, "Reconciliation outcomes"; pr-scope.md, "Existing review
+# awareness")
+
+
+class ReviewState(Enum):
+    APPROVED = "APPROVED"
+    CHANGES_REQUESTED = "CHANGES_REQUESTED"
+    COMMENTED = "COMMENTED"
+    DISMISSED = "DISMISSED"
+
+
+@dataclass(frozen=True)
+class PriorFinding:
+    id: str
+    reviewed_sha: str  # PR HEAD the prior reviewer saw
+
+
+@dataclass(frozen=True)
+class Reconciliation:
+    finding_id: str
+    item_class: PriorItemClass
+    reuse_prior_evidence: bool
+    emit_in_this_review: bool
+
+
+def reconcile_prior_finding(
+    finding: PriorFinding,
+    *,
+    current_head_sha: str,
+    present_on_current_head: Optional[bool],
+    surrounding_code_materially_changed: bool = False,
+    independently_rediscovered: bool = False,
+) -> Reconciliation:
+    """Resolve one prior finding's status against the current PR HEAD.
+
+    `present_on_current_head` is about the current HEAD, never the historical
+    state; `None` (undeterminable) forces re-evaluation, never an assumption.
+    """
+    head_changed = finding.reviewed_sha != current_head_sha
+
+    if present_on_current_head is None:
+        return Reconciliation(finding.id, PriorItemClass.STALE, True, False)
+
+    if present_on_current_head:
+        cls = PriorItemClass.DUPLICATE if independently_rediscovered else PriorItemClass.STILL_RELEVANT
+        return Reconciliation(finding.id, cls, True, True)
+
+    # Absent on the current HEAD, but heavy churn since means "absent" needs
+    # a fresh look rather than a blind "resolved".
+    if head_changed and surrounding_code_materially_changed:
+        return Reconciliation(finding.id, PriorItemClass.STALE, True, False)
+
+    return Reconciliation(finding.id, PriorItemClass.RESOLVED, False, False)
+
+
+def should_emit_independent_finding(*, materially_different_from_prior: bool) -> bool:
+    """A materially different current defect in the same area is always its
+    own finding, never suppressed as a duplicate."""
+    return materially_different_from_prior
+
+
+def should_suppress_as_duplicate(reconciliation: Reconciliation) -> bool:
+    """Suppress publication only for a true same-issue duplicate this review
+    also found independently."""
+    return reconciliation.item_class == PriorItemClass.DUPLICATE
+
+
+# --- Regression after a resolved thread --------------------------------
+# (evidence.md, "Interpret prior evidence against the current target")
+
+
+class RegressionOutcome(Enum):
+    NO_FINDING_STILL_FIXED = "no_finding_still_fixed"
+    EMIT_FRESH_FINDING_REGRESSED = "emit_fresh_finding_regressed"
+    EMIT_FINDING_NEVER_FIXED = "emit_finding_never_fixed"
+
+
+def evaluate_possibly_regressed(
+    thread_resolution: ThreadResolution, defect_present_on_current_head: bool
+) -> RegressionOutcome:
+    """A resolved flag is a past conclusion, not proof of present correctness."""
+    if not defect_present_on_current_head:
+        return RegressionOutcome.NO_FINDING_STILL_FIXED
+    if thread_resolution is ThreadResolution.RESOLVED:
+        return RegressionOutcome.EMIT_FRESH_FINDING_REGRESSED
+    return RegressionOutcome.EMIT_FINDING_NEVER_FIXED
+
+
+def resolved_flag_is_correctness_oracle() -> bool:
+    """Never. The current HEAD determines present correctness."""
+    return False
+
+
+# --- HEAD-change semantics (pr-scope.md; review-evidence.md, "HEAD
+# changes reset applicability") ----------------------------------------
+
+
+def head_change_resets_applicability(prior_sha: str, current_sha: str) -> bool:
+    return prior_sha != current_sha
+
+
+def must_reclassify_prior_human_findings(prior_sha: str, current_sha: str) -> bool:
+    return prior_sha != current_sha
+
+
+def prior_findings_remain_investigation_evidence_after_head_change() -> bool:
+    return True
+
+
+def old_approval_carries_to_new_head(prior_reviewed_sha: str, current_head_sha: str) -> bool:
+    """Never. An old approval does not authorize a different HEAD."""
+    del prior_reviewed_sha, current_head_sha
+    return False
+
+
+# --- Settled decisions (evidence.md, "Settled decisions") --------------
+
+
+class DecisionStatus(Enum):
+    NOT_SETTLED = "not_settled_preference_only"
+    FOLLOWED = "followed"
+    SUPERSEDED = "intentionally_superseded"
+    VIOLATED = "violated"
+
+
+SUPERSESSION_EVIDENCE_KINDS: FrozenSet[str] = frozenset(
+    {
+        "changed_requirements",
+        "correctness_or_reliability_problem",
+        "invalidated_assumption",
+        "new_dependency_or_constraint",
+        "security_or_performance_concern",
+        "newer_explicit_decision",
+    }
+)
+
+# A settled decision can never wave away a defect in one of these categories.
+SAFETY_CRITICAL_CATEGORIES: FrozenSet[str] = frozenset(
+    {"correctness", "security", "data_integrity", "safety"}
+)
+
+
+@dataclass(frozen=True)
+class SettledDecision:
+    id: str
+    established_by: AuthorType
+    has_explicit_agreement: bool
+
+
+def decision_is_settled(decision: SettledDecision) -> bool:
+    """Settled requires explicit agreement AND a human/maintainer author."""
+    return decision.has_explicit_agreement and decision.established_by in HUMAN_AUTHOR_TYPES
+
+
+@dataclass(frozen=True)
+class DecisionReconciliation:
+    decision_id: str
+    status: DecisionStatus
+    emit_finding: bool
+
+
+def reconcile_settled_decision(
+    decision: SettledDecision,
+    *,
+    current_delta_follows: bool,
+    supersession_evidence: FrozenSet[str] = frozenset(),
+) -> DecisionReconciliation:
+    if not decision_is_settled(decision):
+        return DecisionReconciliation(decision.id, DecisionStatus.NOT_SETTLED, False)
+    if current_delta_follows:
+        return DecisionReconciliation(decision.id, DecisionStatus.FOLLOWED, False)
+
+    unknown = supersession_evidence - SUPERSESSION_EVIDENCE_KINDS
+    if unknown:
+        raise ValueError(f"unrecognized supersession evidence kind(s): {sorted(unknown)}")
+
+    if supersession_evidence:
+        return DecisionReconciliation(decision.id, DecisionStatus.SUPERSEDED, False)
+    return DecisionReconciliation(decision.id, DecisionStatus.VIOLATED, True)
+
+
+def settled_decision_suppresses_defect(defect_category: str) -> bool:
+    """A settled 'this is intentional' never suppresses a safety-critical defect."""
+    return defect_category not in SAFETY_CRITICAL_CATEGORIES
+
+
+# --- Retrieval completeness (pr-scope.md, "Retrieving prior review
+# activity") ----------------------------------------------------------
+
+# The surfaces retrieval must cover, paginated to exhaustion.
+REQUIRED_RETRIEVAL_SURFACES: tuple[str, ...] = (
+    "submitted_reviews",
+    "review_state",
+    "review_body",
+    "inline_review_comments",
+    "issue_comments",
+    "review_threads",
+    "thread_resolution_state",
+)
+PAGINATION_TO_EXHAUSTION = True
+
+
+class HistoryCompleteness(Enum):
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    UNAVAILABLE = "unavailable"
+
+
+def history_blocks_review(completeness: HistoryCompleteness) -> bool:
+    """Incomplete history never blocks the review of the current PR."""
+    del completeness
+    return False
+
+
+def may_claim_complete_deduplication(completeness: HistoryCompleteness) -> bool:
+    return completeness is HistoryCompleteness.COMPLETE
+
+
+def must_report_history_uncertainty(
+    completeness: HistoryCompleteness, *, material_to_dedup: bool = True
+) -> bool:
+    return completeness is not HistoryCompleteness.COMPLETE and material_to_dedup
+
+
+# --- Governance: this module stays read-only and carries no PR verdict --
+
+PROHIBITED_CAPABILITY_NAME_FRAGMENTS: FrozenSet[str] = frozenset(
+    {
+        "publish",
+        "submit",
+        "post_",
+        "approve",
+        "request_changes",
+        "merge",
+        "delete",
+        "push",
+        "commit",
+        "dismiss_review",
+        "resolve_thread",
+        "bypass",
+        "override_ownership",
+    }
+)

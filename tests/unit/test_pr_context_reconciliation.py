@@ -132,6 +132,29 @@ class ExistingFindingReconciliationTests(unittest.TestCase):
             )
         )
 
+    def test_regression_after_resolved_thread_is_still_reported_with_fresh_evidence(self) -> None:
+        # The thread was explicitly resolved ("false alarm / fixed")...
+        thread = [
+            prc.ThreadComment(prc.Category.FINDING, label="charge path not idempotent"),
+            prc.ThreadComment(
+                prc.Category.RESOLVED_OBSOLETE,
+                label="fixed in follow-up, resolving",
+                is_explicit_resolution=True,
+            ),
+        ]
+        self.assertEqual(prc.classify_thread(thread).category, prc.Category.RESOLVED_OBSOLETE)
+
+        # ...but the current local delta reintroduces the defect. The
+        # historical resolution is evidence, not proof: reconciliation
+        # against the *current* delta still classifies it STILL_VALID and
+        # emits it.
+        finding = prc.ExistingFinding(id="F-PR-9", touches={"src/payments/charge.py"})
+        result = prc.reconcile_finding(finding, LOCAL_DELTA_TOUCHES, issue_still_present=True)
+        self.assertEqual(result.status, prc.FindingStatus.STILL_VALID)
+        self.assertTrue(
+            prc.should_emit_separate_finding(result, independently_discovered_same_issue=False)
+        )
+
     def test_unclear_applicability_requires_reevaluation_and_reuses_evidence(self) -> None:
         finding = prc.ExistingFinding(id="F-PR-3", touches={"src/payments/charge.py"})
         result = prc.reconcile_finding(finding, LOCAL_DELTA_TOUCHES, issue_still_present=None)

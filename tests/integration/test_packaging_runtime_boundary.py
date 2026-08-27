@@ -38,6 +38,7 @@ REFERENCE_TEST_MODULES = (
     "review_context.py",
     "decision_semantics.py",
     "pr_context_reconciliation.py",
+    "pr_review_evidence.py",
     "reviewer_ownership.py",
     "staged_fingerprint.py",
     "jira_context.py",
@@ -90,6 +91,15 @@ MODULE_TO_PACKAGED_POLICY_HEADINGS = {
             "## Normalized Repository Instruction Context",
             "## Safe and explicit reads",
             "## AGENTS.md vs. CLAUDE.md",
+        ),
+    ),
+    "pr_review_evidence.py": (
+        REPO_ROOT / "shared" / "policies" / "review-evidence.md",
+        (
+            "## Reconciliation outcomes",
+            "## Settled decisions",
+            "## Interpret prior evidence against the current target",
+            "## Comment authorship: human review vs. automation output",
         ),
     ),
 }

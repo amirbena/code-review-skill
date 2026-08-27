@@ -119,12 +119,20 @@ finally: remove the temporary checkout (success, any failure, interruption)
    cannot be established for the scope this mode requires, return an
    incomplete review state rather than claiming the full PR was reviewed.
    Where prior reviews, review comments, and issue comments on this PR are
-   available, classify each relevant one as **Existing Review Evidence** per
+   available — including each submitted review's state (`APPROVED` /
+   `CHANGES_REQUESTED` / `COMMENTED`) and, where GitHub exposes it,
+   review-thread resolved/unresolved state, paginated to exhaustion per
+   [`../policies/pr-scope.md`](../policies/pr-scope.md), "Existing review
+   awareness" → "Retrieving prior review activity" — classify each relevant
+   one as **Existing Review Evidence** per
    [`../policies/review-evidence.md`](../policies/review-evidence.md) and the
    shared [`review-evidence.md`](../../../shared/policies/review-evidence.md)
    — still-relevant, resolved, stale, duplicate, settled decision, or
-   speculative discussion — without blindly inheriting it. Absent prior
-   activity changes nothing.
+   speculative discussion — without blindly inheriting it. Classify
+   automation-authored comments per that shared policy's "Comment authorship"
+   rule (observations only, never settling a decision alone), and treat a
+   `resolved` thread as evidence of a past conclusion, not proof the current
+   HEAD is correct. Absent prior activity changes nothing.
 
    Resolve the requested repository-access mode and, for optional or required
    repository-backed inspection, prepare

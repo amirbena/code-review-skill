@@ -56,8 +56,13 @@ and
 - **PR reference** — an associated GitHub PR whose prior findings, prior
   review comments, and settled decisions are reconciled as Existing Review
   Evidence: still-relevant, resolved, stale, duplicate, settled decision, or
-  speculative discussion — never blindly inherited. Read-only, never expands
-  the review target to the PR's full history. See
+  speculative discussion — never blindly inherited, always reconciled against
+  the current local delta. Retrieval is read-only, targeted to the delta
+  (`gh api` reviews/comments + GraphQL `reviewThreads` is one example), and
+  never expands the review target to the PR's full history; unavailable
+  history never blocks the local review. A resolved thread is evidence of a
+  past conclusion, not proof the delta is correct; automation/bot comments
+  contribute observations only. See
   [`policies/pr-context.md`](policies/pr-context.md).
 
 Example invocation with review context (exact syntax depends on the

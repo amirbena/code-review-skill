@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Test-only local PR simulation harness for the checkout tests.
+"""Test-only PR simulation harness.
 
-Builds a bare "origin" repo plus an author clone (base + feature branch), so
-pr_checkout.py can run against real git with no GitHub.
-Not runtime logic, not packaged.
+Two independent, test-only fixtures, neither packaged:
+- simulated_pr(): a real-git origin+clone topology so pr_checkout.py can run
+  against real git with no GitHub;
+- review_history(): in-memory prior-review-activity fixtures (submitted
+  reviews and their state, inline comments, threads, resolved/unresolved
+  state, comment authorship) for the reconciliation decision-table tests.
+Not runtime logic, not packaged. No fake GitHub API — just plain dataclasses.
 """
 
 from __future__ import annotations
@@ -164,3 +168,56 @@ def unreadable_source(parent: Optional[Path] = None) -> NormalizedPrSource:
         head_ref=f"refs/heads/{_FEATURE_BRANCH}",
         head_sha="0" * 40,
     )
+
+
+# --- In-memory prior-review-activity fixtures --------------------------
+# Consumed by the Existing-Review-Evidence reconciliation tests. Plain
+# dataclasses; no HTTP, no fake GitHub. Authorship strings match
+# tests/reference/pr_review_evidence.AuthorType values.
+
+
+@dataclass(frozen=True)
+class SimReviewComment:
+    path: str
+    body: str
+    author_type: str = "human_reviewer"
+    resolves_thread: bool = False
+
+
+@dataclass(frozen=True)
+class SimReview:
+    state: str  # APPROVED | CHANGES_REQUESTED | COMMENTED | DISMISSED
+    body: str
+    reviewed_sha: str
+    author_type: str = "human_reviewer"
+
+
+@dataclass(frozen=True)
+class SimReviewThread:
+    path: str
+    is_resolved: bool
+    comments: tuple[SimReviewComment, ...] = ()
+
+
+@dataclass(frozen=True)
+class SimIssueComment:
+    body: str
+    author_type: str = "human_reviewer"
+
+
+@dataclass(frozen=True)
+class SimReviewHistory:
+    reviews: tuple[SimReview, ...] = ()
+    threads: tuple[SimReviewThread, ...] = ()
+    issue_comments: tuple[SimIssueComment, ...] = ()
+    complete: bool = True  # False models a paginated collection not fully retrieved
+
+
+def review_history(
+    *,
+    reviews: tuple[SimReview, ...] = (),
+    threads: tuple[SimReviewThread, ...] = (),
+    issue_comments: tuple[SimIssueComment, ...] = (),
+    complete: bool = True,
+) -> SimReviewHistory:
+    return SimReviewHistory(tuple(reviews), tuple(threads), tuple(issue_comments), complete)
