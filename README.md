@@ -18,7 +18,10 @@ an explicitly supplied GitHub Issue — no automatic PR↔Issue discovery — an
 HLD/ADR, or an implementation plan) focuses attention and enables
 scope-boundary reasoning without ever widening the review target, and
 relevant **prior review evidence** (previous findings, resolved findings,
-settled decisions) is reconciled rather than blindly inherited. Both are
+settled decisions) is reconciled against the *current* target rather than
+blindly inherited — a resolved thread is evidence of a past conclusion, not
+proof the current code is correct, and automation/bot comments contribute
+observations only, never a settled decision on their own. Both are
 defined once in
 [`shared/policies/review-context.md`](shared/policies/review-context.md) and
 [`shared/policies/review-evidence.md`](shared/policies/review-evidence.md).

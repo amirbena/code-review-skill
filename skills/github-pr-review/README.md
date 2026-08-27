@@ -121,14 +121,24 @@ it is reviewed, never *what* is reviewed:
   Jira-scoped review — it never infers the ticket from its key, branch name,
   or PR title. Jira is never mandatory; re-invoke without a Jira reference
   for a normal unscoped review.
-- **Existing Review Evidence** — the PR's own prior reviews, review comments,
-  and issue comments, per the shared
+- **Existing Review Evidence** — the PR's own prior reviews (with their
+  `APPROVED` / `CHANGES_REQUESTED` / `COMMENTED` state), review comments,
+  issue comments, and review-thread `isResolved` state where GitHub exposes
+  it — retrieved paginated-to-exhaustion via an authenticated GitHub
+  integration (`gh api` + GraphQL `reviewThreads` being one example, per
+  [`policies/pr-scope.md`](policies/pr-scope.md), "Retrieving prior review
+  activity"), per the shared
   [`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md)
   and [`policies/review-evidence.md`](policies/review-evidence.md). Classified
   as still-relevant / resolved / stale / duplicate / settled decision /
   speculative discussion, then used to avoid repeating settled findings,
   contradicting settled decisions without new evidence, and missing an
-  unresolved previously identified issue — never blindly inherited.
+  unresolved previously identified issue — never blindly inherited, always
+  reconciled against the current PR HEAD. A resolved thread is evidence of a
+  past conclusion, not proof the current HEAD is correct (a reintroduced
+  defect is a fresh finding); a changed HEAD re-classifies every prior human
+  finding; automation/bot comments contribute observations only and never
+  settle a decision on their own.
 
 ## Behavioral review signals
 

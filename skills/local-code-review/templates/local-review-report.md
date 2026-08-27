@@ -71,6 +71,12 @@ supplied>
 **Recommended direction**
 <concrete correction direction>
 
+**Implementation prompt**
+<only when `include_fix_prompt=true` and a full prompt is justified; an
+evidence-supported coding-agent task covering root cause, affected components,
+required behavior, canonical owner, invariants, regression scenarios,
+non-goals, and validation as applicable>
+
 ### Validation
 - <validation actually observed, or explicitly noted as not executed>
 
@@ -230,6 +236,15 @@ strongly it is recommended before commit.
 - **Validation** reports only what was actually inspected or executed.
   If this Skill did not run tests/commands, say so rather than implying
   they passed.
+- **Remediation rendering.** Apply
+  [`../../../shared/policies/remediation-guidance.md`](../../../shared/policies/remediation-guidance.md).
+  `include_fix_prompt` defaults to `false`; when false, omit the
+  **Implementation prompt** field completely. When explicitly true, add at
+  most one prompt per root-cause finding where justified, after the concise
+  recommended direction. Do not create permutation prompts, invent uninspected
+  architecture, or emit a prompt for a clean review. The flag affects output
+  only: findings, severities, evidence, reconciliation, and Decision are
+  identical on and off.
 - **Review State** (base/HEAD SHAs, synchronization status, raw
   counts) is machine/orchestration-oriented detail — it is subordinate,
   appearing only inside the trailing "Review Metadata" section as plain

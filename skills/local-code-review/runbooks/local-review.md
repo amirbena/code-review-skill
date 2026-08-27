@@ -224,7 +224,8 @@ which a value must be resolved before it is used, or what is reported.
    itself gathers from the actual code. This step applies
    [`review-scope.md`](../../../shared/policies/review-scope.md) in full,
    including "Related changes as one unit," "Existing behavior ownership,"
-   and "Failure state, retry safety, and recovery" (the last two
+   "Root-cause and model-completeness pass," and "Failure state, retry safety,
+   and recovery" (the last three
    signal-triggered per that policy's own gating conditions — not applied
    unconditionally to every diff), and
    [`evidence.md`](../../../shared/policies/evidence.md), "Findings beyond
@@ -260,7 +261,12 @@ which a value must be resolved before it is used, or what is reported.
     [`review-summary.md`](../../../shared/templates/review-summary.md),
     including the terse optional "Context" / "PR Context" notes per
     [`../templates/local-review-report.md`](../templates/local-review-report.md)
-    when steps 7/8 ran and materially shaped the review.
+    when steps 7/8 ran and materially shaped the review. Apply
+    [`remediation-guidance.md`](../../../shared/policies/remediation-guidance.md)
+    after findings and the mechanical Decision are finalized. If and only if
+    `include_fix_prompt=true`, append a full implementation prompt where the
+    local template calls for one; otherwise render concise directions only.
+    This output step must not alter the finalized findings or Decision.
 13. Render
     [`../templates/local-review-report.md`](../templates/local-review-report.md)
     as one complete report — including the review scope contract fields

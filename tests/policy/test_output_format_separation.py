@@ -19,6 +19,10 @@ LOCAL_TEMPLATE = (
 GITHUB_TEMPLATE = (
     REPO_ROOT / "skills/github-pr-review/templates/external-review-summary.md"
 )
+LOCAL_SKILL = REPO_ROOT / "skills/local-code-review/SKILL.md"
+GITHUB_OUTPUT = REPO_ROOT / "skills/github-pr-review/policies/review-output.md"
+GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
+SHARED_REMEDIATION = REPO_ROOT / "shared/policies/remediation-guidance.md"
 SHARED_SUMMARY = REPO_ROOT / "shared/templates/review-summary.md"
 
 # GitHub-oriented HTML presentation constructs that must never appear in
@@ -211,6 +215,46 @@ class GithubReportKeepsHtmlPresentation(unittest.TestCase):
         # this suite must never assert it should — shared review
         # reasoning does not imply identical human-facing formatting.
         self.assertNotIn("Relevance-aware metadata rendering", self.text)
+
+    def test_github_direction_is_concise_without_full_prompt(self) -> None:
+        policy = GITHUB_OUTPUT.read_text(encoding="utf-8")
+        self.assertIn("concise, evidence-grounded", policy)
+        self.assertIn("Do not emit `local-code-review`'s full", policy)
+        self.assertNotIn("**Implementation prompt**\n<", self.text)
+
+
+class RemediationContractSeparation(unittest.TestCase):
+    def test_local_flag_is_explicit_default_off_and_output_only(self) -> None:
+        skill = LOCAL_SKILL.read_text(encoding="utf-8")
+        for phrase in (
+            "`include_fix_prompt` (boolean, default `false`)",
+            "explicit output-only opt-in",
+            "Only remediation rendering differs",
+            "never authorizes mutation",
+        ):
+            self.assertIn(phrase, skill)
+
+    def test_shared_policy_preserves_severity_verdict_and_mutation(self) -> None:
+        policy = SHARED_REMEDIATION.read_text(encoding="utf-8")
+        for phrase in (
+            "does not change finding identity, severity",
+            "mechanically derived verdict",
+            "grants no ability to edit",
+            "canonical owner",
+        ):
+            self.assertIn(phrase, policy)
+
+    def test_local_flag_does_not_expand_read_only_boundary(self) -> None:
+        skill = LOCAL_SKILL.read_text(encoding="utf-8")
+        mutation_boundary = skill.split("## 6. Mutation Boundary", 1)[1]
+        for prohibited in ("edit files", "apply patches", "commit", "push", "create branches"):
+            self.assertIn(prohibited, mutation_boundary)
+
+    def test_github_active_and_passive_boundaries_are_unchanged(self) -> None:
+        skill = GITHUB_SKILL.read_text(encoding="utf-8")
+        self.assertIn("returned to the caller, not published", skill)
+        self.assertIn("must never: edit implementation files", skill)
+        self.assertIn("merge, delete branches", skill)
 
 
 class SharedTemplateDefersPresentationChoice(unittest.TestCase):

@@ -182,18 +182,28 @@ stop
    step 1.) Do not treat authentication or repository access as proof
    that a formal review event is permitted.
 7. Retrieve all pages of relevant prior reviews, review comments, and issue
-   comments needed for review state and same-HEAD duplicate detection. If
-   that history is incomplete, report the limitation rather than claiming
-   idempotent publication. Classify each relevant prior review/comment as
-   **Existing Review Evidence** per
+   comments needed for review state and same-HEAD duplicate detection —
+   including each submitted review's state (`APPROVED` / `CHANGES_REQUESTED`
+   / `COMMENTED`) and, where GitHub exposes it, review-thread
+   resolved/unresolved state — paginated to exhaustion per
+   [`../policies/pr-scope.md`](../policies/pr-scope.md), "Existing review
+   awareness" → "Retrieving prior review activity" (which carries a concrete
+   integration example). If that history is incomplete, report the
+   limitation rather than claiming idempotent publication. Classify each
+   relevant prior review/comment as **Existing Review Evidence** per
    [`../policies/review-evidence.md`](../policies/review-evidence.md) and the
    shared [`review-evidence.md`](../../../shared/policies/review-evidence.md)
    — still-relevant, resolved, stale, duplicate, settled decision, or
    speculative discussion — reasoning over each thread as a whole. Prior
    findings are evidence, not authority: do not blindly inherit their
-   conclusions or severities. The same-HEAD duplicate-suppression mechanics
-   remain [`../policies/pr-scope.md`](../policies/pr-scope.md)'s ("Existing
-   review awareness").
+   conclusions or severities; classify automation-authored comments per that
+   shared policy's "Comment authorship" rule (observations only, never
+   settling a decision alone); and treat a `resolved` thread as evidence of a
+   past conclusion, not proof the current HEAD is correct — a resolved thread
+   whose defect the current HEAD reintroduces is a still-relevant finding.
+   The same-HEAD duplicate-suppression mechanics remain
+   [`../policies/pr-scope.md`](../policies/pr-scope.md)'s ("Existing review
+   awareness").
 8. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
    after changed-file resolution, resolve the root-to-specific instruction

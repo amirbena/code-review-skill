@@ -252,11 +252,23 @@ with no loss of correctness.
   **review context** (intended scope/requirements — focuses attention and
   enables scope-boundary reasoning), **repository context**, and optional
   **existing review evidence** (prior findings/decisions, reconciled not
-  inherited). Missing optional inputs change nothing.
+  inherited — always against the *current* target, so a resolved thread is
+  evidence of a past conclusion, not proof of present correctness, and a
+  changed PR HEAD re-classifies every prior human finding; automation/bot
+  comments contribute observations only and never settle a decision alone —
+  [`shared/policies/review-evidence.md`](../shared/policies/review-evidence.md),
+  "Interpret prior evidence against the current target" and "Comment
+  authorship"). Missing optional inputs change nothing.
 - **Git / GitHub State Inspector** — read-only inspection of Git state
   (branch, HEAD, staged/unstaged/untracked) and, for `github-pr-review`,
   GitHub state (PR metadata, base/head SHA, checks, existing comments,
-  prior reviews/review comments/issue comments). Never mutates state.
+  prior reviews with their `APPROVED` / `CHANGES_REQUESTED` / `COMMENTED`
+  state, review comments, issue comments, and review-thread `isResolved`
+  state where GitHub exposes it — retrieved paginated-to-exhaustion via an
+  authenticated GitHub integration, `gh api` + GraphQL `reviewThreads` being
+  one example, per
+  [`skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md),
+  "Retrieving prior review activity"). Never mutates state.
 - **Review Delta Resolver** — computes exactly what must be reviewed: the
   committed delta relative to base, plus any local-only commits, staged
   changes, unstaged changes, and relevant untracked files (local), or the

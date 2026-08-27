@@ -169,7 +169,18 @@ rest of its own review. The local delta always remains the review target.
 When omitted, this Skill's behavior is exactly as if this input did not
 exist.
 
-These two optional inputs are independent — either, both, or neither may
+**Optional:** `include_fix_prompt` (boolean, default `false`). This is an
+explicit output-only opt-in. When `true`, an actionable finding may append a
+coding-agent-ready implementation prompt when the issue is blocking,
+structural, cross-file, rooted in a canonical owner, or otherwise requires a
+tricky correction. Simple findings may retain only a concise recommended
+direction. The flag never changes the Review Target, inspection, evidence,
+finding identity, severity, deduplication, PR-context reconciliation, or
+mechanical Decision, and it never authorizes mutation or an autonomous fix
+workflow. It is not inferred from urgency, severity, branch name, or intent.
+
+The context and PR-reference optional inputs are independent — either, both,
+or neither may
 be supplied in a given invocation, with no ordering requirement between
 them from the caller's side.
 
@@ -186,6 +197,8 @@ context is actually supplied),
 [`git-safety.md`](../../shared/policies/git-safety.md). In orchestrated/
 multi-Agent contexts, also
 [`review-ownership.md`](../../shared/policies/review-ownership.md).
+Always apply [`remediation-guidance.md`](../../shared/policies/remediation-guidance.md)
+to finding guidance.
 For every changed-file category, including generated or opaque content,
 apply [`file-reviewability.md`](../../shared/policies/file-reviewability.md).
 
@@ -252,6 +265,10 @@ whether they are shown, but their *display* is relevance-gated per
 renders unconditionally. Returned to the caller as one complete report —
 never published anywhere, and never streamed finding-by-finding as
 findings are discovered.
+With `include_fix_prompt=false` (the default), findings contain no full
+implementation prompt. With the flag explicitly enabled, qualifying existing
+findings may append one per the local report template; a clean review never
+manufactures implementation work. Only remediation rendering differs.
 
 ## 5. Statelessness and Orchestration Boundary
 

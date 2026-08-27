@@ -102,6 +102,17 @@ is constructed from the finalized findings and submitted as part of the
 one review submission above. When publication is unavailable, it is
 instead returned to the caller with publication status.
 
+## Remediation guidance
+
+Apply the shared
+[`remediation-guidance.md`](../../../shared/policies/remediation-guidance.md)
+after findings and severity are finalized. A GitHub finding may include one
+concise, evidence-grounded **Recommended direction** aimed at the root cause or
+canonical owner. Do not emit `local-code-review`'s full **Implementation
+prompt** or a coding task with workflow/commit instructions. Guidance is
+advisory and cannot change finding identity, severity, Approve/Request Changes,
+or active/passive mutation boundaries.
+
 ## Final decision
 
 - **Review reasoning result** is computed independently: either clean, or

@@ -71,6 +71,97 @@ superficial code similarity exists, and it is not a repository-wide
 duplication audit — the search stays targeted to what the current change's
 own shape suggests already has an owner.
 
+## Root-cause and model-completeness pass
+
+When several observed failures may be manifestations of one underlying
+mechanism, do not stop at enumerating symptom permutations. Perform a bounded
+root-cause / model-completeness pass when the current evidence shows signals
+such as related defects with the same failure shape, repeated fixes that move
+the failure, individually correct helpers whose composition remains unsafe,
+the same invariant bypassed through multiple paths, divergence from a
+canonical owner, or several special cases accumulating around one abstraction.
+Two related findings are a strong signal, not a mandatory numeric threshold;
+one clearly demonstrated shared failure path may also be enough.
+
+Ask whether the failures share a mechanism, whether an invariant or semantic
+model dimension/state is missing, whether multiple paths bypass the same
+validation or authority rule, whether an existing owner already implements
+the behavior, and whether one structural correction would eliminate the
+related failures. For model-, state-machine-, and policy-driven changes,
+compare what the model can represent with the distinctions its governing
+contract actually requires. Examples include an author without the authority
+kind being established, a transition without its origin, a retry without an
+idempotency identity, or a status without its ownership/source. Do not invent
+dimensions speculatively: a missing dimension is a finding only when concrete
+current failures demonstrate that the model cannot represent a distinction
+required for correctness or policy fidelity.
+
+### Structural finding vs. separate findings
+
+Prefer one structural finding, with representative concrete manifestations,
+when the evidence demonstrates the same underlying defect and one coherent
+correction addresses it. Keep findings separate when causes or fixes are
+materially different, impacts are independently significant, or collapsing
+them would hide actionable information. This is semantic deduplication, not
+under-reporting, and severity remains governed only by
+[`severity.md`](severity.md).
+
+A root-cause finding meets the same evidence standard as any other finding:
+show at least two concrete manifestations or one clearly demonstrated shared
+failure path; identify the shared mechanism; explain why it is causal rather
+than merely correlated; state the impact; and connect the correction/owner
+direction to that evidence. Passing examples alone or historical similarity
+does not prove a structural cause.
+
+### Canonical owner and external dependencies
+
+Apply "Existing behavior ownership" above to the structural cause. When a
+repository-local helper, validator, service, or policy already owns the
+invariant, recommend fixing or consuming that owner instead of adding more
+local copies around each symptom.
+
+When the canonical implementation belongs to a third-party or externally
+versioned package, first distinguish local misuse/configuration from an
+upstream package defect:
+
+- **Local misuse or unsupported configuration** — correct the local call,
+  configuration, or ordering; dependency involvement alone is not a reason
+  to recommend an upgrade.
+- **Upstream defect with an evidenced maintained fix** — prefer upgrading the
+  same package to the fixed version or fixed release range over a local
+  reimplementation/workaround. Cite available authoritative release notes,
+  changelog, advisory, upstream issue, or package evidence identifying the
+  package, current version, and fixed version/range.
+- **Upstream defect without a verified fixed version** — identify upstream
+  ownership and explicitly recommend verifying the upstream fix/version; do
+  not invent a version or claim that an upgrade is available. Recommend a
+  local mitigation only when it is needed and an upgrade is unavailable,
+  incompatible, unsafe, or otherwise concretely blocked.
+- **Breaking or major-version upgrade** — account for migration and
+  compatibility implications supported by evidence; never present it as a
+  trivial remediation merely because it contains the upstream fix.
+
+Package upgrades are not a blanket dependency rule. An upgrade recommendation
+is valid only when evidence connects the maintained release to the relevant
+fix; when the review environment cannot verify that evidence, state the
+limitation rather than guessing.
+
+### Re-review and Existing Review Evidence
+
+After a structural finding, verify on re-review that the corrected invariant
+covers the related paths, not only the originally reported examples. A new
+symptom from the same unfixed mechanism reconciles to the same finding rather
+than receiving a renamed permutation; a materially different residual defect
+remains separate.
+
+Repeated historical findings in one semantic area may trigger this pass as
+Existing Review Evidence, but they never widen the current Review Target and
+never prove the root cause by themselves. Current code, tests, configuration,
+or other repository evidence must establish the shared mechanism. This pass
+remains bounded to the current change's realistic blast radius: it requires no
+finding graph, clustering/similarity system, dependency scanner, or automatic
+package resolver.
+
 ## Failure state, retry safety, and recovery
 
 Treat this as one reasoning move, not three separate checklist items. It

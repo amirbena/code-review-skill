@@ -3,7 +3,8 @@
 into both Skills.
 
 Contract: shared/policies/review-scope.md ("Existing behavior ownership",
-"Failure state, retry safety, and recovery", "Related changes as one unit").
+"Root-cause and model-completeness pass", "Failure state, retry safety, and
+recovery", "Related changes as one unit").
 Prose checks only — there is deliberately no second implementation of the
 rules (see AGENTS.md section 18).
 """
@@ -73,9 +74,10 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
     """(2) The new behavioral heuristics are reachable through the normal
     review phase, not disconnected prose."""
 
-    def test_review_scope_defines_all_three_heuristics(self) -> None:
+    def test_review_scope_defines_all_four_heuristics(self) -> None:
         text = _text(REVIEW_SCOPE)
         self.assertIn("## Existing behavior ownership", text)
+        self.assertIn("## Root-cause and model-completeness pass", text)
         self.assertIn("## Failure state, retry safety, and recovery", text)
         self.assertIn("## Related changes as one unit", text)
 
@@ -92,6 +94,7 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
         self.assertGreater(step10, step9)
         step9_body = self.text[step9:step10]
         self.assertIn("Existing behavior ownership", step9_body)
+        self.assertIn("Root-cause and model-completeness pass", step9_body)
         self.assertIn("Failure state, retry safety, and recovery", step9_body)
         self.assertIn("Related changes as one unit", step9_body)
 
@@ -150,6 +153,78 @@ class OwnershipReuseIsTargetedTests(unittest.TestCase):
             "consistency, correctness, or maintainability risk",
             self.section,
         )
+
+
+class RootCauseAndModelCompletenessTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.section = _section(
+            _text(REVIEW_SCOPE),
+            "## Root-cause and model-completeness pass",
+            "## Failure state, retry safety, and recovery",
+        )
+
+    def test_multiple_symptoms_trigger_a_structural_pass_without_fixed_threshold(self) -> None:
+        for signal in (
+            "related defects with the same failure shape",
+            "individually correct helpers whose composition remains unsafe",
+            "same invariant bypassed through multiple paths",
+            "several special cases accumulating around one abstraction",
+        ):
+            self.assertIn(signal, self.section)
+        self.assertIn("strong signal, not a mandatory numeric threshold", self.section)
+
+    def test_model_completeness_requires_evidenced_missing_dimension(self) -> None:
+        self.assertIn("an author without the authority kind being established", self.section)
+        self.assertIn("Do not invent dimensions speculatively", self.section)
+        self.assertIn("cannot represent a distinction required", self.section)
+
+    def test_one_structural_finding_does_not_collapse_distinct_causes(self) -> None:
+        self.assertIn("Prefer one structural finding", self.section)
+        self.assertIn("Keep findings separate when causes or fixes are materially different", self.section)
+        self.assertIn("semantic deduplication, not under-reporting", self.section)
+
+    def test_canonical_repository_owner_is_preferred(self) -> None:
+        self.assertIn("recommend fixing or consuming that owner", self.section)
+        self.assertIn("instead of adding more local copies", self.section)
+
+    def test_evidenced_upstream_fix_prefers_package_upgrade(self) -> None:
+        self.assertIn("Upstream defect with an evidenced maintained fix", self.section)
+        self.assertIn("prefer upgrading the same package to the fixed version", self.section)
+        for evidence in ("release notes", "changelog", "advisory", "upstream issue"):
+            self.assertIn(evidence, self.section)
+
+    def test_unknown_fixed_version_is_never_invented(self) -> None:
+        self.assertIn("Upstream defect without a verified fixed version", self.section)
+        self.assertIn("do not invent a version", self.section)
+        self.assertIn("state the limitation rather than guessing", self.section)
+
+    def test_local_misuse_is_fixed_locally_not_upgraded_automatically(self) -> None:
+        self.assertIn("Local misuse or unsupported configuration", self.section)
+        self.assertIn("correct the local call, configuration, or ordering", self.section)
+        self.assertIn("Package upgrades are not a blanket dependency rule", self.section)
+
+    def test_breaking_upgrade_requires_migration_evidence(self) -> None:
+        self.assertIn("Breaking or major-version upgrade", self.section)
+        self.assertIn("account for migration and compatibility implications", self.section)
+        self.assertIn("never present it as a trivial remediation", self.section)
+
+    def test_rereview_verifies_invariant_across_related_paths(self) -> None:
+        self.assertIn("verify on re-review that the corrected invariant covers the related paths", self.section)
+        self.assertIn("same unfixed mechanism reconciles to the same finding", self.section)
+
+    def test_existing_review_evidence_triggers_but_does_not_prove_root_cause(self) -> None:
+        self.assertIn("may trigger this pass as Existing Review Evidence", self.section)
+        self.assertIn("never widen the current Review Target", self.section)
+        self.assertIn("never prove the root cause by themselves", self.section)
+
+    def test_policy_stays_a_bounded_reasoning_rule(self) -> None:
+        for excluded in (
+            "finding graph",
+            "clustering/similarity system",
+            "dependency scanner",
+            "automatic package resolver",
+        ):
+            self.assertIn(excluded, self.section)
 
 
 class FailureRetryRecoverySignalTriggeredTests(unittest.TestCase):
@@ -337,6 +412,8 @@ class CrossSkillConsistencyTests(unittest.TestCase):
     ) -> None:
         text = _text(GITHUB_REASONING)
         self.assertIn("review-scope.md", text)
+        self.assertIn("Root-Cause and Model-Completeness Review", text)
+        self.assertIn("Root-cause and model-completeness pass", text)
         self.assertIn("this file does not restate their full text", text)
         # It must not have grown a private copy of the new section names —
         # it consumes them through the shared file, not by forking them.
@@ -356,6 +433,7 @@ class CrossSkillConsistencyTests(unittest.TestCase):
         # by name (never restated) from local-review.md/README docs.
         forbidden_headings = (
             "## Existing behavior ownership",
+            "## Root-cause and model-completeness pass",
             "## Failure state, retry safety, and recovery",
         )
         skill_policy_dirs = [

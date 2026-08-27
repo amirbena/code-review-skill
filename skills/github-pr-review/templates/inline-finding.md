@@ -29,6 +29,8 @@ Recommended direction: <concrete correction direction, when useful>
 - evidence-based (see
   [`../../../shared/policies/evidence.md`](../../../shared/policies/evidence.md))
   — no generic "this could be improved" comments with no concrete basis;
+- recommended direction is concise and reviewer-facing; never append a local
+  full **Implementation prompt** or a coding-agent workflow;
 - this is the finding's one authoritative full representation once
   published — the review body references it only via the
   summary-pointer form (see

@@ -18,13 +18,36 @@ same-HEAD duplicate-suppression mechanics to
 The PR's own prior review activity, retrieved (paginated) alongside the rest
 of PR scope:
 
-- prior submitted reviews and their bodies;
+- prior submitted reviews — each review's state (`APPROVED` /
+  `CHANGES_REQUESTED` / `COMMENTED`) and body;
 - inline review comments and their threads;
 - issue comments on the PR conversation;
 - resolved/unresolved state of review threads, where available.
 
+Retrieval of all four surfaces, paginated to exhaustion — with a concrete
+integration example (`gh api` for reviews/comments, GraphQL `reviewThreads`
+for `isResolved`) — is owned by [`pr-scope.md`](pr-scope.md), "Existing
+review awareness" → "Retrieving prior review activity". Incomplete history
+never blocks the review; it only bars claiming complete deduplication.
+
 Another human reviewer's independent feedback is never suppressed merely
 because it is similar to a finding of this review.
+
+## Authorship and resolved-thread state
+
+Classify each prior item per the shared policy's "Comment authorship: human
+review vs. automation output" and "Interpret prior evidence against the
+current target":
+
+- automation / bot comments (CI status, coverage, deployment previews,
+  code-scanning summaries, "please rebase") contribute observations only and
+  never by themselves establish a settled decision, a maintainer
+  clarification, reviewer acceptance, or an authoritative correctness
+  resolution;
+- a GitHub thread's `resolved` flag is evidence of a past conclusion, not
+  proof the current PR HEAD is correct — a resolved thread whose defect the
+  current HEAD reintroduces is a still-relevant finding of this review,
+  reported with fresh evidence.
 
 ## Use it to avoid three failures
 

@@ -41,6 +41,56 @@ review comments, and issue comments from the authenticated reviewer/workflow.
 Do not suppress another human reviewer's independent feedback merely because
 it is similar.
 
+### Retrieving prior review activity
+
+Retrieve, following pagination metadata to exhaustion exactly as for changed
+files ("Complete PR scope and pagination" above), every surface that carries
+prior review signal for this PR:
+
+- **submitted reviews** — each review's state (`APPROVED`,
+  `CHANGES_REQUESTED`, `COMMENTED`, or dismissed) and its body;
+- **inline review comments** — the diff-anchored comments and their reply
+  threads;
+- **issue / conversation comments** — the PR's non-inline discussion;
+- **review threads** — their comments and, where GitHub exposes it, each
+  thread's resolved / unresolved state.
+
+If any of these collections cannot be retrieved completely, report
+review-history uncertainty (below, and
+[`review-evidence.md`](review-evidence.md)) rather than asserting complete
+deduplication or idempotency. Incomplete history never blocks the review of
+the current PR — it constrains only what may be claimed about deduplication.
+
+**Integration examples — not canonical requirements.** These implement the
+capability contract in [`github-review.md`](github-review.md), "GitHub
+integration contract"; any equivalent authenticated GitHub integration that
+returns the same review, comment, and thread data is valid, and this Skill
+is not bound to `gh`:
+
+```text
+gh api --paginate repos/{owner}/{repo}/pulls/{pull_number}/reviews
+gh api --paginate repos/{owner}/{repo}/pulls/{pull_number}/comments
+gh api --paginate repos/{owner}/{repo}/issues/{issue_number}/comments
+```
+
+(`issue_number` is the PR number.) Those REST endpoints do not expose review-
+thread resolution state; where it is needed, a GraphQL query over
+`repository.pullRequest.reviewThreads` (`isResolved`, plus each thread's
+`comments`) supplies it. Absent any resolved-state source, treat threads as
+unknown-resolution and reconcile each against the current PR HEAD anyway.
+
+### Interpreting what was retrieved
+
+Classify each relevant item as Existing Review Evidence per
+[`review-evidence.md`](review-evidence.md) and the shared
+[`review-evidence.md`](../../../shared/policies/review-evidence.md). In
+particular: a thread's `resolved` flag is evidence of a past conclusion, not
+proof the current HEAD is correct (a resolved thread whose defect the current
+HEAD reintroduces is a still-relevant finding); automation-authored comments
+contribute observations only and never by themselves settle a decision; and a
+changed HEAD forces every prior human finding to be re-classified against the
+new state.
+
 For each candidate finding, compute a deterministic internal identity from
 the PR HEAD SHA, normalized file path, relevant side and line/range (or a
 stable cross-cutting location), severity, and normalized finding title or

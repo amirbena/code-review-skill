@@ -159,6 +159,52 @@ class SharedPolicyFilesTests(unittest.TestCase):
             _text(SHARED_EVIDENCE),
         )
 
+    def test_evidence_interpreted_against_the_current_target(self) -> None:
+        t = _text(SHARED_EVIDENCE)
+        self.assertIn("## Interpret prior evidence against the current target", t)
+        self.assertIn("not a correctness oracle", t)
+        self.assertIn(
+            "Regression after a resolved finding is a finding of this review", t
+        )
+        self.assertIn("An old approval never authorizes a new HEAD", t)
+        self.assertIn("re-classify prior human findings against it", t)
+
+    def test_evidence_has_authorship_authority_rule(self) -> None:
+        t = _text(SHARED_EVIDENCE)
+        self.assertIn(
+            "## Comment authorship: human review vs. automation output", t
+        )
+        self.assertIn("Automation output alone never establishes a settled", t)
+        for noise in ("deployment previews", "coverage bots", "CI status", "please rebase"):
+            self.assertIn(noise, t)
+        # Explicitly bounded — no trust-scoring machinery.
+        self.assertIn(
+            "no reviewer-reputation weighting, no bot allowlists", t
+        )
+
+    def test_evidence_authority_is_conclusion_specific(self) -> None:
+        t = _text(SHARED_EVIDENCE)
+        self.assertIn(
+            "Authority is evaluated against both the author and the kind of "
+            "conclusion being established",
+            t,
+        )
+        self.assertIn(
+            "Authority to establish one conclusion kind never grants authority "
+            "to establish another",
+            t,
+        )
+
+    def test_behavioral_reference_model_exists_for_github_evidence(self) -> None:
+        # The contract must be proven behaviorally, not only in prose.
+        mod = REPO_ROOT / "tests" / "reference" / "pr_review_evidence.py"
+        test = REPO_ROOT / "tests" / "unit" / "test_pr_review_evidence.py"
+        self.assertTrue(mod.is_file())
+        self.assertTrue(test.is_file())
+        head = mod.read_text(encoding="utf-8")[:600]
+        self.assertIn("Test-only", head)
+        self.assertIn("not runtime logic, not packaged", head.lower())
+
 
 class BothSkillsReferenceTheSharedModelTests(unittest.TestCase):
     def test_local_skill_md_loads_both_shared_policies(self) -> None:
