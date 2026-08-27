@@ -10,6 +10,7 @@ import inspect
 import unittest
 
 from tests.reference import pr_context_reconciliation as prc
+from tests.reference import current_evidence as ce
 
 
 # --- Fixtures --------------------------------------------------------------
@@ -209,7 +210,7 @@ class ArchitecturalDecisionTests(unittest.TestCase):
             decision,
             LOCAL_DELTA_TOUCHES,
             delta_follows_decision=False,
-            supersession_evidence=frozenset({"invalidated_assumption"}),
+            current_evidence=frozenset({ce.CurrentEvidenceKind.INVALIDATED_ASSUMPTION}),
         )
 
         self.assertEqual(result.status, prc.DecisionStatus.SUPERSEDED)
@@ -226,8 +227,62 @@ class ArchitecturalDecisionTests(unittest.TestCase):
                 decision,
                 LOCAL_DELTA_TOUCHES,
                 delta_follows_decision=False,
-                supersession_evidence=frozenset({"i_just_prefer_this"}),
+                current_evidence=frozenset({"i_just_prefer_this"}),
             )
+
+    def test_current_material_defects_override_even_when_delta_follows(self) -> None:
+        decision = prc.ArchitecturalDecision(
+            id="D-current", touches={"src/payments/charge.py"}, is_settled=True
+        )
+        for evidence in (
+            ce.CurrentEvidenceKind.CORRECTNESS_DEFECT,
+            ce.CurrentEvidenceKind.RELIABILITY_DEFECT,
+            ce.CurrentEvidenceKind.MATERIAL_SECURITY_CONCERN,
+            ce.CurrentEvidenceKind.MATERIAL_PERFORMANCE_CONCERN,
+            ce.CurrentEvidenceKind.DATA_INTEGRITY_DEFECT,
+            ce.CurrentEvidenceKind.SAFETY_DEFECT,
+        ):
+            with self.subTest(evidence=evidence):
+                result = prc.reconcile_decision(
+                    decision,
+                    LOCAL_DELTA_TOUCHES,
+                    delta_follows_decision=True,
+                    current_evidence=frozenset({evidence}),
+                )
+                self.assertEqual(result.status, prc.DecisionStatus.SUPERSEDED)
+                self.assertNotEqual(result.status, prc.DecisionStatus.FOLLOWED)
+
+    def test_non_material_evidence_can_leave_followed_decision_authoritative(self) -> None:
+        decision = prc.ArchitecturalDecision(
+            id="D-preference", touches={"src/payments/charge.py"}, is_settled=True
+        )
+        for evidence in (
+            ce.CurrentEvidenceKind.STYLE_PREFERENCE,
+            ce.CurrentEvidenceKind.SPECULATIVE_OPTIMIZATION,
+            ce.CurrentEvidenceKind.NON_MATERIAL_REVIEWER_PREFERENCE,
+        ):
+            with self.subTest(evidence=evidence):
+                result = prc.reconcile_decision(
+                    decision,
+                    LOCAL_DELTA_TOUCHES,
+                    delta_follows_decision=True,
+                    current_evidence=frozenset({evidence}),
+                )
+                self.assertEqual(result.status, prc.DecisionStatus.FOLLOWED)
+
+    def test_local_and_github_models_share_current_evidence_owner(self) -> None:
+        from tests.reference import pr_review_evidence as prv
+
+        self.assertIs(prc.CurrentEvidenceKind, ce.CurrentEvidenceKind)
+        self.assertIs(prv.CurrentEvidenceKind, ce.CurrentEvidenceKind)
+        self.assertIs(
+            prc.current_evidence_overrides_historical_authority,
+            ce.current_evidence_overrides_historical_authority,
+        )
+        self.assertIs(
+            prv.current_evidence_overrides_historical_authority,
+            ce.current_evidence_overrides_historical_authority,
+        )
 
     def test_scenario_6_unsettled_preference_is_never_a_constraint(self) -> None:
         # A reviewer preference with no agreement/resolution never becomes

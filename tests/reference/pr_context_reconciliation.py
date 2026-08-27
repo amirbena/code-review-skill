@@ -11,6 +11,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import FrozenSet, Optional, Sequence
 
+from tests.reference.current_evidence import (
+    CurrentEvidenceKind,
+    current_evidence_overrides_historical_authority,
+)
+
 
 # --- Classification (pr-context.md, "Classifying PR review context") ----
 
@@ -131,20 +136,6 @@ class DecisionStatus(Enum):
     VIOLATED = "violated"
 
 
-# Evidence sufficient to challenge a settled decision (exhaustive per policy;
-# an unknown kind is a caller error).
-SUPERSESSION_EVIDENCE_KINDS: FrozenSet[str] = frozenset(
-    {
-        "changed_requirements",
-        "correctness_or_reliability_problem",
-        "invalidated_assumption",
-        "new_dependency_or_constraint",
-        "security_or_performance_concern",
-        "newer_explicit_decision",
-    }
-)
-
-
 @dataclass(frozen=True)
 class ArchitecturalDecision:
     id: str
@@ -164,7 +155,7 @@ def reconcile_decision(
     local_delta_touches: FrozenSet[str],
     *,
     delta_follows_decision: bool,
-    supersession_evidence: FrozenSet[str] = frozenset(),
+    current_evidence: FrozenSet[CurrentEvidenceKind] = frozenset(),
 ) -> DecisionReconciliation:
     """Resolve one decision's status against the current local delta.
 
@@ -175,15 +166,13 @@ def reconcile_decision(
         return DecisionReconciliation(decision.id, DecisionStatus.OUT_OF_SCOPE, emit_finding=False)
     if not decision.is_settled:
         return DecisionReconciliation(decision.id, DecisionStatus.NOT_SETTLED, emit_finding=False)
+    if any(
+        current_evidence_overrides_historical_authority(evidence)
+        for evidence in current_evidence
+    ):
+        return DecisionReconciliation(decision.id, DecisionStatus.SUPERSEDED, emit_finding=False)
     if delta_follows_decision:
         return DecisionReconciliation(decision.id, DecisionStatus.FOLLOWED, emit_finding=False)
-
-    unknown_evidence = supersession_evidence - SUPERSESSION_EVIDENCE_KINDS
-    if unknown_evidence:
-        raise ValueError(f"unrecognized supersession evidence kind(s): {sorted(unknown_evidence)}")
-
-    if supersession_evidence:
-        return DecisionReconciliation(decision.id, DecisionStatus.SUPERSEDED, emit_finding=False)
     return DecisionReconciliation(decision.id, DecisionStatus.VIOLATED, emit_finding=True)
 
 

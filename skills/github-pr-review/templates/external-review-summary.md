@@ -114,6 +114,10 @@ append it after the human-facing review, clearly subordinate, per
   duplicate findings"). Do not repeat a full inline finding here.
 - **Validation** reports only what was actually observed; state
   explicitly when something could not be executed.
+- **Remediation** follows
+  [`../../../shared/policies/remediation-guidance.md`](../../../shared/policies/remediation-guidance.md):
+  use a concise recommended direction when useful, never a local-style full
+  **Implementation prompt**. It does not affect severity or Decision.
 - The Decision line is unambiguous and matches the actual GitHub review
   action submitted.
 - **Unresolved supplied Jira reference.** If the caller supplied a Jira

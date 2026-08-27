@@ -33,8 +33,8 @@ derivation rule live in
 
 ## Optional inputs
 
-Two independent, optional inputs may accompany a review request; neither
-changes behavior when omitted. Both are the local application of the
+Three optional inputs may accompany a review request. Review context and PR
+context are independent applications of the
 shared context model in
 [`../../shared/policies/review-context.md`](../../shared/policies/review-context.md)
 and
@@ -79,6 +79,13 @@ Acceptance criteria:
 
 A plain `/local-code-review` with no context supplied remains fully
 supported and behaves exactly as before this input existed.
+
+- **`include_fix_prompt`** — boolean, default `false`, explicit opt-in only.
+  When enabled, qualifying actionable findings may add a coding-agent-ready
+  implementation prompt for the fast local review → fix → separately approved
+  re-review workflow. It changes only remediation rendering: scope, inspection,
+  findings, severity, reconciliation, deduplication, and verdict remain
+  identical. The Skill remains read-only and does not execute the prompt.
 
 ## Review flow (overview)
 

@@ -246,6 +246,11 @@ whenever parallel workers are used —
 [`parallel-review.md`](../../shared/policies/parallel-review.md) (the
 portable parallel-review contract: sequential/parallel equivalence, worker
 input/output, centralized aggregation, failure handling).
+Always apply
+[`remediation-guidance.md`](../../shared/policies/remediation-guidance.md):
+GitHub findings may give a concise recommended direction, but never the local
+Skill's full coding-agent implementation prompt. Guidance does not affect
+severity, decision, or mutation authority.
 
 Also always: [`review-summary.md`](../../shared/templates/review-summary.md)
 (the shared human-facing review body shape).
