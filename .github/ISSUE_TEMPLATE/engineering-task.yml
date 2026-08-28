@@ -60,10 +60,10 @@ body:
     attributes:
       label: Scope
       description: The work included. Prefer 3–6 focused bullets. Do not restate the problem.
-      value: |
-        -
-        -
-        -
+      placeholder: |
+        - ...
+        - ...
+        - ...
     validations:
       required: true
 
