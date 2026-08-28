@@ -7,6 +7,12 @@ Contract: skills/local-code-review/policies/pr-context.md.
 from __future__ import annotations
 
 import inspect
+import itertools
+import os
+import pathlib
+import subprocess
+import sys
+import textwrap
 import unittest
 
 from tests.reference import pr_context_reconciliation as prc
@@ -420,6 +426,189 @@ class ArchitecturalDecisionTests(unittest.TestCase):
 
         self.assertEqual(result.status, prc.DecisionStatus.OUT_OF_SCOPE)
         self.assertFalse(result.emit_finding)
+
+
+class CurrentEvidenceValidationOrderingTests(unittest.TestCase):
+    """Issue #27: the complete current-evidence collection is validated by the
+    canonical owner before every ``reconcile_decision`` return.
+
+    Malformed / unknown evidence is rejected deterministically regardless of
+    scope, settlement state, companion evidence materiality, collection type,
+    or item ordering.
+    """
+
+    RELEVANT_TOUCHES = frozenset({"src/payments/charge.py"})
+
+    OVERRIDING_COMPANION = ce.CurrentEvidenceKind.CORRECTNESS_DEFECT
+    NON_OVERRIDING_COMPANION = ce.CurrentEvidenceKind.STYLE_PREFERENCE
+    BAD = "not_a_current_evidence_kind"
+
+    def _settled(self, touches: frozenset) -> prc.ArchitecturalDecision:
+        return prc.ArchitecturalDecision(id="D-27", touches=touches, is_settled=True)
+
+    def _mixed_orderings(self, companion):
+        """Every ordering / container the malformed collection can arrive in."""
+        return (
+            (companion, self.BAD),
+            (self.BAD, companion),
+            [companion, self.BAD],
+            [self.BAD, companion],
+            (self.BAD,),
+        )
+
+    # 1. Local relevant + settled + malformed evidence -------------------
+
+    def test_relevant_settled_malformed_evidence_is_rejected(self) -> None:
+        decision = self._settled(self.RELEVANT_TOUCHES)
+        for companion in (self.OVERRIDING_COMPANION, self.NON_OVERRIDING_COMPANION):
+            for evidence in self._mixed_orderings(companion):
+                with self.subTest(companion=companion, evidence=evidence):
+                    with self.assertRaises(ValueError):
+                        prc.reconcile_decision(
+                            decision,
+                            LOCAL_DELTA_TOUCHES,
+                            delta_follows_decision=True,
+                            current_evidence=evidence,
+                        )
+
+    # 2. Local OUT_OF_SCOPE + malformed evidence ------------------------
+
+    def test_out_of_scope_cannot_hide_malformed_evidence(self) -> None:
+        decision = self._settled(UNRELATED_TOUCHES)
+        # Sanity: identical valid call really would return OUT_OF_SCOPE.
+        self.assertEqual(
+            prc.reconcile_decision(
+                decision, LOCAL_DELTA_TOUCHES, delta_follows_decision=False
+            ).status,
+            prc.DecisionStatus.OUT_OF_SCOPE,
+        )
+        for companion in (self.OVERRIDING_COMPANION, self.NON_OVERRIDING_COMPANION):
+            for evidence in self._mixed_orderings(companion):
+                with self.subTest(companion=companion, evidence=evidence):
+                    with self.assertRaises(ValueError):
+                        prc.reconcile_decision(
+                            decision,
+                            LOCAL_DELTA_TOUCHES,
+                            delta_follows_decision=False,
+                            current_evidence=evidence,
+                        )
+
+    # 3. Local NOT_SETTLED + malformed evidence ------------------------
+
+    def test_not_settled_cannot_hide_malformed_evidence(self) -> None:
+        preference = prc.ArchitecturalDecision(
+            id="D-27-pref", touches=self.RELEVANT_TOUCHES, is_settled=False
+        )
+        self.assertEqual(
+            prc.reconcile_decision(
+                preference, LOCAL_DELTA_TOUCHES, delta_follows_decision=True
+            ).status,
+            prc.DecisionStatus.NOT_SETTLED,
+        )
+        for companion in (self.OVERRIDING_COMPANION, self.NON_OVERRIDING_COMPANION):
+            for evidence in self._mixed_orderings(companion):
+                with self.subTest(companion=companion, evidence=evidence):
+                    with self.assertRaises(ValueError):
+                        prc.reconcile_decision(
+                            preference,
+                            LOCAL_DELTA_TOUCHES,
+                            delta_follows_decision=True,
+                            current_evidence=evidence,
+                        )
+
+    # 5. Valid early-return behavior is unchanged ---------------------
+
+    def test_valid_evidence_preserves_out_of_scope_and_not_settled(self) -> None:
+        out_of_scope = self._settled(UNRELATED_TOUCHES)
+        preference = prc.ArchitecturalDecision(
+            id="D-27-pref", touches=self.RELEVANT_TOUCHES, is_settled=False
+        )
+        valid_collections = (
+            frozenset(),
+            frozenset({self.OVERRIDING_COMPANION}),
+            frozenset({self.NON_OVERRIDING_COMPANION}),
+            (self.NON_OVERRIDING_COMPANION, self.OVERRIDING_COMPANION),
+        )
+        for evidence in valid_collections:
+            with self.subTest(evidence=evidence):
+                self.assertEqual(
+                    prc.reconcile_decision(
+                        out_of_scope,
+                        LOCAL_DELTA_TOUCHES,
+                        delta_follows_decision=False,
+                        current_evidence=evidence,
+                    ).status,
+                    prc.DecisionStatus.OUT_OF_SCOPE,
+                )
+                self.assertEqual(
+                    prc.reconcile_decision(
+                        preference,
+                        LOCAL_DELTA_TOUCHES,
+                        delta_follows_decision=True,
+                        current_evidence=evidence,
+                    ).status,
+                    prc.DecisionStatus.NOT_SETTLED,
+                )
+
+    # 6. Order independence ------------------------------------------
+
+    def test_malformed_mixed_collection_fails_in_every_order(self) -> None:
+        decision = self._settled(self.RELEVANT_TOUCHES)
+        base = [
+            self.OVERRIDING_COMPANION,
+            self.NON_OVERRIDING_COMPANION,
+            self.BAD,
+        ]
+        for ordering in itertools.permutations(base):
+            with self.subTest(ordering=ordering), self.assertRaises(ValueError):
+                prc.reconcile_decision(
+                    decision,
+                    LOCAL_DELTA_TOUCHES,
+                    delta_follows_decision=True,
+                    current_evidence=list(ordering),
+                )
+
+    # 7. Hash-seed independence -------------------------------------
+
+    def test_rejection_is_stable_across_hash_seeds(self) -> None:
+        program = textwrap.dedent(
+            """
+            from tests.reference import pr_context_reconciliation as prc
+            from tests.reference import current_evidence as ce
+
+            decision = prc.ArchitecturalDecision(
+                id="D", touches=frozenset({"src/payments/charge.py"}), is_settled=True
+            )
+            delta = frozenset({"src/payments/charge.py"})
+            evidence = {
+                ce.CurrentEvidenceKind.CORRECTNESS_DEFECT,
+                ce.CurrentEvidenceKind.STYLE_PREFERENCE,
+                "bad",
+            }
+            try:
+                prc.reconcile_decision(
+                    decision, delta, delta_follows_decision=True,
+                    current_evidence=evidence,
+                )
+            except ValueError:
+                print("rejected")
+            else:
+                raise SystemExit("malformed evidence was not rejected")
+            """
+        )
+        repo_root = pathlib.Path(__file__).resolve().parents[2]
+        for seed in ("0", "1", "42", "12345"):
+            with self.subTest(seed=seed):
+                env = dict(os.environ, PYTHONHASHSEED=seed)
+                result = subprocess.run(
+                    [sys.executable, "-c", program],
+                    cwd=repo_root,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.strip(), "rejected")
 
 
 class AvailabilityFallbackTests(unittest.TestCase):

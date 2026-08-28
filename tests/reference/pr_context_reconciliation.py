@@ -161,12 +161,17 @@ def reconcile_decision(
 
     A non-settled decision is never treated as a constraint, even if the
     delta happens to agree with it.
+
+    The complete supplied current-evidence collection is validated by the
+    canonical owner before any reconciliation return: malformed or unknown
+    evidence is rejected deterministically regardless of scope or settlement.
     """
+    overrides = current_evidence_collection_overrides_historical_authority(current_evidence)
     if not is_relevant_to_local_delta(decision.touches, local_delta_touches):
         return DecisionReconciliation(decision.id, DecisionStatus.OUT_OF_SCOPE, emit_finding=False)
     if not decision.is_settled:
         return DecisionReconciliation(decision.id, DecisionStatus.NOT_SETTLED, emit_finding=False)
-    if current_evidence_collection_overrides_historical_authority(current_evidence):
+    if overrides:
         return DecisionReconciliation(decision.id, DecisionStatus.SUPERSEDED, emit_finding=False)
     if delta_follows_decision:
         return DecisionReconciliation(decision.id, DecisionStatus.FOLLOWED, emit_finding=False)
