@@ -27,6 +27,14 @@ $repoRoot = Resolve-Path (Join-Path $scriptDir "..")
 $distDir = Join-Path $repoRoot "dist"
 $stagingRoot = Join-Path $distDir ".staging"
 $metadataValidator = Join-Path $scriptDir "validate-skill-metadata.py"
+$pythonCommand = if (Get-Command "python" -ErrorAction SilentlyContinue) {
+  "python"
+} elseif (Get-Command "python3" -ErrorAction SilentlyContinue) {
+  "python3"
+} else {
+  Write-Error "Python 3 is required but neither 'python' nor 'python3' is available"
+  exit 1
+}
 
 # Shared files, by package-relative destination path — kept in sync with
 # scripts/package-skills.sh.
@@ -177,7 +185,11 @@ function Package-Skill {
     Write-Error "required Skill entry point missing: skills/$SkillName/SKILL.md"
     exit 1
   }
-  & python3 $metadataValidator $skillSrc --containment-root $repoRoot
+  if (-not (Test-Path (Join-Path $repoRoot "LICENSE") -PathType Leaf)) {
+    Write-Error "required repository license missing: LICENSE"
+    exit 1
+  }
+  & $pythonCommand $metadataValidator $skillSrc --containment-root $repoRoot
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   foreach ($f in $SkillFiles) {
     $path = Join-Path $skillSrc $f
@@ -225,6 +237,7 @@ function Package-Skill {
     New-Item -ItemType Directory -Path (Split-Path -Parent $destPath) -Force | Out-Null
     Copy-Item -Path (Join-Path $skillSrc $f) -Destination $destPath
   }
+  Copy-Item -Path (Join-Path $repoRoot "LICENSE") -Destination (Join-Path $stageDir "LICENSE")
 
   # Adapt relative links into shared/ across every packaged Markdown
   # file (skill-local links like ../SKILL.md or runbooks/... need no
@@ -249,7 +262,7 @@ function Package-Skill {
     exit 1
   }
   Test-SkillFrontmatter -SkillMdPath (Join-Path $stageDir "SKILL.md") -ExpectedName $SkillName
-  & python3 $metadataValidator $stageDir --containment-root $stageDir
+  & $pythonCommand $metadataValidator $stageDir --containment-root $stageDir
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   if (Test-Path $archivePath) {
@@ -269,6 +282,10 @@ function Package-Skill {
   }
   if (-not ($entryNames -contains "SKILL.md")) {
     Write-Error "archive missing root SKILL.md: $archivePath"
+    exit 1
+  }
+  if (-not ($entryNames -contains "LICENSE")) {
+    Write-Error "archive missing root LICENSE: $archivePath"
     exit 1
   }
   if ($entryNames | Where-Object { $_ -like "skills/*" }) {

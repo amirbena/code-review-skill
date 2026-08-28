@@ -33,6 +33,11 @@ class GitignoreTests(unittest.TestCase):
         offenders = [p for p in tracked if Path(p).name == ".DS_Store"]
         self.assertEqual(offenders, [])
 
+    def test_documented_local_build_outputs_are_ignored(self) -> None:
+        for rel in (".venv/pyvenv.cfg", "dist/local-code-review-skill.zip"):
+            with self.subTest(path=rel):
+                self.assertTrue(_ignored(rel), f"{rel} should be git-ignored")
+
 
 if __name__ == "__main__":
     unittest.main()

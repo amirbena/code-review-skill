@@ -20,7 +20,7 @@ a linked pull request that is still progressing.
 ## Make the change
 
 1. Fork the repository.
-2. Create a focused branch in your fork.
+2. Create a focused branch in your fork using the convention below.
 3. Implement the issue without adding unrelated changes.
 4. Run the relevant validation listed in the root [README](README.md#contributing-to-this-repository).
 5. Open a pull request against this repository and use `Fixes #<issue>` when
@@ -29,6 +29,27 @@ a linked pull request that is still progressing.
 The issue form should define the problem, scope, acceptance criteria, and
 validation before work is claimed. Ask on the issue if those boundaries are
 unclear.
+
+### Branch names
+
+Use `<type>/<short-description>`, with a lowercase, concise, descriptive
+kebab-case name for one logical task:
+
+| Prefix | Use for |
+| --- | --- |
+| `feat/` | New functionality |
+| `fix/` | Bug fixes |
+| `docs/` | Documentation-only changes |
+| `test/` | Test-only changes |
+| `refactor/` | Restructuring without intended behavior changes |
+| `chore/` | Repository, tooling, or maintenance work |
+| `research/` | Research or analysis without implementation |
+
+Describe the work, not its author: do not include usernames, coding-agent
+names, timestamps, or random identifiers. An Issue number is optional (for
+example, `fix/42-checkpoint-recovery`); the rest of the name must remain
+understandable without GitHub. Good standalone names include
+`chore/open-source-release-readiness` and `docs/contribution-workflow`.
 
 ## Review and merge
 
