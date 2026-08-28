@@ -1,0 +1,113 @@
+name: Engineering Task
+description: A focused, independently actionable task — implementation, refactor, quality, or research.
+title: ""
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One issue = one outcome. If it has multiple independently closable
+        deliverables, split it. Keep each field short — this is a ticket,
+        not a design document.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: What kind of work is this?
+      options:
+        - Feature
+        - Refactor
+        - Quality
+        - Research
+        - Documentation
+        - Infrastructure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: P0 is reserved for true correctness/blocking emergencies and is applied manually.
+      options:
+        - P1 — High
+        - P2 — Medium
+        - P3 — Low
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the problem, not the implementation.
+      placeholder: What problem are we solving, and why does it matter? (1–3 short paragraphs)
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: Prefer one clear outcome.
+      placeholder: What observable outcome should exist when this issue is complete?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: The work included. Prefer 3–6 focused bullets. Do not restate the problem.
+      value: |
+        -
+        -
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-Goals
+      description: Use only when needed to protect the boundary. Prefer 1–3 bullets.
+      placeholder: What is explicitly out of scope?
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Observable completed state. Prefer 3–6 checks. Do not copy Scope verbatim.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Supports parent/sub-issue structure. Use GitHub native sub-issues when available.
+      value: |
+        Depends on: none
+        Blocks: none
+        Parent: none
+    validations:
+      required: false
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: >
+        How completion is verified — e.g. tests, benchmark run, packaging
+        validation, link validation, manual GitHub behavior verification, or
+        research source verification. Keep it concise.
+      placeholder: How should completion be verified?
+    validations:
+      required: true
