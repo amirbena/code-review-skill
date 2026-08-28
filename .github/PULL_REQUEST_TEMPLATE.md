@@ -12,7 +12,7 @@ Use "None" / "N/A" where a governance or contract field does not apply.
 
 <!-- Link the Issue/decision and state the intent in one or two sentences. -->
 
-Closes #
+Fixes #
 
 ## Behavior and contracts
 
@@ -38,6 +38,7 @@ when any is affected. -->
 
 <!-- `command` — result. Summarize; include detailed output only if useful. -->
 
+- [ ] Relevant validation was run, or the reason it could not be run is stated.
 -
 
 ## Reviewer focus

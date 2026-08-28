@@ -129,6 +129,11 @@ observations only. Both are defined once in
 
 ## Contributing to this repository
 
+Contributions are welcome. Issues labeled `help wanted` or `good first issue`
+are available for anyone to claim without prior approval. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md) for the fork, `/claim`, pull request,
+review, and merge workflow.
+
 Development of this repository follows its own canonical rules in
 [`AGENTS.md`](AGENTS.md) and the focused [`policies/`](policies/) it
 routes to — a dedicated branch per task, squash-merge by default,

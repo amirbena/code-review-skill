@@ -10,6 +10,10 @@ body:
         deliverables, split it. Keep each field short — this is a ticket,
         not a design document.
 
+        Maintainers can mark a fully scoped issue `help wanted` or
+        `good first issue`. Anyone may then comment `/claim` and start work
+        without waiting for approval.
+
   - type: dropdown
     id: type
     attributes:

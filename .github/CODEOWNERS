@@ -1,0 +1,10 @@
+# All repository changes require an explicit maintainer review path.
+* @amirbena
+
+# Sensitive governance and review-contract surfaces.
+/.github/ @amirbena
+/AGENTS.md @amirbena
+/CONTRIBUTING.md @amirbena
+/policies/ @amirbena
+/shared/policies/ @amirbena
+/skills/**/SKILL.md @amirbena
