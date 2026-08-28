@@ -161,7 +161,8 @@ strongly it is recommended before commit.
 ## Rules
 
 - The human-facing body (Result → What changed → What was done well →
-  [Context, when applicable] → [PR Context, when applicable] → Findings
+  [Context, when applicable] → [PR Context, when applicable] → [Findings,
+  when present]
   → Validation → Decision) is primary and always appears first — see
   [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md).
 - **Unresolved supplied Jira reference.** If the caller supplied a Jira

@@ -26,6 +26,7 @@ class InvocationNormalizationTests(unittest.TestCase):
             "include_fix_prompt=true",
             "include_fix_prompt",
             "include fix prompt",
+            "include-fix-prompt",
             "give me a fix prompt",
         )
         self.assertTrue(all(normalize(f, defaults=LOCAL_DEFAULTS)["include_fix_prompt"] for f in forms))
@@ -61,6 +62,10 @@ class InvocationNormalizationTests(unittest.TestCase):
         self.assertEqual(
             normalize("Be detailed and helpful.", defaults=GITHUB_DEFAULTS),
             GITHUB_DEFAULTS,
+        )
+        self.assertEqual(
+            normalize("What does include_fix_prompt do?", defaults=LOCAL_DEFAULTS),
+            LOCAL_DEFAULTS,
         )
 
     def test_invocations_do_not_leak(self) -> None:

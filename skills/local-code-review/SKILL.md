@@ -263,6 +263,8 @@ Validation, and a Decision of `REVIEW CLEAN` or `CHANGES REQUIRED`
 derived mechanically from blocking (P0/P1) severities — see
 [`../../shared/policies/severity.md`](../../shared/policies/severity.md),
 "Decision derivation (mechanical)."
+The Findings section is omitted when the finalized finding set is empty, per
+the shared summary template; this does not change the decision value.
 Machine-oriented detail
 (base/HEAD SHAs, synchronization status, raw P0/P1/P2 counts, per-category
 inclusion/exclusion, and the staged-delta fingerprint per

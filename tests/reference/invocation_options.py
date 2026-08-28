@@ -26,10 +26,14 @@ def _natural_values(text: str, option: str) -> set[bool]:
     lowered = text.lower()
     concept = OPTION_CONCEPTS[option]
     spaced = option.replace("_", " ")
+    hyphenated = option.replace("_", "-")
+    if re.search(rf"\b(?:what|how|why|does|is)\b[^?]*\b(?:{re.escape(option)}|{re.escape(spaced)}|{re.escape(hyphenated)})\b[^?]*\?", lowered):
+        return set()
     values: set[bool] = set()
     positive = (
         rf"(?<![\w]){re.escape(option)}(?![\w=])",
         rf"(?<![\w]){re.escape(spaced)}(?![\w])",
+        rf"(?<![\w]){re.escape(hyphenated)}(?![\w])",
         rf"\b(?:include|show|give me)(?: a| the)? {re.escape(concept)}\b",
     )
     negative = (
