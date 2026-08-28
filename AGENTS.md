@@ -165,6 +165,7 @@ normative).
 | Commit, push, PR creation and assignment, merge strategy, merge safety, squash cleanup, destructive-Git prohibitions | [`policies/git-pr-merge-policy.md`](policies/git-pr-merge-policy.md) |
 | Clean task end state, Python cache/bytecode cleanup, shell/PowerShell script parity, running repository validation & packaging | [`policies/validation-and-clean-exit.md`](policies/validation-and-clean-exit.md) |
 | Repository documentation (`README.md`, `docs/`, Skill `README.md`) — structure and reading experience | [`policies/documentation-policy.md`](policies/documentation-policy.md) |
+| Content of agent-authored GitHub Issues and Pull Requests — how much detail belongs in the body, per-field size guidance, PR summary shape, summarized validation, linking canonical docs instead of duplicating them | [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md) |
 | Skill behavior, Skill packaging, runbook / policy / template ownership, runtime adapters, portability of packaged resources | [`policies/skill-development-policy.md`](policies/skill-development-policy.md) |
 | Review orchestration — implementer/reviewer separation, the `local-code-review` approval gate, review ownership, Skill-consumer branch discipline, human-facing review publication | [`policies/review-orchestration-policy.md`](policies/review-orchestration-policy.md) |
 | Repository-owned Python (`scripts/**/*.py`, `tests/**/*.py`) | [`policies/python_scripts_coding_policy.md`](policies/python_scripts_coding_policy.md) |
