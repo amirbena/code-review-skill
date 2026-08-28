@@ -6,7 +6,7 @@ GitHub-visible body, and what belongs in a linked document instead.
 
 This is a repository-development policy. It is **not** packaged into either
 Skill archive, and no packaged Skill resource may depend on it. It governs
-only the body an agent writes when opening an Issue or PR here. It does not
+the body an agent writes for an Issue or PR here. It does not
 change the Issue Form fields in
 [`../.github/ISSUE_TEMPLATE/engineering-task.yml`](../.github/ISSUE_TEMPLATE/engineering-task.yml)
 or the checklist in
@@ -22,6 +22,17 @@ merge safety) or the documentation reading-experience rules in
 **Agent-complete internally, human-scannable externally.** An agent may
 reason as deeply as the task needs; the Issue or PR body is a briefing for
 a human, not a transcript of that reasoning.
+
+## When this applies
+
+This policy applies whenever an agent **creates, updates, rewrites, or
+materially expands** a GitHub Issue or Pull Request body — not only at
+first creation.
+
+When updating an existing Issue or PR, preserve the context that is still
+useful but compress or replace redundant prose instead of appending
+another full status report, so the body does not grow indefinitely across
+iterations.
 
 ## Prefer / avoid
 
