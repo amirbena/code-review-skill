@@ -1,0 +1,32 @@
+name: Validate repository
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pull request
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install test dependencies
+        run: python -m pip install PyYAML
+
+      - name: Validate Skill metadata
+        run: |
+          python scripts/validate-skill-metadata.py skills/local-code-review --containment-root .
+          python scripts/validate-skill-metadata.py skills/github-pr-review --containment-root .
+
+      - name: Run repository tests
+        run: python -m unittest discover -s tests -t .
