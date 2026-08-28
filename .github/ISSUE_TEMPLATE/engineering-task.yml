@@ -26,6 +26,25 @@ body:
       required: true
 
   - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: One stable high-level category for filtering and organizing.
+      options:
+        - Review Quality
+        - Stateful Re-review
+        - Platform Contracts
+        - Specialist Profiles
+        - Risk / Large PR
+        - GitHub Integration
+        - Packaging / Portability
+        - Documentation
+        - Instruction Architecture
+        - Research
+    validations:
+      required: true
+
+  - type: dropdown
     id: priority
     attributes:
       label: Priority
