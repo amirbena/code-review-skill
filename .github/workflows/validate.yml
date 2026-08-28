@@ -21,7 +21,7 @@ jobs:
           python-version: "3.13"
 
       - name: Install test dependencies
-        run: python -m pip install PyYAML
+        run: python -m pip install -r requirements-dev.txt
 
       - name: Validate Skill metadata
         run: |

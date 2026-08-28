@@ -10,6 +10,8 @@ any Agent Skills-compatible runtime (Claude Code, Codex, Cursor, OpenCode,
 …). Optional runtime adapters may improve discovery but never change review
 behavior.
 
+Licensed under the [Apache License 2.0](LICENSE).
+
 ## What this repository provides
 
 | Skill | Reviews | Delivers |
@@ -39,10 +41,10 @@ in [`docs/CODE_REVIEW_COMPARISON.md`](docs/CODE_REVIEW_COMPARISON.md) §9.
 
 ## Install / package
 
-Building a Skill produces one standalone archive with `SKILL.md` at its
-root (never nested under a `skills/` path), so a consumer never needs to
-know this repository's layout. Pick the archive that matches how the
-reviewer will be used — packaging both is rarely needed.
+Building a Skill produces one standalone archive with `SKILL.md` and
+`LICENSE` at its root (never nested under a `skills/` path), so a consumer
+never needs to know this repository's layout. Pick the archive that matches
+how the reviewer will be used — packaging both is rarely needed.
 
 | Package | Command (shell · PowerShell) | Output |
 |---|---|---|
@@ -148,11 +150,20 @@ shape.
 Validation and packaging run from the repository root:
 
 ```bash
-python3 --version
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
 python3 scripts/validate-skill-metadata.py skills/local-code-review --containment-root .
 python3 scripts/validate-skill-metadata.py skills/github-pr-review --containment-root .
 python3 -m unittest discover -s tests -t .
+./scripts/package-skills.sh all
 ```
+
+On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`, use
+`python` in place of `python3`, and package with
+`./scripts/package-skills.ps1 all`. Packaging also needs the `zip` and
+`unzip` command-line tools on macOS/Linux, or PowerShell on Windows. Generated
+archives stay under the ignored `dist/` directory.
 
 Run one test module with, e.g.,
 `python3 -m unittest tests.unit.test_reviewer_ownership`.
@@ -172,3 +183,4 @@ are rewritten during staging — are described in
 | [`docs/runtime-parallelism.md`](docs/runtime-parallelism.md) | the isolated per-runtime facts behind the portable parallel-review contract |
 | [`skills/local-code-review/README.md`](skills/local-code-review/README.md) · [`skills/github-pr-review/README.md`](skills/github-pr-review/README.md) | per-Skill onboarding |
 | [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md) · [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md) | the complete, normative Skill definitions |
+| [`SECURITY.md`](SECURITY.md) | how to report a vulnerability privately |

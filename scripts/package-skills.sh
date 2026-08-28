@@ -185,6 +185,10 @@ package_skill() {
     echo "error: required Skill entry point missing: skills/${skill_name}/SKILL.md" >&2
     exit 1
   fi
+  if [[ ! -f "${repo_root}/LICENSE" ]]; then
+    echo "error: required repository license missing: LICENSE" >&2
+    exit 1
+  fi
   python3 "${metadata_validator}" "${skill_src}" --containment-root "${repo_root}"
   for f in "${skill_files[@]}"; do
     if [[ ! -f "${skill_src}/${f}" ]]; then
@@ -225,6 +229,7 @@ package_skill() {
     mkdir -p "$(dirname "${dest}")"
     cp "${skill_src}/${f}" "${dest}"
   done
+  cp "${repo_root}/LICENSE" "${stage_dir}/LICENSE"
 
   # Adapt relative links into shared/ across every packaged Markdown
   # file (skill-local links like ../SKILL.md or runbooks/... need no
@@ -259,6 +264,10 @@ package_skill() {
   # --- Verify archive contents ---
   if ! unzip -l "${archive_path}" | awk '{print $4}' | grep -qx "SKILL.md"; then
     echo "error: archive missing root SKILL.md: ${archive_path}" >&2
+    exit 1
+  fi
+  if ! unzip -l "${archive_path}" | awk '{print $4}' | grep -qx "LICENSE"; then
+    echo "error: archive missing root LICENSE: ${archive_path}" >&2
     exit 1
   fi
   if unzip -l "${archive_path}" | awk '{print $4}' | grep -q '^skills/'; then

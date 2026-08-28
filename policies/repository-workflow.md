@@ -83,21 +83,13 @@ report that a stash exists and what it contains, and do not mix it into
 the current task branch. Branch hygiene is never a reason to discard or
 blend unrelated working-tree changes.
 
-Preferred naming:
-
-```text
-feature/<clear-description>
-```
-
-Supported alternatives:
-
-```text
-fix/<clear-fix-name>
-refactor/<clear-refactor-name>
-docs/<clear-docs-name>
-test/<clear-test-name>
-chore/<clear-chore-name>
-```
+Branch names follow the shared contributor convention in
+[`../CONTRIBUTING.md`](../CONTRIBUTING.md), "Branch names": `feat/`, `fix/`,
+`docs/`, `test/`, `refactor/`, `chore/`, or `research/`, followed by a
+lowercase kebab-case description of one logical task. The convention applies
+equally to maintainers, external contributors, and coding agents; the work,
+not the person or runtime, determines the name. An associated Issue number is
+optional.
 
 Do not reuse an already-merged task branch for unrelated work.
 

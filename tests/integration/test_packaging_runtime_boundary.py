@@ -525,6 +525,13 @@ class BuiltArchiveContentTests(unittest.TestCase):
     def test_archive_contains_the_review_context_policy(self) -> None:
         self.assertIn("policies/review-context.md", self.archive_names)
 
+    def test_archive_contains_license(self) -> None:
+        self.assertIn("LICENSE", self.archive_names)
+        with zipfile.ZipFile(DIST_DIR / "local-code-review-skill.zip") as zf:
+            self.assertEqual(
+                (REPO_ROOT / "LICENSE").read_bytes(), zf.read("LICENSE")
+            )
+
     def test_archive_contains_every_context_related_runtime_file(self) -> None:
         # The complete, minimal set of context-related files this Skill
         # actually depends on at runtime — policy + template + runbook +
@@ -604,6 +611,9 @@ class GitHubArchiveContentTests(unittest.TestCase):
             "shared/policies/review-scope.md",
         }
         self.assertEqual(required - self.names, set())
+
+    def test_archive_contains_license(self) -> None:
+        self.assertIn("LICENSE", self.names)
 
     def test_root_cause_model_completeness_policy_is_packaged(self) -> None:
         self.assertIn(

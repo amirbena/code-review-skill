@@ -177,6 +177,10 @@ function Package-Skill {
     Write-Error "required Skill entry point missing: skills/$SkillName/SKILL.md"
     exit 1
   }
+  if (-not (Test-Path (Join-Path $repoRoot "LICENSE") -PathType Leaf)) {
+    Write-Error "required repository license missing: LICENSE"
+    exit 1
+  }
   & python3 $metadataValidator $skillSrc --containment-root $repoRoot
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   foreach ($f in $SkillFiles) {
@@ -225,6 +229,7 @@ function Package-Skill {
     New-Item -ItemType Directory -Path (Split-Path -Parent $destPath) -Force | Out-Null
     Copy-Item -Path (Join-Path $skillSrc $f) -Destination $destPath
   }
+  Copy-Item -Path (Join-Path $repoRoot "LICENSE") -Destination (Join-Path $stageDir "LICENSE")
 
   # Adapt relative links into shared/ across every packaged Markdown
   # file (skill-local links like ../SKILL.md or runbooks/... need no
@@ -269,6 +274,10 @@ function Package-Skill {
   }
   if (-not ($entryNames -contains "SKILL.md")) {
     Write-Error "archive missing root SKILL.md: $archivePath"
+    exit 1
+  }
+  if (-not ($entryNames -contains "LICENSE")) {
+    Write-Error "archive missing root LICENSE: $archivePath"
     exit 1
   }
   if ($entryNames | Where-Object { $_ -like "skills/*" }) {
