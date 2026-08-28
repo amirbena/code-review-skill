@@ -6,7 +6,11 @@ GitHub's API is out of scope here; only the pure logic the workflow depends on.
 
 from __future__ import annotations
 
+import contextlib
+import io
+import os
 import sys
+import tempfile
 import unittest
 
 from tests.support.paths import REPO_ROOT
@@ -193,6 +197,79 @@ class LoadCurrentLabelsTests(unittest.TestCase):
 
     def test_empty(self) -> None:
         self.assertEqual(sil._load_current_labels(""), [])
+
+
+class MainOutputContractTests(unittest.TestCase):
+    """The exact seam sync-issue-labels.yml consumes: main()'s exit code and the
+    action/add/remove lines it writes to $GITHUB_OUTPUT."""
+
+    _ENV_KEYS = ("ISSUE_BODY", "CURRENT_LABELS", "GITHUB_OUTPUT")
+
+    def setUp(self) -> None:
+        self._saved = {k: os.environ.get(k) for k in self._ENV_KEYS}
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.addCleanup(self._restore_env)
+
+    def _restore_env(self) -> None:
+        for key, value in self._saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+    def _run(self, body: str, current_labels: str, *, with_output: bool = True):
+        os.environ["ISSUE_BODY"] = body
+        os.environ["CURRENT_LABELS"] = current_labels
+        out_path = None
+        if with_output:
+            out_path = os.path.join(self._tmp.name, f"out-{id(body)}.txt")
+            os.environ["GITHUB_OUTPUT"] = out_path
+        else:
+            os.environ.pop("GITHUB_OUTPUT", None)
+        with contextlib.redirect_stdout(io.StringIO()):
+            rc = sil.main([])
+        outputs = None
+        if out_path is not None:
+            with open(out_path, encoding="utf-8") as handle:
+                outputs = dict(line.rstrip("\n").split("=", 1) for line in handle if "=" in line)
+        return rc, outputs
+
+    def test_apply_contract(self) -> None:
+        rc, outputs = self._run(STANDARD_BODY, '["bug"]')
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["action"], "apply")
+        self.assertEqual(outputs["add"], "area:review-quality,priority:P1,type:research")
+        self.assertEqual(outputs["remove"], "")
+
+    def test_apply_contract_with_removals(self) -> None:
+        rc, outputs = self._run(STANDARD_BODY, '["bug","type:feature","area:research","priority:P1"]')
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["action"], "apply")
+        self.assertEqual(outputs["add"], "area:review-quality,type:research")
+        self.assertEqual(outputs["remove"], "area:research,type:feature")
+
+    def test_skip_contract(self) -> None:
+        rc, outputs = self._run("Just a normal issue.\n\nNo form fields here.", '["bug"]')
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["action"], "skip")
+        self.assertEqual(outputs["add"], "")
+        self.assertEqual(outputs["remove"], "")
+
+    def test_error_contract_generates_no_label(self) -> None:
+        body = "### Type\n\nChore\n\n### Area\n\nResearch\n\n### Priority\n\nP1 — High\n"
+        rc, outputs = self._run(body, '["bug"]')
+        self.assertEqual(rc, 1)
+        self.assertEqual(outputs["action"], "error")
+        self.assertEqual(outputs["add"], "")
+        self.assertEqual(outputs["remove"], "")
+
+    def test_runs_without_github_output(self) -> None:
+        rc, outputs = self._run(STANDARD_BODY, '["bug"]', with_output=False)
+        self.assertEqual(rc, 0)
+        self.assertIsNone(outputs)
+        rc, _ = self._run("plain issue", "[]", with_output=False)
+        self.assertEqual(rc, 0)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,6 @@ import argparse
 import json
 import os
 import re
-import sys
 from typing import Iterable
 
 # The automation owns exactly these label namespaces and nothing else.

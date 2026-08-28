@@ -11,6 +11,12 @@ permissions:
   contents: read
   issues: write
 
+# Per issue: a newer edit supersedes an in-flight run so stale event state
+# is never applied. Different issues never block each other.
+concurrency:
+  group: sync-issue-labels-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
 jobs:
   sync-labels:
     runs-on: ubuntu-latest
