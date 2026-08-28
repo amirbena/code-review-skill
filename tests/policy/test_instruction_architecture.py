@@ -44,6 +44,7 @@ ROUTED_POLICIES = {
     "git-pr-merge-policy.md": "Squash Cleanup Safety",
     "validation-and-clean-exit.md": "Python cache/bytecode cleanup around commits",
     "documentation-policy.md": "User journey first.",
+    "github-issue-pr-authoring.md": "Agent-complete internally, human-scannable externally",
     "skill-development-policy.md": "Portable Core, Optional Runtime Adapters",
     "review-orchestration-policy.md": "One review scope → one Code Review Agent owner",
     "python_scripts_coding_policy.md": "Remove or shorten a comment that mainly explains",

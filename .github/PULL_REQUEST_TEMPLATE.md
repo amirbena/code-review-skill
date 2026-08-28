@@ -4,6 +4,14 @@ A PR in this repository may touch any combination of Skill behavior,
 policy, packaging, governance, or documentation — none of these are
 "secondary." Use "None" / "N/A" for sections that genuinely don't apply;
 do not fabricate content to fill a section.
+
+Keep the body human-scannable (policies/github-issue-pr-authoring.md):
+answer what changed / why / how it was validated / what needs reviewer
+attention. Fill the sections that apply, mark the rest "None"/"N/A", and
+link the Issue or a canonical doc instead of pasting execution logs, full
+test output, restated requirements, or an implementation diary. Summarize
+validation (e.g. "564 tests passed, git diff --check clean"); paste
+detailed output only when a specific result helps the reviewer.
 -->
 
 ## Summary

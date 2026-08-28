@@ -1,0 +1,53 @@
+name: Sync Engineering Task labels
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+
+# checkout needs contents:read; gh label edits need issues:write. Nothing more.
+permissions:
+  contents: read
+  issues: write
+
+# Per issue: a newer edit supersedes an in-flight run so stale event state
+# is never applied. Different issues never block each other.
+concurrency:
+  group: sync-issue-labels-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Compute managed label changes
+        id: plan
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          CURRENT_LABELS: ${{ toJSON(github.event.issue.labels.*.name) }}
+        run: python3 scripts/sync_issue_labels.py
+
+      - name: Apply label changes
+        if: ${{ steps.plan.outputs.action == 'apply' && (steps.plan.outputs.add != '' || steps.plan.outputs.remove != '') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ADD_LABELS: ${{ steps.plan.outputs.add }}
+          REMOVE_LABELS: ${{ steps.plan.outputs.remove }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [ -n "${ADD_LABELS}" ]; then
+            args+=(--add-label "${ADD_LABELS}")
+          fi
+          if [ -n "${REMOVE_LABELS}" ]; then
+            args+=(--remove-label "${REMOVE_LABELS}")
+          fi
+          gh issue edit "${ISSUE_NUMBER}" "${args[@]}"
