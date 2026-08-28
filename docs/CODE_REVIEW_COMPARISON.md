@@ -148,7 +148,8 @@ thing any review engine is expected to reconstruct on its own.
 
 Some invariants are enforced at two separate points, deliberately:
 
-- **Orchestration prevention**, in repository-wide instructions (`AGENTS.md`): the workflow
+- **Orchestration prevention**, in repository-wide instructions (`AGENTS.md` and
+  [`policies/review-orchestration-policy.md`](../policies/review-orchestration-policy.md)): the workflow
   calling these Skills must never invoke `github-pr-review` against a PR the same implementing
   Agent just opened or updated. This is a sequencing rule for whatever is doing the orchestrating.
 - **Skill-level defensive enforcement**: `github-pr-review` independently verifies the
@@ -167,7 +168,7 @@ Canonical Skill behavior — `SKILL.md` plus each Skill's own packaged policies,
 templates, plus the resources shared under `shared/` — must remain runtime- and vendor-neutral. It
 must not require a specific model, a specific hosted service, or a specific tool name to function
 correctly, and must remain fully correct with only the packaged archive present, with no
-dependency on this source repository's own `AGENTS.md`, `docs/ARCHITECTURE.md`, or `README.md`.
+dependency on this source repository's own `AGENTS.md`, its `policies/`, `docs/ARCHITECTURE.md`, or `README.md`.
 
 A vendor-native reviewer may, in the future, become an optional execution enhancement for the
 finding-generation portion of a review. It must never become a requirement for either Skill to
@@ -274,8 +275,9 @@ implements them today, and this document does not claim they are supported:
 
 ## See also
 
-- [`AGENTS.md`](../AGENTS.md) — repository-wide orchestration rules, including the
-  implementer/reviewer separation and the local-review approval gate summarized in §5 above.
+- [`AGENTS.md`](../AGENTS.md) + [`policies/review-orchestration-policy.md`](../policies/review-orchestration-policy.md)
+  — repository-wide orchestration rules, including the implementer/reviewer separation and the
+  local-review approval gate summarized in §5 above.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — module map and the orchestration/reasoning/delivery
   boundary these Skills are built on.
 - [`runtime-parallelism.md`](runtime-parallelism.md) — the isolated per-runtime facts

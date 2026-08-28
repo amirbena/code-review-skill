@@ -14,7 +14,7 @@ packaging boundary is enforced by
 | `support/` | Shared test infrastructure: `pr_simulation.py` (local bare-repo PR harness) and `paths.py` (the one canonical `REPO_ROOT`). |
 | `unit/` | Unit coverage for the `reference/` models. |
 | `integration/` | Coverage that shells out to real Git or builds the packaged archives. |
-| `policy/` | Prose / documentation-contract checks over `AGENTS.md`, `shared/policies/`, and each Skill's files. |
+| `policy/` | Prose / documentation-contract checks over `AGENTS.md`, `policies/`, `shared/policies/`, and each Skill's files. |
 | `repository/` | Repository-hygiene checks (e.g. `.gitignore`). |
 
 Genuine developer scripts (packaging, metadata validation) live in

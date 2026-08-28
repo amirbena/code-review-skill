@@ -148,9 +148,10 @@ never a blanket "add a metric" or "add more logs" recommendation.
 `runbooks/local-review.md` is intentionally a thin execution document: it
 defines flow, phase ordering, and which policy governs each phase, and it
 does not restate that policy's own semantics — this source repository's
-own `AGENTS.md`, "Runbook Design," states the general rule this follows
-(not linked here: a packaged Skill archive never depends on this source
-repository's own root-level development docs). In particular, all
+own repository-development policies (the "Runbook Design" rule in its
+Skill-development policy) state the general rule this follows (not linked
+here: a packaged Skill archive never depends on this source repository's
+own root-level development docs or `policies/`). In particular, all
 Git-mechanics detail
 — the four repository-state categories, push/synchronization status, and
 the complete staged-fingerprint re-review precondition/comparison contract
@@ -167,7 +168,7 @@ validation/reference helpers — they mirror a policy's decision tables for
 this repo's test suite and are not packaged Skill runtime logic. The
 behavioral heuristics in `review-scope.md` have no such module: an earlier
 iteration added one purely for testability and it was removed as a
-duplicate source of truth (see `AGENTS.md` section 18) — that policy's
+duplicate source of truth (see this repository's "Runbook Design" rule) — that policy's
 Markdown text is tested directly instead (see
 [`../../tests/policy/test_review_scope_behavioral_heuristics.py`](../../tests/policy/test_review_scope_behavioral_heuristics.py)).
 

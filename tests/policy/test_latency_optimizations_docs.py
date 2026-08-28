@@ -131,7 +131,8 @@ class RunbookBatchingTests(unittest.TestCase):
 class ReReviewShortCircuitTests(unittest.TestCase):
     """The complete fingerprint precondition/comparison contract is owned
     by repository-state.md (Git-mechanics/state-interpretation policy per
-    AGENTS.md's runbook-design rule); the runbook only points to it."""
+    the repository runbook-design rule in
+    policies/skill-development-policy.md); the runbook only points to it."""
 
     def setUp(self) -> None:
         self.policy_text = _text(REPOSITORY_STATE_POLICY)
