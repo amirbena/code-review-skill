@@ -27,6 +27,14 @@ $repoRoot = Resolve-Path (Join-Path $scriptDir "..")
 $distDir = Join-Path $repoRoot "dist"
 $stagingRoot = Join-Path $distDir ".staging"
 $metadataValidator = Join-Path $scriptDir "validate-skill-metadata.py"
+$pythonCommand = if (Get-Command "python" -ErrorAction SilentlyContinue) {
+  "python"
+} elseif (Get-Command "python3" -ErrorAction SilentlyContinue) {
+  "python3"
+} else {
+  Write-Error "Python 3 is required but neither 'python' nor 'python3' is available"
+  exit 1
+}
 
 # Shared files, by package-relative destination path — kept in sync with
 # scripts/package-skills.sh.
@@ -181,7 +189,7 @@ function Package-Skill {
     Write-Error "required repository license missing: LICENSE"
     exit 1
   }
-  & python3 $metadataValidator $skillSrc --containment-root $repoRoot
+  & $pythonCommand $metadataValidator $skillSrc --containment-root $repoRoot
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   foreach ($f in $SkillFiles) {
     $path = Join-Path $skillSrc $f
@@ -254,7 +262,7 @@ function Package-Skill {
     exit 1
   }
   Test-SkillFrontmatter -SkillMdPath (Join-Path $stageDir "SKILL.md") -ExpectedName $SkillName
-  & python3 $metadataValidator $stageDir --containment-root $stageDir
+  & $pythonCommand $metadataValidator $stageDir --containment-root $stageDir
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   if (Test-Path $archivePath) {

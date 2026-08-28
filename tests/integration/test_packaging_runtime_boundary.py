@@ -225,6 +225,11 @@ class PackagingScriptParityTests(unittest.TestCase):
             self.assertIn(name, _sh_skill_files(self.sh, "github-pr-review"))
             self.assertIn(name, _ps1_skill_files(self.ps1, "github-pr-review"))
 
+    def test_powershell_resolves_a_windows_compatible_python_launcher(self) -> None:
+        self.assertIn('Get-Command "python"', self.ps1)
+        self.assertIn('Get-Command "python3"', self.ps1)
+        self.assertNotIn("& python3 $metadataValidator", self.ps1)
+
 
 class DeclaredPackageFileListTests(unittest.TestCase):
     """Structural check on scripts/package-skills.sh itself — no build
