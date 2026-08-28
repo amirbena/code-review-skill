@@ -1,5 +1,7 @@
 # local-code-review
 
+## Purpose
+
 A small, stateless Code Review Agent Skill that reviews a local Git
 repository's implementation state — committed, staged, unstaged, and
 untracked changes, each detected separately — and returns evidence-backed
@@ -8,7 +10,8 @@ touches GitHub. For local/uncommitted state before a push or PR; for an
 existing GitHub Pull Request, use the sibling
 [`github-pr-review`](../github-pr-review/SKILL.md) Skill instead. See
 [`../../docs/CODE_REVIEW_COMPARISON.md`](../../docs/CODE_REVIEW_COMPARISON.md) for
-why this Skill exists alongside native and third-party reviewers.
+why this Skill exists alongside native and third-party reviewers, and its
+"At a glance" section for choosing between this Skill and `github-pr-review`.
 
 ## Opt-in only
 

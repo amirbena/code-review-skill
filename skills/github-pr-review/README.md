@@ -8,7 +8,9 @@ P0/P1/P2 findings — passively as a report, or, with sufficient
 authenticated GitHub access, actively by publishing inline findings, a
 final summary, and an Approve/Request Changes decision. For why this
 Skill exists alongside native and third-party PR reviewers, see
-[`../../docs/CODE_REVIEW_COMPARISON.md`](../../docs/CODE_REVIEW_COMPARISON.md).
+[`../../docs/CODE_REVIEW_COMPARISON.md`](../../docs/CODE_REVIEW_COMPARISON.md);
+its "At a glance" section helps you choose between this Skill and
+`local-code-review`.
 
 ## When to Use
 

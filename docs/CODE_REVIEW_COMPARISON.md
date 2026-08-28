@@ -7,6 +7,46 @@ code-review approaches already exist. It is permanent repository documentation, 
 artifact — it does not track any single vendor's roadmap and should stay accurate as those
 products evolve.
 
+## At a glance
+
+**Which review mode fits?**
+
+| Situation | Mode |
+|---|---|
+| Local changes, no PR yet, before you push | `local-code-review` |
+| …and you also want a coding-agent-ready fix prompt for the findings | `local-code-review` with `include_fix_prompt=true` |
+| An existing GitHub PR you did not author — report only | `github-pr-review` (passive) |
+| …that PR, with inline comments and an Approve / Request Changes decision | `github-pr-review` (active — needs review permission) |
+
+**Core differences**
+
+| Dimension | `local-code-review` | `github-pr-review` |
+|---|---|---|
+| Review target | local implementation delta (committed / staged / unstaged / untracked) | the GitHub Pull Request delta |
+| Local vs. GitHub | runs against a local working tree | runs against GitHub PR state; optional isolated read-only checkout |
+| Prior-review-history awareness | an optional associated PR's findings / decisions, reconciled | the PR's own prior reviews / comments, reconciled |
+| Review Context | shared model — requirements / Jira / GitHub Issue / HLD / ADR / plan | shared model, identical |
+| Repository instruction handling | root→specific `AGENTS.md` hierarchy shapes evaluation, never widens the target | same |
+| Read-only behavior | always; never edits, commits, pushes, or touches GitHub | read-only on Git and code; the checkout is a throwaway clone |
+| GitHub publication | never | active mode only, as one batched review |
+| Approve / Request Changes | n/a — `REVIEW CLEAN` / `CHANGES REQUIRED` | active mode, when authorized; maximum positive action is Approve |
+| Remediation guidance | concise direction; opt-in `include_fix_prompt=true` adds one full fix prompt per qualifying root-cause finding | concise reviewer-facing direction only; no full fix prompt |
+| Root-cause / model-completeness reasoning | shared `review-scope.md` pass | shared, identical |
+| Intended use case | pre-PR implementation review | independent review of an existing PR |
+
+**What each mode intentionally does *not* do**
+
+- Neither edits, commits, pushes, merges, or manages branches.
+- Neither runs the target repository's tests, linters, build, hooks, or any of its code.
+- Neither creates a GitHub status check, required check, ruleset, or branch-protection state — a blocking P0/P1 result never enforces a merge block.
+- `github-pr-review` never merges; its strongest action is **Approve**.
+- `local-code-review` never publishes anything to GitHub, even when given a PR reference.
+
+The rest of this document explains *why* this split exists and how it
+compares to other reviewers. Full row-by-row detail is in §9
+(`local-code-review` vs. `github-pr-review`); §10 lists what is planned but
+not yet implemented.
+
 ## 1. Purpose
 
 These Skills are not primarily trying to out-perform every native or third-party reviewer at
