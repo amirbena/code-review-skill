@@ -9,6 +9,7 @@ review target is the current PR HEAD rather than a local delta.
 
 from __future__ import annotations
 
+import itertools
 import unittest
 
 from tests.reference import pr_review_evidence as prv
@@ -683,6 +684,161 @@ class SettledDecisionTests(unittest.TestCase):
                 prv.CurrentEvidenceKind.SPECULATIVE_OPTIMIZATION
             )
         )
+
+
+class CurrentEvidenceValidationOrderingTests(unittest.TestCase):
+    """Issue #27: ``reconcile_settled_decision`` validates the complete
+    current-evidence collection via the canonical owner before every return,
+    so a NOT_SETTLED decision can no longer hide malformed evidence.
+    """
+
+    OVERRIDING_COMPANION = prv.CurrentEvidenceKind.CORRECTNESS_DEFECT
+    NON_OVERRIDING_COMPANION = prv.CurrentEvidenceKind.STYLE_PREFERENCE
+    BAD = "not_a_current_evidence_kind"
+
+    def _settled(self) -> prv.SettledDecision:
+        return prv.SettledDecision(
+            "D-27", prv.AuthorType.MAINTAINER, has_explicit_agreement=True
+        )
+
+    def _unsettled(self) -> prv.SettledDecision:
+        return prv.SettledDecision(
+            "D-27", prv.AuthorType.HUMAN_REVIEWER, has_explicit_agreement=False
+        )
+
+    def _mixed_orderings(self, companion):
+        return (
+            (companion, self.BAD),
+            (self.BAD, companion),
+            [companion, self.BAD],
+            [self.BAD, companion],
+            (self.BAD,),
+        )
+
+    # 4. GitHub NOT_SETTLED + malformed evidence ----------------------
+
+    def test_not_settled_cannot_hide_malformed_evidence(self) -> None:
+        # Sanity: the same call with valid evidence really returns NOT_SETTLED.
+        self.assertEqual(
+            prv.reconcile_settled_decision(
+                self._unsettled(), current_delta_follows=True
+            ).status,
+            prv.DecisionStatus.NOT_SETTLED,
+        )
+        for companion in (self.OVERRIDING_COMPANION, self.NON_OVERRIDING_COMPANION):
+            for evidence in self._mixed_orderings(companion):
+                with self.subTest(companion=companion, evidence=evidence):
+                    with self.assertRaises(ValueError):
+                        prv.reconcile_settled_decision(
+                            self._unsettled(),
+                            current_delta_follows=True,
+                            current_evidence=evidence,
+                        )
+
+    def test_settled_decision_also_rejects_malformed_evidence(self) -> None:
+        for companion in (self.OVERRIDING_COMPANION, self.NON_OVERRIDING_COMPANION):
+            for evidence in self._mixed_orderings(companion):
+                with self.subTest(companion=companion, evidence=evidence):
+                    with self.assertRaises(ValueError):
+                        prv.reconcile_settled_decision(
+                            self._settled(),
+                            current_delta_follows=True,
+                            current_evidence=evidence,
+                        )
+
+    # 5. Valid GitHub NOT_SETTLED early return is unchanged ----------
+
+    def test_valid_evidence_preserves_not_settled(self) -> None:
+        valid_collections = (
+            frozenset(),
+            frozenset({self.OVERRIDING_COMPANION}),
+            frozenset({self.NON_OVERRIDING_COMPANION}),
+            (self.NON_OVERRIDING_COMPANION, self.OVERRIDING_COMPANION),
+        )
+        for evidence in valid_collections:
+            with self.subTest(evidence=evidence):
+                self.assertEqual(
+                    prv.reconcile_settled_decision(
+                        self._unsettled(),
+                        current_delta_follows=True,
+                        current_evidence=evidence,
+                    ).status,
+                    prv.DecisionStatus.NOT_SETTLED,
+                )
+
+    # 6. Order independence ---------------------------------------
+
+    def test_malformed_mixed_collection_fails_in_every_order(self) -> None:
+        base = [self.OVERRIDING_COMPANION, self.NON_OVERRIDING_COMPANION, self.BAD]
+        for ordering in itertools.permutations(base):
+            with self.subTest(ordering=ordering), self.assertRaises(ValueError):
+                prv.reconcile_settled_decision(
+                    self._unsettled(),
+                    current_delta_follows=True,
+                    current_evidence=list(ordering),
+                )
+
+    # Non-authoritative governing conclusion path (same invariant) ----
+
+    def test_non_authoritative_conclusion_still_validates_evidence(self) -> None:
+        unauthorized = prv.ThreadComment(
+            prv.AuthorType.HUMAN_REVIEWER,
+            conclusion_kind=prv.ConclusionKind.MAINTAINER_CLARIFICATION,
+            is_explicit_conclusion=True,
+            label="claims a maintainer clarification without the authority",
+        )
+        self.assertFalse(
+            prv.thread_conclusion_is_authoritative(
+                prv.classify_thread([unauthorized])
+            )
+        )
+        with self.assertRaises(ValueError):
+            prv.governing_conclusion_suppresses_defect([unauthorized], self.BAD)
+
+    # 7. Hash-seed independence ----------------------------------
+
+    def test_rejection_is_stable_across_hash_seeds(self) -> None:
+        import os
+        import pathlib
+        import subprocess
+        import sys
+        import textwrap
+
+        program = textwrap.dedent(
+            """
+            from tests.reference import pr_review_evidence as prv
+
+            decision = prv.SettledDecision(
+                "D", prv.AuthorType.HUMAN_REVIEWER, has_explicit_agreement=False
+            )
+            evidence = {
+                prv.CurrentEvidenceKind.CORRECTNESS_DEFECT,
+                prv.CurrentEvidenceKind.STYLE_PREFERENCE,
+                "bad",
+            }
+            try:
+                prv.reconcile_settled_decision(
+                    decision, current_delta_follows=True, current_evidence=evidence
+                )
+            except ValueError:
+                print("rejected")
+            else:
+                raise SystemExit("malformed evidence was not rejected")
+            """
+        )
+        repo_root = pathlib.Path(__file__).resolve().parents[2]
+        for seed in ("0", "1", "42", "12345"):
+            with self.subTest(seed=seed):
+                env = dict(os.environ, PYTHONHASHSEED=seed)
+                result = subprocess.run(
+                    [sys.executable, "-c", program],
+                    cwd=repo_root,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.strip(), "rejected")
 
 
 class AuthorshipAuthorityTests(unittest.TestCase):

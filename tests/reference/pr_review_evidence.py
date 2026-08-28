@@ -317,10 +317,15 @@ def reconcile_settled_decision(
     current_delta_follows: bool,
     current_evidence: Iterable[object] = frozenset(),
 ) -> DecisionReconciliation:
+    # Validate the complete supplied current-evidence collection via the
+    # canonical owner before any reconciliation return: malformed or unknown
+    # evidence is rejected deterministically regardless of settlement state.
+    overrides = current_evidence_collection_overrides_historical_authority(current_evidence)
+
     if not decision_is_settled(decision):
         return DecisionReconciliation(decision.id, DecisionStatus.NOT_SETTLED, False)
 
-    if current_evidence_collection_overrides_historical_authority(current_evidence):
+    if overrides:
         return DecisionReconciliation(decision.id, DecisionStatus.SUPERSEDED, False)
     if current_delta_follows:
         return DecisionReconciliation(decision.id, DecisionStatus.FOLLOWED, False)
@@ -335,11 +340,15 @@ def settled_decision_suppresses_evidence(evidence: CurrentEvidenceKind) -> bool:
 def governing_conclusion_suppresses_defect(
     comments: Sequence[ThreadComment], evidence: CurrentEvidenceKind
 ) -> bool:
-    """Only authoritative evidence may constrain non-critical preferences."""
+    """Only authoritative evidence may constrain non-critical preferences.
+
+    The supplied current evidence is validated by the canonical owner first,
+    so malformed or unknown evidence is rejected regardless of whether the
+    governing conclusion is authoritative.
+    """
     governing = classify_thread(comments)
-    return thread_conclusion_is_authoritative(
-        governing
-    ) and settled_decision_suppresses_evidence(evidence)
+    evidence_is_suppressible = settled_decision_suppresses_evidence(evidence)
+    return thread_conclusion_is_authoritative(governing) and evidence_is_suppressible
 
 
 # --- Retrieval completeness (pr-scope.md, "Retrieving prior review
