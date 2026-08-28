@@ -22,9 +22,21 @@ OPENAI_INTERFACE_FIELDS = {
     "default_prompt",
 }
 
-# A packaged Skill never depends on this repo's own dev docs. Any packaged
-# link to one of these basenames, at any depth, is a boundary violation.
-REPO_ROOT_ONLY_DOC_BASENAMES = {"AGENTS.md", "ARCHITECTURE.md", "README.md"}
+# A packaged Skill never depends on this repo's own dev docs or its
+# repository-development policies/. Any packaged link to one of these
+# basenames, at any depth, is a boundary violation.
+REPO_ROOT_ONLY_DOC_BASENAMES = {
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "README.md",
+    "repository-workflow.md",
+    "git-pr-merge-policy.md",
+    "validation-and-clean-exit.md",
+    "documentation-policy.md",
+    "skill-development-policy.md",
+    "review-orchestration-policy.md",
+    "python_scripts_coding_policy.md",
+}
 MARKDOWN_LINK_RE = re.compile(r"\]\(([^)]+)\)")
 WHITESPACE_RE = re.compile(r"\s+")
 

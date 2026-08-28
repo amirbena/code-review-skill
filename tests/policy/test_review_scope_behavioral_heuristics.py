@@ -6,7 +6,7 @@ Contract: shared/policies/review-scope.md ("Existing behavior ownership",
 "Root-cause and model-completeness pass", "Failure state, retry safety, and
 recovery", "Related changes as one unit").
 Prose checks only — there is deliberately no second implementation of the
-rules (see AGENTS.md section 18).
+rules (see policies/skill-development-policy.md, "Runbook Design").
 """
 
 from __future__ import annotations
