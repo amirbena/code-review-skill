@@ -9,7 +9,10 @@ mutate source or repository state.
 ## Evidence-grounded direction
 
 When useful, give a concise recommended direction that addresses the evidenced
-cause. Prefer the canonical owner of an invariant over patches at each symptom.
+cause. This is the content of a finding's **Fix** field in
+[`../templates/finding.md`](../templates/finding.md); the shorter field label
+does not change what this policy governs. Prefer the canonical owner of an
+invariant over patches at each symptom.
 The root-cause and model-completeness rules in
 [`review-scope.md`](review-scope.md) govern grouping: one structural finding
 gets one coherent remediation direction, not one instruction per manifestation.

@@ -36,8 +36,8 @@ Each finding has exactly one authoritative full representation, per
 [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
 "Rules." When a finding is published in full as an inline comment, the
 review body's Findings section uses only the summary-pointer form
-(severity, title, file:line) for it — never the full evidence/impact/
-recommended-direction text a second time. When a finding has no inline
+(severity, title, file:line) for it — never the full evidence/impact/fix
+text a second time. When a finding has no inline
 comment (no valid anchor, or a rejected location moved to the body per
 below), its full representation appears once, in the body.
 

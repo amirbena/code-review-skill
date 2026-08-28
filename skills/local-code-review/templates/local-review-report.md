@@ -60,22 +60,23 @@ supplied>
 
 #### F1 [P1] Retry can duplicate processing
 
-**File:** `src/...:<line>` _(staged)_
+- **Location:** `src/...:<line>` _(staged)_
+- **Evidence:** <concrete evidence, concise>
+- **Impact:** <concrete engineering consequence, concise>
+- **Fix:** <concrete correction direction, not a patch>
+- **Implementation prompt:** <only when `include_fix_prompt=true` and a
+  full prompt is justified; an evidence-supported coding-agent task
+  covering root cause, affected components, required behavior, canonical
+  owner, invariants, regression scenarios, non-goals, and validation as
+  applicable>
 
-**Evidence**
-<concrete evidence>
-
-**Impact**
-<concrete engineering consequence>
-
-**Recommended direction**
-<concrete correction direction>
-
-**Implementation prompt**
-<only when `include_fix_prompt=true` and a full prompt is justified; an
-evidence-supported coding-agent task covering root cause, affected components,
-required behavior, canonical owner, invariants, regression scenarios,
-non-goals, and validation as applicable>
+A finding that meets
+[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+"When a longer explanation is justified" (non-obvious cross-file
+behavior, a concurrency/ordering bug, a security implication, a complex
+invariant violation, or evidence that needs brief context) adds one
+`- **Details:** <short paragraph>` line immediately after `Evidence`. An
+ordinary finding does not.
 
 ### Validation
 - <validation actually observed, or explicitly noted as not executed>
@@ -140,18 +141,12 @@ by itself changes the decision — see
 
 #### F1 [P2] Repository style convention violation
 
-**File:** `src/...:<line>` _(staged)_
-
-**Evidence**
-<concrete evidence, e.g. the target repository's `AGENTS.md` states the
-convention and the staged delta violates it>
-
-**Impact**
-<concrete engineering consequence — maintainability/consistency, not a
-correctness or safety defect>
-
-**Recommended direction**
-<concrete correction direction>
+- **Location:** `src/...:<line>` _(staged)_
+- **Evidence:** <concrete evidence, e.g. the target repository's
+  `AGENTS.md` states the convention and the staged delta violates it>
+- **Impact:** <concrete engineering consequence — maintainability/
+  consistency, not a correctness or safety defect>
+- **Fix:** <concrete correction direction>
 
 ### Decision
 **REVIEW CLEAN**
@@ -219,15 +214,22 @@ strongly it is recommended before commit.
   "Conventions determine findings, not severity"). The one-sentence
   rationale explains this mechanical result; it is never an independent
   subjective call that could contradict it.
-- Every finding uses the full rendering in
+- Every finding uses the compact full rendering in
   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md):
-  a stable ID (`F1`, `F2`, ...), severity, a concrete title, file/line
-  where available, evidence, impact, and a recommended direction. The
-  file line also carries this Skill's optional trailing annotation
-  naming the finding's source category — `(committed)`, `(staged)`,
-  `(unstaged)`, or `(untracked)` — per
+  a stable ID (`F1`, `F2`, ...) and `[severity]` on the heading, then the
+  field-oriented `Location` / `Evidence` / `Impact` / `Fix` block. Each
+  field is concise by default — a sentence or two, not a paragraph;
+  concision never drops evidence, impact, or fix. A `Details` field is
+  added only for a finding in one of the categories in
   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
-  "Optional Skill-specific trailing annotation," and
+  "When a longer explanation is justified" (non-obvious cross-file
+  behavior, a concurrency/ordering bug, a security implication, a complex
+  invariant violation, or evidence needing brief context). The `Location`
+  value also carries this Skill's optional trailing annotation naming the
+  finding's source category — `(committed)`, `(staged)`, `(unstaged)`, or
+  `(untracked)` — per
+  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+  "Location source annotation," and
   [`../policies/repository-state.md`](../policies/repository-state.md),
   "Attribution in findings," so the report says precisely where each
   finding came from. This annotation is specific to this Skill's local
@@ -241,7 +243,7 @@ strongly it is recommended before commit.
   `include_fix_prompt` defaults to `false`; when false, omit the
   **Implementation prompt** field completely. When explicitly true, add at
   most one prompt per root-cause finding where justified, after the concise
-  recommended direction. Do not create permutation prompts, invent uninspected
+  `Fix` direction. Do not create permutation prompts, invent uninspected
   architecture, or emit a prompt for a clean review. The flag affects output
   only: findings, severities, evidence, reconciliation, and Decision are
   identical on and off.

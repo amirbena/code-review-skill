@@ -113,7 +113,11 @@ snapshot, and other opaque or machine-produced changes
 
 shared/templates/finding.md
     ↓
-one canonical finding shape, rendered differently per delivery surface
+one canonical finding contract — a compact, field-oriented
+`id`/`severity`/`title`/`Location`/`Evidence`/`Impact`/`Fix` shape,
+concise by default, with a controlled `Details` field for genuinely
+complex findings; the fields are the stable contract, the rendering is
+one projection of them, and it is rendered per delivery surface
 
 shared/templates/review-summary.md
     ↓
@@ -684,6 +688,17 @@ in staged package metadata, then checked for containment and existence.
 - **Review reasoning** is Skill-agnostic and delivery-mode-agnostic: the
   same shared policies and severity model apply in `local-code-review`
   and in both modes of `github-pr-review`.
+- **The canonical finding contract is shared, its rendering is a
+  projection.** Both Skills render the one compact, field-oriented finding
+  shape in
+  [`shared/templates/finding.md`](../shared/templates/finding.md)
+  (`id`/`severity`/`title`/`Location`/`Evidence`/`Impact`/`Fix`, concise
+  by default, with a controlled `Details` field for complex findings). The
+  fields are the stable, agent-parseable contract; each surface (local
+  report, GitHub review body, GitHub inline comment) projects the same
+  fields. A future machine-readable renderer would be another projection —
+  it would not redesign the review reasoning model or the severity/
+  decision semantics.
 - **Human-facing report formatting is not implied by shared reasoning.**
   Each Skill's own template owns the presentation appropriate to its own
   delivery surface, per

@@ -248,7 +248,7 @@ This policy does not duplicate that contract.
 
 The complete human-facing output shape (result, what changed, meaningful
 strengths, findings, validation, decision) and the finding contract
-(what/where/evidence/impact/recommended direction) are owned by
+(what/where/evidence/impact/fix) are owned by
 [`../shared/templates/review-summary.md`](../shared/templates/review-summary.md)
 and [`../shared/templates/finding.md`](../shared/templates/finding.md),
 consumed identically by both Skills — this policy does not duplicate their

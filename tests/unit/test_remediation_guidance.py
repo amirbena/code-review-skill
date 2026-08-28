@@ -42,7 +42,7 @@ class RemediationGuidanceTests(unittest.TestCase):
 
     def test_github_uses_concise_direction_without_full_prompt(self) -> None:
         review = rg.render_github([self.structural])
-        self.assertIn("Recommended direction:", review.rendered)
+        self.assertIn("Fix:", review.rendered)
         self.assertNotIn("Implementation prompt:", review.rendered)
         self.assertEqual(review.decision, "REQUEST CHANGES")
         self.assertEqual(review.findings, (self.structural,))

@@ -36,7 +36,11 @@ metadata is subordinate" below.
   its one authoritative location, or its summary-pointer rendering (per
   [`finding.md`](finding.md), "Canonical summary-pointer rendering") when
   its full form was already published at another location (e.g. a GitHub
-  inline comment) — never both.
+  inline comment) — never both. Findings use the compact, field-oriented
+  contract in [`finding.md`](finding.md) — a scannable block per finding,
+  not a multi-paragraph essay; a longer `Details` field only for the
+  cases [`finding.md`](finding.md), "When a longer explanation is
+  justified" allows.
 
 ### Validation
 - <validation actually observed, or explicitly noted as not executed>
@@ -68,8 +72,11 @@ metadata is subordinate" below.
 - **Findings** — the aggregate view. Every P0/P1/P2 finding is
   represented exactly once, in exactly one authoritative form (full or
   summary-pointer — never both), per
-  [`finding.md`](finding.md), "Rules." This section does not repeat
-  implementation detail already covered under "What changed."
+  [`finding.md`](finding.md), "Rules," and rendered with the compact,
+  field-oriented finding contract in [`finding.md`](finding.md) so the
+  per-finding shape and this summary read as one coherent contract. This
+  section does not repeat implementation detail already covered under
+  "What changed."
 - **Validation** — reports only what was actually observed (tests run,
   packaging performed, links checked, etc.). When something could not be
   executed, say so explicitly rather than implying it passed.
