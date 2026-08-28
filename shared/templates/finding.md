@@ -138,8 +138,8 @@ after it, no `Details:` heading with boilerplate under it.
   source-state model (see "Location source annotation" below). Present
   only for a Skill that has such a concept;
 - **implementation prompt** — `local-code-review` only, and only under its
-  explicit `include_fix_prompt` opt-in, appended after `Details` when present
-  (otherwise after `Fix`) for a
+  explicit `include_fix_prompt` opt-in, appended after `Fix` and before
+  supporting `Details` when present for a
   qualifying finding. Never rendered by `github-pr-review`, never rendered
   when the flag is off, and never rendered for a clean review. Owned by
   that Skill's `templates/local-review-report.md` and the shared

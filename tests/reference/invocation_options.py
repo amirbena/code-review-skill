@@ -27,8 +27,11 @@ def _natural_values(text: str, option: str) -> set[bool]:
     concept = OPTION_CONCEPTS[option]
     spaced = option.replace("_", " ")
     hyphenated = option.replace("_", "-")
-    if re.search(rf"\b(?:what|how|why|does|is)\b[^?]*\b(?:{re.escape(option)}|{re.escape(spaced)}|{re.escape(hyphenated)})\b[^?]*\?", lowered):
-        return set()
+    question = re.compile(
+        rf"\b(?:what|how|why|does|is)\b[^?]*\b(?:{re.escape(option)}|"
+        rf"{re.escape(spaced)}|{re.escape(hyphenated)})\b[^?]*\?"
+    )
+    lowered = question.sub("", lowered)
     values: set[bool] = set()
     positive = (
         rf"(?<![\w]){re.escape(option)}(?![\w=])",

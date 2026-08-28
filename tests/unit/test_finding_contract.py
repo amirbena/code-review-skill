@@ -156,17 +156,29 @@ class LongerExplanationTests(unittest.TestCase):
 
     def test_github_finding_level_override_beats_invocation(self) -> None:
         rendered = fc.render_full(
-            _finding(details="Race ordering.", include_details=True),
+            _finding(details="Race ordering."),
             surface=fc.Surface.GITHUB_BODY,
             include_finding_details=False,
+            finding_detail_override=True,
         )
         self.assertIn("**Details:** Race ordering.", rendered)
 
     def test_finding_level_false_beats_local_default(self) -> None:
         rendered = fc.render_full(
-            _finding(details="Redundant context.", include_details=False)
+            _finding(details="Redundant context."), finding_detail_override=False
         )
         self.assertNotIn("**Details:**", rendered)
+
+    def test_finding_level_override_is_not_part_of_finding_data(self) -> None:
+        self.assertNotIn("include_details", fc.Finding.__dataclass_fields__)
+
+    def test_implementation_prompt_stays_before_supporting_details(self) -> None:
+        rendered = fc.render_full(
+            _finding(details="Supporting context.", implementation_prompt="Implement safely."),
+            include_fix_prompt=True,
+        )
+        self.assertLess(rendered.index("**Fix:**"), rendered.index("**Implementation prompt:**"))
+        self.assertLess(rendered.index("**Implementation prompt:**"), rendered.index("**Details:**"))
 
 
 class ReviewSummaryAlignmentTests(unittest.TestCase):

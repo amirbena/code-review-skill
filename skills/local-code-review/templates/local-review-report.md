@@ -63,13 +63,13 @@ supplied>
 - **Evidence:** <concrete evidence, concise>
 - **Impact:** <concrete engineering consequence, concise>
 - **Fix:** <concrete correction direction, not a patch>
-- **Details:** <only when populated and selected by the detail-precedence rule;
-  supporting technical context, concise>
 - **Implementation prompt:** <only when `include_fix_prompt=true` and a
   full prompt is justified; an evidence-supported coding-agent task
   covering root cause, affected components, required behavior, canonical
   owner, invariants, regression scenarios, non-goals, and validation as
   applicable>
+- **Details:** <only when populated and selected by the detail-precedence rule;
+  supporting technical context, concise>
 
 A finding that meets
 [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),

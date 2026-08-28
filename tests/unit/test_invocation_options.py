@@ -67,6 +67,11 @@ class InvocationNormalizationTests(unittest.TestCase):
             normalize("What does include_fix_prompt do?", defaults=LOCAL_DEFAULTS),
             LOCAL_DEFAULTS,
         )
+        mixed = normalize(
+            "What does include_fix_prompt do? Give me a fix prompt.",
+            defaults=LOCAL_DEFAULTS,
+        )
+        self.assertTrue(mixed["include_fix_prompt"])
 
     def test_invocations_do_not_leak(self) -> None:
         first = normalize("include finding details", defaults=GITHUB_DEFAULTS)
