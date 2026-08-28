@@ -31,6 +31,7 @@ products evolve.
 | GitHub publication | never | active mode only, as one batched review |
 | Approve / Request Changes | n/a — `REVIEW CLEAN` / `CHANGES REQUIRED` | active mode, when authorized; maximum positive action is Approve |
 | Remediation guidance | concise direction; opt-in `include_fix_prompt=true` adds one full fix prompt per qualifying root-cause finding | concise reviewer-facing direction only; no full fix prompt |
+| Finding detail presentation | `include_finding_details=true` by default | `include_finding_details=false` by default; per-finding override for materially useful technical context |
 | Root-cause / model-completeness reasoning | shared `review-scope.md` pass | shared, identical |
 | Intended use case | pre-PR implementation review | independent review of an existing PR |
 

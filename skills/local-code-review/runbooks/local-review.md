@@ -15,6 +15,7 @@ Applies shared policies:
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
 [`git-safety.md`](../../../shared/policies/git-safety.md),
+[`invocation-options.md`](../../../shared/policies/invocation-options.md),
 [`review-context.md`](../../../shared/policies/review-context.md) (the shared
 review-target / review-context / repository-context / existing-review-evidence
 model — its requirement-context and scope-boundary sections bind only when
@@ -44,6 +45,8 @@ never loaded or applied otherwise.
 ## Flow
 
 ```text
+normalize current-invocation presentation options
+    ↓
 resolve local review scope
     ↓
 discover applicable AGENTS.md / CLAUDE.md

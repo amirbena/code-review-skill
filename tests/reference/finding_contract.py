@@ -118,12 +118,17 @@ def _location_line(finding: Finding) -> str:
 
 
 def render_full(
-    finding: Finding, *, surface: Surface = Surface.LOCAL_REPORT, include_fix_prompt: bool = False
+    finding: Finding,
+    *,
+    surface: Surface = Surface.LOCAL_REPORT,
+    include_fix_prompt: bool = False,
+    include_finding_details: Optional[bool] = None,
+    finding_detail_override: Optional[bool] = None,
 ) -> str:
     """The compact full rendering (finding.md, "Canonical full rendering").
 
-    Order is fixed: heading, Location, Evidence, [Details], Impact, Fix,
-    [Implementation prompt]. Optional fields are emitted only when populated
+    Order is fixed: heading, Location, Evidence, Impact, Fix,
+    [Implementation prompt], [Details]. Optional fields are emitted only when selected
     — never as an empty placeholder line.
     """
     if surface is Surface.GITHUB_INLINE:
@@ -131,8 +136,6 @@ def render_full(
     lines = [f"### {finding.id} [{finding.severity.value}] {finding.title}", ""]
     lines.append(_location_line(finding))
     lines.append(f"- **Evidence:** {finding.evidence}")
-    if finding.details is not None:
-        lines.append(f"- **Details:** {finding.details}")
     lines.append(f"- **Impact:** {finding.impact}")
     lines.append(f"- **Fix:** {finding.fix}")
     if (
@@ -141,16 +144,38 @@ def render_full(
         and finding.implementation_prompt
     ):
         lines.append(f"- **Implementation prompt:** {finding.implementation_prompt}")
+    default = surface is Surface.LOCAL_REPORT
+    show_details = (
+        finding_detail_override
+        if finding_detail_override is not None
+        else include_finding_details
+        if include_finding_details is not None
+        else default
+    )
+    if finding.details is not None and show_details:
+        lines.append(f"- **Details:** {finding.details}")
     return "\n".join(lines)
 
 
-def render_inline(finding: Finding) -> str:
+def render_inline(
+    finding: Finding,
+    *,
+    include_finding_details: Optional[bool] = None,
+    finding_detail_override: Optional[bool] = None,
+) -> str:
     """The GitHub inline-comment rendering (finding.md, "Canonical inline
     rendering"): severity first, no `id`, no `Location`."""
     lines = [f"[{finding.severity.value}] {finding.title}", "", f"Evidence: {finding.evidence}"]
-    if finding.details is not None:
-        lines += ["", f"Details: {finding.details}"]
     lines += ["", f"Impact: {finding.impact}", "", f"Fix: {finding.fix}"]
+    show_details = (
+        finding_detail_override
+        if finding_detail_override is not None
+        else include_finding_details
+        if include_finding_details is not None
+        else False
+    )
+    if finding.details is not None and show_details:
+        lines += ["", f"Details: {finding.details}"]
     return "\n".join(lines)
 
 
@@ -159,11 +184,8 @@ def render_summary_pointer(finding: Finding) -> str:
     return f"- **{finding.severity.value} — {finding.title}**\n  `{finding.location}`"
 
 
-NO_FINDINGS_LINE = "No P0, P1, or P2 findings."
-
-
 def render_findings_section(findings: Sequence[Finding]) -> str:
     """The review-summary "Findings" section body for a set of findings."""
     if not findings:
-        return NO_FINDINGS_LINE
+        return ""
     return "\n\n".join(render_full(f) for f in findings)

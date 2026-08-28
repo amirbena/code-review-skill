@@ -89,6 +89,14 @@ supported and behaves exactly as before this input existed.
   re-review workflow. It changes only remediation rendering: scope, inspection,
   findings, severity, reconciliation, deduplication, and verdict remain
   identical. The Skill remains read-only and does not execute the prompt.
+- **`include_finding_details`** — boolean, default `true`; controls only the
+  optional supporting `Details` field.
+- **`include_fix_guidance`** — boolean, default `true`; controls optional
+  remediation elaboration but never removes the mandatory concise `Fix`.
+
+Canonical assignments and explicit requests such as “give me a fix prompt”
+normalize identically for the current invocation only; see
+[`../../shared/policies/invocation-options.md`](../../shared/policies/invocation-options.md).
 
 ## Review flow (overview)
 

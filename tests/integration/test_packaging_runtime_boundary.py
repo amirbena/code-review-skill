@@ -49,6 +49,7 @@ REFERENCE_TEST_MODULES = (
     "repository_instructions.py",
     "remediation_guidance.py",
     "finding_contract.py",
+    "invocation_options.py",
 )
 
 # module -> (packaged canonical source that must carry the same contract,
@@ -115,6 +116,15 @@ MODULE_TO_PACKAGED_POLICY_HEADINGS = {
             "## Optional and surface-specific fields",
             "## Canonical full rendering",
             "## Canonical inline rendering",
+        ),
+    ),
+    "invocation_options.py": (
+        REPO_ROOT / "shared" / "policies" / "invocation-options.md",
+        (
+            "## Canonical options",
+            "## Deterministic normalization",
+            "## Invocation isolation and mediation parity",
+            "## Finding-detail precedence",
         ),
     ),
 }

@@ -7,12 +7,15 @@ Applies shared policies:
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
+[`invocation-options.md`](../../../shared/policies/invocation-options.md),
 plus this Skill's own policy family starting at
 [`github-review.md`](../policies/github-review.md).
 
 ## Flow
 
 ```text
+normalize current-invocation presentation options
+    ↓
 resolve PR
     ↓
 resolve authenticated identity and PR author

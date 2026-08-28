@@ -67,10 +67,7 @@ class SharedFindingContractTests(unittest.TestCase):
         for header in OLD_BLOCK_HEADERS:
             self.assertNotIn(header, body)
 
-    def test_details_field_is_rendered_between_evidence_and_impact(self) -> None:
-        # Anchor the optional Details position against the actual template
-        # example, not only against the reference model: it sits after
-        # Evidence and before Impact in the longer-explanation rendering.
+    def test_details_field_follows_problem_impact_fix(self) -> None:
         details_block = next(
             (
                 b
@@ -82,12 +79,9 @@ class SharedFindingContractTests(unittest.TestCase):
         self.assertIsNotNone(
             details_block, "finding.md has no rendered example containing a Details field"
         )
-        self.assertLess(
-            details_block.index("**Evidence:**"), details_block.index("**Details:**")
-        )
-        self.assertLess(
-            details_block.index("**Details:**"), details_block.index("**Impact:**")
-        )
+        self.assertLess(details_block.index("**Evidence:**"), details_block.index("**Impact:**"))
+        self.assertLess(details_block.index("**Impact:**"), details_block.index("**Fix:**"))
+        self.assertLess(details_block.index("**Fix:**"), details_block.index("**Details:**"))
 
     def test_severity_semantics_are_deferred_not_redefined(self) -> None:
         self.assertIn("policies/severity.md", self.text)
@@ -206,6 +200,13 @@ class SkillRenderingsAlignTests(unittest.TestCase):
                 path.read_text(encoding="utf-8"),
             )
 
+    def test_per_skill_detail_defaults_and_github_override_are_explicit(self) -> None:
+        local = _norm(LOCAL_REPORT.read_text(encoding="utf-8"))
+        github = _norm(GITHUB_BODY.read_text(encoding="utf-8"))
+        self.assertIn("include_finding_details defaults to true", local)
+        self.assertIn("include_finding_details defaults to false", github)
+        self.assertIn("finding-level decision", github)
+
 
 class ReviewSummaryAlignmentTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -217,8 +218,8 @@ class ReviewSummaryAlignmentTests(unittest.TestCase):
         )
         self.assertIn("read as one coherent contract", self.norm)
 
-    def test_clean_review_no_findings_line_is_preserved(self) -> None:
-        self.assertIn("No P0, P1, or P2 findings.", self.norm)
+    def test_clean_review_omits_findings_section(self) -> None:
+        self.assertIn("Omit the section completely on a clean review", self.norm)
 
 
 if __name__ == "__main__":

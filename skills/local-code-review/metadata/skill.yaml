@@ -48,6 +48,7 @@ shared:
     - ../../../shared/policies/file-reviewability.md
     - ../../../shared/policies/review-context.md
     - ../../../shared/policies/review-evidence.md
+    - ../../../shared/policies/invocation-options.md
     - ../../../shared/policies/remediation-guidance.md
   templates:
     - ../../../shared/templates/finding.md
