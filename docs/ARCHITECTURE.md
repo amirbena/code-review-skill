@@ -8,6 +8,56 @@ specific runtime implementation — see [`AGENTS.md`](../AGENTS.md) section 2
 own native review, GitHub-native review, and third-party reviewers — see
 [`CODE_REVIEW_COMPARISON.md`](CODE_REVIEW_COMPARISON.md).
 
+## The mental model in one picture
+
+```text
+                     Shared Review Standard
+             (shared/policies/ — scope, severity, evidence,
+              review-context, review-evidence, ownership)
+                              │
+              ┌───────────────┴───────────────┐
+              │                               │
+      local-code-review                github-pr-review
+              │                               │
+   Review target: local Git delta   Review target: GitHub PR delta
+   (committed / staged / unstaged /  (full diff, or a bounded
+    untracked, detected separately)   reviewer-owned delta re-review)
+              │                               │
+   Delivery: one structured report   Delivery: a report (passive), or
+   returned to the caller             inline comments + summary +
+                                      Approve / Request Changes (active)
+```
+
+Everything in the top box is **one copy**, consumed identically by both
+Skills, so P0/P1/P2 semantics never diverge. Everything below the split is
+**target-specific**.
+
+### What is shared vs. what differs
+
+| Concern | Shared (one copy under `shared/`) | Differs per Skill |
+|---|---|---|
+| Review reasoning | scope, correctness, regression, architecture, behavioral heuristics | — |
+| Severity | the P0/P1/P2 model and the mechanical blocking rule | only the decision *labels*: `REVIEW CLEAN` / `CHANGES REQUIRED` vs. `Approve` / `Request Changes` |
+| Context model | review target / review context / repository context / existing review evidence | a thin per-Skill application (the local delta vs. the PR) |
+| State inspection | — | local Git state vs. GitHub PR state |
+| Delivery | the canonical report and finding shapes | a local report vs. GitHub publication |
+| Extra machinery | — | `github-pr-review` only: temporary checkout, parallel workers, self-review guard, SHA-bound delta re-review |
+
+### Where to read next
+
+You do not need to read the numbered sections in order — each is
+self-contained. Jump to what you need:
+
+| To understand… | Read |
+|---|---|
+| which file owns what, and how it maps into an archive | §1 Module Map, §7 Packaging |
+| the review-target / review-context / evidence vocabulary | §1 (shared model) and §2, "Normalize Inputs" |
+| the end-to-end review pipeline | §2 Core Pipeline |
+| who owns policy vs. runbook vs. output | §1 "Thin runbooks", §3 Separation of Concerns, §9 |
+| what the caller owns, and the Skill does not | §4 Orchestration Boundary, §5 Handoff Between Skills |
+| what is packaged vs. repository-only or test-only | §7 Packaging, §8 discovery metadata |
+| what is deliberately not built | §2, "Future work" |
+
 ## 1. Module Map
 
 ```text
@@ -137,6 +187,21 @@ policy; the runbook states only when each is resolved and applied in the
 execution flow.
 
 ## 2. Core Pipeline (per Skill)
+
+At a glance, every review — either Skill, either delivery mode — runs three
+phases:
+
+1. **Resolve inputs** — turn the invocation into a normalized Review
+   Target, optional Review Context, Repository Context, and optional
+   Existing Review Evidence (nothing below the target ever widens it).
+2. **Reason** — inspect state read-only, compute the exact delta, optionally
+   prepare a repository-backed checkout, plan sequential or parallel
+   execution, produce candidate findings, then reconcile them centrally.
+3. **Decide and deliver** — one aggregator applies the shared severity
+   model to produce one P0/P1/P2 set and one decision, rendered as a local
+   report or a GitHub review.
+
+The detailed stage list below expands those three phases.
 
 ```text
 Review Invocation
