@@ -11,13 +11,14 @@ permissions:
   contents: read
   issues: write
 
-concurrency:
-  group: claim-issue-${{ github.event.issue.number }}
-  cancel-in-progress: false
-
 jobs:
   claim:
     if: ${{ !github.event.issue.pull_request && (github.event.comment.body == '/claim' || github.event.comment.body == '/unclaim') }}
+    concurrency:
+      # This is only a mutex. Each surviving command run replays every
+      # uncheckpointed command, so replacement of a pending run loses nothing.
+      group: claim-issue-${{ github.event.issue.number }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - name: Check out trusted default-branch automation
@@ -40,19 +41,21 @@ jobs:
         id: plan
         env:
           COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_ID: ${{ github.event.comment.id }}
           COMMENT_ACTOR: ${{ github.event.comment.user.login }}
           AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association }}
         run: |
           python3 scripts/claim_issue.py \
             --issue-json "${RUNNER_TEMP}/issue.json" \
             --comments-json "${RUNNER_TEMP}/comments.json" \
+            --event-comment-id "${COMMENT_ID}" \
             --command "${COMMENT_BODY}" \
             --actor "${COMMENT_ACTOR}" \
             --association "${AUTHOR_ASSOCIATION}" \
             --comment-file "${RUNNER_TEMP}/response.md"
 
       - name: Apply claim state
-        if: ${{ steps.plan.outputs.action == 'claim' }}
+        if: ${{ steps.plan.outputs.add_label != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -61,7 +64,7 @@ jobs:
         run: gh api --method POST "repos/${GH_REPO}/issues/${ISSUE_NUMBER}/labels" -f "labels[]=${LABEL}"
 
       - name: Apply released state
-        if: ${{ steps.plan.outputs.action == 'unclaim' }}
+        if: ${{ steps.plan.outputs.remove_label != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -69,8 +72,7 @@ jobs:
           LABEL: ${{ steps.plan.outputs.remove_label }}
         run: gh api --method DELETE "repos/${GH_REPO}/issues/${ISSUE_NUMBER}/labels/${LABEL}"
 
-      - name: Respond
-        if: ${{ steps.plan.outputs.action != 'ignore' }}
+      - name: Checkpoint reconciled state
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
