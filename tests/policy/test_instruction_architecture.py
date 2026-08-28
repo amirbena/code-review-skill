@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Structural coverage for the repository instruction architecture:
 AGENTS.md is a routing entrypoint, each routed policy file exists and is
-canonical, moved rules are not duplicated back into AGENTS.md, and no
-repository-development policy leaks into a packaged Skill.
+canonical, moved rules are not duplicated back into AGENTS.md, no
+repository-development policy leaks into a packaged Skill, and every
+user-facing policy/guidance directory has a navigational README.
 """
 
 from __future__ import annotations
@@ -16,6 +17,16 @@ from tests.support.paths import REPO_ROOT
 AGENTS = REPO_ROOT / "AGENTS.md"
 CLAUDE = REPO_ROOT / "CLAUDE.md"
 POLICIES_DIR = REPO_ROOT / "policies"
+SHARED_POLICIES_DIR = REPO_ROOT / "shared" / "policies"
+DOCUMENTATION_POLICY = POLICIES_DIR / "documentation-policy.md"
+# Directories a person/agent is expected to browse directly per
+# documentation-policy.md, "Navigational README for user-facing
+# policy/guidance directories."
+USER_FACING_GUIDANCE_DIRS = (
+    POLICIES_DIR,
+    SHARED_POLICIES_DIR,
+    REPO_ROOT / "tests",
+)
 PACKAGE_SCRIPTS = (
     REPO_ROOT / "scripts" / "package-skills.sh",
     REPO_ROOT / "scripts" / "package-skills.ps1",
@@ -135,6 +146,68 @@ class PoliciesReadmeTests(unittest.TestCase):
         self.assertNotIn("MUST ", t)
 
 
+class SharedPoliciesReadmeTests(unittest.TestCase):
+    README = SHARED_POLICIES_DIR / "README.md"
+
+    def test_readme_exists(self) -> None:
+        self.assertTrue(self.README.is_file())
+
+    def test_readme_maps_exactly_the_existing_shared_policies(self) -> None:
+        raw = self.README.read_text(encoding="utf-8")
+        listed = {
+            m for m in LINK_RE.findall(raw)
+            if m.endswith(".md") and "/" not in m
+        }
+        on_disk = {p.name for p in SHARED_POLICIES_DIR.glob("*.md")} - {"README.md"}
+        # Every shared policy is mapped, and nothing invented.
+        self.assertEqual(listed, on_disk, "shared/policies/README.md map is out of sync")
+
+    def test_readme_is_navigational_only(self) -> None:
+        t = _norm(self.README)
+        self.assertNotIn("MUST NOT", t)
+        self.assertNotIn("MUST ", t)
+        self.assertIn("the policy wins", t)
+
+    def test_readme_states_packaging_status(self) -> None:
+        t = _norm(self.README)
+        self.assertIn("except this README", t)
+        self.assertIn("packaged runtime resource", t)
+
+    def test_readme_relative_links_resolve(self) -> None:
+        broken = [
+            target
+            for target in LINK_RE.findall(self.README.read_text(encoding="utf-8"))
+            if not target.startswith(("http://", "https://", "mailto:"))
+            and (rel := target.split("#", 1)[0].strip())
+            and not (self.README.parent / rel).exists()
+        ]
+        self.assertEqual(broken, [], f"broken links in shared/policies/README.md: {broken}")
+
+
+class NavigationalReadmeConventionTests(unittest.TestCase):
+    def test_convention_is_owned_by_documentation_policy(self) -> None:
+        raw = DOCUMENTATION_POLICY.read_text(encoding="utf-8")
+        self.assertIn(
+            "## Navigational README for user-facing policy/guidance directories", raw
+        )
+        t = _norm(DOCUMENTATION_POLICY)
+        self.assertIn("If a README and a policy conflict, the policy wins", t)
+        self.assertIn("not a rule that", t)  # explicitly not "every directory has a README"
+
+    def test_agents_routes_the_convention_without_inlining_it(self) -> None:
+        raw = AGENTS.read_text(encoding="utf-8")
+        self.assertIn("](policies/documentation-policy.md)", raw)
+        self.assertIn("navigational README", _norm(AGENTS))
+
+    def test_user_facing_guidance_directories_have_an_entrypoint(self) -> None:
+        missing = [
+            str(d.relative_to(REPO_ROOT))
+            for d in USER_FACING_GUIDANCE_DIRS
+            if not (d / "README.md").is_file()
+        ]
+        self.assertEqual(missing, [], f"user-facing guidance dirs without a README: {missing}")
+
+
 class PackagingBoundaryTests(unittest.TestCase):
     # Repository-development files that must never enter a packaged archive.
     UNPACKAGED = set(ROUTED_POLICIES) | {"README.md"}
@@ -174,7 +247,10 @@ class PackagingBoundaryTests(unittest.TestCase):
         ]
         if not all(a.is_file() for a in archives):
             self.skipTest("archives not built; run scripts/package-skills.sh all")
-        banned = {f"policies/{n}" for n in self.UNPACKAGED} | {"AGENTS.md", "CLAUDE.md"}
+        banned = (
+            {f"policies/{n}" for n in self.UNPACKAGED}
+            | {"AGENTS.md", "CLAUDE.md", "shared/policies/README.md"}
+        )
         for archive in archives:
             with zipfile.ZipFile(archive) as zf:
                 names = set(zf.namelist())

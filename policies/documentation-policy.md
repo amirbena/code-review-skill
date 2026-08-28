@@ -55,3 +55,38 @@ behavior, runbooks are procedures, and `docs/` plus the READMEs are
 explanation, navigation, and mental models. Do not copy large normative
 sections out of `shared/policies/` or a Skill's `policies/` into a README
 or a `docs/` file — reference them instead.
+
+## Navigational README for user-facing policy/guidance directories
+
+A repository directory that exposes **policies, contracts, instructions,
+or other guidance meant for direct human, maintainer, or coding-agent
+navigation** must provide a concise README (or equivalent single
+entrypoint) — *unless* the directory is already self-explanatory from one
+obvious canonical file inside it.
+
+**"User-facing" here** means a person or agent is expected to open or
+list the directory itself to learn what policies/contracts/workflows/
+guidance it holds and which file owns which concern — not merely that a
+tool reads the files. Judge by how the directory is actually navigated,
+not by whether it contains `.md` files.
+
+- **In scope** (each must have a README entrypoint): the repository-root
+  [`../policies/`](../policies/README.md),
+  [`../shared/policies/`](../shared/policies/README.md), and
+  [`../tests/`](../tests/README.md).
+- **Not automatically in scope**: leaf/implementation directories reached
+  only by following a link to a specific file — e.g. `tests/unit/`,
+  `tests/reference/`, `tests/support/`, a Skill's `templates/` or
+  `runbooks/` — unless one becomes a direct navigation surface in its own
+  right.
+
+**The README stays navigational, not normative.** It states purpose,
+ownership, canonicality, and routing, and links to the files that hold
+the rules. It must not restate a policy's logic, decision tables, or
+rule blocks. If a README and a policy conflict, the policy wins. This is
+not a rule that "every directory has a `README.md`" — it applies only to
+genuine navigation surfaces.
+
+When adding a new policy/guidance directory that people will browse
+directly, add its README in the same change, and route to it from the
+nearest existing entrypoint (`../AGENTS.md`, a parent README, or `docs/`).

@@ -207,6 +207,12 @@ responsibility.
 - Put a **substantial, independently ownable policy domain** in its own
   focused file under `policies/`, and add a routing row above. Prefer a
   small number of meaningful domains over many tiny files.
+- Give every **directory people navigate directly** to find policies,
+  contracts, or guidance a concise navigational README entrypoint (this
+  applies to `policies/`, `shared/policies/`, and `tests/` today — not to
+  every directory). The canonical rule is in
+  [`policies/documentation-policy.md`](policies/documentation-policy.md),
+  "Navigational README for user-facing policy/guidance directories."
 - Add a rule to this file's Global invariants only when it truly applies
   to *every* repository task and is short enough to state as an
   invariant. Otherwise it belongs in a routed policy.
