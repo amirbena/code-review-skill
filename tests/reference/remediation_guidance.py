@@ -39,7 +39,7 @@ def render_local(
     for finding in findings:
         body = (
             f"{finding.id} [{finding.severity}] {finding.title}\n"
-            f"Recommended direction: {finding.recommended_direction}"
+            f"Fix: {finding.recommended_direction}"
         )
         if include_fix_prompt and finding.implementation_prompt:
             body += f"\nImplementation prompt: {finding.implementation_prompt}"
@@ -51,7 +51,7 @@ def render_github(findings: Sequence[Finding]) -> Review:
     """GitHub renders concise reviewer guidance without local fix prompts."""
     rendered = "\n\n".join(
         f"{finding.id} [{finding.severity}] {finding.title}\n"
-        f"Recommended direction: {finding.recommended_direction}"
+        f"Fix: {finding.recommended_direction}"
         for finding in findings
     )
     decision = (

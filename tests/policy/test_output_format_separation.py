@@ -191,7 +191,17 @@ class LocalReportIsPlainMarkdown(unittest.TestCase):
         self.assertIn("CHANGES REQUIRED", self.text)
 
     def test_preserves_finding_severity_and_evidence_fields(self) -> None:
-        for field in ("[P1]", "**Evidence**", "**Impact**", "**Recommended direction**"):
+        # The compact, field-oriented finding contract (Issue #37): severity
+        # visible first, then the scannable Location/Evidence/Impact/Fix
+        # block. Evidence, impact, and remediation direction are all still
+        # mandatory — only the rendering shape and the `Fix` label changed.
+        for field in (
+            "[P1]",
+            "**Location:**",
+            "**Evidence:**",
+            "**Impact:**",
+            "**Fix:**",
+        ):
             self.assertIn(field, self.text)
 
 

@@ -62,7 +62,7 @@ how strongly it is recommended, how many P2 findings exist, or where it
 originated (a repository convention, reconciled PR context, supplied
 review context, or the reviewer's own judgment) — never by itself
 produces a blocking decision. A strong recommendation belongs in that
-finding's own Impact/Recommended direction text; it never substitutes
+finding's own Impact/Fix text; it never substitutes
 for, or overrides, severity when the decision is derived. Conversely, a
 finding that actually warrants blocking must be classified P0 or P1
 under the definitions above — the fix for "this should really block" is

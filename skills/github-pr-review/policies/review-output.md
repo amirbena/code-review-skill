@@ -107,9 +107,12 @@ instead returned to the caller with publication status.
 Apply the shared
 [`remediation-guidance.md`](../../../shared/policies/remediation-guidance.md)
 after findings and severity are finalized. A GitHub finding may include one
-concise, evidence-grounded **Recommended direction** aimed at the root cause or
-canonical owner. Do not emit `local-code-review`'s full **Implementation
-prompt** or a coding task with workflow/commit instructions. Guidance is
+concise, evidence-grounded **Fix** direction (the finding contract's `Fix`
+field — see
+[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md))
+aimed at the root cause or canonical owner.
+Do not emit `local-code-review`'s full **Implementation prompt** or a
+coding task with workflow/commit instructions. Guidance is
 advisory and cannot change finding identity, severity, Approve/Request Changes,
 or active/passive mutation boundaries.
 

@@ -54,17 +54,11 @@ Current HEAD: `def5678`
 
 #### F2 [P2] Validation output hides a useful failure reason
 
-**File:** `scripts/validate.py:117`
-
-**Evidence**
-<concrete evidence — this finding had no valid inline anchor, so its
-full form lives here instead>
-
-**Impact**
-<concrete engineering consequence>
-
-**Recommended direction**
-<concrete correction direction>
+- **Location:** `scripts/validate.py:117`
+- **Evidence:** <concrete evidence — this finding had no valid inline
+  anchor, so its full form lives here instead>
+- **Impact:** <concrete engineering consequence, concise>
+- **Fix:** <concrete correction direction, not a patch>
 
 ### Decision
 **REQUEST CHANGES**
@@ -111,13 +105,19 @@ append it after the human-facing review, clearly subordinate, per
   when this body is its only representation, or the summary-pointer form
   when its full form was already published as an inline comment (see
   [`../policies/finding-placement.md`](../policies/finding-placement.md), "No
-  duplicate findings"). Do not repeat a full inline finding here.
+  duplicate findings"). Do not repeat a full inline finding here. Full
+  findings use the compact, field-oriented `Location` / `Evidence` /
+  `Impact` / `Fix` contract in
+  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md)
+  — concise by default, with a `Details` field only for a finding in one
+  of that file's "When a longer explanation is justified" categories.
 - **Validation** reports only what was actually observed; state
   explicitly when something could not be executed.
 - **Remediation** follows
   [`../../../shared/policies/remediation-guidance.md`](../../../shared/policies/remediation-guidance.md):
-  use a concise recommended direction when useful, never a local-style full
-  **Implementation prompt**. It does not affect severity or Decision.
+  the `Fix` field carries a concise recommended direction when useful, never a
+  local-style full **Implementation prompt**. It does not affect severity or
+  Decision.
 - The Decision line is unambiguous and matches the actual GitHub review
   action submitted.
 - **Unresolved supplied Jira reference.** If the caller supplied a Jira
