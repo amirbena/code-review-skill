@@ -201,10 +201,7 @@ phases:
    model to produce one P0/P1/P2 set and one decision, rendered as a local
    report or a GitHub review.
 
-The detailed stage list below expands those three phases. Repository-backed
-modes and parallel workers apply to `github-pr-review` only —
-`local-code-review` and API-only `github-pr-review` skip them entirely with
-no loss of correctness.
+The detailed stage list below expands those three phases.
 
 ```text
 Review Invocation
