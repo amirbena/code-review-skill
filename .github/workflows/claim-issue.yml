@@ -12,11 +12,38 @@ permissions:
   issues: write
 
 jobs:
-  claim:
+  accept-command:
     if: ${{ !github.event.issue.pull_request && (github.event.comment.body == '/claim' || github.event.comment.body == '/unclaim') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Persist trusted command receipt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+          COMMENT_ACTOR: ${{ github.event.comment.user.login }}
+          AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association }}
+          ISSUE_STATE: ${{ github.event.issue.state }}
+          CLAIM_ELIGIBLE: ${{ contains(github.event.issue.labels.*.name, 'help wanted') || contains(github.event.issue.labels.*.name, 'good first issue') }}
+        run: |
+          set -euo pipefail
+          case "${COMMENT_BODY}" in
+            /claim) command=claim ;;
+            /unclaim) command=unclaim ;;
+            *) exit 1 ;;
+          esac
+          printf 'Command `%s` accepted from @%s.\n\n<!-- issue-claim-command id=%s command=%s actor=%s association=%s state=%s eligible=%s -->\n' \
+            "${COMMENT_BODY}" "${COMMENT_ACTOR}" "${COMMENT_ID}" "${command}" \
+            "${COMMENT_ACTOR}" "${AUTHOR_ASSOCIATION}" "${ISSUE_STATE}" \
+            "${CLAIM_ELIGIBLE}" > "${RUNNER_TEMP}/receipt.md"
+          gh issue comment "${ISSUE_NUMBER}" --body-file "${RUNNER_TEMP}/receipt.md"
+
+  reconcile:
+    needs: accept-command
     concurrency:
-      # This is only a mutex. Each surviving command run replays every
-      # uncheckpointed command, so replacement of a pending run loses nothing.
+      # Receipts are persisted before this replaceable mutex is entered.
       group: claim-issue-${{ github.event.issue.number }}
       cancel-in-progress: false
     runs-on: ubuntu-latest
@@ -39,19 +66,10 @@ jobs:
 
       - name: Plan claim action
         id: plan
-        env:
-          COMMENT_BODY: ${{ github.event.comment.body }}
-          COMMENT_ID: ${{ github.event.comment.id }}
-          COMMENT_ACTOR: ${{ github.event.comment.user.login }}
-          AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association }}
         run: |
           python3 scripts/claim_issue.py \
             --issue-json "${RUNNER_TEMP}/issue.json" \
             --comments-json "${RUNNER_TEMP}/comments.json" \
-            --event-comment-id "${COMMENT_ID}" \
-            --command "${COMMENT_BODY}" \
-            --actor "${COMMENT_ACTOR}" \
-            --association "${AUTHOR_ASSOCIATION}" \
             --comment-file "${RUNNER_TEMP}/response.md"
 
       - name: Apply claim state

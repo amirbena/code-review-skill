@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reconcile issue claim state from trusted checkpoints and command comments."""
+"""Reconcile issue claim state from trusted command receipts."""
 
 from __future__ import annotations
 
@@ -10,14 +10,17 @@ import re
 from pathlib import Path
 from typing import Any, Iterable
 
-ELIGIBLE_LABELS = frozenset({"help wanted", "good first issue"})
 CLAIMED_LABEL = "claimed"
 MAINTAINER_ASSOCIATIONS = frozenset({"OWNER", "MEMBER", "COLLABORATOR"})
 BOT_LOGIN = "github-actions[bot]"
-COMMANDS = frozenset({"/claim", "/unclaim"})
 MARKER_RE = re.compile(
     r"<!-- issue-claim-state status=(active|available) "
     r"claimant=([A-Za-z0-9-]+|none) through=([0-9]+) -->"
+)
+RECEIPT_RE = re.compile(
+    r"<!-- issue-claim-command id=([0-9]+) command=(claim|unclaim) "
+    r"actor=([A-Za-z0-9-]+) association=([A-Z_]+) "
+    r"state=(open|closed) eligible=(true|false) -->"
 )
 
 
@@ -45,54 +48,97 @@ def _comment_id(comment: dict[str, Any]) -> int:
         return 0
 
 
-def _checkpoint(comments: Iterable[Any]) -> tuple[str | None, int]:
-    claimant: str | None = None
-    through = 0
-    for comment in sorted(_flatten_comments(comments), key=_comment_id):
-        user = comment.get("user") or {}
-        if user.get("login") != BOT_LOGIN or user.get("type") != "Bot":
+def _trusted_bot_comment(comment: dict[str, Any]) -> bool:
+    user = comment.get("user") or {}
+    return user.get("login") == BOT_LOGIN and user.get("type") == "Bot"
+
+
+def _checkpoints(comments: Iterable[Any]) -> list[tuple[int, str | None, int]]:
+    checkpoints: list[tuple[int, str | None, int]] = []
+    for comment in _flatten_comments(comments):
+        if not _trusted_bot_comment(comment):
             continue
         match = MARKER_RE.search(comment.get("body") or "")
         if not match:
             continue
-        marker_through = int(match.group(3))
-        if marker_through < through:
-            continue
         claimant = match.group(2) if match.group(1) == "active" else None
-        through = marker_through
-    return claimant, through
+        checkpoints.append((_comment_id(comment), claimant, int(match.group(3))))
+    return sorted(checkpoints)
 
 
-def _command_comments(comments: Iterable[Any], through: int) -> list[dict[str, Any]]:
-    return sorted(
-        (
-            comment
-            for comment in _flatten_comments(comments)
-            if _comment_id(comment) > through and comment.get("body") in COMMANDS
-        ),
-        key=_comment_id,
-    )
+def _receipts(comments: Iterable[Any]) -> list[dict[str, Any]]:
+    receipts: dict[int, dict[str, Any]] = {}
+    for comment in sorted(_flatten_comments(comments), key=_comment_id):
+        if not _trusted_bot_comment(comment):
+            continue
+        match = RECEIPT_RE.search(comment.get("body") or "")
+        if not match:
+            continue
+        receipt = {
+            "id": int(match.group(1)),
+            "command": f"/{match.group(2)}",
+            "actor": match.group(3),
+            "association": match.group(4),
+            "issue_open": match.group(5) == "open",
+            "eligible": match.group(6) == "true",
+        }
+        expected_body = (
+            f"Command `{receipt['command']}` accepted from @{receipt['actor']}.\n\n"
+            f"<!-- issue-claim-command id={receipt['id']} "
+            f"command={receipt['command'].removeprefix('/')} actor={receipt['actor']} "
+            f"association={receipt['association']} "
+            f"state={'open' if receipt['issue_open'] else 'closed'} "
+            f"eligible={str(receipt['eligible']).lower()} -->"
+        )
+        if (comment.get("body") or "").rstrip("\n") != expected_body:
+            continue
+        existing = receipts.get(receipt["id"])
+        if existing is not None and existing != receipt:
+            raise ValueError(f"conflicting trusted receipts for comment {receipt['id']}")
+        receipts[receipt["id"]] = receipt
+    return [receipts[comment_id] for comment_id in sorted(receipts)]
 
 
-def _is_maintainer(comment: dict[str, Any]) -> bool:
-    return str(comment.get("author_association", "")).upper() in MAINTAINER_ASSOCIATIONS
+def _replay_anchor(
+    checkpoints: list[tuple[int, str | None, int]], receipts: list[dict[str, Any]]
+) -> tuple[str | None, int, bool]:
+    if not receipts:
+        if not checkpoints:
+            return None, 0, False
+        _, claimant, through = max(checkpoints, key=lambda checkpoint: checkpoint[2])
+        return claimant, through, True
+
+    first_receipt_id = receipts[0]["id"]
+    anchors = [checkpoint for checkpoint in checkpoints if checkpoint[2] < first_receipt_id]
+    if not anchors:
+        return None, 0, False
+    _, claimant, through = max(anchors, key=lambda checkpoint: checkpoint[2])
+    return claimant, through, True
+
+
+def _is_maintainer(receipt: dict[str, Any]) -> bool:
+    return receipt["association"] in MAINTAINER_ASSOCIATIONS
 
 
 def reconcile(issue: dict[str, Any], comments: Iterable[Any]) -> dict[str, Any]:
-    """Replay uncheckpointed commands and reconcile the label projection."""
+    """Replay trusted receipts and reconcile the label projection."""
     all_comments = _flatten_comments(comments)
-    claimant, through = _checkpoint(all_comments)
+    receipts = _receipts(all_comments)
+    claimant, through, trusted_state = _replay_anchor(_checkpoints(all_comments), receipts)
     message = "Claim state checked."
+    release_authorized = trusted_state and claimant is None
 
-    for comment in _command_comments(all_comments, through):
-        command = comment["body"]
-        actor = str((comment.get("user") or {}).get("login", ""))
-        through = _comment_id(comment)
+    for receipt in receipts:
+        if receipt["id"] <= through:
+            continue
+        command = receipt["command"]
+        actor = receipt["actor"]
+        through = receipt["id"]
 
         if command == "/claim":
-            if issue.get("state") != "open":
+            if not receipt["issue_open"]:
                 message = "This issue is closed and cannot be claimed."
-            elif not _label_names(issue).intersection(ELIGIBLE_LABELS):
+            elif not receipt["eligible"]:
                 message = (
                     "This issue is not open for direct claiming. A maintainer can add "
                     "`help wanted` or `good first issue` when it is contribution-ready."
@@ -107,7 +153,8 @@ def reconcile(issue: dict[str, Any], comments: Iterable[Any]) -> dict[str, Any]:
                 )
             continue
 
-        if claimant == actor or _is_maintainer(comment):
+        if claimant == actor or _is_maintainer(receipt):
+            release_authorized = True
             if claimant:
                 claimant = None
                 message = f"Claim released by @{actor}. This issue is available again."
@@ -125,7 +172,11 @@ def reconcile(issue: dict[str, Any], comments: Iterable[Any]) -> dict[str, Any]:
     return {
         "action": "reconcile",
         "add_label": CLAIMED_LABEL if desired_claimed and CLAIMED_LABEL not in labels else "",
-        "remove_label": CLAIMED_LABEL if not desired_claimed and CLAIMED_LABEL in labels else "",
+        "remove_label": (
+            CLAIMED_LABEL
+            if not desired_claimed and CLAIMED_LABEL in labels and release_authorized
+            else ""
+        ),
         "claimant": claimant,
         "through": through,
         "comment": (
@@ -152,25 +203,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--issue-json", required=True)
     parser.add_argument("--comments-json", required=True)
-    parser.add_argument("--event-comment-id", required=True, type=int)
-    parser.add_argument("--command", required=True)
-    parser.add_argument("--actor", required=True)
-    parser.add_argument("--association", required=True)
     parser.add_argument("--github-output", default=os.environ.get("GITHUB_OUTPUT"))
     parser.add_argument("--comment-file", required=True)
     args = parser.parse_args(argv)
 
-    comments = _flatten_comments(_load(args.comments_json))
-    if not any(_comment_id(comment) == args.event_comment_id for comment in comments):
-        comments.append(
-            {
-                "id": args.event_comment_id,
-                "body": args.command,
-                "user": {"login": args.actor, "type": "User"},
-                "author_association": args.association,
-            }
-        )
-    result = reconcile(_load(args.issue_json), comments)
+    result = reconcile(_load(args.issue_json), _load(args.comments_json))
     print(json.dumps(result, indent=2, sort_keys=True))
     if args.github_output:
         _emit_outputs(result, args.github_output, args.comment_file)
