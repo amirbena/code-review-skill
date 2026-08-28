@@ -31,7 +31,10 @@ or merges. `github-pr-review`'s strongest positive action is **Approve**.
 
 Rule of thumb: **no PR yet → `local-code-review`; a PR exists and you are
 not its author → `github-pr-review`.** An implementing Agent never reviews
-its own PR — see [`AGENTS.md`](AGENTS.md) §13. Full side-by-side detail is
+its own PR — see
+[`policies/review-orchestration-policy.md`](policies/review-orchestration-policy.md),
+"Implementation Workflow Termination and Reviewer/Author Separation." Full
+side-by-side detail is
 in [`docs/CODE_REVIEW_COMPARISON.md`](docs/CODE_REVIEW_COMPARISON.md) §9.
 
 ## Install / package
@@ -127,8 +130,10 @@ observations only. Both are defined once in
 ## Contributing to this repository
 
 Development of this repository follows its own canonical rules in
-[`AGENTS.md`](AGENTS.md) — a dedicated branch per task, squash-merge by
-default, read-only Git safety, and the documentation-UX standards in §20.
+[`AGENTS.md`](AGENTS.md) and the focused [`policies/`](policies/) it
+routes to — a dedicated branch per task, squash-merge by default,
+read-only Git safety, and the documentation-UX standards in
+[`policies/documentation-policy.md`](policies/documentation-policy.md).
 Opening a PR here applies
 [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md)
 automatically — it walks through change surface, behavioral change,
@@ -157,7 +162,7 @@ are rewritten during staging — are described in
 |---|---|
 | [`docs/CODE_REVIEW_COMPARISON.md`](docs/CODE_REVIEW_COMPARISON.md) | why these Skills exist alongside Claude Code, GitHub-native, and third-party reviewers, and the full `local-code-review` vs. `github-pr-review` matrix |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | the high-level mental model, module boundaries, the review pipeline, and the orchestration boundary between the Skills and their caller |
-| [`AGENTS.md`](AGENTS.md) | this repository's canonical development, orchestration, and documentation-UX rules, plus the shared review-ownership invariant |
+| [`AGENTS.md`](AGENTS.md) + [`policies/`](policies/) | this repository's canonical development entrypoint — global invariants, instruction precedence, and a routing table into the focused development, Git/PR/merge, validation, documentation, Skill-development, and review-orchestration policies |
 | [`docs/runtime-parallelism.md`](docs/runtime-parallelism.md) | the isolated per-runtime facts behind the portable parallel-review contract |
 | [`skills/local-code-review/README.md`](skills/local-code-review/README.md) · [`skills/github-pr-review/README.md`](skills/github-pr-review/README.md) | per-Skill onboarding |
 | [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md) · [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md) | the complete, normative Skill definitions |

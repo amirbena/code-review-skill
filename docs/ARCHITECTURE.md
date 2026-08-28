@@ -2,9 +2,12 @@
 
 This document describes the conceptual architecture of this repository's
 two Code Review Agent Skills. It is intentionally decoupled from any
-specific runtime implementation — see [`AGENTS.md`](../AGENTS.md) section 2
-("Runtime Neutrality") and the **Agent via Skill** vocabulary in section
-1. For why this architecture exists — how it differs from Claude Code's
+specific runtime implementation — see [`AGENTS.md`](../AGENTS.md)
+("Global invariants" — runtime neutrality; and the **Agent via Skill**
+vocabulary it defines) and
+[`policies/skill-development-policy.md`](../policies/skill-development-policy.md),
+"Portable Core, Optional Runtime Adapters." For why this architecture
+exists — how it differs from Claude Code's
 own native review, GitHub-native review, and third-party reviewers — see
 [`CODE_REVIEW_COMPARISON.md`](CODE_REVIEW_COMPARISON.md).
 
@@ -159,8 +162,8 @@ instructions, a Jira/tracker ticket, an explicitly supplied GitHub Issue
 ### Thin runbooks, canonical policy owners
 
 A runbook is an execution document, not a second policy store — see
-[`AGENTS.md`](../AGENTS.md) section 18, "Runbook Design," for the canonical
-rule. It defines flow, phase ordering, and which policy governs each
+[`policies/skill-development-policy.md`](../policies/skill-development-policy.md),
+"Runbook Design," for the canonical rule. It defines flow, phase ordering, and which policy governs each
 phase; it does not restate that policy's decision tables, edge-case
 semantics, or state-interpretation rules. Concretely:
 
@@ -499,13 +502,14 @@ obtained fresh, explicit user approval scoped to that one run. An
 approval that authorized one invocation never authorizes another; the
 orchestrator must ask again before each subsequent invocation, including
 immediately after fixing findings from the previous one. See
-[`AGENTS.md`](../AGENTS.md) section 14, "Explicit User Approval Required for
-`local-code-review` Invocation."
+[`policies/review-orchestration-policy.md`](../policies/review-orchestration-policy.md),
+"Explicit User Approval Required for `local-code-review` Invocation."
 
 Second, it never extends to an implementing Agent invoking
 `github-pr-review` against the PR it just opened or updated for its own
 implementation work. Opening/updating that PR is the terminal step of the
-implementation workflow — see [`AGENTS.md`](../AGENTS.md) section 13,
+implementation workflow — see
+[`policies/review-orchestration-policy.md`](../policies/review-orchestration-policy.md),
 "Implementation Workflow Termination and Reviewer/Author Separation."
 `github-pr-review` is a reviewer-role Skill invoked by a genuinely
 separate reviewer or review task, not a post-implementation validation
@@ -561,14 +565,19 @@ GitHub PR Review Skill
 Each `Local Code Review Skill` box above represents exactly one
 invocation, gated by its own fresh, explicit user approval obtained
 immediately beforehand. Approval for one invocation never carries over
-to a later one — see [`AGENTS.md`](../AGENTS.md) section 14, "Explicit User
-Approval Required for `local-code-review` Invocation." A "no" at any
+to a later one — see
+[`policies/review-orchestration-policy.md`](../policies/review-orchestration-policy.md),
+"Explicit User Approval Required for `local-code-review` Invocation." A
+"no" at any
 approval gate is a fully valid outcome: the implementation workflow
 continues straight to local acceptance, push, and PR without review.
 
 `local-code-review` does not automatically invoke `github-pr-review`,
 and neither does the implementing Agent that just opened or updated the
-PR — see [`AGENTS.md`](../AGENTS.md) section 13. `github-pr-review` is
+PR — see
+[`policies/review-orchestration-policy.md`](../policies/review-orchestration-policy.md),
+"Implementation Workflow Termination and Reviewer/Author Separation."
+`github-pr-review` is
 invoked by a genuinely separate reviewer (a different Agent/identity, or
 a dedicated review task against an existing PR), never as an automatic
 continuation of the same implementation workflow. `github-pr-review`
@@ -599,8 +608,10 @@ Stop
 
 Maximum automated positive action: **Approve**. No merge occurs — the
 repository owner or their merge workflow performs the merge separately,
-following `AGENTS.md`'s merge-strategy rules when this repository's own
-PRs are the ones being merged. See
+following
+[`policies/git-pr-merge-policy.md`](../policies/git-pr-merge-policy.md)'s
+merge-strategy rules when this repository's own PRs are the ones being
+merged. See
 [`skills/github-pr-review/runbooks/active-pr-review.md`](../skills/github-pr-review/runbooks/active-pr-review.md).
 
 ## 7. Packaging: Source Layout vs. Distribution Layout
