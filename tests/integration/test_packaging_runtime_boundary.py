@@ -48,10 +48,13 @@ REFERENCE_TEST_MODULES = (
     "parallel_review.py",
     "repository_instructions.py",
     "remediation_guidance.py",
+    "finding_contract.py",
 )
 
-# module -> (packaged policy that must carry the same contract, headings that
-# must still be present in it).
+# module -> (packaged canonical source that must carry the same contract,
+# headings that must still be present in it). The canonical source is
+# usually a shared/skill policy, but a packaged shared/templates/*.md file
+# is equally valid — finding_contract.py mirrors the finding template.
 MODULE_TO_PACKAGED_POLICY_HEADINGS = {
     "review_context.py": (
         REPO_ROOT / "shared" / "policies" / "review-context.md",
@@ -102,6 +105,16 @@ MODULE_TO_PACKAGED_POLICY_HEADINGS = {
             "## Settled decisions",
             "## Interpret prior evidence against the current target",
             "## Comment authorship: human review vs. automation output",
+        ),
+    ),
+    "finding_contract.py": (
+        REPO_ROOT / "shared" / "templates" / "finding.md",
+        (
+            "## Conciseness contract",
+            "## When a longer explanation is justified",
+            "## Optional and surface-specific fields",
+            "## Canonical full rendering",
+            "## Canonical inline rendering",
         ),
     ),
 }

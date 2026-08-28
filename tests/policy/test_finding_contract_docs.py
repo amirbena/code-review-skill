@@ -67,6 +67,28 @@ class SharedFindingContractTests(unittest.TestCase):
         for header in OLD_BLOCK_HEADERS:
             self.assertNotIn(header, body)
 
+    def test_details_field_is_rendered_between_evidence_and_impact(self) -> None:
+        # Anchor the optional Details position against the actual template
+        # example, not only against the reference model: it sits after
+        # Evidence and before Impact in the longer-explanation rendering.
+        details_block = next(
+            (
+                b
+                for b in re.findall(r"```markdown\n(.*?)\n```", self.text, re.S)
+                if "**Details:**" in b
+            ),
+            None,
+        )
+        self.assertIsNotNone(
+            details_block, "finding.md has no rendered example containing a Details field"
+        )
+        self.assertLess(
+            details_block.index("**Evidence:**"), details_block.index("**Details:**")
+        )
+        self.assertLess(
+            details_block.index("**Details:**"), details_block.index("**Impact:**")
+        )
+
     def test_severity_semantics_are_deferred_not_redefined(self) -> None:
         self.assertIn("policies/severity.md", self.text)
         self.assertIn("[P0] / [P1] / [P2]", self.norm)
