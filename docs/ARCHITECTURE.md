@@ -111,6 +111,11 @@ shared/policies/file-reviewability.md
 evidence-based handling for generated, vendored, lock, minified, binary,
 snapshot, and other opaque or machine-produced changes
 
+shared/policies/invocation-options.md
+    ↓
+deterministic current-invocation normalization for presentation options,
+including per-Skill finding-detail defaults and finding-level precedence
+
 shared/templates/finding.md
     ↓
 one canonical finding contract — a compact, field-oriented
@@ -198,9 +203,9 @@ execution flow.
 At a glance, every review — either Skill, either delivery mode — runs three
 phases:
 
-1. **Resolve inputs** — turn the invocation into a normalized Review
-   Target, optional Review Context, Repository Context, and optional
-   Existing Review Evidence (nothing below the target ever widens it).
+1. **Resolve inputs** — turn the invocation into normalized presentation
+   options, a Review Target, optional Review Context, Repository Context, and
+   optional Existing Review Evidence (nothing below the target ever widens it).
 2. **Reason** — inspect state read-only, compute the exact delta, optionally
    prepare a repository-backed checkout, plan sequential or parallel
    execution, produce candidate findings, then reconcile them centrally.
@@ -694,11 +699,16 @@ in staged package metadata, then checked for containment and existence.
   [`shared/templates/finding.md`](../shared/templates/finding.md)
   (`id`/`severity`/`title`/`Location`/`Evidence`/`Impact`/`Fix`, concise
   by default, with a controlled `Details` field for complex findings). The
-  fields are the stable, agent-parseable contract; each surface (local
+  human projection reads problem → impact → fix → optional supporting detail.
+  The fields are the stable, agent-parseable contract; each surface (local
   report, GitHub review body, GitHub inline comment) projects the same
   fields. A future machine-readable renderer would be another projection —
   it would not redesign the review reasoning model or the severity/
   decision semantics.
+- **Detail is presentation-only.** `include_finding_details` defaults to
+  `true` locally and `false` on GitHub; a per-finding decision overrides the
+  invocation, which overrides the Skill default. The option never changes the
+  canonical finding data, severity, or decision.
 - **Human-facing report formatting is not implied by shared reasoning.**
   Each Skill's own template owns the presentation appropriate to its own
   delivery surface, per

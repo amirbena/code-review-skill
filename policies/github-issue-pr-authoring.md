@@ -89,12 +89,12 @@ Short explanation.
 Only when something is non-obvious.
 ```
 
-Keep the structured traceability sections of
-[`../.github/PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md)
-(change surface, behavioral change, governance impact, contract / packaging
-impact, reviewer focus): fill the ones that apply and mark the rest
-`None` / `N/A`. Brevity means not padding those sections — never dropping
-required review or traceability information.
+Keep the compact traceability fields in
+[`../.github/PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md):
+behavior/contracts, governance, policy/documentation, packaging/portability,
+validation, and optional reviewer focus. Fill what applies and mark the rest
+`None` / `N/A`; brevity never drops required review or traceability
+information.
 
 Do not include: a full chronology of the work; every command run; full
 test output; the Issue's requirements restated; architecture already

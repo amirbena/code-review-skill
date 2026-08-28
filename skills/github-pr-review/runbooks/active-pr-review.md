@@ -7,6 +7,7 @@ decision. Applies shared policies:
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
+[`invocation-options.md`](../../../shared/policies/invocation-options.md),
 plus this Skill's own policy family starting at
 [`github-review.md`](../policies/github-review.md), and the shared
 [`review-ownership.md`](../../../shared/policies/review-ownership.md).
@@ -15,6 +16,8 @@ plus this Skill's own policy family starting at
 
 ```text
 PR
+    ↓
+normalize current-invocation presentation options
     ↓
 resolve authenticated identity and PR author
     ↓

@@ -38,6 +38,7 @@ shared_policies=(
   "review-context.md"
   "review-evidence.md"
   "parallel-review.md"
+  "invocation-options.md"
   "remediation-guidance.md"
 )
 shared_templates=(

@@ -60,6 +60,13 @@ evidence-backed findings, and either publish one finalized GitHub review
 [`policies/github-review.md`](policies/github-review.md) for each
 stage's canonical rule.
 
+Presentation options use the shared deterministic normalization contract.
+`include_finding_details` defaults to `false`; a finding-level decision may
+still show materially useful concurrency, security, cross-file, invariant, or
+evidence context. `include_fix_guidance` defaults to `true`, while
+`include_fix_prompt` remains local-only. See
+[`../../shared/policies/invocation-options.md`](../../shared/policies/invocation-options.md).
+
 ## Repository-access modes
 
 API-only mode never prepares a checkout. Optional or explicitly required

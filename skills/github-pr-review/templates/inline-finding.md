@@ -28,8 +28,13 @@ A finding that meets
 "When a longer explanation is justified" (non-obvious cross-file
 behavior, a concurrency/ordering bug, a security implication, a complex
 invariant violation, or evidence needing brief context) adds one
-`Details:` line between `Evidence:` and `Impact:`, kept to a short
-paragraph. An ordinary finding does not.
+`Details:` line after `Fix`, kept to a short paragraph, only when
+`include_finding_details=true` or a finding-level decision enables it. The
+GitHub default is `false`. An ordinary finding does not.
+
+```text
+Details: <supporting technical context, concise>
+```
 
 ## Rules
 

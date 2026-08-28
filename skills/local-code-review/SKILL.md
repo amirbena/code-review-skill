@@ -179,6 +179,14 @@ finding identity, severity, deduplication, PR-context reconciliation, or
 mechanical Decision, and it never authorizes mutation or an autonomous fix
 workflow. It is not inferred from urgency, severity, branch name, or intent.
 
+**Optional presentation options:** `include_fix_guidance` (boolean, default
+`true`) and `include_finding_details` (boolean, default `true`). Normalize
+canonical and explicit human phrasing for these options and
+`include_fix_prompt` through
+[`invocation-options.md`](../../shared/policies/invocation-options.md). Values
+are current-invocation-only. Finding details follow that policy's precedence;
+all options affect rendering only and preserve the canonical finding fields.
+
 The context and PR-reference optional inputs are independent — either, both,
 or neither may
 be supplied in a given invocation, with no ordering requirement between
@@ -197,6 +205,9 @@ context is actually supplied),
 [`git-safety.md`](../../shared/policies/git-safety.md). In orchestrated/
 multi-Agent contexts, also
 [`review-ownership.md`](../../shared/policies/review-ownership.md).
+Always apply
+[`invocation-options.md`](../../shared/policies/invocation-options.md) before
+review reasoning.
 Always apply [`remediation-guidance.md`](../../shared/policies/remediation-guidance.md)
 to finding guidance.
 For every changed-file category, including generated or opaque content,
@@ -269,6 +280,10 @@ With `include_fix_prompt=false` (the default), findings contain no full
 implementation prompt. With the flag explicitly enabled, qualifying existing
 findings may append one per the local report template; a clean review never
 manufactures implementation work. Only remediation rendering differs.
+`include_finding_details` defaults to `true`; a populated, justified
+`Details` field therefore renders unless a higher-precedence finding-level
+decision suppresses it. `include_fix_guidance` never removes the mandatory,
+concise `Fix` field.
 
 ## 5. Statelessness and Orchestration Boundary
 

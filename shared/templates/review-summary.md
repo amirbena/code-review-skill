@@ -19,7 +19,8 @@ metadata is subordinate" below.
 
 **Result: <emoji> <short human result label>**
 
-<one or two sentences: scope reviewed, e.g. files/commit or PR HEAD>
+<one or two sentences: overall assessment, merge/proceed safety, and the most
+important concern or attention point; include scope only when useful>
 
 ### What changed
 <concise, concrete summary of what the change implements and its intent>
@@ -29,9 +30,7 @@ metadata is subordinate" below.
 - **<theme>:** <concrete, evidence-backed strength>
 
 ### Findings
-<one of:>
-- "No P0, P1, or P2 findings."
-- for each finding: either its full rendering (per
+<only when findings exist; for each finding: either its full rendering (per
   [`finding.md`](finding.md), "Canonical full rendering") when this is
   its one authoritative location, or its summary-pointer rendering (per
   [`finding.md`](finding.md), "Canonical summary-pointer rendering") when
@@ -65,10 +64,18 @@ metadata is subordinate" below.
   section, never a provisional Result later replaced by a corrected one,
   and never correction prose narrating that an earlier rendering was
   wrong.
+- **Opening assessment** — immediately says whether the change is safe to
+  merge/proceed and names the highest-priority concern or reviewer attention
+  point. Avoid mechanical “reviewed N files” boilerplate when it adds no
+  useful context.
 - **What changed** — a concrete implementation summary, not a diff dump.
 - **What was done well** — only concrete, evidence-backed strengths.
   Omit the section (or keep it to one line) rather than invent generic
   praise when nothing specific stands out.
+- **Empty sections** — omit optional sections that add no information. A clean
+  review normally needs only the result/opening assessment, a compact change
+  summary when useful, validation, and the final decision; do not repeat “no
+  findings” in multiple sections.
 - **Findings** — the aggregate view. Every P0/P1/P2 finding is
   represented exactly once, in exactly one authoritative form (full or
   summary-pointer — never both), per
@@ -76,7 +83,8 @@ metadata is subordinate" below.
   field-oriented finding contract in [`finding.md`](finding.md) so the
   per-finding shape and this summary read as one coherent contract. This
   section does not repeat implementation detail already covered under
-  "What changed."
+  "What changed." Omit the section completely on a clean review; the opening
+  assessment and Decision already communicate that result.
 - **Validation** — reports only what was actually observed (tests run,
   packaging performed, links checked, etc.). When something could not be
   executed, say so explicitly rather than implying it passed.

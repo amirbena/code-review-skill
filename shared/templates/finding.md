@@ -129,15 +129,17 @@ placeholder field is never rendered — no `Location:` line with nothing
 after it, no `Details:` heading with boilerplate under it.
 
 - **details** — the longer explanation permitted by "When a longer
-  explanation is justified" above. Present only for a finding in one of
-  those categories; absent otherwise;
+  explanation is justified" above. Visibility follows
+  [`../policies/invocation-options.md`](../policies/invocation-options.md),
+  "Finding-detail precedence"; absent when not populated or not selected;
 - **source annotation on `location`** — a Skill may append a short
   parenthetical after the location value when it has its own concept that
   classifies *where the finding's evidence came from* within that Skill's
   source-state model (see "Location source annotation" below). Present
   only for a Skill that has such a concept;
 - **implementation prompt** — `local-code-review` only, and only under its
-  explicit `include_fix_prompt` opt-in, appended after `Fix` for a
+  explicit `include_fix_prompt` opt-in, appended after `Details` when present
+  (otherwise after `Fix`) for a
   qualifying finding. Never rendered by `github-pr-review`, never rendered
   when the flag is off, and never rendered for a clean review. Owned by
   that Skill's `templates/local-review-report.md` and the shared
@@ -151,7 +153,9 @@ after it, no `Details:` heading with boilerplate under it.
 The mandatory core of a normal actionable finding —
 `id` (where the surface needs it), `severity`, `title`, `location` (where
 the surface needs it), `evidence`, `impact`, `fix` — is always present and
-always in the same order, so an agent can rely on it.
+deterministically identifiable, so an agent can rely on it. The human-first
+projection orders content as problem (`Evidence`) → consequence (`Impact`) →
+correction (`Fix`) → optional supporting technical detail (`Details`).
 
 ## Canonical full rendering
 
@@ -168,19 +172,18 @@ anchor exists. Compact and field-oriented:
 - **Fix:** <concrete correction direction, not a patch>
 ```
 
-A finding that meets "When a longer explanation is justified" adds one
-`Details` field, immediately after `Evidence`:
+A finding that meets "When a longer explanation is justified" and whose
+detail-visibility decision is true adds one `Details` field after `Fix`:
 
 ```markdown
 ### <id> [<severity>] <short, concrete title>
 
 - **Location:** `<path>:<line-or-range>`
 - **Evidence:** <concrete evidence, concise>
-- **Details:** <the cross-file / concurrency / security / invariant
-  explanation the evidence needs to be understood — a short paragraph,
-  not an essay>
 - **Impact:** <concrete engineering consequence, concise>
 - **Fix:** <concrete correction direction, not a patch>
+- **Details:** <the cross-file / concurrency / security / invariant
+  explanation supporting the finding — a short paragraph, not an essay>
 ```
 
 ### Location source annotation
@@ -223,8 +226,8 @@ Impact: <concrete engineering consequence — why it matters>
 Fix: <concrete correction direction, when useful>
 ```
 
-A justified longer explanation adds a single `Details:` line between
-`Evidence:` and `Impact:`, on the same terms as the full rendering.
+A justified longer explanation adds a single `Details:` line after `Fix:`, on
+the same visibility terms as the full rendering.
 
 ## Canonical summary-pointer rendering
 
@@ -245,7 +248,8 @@ reference it — never both in full:
   it;
 - fields are concise by default per "Conciseness contract"; a longer
   `Details` field is allowed only for a finding in one of the categories
-  in "When a longer explanation is justified";
+  in "When a longer explanation is justified" and rendered only per the
+  detail-precedence rule in `invocation-options.md`;
 - optional fields render only when populated — never as an empty or
   placeholder line (see "Optional and surface-specific fields");
 - evidence-based — no generic "this could be improved" without a

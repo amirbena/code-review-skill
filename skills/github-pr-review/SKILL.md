@@ -227,6 +227,17 @@ resolved thread is evidence of a past conclusion, not proof the current HEAD
 is correct; automation-authored comments contribute observations only).
 Absent prior activity changes nothing.
 
+**Optional presentation options:** `include_fix_guidance` (boolean, default
+`true`) and `include_finding_details` (boolean, default `false`). Canonical
+assignments and explicit human phrasing are normalized through
+[`invocation-options.md`](../../shared/policies/invocation-options.md), using
+only the current invocation. GitHub may override finding-detail visibility per
+finding when expanded technical context is materially useful; the precedence
+is finding-level decision, then invocation option, then this Skill's default.
+These options affect presentation only. `include_fix_prompt` is recognized by
+the shared normalizer for direct/mediated parity but remains local-only and
+never causes a GitHub implementation prompt.
+
 ## 3. Required Policy Loading
 
 Shared, always: [`review-scope.md`](../../shared/policies/review-scope.md),
@@ -246,6 +257,9 @@ whenever parallel workers are used —
 [`parallel-review.md`](../../shared/policies/parallel-review.md) (the
 portable parallel-review contract: sequential/parallel equivalence, worker
 input/output, centralized aggregation, failure handling).
+Always apply
+[`invocation-options.md`](../../shared/policies/invocation-options.md) before
+review reasoning.
 Always apply
 [`remediation-guidance.md`](../../shared/policies/remediation-guidance.md):
 GitHub findings may give a concise recommended direction, but never the local

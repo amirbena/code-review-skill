@@ -41,6 +41,7 @@ $sharedPolicies = @(
   "review-context.md",
   "review-evidence.md",
   "parallel-review.md",
+  "invocation-options.md",
   "remediation-guidance.md"
 )
 $sharedTemplates = @(

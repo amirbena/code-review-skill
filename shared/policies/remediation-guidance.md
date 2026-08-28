@@ -31,3 +31,9 @@ existing actionable finding. `github-pr-review` remains reviewer-facing and
 uses concise recommended directions; it does not emit the local full prompt.
 Neither form may introduce unsupported architecture or arbitrary implementation
 requirements.
+
+`include_fix_guidance` controls only optional elaboration beyond the concise
+canonical `Fix`. Its default is `true`; `false` keeps the mandatory `Fix` but
+suppresses additional remediation explanation. Normalize it per
+[`invocation-options.md`](invocation-options.md). Never restate the same
+direction in both `Fix` and surrounding prose.

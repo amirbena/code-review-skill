@@ -15,7 +15,7 @@ findings use the shared shape in
 
 **Result: ✅ Review Clean**
 
-Reviewed <n> changed files at commit `<sha>`.
+Safe to merge at `<sha>`: no P0, P1, or P2 findings were identified.
 
 Review mode: Full review
 Reason: no previous completed review by this reviewer
@@ -28,16 +28,13 @@ Reason: no previous completed review by this reviewer
 
 <omit this section, or keep it to one line, if nothing specific stands out>
 
-### Findings
-No P0, P1, or P2 findings.
-
 ### Validation
 - <validation actually observed, or explicitly noted as not executed>
 
 ### Decision
 **APPROVE**
 
-No P0, P1, or P2 findings were identified in the reviewed HEAD.
+No blocking findings were identified in the reviewed HEAD.
 ```
 
 or, when there are findings:
@@ -59,6 +56,8 @@ Current HEAD: `def5678`
   anchor, so its full form lives here instead>
 - **Impact:** <concrete engineering consequence, concise>
 - **Fix:** <concrete correction direction, not a patch>
+- **Details:** <only when a finding-level decision or
+  `include_finding_details=true` selects materially useful context>
 
 ### Decision
 **REQUEST CHANGES**
@@ -97,6 +96,8 @@ append it after the human-facing review, clearly subordinate, per
   mechanics as primary output.
 - **Result** and **Decision** state the outcome in plain language; a
   reader never infers the outcome from raw counts.
+- The opening says whether the reviewed HEAD is safe to merge and names the
+  most important concern. Omit empty sections and repeated clean-review prose.
 - "What was done well" only mentions strengths actually supported by the
   PR — never invented; omit rather than pad.
 - **Findings** is the aggregate view: every finding appears exactly once,
@@ -109,8 +110,14 @@ append it after the human-facing review, clearly subordinate, per
   findings use the compact, field-oriented `Location` / `Evidence` /
   `Impact` / `Fix` contract in
   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md)
-  — concise by default, with a `Details` field only for a finding in one
-  of that file's "When a longer explanation is justified" categories.
+  — concise by default. `include_finding_details` defaults to `false`; a
+  populated `Details` field renders only when the invocation enables it or a
+  higher-precedence finding-level decision selects materially useful context,
+  per
+  [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md).
+  The finding must still satisfy
+  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+  "When a longer explanation is justified."
 - **Validation** reports only what was actually observed; state
   explicitly when something could not be executed.
 - **Remediation** follows

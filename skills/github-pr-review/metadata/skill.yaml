@@ -54,6 +54,7 @@ shared:
     - ../../../shared/policies/review-context.md
     - ../../../shared/policies/review-evidence.md
     - ../../../shared/policies/parallel-review.md
+    - ../../../shared/policies/invocation-options.md
     - ../../../shared/policies/remediation-guidance.md
   templates:
     - ../../../shared/templates/finding.md

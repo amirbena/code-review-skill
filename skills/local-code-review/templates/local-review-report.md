@@ -18,9 +18,8 @@ finding could already be published to.
 
 **Result: ⚠️ Changes Requested**
 
-Reviewed the current implementation state (committed delta, staged,
-unstaged, and untracked changes — see the Review Scope below for what
-was included) against `<base>`.
+Not safe to proceed: <highest-priority concern and concrete impact>.
+<Optional short attention point; detailed scope stays in Review Metadata.>
 
 ### What changed
 <concise, concrete implementation summary>
@@ -64,6 +63,8 @@ supplied>
 - **Evidence:** <concrete evidence, concise>
 - **Impact:** <concrete engineering consequence, concise>
 - **Fix:** <concrete correction direction, not a patch>
+- **Details:** <only when populated and selected by the detail-precedence rule;
+  supporting technical context, concise>
 - **Implementation prompt:** <only when `include_fix_prompt=true` and a
   full prompt is justified; an evidence-supported coding-agent task
   covering root cause, affected components, required behavior, canonical
@@ -75,8 +76,9 @@ A finding that meets
 "When a longer explanation is justified" (non-obvious cross-file
 behavior, a concurrency/ordering bug, a security implication, a complex
 invariant violation, or evidence that needs brief context) adds one
-`- **Details:** <short paragraph>` line immediately after `Evidence`. An
-ordinary finding does not.
+`- **Details:** <short paragraph>` after `Fix` when
+`include_finding_details` resolves true (default `true`) or a finding-level
+decision enables it. An ordinary finding does not.
 
 ### Validation
 - <validation actually observed, or explicitly noted as not executed>
@@ -115,10 +117,10 @@ or, when clean:
 ```markdown
 **Result: ✅ Review Clean**
 
-...
+Safe to proceed: no blocking or non-blocking findings were identified.
 
-### Findings
-No P0, P1, or P2 findings.
+<optional concise What changed and Validation sections; omit Findings when
+empty>
 
 ### Decision
 **REVIEW CLEAN**
@@ -247,6 +249,9 @@ strongly it is recommended before commit.
   architecture, or emit a prompt for a clean review. The flag affects output
   only: findings, severities, evidence, reconciliation, and Decision are
   identical on and off.
+- **Finding details.** Apply
+  [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+  "Finding-detail precedence." `include_finding_details` defaults to `true`.
 - **Review State** (base/HEAD SHAs, synchronization status, raw
   counts) is machine/orchestration-oriented detail — it is subordinate,
   appearing only inside the trailing "Review Metadata" section as plain

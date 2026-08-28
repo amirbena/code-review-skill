@@ -133,20 +133,45 @@ class LongerExplanationTests(unittest.TestCase):
     def test_ordinary_finding_needs_no_justification(self) -> None:
         self.assertTrue(fc.has_justified_long_form(_finding()))
 
-    def test_details_renders_between_evidence_and_impact(self) -> None:
+    def test_details_renders_after_fix_for_human_first_order(self) -> None:
         rendered = fc.render_full(
             _finding(
                 details="The invariant is established in loader.py and broken here.",
                 long_form_category="complex_invariant_violation",
             )
         )
-        self.assertLess(rendered.index("**Evidence:**"), rendered.index("**Details:**"))
-        self.assertLess(rendered.index("**Details:**"), rendered.index("**Impact:**"))
+        self.assertLess(rendered.index("**Evidence:**"), rendered.index("**Impact:**"))
+        self.assertLess(rendered.index("**Impact:**"), rendered.index("**Fix:**"))
+        self.assertLess(rendered.index("**Fix:**"), rendered.index("**Details:**"))
+
+    def test_local_details_default_true(self) -> None:
+        rendered = fc.render_full(_finding(details="Useful context."))
+        self.assertIn("**Details:**", rendered)
+
+    def test_github_details_default_false(self) -> None:
+        rendered = fc.render_full(
+            _finding(details="Useful context."), surface=fc.Surface.GITHUB_BODY
+        )
+        self.assertNotIn("**Details:**", rendered)
+
+    def test_github_finding_level_override_beats_invocation(self) -> None:
+        rendered = fc.render_full(
+            _finding(details="Race ordering.", include_details=True),
+            surface=fc.Surface.GITHUB_BODY,
+            include_finding_details=False,
+        )
+        self.assertIn("**Details:** Race ordering.", rendered)
+
+    def test_finding_level_false_beats_local_default(self) -> None:
+        rendered = fc.render_full(
+            _finding(details="Redundant context.", include_details=False)
+        )
+        self.assertNotIn("**Details:**", rendered)
 
 
 class ReviewSummaryAlignmentTests(unittest.TestCase):
-    def test_clean_review_renders_the_fixed_no_findings_line(self) -> None:
-        self.assertEqual(fc.render_findings_section([]), "No P0, P1, or P2 findings.")
+    def test_clean_review_omits_the_findings_section_body(self) -> None:
+        self.assertEqual(fc.render_findings_section([]), "")
 
     def test_multiple_severities_each_render_once_severity_first(self) -> None:
         findings = [
