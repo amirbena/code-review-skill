@@ -76,7 +76,8 @@ class RoutingTableTests(unittest.TestCase):
             )
 
     def test_every_policy_dir_file_is_routed(self) -> None:
-        on_disk = {p.name for p in POLICIES_DIR.glob("*.md")}
+        # README.md is the directory's navigation aid, not a routed policy.
+        on_disk = {p.name for p in POLICIES_DIR.glob("*.md")} - {"README.md"}
         self.assertEqual(on_disk, set(ROUTED_POLICIES), "policies/ and the routing table disagree")
 
 
@@ -110,15 +111,42 @@ class CanonicalOwnershipTests(unittest.TestCase):
         self.assertEqual(broken, [], f"broken links in policies/: {broken}")
 
 
+class PoliciesReadmeTests(unittest.TestCase):
+    README = POLICIES_DIR / "README.md"
+
+    def test_readme_exists_and_maps_every_routed_policy(self) -> None:
+        self.assertTrue(self.README.is_file())
+        raw = self.README.read_text(encoding="utf-8")
+        for name in ROUTED_POLICIES:
+            self.assertIn(f"]({name})", raw, f"policies/README.md does not list {name}")
+
+    def test_readme_states_the_runtime_boundary(self) -> None:
+        t = _norm(self.README)
+        self.assertIn("never shipped", t)
+        self.assertIn("no packaged Skill resource may depend on them", t)
+        self.assertIn("shared/", t)
+        self.assertIn("skills/", t)
+
+    def test_readme_is_navigational_only(self) -> None:
+        # A directory map, not another normative policy: no imperative
+        # rule-defining modal verbs of the kind the policy files use.
+        t = _norm(self.README)
+        self.assertNotIn("MUST NOT", t)
+        self.assertNotIn("MUST ", t)
+
+
 class PackagingBoundaryTests(unittest.TestCase):
+    # Repository-development files that must never enter a packaged archive.
+    UNPACKAGED = set(ROUTED_POLICIES) | {"README.md"}
+
     def test_no_package_script_lists_a_repository_development_policy(self) -> None:
         for script in PACKAGE_SCRIPTS:
             text = script.read_text(encoding="utf-8")
-            for name in ROUTED_POLICIES:
+            for name in self.UNPACKAGED:
                 self.assertNotIn(
                     f'"policies/{name}"',
                     text,
-                    f"{script.name} packages repository-development policy {name}",
+                    f"{script.name} packages repository-development file {name}",
                 )
 
     def test_no_packaged_skill_markdown_links_to_a_repository_development_policy(self) -> None:
@@ -126,10 +154,33 @@ class PackagingBoundaryTests(unittest.TestCase):
         for skill_dir in SKILL_DIRS:
             for md in skill_dir.rglob("*.md"):
                 for target in LINK_RE.findall(md.read_text(encoding="utf-8")):
-                    basename = Path(target.split("#", 1)[0].strip()).name
-                    if basename in ROUTED_POLICIES:
+                    rel = target.split("#", 1)[0].strip()
+                    if not rel or rel.startswith(("http://", "https://", "mailto:")):
+                        continue
+                    # Only a link that actually points into repo-root policies/
+                    # is a violation — a Skill's own policies/<name>.md is fine.
+                    resolved = (md.parent / rel).resolve()
+                    if resolved.parent == POLICIES_DIR.resolve():
                         offenders.append(f"{md.relative_to(REPO_ROOT)} -> {target}")
-        self.assertEqual(offenders, [], f"packaged links into policies/: {offenders}")
+        self.assertEqual(offenders, [], f"packaged links into repo-root policies/: {offenders}")
+
+    def test_archives_exclude_repository_development_files(self) -> None:
+        import zipfile
+
+        dist = REPO_ROOT / "dist"
+        archives = [
+            dist / "local-code-review-skill.zip",
+            dist / "github-pr-review-skill.zip",
+        ]
+        if not all(a.is_file() for a in archives):
+            self.skipTest("archives not built; run scripts/package-skills.sh all")
+        banned = {f"policies/{n}" for n in self.UNPACKAGED} | {"AGENTS.md", "CLAUDE.md"}
+        for archive in archives:
+            with zipfile.ZipFile(archive) as zf:
+                names = set(zf.namelist())
+            self.assertEqual(
+                names & banned, set(), f"{archive.name} ships repository-development files"
+            )
 
 
 if __name__ == "__main__":

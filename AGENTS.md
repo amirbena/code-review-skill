@@ -153,7 +153,10 @@ reviewed* (a target repo's `AGENTS.md` vs. its `CLAUDE.md`), see
 ## Task routing
 
 Read this file's Global invariants and Instruction precedence for **any**
-task. Then read the one canonical policy that owns your task:
+task. Then read the one canonical policy that owns your task. For a short
+directory map of the routed policies, see
+[`policies/README.md`](policies/README.md) (navigational only — not
+normative).
 
 | Task / concern | Canonical instruction source |
 | --- | --- |
