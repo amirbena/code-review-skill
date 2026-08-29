@@ -6,8 +6,21 @@ This file summarizes releases; it is not a commit-by-commit log.
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- Release-worthiness automation: a deterministic classifier
+  (`scripts/release_worthiness.py`) and a `Release worthiness` GitHub
+  Action. On PRs/pushes it is read-only — it classifies all changes since
+  the previous `v*` tag and fails closed when release-worthy work is
+  missing from `## Unreleased`. On a maintainer-triggered
+  `workflow_dispatch` it is the authoritative release flow: preflight,
+  roll the changelog, build and verify both Skill archives, commit and
+  push directly to `main`, create and push an annotated `vX.Y.Z` tag at
+  that commit, publish the GitHub Release with the archives, and verify
+  the live tag/commit/assets. Direct-to-`main` push is limited to a
+  dedicated release GitHub App as the sole branch-ruleset bypass actor.
+  Convention and required repository configuration: `docs/RELEASE.md`
+  (#104).
 
 ## v1.0.2 — 2026-08-29
 
