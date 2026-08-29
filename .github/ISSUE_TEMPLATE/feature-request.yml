@@ -6,51 +6,22 @@ body:
   - type: markdown
     attributes:
       value: |
-        Focus on the problem you are trying to solve and the outcome you
-        want. Implementation design is not required.
+        Describe what you want to be different. Focus on the outcome — a
+        maintainer or agent can work out the implementation later.
 
   - type: textarea
-    id: problem
+    id: improvement
     attributes:
-      label: Problem / use case
-      description: What are you trying to do, and what makes it hard today?
+      label: What would you like to improve?
+      description: The problem you hit and the outcome you want instead.
     validations:
       required: true
 
-  - type: textarea
-    id: desired
-    attributes:
-      label: Desired behavior
-      description: What should happen instead? Describe the outcome, not the internals.
-    validations:
-      required: true
-
-  - type: dropdown
+  - type: input
     id: area
     attributes:
-      label: Affected Skill / area
-      options:
-        - local-code-review
-        - github-pr-review
-        - Both Skills
-        - Repository tooling
-        - Not sure
-    validations:
-      required: true
-
-  - type: textarea
-    id: example
-    attributes:
-      label: Example workflow or invocation
-      description: When useful — a command, prompt, or step-by-step of how it would be used.
-    validations:
-      required: false
-
-  - type: textarea
-    id: alternatives
-    attributes:
-      label: Alternatives / workarounds
-      description: What you do today, or other approaches you considered.
+      label: Affected Skill/area
+      description: e.g. local-code-review, github-pr-review, both, repository tooling.
     validations:
       required: false
 
