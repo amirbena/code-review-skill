@@ -102,6 +102,16 @@ is constructed from the finalized findings and submitted as part of the
 one review submission above. When publication is unavailable, it is
 instead returned to the caller with publication status.
 
+It reads like a review a strong human reviewer would leave: verdict
+first, then the findings that need action, then stop. Process and machine
+state (review mode, SHAs, counts, action mode, mutation outcome) are
+subordinate — a short trailing block, never the body. A self-review
+publishes the **same** human-facing body as an informational `COMMENT`,
+differing only by the closing disclosure line in
+[`../templates/external-review-summary.md`](../templates/external-review-summary.md),
+"Self-review (informational COMMENT)" — not by a separate, heavier
+format.
+
 ## Remediation guidance
 
 Apply the shared
