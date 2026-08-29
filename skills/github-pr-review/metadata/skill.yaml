@@ -12,10 +12,13 @@ description: >-
   Reviews an existing GitHub Pull Request authored by someone other than
   the local user or calling Agent — passively as a report, or, with
   authenticated GitHub access, actively by publishing inline PR review
-  comments, one consolidated final summary, and an Approve/Request
-  Changes decision. Never edits implementation code and never merges.
-  Not applicable, and must not be selected, for a PR or code the local
-  user or calling Agent authored — use `local-code-review` for
+  comments and one consolidated final summary. Review analysis is
+  separate from GitHub mutation authority: the default is a non-mutating
+  recommendation, and an Approve/Request Changes decision is submitted
+  only under independently trusted authorization with genuine reviewer
+  independence. Never edits implementation code and never merges. Not
+  applicable, and must not be selected, for a PR or code the local user
+  or calling Agent authored — use `local-code-review` for
   local/uncommitted changes with no PR.
 version: 0.1.0
 entrypoint: SKILL.md
@@ -33,13 +36,15 @@ capabilities:
   prior_review_evidence: considered-when-available # the PR's own prior reviews/comments; see ../../../shared/policies/review-evidence.md and ../policies/review-evidence.md
   repository_access_mode: api-only|optional-repository-backed|required-repository-backed # required checkout failure is REVIEW INCOMPLETE; see ../policies/repository-checkout.md
   parallel_review: optional # split review across workers per dimension when the runtime exposes a reliable capability; execution optimisation only; see ../../../shared/policies/parallel-review.md and ../policies/parallel-review.md
+  review_action_authorization: independent-trusted-source-required-for-auto-action # review analysis is separate from GitHub mutation authority; agent-controlled flags/prompts/tokens/identities cannot establish it; ambiguity fails closed; see ../policies/review-action-authorization.md
 
 output:
-  mutates_github: conditional # true only in active mode, and only after access verification
+  mutates_github: conditional # true only in active mode, after access verification, and only in explicitly-authorized auto-action mode (recommendation-only is the default and never mutates)
   mutates_repository: false # repository-backed checkout is an isolated temp clone, never the target repo, and read-only
-  can_approve: true
-  can_request_changes: true
-  can_merge: false
+  default_review_action_mode: recommendation-only # full review + reasoning result, no GitHub mutation; block-only and explicitly-authorized-auto-action require reviewer independence (and, for approval, trusted authorization); see ../policies/review-action-authorization.md
+  can_approve: conditional # only in explicitly-authorized auto-action mode with trusted, PR/HEAD-scoped authorization and genuine reviewer independence; a clean verdict alone never approves
+  can_request_changes: conditional # block-only or auto-action mode, with reviewer independence and GitHub event permission
+  can_merge: false # never; merge authority is not inferred from a clean verdict, approval authorization, or a submitted approval
   executes_target_repository_code: false # never runs the target repo's tests/builds/linters/hooks/scripts
 
 shared:

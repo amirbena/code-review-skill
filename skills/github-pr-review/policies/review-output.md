@@ -119,24 +119,73 @@ or active/passive mutation boundaries.
 ## Final decision
 
 - **Review reasoning result** is computed independently: either clean, or
-  blocking findings (unresolved P0/P1).
-- **Approve** — allowed when no unresolved P0 exists, no unresolved
-  blocking P1 exists, and the current PR HEAD equals the reviewed HEAD.
-  P2 findings may remain.
-- **Request Changes** — used when an unresolved P0 or unresolved blocking
-  P1 exists.
+  blocking findings (unresolved P0/P1). This mechanical derivation is
+  owned by
+  [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md)
+  and is unchanged by anything in this section — the reasoning result
+  always exists and is always reported.
+- **Approve** (reasoned) — the reasoning result is clean: no unresolved
+  P0, no unresolved blocking P1, and the current PR HEAD equals the
+  reviewed HEAD. P2 findings may remain.
+- **Request Changes** (reasoned) — an unresolved P0 or unresolved
+  blocking P1 exists.
 
-Approve or Request Changes is submitted only when the authenticated
-reviewer is eligible to submit that formal event. The reasoning result is
-still reported when GitHub submission is unavailable.
+Submitting that reasoned result to GitHub as an `APPROVE` or
+`REQUEST_CHANGES` **event** is a separate, authorized action — never an
+automatic consequence of the reasoning result. A reasoned "Approve" is
+not a GitHub `APPROVE`, and a GitHub `APPROVE` is not merge authority.
+An event is submitted only when **both**:
+
+- the authenticated reviewer is eligible to submit that formal event
+  (see [`review-authority.md`](review-authority.md), "Review/repository
+  access prerequisite"); **and**
+- the **Review-action authorization gate** below permits it.
+
+The reasoning result is still reported when GitHub submission is
+unavailable, unauthorized, or withheld.
+
+### Review-action authorization gate
+
+Immediately before submitting any `APPROVE` / `REQUEST_CHANGES` event
+(and after "HEAD revalidation" below), apply
+[`review-action-authorization.md`](review-action-authorization.md):
+
+- Resolve the review-action mode. The default is **recommendation-only**
+  — a full review and reasoning result, with **no** GitHub mutation.
+  Passive review is always recommendation-only.
+- **`APPROVE` is submitted only in explicitly-authorized auto-action
+  mode**, i.e. only when trusted mutation authorization for this exact
+  action is established, reviewer independence (authority separation, not
+  just a different username) is established, and every guarantee in that
+  policy's principle 7 holds at submission time. A clean reasoning result
+  without that authorization stays non-mutating.
+- **`REQUEST_CHANGES`** may be submitted in block-only or auto-action
+  mode when reviewer independence and GitHub event permission hold; it
+  does not additionally require auto-action authorization (it cannot
+  approve or unblock — see that policy, "block-only").
+- Ambiguity in mode, authorization provenance, authorization scope, or
+  reviewer provenance **fails closed** to recommendation-only (or
+  block-only for a blocking result where independence and permission
+  hold). A caller never needs to say "do not approve" to get this.
+- A relied-upon authorization is scoped to this invocation / repository /
+  PR / reviewed HEAD / single action and cannot be replayed elsewhere.
 
 Report reasoning and mutation separately:
 
 ```text
-Reasoning: REVIEW CLEAN | CHANGES REQUIRED | REVIEW INCOMPLETE | NO NEW DELTA | JIRA CONTEXT UNRESOLVED
-Comments: COMMENTS PUBLISHED | COMMENTS NOT PUBLISHED | NOT REQUESTED
-Decision: REVIEW SUBMITTED | REVIEW NOT SUBMITTED | NOT REQUESTED
+Reasoning:   REVIEW CLEAN | CHANGES REQUIRED | REVIEW INCOMPLETE | NO NEW DELTA | JIRA CONTEXT UNRESOLVED
+Action mode: recommendation-only | block-only | explicitly-authorized auto-action
+Comments:    COMMENTS PUBLISHED | COMMENTS NOT PUBLISHED | NOT REQUESTED
+Decision:    REVIEW SUBMITTED | REVIEW NOT SUBMITTED | NOT REQUESTED
+Mutation:    SUBMITTED (<event>) | WITHHELD (<reason>) | NOT REQUESTED
 ```
+
+A `WITHHELD` reason is explicit and names the gate that stopped the
+mutation (for example `WITHHELD (no trusted mutation authorization;
+default recommendation-only)` or `WITHHELD (reviewer independence not
+established)`). A clean reasoning result with a withheld approval is
+reported as a clean result **and** a non-mutating outcome — never as
+"approved."
 
 `NO NEW DELTA` applies only when the current reviewer is the same
 identity as the immediately preceding completed review and the

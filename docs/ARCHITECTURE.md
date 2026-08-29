@@ -44,7 +44,7 @@ Skills, so P0/P1/P2 semantics never diverge. Everything below the split is
 | Context model | review target / review context / repository context / existing review evidence | a thin per-Skill application (the local delta vs. the PR) |
 | State inspection | — | local Git state vs. GitHub PR state |
 | Delivery | the canonical report and finding shapes | a local report vs. GitHub publication |
-| Extra machinery | — | `github-pr-review` only: temporary checkout, parallel workers, self-review guard, SHA-bound delta re-review |
+| Extra machinery | — | `github-pr-review` only: temporary checkout, parallel workers, self-review guard, review-action authorization (verdict ≠ mutation authority), SHA-bound delta re-review |
 
 ### Where to read next
 
@@ -145,8 +145,14 @@ review-scope rules, or the review-context / existing-review-evidence model
 `github-pr-review` additionally has its own policy family, indexed from
 [`policies/github-review.md`](../skills/github-pr-review/policies/github-review.md),
 for GitHub-specific delivery rules with no local-review analogue: review
-authority and self-review, reviewer delta re-review, PR scope and
-pagination, review reasoning (logical cohorts, code-impact/dependency
+authority and self-review, **review-action authorization**
+(`policies/review-action-authorization.md`: review analysis is separate
+from GitHub mutation authority — a non-mutating `recommendation-only`
+default, `block-only`, and `explicitly-authorized auto-action`; trusted
+mutation authorization scoped to the invocation/repo/PR/HEAD/action;
+reviewer independence as *authority* separation, not just a different
+username; fail closed on ambiguity), reviewer delta re-review, PR scope
+and pagination, review reasoning (logical cohorts, code-impact/dependency
 analysis), finding placement, batched publication/decision, the opt-in
 **repository-backed checkout** lifecycle (`policies/repository-checkout.md`:
 isolated temporary clone, base/head fidelity, read-only inspection,
@@ -464,6 +470,25 @@ with no loss of correctness.
   (`shared/policies/parallel-review.md`), realised via Claude Code Agent
   Teams, Cursor subagents, or Codex concurrent agents where available.
   Semantics are unchanged: one aggregator, one decision.
+- **Review-action authorization** — `github-pr-review` separates review
+  analysis from GitHub mutation authority
+  (`skills/github-pr-review/policies/review-action-authorization.md`). The
+  review always runs and produces a verdict; whether that verdict is
+  *submitted* as an `APPROVE` / `REQUEST_CHANGES` event is a separate
+  authorized decision. The default is non-mutating
+  (`recommendation-only`); `APPROVE` is submitted only in
+  `explicitly-authorized auto-action` mode, only under trusted mutation
+  authorization (independent of the review-performing/orchestrating
+  agent, scoped to the invocation/repo/PR/reviewed HEAD/action) and
+  genuine reviewer independence (authority separation, not merely a
+  different GitHub username). Agent-controlled flags, prompts, generated
+  instructions, nested Skill/agent invocations, alternate tokens, and
+  alternate identities cannot establish it; ambiguity fails closed. A
+  verdict is not authorization (`REVIEW CLEAN` ≠ `APPROVE`) and approval
+  is not merge authority (`APPROVE` ≠ `MERGE`). As a portable Skill with
+  no runtime of its own, it cannot cryptographically verify provenance —
+  it guarantees the safe default and the capability boundary and relies
+  on the runtime for an independent authorization channel.
 
 ### Future work (not implemented)
 
@@ -730,6 +755,17 @@ in staged package metadata, then checked for containment and existence.
 - **GitHub submission capability** is separate from reasoning. A clean or
   blocking result remains valid even when the authenticated account (for
   example, the PR author) cannot submit the corresponding formal review.
+- **GitHub mutation authority** is separate again from both reasoning and
+  submission *capability*. Even when reasoning is clean and the account
+  *could* submit an `APPROVE`, the event is submitted only in
+  `explicitly-authorized auto-action` mode under trusted, scoped
+  authorization and genuine reviewer independence
+  (`skills/github-pr-review/policies/review-action-authorization.md`). The
+  default is `recommendation-only`; a verdict is not authorization and
+  approval is not merge authority. This gate composes with — never
+  replaces — HEAD revalidation, stale-review protection, reviewer
+  ownership, delta re-review, and the mechanical severity → decision
+  derivation.
 - **Git/GitHub state inspection** is read-only and never assumes GitHub
   is authoritative when local state diverges from it — see
   [`skills/local-code-review/runbooks/local-review.md`](../skills/local-code-review/runbooks/local-review.md).

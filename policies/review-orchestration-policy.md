@@ -149,8 +149,18 @@ Orchestration is the primary safeguard here. `github-pr-review` also
 carries its own defensive self-review guard for the case where it is
 nevertheless invoked against a PR authored by the authenticated identity
 — see [`../skills/github-pr-review/policies/review-authority.md`](../skills/github-pr-review/policies/review-authority.md),
-"Self-review capability." That guard is a fallback, not a substitute for
-orchestration honoring the rule above.
+"Self-review capability" and "Authority separation, not just identity
+separation." That guard is a fallback, not a substitute for orchestration
+honoring the rule above. Separately, and regardless of orchestration,
+`github-pr-review` never submits an `APPROVE` / `REQUEST_CHANGES`
+mutation just because it was invoked: its default is a non-mutating
+recommendation, and a mutation is submitted only under authorization from
+a source independent of the invoking/orchestrating agent, with genuine
+reviewer independence — an implementing agent cannot switch identities,
+tokens, bots, or nested agents to manufacture its own approver. The
+canonical rule is
+[`../skills/github-pr-review/policies/review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md);
+this summary does not restate it.
 
 ## Explicit User Approval Required for `local-code-review` Invocation
 

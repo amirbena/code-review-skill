@@ -98,13 +98,20 @@ The governance features below are this repository's differentiated, durable cont
   as if it were the SHA that was actually reviewed.
 - **Mutation boundary** — neither Skill edits implementation files, commits, pushes, merges, or
   manages branches; `github-pr-review`'s maximum positive action is Approve.
+- **Review analysis separate from GitHub mutation authority** — `github-pr-review` defaults to a
+  non-mutating `recommendation-only` result; an `APPROVE` / `REQUEST_CHANGES` event is submitted
+  only under trusted authorization independent of the review-performing agent and genuine
+  reviewer independence, scoped to the invocation/repo/PR/reviewed HEAD/action; a verdict is not
+  authorization and approval is not merge authority ([`review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md)).
 - **Explicit fresh approval per invocation for local review** — `local-code-review` requires a
   meaning-based, non-persistent, current-interaction approval before every single invocation,
   including every re-review after a fix.
 - **A portable P0/P1/P2 severity model** with an explicit blocking rule, shared identically by
   both Skills.
 - **Explicit Approve / Request Changes semantics** — `github-pr-review` can submit a formal
-  GitHub review decision when authorized to, not merely a passive comment.
+  GitHub review decision when authorized to, not merely a passive comment. That authorization is
+  a trusted, independently sourced, PR/HEAD-scoped signal — never the review's own verdict, a
+  caller flag, or agent-generated text.
 - **Passive and active review modes** — a report-only mode and a GitHub-publishing mode apply the
   same review standard, differing only in delivery.
 - **Portable operation across runtimes** — both Skills are designed to run under Claude Code,
@@ -241,7 +248,7 @@ consumed identically by both.
 | **Scope-boundary reasoning** | shared ([`review-context.md`](../shared/policies/review-context.md), "Scope-boundary reasoning") — missing behavior, contradicted acceptance criteria, unrelated scope expansion, valid-but-out-of-scope findings, repo-policy violations regardless of ticket scope | shared, same, applied to the PR |
 | **Severity model** | shared P0 / P1 / P2 ([`severity.md`](../shared/policies/severity.md)) | shared, identical |
 | **Final decision semantics** | `REVIEW CLEAN` / `CHANGES REQUIRED`, derived mechanically from blocking (P0/P1) severities | `Approve` / `Request Changes`, same mechanical derivation |
-| **Opt-in behavior** | every invocation needs fresh explicit user approval ([`invocation-approval.md`](../skills/local-code-review/policies/invocation-approval.md)) | selection boundary + defensive self-review guard ([`review-authority.md`](../skills/github-pr-review/policies/review-authority.md)); no per-run approval gate |
+| **Opt-in behavior** | every invocation needs fresh explicit user approval ([`invocation-approval.md`](../skills/local-code-review/policies/invocation-approval.md)) | selection boundary + defensive self-review guard ([`review-authority.md`](../skills/github-pr-review/policies/review-authority.md)); no per-run approval gate for *analysis*, but GitHub mutation is gated — non-mutating `recommendation-only` by default, `APPROVE` only under independently trusted, PR/HEAD-scoped authorization with genuine reviewer independence ([`review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md)) |
 | **Re-review behavior** | stateless; fresh approval each run; staged-delta fingerprint short-circuit | SHA-bound reviewer-owned delta re-review; `NO NEW DELTA`; escalation to full review |
 | **Publishing behavior** | returns one structured report to the caller; never publishes | passive: returns a report; active: one batched GitHub review (inline comments + body + Approve/Request Changes) |
 | **Remediation guidance** | concise `Fix` direction by default; explicit `include_fix_prompt=true` may add one coding-agent-ready prompt per qualifying root-cause finding; output-only and still read-only | concise reviewer-facing `Fix` direction only; no local-style full implementation prompt; severity, verdict, and mutation boundaries unchanged |
@@ -258,8 +265,8 @@ consumed identically by both.
 | — centralized aggregation | single reviewer | one aggregator: normalize → deduplicate → reconcile → canonical severity → one decision; worker completion order never matters; workers derive nothing final; missing **required** dimension → `REVIEW INCOMPLETE`, never `REVIEW CLEAN` |
 | — runtime portability | n/a | capability *names* only in policy; per-runtime facts (Claude Code Agent Teams + `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, Cursor subagents, Codex concurrent agents) isolated in `docs/runtime-parallelism.md`; the Skill never mutates user config |
 | — simulated PR testing | n/a | a deterministic local bare-repo + branches + `refs/pull/123/head` harness (`tests/support/pr_simulation.py`) exercises the checkout with real Git; a live GitHub PR is not required for coverage |
-| **Mutation / read-only boundaries** | read-only; never edits, commits, pushes, or performs any GitHub mutation — even with a PR reference | read-only on Git and implementation; the repository-backed checkout is an isolated throwaway clone, never the target repo, and read-only; GitHub mutation only in active mode; max positive action is **Approve**; never merges; never executes target-repo code |
-| **Delegated Agent / Sub-Agent execution** | mechanics never transfer the approval decision — the user owns it | reviewer/author separation required; parallel workers are read-only and non-authoritative; orchestration external |
+| **Mutation / read-only boundaries** | read-only; never edits, commits, pushes, or performs any GitHub mutation — even with a PR reference | read-only on Git and implementation; the repository-backed checkout is an isolated throwaway clone, never the target repo, and read-only; GitHub mutation only in active mode; non-mutating `recommendation-only` by default, `APPROVE` only in `explicitly-authorized auto-action` mode under independently trusted, PR/HEAD-scoped authorization; max positive action is **Approve**; never merges (merge authority never inferred from a verdict or an approval); never executes target-repo code |
+| **Delegated Agent / Sub-Agent execution** | mechanics never transfer the approval decision — the user owns it | reviewer/author separation required — as *authority* separation, not just a different username: an alternate account, token, bot, service account, GitHub App, or nested agent under the same controlling authority does not create an independent reviewer ([`review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md)); parallel workers are read-only and non-authoritative; orchestration external |
 
 ## 10. Planned / not yet implemented
 

@@ -43,6 +43,7 @@ WHITESPACE_RE = re.compile(r"\s+")
 # github-pr-review sub-policies in the order github-review.md must list them.
 GITHUB_POLICY_ORDER = (
     "review-authority.md",
+    "review-action-authorization.md",
     "reviewer-delta-review.md",
     "pr-scope.md",
     "repository-checkout.md",
@@ -71,8 +72,42 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "## Self-review capability",
         "REVIEW SKIPPED",
         "Self-review is intentionally not performed.",
+        "### Authority separation, not just identity separation",
+        "none of these manufacture an independent reviewer, and none bypass "
+        "this guard",
         "## Review/repository access prerequisite",
         "## Capability matrix",
+    ),
+    "review-action-authorization.md": (
+        "## Security principles",
+        "A review verdict is not authorization.",
+        "Approval is not merge authority.",
+        "Agent-controlled input cannot establish mutation authority.",
+        "Reviewer independence requires authority separation, not only "
+        "identity separation.",
+        "An implementation agent cannot manufacture its own reviewer.",
+        "Ambiguous authorization or reviewer provenance must fail closed.",
+        "## Review-action modes",
+        "### recommendation-only (default)",
+        "### block-only",
+        "### explicitly-authorized auto-action",
+        "## Safe default and fail-closed",
+        "A review with no established stronger mode performs no GitHub "
+        "mutation",
+        "## Trusted mutation authorization",
+        "### What can never establish it",
+        "### Structural limitation (read this before relying on auto-action)",
+        "### Authorization scope (no replay)",
+        "It is consumed once.",
+        "## Trusted reviewer independence",
+        "necessary but not sufficient",
+        "A different identity under the same controlling authority is the "
+        "same reviewer",
+        "## Merge boundary",
+        "Merge authority is never inferred from a clean verdict",
+        "## Composition with existing guarantees",
+        "## Reporting",
+        "Report the review verdict and the mutation outcome",
     ),
     "reviewer-delta-review.md": (
         "Delta-only re-review is allowed only when the current reviewer owns "
@@ -153,6 +188,8 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "finding is discovered",
         "## Final summary",
         "## Final decision",
+        "### Review-action authorization gate",
+        "APPROVE` is submitted only in explicitly-authorized auto-action",
         "NO NEW DELTA",
         "## HEAD revalidation",
         "## Submission ordering",
@@ -166,6 +203,15 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
         "## Self-review capability",
         "## Review/repository access prerequisite",
         "## Capability matrix",
+    ),
+    "review-action-authorization.md": (
+        "## Security principles",
+        "## Review-action modes",
+        "## Safe default and fail-closed",
+        "## Trusted mutation authorization",
+        "## Trusted reviewer independence",
+        "## Merge boundary",
+        "## Composition with existing guarantees",
     ),
     "reviewer-delta-review.md": (
         "## Reviewer identity",

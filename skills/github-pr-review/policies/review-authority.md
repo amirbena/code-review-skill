@@ -57,6 +57,32 @@ assume it differs from the PR author merely for convenience; treat
 resolution failure as its own explicit incapability rather than silently
 defaulting to a full review.
 
+### Authority separation, not just identity separation
+
+The `authenticated_identity == pr_author` comparison above is a
+**necessary** guard and a hard stop, but it is **not** the complete trust
+model for whether a review is genuinely independent. `authenticated_identity
+!= pr_author` does not, on its own, prove the reviewer is independent of
+the change's author.
+
+A different GitHub identity is **not** an independent reviewer when its
+selection, credentials, or instructions are controlled by the agent that
+implemented or is orchestrating the change under review. Switching GitHub
+accounts, selecting another token, using a bot / service account / CI
+identity / GitHub App identity the agent can act as, invoking a nested
+agent or sub-agent the agent spawns, spawning another process under the
+same controlling authority, or forwarding the review task with
+instructions to another agent still under that authority — none of these
+manufacture an independent reviewer, and none bypass this guard.
+
+Whether a privileged GitHub review **mutation** (`APPROVE` /
+`REQUEST_CHANGES`) may actually be submitted is governed by
+[`review-action-authorization.md`](review-action-authorization.md), which
+requires *authority separation* (this section) **and** trusted mutation
+authorization, and fails closed to a non-mutating review otherwise. This
+`REVIEW SKIPPED` guard runs first and is authoritative; that policy never
+weakens it.
+
 ## Review/repository access prerequisite
 
 Successful GitHub authentication alone does not imply the authenticated
