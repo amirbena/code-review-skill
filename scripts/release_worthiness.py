@@ -251,6 +251,95 @@ def extract_version_section(changelog_text: str, version: str) -> str:
     return "\n".join(out).strip() + "\n"
 
 
+# --- Deterministic SemVer classification --------------------------------
+#
+# The release's bump is decided by the Keep a Changelog `### <Category>`
+# headings under `## Unreleased`, never by free judgement. Mapping and the
+# highest-impact-wins rule are documented in docs/RELEASE.md.
+
+SUBSECTION_IMPACT = {
+    "added": "minor",
+    "changed": "minor",
+    "deprecated": "minor",
+    "fixed": "patch",
+    "security": "patch",
+    "removed": "major",
+    "breaking": "major",
+    "breaking changes": "major",
+}
+
+_IMPACT_RANK = {"patch": 1, "minor": 2, "major": 3}
+
+# One-time migration (Issue #113): entries accumulated under `## Unreleased`
+# before this contract existed ship as a single PATCH release, whatever
+# their categories say. It applies only while the latest release is still
+# this baseline; the next release retires it automatically.
+PRE_POLICY_BASELINE_TAG = "v1.0.2"
+
+_SUBSECTION_RE = re.compile(r"^###\s+(.+?)\s*$")
+
+
+class AmbiguousReleaseImpact(ValueError):
+    """The `## Unreleased` entries cannot be mapped to a single bump."""
+
+
+def classify_semver_impact(changelog_text: str) -> str:
+    """Return `patch` / `minor` / `major` for the current `## Unreleased`.
+
+    Every entry must sit under a recognized `### <Category>` heading. The
+    highest impact across categories wins. Anything unrecognized or
+    uncategorized raises AmbiguousReleaseImpact so the caller fails closed.
+    """
+    body = _unreleased_body(changelog_text)
+    if body is None:
+        raise AmbiguousReleaseImpact("CHANGELOG.md has no '## Unreleased' section")
+
+    impacts: set[str] = set()
+    current: str | None = None
+    saw_entry = False
+    for line in body:
+        heading = _SUBSECTION_RE.match(line)
+        if heading:
+            current = heading.group(1).strip().lower()
+            if current not in SUBSECTION_IMPACT:
+                raise AmbiguousReleaseImpact(
+                    f"unrecognized '## Unreleased' category '### {heading.group(1).strip()}'"
+                )
+            continue
+        if _BULLET_RE.match(line):
+            saw_entry = True
+            if current is None:
+                raise AmbiguousReleaseImpact(
+                    "'## Unreleased' has an entry outside any '### <Category>' heading"
+                )
+            impacts.add(SUBSECTION_IMPACT[current])
+    if not saw_entry:
+        raise AmbiguousReleaseImpact("'## Unreleased' has no entries to classify")
+    return max(impacts, key=_IMPACT_RANK.__getitem__)
+
+
+def migration_forced_impact(latest_tag: str | None) -> str | None:
+    """`"patch"` while the one-time pre-policy migration applies, else None."""
+    return "patch" if latest_tag == PRE_POLICY_BASELINE_TAG else None
+
+
+def derive_next_version(latest_tag: str | None, impact: str) -> str:
+    """Next `X.Y.Z` from the latest `vX.Y.Z` tag and a patch/minor/major bump."""
+    if impact not in _IMPACT_RANK:
+        raise ValueError(f"impact must be patch/minor/major, got {impact!r}")
+    if not latest_tag:
+        raise ValueError("no vX.Y.Z release tag to derive the next version from")
+    match = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", latest_tag.strip())
+    if not match:
+        raise ValueError(f"latest tag {latest_tag!r} is not a vX.Y.Z release tag")
+    major, minor, patch = (int(part) for part in match.groups())
+    if impact == "major":
+        return f"{major + 1}.0.0"
+    if impact == "minor":
+        return f"{major}.{minor + 1}.0"
+    return f"{major}.{minor}.{patch + 1}"
+
+
 # --- Release-state comparisons (pure) ------------------------------------
 
 
@@ -311,6 +400,26 @@ def previous_release_tag(repo_root: Path) -> str | None:
         return None
     tag = out.strip()
     return tag or None
+
+
+def latest_release_tag(repo_root: Path) -> str | None:
+    """Highest `vMAJOR.MINOR.PATCH` tag by version order, not commit topology.
+
+    This is the version baseline for automatic releases: the accumulated
+    release set is everything since this tag, and the next version is
+    derived from it.
+    """
+    try:
+        out = _git(
+            ["tag", "--list", "--sort=-v:refname", "v[0-9]*.[0-9]*.[0-9]*"], repo_root
+        )
+    except subprocess.CalledProcessError:
+        return None
+    for line in out.splitlines():
+        tag = line.strip()
+        if tag.startswith("v") and _VERSION_RE.match(tag[1:]):
+            return tag
+    return None
 
 
 def changed_files(repo_root: Path, base_ref: str | None) -> list[str]:
@@ -450,6 +559,106 @@ def _cmd_changelog_section(args: argparse.Namespace) -> int:
     return 0
 
 
+# --- CLI: classify-semver -----------------------------------------------
+
+_SEMVER_FIX_HINT = (
+    "Group every '## Unreleased' entry under a recognized '### <Category>' "
+    "heading: Added/Changed/Deprecated -> minor, Fixed/Security -> patch, "
+    "Removed/Breaking -> major. See docs/RELEASE.md."
+)
+
+
+def _emit_output(path: str | None, **pairs: str) -> None:
+    target = path or os.environ.get("GITHUB_OUTPUT")
+    if not target:
+        return
+    with open(target, "a", encoding="utf-8") as handle:
+        for key, value in pairs.items():
+            handle.write(f"{key}={value}\n")
+
+
+def _cmd_classify_semver(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).resolve()
+    changelog_path = _resolve_changelog(args, repo_root)
+    text = changelog_path.read_text(encoding="utf-8") if changelog_path.is_file() else ""
+    try:
+        impact = classify_semver_impact(text)
+    except AmbiguousReleaseImpact as exc:
+        print(f"::{'error' if args.strict else 'warning'}::ambiguous SemVer classification: {exc}")
+        print(_SEMVER_FIX_HINT)
+        _emit_output(args.github_output, semver_impact="ambiguous")
+        return 1 if args.strict else 0
+    print(f"Proposed SemVer impact: {impact}")
+    _emit_output(args.github_output, semver_impact=impact)
+    return 0
+
+
+# --- CLI: auto-release-plan -------------------------------------------------
+
+
+def _cmd_auto_release_plan(args: argparse.Namespace) -> int:
+    """Decide, from trusted `main`, whether to publish and at which version.
+
+    Exit 0 whether or not a release is due (``should_release`` says which);
+    exit 1 only on a hard fault — no baseline tag, or a release-worthy,
+    covered set whose SemVer impact is ambiguous (fail closed).
+    """
+    repo_root = Path(args.repo_root).resolve()
+    changelog_path = _resolve_changelog(args, repo_root)
+
+    baseline = latest_release_tag(repo_root)
+    if not baseline:
+        print("::error::no valid vX.Y.Z release tag to use as the version baseline")
+        _emit_output(args.github_output, should_release="false", reason="no release tag baseline")
+        return 1
+
+    classification = classify_paths(changed_files(repo_root, baseline))
+    if not classification.release_worthy:
+        reason = f"no release-worthy changes since {baseline}"
+        print(f"No release: {reason}")
+        _emit_output(args.github_output, should_release="false", reason=reason, baseline=baseline)
+        return 0
+
+    changelog_text = changelog_path.read_text(encoding="utf-8") if changelog_path.is_file() else ""
+    if not unreleased_has_coverage(changelog_text):
+        reason = "'## Unreleased' has no entries; the accumulated set is already released"
+        print(f"No release: {reason}")
+        _emit_output(args.github_output, should_release="false", reason=reason, baseline=baseline)
+        return 0
+
+    impact = migration_forced_impact(baseline)
+    impact_source = "one-time pre-policy migration"
+    if impact is None:
+        try:
+            impact = classify_semver_impact(changelog_text)
+        except AmbiguousReleaseImpact as exc:
+            print(f"::error::ambiguous SemVer classification: {exc}")
+            print(_SEMVER_FIX_HINT)
+            _emit_output(
+                args.github_output, should_release="false", ambiguous="true",
+                reason=str(exc), baseline=baseline,
+            )
+            return 1
+        impact_source = "CHANGELOG '## Unreleased' categories"
+
+    version = derive_next_version(baseline, impact)
+    if tag_exists(repo_root, f"v{version}"):
+        reason = f"v{version} already exists; the accumulated set is already released"
+        print(f"No release: {reason}")
+        _emit_output(
+            args.github_output, should_release="false", reason=reason,
+            baseline=baseline, version=version, impact=impact,
+        )
+        return 0
+
+    print(f"Release planned: {baseline} -> v{version} ({impact}, {impact_source}); {classification.reason}")
+    _emit_output(
+        args.github_output, should_release="true", version=version, impact=impact,
+        baseline=baseline, reason=classification.reason,
+    )
+    return 0
+
+
 # --- CLI: release-preflight -----------------------------------------------
 
 
@@ -582,6 +791,21 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("changelog-section", help="print the notes for one version (for GitHub Release body)")
     s.add_argument("--version", required=True, help="version X.Y.Z whose section to print")
     s.set_defaults(func=_cmd_changelog_section)
+
+    cs = sub.add_parser(
+        "classify-semver",
+        help="print the SemVer impact (patch/minor/major) of the current '## Unreleased'",
+    )
+    cs.add_argument("--strict", action="store_true", help="exit 1 when the impact is ambiguous")
+    cs.add_argument("--github-output", default=None, help="path for the semver_impact output")
+    cs.set_defaults(func=_cmd_classify_semver)
+
+    ar = sub.add_parser(
+        "auto-release-plan",
+        help="from trusted main, decide whether to publish and derive the next version",
+    )
+    ar.add_argument("--github-output", default=None, help="path for should_release/version/impact outputs")
+    ar.set_defaults(func=_cmd_auto_release_plan)
 
     f = sub.add_parser(
         "release-preflight",

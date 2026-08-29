@@ -1,13 +1,22 @@
 name: Release worthiness
 
 # Deterministically decides whether a change ships a Skill or its packaged
-# distribution. On PRs and pushes it is read-only: it classifies the change
-# set against the previous v* tag and enforces CHANGELOG coverage. On a
-# maintainer-triggered workflow_dispatch it is the authoritative release
-# flow — it commits the changelog roll directly to main, tags it, and
-# publishes the GitHub Release with the verified Skill archives.
+# distribution, and — from trusted main — publishes the release.
 #
-# Classification and release checks: scripts/release_worthiness.py.
+# On PRs and pushes the `assess` job is read-only: it classifies the
+# change set against the latest v* tag, enforces CHANGELOG coverage, and
+# classifies the proposed SemVer impact. It never mutates the repository.
+#
+# On a non-[skip ci] push to main (and, for recovery, workflow_dispatch)
+# the read-only `plan` job derives the next version from the accumulated
+# `## Unreleased` entries — no human supplies one. Only when it reports a
+# classified, release-worthy accumulated set does the `publish` job run:
+# it rolls the changelog, builds and verifies both Skill archives, commits
+# to main, tags, and publishes the GitHub Release, all through the trusted
+# release GitHub App. A normal merge that ships nothing releasable never
+# starts `publish` at all — no write token, no release Environment gate.
+#
+# Classification, SemVer, and release checks: scripts/release_worthiness.py.
 # Repository configuration (branch ruleset + the trusted release GitHub
 # App that is the sole bypass actor): docs/RELEASE.md.
 
@@ -16,13 +25,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Semantic version to release, e.g. 1.0.3 (no leading v). Rolls Unreleased, commits to main, tags vX.Y.Z, and publishes the GitHub Release."
-        required: true
-        type: string
 
-# Read-only by default. Only the release job below is granted write, and it
+# Read-only by default. Only the publish job below is granted write, and it
 # performs main/tag/release mutations with a short-lived GitHub App token,
 # never the Actions GITHUB_TOKEN.
 permissions:
@@ -78,6 +82,11 @@ jobs:
           fi
           python scripts/release_worthiness.py $args
 
+      - name: Classify proposed SemVer impact
+        id: semver
+        if: steps.classify.outputs.release_worthy == 'true'
+        run: python scripts/release_worthiness.py classify-semver --strict --github-output "$GITHUB_OUTPUT"
+
       - name: Build Skill package archives
         if: steps.classify.outputs.release_worthy == 'true'
         run: ./scripts/package-skills.sh all
@@ -105,23 +114,88 @@ jobs:
           {
             echo "## Release recommended"
             echo
-            echo "This change affects a Skill or its packaged distribution. A release is recommended."
+            echo "This change affects a Skill or its packaged distribution. It publishes automatically once merged to \`main\`."
             echo
             echo "- Trigger: ${{ steps.classify.outputs.reason }}"
             echo "- CHANGELOG \`Unreleased\` coverage: ${{ steps.classify.outputs.changelog_covered }}"
+            echo "- Proposed SemVer impact: ${{ steps.semver.outputs.semver_impact }}"
             echo
-            echo "Publish it with **Run workflow** on \`Release worthiness\`, giving the target version. See \`docs/RELEASE.md\`."
+            echo "See \`docs/RELEASE.md\`."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  release:
-    # Authoritative direct-to-main release flow. Manual, maintainer-triggered
-    # only. This is the single job granted contents: write, and it mints a
-    # short-lived token from the trusted release GitHub App (the sole bypass
-    # actor on the main branch ruleset) for the protected push/tag/release
-    # mutations — the Actions GITHUB_TOKEN cannot bypass the ruleset and is
-    # never used for them. The commit is marked [skip ci] and no trigger here
-    # listens on tag pushes or releases, so the flow cannot recurse.
-    if: github.event_name == 'workflow_dispatch'
+  plan:
+    # Read-only. On trusted main state (a non-[skip ci] push to main, or
+    # workflow_dispatch for recovery) it derives the next version from the
+    # accumulated `## Unreleased` entries with release_worthiness.py
+    # auto-release-plan. It holds no write permission and never touches the
+    # release App credentials, so a merge that ships nothing releasable
+    # costs only this job. `publish` runs only when should_release is true.
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'push'
+          && github.ref == 'refs/heads/main'
+          && !contains(github.event.head_commit.message, '[skip ci]')) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      should_release: ${{ steps.plan.outputs.should_release }}
+      version: ${{ steps.plan.outputs.version }}
+      impact: ${{ steps.plan.outputs.impact }}
+      baseline: ${{ steps.plan.outputs.baseline }}
+      reason: ${{ steps.plan.outputs.reason }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dev dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Plan the release (derive version from accumulated Unreleased entries)
+        id: plan
+        run: python scripts/release_worthiness.py auto-release-plan --github-output "$GITHUB_OUTPUT"
+
+      - name: Summarize the plan
+        run: |
+          if [ "${{ steps.plan.outputs.should_release }}" = "true" ]; then
+            {
+              echo "## Release planned"
+              echo
+              echo "- Version: \`v${{ steps.plan.outputs.version }}\` (${{ steps.plan.outputs.impact }})"
+              echo "- Since: \`${{ steps.plan.outputs.baseline }}\`"
+              echo "- ${{ steps.plan.outputs.reason }}"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## No release"
+              echo
+              echo "- ${{ steps.plan.outputs.reason }}"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  publish:
+    # Authoritative release flow. Runs only when `plan` reports a
+    # classified, release-worthy accumulated set. This is the single job
+    # granted contents: write and the only one behind the `release`
+    # Environment; it mints a short-lived token from the trusted release
+    # GitHub App (the sole bypass actor on the main branch ruleset) for the
+    # protected push/tag/release mutations — the Actions GITHUB_TOKEN
+    # cannot bypass the ruleset and is never used for them. The release
+    # commit is marked [skip ci] and no trigger here listens on tag pushes
+    # or releases, so the flow cannot recurse. A retry after a completed
+    # release is a clean no-op: `plan` reports nothing to release and this
+    # job does not run.
+    needs: plan
+    if: needs.plan.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -164,10 +238,13 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
 
       - name: Preflight — release-worthy since last tag, changelog notes, new valid version/tag
-        run: python scripts/release_worthiness.py release-preflight --version "${{ inputs.version }}"
+        run: |
+          python scripts/release_worthiness.py release-preflight \
+            --version "${{ needs.plan.outputs.version }}" \
+            --base-ref "${{ needs.plan.outputs.baseline }}"
 
-      - name: Roll CHANGELOG Unreleased into v${{ inputs.version }}
-        run: python scripts/release_worthiness.py prepare-changelog --version "${{ inputs.version }}"
+      - name: Roll CHANGELOG Unreleased into v${{ needs.plan.outputs.version }}
+        run: python scripts/release_worthiness.py prepare-changelog --version "${{ needs.plan.outputs.version }}"
 
       - name: Build and verify Skill archives
         run: |
@@ -185,7 +262,7 @@ jobs:
           git config user.name "release-automation[bot]"
           git config user.email "release-automation[bot]@users.noreply.github.com"
           git add CHANGELOG.md
-          git commit -m "chore(release): v${{ inputs.version }} [skip ci]"
+          git commit -m "chore(release): v${{ needs.plan.outputs.version }} [skip ci]"
           sha="$(git rev-parse HEAD)"
           echo "sha=${sha}" >> "$GITHUB_OUTPUT"
           echo "Release commit: ${sha}"
@@ -202,19 +279,19 @@ jobs:
 
       - name: Create annotated tag at the release commit
         run: |
-          git tag -a "v${{ inputs.version }}" "${{ steps.commit.outputs.sha }}" -m "Release v${{ inputs.version }}"
+          git tag -a "v${{ needs.plan.outputs.version }}" "${{ steps.commit.outputs.sha }}" -m "Release v${{ needs.plan.outputs.version }}"
 
       - name: Push the tag
-        run: git push origin "refs/tags/v${{ inputs.version }}"
+        run: git push origin "refs/tags/v${{ needs.plan.outputs.version }}"
 
       - name: Publish the GitHub Release with the verified archives
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          python scripts/release_worthiness.py changelog-section --version "${{ inputs.version }}" > release-notes.md
-          gh release create "v${{ inputs.version }}" \
+          python scripts/release_worthiness.py changelog-section --version "${{ needs.plan.outputs.version }}" > release-notes.md
+          gh release create "v${{ needs.plan.outputs.version }}" \
             --target "${{ steps.commit.outputs.sha }}" \
-            --title "v${{ inputs.version }}" \
+            --title "v${{ needs.plan.outputs.version }}" \
             --notes-file release-notes.md \
             dist/local-code-review-skill.zip \
             dist/github-pr-review-skill.zip
@@ -224,7 +301,7 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           python scripts/release_worthiness.py release-verify \
-            --version "${{ inputs.version }}" \
+            --version "${{ needs.plan.outputs.version }}" \
             --expected-sha "${{ steps.commit.outputs.sha }}" \
             --asset local-code-review-skill.zip \
             --asset github-pr-review-skill.zip
@@ -232,9 +309,10 @@ jobs:
       - name: Release summary
         run: |
           {
-            echo "## Released v${{ inputs.version }}"
+            echo "## Released v${{ needs.plan.outputs.version }}"
             echo
+            echo "- SemVer impact: ${{ needs.plan.outputs.impact }} (derived from CHANGELOG '## Unreleased')"
             echo "- main commit: \`${{ steps.commit.outputs.sha }}\`"
-            echo "- annotated tag \`v${{ inputs.version }}\` points at that commit"
+            echo "- annotated tag \`v${{ needs.plan.outputs.version }}\` points at that commit"
             echo "- GitHub Release published with both Skill archives, verified"
           } >> "$GITHUB_STEP_SUMMARY"

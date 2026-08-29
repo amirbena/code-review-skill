@@ -185,4 +185,4 @@ are rewritten during staging — are described in
 | [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md) · [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md) | the complete, normative Skill definitions |
 | [`SECURITY.md`](SECURITY.md) | how to report a vulnerability privately |
 | [`CHANGELOG.md`](CHANGELOG.md) | notable user-facing changes per release |
-| [`docs/RELEASE.md`](docs/RELEASE.md) | how release-worthy changes are detected, CHANGELOG coverage, and the release-preparation flow |
+| [`docs/RELEASE.md`](docs/RELEASE.md) | how release-worthy changes are detected, CHANGELOG coverage, deterministic SemVer classification, and the automatic publication flow |
