@@ -9,6 +9,31 @@ This file summarizes releases; it is not a commit-by-commit log.
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.0.2 — 2026-08-29
+
+Documentation and review-presentation refinements for both Skills. No
+change to review semantics, severity, verdict derivation, or the
+security and mutation boundaries.
+
+### Changed
+
+- Slimmed the `local-code-review` and `github-pr-review` Skill
+  entrypoints by removing duplicated policy and runbook prose, while
+  keeping the critical review and security contracts visible at the point
+  of invocation and pointing to their canonical policies for detail.
+- Refreshed both Skill READMEs for clearer onboarding, natural-language
+  invocation examples, and easier navigation to the canonical
+  documentation.
+- Made `github-pr-review` review summaries more concise and
+  human-readable: detailed evidence, impact, and fix guidance stay in the
+  inline review comments instead of being repeated in the final review
+  body, which now carries the verdict and a scannable one-line list of
+  findings.
+- Unified self-review and external-review presentation around the same
+  human-facing review format, while preserving their different GitHub
+  mutation boundaries — self-review publishes an informational comment,
+  and an authorized independent review may approve or request changes.
+
 ## v1.0.1 — 2026-08-29
 
 Hardens `github-pr-review`'s authorization model: reviewing a pull
