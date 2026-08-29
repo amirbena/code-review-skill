@@ -1,1 +1,13 @@
+# Issue creation routes through the template chooser at
+# /issues/new/choose. With more than one Issue Form present in this
+# directory, GitHub's "New issue" button opens the chooser first, and the
+# corresponding Issue Form opens only after a template is selected:
+#
+#   New issue -> choose: Bug Report | Feature Request | Engineering Task
+#
+# blank_issues_enabled: false removes the "Open a blank issue" escape
+# hatch from that chooser, so a reporter always lands on a structured
+# form. Do not set it to true, and do not add contact_links here unless
+# they are real, active destinations — either would put a bypass on the
+# chooser.
 blank_issues_enabled: false
