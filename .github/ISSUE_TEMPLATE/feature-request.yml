@@ -1,0 +1,63 @@
+name: Feature Request
+description: Propose new or changed behavior for a Skill or the repository tooling.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Focus on the problem you are trying to solve and the outcome you
+        want. Implementation design is not required.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What are you trying to do, and what makes it hard today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired
+    attributes:
+      label: Desired behavior
+      description: What should happen instead? Describe the outcome, not the internals.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Skill / area
+      options:
+        - local-code-review
+        - github-pr-review
+        - Both Skills
+        - Repository tooling
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example workflow or invocation
+      description: When useful — a command, prompt, or step-by-step of how it would be used.
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives / workarounds
+      description: What you do today, or other approaches you considered.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else that helps — links, related issues, prior discussion.
+    validations:
+      required: false
