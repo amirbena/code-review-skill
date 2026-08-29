@@ -25,6 +25,7 @@ body:
         - local-code-review
         - github-pr-review
         - Both
+        - Repository tooling
         - Not sure
     validations:
       required: true
