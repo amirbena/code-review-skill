@@ -184,3 +184,4 @@ are rewritten during staging — are described in
 | [`skills/local-code-review/README.md`](skills/local-code-review/README.md) · [`skills/github-pr-review/README.md`](skills/github-pr-review/README.md) | per-Skill onboarding |
 | [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md) · [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md) | the complete, normative Skill definitions |
 | [`SECURITY.md`](SECURITY.md) | how to report a vulnerability privately |
+| [`CHANGELOG.md`](CHANGELOG.md) | notable user-facing changes per release |
