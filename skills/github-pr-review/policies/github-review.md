@@ -16,7 +16,11 @@ duplicate that prose.
 ## Canonical sub-policies, in authoritative order
 
 ```text
-review-authority.md         identity, self-review guard, publication capability
+review-authority.md         identity, self-review mutation boundary, publication capability
+        ↓
+review-action-authorization.md  review analysis vs. GitHub mutation authority;
+                            recommendation-only default; trusted authorization
+                            and reviewer independence; fail closed
         ↓
 reviewer-delta-review.md    delta re-review vs. normal review mode
         ↓
@@ -44,9 +48,17 @@ review-output.md            analysis/publication boundary, batching, decision
 This order is the authoritative dependency order: a later file's rules
 assume every earlier file's gates have already resolved for this
 invocation. [`review-authority.md`](review-authority.md) resolves first
-and is never bypassed by anything downstream —
+and is never bypassed by anything downstream;
+[`review-action-authorization.md`](review-action-authorization.md) builds
+directly on it — it separates review analysis from GitHub mutation
+authority, defaults to a non-mutating (recommendation-only) result, and
+requires trusted authorization plus reviewer independence before any
+`APPROVE` / `REQUEST_CHANGES` is submitted; its gate is enforced at
+submission time in [`review-output.md`](review-output.md), "Review-action
+authorization gate."
 [`reviewer-delta-review.md`](reviewer-delta-review.md) explicitly runs
-after its self-review guard;
+after the self-review mutation-boundary check, and applies to a
+self-review exactly as to an external review;
 [`repository-checkout.md`](repository-checkout.md) is optional, runs after
 [`pr-scope.md`](pr-scope.md) has established the PR's base/head, and never
 changes the Review Target — the PR delta;

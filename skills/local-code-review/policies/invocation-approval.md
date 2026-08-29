@@ -298,9 +298,10 @@ to review, once, per invocation; see
 
 ## Structural limitation: this Skill cannot verify that approval occurred
 
-Unlike `github-pr-review`'s self-review guard — which checks an external,
-queryable fact (the authenticated GitHub identity against the PR author) and
-can therefore refuse to proceed on its own — user approval for
+Unlike `github-pr-review`'s self-review mutation boundary — which checks an
+external, queryable fact (the authenticated GitHub identity, and its
+controlling authority, against the PR author) and can therefore withhold a
+formal `APPROVE` / `REQUEST_CHANGES` on its own — user approval for
 `local-code-review` is a conversational fact with no external state this
 Skill can query. This Skill has no mechanism to confirm, from inside a given
 invocation, that a fresh, explicit, current-interaction approval actually

@@ -81,6 +81,8 @@ append it after the human-facing review, clearly subordinate, per
 - P1: <n>
 - P2: <n>
 - decision: `approve` | `request_changes`
+- action_mode: `recommendation-only` | `block-only` | `explicitly-authorized-auto-action`
+- mutation: `submitted (<event>)` | `withheld (<reason>)` | `not_requested`
 
 </details>
 ```
@@ -127,6 +129,16 @@ append it after the human-facing review, clearly subordinate, per
   Decision.
 - The Decision line is unambiguous and matches the actual GitHub review
   action submitted.
+- **Review-action authority.** The reasoned decision and the GitHub
+  mutation are reported separately, per
+  [`../policies/review-action-authorization.md`](../policies/review-action-authorization.md)
+  and [`../policies/review-output.md`](../policies/review-output.md),
+  "Review-action authorization gate." The default mode is
+  recommendation-only (no mutation); `APPROVE` is submitted only in
+  explicitly-authorized auto-action mode with trusted authorization and
+  reviewer independence. When a mutation was withheld, say so plainly
+  with the reason — a clean reasoning result with a withheld approval is
+  never rendered as "approved."
 - **Unresolved supplied Jira reference.** If the caller supplied a Jira
   reference that could not be resolved (see
   [`../policies/review-context.md`](../policies/review-context.md), "Jira

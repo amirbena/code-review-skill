@@ -11,18 +11,19 @@ Delta-only re-review is allowed only when the current reviewer owns the
 immediately preceding review context. A different reviewer must
 independently review the current PR state.
 
-This check runs after the self-review guard in
+This check runs after the self-review mutation boundary is resolved in
 [`review-authority.md`](review-authority.md), "Self-review capability"
-(which remains authoritative and terminates first, before this check
-ever runs) and before this invocation's review scope is established, so
-the outcome determines *how much* of the PR this invocation reviews —
-never *whether* it reviews at all, and never a bypass of the self-review
-guard.
+(which never terminates analysis — it only decides whether a formal
+GitHub review event may be submitted), and before this invocation's
+review scope is established. Review-mode selection applies to a
+self-review exactly as it does to an external review: the outcome
+determines *how much* of the PR this invocation reviews, never *whether*
+it reviews at all.
 
 ```text
 Resolve current reviewer
         ↓
-Apply self-review guard
+Resolve self-review mutation boundary (analysis still runs either way)
         ↓
 Inspect previous completed review
         ↓

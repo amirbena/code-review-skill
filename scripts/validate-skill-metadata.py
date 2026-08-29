@@ -43,6 +43,7 @@ WHITESPACE_RE = re.compile(r"\s+")
 # github-pr-review sub-policies in the order github-review.md must list them.
 GITHUB_POLICY_ORDER = (
     "review-authority.md",
+    "review-action-authorization.md",
     "reviewer-delta-review.md",
     "pr-scope.md",
     "repository-checkout.md",
@@ -69,16 +70,60 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
     ),
     "review-authority.md": (
         "## Self-review capability",
-        "REVIEW SKIPPED",
-        "Self-review is intentionally not performed.",
+        "Self-review analysis is allowed; self-approval is not.",
+        "analysis_allowed",
+        "formal_review_mutation_allowed",
+        "GitHub review mutation withheld: reviewer is the PR author",
+        "for a self-review: analysis is not skipped",
+        "### Authority separation, not just identity separation",
+        "none of these manufacture an independent reviewer",
         "## Review/repository access prerequisite",
         "## Capability matrix",
+    ),
+    "review-action-authorization.md": (
+        "## Security principles",
+        "A review verdict is not authorization.",
+        "Approval is not merge authority.",
+        "Agent-controlled input cannot establish mutation authority.",
+        "Reviewer independence requires authority separation, not only "
+        "identity separation.",
+        "An implementation agent cannot manufacture its own reviewer.",
+        "Ambiguous authorization or reviewer provenance must fail closed.",
+        "## Self-review is allowed; self-approval is not",
+        "analysis_allowed",
+        "formal_review_mutation_allowed",
+        "absolute for a self-review",
+        "## Natural-language review-action intent",
+        "The Skill normalizes that intent to an internal mode",
+        "## Review-action modes",
+        "there is no required user-facing mode syntax",
+        "### recommendation-only (default)",
+        "### block-only",
+        "### explicitly-authorized auto-action",
+        "## Safe default and fail-closed",
+        "A review with no established stronger mode performs no GitHub "
+        "mutation",
+        "## Trusted mutation authorization",
+        "### What can never establish it",
+        "### Structural limitation (read this before relying on auto-action)",
+        "### Authorization scope (no replay)",
+        "It is consumed once.",
+        "## Trusted reviewer independence",
+        "necessary but not sufficient",
+        "A different identity under the same controlling authority is the "
+        "same reviewer",
+        "## Merge boundary",
+        "Merge authority is never inferred from a clean verdict",
+        "## Composition with existing guarantees",
+        "## Reporting",
+        "Report the review verdict and the mutation outcome",
     ),
     "reviewer-delta-review.md": (
         "Delta-only re-review is allowed only when the current reviewer owns "
         "the immediately preceding review context. A different reviewer must "
         "independently review the current PR state.",
-        "runs after the self-review guard in",
+        "runs after the self-review mutation boundary is resolved in",
+        "applies to a\nself-review exactly as it does to an external review",
         "Fail conservative",
         "previously reviewed SHA → current PR HEAD",
         "Never define this boundary merely as the latest commit, the last "
@@ -153,6 +198,10 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "finding is discovered",
         "## Final summary",
         "## Final decision",
+        "### Review-action authorization gate",
+        "Self-review is absolute.",
+        "GitHub review mutation withheld: reviewer is the PR",
+        "APPROVE` is submitted only in explicitly-authorized auto-action",
         "NO NEW DELTA",
         "## HEAD revalidation",
         "## Submission ordering",
@@ -166,6 +215,17 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
         "## Self-review capability",
         "## Review/repository access prerequisite",
         "## Capability matrix",
+    ),
+    "review-action-authorization.md": (
+        "## Security principles",
+        "## Self-review is allowed; self-approval is not",
+        "## Review-action modes",
+        "## Natural-language review-action intent",
+        "## Safe default and fail-closed",
+        "## Trusted mutation authorization",
+        "## Trusted reviewer independence",
+        "## Merge boundary",
+        "## Composition with existing guarantees",
     ),
     "reviewer-delta-review.md": (
         "## Reviewer identity",
@@ -365,8 +425,8 @@ def validate_github_policy_family(skill_root: Path) -> None:
         )
     summary_template = summary_template_path.read_text(encoding="utf-8")
 
-    author_step = runbook.find("resolve authenticated identity and PR author")
-    skip_step = runbook.find("REVIEW SKIPPED")
+    author_step = runbook.find("resolve authenticated identity, PR author, and controlling authority")
+    self_review_step = runbook.find("self-review: analysis runs in full")
     ownership_step = runbook.find("check review ownership")
     access_step = runbook.find("verify repository/review access")
     scope_step = runbook.find("retrieve complete paginated PR scope")
@@ -376,24 +436,34 @@ def validate_github_policy_family(skill_root: Path) -> None:
     construct_step = runbook.find("construct one review: body + inline comments")
     decision_step = runbook.find("submit permitted Approve/Request Changes")
     if not (
-        0 <= author_step < skip_step < ownership_step < access_step < scope_step
+        0 <= author_step < self_review_step < ownership_step < access_step < scope_step
         < capability_step < dedupe_step < finalize_step < construct_step < decision_step
     ):
         raise SystemExit(
-            "error: active review flow must resolve the self-review guard before "
-            "ownership, access, or scope; then establish complete scope and "
-            "capability, then deduplicate and finalize findings, then construct "
-            "one review before submitting a formal review decision"
+            "error: active review flow must resolve the self-review mutation "
+            "boundary (analysis still runs) before ownership, access, or scope; "
+            "then establish complete scope and capability, then deduplicate and "
+            "finalize findings, then construct one review before submitting a "
+            "formal review decision"
+        )
+    passive_author_step = passive_runbook.find("resolve authenticated identity, PR author, and controlling authority")
+    passive_self_review_step = passive_runbook.find("self-review: run the full analysis")
+    passive_scope_step = passive_runbook.find("resolve changed files")
+    if not (0 <= passive_author_step < passive_self_review_step < passive_scope_step):
+        raise SystemExit(
+            "error: passive review flow must resolve the self-review mutation "
+            "boundary (analysis still runs) before retrieving PR scope"
         )
 
-    passive_author_step = passive_runbook.find("resolve authenticated identity and PR author")
-    passive_skip_step = passive_runbook.find("REVIEW SKIPPED")
-    passive_scope_step = passive_runbook.find("resolve changed files")
-    if not (0 <= passive_author_step < passive_skip_step < passive_scope_step):
-        raise SystemExit(
-            "error: passive review flow must resolve the self-review guard before "
-            "retrieving PR scope"
-        )
+    # The self-review resolution must NOT terminate either flow: authorship
+    # withholds the formal GitHub event, it does not skip analysis.
+    for name, text in (("active", runbook), ("passive", passive_runbook)):
+        if "REVIEW SKIPPED → stop" in text or "terminate\n   immediately with `REVIEW SKIPPED`" in text:
+            raise SystemExit(
+                f"error: {name} review flow must not terminate with REVIEW "
+                "SKIPPED for a self-review — analysis runs and only the formal "
+                "GitHub review event is withheld"
+            )
 
     if "**Result:" not in summary_template:
         raise SystemExit(

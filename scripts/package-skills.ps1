@@ -324,6 +324,7 @@ if ($Skill -eq "github" -or $Skill -eq "all") {
     "metadata/skill.yaml",
     "policies/github-review.md",
     "policies/review-authority.md",
+    "policies/review-action-authorization.md",
     "policies/reviewer-delta-review.md",
     "policies/pr-scope.md",
     "policies/repository-checkout.md",
