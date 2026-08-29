@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """Tests for scripts/release_worthiness.py — classification, CHANGELOG
-coverage, the Unreleased roll, and the main() / $GITHUB_OUTPUT contract.
+coverage, the Unreleased roll, changelog-section extraction, the release
+preflight / verify gates, and the main() / $GITHUB_OUTPUT contract.
 
-Git plumbing is out of scope; only the pure, deterministic logic the
-workflow depends on.
+The pure logic is tested directly; the Git/GitHub command wrappers are
+exercised through a fake runner injected in place of ``rw._git`` / ``rw._gh``.
 """
 
 from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -342,6 +345,221 @@ class MainAssessContractTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             rc = rw.main(["--changelog", str(cl), "prepare-changelog", "--version", "1.0.3"])
         self.assertEqual(rc, 1)
+
+
+VERSIONED_CHANGELOG = """\
+# Changelog
+
+## Unreleased
+
+_Nothing yet._
+
+## v1.0.3 — 2026-09-01
+
+### Added
+
+- Release-worthiness automation (#104).
+
+### Changed
+
+- Tightened packaging checks.
+
+## v1.0.2 — 2026-08-29
+
+- Something shipped earlier.
+"""
+
+
+class PureReleaseHelperTests(unittest.TestCase):
+    def test_validate_semver_accepts_plain_triplet(self) -> None:
+        rw.validate_semver("1.0.3")
+
+    def test_validate_semver_rejects_leading_v_and_odd_shapes(self) -> None:
+        for bad in ("v1.0.3", "1.0", "1.0.3.4", "1.0.x", "1.0.3-rc1", ""):
+            with self.assertRaises(ValueError, msg=bad):
+                rw.validate_semver(bad)
+
+    def test_parse_ref_lines(self) -> None:
+        text = "abc123\trefs/heads/main\ndef456\trefs/tags/v1.0.3\n"
+        self.assertEqual(
+            rw.parse_ref_lines(text),
+            {"refs/heads/main": "abc123", "refs/tags/v1.0.3": "def456"},
+        )
+
+    def test_resolved_tag_commit_prefers_peeled_annotated_ref(self) -> None:
+        text = "tagobj\trefs/tags/v1.0.3\ncommit99\trefs/tags/v1.0.3^{}\n"
+        self.assertEqual(rw.resolved_tag_commit(text, "1.0.3"), "commit99")
+
+    def test_resolved_tag_commit_falls_back_to_bare_ref(self) -> None:
+        text = "commit77\trefs/tags/v1.0.3\n"
+        self.assertEqual(rw.resolved_tag_commit(text, "1.0.3"), "commit77")
+        self.assertIsNone(rw.resolved_tag_commit("", "1.0.3"))
+
+    def test_release_assets_present(self) -> None:
+        rel = {"assets": [{"name": "a.zip"}, {"name": "b.zip"}]}
+        self.assertTrue(rw.release_assets_present(rel, ["a.zip", "b.zip"]))
+        self.assertFalse(rw.release_assets_present(rel, ["a.zip", "c.zip"]))
+
+    def test_extract_version_section_returns_only_that_version(self) -> None:
+        section = rw.extract_version_section(VERSIONED_CHANGELOG, "1.0.3")
+        self.assertIn("Release-worthiness automation (#104).", section)
+        self.assertIn("Tightened packaging checks.", section)
+        self.assertNotIn("Something shipped earlier.", section)
+        self.assertNotIn("Unreleased", section)
+
+    def test_extract_version_section_missing_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            rw.extract_version_section(VERSIONED_CHANGELOG, "9.9.9")
+
+
+class _FakeGit:
+    """Stand-in for rw._git dispatching on the leading git args."""
+
+    def __init__(
+        self,
+        *,
+        describe: str = "v1.0.2\n",
+        diff: str = "",
+        tag_list: str = "",
+        ls_remote_tags: str = "",
+        ls_remote_main: str = "",
+        rev_parse: str | None = None,
+    ) -> None:
+        self.describe = describe
+        self.diff = diff
+        self.tag_list = tag_list
+        self.ls_remote_tags = ls_remote_tags
+        self.ls_remote_main = ls_remote_main
+        self.rev_parse = rev_parse
+        self.calls: list[list[str]] = []
+
+    def __call__(self, args, repo_root):  # noqa: ANN001 - test shim
+        a = list(args)
+        self.calls.append(a)
+        if a[:1] == ["describe"]:
+            return self.describe
+        if a[:2] == ["diff", "--name-only"]:
+            return self.diff
+        if a[:2] == ["tag", "--list"]:
+            return self.tag_list
+        if a[:1] == ["rev-parse"]:
+            if self.rev_parse is None:
+                raise subprocess.CalledProcessError(128, ["git", *a])
+            return self.rev_parse
+        if a[:1] == ["ls-remote"]:
+            return self.ls_remote_tags if "--tags" in a else self.ls_remote_main
+        raise AssertionError(f"unexpected git call: {a}")
+
+
+class ReleasePreflightTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._real_git = rw._git
+        self.addCleanup(setattr, rw, "_git", self._real_git)
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+
+    def _changelog(self, text: str) -> Path:
+        path = Path(self._tmp.name) / "CHANGELOG.md"
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def _run(self, version: str, fake: _FakeGit, changelog_text: str) -> int:
+        rw._git = fake
+        cl = self._changelog(changelog_text)
+        with contextlib.redirect_stdout(io.StringIO()):
+            return rw.main(["--changelog", str(cl), "release-preflight", "--version", version])
+
+    def test_invalid_version_fails(self) -> None:
+        self.assertEqual(self._run("v1.0.3", _FakeGit(), COVERED_CHANGELOG), 1)
+
+    def test_existing_local_tag_fails(self) -> None:
+        fake = _FakeGit(tag_list="v1.0.3\n", diff="skills/a/SKILL.md\n")
+        self.assertEqual(self._run("1.0.3", fake, COVERED_CHANGELOG), 1)
+
+    def test_existing_remote_tag_fails(self) -> None:
+        fake = _FakeGit(ls_remote_tags="sha\trefs/tags/v1.0.3\n", diff="skills/a/SKILL.md\n")
+        self.assertEqual(self._run("1.0.3", fake, COVERED_CHANGELOG), 1)
+
+    def test_no_release_worthy_changes_fails(self) -> None:
+        fake = _FakeGit(diff="docs/x.md\nREADME.md\ntests/unit/test_x.py\n")
+        self.assertEqual(self._run("1.0.3", fake, COVERED_CHANGELOG), 1)
+
+    def test_missing_unreleased_coverage_fails(self) -> None:
+        fake = _FakeGit(diff="skills/local-code-review/SKILL.md\n")
+        self.assertEqual(self._run("1.0.3", fake, PLACEHOLDER_CHANGELOG), 1)
+
+    def test_happy_path_passes(self) -> None:
+        fake = _FakeGit(diff="skills/local-code-review/SKILL.md\nshared/policies/severity.md\n")
+        self.assertEqual(self._run("1.0.3", fake, COVERED_CHANGELOG), 0)
+
+
+class ReleaseVerifyTests(unittest.TestCase):
+    SHA = "a" * 40
+
+    def setUp(self) -> None:
+        self._real_git, self._real_gh = rw._git, rw._gh
+        self.addCleanup(setattr, rw, "_git", self._real_git)
+        self.addCleanup(setattr, rw, "_gh", self._real_gh)
+
+    def _good_git(self, **overrides) -> _FakeGit:
+        base = dict(
+            rev_parse=self.SHA + "\n",
+            ls_remote_tags=f"tagobj\trefs/tags/v1.0.3\n{self.SHA}\trefs/tags/v1.0.3^{{}}\n",
+            ls_remote_main=f"{self.SHA}\trefs/heads/main\n",
+        )
+        base.update(overrides)
+        return _FakeGit(**base)
+
+    def _gh_release(self, assets=("local-code-review-skill.zip", "github-pr-review-skill.zip")):
+        payload = {
+            "tagName": "v1.0.3",
+            "targetCommitish": "main",
+            "assets": [{"name": name} for name in assets],
+        }
+        return lambda args, repo_root: json.dumps(payload)
+
+    def _run(self, git: _FakeGit, gh, expected: str = SHA) -> int:
+        rw._git, rw._gh = git, gh
+        with contextlib.redirect_stdout(io.StringIO()):
+            return rw.main(
+                [
+                    "release-verify",
+                    "--version", "1.0.3",
+                    "--expected-sha", expected,
+                    "--asset", "local-code-review-skill.zip",
+                    "--asset", "github-pr-review-skill.zip",
+                ]
+            )
+
+    def test_all_match_passes(self) -> None:
+        self.assertEqual(self._run(self._good_git(), self._gh_release()), 0)
+
+    def test_tag_points_elsewhere_fails(self) -> None:
+        self.assertEqual(self._run(self._good_git(rev_parse="b" * 40 + "\n"), self._gh_release()), 1)
+
+    def test_main_not_advanced_fails(self) -> None:
+        git = self._good_git(ls_remote_main="c" * 40 + "\trefs/heads/main\n")
+        self.assertEqual(self._run(git, self._gh_release()), 1)
+
+    def test_missing_release_asset_fails(self) -> None:
+        self.assertEqual(self._run(self._good_git(), self._gh_release(assets=("local-code-review-skill.zip",))), 1)
+
+    def test_non_sha_expected_fails(self) -> None:
+        self.assertEqual(self._run(self._good_git(), self._gh_release(), expected="main"), 1)
+
+
+class ChangelogSectionCommandTests(unittest.TestCase):
+    def test_prints_version_section(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        cl = Path(tmp.name) / "CHANGELOG.md"
+        cl.write_text(VERSIONED_CHANGELOG, encoding="utf-8")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = rw.main(["--changelog", str(cl), "changelog-section", "--version", "1.0.3"])
+        self.assertEqual(rc, 0)
+        self.assertIn("Release-worthiness automation (#104).", buf.getvalue())
+        self.assertNotIn("Something shipped earlier.", buf.getvalue())
 
 
 if __name__ == "__main__":

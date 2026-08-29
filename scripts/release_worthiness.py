@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""Classify a change set as release-worthy and enforce CHANGELOG coverage.
+"""Classify a change set as release-worthy, enforce CHANGELOG coverage, and
+drive the deterministic parts of the direct-to-main release flow.
 
-Classification and CHANGELOG parsing are pure and Git-free so they can be
-unit tested; the workflow (.github/workflows/release-worthiness.yml) supplies
-the changed-file list (or a base ref to diff against) and acts on the result.
+Classification, CHANGELOG parsing, and the release-state comparisons are
+pure and side-effect-free so they can be unit tested; the workflow
+(.github/workflows/release-worthiness.yml) supplies the changed-file list
+or a base ref, and performs the Git/GitHub mutations itself.
 
-The rule this file encodes is deterministic and intentionally narrow: a
-change is release-worthy only when it touches shipped Skill content or the
-packaging/distribution path that builds the Skill archives. See
-docs/RELEASE.md for the human-facing convention.
+Release worthiness is always evaluated over *all* changes since the
+previous ``v*`` tag. ``## Unreleased`` is the coverage for that whole
+release set, never one entry per pull request. See docs/RELEASE.md.
 """
 
 from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import json
 import os
 import re
 import subprocess
@@ -79,6 +81,7 @@ _VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 _BULLET_RE = re.compile(r"^\s*[-*]\s+\S")
 _UNRELEASED_HEADING_RE = re.compile(r"^##\s+Unreleased\s*$", re.IGNORECASE)
 _VERSION_HEADING_RE = re.compile(r"^##\s+\S")
+_FULL_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
 def _normalize(path: str) -> str:
@@ -156,7 +159,7 @@ def classify_paths(paths: Iterable[str]) -> Classification:
     return Classification(tuple(triggering), tuple(other))
 
 
-# --- CHANGELOG coverage ------------------------------------------------------
+# --- CHANGELOG parsing -----------------------------------------------------
 
 
 def _unreleased_body(changelog_text: str) -> list[str] | None:
@@ -192,8 +195,7 @@ def unreleased_has_coverage(changelog_text: str) -> bool:
 def roll_unreleased(changelog_text: str, version: str, today: str) -> str:
     """Move the `## Unreleased` entries under a `## v<version> — <today>`
     heading and leave a fresh empty `Unreleased` placeholder above it."""
-    if not _VERSION_RE.match(version):
-        raise ValueError(f"version must be X.Y.Z, got {version!r}")
+    validate_semver(version)
     body = _unreleased_body(changelog_text)
     if body is None:
         raise ValueError("CHANGELOG.md has no '## Unreleased' section")
@@ -227,16 +229,77 @@ def roll_unreleased(changelog_text: str, version: str, today: str) -> str:
     return text
 
 
-# --- Git plumbing ----------------------------------------------------------
+def extract_version_section(changelog_text: str, version: str) -> str:
+    """Return the notes under `## v<version> — …`, up to the next `## ` heading.
+
+    Used to keep the GitHub Release body consistent with CHANGELOG.md.
+    """
+    heading = re.compile(rf"^##\s+v{re.escape(version)}(\s|$|\s+—)")
+    lines = changelog_text.splitlines()
+    start = None
+    for i, line in enumerate(lines):
+        if heading.match(line):
+            start = i + 1
+            break
+    if start is None:
+        raise ValueError(f"CHANGELOG.md has no '## v{version}' section")
+    out: list[str] = []
+    for line in lines[start:]:
+        if _VERSION_HEADING_RE.match(line):
+            break
+        out.append(line)
+    return "\n".join(out).strip() + "\n"
+
+
+# --- Release-state comparisons (pure) ------------------------------------
+
+
+def validate_semver(version: str) -> None:
+    """Accept only `X.Y.Z` with no leading `v` and no pre-release/build parts."""
+    if not _VERSION_RE.match(version):
+        raise ValueError(f"version must be X.Y.Z with no leading 'v', got {version!r}")
+
+
+def parse_ref_lines(text: str) -> dict[str, str]:
+    """Parse `git ls-remote` output into {ref: sha}. Keeps peeled `^{}` refs."""
+    refs: dict[str, str] = {}
+    for line in text.splitlines():
+        if "\t" not in line:
+            continue
+        sha, ref = line.split("\t", 1)
+        refs[ref.strip()] = sha.strip()
+    return refs
+
+
+def resolved_tag_commit(ls_remote_text: str, version: str) -> str | None:
+    """The commit a `v<version>` tag points at, dereferencing an annotated tag.
+
+    Prefers the peeled `refs/tags/v<version>^{}` entry (annotated tag → commit);
+    falls back to the bare ref (lightweight tag → commit).
+    """
+    refs = parse_ref_lines(ls_remote_text)
+    return refs.get(f"refs/tags/v{version}^{{}}") or refs.get(f"refs/tags/v{version}")
+
+
+def release_assets_present(release_json: dict, expected: Sequence[str]) -> bool:
+    """True when every expected asset filename is attached to the release."""
+    names = {asset.get("name") for asset in release_json.get("assets", [])}
+    return set(expected).issubset(names)
+
+
+# --- Git / GitHub plumbing ---------------------------------------------------
 
 
 def _git(args: Sequence[str], repo_root: Path) -> str:
     result = subprocess.run(
-        ["git", *args],
-        cwd=repo_root,
-        capture_output=True,
-        text=True,
-        check=True,
+        ["git", *args], cwd=repo_root, capture_output=True, text=True, check=True
+    )
+    return result.stdout
+
+
+def _gh(args: Sequence[str], repo_root: Path) -> str:
+    result = subprocess.run(
+        ["gh", *args], cwd=repo_root, capture_output=True, text=True, check=True
     )
     return result.stdout
 
@@ -251,6 +314,8 @@ def previous_release_tag(repo_root: Path) -> str | None:
 
 
 def changed_files(repo_root: Path, base_ref: str | None) -> list[str]:
+    """Repository-relative paths changed between `base_ref` (default: previous
+    `v*` tag) and HEAD."""
     ref = base_ref or previous_release_tag(repo_root)
     if not ref:
         # No prior release to diff against: treat the whole tree as in scope.
@@ -260,7 +325,19 @@ def changed_files(repo_root: Path, base_ref: str | None) -> list[str]:
     return [line for line in out.splitlines() if line.strip()]
 
 
-# --- CLI -----------------------------------------------------------------
+def tag_exists(repo_root: Path, tag: str) -> bool:
+    """True when `tag` exists locally or on `origin`."""
+    local = {line.strip() for line in _git(["tag", "--list", tag], repo_root).splitlines() if line.strip()}
+    if tag in local:
+        return True
+    try:
+        remote = _git(["ls-remote", "--tags", "origin", f"refs/tags/{tag}"], repo_root)
+    except subprocess.CalledProcessError:
+        remote = ""
+    return bool(remote.strip())
+
+
+# --- CLI: assess -------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -304,9 +381,13 @@ def _emit_github_output(assessment: Assessment, path: str) -> None:
         handle.write(f"reason={c.reason}\n")
 
 
+def _resolve_changelog(args: argparse.Namespace, repo_root: Path) -> Path:
+    return Path(args.changelog) if args.changelog else repo_root / "CHANGELOG.md"
+
+
 def _cmd_assess(args: argparse.Namespace) -> int:
     repo_root = Path(args.repo_root).resolve()
-    changelog_path = Path(args.changelog or repo_root / "CHANGELOG.md")
+    changelog_path = _resolve_changelog(args, repo_root)
 
     if args.changed_file:
         paths: list[str] = list(args.changed_file)
@@ -335,9 +416,12 @@ def _cmd_assess(args: argparse.Namespace) -> int:
     return 0
 
 
+# --- CLI: prepare-changelog / changelog-section ----------------------------
+
+
 def _cmd_prepare_changelog(args: argparse.Namespace) -> int:
     repo_root = Path(args.repo_root).resolve()
-    changelog_path = Path(args.changelog or repo_root / "CHANGELOG.md")
+    changelog_path = _resolve_changelog(args, repo_root)
     today = args.date or _dt.date.today().isoformat()
     text = changelog_path.read_text(encoding="utf-8")
     try:
@@ -353,6 +437,126 @@ def _cmd_prepare_changelog(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_changelog_section(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).resolve()
+    changelog_path = _resolve_changelog(args, repo_root)
+    try:
+        validate_semver(args.version)
+        section = extract_version_section(changelog_path.read_text(encoding="utf-8"), args.version)
+    except ValueError as exc:
+        print(f"::error::{exc}", file=sys.stderr)
+        return 1
+    sys.stdout.write(section)
+    return 0
+
+
+# --- CLI: release-preflight -----------------------------------------------
+
+
+def _cmd_release_preflight(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).resolve()
+    changelog_path = _resolve_changelog(args, repo_root)
+
+    try:
+        validate_semver(args.version)
+    except ValueError as exc:
+        print(f"::error::{exc}")
+        return 1
+    tag = f"v{args.version}"
+
+    if tag_exists(repo_root, tag):
+        print(f"::error::tag {tag} already exists (locally or on origin); choose a new version")
+        return 1
+
+    paths = changed_files(repo_root, args.base_ref)
+    classification = classify_paths(paths)
+    if not classification.release_worthy:
+        print(
+            "::error::no release-worthy changes since the previous tag "
+            f"({previous_release_tag(repo_root) or 'none'}); nothing to release"
+        )
+        return 1
+
+    changelog_text = changelog_path.read_text(encoding="utf-8") if changelog_path.is_file() else ""
+    if not unreleased_has_coverage(changelog_text):
+        print("::error::'## Unreleased' has no release notes; add them before releasing")
+        return 1
+
+    print(
+        f"Preflight OK: {tag} is new; {classification.reason}; '## Unreleased' has notes"
+    )
+    return 0
+
+
+# --- CLI: release-verify -------------------------------------------------
+
+
+def _cmd_release_verify(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).resolve()
+    tag = f"v{args.version}"
+    expected = args.expected_sha.strip()
+    failures: list[str] = []
+
+    try:
+        validate_semver(args.version)
+    except ValueError as exc:
+        print(f"::error::{exc}")
+        return 1
+    if not _FULL_SHA_RE.match(expected):
+        print(f"::error::--expected-sha must be a full 40-hex commit SHA, got {expected!r}")
+        return 1
+
+    try:
+        local_commit = _git(["rev-parse", f"{tag}^{{commit}}"], repo_root).strip()
+    except subprocess.CalledProcessError:
+        local_commit = None
+    if local_commit != expected:
+        failures.append(f"local tag {tag} resolves to {local_commit or 'nothing'}, expected {expected}")
+
+    remote_tags = _git(
+        ["ls-remote", "--tags", "origin", f"refs/tags/{tag}", f"refs/tags/{tag}^{{}}"], repo_root
+    )
+    remote_commit = resolved_tag_commit(remote_tags, args.version)
+    if remote_commit != expected:
+        failures.append(f"origin tag {tag} resolves to {remote_commit or 'nothing'}, expected {expected}")
+
+    main_refs = parse_ref_lines(_git(["ls-remote", "origin", "refs/heads/main"], repo_root))
+    main_commit = main_refs.get("refs/heads/main")
+    if main_commit != expected:
+        failures.append(f"origin/main is at {main_commit or 'nothing'}, expected {expected}")
+
+    try:
+        release_json = json.loads(
+            _gh(["release", "view", tag, "--json", "tagName,targetCommitish,assets"], repo_root)
+        )
+    except (subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+        failures.append(f"could not read GitHub Release {tag}: {exc}")
+        release_json = None
+
+    if release_json is not None:
+        if release_json.get("tagName") != tag:
+            failures.append(f"GitHub Release tagName is {release_json.get('tagName')!r}, expected {tag}")
+        target = str(release_json.get("targetCommitish", ""))
+        if _FULL_SHA_RE.match(target) and target != expected:
+            failures.append(f"GitHub Release target is {target}, expected {expected}")
+        if not release_assets_present(release_json, args.asset):
+            have = sorted(a.get("name") for a in release_json.get("assets", []))
+            failures.append(f"GitHub Release assets {have} are missing one of {list(args.asset)}")
+
+    if failures:
+        for failure in failures:
+            print(f"::error::{failure}")
+        return 1
+    print(
+        f"Verified: {tag} → {expected}; origin/main → {expected}; "
+        f"GitHub Release published with assets {list(args.asset)}"
+    )
+    return 0
+
+
+# --- parser ------------------------------------------------------------------
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", default=".", help="repository root (default: cwd)")
@@ -360,34 +564,42 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     a = sub.add_parser("assess", help="classify the change set and check CHANGELOG coverage")
+    a.add_argument("--base-ref", default=None, help="diff HEAD against this ref (default: previous v* tag)")
     a.add_argument(
-        "--base-ref",
-        default=None,
-        help="diff HEAD against this ref (default: previous v* tag)",
-    )
-    a.add_argument(
-        "--changed-file",
-        action="append",
-        default=[],
-        metavar="PATH",
+        "--changed-file", action="append", default=[], metavar="PATH",
         help="explicit changed path (repeatable); skips Git when given",
     )
-    a.add_argument(
-        "--require-changelog",
-        action="store_true",
-        help="exit 1 when release-worthy and CHANGELOG coverage is missing",
-    )
+    a.add_argument("--require-changelog", action="store_true", help="exit 1 when release-worthy and coverage is missing")
     a.add_argument("--github-output", default=None, help="path for release_worthy/reason outputs")
     a.set_defaults(func=_cmd_assess)
 
-    p = sub.add_parser(
-        "prepare-changelog",
-        help="roll '## Unreleased' entries into a versioned heading",
-    )
+    p = sub.add_parser("prepare-changelog", help="roll '## Unreleased' entries into a versioned heading")
     p.add_argument("--version", required=True, help="target version X.Y.Z")
     p.add_argument("--date", default=None, help="release date YYYY-MM-DD (default: today)")
     p.add_argument("--check", action="store_true", help="print result to stdout, do not write")
     p.set_defaults(func=_cmd_prepare_changelog)
+
+    s = sub.add_parser("changelog-section", help="print the notes for one version (for GitHub Release body)")
+    s.add_argument("--version", required=True, help="version X.Y.Z whose section to print")
+    s.set_defaults(func=_cmd_changelog_section)
+
+    f = sub.add_parser(
+        "release-preflight",
+        help="fail closed unless there are release-worthy changes since the previous tag, "
+        "'## Unreleased' has notes, and v<version> is a new, valid tag",
+    )
+    f.add_argument("--version", required=True, help="requested semantic version X.Y.Z")
+    f.add_argument("--base-ref", default=None, help="override the since-tag base (default: previous v* tag)")
+    f.set_defaults(func=_cmd_release_preflight)
+
+    v = sub.add_parser(
+        "release-verify",
+        help="verify the live tag, origin/main, and the published GitHub Release all match the release commit",
+    )
+    v.add_argument("--version", required=True, help="released version X.Y.Z")
+    v.add_argument("--expected-sha", required=True, help="the pushed main commit the release must point at")
+    v.add_argument("--asset", action="append", default=[], metavar="NAME", help="required release asset filename (repeatable)")
+    v.set_defaults(func=_cmd_release_verify)
     return parser
 
 

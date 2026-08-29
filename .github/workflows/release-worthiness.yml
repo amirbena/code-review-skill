@@ -1,10 +1,15 @@
 name: Release worthiness
 
 # Deterministically decides whether a change ships a Skill or its packaged
-# distribution, and — when it does — enforces CHANGELOG coverage, builds and
-# verifies the Skill archives, and prepares the next release. Classification
-# logic lives in scripts/release_worthiness.py; the convention is documented
-# in docs/RELEASE.md.
+# distribution. On PRs and pushes it is read-only: it classifies the change
+# set against the previous v* tag and enforces CHANGELOG coverage. On a
+# maintainer-triggered workflow_dispatch it is the authoritative release
+# flow — it commits the changelog roll directly to main, tags it, and
+# publishes the GitHub Release with the verified Skill archives.
+#
+# Classification and release checks: scripts/release_worthiness.py.
+# Repository configuration (branch ruleset + the trusted release GitHub
+# App that is the sole bypass actor): docs/RELEASE.md.
 
 on:
   pull_request:
@@ -13,11 +18,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to roll '## Unreleased' into, e.g. 1.0.3 (release preparation only; no tag or GitHub Release is created)"
+        description: "Semantic version to release, e.g. 1.0.3 (no leading v). Rolls Unreleased, commits to main, tags vX.Y.Z, and publishes the GitHub Release."
         required: true
         type: string
 
-# Read-only by default. Only the release-prep job below widens this.
+# Read-only by default. Only the release job below is granted write, and it
+# performs main/tag/release mutations with a short-lived GitHub App token,
+# never the Actions GITHUB_TOKEN.
 permissions:
   contents: read
 
@@ -29,7 +36,11 @@ jobs:
   assess:
     # PR and push checks only. This job can run untrusted contributor content,
     # so it stays strictly read-only and is never given write credentials.
-    if: github.event_name != 'workflow_dispatch'
+    # The [skip ci] guard is belt-and-braces against the release commit
+    # (which GitHub already skips) ever re-entering this workflow.
+    if: >-
+      ${{ github.event_name != 'workflow_dispatch'
+      && !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -88,7 +99,7 @@ jobs:
           path: dist/*.zip
           if-no-files-found: error
 
-      - name: Release-preparation summary
+      - name: Release-recommended summary
         if: steps.classify.outputs.release_worthy == 'true'
         run: |
           {
@@ -98,25 +109,51 @@ jobs:
             echo
             echo "- Trigger: ${{ steps.classify.outputs.reason }}"
             echo "- CHANGELOG \`Unreleased\` coverage: ${{ steps.classify.outputs.changelog_covered }}"
-            echo "- Skill archives were built and integrity-checked; download them from this run's Artifacts."
             echo
-            echo "Next: run this workflow via **Run workflow** with the target version to roll \`Unreleased\` into a versioned section on a \`release-prep/vX.Y.Z\` branch, then follow \`docs/RELEASE.md\`."
+            echo "Publish it with **Run workflow** on \`Release worthiness\`, giving the target version. See \`docs/RELEASE.md\`."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  release-prep:
-    # Manual, maintainer-triggered only. This is the single job that needs to
-    # commit generated changes, so it is the only one granted contents: write.
-    # It pushes a release-prep branch (never main) with a [skip ci] commit, so
-    # it cannot loop this workflow. It does not tag or publish a GitHub Release.
+  release:
+    # Authoritative direct-to-main release flow. Manual, maintainer-triggered
+    # only. This is the single job granted contents: write, and it mints a
+    # short-lived token from the trusted release GitHub App (the sole bypass
+    # actor on the main branch ruleset) for the protected push/tag/release
+    # mutations — the Actions GITHUB_TOKEN cannot bypass the ruleset and is
+    # never used for them. The commit is marked [skip ci] and no trigger here
+    # listens on tag pushes or releases, so the flow cannot recurse.
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    environment: release
+    concurrency:
+      group: release-publish
+      cancel-in-progress: false
     steps:
-      - name: Check out
+      - name: Require trusted release App credentials
+        env:
+          APP_ID: ${{ secrets.RELEASE_APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+        run: |
+          if [ -z "${APP_ID}" ] || [ -z "${APP_PRIVATE_KEY}" ]; then
+            echo "::error::RELEASE_APP_ID / RELEASE_APP_PRIVATE_KEY are not configured. See docs/RELEASE.md — the release App is the only actor allowed to push to main."
+            exit 1
+          fi
+
+      - name: Mint release App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Check out main
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -126,16 +163,11 @@ jobs:
       - name: Install dev dependencies
         run: python -m pip install -r requirements-dev.txt
 
-      - name: Confirm the current state is release-worthy
-        run: |
-          prev="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
-          args="assess"
-          if [ -n "${prev}" ]; then args="$args --base-ref ${prev}"; fi
-          python scripts/release_worthiness.py $args
+      - name: Preflight — release-worthy since last tag, changelog notes, new valid version/tag
+        run: python scripts/release_worthiness.py release-preflight --version "${{ inputs.version }}"
 
-      - name: Roll CHANGELOG Unreleased into the target version
-        run: |
-          python scripts/release_worthiness.py prepare-changelog --version "${{ inputs.version }}"
+      - name: Roll CHANGELOG Unreleased into v${{ inputs.version }}
+        run: python scripts/release_worthiness.py prepare-changelog --version "${{ inputs.version }}"
 
       - name: Build and verify Skill archives
         run: |
@@ -144,14 +176,65 @@ jobs:
             echo "== ${archive} =="
             unzip -t "${archive}"
           done
+          test -f dist/local-code-review-skill.zip
+          test -f dist/github-pr-review-skill.zip
 
-      - name: Push release-prep branch
+      - name: Commit release preparation to main
+        id: commit
         run: |
-          branch="release-prep/v${{ inputs.version }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "${branch}"
+          git config user.name "release-automation[bot]"
+          git config user.email "release-automation[bot]@users.noreply.github.com"
           git add CHANGELOG.md
-          git commit -m "chore(release): prepare v${{ inputs.version }} changelog [skip ci]"
-          git push --set-upstream origin "${branch}"
-          echo "Pushed ${branch}. Open a PR from it; do not tag or publish a release from this workflow." >> "$GITHUB_STEP_SUMMARY"
+          git commit -m "chore(release): v${{ inputs.version }} [skip ci]"
+          sha="$(git rev-parse HEAD)"
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "Release commit: ${sha}"
+
+      - name: Push to main
+        run: git push origin "HEAD:main"
+
+      - name: Verify main advanced to the release commit
+        run: |
+          git fetch origin main
+          have="$(git rev-parse FETCH_HEAD)"
+          test "${have}" = "${{ steps.commit.outputs.sha }}" \
+            || { echo "::error::origin/main is ${have}, expected ${{ steps.commit.outputs.sha }}"; exit 1; }
+
+      - name: Create annotated tag at the release commit
+        run: |
+          git tag -a "v${{ inputs.version }}" "${{ steps.commit.outputs.sha }}" -m "Release v${{ inputs.version }}"
+
+      - name: Push the tag
+        run: git push origin "refs/tags/v${{ inputs.version }}"
+
+      - name: Publish the GitHub Release with the verified archives
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          python scripts/release_worthiness.py changelog-section --version "${{ inputs.version }}" > release-notes.md
+          gh release create "v${{ inputs.version }}" \
+            --target "${{ steps.commit.outputs.sha }}" \
+            --title "v${{ inputs.version }}" \
+            --notes-file release-notes.md \
+            dist/local-code-review-skill.zip \
+            dist/github-pr-review-skill.zip
+
+      - name: Verify the live tag, release target, and uploaded assets
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          python scripts/release_worthiness.py release-verify \
+            --version "${{ inputs.version }}" \
+            --expected-sha "${{ steps.commit.outputs.sha }}" \
+            --asset local-code-review-skill.zip \
+            --asset github-pr-review-skill.zip
+
+      - name: Release summary
+        run: |
+          {
+            echo "## Released v${{ inputs.version }}"
+            echo
+            echo "- main commit: \`${{ steps.commit.outputs.sha }}\`"
+            echo "- annotated tag \`v${{ inputs.version }}\` points at that commit"
+            echo "- GitHub Release published with both Skill archives, verified"
+          } >> "$GITHUB_STEP_SUMMARY"
