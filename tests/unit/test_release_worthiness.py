@@ -421,6 +421,7 @@ class _FakeGit:
         describe: str = "v1.0.2\n",
         diff: str = "",
         tag_list: str = "",
+        sorted_tags: str | None = None,
         ls_remote_tags: str = "",
         ls_remote_main: str = "",
         rev_parse: str | None = None,
@@ -428,6 +429,9 @@ class _FakeGit:
         self.describe = describe
         self.diff = diff
         self.tag_list = tag_list
+        # `git tag --list --sort=-v:refname <glob>` output; defaults to the
+        # exact-match tag_list when the test does not distinguish them.
+        self.sorted_tags = tag_list if sorted_tags is None else sorted_tags
         self.ls_remote_tags = ls_remote_tags
         self.ls_remote_main = ls_remote_main
         self.rev_parse = rev_parse
@@ -441,7 +445,11 @@ class _FakeGit:
         if a[:2] == ["diff", "--name-only"]:
             return self.diff
         if a[:2] == ["tag", "--list"]:
-            return self.tag_list
+            if any(part.startswith("--sort") for part in a):
+                return self.sorted_tags
+            pattern = a[-1]
+            names = [line.strip() for line in self.tag_list.splitlines() if line.strip()]
+            return f"{pattern}\n" if pattern in names else ""
         if a[:1] == ["rev-parse"]:
             if self.rev_parse is None:
                 raise subprocess.CalledProcessError(128, ["git", *a])
@@ -560,6 +568,256 @@ class ChangelogSectionCommandTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertIn("Release-worthiness automation (#104).", buf.getvalue())
         self.assertNotIn("Something shipped earlier.", buf.getvalue())
+
+
+# --- Deterministic SemVer classification --------------------------------
+
+
+def _unreleased(*body: str) -> str:
+    return "# Changelog\n\n## Unreleased\n\n" + "\n".join(body) + "\n\n## v1.0.2 — 2026-08-29\n\n- old\n"
+
+
+class ClassifySemverImpactTests(unittest.TestCase):
+    def test_added_or_changed_is_minor(self) -> None:
+        self.assertEqual(rw.classify_semver_impact(_unreleased("### Added", "", "- a new thing")), "minor")
+        self.assertEqual(rw.classify_semver_impact(_unreleased("### Changed", "", "- reworked x")), "minor")
+
+    def test_fixed_or_security_is_patch(self) -> None:
+        self.assertEqual(rw.classify_semver_impact(_unreleased("### Fixed", "", "- fixed x")), "patch")
+        self.assertEqual(rw.classify_semver_impact(_unreleased("### Security", "", "- hardened y")), "patch")
+
+    def test_removed_or_breaking_is_major(self) -> None:
+        self.assertEqual(rw.classify_semver_impact(_unreleased("### Removed", "", "- dropped z")), "major")
+        self.assertEqual(rw.classify_semver_impact(_unreleased("### Breaking", "", "- changed contract")), "major")
+
+    def test_highest_impact_wins_across_categories(self) -> None:
+        mixed_patch_minor = _unreleased("### Fixed", "", "- fix", "", "### Added", "", "- feat")
+        self.assertEqual(rw.classify_semver_impact(mixed_patch_minor), "minor")
+        mixed_all = _unreleased(
+            "### Fixed", "", "- fix", "", "### Added", "", "- feat", "", "### Removed", "", "- drop"
+        )
+        self.assertEqual(rw.classify_semver_impact(mixed_all), "major")
+        mixed_patch_only = _unreleased("### Fixed", "", "- fix", "", "### Security", "", "- hard")
+        self.assertEqual(rw.classify_semver_impact(mixed_patch_only), "patch")
+
+    def test_entry_outside_any_category_is_ambiguous(self) -> None:
+        with self.assertRaises(rw.AmbiguousReleaseImpact):
+            rw.classify_semver_impact(_unreleased("- a bullet with no category heading"))
+
+    def test_unrecognized_category_is_ambiguous(self) -> None:
+        with self.assertRaises(rw.AmbiguousReleaseImpact):
+            rw.classify_semver_impact(_unreleased("### Notes", "", "- something"))
+
+    def test_no_entries_is_ambiguous(self) -> None:
+        with self.assertRaises(rw.AmbiguousReleaseImpact):
+            rw.classify_semver_impact(PLACEHOLDER_CHANGELOG)
+
+    def test_missing_unreleased_section_is_ambiguous(self) -> None:
+        with self.assertRaises(rw.AmbiguousReleaseImpact):
+            rw.classify_semver_impact("# Changelog\n\n## v1.0.0 — 2026-01-01\n\n- x\n")
+
+
+class DeriveNextVersionTests(unittest.TestCase):
+    def test_patch_minor_major_bumps(self) -> None:
+        self.assertEqual(rw.derive_next_version("v1.0.2", "patch"), "1.0.3")
+        self.assertEqual(rw.derive_next_version("v1.0.2", "minor"), "1.1.0")
+        self.assertEqual(rw.derive_next_version("v1.4.7", "major"), "2.0.0")
+
+    def test_rejects_missing_or_malformed_tag(self) -> None:
+        for bad in (None, "", "1.0.2", "v1.0", "vX.Y.Z"):
+            with self.assertRaises(ValueError, msg=repr(bad)):
+                rw.derive_next_version(bad, "patch")
+
+    def test_rejects_bad_impact(self) -> None:
+        with self.assertRaises(ValueError):
+            rw.derive_next_version("v1.0.2", "huge")
+
+
+class MigrationForcedImpactTests(unittest.TestCase):
+    def test_forces_patch_only_at_the_pre_policy_baseline(self) -> None:
+        self.assertEqual(rw.migration_forced_impact(rw.PRE_POLICY_BASELINE_TAG), "patch")
+
+    def test_no_force_after_the_baseline_moves_on(self) -> None:
+        self.assertIsNone(rw.migration_forced_impact("v1.0.3"))
+        self.assertIsNone(rw.migration_forced_impact("v2.0.0"))
+        self.assertIsNone(rw.migration_forced_impact(None))
+
+
+class ClassifySemverCommandTests(unittest.TestCase):
+    def _run(self, changelog_text: str, *extra: str):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        cl = Path(tmp.name) / "CHANGELOG.md"
+        cl.write_text(changelog_text, encoding="utf-8")
+        out = Path(tmp.name) / "gh-out.txt"
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = rw.main(
+                ["--changelog", str(cl), "classify-semver", "--github-output", str(out), *extra]
+            )
+        outputs = dict(
+            line.split("=", 1) for line in out.read_text(encoding="utf-8").splitlines() if "=" in line
+        ) if out.is_file() else {}
+        return rc, outputs, buf.getvalue()
+
+    def test_reports_impact_and_exits_zero(self) -> None:
+        rc, outputs, _ = self._run(_unreleased("### Added", "", "- feat"))
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["semver_impact"], "minor")
+
+    def test_ambiguous_is_a_warning_without_strict(self) -> None:
+        rc, outputs, text = self._run(_unreleased("### Notes", "", "- x"))
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["semver_impact"], "ambiguous")
+        self.assertIn("::warning::", text)
+
+    def test_ambiguous_fails_closed_with_strict(self) -> None:
+        rc, outputs, text = self._run(_unreleased("### Notes", "", "- x"), "--strict")
+        self.assertEqual(rc, 1)
+        self.assertEqual(outputs["semver_impact"], "ambiguous")
+        self.assertIn("::error::", text)
+
+
+class AutoReleasePlanTests(unittest.TestCase):
+    """The seam the release job consumes: should_release / version / impact
+    and the exit code (1 only on a hard fault such as ambiguous impact)."""
+
+    SKILL_DIFF = "skills/local-code-review/SKILL.md\n"
+
+    def setUp(self) -> None:
+        self._real_git = rw._git
+        self.addCleanup(setattr, rw, "_git", self._real_git)
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+
+    def _run(self, fake: _FakeGit, changelog_text: str):
+        rw._git = fake
+        cl = Path(self._tmp.name) / "CHANGELOG.md"
+        cl.write_text(changelog_text, encoding="utf-8")
+        out = Path(self._tmp.name) / "gh-out.txt"
+        if out.exists():
+            out.unlink()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = rw.main(["--changelog", str(cl), "auto-release-plan", "--github-output", str(out)])
+        outputs = dict(
+            line.split("=", 1) for line in out.read_text(encoding="utf-8").splitlines() if "=" in line
+        ) if out.is_file() else {}
+        return rc, outputs, buf.getvalue()
+
+    def _tags(self, *tags: str) -> str:
+        return "".join(f"{t}\n" for t in tags)
+
+    def test_migration_forces_patch_regardless_of_categories(self) -> None:
+        # Baseline is the pre-policy tag; Unreleased has an Added entry that
+        # would otherwise be a minor bump.
+        fake = _FakeGit(sorted_tags=self._tags("v1.0.2", "v1.0.1", "v1.0.0"), diff=self.SKILL_DIFF)
+        rc, outputs, _ = self._run(fake, _unreleased("### Added", "", "- a capability (#34)"))
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["should_release"], "true")
+        self.assertEqual(outputs["impact"], "patch")
+        self.assertEqual(outputs["version"], "1.0.3")
+        self.assertEqual(outputs["baseline"], "v1.0.2")
+
+    def test_post_migration_patch_only_release(self) -> None:
+        fake = _FakeGit(sorted_tags=self._tags("v1.0.3", "v1.0.2"), diff=self.SKILL_DIFF)
+        rc, outputs, _ = self._run(fake, _unreleased("### Fixed", "", "- a fix"))
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["impact"], "patch")
+        self.assertEqual(outputs["version"], "1.0.4")
+
+    def test_post_migration_minor_release(self) -> None:
+        fake = _FakeGit(sorted_tags=self._tags("v1.0.3"), diff=self.SKILL_DIFF)
+        rc, outputs, _ = self._run(fake, _unreleased("### Added", "", "- a capability"))
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["impact"], "minor")
+        self.assertEqual(outputs["version"], "1.1.0")
+
+    def test_post_migration_major_release(self) -> None:
+        fake = _FakeGit(sorted_tags=self._tags("v1.0.3"), diff=self.SKILL_DIFF)
+        rc, outputs, _ = self._run(fake, _unreleased("### Removed", "", "- dropped a mode"))
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["impact"], "major")
+        self.assertEqual(outputs["version"], "2.0.0")
+
+    def test_mixed_set_takes_the_highest_bump(self) -> None:
+        body = _unreleased(
+            "### Fixed", "", "- fix", "", "### Added", "", "- feat", "", "### Removed", "", "- drop"
+        )
+        fake = _FakeGit(sorted_tags=self._tags("v1.2.0"), diff=self.SKILL_DIFF)
+        rc, outputs, _ = self._run(fake, body)
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["impact"], "major")
+        self.assertEqual(outputs["version"], "2.0.0")
+
+    def test_ambiguous_classification_fails_closed(self) -> None:
+        fake = _FakeGit(sorted_tags=self._tags("v1.0.3"), diff=self.SKILL_DIFF)
+        rc, outputs, text = self._run(fake, _unreleased("- uncategorized entry"))
+        self.assertEqual(rc, 1)
+        self.assertEqual(outputs["should_release"], "false")
+        self.assertEqual(outputs["ambiguous"], "true")
+        self.assertIn("::error::", text)
+        # No version was derived, so nothing downstream can mutate a tag.
+        self.assertNotIn("version", outputs)
+
+    def test_no_release_when_nothing_release_worthy_accumulated(self) -> None:
+        fake = _FakeGit(sorted_tags=self._tags("v1.0.3"), diff="docs/x.md\ntests/unit/test_x.py\n")
+        rc, outputs, _ = self._run(fake, _unreleased("### Added", "", "- feat"))
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["should_release"], "false")
+        self.assertIn("no release-worthy changes since v1.0.3", outputs["reason"])
+
+    def test_retry_after_successful_release_is_a_no_op(self) -> None:
+        # Latest tag is the just-published version and nothing new is
+        # release-worthy since it: a re-run must not cut another release.
+        fake = _FakeGit(sorted_tags=self._tags("v1.0.3", "v1.0.2"), diff="")
+        rc, outputs, _ = self._run(fake, PLACEHOLDER_CHANGELOG)
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["should_release"], "false")
+
+    def test_rolled_changelog_after_partial_publish_is_a_no_op(self) -> None:
+        # Changelog already rolled (no Unreleased entries) but the skill
+        # delta is still in the diff: still no new release.
+        fake = _FakeGit(sorted_tags=self._tags("v1.0.2"), diff=self.SKILL_DIFF)
+        rc, outputs, _ = self._run(fake, PLACEHOLDER_CHANGELOG)
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["should_release"], "false")
+
+    def test_derived_tag_already_exists_is_a_no_op(self) -> None:
+        fake = _FakeGit(
+            sorted_tags=self._tags("v1.0.3", "v1.0.2"),
+            tag_list=self._tags("v1.0.4", "v1.0.3", "v1.0.2"),
+            diff=self.SKILL_DIFF,
+        )
+        rc, outputs, _ = self._run(fake, _unreleased("### Fixed", "", "- a fix"))
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["should_release"], "false")
+        self.assertIn("already exists", outputs["reason"])
+
+    def test_no_baseline_tag_is_a_hard_fault(self) -> None:
+        fake = _FakeGit(sorted_tags="", diff=self.SKILL_DIFF)
+        rc, outputs, text = self._run(fake, _unreleased("### Added", "", "- feat"))
+        self.assertEqual(rc, 1)
+        self.assertEqual(outputs["should_release"], "false")
+        self.assertIn("::error::", text)
+
+
+class LatestReleaseTagTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._real_git = rw._git
+        self.addCleanup(setattr, rw, "_git", self._real_git)
+
+    def test_picks_highest_valid_semver_tag(self) -> None:
+        rw._git = _FakeGit(sorted_tags="v1.0.10\nv1.0.9\nv1.0.2\n")
+        self.assertEqual(rw.latest_release_tag(Path(".")), "v1.0.10")
+
+    def test_skips_non_semver_lines(self) -> None:
+        rw._git = _FakeGit(sorted_tags="v1.2\nnightly\nv1.0.3\nv1.0.2\n")
+        self.assertEqual(rw.latest_release_tag(Path(".")), "v1.0.3")
+
+    def test_none_when_no_tags(self) -> None:
+        rw._git = _FakeGit(sorted_tags="")
+        self.assertIsNone(rw.latest_release_tag(Path(".")))
 
 
 if __name__ == "__main__":

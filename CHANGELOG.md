@@ -4,6 +4,13 @@ Notable user-facing and project-level changes, newest first. Each version
 corresponds to a published GitHub Release and a matching `vX.Y.Z` tag.
 This file summarizes releases; it is not a commit-by-commit log.
 
+Entries under `## Unreleased` are grouped by Keep a Changelog category
+(`Added` / `Changed` / `Deprecated` → minor, `Fixed` / `Security` →
+patch, `Removed` / `Breaking` → major). The highest category present
+determines the next version, which is derived and published automatically
+when the change reaches `main`. See
+[`docs/RELEASE.md`](docs/RELEASE.md).
+
 ## Unreleased
 
 ### Added
