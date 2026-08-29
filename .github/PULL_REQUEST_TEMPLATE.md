@@ -33,6 +33,7 @@ when any is affected. -->
 - **Governance impact:** None
 - **Policy / documentation impact:** None
 - **Packaging / portability impact:** None
+- **Changelog:** required — entry under `## Unreleased` / not required — <short reason> (see `docs/RELEASE.md`)
 
 ## Validation
 

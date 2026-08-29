@@ -6,8 +6,15 @@ This file summarizes releases; it is not a commit-by-commit log.
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- Release-worthiness automation: a deterministic classifier
+  (`scripts/release_worthiness.py`) and a `Release worthiness` GitHub
+  Action that detect changes to shipped Skill content or
+  packaging/distribution, enforce `Unreleased` CHANGELOG coverage
+  (fail-closed), build and integrity-check the Skill archives, and
+  prepare the next release on a branch. Convention documented in
+  `docs/RELEASE.md` and the PR template's `Changelog:` line (#104).
 
 ## v1.0.2 — 2026-08-29
 
