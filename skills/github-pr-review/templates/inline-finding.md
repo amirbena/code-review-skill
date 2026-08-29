@@ -52,7 +52,8 @@ Details: <supporting technical context, concise>
   line, and even then it stays a short paragraph, never an essay;
 - evidence-based (see
   [`../../../shared/policies/evidence.md`](../../../shared/policies/evidence.md))
-  — no generic "this could be improved" comments with no concrete basis;
+  — no generic "this could be improved" / "consider refactoring" comments
+  with no concrete basis, and no praise on an inline comment;
 - `Fix` is concise and reviewer-facing; never append a local full
   **Implementation prompt** or a coding-agent workflow;
 - this is the finding's one authoritative full representation once
