@@ -256,7 +256,12 @@ class RemediationContractSeparation(unittest.TestCase):
 
     def test_local_flag_does_not_expand_read_only_boundary(self) -> None:
         skill = LOCAL_SKILL.read_text(encoding="utf-8")
-        mutation_boundary = skill.split("## 6. Mutation Boundary", 1)[1]
+        # Anchor on the section heading text, not its ordinal, so a
+        # renumbering during entrypoint slimming doesn't mask a real
+        # regression in the mutation-boundary prohibition list.
+        m = re.search(r"^##\s*(?:\d+\.\s*)?Mutation Boundary\s*$", skill, re.M)
+        self.assertIsNotNone(m, "local SKILL.md has no 'Mutation Boundary' section")
+        mutation_boundary = skill[m.end() :]
         for prohibited in ("edit files", "apply patches", "commit", "push", "create branches"):
             self.assertIn(prohibited, mutation_boundary)
 

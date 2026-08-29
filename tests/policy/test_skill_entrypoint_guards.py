@@ -29,11 +29,12 @@ from tests.support.paths import REPO_ROOT
 LOCAL_SKILL = REPO_ROOT / "skills/local-code-review/SKILL.md"
 GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 
-# Soft ceilings: comfortably above the current slimmed size, well below
-# the pre-refactor size (local 374, github 490). Raising one should be a
-# deliberate, reviewed act — not something a drive-by edit does silently.
-LOCAL_MAX_LINES = 300
-GITHUB_MAX_LINES = 410
+# Soft ceilings: the final slimmed size plus a small maintenance margin,
+# well below the pre-refactor size (local 374, github 490). Raising one
+# should be a deliberate, reviewed act — not something a drive-by edit
+# does silently. Intermediate refactor sizes are not encoded here.
+LOCAL_MAX_LINES = 260
+GITHUB_MAX_LINES = 350
 
 
 def _norm(path) -> str:

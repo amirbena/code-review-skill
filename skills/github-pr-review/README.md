@@ -39,44 +39,48 @@ and never widens the PR delta.
 
 ## What a review looks like
 
-**Clean:**
+**Clean** — a few lines:
 
 ```markdown
 ## Code Review
 
 **Result: ✅ REVIEW CLEAN**
 
-Reviewed against the ticket's acceptance criteria. Safe to merge at
-`a1b2c3d` — no blocking findings.
+No blocking findings at `a1b2c3d`.
 
-### Validation
-Validation passed: full test suite and metadata checks.
+Validation passed: 761 tests and repository checks.
 
 ### Decision
 **APPROVE**
 ```
 
-**With findings:**
+**With findings** — one scannable line per finding; the detail lives in
+the inline comments:
 
 ```markdown
 ## Code Review
 
 **Result: ⚠️ CHANGES REQUIRED**
 
-Not safe to merge at `a1b2c3d`: pagination can stop after page one.
+Not safe to merge at `a1b2c3d` yet; see the inline comments for detail.
 
 ### Findings
 
-#### F1 [P1] Incomplete pagination can produce a false clean review
-`src/reviews/scan.py:84`
-_(full finding published as an inline comment)_
+- **P1 — Pagination can stop after page one and pass a false clean review**
+  `src/reviews/scan.py:84`
+- **P2 — Validation output hides the failing check name**
+  `scripts/validate.py:117`
+
+Validation passed: 761 tests and repository checks.
 
 ### Decision
 **REQUEST CHANGES**
 ```
 
-Machine/process state (SHAs, counts, review mode, action mode, mutation
-outcome) sits in a small trailing `<details>` block — never in the body.
+The final body never repeats a finding's evidence, impact, or fix when
+that finding already has an inline comment. Machine/process state (SHAs,
+counts, review mode, action mode, mutation outcome) sits in a small
+trailing `<details>` block — never in the body.
 
 ## Self-review
 
