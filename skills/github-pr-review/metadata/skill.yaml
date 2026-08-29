@@ -9,17 +9,17 @@
 
 name: github-pr-review
 description: >-
-  Reviews an existing GitHub Pull Request authored by someone other than
-  the local user or calling Agent — passively as a report, or, with
-  authenticated GitHub access, actively by publishing inline PR review
-  comments and one consolidated final summary. Review analysis is
+  Reviews an existing GitHub Pull Request — passively as a report, or,
+  with authenticated GitHub access, actively by publishing inline PR
+  review comments and one consolidated final summary. Review analysis is
   separate from GitHub mutation authority: the default is a non-mutating
   recommendation, and an Approve/Request Changes decision is submitted
   only under independently trusted authorization with genuine reviewer
-  independence. Never edits implementation code and never merges. Not
-  applicable, and must not be selected, for a PR or code the local user
-  or calling Agent authored — use `local-code-review` for
-  local/uncommitted changes with no PR.
+  independence. Self-review is allowed — the Skill analyzes its own PR
+  and produces a verdict — but self-approval is not: no formal
+  Approve/Request Changes is ever submitted on the reviewer's own work.
+  Never edits implementation code and never merges. For local,
+  not-yet-PR'd changes use `local-code-review`.
 version: 0.1.0
 entrypoint: SKILL.md
 

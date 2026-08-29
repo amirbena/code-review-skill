@@ -22,8 +22,8 @@ is the one exception — see "Jira context resolution (PR application)" below �
 and it never makes Jira mandatory for reviews that do not supply one.
 
 Context is resolved **after**
-[`review-authority.md`](review-authority.md) (the self-review guard is
-authoritative and terminates first) and
+[`review-authority.md`](review-authority.md) (the self-review mutation
+boundary is resolved first — it never blocks analysis) and
 [`reviewer-delta-review.md`](reviewer-delta-review.md) (review-mode
 resolution), and **before or alongside** PR scope retrieval
 ([`pr-scope.md`](pr-scope.md)). It never changes whether the PR is reviewed
@@ -67,9 +67,9 @@ by the shared
 [`review-context.md`](../../../shared/policies/review-context.md), "Jira
 context resolution," and is not restated here. For a PR review:
 
-- the Resolution procedure runs after the self-review guard and review-mode
-  resolution and before PR scope retrieval; it never changes the review mode
-  or the PR delta;
+- the Resolution procedure runs after the self-review mutation-boundary
+  resolution and review-mode resolution and before PR scope retrieval; it
+  never changes the review mode or the PR delta;
 - **read-only**: retrieving Jira context adds no Jira write capability —
   never edit/transition an issue, add a comment, change a field, create a
   ticket, or assign a user;
@@ -114,5 +114,7 @@ an ambiguity rather than silently picking a side.
   [`review-output.md`](review-output.md), "Final decision," and
   [`severity.md`](../../../shared/policies/severity.md), "Decision derivation
   (mechanical)." It never adds a separate decision path.
-- **Self-review guard unchanged.** Supplying context never bypasses
+- **Self-review mutation boundary unchanged.** Supplying context never
+  lets a self-review submit a formal `APPROVE` / `REQUEST_CHANGES` on the
+  reviewer's own work — see
   [`review-authority.md`](review-authority.md), "Self-review capability."

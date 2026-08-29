@@ -10,7 +10,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-SELF_REVIEW_SKIPPED = "self_review_skipped"
 NORMAL_FULL_REVIEW = "normal_full_review"
 DELTA_RE_REVIEW = "delta_re_review"
 NO_NEW_DELTA = "no_new_delta"
@@ -22,6 +21,12 @@ class ReviewModeInput:
 
     `current_reviewer`/`pr_author` are required; other None/False fields
     mean "unresolved" and fail conservative (normal full review).
+
+    `current_reviewer == pr_author` (a self-review) does **not** change
+    review-mode selection — a self-review is a full or delta re-review on
+    the same terms as an external one. Whether a self-review may submit a
+    formal GitHub event is a separate concern owned by
+    review_action_authorization.py.
     """
 
     current_reviewer: str
@@ -41,12 +46,14 @@ class ReviewModeResult:
 
 
 def resolve_review_mode(inp: ReviewModeInput) -> ReviewModeResult:
-    """Resolve the review mode. Order: self-review guard, previous-review
-    existence, reviewer ambiguity/match, SHA checks, delta escalation."""
+    """Resolve the review mode. Order: previous-review existence, reviewer
+    ambiguity/match, SHA checks, delta escalation.
 
-    # Self-review guard is authoritative and can never be bypassed below.
-    if inp.current_reviewer == inp.pr_author:
-        return ReviewModeResult(SELF_REVIEW_SKIPPED, "current reviewer is the PR author")
+    Authorship (`current_reviewer == pr_author`) is deliberately not
+    consulted here: a self-review resolves its mode exactly like an
+    external review. The self-review mutation boundary is applied
+    elsewhere and never skips analysis or mode resolution.
+    """
 
     if not inp.previous_review_exists:
         return ReviewModeResult(NORMAL_FULL_REVIEW, "no previous completed review")

@@ -433,8 +433,9 @@ source would — see [`severity.md`](severity.md), "Decision derivation
   GitHub Issue included) is never itself approval to invoke a Skill and never
   bypasses `local-code-review`'s per-invocation approval contract
   (`skills/local-code-review/policies/invocation-approval.md`) or
-  `github-pr-review`'s self-review guard
-  (`skills/github-pr-review/policies/review-authority.md`).
+  `github-pr-review`'s self-review mutation boundary — authorship still
+  withholds a formal `APPROVE` / `REQUEST_CHANGES` on the reviewer's own
+  work (`skills/github-pr-review/policies/review-authority.md`).
 - **Target unchanged.** Context never converts a Jira ticket, an Issue, an
   ADR, or a PR description into an additional review target. The review target
   stays the local delta / the PR.

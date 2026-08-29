@@ -146,10 +146,25 @@ unavailable, unauthorized, or withheld.
 
 ### Review-action authorization gate
 
+The reasoning result (verdict) is produced first, by the mechanical
+derivation above, and is always reported. This gate is applied only to
+whether that verdict is *submitted* to GitHub as an event.
+
 Immediately before submitting any `APPROVE` / `REQUEST_CHANGES` event
 (and after "HEAD revalidation" below), apply
 [`review-action-authorization.md`](review-action-authorization.md):
 
+- **Self-review is absolute.** If the reviewer is the PR author — or a
+  reviewer under the same controlling authority as the author (see
+  [`review-authority.md`](review-authority.md), "Self-review capability"
+  and "Authority separation, not just identity separation") — no formal
+  `APPROVE` / `REQUEST_CHANGES` event is submitted, regardless of mode,
+  natural-language request, or any authorization. The full analysis still
+  ran; report the verdict with the withheld reason, for example:
+  `REVIEW CLEAN — GitHub review mutation withheld: reviewer is the PR
+  author` or `CHANGES REQUIRED — GitHub review mutation withheld:
+  reviewer is the PR author`. The verdict is not rewritten because the
+  event was withheld.
 - Resolve the review-action mode. The default is **recommendation-only**
   — a full review and reasoning result, with **no** GitHub mutation.
   Passive review is always recommendation-only.

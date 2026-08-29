@@ -19,10 +19,13 @@ PR
     ↓
 normalize current-invocation presentation options
     ↓
-resolve authenticated identity and PR author
+resolve authenticated identity, PR author, and controlling authority
     ↓
-same identity? → yes → REVIEW SKIPPED → stop
-    ↓ no
+reviewer is the PR author (or same controlling authority)?
+    → yes → self-review: analysis runs in full; formal APPROVE /
+            REQUEST_CHANGES is withheld on own work (no stop)
+    → no  → external review; mutation eligibility resolved by the gate
+    ↓
 check review ownership
     ↓
 verify repository/review access
@@ -82,13 +85,22 @@ stop
 ## Steps
 
 1. **Before any other step**, resolve the repository and PR, then resolve
-   the authenticated GitHub identity and the PR author and compare them,
-   per [`../policies/review-authority.md`](../policies/review-authority.md),
-   "Self-review capability." If they are the same account, terminate
-   immediately with `REVIEW SKIPPED` — do not check review ownership,
-   verify access, retrieve PR scope, review the diff, or produce any
-   finding. This check precedes and is independent of the ownership check
-   in step 2.
+   the authenticated GitHub identity, the PR author, and whether the two
+   share a controlling authority, per
+   [`../policies/review-authority.md`](../policies/review-authority.md),
+   "Self-review capability" and "Authority separation, not just identity
+   separation." If the reviewer **is** the PR author, or is a reviewer
+   under the same controlling authority (an alternate account / token /
+   bot / service account / GitHub App identity / nested agent / spawned
+   process), this invocation is a **self-review**: set
+   `formal_review_mutation_allowed = false` and **continue** — the full
+   review still runs (same evidence and process as an external review),
+   but step 14 submits no `APPROVE` and no formal `REQUEST_CHANGES` on the
+   reviewer's own work. There is no `REVIEW SKIPPED`; analysis is not
+   skipped. If identity or controlling authority cannot be resolved with
+   confidence, treat the invocation as a self-review for the mutation
+   boundary (fail closed). This resolution precedes and is independent of
+   the ownership check in step 2.
 2. Check for an existing Code Review Agent owner of this scope per
    [`../../../shared/policies/review-ownership.md`](../../../shared/policies/review-ownership.md).
    If owned elsewhere, return `REVIEW ALREADY OWNED` and stop.
@@ -188,9 +200,10 @@ stop
 6. Determine event-specific capability, including draft, fork,
    comment-only, and permission-limited states, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
-   "Capability matrix." (Self-review was already resolved and excluded in
-   step 1.) Do not treat authentication or repository access as proof
-   that a formal review event is permitted.
+   "Capability matrix." (The self-review mutation boundary was resolved in
+   step 1; if this is a self-review, no formal event is submitted
+   regardless of capability.) Do not treat authentication or repository
+   access as proof that a formal review event is permitted.
 
    **Resolve the review-action mode and mutation authorization** per
    [`../policies/review-action-authorization.md`](../policies/review-action-authorization.md).
@@ -346,19 +359,24 @@ stop
     [`../policies/review-action-authorization.md`](../policies/review-action-authorization.md)
     and [`../policies/review-output.md`](../policies/review-output.md),
     "Review-action authorization gate," using the mode resolved in step 6
-    and the HEAD confirmed in step 12. In **recommendation-only** mode,
-    submit no GitHub mutation — return the finalized review body and
-    findings to the caller and report `Mutation: WITHHELD (<reason>)`. In
-    **block-only** mode, submit `REQUEST_CHANGES` only for a blocking
-    reasoning result and never `APPROVE` for a clean one. In
-    **explicitly-authorized auto-action** mode — only with trusted
-    authorization for this exact action, established reviewer
-    independence, and all principle-7 guarantees holding — submit that
-    one review: body, inline comments, and the permitted **Approve** or
-    **Request Changes** event together, per
+    and the HEAD confirmed in step 12. **If step 1 resolved this as a
+    self-review** (`formal_review_mutation_allowed = false`): submit no
+    GitHub review event at all — not `APPROVE`, not `REQUEST_CHANGES` —
+    regardless of mode, natural-language request, or authorization; return
+    the finalized review body and findings and report the verdict with
+    `Mutation: WITHHELD (self-review: reviewer is the PR author)`. The
+    verdict is not changed. Otherwise (external review): in
+    **recommendation-only** mode, submit no GitHub mutation — return the
+    finalized review body and findings to the caller and report
+    `Mutation: WITHHELD (<reason>)`. In **block-only** mode, submit
+    `REQUEST_CHANGES` only for a blocking reasoning result and never
+    `APPROVE` for a clean one. In **explicitly-authorized auto-action**
+    mode — only with trusted authorization for this exact action,
+    established reviewer independence, and all principle-7 guarantees
+    holding — submit that one review: body, inline comments, and the
+    permitted **Approve** or **Request Changes** event together, per
     [`../policies/review-output.md`](../policies/review-output.md),
-    "Batched review construction and submission." (Self-review was
-    already excluded in step 1 and never reaches this step.) If GitHub
+    "Batched review construction and submission." If GitHub
     rejects a specific resolved inline location during this step, apply
     the [`../policies/finding-placement.md`](../policies/finding-placement.md)
     "Rejected inline location fallback" (move that finding's full
@@ -376,11 +394,11 @@ stop
     explicitly with its reason; a clean reasoning result with a withheld
     approval is never reported as "approved."
 16. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
-    step 5, remove it now — and on **every** other exit path: a `REVIEW
-    SKIPPED` / `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any
-    context-resolution failure after the checkout was allocated, any review
-    or worker failure, any publication failure, or an interruption the
-    runtime surfaces. This runs in a `finally` (or the runtime's
+    step 5, remove it now — and on **every** other exit path: a
+    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, a self-review that
+    withholds its formal event, any context-resolution failure after the
+    checkout was allocated, any review or worker failure, any publication
+    failure, or an interruption the runtime surfaces. This runs in a `finally` (or the runtime's
     equivalent). Before deleting, verify the target resolves inside the
     scratch parent, is not the scratch parent itself, and carries this
     Skill's ownership marker — never an unconstrained recursive delete. Then

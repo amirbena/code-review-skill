@@ -17,7 +17,9 @@ changed files and their normalized repository-instruction context are
 resolved, and before findings are finalized. Required repository-context
 failure starts no workers. It never changes the review mode
 ([`reviewer-delta-review.md`](reviewer-delta-review.md)), the PR delta, the
-self-review guard, or the batched single-review publication
+self-review mutation boundary
+([`review-authority.md`](review-authority.md)), or the batched
+single-review publication
 ([`review-output.md`](review-output.md)).
 
 ## Execution-policy signals for a PR

@@ -81,10 +81,13 @@ matrix that goes stale.
 
 The governance features below are this repository's differentiated, durable content:
 
-- **Hard self-review prevention** — an implementing Agent must not review its own PR.
-- **Defensive authenticated-user vs. PR-author guard** — `github-pr-review` independently
-  compares the authenticated identity against the PR author before doing anything else, and
-  terminates with `REVIEW SKIPPED` if they match, regardless of why it was invoked.
+- **Self-review is allowed; self-approval is not** — `github-pr-review` may analyze its own
+  PR and produce findings and a verdict, but it never submits a formal `APPROVE` /
+  `REQUEST_CHANGES` on the reviewer's own work.
+- **Defensive authenticated-user vs. PR-author check** — `github-pr-review` independently
+  compares the authenticated identity (and its controlling authority) against the PR author
+  before submitting anything; if they match, the review still runs and reports a verdict, but
+  the formal GitHub review event is withheld, regardless of why the Skill was invoked.
 - **One reviewer owner per scope** — a given PR or local branch/review scope has exactly one
   owning Code Review Agent at a time.
 - **Reviewer-aware, SHA-bound delta re-review** — a re-review may be scoped to just the delta
@@ -161,8 +164,9 @@ Some invariants are enforced at two separate points, deliberately:
   calling these Skills must never invoke `github-pr-review` against a PR the same implementing
   Agent just opened or updated. This is a sequencing rule for whatever is doing the orchestrating.
 - **Skill-level defensive enforcement**: `github-pr-review` independently verifies the
-  authenticated identity against the PR author and returns `REVIEW SKIPPED` before any analysis,
-  regardless of whether the orchestration rule above was honored.
+  authenticated identity (and its controlling authority) against the PR author; when they
+  match, the analysis still runs and reports a verdict but the formal GitHub review event is
+  withheld, regardless of whether the orchestration rule above was honored.
 
 These are not the same rule enforced twice — they intervene at two different points in the
 causal chain. The orchestration rule tries to prevent the invocation from happening at all; the
@@ -191,7 +195,7 @@ today, and this document does not describe one as though it did.
 |---|---|---|
 | Bug finding | Yes | Yes |
 | Repository-context reasoning | Often | Yes |
-| Self-review prevention | Varies by product | Explicit |
+| Self-approval prevention (self-review analysis allowed) | Varies by product | Explicit |
 | Reviewer ownership | Varies by product | Explicit |
 | SHA-bound delta re-review | Varies by product | Explicit |
 | HEAD TOCTOU protection | Varies by product | Explicit |
@@ -248,7 +252,7 @@ consumed identically by both.
 | **Scope-boundary reasoning** | shared ([`review-context.md`](../shared/policies/review-context.md), "Scope-boundary reasoning") — missing behavior, contradicted acceptance criteria, unrelated scope expansion, valid-but-out-of-scope findings, repo-policy violations regardless of ticket scope | shared, same, applied to the PR |
 | **Severity model** | shared P0 / P1 / P2 ([`severity.md`](../shared/policies/severity.md)) | shared, identical |
 | **Final decision semantics** | `REVIEW CLEAN` / `CHANGES REQUIRED`, derived mechanically from blocking (P0/P1) severities | `Approve` / `Request Changes`, same mechanical derivation |
-| **Opt-in behavior** | every invocation needs fresh explicit user approval ([`invocation-approval.md`](../skills/local-code-review/policies/invocation-approval.md)) | selection boundary + defensive self-review guard ([`review-authority.md`](../skills/github-pr-review/policies/review-authority.md)); no per-run approval gate for *analysis*, but GitHub mutation is gated — non-mutating `recommendation-only` by default, `APPROVE` only under independently trusted, PR/HEAD-scoped authorization with genuine reviewer independence ([`review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md)) |
+| **Opt-in behavior** | every invocation needs fresh explicit user approval ([`invocation-approval.md`](../skills/local-code-review/policies/invocation-approval.md)) | no per-run approval gate for *analysis* (self-review analysis is allowed), but GitHub mutation is gated — non-mutating `recommendation-only` by default, self-review never submits a formal event, and `APPROVE` only under independently trusted, PR/HEAD-scoped authorization with genuine reviewer independence ([`review-authority.md`](../skills/github-pr-review/policies/review-authority.md), [`review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md)) |
 | **Re-review behavior** | stateless; fresh approval each run; staged-delta fingerprint short-circuit | SHA-bound reviewer-owned delta re-review; `NO NEW DELTA`; escalation to full review |
 | **Publishing behavior** | returns one structured report to the caller; never publishes | passive: returns a report; active: one batched GitHub review (inline comments + body + Approve/Request Changes) |
 | **Remediation guidance** | concise `Fix` direction by default; explicit `include_fix_prompt=true` may add one coding-agent-ready prompt per qualifying root-cause finding; output-only and still read-only | concise reviewer-facing `Fix` direction only; no local-style full implementation prompt; severity, verdict, and mutation boundaries unchanged |

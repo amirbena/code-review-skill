@@ -7,8 +7,8 @@ trusted reviewer independence, and the fail-closed rules that apply when
 either cannot be established. Canonical index:
 [`github-review.md`](github-review.md). Builds on
 [`review-authority.md`](review-authority.md) (identity resolution and the
-self-review guard, which run first and are never bypassed) and is
-enforced at submission time by
+self-review mutation boundary — authorship forbids a formal self-review
+event but never blocks analysis) and is enforced at submission time by
 [`review-output.md`](review-output.md), "Review-action authorization
 gate."
 
@@ -63,11 +63,57 @@ downstream rule, flag, prompt, or invocation.
    boundary. This gate composes with them; it never substitutes for or
    relaxes them.
 
+## Self-review is allowed; self-approval is not
+
+Analysis eligibility and mutation eligibility are **separate**:
+
+```text
+analysis_allowed                → may this reviewer run the review at all?
+formal_review_mutation_allowed  → may this reviewer submit a formal
+                                  APPROVE / REQUEST_CHANGES event?
+```
+
+Authorship gates only the second. When the reviewer is the PR author, or
+is a reviewer under the same controlling authority as the author (an
+alternate account / token / bot / service account / GitHub App identity /
+nested agent / spawned process — see
+[`review-authority.md`](review-authority.md), "Authority separation, not
+just identity separation"), the invocation is a **self-review**:
+
+```text
+analysis_allowed               = true
+formal_review_mutation_allowed = false
+```
+
+The full review runs — same evidence, same process, same mechanical
+verdict derivation — and produces findings, P0/P1/P2 classifications, and
+a `REVIEW CLEAN` / `CHANGES REQUIRED` verdict. It just does not submit a
+GitHub review event: `APPROVE` on one's own work is **always** forbidden,
+and `REQUEST_CHANGES` is not submitted as a formal self-review action
+either. The verdict is reported unchanged, with an explicit note that the
+formal event was withheld because the reviewer is the PR author.
+
+This boundary is **absolute for a self-review** — no review-action mode,
+natural-language request, flag, prompt, or trusted external authorization
+can make a self-review submit a formal event. Trusted authorization and
+the reviewer-independence rules below decide whether an **external**
+(non-self) review may mutate; they never apply to a self-review, which is
+non-mutating by construction. `MERGE` is never introduced here for any
+reviewer.
+
 ## Review-action modes
+
+Modes are an **internal** representation of requested review behavior.
+Users express intent in natural language — see "Natural-language
+review-action intent" below — and there is no required user-facing mode
+syntax (no `--recommendation-only` / `--block-only` / `--auto-action`).
+The internal identifiers may appear in package metadata and reference
+models.
 
 Exactly one mode is in effect for an invocation. The mode never changes
 which findings exist, their severity, or the derived decision — it only
-bounds which GitHub mutations may be submitted.
+bounds which GitHub mutations an **external** review may submit (a
+self-review submits none regardless of mode).
 
 ### recommendation-only (default)
 
@@ -136,6 +182,30 @@ never proceeds with the privileged action on partial evidence.
   never to auto-action.
 - A withheld mutation is reported explicitly with its reason (see
   "Reporting"), never silently downgraded.
+
+## Natural-language review-action intent
+
+Users express what they want the review to do in ordinary language. The
+Skill normalizes that intent to an internal mode; it never requires the
+user to name a mode or pass a flag.
+
+```text
+"Just review this PR."                              → recommendation-only
+"Review it and block it if there are serious        → block-only
+ issues, but don't approve it."
+"Review it; approve if clean, request changes if    → auto-action candidate
+ there are blocking findings."
+```
+
+An `auto-action` **candidate** is only that. Natural-language intent
+expresses *requested* behavior; it is **not** trusted mutation
+authorization. The fact that a user (or an agent relaying a user) asked
+for a GitHub action does not by itself permit the mutation — the
+provenance gate in "Trusted mutation authorization" still decides whether
+an `APPROVE` / `REQUEST_CHANGES` may actually be submitted, and a
+self-review submits none regardless. When the phrasing is ambiguous, or
+cannot be mapped to one clear behavior, resolve to recommendation-only
+per "Safe default and fail-closed."
 
 ## Trusted mutation authorization
 
@@ -244,9 +314,10 @@ Reviewer independence is a question of **authority**, not usernames.
 
 `authenticated_identity != pr_author_identity` (the check owned by
 [`review-authority.md`](review-authority.md), "Self-review capability") is
-**necessary but not sufficient**. It remains in force as defense in depth
-and its `REVIEW SKIPPED` hard stop is authoritative and runs first — but
-it is not the whole trust model.
+**necessary but not sufficient**. Failing it means the invocation is a
+self-review: analysis still runs, and the formal event is withheld. Passing
+it does not by itself establish independence — it is not the whole trust
+model.
 
 An actor is **not** an independent reviewer, and using it does not create
 reviewer independence, when its selection, credentials, or instructions
@@ -297,7 +368,9 @@ The gate is applied **in addition to**, and after, everything already
 required for a formal review:
 
 ```text
-self-review guard (review-authority.md)        — runs first; REVIEW SKIPPED is a hard stop
+self-review mutation boundary (review-authority.md) — authorship forbids a
+                                                 formal self-review event;
+                                                 analysis still runs
     ↓
 reviewer ownership (review-ownership.md)        — REVIEW ALREADY OWNED unchanged
     ↓
@@ -334,6 +407,7 @@ Mutation:    SUBMITTED (<event>) | WITHHELD (<reason>) | NOT REQUESTED
 `WITHHELD` reasons are explicit and name the specific gate that stopped
 the mutation, for example:
 
+- `WITHHELD (self-review: reviewer is the PR author; no formal review event on own work)`
 - `WITHHELD (no trusted mutation authorization; default recommendation-only)`
 - `WITHHELD (reviewer independence not established)`
 - `WITHHELD (authorization scope does not match this PR/HEAD)`

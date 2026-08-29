@@ -6,18 +6,26 @@ Mirrors skills/github-pr-review/policies/review-action-authorization.md
 skills/github-pr-review/policies/review-output.md, "Review-action
 authorization gate"). Not runtime logic, not packaged.
 
-The model deliberately keeps three concerns separate, exactly as the
+The model deliberately keeps four concerns separate, exactly as the
 policy does:
 
+* whether **review analysis** may run (`analysis_allowed`) — authorship
+  never blocks it;
 * the review **verdict** (mechanically derived elsewhere from finding
   severities — see decision_semantics.py — and never an input to
-  authority here);
+  authority here, and never rewritten because mutation was withheld);
 * the review-action **mode** (recommendation-only | block-only |
-  explicitly-authorized auto-action);
-* whether a GitHub **mutation** (APPROVE / REQUEST_CHANGES) may be
-  submitted.
+  explicitly-authorized auto-action) — an internal representation of
+  requested behavior; users express intent in natural language;
+* whether a formal GitHub **mutation** (APPROVE / REQUEST_CHANGES) may be
+  submitted (`formal_review_mutation_allowed`).
 
-Everything fails closed: any unknown, ambiguous, or agent-controlled
+Core invariant: **self-review is allowed; self-approval is not.** A
+reviewer may analyze its own work and produce a verdict, but it never
+submits a formal APPROVE or REQUEST_CHANGES on its own work — regardless
+of mode, natural-language request, or any authorization.
+
+Everything else fails closed: any unknown, ambiguous, or agent-controlled
 input resolves to the safe, non-mutating outcome.
 """
 
@@ -134,6 +142,25 @@ def classify_reviewer_independence(
     return ReviewerIndependence.INDEPENDENT
 
 
+# Natural-language intent → internal mode. Illustrative normalization,
+# not a real NLP parser: it shows that users express behavior in ordinary
+# language and never need a keyword or flag. The result is only a
+# *requested* mode — it is not, by itself, trusted mutation authorization.
+def normalize_intent(text: Optional[str]) -> ActionMode:
+    if not text:
+        return ActionMode.RECOMMENDATION_ONLY
+    t = text.lower()
+    asks_approve = ("approve if" in t) or ("approve it if" in t) or ("auto-approve" in t)
+    forbids_approve = ("don't approve" in t) or ("do not approve" in t) or ("never approve" in t)
+    asks_block = ("block it" in t) or ("request changes if" in t) or ("block if" in t)
+    if asks_approve and not forbids_approve:
+        return ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION  # a *candidate* only
+    if asks_block or (forbids_approve and asks_block):
+        return ActionMode.BLOCK_ONLY
+    # "just review this", "review it", anything ambiguous → safe default.
+    return ActionMode.RECOMMENDATION_ONLY
+
+
 @dataclass(frozen=True)
 class AuthorizationScope:
     """The narrow binding of a relied-upon authorization (policy,
@@ -180,11 +207,18 @@ def authorization_covers(
 class ActionAuthorizationInput:
     """Already-resolved facts for the gate.
 
-    `requested_mode` is what the caller/agent asked for; it is only a
-    *request* and never sufficient on its own. Everything else is a
-    resolved fact from earlier gates (self-review, HEAD revalidation,
-    GitHub event capability) plus the authorization/independence
-    classification above.
+    `requested_mode` is what the caller/agent asked for (normalized from
+    natural language upstream); it is only a *request* and never
+    sufficient on its own. Everything else is a resolved fact from
+    earlier gates (HEAD revalidation, GitHub event capability) plus the
+    authorship / authorization / independence classification above.
+
+    `self_review` is true when the authenticated reviewer *is* the PR
+    author. `same_controlling_authority_as_author` is true when the
+    reviewer is a distinct identity (alternate account/token/bot/service
+    account/GitHub App/nested agent/spawned process) that is nonetheless
+    under the PR author's controlling authority. Either makes this a
+    self-review for the mutation boundary; neither blocks analysis.
     """
 
     verdict: Verdict
@@ -193,11 +227,21 @@ class ActionAuthorizationInput:
     reviewed_head_sha: str
     current_head_sha: str
     passive: bool = False
-    self_review: bool = False  # authenticated identity == PR author
+    self_review: bool = False
+    same_controlling_authority_as_author: bool = False
     requested_mode: ActionMode = ActionMode.RECOMMENDATION_ONLY
     authorization: Optional[MutationAuthorization] = None
     reviewer_independence: ReviewerIndependence = ReviewerIndependence.AMBIGUOUS
     permitted_events: frozenset[GitHubEvent] = field(default_factory=frozenset)
+
+
+@dataclass(frozen=True)
+class ReviewEligibility:
+    """The two concerns, kept explicitly separate."""
+
+    analysis_allowed: bool
+    formal_review_mutation_allowed: bool
+    reason: str
 
 
 @dataclass(frozen=True)
@@ -212,6 +256,42 @@ class MutationOutcome:
         return self.event is not GitHubEvent.NONE
 
 
+def is_self_review(inp: ActionAuthorizationInput) -> bool:
+    """Authorship as a mutation boundary: identity match, or a distinct
+    identity under the author's controlling authority."""
+    return inp.self_review or inp.same_controlling_authority_as_author
+
+
+def analysis_allowed(inp: ActionAuthorizationInput) -> bool:
+    """Authorship never blocks analysis. (Concerns that *can* stop a
+    review before analysis — Agent review ownership, unresolved Jira
+    context, incomplete scope — are owned by other policies and are out
+    of scope for this model.)"""
+    return True
+
+
+def review_eligibility(inp: ActionAuthorizationInput) -> ReviewEligibility:
+    """Separate analysis eligibility from formal-mutation eligibility.
+
+    A self-review: analysis_allowed = True, formal_review_mutation_allowed
+    = False. An external review: analysis_allowed = True, and whether a
+    formal event is actually submitted is then decided by
+    resolve_mutation_outcome (mode + trusted authorization + independence
+    + HEAD + permission)."""
+    if is_self_review(inp):
+        return ReviewEligibility(
+            analysis_allowed=True,
+            formal_review_mutation_allowed=False,
+            reason="self-review: reviewer is the PR author (or under the "
+            "author's controlling authority); no formal review event on own work",
+        )
+    return ReviewEligibility(
+        analysis_allowed=True,
+        formal_review_mutation_allowed=True,
+        reason="external review: formal mutation subject to the authorization gate",
+    )
+
+
 def _head_is_stale(inp: ActionAuthorizationInput) -> bool:
     return inp.reviewed_head_sha != inp.current_head_sha
 
@@ -221,8 +301,9 @@ def resolve_action_mode(inp: ActionAuthorizationInput) -> ActionMode:
     every ambiguity fails closed to it (or to BLOCK_ONLY only when
     independence is firmly established and the verdict is blocking)."""
 
-    # Passive review and self-review are always non-mutating.
-    if inp.passive or inp.self_review:
+    # Passive review and self-review are always non-mutating; the "mode"
+    # is moot for them (no formal event is submitted regardless).
+    if inp.passive or is_self_review(inp):
         return ActionMode.RECOMMENDATION_ONLY
 
     independent = inp.reviewer_independence is ReviewerIndependence.INDEPENDENT
@@ -244,9 +325,10 @@ def resolve_action_mode(inp: ActionAuthorizationInput) -> ActionMode:
 
 
 def resolve_mutation_outcome(inp: ActionAuthorizationInput) -> MutationOutcome:
-    """Decide whether a GitHub mutation is submitted. The verdict is
-    computed elsewhere and only *reported* here — it is never an input to
-    authority."""
+    """Decide whether a formal GitHub review event is submitted. The
+    verdict is computed elsewhere and only *reported* here — it is never
+    an input to authority, and never rewritten because the event was
+    withheld."""
 
     mode = resolve_action_mode(inp)
     desired = (
@@ -258,8 +340,13 @@ def resolve_mutation_outcome(inp: ActionAuthorizationInput) -> MutationOutcome:
     def withheld(reason: str) -> MutationOutcome:
         return MutationOutcome(mode, GitHubEvent.NONE, inp.verdict, reason)
 
-    if inp.self_review:
-        return withheld("self-review: authenticated identity is the PR author")
+    # Self-review is absolute: analysis already ran and produced the
+    # verdict above; no formal APPROVE / REQUEST_CHANGES is ever submitted
+    # on own work, whatever the mode, request, or authorization.
+    if is_self_review(inp):
+        return withheld(
+            "self-review: reviewer is the PR author; no formal review event on own work"
+        )
 
     # A stronger request than recommendation-only requires established
     # reviewer independence before anything else — report that precisely

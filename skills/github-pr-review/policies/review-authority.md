@@ -1,7 +1,7 @@
 # Policy — Review Authority
 
-Governs the self-review guard and review/publication capability for
-`github-pr-review`. Canonical index:
+Governs the self-review mutation boundary and review/publication
+capability for `github-pr-review`. Canonical index:
 [`github-review.md`](github-review.md). Builds on the shared
 [`review-ownership.md`](../../../shared/policies/review-ownership.md)
 policy ("Access vs. Ownership") for the distinct Agent-level ownership
@@ -9,61 +9,84 @@ concern.
 
 ## Self-review capability
 
-`github-pr-review` is a reviewer role that requires genuine
-reviewer/author separation to mean anything. Preventing an implementing
-Agent from ever invoking this Skill against its own PR is primarily the
-calling system's orchestration responsibility, not this Skill's own. This
-guard is this Skill's complete, self-contained fallback for the case
-where that orchestration boundary is not honored and this Skill is
-invoked anyway — understanding and enforcing it requires nothing beyond
-this policy.
+**Self-review analysis is allowed; self-approval is not.** A reviewer may
+analyze its own work, follow the full review process, and produce
+findings and a review verdict — but it must never submit a formal
+`APPROVE` or `REQUEST_CHANGES` review on its own work.
 
-This check runs **first, before any other step** — before retrieving the
-paginated diff, before discovering repository instructions, before any
-review reasoning — for both passive and active review, regardless of
-which runbook was entered:
+Authorship is a **mutation boundary, not an analysis boundary**. When the
+authenticated reviewer *is* the PR author — or shares the same
+controlling authority as the PR author, see "Authority separation, not
+just identity separation" below — this invocation is a **self-review**:
 
 ```text
 resolve authenticated GitHub identity
-resolve PR author
+resolve PR author + its controlling authority
     ↓
-same identity?
+reviewer is the PR author, or same controlling authority?
     ↓ yes
-SKIP immediately — no diff analysis, no findings, no comments,
-no summary, no decision
+self-review:
+    analysis_allowed                = true   → run the full review
+    formal_review_mutation_allowed  = false  → submit no APPROVE and no
+                                               formal REQUEST_CHANGES on
+                                               the reviewer's own work
 ```
 
-When the authenticated identity and the PR author are the same account,
-this Skill terminates immediately with `REVIEW SKIPPED`. It must not
-proceed to: read or analyze the diff, generate findings, generate a
-review summary, emit `REVIEW CLEAN`, create inline comments, submit
-general comments, approve the PR, or request changes. Output is short and
-explicit:
+A self-review runs the same review process as an external review — same
+Issue/task intent, repository context, diff, previous review state,
+reviewed HEAD, delta re-review resolution, severity policy, blocking-
+finding handling, and stale-HEAD checks (see
+[`reviewer-delta-review.md`](reviewer-delta-review.md),
+[`pr-scope.md`](pr-scope.md), [`review-output.md`](review-output.md)).
+Review quality is never weakened because the reviewer is also the author.
+
+A self-review still produces and reports:
+
+- findings, with P0/P1/P2 classifications;
+- the mechanically derived verdict — `REVIEW CLEAN` or `CHANGES REQUIRED`
+  (see [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md));
+- an explicit statement that the formal GitHub review event was withheld
+  because the reviewer is the PR author.
+
+It does **not** submit a GitHub review event. `APPROVE` on one's own work
+is always forbidden; `REQUEST_CHANGES` is not submitted as a formal
+self-review action against the reviewer's own PR either (the blocking
+verdict is still reported — the change is withheld *submission*, not a
+softened verdict). The verdict is never rewritten merely because formal
+mutation is unavailable — see [`review-output.md`](review-output.md),
+"Final decision," and
+[`review-action-authorization.md`](review-action-authorization.md),
+"Self-review is allowed; self-approval is not."
+
+Example outcomes:
 
 ```text
-REVIEW SKIPPED
+own PR, no blocking findings
+    → REVIEW CLEAN
+    → GitHub review mutation withheld: reviewer is the PR author
 
-The authenticated GitHub user is the PR author.
-Self-review is intentionally not performed.
+own PR, an unresolved P1
+    → CHANGES REQUIRED
+    → GitHub review mutation withheld: reviewer is the PR author
 ```
 
-This is a hard stop, not a degraded review: it is distinct from the
-"Can inspect, cannot mutate" or "Comment-capable, decision-ineligible"
-capability states below, which still complete reasoning and report a
-recommendation. Self-review completes no reasoning at all.
+There is no `REVIEW SKIPPED` for a self-review: analysis is not skipped,
+only the formal GitHub event is. `MERGE` remains outside this Skill
+entirely and is never introduced here.
 
-If the authenticated identity cannot be resolved with confidence, do not
-assume it differs from the PR author merely for convenience; treat
-resolution failure as its own explicit incapability rather than silently
-defaulting to a full review.
+If the authenticated identity or the PR author's controlling authority
+cannot be resolved with confidence, do not assume separation merely for
+convenience; treat the invocation as a self-review for the purpose of the
+mutation boundary (fail closed — analysis still runs, the formal event is
+still withheld).
 
 ### Authority separation, not just identity separation
 
-The `authenticated_identity == pr_author` comparison above is a
-**necessary** guard and a hard stop, but it is **not** the complete trust
-model for whether a review is genuinely independent. `authenticated_identity
-!= pr_author` does not, on its own, prove the reviewer is independent of
-the change's author.
+The `authenticated_identity == pr_author` comparison above is
+**necessary** but **not** the complete test for whether a review is
+genuinely independent. `authenticated_identity != pr_author` does not, on
+its own, prove the reviewer is independent of the change's author — so it
+does not, on its own, lift the self-review mutation boundary.
 
 A different GitHub identity is **not** an independent reviewer when its
 selection, credentials, or instructions are controlled by the agent that
@@ -73,15 +96,20 @@ identity / GitHub App identity the agent can act as, invoking a nested
 agent or sub-agent the agent spawns, spawning another process under the
 same controlling authority, or forwarding the review task with
 instructions to another agent still under that authority — none of these
-manufacture an independent reviewer, and none bypass this guard.
+manufacture an independent reviewer. A review conducted through any of
+them is treated as a **self-review**: analysis runs in full, and the
+formal GitHub review event is withheld, exactly as in the same-account
+case above.
 
-Whether a privileged GitHub review **mutation** (`APPROVE` /
-`REQUEST_CHANGES`) may actually be submitted is governed by
+None of these checks stop the analysis itself. They gate only whether a
+formal GitHub review **mutation** (`APPROVE` / `REQUEST_CHANGES`) may be
+submitted. Whether an external (non-self) review may submit one is
+governed by
 [`review-action-authorization.md`](review-action-authorization.md), which
 requires *authority separation* (this section) **and** trusted mutation
-authorization, and fails closed to a non-mutating review otherwise. This
-`REVIEW SKIPPED` guard runs first and is authoritative; that policy never
-weakens it.
+authorization, and fails closed to a non-mutating review otherwise. That
+policy never lets a self-review submit a formal event, whatever
+authorization is presented.
 
 ## Review/repository access prerequisite
 
@@ -119,7 +147,7 @@ and intended event. Do not infer it from authentication or a broad role alone.
 | State | Reasoning | Comments | Formal decision |
 |---|---|---|---|
 | Eligible external reviewer | Complete when scope is complete | Publish when authorized | Submit `APPROVE` or `REQUEST_CHANGES` as reasoned |
-| PR author (self-review) | **None performed** — `REVIEW SKIPPED` at entry, before scope retrieval | None published | None submitted |
+| PR author (self-review), or reviewer under the same controlling authority as the author | **Complete** — same process and evidence as an external review | Not published as a formal review | **None** — no `APPROVE`, and no formal `REQUEST_CHANGES` on own work; report the verdict plus "GitHub review mutation withheld: reviewer is the PR author" |
 | Can inspect, cannot mutate | Complete when scope is complete | Do not publish | Return recommendation and `REVIEW NOT SUBMITTED` |
 | Comment-capable, decision-ineligible | Complete when scope is complete | May publish permitted comments | Return recommendation and `REVIEW NOT SUBMITTED` |
 | Draft PR | Review work-in-progress; complete only if scope is complete | May publish permitted feedback | Intentionally do not submit Approve/Request Changes until ready for review |

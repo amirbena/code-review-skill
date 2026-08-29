@@ -15,7 +15,6 @@ from tests.reference.reviewer_ownership import (
     DELTA_RE_REVIEW,
     NORMAL_FULL_REVIEW,
     NO_NEW_DELTA,
-    SELF_REVIEW_SKIPPED,
     ReviewModeInput,
     resolve_review_mode,
 )
@@ -100,12 +99,11 @@ class ReviewerOwnershipTests(unittest.TestCase):
         )
         self.assertEqual(result.mode, NO_NEW_DELTA)
 
-    def test_self_review_condition_terminates_before_review_mode_resolution(
-        self,
-    ) -> None:
-        # current_reviewer == pr_author must win even though every other
-        # fact below would otherwise select delta re-review — the
-        # self-review guard is authoritative and runs first.
+    def test_self_review_does_not_change_mode_resolution(self) -> None:
+        # A self-review (current_reviewer == pr_author) resolves its mode
+        # exactly like an external review: authorship never skips analysis
+        # or mode selection. With a prior self-review by the same identity
+        # and a new HEAD, this is a delta re-review, not a skip.
         result = resolve_review_mode(
             ReviewModeInput(
                 current_reviewer="alice",
@@ -116,7 +114,17 @@ class ReviewerOwnershipTests(unittest.TestCase):
                 current_head_sha="def5678",
             )
         )
-        self.assertEqual(result.mode, SELF_REVIEW_SKIPPED)
+        self.assertEqual(result.mode, DELTA_RE_REVIEW)
+
+    def test_self_review_with_no_prior_review_is_a_normal_full_review(self) -> None:
+        result = resolve_review_mode(
+            ReviewModeInput(
+                current_reviewer="alice",
+                pr_author="alice",
+                previous_review_exists=False,
+            )
+        )
+        self.assertEqual(result.mode, NORMAL_FULL_REVIEW)
 
     def test_same_reviewer_materially_expanded_delta_escalates_to_full_review(
         self,

@@ -145,17 +145,19 @@ review assignment (separate task, separate identity)
 github-pr-review
 ```
 
-Orchestration is the primary safeguard here. `github-pr-review` also
-carries its own defensive self-review guard for the case where it is
-nevertheless invoked against a PR authored by the authenticated identity
-— see [`../skills/github-pr-review/policies/review-authority.md`](../skills/github-pr-review/policies/review-authority.md),
+Orchestration is the primary safeguard here — it keeps an implementing
+Agent's own PR going to a genuinely separate reviewer for the formal
+decision. `github-pr-review` itself does **not** refuse to analyze its
+own PR: **self-review is allowed; self-approval is not.** When it is
+invoked against a PR authored by the authenticated identity (or a
+reviewer under the same controlling authority), it runs the full review
+and reports a verdict, but submits **no** formal `APPROVE` /
+`REQUEST_CHANGES` on that work — there is no `REVIEW SKIPPED`. See
+[`../skills/github-pr-review/policies/review-authority.md`](../skills/github-pr-review/policies/review-authority.md),
 "Self-review capability" and "Authority separation, not just identity
-separation." That guard is a fallback, not a substitute for orchestration
-honoring the rule above. Separately, and regardless of orchestration,
-`github-pr-review` never submits an `APPROVE` / `REQUEST_CHANGES`
-mutation just because it was invoked: its default is a non-mutating
-recommendation, and a mutation is submitted only under authorization from
-a source independent of the invoking/orchestrating agent, with genuine
+separation." Separately, and regardless of orchestration, an *external*
+`github-pr-review` mutation is submitted only under authorization from a
+source independent of the invoking/orchestrating agent, with genuine
 reviewer independence — an implementing agent cannot switch identities,
 tokens, bots, or nested agents to manufacture its own approver. The
 canonical rule is

@@ -14,39 +14,57 @@ its "At a glance" section helps you choose between this Skill and
 
 ## When to Use
 
-Use this Skill to review an existing GitHub Pull Request, authored by
-someone other than the local user or calling Agent, referenced by URL or
-number. It is not for reviewing local/uncommitted changes with no PR —
-see the sibling [`local-code-review`](../local-code-review/SKILL.md)
-Skill for that.
+Use this Skill to review an existing GitHub Pull Request, referenced by
+URL or number — someone else's PR, or the reviewer's own. It is not for
+reviewing local/uncommitted changes with no PR — see the sibling
+[`local-code-review`](../local-code-review/SKILL.md) Skill for that.
 
-This Skill preserves a strict reviewer/author separation, enforced at
-two layers:
+This Skill **may** be pointed at the reviewer's own PR — **self-review
+analysis is allowed** — but it never **self-approves**:
 
-- **Selection/invocation boundary (primary):** this Skill's own
-  `description` states it is not applicable — and must not be selected
-  or invoked — when the local user authored the code or PR under
-  review, or when an implementing Agent has just opened its own PR for
-  the change it made.
-- **Runtime defensive guard (fallback, unchanged):** if invoked anyway,
-  self-review by the authenticated PR author is skipped
-  (`REVIEW SKIPPED`) before any diff analysis or publication.
+- **Self-review — allowed.** When the reviewer is the PR author (or a
+  reviewer under the same controlling authority), the full review still
+  runs — same evidence, same process, same verdict derivation — and
+  produces findings and a `REVIEW CLEAN` / `CHANGES REQUIRED` verdict. It
+  submits **no** formal GitHub review event: `APPROVE` on one's own work
+  is always forbidden, and `REQUEST_CHANGES` is not submitted as a formal
+  self-review action either. The verdict is reported with a "GitHub
+  review mutation withheld: reviewer is the PR author" note and is not
+  rewritten.
+- **Manufactured independence — rejected.** An alternate account, token,
+  bot, service account, GitHub App identity, nested agent, or spawned
+  process under the same controlling authority as the author is treated
+  as a self-review for this boundary; it never unlocks a formal
+  self-approval.
 
-Independent review authority is required for a review to proceed. The
-complete rule is owned by
+Authorship gates **GitHub mutation, not analysis**. The complete rule is
+owned by
 [`policies/review-authority.md`](policies/review-authority.md) — this is
 a summary, not a restatement.
 
 ## Review-action authority
 
-Review analysis is separate from GitHub mutation authority. Merely
-allowing an implementation or orchestration agent to invoke this Skill
-does **not** let that agent approve its own work.
+Review analysis is separate from GitHub mutation authority. Analysis
+eligibility and mutation eligibility are distinct: a reviewer may always
+analyze and produce a verdict; whether it may submit a formal GitHub
+review event is a separate question. Merely allowing an implementation or
+orchestration agent to invoke this Skill does **not** let it approve its
+own work.
 
-- **Default: recommendation-only.** A review runs and returns its
-  findings and verdict with **no** GitHub mutation. Passive review is
+- **Self-review is allowed; self-approval is not.** Authorship (the
+  reviewer is the PR author, or shares the author's controlling
+  authority) forbids submitting a formal `APPROVE` / `REQUEST_CHANGES` on
+  the reviewer's own work — regardless of mode, request, or
+  authorization — but never blocks the analysis or changes the verdict.
+- **Default: recommendation-only.** An external review runs and returns
+  its findings and verdict with **no** GitHub mutation. Passive review is
   always recommendation-only. A caller never needs to pass a flag or say
   "do not approve" to get safe autonomous-agent behavior.
+- **Natural language, not syntax.** Users say what they want ("just
+  review this", "block it if serious but don't approve", "approve if
+  clean"); the Skill normalizes that to an internal mode. There is no
+  required mode flag or keyword, and asking for a GitHub action is not
+  itself trusted authorization.
 - **`block-only`** may submit `REQUEST_CHANGES` for a blocking verdict
   (with reviewer independence and GitHub permission), but never `APPROVE`
   for a clean one.
@@ -93,8 +111,9 @@ PR state
 → decision
 ```
 
-In brief: resolve the PR and reviewer identity, apply the self-review
-guard, resolve whether this is a full or bounded delta re-review,
+In brief: resolve the PR and reviewer identity, resolve the self-review
+mutation boundary (authorship withholds a formal event but never blocks
+analysis), resolve whether this is a full or bounded delta re-review,
 retrieve the complete required PR scope, reason about related changes as
 logical cohorts with their impact/dependency footprint, produce
 evidence-backed findings, and either publish one finalized GitHub review
@@ -228,7 +247,7 @@ authority is never inferred from a clean verdict or an approval.
 - [`policies/github-review.md`](policies/github-review.md) — canonical
   policy index for this Skill
 - [`policies/review-authority.md`](policies/review-authority.md) — identity,
-  self-review guard, authority separation, publication capability
+  self-review mutation boundary, authority separation, publication capability
 - [`policies/review-action-authorization.md`](policies/review-action-authorization.md)
   — review analysis vs. GitHub mutation authority; recommendation-only
   default; trusted authorization and reviewer independence; fail closed

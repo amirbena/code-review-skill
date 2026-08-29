@@ -44,7 +44,7 @@ Skills, so P0/P1/P2 semantics never diverge. Everything below the split is
 | Context model | review target / review context / repository context / existing review evidence | a thin per-Skill application (the local delta vs. the PR) |
 | State inspection | — | local Git state vs. GitHub PR state |
 | Delivery | the canonical report and finding shapes | a local report vs. GitHub publication |
-| Extra machinery | — | `github-pr-review` only: temporary checkout, parallel workers, self-review guard, review-action authorization (verdict ≠ mutation authority), SHA-bound delta re-review |
+| Extra machinery | — | `github-pr-review` only: temporary checkout, parallel workers, self-review mutation boundary (analysis allowed, self-approval not), review-action authorization (verdict ≠ mutation authority), SHA-bound delta re-review |
 
 ### Where to read next
 
@@ -145,7 +145,9 @@ review-scope rules, or the review-context / existing-review-evidence model
 `github-pr-review` additionally has its own policy family, indexed from
 [`policies/github-review.md`](../skills/github-pr-review/policies/github-review.md),
 for GitHub-specific delivery rules with no local-review analogue: review
-authority and self-review, **review-action authorization**
+authority and the self-review mutation boundary (authorship forbids a
+formal self-review event but never blocks analysis or the verdict),
+**review-action authorization**
 (`policies/review-action-authorization.md`: review analysis is separate
 from GitHub mutation authority — a non-mutating `recommendation-only`
 default, `block-only`, and `explicitly-authorized auto-action`; trusted
@@ -475,7 +477,11 @@ with no loss of correctness.
   (`skills/github-pr-review/policies/review-action-authorization.md`). The
   review always runs and produces a verdict; whether that verdict is
   *submitted* as an `APPROVE` / `REQUEST_CHANGES` event is a separate
-  authorized decision. The default is non-mutating
+  authorized decision. **Self-review is allowed; self-approval is not** —
+  authorship (the reviewer is the PR author, or shares the author's
+  controlling authority) forbids submitting any formal self-review event,
+  but never blocks the analysis or rewrites the verdict; there is no
+  `REVIEW SKIPPED`. For an external review, the default is non-mutating
   (`recommendation-only`); `APPROVE` is submitted only in
   `explicitly-authorized auto-action` mode, only under trusted mutation
   authorization (independent of the review-performing/orchestrating
@@ -755,11 +761,17 @@ in staged package metadata, then checked for containment and existence.
 - **GitHub submission capability** is separate from reasoning. A clean or
   blocking result remains valid even when the authenticated account (for
   example, the PR author) cannot submit the corresponding formal review.
+- **Analysis eligibility is separate from mutation eligibility.**
+  Authorship never blocks analysis: a self-review (the reviewer is the PR
+  author, or shares the author's controlling authority) runs the full
+  review and produces a verdict, but never submits a formal `APPROVE` /
+  `REQUEST_CHANGES` on its own work — self-review is allowed, self-approval
+  is not, and there is no `REVIEW SKIPPED`.
 - **GitHub mutation authority** is separate again from both reasoning and
-  submission *capability*. Even when reasoning is clean and the account
-  *could* submit an `APPROVE`, the event is submitted only in
-  `explicitly-authorized auto-action` mode under trusted, scoped
-  authorization and genuine reviewer independence
+  submission *capability*. For an external review, even when reasoning is
+  clean and the account *could* submit an `APPROVE`, the event is
+  submitted only in `explicitly-authorized auto-action` mode under
+  trusted, scoped authorization and genuine reviewer independence
   (`skills/github-pr-review/policies/review-action-authorization.md`). The
   default is `recommendation-only`; a verdict is not authorization and
   approval is not merge authority. This gate composes with — never

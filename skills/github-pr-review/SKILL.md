@@ -1,17 +1,17 @@
 ---
 name: github-pr-review
 description: >-
-  Reviews an existing GitHub Pull Request authored by someone other than
-  the local user or calling Agent — passively as a report, or, with
-  authenticated GitHub access, actively by publishing inline PR review
-  comments and one consolidated final summary. Review analysis is
+  Reviews an existing GitHub Pull Request — passively as a report, or,
+  with authenticated GitHub access, actively by publishing inline PR
+  review comments and one consolidated final summary. Review analysis is
   separate from GitHub mutation authority: the default is a non-mutating
   recommendation, and an Approve/Request Changes decision is submitted
   only under independently trusted authorization with genuine reviewer
-  independence. Never edits implementation code and never merges. Not
-  applicable, and must not be selected, for a PR or code the local user
-  or calling Agent authored — use `local-code-review` for
-  local/uncommitted changes with no PR.
+  independence. Self-review is allowed — the Skill analyzes its own PR
+  and produces a verdict — but self-approval is not: no formal
+  Approve/Request Changes is ever submitted on the reviewer's own work.
+  Never edits implementation code and never merges. For local,
+  not-yet-PR'd changes use `local-code-review`.
 ---
 
 # SKILL.md — github-pr-review
@@ -26,10 +26,13 @@ authenticated GitHub access with sufficient review permissions.
 ```text
 resolve PR
     ↓
-resolve authenticated identity and PR author
+resolve authenticated identity, PR author, and controlling authority
     ↓
-same identity? → yes → REVIEW SKIPPED → stop
-    ↓ no
+reviewer is the PR author (or same controlling authority)?
+    → yes → self-review: run the full review; formal APPROVE / REQUEST_CHANGES
+            is never submitted on own work (analysis is not skipped)
+    → no  → external review; mutation eligibility resolved by the gate
+    ↓
 resolve review mode: same reviewer as immediately preceding
 completed review? → yes → delta re-review of the bounded SHA range
                            (escalates to full review if the delta
@@ -90,28 +93,35 @@ platform capability permits it — see
 [`policies/review-output.md`](policies/review-output.md), "Batched review
 construction and submission."
 
-**This Skill is a reviewer role, not an implementation-completion step,
-and not a self-review mechanism.** It is intended for genuine
-reviewer/author separation — a different Agent or identity reviewing
-someone else's PR, or review of an existing external PR — never as
-something an implementing Agent chains onto after opening or updating
-its own PR. This exclusion applies at two layers:
+**This Skill is a reviewer role, not an implementation-completion step.**
+It behaves like an external senior reviewer and it *may* be pointed at
+the reviewer's own PR — self-review analysis is allowed. What it never
+does is **self-approve**:
 
-1. **Selection/invocation boundary (primary).** The `description` in
-   this file's frontmatter already states that this Skill is not
-   applicable, and must not be selected or invoked, when the local
-   user authored the code or PR under review, or when an implementing
-   Agent has just opened its own PR for the change it made. A calling
-   system choosing which Skill to invoke should never select this one
-   for that case in the first place.
-2. **Runtime defensive guard (fallback, unchanged).** If this Skill is
-   invoked anyway against a PR it (or the authenticated identity)
-   authored, "Self-review capability" below and in
-   [`policies/review-authority.md`](policies/review-authority.md)
-   defines this Skill's own complete, self-contained guard
-   (`REVIEW SKIPPED`) that stops before any diff analysis, finding, or
-   publication occurs. This guard is defense in depth — it remains in
-   place regardless of layer 1 and is never weakened by it.
+- **Self-review — allowed.** When the reviewer is the PR author (or a
+  reviewer under the same controlling authority as the author), the full
+  review still runs — same evidence, same process, same verdict
+  derivation — and produces findings and a `REVIEW CLEAN` /
+  `CHANGES REQUIRED` verdict. It just submits **no** formal GitHub review
+  event: `APPROVE` on one's own work is always forbidden, and
+  `REQUEST_CHANGES` is not submitted as a formal self-review action
+  either. The verdict is reported with an explicit "GitHub review
+  mutation withheld: reviewer is the PR author" note, and is not
+  rewritten because the event was withheld. See "Self-review capability"
+  below and in
+  [`policies/review-authority.md`](policies/review-authority.md).
+- **Manufactured independence — rejected.** An alternate account, token,
+  bot, service account, GitHub App identity, nested agent, or spawned
+  process under the same controlling authority as the author is treated
+  as a self-review for the mutation boundary; it never unlocks a formal
+  self-approval. See
+  [`policies/review-authority.md`](policies/review-authority.md),
+  "Authority separation, not just identity separation."
+- **Orchestration still matters.** A calling system should still route
+  its own implementation PRs to a genuinely separate reviewer for a
+  formal decision; this Skill's self-review mode is for producing an
+  honest verdict, not for an implementing Agent to rubber-stamp its own
+  work.
 
 See [`runbooks/passive-pr-review.md`](runbooks/passive-pr-review.md) and
 [`runbooks/active-pr-review.md`](runbooks/active-pr-review.md) for the
@@ -275,7 +285,7 @@ Also always: [`review-summary.md`](../../shared/templates/review-summary.md)
 This Skill's own: [`policies/github-review.md`](policies/github-review.md),
 the canonical policy index, and its sub-policies —
 [`review-authority.md`](policies/review-authority.md) (identity,
-self-review guard, authority separation, publication capability),
+self-review mutation boundary, authority separation, publication capability),
 [`review-action-authorization.md`](policies/review-action-authorization.md)
 (review analysis vs. GitHub mutation authority: the review-action modes,
 the recommendation-only default, trusted mutation authorization and its
@@ -318,9 +328,12 @@ retrieved.
 
 ## 5. Active Review Access Check
 
-Before active review, resolve the authenticated GitHub identity, verify
-the PR author, compare their account identities, verify the target
-repository/PR is accessible to the authenticated identity, and verify it has
+Before active review, resolve the authenticated GitHub identity, the PR
+author, and whether they share a controlling authority (which makes this
+a self-review — see "Self-review capability" in
+[`policies/review-authority.md`](policies/review-authority.md): analysis
+still runs, no formal event is submitted). Then verify the target
+repository/PR is accessible to the authenticated identity and that it has
 sufficient capability to submit the intended review action.
 **Authentication alone is not sufficient evidence of review capability**
 — see [`policies/review-authority.md`](policies/review-authority.md), "Review/
@@ -351,8 +364,9 @@ that record; it is never the review's only representation.
   finalized finding set across multiple review submissions; see
   [`policies/review-output.md`](policies/review-output.md), "Batched
   review construction and submission." Human-readable content always
-  precedes any machine-oriented metadata. A self-review never claims
-  an independent approval; see
+  precedes any machine-oriented metadata. A self-review completes the
+  full analysis and reports its verdict, but submits no formal GitHub
+  review event; see
   [`policies/review-authority.md`](policies/review-authority.md), "Self-review
   capability."
 
@@ -379,6 +393,13 @@ result; whether that result is *submitted* to GitHub as an `APPROVE` /
   automatically means GitHub `APPROVE`.
 - **Approval is not merge authority.** `APPROVE` never automatically
   means `MERGE`, and this Skill never merges.
+- **Self-review is allowed; self-approval is not.** When the reviewer is
+  the PR author (or a reviewer under the same controlling authority), the
+  full analysis runs and reports a verdict, but no formal `APPROVE` /
+  `REQUEST_CHANGES` event is ever submitted on the reviewer's own work —
+  regardless of mode, natural-language request, or authorization. The
+  verdict is reported with "GitHub review mutation withheld: reviewer is
+  the PR author" and is not rewritten.
 - **The default is non-mutating (recommendation-only).** A review runs
   and returns findings and a verdict with no GitHub mutation unless a
   stronger mode is established. Passive review is always
@@ -396,6 +417,12 @@ result; whether that result is *submitted* to GitHub as an `APPROVE` /
   never establishes either.
 - **Ambiguity fails closed** to recommendation-only (or block-only for a
   blocking result where independence and GitHub permission hold).
+- **Natural language, not syntax.** Users say what they want ("just
+  review this", "block it if there are serious issues but don't approve",
+  "approve if clean") and the Skill normalizes that to an internal mode.
+  There is no required mode flag or keyword. Asking for a GitHub action
+  expresses *requested* behavior — it is not itself trusted
+  authorization.
 - As a portable Skill with no runtime of its own, this Skill cannot
   cryptographically verify provenance; it guarantees the safe default and
   the capability boundary and relies on the runtime/orchestrator to
@@ -444,11 +471,12 @@ authenticated reviewer is the same identity as the reviewer of the
 immediately preceding completed review of this PR, and that review's
 reviewed SHA can be established reliably. A different reviewer, no prior
 completed review, or any ambiguity in reviewer identity or the reviewed
-SHA all default to a normal full review. The self-review guard described
-at the top of this file and in
+SHA all default to a normal full review. The self-review mutation
+boundary described at the top of this file and in
 [`policies/review-authority.md`](policies/review-authority.md), "Self-review
-capability," runs first and is authoritative; review-mode resolution
-never bypasses it. This applies identically to passive and active
+capability," is resolved first, but it never changes review-mode
+selection: a self-review is a full or delta re-review on the same terms
+as an external one. This applies identically to passive and active
 review — see
 [`runbooks/passive-pr-review.md`](runbooks/passive-pr-review.md) and
 [`runbooks/active-pr-review.md`](runbooks/active-pr-review.md).

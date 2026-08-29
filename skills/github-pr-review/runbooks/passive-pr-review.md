@@ -18,10 +18,13 @@ normalize current-invocation presentation options
     ↓
 resolve PR
     ↓
-resolve authenticated identity and PR author
+resolve authenticated identity, PR author, and controlling authority
     ↓
-same identity? → yes → REVIEW SKIPPED → stop
-    ↓ no
+reviewer is the PR author (or same controlling authority)?
+    → yes → self-review: run the full analysis; the report notes that a
+            formal GitHub review event would be withheld (no stop)
+    → no  → external review
+    ↓
 resolve review mode (delta re-review vs. normal review)
     ↓
 resolve optional external context (if any): Jira reference → Jira
@@ -61,13 +64,17 @@ finally: remove the temporary checkout (success, any failure, interruption)
 
 1. Resolve the repository and PR from the given input (PR URL, PR number
    + repository context, or repository + PR number).
-2. **Before any other step**, resolve the authenticated GitHub identity and
-   the PR author and compare them, per
+2. **Before any other step**, resolve the authenticated GitHub identity,
+   the PR author, and whether the two share a controlling authority, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
-   "Self-review capability." If they are the same account, terminate
-   immediately with `REVIEW SKIPPED` — do not retrieve the diff, discover
-   repository instructions, produce findings, or return a report. This
-   applies to passive review exactly as it does to active review.
+   "Self-review capability" and "Authority separation, not just identity
+   separation." If the reviewer is the PR author (or a reviewer under the
+   same controlling authority), this is a **self-review** — but passive
+   review publishes nothing anyway, so proceed with the full analysis and
+   note in the returned report that a formal GitHub review event would be
+   withheld because the reviewer is the PR author. There is no
+   `REVIEW SKIPPED`; analysis is not skipped. This applies to passive
+   review exactly as it does to active review.
 3. **Resolve review mode** per
    [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
    when prior review history is available to this invocation. If the
@@ -228,7 +235,7 @@ finally: remove the temporary checkout (success, any failure, interruption)
    [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
    "Reporting the mode."
 9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
-   step 4, remove it — on this path and on every other: a `REVIEW SKIPPED` /
+   step 4, remove it — on this path and on every other: a
    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the
    checkout was allocated, a worker failure, or an interruption the runtime
    surfaces. Run this in a `finally` (or equivalent). Before deleting,
@@ -248,6 +255,10 @@ finally: remove the temporary checkout (success, any failure, interruption)
 - A review verdict is not authorization: a clean passive result is a
   reasoning result only, never a GitHub `APPROVE` and never merge
   authority.
+- A **self-review** in passive mode runs the full analysis like any
+  other passive review; the report notes that a formal GitHub review
+  event would be withheld because the reviewer is the PR author. Analysis
+  is never skipped for authorship.
 - If no available integration can retrieve the required PR state, report
   the missing capability explicitly rather than inventing PR state (see
   [`../policies/github-review.md`](../policies/github-review.md)).

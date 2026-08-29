@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Documentation-contract coverage for Issue #101: separating review
-analysis from GitHub mutation authority in `github-pr-review`.
+"""Documentation-contract coverage for Issue #101 and its self-review
+follow-up: separating review *analysis* from GitHub *mutation authority*
+in `github-pr-review`, where authorship gates the formal GitHub review
+event but never the analysis or the verdict.
 
 Pins the canonical policy (`review-action-authorization.md`) and its
 wire-in points (the policy index, `review-authority.md`,
 `review-output.md`, `SKILL.md`, both runbooks, package metadata, and the
 packaging / validation scripts) so a later edit cannot quietly drop the
-security boundary.
+security boundary or re-introduce a same-author analysis prohibition.
 """
 
 from __future__ import annotations
@@ -167,12 +169,76 @@ class ReviewerIndependenceIsAuthoritySeparation(unittest.TestCase):
         ):
             self.assertIn(phrase, self.t, phrase)
 
-    def test_self_review_guard_preserved_as_defense_in_depth(self) -> None:
-        self.assertIn("remains in force as defense in depth", self.t)
-        self.assertIn("REVIEW SKIPPED hard stop is authoritative and runs first", self.t)
+    def test_self_review_is_a_mutation_boundary_not_an_analysis_block(self) -> None:
+        self.assertIn(
+            "Failing it means the invocation is a self-review: analysis still "
+            "runs, and the formal event is withheld",
+            self.t,
+        )
 
     def test_ambiguous_reviewer_provenance_fails_closed(self) -> None:
         self.assertIn("treat it as not independent and fail closed", self.t)
+
+
+class SelfReviewIsAllowedSelfApprovalIsNot(unittest.TestCase):
+    def setUp(self) -> None:
+        self.t = _norm(POLICY)
+
+    def test_core_invariant_is_stated(self) -> None:
+        self.assertIn("Self-review is allowed; self-approval is not", self.t)
+
+    def test_analysis_and_mutation_eligibility_are_separate(self) -> None:
+        self.assertIn("Analysis eligibility and mutation eligibility are separate", self.t)
+        self.assertIn("analysis_allowed", self.t)
+        self.assertIn("formal_review_mutation_allowed", self.t)
+
+    def test_self_review_runs_full_analysis_and_produces_a_verdict(self) -> None:
+        self.assertIn("The full review runs", self.t)
+        self.assertIn("same evidence, same process, same mechanical", self.t)
+        self.assertIn("REVIEW CLEAN / CHANGES REQUIRED verdict", self.t)
+
+    def test_self_approval_is_absolute_and_not_overridable(self) -> None:
+        self.assertIn("APPROVE on one's own work is always forbidden", self.t)
+        self.assertIn("absolute for a self-review", self.t)
+        self.assertIn(
+            "no review-action mode, natural-language request, flag, prompt, or "
+            "trusted external authorization can make a self-review submit a "
+            "formal event",
+            self.t,
+        )
+
+    def test_controlled_alternate_identity_is_a_self_review(self) -> None:
+        self.assertIn(
+            "is a reviewer under the same controlling authority as the author",
+            self.t,
+        )
+
+
+class NaturalLanguageIntentSection(unittest.TestCase):
+    def setUp(self) -> None:
+        self.t = _norm(POLICY)
+
+    def test_section_exists(self) -> None:
+        self.assertIn("Natural-language review-action intent", self.t)
+
+    def test_no_required_mode_syntax(self) -> None:
+        self.assertIn(
+            "there is no required user-facing mode syntax", _norm(POLICY)
+        )
+        self.assertIn(
+            "The Skill normalizes that intent to an internal mode", self.t
+        )
+        self.assertIn("it never requires the user to name a mode or pass a flag", self.t)
+
+    def test_intent_is_not_authorization(self) -> None:
+        self.assertIn("it is not\ntrusted mutation authorization".replace("\n", " "), self.t)
+        self.assertIn(
+            "does not by itself permit the mutation — the\nprovenance gate".replace(
+                "\n", " "
+            ),
+            self.t,
+        )
+        self.assertIn("a self-review submits none regardless", self.t)
 
 
 class MergeBoundaryUnchanged(unittest.TestCase):
@@ -218,17 +284,51 @@ class WiredIntoPolicyIndex(unittest.TestCase):
 
 
 class WiredIntoReviewAuthority(unittest.TestCase):
+    def setUp(self) -> None:
+        self.raw = AUTHORITY.read_text(encoding="utf-8")
+        self.t = _norm(AUTHORITY)
+
     def test_authority_separation_subsection_present(self) -> None:
-        raw = AUTHORITY.read_text(encoding="utf-8")
-        self.assertIn("### Authority separation, not just identity separation", raw)
-        t = _norm(AUTHORITY)
+        self.assertIn("### Authority separation, not just identity separation", self.raw)
         self.assertIn(
             "does not, on its own, prove the reviewer is independent of the "
             "change's author",
-            t,
+            self.t,
         )
-        self.assertIn("none of these manufacture an independent reviewer", t)
-        self.assertIn("This REVIEW SKIPPED guard runs first and is authoritative", t)
+        self.assertIn("none of these manufacture an independent reviewer", self.t)
+
+    def test_self_review_rule_is_a_mutation_boundary_not_analysis_skip(self) -> None:
+        self.assertIn("Self-review analysis is allowed; self-approval is not.", self.t)
+        self.assertIn(
+            "Authorship is a mutation boundary, not an analysis boundary.", self.t
+        )
+        self.assertIn("analysis_allowed = true", self.t)
+        self.assertIn("formal_review_mutation_allowed = false", self.t)
+        self.assertIn("GitHub review mutation withheld: reviewer is the PR author", self.t)
+
+    def test_no_review_skipped_termination_for_self_review(self) -> None:
+        self.assertIn(
+            "There is no REVIEW SKIPPED for a self-review: analysis is not "
+            "skipped, only the formal GitHub event is",
+            self.t,
+        )
+        # The old hard-stop output block must be gone.
+        self.assertNotIn("Self-review is intentionally not performed.", self.raw)
+
+    def test_capability_matrix_self_review_row_allows_analysis(self) -> None:
+        self.assertIn(
+            "Complete — same process and evidence as an external review", self.t
+        )
+        self.assertIn(
+            "no APPROVE, and no formal REQUEST_CHANGES on own work", self.t
+        )
+
+    def test_manufactured_independence_is_treated_as_self_review(self) -> None:
+        self.assertIn(
+            "A review conducted through any of them is treated as a self-review",
+            self.t,
+        )
+        self.assertIn("None of these checks stop the analysis itself.", self.t)
 
 
 class WiredIntoReviewOutput(unittest.TestCase):
@@ -249,6 +349,25 @@ class WiredIntoReviewOutput(unittest.TestCase):
         t = _norm(OUTPUT)
         self.assertIn("This mechanical derivation is owned by", t)
         self.assertIn("unchanged by anything in this section", t)
+
+    def test_self_review_bullet_is_absolute_and_reports_the_verdict(self) -> None:
+        t = _norm(OUTPUT)
+        self.assertIn("Self-review is absolute.", t)
+        self.assertIn(
+            "no formal APPROVE / REQUEST_CHANGES event is submitted, regardless "
+            "of mode, natural-language request, or any authorization",
+            t,
+        )
+        self.assertIn("REVIEW CLEAN — GitHub review mutation withheld: reviewer is the PR", t)
+        self.assertIn("The verdict is not rewritten because the event was withheld.", t)
+
+    def test_verdict_is_produced_before_the_gate(self) -> None:
+        t = _norm(OUTPUT)
+        self.assertIn(
+            "The reasoning result (verdict) is produced first, by the mechanical "
+            "derivation above, and is always reported",
+            t,
+        )
 
 
 class WiredIntoSkillMd(unittest.TestCase):
@@ -281,6 +400,29 @@ class WiredIntoSkillMd(unittest.TestCase):
         self.assertIn("Review analysis is separate from GitHub mutation authority", self.t)
         self.assertIn("the default is a non-mutating recommendation", self.t)
 
+    def test_skill_is_selectable_for_own_prs(self) -> None:
+        # The old exclusion ("Not applicable, and must not be selected, for
+        # a PR ... the local user or calling Agent authored") is gone.
+        self.assertNotIn("must not be selected, for a PR or code the local", self.t)
+        self.assertIn("Self-review is allowed", self.t)
+        self.assertIn(
+            "no formal Approve/Request Changes is ever submitted on the "
+            "reviewer's own work",
+            self.t,
+        )
+
+    def test_section_7_has_the_self_review_bullet(self) -> None:
+        self.assertIn("Self-review is allowed; self-approval is not.", self.t)
+        self.assertIn(
+            "no formal APPROVE / REQUEST_CHANGES event is ever submitted on the "
+            "reviewer's own work",
+            self.t,
+        )
+
+    def test_natural_language_mode_selection_is_preserved(self) -> None:
+        self.assertIn("Natural language, not syntax.", self.t)
+        self.assertIn("There is no required mode flag or keyword", self.t)
+
 
 class WiredIntoRunbooks(unittest.TestCase):
     def test_active_runbook_resolves_mode_and_gates_submission(self) -> None:
@@ -303,6 +445,27 @@ class WiredIntoRunbooks(unittest.TestCase):
         self.assertIn("Passive review is inherently recommendation-only", t)
         self.assertIn("no review-action mode, flag, prompt, authorization", t)
         self.assertIn("A review verdict is not authorization", t)
+
+    def test_active_runbook_does_not_stop_analysis_for_self_review(self) -> None:
+        raw = ACTIVE_RUNBOOK.read_text(encoding="utf-8")
+        t = _norm(ACTIVE_RUNBOOK)
+        self.assertNotIn("REVIEW SKIPPED → stop", raw)
+        self.assertNotIn("terminate immediately with REVIEW SKIPPED", t)
+        self.assertIn("this invocation is a self-review", t)
+        self.assertIn("formal_review_mutation_allowed = false and continue", t)
+        self.assertIn("There is no REVIEW SKIPPED; analysis is not skipped", t)
+        # Step 14 has an explicit self-review branch that submits nothing.
+        self.assertIn("If step 1 resolved this as a self-review", t)
+        self.assertIn("submit no GitHub review event at all", t)
+        self.assertIn("Mutation: WITHHELD (self-review: reviewer is the PR author)", t)
+
+    def test_passive_runbook_does_not_stop_analysis_for_self_review(self) -> None:
+        raw = PASSIVE_RUNBOOK.read_text(encoding="utf-8")
+        t = _norm(PASSIVE_RUNBOOK)
+        self.assertNotIn("REVIEW SKIPPED → stop", raw)
+        self.assertIn("this is a self-review", t)
+        self.assertIn("proceed with the full analysis", t)
+        self.assertIn("There is no REVIEW SKIPPED; analysis is not skipped", t)
 
 
 class WiredIntoMetadataAndTemplate(unittest.TestCase):

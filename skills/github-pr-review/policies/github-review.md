@@ -16,7 +16,7 @@ duplicate that prose.
 ## Canonical sub-policies, in authoritative order
 
 ```text
-review-authority.md         identity, self-review guard, publication capability
+review-authority.md         identity, self-review mutation boundary, publication capability
         ↓
 review-action-authorization.md  review analysis vs. GitHub mutation authority;
                             recommendation-only default; trusted authorization
@@ -57,7 +57,8 @@ requires trusted authorization plus reviewer independence before any
 submission time in [`review-output.md`](review-output.md), "Review-action
 authorization gate."
 [`reviewer-delta-review.md`](reviewer-delta-review.md) explicitly runs
-after the self-review guard;
+after the self-review mutation-boundary check, and applies to a
+self-review exactly as to an external review;
 [`repository-checkout.md`](repository-checkout.md) is optional, runs after
 [`pr-scope.md`](pr-scope.md) has established the PR's base/head, and never
 changes the Review Target — the PR delta;

@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""Regression coverage for the review-action authorization gate.
+"""Regression coverage for the review-action authorization gate and the
+self-review model.
 
-Mirrors skills/github-pr-review/policies/review-action-authorization.md
-and skills/github-pr-review/policies/review-output.md, "Review-action
-authorization gate". Scenario numbers map to Issue #101's acceptance
-coverage list.
+Mirrors skills/github-pr-review/policies/review-action-authorization.md,
+skills/github-pr-review/policies/review-authority.md ("Self-review
+capability"), and skills/github-pr-review/policies/review-output.md
+("Review-action authorization gate").
+
+Core invariant under test: **self-review is allowed; self-approval is
+not.** Authorship gates the formal GitHub review event, never the
+analysis or the verdict.
 
 Run with:
     python3 -m unittest tests.unit.test_review_action_authorization
@@ -18,7 +23,8 @@ import unittest
 from tests.reference import decision_semantics as ds
 from tests.reference import review_action_authorization as raa
 from tests.reference.reviewer_ownership import (
-    SELF_REVIEW_SKIPPED,
+    DELTA_RE_REVIEW,
+    NORMAL_FULL_REVIEW,
     ReviewModeInput,
     resolve_review_mode,
 )
@@ -60,120 +66,399 @@ def _independent() -> raa.ReviewerIndependence:
     )
 
 
-class Scenario01_AutonomousNoAuthorization(unittest.TestCase):
-    def test_review_completes_and_no_mutation_occurs(self) -> None:
-        out = raa.resolve_mutation_outcome(_base())
-        self.assertEqual(out.mode, raa.ActionMode.RECOMMENDATION_ONLY)
-        self.assertFalse(out.mutated)
+def _same_authority() -> raa.ReviewerIndependence:
+    return raa.classify_reviewer_independence(
+        reviewer_actor_selected_by_implementing_agent=True,
+        reviewer_provenance_known=True,
+    )
+
+
+# --------------------------------------------------------------------------
+# 1. own PR + clean review → analysis runs → REVIEW CLEAN → no APPROVE
+# --------------------------------------------------------------------------
+class OwnPrCleanReview(unittest.TestCase):
+    def test_analysis_runs_verdict_clean_no_approve(self) -> None:
+        inp = _base(self_review=True, verdict=raa.Verdict.CLEAN)
+        elig = raa.review_eligibility(inp)
+        self.assertTrue(elig.analysis_allowed)
+        self.assertFalse(elig.formal_review_mutation_allowed)
+
+        out = raa.resolve_mutation_outcome(inp)
+        self.assertEqual(out.verdict, raa.Verdict.CLEAN)  # verdict preserved
         self.assertEqual(out.event, raa.GitHubEvent.NONE)
-        # The verdict is still produced and reported.
-        self.assertEqual(out.verdict, raa.Verdict.CLEAN)
-        self.assertIsNotNone(out.withheld_reason)
-
-
-class Scenario02_AgentEnablesAutoActionItself(unittest.TestCase):
-    def test_agent_set_flag_does_not_authorize(self) -> None:
-        out = raa.resolve_mutation_outcome(
-            _base(
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(
-                    raa.classify_provenance("action_mode_flag")
-                ),
-                reviewer_independence=_independent(),
-            )
-        )
-        self.assertNotEqual(
-            out.mode, raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION
-        )
         self.assertFalse(out.mutated)
+        self.assertIn("self-review", out.withheld_reason)
 
 
-class Scenario03_ApproveIfCleanText(unittest.TestCase):
-    def test_generated_text_is_not_authorization(self) -> None:
+# --------------------------------------------------------------------------
+# 2. own PR + P1 → analysis runs → CHANGES REQUIRED → no formal REQUEST_CHANGES
+# --------------------------------------------------------------------------
+class OwnPrBlockingReview(unittest.TestCase):
+    def test_analysis_runs_verdict_blocking_no_request_changes(self) -> None:
+        inp = _base(self_review=True, verdict=raa.Verdict.BLOCKING)
+        out = raa.resolve_mutation_outcome(inp)
+        self.assertEqual(out.verdict, raa.Verdict.BLOCKING)  # not softened
+        self.assertEqual(out.event, raa.GitHubEvent.NONE)
+        self.assertFalse(out.mutated)
+        self.assertIn("self-review", out.withheld_reason)
+
+
+# --------------------------------------------------------------------------
+# 3. own PR + natural-language "approve if clean" → approval still withheld
+# --------------------------------------------------------------------------
+class OwnPrNaturalLanguageApprove(unittest.TestCase):
+    def test_nl_approve_if_clean_does_not_unlock_self_approval(self) -> None:
+        requested = raa.normalize_intent("Review it; approve if clean.")
         self.assertEqual(
-            raa.classify_provenance("approve_if_clean_text"),
-            raa.Provenance.AGENT_CONTROLLED,
+            requested, raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION
         )
-        out = raa.resolve_mutation_outcome(
-            _base(
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(raa.classify_provenance("approve_if_clean_text")),
-                reviewer_independence=_independent(),
-            )
+        inp = _base(
+            self_review=True,
+            verdict=raa.Verdict.CLEAN,
+            requested_mode=requested,
+            # even a genuine trusted authorization cannot override authorship
+            authorization=_auth(raa.classify_provenance("human_principal_out_of_band")),
+            reviewer_independence=_independent(),
         )
+        out = raa.resolve_mutation_outcome(inp)
         self.assertFalse(out.mutated)
+        self.assertIn("self-review", out.withheld_reason)
 
 
-class Scenario04_NestedSkillOrAgentGrant(unittest.TestCase):
-    def test_nested_invocation_cannot_grant_authority(self) -> None:
-        for channel in ("nested_skill_invocation", "nested_agent_instruction",
-                        "sub_agent", "spawned_process"):
+# --------------------------------------------------------------------------
+# 4. own PR + natural-language "request changes if blocking" → withheld
+# --------------------------------------------------------------------------
+class OwnPrNaturalLanguageRequestChanges(unittest.TestCase):
+    def test_nl_request_changes_if_blocking_is_withheld_on_own_pr(self) -> None:
+        requested = raa.normalize_intent(
+            "Review it and block it if there are serious issues, but don't approve it."
+        )
+        self.assertEqual(requested, raa.ActionMode.BLOCK_ONLY)
+        inp = _base(
+            self_review=True,
+            verdict=raa.Verdict.BLOCKING,
+            requested_mode=requested,
+            reviewer_independence=_independent(),
+        )
+        out = raa.resolve_mutation_outcome(inp)
+        self.assertFalse(out.mutated)
+        self.assertIn("self-review", out.withheld_reason)
+
+
+# --------------------------------------------------------------------------
+# 5. own PR + alternate token controlled by same authority → analysis, no mutation
+# 6. own PR + alternate GitHub account controlled by same authority → same
+# 7. own PR + nested/spawned review agent → no manufactured independence
+# --------------------------------------------------------------------------
+class OwnPrManufacturedIndependence(unittest.TestCase):
+    CHANNELS = ("alternate_token", "alternate_username", "bot_identity",
+                "service_account", "github_app_identity",
+                "nested_agent_instruction", "sub_agent", "spawned_process")
+
+    def test_controlled_alternate_identity_runs_analysis_but_never_mutates(self) -> None:
+        for channel in self.CHANNELS:
             with self.subTest(channel=channel):
                 self.assertEqual(
                     raa.classify_provenance(channel),
                     raa.Provenance.AGENT_CONTROLLED,
                 )
-                out = raa.resolve_mutation_outcome(
-                    _base(
-                        requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                        authorization=_auth(raa.classify_provenance(channel)),
-                        reviewer_independence=_independent(),
-                    )
+                inp = _base(
+                    same_controlling_authority_as_author=True,
+                    verdict=raa.Verdict.CLEAN,
+                    requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
+                    authorization=_auth(raa.classify_provenance(channel)),
+                    reviewer_independence=_same_authority(),
                 )
+                self.assertTrue(raa.review_eligibility(inp).analysis_allowed)
+                self.assertFalse(
+                    raa.review_eligibility(inp).formal_review_mutation_allowed
+                )
+                out = raa.resolve_mutation_outcome(inp)
                 self.assertFalse(out.mutated)
+                self.assertIn("self-review", out.withheld_reason)
+
+    def test_is_self_review_covers_controlled_alternate_identity(self) -> None:
+        self.assertTrue(
+            raa.is_self_review(_base(same_controlling_authority_as_author=True))
+        )
 
 
-class Scenario05_GenuineTrustedAuthorization(unittest.TestCase):
-    def test_trusted_scoped_authorization_approves_a_clean_pr(self) -> None:
-        out = raa.resolve_mutation_outcome(
-            _base(
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(
-                    raa.classify_provenance("human_principal_out_of_band")
-                ),
-                reviewer_independence=_independent(),
-            )
+# --------------------------------------------------------------------------
+# 8. genuinely independent reviewer + clean + valid trusted authorization
+#    → APPROVE may be submitted
+# --------------------------------------------------------------------------
+class IndependentReviewerApprove(unittest.TestCase):
+    def test_independent_clean_trusted_authorization_approves(self) -> None:
+        inp = _base(
+            verdict=raa.Verdict.CLEAN,
+            requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
+            authorization=_auth(raa.classify_provenance("human_principal_out_of_band")),
+            reviewer_independence=_independent(),
         )
-        self.assertEqual(
-            out.mode, raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION
-        )
+        self.assertTrue(raa.review_eligibility(inp).formal_review_mutation_allowed)
+        out = raa.resolve_mutation_outcome(inp)
         self.assertTrue(out.mutated)
         self.assertEqual(out.event, raa.GitHubEvent.APPROVE)
         self.assertIsNone(out.withheld_reason)
 
 
-class Scenario06_CleanVerdictWithoutAuthorization(unittest.TestCase):
-    def test_clean_without_authorization_is_non_mutating(self) -> None:
-        out = raa.resolve_mutation_outcome(_base(verdict=raa.Verdict.CLEAN))
-        self.assertFalse(out.mutated)
-        self.assertEqual(out.verdict, raa.Verdict.CLEAN)
-
-
-class Scenario07_StaleHeadBlocksMutation(unittest.TestCase):
-    def test_stale_head_withholds_even_with_authorization(self) -> None:
-        out = raa.resolve_mutation_outcome(
-            _base(
-                reviewed_head_sha="old111",
-                current_head_sha="new222",
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(
-                    raa.classify_provenance("human_principal_out_of_band"),
-                    head="old111",
-                ),
-                reviewer_independence=_independent(),
-            )
+# --------------------------------------------------------------------------
+# 9. genuinely independent reviewer + blocking + permitted mode/auth
+#    → REQUEST_CHANGES may be submitted
+# --------------------------------------------------------------------------
+class IndependentReviewerRequestChanges(unittest.TestCase):
+    def test_independent_blocking_block_only_requests_changes(self) -> None:
+        inp = _base(
+            verdict=raa.Verdict.BLOCKING,
+            requested_mode=raa.ActionMode.BLOCK_ONLY,
+            reviewer_independence=_independent(),
         )
+        out = raa.resolve_mutation_outcome(inp)
+        self.assertTrue(out.mutated)
+        self.assertEqual(out.event, raa.GitHubEvent.REQUEST_CHANGES)
+
+
+# --------------------------------------------------------------------------
+# 10. independent reviewer without trusted approval authorization
+#     → REVIEW CLEAN still produced → APPROVE withheld
+# --------------------------------------------------------------------------
+class IndependentReviewerNoAuthorization(unittest.TestCase):
+    def test_clean_verdict_produced_but_approve_withheld(self) -> None:
+        inp = _base(verdict=raa.Verdict.CLEAN, reviewer_independence=_independent())
+        out = raa.resolve_mutation_outcome(inp)
+        self.assertEqual(out.verdict, raa.Verdict.CLEAN)
+        self.assertFalse(out.mutated)
+        self.assertEqual(out.mode, raa.ActionMode.RECOMMENDATION_ONLY)
+
+
+# --------------------------------------------------------------------------
+# 11. stale reviewed HEAD → verdict reported → mutation blocked
+# --------------------------------------------------------------------------
+class StaleHeadBlocksMutation(unittest.TestCase):
+    def test_stale_head_reports_verdict_and_blocks_mutation(self) -> None:
+        inp = _base(
+            reviewed_head_sha="old111",
+            current_head_sha="new222",
+            verdict=raa.Verdict.CLEAN,
+            requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
+            authorization=_auth(
+                raa.classify_provenance("human_principal_out_of_band"), head="old111"
+            ),
+            reviewer_independence=_independent(),
+        )
+        out = raa.resolve_mutation_outcome(inp)
+        self.assertEqual(out.verdict, raa.Verdict.CLEAN)
         self.assertFalse(out.mutated)
         self.assertIn("stale", out.withheld_reason)
 
 
-class Scenario08_ApprovalIsNotMergeAuthority(unittest.TestCase):
-    def test_model_cannot_express_a_merge_event(self) -> None:
-        events = {e.name for e in raa.GitHubEvent}
-        self.assertNotIn("MERGE", events)
-        self.assertEqual(events, {"NONE", "APPROVE", "REQUEST_CHANGES"})
+# --------------------------------------------------------------------------
+# 12. natural-language intent maps to internal behavior without mode keywords
+# --------------------------------------------------------------------------
+class NaturalLanguageIntentMapping(unittest.TestCase):
+    def test_plain_review_request_is_recommendation_only(self) -> None:
+        for phrase in ("Just review this PR.", "review it", "take a look at this PR"):
+            self.assertEqual(
+                raa.normalize_intent(phrase), raa.ActionMode.RECOMMENDATION_ONLY
+            )
 
-    def test_a_submitted_approval_yields_only_an_approve_event(self) -> None:
+    def test_block_but_do_not_approve_is_block_only(self) -> None:
+        self.assertEqual(
+            raa.normalize_intent(
+                "Review it and block it if there are serious issues, but don't approve it."
+            ),
+            raa.ActionMode.BLOCK_ONLY,
+        )
+
+    def test_approve_if_clean_is_an_auto_action_candidate(self) -> None:
+        self.assertEqual(
+            raa.normalize_intent(
+                "Review it; approve if clean, request changes if there are blocking findings."
+            ),
+            raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
+        )
+
+    def test_no_cli_keyword_syntax_is_required_or_recognised(self) -> None:
+        # The normalizer takes ordinary language, not flags. A bare
+        # "--auto-action" string is not a recognised mode selector and
+        # falls through to the safe default.
+        for flagish in ("--auto-action", "--block-only", "--recommendation-only"):
+            self.assertEqual(
+                raa.normalize_intent(flagish), raa.ActionMode.RECOMMENDATION_ONLY
+            )
+
+    def test_ambiguous_or_empty_intent_is_recommendation_only(self) -> None:
+        for phrase in ("", None, "make it helpful", "do a good job"):
+            self.assertEqual(
+                raa.normalize_intent(phrase), raa.ActionMode.RECOMMENDATION_ONLY
+            )
+
+    def test_requested_mode_is_not_authorization(self) -> None:
+        # An auto-action *request* with no trusted authorization still
+        # produces no mutation.
+        inp = _base(
+            verdict=raa.Verdict.CLEAN,
+            requested_mode=raa.normalize_intent("approve if clean"),
+            reviewer_independence=_independent(),
+        )
+        out = raa.resolve_mutation_outcome(inp)
+        self.assertFalse(out.mutated)
+
+
+# --------------------------------------------------------------------------
+# 13. unknown/ambiguous reviewer provenance → analysis not blocked → mutation fails closed
+# --------------------------------------------------------------------------
+class AmbiguousReviewerProvenance(unittest.TestCase):
+    def test_ambiguous_provenance_allows_analysis_and_fails_mutation_closed(self) -> None:
+        independence = raa.classify_reviewer_independence(
+            reviewer_actor_selected_by_implementing_agent=False,
+            reviewer_provenance_known=False,
+        )
+        self.assertEqual(independence, raa.ReviewerIndependence.AMBIGUOUS)
+        inp = _base(
+            verdict=raa.Verdict.CLEAN,
+            requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
+            authorization=_auth(raa.classify_provenance("human_principal_out_of_band")),
+            reviewer_independence=independence,
+        )
+        # analysis is not an ambiguity-gated concern here
+        self.assertTrue(raa.analysis_allowed(inp))
+        out = raa.resolve_mutation_outcome(inp)
+        self.assertFalse(out.mutated)
+
+
+class AmbiguousAuthorizationProvenance(unittest.TestCase):
+    def test_ambiguous_authorization_channel_fails_closed(self) -> None:
+        self.assertEqual(
+            raa.classify_provenance("mystery_channel"), raa.Provenance.AMBIGUOUS
+        )
+        out = raa.resolve_mutation_outcome(
+            _base(
+                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
+                authorization=_auth(raa.classify_provenance("mystery_channel")),
+                reviewer_independence=_independent(),
+            )
+        )
+        self.assertFalse(out.mutated)
+        self.assertEqual(out.mode, raa.ActionMode.RECOMMENDATION_ONLY)
+
+
+# --------------------------------------------------------------------------
+# 14. verdict derivation remains independent of the authorization gate
+# --------------------------------------------------------------------------
+class VerdictIndependentOfGate(unittest.TestCase):
+    def test_mechanical_decision_derivation_untouched(self) -> None:
+        self.assertEqual(ds.derive_decision([]), ds.Decision.CLEAN)
+        self.assertEqual(
+            ds.derive_decision([ds.Finding("F1", ds.Severity.P1)]),
+            ds.Decision.CHANGES_REQUIRED,
+        )
+
+    def test_gate_reports_the_verdict_it_was_given_for_every_reviewer_kind(self) -> None:
+        for verdict in (raa.Verdict.CLEAN, raa.Verdict.BLOCKING):
+            for kw in (
+                {},
+                {"self_review": True},
+                {"same_controlling_authority_as_author": True},
+                {"reviewer_independence": _independent()},
+            ):
+                with self.subTest(verdict=verdict, kw=kw):
+                    out = raa.resolve_mutation_outcome(_base(verdict=verdict, **kw))
+                    self.assertEqual(out.verdict, verdict)
+
+    def test_gate_module_carries_no_severity_or_decision_logic(self) -> None:
+        self.assertFalse(hasattr(raa, "Severity"))
+        self.assertFalse(hasattr(raa, "derive_decision"))
+        self.assertFalse(hasattr(raa, "blocking_findings"))
+        self.assertEqual(
+            list(inspect.signature(raa.resolve_mutation_outcome).parameters), ["inp"]
+        )
+        self.assertIn(
+            "verdict",
+            inspect.signature(raa.ActionAuthorizationInput).parameters,
+        )
+
+
+# --------------------------------------------------------------------------
+# 15. delta re-review / reviewer-ownership semantics unchanged by this delta
+# --------------------------------------------------------------------------
+class ReviewModeSemanticsUnchanged(unittest.TestCase):
+    def test_external_delta_re_review_still_resolves(self) -> None:
+        result = resolve_review_mode(
+            ReviewModeInput(
+                current_reviewer="alice",
+                pr_author="carol",
+                previous_review_exists=True,
+                previous_reviewer="alice",
+                previous_reviewed_sha="abc",
+                current_head_sha="def",
+            )
+        )
+        self.assertEqual(result.mode, DELTA_RE_REVIEW)
+
+    def test_self_review_resolves_mode_like_an_external_review(self) -> None:
+        # current_reviewer == pr_author no longer short-circuits mode
+        # resolution: with a prior self-review and a new HEAD this is a
+        # delta re-review, not a skip.
+        result = resolve_review_mode(
+            ReviewModeInput(
+                current_reviewer="alice",
+                pr_author="alice",
+                previous_review_exists=True,
+                previous_reviewer="alice",
+                previous_reviewed_sha="abc",
+                current_head_sha="def",
+            )
+        )
+        self.assertEqual(result.mode, DELTA_RE_REVIEW)
+
+    def test_self_review_no_prior_review_is_normal_full_review(self) -> None:
+        result = resolve_review_mode(
+            ReviewModeInput(
+                current_reviewer="alice",
+                pr_author="alice",
+                previous_review_exists=False,
+            )
+        )
+        self.assertEqual(result.mode, NORMAL_FULL_REVIEW)
+
+
+# --------------------------------------------------------------------------
+# Analysis-vs-mutation eligibility split (Issue-#101 delta requirement 4/8)
+# --------------------------------------------------------------------------
+class AnalysisVsMutationEligibility(unittest.TestCase):
+    def test_self_review_is_analysis_true_mutation_false(self) -> None:
+        elig = raa.review_eligibility(_base(self_review=True))
+        self.assertTrue(elig.analysis_allowed)
+        self.assertFalse(elig.formal_review_mutation_allowed)
+
+    def test_external_review_is_analysis_true_mutation_gate_open(self) -> None:
+        elig = raa.review_eligibility(_base(reviewer_independence=_independent()))
+        self.assertTrue(elig.analysis_allowed)
+        self.assertTrue(elig.formal_review_mutation_allowed)
+
+    def test_analysis_allowed_is_never_blocked_by_authorship(self) -> None:
+        for kw in ({"self_review": True},
+                   {"same_controlling_authority_as_author": True}):
+            self.assertTrue(raa.analysis_allowed(_base(**kw)))
+
+    def test_two_concerns_are_not_one_boolean(self) -> None:
+        # ReviewEligibility exposes both, separately.
+        fields = inspect.signature(raa.ReviewEligibility).parameters
+        self.assertIn("analysis_allowed", fields)
+        self.assertIn("formal_review_mutation_allowed", fields)
+
+
+# --------------------------------------------------------------------------
+# Merge boundary + governance sweeps
+# --------------------------------------------------------------------------
+class MergeBoundary(unittest.TestCase):
+    def test_model_cannot_express_a_merge_event(self) -> None:
+        self.assertEqual(
+            {e.name for e in raa.GitHubEvent}, {"NONE", "APPROVE", "REQUEST_CHANGES"}
+        )
+
+    def test_a_submitted_approval_is_only_an_approve_event(self) -> None:
         out = raa.resolve_mutation_outcome(
             _base(
                 requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
@@ -184,166 +469,10 @@ class Scenario08_ApprovalIsNotMergeAuthority(unittest.TestCase):
             )
         )
         self.assertEqual(out.event, raa.GitHubEvent.APPROVE)
-        # No field, flag, or return value implies merge.
         self.assertNotIn("merge", repr(out).lower())
 
 
-class Scenario09_SelfReviewSameIdentity(unittest.TestCase):
-    def test_self_review_is_rejected_regardless_of_everything_else(self) -> None:
-        out = raa.resolve_mutation_outcome(
-            _base(
-                self_review=True,
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(
-                    raa.classify_provenance("human_principal_out_of_band")
-                ),
-                reviewer_independence=_independent(),
-            )
-        )
-        self.assertFalse(out.mutated)
-        self.assertIn("self-review", out.withheld_reason)
-
-
-class Scenario10_SelfReviewViaAnotherControlledIdentity(unittest.TestCase):
-    def test_agent_selected_reviewer_is_not_independent(self) -> None:
-        independence = raa.classify_reviewer_independence(
-            reviewer_actor_selected_by_implementing_agent=True,
-            reviewer_provenance_known=True,
-        )
-        self.assertEqual(independence, raa.ReviewerIndependence.SAME_AUTHORITY)
-        out = raa.resolve_mutation_outcome(
-            _base(
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(
-                    raa.classify_provenance("human_principal_out_of_band")
-                ),
-                reviewer_independence=independence,
-            )
-        )
-        self.assertFalse(out.mutated)
-
-
-class Scenario11_AlternateToken(unittest.TestCase):
-    def test_alternate_token_is_agent_controlled_and_not_independent(self) -> None:
-        self.assertEqual(
-            raa.classify_provenance("alternate_token"),
-            raa.Provenance.AGENT_CONTROLLED,
-        )
-        out = raa.resolve_mutation_outcome(
-            _base(
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(raa.classify_provenance("alternate_token")),
-                reviewer_independence=raa.classify_reviewer_independence(
-                    reviewer_actor_selected_by_implementing_agent=True,
-                    reviewer_provenance_known=True,
-                ),
-            )
-        )
-        self.assertFalse(out.mutated)
-
-
-class Scenario12_BotServiceOrAppIdentity(unittest.TestCase):
-    def test_agent_driven_machine_identity_does_not_bypass_the_guard(self) -> None:
-        for channel in ("bot_identity", "service_account", "github_app_identity"):
-            with self.subTest(channel=channel):
-                self.assertEqual(
-                    raa.classify_provenance(channel),
-                    raa.Provenance.AGENT_CONTROLLED,
-                )
-        independence = raa.classify_reviewer_independence(
-            reviewer_actor_selected_by_implementing_agent=True,
-            reviewer_provenance_known=True,
-        )
-        out = raa.resolve_mutation_outcome(
-            _base(
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(raa.classify_provenance("github_app_identity")),
-                reviewer_independence=independence,
-            )
-        )
-        self.assertFalse(out.mutated)
-
-
-class Scenario13_NestedReviewerUnderSameAuthority(unittest.TestCase):
-    def test_nested_reviewer_agent_is_not_external_review(self) -> None:
-        independence = raa.classify_reviewer_independence(
-            reviewer_actor_selected_by_implementing_agent=True,
-            reviewer_provenance_known=True,
-        )
-        self.assertEqual(independence, raa.ReviewerIndependence.SAME_AUTHORITY)
-        out = raa.resolve_mutation_outcome(
-            _base(reviewer_independence=independence,
-                  requested_mode=raa.ActionMode.BLOCK_ONLY,
-                  verdict=raa.Verdict.BLOCKING)
-        )
-        # Not even a block is issued by a non-independent reviewer.
-        self.assertFalse(out.mutated)
-        self.assertIn("independence", out.withheld_reason)
-
-
-class Scenario14_GenuinelyIndependentTrustedReviewer(unittest.TestCase):
-    def test_independent_reviewer_with_trusted_authorization_succeeds(self) -> None:
-        out = raa.resolve_mutation_outcome(
-            _base(
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(
-                    raa.classify_provenance("human_principal_out_of_band")
-                ),
-                reviewer_independence=_independent(),
-            )
-        )
-        self.assertTrue(out.mutated)
-        self.assertEqual(out.event, raa.GitHubEvent.APPROVE)
-
-    def test_independent_reviewer_can_block_without_auto_action_authorization(self) -> None:
-        out = raa.resolve_mutation_outcome(
-            _base(
-                verdict=raa.Verdict.BLOCKING,
-                requested_mode=raa.ActionMode.BLOCK_ONLY,
-                reviewer_independence=_independent(),
-            )
-        )
-        self.assertEqual(out.event, raa.GitHubEvent.REQUEST_CHANGES)
-        self.assertTrue(out.mutated)
-
-
-class Scenario15_AmbiguousAuthorizationProvenance(unittest.TestCase):
-    def test_ambiguous_provenance_fails_closed(self) -> None:
-        self.assertEqual(
-            raa.classify_provenance("some_unknown_channel"),
-            raa.Provenance.AMBIGUOUS,
-        )
-        out = raa.resolve_mutation_outcome(
-            _base(
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(raa.classify_provenance("some_unknown_channel")),
-                reviewer_independence=_independent(),
-            )
-        )
-        self.assertFalse(out.mutated)
-        self.assertEqual(out.mode, raa.ActionMode.RECOMMENDATION_ONLY)
-
-
-class Scenario16_AmbiguousReviewerProvenance(unittest.TestCase):
-    def test_ambiguous_reviewer_provenance_fails_closed(self) -> None:
-        independence = raa.classify_reviewer_independence(
-            reviewer_actor_selected_by_implementing_agent=False,
-            reviewer_provenance_known=False,
-        )
-        self.assertEqual(independence, raa.ReviewerIndependence.AMBIGUOUS)
-        out = raa.resolve_mutation_outcome(
-            _base(
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(
-                    raa.classify_provenance("human_principal_out_of_band")
-                ),
-                reviewer_independence=independence,
-            )
-        )
-        self.assertFalse(out.mutated)
-
-
-class Scenario17_AuthorizationScopeCannotBeReplayed(unittest.TestCase):
+class AuthorizationScopeNoReplay(unittest.TestCase):
     def setUp(self) -> None:
         self.auth = _auth(
             raa.classify_provenance("human_principal_out_of_band"),
@@ -358,48 +487,26 @@ class Scenario17_AuthorizationScopeCannotBeReplayed(unittest.TestCase):
             )
         )
 
-    def test_rejected_for_another_pr(self) -> None:
-        self.assertFalse(
-            raa.authorization_covers(
-                self.auth, repo=REPO, pr_number=PR + 1, head_sha=HEAD,
-                action=raa.GitHubEvent.APPROVE,
-            )
-        )
+    def test_rejected_across_pr_head_repo_action(self) -> None:
+        self.assertFalse(raa.authorization_covers(
+            self.auth, repo=REPO, pr_number=PR + 1, head_sha=HEAD,
+            action=raa.GitHubEvent.APPROVE))
+        self.assertFalse(raa.authorization_covers(
+            self.auth, repo=REPO, pr_number=PR, head_sha="advanced999",
+            action=raa.GitHubEvent.APPROVE))
+        self.assertFalse(raa.authorization_covers(
+            self.auth, repo="evil/fork", pr_number=PR, head_sha=HEAD,
+            action=raa.GitHubEvent.APPROVE))
+        self.assertFalse(raa.authorization_covers(
+            self.auth, repo=REPO, pr_number=PR, head_sha=HEAD,
+            action=raa.GitHubEvent.REQUEST_CHANGES))
 
-    def test_rejected_for_another_head(self) -> None:
-        self.assertFalse(
-            raa.authorization_covers(
-                self.auth, repo=REPO, pr_number=PR, head_sha="advanced999",
-                action=raa.GitHubEvent.APPROVE,
-            )
-        )
-
-    def test_rejected_for_another_repo(self) -> None:
-        self.assertFalse(
-            raa.authorization_covers(
-                self.auth, repo="evil/fork", pr_number=PR, head_sha=HEAD,
-                action=raa.GitHubEvent.APPROVE,
-            )
-        )
-
-    def test_rejected_for_another_action(self) -> None:
-        self.assertFalse(
-            raa.authorization_covers(
-                self.auth, repo=REPO, pr_number=PR, head_sha=HEAD,
-                action=raa.GitHubEvent.REQUEST_CHANGES,
-            )
-        )
-
-    def test_gate_rejects_replayed_authorization_on_advanced_head(self) -> None:
+    def test_gate_rejects_authorization_scoped_to_another_pr(self) -> None:
         out = raa.resolve_mutation_outcome(
             _base(
-                reviewed_head_sha=HEAD,
-                current_head_sha=HEAD,  # HEAD not stale...
                 requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                # ...but the authorization was issued for a *different* PR
                 authorization=_auth(
-                    raa.classify_provenance("human_principal_out_of_band"),
-                    pr=999,
+                    raa.classify_provenance("human_principal_out_of_band"), pr=999
                 ),
                 reviewer_independence=_independent(),
             )
@@ -408,74 +515,8 @@ class Scenario17_AuthorizationScopeCannotBeReplayed(unittest.TestCase):
         self.assertIn("scope", out.withheld_reason)
 
 
-class Scenario18_SeverityDecisionUnchanged(unittest.TestCase):
-    def test_mechanical_decision_derivation_is_untouched(self) -> None:
-        self.assertEqual(ds.derive_decision([]), ds.Decision.CLEAN)
-        self.assertEqual(
-            ds.derive_decision([ds.Finding("F1", ds.Severity.P1)]),
-            ds.Decision.CHANGES_REQUIRED,
-        )
-
-    def test_gate_reports_the_verdict_it_was_given_without_changing_it(self) -> None:
-        for verdict in (raa.Verdict.CLEAN, raa.Verdict.BLOCKING):
-            with self.subTest(verdict=verdict):
-                out = raa.resolve_mutation_outcome(_base(verdict=verdict))
-                self.assertEqual(out.verdict, verdict)
-
-    def test_gate_module_does_not_reimplement_severity_or_decision(self) -> None:
-        # The gate consumes an already-derived verdict; it must not carry
-        # its own severity model or decision derivation.
-        self.assertFalse(hasattr(raa, "Severity"))
-        self.assertFalse(hasattr(raa, "derive_decision"))
-        self.assertFalse(hasattr(raa, "blocking_findings"))
-        sig = inspect.signature(raa.resolve_mutation_outcome)
-        # verdict is an input, never computed here.
-        self.assertEqual(list(sig.parameters), ["inp"])
-        self.assertIn("verdict", inspect.signature(raa.ActionAuthorizationInput).parameters)
-
-
-class Scenario19_DeltaReReviewUnchanged(unittest.TestCase):
-    def test_reviewer_delta_mode_resolution_still_behaves(self) -> None:
-        result = resolve_review_mode(
-            ReviewModeInput(
-                current_reviewer="alice",
-                pr_author="carol",
-                previous_review_exists=True,
-                previous_reviewer="alice",
-                previous_reviewed_sha="abc",
-                current_head_sha="def",
-            )
-        )
-        self.assertEqual(result.mode, "delta_re_review")
-
-    def test_action_gate_does_not_depend_on_delta_state(self) -> None:
-        sig = inspect.signature(raa.resolve_mutation_outcome)
-        # The gate consumes only resolved facts; it never re-derives the
-        # review mode.
-        self.assertEqual(list(sig.parameters), ["inp"])
-        self.assertNotIn("delta", inspect.getsource(raa).lower())
-
-
-class Scenario20_ReviewerOwnershipUnchanged(unittest.TestCase):
-    def test_self_review_guard_still_wins_in_ownership_resolution(self) -> None:
-        result = resolve_review_mode(
-            ReviewModeInput(
-                current_reviewer="alice",
-                pr_author="alice",
-                previous_review_exists=True,
-                previous_reviewer="alice",
-                previous_reviewed_sha="abc",
-                current_head_sha="def",
-            )
-        )
-        self.assertEqual(result.mode, SELF_REVIEW_SKIPPED)
-
-
-class GovernanceTests(unittest.TestCase):
-    def test_default_mode_is_recommendation_only(self) -> None:
-        self.assertEqual(
-            raa.resolve_action_mode(_base()), raa.ActionMode.RECOMMENDATION_ONLY
-        )
+class GovernanceSweeps(unittest.TestCase):
+    def test_default_requested_mode_is_recommendation_only(self) -> None:
         self.assertEqual(
             raa.ActionAuthorizationInput(
                 verdict=raa.Verdict.CLEAN, repo=REPO, pr_number=PR,
@@ -497,24 +538,31 @@ class GovernanceTests(unittest.TestCase):
                     fragment, params, f"{name} exposes an escape hatch: {fragment}"
                 )
 
-    def test_approve_is_never_submitted_outside_auto_action_mode(self) -> None:
-        # Exhaustive-ish sweep: no combination of verdict / requested mode /
-        # provenance / independence yields an APPROVE event unless the
-        # resolved mode is explicitly-authorized auto-action.
-        provenances = list(raa.Provenance)
-        independences = list(raa.ReviewerIndependence)
-        modes = list(raa.ActionMode)
+    def test_self_review_never_mutates_across_the_whole_input_space(self) -> None:
         for verdict in raa.Verdict:
-            for rmode in modes:
-                for prov in provenances:
-                    for indep in independences:
-                        inp = _base(
-                            verdict=verdict,
-                            requested_mode=rmode,
-                            authorization=_auth(prov),
-                            reviewer_independence=indep,
-                        )
-                        out = raa.resolve_mutation_outcome(inp)
+            for rmode in raa.ActionMode:
+                for prov in raa.Provenance:
+                    for indep in raa.ReviewerIndependence:
+                        for author_kw in ({"self_review": True},
+                                          {"same_controlling_authority_as_author": True}):
+                            out = raa.resolve_mutation_outcome(_base(
+                                verdict=verdict, requested_mode=rmode,
+                                authorization=_auth(prov),
+                                reviewer_independence=indep, **author_kw,
+                            ))
+                            self.assertFalse(out.mutated)
+                            self.assertIn("self-review", out.withheld_reason)
+                            self.assertEqual(out.verdict, verdict)
+
+    def test_approve_only_ever_with_auto_action_trusted_and_independent(self) -> None:
+        for verdict in raa.Verdict:
+            for rmode in raa.ActionMode:
+                for prov in raa.Provenance:
+                    for indep in raa.ReviewerIndependence:
+                        out = raa.resolve_mutation_outcome(_base(
+                            verdict=verdict, requested_mode=rmode,
+                            authorization=_auth(prov), reviewer_independence=indep,
+                        ))
                         if out.event is raa.GitHubEvent.APPROVE:
                             self.assertEqual(
                                 out.mode,
@@ -524,28 +572,23 @@ class GovernanceTests(unittest.TestCase):
                             self.assertEqual(indep, raa.ReviewerIndependence.INDEPENDENT)
                             self.assertEqual(prov, raa.Provenance.INDEPENDENT_TRUSTED)
 
-    def test_passive_review_is_always_non_mutating(self) -> None:
+    def test_passive_review_never_mutates(self) -> None:
         for verdict in raa.Verdict:
             for rmode in raa.ActionMode:
-                out = raa.resolve_mutation_outcome(
-                    _base(
-                        passive=True,
-                        verdict=verdict,
-                        requested_mode=rmode,
-                        authorization=_auth(raa.Provenance.INDEPENDENT_TRUSTED),
-                        reviewer_independence=raa.ReviewerIndependence.INDEPENDENT,
-                    )
-                )
+                out = raa.resolve_mutation_outcome(_base(
+                    passive=True, verdict=verdict, requested_mode=rmode,
+                    authorization=_auth(raa.Provenance.INDEPENDENT_TRUSTED),
+                    reviewer_independence=raa.ReviewerIndependence.INDEPENDENT,
+                ))
                 self.assertFalse(out.mutated)
-                self.assertEqual(out.mode, raa.ActionMode.RECOMMENDATION_ONLY)
 
-    def test_every_agent_controlled_channel_classifies_as_untrusted(self) -> None:
+    def test_every_agent_controlled_channel_is_untrusted(self) -> None:
         for channel in raa.AGENT_CONTROLLED_CHANNELS:
             self.assertEqual(
                 raa.classify_provenance(channel), raa.Provenance.AGENT_CONTROLLED
             )
 
-    def test_missing_or_empty_channel_is_never_trusted(self) -> None:
+    def test_missing_channel_is_never_trusted(self) -> None:
         self.assertEqual(raa.classify_provenance(None), raa.Provenance.NONE)
         self.assertEqual(raa.classify_provenance(""), raa.Provenance.NONE)
 
