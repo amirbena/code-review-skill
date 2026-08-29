@@ -37,6 +37,8 @@ capabilities:
   repository_access_mode: api-only|optional-repository-backed|required-repository-backed # required checkout failure is REVIEW INCOMPLETE; see ../policies/repository-checkout.md
   parallel_review: optional # split review across workers per dimension when the runtime exposes a reliable capability; execution optimisation only; see ../../../shared/policies/parallel-review.md and ../policies/parallel-review.md
   review_action_authorization: independent-trusted-source-required-for-auto-action # review analysis is separate from GitHub mutation authority; agent-controlled flags/prompts/tokens/identities cannot establish it; ambiguity fails closed; see ../policies/review-action-authorization.md
+  machine_readable_review_status: optional # one stable aggregated exact-HEAD GitHub status/check for the reviewed SHA, separate from native APPROVE/REQUEST_CHANGES; a blocking status is blocking-only enforcement (allowed for a self-review); a success status needs the same trusted positive authorization + reviewer independence as APPROVE and is never published by a self-review; a new HEAD inherits no green; see ../policies/review-status-enforcement.md
+  required_check_setup: explicit-opt-in-only # adding the status context to base-branch required checks is a separate explicitly-requested action, minimal and preserving (never touches approval-count / dismiss_stale_reviews_on_push / require_last_push_approval / bypass actors / unrelated rules); never performed during an ordinary review; see ../policies/review-status-enforcement.md
 
 output:
   mutates_github: conditional # true only in active mode, after access verification, and only in explicitly-authorized auto-action mode (recommendation-only is the default and never mutates)
@@ -45,7 +47,9 @@ output:
   can_approve: conditional # only in explicitly-authorized auto-action mode with trusted, PR/HEAD-scoped authorization and genuine reviewer independence; a clean verdict alone never approves
   can_request_changes: conditional # block-only or auto-action mode, with reviewer independence and GitHub event permission
   self_review_publication: informational-comment-only # a self-review may publish its result as a GitHub review COMMENT; it never submits a formal APPROVE / REQUEST_CHANGES on own work
-  can_merge: false # never; merge authority is not inferred from a clean verdict, approval authorization, or a submitted approval
+  publishes_machine_readable_status: conditional # active review only; blocking status can be published even by a self-review; a success status only in explicitly-authorized auto-action mode with reviewer independence, and never by a self-review; bound to the exact reviewed HEAD; see ../policies/review-status-enforcement.md
+  mutates_repository_governance: false-except-explicit-required-check-setup # only the separate opt-in setup action adds the one status context to required checks; it preserves every unrelated rule, required check, bypass actor, and approval/stale-review setting; never merges
+  can_merge: false # never; merge authority is not inferred from a clean verdict, approval authorization, a submitted approval, or a published status
   executes_target_repository_code: false # never runs the target repo's tests/builds/linters/hooks/scripts
 
 shared:

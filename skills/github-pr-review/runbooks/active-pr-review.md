@@ -9,7 +9,9 @@ decision. Applies shared policies:
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
 [`invocation-options.md`](../../../shared/policies/invocation-options.md),
 plus this Skill's own policy family starting at
-[`github-review.md`](../policies/github-review.md), and the shared
+[`github-review.md`](../policies/github-review.md) (including the optional
+[`review-status-enforcement.md`](../policies/review-status-enforcement.md)),
+and the shared
 [`review-ownership.md`](../../../shared/policies/review-ownership.md).
 
 ## Flow
@@ -76,6 +78,10 @@ explicitly-authorized auto-action mode; else withhold + report reason)
     ↓
 submit permitted Approve/Request Changes
 or report why formal submission is unavailable
+    ↓
+optional: publish the one exact-HEAD machine-readable status for the
+reviewed SHA (blocking status allowed even for a self-review; success
+status only under APPROVE-level authorization; withhold if HEAD advanced)
     ↓
 finally: remove the temporary checkout (success, any failure, interruption)
     ↓
@@ -196,7 +202,7 @@ stop
    and never a run of the target repo's tests/builds/linters/hooks/scripts.
    On failure, clean up. Optional mode records a visible API-only degradation;
    required mode returns `REVIEW INCOMPLETE` / `REPOSITORY CONTEXT
-   UNAVAILABLE` and starts no workers. See step 16 for mandatory cleanup.
+   UNAVAILABLE` and starts no workers. See step 17 for mandatory cleanup.
 6. Determine event-specific capability, including draft, fork,
    comment-only, and permission-limited states, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
@@ -396,7 +402,24 @@ stop
     not GitHub mutation succeeded. A withheld mutation is reported
     explicitly with its reason; a clean reasoning result with a withheld
     approval is never reported as "approved."
-16. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
+16. **Optional machine-readable status.** After the gate in step 14, the
+    Skill may publish one stable, aggregated, exact-HEAD GitHub
+    status/check for the reviewed SHA per
+    [`../policies/review-status-enforcement.md`](../policies/review-status-enforcement.md).
+    Re-confirm the live HEAD still equals the reviewed SHA first; if it
+    advanced, withhold and report `STATUS WITHHELD (HEAD advanced)`. Map
+    the canonical verdict: `CHANGES REQUIRED` / `REVIEW INCOMPLETE` / any
+    unresolved or ungraded state → a **blocking** (non-`success`) status,
+    which is blocking-only enforcement and may be published even for a
+    self-review; `REVIEW CLEAN` → a **`success`** status only when this
+    external review holds the same trusted, PR/HEAD-scoped positive
+    authorization and reviewer independence a native `APPROVE` requires —
+    a self-review, or any ambiguity, never publishes `success`. Only the
+    authoritative aggregator publishes it; parallel workers never do.
+    Never merge. Adding the context to the base branch's required checks
+    is a separate, explicitly requested setup action per that policy,
+    never performed here.
+17. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
     step 5, remove it now — and on **every** other exit path: a
     `NO NEW DELTA` / `REVIEW INCOMPLETE` return, a self-review that
     withholds its formal event, any context-resolution failure after the

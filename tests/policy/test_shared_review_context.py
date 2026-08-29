@@ -330,15 +330,21 @@ class DocsReflectCurrentCapabilitiesTests(unittest.TestCase):
         ):
             self.assertIn(row, t)
 
-    def test_comparison_keeps_only_merge_enforcement_and_pr_code_as_future(self) -> None:
+    def test_comparison_keeps_only_governance_config_and_pr_code_as_future(self) -> None:
         t = _text(REPO_ROOT / "docs" / "CODE_REVIEW_COMPARISON.md")
         self.assertIn("Planned / not yet implemented", t)
-        self.assertIn("GitHub blocking status checks / merge enforcement", t)
+        # Issue #34 shipped the exact-HEAD machine-readable status; what
+        # stays future is broader branch-protection/ruleset mutation and
+        # any GitHub-side merge.
+        self.assertIn(
+            "Branch-protection / ruleset configuration beyond the one opt-in", t
+        )
         self.assertIn("Automatic execution of PR code", t)
-        # Phase 2 shipped these — they must no longer be listed as future.
         future_block = t.split("Planned / not yet implemented", 1)[1].split("See also", 1)[0]
         self.assertNotIn("Temporary GitHub PR repository checkout", future_block)
         self.assertNotIn("Parallel / spawned execution", future_block)
+        # The exact-HEAD status itself is no longer future.
+        self.assertNotIn("GitHub blocking status checks / merge enforcement", future_block)
 
     def test_comparison_shows_repository_backed_and_parallel_as_implemented(self) -> None:
         t = _text(REPO_ROOT / "docs" / "CODE_REVIEW_COMPARISON.md")
@@ -364,12 +370,18 @@ class DocsReflectCurrentCapabilitiesTests(unittest.TestCase):
         self.assertIn("Reconcile findings", t)
         self.assertIn("Future work (not implemented)", t)
 
-    def test_architecture_keeps_merge_and_pr_code_execution_as_future(self) -> None:
+    def test_architecture_keeps_governance_config_and_pr_code_execution_as_future(self) -> None:
         t = _text(REPO_ROOT / "docs" / "ARCHITECTURE.md")
         future_block = t.split("Future work (not implemented)", 1)[1].split("## 3.", 1)[0]
-        self.assertIn("merge-blocking / required status checks", future_block)
+        # Issue #34 shipped the exact-HEAD machine-readable status; what
+        # stays future is broader branch-protection/ruleset mutation.
+        self.assertIn(
+            "Automatic branch-protection / ruleset configuration beyond the one opt-in",
+            future_block,
+        )
         self.assertIn("Automatic execution of PR code", future_block)
         self.assertNotIn("repository-backed GitHub PR review", future_block)
+        self.assertNotIn("merge-blocking / required status checks", future_block)
 
 
 PY_POLICY = REPO_ROOT / "policies" / "python_scripts_coding_policy.md"

@@ -61,7 +61,9 @@ review. Worker candidate findings are normalized, deduplicated, and
 reconciled, then [`severity.md`](../../../shared/policies/severity.md)'s
 mechanical derivation produces one decision — see
 [`review-output.md`](review-output.md), "Final decision." Workers publish
-nothing.
+nothing — including the optional machine-readable status in
+[`review-status-enforcement.md`](review-status-enforcement.md), which only
+the aggregating reviewer may publish, once.
 
 ## Required vs. incomplete
 

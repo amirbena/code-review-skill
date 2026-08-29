@@ -8,6 +8,23 @@ This file summarizes releases; it is not a commit-by-commit log.
 
 ### Added
 
+- `github-pr-review` can publish one optional, stable, aggregated,
+  **exact-HEAD machine-readable GitHub status/check** for the reviewed
+  SHA, separate from the native `APPROVE` / `REQUEST_CHANGES` event and
+  derived from the same canonical verdict. A blocking (non-`success`)
+  status is blocking-only enforcement and may be published even by a
+  self-review; a `success` status is a positive/unblocking action that
+  requires the same trusted authorization and reviewer independence as
+  `APPROVE` and is **never** published by a self-review; incomplete or
+  unresolved review states never publish `success`; a new HEAD inherits
+  no green. The Skill can also report, read-only, whether that context is
+  `ENFORCED` / `NOT ENFORCED` / `UNKNOWN` across repository rulesets and
+  classic branch protection, and — only through a separate, explicitly
+  requested, minimal, preserving setup action — add the one context to a
+  base branch's required checks without touching approval-count rules,
+  `dismiss_stale_reviews_on_push`, `require_last_push_approval`, bypass
+  actors, or any unrelated rule. It never merges. New canonical policy
+  `skills/github-pr-review/policies/review-status-enforcement.md` (#34).
 - Release-worthiness automation: a deterministic classifier
   (`scripts/release_worthiness.py`) and a `Release worthiness` GitHub
   Action. On PRs/pushes it is read-only — it classifies all changes since

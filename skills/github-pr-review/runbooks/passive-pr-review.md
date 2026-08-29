@@ -255,6 +255,12 @@ finally: remove the temporary checkout (success, any failure, interruption)
 - A review verdict is not authorization: a clean passive result is a
   reasoning result only, never a GitHub `APPROVE` and never merge
   authority.
+- No machine-readable status/check is published either. The optional
+  exact-HEAD status in
+  [`../policies/review-status-enforcement.md`](../policies/review-status-enforcement.md)
+  is an active-review publication; passive review only reports the
+  verdict and, on request, the read-only `ENFORCED` / `NOT ENFORCED` /
+  `UNKNOWN` enforcement state.
 - A **self-review** in passive mode runs the full analysis like any
   other passive review; the report notes that a formal GitHub review
   event would be withheld because the reviewer is the PR author. Analysis
