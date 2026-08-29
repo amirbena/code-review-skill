@@ -1,0 +1,75 @@
+name: Bug Report
+description: Something in a Skill or the repository tooling is not working as expected.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Fill in what you can — not every field is
+        required. Paste review output, error messages, and repo/PR context
+        directly. Do not include secrets or private code.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: One sentence describing the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: The actual behavior. Include the relevant output or error.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: The behavior you expected instead.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Skill / area
+      options:
+        - local-code-review
+        - github-pr-review
+        - Both Skills
+        - Repository tooling
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps or example invocation
+      description: How to trigger it — numbered steps, or the command / prompt you used.
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment / coding agent
+      description: When relevant — coding agent, OS, or repo type where it happened.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else that helps — links, screenshots, related issues.
+    validations:
+      required: false
