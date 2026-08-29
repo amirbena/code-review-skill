@@ -43,6 +43,10 @@ parallel-review.md          optional parallel workers per review dimension;
 finding-placement.md        inline vs. body placement, one representation per finding
         ↓
 review-output.md            analysis/publication boundary, batching, decision
+        ↓
+review-status-enforcement.md  optional exact-HEAD machine-readable status;
+                            blocking vs. positive authority; enforcement
+                            detection; explicit opt-in required-check setup
 ```
 
 This order is the authoritative dependency order: a later file's rules
@@ -70,8 +74,13 @@ the scope [`pr-scope.md`](pr-scope.md) establishes;
 review-authority and reviewer-mode resolution have already run; and
 [`parallel-review.md`](parallel-review.md) is an optional execution
 optimisation whose sequential and parallel forms must reach the same
-findings and decision. See each file for its own cross-references; this
-list is not restated per-section elsewhere. The shared semantics behind the
+findings and decision;
+[`review-status-enforcement.md`](review-status-enforcement.md) is optional
+and runs last — only after the verdict, HEAD revalidation, and the
+review-action authorization gate in
+[`review-output.md`](review-output.md) have resolved — and adds nothing
+to the verdict or to native-event authority. See each file for its own
+cross-references; this list is not restated per-section elsewhere. The shared semantics behind the
 optional context files live in
 [`review-context.md`](../../../shared/policies/review-context.md) and
 [`review-evidence.md`](../../../shared/policies/review-evidence.md), and the

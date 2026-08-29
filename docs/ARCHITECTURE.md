@@ -155,7 +155,16 @@ mutation authorization scoped to the invocation/repo/PR/HEAD/action;
 reviewer independence as *authority* separation, not just a different
 username; fail closed on ambiguity), reviewer delta re-review, PR scope
 and pagination, review reasoning (logical cohorts, code-impact/dependency
-analysis), finding placement, batched publication/decision, the opt-in
+analysis), finding placement, batched publication/decision, the optional
+exact-HEAD **machine-readable review status**
+(`policies/review-status-enforcement.md`: one stable aggregated
+status/check bound to the reviewed SHA, separate from native
+Approve/Request Changes; a blocking status is blocking-only enforcement
+allowed even for a self-review, a `success` status needs APPROVE-level
+positive authorization and is never published by a self-review; a new
+HEAD inherits no green; enforcement-state detection across rulesets and
+classic branch protection; and an explicit opt-in, minimal, preserving
+required-check setup that never merges), the opt-in
 **repository-backed checkout** lifecycle (`policies/repository-checkout.md`:
 isolated temporary clone, base/head fidelity, read-only inspection,
 security, guaranteed cleanup) — plus three **thin PR applications** of a
@@ -502,10 +511,16 @@ The following are deliberately **not** part of the current architecture and
 are documented here only to mark them as future phases — no code, policy, or
 runbook implements them today:
 
-- **GitHub merge-blocking / required status checks** — neither Skill
-  creates a GitHub status check, a required check, a ruleset, or any
-  branch-protection state. `github-pr-review`'s maximum positive action
-  remains **Approve**; it never blocks merges through GitHub machinery.
+- **Automatic branch-protection / ruleset configuration beyond the one
+  opt-in required-check setup** — `github-pr-review` can add its single
+  aggregated status context to a base branch's required checks only
+  through an explicit, separately requested setup action that preserves
+  every unrelated rule, required check, bypass actor, and
+  approval/stale-review setting
+  (`policies/review-status-enforcement.md`). It never changes
+  approval-count rules, `dismiss_stale_reviews_on_push`,
+  `require_last_push_approval`, or bypass actors, and never merges — its
+  maximum positive action remains **Approve** / a `success` status.
 - **Automatic execution of PR code** — neither Skill runs the target
   repository's tests, linters, build, hooks, or arbitrary commands, even in
   repository-backed mode. Cloning untrusted PR code is not permission to

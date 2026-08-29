@@ -198,8 +198,11 @@ inspection only),
 [`review-evidence.md`](policies/review-evidence.md),
 [`review-reasoning.md`](policies/review-reasoning.md),
 [`parallel-review.md`](policies/parallel-review.md) (parallel workers
-only), [`finding-placement.md`](policies/finding-placement.md), and
-[`review-output.md`](policies/review-output.md).
+only), [`finding-placement.md`](policies/finding-placement.md),
+[`review-output.md`](policies/review-output.md), and
+[`review-status-enforcement.md`](policies/review-status-enforcement.md)
+(optional machine-readable status; loaded only when that signal or its
+setup is in play).
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.
@@ -319,6 +322,18 @@ result; whether that result is *submitted* to GitHub as an `APPROVE` /
   the capability boundary and relies on the runtime/orchestrator for an
   independent authorization channel — see that policy, "Structural
   limitation."
+
+- **Optional machine-readable status.** `github-pr-review` may also
+  publish one stable, aggregated, exact-HEAD GitHub status/check for the
+  reviewed SHA — separate from the native `APPROVE` / `REQUEST_CHANGES`
+  event. A **blocking** status is blocking-only enforcement and may be
+  published even by a self-review (it can only make the gate stricter); a
+  **success** status is a positive/unblocking action requiring the same
+  trusted authorization and reviewer independence as `APPROVE`, and is
+  **never** published by a self-review. A new HEAD inherits no green.
+  Making the status a required merge check is an explicit, opt-in setup
+  action, never part of an ordinary review. Canonical:
+  [`review-status-enforcement.md`](policies/review-status-enforcement.md).
 
 This Skill must never: edit implementation files, commit, push
 implementation changes, merge, delete branches, or perform cleanup on

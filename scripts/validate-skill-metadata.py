@@ -53,6 +53,7 @@ GITHUB_POLICY_ORDER = (
     "parallel-review.md",
     "finding-placement.md",
     "review-output.md",
+    "review-status-enforcement.md",
 )
 
 # Required markers per file (matched after whitespace normalization). Keep a
@@ -66,6 +67,7 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "review-reasoning.md",
         "finding-placement.md",
         "review-output.md",
+        "review-status-enforcement.md",
         "PR intent → diff → logical cohorts → impacted dependency surface → findings",
     ),
     "review-authority.md": (
@@ -205,6 +207,27 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "NO NEW DELTA",
         "## HEAD revalidation",
         "## Submission ordering",
+        "## Optional machine-readable review status",
+    ),
+    "review-status-enforcement.md": (
+        "## Separate from native review events",
+        "## One stable aggregated status context",
+        "## Exact reviewed-HEAD binding",
+        "A status on SHA A is evidence about SHA A only.",
+        "## Verdict → status state (no second engine)",
+        "No false green.",
+        "## Authorization: blocking authority vs. positive authority",
+        "is blocking-only enforcement",
+        "including a self-review",
+        "A self-review must never publish a",
+        "Ambiguity fails closed.",
+        "## Enforcement-state detection (read-only)",
+        "repository rulesets and classic branch protection",
+        "## Explicit opt-in required-check setup",
+        "Already required → no-op.",
+        "## Idempotency",
+        "## No merge",
+        "never enables auto-merge",
     ),
 }
 
@@ -269,6 +292,13 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
         "## Final decision",
         "## HEAD revalidation",
         "## Submission ordering",
+    ),
+    "review-status-enforcement.md": (
+        "## Exact reviewed-HEAD binding",
+        "## Verdict → status state (no second engine)",
+        "## Authorization: blocking authority vs. positive authority",
+        "## Enforcement-state detection (read-only)",
+        "## Explicit opt-in required-check setup",
     ),
 }
 

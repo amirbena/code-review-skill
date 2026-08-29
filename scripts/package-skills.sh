@@ -314,6 +314,7 @@ if [[ "${target}" == "github" || "${target}" == "all" ]]; then
     "policies/parallel-review.md" \
     "policies/finding-placement.md" \
     "policies/review-output.md" \
+    "policies/review-status-enforcement.md" \
     "runbooks/passive-pr-review.md" \
     "runbooks/active-pr-review.md" \
     "templates/inline-finding.md" \

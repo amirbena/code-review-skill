@@ -285,3 +285,15 @@ inline comments are always submitted together as one review submission
 per "Batched review construction and submission" above; there is no
 separate "publish inline comments" step followed later by a separate
 "publish summary" step.
+
+## Optional machine-readable review status
+
+After this file's gates resolve — verdict, HEAD revalidation, and the
+review-action authorization gate — an optional, exact-HEAD,
+machine-readable GitHub status/check may be published for the reviewed
+SHA. It is a separate, optional signal from the native `APPROVE` /
+`REQUEST_CHANGES` event, it never merges, and its blocking-vs-positive
+authorization split, enforcement-state detection, and explicit opt-in
+required-check setup are owned by
+[`review-status-enforcement.md`](review-status-enforcement.md). This file
+does not restate that behavior.

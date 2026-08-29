@@ -39,8 +39,9 @@ products evolve.
 
 - Neither edits, commits, pushes, merges, or manages branches.
 - Neither runs the target repository's tests, linters, build, hooks, or any of its code.
-- Neither creates a GitHub status check, required check, ruleset, or branch-protection state — a blocking P0/P1 result never enforces a merge block.
-- `github-pr-review` never merges; its strongest action is **Approve**.
+- `github-pr-review` may publish one optional, exact-HEAD, machine-readable status/check for the reviewed SHA (a blocking status even on a self-review; a `success` status only under APPROVE-level positive authorization, never on a self-review) and, as a separate opt-in action, add that one context to a base branch's required checks — but it never merges, never enables auto-merge, and never changes approval-count rules, stale-review settings, or bypass actors.
+- `local-code-review` never creates any GitHub status, check, ruleset, or branch-protection state.
+- `github-pr-review` never merges; its strongest action is **Approve** / a `success` status.
 - `local-code-review` never publishes anything to GitHub, even when given a PR reference.
 
 The rest of this document explains *why* this split exists and how it
@@ -271,16 +272,22 @@ consumed identically by both.
 | — simulated PR testing | n/a | a deterministic local bare-repo + branches + `refs/pull/123/head` harness (`tests/support/pr_simulation.py`) exercises the checkout with real Git; a live GitHub PR is not required for coverage |
 | **Mutation / read-only boundaries** | read-only; never edits, commits, pushes, or performs any GitHub mutation — even with a PR reference | read-only on Git and implementation; the repository-backed checkout is an isolated throwaway clone, never the target repo, and read-only; GitHub mutation only in active mode; non-mutating `recommendation-only` by default, `APPROVE` only in `explicitly-authorized auto-action` mode under independently trusted, PR/HEAD-scoped authorization; max positive action is **Approve**; never merges (merge authority never inferred from a verdict or an approval); never executes target-repo code |
 | **Delegated Agent / Sub-Agent execution** | mechanics never transfer the approval decision — the user owns it | reviewer/author separation required — as *authority* separation, not just a different username: an alternate account, token, bot, service account, GitHub App, or nested agent under the same controlling authority does not create an independent reviewer ([`review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md)); parallel workers are read-only and non-authoritative; orchestration external |
+| **Machine-readable review status** | n/a — never publishes to GitHub | optional: one stable aggregated status/check bound to the exact reviewed SHA, separate from native Approve/Request Changes ([`review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md)); a blocking status is blocking-only enforcement, allowed even for a self-review; a `success` status needs the same trusted positive authorization + reviewer independence as `APPROVE` and is never published by a self-review; a new HEAD inherits no green; enforcement state reported as `ENFORCED` / `NOT ENFORCED` / `UNKNOWN` from rulesets *and* classic branch protection; making it a required check is a separate, explicit, minimal, preserving opt-in; never merges |
 
 ## 10. Planned / not yet implemented
 
 These are future phases. No code, policy, or runbook in this repository
 implements them today, and this document does not claim they are supported:
 
-- **GitHub blocking status checks / merge enforcement** — required checks,
-  rulesets, branch-protection changes, or any GitHub-side merge blocking. A
-  blocking P0/P1 result never enforces a merge block; `github-pr-review`'s
-  maximum positive action stays **Approve**.
+- **Branch-protection / ruleset configuration beyond the one opt-in
+  required-check setup** — `github-pr-review` adds only its single
+  aggregated status context to a base branch's required checks, and only
+  through an explicit, separately requested, minimal, preserving setup
+  action ([`review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md)).
+  Changing approval-count rules, `dismiss_stale_reviews_on_push`,
+  `require_last_push_approval`, or bypass actors, and any GitHub-side
+  merge itself, are not implemented; the maximum positive action stays
+  **Approve** / a `success` status.
 - **Automatic execution of PR code** — running the target repository's tests,
   linters, build, hooks, or arbitrary commands, in any mode including
   repository-backed. Cloning untrusted PR code is not permission to run it.
