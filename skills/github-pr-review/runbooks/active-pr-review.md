@@ -361,11 +361,14 @@ stop
     "Review-action authorization gate," using the mode resolved in step 6
     and the HEAD confirmed in step 12. **If step 1 resolved this as a
     self-review** (`formal_review_mutation_allowed = false`): submit no
-    GitHub review event at all — not `APPROVE`, not `REQUEST_CHANGES` —
-    regardless of mode, natural-language request, or authorization; return
-    the finalized review body and findings and report the verdict with
-    `Mutation: WITHHELD (self-review: reviewer is the PR author)`. The
-    verdict is not changed. Otherwise (external review): in
+    formal review decision — not `APPROVE`, not `REQUEST_CHANGES` —
+    regardless of mode, natural-language request, or authorization. Publish
+    the finalized review body as an informational `COMMENT` (verdict,
+    reviewed HEAD, findings, and a note that the formal decision was
+    withheld by policy), and report `Comments: COMMENTS PUBLISHED` /
+    `Mutation: WITHHELD (self-review: reviewer is the PR author)`. A
+    `COMMENT` is not approval, request-changes, or merge authorization.
+    The verdict is not changed. Otherwise (external review): in
     **recommendation-only** mode, submit no GitHub mutation — return the
     finalized review body and findings to the caller and report
     `Mutation: WITHHELD (<reason>)`. In **block-only** mode, submit

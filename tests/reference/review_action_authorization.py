@@ -21,9 +21,11 @@ policy does:
   submitted (`formal_review_mutation_allowed`).
 
 Core invariant: **self-review is allowed; self-approval is not.** A
-reviewer may analyze its own work and produce a verdict, but it never
-submits a formal APPROVE or REQUEST_CHANGES on its own work — regardless
-of mode, natural-language request, or any authorization.
+reviewer may analyze its own work, produce a verdict, and publish the
+result as an informational GitHub COMMENT — but it never submits a formal
+APPROVE or REQUEST_CHANGES on its own work, regardless of mode,
+natural-language request, or any authorization. A COMMENT is an
+informational publication, not a governance decision.
 
 Everything else fails closed: any unknown, ambiguous, or agent-controlled
 input resolves to the safe, non-mutating outcome.
@@ -247,13 +249,22 @@ class ReviewEligibility:
 @dataclass(frozen=True)
 class MutationOutcome:
     mode: ActionMode
-    event: GitHubEvent  # the event actually submitted (NONE when withheld)
+    event: GitHubEvent  # the FORMAL review event submitted (NONE when withheld)
     verdict: Verdict  # unchanged, always reported
     withheld_reason: Optional[str] = None
+    # An informational GitHub review COMMENT publishing the result. This is
+    # a publication, not a governance decision: it never counts as APPROVE,
+    # REQUEST_CHANGES, or merge authorization, and does not set `mutated`.
+    comment: bool = False
 
     @property
     def mutated(self) -> bool:
+        """A FORMAL review decision was submitted (APPROVE / REQUEST_CHANGES)."""
         return self.event is not GitHubEvent.NONE
+
+    @property
+    def published_comment(self) -> bool:
+        return self.comment
 
 
 def is_self_review(inp: ActionAuthorizationInput) -> bool:
@@ -340,12 +351,18 @@ def resolve_mutation_outcome(inp: ActionAuthorizationInput) -> MutationOutcome:
     def withheld(reason: str) -> MutationOutcome:
         return MutationOutcome(mode, GitHubEvent.NONE, inp.verdict, reason)
 
-    # Self-review is absolute: analysis already ran and produced the
-    # verdict above; no formal APPROVE / REQUEST_CHANGES is ever submitted
-    # on own work, whatever the mode, request, or authorization.
+    # Self-review is absolute for the FORMAL decision: analysis already ran
+    # and produced the verdict above; no APPROVE / REQUEST_CHANGES is ever
+    # submitted on own work, whatever the mode, request, or authorization.
+    # The result MAY still be published as an informational COMMENT.
     if is_self_review(inp):
-        return withheld(
-            "self-review: reviewer is the PR author; no formal review event on own work"
+        return MutationOutcome(
+            mode,
+            GitHubEvent.NONE,
+            inp.verdict,
+            "self-review: reviewer is the PR author; formal review decision "
+            "withheld — informational COMMENT only",
+            comment=True,
         )
 
     # A stronger request than recommendation-only requires established

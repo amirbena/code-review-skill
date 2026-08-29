@@ -85,8 +85,9 @@ class OwnPrCleanReview(unittest.TestCase):
 
         out = raa.resolve_mutation_outcome(inp)
         self.assertEqual(out.verdict, raa.Verdict.CLEAN)  # verdict preserved
-        self.assertEqual(out.event, raa.GitHubEvent.NONE)
+        self.assertEqual(out.event, raa.GitHubEvent.NONE)  # no formal decision
         self.assertFalse(out.mutated)
+        self.assertTrue(out.published_comment)  # informational COMMENT allowed
         self.assertIn("self-review", out.withheld_reason)
 
 
@@ -98,8 +99,9 @@ class OwnPrBlockingReview(unittest.TestCase):
         inp = _base(self_review=True, verdict=raa.Verdict.BLOCKING)
         out = raa.resolve_mutation_outcome(inp)
         self.assertEqual(out.verdict, raa.Verdict.BLOCKING)  # not softened
-        self.assertEqual(out.event, raa.GitHubEvent.NONE)
+        self.assertEqual(out.event, raa.GitHubEvent.NONE)  # no formal decision
         self.assertFalse(out.mutated)
+        self.assertTrue(out.published_comment)  # informational COMMENT allowed
         self.assertIn("self-review", out.withheld_reason)
 
 
@@ -450,6 +452,54 @@ class AnalysisVsMutationEligibility(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------
+# Self-review may publish an informational COMMENT, never a formal decision
+# --------------------------------------------------------------------------
+class SelfReviewInformationalComment(unittest.TestCase):
+    def test_clean_self_review_publishes_comment_and_withholds_approve(self) -> None:
+        out = raa.resolve_mutation_outcome(_base(self_review=True, verdict=raa.Verdict.CLEAN))
+        self.assertTrue(out.published_comment)
+        self.assertFalse(out.mutated)
+        self.assertEqual(out.event, raa.GitHubEvent.NONE)
+        self.assertEqual(out.verdict, raa.Verdict.CLEAN)
+
+    def test_blocking_self_review_publishes_comment_and_withholds_request_changes(self) -> None:
+        out = raa.resolve_mutation_outcome(_base(self_review=True, verdict=raa.Verdict.BLOCKING))
+        self.assertTrue(out.published_comment)
+        self.assertFalse(out.mutated)
+        self.assertEqual(out.event, raa.GitHubEvent.NONE)
+        self.assertEqual(out.verdict, raa.Verdict.BLOCKING)
+
+    def test_comment_is_not_a_formal_event_and_does_not_unlock_one(self) -> None:
+        # Even with an auto-action request + trusted authorization, a
+        # self-review's COMMENT never becomes / accompanies APPROVE or
+        # REQUEST_CHANGES.
+        out = raa.resolve_mutation_outcome(_base(
+            self_review=True,
+            verdict=raa.Verdict.CLEAN,
+            requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
+            authorization=_auth(raa.classify_provenance("human_principal_out_of_band")),
+            reviewer_independence=_independent(),
+        ))
+        self.assertTrue(out.published_comment)
+        self.assertNotIn(out.event, (raa.GitHubEvent.APPROVE, raa.GitHubEvent.REQUEST_CHANGES))
+        self.assertFalse(out.mutated)
+
+    def test_external_review_never_emits_the_self_review_comment(self) -> None:
+        for kw in (
+            {},  # recommendation-only default
+            {"reviewer_independence": _independent()},
+            {"reviewer_independence": _independent(),
+             "requested_mode": raa.ActionMode.BLOCK_ONLY, "verdict": raa.Verdict.BLOCKING},
+            {"reviewer_independence": _independent(),
+             "requested_mode": raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
+             "authorization": _auth(raa.classify_provenance("human_principal_out_of_band"))},
+            {"passive": True},
+        ):
+            out = raa.resolve_mutation_outcome(_base(**kw))
+            self.assertFalse(out.published_comment, kw)
+
+
+# --------------------------------------------------------------------------
 # Merge boundary + governance sweeps
 # --------------------------------------------------------------------------
 class MergeBoundary(unittest.TestCase):
@@ -551,6 +601,8 @@ class GovernanceSweeps(unittest.TestCase):
                                 reviewer_independence=indep, **author_kw,
                             ))
                             self.assertFalse(out.mutated)
+                            self.assertEqual(out.event, raa.GitHubEvent.NONE)
+                            self.assertTrue(out.published_comment)
                             self.assertIn("self-review", out.withheld_reason)
                             self.assertEqual(out.verdict, verdict)
 

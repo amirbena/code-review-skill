@@ -44,6 +44,7 @@ output:
   default_review_action_mode: recommendation-only # full review + reasoning result, no GitHub mutation; block-only and explicitly-authorized-auto-action require reviewer independence (and, for approval, trusted authorization); see ../policies/review-action-authorization.md
   can_approve: conditional # only in explicitly-authorized auto-action mode with trusted, PR/HEAD-scoped authorization and genuine reviewer independence; a clean verdict alone never approves
   can_request_changes: conditional # block-only or auto-action mode, with reviewer independence and GitHub event permission
+  self_review_publication: informational-comment-only # a self-review may publish its result as a GitHub review COMMENT; it never submits a formal APPROVE / REQUEST_CHANGES on own work
   can_merge: false # never; merge authority is not inferred from a clean verdict, approval authorization, or a submitted approval
   executes_target_repository_code: false # never runs the target repo's tests/builds/linters/hooks/scripts
 

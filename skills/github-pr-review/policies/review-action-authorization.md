@@ -87,15 +87,19 @@ formal_review_mutation_allowed = false
 
 The full review runs — same evidence, same process, same mechanical
 verdict derivation — and produces findings, P0/P1/P2 classifications, and
-a `REVIEW CLEAN` / `CHANGES REQUIRED` verdict. It just does not submit a
-GitHub review event: `APPROVE` on one's own work is **always** forbidden,
-and `REQUEST_CHANGES` is not submitted as a formal self-review action
-either. The verdict is reported unchanged, with an explicit note that the
-formal event was withheld because the reviewer is the PR author.
+a `REVIEW CLEAN` / `CHANGES REQUIRED` verdict. The result **may** be
+published to GitHub as an informational review `COMMENT` (the verdict,
+the reviewed HEAD, the findings, and a note that the formal decision was
+withheld by policy). It does **not** submit a formal review **decision**:
+`APPROVE` on one's own work is **always** forbidden, and `REQUEST_CHANGES`
+is not submitted as a formal self-review action either. The verdict is
+reported unchanged. A `COMMENT` is an informational publication, not a
+governance decision — it never counts as approval, request-changes, or
+merge authorization, and must not be used as a route to any of them.
 
 This boundary is **absolute for a self-review** — no review-action mode,
 natural-language request, flag, prompt, or trusted external authorization
-can make a self-review submit a formal event. Trusted authorization and
+can make a self-review submit a formal event (`APPROVE` / `REQUEST_CHANGES`). Trusted authorization and
 the reviewer-independence rules below decide whether an **external**
 (non-self) review may mutate; they never apply to a self-review, which is
 non-mutating by construction. `MERGE` is never introduced here for any

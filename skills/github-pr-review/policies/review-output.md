@@ -160,11 +160,15 @@ Immediately before submitting any `APPROVE` / `REQUEST_CHANGES` event
   and "Authority separation, not just identity separation") — no formal
   `APPROVE` / `REQUEST_CHANGES` event is submitted, regardless of mode,
   natural-language request, or any authorization. The full analysis still
-  ran; report the verdict with the withheld reason, for example:
-  `REVIEW CLEAN — GitHub review mutation withheld: reviewer is the PR
-  author` or `CHANGES REQUIRED — GitHub review mutation withheld:
-  reviewer is the PR author`. The verdict is not rewritten because the
-  event was withheld.
+  ran; the result **may** be published as an informational review
+  `COMMENT` (verdict, reviewed HEAD, findings, and that the formal
+  decision was withheld by policy). A `COMMENT` is not approval,
+  request-changes, or merge authorization and must not be used as a route
+  to any of them. Report the verdict with the withheld reason, for
+  example: `REVIEW CLEAN — GitHub review mutation withheld: reviewer is
+  the PR author` or `CHANGES REQUIRED — GitHub review mutation withheld:
+  reviewer is the PR author` (with `Comments: COMMENTS PUBLISHED`). The
+  verdict is not rewritten because the event was withheld.
 - Resolve the review-action mode. The default is **recommendation-only**
   — a full review and reasoning result, with **no** GitHub mutation.
   Passive review is always recommendation-only.

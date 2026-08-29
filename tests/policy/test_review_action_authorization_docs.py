@@ -213,6 +213,18 @@ class SelfReviewIsAllowedSelfApprovalIsNot(unittest.TestCase):
             self.t,
         )
 
+    def test_self_review_may_publish_informational_comment_not_a_decision(self) -> None:
+        self.assertIn("published to GitHub as an informational review COMMENT", self.t)
+        self.assertIn("does not submit a formal review decision", self.t)
+        self.assertIn(
+            "A COMMENT is an informational publication, not a governance decision",
+            self.t,
+        )
+        self.assertIn(
+            "never counts as approval, request-changes, or merge authorization",
+            self.t,
+        )
+
 
 class NaturalLanguageIntentSection(unittest.TestCase):
     def setUp(self) -> None:
@@ -361,6 +373,16 @@ class WiredIntoReviewOutput(unittest.TestCase):
         self.assertIn("REVIEW CLEAN — GitHub review mutation withheld: reviewer is the PR", t)
         self.assertIn("The verdict is not rewritten because the event was withheld.", t)
 
+    def test_self_review_may_publish_informational_comment(self) -> None:
+        t = _norm(OUTPUT)
+        self.assertIn(
+            "the result may be published as an informational review COMMENT", t
+        )
+        self.assertIn(
+            "A COMMENT is not approval, request-changes, or merge authorization", t
+        )
+        self.assertIn("with Comments: COMMENTS PUBLISHED", t)
+
     def test_verdict_is_produced_before_the_gate(self) -> None:
         t = _norm(OUTPUT)
         self.assertIn(
@@ -454,9 +476,14 @@ class WiredIntoRunbooks(unittest.TestCase):
         self.assertIn("this invocation is a self-review", t)
         self.assertIn("formal_review_mutation_allowed = false and continue", t)
         self.assertIn("There is no REVIEW SKIPPED; analysis is not skipped", t)
-        # Step 14 has an explicit self-review branch that submits nothing.
+        # Step 14 has an explicit self-review branch: no formal decision,
+        # informational COMMENT only.
         self.assertIn("If step 1 resolved this as a self-review", t)
-        self.assertIn("submit no GitHub review event at all", t)
+        self.assertIn("submit no formal review decision", t)
+        self.assertIn(
+            "Publish the finalized review body as an informational COMMENT", t
+        )
+        self.assertIn("Comments: COMMENTS PUBLISHED", t)
         self.assertIn("Mutation: WITHHELD (self-review: reviewer is the PR author)", t)
 
     def test_passive_runbook_does_not_stop_analysis_for_self_review(self) -> None:

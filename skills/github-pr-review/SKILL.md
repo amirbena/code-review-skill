@@ -102,8 +102,9 @@ does is **self-approve**:
   reviewer under the same controlling authority as the author), the full
   review still runs — same evidence, same process, same verdict
   derivation — and produces findings and a `REVIEW CLEAN` /
-  `CHANGES REQUIRED` verdict. It just submits **no** formal GitHub review
-  event: `APPROVE` on one's own work is always forbidden, and
+  `CHANGES REQUIRED` verdict. The result may be published as an
+  informational GitHub review `COMMENT`, but it submits **no** formal
+  review decision: `APPROVE` on one's own work is always forbidden, and
   `REQUEST_CHANGES` is not submitted as a formal self-review action
   either. The verdict is reported with an explicit "GitHub review
   mutation withheld: reviewer is the PR author" note, and is not
@@ -395,7 +396,8 @@ result; whether that result is *submitted* to GitHub as an `APPROVE` /
   means `MERGE`, and this Skill never merges.
 - **Self-review is allowed; self-approval is not.** When the reviewer is
   the PR author (or a reviewer under the same controlling authority), the
-  full analysis runs and reports a verdict, but no formal `APPROVE` /
+  full analysis runs and reports a verdict; the result may be published
+  as an informational `COMMENT`, but no formal `APPROVE` /
   `REQUEST_CHANGES` event is ever submitted on the reviewer's own work —
   regardless of mode, natural-language request, or authorization. The
   verdict is reported with "GitHub review mutation withheld: reviewer is

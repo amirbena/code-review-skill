@@ -48,13 +48,16 @@ A self-review still produces and reports:
 - an explicit statement that the formal GitHub review event was withheld
   because the reviewer is the PR author.
 
-It does **not** submit a GitHub review event. `APPROVE` on one's own work
-is always forbidden; `REQUEST_CHANGES` is not submitted as a formal
-self-review action against the reviewer's own PR either (the blocking
-verdict is still reported — the change is withheld *submission*, not a
-softened verdict). The verdict is never rewritten merely because formal
-mutation is unavailable — see [`review-output.md`](review-output.md),
-"Final decision," and
+It **may** publish its result to GitHub as an informational review
+`COMMENT`, but it does **not** submit a formal review decision. `APPROVE`
+on one's own work is always forbidden; `REQUEST_CHANGES` is not submitted
+as a formal self-review action against the reviewer's own PR either (the
+blocking verdict is still reported in the comment — the change is withheld
+*submission* as a decision, not a softened verdict). A `COMMENT` is an
+informational publication, not a governance decision, and never counts as
+approval, request-changes, or merge authorization. The verdict is never
+rewritten merely because formal mutation is unavailable — see
+[`review-output.md`](review-output.md), "Final decision," and
 [`review-action-authorization.md`](review-action-authorization.md),
 "Self-review is allowed; self-approval is not."
 
@@ -63,10 +66,12 @@ Example outcomes:
 ```text
 own PR, no blocking findings
     → REVIEW CLEAN
+    → published as an informational COMMENT
     → GitHub review mutation withheld: reviewer is the PR author
 
 own PR, an unresolved P1
     → CHANGES REQUIRED
+    → published as an informational COMMENT (with the blocking findings)
     → GitHub review mutation withheld: reviewer is the PR author
 ```
 
@@ -147,7 +152,7 @@ and intended event. Do not infer it from authentication or a broad role alone.
 | State | Reasoning | Comments | Formal decision |
 |---|---|---|---|
 | Eligible external reviewer | Complete when scope is complete | Publish when authorized | Submit `APPROVE` or `REQUEST_CHANGES` as reasoned |
-| PR author (self-review), or reviewer under the same controlling authority as the author | **Complete** — same process and evidence as an external review | Not published as a formal review | **None** — no `APPROVE`, and no formal `REQUEST_CHANGES` on own work; report the verdict plus "GitHub review mutation withheld: reviewer is the PR author" |
+| PR author (self-review), or reviewer under the same controlling authority as the author | **Complete** — same process and evidence as an external review | May publish the result as an informational `COMMENT` (not a formal review) | **None** — no `APPROVE`, and no formal `REQUEST_CHANGES` on own work; report the verdict plus "GitHub review mutation withheld: reviewer is the PR author" |
 | Can inspect, cannot mutate | Complete when scope is complete | Do not publish | Return recommendation and `REVIEW NOT SUBMITTED` |
 | Comment-capable, decision-ineligible | Complete when scope is complete | May publish permitted comments | Return recommendation and `REVIEW NOT SUBMITTED` |
 | Draft PR | Review work-in-progress; complete only if scope is complete | May publish permitted feedback | Intentionally do not submit Approve/Request Changes until ready for review |
