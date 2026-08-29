@@ -13,11 +13,8 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-### Fixed
-
-- CI: confirmed a normal merge to `main` automatically triggers the
-  `Release worthiness` workflow via `on: push` (release-trigger
-  verification only; no product or Skill behavior change).
+_Nothing yet. New entries land here and move under a version heading at
+release time._
 
 ## v1.0.3 — 2026-08-29
 
