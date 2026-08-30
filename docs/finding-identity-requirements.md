@@ -126,10 +126,16 @@ all of these:
    the defect, not the sentence.
 7. **Severity re-classification of the same defect.** The same underlying
    defect is re-rated (e.g. `P2` → `P1`) because impact was reassessed.
-   Identity represents the defect, not its severity label, so this alone
-   MUST NOT produce a new identity. *(The same-HEAD identity in
+   Identity represents the defect, not its severity label, so a pure
+   severity re-rating **MUST NOT** create a new cross-review identity. The
+   same-HEAD identity in
    [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md)
-   may fold severity in; §5.6 governs how the two relate.)*
+   **may** fold severity into its own value; reconciling that mechanism
+   with this one is owned by
+   [#59](https://github.com/amirbena/code-review-skill/issues/59). (§5.6
+   does not govern this interaction — it only governs the separate
+   constraint that cross-review identity must not split findings the
+   same-HEAD rule treats as one within a single unchanged state.)
 8. **Cross-Skill re-review of the same change.** The change was reviewed
    once by `local-code-review` on the local delta and again by
    `github-pr-review` on the PR built from it (or vice versa). The same
@@ -195,9 +201,9 @@ is derived from *the defect in its program element*.
 identity mechanism *may read*. Listing a signal here does **not** permit
 the identity value to *depend on* it. Which signals may **determine**
 identity, and which may only **inform** it, is governed by §5 — §5.3 for
-position, §5.5 for Skill-specific metadata. A signal marked *informing
-only* below MAY be consulted but MUST NOT be a component the identity value
-is bound to.
+position, §5.5 for Skill-specific metadata — and by §2.7 for severity. A
+signal marked *informing only* below MAY be consulted but MUST NOT be a
+component the identity value is bound to.
 
 The finding fields are those in
 [`../shared/templates/finding.md`](../shared/templates/finding.md); the
