@@ -525,6 +525,16 @@ runbook implements them today:
   repository's tests, linters, build, hooks, or arbitrary commands, even in
   repository-backed mode. Cloning untrusted PR code is not permission to
   execute it.
+- **Cross-review stable finding identity** — a movement-tolerant identifier
+  that lets a re-review tell "the same defect again" from "a new defect"
+  after line numbers, surrounding code, or wording changed. It is distinct
+  from the same-HEAD publish de-duplication identity `github-pr-review`
+  already computes
+  ([`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md),
+  "Existing review awareness"). The requirements are captured in
+  [`finding-identity-requirements.md`](finding-identity-requirements.md); no
+  policy, runbook, or code implements the movement-tolerant mechanism, the
+  finding lifecycle, or SHA-bound re-review state today.
 
 ## 3. Separation of Concerns
 
