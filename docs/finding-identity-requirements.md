@@ -14,18 +14,18 @@ done against a fixed contract instead of rediscovering the problem:
   [#42](https://github.com/amirbena/code-review-skill/issues/42).
 
 This file is **requirements only**. It does **not** choose or design a
-matching mechanism, and it is deliberately written so that structural
-hashing, fuzzy location matching, semantic similarity, or a hybrid can each
-still be evaluated against it in
-[#59](https://github.com/amirbena/code-review-skill/issues/59).
+matching mechanism. Wherever a requirement below bounds a tolerance or
+names candidate techniques — structural hashing, fuzzy location matching,
+semantic similarity, a hybrid — **selecting the technique and the exact
+value is [#59](https://github.com/amirbena/code-review-skill/issues/59)'s
+decision**; this document only sets the bound that selection must satisfy,
+so all four approaches stay comparable there.
 
 This is a repository-development doc, like
 [`runtime-parallelism.md`](runtime-parallelism.md): it is **not** packaged
 into either Skill archive, and no packaged Skill resource depends on it.
-When [#60](https://github.com/amirbena/code-review-skill/issues/60) ships a
-runtime-normative rule, its canonical portable home is a packaged resource
-(a `shared/policies/` file or an extension of an existing one), chosen then;
-this doc becomes that rule's requirements record.
+Its standing relative to the eventual runtime policy is defined in
+"Status and canonical home" at the end.
 
 The finding fields these requirements are expressed over are the shared
 finding contract in
@@ -35,26 +35,24 @@ finding contract in
 
 ## Summary
 
-- **Identity tracks a defect, not a line and not a sentence.** Two findings
-  share identity when they are the *same underlying problem in the same
-  program element*, even if line numbers, surrounding code, or the
-  reviewer's wording changed. They do **not** share identity merely because
-  they sit on the same line or read similarly.
-- **Stability is asymmetric on purpose.** Identity must survive
-  movement/reformatting of otherwise-unchanged defective code, and must
-  change when the defect, or the program element it lives in, is materially
-  different.
-- **Determinism is required.** The same finding against the same target
-  state yields the same identity on every run, independent of discovery
-  order or worker count.
-- **Fail toward splitting, never toward merging.** When the mechanism
-  cannot tell whether two findings are the same, it must treat them as
-  distinct. A false split costs a re-surfaced duplicate (visible,
-  recoverable); a false merge hides a real defect under another finding's
-  record (silent, not recoverable).
-- **No resolution behavior is defined here.** What a re-review *does* with a
-  matched, unmatched, or uncertain identity — resolve, re-open, suppress,
-  carry forward — belongs to the finding lifecycle
+Each point is stated normatively in the section named; this list only
+orients.
+
+- **Identity tracks a defect, not a line and not a sentence** (§1). The
+  same underlying problem in the same program element is the same identity;
+  similar wording or a shared location is not.
+- **Stability is asymmetric** (§2, §3, §5). Identity survives
+  movement/reformatting of unchanged defective code; it changes when the
+  defect, or its program element, is materially different.
+- **Determinism is required** (§5). Same finding + same target state → the
+  same identity, every run.
+- **Portable across both Skills** (§5). The same defect in the same change
+  gets one identity whether `local-code-review` or `github-pr-review`
+  produced the finding.
+- **Fail toward splitting, never toward merging** (§6). An uncertain match
+  is treated as distinct.
+- **No resolution behavior is defined here** (§7, §8). Resolve / re-open /
+  suppress / carry-forward belongs to the finding lifecycle
   ([#43](https://github.com/amirbena/code-review-skill/issues/43),
   [#62](https://github.com/amirbena/code-review-skill/issues/62)), not to
   this contract.
@@ -63,17 +61,14 @@ finding contract in
 
 ## 1. What finding identity represents
 
-A **finding identity** is a value that answers one question across two
-reviews of the same evolving change:
+A **finding identity** answers one question across two reviews of the same
+evolving change:
 
 > Is *this* finding the same problem the earlier review already reported, or
 > a different one?
 
-It exists so a later review can distinguish "the same defect is still here"
-from "a new defect appeared" without a human re-reading both reviews
-side by side. It is the join key the finding lifecycle and delta/re-review
-work build on; it is not itself a lifecycle state, a severity, or a
-verdict.
+It is the join key the finding lifecycle and delta/re-review work build on.
+It is **not** a lifecycle state, a severity, or a verdict.
 
 ### The four distinctions identity must get right
 
@@ -86,34 +81,29 @@ verdict.
 
 ### Identity vs. the existing per-review and same-HEAD identifiers
 
-Two related but different concepts already exist and are **not** what this
-document specifies:
+Two related concepts already exist and are **not** what this document
+specifies:
 
 - **Human-facing display IDs (`F1`, `F2`, …)** in
   [`../shared/templates/finding.md`](../shared/templates/finding.md) are
-  ordinals *within one review's output*. They are for reference in that one
-  report and are not stable across runs.
+  ordinals *within one review's output*, not stable across runs.
 - **`github-pr-review`'s same-HEAD deterministic identity** in
   [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md),
-  "Existing review awareness," is computed to suppress the *same workflow
-  re-publishing the same finding for the same PR and the same HEAD*. It
-  deliberately binds to the HEAD SHA and exact location and is not required
-  to survive any code movement.
+  "Existing review awareness," suppresses the *same workflow re-publishing
+  the same finding for the same PR and the same HEAD*. It deliberately
+  binds to the HEAD SHA and exact location and is not required to survive
+  code movement.
 
 Cross-review finding identity is the **movement-tolerant superset**: it
-must remain usable when the HEAD SHA changed and code moved. Its design
-must stay *consistent with* the same-HEAD identity (two findings the
-same-HEAD rule treats as identical must not be split by the cross-review
-rule for the same unchanged state), but it is a distinct mechanism.
-Reconciling the exact relationship between the two is in scope for
-[#59](https://github.com/amirbena/code-review-skill/issues/59).
+MUST remain usable when the HEAD SHA changed and code moved, and MUST stay
+consistent with the same-HEAD identity (§5.6).
 
 ---
 
 ## 2. Must-survive scenarios (identity stays the same)
 
 The defective code and the defect are materially unchanged; only the
-surroundings or the presentation moved. Identity **must** be stable across
+surroundings or the presentation moved. Identity **MUST** be stable across
 all of these:
 
 1. **Line-number movement.** Code above the finding was added or removed, so
@@ -136,17 +126,14 @@ all of these:
    the defect, not the sentence.
 7. **Severity re-classification of the same defect.** The same underlying
    defect is re-rated (e.g. `P2` → `P1`) because impact was reassessed.
-   Identity represents the defect, not its current severity label, so this
-   alone should not produce a new identity. *(This is a deliberate
-   difference from the same-HEAD identity in
-   [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md),
-   which may fold severity in; how the cross-review rule relates to it is
-   for [#59](https://github.com/amirbena/code-review-skill/issues/59).)*
+   Identity represents the defect, not its severity label, so this alone
+   MUST NOT produce a new identity. *(The same-HEAD identity in
+   [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md)
+   may fold severity in; §5.6 governs how the two relate.)*
 8. **Cross-Skill re-review of the same change.** The change was reviewed
    once by `local-code-review` on the local delta and again by
    `github-pr-review` on the PR built from it (or vice versa). The same
-   defect must carry the same identity across that hand-off — see
-   **Portability** in §5.
+   defect MUST carry the same identity across that hand-off (§5.5).
 9. **Re-review after a rebase or history rewrite of the branch** that leaves
    the defective code textually the same, even though commit SHAs and the
    review base changed.
@@ -155,7 +142,7 @@ Cross-check against the re-review change classes in
 [#43](https://github.com/amirbena/code-review-skill/issues/43) /
 [#64](https://github.com/amirbena/code-review-skill/issues/64):
 **`unchanged`** and **`moved`** map to *stable identity*; **`reopened`**
-(a previously fixed defect that regressed) must *reuse the original
+(a previously fixed defect that regressed) MUST *reuse the original
 identity* so the lifecycle can express a re-open rather than invent a new
 problem.
 
@@ -163,7 +150,7 @@ problem.
 
 ## 3. Must-change scenarios (a new identity is required)
 
-Textual or positional similarity must **not** collapse these into one
+Textual or positional similarity **MUST NOT** collapse these into one
 identity:
 
 1. **A genuinely different defect.** Different faulty behavior, different
@@ -183,7 +170,7 @@ identity:
 4. **Similar wording, different underlying problem.** Two findings whose
    `title`/`evidence` read alike but which describe unrelated defects (e.g.
    "unhandled error path" in two unrelated modules for two unrelated
-   reasons) must stay distinct.
+   reasons) MUST stay distinct.
 5. **Same message text, different file or symbol.** Re-using a finding's
    phrasing at a new path or new element does not carry its identity there.
 6. **Scope/intent of the finding changed.** A file-level or cross-cutting
@@ -195,19 +182,24 @@ identity:
 [#43](https://github.com/amirbena/code-review-skill/issues/43) always maps
 to a *fresh identity*.
 
-**Guard against equating text similarity with identity.** A mechanism that
-keys primarily on normalized message text will fail scenarios 1, 2, and 4
-here. A mechanism that keys primarily on file+line will fail scenario 3
-here and scenarios 1–5 in §2. The requirements intentionally push toward
-identifying *the defect in its program element*, and leave *how* to
-[#59](https://github.com/amirbena/code-review-skill/issues/59).
+Identity **MUST NOT** be derived from normalized message-text similarity
+alone, or from file + line alone: the first fails scenarios 1, 2, and 4
+above; the second fails scenario 3 above and scenarios 1–5 in §2. Identity
+is derived from *the defect in its program element*.
 
 ---
 
 ## 4. Inputs available at review time
 
-An identity mechanism may rely only on signals that actually exist in this
-repository's review model. The finding fields are those in
+**Availability is not identity-binding.** This section lists the signals an
+identity mechanism *may read*. Listing a signal here does **not** permit
+the identity value to *depend on* it. Which signals may **determine**
+identity, and which may only **inform** it, is governed by §5 — §5.3 for
+position, §5.5 for Skill-specific metadata. A signal marked *informing
+only* below MAY be consulted but MUST NOT be a component the identity value
+is bound to.
+
+The finding fields are those in
 [`../shared/templates/finding.md`](../shared/templates/finding.md); the
 target/context concepts are those in
 [`../shared/policies/review-context.md`](../shared/policies/review-context.md)
@@ -219,7 +211,7 @@ and
 - **Repository-relative file path** of the finding (normalized;
   `/`-separated). For a genuinely cross-file or repo-level finding, an
   explicit "no single file" marker rather than a path.
-- **Severity** — exactly one of `P0` / `P1` / `P2`.
+- **Severity** — exactly one of `P0` / `P1` / `P2`. **Informing only** (§2.7).
 - **A short problem statement** — the finding `title` (what is wrong).
 - **`evidence`** — the concrete behavior/text supporting the finding.
 - **`impact`** — the engineering consequence.
@@ -227,7 +219,7 @@ and
   local implementation delta (`local-code-review`) or the Pull Request
   (`github-pr-review`); see
   [`../shared/policies/review-context.md`](../shared/policies/review-context.md),
-  "The four concepts."
+  "The four concepts." **Informing only** (§5.5).
 - **The current changed set for that target** — the diff / changed hunks and
   the ability to read the changed files at the reviewed revision.
 
@@ -236,6 +228,7 @@ and
 - **Precise line or line range.** A cross-cutting finding may carry only a
   section, a symbol, or a file-level location — see `location` in
   [`../shared/templates/finding.md`](../shared/templates/finding.md).
+  **Informing only** (§4.3, §5.3).
 - **Symbol / structural context** (enclosing function, class, method,
   module path). Availability depends on language and on the file not being
   classified opaque/generated/binary per
@@ -247,7 +240,7 @@ and
   "When a longer explanation is justified."
 - **Location source annotation** — `local-code-review` only:
   `(committed)` / `(staged)` / `(unstaged)` / `(untracked)`. No PR
-  equivalent exists.
+  equivalent exists. **Informing only** (§5.5).
 - **Existing review evidence** — prior reviewer findings, resolved findings,
   and settled decisions, available only when an associated PR/reference is
   supplied (`local-code-review`) or prior reviews exist on the PR
@@ -262,69 +255,73 @@ and
   [#64](https://github.com/amirbena/code-review-skill/issues/64), not this
   document.
 
-### 4.3 Unavailable — must not be assumed
+### 4.3 Unavailable — MUST NOT be assumed
 
 - A persistent per-finding identifier from an external tracker, database, or
   prior tool run that is not one of the inputs above.
 - A stable, semantically meaningful **absolute line number** across
-  revisions — line numbers move and must not be the sole identity signal.
+  revisions — line numbers move; identity MUST NOT be bound to one.
 - **Full repository history / blame** beyond what the review target
   exposes, or history that survived a rewrite unchanged.
 - A **semantic index, embeddings store, or language server** as a
-  precondition — the current model does not provide one.
-  [#59](https://github.com/amirbena/code-review-skill/issues/59) may
-  *recommend* introducing such a capability, but these requirements must be
-  satisfiable without presupposing it.
+  precondition — the current model does not provide one, and these
+  requirements MUST be satisfiable without presupposing it.
 - Any **runtime or execution observation** of the target (neither Skill
   runs target code).
 - Any **cross-repository** signal — identity is single-repository only
-  (§6).
-- Wall-clock time, RNG, environment, worker/shard index, or finding
-  discovery order (§5).
+  (§6, §8).
+- **Volatile runtime signals** — wall-clock time, RNG, environment,
+  worker/shard index, finding discovery order. §5.1–§5.2 forbid any
+  dependence on these.
 
 ---
 
 ## 5. Stability requirements
 
+This section is the authority on **which signals may determine identity**
+and **how robust identity must be**. §4 lists what is *available*; this
+section constrains what is *binding*.
+
 1. **Deterministic.** For a fixed finding and a fixed target state, the
-   identity value is always the same. No dependence on wall-clock time,
-   random seeds, machine, environment, or the number of review workers /
-   shards used (parallel execution is an optimization only — see
+   identity value MUST always be the same — no dependence on wall-clock
+   time, random seeds, machine, environment, or the number of review
+   workers / shards (parallel execution is an optimization only; see
    [`../shared/policies/parallel-review.md`](../shared/policies/parallel-review.md)).
-2. **Order-independent.** Identity does not depend on the order findings are
+2. **Order-independent.** Identity MUST NOT depend on the order findings are
    discovered or emitted, or on how many other findings exist in the same
    review.
-3. **Independent of volatile position where possible.** Identity must not
-   break solely because line numbers shifted, code was reindented, or
-   unchanged defective code moved within its file (§2). Position may
-   *inform* identity; it may not be the value.
+3. **Independent of volatile position.** Identity MUST NOT break solely
+   because line numbers shifted, code was reindented, or unchanged
+   defective code moved within its file (§2). Position MAY *inform*
+   identity; it MUST NOT *be* the value.
 4. **Stable across a normal re-review of the same change.** Re-running a
    review on the same PR / same local delta with no material change to the
-   defective code produces the same identity — including after commits that
-   touched only unrelated files, after a rebase that left the code
+   defective code MUST produce the same identity — including after commits
+   that touched only unrelated files, after a rebase that left the code
    textually the same, and after the review base or HEAD SHA changed
    without changing the defect.
 5. **Portable between the two Skills.** Identity is defined over the shared
-   finding contract and computed only from inputs both Skills possess
-   (§4.1, and §4.2 inputs only when actually present). Where an input is
+   finding contract and MUST be computed only from inputs both Skills
+   possess (§4.1, and §4.2 inputs only when present). Where an input is
    Skill-specific — the `local-code-review` repository-state annotation, or
-   a PR HEAD SHA — identity must not depend on it in a way that makes the
-   *same defect in the same change* resolve to different identities under
+   a PR HEAD SHA — identity MUST NOT depend on it such that the *same
+   defect in the same change* resolves to different identities under
    `local-code-review` and under a later `github-pr-review` of the PR built
-   from that work. The
-   [handoff between the two Skills](ARCHITECTURE.md) must preserve identity.
+   from that work. **No identity-carrying findings handoff between the two
+   Skills exists today**: `github-pr-review` does not ingest
+   `local-code-review` output, and prior-review evidence reaches
+   `local-code-review` only through a caller-supplied PR reference (§4.2).
+   If such a handoff is introduced later, it MUST preserve identity
+   unchanged.
 6. **Consistent with the same-HEAD identity.** For a single unchanged
-   state, the cross-review identity must not split two findings that
+   state, the cross-review identity MUST NOT split two findings that
    [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md)'s
    same-HEAD rule treats as one.
 7. **Bounded sensitivity.** A small, behavior-preserving edit to the
-   defective code (rename of a purely local identifier, extraction of a
-   sub-expression, a formatting change) should not, by itself, be required
-   to change identity when the defect is still the same one. The exact
-   tolerance is a design question for
-   [#59](https://github.com/amirbena/code-review-skill/issues/59); the
-   requirement here is only that identity is *not* defined so tightly that
-   §2 scenarios fail.
+   defective code — renaming a purely local identifier, extracting a
+   sub-expression, a formatting change — SHOULD NOT by itself force a new
+   identity while the defect is the same one. Identity MUST NOT be defined
+   so tightly that the §2 scenarios fail.
 
 ---
 
@@ -333,36 +330,30 @@ and
 A **collision** is two *materially distinct* findings (per §3) receiving the
 **same** identity.
 
-- **Unacceptable outcome: silent merge.** If two distinct defects collapse
-  to one identity, the finding lifecycle
+- **Silent merge is unacceptable.** If two distinct defects collapse to one
+  identity, the finding lifecycle
   ([#43](https://github.com/amirbena/code-review-skill/issues/43)) records
-  them as one item. One real defect then rides on the other's history and
+  them as one item; one real defect then rides on the other's history and
   can be marked resolved, suppressed as a duplicate, or hidden from a
-  re-review because its "record" already exists. This must be treated as a
-  correctness defect in the identity mechanism, not an acceptable
-  approximation.
+  re-review. This is a correctness defect in the identity mechanism, not an
+  acceptable approximation.
 - **Required fail-safe direction: prefer splitting over merging.** When the
-  mechanism is not confident two findings are the same, it must assign
-  **distinct** identities.
-  - A **false split** (the same defect looks new on re-review) produces a
-    visible duplicate/re-surfaced finding. It is annoying and measurable,
-    and it is recoverable by a human or by later tuning.
-  - A **false merge** (two defects share one identity) is silent and can
-    drop a real finding. It is not recoverable from the review output
-    alone.
-  The asymmetry is deliberate: **duplicate noise is a quality metric;
-  a false merge is a safety failure.** This direction is fixed here; the
-  *technique* that achieves it is
-  [#59](https://github.com/amirbena/code-review-skill/issues/59) /
-  [#60](https://github.com/amirbena/code-review-skill/issues/60).
-- **Distinctness inputs must be honored.** Different program element,
-  different defect behavior, and different location intent (§3) must be
-  capable of producing different identities even when file path and message
-  text are identical.
-- **No global-uniqueness claim.** These requirements do not mandate that
-  identity be a collision-free hash over all findings everywhere; they
-  mandate that *distinct findings in the same review context* are not
-  merged and that ambiguity resolves toward distinctness.
+  mechanism is not confident two findings are the same, it MUST assign
+  **distinct** identities. The asymmetry is deliberate:
+  - a **false split** (the same defect looks new on re-review) produces a
+    visible, measurable duplicate finding, recoverable by a human or by
+    later tuning;
+  - a **false merge** (two defects share one identity) is silent, can drop
+    a real finding, and is not recoverable from the review output alone.
+
+  Duplicate noise is a quality metric; a false merge is a safety failure.
+- **Distinctness inputs MUST be honored.** Different program element,
+  different defect behavior, and different location intent (§3) MUST be
+  able to produce different identities even when file path and message text
+  are identical.
+- **No global-uniqueness claim.** Identity need not be a collision-free hash
+  over all findings everywhere; the requirement is only that distinct
+  findings in the same review context are never merged.
 
 ---
 
@@ -371,21 +362,18 @@ A **collision** is two *materially distinct* findings (per §3) receiving the
 When the mechanism **cannot confidently determine** whether a current
 finding is the same as a prior one:
 
-- **Do not silently treat it as the same.** An uncertain match must not be
-  presented as a definite match.
-- **Resolve toward distinct** (§6): assign the current finding its own
+- It **MUST NOT** silently treat the match as definite.
+- It **MUST resolve toward distinct** (§6): the current finding gets its own
   identity rather than adopting the prior one.
-- **Preserve the uncertainty for the lifecycle layer.** Where the model can
-  carry it, the pairing should be marked as a *low-confidence / candidate*
+- It **SHOULD preserve the uncertainty for the lifecycle layer** — where the
+  model can carry it, mark the pairing as a *low-confidence / candidate*
   relationship so
   [#43](https://github.com/amirbena/code-review-skill/issues/43) /
   [#62](https://github.com/amirbena/code-review-skill/issues/62) can decide
-  conservatively. This document does **not** define what that decision is.
-- **No automatic resolution behavior is defined here.** An uncertain or
-  absent match must not, on its own, cause a finding to be auto-resolved,
-  auto-merged, auto-suppressed, or dropped from output. Anything that would
-  make later lifecycle logic unsafe is out of bounds for the identity
-  mechanism.
+  conservatively. This document does not define that decision.
+- It **MUST NOT auto-resolve.** An uncertain or absent match MUST NOT, on
+  its own, cause a finding to be auto-resolved, auto-merged,
+  auto-suppressed, or dropped from output.
 - **Report, don't guess.** Consistent with
   [`../shared/policies/review-evidence.md`](../shared/policies/review-evidence.md)
   ("report that limitation rather than asserting it was handled"), when
@@ -410,6 +398,19 @@ does **not** define:
 | Cross-repository or cross-project finding identity | Out of scope for [#42](https://github.com/amirbena/code-review-skill/issues/42) entirely |
 | Human-facing `F1` / `F2` display IDs and same-HEAD publish de-duplication | [`../shared/templates/finding.md`](../shared/templates/finding.md); [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md) |
 
-A downstream issue may refine wording here if it discovers a genuine
-conflict with the shared review model — it should do so explicitly, not by
-silently diverging.
+## Status and canonical home
+
+Until [#60](https://github.com/amirbena/code-review-skill/issues/60) lands,
+**this document is the requirements record** for cross-review finding
+identity. A downstream issue MAY refine it — explicitly, never by silent
+divergence — if it discovers a genuine conflict between these requirements
+and the shared review model.
+
+Once [#60](https://github.com/amirbena/code-review-skill/issues/60)
+establishes the canonical runtime rule in a packaged resource (a
+`shared/policies/` file or an extension of an existing one — the path is
+[#60](https://github.com/amirbena/code-review-skill/issues/60)'s to choose,
+not this document's), **that policy becomes the single normative source.**
+This document then becomes a historical requirements record: it MUST link
+to the canonical policy and MUST NOT keep evolving the same rule
+independently.
