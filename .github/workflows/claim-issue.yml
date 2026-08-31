@@ -5,24 +5,42 @@ on:
     types:
       - created
 
+# These conservative defaults allow ordinary corrections while bounding rapid churn.
+env:
+  CLAIM_CHURN_THRESHOLD: 6
+  CLAIM_CHURN_WINDOW_SECONDS: 600
+  CLAIM_COOLDOWN_SECONDS: 1800
+
 # The workflow reads issue state and only mutates labels/comments. It never
-# checks out or executes contributor-controlled code.
+# executes contributor-controlled code.
 permissions:
   contents: read
   issues: write
 
 jobs:
-  accept-command:
+  reconcile:
     if: ${{ !github.event.issue.pull_request && (github.event.comment.body == '/claim' || github.event.comment.body == '/unclaim') }}
+    concurrency:
+      # Repository-wide serialization makes cross-issue restrictions deterministic.
+      group: claim-issue-${{ github.repository_id }}
+      cancel-in-progress: false
+      queue: max
     runs-on: ubuntu-latest
     steps:
-      - name: Persist trusted command receipt
+      - name: Check out trusted default-branch automation
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Read claim state and prepare trusted receipt
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           COMMENT_BODY: ${{ github.event.comment.body }}
           COMMENT_ID: ${{ github.event.comment.id }}
+          COMMENT_CREATED_AT: ${{ github.event.comment.created_at }}
           COMMENT_ACTOR: ${{ github.event.comment.user.login }}
           AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association }}
           ISSUE_STATE: ${{ github.event.issue.state }}
@@ -34,35 +52,32 @@ jobs:
             /unclaim) command=unclaim ;;
             *) exit 1 ;;
           esac
+
+          now="$(date -u +%s)"
+          history_seconds="${CLAIM_CHURN_WINDOW_SECONDS}"
+          if (( CLAIM_COOLDOWN_SECONDS > history_seconds )); then
+            history_seconds="${CLAIM_COOLDOWN_SECONDS}"
+          fi
+          since="$(date -u -d "@$((${now} - ${history_seconds}))" +%Y-%m-%dT%H:%M:%SZ)"
+
+          gh api "repos/${GH_REPO}/issues/${ISSUE_NUMBER}" > "${RUNNER_TEMP}/issue.json"
+          gh api --paginate --slurp \
+            "repos/${GH_REPO}/issues/${ISSUE_NUMBER}/comments?per_page=100" \
+            > "${RUNNER_TEMP}/issue-comments.json"
+          gh api --method GET --paginate --slurp \
+            "repos/${GH_REPO}/issues/comments" -f per_page=100 -f since="${since}" \
+            > "${RUNNER_TEMP}/repository-comments.json"
+
           printf 'Command `%s` accepted from @%s.\n\n<!-- issue-claim-command id=%s command=%s actor=%s association=%s state=%s eligible=%s -->\n' \
             "${COMMENT_BODY}" "${COMMENT_ACTOR}" "${COMMENT_ID}" "${command}" \
             "${COMMENT_ACTOR}" "${AUTHOR_ASSOCIATION}" "${ISSUE_STATE}" \
             "${CLAIM_ELIGIBLE}" > "${RUNNER_TEMP}/receipt.md"
-          gh issue comment "${ISSUE_NUMBER}" --body-file "${RUNNER_TEMP}/receipt.md"
-
-  reconcile:
-    needs: accept-command
-    concurrency:
-      # Receipts are persisted before this replaceable mutex is entered.
-      group: claim-issue-${{ github.event.issue.number }}
-      cancel-in-progress: false
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out trusted default-branch automation
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          persist-credentials: false
-
-      - name: Read current issue state
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-        run: |
-          set -euo pipefail
-          gh api "repos/${GH_REPO}/issues/${ISSUE_NUMBER}" > "${RUNNER_TEMP}/issue.json"
-          gh api --paginate --slurp "repos/${GH_REPO}/issues/${ISSUE_NUMBER}/comments?per_page=100" > "${RUNNER_TEMP}/comments.json"
+          jq --argjson id "${COMMENT_ID}" --arg created_at "${COMMENT_CREATED_AT}" \
+            --rawfile body "${RUNNER_TEMP}/receipt.md" \
+            '. + [{id: $id, created_at: $created_at,
+                    user: {login: "github-actions[bot]", type: "Bot"}, body: $body}]' \
+            "${RUNNER_TEMP}/issue-comments.json" > "${RUNNER_TEMP}/comments.json"
+          printf '%s\n' "${now}" > "${RUNNER_TEMP}/now"
 
       - name: Plan claim action
         id: plan
@@ -70,7 +85,30 @@ jobs:
           python3 scripts/claim_issue.py \
             --issue-json "${RUNNER_TEMP}/issue.json" \
             --comments-json "${RUNNER_TEMP}/comments.json" \
+            --repository-comments-json "${RUNNER_TEMP}/repository-comments.json" \
+            --churn-threshold "${CLAIM_CHURN_THRESHOLD}" \
+            --churn-window-seconds "${CLAIM_CHURN_WINDOW_SECONDS}" \
+            --cooldown-seconds "${CLAIM_COOLDOWN_SECONDS}" \
+            --now "$(<"${RUNNER_TEMP}/now")" \
             --comment-file "${RUNNER_TEMP}/response.md"
+
+      - name: Persist trusted command receipt
+        if: ${{ steps.plan.outputs.persist_receipt == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: gh issue comment "${ISSUE_NUMBER}" --body-file "${RUNNER_TEMP}/receipt.md"
+
+      # Persist logical state before projecting it to the label. A failed label
+      # mutation is recoverable from the receipt/checkpoint pair.
+      - name: Checkpoint reconciled state
+        if: ${{ steps.plan.outputs.post_comment == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: gh issue comment "${ISSUE_NUMBER}" --body-file "${RUNNER_TEMP}/response.md"
 
       - name: Apply claim state
         if: ${{ steps.plan.outputs.add_label != '' }}
@@ -89,10 +127,3 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           LABEL: ${{ steps.plan.outputs.remove_label }}
         run: gh api --method DELETE "repos/${GH_REPO}/issues/${ISSUE_NUMBER}/labels/${LABEL}"
-
-      - name: Checkpoint reconciled state
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-        run: gh issue comment "${ISSUE_NUMBER}" --body-file "${RUNNER_TEMP}/response.md"
