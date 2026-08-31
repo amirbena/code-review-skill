@@ -9,7 +9,10 @@ import json
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
+
+import yaml
 
 from tests.support.paths import REPO_ROOT
 
@@ -58,6 +61,36 @@ def marker(comment_id: int, status: str, claimant: str, through: int) -> dict[st
             f"claimant={claimant} through={through} -->"
         ),
     }
+
+
+def bot_history(comment_id: int, body: str, at: int) -> dict[str, object]:
+    return {
+        "id": comment_id,
+        "created_at": datetime.fromtimestamp(at, timezone.utc).isoformat(),
+        "user": {"login": ci.BOT_LOGIN, "type": "Bot"},
+        "body": body,
+    }
+
+
+def transition(comment_id: int, actor: str, command: str, at: int) -> dict[str, object]:
+    return bot_history(
+        comment_id,
+        f"<!-- issue-claim-transition id={comment_id} actor={actor} command={command} -->",
+        at,
+    )
+
+
+def restriction(
+    comment_id: int, actor: str, until: int, *, notified: bool = False
+) -> dict[str, object]:
+    return bot_history(
+        comment_id,
+        (
+            f"<!-- issue-claim-restriction actor={actor} until={until} "
+            f"notified={str(notified).lower()} -->"
+        ),
+        until - 10,
+    )
 
 
 class ClaimReconciliationTests(unittest.TestCase):
@@ -267,6 +300,280 @@ class ClaimReconciliationTests(unittest.TestCase):
         self.assertEqual(result["claimant"], "alice")
 
 
+class ClaimChurnProtectionTests(unittest.TestCase):
+    NOW = 10_000
+
+    def reconcile(
+        self,
+        current_comments: list[dict[str, object]],
+        history: list[dict[str, object]] | None = None,
+        *,
+        current_issue: dict[str, object] | None = None,
+        threshold: int = 4,
+        now: int | None = None,
+    ) -> dict[str, object]:
+        return ci.reconcile(
+            current_issue or issue("help wanted"),
+            current_comments,
+            history or [],
+            now=self.NOW if now is None else now,
+            churn_threshold=threshold,
+            churn_window_seconds=100,
+            cooldown_seconds=300,
+        )
+
+    def test_normal_claim_and_one_claim_unclaim_cycle_remain_allowed(self) -> None:
+        claimed = self.reconcile([receipt(10, "/claim", "alice")])
+        self.assertEqual(claimed["claimant"], "alice")
+        self.assertNotIn("issue-claim-restriction", claimed["comment"])
+
+        released = self.reconcile(
+            [marker(20, "active", "alice", 10), receipt(21, "/unclaim", "alice")],
+            [transition(1, "alice", "claim", self.NOW - 10)],
+            current_issue=issue("help wanted", "claimed"),
+        )
+        self.assertIsNone(released["claimant"])
+        self.assertNotIn("issue-claim-restriction", released["comment"])
+
+    def test_activity_below_threshold_remains_allowed(self) -> None:
+        history = [
+            transition(1, "alice", "claim", self.NOW - 30),
+            transition(2, "alice", "unclaim", self.NOW - 20),
+        ]
+        result = self.reconcile([receipt(10, "/claim", "alice")], history)
+        self.assertEqual(result["claimant"], "alice")
+        self.assertNotIn("issue-claim-restriction", result["comment"])
+
+    def test_threshold_transition_activates_repository_wide_restriction(self) -> None:
+        history = [
+            transition(1, "alice", "claim", self.NOW - 30),
+            transition(2, "alice", "unclaim", self.NOW - 20),
+            transition(3, "alice", "claim", self.NOW - 10),
+        ]
+        result = self.reconcile(
+            [marker(20, "active", "alice", 9), receipt(10, "/unclaim", "alice")],
+            history,
+            current_issue=issue("help wanted", "claimed"),
+        )
+        self.assertIsNone(result["claimant"])
+        self.assertIn("actor=alice until=10300 notified=false", result["comment"])
+        self.assertIn("temporarily unavailable", result["comment"])
+
+    def test_retained_receipts_reconstruct_state_without_reemitting_transitions(self) -> None:
+        first = self.reconcile([receipt(10, "/claim", "alice")], threshold=6)
+        first_checkpoint = bot_history(5010, first["comment"], self.NOW - 20)
+
+        second = self.reconcile(
+            [
+                receipt(10, "/claim", "alice"),
+                first_checkpoint,
+                receipt(20, "/unclaim", "alice"),
+            ],
+            [first_checkpoint],
+            current_issue=issue("help wanted", "claimed"),
+            threshold=6,
+        )
+        self.assertNotIn("issue-claim-transition id=10", second["comment"])
+        self.assertEqual(second["comment"].count("issue-claim-transition"), 1)
+        self.assertIn("issue-claim-transition id=20", second["comment"])
+
+        second_checkpoint = bot_history(5020, second["comment"], self.NOW - 10)
+        third = self.reconcile(
+            [
+                receipt(20, "/unclaim", "alice"),
+                second_checkpoint,
+                receipt(10, "/claim", "alice"),
+                first_checkpoint,
+                receipt(30, "/claim", "alice"),
+            ],
+            [second_checkpoint, first_checkpoint],
+            threshold=6,
+        )
+        self.assertEqual(third["comment"].count("issue-claim-transition"), 1)
+        self.assertIn("issue-claim-transition id=30", third["comment"])
+
+    def test_duplicate_transition_identity_counts_once_at_exact_threshold(self) -> None:
+        duplicate_a = transition(10, "alice", "claim", self.NOW - 30)
+        duplicate_b = transition(10, "alice", "claim", self.NOW - 20)
+        duplicate_b["id"] = 110
+        history = [
+            duplicate_b,
+            transition(11, "alice", "unclaim", self.NOW - 15),
+            duplicate_a,
+        ]
+        below = self.reconcile([receipt(12, "/claim", "alice")], history, threshold=4)
+        self.assertNotIn("issue-claim-restriction", below["comment"])
+
+        checkpoint = bot_history(5012, below["comment"], self.NOW - 5)
+        exact = self.reconcile(
+            [
+                receipt(10, "/claim", "alice"),
+                receipt(11, "/unclaim", "alice"),
+                receipt(12, "/claim", "alice"),
+                checkpoint,
+                receipt(13, "/unclaim", "alice"),
+            ],
+            [*history, checkpoint],
+            current_issue=issue("help wanted", "claimed"),
+            threshold=4,
+        )
+        self.assertIn("issue-claim-restriction", exact["comment"])
+        self.assertEqual(exact["comment"].count("issue-claim-transition"), 1)
+
+    def test_legacy_and_malformed_transition_markers_are_ignored(self) -> None:
+        malformed = bot_history(
+            1,
+            "<!-- issue-claim-transition id=bad actor=alice command=claim -->",
+            self.NOW - 10,
+        )
+        legacy = bot_history(
+            2,
+            "<!-- issue-claim-transition actor=alice command=claim -->",
+            self.NOW - 10,
+        )
+        result = self.reconcile(
+            [receipt(10, "/claim", "alice")],
+            [malformed, legacy],
+            threshold=2,
+        )
+        self.assertNotIn("issue-claim-restriction", result["comment"])
+
+    def test_conflicting_trusted_transition_identity_fails_closed(self) -> None:
+        conflicting = transition(10, "bob", "claim", self.NOW - 10)
+        conflicting["id"] = 110
+        with self.assertRaisesRegex(ValueError, "conflicting trusted transitions"):
+            self.reconcile(
+                [receipt(12, "/claim", "alice")],
+                [
+                    transition(10, "alice", "claim", self.NOW - 20),
+                    conflicting,
+                ],
+            )
+
+    def test_restricted_actor_cannot_claim_same_or_different_issue(self) -> None:
+        active = [restriction(1, "alice", self.NOW + 100)]
+        for labels in (("help wanted",), ("good first issue",)):
+            with self.subTest(labels=labels):
+                result = self.reconcile(
+                    [receipt(10, "/claim", "alice")],
+                    active,
+                    current_issue=issue(*labels),
+                )
+                self.assertIsNone(result["claimant"])
+                self.assertFalse(result["persist_receipt"])
+                self.assertTrue(result["post_comment"])
+                self.assertIn("temporarily unavailable", result["comment"])
+
+    def test_restriction_is_isolated_per_actor(self) -> None:
+        result = self.reconcile(
+            [receipt(10, "/claim", "bob")],
+            [restriction(1, "alice", self.NOW + 100)],
+        )
+        self.assertEqual(result["claimant"], "bob")
+
+    def test_cooldown_expiry_restores_claiming_without_extending_it(self) -> None:
+        active = restriction(1, "alice", self.NOW + 100)
+        first = self.reconcile([receipt(10, "/claim", "alice")], [active])
+        self.assertIn("until=10100", first["comment"])
+
+        notified = restriction(2, "alice", self.NOW + 100, notified=True)
+        retry = self.reconcile([receipt(11, "/claim", "alice")], [active, notified])
+        self.assertFalse(retry["post_comment"])
+        self.assertFalse(retry["persist_receipt"])
+        self.assertNotIn("until=10400", retry["comment"])
+
+        expired = self.reconcile(
+            [receipt(12, "/claim", "alice")], [active, notified], now=self.NOW + 100
+        )
+        self.assertEqual(expired["claimant"], "alice")
+
+    def test_stale_activity_outside_window_does_not_count(self) -> None:
+        history = [
+            transition(1, "alice", "claim", self.NOW - 101),
+            transition(2, "alice", "unclaim", self.NOW - 100),
+            transition(3, "alice", "claim", self.NOW - 10),
+        ]
+        result = self.reconcile(
+            [marker(20, "active", "alice", 9), receipt(10, "/unclaim", "alice")],
+            history,
+            current_issue=issue("help wanted", "claimed"),
+        )
+        self.assertNotIn("issue-claim-restriction", result["comment"])
+
+    def test_failed_noop_and_unauthorized_commands_do_not_count(self) -> None:
+        cases = [
+            (issue("bug"), [receipt(10, "/claim", "alice", eligible=False)]),
+            (issue("help wanted", state="closed"), [receipt(10, "/claim", "alice", state="closed")]),
+            (issue("help wanted", "claimed"), [marker(20, "active", "bob", 9), receipt(10, "/claim", "alice")]),
+            (issue("help wanted", "claimed"), [marker(20, "active", "bob", 9), receipt(10, "/unclaim", "alice")]),
+        ]
+        history = [
+            transition(1, "alice", "claim", self.NOW - 30),
+            transition(2, "alice", "unclaim", self.NOW - 20),
+            transition(3, "alice", "claim", self.NOW - 10),
+        ]
+        for current_issue, comments in cases:
+            with self.subTest(current_issue=current_issue, comments=comments):
+                result = self.reconcile(comments, history, current_issue=current_issue)
+                self.assertNotIn("issue-claim-restriction", result["comment"])
+
+    def test_restricted_actor_can_still_unclaim(self) -> None:
+        result = self.reconcile(
+            [marker(20, "active", "alice", 9), receipt(10, "/unclaim", "alice")],
+            [restriction(1, "alice", self.NOW + 100)],
+            current_issue=issue("help wanted", "claimed"),
+        )
+        self.assertIsNone(result["claimant"])
+        self.assertEqual(result["remove_label"], "claimed")
+
+    def test_churn_guard_precedes_existing_claim_errors_to_close_spam_bypasses(self) -> None:
+        active = [restriction(1, "alice", self.NOW + 100)]
+        ineligible = self.reconcile(
+            [receipt(10, "/claim", "alice", eligible=False)],
+            active,
+            current_issue=issue("bug"),
+        )
+        claimed = self.reconcile(
+            [marker(20, "active", "bob", 9), receipt(10, "/claim", "alice")],
+            active,
+            current_issue=issue("help wanted", "claimed"),
+        )
+        self.assertIn("temporarily unavailable", ineligible["comment"])
+        self.assertIn("temporarily unavailable", claimed["comment"])
+        self.assertFalse(ineligible["persist_receipt"])
+        self.assertFalse(claimed["persist_receipt"])
+
+    def test_invalid_configuration_fails_closed(self) -> None:
+        with self.assertRaisesRegex(ValueError, "must be positive"):
+            ci.reconcile(issue("help wanted"), [], now=self.NOW, churn_threshold=0)
+
+    def test_default_configuration_is_documented_and_conservative(self) -> None:
+        self.assertEqual(ci.DEFAULT_CHURN_THRESHOLD, 6)
+        self.assertEqual(ci.DEFAULT_CHURN_WINDOW_SECONDS, 600)
+        self.assertEqual(ci.DEFAULT_CLAIM_COOLDOWN_SECONDS, 1800)
+
+        workflow = yaml.safe_load(
+            (REPO_ROOT / ".github/workflows/claim-issue.yml").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            workflow["env"],
+            {
+                "CLAIM_CHURN_THRESHOLD": ci.DEFAULT_CHURN_THRESHOLD,
+                "CLAIM_CHURN_WINDOW_SECONDS": ci.DEFAULT_CHURN_WINDOW_SECONDS,
+                "CLAIM_COOLDOWN_SECONDS": ci.DEFAULT_CLAIM_COOLDOWN_SECONDS,
+            },
+        )
+        contributing = (REPO_ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        normalized_contributing = " ".join(contributing.split())
+        self.assertIn(
+            "Six such changes by one actor within ten minutes temporarily disable "
+            "that actor's repository-wide claim ability for thirty minutes",
+            normalized_contributing,
+        )
+
+
 class MainContractTests(unittest.TestCase):
     def test_reconciliation_uses_persisted_receipt_when_user_comment_api_lags(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -300,18 +607,25 @@ class MainContractTests(unittest.TestCase):
             self.assertEqual(outputs["add_label"], "claimed")
             self.assertIn("claimant=alice through=42", response_path.read_text(encoding="utf-8"))
 
-    def test_workflow_persists_receipt_before_replaceable_reconciliation(self) -> None:
-        workflow = (REPO_ROOT / ".github/workflows/claim-issue.yml").read_text(
-            encoding="utf-8"
-        )
-        acceptance = workflow.index("accept-command:")
-        reconciliation = workflow.index("reconcile:")
-        self.assertLess(acceptance, reconciliation)
-        self.assertNotIn("concurrency:", workflow[acceptance:reconciliation])
-        self.assertIn("needs: accept-command", workflow[reconciliation:])
-        self.assertIn("github.event.comment.id", workflow[acceptance:reconciliation])
-        self.assertIn("github.event.comment.user.login", workflow[acceptance:reconciliation])
-        self.assertIn("github.event.comment.author_association", workflow[acceptance:reconciliation])
+    def test_workflow_serializes_repository_and_suppresses_repeat_rejections(self) -> None:
+        workflow_path = REPO_ROOT / ".github/workflows/claim-issue.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        parsed_workflow = yaml.safe_load(workflow)
+        concurrency = parsed_workflow["jobs"]["reconcile"]["concurrency"]
+        self.assertEqual(concurrency["group"], "claim-issue-${{ github.repository_id }}")
+        self.assertFalse(concurrency["cancel-in-progress"])
+        self.assertEqual(concurrency["queue"], "max")
+        self.assertIn("repository-comments-json", workflow)
+        self.assertIn("outputs.persist_receipt == 'true'", workflow)
+        self.assertIn("outputs.post_comment == 'true'", workflow)
+        self.assertIn("github.event.comment.id", workflow)
+        self.assertIn("github.event.comment.user.login", workflow)
+        self.assertIn("github.event.comment.author_association", workflow)
+        checkpoint = workflow.index("- name: Checkpoint reconciled state")
+        add_label = workflow.index("- name: Apply claim state")
+        remove_label = workflow.index("- name: Apply released state")
+        self.assertLess(checkpoint, add_label)
+        self.assertLess(checkpoint, remove_label)
 
 
 if __name__ == "__main__":

@@ -17,6 +17,15 @@ If a claim has no meaningful contributor activity for seven days, a
 maintainer may release it with `/unclaim`. Maintainers should first check for
 a linked pull request that is still progressing.
 
+Only successful ownership changes contribute to churn protection: a claim of
+an available issue or an authorized unclaim that actually releases it. Six
+such changes by one actor within ten minutes temporarily disable that actor's
+repository-wide claim ability for thirty minutes; `/unclaim` remains available.
+Failed, unauthorized, duplicate, idempotent, or cooldown-rejected commands do
+not count, and retries during a cooldown neither extend it nor generate repeated
+bot replies. Maintainers can tune the three named `CLAIM_*` values in
+`.github/workflows/claim-issue.yml`.
+
 ## Make the change
 
 1. Fork the repository.
