@@ -532,9 +532,11 @@ runbook implements them today:
   already computes
   ([`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md),
   "Existing review awareness"). The requirements are captured in
-  [`finding-identity-requirements.md`](finding-identity-requirements.md); no
-  policy, runbook, or code implements the movement-tolerant mechanism, the
-  finding lifecycle, or stateful re-review today.
+  [`finding-identity-requirements.md`](finding-identity-requirements.md), and
+  the selected precision-first matching strategy is recorded in
+  [`finding-matching-strategy.md`](finding-matching-strategy.md). No policy,
+  runbook, or code implements the movement-tolerant mechanism, the finding
+  lifecycle, or stateful re-review today.
 - **Stateful re-review keyed off a reviewed SHA** — loading a prior
   reviewed state and computing what changed since it. The reviewed-SHA
   state model this depends on — the minimal recorded fields, which commit
