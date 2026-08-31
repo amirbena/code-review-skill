@@ -59,9 +59,10 @@ orients.
   review that writes a new record does.
 - **Minimal but sufficient record** (§1). Repository identity, review base
   (name + SHA), merge-base, reviewed head SHA, reviewer identity, review
-  result, full-vs-delta, prior reviewed SHA (delta only), a
-  provenance/timestamp marker, and an *opaque* reference to that review's
-  output.
+  result, full-vs-delta, prior reviewed SHA (whenever a same-reviewer
+  predecessor was superseded — `full` records included), a
+  provenance/timestamp marker, and an *optional* opaque reference to that
+  review's findings.
 - **Authoritative SHA = the recorded reviewed head SHA** (§2). Added
   commits, moved refs, a changed PR head, an advanced base, a rebase, or a
   force-push never silently update it.
@@ -72,17 +73,21 @@ orients.
 - **Reviewed state is reviewer-owned and non-transferable** (§4). A
   different reviewer, or an unverifiable reviewer identity, gets a fresh
   full review; the record is still visible as Existing Review Evidence.
-- **The full-review → re-review → re-review chain is explicit** (§5). Each
-  record names exactly one prior reviewed SHA; the chain terminates at a
-  `full` record. No recursion, no guessing which SHA a review superseded.
+- **The supersession chain is explicit** (§5). `review completeness` and
+  `prior reviewed SHA` are independent: any record — `full` or
+  `delta-re-review` — names at most one prior reviewed SHA, the
+  same-reviewer state it superseded. The chain root is the review with no
+  established same-reviewer predecessor, not necessarily every `full`
+  review. No recursion, no guessing which SHA a review superseded.
 - **Trust is tiered** (§6): authoritative, user-supplied, inferred,
   unavailable/ambiguous. Inferred state never seeds a delta. No new
   persistence service is introduced.
 - **Unsafe or ambiguous prior state falls back to a fresh full review**
   (§7), never a silently constructed delta.
 - **Finding identity/matching/lifecycle is out of scope** (§8). The record
-  may carry findings as an opaque payload; it never defines how they are
-  identified or matched.
+  may hold an opaque *reference* to the prior findings; it never embeds a
+  findings payload and never defines how findings are identified or
+  matched.
 
 ---
 
@@ -99,28 +104,33 @@ branch happens to point at, or that was pushed after the last review, is
 
 ### The Reviewed State Record
 
-Every field below is required *because a downstream Issue needs it*, not
-because it may be useful. A record missing any required field is
-incomplete and cannot seed a delta re-review (§7).
+Every field below is present *because a downstream Issue needs it*, not
+because it may be useful. All are required to establish trustworthy
+reviewed-SHA state **except the last** — *Associated review evidence
+reference* is optional/recommended. A record missing a required field is
+incomplete and cannot seed a delta re-review (§7); a record missing only
+the optional reference is still valid reviewed state (§7, §8).
 
-| Field | What it holds | Why it is required |
+| Field | What it holds | Why it is in the record |
 |---|---|---|
 | **Repository identity** | The canonical repository the review ran against (remote/owner/repo identity for a PR; the local repository identity for local review). | Reviewed state is single-repository only. A record from a different repository identity is never a delta seed (§7), matching the single-repository scope in [`finding-identity-requirements.md`](finding-identity-requirements.md), §8. |
 | **Base branch name** | The base/target branch the change was reviewed against (e.g. `main`). | Lets a later pass resolve "the same base" and detect a base **reassignment** (§3). A SHA alone cannot. |
 | **Base SHA at review time** | The exact commit the base branch pointed at when the review ran. | Lets [#64](https://github.com/amirbena/code-review-skill/issues/64) tell whether the base **moved** since the review (§3, Example C). |
-| **Merge-base SHA at review time** | `merge-base(base, head)` as computed for the review. | The true lower bound of the reviewed range: the review covered `merge-base..reviewed head`. A re-review extends its delta from this, not from a re-guessed point. |
+| **Merge-base SHA at review time** | `merge-base(base, head)` as computed for the review. | The lower bound of the range the review actually covered (`merge-base..reviewed head`). Recorded so a later pass has the *observed* value instead of re-deriving it; **how** a re-review uses it is [#64](https://github.com/amirbena/code-review-skill/issues/64)'s to define (§3). |
 | **Reviewed head SHA** | The exact commit that was reviewed. | The spine of the record and the authoritative reviewed SHA (§2). |
 | **Reviewer identity** | The identity that owns this reviewed state — the authenticated GitHub identity for a PR review; the established local review ownership context for local review. | Delta re-review is reviewer-owned (§4). A record whose reviewer cannot be established is not a delta seed. |
 | **Review result** | The verdict the review produced: `REVIEW CLEAN` / `CHANGES REQUIRED` (local), `Approve` / `Request Changes` / `recommendation-only` (PR), or an explicit non-graded outcome (`REVIEW INCOMPLETE`, `JIRA CONTEXT UNRESOLVED`, `NO NEW DELTA`). | Only a **completed, graded** review is a valid prior state to diff from. A non-graded outcome is recorded but never seeds a delta (§7). |
-| **Review completeness** | `full` or `delta-re-review`. | Needed to reconstruct the chain in §5. |
-| **Prior reviewed SHA** | *(delta re-reviews only)* the reviewed head SHA of the record this review superseded. | Lets [#64](https://github.com/amirbena/code-review-skill/issues/64) / [#65](https://github.com/amirbena/code-review-skill/issues/65) walk `full → re-review → re-review` without guessing (§5). Absent on a `full` record. |
+| **Review completeness** | `full` or `delta-re-review` — how much of the current state *this* review covered. Independent of **Prior reviewed SHA** below (§5). | Lets a later pass tell whether the recorded review already covered the whole current state or only a bounded delta. |
+| **Prior reviewed SHA** | The reviewed head SHA of the established prior same-reviewer reviewed state this review **superseded**, if any. Recorded whenever such a predecessor exists — **including when this review is `full`** (e.g. a delta re-review that escalated to full). Absent only when there is no established same-reviewer predecessor (the chain root). | Lets [#64](https://github.com/amirbena/code-review-skill/issues/64) / [#65](https://github.com/amirbena/code-review-skill/issues/65) reconstruct the supersession chain (`full → delta → delta`, `full → delta → escalated-full → delta`) without guessing which SHA each review superseded (§5). |
 | **Provenance marker** | When the record was produced and by which mechanism (submitted GitHub review, published SHA-bound status, carried-forward local report, explicit user input). | Drives the trust tiering in §6 and the selection of the "immediately preceding" review. |
-| **Associated review output** | An **opaque** reference to the findings (and any recorded per-finding state) that review produced. | So [#64](https://github.com/amirbena/code-review-skill/issues/64) / [#65](https://github.com/amirbena/code-review-skill/issues/65) have a well-defined prior finding set to diff against. This document does **not** interpret it — see §8. |
+| **Associated review evidence reference** | *Optional (recommended).* An **opaque reference / association** to the findings (and any recorded per-finding state) that review produced. Storage-neutral: the record points at that evidence, it does not have to embed it. | When present, lets [#64](https://github.com/amirbena/code-review-skill/issues/64) / [#65](https://github.com/amirbena/code-review-skill/issues/65) reconcile findings across revisions. When absent, a **commit-range** re-review is still possible — only finding-level reconciliation is limited (§7). This document does **not** interpret the evidence — see §8. |
 
 Fields deliberately **not** in the record: the current branch tip, "commits
 since task start," a branch-name convention, any cross-repository pointer,
 any finding-identity or finding-matching structure, any lifecycle-state
-machine. Adding those is another Issue's concern, not this contract's.
+machine, any embedded findings payload or serialization format (a reference
+is enough — see **Associated review evidence reference** above). Adding
+those is another Issue's concern, not this contract's.
 
 ### Local review is stateless; the "record" is the carried-forward report
 
@@ -188,25 +198,28 @@ review time**. None alone is sufficient:
   and detect that the PR's base was **reassigned** to a different branch;
 - **base SHA at review time** — so a re-review can tell whether the base
   **moved at all** since the review;
-- **merge-base SHA at review time** — the actual lower bound of the
-  reviewed range (`merge-base..reviewed head`), which a re-review's delta
-  computation extends from.
+- **merge-base SHA at review time** — the observed lower bound of the
+  range the previous review actually covered (`merge-base..reviewed
+  head`). It is recorded so [#64](https://github.com/amirbena/code-review-skill/issues/64)
+  works from the value seen at review time rather than re-deriving it
+  against moved history. This contract does **not** say how a re-review's
+  delta uses it.
 
 ### What downstream may infer without guessing
 
 From a valid record, [#64](https://github.com/amirbena/code-review-skill/issues/64)
-can determine, purely from stored state:
+can establish, purely from stored state:
 
-- the exact commit range that was reviewed: `recorded merge-base .. recorded reviewed head`;
+- the commit range the previous review covered: `recorded merge-base .. recorded reviewed head`;
 - whether the base branch moved: `current base SHA` vs. `recorded base SHA`;
 - whether the base branch itself was changed: `current base name` vs. `recorded base name`;
-- and therefore whether a plain `reviewed head .. new head` delta is
-  sufficient, or the base movement must also be accounted for.
+- whether the reviewed head is still an ancestor of the current head, and
+  the recorded prior reviewed SHA (§5) for the previous review.
 
 This document defines only that the state above is **recorded**. **How** a
-re-review folds base movement into its delta — whether new base commits
-are in scope, how the merge-base is recomputed, which prior findings are
-re-surfaced — is
+re-review turns it into a delta — which commit range it re-reviews,
+whether new base commits are in scope, how the merge-base is recomputed,
+which prior findings are re-surfaced — is
 [#64](https://github.com/amirbena/code-review-skill/issues/64)'s to
 define. See Example C.
 
@@ -250,17 +263,45 @@ formal GitHub event is a separate concern owned by
 
 ## 5. Full review vs. re-review
 
-Each record carries `review completeness ∈ {full, delta-re-review}`. A
-`delta-re-review` record additionally carries **one** `prior reviewed
-SHA`: the reviewed head SHA of the immediately preceding record it
-superseded (by the same reviewer identity, §4).
+Two **independent** properties, not one:
+
+- **`review completeness ∈ {full, delta-re-review}`** — how much of the
+  *current* state this review covered: the whole thing (`full`) or a
+  bounded delta (`delta-re-review`).
+- **`prior reviewed SHA`** — the reviewed head SHA of the established
+  same-reviewer reviewed state (§4) this review **superseded**, recorded
+  whenever such a predecessor exists and absent only at the chain root.
+
+These do not track each other. A re-review that begins delta-only but
+**escalates to a full review of the current state** (per
+[`../skills/github-pr-review/policies/reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md),
+"Escalating from delta to full review") completes as `full` **and** still
+records the same-reviewer predecessor it superseded. This contract only
+makes the state model able to represent that outcome; it does not define
+the escalation decision itself — that is
+[`reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md)'s.
 
 ### Reconstructing the chain
 
-Follow `prior reviewed SHA` links backward:
+Follow `prior reviewed SHA` links backward. Both shapes reconstruct
+without guessing:
 
 ```text
+full → delta → delta
+
 record₃  reviewed head = C   completeness = delta-re-review   prior reviewed SHA = B
+   ↓
+record₂  reviewed head = B   completeness = delta-re-review   prior reviewed SHA = A
+   ↓
+record₁  reviewed head = A   completeness = full              prior reviewed SHA = ∅  (chain root)
+```
+
+```text
+full → delta → escalated-full → delta
+
+record₄  reviewed head = D   completeness = delta-re-review   prior reviewed SHA = C
+   ↓
+record₃  reviewed head = C   completeness = full              prior reviewed SHA = B   (escalated: full, but has a predecessor)
    ↓
 record₂  reviewed head = B   completeness = delta-re-review   prior reviewed SHA = A
    ↓
@@ -269,9 +310,12 @@ record₁  reviewed head = A   completeness = full              prior reviewed S
 
 This is unambiguous and non-recursive:
 
-- each record names **exactly one** prior reviewed SHA (or none, if
-  `full`);
-- the chain **terminates** at a `full` record with no prior;
+- each record names **at most one** prior reviewed SHA — the same-reviewer
+  state it superseded — regardless of its own `completeness`;
+- the chain **root** is the record with **no established same-reviewer
+  predecessor** (`prior reviewed SHA = ∅`). A `full` record is the root
+  only when it also has no predecessor; a `full` record that superseded an
+  earlier same-reviewer review is **not** the root;
 - a record must **not** name itself as its prior;
 - `prior reviewed SHA` must be an ancestor of that record's own reviewed
   head SHA (a re-review moves history forward, never backward).
@@ -356,7 +400,14 @@ state**:
 | Base context is incompatible (base branch reassigned, or base moved and the record lacks the fields §3 requires to reconcile it) | Full review of the current state; the record's reviewed head may still be noted. |
 | Reviewer ownership cannot be verified on either side (§4) | Full review. |
 | Multiple plausible prior reviewed SHAs / records (ambiguous "immediately preceding" review) | Full review — ambiguity never unlocks a delta, matching the existing "fail conservative" rule. |
-| Stored state is incomplete (missing reviewed head SHA, missing reviewer identity, missing base data §3 needs, or the §5 chain is broken) | Full review. |
+| Stored state is incomplete — missing **reviewed head SHA**, missing **reviewer identity**, missing the **base data** §3 needs, or a broken §5 chain | Full review. |
+
+A **missing *Associated review evidence reference*** (§1) is **not** an
+incompleteness condition. Otherwise-trustworthy reviewed-SHA state stays
+valid without it; the only consequence is that a later re-review does
+finding-level reconciliation with less prior signal (§8) — a
+**commit-range** re-review is still available. It is listed here only to
+be explicit that its absence, alone, never forces a full review.
 
 The one case where "reviewed SHA equals the current head" is legitimate is
 `NO NEW DELTA` — a **valid record** whose reviewed head SHA equals the
@@ -378,9 +429,13 @@ default whenever delta re-review preconditions are not met.
 [#59](https://github.com/amirbena/code-review-skill/issues/59) /
 [#60](https://github.com/amirbena/code-review-skill/issues/60).
 
-- The Reviewed State Record **may carry** the prior review's findings and
-  any recorded per-finding state as an **opaque associated payload**, so a
-  later pass has a well-defined prior finding set to diff from.
+- The Reviewed State Record **may hold an opaque reference / association**
+  to the prior review's findings and any recorded per-finding state
+  (§1, *Associated review evidence reference*), so a later pass has a
+  well-defined prior finding set to diff from. The reference is optional
+  and storage-neutral — the record points at that evidence, it never has
+  to embed a findings payload, and this contract defines no serialization
+  for it.
 - This document **does not define**, and a reviewed-SHA implementation
   **must not embed**:
   - how a finding acquires a stable identity across revisions —
@@ -448,13 +503,14 @@ throughout unless stated.
    `reviewed_head=B`.
 2. `main` advances from `M0` to `M1`. The PR head is still `B`.
 3. **Retained, usable state:** `reviewed_head=B` (still genuinely reviewed
-   *as of base `M0`*), `reviewer=R`, the associated findings payload, and
-   — crucially — the recorded `base_sha=M0` and `merge_base=MB0`.
+   *as of base `M0`*), `reviewer=R`, the associated review evidence
+   reference (if one was recorded), and — crucially — the recorded
+   `base_sha=M0` and `merge_base=MB0`.
 4. **Must be re-evaluated later, by
    [#64](https://github.com/amirbena/code-review-skill/issues/64), not
-   here:** whether the base commits `M0..M1` interact with the PR's change
-   such that the effective review delta must widen beyond `B..head`, and
-   how the merge-base is recomputed. [#63](https://github.com/amirbena/code-review-skill/issues/63)
+   here:** whether the base commits `M0..M1` interact with the PR's change,
+   which commit range the re-review covers, and how the merge-base is
+   recomputed. [#63](https://github.com/amirbena/code-review-skill/issues/63)
    guarantees only that `M0` and `MB0` were recorded so that movement is
    *detectable* without guessing. This example deliberately does not
    resolve the delta.
@@ -496,6 +552,27 @@ reviewer identity.
 
 Result in every case: a **fresh full review** of the current state. No
 delta is constructed from a guessed or ambiguous prior SHA (§7).
+
+### G. Delta re-review that escalates to a full review
+
+1. `record₂` exists with `reviewed_head=B`, `reviewer=R`,
+   `completeness=delta-re-review`, `prior=A`.
+2. The branch advances to `C`. `R` re-reviews, starting delta-only from
+   `B`, but the delta materially changes the implementation, so `R`
+   **escalates to a full review of the current state** (per
+   [`../skills/github-pr-review/policies/reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md),
+   "Escalating from delta to full review").
+3. The review completes and writes
+   `record₃ = { …, reviewed_head=C, reviewer=R, completeness=full,
+   prior=B }` — **`full`, yet it records the predecessor `B` it
+   superseded.**
+4. Later, `R` re-reviews `C..D`, writing
+   `record₄ = { …, reviewed_head=D, completeness=delta-re-review,
+   prior=C }`. Walking `prior` links —
+   `record₄ → record₃ → record₂ → record₁` — reconstructs the full
+   `full → delta → escalated-full → delta` chain with no guessing about
+   which SHA `record₃` superseded. If `record₃` had dropped `prior=B`
+   merely because it was `full`, that link would be lost.
 
 ---
 

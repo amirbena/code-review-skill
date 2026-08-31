@@ -66,7 +66,7 @@ class ReviewedStateRecordFieldsTests(unittest.TestCase):
     def setUp(self) -> None:
         self.text = _norm(DOC)
 
-    def test_all_required_record_fields_are_named(self) -> None:
+    def test_all_record_fields_are_named(self) -> None:
         for field in (
             "Repository identity",
             "Base branch name",
@@ -78,13 +78,41 @@ class ReviewedStateRecordFieldsTests(unittest.TestCase):
             "Review completeness",
             "Prior reviewed SHA",
             "Provenance marker",
-            "Associated review output",
+            "Associated review evidence reference",
         ):
             self.assertIn(field, self.text)
 
-    def test_associated_review_output_is_opaque(self) -> None:
-        self.assertIn("Associated review output", self.text)
-        self.assertIn("opaque", self.text)
+    def test_associated_review_evidence_reference_is_optional_and_storage_neutral(
+        self,
+    ) -> None:
+        # P2-3: not a hard prerequisite, and worded as a reference/association
+        # rather than an embedded payload.
+        self.assertIn("Associated review evidence reference", self.text)
+        self.assertIn("Optional (recommended)", self.text)
+        self.assertIn("opaque reference / association", self.text)
+        # storage-neutral: the record points at the evidence, does not embed it
+        self.assertIn("it does not have to embed it", self.text)
+        # explicitly listed among the fields the record does NOT carry
+        self.assertIn("any embedded findings payload or serialization format", self.text)
+
+    def test_missing_associated_reference_does_not_invalidate_state(self) -> None:
+        # P2-3: absence limits finding-level reconciliation only; a
+        # commit-range re-review stays available.
+        self.assertIn(
+            "A missing Associated review evidence reference (§1) is not an "
+            "incompleteness condition",
+            self.text,
+        )
+        self.assertIn(
+            "a commit-range re-review is still available", self.text
+        )
+
+    def test_field_preamble_marks_only_the_last_field_optional(self) -> None:
+        self.assertIn(
+            "All are required to establish trustworthy reviewed-SHA state "
+            "except the last",
+            self.text,
+        )
 
     def test_local_review_statelessness_asymmetry_is_documented(self) -> None:
         self.assertIn("Local review is stateless", self.text)
@@ -180,12 +208,33 @@ class BaseBranchRelationshipTests(unittest.TestCase):
 
     def test_downstream_can_infer_without_guessing(self) -> None:
         self.assertIn("What downstream may infer without guessing", self.text)
-        self.assertIn("recorded merge-base .. recorded reviewed head", self.text)
-
-    def test_delta_folding_is_left_to_issue_64(self) -> None:
         self.assertIn(
-            "How a re-review folds base movement into its delta", self.text
+            "the commit range the previous review covered: recorded "
+            "merge-base .. recorded reviewed head",
+            self.text,
         )
+
+    def test_merge_base_is_recorded_without_defining_the_future_delta_range(
+        self,
+    ) -> None:
+        # P2-2: no "the re-review extends its delta from the merge-base".
+        self.assertNotIn("a re-review extends its delta from", self.text)
+        self.assertNotIn("which a re-review's delta computation extends from", self.text)
+        self.assertIn(
+            "the observed lower bound of the range the previous review "
+            "actually covered",
+            self.text,
+        )
+        self.assertIn(
+            "This contract does not say how a re-review's delta uses it",
+            self.text,
+        )
+
+    def test_delta_computation_is_left_to_issue_64(self) -> None:
+        self.assertIn(
+            "How a re-review turns it into a delta", self.text
+        )
+        self.assertIn("which commit range it re-reviews", self.text)
         self.assertIn("is #64's to define", self.text)
 
 
@@ -234,18 +283,64 @@ class ReviewerOwnershipTests(unittest.TestCase):
 
 
 class FullVsReReviewChainTests(unittest.TestCase):
-    """Question 5 — reconstructing full -> re-review -> re-review."""
+    """Question 5 — reconstructing the supersession chain, including an
+    escalated-to-full re-review (P2-1)."""
 
     def setUp(self) -> None:
         self.text = _norm(DOC)
 
-    def test_completeness_field_distinguishes_full_and_delta(self) -> None:
+    def test_completeness_and_prior_sha_are_independent(self) -> None:
+        # P2-1: the two properties must not track each other.
         self.assertIn("review completeness ∈ {full, delta-re-review}", self.text)
+        self.assertIn("Two independent properties, not one", self.text)
+        self.assertIn("These do not track each other", self.text)
 
-    def test_single_prior_sha_no_recursion(self) -> None:
-        self.assertIn("each record names exactly one prior reviewed SHA", self.text)
-        self.assertIn("terminates at a full record with no prior", self.text)
+    def test_full_review_may_carry_a_prior_reviewed_sha(self) -> None:
+        # P2-1 core invariant: an escalated-to-full re-review still records
+        # the predecessor it superseded.
+        self.assertIn(
+            "completes as full and still records the same-reviewer "
+            "predecessor it superseded",
+            self.text,
+        )
+        self.assertIn(
+            "Recorded whenever such a predecessor exists — including when "
+            "this review is full",
+            self.text,
+        )
+
+    def test_chain_root_is_not_equated_with_every_full_review(self) -> None:
+        # P2-1: chain root == "no established same-reviewer predecessor",
+        # not "is a full review".
+        self.assertIn(
+            "the chain root is the record with no established same-reviewer "
+            "predecessor",
+            self.text,
+        )
+        self.assertIn(
+            "a full record that superseded an earlier same-reviewer review "
+            "is not the root",
+            self.text,
+        )
+
+    def test_at_most_one_prior_sha_regardless_of_completeness(self) -> None:
+        self.assertIn(
+            "each record names at most one prior reviewed SHA", self.text
+        )
+        self.assertIn("regardless of its own completeness", self.text)
         self.assertIn("must not name itself as its prior", self.text)
+
+    def test_escalation_algorithm_itself_is_deferred(self) -> None:
+        # State model represents the result; it does not define escalation.
+        self.assertIn(
+            "it does not define the escalation decision itself", self.text
+        )
+        self.assertIn("Escalating from delta to full review", self.text)
+
+    def test_both_chain_shapes_are_shown(self) -> None:
+        raw = DOC.read_text(encoding="utf-8")
+        self.assertIn("full → delta → delta", raw)
+        self.assertIn("full → delta → escalated-full → delta", raw)
 
     def test_prior_sha_must_be_ancestor_of_own_head(self) -> None:
         self.assertIn(
@@ -340,12 +435,14 @@ class FindingIdentityBoundaryTests(unittest.TestCase):
     def setUp(self) -> None:
         self.text = _norm(DOC)
 
-    def test_findings_carried_as_opaque_payload(self) -> None:
+    def test_findings_held_as_opaque_reference_not_embedded_payload(self) -> None:
         self.assertIn(
-            "may carry the prior review's findings and any recorded "
-            "per-finding state as an opaque associated payload",
+            "may hold an opaque reference / association to the prior "
+            "review's findings",
             self.text,
         )
+        self.assertIn("it never has to embed a findings payload", self.text)
+        self.assertIn("this contract defines no serialization for it", self.text)
 
     def test_does_not_define_identity_matching_or_lifecycle(self) -> None:
         for owned_elsewhere in (
@@ -423,17 +520,41 @@ class CrossReferenceConsistencyTests(unittest.TestCase):
             FINDING_IDENTITY.read_text(encoding="utf-8"),
         )
 
-    def test_no_packaged_skill_markdown_links_to_this_repo_dev_doc(self) -> None:
+    def test_no_packaged_resource_markdown_links_to_this_repo_dev_doc(self) -> None:
+        # A repository-development doc must not be depended on by any
+        # PACKAGED resource — both Skills' shipped Markdown *and* the
+        # packaged shared/ Markdown (shared/policies/, shared/templates/).
+        # README.md is never packaged (see shared/policies/README.md,
+        # "Packaging"), so it is excluded from the scan.
+        packaged_roots = (
+            *SKILL_DIRS,
+            REPO_ROOT / "shared" / "policies",
+            REPO_ROOT / "shared" / "templates",
+        )
         offenders = []
-        for skill_dir in SKILL_DIRS:
-            for md in skill_dir.rglob("*.md"):
+        for root in packaged_roots:
+            for md in root.rglob("*.md"):
+                if md.name == "README.md":
+                    continue
                 if "reviewed-sha-state-contract" in md.read_text(encoding="utf-8"):
                     offenders.append(str(md.relative_to(REPO_ROOT)))
         self.assertEqual(
             offenders,
             [],
-            f"packaged Skill markdown must not depend on a docs/ file: {offenders}",
+            f"packaged resource markdown must not depend on a docs/ file: {offenders}",
         )
+
+    def test_scan_covers_the_packaged_shared_directories(self) -> None:
+        # Guard the P2-5 fix itself: the scan must actually reach shared/.
+        for d in (
+            REPO_ROOT / "shared" / "policies",
+            REPO_ROOT / "shared" / "templates",
+        ):
+            self.assertTrue(d.is_dir(), f"expected packaged dir missing: {d}")
+            self.assertTrue(
+                any(p.name != "README.md" for p in d.rglob("*.md")),
+                f"no packaged markdown found under {d}",
+            )
 
     def test_no_package_script_ships_the_doc(self) -> None:
         for script in PACKAGE_SCRIPTS:
