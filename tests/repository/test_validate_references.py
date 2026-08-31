@@ -86,11 +86,39 @@ class ReferenceValidationTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_shared_metadata_entry_outside_shared_fails(self) -> None:
+        self._write(
+            "skills/example/metadata/skill.yaml",
+            "shared:\n  policies:\n    - ../../../README.md\n",
+        )
+        self._write("README.md", "# Repository\n")
+
+        result = self._run()
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(
+            "skills/example/metadata/skill.yaml:3: ../../../README.md",
+            result.stderr,
+        )
+
     def test_external_urls_and_inline_code_paths_are_ignored(self) -> None:
         self._write(
             "README.md",
             "[web](https://example.com/missing) [mail](mailto:test@example.com) "
             "[cdn](//example.com/file) `policies/missing.md`\n",
+        )
+
+        result = self._run()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_link_syntax_inside_code_is_ignored(self) -> None:
+        self._write(
+            "README.md",
+            "Use `[example](missing-inline.md)` in prose.\n\n"
+            "```markdown\n"
+            "[example](missing-fenced.md)\n"
+            "```\n",
         )
 
         result = self._run()

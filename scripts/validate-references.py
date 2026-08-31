@@ -17,6 +17,7 @@ from yaml.nodes import MappingNode, Node, ScalarNode
 
 MARKDOWN_LINK_RE = re.compile(r"(?<!!)\[[^\]\n]+\]\(([^)\n]+)\)")
 SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+FENCE_RE = re.compile(r"^[ ]{0,3}(`{3,}|~{3,})")
 
 
 @dataclass(frozen=True, order=True)
@@ -32,7 +33,7 @@ def tracked_files(root: Path, pathspec: str) -> list[Path]:
         check=True,
         capture_output=True,
     )
-    return [root / path.decode() for path in result.stdout.split(b"\0") if path]
+    return [root / path.decode("utf-8") for path in result.stdout.split(b"\0") if path]
 
 
 def link_destination(raw_target: str) -> str:
@@ -42,11 +43,51 @@ def link_destination(raw_target: str) -> str:
     return target.split(maxsplit=1)[0]
 
 
+def mask_inline_code(line: str) -> str:
+    masked = list(line)
+    cursor = 0
+    while (start := line.find("`", cursor)) >= 0:
+        end_of_run = start
+        while end_of_run < len(line) and line[end_of_run] == "`":
+            end_of_run += 1
+        delimiter = line[start:end_of_run]
+        close = line.find(delimiter, end_of_run)
+        if close < 0:
+            break
+        for index in range(start, close + len(delimiter)):
+            masked[index] = " "
+        cursor = close + len(delimiter)
+    return "".join(masked)
+
+
+def mask_code(text: str) -> str:
+    masked_lines: list[str] = []
+    fence: tuple[str, int] | None = None
+    for line in text.splitlines(keepends=True):
+        content = line.rstrip("\r\n")
+        match = FENCE_RE.match(content)
+        if fence is not None:
+            masked_lines.append("".join("\n" if char == "\n" else " " for char in line))
+            if match:
+                marker = match.group(1)
+                remainder = content[match.end() :]
+                if marker[0] == fence[0] and len(marker) >= fence[1] and not remainder.strip():
+                    fence = None
+            continue
+        if match:
+            marker = match.group(1)
+            fence = (marker[0], len(marker))
+            masked_lines.append("".join("\n" if char == "\n" else " " for char in line))
+            continue
+        masked_lines.append(mask_inline_code(line))
+    return "".join(masked_lines)
+
+
 def markdown_failures(root: Path) -> list[UnresolvedReference]:
     failures: list[UnresolvedReference] = []
     for source in tracked_files(root, "*.md"):
         text = source.read_text(encoding="utf-8")
-        for match in MARKDOWN_LINK_RE.finditer(text):
+        for match in MARKDOWN_LINK_RE.finditer(mask_code(text)):
             raw_target = link_destination(match.group(1))
             if (
                 not raw_target
@@ -95,6 +136,7 @@ def shared_node(document: Node) -> Node | None:
 
 def metadata_failures(root: Path) -> list[UnresolvedReference]:
     failures: list[UnresolvedReference] = []
+    shared_root = (root / "shared").resolve()
     pathspec = ":(glob)skills/*/metadata/skill.yaml"
     for source in tracked_files(root, pathspec):
         document = yaml.compose(source.read_text(encoding="utf-8"))
@@ -104,7 +146,7 @@ def metadata_failures(root: Path) -> list[UnresolvedReference]:
             target = node.value
             resolved = (source.parent / target).resolve()
             try:
-                resolved.relative_to(root)
+                resolved.relative_to(shared_root)
             except ValueError:
                 exists = False
             else:
