@@ -28,5 +28,8 @@ jobs:
           python scripts/validate-skill-metadata.py skills/local-code-review --containment-root .
           python scripts/validate-skill-metadata.py skills/github-pr-review --containment-root .
 
+      - name: Validate repository references
+        run: python scripts/validate-references.py
+
       - name: Run repository tests
         run: python -m unittest discover -s tests -t .
