@@ -124,6 +124,42 @@ The implementation must derive the descriptor from the actual evidence at the
 reviewed revision, not title prose alone. Missing optional facets reduce recall;
 they never become wildcards that increase confidence.
 
+### #59 → #60 ownership boundary
+
+This research treats `cause_key`, `behavior_key`, `mechanism_key`, occurrence
+context, `context_tokens`, neighboring syntax fragments, and equivalent
+canonical-normalization helpers as **implementation-owned normalized descriptor
+primitives**.
+
+- **#59 owns their matching semantics:** which normalized facts admit a
+  candidate, satisfy or support each proof axis, create a supported/ambiguity/no
+  edge outcome, and participate in global bipartite resolution.
+- **#60 owns their canonical construction:** how each primitive is derived,
+  normalized, represented, and tested, including occurrence-context boundaries,
+  neighboring-syntax selection, and explicit absent/unclassifiable values.
+
+A conforming #60 implementation may choose concrete normalization mechanics,
+but it may not change #59's semantic matching outcomes, proof independence,
+precision-first bias, or evidence hierarchy. In particular, implementation
+choices may not broaden equivalence merely to improve matching recall.
+
+Whatever mechanics #60 selects, descriptor derivation must be:
+
+- deterministic for identical inputs and reproducible in local/offline review;
+- backed by the reviewed source and finding evidence;
+- conservative when information is absent or cannot be classified;
+- explicit about absence rather than guessing a value;
+- language-portable where practical, without making a parser mandatory;
+- independent of generated-prose wording where source-backed facts can be used;
+- stable across formatting-only and line-number-only changes where the matching
+  contract intends stability; and
+- incapable of weakening disqualifiers or broadening equivalence for recall.
+
+#59 deliberately does not prescribe a token-window size, parser implementation,
+serialization, normalization code, or numeric similarity threshold. Those are
+#60 implementation choices constrained by the invariants above and verified by
+#60/#61 regression tests.
+
 ### Two independently grounded proof axes
 
 The matcher records the atomic evidence items used by each axis. Both axes
