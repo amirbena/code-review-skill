@@ -172,30 +172,61 @@ finding may become `RESOLVED` while other P0/P1 findings make the same review
 
 ## 6. Reopen evidence
 
-`RESOLVED → OPEN` is `REOPENED` only when a stable prior identity is
-`RESOLVED`, #59 establishes one definite `MATCH`, and positive current evidence
-establishes that the same defect-bearing condition exists again.
+### Canonical recurrence handshake
+
+Reopening uses this acyclic sequence:
+
+1. **Read prior lifecycle state.** A stable prior identity has established
+   state `RESOLVED`. This is historical input only; it does not reopen the
+   finding.
+2. **Obtain positive current recurrence evidence.** The current review observes
+   that a defect exists again at or around the prior logical site — for example,
+   previously absent unsafe behavior is present, a restored guard was removed,
+   or equivalent defective behavior is observable at the mapped occurrence.
+   This is a recurrence-candidate signal, not a transition or proof of identity.
+   #64 owns how review scope, coverage, and the current delta establish it.
+3. **Activate #59 recurrence evaluation.** Prior `RESOLVED` state plus positive
+   recurrence evidence supplies the lifecycle context for #59's documented
+   recurrence exception. That exception removes only the disqualifier that the
+   old defect disappeared before the current defect appeared. It does not prove
+   sameness or weaken defect continuity, logical-site continuity, proof
+   independence, supported-edge uniqueness, or any other disqualifier.
+4. **Consume #59's outcome.** A definite `MATCH` produces `REOPENED` and `OPEN`.
+   `NO MATCH` leaves the prior identity `RESOLVED` with no event for it.
+   `AMBIGUOUS` records `UNCERTAIN` and preserves `RESOLVED`.
+
+The critical invariant is:
+
+> Recurrence evidence permits matching to reconsider a previously resolved
+> finding; it does not prove sameness. Only a definite #59 `MATCH` may produce
+> the `REOPENED` lifecycle event.
+
+#59 does not require an already-emitted `REOPENED` event to evaluate recurrence.
+It receives prior `RESOLVED` state and the recurrence-candidate evidence first;
+lifecycle applies the event only after matching completes. #65 will orchestrate
+this ordering when it loads state, obtains #64's evidence result, invokes #59
+with recurrence context, and applies this contract.
 
 Similarity elsewhere is not reopening. With `NO MATCH`, a similar defect gets
-its own identity and `DETECTED`. With `AMBIGUOUS`, the old identity remains
-`RESOLVED` with `UNCERTAIN`; no reopen is fabricated.
+no event on the old identity, which remains `RESOLVED`; #60 may give the current
+defect its own identity. With `AMBIGUOUS`, the old identity remains `RESOLVED`
+with `UNCERTAIN`; no reopen is fabricated.
 
 ## 7. State-transition table
 
-| Prior state | Matching outcome | Coverage / current evidence | Event | Resulting state |
-|---|---|---|---|---|
-| none | not applicable | Supported current finding; no prior identity assigned | `DETECTED` | `OPEN` |
-| `OPEN` | `MATCH` | Same defect positively shown still present | `STILL_PRESENT` | `OPEN` |
-| `OPEN` | `MATCH` | Current defect evidence is missing or contradictory | `UNCERTAIN`; re-evaluate inputs | `OPEN` preserved |
-| `OPEN` | `NO MATCH` | Completed review, verified relevant coverage, positive absence evidence, no ambiguity | `RESOLVED` | `RESOLVED` |
-| `OPEN` | `NO MATCH` | No verified coverage or only non-emission | `UNCERTAIN` | `OPEN` preserved |
-| `OPEN` | `AMBIGUOUS` | Any coverage | `UNCERTAIN` | `OPEN` preserved |
-| `RESOLVED` | `MATCH` | Same defect positively shown to exist again | `REOPENED` | `OPEN` |
-| `RESOLVED` | `MATCH` | Current defect evidence insufficient or contradictory | `UNCERTAIN`; re-evaluate inputs | `RESOLVED` preserved |
-| `RESOLVED` | `NO MATCH` | Verified absence remains consistent | `NO TRANSITION` | `RESOLVED` |
-| `RESOLVED` | `NO MATCH` | Coverage unavailable | `UNCERTAIN` only if the gap is material | `RESOLVED` preserved |
-| `RESOLVED` | `AMBIGUOUS` | Any coverage | `UNCERTAIN` | `RESOLVED` preserved |
-| `OPEN` or `RESOLVED` | any | Review aborts/incomplete before sufficient evaluation | `UNCERTAIN` | prior state preserved |
+| Prior state | Recurrence evidence | #59 outcome | Coverage / current evidence | Event | Resulting state |
+|---|---|---|---|---|---|
+| none | not applicable | not applicable | Supported current finding; no prior identity assigned | `DETECTED` | `OPEN` |
+| `OPEN` | not applicable | `MATCH` | Same defect positively shown still present | `STILL_PRESENT` | `OPEN` |
+| `OPEN` | not applicable | `MATCH` | Current defect evidence is missing or contradictory | `UNCERTAIN`; re-evaluate inputs | `OPEN` preserved |
+| `OPEN` | not applicable | `NO MATCH` | Completed review, verified relevant coverage, positive absence evidence, no ambiguity | `RESOLVED` | `RESOLVED` |
+| `OPEN` | not applicable | `NO MATCH` | No verified coverage or only non-emission | `UNCERTAIN` | `OPEN` preserved |
+| `OPEN` | not applicable | `AMBIGUOUS` | Any coverage | `UNCERTAIN` | `OPEN` preserved |
+| `RESOLVED` | yes; enables recurrence evaluation | `MATCH` | Same defect and logical site independently established | `REOPENED` | `OPEN` |
+| `RESOLVED` | yes; enables recurrence evaluation | `NO MATCH` | Identity continuity not established | `NO TRANSITION` for prior identity | `RESOLVED` |
+| `RESOLVED` | yes; enables recurrence evaluation | `AMBIGUOUS` | Identity continuity remains uncertain | `UNCERTAIN` | `RESOLVED` preserved |
+| `RESOLVED` | no | none required | No positive signal that the defect exists again | `NO TRANSITION` | `RESOLVED` |
+| `OPEN` or `RESOLVED` | any | any/unavailable | Review aborts/incomplete before sufficient evaluation | `UNCERTAIN` | prior state preserved |
 
 Impossible or unsupported transitions:
 
@@ -232,8 +263,8 @@ attempted review.
 | 4 | Definite fix with verified coverage | `OPEN` | `NO MATCH` | Completed review; site/behavior covered; condition absent; no ambiguity | `RESOLVED` (`FIXED`) | `RESOLVED` |
 | 5 | Absent, but prior site outside scope | `OPEN` | `NO MATCH` | Relevant coverage is not established | `UNCERTAIN` | `OPEN` preserved |
 | 6 | Absent with ambiguous matching | `OPEN` | `AMBIGUOUS` | Ambiguity forbids transition | `UNCERTAIN` | `OPEN` preserved |
-| 7 | Resolved finding returns at same site | `RESOLVED` | `MATCH` | Positive evidence of same defect | `REOPENED` | `OPEN` |
-| 8 | Similar defect elsewhere after resolution | `RESOLVED` | `NO MATCH` | Old remains resolved; new site independently meets evidence bar | old: no transition; new: `DETECTED` | old `RESOLVED`; new `OPEN` |
+| 7 | Resolved finding returns at same site | `RESOLVED` | `MATCH` | Positive recurrence evidence enables #59 evaluation; #59 independently proves defect/site continuity and unique support | `REOPENED` | `OPEN` |
+| 8 | Similar defect elsewhere after resolution | `RESOLVED` | `NO MATCH` | Recurrence evidence may enable comparison, but #59 fails identity continuity; the current defect may receive its own identity under #60 | old: no transition | old `RESOLVED` |
 | 9 | Severity increases while open | `OPEN` | `MATCH` | Defect still present; current impact classified independently | `STILL_PRESENT` | `OPEN` |
 | 10 | Severity decreases while open | `OPEN` | `MATCH` | Defect still present; current impact classified independently | `STILL_PRESENT` | `OPEN` |
 | 11 | One prior finding splits into two candidates | `OPEN` | `AMBIGUOUS` | One-to-many cannot transfer identity | `UNCERTAIN` | `OPEN` preserved |
@@ -249,15 +280,19 @@ ambiguous relationship to preserved prior identities remains in provenance.
 ## 10. Downstream boundaries
 
 - **#59 — matching strategy:** owns proof gates, matching outcomes, and
-  split/collapse ambiguity. This contract consumes them unchanged.
+  split/collapse ambiguity. This contract supplies prior `RESOLVED` state and
+  recurrence-candidate context for its existing exception, then consumes its
+  outcome unchanged; it does not weaken or redefine matching.
 - **#60 — stable IDs:** owns identity/descriptor construction, serialization,
   propagation, and fresh-ID assignment. This contract defines none of those.
 - **#64 — review delta semantics:** owns scope, coverage, change classes, and
   re-surface/suppress behavior. It must supply affirmative relevant coverage
   before this contract permits resolution.
 - **#65 — stateful implementation:** owns loading, application, persistence,
-  output fields, fallback, and provenance representation. It must not add
-  lifecycle semantics.
+  output fields, fallback, and provenance representation. It will load prior
+  lifecycle state, obtain current coverage/evidence, invoke #59 with recurrence
+  context when applicable, and only then apply this transition table. It must
+  not add lifecycle semantics.
 - **#66 — regression fixtures:** owns executable histories. Its fixtures must
   inherit the fifteen scenarios in §9 and assert state plus event.
 

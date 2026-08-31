@@ -60,6 +60,51 @@ class FindingLifecycleContractTests(unittest.TestCase):
         self.assertIn("`AMBIGUOUS → REOPENED`", self.raw)
         self.assertIn("preserve its established state", self.text)
 
+    def test_recurrence_handshake_is_acyclic_and_ordered(self) -> None:
+        section = self.raw.split("### Canonical recurrence handshake", 1)[1].split(
+            "## 7. State-transition table", 1
+        )[0]
+        ordered_markers = (
+            "**Read prior lifecycle state.**",
+            "**Obtain positive current recurrence evidence.**",
+            "**Activate #59 recurrence evaluation.**",
+            "**Consume #59's outcome.**",
+        )
+        positions = [section.index(marker) for marker in ordered_markers]
+        self.assertEqual(sorted(positions), positions)
+        for value in ("`RESOLVED`", "`MATCH`", "`REOPENED`", "`OPEN`"):
+            self.assertIn(value, section)
+
+    def test_recurrence_evidence_does_not_prove_identity_or_reopen(self) -> None:
+        self.assertIn(
+            "Recurrence evidence permits matching to reconsider a previously resolved",
+            self.text,
+        )
+        self.assertIn("it does not prove sameness", self.text)
+        self.assertIn("Only a definite #59 `MATCH` may produce", self.text)
+
+    def test_recurrence_matching_needs_no_pre_emitted_reopen_event(self) -> None:
+        self.assertIn(
+            "#59 does not require an already-emitted `REOPENED` event",
+            self.text,
+        )
+
+    def test_resolved_recurrence_outcome_rows_fail_closed(self) -> None:
+        table = self.raw.split("## 7. State-transition table", 1)[1].split(
+            "Impossible or unsupported transitions:", 1
+        )[0]
+        self.assertIn(
+            "| `RESOLVED` | yes; enables recurrence evaluation | `MATCH`", table
+        )
+        self.assertIn(
+            "| `RESOLVED` | yes; enables recurrence evaluation | `NO MATCH`", table
+        )
+        self.assertIn(
+            "| `RESOLVED` | yes; enables recurrence evaluation | `AMBIGUOUS`", table
+        )
+        self.assertIn("`NO TRANSITION` for prior identity | `RESOLVED`", table)
+        self.assertIn("`UNCERTAIN` | `RESOLVED` preserved", table)
+
     def test_required_scenarios_are_present(self) -> None:
         rows = [line for line in self.raw.splitlines() if line.startswith("| ")]
         scenario_rows = [line for line in rows if line.split("|")[1].strip().isdigit()]
