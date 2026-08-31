@@ -116,6 +116,9 @@ serialization:
 | `context_tokens` | bounded tokens around the anchor within its symbol/section | same normalization; diagnostic/candidate evidence |
 | `defect_kind` | narrow defect class/invariant violated | controlled shared vocabulary where one exists; otherwise conservative normalized phrase |
 | `behavioral_claim` | concise cause → faulty behavior, excluding impact/fix/severity | normalize case/whitespace only; do not erase identifiers, negation, numbers, or operators |
+| `cause_key` | normalized defect-producing condition/root cause extracted from `behavioral_claim` | conservative tokens; exact equality only for authoritative predicates |
+| `behavior_key` | normalized observable faulty behavior extracted from `behavioral_claim` | conservative tokens; exact equality only for authoritative predicates |
+| `mechanism_key` | normalized unsafe operation or violated invariant demonstrated by source evidence | preserve operation/invariant identity, literals, operators, and negation |
 
 The implementation must derive the descriptor from the actual evidence at the
 reviewed revision, not title prose alone. Missing optional facets reduce recall;
@@ -186,6 +189,82 @@ If equivalent anchors or defect-bearing constructs repeat within one symbol or
 region and the mapper cannot identify which occurrence continued, site proof
 fails and the relationship is an ambiguity edge (defined in §5), never a
 supported automatic match.
+
+#### Closed weaker-support predicates
+
+The authoritative graph uses two Boolean predicates below. Equality always
+means exact equality after the descriptor normalization in §2; “mapped” means
+an explicit fact produced by the compared source/diff mapping in §5 step 2.
+There are no similarity thresholds or reviewer-selected substitutes.
+
+`DEFECT_SUPPORT(old, new)` is true exactly when strong defect proof already
+passes **or** all of the following hold:
+
+1. neither `defect_kind`, `cause_key`, `behavior_key`, nor `mechanism_key`
+   contradicts its present counterpart; and
+2. at least one defect-mechanism fact holds:
+   - `mechanism_key` values are equal;
+   - `cause_key` values are equal; or
+   - an explicit refactor/move mapping maps the old defect-bearing operation to
+     the new operation while preserving its `mechanism_key`; and
+3. at least one behavioral fact holds:
+   - `behavior_key` values are equal; or
+   - `cause_key` and `behavior_key` are both present and equal as a pair.
+
+The second behavioral alternative is intentionally redundant in its behavior
+component but records the stronger cause→behavior relationship in the trace.
+An exact anchor may demonstrate an equal `mechanism_key`; anchor equality is
+not itself a second behavioral fact. Same category/`defect_kind` alone,
+generated title/explanation similarity, fuzzy tokens, semantic/LLM opinion,
+severity, or common file/symbol does not make `DEFECT_SUPPORT` true.
+
+`SITE_SUPPORT(old, new)` is true exactly when strong site proof already passes
+**or** at least one of these closed occurrence-level combinations holds:
+
+1. `construct` values are equal and `context_tokens` are exactly equal, where
+   the context contains at least one normalized token outside `anchor_tokens`;
+2. an explicit path or symbol container mapping exists, `construct` values are
+   equal, and at least one stable predecessor or successor syntax fragment
+   outside the anchor is exactly equal in both occurrence contexts; or
+3. path and qualified symbol are equal, `construct` values are equal, and
+   `anchor_tokens` are exactly equal—even if repeated or non-unique. This
+   combination supports only an ambiguity edge unless a separate strong unique
+   occurrence mapping exists.
+
+Path alone, symbol alone, path + symbol alone, construct kind alone, line
+proximity, fuzzy anchor/context similarity, category/defect kind, or
+semantic/LLM opinion does not make `SITE_SUPPORT` true. An exact anchor alone
+also does not pass: combination 3 requires the independent container and
+construct facts, and remains non-strong when occurrence uniqueness is absent.
+
+These weaker predicates may share an anchor or mapping fact, because they can
+only create an ambiguity edge. They do not relax the independent strong-proof
+requirement for a supported edge. A pair whose same anchor contributes to both
+support predicates therefore blocks an unsafe automatic choice but can never
+become `MATCH` without separate occurrence-level site proof.
+
+#### Evidence classification
+
+This table is categorical, not a score. “Conditional” refers only to the exact
+combinations above.
+
+| Evidence fact / combination | Candidate admission | Defect support | Site support | Strong defect proof | Strong site proof | Authoritative alone? |
+|---|---|---|---|---|---|---|
+| same path | no | no | no | no | no | no |
+| same symbol | no | no | no | no | no | no |
+| same path + same symbol | yes | no | no | no | no | no |
+| same construct kind | no | no | no | no | no | no |
+| exact normalized anchor | with compatible path/construct context | mechanism fact only | no alone; conditional in site combination 3 | only with compatible `defect_kind` and independent strong site proof | no | no |
+| duplicated exact anchor | yes with compatible container/construct | mechanism fact only | yes only via combination 3 | no when used by both axes | no | ambiguity edge only if `DEFECT_SUPPORT` also passes |
+| exact occurrence context containing non-anchor tokens + same construct | yes | no | yes | no | strong only when mapping is unique | ambiguity edge unless both strong proofs pass independently |
+| unique occurrence-context mapping | yes | no | yes | no | yes | site proof only |
+| explicit refactor mapping of the occurrence | yes | conditional mechanism fact | yes | no alone | yes when one-to-one and unique | site proof; may contribute one defect fact |
+| compatible `defect_kind` | no | no alone | no | no alone | no | no |
+| equal `cause_key` + equal `behavior_key` | with structural admission | yes | no | yes when it is the normalized full behavioral claim with compatible kind | no | defect axis only |
+| equal `mechanism_key` + equal `behavior_key` | with structural admission | yes | no | conditional under the strong-proof rules | no | defect support only |
+| fuzzy similarity | ranking only | no | no | no | no | no |
+| semantic/LLM similarity | diagnostics only | no | no | no | no | no |
+| line proximity | no | no | no | no | no | no |
 
 ### Disqualifiers
 
@@ -303,7 +382,7 @@ relationship may be preserved for inspection, but #60 must not reuse identity.
 | 19 | old occurrence fixed; identical defect appears elsewhere in the same function | same enclosure can mislead | likely match | may match | **No** unless an independent mapping proves movement; same path/symbol/claim is insufficient |
 | 20 | two identical vulnerable calls occur in one method | repeated occurrence | likely collision | may conflate | **Ambiguous** when either could be the continuation; no identity inheritance |
 | 21 | one pair has both proofs; an alternative has only weak/fuzzy similarity | one structural pair | ranks both | may favor either | **Match** the supported pair; fuzzy-only alternative creates no authoritative edge |
-| 22 | two candidates each have partial non-fuzzy evidence for both axes | incomplete mappings | may rank | may choose | **Ambiguous**: both enter authoritative resolution as ambiguity edges |
+| 22 | two candidates each satisfy both closed support predicates but lack a unique occurrence mapping | incomplete mappings | may rank | may choose | **Ambiguous**: both become ambiguity edges by the §2 predicates |
 | 23 | three structurally similar candidates; one pair has a unique occurrence mapping and defect proof | one unique mapping | ranks all | may choose | **Match** the supported pair when the others lack ambiguity-edge evidence |
 | 24 | the same anchor text occurs at multiple sites | anchor is non-unique | likely collision | may conflate | **Ambiguous** when defect and site support exist but occurrence uniqueness is unresolved |
 
@@ -316,17 +395,25 @@ cases. That is the correct trade under the requirements' false-merge asymmetry.
 ### Edge-class benchmark for the added adversarial cases
 
 This table makes the authoritative graph predicates in §5 directly testable.
-“Support” below means non-fuzzy structural/defect evidence that does not yet
-reach the corresponding strong-proof bar.
+“Support” means exactly `DEFECT_SUPPORT` / `SITE_SUPPORT` from §2, never an
+open-ended evidence judgment.
 
 | Case | Candidate admitted? | Defect proof | Occurrence-site proof | Conflict/disqualifier | Authoritative edge | Global result |
 |---:|---|---|---|---|---|---|
 | 19 | yes: same enclosure/defect signals | pass | fail: different occurrence, no mapping | old cause removed at A; new site B | none | `NO MATCH` |
 | 20 | yes: both repeated sites | pass or supported | incomplete: non-unique | repeated-occurrence conflict | ambiguity edges | `AMBIGUOUS` |
 | 21 | yes: structural admission for both | pass for mapped pair; fuzzy-only for alternative | pass for mapped pair; supporting enclosure only for alternative | none on mapped pair | one supported edge; no edge for fuzzy-only alternative | `MATCH` |
-| 22 | yes: structural admission for both | non-fuzzy support, not strong proof | non-fuzzy support, not unique proof | incomplete uniqueness | two ambiguity edges | `AMBIGUOUS` |
+| 22 | yes: both have mapped containers/constructs | yes: equal `mechanism_key` + `behavior_key` | yes: mapped container + same construct + equal neighbor syntax | occurrence map is not unique; strong site proof fails | two ambiguity edges | `AMBIGUOUS` |
 | 23 | yes: three structural candidates | pass for mapped pair; absent/fuzzy-only for alternatives | unique pass for mapped pair; enclosure-only alternatives | none on mapped pair | one supported edge; no alternative authoritative edges | `MATCH` |
 | 24 | yes: repeated anchors | pass or supported | incomplete: anchor cannot select occurrence | repeated-occurrence conflict | ambiguity edges | `AMBIGUOUS` |
+
+The reviewer's boundary example is also closed: **same construct + compatible
+defect kind + changed anchor**, with no equal cause/behavior/mechanism keys and
+no equal occurrence context or explicit mapping, is admitted only when the
+surrounding path/symbol rule admits it. `DEFECT_SUPPORT = false`,
+`SITE_SUPPORT = false`, both strong proofs are false, and the pair creates no
+authoritative edge. If it is the only alternative to supported `A → X`, it does
+not block `MATCH` for `A → X`.
 
 ## 5. Algorithm for #60
 
@@ -407,14 +494,17 @@ classes. No free-form “plausible,” “likely,” or scored edge exists.
 5. no contradiction, repeated-occurrence conflict, split/collapse conflict, or
    other §2 disqualifier applies.
 
-**Ambiguity edge.** Add one exactly when comparison scope and candidate
-admission pass, no hard contradiction applies, and either:
+**Ambiguity edge.** Add one exactly when all of these are true:
 
-- one axis has strong proof while the other has non-fuzzy structural/defect
-  support but fails only independence or occurrence uniqueness; or
-- both axes have non-fuzzy support tied to current source/mapping evidence, but
-  at least one misses the strong-proof bar because a mapping is incomplete or
-  multiple occurrences remain indistinguishable.
+1. comparison scope and candidate admission pass;
+2. no hard contradiction applies;
+3. the pair is not a supported edge;
+4. `DEFECT_SUPPORT(old, new)` is true;
+5. `SITE_SUPPORT(old, new)` is true; and
+6. supported-edge formation is prevented by at least one mechanically recorded
+   condition: a strong proof is absent, the two strong proof bases are not
+   independent, the occurrence mapping has more than one old or current match,
+   or equivalent occurrences compete.
 
 Hard contradictions — different repository or location intent, incompatible
 cause/behavior/defect kind, positive evidence that the old cause was removed
@@ -422,6 +512,11 @@ and a new cause appeared, or stale/uncheckable source evidence — create no
 edge. Path/symbol enclosure alone, line proximity, category equality, fuzzy
 text, and semantic/LLM opinion also create no authoritative edge. They remain
 diagnostics and therefore cannot block an otherwise unique supported match.
+
+**No authoritative edge.** An admitted pair creates neither edge when a hard
+contradiction applies, `DEFECT_SUPPORT` is false, or `SITE_SUPPORT` is false.
+Evidence confined to the explicitly insufficient classes in §2 therefore
+cannot block a supported match merely because the candidate was admitted.
 
 Resolve each connected component of this authoritative graph:
 
@@ -436,6 +531,13 @@ A supported edge elsewhere in a component does not authorize selecting a
 maximum matching: if the component admits more than one pairing, the component
 is ambiguous. A weak/fuzzy alternative that fails the ambiguity-edge predicate
 is not in the authoritative graph and does not block the unique supported pair.
+
+Concretely, supported `A → X` plus admitted `A → Y` still produces `MATCH` for
+`A → X` when `A → Y` fails either closed support predicate: `A → Y` has no
+authoritative edge. When `A → Y` passes both support predicates but lacks an
+independent strong proof or unique occurrence mapping, it creates an ambiguity
+edge incident to `A`; `A → X` is no longer isolated and the component is
+`AMBIGUOUS`.
 
 Sort paths, descriptors, and candidate IDs lexically for deterministic output,
 but never use sort order to break a tie. Do not run a greedy "best score wins"
