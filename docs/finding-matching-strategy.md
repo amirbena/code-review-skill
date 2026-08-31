@@ -28,7 +28,7 @@ require independent defect continuity + site continuity
         ↓
 one uniquely supported pair? ── yes → MATCH
         │
-        ├─ plausible evidence, but conflict/multiplicity? → AMBIGUOUS
+        ├─ defined ambiguity edge or multiplicity? → AMBIGUOUS
         └─ otherwise → NO MATCH
 ```
 
@@ -121,32 +121,71 @@ The implementation must derive the descriptor from the actual evidence at the
 reviewed revision, not title prose alone. Missing optional facets reduce recall;
 they never become wildcards that increase confidence.
 
-### Two independent proof axes
+### Two independently grounded proof axes
 
-**Defect continuity** is established by one of:
+The matcher records the atomic evidence items used by each axis. Both axes
+must pass, and their proofs must have independent grounds: **the same atomic
+fact cannot be the sole fact that passes both axes**. A composite mapping is
+acceptable only when its trace identifies distinct underlying facts for the
+two conclusions.
 
-- exact `defect_kind + behavioral_claim` after conservative normalization;
-- the same defect-bearing `anchor_tokens` plus compatible `defect_kind`; or
-- for a partial fix, explicit current evidence that the prior cause → faulty
-  behavior remains, with the same `defect_kind` and no contradictory claim.
+For example, an unchanged anchor may prove that the same defective operation
+remains, while a before/after mapping based on stable sibling context proves
+which occurrence continued. The anchor text supports both analyses, but the
+site proof is independently grounded in the mapping/context. One identical
+snippet with no independent occurrence mapping cannot mean both “same defect”
+and “same site.” Conversely, a behavioral claim cannot establish a physical
+occurrence mapping.
 
-Textual resemblance of title, impact, fix, or explanation is not proof.
+#### Defect continuity
 
-**Site continuity** is established by one of:
+Defect continuity asks whether the same underlying **cause → faulty behavior**
+remains. Strong proof is one of:
 
-- same normalized path + same qualified symbol + compatible location intent;
-- a deterministic Git path rename/copy mapping + same symbol or exact anchor;
-- same path + exact distinctive anchor within the same symbol/section;
-- exact distinctive anchor moved within the compared changed set, when it has
-  exactly one occurrence and surrounding context is compatible; or
-- a recorded explicit refactor mapping supplied by the compared delta (for
-  example, old symbol to extracted helper), again with exactly one destination.
+- exact `defect_kind + behavioral_claim` after conservative normalization,
+  checked against current source evidence;
+- the same defect-bearing `anchor_tokens` plus compatible `defect_kind`, when
+  site continuity is independently proved by evidence other than that anchor;
+- for a partial fix, positive current evidence that the prior cause still
+  produces the prior faulty behavior, with compatible `defect_kind`.
 
-Line overlap alone, same path alone, same symbol name in different paths, or
-fuzzy context alone is not proof. An anchor is **distinctive** only when its
-normalized token sequence occurs once among eligible current sites and once
-among the relevant prior sites; common fragments such as `return null` are not
-distinctive.
+Compatible impact, title, fix, nearby code, or fuzzy wording is supporting
+evidence only. A changed root cause, changed faulty behavior, incompatible
+defect kind, evidence that the original cause was removed, or only the same
+symptom with no cause continuity contradicts this axis. “No contradiction” is
+not positive proof: a partial fix passes only when current evidence affirmatively
+shows the prior cause → behavior path still exists.
+
+#### Logical-site continuity
+
+Logical-site continuity asks whether this is the continuation of the **specific
+defect-bearing occurrence**, not merely code in the same enclosing function,
+class, file, or region. Strong proof is one of:
+
+- a unique before/after source mapping of the defect-bearing construct, using
+  stable normalized context outside the defect anchor (for example, distinctive
+  sibling tokens or enclosing statement relationships);
+- a unique construct/statement/expression mapping within the enclosing symbol
+  that preserves the occurrence despite formatting or line movement;
+- an explicit file/symbol rename, move, extraction, inlining, or refactor
+  mapping from the compared delta that identifies exactly one source occurrence
+  and one destination occurrence; or
+- a unique normalized occurrence-context mapping across the changed set whose
+  distinguishing tokens are not solely the anchor used for defect proof.
+
+Exact/mapped path, enclosing qualified symbol, construct kind, line proximity,
+and anchor equality are supporting site evidence and candidate-generation
+signals. `same path + same symbol` never proves occurrence continuity by itself.
+Git file rename/copy detection likewise maps a container, not the occurrence.
+No language-specific AST is required: a diff/source-token mapper may establish
+the same relationship, while an available parser may refine it.
+
+An occurrence mapping is **unique** only when exactly one old occurrence and
+one current occurrence satisfy its distinguishing structural/context facts.
+If equivalent anchors or defect-bearing constructs repeat within one symbol or
+region and the mapper cannot identify which occurrence continued, site proof
+fails and the relationship is an ambiguity edge (defined in §5), never a
+supported automatic match.
 
 ### Disqualifiers
 
@@ -159,6 +198,9 @@ Any of these forbids automatic reuse even if other signals are similar:
   unless later lifecycle evidence explicitly establishes recurrence;
 - two or more equally supported prior or current sites;
 - a split or collapse (one-to-many or many-to-one);
+- multiple equivalent defect-bearing occurrences in one symbol/region when no
+  independent occurrence mapping distinguishes the continuation;
+- a claimed two-axis proof whose only common basis is one anchor/snippet;
 - only generated-prose similarity, only line overlap, or only category equality;
 - stale/untrusted source evidence that cannot be checked at the two reviewed
   states.
@@ -258,12 +300,33 @@ relationship may be preserved for inspection, but #60 must not reuse identity.
 | 16 | helper extraction changes symbol/location | mapping-dependent | possible | likely | **Ambiguous** by default; auto only with explicit unique mapping + proof |
 | 17 | prior evidence gone, same high-level concern claimed | no support | prose may match | may match | **No**: current evidence cannot prove continuation |
 | 18 | multiple plausible priors for one current | conflict | ranks but cannot decide | may guess | **Ambiguous**: preserve candidate set |
+| 19 | old occurrence fixed; identical defect appears elsewhere in the same function | same enclosure can mislead | likely match | may match | **No** unless an independent mapping proves movement; same path/symbol/claim is insufficient |
+| 20 | two identical vulnerable calls occur in one method | repeated occurrence | likely collision | may conflate | **Ambiguous** when either could be the continuation; no identity inheritance |
+| 21 | one pair has both proofs; an alternative has only weak/fuzzy similarity | one structural pair | ranks both | may favor either | **Match** the supported pair; fuzzy-only alternative creates no authoritative edge |
+| 22 | two candidates each have partial non-fuzzy evidence for both axes | incomplete mappings | may rank | may choose | **Ambiguous**: both enter authoritative resolution as ambiguity edges |
+| 23 | three structurally similar candidates; one pair has a unique occurrence mapping and defect proof | one unique mapping | ranks all | may choose | **Match** the supported pair when the others lack ambiguity-edge evidence |
+| 24 | the same anchor text occurs at multiple sites | anchor is non-unique | likely collision | may conflate | **Ambiguous** when defect and site support exist but occurrence uniqueness is unresolved |
 
-The matrix produces seven conditional automatic matches (1–7), six definite
-non-matches (8–12 and 17), and five explicit ambiguities (13–16 and 18; case
-16 may promote only with stronger evidence). It deliberately does not claim
-perfect recall for wording-only or heavily rewritten cases. That is the
-correct trade under the requirements' false-merge asymmetry.
+The expanded matrix produces nine conditional automatic matches (1–7, 21,
+23), seven definite non-matches (8–12, 17, 19), and eight explicit ambiguities
+(13–16, 18, 20, 22, 24; case 16 may promote only with stronger evidence). It
+deliberately does not claim perfect recall for wording-only or heavily rewritten
+cases. That is the correct trade under the requirements' false-merge asymmetry.
+
+### Edge-class benchmark for the added adversarial cases
+
+This table makes the authoritative graph predicates in §5 directly testable.
+“Support” below means non-fuzzy structural/defect evidence that does not yet
+reach the corresponding strong-proof bar.
+
+| Case | Candidate admitted? | Defect proof | Occurrence-site proof | Conflict/disqualifier | Authoritative edge | Global result |
+|---:|---|---|---|---|---|---|
+| 19 | yes: same enclosure/defect signals | pass | fail: different occurrence, no mapping | old cause removed at A; new site B | none | `NO MATCH` |
+| 20 | yes: both repeated sites | pass or supported | incomplete: non-unique | repeated-occurrence conflict | ambiguity edges | `AMBIGUOUS` |
+| 21 | yes: structural admission for both | pass for mapped pair; fuzzy-only for alternative | pass for mapped pair; supporting enclosure only for alternative | none on mapped pair | one supported edge; no edge for fuzzy-only alternative | `MATCH` |
+| 22 | yes: structural admission for both | non-fuzzy support, not strong proof | non-fuzzy support, not unique proof | incomplete uniqueness | two ambiguity edges | `AMBIGUOUS` |
+| 23 | yes: three structural candidates | pass for mapped pair; absent/fuzzy-only for alternatives | unique pass for mapped pair; enclosure-only alternatives | none on mapped pair | one supported edge; no alternative authoritative edges | `MATCH` |
+| 24 | yes: repeated anchors | pass or supported | incomplete: anchor cannot select occurrence | repeated-occurrence conflict | ambiguity edges | `AMBIGUOUS` |
 
 ## 5. Algorithm for #60
 
@@ -300,14 +363,16 @@ A prior finding is eligible only if location intent is compatible and at least
 one site-continuity signal exists:
 
 - same path and same symbol/section;
-- mapped path and same symbol or exact anchor;
-- same path and a unique exact anchor; or
-- a unique exact anchor/refactor mapping across the changed set.
+- mapped path and same symbol/section or occurrence context;
+- same path and compatible construct/anchor context; or
+- a source/refactor mapping across the changed set.
 
 Same category, same line, or similar prose alone never creates a candidate.
 Fuzzy anchor/context/title comparison may rank already eligible candidates for
 diagnostics, but may not widen eligibility beyond the repository's changed set
-and structurally plausible sites.
+and structurally plausible sites. Candidate admission is deliberately broader
+than site proof: same path/symbol may admit a pair for inspection but cannot
+make it a supported edge.
 
 ### Step 4 — classify each candidate pair
 
@@ -320,25 +385,57 @@ weak signals:<optional fuzzy/semantic observations>
 conflicts:    <missing, contradictory, or multiplicity evidence>
 ```
 
-A pair becomes a **high-confidence edge** only when it has at least one valid
-site proof and one valid defect proof, with no disqualifier. Weak signals do
-not count toward either proof.
+A pair becomes a **supported edge** only when it has a valid defect proof and
+a valid occurrence-level site proof, the proof bases satisfy §2's independence
+rule, and no disqualifier or unresolved uniqueness conflict applies. Supporting,
+fuzzy, and semantic signals do not count toward either proof.
 
 This is a conjunctive decision rule, not a weighted sum. It needs no magic
 threshold and is explainable as two inspectable facts.
 
 ### Step 5 — resolve globally, not greedily
 
-Construct the bipartite graph of prior findings and current findings using
-high-confidence edges plus separately retained plausible candidate edges.
+Construct one deterministic authoritative bipartite graph with exactly two edge
+classes. No free-form “plausible,” “likely,” or scored edge exists.
 
-- exactly one high-confidence edge incident to both endpoints, and no competing
-  plausible edge with unresolved conflict → `MATCH`;
-- no eligible or supported edge → `NO MATCH`;
-- multiple high-confidence/plausible edges for either endpoint, or a
-  one-to-many/many-to-one topology → `AMBIGUOUS` for the whole component;
-- conflicting evidence → `AMBIGUOUS` when a relationship remains plausible,
-  otherwise `NO MATCH`.
+**Supported edge.** Add one exactly when all of these are true:
+
+1. comparison scope and candidate admission pass;
+2. defect continuity has strong proof;
+3. occurrence-level site continuity has strong proof;
+4. the two proof bases are independently grounded;
+5. no contradiction, repeated-occurrence conflict, split/collapse conflict, or
+   other §2 disqualifier applies.
+
+**Ambiguity edge.** Add one exactly when comparison scope and candidate
+admission pass, no hard contradiction applies, and either:
+
+- one axis has strong proof while the other has non-fuzzy structural/defect
+  support but fails only independence or occurrence uniqueness; or
+- both axes have non-fuzzy support tied to current source/mapping evidence, but
+  at least one misses the strong-proof bar because a mapping is incomplete or
+  multiple occurrences remain indistinguishable.
+
+Hard contradictions — different repository or location intent, incompatible
+cause/behavior/defect kind, positive evidence that the old cause was removed
+and a new cause appeared, or stale/uncheckable source evidence — create no
+edge. Path/symbol enclosure alone, line proximity, category equality, fuzzy
+text, and semantic/LLM opinion also create no authoritative edge. They remain
+diagnostics and therefore cannot block an otherwise unique supported match.
+
+Resolve each connected component of this authoritative graph:
+
+- exactly one supported edge and no ambiguity edge incident to either endpoint
+  → `MATCH`;
+- no authoritative edge → `NO MATCH`;
+- more than one supported edge incident to an endpoint, any incident ambiguity
+  edge, a one-to-many/many-to-one topology, or multiple possible one-to-one
+  pairings → `AMBIGUOUS` for the whole connected component.
+
+A supported edge elsewhere in a component does not authorize selecting a
+maximum matching: if the component admits more than one pairing, the component
+is ambiguous. A weak/fuzzy alternative that fails the ambiguity-edge predicate
+is not in the authoritative graph and does not block the unique supported pair.
 
 Sort paths, descriptors, and candidate IDs lexically for deterministic output,
 but never use sort order to break a tie. Do not run a greedy "best score wins"
@@ -390,7 +487,7 @@ severity and volatile line/HEAD inputs from the cross-review relationship.
 
 ### #61 — regression tests
 
-Turn all 18 scenarios into deterministic fixtures. Each fixture should vary
+Turn all 24 scenarios into deterministic fixtures. Each fixture should vary
 one signal at a time, assert `MATCH`/`NO MATCH`/`AMBIGUOUS`, assert the reason
 trace, and permute finding order. Add adversarial repeated-pattern, negation,
 literal/operator-change, duplicated-anchor, path-case, rename, cross-Skill,
