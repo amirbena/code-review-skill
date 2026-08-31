@@ -535,8 +535,11 @@ runbook implements them today:
   [`finding-identity-requirements.md`](finding-identity-requirements.md), and
   the selected precision-first matching strategy is recorded in
   [`finding-matching-strategy.md`](finding-matching-strategy.md). No policy,
-  runbook, or code implements the movement-tolerant mechanism, the finding
-  lifecycle, or stateful re-review today.
+  runbook, or code implements the movement-tolerant mechanism or stateful
+  re-review today. The two-state finding lifecycle and its evidence-gated
+  transitions are defined in
+  [`finding-lifecycle-contract.md`](finding-lifecycle-contract.md); no runtime
+  applies that contract yet.
 - **Stateful re-review keyed off a reviewed SHA** — loading a prior
   reviewed state and computing what changed since it. The reviewed-SHA
   state model this depends on — the minimal recorded fields, which commit
