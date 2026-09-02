@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Prose / cross-reference checks pinning the reviewed-SHA state contract
-(Issue #63) in docs/reviewed-sha-state-contract.md.
+(Issue #63) in docs/findings/reviewed-sha-state-contract.md.
 
 Contract invariants only — this is a repository-development requirements
 doc like docs/findings/finding-identity-requirements.md, not runtime logic. The
@@ -16,7 +16,7 @@ from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "docs/reviewed-sha-state-contract.md"
+DOC = REPO_ROOT / "docs/findings/reviewed-sha-state-contract.md"
 ARCHITECTURE = REPO_ROOT / "docs/ARCHITECTURE.md"
 FINDING_IDENTITY = REPO_ROOT / "docs/findings/finding-identity-requirements.md"
 SKILL_DIRS = (

@@ -258,7 +258,7 @@ and
   [`../../skills/github-pr-review/policies/reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md).
   Its recorded state, which commit is authoritative, and its invalidation
   are contracted in
-  [`../reviewed-sha-state-contract.md`](../reviewed-sha-state-contract.md)
+  [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md)
   ([#63](https://github.com/amirbena/code-review-skill/issues/63)); how a
   re-review computes the delta from it is
   [#64](https://github.com/amirbena/code-review-skill/issues/64). Neither
@@ -399,7 +399,7 @@ does **not** define:
 | Not defined here | Owner |
 |---|---|
 | Finding lifecycle states and transitions (`new` / `open` / `resolved` / `superseded` / `no longer applicable`) | [#62](https://github.com/amirbena/code-review-skill/issues/62), parent [#43](https://github.com/amirbena/code-review-skill/issues/43) |
-| Reviewed-SHA state — what is recorded, where, and its invalidation | [`../reviewed-sha-state-contract.md`](../reviewed-sha-state-contract.md), [#63](https://github.com/amirbena/code-review-skill/issues/63) |
+| Reviewed-SHA state — what is recorded, where, and its invalidation | [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md), [#63](https://github.com/amirbena/code-review-skill/issues/63) |
 | Review delta / re-review semantics — how a re-review computes and acts on the change set | [#64](https://github.com/amirbena/code-review-skill/issues/64), [#65](https://github.com/amirbena/code-review-skill/issues/65) |
 | Matching-strategy selection (structural hashing vs. fuzzy location vs. semantic similarity vs. hybrid) and its accuracy/cost trade-offs | [#59](https://github.com/amirbena/code-review-skill/issues/59) |
 | The concrete identity derivation / serialization / hashing / any embedding use | [#60](https://github.com/amirbena/code-review-skill/issues/60) |

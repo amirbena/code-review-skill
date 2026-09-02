@@ -23,6 +23,7 @@ runtime behavior.
 | [`finding-matching-strategy.md`](finding-matching-strategy.md) | *Which* prior finding a current one continues — the precision-first staged hybrid, its two proof axes, and the `MATCH` / `AMBIGUOUS` / `NO MATCH` outcomes. | [#59](https://github.com/amirbena/code-review-skill/issues/59) |
 | [`finding-stable-identity.md`](finding-stable-identity.md) | *How* the stable identifier and its descriptor primitives are constructed — the canonical deterministic derivation, with a test-only reference model. | [#60](https://github.com/amirbena/code-review-skill/issues/60) |
 | [`finding-lifecycle-contract.md`](finding-lifecycle-contract.md) | The `OPEN` / `RESOLVED` state of one identity across reviews and its evidence-gated transitions. | [#62](https://github.com/amirbena/code-review-skill/issues/62) |
+| [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md) | The reviewed-SHA state a re-review compares against — the recorded fields, which commit is authoritative, and invalidation. | [#63](https://github.com/amirbena/code-review-skill/issues/63) |
 
 The identity regression suite required by
 [#61](https://github.com/amirbena/code-review-skill/issues/61) lives in
@@ -32,7 +33,4 @@ and exercises the reference model in
 
 ## Related
 
-The reviewed-SHA state these contracts are compared across is defined in
-[`../reviewed-sha-state-contract.md`](../reviewed-sha-state-contract.md)
-([#63](https://github.com/amirbena/code-review-skill/issues/63)); the
-architecture map is [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
+The architecture map is [`../ARCHITECTURE.md`](../ARCHITECTURE.md).

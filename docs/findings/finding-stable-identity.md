@@ -367,7 +367,7 @@ doubt, split.
 |---|---|
 | Which prior finding a current finding matches; proof axes; ambiguity edges; global resolution | [#59](https://github.com/amirbena/code-review-skill/issues/59), [`finding-matching-strategy.md`](finding-matching-strategy.md) |
 | Lifecycle states (`OPEN` / `RESOLVED`) and evidence-gated transitions | [#62](https://github.com/amirbena/code-review-skill/issues/62), [`finding-lifecycle-contract.md`](finding-lifecycle-contract.md) |
-| Reviewed-SHA state record and its invalidation | [#63](https://github.com/amirbena/code-review-skill/issues/63), [`../reviewed-sha-state-contract.md`](../reviewed-sha-state-contract.md) |
+| Reviewed-SHA state record and its invalidation | [#63](https://github.com/amirbena/code-review-skill/issues/63), [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md) |
 | Review-delta semantics (fixed / unchanged / moved / reopened / newly introduced) | [#64](https://github.com/amirbena/code-review-skill/issues/64) |
 | Loading prior state, applying transitions, emitting per-finding state, full-review fallback | [#65](https://github.com/amirbena/code-review-skill/issues/65) |
 | Identity regression fixtures and their assertions | [#61](https://github.com/amirbena/code-review-skill/issues/61) |
