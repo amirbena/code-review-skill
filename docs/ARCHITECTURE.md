@@ -532,11 +532,15 @@ runbook implements them today:
   already computes
   ([`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md),
   "Existing review awareness"). The requirements are captured in
-  [`finding-identity-requirements.md`](finding-identity-requirements.md), and
-  the selected precision-first matching strategy is recorded in
-  [`finding-matching-strategy.md`](finding-matching-strategy.md). No policy,
-  runbook, or code implements the movement-tolerant mechanism or stateful
-  re-review today. The two-state finding lifecycle and its evidence-gated
+  [`finding-identity-requirements.md`](finding-identity-requirements.md), the
+  selected precision-first matching strategy is recorded in
+  [`finding-matching-strategy.md`](finding-matching-strategy.md), and the
+  canonical deterministic derivation of the stable identifier and its
+  descriptor primitives is contracted in
+  [`finding-stable-identity.md`](finding-stable-identity.md) (with a test-only
+  reference model). No packaged policy, runbook, or code attaches the
+  identifier at Skill runtime or performs stateful re-review today. The
+  two-state finding lifecycle and its evidence-gated
   transitions are defined in
   [`finding-lifecycle-contract.md`](finding-lifecycle-contract.md); no runtime
   applies that contract yet.

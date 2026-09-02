@@ -409,17 +409,24 @@ does **not** define:
 
 ## Status and canonical home
 
-Until [#60](https://github.com/amirbena/code-review-skill/issues/60) lands,
-**this document is the requirements record** for cross-review finding
+**This document is the requirements record** for cross-review finding
 identity. A downstream issue MAY refine it — explicitly, never by silent
 divergence — if it discovers a genuine conflict between these requirements
 and the shared review model.
 
-Once [#60](https://github.com/amirbena/code-review-skill/issues/60)
-establishes the canonical runtime rule in a packaged resource (a
-`shared/policies/` file or an extension of an existing one — the path is
-[#60](https://github.com/amirbena/code-review-skill/issues/60)'s to choose,
-not this document's), **that policy becomes the single normative source.**
-This document then becomes a historical requirements record: it MUST link
-to the canonical policy and MUST NOT keep evolving the same rule
-independently.
+[#60](https://github.com/amirbena/code-review-skill/issues/60) has landed the
+**canonical deterministic derivation** of the stable identifier and its
+descriptor primitives in
+[`finding-stable-identity.md`](finding-stable-identity.md) (a
+repository-development contract, with a test-only reference model). That
+document owns *how* the identifier and primitives are constructed; this
+document remains the authority on *what* identity must and must not do.
+
+When a later issue
+([#65](https://github.com/amirbena/code-review-skill/issues/65)) installs the
+equivalent rule in a packaged resource (a `shared/policies/` file or an
+extension of an existing one), **that policy becomes the single normative
+source.** Both this document and
+[`finding-stable-identity.md`](finding-stable-identity.md) then become
+historical records: they MUST link to the canonical policy and MUST NOT keep
+evolving the same rule independently.
