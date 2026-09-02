@@ -33,6 +33,7 @@ capabilities:
   github_read_access: optional # PR reference -> prior review evidence (../../../shared/policies/review-evidence.md, ../policies/pr-context.md); GitHub Issue reference -> read-only Issue retrieval
 
 output:
+  executes_target_repository_code: conditional # only inside the disposable execution boundary required by ../../../shared/policies/runtime-validation.md; never directly on the reviewer host
   mutates_github: false
   mutates_repository: false
   manages_review_loop: false

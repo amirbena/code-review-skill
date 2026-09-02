@@ -176,8 +176,10 @@ finally: remove the temporary checkout (success, any failure, interruption)
    [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
    policy. Use only declarations and blast-radius context already resolved
    for this target; carry exactly one outcome record per selected command (or
-   the explicit no-command result) into the shared `Validation` section.
-   This does not add retries, matrices, or any repository/GitHub mutation.
+   the explicit no-command result) into the shared `Validation` section. The
+   shared policy owns command eligibility, execution-boundary gating, and all
+   safety semantics; this runbook only sequences the step and carries its
+   records forward.
 
    **Plan review execution** per
    [`../policies/parallel-review.md`](../policies/parallel-review.md) and the

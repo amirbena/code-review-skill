@@ -19,6 +19,42 @@ This policy does not authorize autofixes, generated reproductions, CI
 orchestration, retries, matrix execution, dependency installation, service
 startup, deployment, or any other expansion of review scope.
 
+## Trust model and execution boundary
+
+Runtime validation executes target-repository-controlled code. A command is
+not safe merely because its name is conventional, it appears in `AGENTS.md`,
+`CONTRIBUTING.md`, or task-runner configuration, it is described as a test,
+lint, or validation task, or its visible argv is syntactically benign. A
+declaration establishes **command-source trust** (where the command came
+from); it does not establish **execution-payload trust** (what repository code
+the command, hooks, dependencies, scripts, or subprocesses will execute).
+The payload remains untrusted, including for `pytest`, `npm test`, `cargo
+test`, `make test`, scripts, and task-runner aliases.
+
+Consequently, static command screening is necessary but insufficient. A
+selected command requires a disposable, bounded execution boundary before it
+may start. The minimum boundary is:
+
+- filesystem isolation from the reviewer host, with access limited to a
+  bounded target checkout/work copy and explicitly required read-only inputs;
+- no access to host secrets or credentials, including SSH agents, GitHub
+  tokens, cloud credentials, browser/session data, home-directory secrets, or
+  unrelated repositories;
+- network denied by default, with no broad declared-command exception;
+- no host Git/GitHub mutation capability, privilege escalation, or inherited
+  mutation credentials;
+- bounded non-interactive process, runtime, and resource limits;
+- disposable execution state; and
+- post-run verification that the reviewed source tree and Git state were not
+  mutated outside explicitly allowed ephemeral outputs.
+
+This is a policy contract, not a new container or CI platform. If the
+reviewer's runtime has no existing abstraction that can establish and verify
+this boundary, record the command as `unavailable` with the missing boundary
+capability. If the boundary is present but cannot be established for this
+command, record `skipped` with the concrete safety reason. Never fall back to
+direct or unsandboxed host execution.
+
 ## Declaring and discovering commands
 
 Reuse the target repository instruction hierarchy and applicable repository
@@ -63,15 +99,18 @@ record.
 Run a selected command only when all of the following are established:
 
 - it is the exact command declared by an applicable target-repository source;
+- the required disposable execution boundary above is established before
+  process start, and the target payload is treated as untrusted;
 - its relevant task definition and configuration can be inspected without
   executing repository code first;
-- it reads the reviewed tree and produces no source, generated-file, cache,
-  Git, GitHub, deployment, or other target-repository mutation;
-- it does not require a secret, credential, approval, external service,
-  network access, daemon, database, cloud resource, or other unavailable
-  external state; and
-- the runner can invoke it in a bounded, non-interactive way without shell
-  evaluation of untrusted text or hooks.
+- the isolated invocation reads the reviewed work copy and produces no source,
+  generated-file, cache, Git, GitHub, deployment, or other target-repository
+  mutation outside explicitly allowed disposable state;
+- the isolated invocation has no secret, credential, approval, external
+  service, network access, daemon, database, cloud resource, or other
+  unavailable external state; and
+- the boundary's runner invokes it in a bounded, non-interactive way without
+  shell evaluation of untrusted text or hooks.
 
 Skip and record a reason when a command is destructive or side-effecting
 (including autofix, format, repair, clean, reset, migration, install,
@@ -87,6 +126,11 @@ If a safe declared command cannot be started because its executable,
 dependency, interpreter, or required local capability is unavailable, record
 `unavailable` and the concrete missing capability. `unavailable` is not
 `skipped` and neither is a pass.
+
+If the required sandbox/isolated execution boundary is unavailable, record
+`unavailable` with that safety reason. If a command's boundary cannot be
+verified, record `skipped` with that safety reason. In both cases, do not
+attempt the command unsandboxed.
 
 ## Outcome contract
 

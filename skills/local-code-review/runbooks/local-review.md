@@ -221,9 +221,9 @@ which a value must be resolved before it is used, or what is reported.
    policy. Use the target repository instruction context and the changed
    delta's blast radius already resolved above. Carry exactly one outcome
    record per selected command, or the explicit no-command result, into the
-   shared `Validation` section. This step may execute only a command that
-   passes the policy's safety gate; it adds no retries, matrices, or
-   repository/GitHub mutation.
+   shared `Validation` section. The shared policy owns command eligibility,
+   execution-boundary gating, and all safety semantics; this runbook only
+   sequences the step and carries its records forward.
 9. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

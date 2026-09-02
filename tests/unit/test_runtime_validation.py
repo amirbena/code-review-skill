@@ -14,6 +14,57 @@ def command(*argv: str, **kwargs) -> rv.CommandDeclaration:
 
 
 class RuntimeValidationFixtureMatrix(unittest.TestCase):
+    def test_conventional_command_payload_is_untrusted_but_runs_only_in_boundary(self) -> None:
+        declaration = command("pytest", "tests/", source="AGENTS.md: validation")
+        repo = rv.FakeRepository(
+            host_sentinel="host-only",
+            host_secret="credential-only",
+            unrelated_files={"other-repository/secret.txt": "host-only"},
+        )
+        records = rv.run_validation([declaration], repo)
+        self.assertTrue(declaration.payload_untrusted)
+        self.assertEqual(records[0].outcome, rv.Outcome.EXECUTED)
+        self.assertEqual(len(repo.boundary_invocations), 1)
+        self.assertEqual(repo.boundary_invocations[0].network_isolated, True)
+        self.assertEqual(repo.host_accesses, 0)
+        self.assertEqual(repo.network_attempts, 0)
+
+    def test_payload_trust_cannot_be_used_as_a_host_execution_bypass(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation(
+            [command("pytest", "tests/", payload_untrusted=False)], repo
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIn("payload trust", records[0].reason)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_missing_execution_boundary_is_unavailable_without_host_fallback(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=rv.ExecutionBoundary(available=False))], repo
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.UNAVAILABLE)
+        self.assertIn("boundary", records[0].reason)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_unverified_execution_boundary_is_skipped_without_host_fallback(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=rv.ExecutionBoundary(post_run_verified=False))], repo
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIn("cannot be verified", records[0].reason)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_boundary_network_isolation_is_required_even_for_conventional_command(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=rv.ExecutionBoundary(network_isolated=False))], repo
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIn("boundary", records[0].reason)
+        self.assertEqual(repo.network_attempts, 0)
+
     def test_focused_declared_command_passes(self) -> None:
         repo = rv.FakeRepository()
         records = rv.run_validation([command("pytest", "tests/unit/test_app.py", stdout="1 passed")], repo)

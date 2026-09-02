@@ -36,6 +36,11 @@ class CanonicalPolicyTests(unittest.TestCase):
             "Use the blast-radius guidance in [review-scope.md](review-scope.md)",
             "This policy does not authorize autofixes",
             "After target-repository instruction discovery",
+            "Runtime validation executes target-repository-controlled code",
+            "command-source trust",
+            "execution-payload trust",
+            "static command screening is necessary but insufficient",
+            "Never fall back to direct or unsandboxed host execution",
         ):
             self.assertIn(phrase, self.text)
 
@@ -60,6 +65,13 @@ class CanonicalPolicyTests(unittest.TestCase):
             "destructive or side-effecting",
             "may write caches or artifacts in the target tree",
             "shell evaluation of untrusted text",
+            "filesystem isolation",
+            "host secrets or credentials",
+            "network denied by default",
+            "privilege escalation",
+            "resource limits",
+            "disposable execution state",
+            "post-run verification",
         ):
             self.assertIn(phrase, self.text)
 
@@ -103,8 +115,21 @@ class WiringTests(unittest.TestCase):
         for path in (LOCAL_RUNBOOK, ACTIVE_RUNBOOK, PASSIVE_RUNBOOK):
             text = normalized(path)
             self.assertIn("carry", text)
+            self.assertIn("execution-boundary gating", text)
+            self.assertNotIn("Run a selected command only when", text)
             self.assertNotIn("exit code 0 means", text)
             self.assertNotIn("retry the validation", text.lower())
+
+    def test_metadata_declares_equal_conditional_payload_capability(self) -> None:
+        values = []
+        for path in (
+            REPO_ROOT / "skills/local-code-review/metadata/skill.yaml",
+            REPO_ROOT / "skills/github-pr-review/metadata/skill.yaml",
+        ):
+            match = re.search(r"^\s+executes_target_repository_code:\s+(\S+)", path.read_text(encoding="utf-8"), re.M)
+            self.assertIsNotNone(match, path)
+            values.append(match.group(1))
+        self.assertEqual(values, ["conditional", "conditional"])
 
 
 if __name__ == "__main__":

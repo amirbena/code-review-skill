@@ -21,6 +21,36 @@ class Outcome(Enum):
 
 
 @dataclass(frozen=True)
+class ExecutionBoundary:
+    """Minimum disposable boundary required before untrusted payload runs."""
+
+    available: bool = True
+    filesystem_isolated: bool = True
+    host_credentials_isolated: bool = True
+    network_isolated: bool = True
+    git_github_isolated: bool = True
+    privilege_isolated: bool = True
+    resource_bounded: bool = True
+    disposable: bool = True
+    post_run_verified: bool = True
+
+    @property
+    def established(self) -> bool:
+        return all(
+            (
+                self.filesystem_isolated,
+                self.host_credentials_isolated,
+                self.network_isolated,
+                self.git_github_isolated,
+                self.privilege_isolated,
+                self.resource_bounded,
+                self.disposable,
+                self.post_run_verified,
+            )
+        )
+
+
+@dataclass(frozen=True)
 class CommandDeclaration:
     """One exact command declaration supplied by an existing target source."""
 
@@ -40,6 +70,8 @@ class CommandDeclaration:
     exit_code: int = 0
     stdout: str = ""
     stderr: str = ""
+    payload_untrusted: bool = True
+    boundary: ExecutionBoundary = field(default_factory=ExecutionBoundary)
 
     @property
     def rendered(self) -> str:
@@ -62,16 +94,25 @@ class FakeRepository:
     """A repository/process double whose state makes mutation observable."""
 
     files: dict[str, str] = field(default_factory=lambda: {"src/app.py": "value = 1\n"})
+    host_sentinel: str = ""
+    host_secret: str = ""
+    unrelated_files: dict[str, str] = field(default_factory=dict)
     process_invocations: list[tuple[str, ...]] = field(default_factory=list)
+    boundary_invocations: list[ExecutionBoundary] = field(default_factory=list)
     git_writes: int = 0
     github_writes: int = 0
+    host_accesses: int = 0
+    network_attempts: int = 0
 
     def snapshot(self) -> tuple[tuple[str, str], ...]:
         return tuple(sorted(self.files.items()))
 
-    def start(self, argv: tuple[str, ...]) -> None:
-        """Record a fake process start; no shell or repository mutation exists."""
+    def start(self, argv: tuple[str, ...], boundary: ExecutionBoundary) -> None:
+        """Record a sandboxed fake process start; no host access exists."""
+        if not boundary.established:
+            raise AssertionError("fake runner must not start outside the boundary")
         self.process_invocations.append(argv)
+        self.boundary_invocations.append(boundary)
 
 
 def _selected(declarations: Sequence[CommandDeclaration]) -> CommandDeclaration | None:
@@ -109,6 +150,8 @@ def run_validation(
         )
     if not command.trusted:
         return (_record_skip(command, "command is not trustworthily declared"),)
+    if not command.payload_untrusted:
+        return (_record_skip(command, "execution payload trust cannot be assumed"),)
     if command.scope == "broader" and not command.justification:
         return (_record_skip(command, "broader command lacks blast-radius justification"),)
     if command.unsafe_reason:
@@ -130,8 +173,20 @@ def run_validation(
                 reason="required executable or local capability is unavailable",
             ),
         )
+    if not command.boundary.available:
+        return (
+            ValidationRecord(
+                command.rendered,
+                command.source,
+                command.scope,
+                Outcome.UNAVAILABLE,
+                reason="safe execution boundary is unavailable",
+            ),
+        )
+    if not command.boundary.established:
+        return (_record_skip(command, "required execution boundary cannot be verified"),)
 
-    repository.start(command.argv)
+    repository.start(command.argv, command.boundary)
     outcome = Outcome.EXECUTED if command.exit_code == 0 else Outcome.FAILED
     return (
         ValidationRecord(
