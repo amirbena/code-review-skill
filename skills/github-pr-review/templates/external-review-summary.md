@@ -14,9 +14,9 @@ Write it the way a strong human reviewer leaves a review on a PR: lead
 with the verdict, then a scannable list of the findings that matter, and
 stop. The **inline comments own the technical detail** (evidence, impact,
 reasoning, precise location, fix); the body owns the verdict, a
-high-level list, a one-line validation note, and the decision. The
-developer should not have to read the same finding twice. Process and
-machine state are subordinate — a short trailing block, never the body.
+high-level list, compact validation records, and the decision. The developer
+should not have to read the same finding twice. Process and machine state are
+subordinate — a short trailing block, never the body.
 
 ## Clean review
 
@@ -27,7 +27,8 @@ machine state are subordinate — a short trailing block, never the body.
 
 No blocking findings at `<short-sha>`.
 
-Validation passed: <one sentence, e.g. "761 tests and repository checks">.
+Validation: `executed` — `<exact command>` (declared at `<source>`, exit 0,
+<bounded evidence>).
 
 ### Decision
 **APPROVE**
@@ -62,7 +63,8 @@ addressed; see the inline comments for detail.
 - **P2 — Validation output hides the failing check name**
   `scripts/validate.py:117`
 
-Validation passed: <one sentence>.
+Validation: `failed` — `<exact command>` (declared at `<source>`, exit
+<status>, <bounded evidence/reason>).
 
 ### Decision
 **REQUEST CHANGES**
@@ -111,7 +113,7 @@ a note on the `Decision` line and one closing disclosure line:
 
 No blocking findings at `<short-sha>`.
 
-Validation passed: <one sentence>.
+Validation: `skipped` — no declared command (no validation executed).
 
 ### Decision
 **REVIEW CLEAN** — GitHub review mutation withheld: reviewer is the PR author
@@ -194,9 +196,12 @@ human-facing review and clearly subordinate, per
   "When a longer explanation is justified." No generic "consider
   refactoring" filler; no praise padding. Never drop a real finding to
   keep the list short.
-- **Validation** is one sentence summarising what was actually run (or
-  explicitly noting what could not be) — normally a plain line, not a
-  section. Never a command-by-command dump.
+- **Validation** follows the shared
+  [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
+  contract. Render one compact record per selected command (or an explicit
+  no-command record) with exactly `executed`, `skipped`, `failed`, or
+  `unavailable`, the exact command/source, scope or justification, and the
+  observed evidence/reason. Never summarize non-execution as passing.
 - **Review mode** is not part of the human body. A `full` review says
   nothing about mode; a `delta` re-review may add one plain sentence
   ("Reviewed the delta since `abc1234`.") when it helps the reader.

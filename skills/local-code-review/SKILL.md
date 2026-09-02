@@ -68,8 +68,9 @@ delta by category (committed, staged, unstaged, untracked) → compute the
 staged-delta fingerprint → [optional] resolve a Jira reference (read-only;
 else JIRA CONTEXT UNRESOLVED) / map review context / reconcile a PR
 reference's prior findings — all onto the delta, never widening it →
-inspect surrounding code → review against code + conventions, focused by
-context → classify by severity (source never changes it) → derive the
+resolve the shared runtime-validation policy and record any safe validation
+outcome → inspect surrounding code → review against code + conventions,
+focused by context → classify by severity (source never changes it) → derive the
 decision mechanically from blocking (P0/P1) severities → return, stop
 ```
 
@@ -149,6 +150,7 @@ Always, as one batched operation:
 [`severity.md`](../../shared/policies/severity.md),
 [`evidence.md`](../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),
+[`runtime-validation.md`](../../shared/policies/runtime-validation.md),
 [`review-context.md`](../../shared/policies/review-context.md) (its
 requirement-context and scope-boundary sections bind only when context is
 supplied),

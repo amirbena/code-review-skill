@@ -42,7 +42,10 @@ important concern or attention point; include scope only when useful>
   justified" allows.
 
 ### Validation
-- <validation actually observed, or explicitly noted as not executed>
+- <one entry per selected command, or an explicit no-command entry, using
+  exactly `executed`, `skipped`, `failed`, or `unavailable`; include the exact
+  command, declaration source, scope/justification, observed evidence, and a
+  reason where applicable>
 
 ### Decision
 **<decision label>**
@@ -86,8 +89,11 @@ important concern or attention point; include scope only when useful>
   "What changed." Omit the section completely on a clean review; the opening
   assessment and Decision already communicate that result.
 - **Validation** — reports only what was actually observed (tests run,
-  packaging performed, links checked, etc.). When something could not be
-  executed, say so explicitly rather than implying it passed.
+  packaging performed, links checked, etc.). Runtime validation uses the
+  shared [`runtime-validation.md`](../policies/runtime-validation.md)
+  contract: every selected command is explicitly `executed`, `skipped`,
+  `failed`, or `unavailable`, with exact command and reason/evidence;
+  non-execution is never a pass.
 - **Decision** — an unambiguous label plus one sentence tying it to the
   findings. Never leave the reader to compute the outcome from raw P0/P1/P2
   counts. The decision itself is derived mechanically from blocking

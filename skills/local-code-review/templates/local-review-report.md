@@ -81,7 +81,10 @@ invariant violation, or evidence that needs brief context) adds one
 decision enables it. An ordinary finding does not.
 
 ### Validation
-- <validation actually observed, or explicitly noted as not executed>
+- <one record per selected command, or an explicit no-command record, per
+  [`../../../shared/policies/runtime-validation.md`](../../../shared/policies/runtime-validation.md):
+  `executed`, `skipped`, `failed`, or `unavailable`, with command, source,
+  scope/justification, evidence, and reason>
 
 ### Decision
 **CHANGES REQUIRED**
@@ -238,9 +241,11 @@ strongly it is recommended before commit.
   finding came from. This annotation is specific to this Skill's local
   Git working-tree model; it is not part of the shared template's
   required fields.
-- **Validation** reports only what was actually inspected or executed.
-  If this Skill did not run tests/commands, say so rather than implying
-  they passed.
+- **Validation** follows the shared
+  [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
+  contract and records `executed`, `skipped`, `failed`, or `unavailable`
+  explicitly. If this Skill did not run a command, record the reason rather
+  than implying it passed.
 - **Remediation rendering.** Apply
   [`../../../shared/policies/remediation-guidance.md`](../../../shared/policies/remediation-guidance.md).
   `include_fix_prompt` defaults to `false`; when false, omit the

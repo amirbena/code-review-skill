@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Fixture matrix for shared runtime-validation.md (#138)."""
+
+from __future__ import annotations
+
+import unittest
+
+from tests.reference import runtime_validation as rv
+from tests.reference.decision_semantics import Decision, Finding, Severity, derive_decision
+
+
+def command(*argv: str, **kwargs) -> rv.CommandDeclaration:
+    return rv.CommandDeclaration(argv=argv, **kwargs)
+
+
+class RuntimeValidationFixtureMatrix(unittest.TestCase):
+    def test_focused_declared_command_passes(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation([command("pytest", "tests/unit/test_app.py", stdout="1 passed")], repo)
+        self.assertEqual(records[0].outcome, rv.Outcome.EXECUTED)
+        self.assertEqual(records[0].exit_code, 0)
+        self.assertEqual(repo.process_invocations, [("pytest", "tests/unit/test_app.py")])
+
+    def test_focused_declared_command_fails(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation(
+            [command("pytest", "tests/unit/test_app.py", exit_code=1, stderr="assertion failed")], repo
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.FAILED)
+        self.assertEqual(records[0].exit_code, 1)
+        self.assertEqual(records[0].evidence, "assertion failed")
+
+    def test_justified_broader_command_is_selected_when_no_focused_command_exists(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation(
+            [command("make", "test", scope="broader", justification="shared API changed")], repo
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.EXECUTED)
+        self.assertEqual(records[0].scope, "broader")
+
+    def test_focused_command_wins_over_broader_command(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation(
+            [
+                command("make", "all", scope="broader", justification="large blast radius"),
+                command("pytest", "tests/unit/test_app.py"),
+            ],
+            repo,
+        )
+        self.assertEqual(records[0].command, "pytest tests/unit/test_app.py")
+
+    def test_no_declared_command_is_explicitly_skipped(self) -> None:
+        records = rv.run_validation([], rv.FakeRepository())
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertEqual(records[0].reason, "no declared command")
+
+    def test_unsafe_destructive_command_is_skipped_without_starting(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation(
+            [command("pytest", "--fix", unsafe_reason="autofix/destructive task")], repo
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIn("autofix", records[0].reason)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_secret_dependent_command_is_skipped(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation([command("make", "integration", requires_secret=True)], repo)
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIn("secret", records[0].reason)
+
+    def test_service_dependent_command_is_skipped(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation([command("pytest", "tests/e2e", requires_service=True)], repo)
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIn("service", records[0].reason)
+
+    def test_network_dependent_command_is_skipped(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation([command("curl", "https://example.test", requires_network=True)], repo)
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIn("network", records[0].reason)
+
+    def test_command_unavailable_is_distinct_from_skipped(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation([command("cargo", "test", available=False)], repo)
+        self.assertEqual(records[0].outcome, rv.Outcome.UNAVAILABLE)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_untrusted_declaration_is_not_executed(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation([command("pytest", trusted=False)], repo)
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIn("trustworthily", records[0].reason)
+
+
+class RuntimeValidationSafetyAndDecisionTests(unittest.TestCase):
+    def test_source_tree_remains_unchanged_on_all_paths(self) -> None:
+        declarations = [
+            command("pytest", "tests/unit/test_app.py"),
+            command("make", "fix", unsafe_reason="format/autofix"),
+            command("make", "integration", requires_service=True),
+            command("missing-tool", available=False),
+        ]
+        for declaration in declarations:
+            with self.subTest(declaration=declaration.rendered):
+                repo = rv.FakeRepository()
+                before = repo.snapshot()
+                rv.run_validation([declaration], repo)
+                self.assertEqual(repo.snapshot(), before)
+
+    def test_no_git_or_github_write_path_is_exercised(self) -> None:
+        for declaration in (
+            command("pytest", "tests/unit/test_app.py"),
+            command("git", "clean", unsafe_reason="destructive Git command"),
+            command("gh", "pr", "close", unsafe_reason="GitHub mutation"),
+        ):
+            with self.subTest(declaration=declaration.rendered):
+                repo = rv.FakeRepository()
+                rv.run_validation([declaration], repo)
+                self.assertEqual(repo.git_writes, 0)
+                self.assertEqual(repo.github_writes, 0)
+
+    def test_passing_validation_preserves_findings_and_existing_decision(self) -> None:
+        findings = (Finding("existing", Severity.P1), Finding("note", Severity.P2))
+        retained, decision = rv.apply_validation_to_review(
+            findings, rv.run_validation([command("pytest", "tests/unit/test_app.py")], rv.FakeRepository())
+        )
+        self.assertEqual(retained, findings)
+        self.assertEqual(decision, derive_decision(findings))
+
+    def test_passing_validation_does_not_turn_p2_findings_into_empty_review(self) -> None:
+        findings = (Finding("existing", Severity.P2),)
+        retained, decision = rv.apply_validation_to_review(
+            findings, rv.run_validation([command("pytest", "tests/unit/test_app.py")], rv.FakeRepository())
+        )
+        self.assertEqual(retained, findings)
+        self.assertEqual(decision, Decision.CLEAN)
+
+    def test_failed_validation_is_finding_material_with_impact_derived_severity(self) -> None:
+        record = rv.run_validation(
+            [command("pytest", "tests/unit/test_app.py", exit_code=1)], rv.FakeRepository()
+        )[0]
+        finding = rv.failure_finding(record, Severity.P2)
+        self.assertEqual(finding.severity, Severity.P2)
+        self.assertEqual(derive_decision([finding]), Decision.CLEAN)
+
+    def test_failing_validation_with_blocking_impact_blocks_mechanically(self) -> None:
+        record = rv.run_validation(
+            [command("pytest", "tests/unit/test_app.py", exit_code=1)], rv.FakeRepository()
+        )[0]
+        finding = rv.failure_finding(record, Severity.P1)
+        self.assertEqual(derive_decision([finding]), Decision.CHANGES_REQUIRED)
+
+    def test_every_record_has_one_canonical_outcome(self) -> None:
+        records = [
+            rv.run_validation([command("pytest")], rv.FakeRepository())[0],
+            rv.run_validation([command("pytest", exit_code=1)], rv.FakeRepository())[0],
+            rv.run_validation([command("pytest", unsafe_reason="destructive")], rv.FakeRepository())[0],
+            rv.run_validation([command("pytest", available=False)], rv.FakeRepository())[0],
+        ]
+        self.assertEqual(
+            {record.outcome for record in records},
+            {rv.Outcome.EXECUTED, rv.Outcome.FAILED, rv.Outcome.SKIPPED, rv.Outcome.UNAVAILABLE},
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

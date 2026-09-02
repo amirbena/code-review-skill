@@ -13,6 +13,7 @@ Applies shared policies:
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
+[`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
 [`git-safety.md`](../../../shared/policies/git-safety.md),
 [`invocation-options.md`](../../../shared/policies/invocation-options.md),
@@ -67,6 +68,9 @@ PR reference supplied? → yes → read/classify/reconcile relevant PR
                                  context against the delta established
                                  above (scope never expands to the PR)
                                → no  → unchanged
+    ↓
+resolve the shared runtime-validation policy; optionally execute one safe
+declared command and carry its outcome record into Validation
     ↓
 inspect relevant surrounding code
     ↓
@@ -212,6 +216,14 @@ which a value must be resolved before it is used, or what is reported.
    current local delta without blindly inheriting it); this runbook does
    not restate them. If no PR reference was supplied, skip this step
    entirely and proceed directly to the review step below.
+8a. **Resolve and optionally execute runtime validation** per the shared
+   [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
+   policy. Use the target repository instruction context and the changed
+   delta's blast radius already resolved above. Carry exactly one outcome
+   record per selected command, or the explicit no-command result, into the
+   shared `Validation` section. This step may execute only a command that
+   passes the policy's safety gate; it adds no retries, matrices, or
+   repository/GitHub mutation.
 9. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

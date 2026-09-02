@@ -50,7 +50,7 @@ output:
   publishes_machine_readable_status: conditional # active review only; blocking status can be published even by a self-review; a success status only in explicitly-authorized auto-action mode with reviewer independence, and never by a self-review; bound to the exact reviewed HEAD; see ../policies/review-status-enforcement.md
   mutates_repository_governance: false-except-explicit-required-check-setup # only the separate opt-in setup action adds the one status context to required checks; it preserves every unrelated rule, required check, bypass actor, and approval/stale-review setting; never merges
   can_merge: false # never; merge authority is not inferred from a clean verdict, approval authorization, a submitted approval, or a published status
-  executes_target_repository_code: false # never runs the target repo's tests/builds/linters/hooks/scripts
+  executes_target_repository_code: conditional # only an exact safe command declared by the target repository, per ../../../shared/policies/runtime-validation.md
 
 shared:
   policies:
@@ -58,6 +58,7 @@ shared:
     - ../../../shared/policies/severity.md
     - ../../../shared/policies/evidence.md
     - ../../../shared/policies/repository-instructions.md
+    - ../../../shared/policies/runtime-validation.md
     - ../../../shared/policies/git-safety.md
     - ../../../shared/policies/review-ownership.md
     - ../../../shared/policies/file-reviewability.md

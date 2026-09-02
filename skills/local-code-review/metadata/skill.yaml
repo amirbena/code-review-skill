@@ -43,6 +43,7 @@ shared:
     - ../../../shared/policies/severity.md
     - ../../../shared/policies/evidence.md
     - ../../../shared/policies/repository-instructions.md
+    - ../../../shared/policies/runtime-validation.md
     - ../../../shared/policies/git-safety.md
     - ../../../shared/policies/review-ownership.md
     - ../../../shared/policies/file-reviewability.md

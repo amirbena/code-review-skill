@@ -6,6 +6,7 @@ decision. Applies shared policies:
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
+[`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
 [`invocation-options.md`](../../../shared/policies/invocation-options.md),
 plus this Skill's own policy family starting at
@@ -54,6 +55,9 @@ independence; ambiguity fails closed)
     ↓
 classify prior review comments as Existing Review Evidence
 (still-relevant / resolved / stale / duplicate / settled / speculative)
+    ↓
+resolve the shared runtime-validation policy; optionally execute one safe
+declared command and carry its outcome record into Validation
     ↓
 plan review execution: reliable capability AND 2+ independent dimensions
    AND expected latency benefit
@@ -199,7 +203,8 @@ stop
    submodule update, no fsmonitor. The checkout is **read-only** context
    only — the PR delta remains
    `merge-base(base_sha, head_sha)..head_sha`, never an arbitrary repo diff,
-   and never a run of the target repo's tests/builds/linters/hooks/scripts.
+   and never a run outside the exact declared-command exception in the shared
+   runtime-validation policy.
    On failure, clean up. Optional mode records a visible API-only degradation;
    required mode returns `REVIEW INCOMPLETE` / `REPOSITORY CONTEXT
    UNAVAILABLE` and starts no workers. See step 17 for mandatory cleanup.
@@ -261,6 +266,14 @@ stop
    from the Skill's own source checkout. Build one normalized Repository
    Instruction Context before reviewing; surrounding context never widens the
    target.
+
+   **Resolve and optionally execute runtime validation** per the shared
+   [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
+   policy. Use only declarations and blast-radius context already resolved
+   for this target; carry exactly one outcome record per selected command (or
+   the explicit no-command result) into the shared `Validation` section.
+   This step may execute only a command that passes that policy's safety gate;
+   it does not add retries, matrices, or any repository/GitHub mutation.
 
    **Plan review execution** per
    [`../policies/parallel-review.md`](../policies/parallel-review.md) and the
@@ -430,5 +443,5 @@ stop
     Skill's ownership marker — never an unconstrained recursive delete. Then
     stop. Never merge, never delete branches in the target repository, never
     modify implementation code, never take ownership of repository lifecycle
-    cleanup, and never run the target repository's tests, builds, linters,
-    hooks, or scripts.
+    cleanup, and never run target-repository commands outside the shared
+    runtime-validation policy.

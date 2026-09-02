@@ -32,6 +32,7 @@ shared_policies=(
   "severity.md"
   "evidence.md"
   "repository-instructions.md"
+  "runtime-validation.md"
   "git-safety.md"
   "review-ownership.md"
   "file-reviewability.md"
