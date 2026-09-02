@@ -44,9 +44,11 @@ CONSTRUCT_KINDS = (
 )
 
 # The descriptor fields hashed into the minted identity, in order (§6.1).
-# Source-backed discriminators only: cause_key / behavior_key are extracted
-# from reviewer prose, so they stay matching-only evidence (#59) and are
-# excluded here to keep the minted identity stable across wording changes.
+# `cause_key` / `behavior_key` are included: a reworded claim that changes
+# their normalized tokens re-mints (a false split, the safe direction per
+# #58 §6), and a definite #59 MATCH re-propagates. `defect_kind` is a
+# free-form slug of reviewer wording and is *not* a stable hash discriminator,
+# so it is excluded here (still built for #59).
 DISCRIMINATING_FIELDS = (
     "repository",
     "location_intent",
@@ -55,8 +57,14 @@ DISCRIMINATING_FIELDS = (
     "construct",
     "anchor_tokens",
     "mechanism_key",
-    "defect_kind",
+    "cause_key",
+    "behavior_key",
 )
+
+# Classified semantic fields that distinguish two findings beyond
+# repository / path / anchor. A descriptor with none of these is not
+# eligible for automatic matching (§7).
+STRONG_SEMANTIC_FIELDS = ("symbol", "mechanism_key", "cause_key", "behavior_key")
 
 
 class Sentinel(Enum):
@@ -74,8 +82,6 @@ MaybeStr = Union[str, Sentinel]
 MaybeTokens = Union[Tokens, Sentinel]
 
 _CONTROL = re.compile(r"[\x00-\x1f\x7f]")
-_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
-_LINE_COMMENT = re.compile(r"(#|//).*")
 _TOKEN = re.compile(
     r"""
     [A-Za-z_][A-Za-z0-9_]*        # identifier / keyword
@@ -88,13 +94,49 @@ _TOKEN = re.compile(
 )
 
 
+def _strip_comments(text: str) -> str:
+    """Remove ``/* */`` and ``#``-to-end-of-line comments that are *outside*
+    string literals. `//` is left intact — it is ambiguous with floor
+    division and other operator runs, and an anchor fragment (the smallest
+    defect-demonstrating snippet) rarely carries a trailing line comment.
+    An unterminated quote consumes the rest of the fragment (conservative)."""
+    out: list[str] = []
+    i, n, quote = 0, len(text), ""
+    while i < n:
+        ch = text[i]
+        if quote:
+            out.append(ch)
+            if ch == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if ch == quote:
+                quote = ""
+            i += 1
+        elif ch in ("'", '"'):
+            quote = ch
+            out.append(ch)
+            i += 1
+        elif ch == "#":
+            while i < n and text[i] != "\n":
+                i += 1
+        elif ch == "/" and i + 1 < n and text[i + 1] == "*":
+            i += 2
+            while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                i += 1
+            i += 2
+            out.append(" ")
+        else:
+            out.append(ch)
+            i += 1
+    return "".join(out)
+
+
 def normalize_tokens(fragment: Optional[str]) -> Tokens:
     """§3.1: the one tokenizer shared by every token-valued primitive."""
     if not fragment:
         return ()
-    text = _BLOCK_COMMENT.sub(" ", fragment)
-    text = "\n".join(_LINE_COMMENT.sub("", line) for line in text.splitlines())
-    text = _CONTROL.sub(" ", text)
+    text = _CONTROL.sub(" ", _strip_comments(fragment))
     return tuple(_TOKEN.findall(text))
 
 
@@ -153,13 +195,20 @@ def behavioral_claim(raw: Optional[str]) -> MaybeStr:
     return re.sub(r"\s+", " ", raw.strip()).casefold()
 
 
+# Prose clauses are trimmed of surrounding whitespace and sentence
+# punctuation so a trailing "." or "," does not re-mint an identity (§6.1).
+_CLAUSE_EDGE = " \t\n\r.,;:!?"
+
+
 def _split_claim(claim: MaybeStr) -> Optional[tuple[str, str]]:
     if isinstance(claim, Sentinel):
         return None
     for connective in CAUSE_BEHAVIOR_CONNECTIVES:
         idx = claim.find(connective)
         if idx != -1:
-            return claim[:idx].strip(), claim[idx + len(connective) :].strip()
+            head = claim[:idx].strip(_CLAUSE_EDGE)
+            tail = claim[idx + len(connective) :].strip(_CLAUSE_EDGE)
+            return head, tail
     return None
 
 
@@ -309,15 +358,29 @@ def mint_identity(descriptor: FindingDescriptor) -> str:
     return f"fid_{IDENTITY_SCHEME}_{digest[:32]}"
 
 
+def _has_strong_semantic_field(descriptor: FindingDescriptor) -> bool:
+    """True when at least one classified field distinguishes this finding
+    beyond repository / path / anchor (§7)."""
+    return any(
+        getattr(descriptor, name) not in (ABSENT, UNCLASSIFIABLE)
+        for name in STRONG_SEMANTIC_FIELDS
+    )
+
+
 def is_matchable(descriptor: FindingDescriptor) -> bool:
-    """§7: fail closed — a finding with no source-backed discriminator, an
-    unresolvable repository, or an unclassifiable location is never
-    auto-matched (it still gets a deterministic minted identity)."""
+    """§7: fail closed. A finding is not eligible for automatic matching when
+    the repository is unresolvable, the location intent is unclassifiable,
+    there is no source-backed discriminator, or its discrimination reduces to
+    repository / path / ``anchor_tokens`` (and at most ``construct``) — no
+    classified ``symbol`` / ``mechanism_key`` / ``cause_key`` / ``behavior_key``.
+    A non-matchable finding still gets a deterministic minted identity."""
     if not descriptor.repository:
         return False
     if descriptor.location_intent is UNCLASSIFIABLE:
         return False
     if not descriptor.anchor_tokens and descriptor.mechanism_key is UNCLASSIFIABLE:
+        return False
+    if not _has_strong_semantic_field(descriptor):
         return False
     return True
 
@@ -330,8 +393,11 @@ def effective_identity(
     """§6.4: the #59 -> #60 hand-off.
 
     ``matched_prior_identity`` is set only for a definite #59 ``MATCH``;
-    ``NO MATCH`` and ``AMBIGUOUS`` pass ``None`` and mint fresh.
+    ``NO MATCH`` and ``AMBIGUOUS`` pass ``None`` and mint fresh. A prior
+    identity is propagated only for a descriptor that is eligible for
+    automatic matching (§7) — a non-matchable descriptor always mints fresh,
+    so a caller cannot bypass fail-closed at the hand-off.
     """
-    if matched_prior_identity is not None:
+    if matched_prior_identity is not None and is_matchable(descriptor):
         return matched_prior_identity
     return mint_identity(descriptor)

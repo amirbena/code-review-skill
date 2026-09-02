@@ -65,10 +65,20 @@ class StableFindingIdentityContractTests(unittest.TestCase):
         self.assertIn("SHA-256", self.raw)
         self.assertIn("fid_", self.raw)
         self.assertIn("`v1`", self.raw)
-        # occurrence context and prose-derived keys are excluded from the hash
+        # cause_key / behavior_key ARE hashed (false-merge protection); the
+        # hashed list is quoted verbatim in the doc.
+        self.assertIn(
+            "repository, location_intent, path, symbol, construct, anchor_tokens, mechanism_key, cause_key, behavior_key",
+            self.text,
+        )
+        # occurrence context, raw prose, and the free-form defect_kind slug are excluded
         self.assertIn("deliberately excluded", self.text)
         self.assertIn("`context_tokens` and `neighboring_syntax`", self.raw)
-        self.assertIn("`cause_key` and `behavior_key`", self.raw)
+        self.assertIn("Free-form wording is not a stable hash discriminator", self.text)
+
+    def test_defect_kind_is_not_a_hash_discriminator(self) -> None:
+        self.assertIn("`defect_kind` is not hashed", self.text)
+        self.assertIn("still built and still consumed by #59", self.text)
 
     def test_identity_handoff_keeps_matching_and_lifecycle_separate(self) -> None:
         self.assertIn("### 6.4 Hand-off with #59", self.raw)
@@ -80,11 +90,36 @@ class StableFindingIdentityContractTests(unittest.TestCase):
             self.text,
         )
 
+    def test_handoff_enforces_fail_closed(self) -> None:
+        # F3: a non-matchable descriptor mints fresh even when a prior identity is offered.
+        self.assertIn("provided the current descriptor is itself eligible for automatic matching", self.text)
+        self.assertIn("a caller cannot bypass fail-closed at the hand-off", self.text)
+
     def test_fail_closed_conditions_are_explicit(self) -> None:
         self.assertIn("## 7. Fail-closed conditions", self.raw)
         self.assertIn("**not eligible for automatic matching**", self.text)
         self.assertIn("**no source-backed discriminator**", self.text)
         self.assertIn("When in doubt, split", self.text)
+
+    def test_fail_closed_on_repo_path_anchor_only(self) -> None:
+        # F1: discrimination reducing to repository/path/anchor is non-matchable.
+        self.assertIn("reduces to repository / path /", self.text)
+        self.assertIn(
+            "none of `symbol`, `mechanism_key`, `cause_key`, or `behavior_key` is classified",
+            self.text,
+        )
+
+    def test_serialization_collision_freedom_is_attributed_to_framing(self) -> None:
+        # F4: not universal control-character stripping.
+        self.assertIn("Collision-freedom comes from this framing", self.text)
+        self.assertIn("length/count prefix on every value", self.text)
+        self.assertIn("`repository`, `path`, and `symbol` are hashed as-is", self.text)
+
+    def test_comment_normalization_is_string_and_operator_safe(self) -> None:
+        # F2
+        self.assertIn("Outside string literals", self.raw)
+        self.assertIn("ambiguous with floor division", self.text)
+        self.assertIn("Quoted string literals are copied verbatim", self.text)
 
     def test_scope_boundaries_defer_downstream_work(self) -> None:
         self.assertIn("## 8. Scope boundaries", self.raw)

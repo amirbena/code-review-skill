@@ -63,10 +63,11 @@ Each point is stated normatively in the section named; this list only orients.
   propagated. **Which** prior finding (if any) a current finding continues is
   #59's decision; what state the identity is in is
   [#62](https://github.com/amirbena/code-review-skill/issues/62)'s.
-- **Fail closed** (§7). Anything that leaves a discriminating primitive
-  `UNCLASSIFIABLE`, or leaves the finding without a source-backed
-  discriminator, yields a fresh minted identity that is **not** eligible for
-  automatic matching.
+- **Fail closed** (§7). A finding whose discrimination reduces to
+  repository / path / `anchor_tokens` — no classified `symbol`,
+  `mechanism_key`, `cause_key`, or `behavior_key` — or whose repository or
+  location intent is unresolvable, is still minted deterministically but is
+  emitted **not eligible for automatic matching**. Prefer a false split.
 
 ---
 
@@ -127,9 +128,14 @@ means the output of the tokenizer in §3.1, in source order.
 The single tokenizer used by `anchor_tokens`, `context_tokens`,
 `neighboring_syntax`, `cause_key`, `behavior_key`, and `mechanism_key`:
 
-1. Delete block comments (`/* … */`) and, from each line, `#…` and `//…` to
-   end of line. This is a conservative lexical strip, not a language-aware
-   one; a `#` or `//` inside a string literal is treated as a comment start.
+1. **Outside string literals**, delete block comments (`/* … */`) and
+   `#`-to-end-of-line comments. Quoted string literals are copied verbatim,
+   so a URL, a `//` path, or a `#fragment` inside quotes is preserved. `//`
+   is **not** treated as a comment: it is ambiguous with floor division
+   (`a // b`) and other operator runs, so it is tokenized as an operator; an
+   anchor fragment — the smallest fragment that demonstrates the defect —
+   rarely carries trailing line commentary. An unterminated quote in a
+   fragment consumes the rest of it (conservative, still deterministic).
 2. Delete ASCII control characters (`U+0000`–`U+001F`, `U+007F`).
 3. Collapse every whitespace run to a single space.
 4. Emit tokens in order, each being one of: an identifier/keyword
@@ -160,10 +166,10 @@ reflow, line-number movement) and does not merge the must-change scenarios in
 | `context_tokens` | §3.1 over the source of the sibling statements inside the enclosing `symbol`/`section`, with the longest contiguous run equal to `anchor_tokens` removed, then truncated to the first `CONTEXT_TOKEN_CAP` tokens. `CONTEXT_TOKEN_CAP = 64`. This is the **occurrence context**. | No enclosing sibling source available → `ABSENT`. |
 | `neighboring_syntax` | An ordered pair `(predecessor, successor)`: §3.1 over the nearest stable statement immediately before, and immediately after, the anchor within its `symbol`/`section`, each independently. | A side with no stable neighbor → that side is `ABSENT`. |
 | `behavioral_claim` | The finding's concise cause → faulty-behavior statement (excluding impact, fix, severity), case-folded, whitespace-collapsed, trimmed. Identifiers, negation, numbers, and operators are **kept**. | Empty → `ABSENT`. |
-| `cause_key` | §3.1 over the substring of `behavioral_claim` **before** the first cause→behavior connective in `{" so ", " causing ", " resulting in ", " leads to ", " which causes ", " therefore ", " -> ", " → "}`. | No connective, or empty left side → `UNCLASSIFIABLE`. |
-| `behavior_key` | §3.1 over the substring of `behavioral_claim` **after** that first connective. | No connective, or empty right side → `UNCLASSIFIABLE`. |
+| `cause_key` | §3.1 over the substring of `behavioral_claim` **before** the first cause→behavior connective in `{" so ", " causing ", " resulting in ", " leads to ", " which causes ", " therefore ", " -> ", " → "}`, after trimming surrounding whitespace and sentence punctuation (`. , ; : ! ?`) from the clause. | No connective, or empty left side → `UNCLASSIFIABLE`. |
+| `behavior_key` | §3.1 over the substring of `behavioral_claim` **after** that first connective, trimmed the same way. | No connective, or empty right side → `UNCLASSIFIABLE`. |
 | `mechanism_key` | §3.1 over the **reviewer-provided source fragment naming the unsafe operation or violated invariant** at the reviewed revision. #60 only normalizes this fragment; it does not extract it heuristically. | No fragment provided → `UNCLASSIFIABLE`. |
-| `defect_kind` | The narrow defect class: the controlled-vocabulary slug when one applies, otherwise a conservative slug of the reviewer phrase (case-folded, non-`[a-z0-9]` runs → single `_`, trimmed of `_`). | Empty → `UNCLASSIFIABLE`. |
+| `defect_kind` | The narrow defect class: the controlled-vocabulary slug when one applies, otherwise a conservative slug of the reviewer phrase (case-folded, non-`[a-z0-9]` runs → single `_`, trimmed of `_`). Built for #59; **not** in the minted digest (§6.1) — a free-form phrase slug is not a stable hash discriminator. | Empty → `UNCLASSIFIABLE`. |
 
 Constants (`CONTEXT_TOKEN_CAP`, the connective set, the enum members, the
 identity scheme tag in §6) are fixed by this contract and changed only by
@@ -188,10 +194,12 @@ Rules:
    equality predicate in [`finding-matching-strategy.md`](finding-matching-strategy.md)
    §2.
 3. For **minting** (§6) the two sentinels serialize to two fixed, distinct
-   byte markers so the digest stays a total function; this makes minting
-   deterministic without letting a sentinel act as a wildcard, because a
-   sentinel in a discriminating field also makes the finding non-matchable
-   (§7).
+   byte markers so the digest stays a total function. This does not make a
+   sentinel a wildcard: a sentinel in a discriminating field can only
+   *reduce* discrimination, never broaden equivalence, and when sentinels
+   leave a descriptor with no classified strong semantic field (`symbol`,
+   `mechanism_key`, `cause_key`, `behavior_key`) §7 makes the finding
+   non-matchable.
 4. A sentinel is never replaced by a default, a nearby value, or a
    parser guess to "improve" recall.
 
@@ -229,8 +237,24 @@ order:
 
 ```text
 repository, location_intent, path, symbol, construct,
-anchor_tokens, mechanism_key, defect_kind
+anchor_tokens, mechanism_key, cause_key, behavior_key
 ```
+
+`cause_key` and `behavior_key` **are** in the digest. They are the semantic
+distinction between two defects that share a site and a code snippet — a SQL
+-injection finding and a cross-tenant-leak finding on the same
+`db.execute(q)` line differ only there. Excluding them would let those two
+mint one identity, a silent **false merge**, which
+[`finding-identity-requirements.md`](finding-identity-requirements.md) §6
+calls a safety failure. The cost is the opposite direction: a behavioral
+claim reworded enough to change its *normalized* `cause_key` / `behavior_key`
+tokens re-mints the identity — a visible **false split**, the recoverable
+direction (§6). A definite #59 `MATCH` (anchor-backed defect proof plus an
+independent site proof) then re-propagates the prior identity — the same
+mechanism already relied on when a defect's enclosing `symbol` changes.
+Trivial phrasing changes — case, surrounding whitespace, trailing sentence
+punctuation, dropped commas — do not change the normalized `cause_key` /
+`behavior_key` tokens and keep the identity.
 
 Three groups of primitives are **deliberately excluded** from the digest:
 
@@ -239,31 +263,40 @@ Three groups of primitives are **deliberately excluded** from the digest:
   exact formatting / line-movement / nearby-edit scenarios that
   [`finding-identity-requirements.md`](finding-identity-requirements.md) §2
   requires the identity to survive.
-- `cause_key` and `behavior_key` — both are extracted from the reviewer's
-  `behavioral_claim` **prose**, so a pure wording change
-  ([`finding-identity-requirements.md`](finding-identity-requirements.md) §2.6)
-  would otherwise re-mint the identity. They remain first-class descriptor
-  primitives for #59's `DEFECT_SUPPORT` equality predicates; the minted
-  identity instead leans on the source-backed `anchor_tokens` /
-  `mechanism_key` plus the controlled `defect_kind` slug to separate distinct
-  defects at one site.
-- `behavioral_claim` itself, for the same reason.
+- `behavioral_claim` — the raw reviewer prose. Only its normalized
+  extractions (`cause_key` / `behavior_key`) discriminate; the prose itself
+  is not hashed.
+- `defect_kind` — a conservative slug of a free-form reviewer phrase
+  (`missing null check` vs `no null-check` slug differently). Free-form
+  wording is not a stable hash discriminator, so `defect_kind` is not hashed.
+  It is still built and still consumed by #59 as controlled-vocabulary-or
+  -phrase evidence.
 
 Excluding a primitive from the digest never lets it act as a wildcard: it is
-still built, still recorded, and still used by #59.
+still built, still recorded, and still used by #59. Conversely, adding a
+field to the digest can only *narrow* what mints the same identity — it never
+broadens #59's equivalence or changes its supported / ambiguity / no-edge
+outcomes.
 
 ### 6.2 Canonical serialization
 
 Each field is encoded unambiguously and length-delimited:
 
-- a string `s` → `len(s) "\x1f" s`;
-- a token list `t` → `len(t) "\x1f" join("\x1f", t)`;
+- a string `s` → `len(s) "\x1f" s` (length-prefixed);
+- a token list `t` → `len(t) "\x1f" join("\x1f", t)` (count-prefixed; §3.1
+  already removed control characters, including `\x1f`, from every token);
 - `ABSENT` → the fixed marker `\x00A`; `UNCLASSIFIABLE` → `\x00U`.
 
-Fields are joined in the §6.1 order with `\x1e`, and the whole is prefixed with
-the identity scheme tag `v1` and `\x1e`. Control characters are already
-stripped from every token (§3.1), so the separators cannot collide with
-content.
+Fields are joined in the §6.1 order with `\x1e`, each behind its fixed
+`<name>\x1d` marker, and the whole is prefixed with the identity scheme tag
+`v1` and `\x1e`. Collision-freedom comes from this framing — the fixed field
+names, the fixed field order, and the length/count prefix on every value —
+**not** from control characters being absent from every field: `repository`,
+`path`, and `symbol` are hashed as-is and may contain any character. Because
+each value's byte length is known from its prefix and its position is pinned
+by the preceding `<name>\x1d`, a separator appearing inside a value cannot be
+mistaken for a structural delimiter, so no two distinct descriptors serialize
+to the same string.
 
 ### 6.3 Minted identity
 
@@ -284,8 +317,11 @@ stable for identical inputs on any machine, offline, in either Skill.
   inherits — this is [`finding-identity-requirements.md`](finding-identity-requirements.md)
   §7 and [`finding-matching-strategy.md`](finding-matching-strategy.md) Step 6.
 - **#59 `MATCH`** → the current finding's effective identity is the
-  **established prior identity**, propagated unchanged. The minted value is
-  retained only as diagnostics.
+  **established prior identity**, propagated unchanged, **provided the
+  current descriptor is itself eligible for automatic matching (§7)**. A
+  non-matchable descriptor always takes its freshly minted identity, even if
+  a prior identity is offered, so a caller cannot bypass fail-closed at the
+  hand-off. The minted value is retained only as diagnostics.
 
 #60 performs no candidate generation, no proof-axis evaluation, and no global
 bipartite resolution. It consumes a single already-decided #59 outcome per
@@ -306,8 +342,19 @@ any of the following holds:
   is incompatible;
 - the finding has **no source-backed discriminator** — `anchor_tokens` is
   empty **and** `mechanism_key` is `UNCLASSIFIABLE`;
+- the descriptor's discrimination **reduces to repository / path /
+  `anchor_tokens`** (and at most `construct`) — none of `symbol`,
+  `mechanism_key`, `cause_key`, or `behavior_key` is classified. Two
+  materially distinct findings can share the same file, line, and code
+  snippet, so `{repository, path, anchor_tokens}` alone is never enough to
+  license an automatic match;
 - the reviewed source needed to build `anchor_tokens` or `mechanism_key`
   cannot be read at one of the two compared states.
+
+Such a finding is still minted deterministically (so it has a stable
+identifier), but it is emitted as **not eligible for automatic matching** —
+two distinct findings that reduce to the same `{repository, path,
+anchor_tokens}` therefore never inherit one another's identity.
 
 This is the requirements' asymmetric error budget
 ([`finding-identity-requirements.md`](finding-identity-requirements.md) §6): a
@@ -340,9 +387,12 @@ The conservative rules here will mint a fresh identity — a visible false split
 never a silent merge — when the reviewed source for an anchor cannot be read at
 both states, when a finding has only prose and no source-backed anchor or
 mechanism fragment, when a defect moves to a differently named symbol with no
-#59 `MATCH`, or when `behavioral_claim` has no separable cause→behavior
-connective. These are the accepted cost of the requirements' false-merge
-asymmetry and are the same limitation class
+#59 `MATCH`, when `behavioral_claim` has no separable cause→behavior
+connective, or when a behavioral claim is reworded enough to change its
+normalized `cause_key` / `behavior_key` tokens. A finding that reduces to
+repository / path / `anchor_tokens` only is emitted non-matchable rather than
+risk merging two distinct defects at one snippet. These are the accepted cost
+of the requirements' false-merge asymmetry and are the same limitation class
 [`finding-matching-strategy.md`](finding-matching-strategy.md) §8 records.
 
 ## Status and canonical home
