@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Behavioral coverage for stable finding identity (Issue #60).
 
-Contract: docs/finding-stable-identity.md. Focus: deterministic descriptor
+Contract: docs/findings/finding-stable-identity.md. Focus: deterministic descriptor
 construction; the minted identity survives the #59 must-survive scenarios
 (line movement, reformatting, reviewer wording) and changes for the
 must-change scenarios (distinct defect, different site intent); the
@@ -77,7 +77,7 @@ class DescriptorConstructionTests(unittest.TestCase):
 
 
 class MustSurviveTests(unittest.TestCase):
-    """finding-identity-requirements.md §2 — identity stays stable."""
+    """docs/findings/finding-identity-requirements.md §2 — identity stays stable."""
 
     def test_reformatting_only_change(self) -> None:
         original = _descriptor(anchor_fragment="queue.put(job)")
@@ -147,7 +147,7 @@ class MustSurviveTests(unittest.TestCase):
 
 
 class MustChangeTests(unittest.TestCase):
-    """finding-identity-requirements.md §3 — a new identity is required."""
+    """docs/findings/finding-identity-requirements.md §3 — a new identity is required."""
 
     def test_distinct_defect_same_location(self) -> None:
         base = _descriptor()
@@ -188,7 +188,7 @@ class MustChangeTests(unittest.TestCase):
 
 
 class HandoffTests(unittest.TestCase):
-    """docs/finding-stable-identity.md §6.4 — identity vs. matching."""
+    """docs/findings/finding-stable-identity.md §6.4 — identity vs. matching."""
 
     def test_match_propagates_prior_identity(self) -> None:
         current = _descriptor(symbol="pay.retry.RetryHandler.retry")  # moved/renamed
@@ -354,7 +354,7 @@ class NormalizationSafetyTests(unittest.TestCase):
 
 
 class SentinelTests(unittest.TestCase):
-    """docs/finding-stable-identity.md §4 — absent vs. unclassifiable."""
+    """docs/findings/finding-stable-identity.md §4 — absent vs. unclassifiable."""
 
     def test_absent_and_unclassifiable_are_distinct(self) -> None:
         self.assertIsNot(fi.ABSENT, fi.UNCLASSIFIABLE)
@@ -388,7 +388,7 @@ class SentinelTests(unittest.TestCase):
 
 
 class FailClosedTests(unittest.TestCase):
-    """docs/finding-stable-identity.md §7."""
+    """docs/findings/finding-stable-identity.md §7."""
 
     def test_source_less_finding_is_not_matchable_but_still_minted(self) -> None:
         d = fi.build_descriptor(

@@ -532,24 +532,25 @@ runbook implements them today:
   already computes
   ([`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md),
   "Existing review awareness"). The requirements are captured in
-  [`finding-identity-requirements.md`](finding-identity-requirements.md), the
+  [`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md), the
   selected precision-first matching strategy is recorded in
-  [`finding-matching-strategy.md`](finding-matching-strategy.md), and the
+  [`findings/finding-matching-strategy.md`](findings/finding-matching-strategy.md), and the
   canonical deterministic derivation of the stable identifier and its
   descriptor primitives is contracted in
-  [`finding-stable-identity.md`](finding-stable-identity.md) (with a test-only
+  [`findings/finding-stable-identity.md`](findings/finding-stable-identity.md) (with a test-only
   reference model). No packaged policy, runbook, or code attaches the
   identifier at Skill runtime or performs stateful re-review today. The
   two-state finding lifecycle and its evidence-gated
   transitions are defined in
-  [`finding-lifecycle-contract.md`](finding-lifecycle-contract.md); no runtime
-  applies that contract yet.
+  [`findings/finding-lifecycle-contract.md`](findings/finding-lifecycle-contract.md); no runtime
+  applies that contract yet. These contracts share the
+  [`findings/`](findings/README.md) directory.
 - **Stateful re-review keyed off a reviewed SHA** — loading a prior
   reviewed state and computing what changed since it. The reviewed-SHA
   state model this depends on — the minimal recorded fields, which commit
   is authoritative when history moves, reviewer ownership, and
   invalidation on rebase/force-push — is contracted in
-  [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md). The
+  [`findings/reviewed-sha-state-contract.md`](findings/reviewed-sha-state-contract.md). The
   Skills already record and revalidate an exact reviewed HEAD, bind the
   optional machine-readable status to it, and scope a same-reviewer delta
   re-review to `previously reviewed SHA → current HEAD`

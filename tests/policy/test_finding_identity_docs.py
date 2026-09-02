@@ -1,6 +1,6 @@
 """Structural contract checks for the stable finding identity derivation (#60).
 
-Pins docs/finding-stable-identity.md so the canonical descriptor-primitive
+Pins docs/findings/finding-stable-identity.md so the canonical descriptor-primitive
 construction, the minted-identity derivation, the fail-closed rule, and the
 #59 / #62 boundaries cannot drift silently. Prose assertions are
 whitespace-normalized; structural ones target headings and literal terms.
@@ -10,9 +10,9 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "docs" / "finding-stable-identity.md"
+DOC = REPO_ROOT / "docs" / "findings" / "finding-stable-identity.md"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
-REQUIREMENTS = REPO_ROOT / "docs" / "finding-identity-requirements.md"
+REQUIREMENTS = REPO_ROOT / "docs" / "findings" / "finding-identity-requirements.md"
 REFERENCE = REPO_ROOT / "tests" / "reference" / "finding_identity.py"
 
 

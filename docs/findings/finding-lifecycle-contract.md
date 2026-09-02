@@ -242,7 +242,7 @@ Impossible or unsupported transitions:
 ## 8. Severity and review-result independence
 
 Severity is not identity or lifecycle. It remains governed solely by
-[`../shared/policies/severity.md`](../shared/policies/severity.md).
+[`../../shared/policies/severity.md`](../../shared/policies/severity.md).
 
 An `OPEN` finding may change P2 → P1 or P1 → P2 while retaining identity and
 producing `STILL_PRESENT`. Severity change alone cannot produce `DETECTED`,

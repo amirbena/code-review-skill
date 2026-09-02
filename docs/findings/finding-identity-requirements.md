@@ -22,14 +22,14 @@ decision**; this document only sets the bound that selection must satisfy,
 so all four approaches stay comparable there.
 
 This is a repository-development doc, like
-[`runtime-parallelism.md`](runtime-parallelism.md): it is **not** packaged
+[`../runtime-parallelism.md`](../runtime-parallelism.md): it is **not** packaged
 into either Skill archive, and no packaged Skill resource depends on it.
 Its standing relative to the eventual runtime policy is defined in
 "Status and canonical home" at the end.
 
 The finding fields these requirements are expressed over are the shared
 finding contract in
-[`../shared/templates/finding.md`](../shared/templates/finding.md).
+[`../../shared/templates/finding.md`](../../shared/templates/finding.md).
 
 ---
 
@@ -85,10 +85,10 @@ Two related concepts already exist and are **not** what this document
 specifies:
 
 - **Human-facing display IDs (`F1`, `F2`, …)** in
-  [`../shared/templates/finding.md`](../shared/templates/finding.md) are
+  [`../../shared/templates/finding.md`](../../shared/templates/finding.md) are
   ordinals *within one review's output*, not stable across runs.
 - **`github-pr-review`'s same-HEAD deterministic identity** in
-  [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md),
+  [`../../skills/github-pr-review/policies/pr-scope.md`](../../skills/github-pr-review/policies/pr-scope.md),
   "Existing review awareness," suppresses the *same workflow re-publishing
   the same finding for the same PR and the same HEAD*. It deliberately
   binds to the HEAD SHA and exact location and is not required to survive
@@ -129,7 +129,7 @@ all of these:
    Identity represents the defect, not its severity label, so a pure
    severity re-rating **MUST NOT** create a new cross-review identity. The
    same-HEAD identity in
-   [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md)
+   [`../../skills/github-pr-review/policies/pr-scope.md`](../../skills/github-pr-review/policies/pr-scope.md)
    **may** fold severity into its own value; reconciling that mechanism
    with this one is owned by
    [#59](https://github.com/amirbena/code-review-skill/issues/59). (§5.6
@@ -206,11 +206,11 @@ signal marked *informing only* below MAY be consulted but MUST NOT be a
 component the identity value is bound to.
 
 The finding fields are those in
-[`../shared/templates/finding.md`](../shared/templates/finding.md); the
+[`../../shared/templates/finding.md`](../../shared/templates/finding.md); the
 target/context concepts are those in
-[`../shared/policies/review-context.md`](../shared/policies/review-context.md)
+[`../../shared/policies/review-context.md`](../../shared/policies/review-context.md)
 and
-[`../shared/policies/review-evidence.md`](../shared/policies/review-evidence.md).
+[`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md).
 
 ### 4.1 Guaranteed — always present for any actionable finding
 
@@ -224,7 +224,7 @@ and
 - **The review target kind and its identifying metadata** — either the
   local implementation delta (`local-code-review`) or the Pull Request
   (`github-pr-review`); see
-  [`../shared/policies/review-context.md`](../shared/policies/review-context.md),
+  [`../../shared/policies/review-context.md`](../../shared/policies/review-context.md),
   "The four concepts." **Informing only** (§5.5).
 - **The current changed set for that target** — the diff / changed hunks and
   the ability to read the changed files at the reviewed revision.
@@ -233,16 +233,16 @@ and
 
 - **Precise line or line range.** A cross-cutting finding may carry only a
   section, a symbol, or a file-level location — see `location` in
-  [`../shared/templates/finding.md`](../shared/templates/finding.md).
+  [`../../shared/templates/finding.md`](../../shared/templates/finding.md).
   **Informing only** (§4.3, §5.3).
 - **Symbol / structural context** (enclosing function, class, method,
   module path). Availability depends on language and on the file not being
   classified opaque/generated/binary per
-  [`../shared/policies/file-reviewability.md`](../shared/policies/file-reviewability.md).
+  [`../../shared/policies/file-reviewability.md`](../../shared/policies/file-reviewability.md).
 - **Surrounding code context** beyond the changed lines (enough to read the
   defect in place).
 - **`details`** — the optional longer explanation, per
-  [`../shared/templates/finding.md`](../shared/templates/finding.md),
+  [`../../shared/templates/finding.md`](../../shared/templates/finding.md),
   "When a longer explanation is justified."
 - **Location source annotation** — `local-code-review` only:
   `(committed)` / `(staged)` / `(unstaged)` / `(untracked)`. No PR
@@ -251,11 +251,11 @@ and
   and settled decisions, available only when an associated PR/reference is
   supplied (`local-code-review`) or prior reviews exist on the PR
   (`github-pr-review`); see
-  [`../shared/policies/review-evidence.md`](../shared/policies/review-evidence.md).
+  [`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md).
   A prior finding *may* carry an identity assigned by an earlier run.
 - **A previously reviewed SHA / prior review base** — available only on a
   same-reviewer delta re-review, per
-  [`../skills/github-pr-review/policies/reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md).
+  [`../../skills/github-pr-review/policies/reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md).
   Its recorded state, which commit is authoritative, and its invalidation
   are contracted in
   [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md)
@@ -295,7 +295,7 @@ section constrains what is *binding*.
    identity value MUST always be the same — no dependence on wall-clock
    time, random seeds, machine, environment, or the number of review
    workers / shards (parallel execution is an optimization only; see
-   [`../shared/policies/parallel-review.md`](../shared/policies/parallel-review.md)).
+   [`../../shared/policies/parallel-review.md`](../../shared/policies/parallel-review.md)).
 2. **Order-independent.** Identity MUST NOT depend on the order findings are
    discovered or emitted, or on how many other findings exist in the same
    review.
@@ -324,7 +324,7 @@ section constrains what is *binding*.
    unchanged.
 6. **Consistent with the same-HEAD identity.** For a single unchanged
    state, the cross-review identity MUST NOT split two findings that
-   [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md)'s
+   [`../../skills/github-pr-review/policies/pr-scope.md`](../../skills/github-pr-review/policies/pr-scope.md)'s
    same-HEAD rule treats as one.
 7. **Bounded sensitivity.** A small, behavior-preserving edit to the
    defective code — renaming a purely local identifier, extracting a
@@ -384,7 +384,7 @@ finding is the same as a prior one:
   its own, cause a finding to be auto-resolved, auto-merged,
   auto-suppressed, or dropped from output.
 - **Report, don't guess.** Consistent with
-  [`../shared/policies/review-evidence.md`](../shared/policies/review-evidence.md)
+  [`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md)
   ("report that limitation rather than asserting it was handled"), when
   identity/matching completeness cannot be established, the review says so
   rather than implying reliable de-duplication.
@@ -405,7 +405,7 @@ does **not** define:
 | The concrete identity derivation / serialization / hashing / any embedding use | [#60](https://github.com/amirbena/code-review-skill/issues/60) |
 | Identity regression fixtures and their assertions | [#61](https://github.com/amirbena/code-review-skill/issues/61) |
 | Cross-repository or cross-project finding identity | Out of scope for [#42](https://github.com/amirbena/code-review-skill/issues/42) entirely |
-| Human-facing `F1` / `F2` display IDs and same-HEAD publish de-duplication | [`../shared/templates/finding.md`](../shared/templates/finding.md); [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md) |
+| Human-facing `F1` / `F2` display IDs and same-HEAD publish de-duplication | [`../../shared/templates/finding.md`](../../shared/templates/finding.md); [`../../skills/github-pr-review/policies/pr-scope.md`](../../skills/github-pr-review/policies/pr-scope.md) |
 
 ## Status and canonical home
 

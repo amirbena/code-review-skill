@@ -29,23 +29,23 @@ not this document's.
 
 This is a repository-development doc, like
 [`finding-identity-requirements.md`](finding-identity-requirements.md) and
-[`runtime-parallelism.md`](runtime-parallelism.md): it is **not** packaged
+[`../runtime-parallelism.md`](../runtime-parallelism.md): it is **not** packaged
 into either Skill archive, and no packaged Skill resource depends on it.
 Its standing relative to the eventual runtime policy is defined in
 "Status and canonical home" at the end.
 
 The review-target / review-context / repository-context / existing-review-
 evidence vocabulary is
-[`../shared/policies/review-context.md`](../shared/policies/review-context.md)
+[`../../shared/policies/review-context.md`](../../shared/policies/review-context.md)
 and
-[`../shared/policies/review-evidence.md`](../shared/policies/review-evidence.md).
+[`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md).
 The reviewer-ownership and delta-boundary rules this contract aligns with
 are
-[`../shared/policies/review-ownership.md`](../shared/policies/review-ownership.md),
-[`../skills/github-pr-review/policies/reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md),
-[`../skills/github-pr-review/policies/review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md),
+[`../../shared/policies/review-ownership.md`](../../shared/policies/review-ownership.md),
+[`../../skills/github-pr-review/policies/reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md),
+[`../../skills/github-pr-review/policies/review-status-enforcement.md`](../../skills/github-pr-review/policies/review-status-enforcement.md),
 and
-[`../skills/local-code-review/policies/repository-state.md`](../skills/local-code-review/policies/repository-state.md).
+[`../../skills/local-code-review/policies/repository-state.md`](../../skills/local-code-review/policies/repository-state.md).
 
 ---
 
@@ -137,7 +137,7 @@ those is another Issue's concern, not this contract's.
 `local-code-review` does not persist anything itself — it computes and
 reports the current repository-state categories and the staged-delta
 fingerprint every invocation and remembers nothing between invocations
-([`../skills/local-code-review/policies/repository-state.md`](../skills/local-code-review/policies/repository-state.md),
+([`../../skills/local-code-review/policies/repository-state.md`](../../skills/local-code-review/policies/repository-state.md),
 "This Skill remains stateless"). For local review, the Reviewed State
 Record **is** the prior review's reported output as carried forward by the
 orchestrator/caller — the reviewed base, the reviewed committed/staged
@@ -153,17 +153,17 @@ out so downstream work does not assume a local persistence layer exists.
 **The authoritative reviewed state is the reviewed head SHA recorded in
 the Reviewed State Record — never the current branch tip, the latest
 commit, the last push, or a SHA inferred from a ref name.** This mirrors
-[`../skills/github-pr-review/policies/reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md),
+[`../../skills/github-pr-review/policies/reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md),
 "Same reviewer: delta boundary and scope" ("Never define this boundary
 merely as the latest commit, the last push, the last local commit, or
 'commits since task start'").
 
 | Situation | Authoritative reviewed SHA | Is the prior state usable as a delta seed? |
 |---|---|---|
-| Working tree clean, no new commits since the review | the recorded reviewed head SHA (call it `B`) | Yes. If the current review head also equals `B` and the review standard is unchanged, this is `NO NEW DELTA` — no new review is manufactured (see [`../skills/github-pr-review/policies/review-output.md`](../skills/github-pr-review/policies/review-output.md), "Final decision," and the staged-fingerprint short-circuit in [`../skills/local-code-review/policies/repository-state.md`](../skills/local-code-review/policies/repository-state.md)). |
+| Working tree clean, no new commits since the review | the recorded reviewed head SHA (call it `B`) | Yes. If the current review head also equals `B` and the review standard is unchanged, this is `NO NEW DELTA` — no new review is manufactured (see [`../../skills/github-pr-review/policies/review-output.md`](../../skills/github-pr-review/policies/review-output.md), "Final decision," and the staged-fingerprint short-circuit in [`../../skills/local-code-review/policies/repository-state.md`](../../skills/local-code-review/policies/repository-state.md)). |
 | Commits added after the review; branch now at `C` | still `B` | Yes — `B` is the prior reviewed state; the new delta is `B..C`. `C` is **not** reviewed until a new review completes and writes a new record. |
 | Remote branch ref moved | still `B` (the record binds a SHA, not a ref) | Yes — a moved ref is only a trigger to re-review; it never rewrites the reviewed SHA. |
-| PR head changed | still `B` | The new head must be re-reviewed. An old review/record/approval never covers the new head — consistent with HEAD revalidation ([`../skills/github-pr-review/policies/review-output.md`](../skills/github-pr-review/policies/review-output.md)) and "a new SHA inherits no green" ([`../skills/github-pr-review/policies/review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md)). |
+| PR head changed | still `B` | The new head must be re-reviewed. An old review/record/approval never covers the new head — consistent with HEAD revalidation ([`../../skills/github-pr-review/policies/review-output.md`](../../skills/github-pr-review/policies/review-output.md)) and "a new SHA inherits no green" ([`../../skills/github-pr-review/policies/review-status-enforcement.md`](../../skills/github-pr-review/policies/review-status-enforcement.md)). |
 | Base branch advanced (`main` moved), head unchanged at `B` | still `B`; `B` remains genuinely reviewed **as of the recorded base** | Yes for the head; the **base context** is now stale (recorded base SHA / merge-base no longer match). The record carries enough (§3) for [#64](https://github.com/amirbena/code-review-skill/issues/64) to detect this and decide whether the delta must widen. No assumption that the review still covers interactions with new base commits. |
 | Branch rebased | typically **none** — `B` is usually no longer an ancestor of (or present in) the rewritten history | No. If the recorded reviewed head SHA is missing from the repository, or is not an ancestor of the current review head, the prior state cannot seed a delta — fall back to a full review (§7, Example D). |
 | Branch force-pushed | same as rebase — depends on whether `B` is still reachable and an ancestor | No when `B` is unreachable or not an ancestor. This is the invalidation Issue [#63](https://github.com/amirbena/code-review-skill/issues/63) explicitly calls for. |
@@ -183,7 +183,7 @@ of the following hold:
 If any condition fails, the prior state is not a safe delta base →
 **fresh full review** (§7). The record may still be read as Existing
 Review Evidence
-([`../shared/policies/review-evidence.md`](../shared/policies/review-evidence.md))
+([`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md))
 — that is a separate, weaker use than seeding a delta.
 
 ---
@@ -228,9 +228,9 @@ define. See Example C.
 ## 4. Reviewer ownership
 
 Reviewed-SHA state is **reviewer-specific**, aligned with
-[`../skills/github-pr-review/policies/reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md)
+[`../../skills/github-pr-review/policies/reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md)
 and the single-owner invariant in
-[`../shared/policies/review-ownership.md`](../shared/policies/review-ownership.md).
+[`../../shared/policies/review-ownership.md`](../../shared/policies/review-ownership.md).
 
 - **Reviewer-specific.** The record's reviewer identity is part of what
   makes it usable as a delta seed. A delta re-review is only valid when
@@ -239,7 +239,7 @@ and the single-owner invariant in
   reviewer's reviewed state as a delta base. They perform a normal full
   review of the current state. They still see the prior record as Existing
   Review Evidence — reconciled, not inherited
-  ([`../shared/policies/review-evidence.md`](../shared/policies/review-evidence.md)).
+  ([`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md)).
 - **Reusable only when reviewer identity is reliably established** on
   **both** sides — the current reviewer and the record's reviewer. Use the
   strongest repository/GitHub evidence available (authenticated identity;
@@ -257,7 +257,7 @@ A self-review (current reviewer is the PR author) does not change any of
 this: reviewed-state ownership and delta-mode selection work the same for
 a self-review as for an external one. Whether a self-review may *submit* a
 formal GitHub event is a separate concern owned by
-[`../skills/github-pr-review/policies/review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md).
+[`../../skills/github-pr-review/policies/review-action-authorization.md`](../../skills/github-pr-review/policies/review-action-authorization.md).
 
 ---
 
@@ -274,12 +274,12 @@ Two **independent** properties, not one:
 
 These do not track each other. A re-review that begins delta-only but
 **escalates to a full review of the current state** (per
-[`../skills/github-pr-review/policies/reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md),
+[`../../skills/github-pr-review/policies/reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md),
 "Escalating from delta to full review") completes as `full` **and** still
 records the same-reviewer predecessor it superseded. This contract only
 makes the state model able to represent that outcome; it does not define
 the escalation decision itself — that is
-[`reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md)'s.
+[`reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md)'s.
 
 ### Reconstructing the chain
 
@@ -345,16 +345,16 @@ mechanisms that already exist.
    - **GitHub PR review**: the reviewed HEAD SHA recorded on a
      **submitted** GitHub review by the same authenticated reviewer
      (retrieved per
-     [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md),
+     [`../../skills/github-pr-review/policies/pr-scope.md`](../../skills/github-pr-review/policies/pr-scope.md),
      "Retrieving prior review activity"; reviewer identity per
-     [`../skills/github-pr-review/policies/reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md)),
+     [`../../skills/github-pr-review/policies/reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md)),
      together with this Skill's own published review body and the optional
      exact-HEAD machine-readable status, which is already SHA-bound
-     ([`../skills/github-pr-review/policies/review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md)).
+     ([`../../skills/github-pr-review/policies/review-status-enforcement.md`](../../skills/github-pr-review/policies/review-status-enforcement.md)).
    - **Local review**: the prior review's **reported output** carried
      forward by the orchestrator — the local review report, its recorded
      repository-state categories, and its staged-delta fingerprint
-     ([`../skills/local-code-review/policies/repository-state.md`](../skills/local-code-review/policies/repository-state.md)).
+     ([`../../skills/local-code-review/policies/repository-state.md`](../../skills/local-code-review/policies/repository-state.md)).
      There is no on-disk store; the report *is* the record.
 2. **User-supplied state** — a prior reviewed SHA / prior review base the
    caller passes in explicitly. Usable, but **only after validation**: the
@@ -377,7 +377,7 @@ The mode actually used is stated concisely in the human-facing review, as
 the existing templates already do (`Review mode: Full review` /
 `Review mode: Delta re-review` with the previous reviewed SHA and current
 HEAD) — see
-[`../skills/github-pr-review/policies/reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md),
+[`../../skills/github-pr-review/policies/reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md),
 "Reporting the mode." Internal identity/matching machinery is not primary
 output.
 
@@ -538,7 +538,7 @@ throughout unless stated.
 4. `R`'s `record₂` is visible to `S` as Existing Review Evidence — prior
    findings and settled decisions, reconciled against the current target,
    not inherited
-   ([`../shared/policies/review-evidence.md`](../shared/policies/review-evidence.md)).
+   ([`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md)).
    When `S`'s review completes it writes `S`'s own record; it does not
    overwrite or claim `R`'s.
 
@@ -560,7 +560,7 @@ delta is constructed from a guessed or ambiguous prior SHA (§7).
 2. The branch advances to `C`. `R` re-reviews, starting delta-only from
    `B`, but the delta materially changes the implementation, so `R`
    **escalates to a full review of the current state** (per
-   [`../skills/github-pr-review/policies/reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md),
+   [`../../skills/github-pr-review/policies/reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md),
    "Escalating from delta to full review").
 3. The review completes and writes
    `record₃ = { …, reviewed_head=C, reviewer=R, completeness=full,
@@ -588,29 +588,29 @@ what they already own.** This document consolidates and names the
 reviewed-SHA state model that each of the following already touches one
 facet of; it does not restate or override them:
 
-- [`../skills/github-pr-review/policies/reviewer-delta-review.md`](../skills/github-pr-review/policies/reviewer-delta-review.md)
+- [`../../skills/github-pr-review/policies/reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md)
   — reviewer identity, selecting the immediately preceding completed
   review, the delta boundary `previously reviewed SHA → current PR HEAD`,
   escalation from delta to full, and the `NO NEW DELTA` outcome;
-- [`../skills/github-pr-review/policies/review-output.md`](../skills/github-pr-review/policies/review-output.md)
+- [`../../skills/github-pr-review/policies/review-output.md`](../../skills/github-pr-review/policies/review-output.md)
   and
-  [`../skills/github-pr-review/SKILL.md`](../skills/github-pr-review/SKILL.md)
+  [`../../skills/github-pr-review/SKILL.md`](../../skills/github-pr-review/SKILL.md)
   — recording the reviewed HEAD SHA and revalidating it immediately before
   the final decision;
-- [`../skills/github-pr-review/policies/review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md)
+- [`../../skills/github-pr-review/policies/review-status-enforcement.md`](../../skills/github-pr-review/policies/review-status-enforcement.md)
   — exact reviewed-HEAD binding and "a new SHA inherits no status and no
   green";
-- [`../skills/local-code-review/policies/repository-state.md`](../skills/local-code-review/policies/repository-state.md)
+- [`../../skills/local-code-review/policies/repository-state.md`](../../skills/local-code-review/policies/repository-state.md)
   — the repository-state categories, the staged-delta fingerprint, and
   Skill statelessness;
-- [`../shared/policies/review-evidence.md`](../shared/policies/review-evidence.md)
+- [`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md)
   and
-  [`../shared/policies/review-ownership.md`](../shared/policies/review-ownership.md)
+  [`../../shared/policies/review-ownership.md`](../../shared/policies/review-ownership.md)
   — reconciling prior review evidence against the current target, and one
   Code Review Agent owner per review scope.
 
 Because this is a repository-development doc, **no packaged Skill resource
-depends on it** (see [`../AGENTS.md`](../AGENTS.md), "Packaged Skills are
+depends on it** (see [`../../AGENTS.md`](../../AGENTS.md), "Packaged Skills are
 independent of repository-level instructions"), and it is not part of
 either Skill archive.
 

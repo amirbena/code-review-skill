@@ -663,10 +663,10 @@ persistence (#65), severity/decision changes, or network/runtime dependencies.
 - Repository contracts:
   [`finding-identity-requirements.md`](finding-identity-requirements.md),
   [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md),
-  [`../shared/templates/finding.md`](../shared/templates/finding.md),
-  [`../shared/policies/review-evidence.md`](../shared/policies/review-evidence.md),
+  [`../../shared/templates/finding.md`](../../shared/templates/finding.md),
+  [`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md),
   and
-  [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md).
+  [`../../skills/github-pr-review/policies/pr-scope.md`](../../skills/github-pr-review/policies/pr-scope.md).
 - [Git diff documentation](https://git-scm.com/docs/git-diff) — rename/copy
   detection, similarity thresholds, and diff mapping behavior.
 - [Python `difflib` documentation](https://docs.python.org/3/library/difflib.html)

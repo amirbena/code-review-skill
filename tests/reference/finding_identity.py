@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Test-only reference for stable finding identity (Issue #60).
 
-Mirrors docs/finding-stable-identity.md: the canonical construction of the
+Mirrors docs/findings/finding-stable-identity.md: the canonical construction of the
 descriptor primitives and the minted stable identity digest.
 Not runtime logic, not packaged — the packaged Skills are Markdown/YAML only.
 
