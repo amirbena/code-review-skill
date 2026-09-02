@@ -28,7 +28,7 @@ for a downstream pass to decide," **that decision is the named Issue's**,
 not this document's.
 
 This is a repository-development doc, like
-[`finding-identity-requirements.md`](finding-identity-requirements.md) and
+[`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md) and
 [`runtime-parallelism.md`](runtime-parallelism.md): it is **not** packaged
 into either Skill archive, and no packaged Skill resource depends on it.
 Its standing relative to the eventual runtime policy is defined in
@@ -113,7 +113,7 @@ the optional reference is still valid reviewed state (§7, §8).
 
 | Field | What it holds | Why it is in the record |
 |---|---|---|
-| **Repository identity** | The canonical repository the review ran against (remote/owner/repo identity for a PR; the local repository identity for local review). | Reviewed state is single-repository only. A record from a different repository identity is never a delta seed (§7), matching the single-repository scope in [`finding-identity-requirements.md`](finding-identity-requirements.md), §8. |
+| **Repository identity** | The canonical repository the review ran against (remote/owner/repo identity for a PR; the local repository identity for local review). | Reviewed state is single-repository only. A record from a different repository identity is never a delta seed (§7), matching the single-repository scope in [`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md), §8. |
 | **Base branch name** | The base/target branch the change was reviewed against (e.g. `main`). | Lets a later pass resolve "the same base" and detect a base **reassignment** (§3). A SHA alone cannot. |
 | **Base SHA at review time** | The exact commit the base branch pointed at when the review ran. | Lets [#64](https://github.com/amirbena/code-review-skill/issues/64) tell whether the base **moved** since the review (§3, Example C). |
 | **Merge-base SHA at review time** | `merge-base(base, head)` as computed for the review. | The lower bound of the range the review actually covered (`merge-base..reviewed head`). Recorded so a later pass has the *observed* value instead of re-deriving it; **how** a re-review uses it is [#64](https://github.com/amirbena/code-review-skill/issues/64)'s to define (§3). |
@@ -439,7 +439,7 @@ default whenever delta re-review preconditions are not met.
 - This document **does not define**, and a reviewed-SHA implementation
   **must not embed**:
   - how a finding acquires a stable identity across revisions —
-    [`finding-identity-requirements.md`](finding-identity-requirements.md)
+    [`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md)
     ([#58](https://github.com/amirbena/code-review-skill/issues/58)) and
     strategy selection
     ([#59](https://github.com/amirbena/code-review-skill/issues/59)) /
@@ -624,7 +624,7 @@ choose), **that policy becomes the single normative source.** This
 document then becomes a historical contract record: it MUST link to the
 canonical policy and MUST NOT keep evolving the same rules independently —
 the same lifecycle as
-[`finding-identity-requirements.md`](finding-identity-requirements.md).
+[`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md).
 
 ## Scope boundaries
 

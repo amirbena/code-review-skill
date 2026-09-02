@@ -5,7 +5,7 @@ import unittest
 from tests.support.paths import REPO_ROOT
 
 
-DOC = REPO_ROOT / "docs" / "finding-lifecycle-contract.md"
+DOC = REPO_ROOT / "docs" / "findings" / "finding-lifecycle-contract.md"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
 
 

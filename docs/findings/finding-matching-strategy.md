@@ -68,7 +68,7 @@ and recoverable; a false merge can silently suppress a real finding. Automatic
 matching therefore optimizes precision before recall.
 
 The reviewed-SHA contract in
-[`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md) contributes
+[`../reviewed-sha-state-contract.md`](../reviewed-sha-state-contract.md) contributes
 an authoritative prior/current revision boundary and an optional reference to
 prior findings. It does not embed findings, match them, or validate an
 untrusted/ambiguous prior state. If that state cannot seed a safe comparison,
@@ -662,11 +662,11 @@ persistence (#65), severity/decision changes, or network/runtime dependencies.
 
 - Repository contracts:
   [`finding-identity-requirements.md`](finding-identity-requirements.md),
-  [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md),
-  [`../shared/templates/finding.md`](../shared/templates/finding.md),
-  [`../shared/policies/review-evidence.md`](../shared/policies/review-evidence.md),
+  [`../reviewed-sha-state-contract.md`](../reviewed-sha-state-contract.md),
+  [`../../shared/templates/finding.md`](../../shared/templates/finding.md),
+  [`../../shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md),
   and
-  [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md).
+  [`../../skills/github-pr-review/policies/pr-scope.md`](../../skills/github-pr-review/policies/pr-scope.md).
 - [Git diff documentation](https://git-scm.com/docs/git-diff) — rename/copy
   detection, similarity thresholds, and diff mapping behavior.
 - [Python `difflib` documentation](https://docs.python.org/3/library/difflib.html)

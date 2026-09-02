@@ -3,7 +3,7 @@
 (Issue #63) in docs/reviewed-sha-state-contract.md.
 
 Contract invariants only — this is a repository-development requirements
-doc like docs/finding-identity-requirements.md, not runtime logic. The
+doc like docs/findings/finding-identity-requirements.md, not runtime logic. The
 delta computation, finding lifecycle, and stateful-re-review implementation
 belong to #64 / #62 / #65 and are deliberately NOT asserted here.
 """
@@ -18,7 +18,7 @@ from tests.support.paths import REPO_ROOT
 
 DOC = REPO_ROOT / "docs/reviewed-sha-state-contract.md"
 ARCHITECTURE = REPO_ROOT / "docs/ARCHITECTURE.md"
-FINDING_IDENTITY = REPO_ROOT / "docs/finding-identity-requirements.md"
+FINDING_IDENTITY = REPO_ROOT / "docs/findings/finding-identity-requirements.md"
 SKILL_DIRS = (
     REPO_ROOT / "skills/local-code-review",
     REPO_ROOT / "skills/github-pr-review",

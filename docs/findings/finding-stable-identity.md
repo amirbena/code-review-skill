@@ -21,13 +21,13 @@ It sits directly under two already-settled sources and does not reopen either:
 
 This is a repository-development doc, like
 [`finding-identity-requirements.md`](finding-identity-requirements.md) and
-[`runtime-parallelism.md`](runtime-parallelism.md): it is **not** packaged into
+[`../runtime-parallelism.md`](../runtime-parallelism.md): it is **not** packaged into
 either Skill archive, and no packaged Skill resource depends on it. Its
 standing relative to the eventual packaged runtime policy is in "Status and
 canonical home" at the end.
 
 The finding fields this document is expressed over are the shared finding
-contract in [`../shared/templates/finding.md`](../shared/templates/finding.md).
+contract in [`../../shared/templates/finding.md`](../../shared/templates/finding.md).
 
 ---
 
@@ -367,12 +367,12 @@ doubt, split.
 |---|---|
 | Which prior finding a current finding matches; proof axes; ambiguity edges; global resolution | [#59](https://github.com/amirbena/code-review-skill/issues/59), [`finding-matching-strategy.md`](finding-matching-strategy.md) |
 | Lifecycle states (`OPEN` / `RESOLVED`) and evidence-gated transitions | [#62](https://github.com/amirbena/code-review-skill/issues/62), [`finding-lifecycle-contract.md`](finding-lifecycle-contract.md) |
-| Reviewed-SHA state record and its invalidation | [#63](https://github.com/amirbena/code-review-skill/issues/63), [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md) |
+| Reviewed-SHA state record and its invalidation | [#63](https://github.com/amirbena/code-review-skill/issues/63), [`../reviewed-sha-state-contract.md`](../reviewed-sha-state-contract.md) |
 | Review-delta semantics (fixed / unchanged / moved / reopened / newly introduced) | [#64](https://github.com/amirbena/code-review-skill/issues/64) |
 | Loading prior state, applying transitions, emitting per-finding state, full-review fallback | [#65](https://github.com/amirbena/code-review-skill/issues/65) |
 | Identity regression fixtures and their assertions | [#61](https://github.com/amirbena/code-review-skill/issues/61) |
 | A rendered / machine-readable output schema and its versioning | [#44](https://github.com/amirbena/code-review-skill/issues/44) |
-| Human-facing `F1` / `F2` display IDs; same-HEAD publish de-duplication | [`../shared/templates/finding.md`](../shared/templates/finding.md); [`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md) |
+| Human-facing `F1` / `F2` display IDs; same-HEAD publish de-duplication | [`../../shared/templates/finding.md`](../../shared/templates/finding.md); [`../../skills/github-pr-review/policies/pr-scope.md`](../../skills/github-pr-review/policies/pr-scope.md) |
 
 The `F1` / `F2` display ordinals are unchanged. The stable identity defined
 here is a separate value in the finding model; a first review mints it and
