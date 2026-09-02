@@ -50,6 +50,7 @@ REFERENCE_TEST_MODULES = (
     "remediation_guidance.py",
     "finding_contract.py",
     "invocation_options.py",
+    "finding_identity.py",
 )
 
 # module -> (packaged canonical source that must carry the same contract,

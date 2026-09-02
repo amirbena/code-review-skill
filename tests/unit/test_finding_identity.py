@@ -1,0 +1,431 @@
+#!/usr/bin/env python3
+"""Behavioral coverage for stable finding identity (Issue #60).
+
+Contract: docs/finding-stable-identity.md. Focus: deterministic descriptor
+construction; the minted identity survives the #59 must-survive scenarios
+(line movement, reformatting, reviewer wording) and changes for the
+must-change scenarios (distinct defect, different site intent); the
+#59 -> #60 hand-off propagates on MATCH and mints fresh on NO MATCH /
+AMBIGUOUS; ABSENT and UNCLASSIFIABLE stay distinct and non-wildcard;
+fail-closed on a source-less finding. Broad fixtures are #61's.
+"""
+
+from __future__ import annotations
+
+import unittest
+
+from tests.reference import finding_identity as fi
+
+
+def _descriptor(**overrides):
+    base = dict(
+        repository="github.com/acme/widgets",
+        location="src/pay/retry.py:88",
+        behavioral_claim_text="the row is re-enqueued before the commit so a retry processes the payment twice",
+        anchor_fragment="queue.put(job)",
+        mechanism_fragment="queue.put(job)",
+        defect_kind_text="lost update",
+        symbol="pay.retry.RetryHandler.run",
+        construct="call",
+        sibling_source="row.status = 'pending'\nqueue.put(job)\nlog.info('queued')",
+        predecessor_source="row.status = 'pending'",
+        successor_source="log.info('queued')",
+    )
+    base.update(overrides)
+    return fi.build_descriptor(**base)
+
+
+class DescriptorConstructionTests(unittest.TestCase):
+    def test_build_is_deterministic_and_kwarg_order_independent(self) -> None:
+        a = fi.build_descriptor(
+            repository="r", location="a/b.py:1", anchor_fragment="x = 1",
+            mechanism_fragment="x = 1", defect_kind_text="k",
+        )
+        b = fi.build_descriptor(
+            defect_kind_text="k", mechanism_fragment="x = 1",
+            anchor_fragment="x = 1", location="a/b.py:1", repository="r",
+        )
+        self.assertEqual(a, b)
+        self.assertEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_minted_identity_shape(self) -> None:
+        value = fi.mint_identity(_descriptor())
+        self.assertTrue(value.startswith("fid_v1_"))
+        self.assertEqual(len(value), len("fid_v1_") + 32)
+        self.assertEqual(value, value.lower())
+
+    def test_volatile_signals_are_ignored(self) -> None:
+        plain = _descriptor()
+        noisy = _descriptor(
+            severity="P0", display_id="F7", head_sha="deadbeef",
+            pr_number=42, discovery_order=3, worker_index=1,
+            repository_state_annotation="staged",
+        )
+        self.assertEqual(fi.mint_identity(plain), fi.mint_identity(noisy))
+
+    def test_path_is_stripped_of_line_suffix_and_normalized(self) -> None:
+        d = fi.build_descriptor(
+            repository="r", location="./src\\pay\\retry.py:88-90",
+            anchor_fragment="a", mechanism_fragment="a",
+        )
+        self.assertEqual(d.path, "src/pay/retry.py")
+
+    def test_repository_intent_has_no_path(self) -> None:
+        d = _descriptor(location="repository", path=None)
+        self.assertEqual(d.location_intent, "repository")
+        self.assertIs(d.path, fi.ABSENT)
+
+
+class MustSurviveTests(unittest.TestCase):
+    """finding-identity-requirements.md §2 — identity stays stable."""
+
+    def test_reformatting_only_change(self) -> None:
+        original = _descriptor(anchor_fragment="queue.put(job)")
+        reformatted = _descriptor(
+            anchor_fragment="queue . put(\n    job,\n)   # re-enqueue\n",
+        )
+        self.assertEqual(original.anchor_tokens, reformatted.anchor_tokens)
+        self.assertEqual(fi.mint_identity(original), fi.mint_identity(reformatted))
+
+    def test_line_movement_and_nearby_edits(self) -> None:
+        # Different line number, different surrounding context -> same identity
+        # (context_tokens / neighboring_syntax are excluded from the digest).
+        here = _descriptor(location="src/pay/retry.py:88")
+        moved = _descriptor(
+            location="src/pay/retry.py:141",
+            sibling_source="audit.record(row)\nqueue.put(job)\nmetrics.bump()",
+            predecessor_source="audit.record(row)",
+            successor_source="metrics.bump()",
+        )
+        self.assertNotEqual(here.context_tokens, moved.context_tokens)
+        self.assertEqual(fi.mint_identity(here), fi.mint_identity(moved))
+
+    def test_trivial_wording_change_keeps_identity(self) -> None:
+        # Case / whitespace / punctuation / dropped commas do not change the
+        # normalized cause_key / behavior_key tokens -> identity is stable.
+        a = _descriptor(
+            behavioral_claim_text="the row is re-enqueued before the commit so a retry processes the payment twice",
+        )
+        b = _descriptor(
+            behavioral_claim_text="  The row is re-enqueued, before the commit,  SO a retry processes the payment twice.  ",
+        )
+        self.assertNotEqual(a.behavioral_claim, b.behavioral_claim)
+        self.assertEqual(a.cause_key, b.cause_key)
+        self.assertEqual(a.behavior_key, b.behavior_key)
+        self.assertEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_semantic_reword_resplits_then_match_reunifies(self) -> None:
+        # A claim reworded enough to change its normalized behavior tokens is a
+        # visible false split (the safe direction, #58 §6); a definite #59
+        # MATCH re-propagates the prior identity via the hand-off.
+        a = _descriptor(
+            behavioral_claim_text="the row is re-enqueued before the commit so a retry processes the payment twice",
+        )
+        b = _descriptor(
+            behavioral_claim_text="the row is re-enqueued before the commit so the customer is double-charged on retry",
+        )
+        self.assertNotEqual(b.behavior_key, a.behavior_key)
+        self.assertNotEqual(fi.mint_identity(a), fi.mint_identity(b))  # re-split
+        prior = fi.mint_identity(a)
+        self.assertEqual(
+            fi.effective_identity(b, matched_prior_identity=prior), prior
+        )  # #59 MATCH re-unifies
+
+    def test_severity_reclassification_keeps_identity(self) -> None:
+        self.assertEqual(
+            fi.mint_identity(_descriptor(severity="P2")),
+            fi.mint_identity(_descriptor(severity="P1")),
+        )
+
+    def test_parser_refinement_does_not_change_identity(self) -> None:
+        without = _descriptor(diagnostic_symbol=None, diagnostic_construct=None)
+        with_parser = _descriptor(
+            diagnostic_symbol="pay.retry.RetryHandler.run#L88",
+            diagnostic_construct="await_call",
+        )
+        self.assertEqual(fi.mint_identity(without), fi.mint_identity(with_parser))
+
+
+class MustChangeTests(unittest.TestCase):
+    """finding-identity-requirements.md §3 — a new identity is required."""
+
+    def test_distinct_defect_same_location(self) -> None:
+        base = _descriptor()
+        other = _descriptor(
+            behavioral_claim_text="the amount is read as a float so rounding drifts on large sums",
+            mechanism_fragment="total = float(amount)",
+            anchor_fragment="total = float(amount)",
+            defect_kind_text="precision loss",
+        )
+        self.assertNotEqual(fi.mint_identity(base), fi.mint_identity(other))
+
+    def test_similar_wording_different_underlying_problem(self) -> None:
+        a = _descriptor(
+            behavioral_claim_text="the guard is missing so the request is not validated",
+            anchor_fragment="handler.dispatch(req)", mechanism_fragment="handler.dispatch(req)",
+        )
+        b = _descriptor(
+            behavioral_claim_text="the guard is missing so the request is not validated",
+            anchor_fragment="worker.enqueue(req)", mechanism_fragment="worker.enqueue(req)",
+        )
+        self.assertNotEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_same_pattern_different_symbol_is_a_different_minted_identity(self) -> None:
+        a = _descriptor(symbol="pay.retry.RetryHandler.run")
+        b = _descriptor(symbol="pay.refund.RefundHandler.run")
+        self.assertNotEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_different_location_intent_is_a_different_identity(self) -> None:
+        line = _descriptor(location="src/pay/retry.py:88")
+        file_level = _descriptor(location="file", path="src/pay/retry.py")
+        self.assertNotEqual(fi.mint_identity(line), fi.mint_identity(file_level))
+
+    def test_anchor_token_order_is_significant(self) -> None:
+        a = _descriptor(anchor_fragment="a and not b")
+        b = _descriptor(anchor_fragment="b and not a")
+        self.assertNotEqual(a.anchor_tokens, b.anchor_tokens)
+        self.assertNotEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+
+class HandoffTests(unittest.TestCase):
+    """docs/finding-stable-identity.md §6.4 — identity vs. matching."""
+
+    def test_match_propagates_prior_identity(self) -> None:
+        current = _descriptor(symbol="pay.retry.RetryHandler.retry")  # moved/renamed
+        prior_identity = "fid_v1_" + "0" * 32
+        self.assertEqual(
+            fi.effective_identity(current, matched_prior_identity=prior_identity),
+            prior_identity,
+        )
+
+    def test_no_match_and_ambiguous_mint_fresh(self) -> None:
+        current = _descriptor()
+        minted = fi.mint_identity(current)
+        # NO MATCH / AMBIGUOUS both arrive as matched_prior_identity=None.
+        self.assertEqual(fi.effective_identity(current), minted)
+        self.assertEqual(
+            fi.effective_identity(current, matched_prior_identity=None), minted
+        )
+
+    def test_ambiguous_never_inherits_a_candidate(self) -> None:
+        current = _descriptor()
+        candidate = "fid_v1_" + "a" * 32
+        # The contract models AMBIGUOUS as None; a fresh mint must result.
+        self.assertNotEqual(fi.effective_identity(current), candidate)
+
+    def test_non_matchable_descriptor_cannot_inherit_a_prior_identity(self) -> None:
+        # F3: even if a caller offers a prior identity, a descriptor that is
+        # not eligible for automatic matching (§7) mints fresh.
+        degenerate = fi.build_descriptor(
+            repository="r", location="a/b.py:1", anchor_fragment="x = 1",
+        )  # no symbol / construct / mechanism / claim
+        self.assertFalse(fi.is_matchable(degenerate))
+        prior = "fid_v1_" + "0" * 32
+        self.assertEqual(
+            fi.effective_identity(degenerate, matched_prior_identity=prior),
+            fi.mint_identity(degenerate),
+        )
+
+
+class CollisionBoundaryTests(unittest.TestCase):
+    """F1: two materially distinct findings at the same location/anchor must
+    mint distinct identities OR be non-matchable — never a silent merge."""
+
+    _SQLI = "q is built by string interpolation so untrusted input reaches sql"
+    _LEAK = "the tenant filter is missing so another tenant's rows are returned"
+
+    def test_distinguished_only_by_behavioral_keys_mint_distinct(self) -> None:
+        # Same file:line, same anchor + mechanism + symbol; the only
+        # difference is cause/behavior. They must NOT collide.
+        a = _descriptor(behavioral_claim_text=self._SQLI)
+        b = _descriptor(behavioral_claim_text=self._LEAK)
+        self.assertEqual(a.anchor_tokens, b.anchor_tokens)
+        self.assertEqual(a.mechanism_key, b.mechanism_key)
+        self.assertNotEqual(a.cause_key, b.cause_key)
+        self.assertNotEqual(fi.mint_identity(a), fi.mint_identity(b))
+        self.assertTrue(fi.is_matchable(a) and fi.is_matchable(b))
+
+    def test_repo_path_anchor_only_is_not_matchable(self) -> None:
+        # No parser (symbol absent), no mechanism, unseparable claim ->
+        # discrimination reduces to {repository, path, anchor_tokens}.
+        d = fi.build_descriptor(
+            repository="github.com/acme/app", location="src/api/users.py:120",
+            anchor_fragment="row = db.execute(q)",
+            behavioral_claim_text="untrusted input reaches sql",  # no connective
+        )
+        self.assertIs(d.symbol, fi.ABSENT)
+        self.assertIs(d.mechanism_key, fi.UNCLASSIFIABLE)
+        self.assertIs(d.cause_key, fi.UNCLASSIFIABLE)
+        self.assertIs(d.behavior_key, fi.UNCLASSIFIABLE)
+        self.assertFalse(fi.is_matchable(d))
+        self.assertTrue(fi.mint_identity(d).startswith("fid_v1_"))
+
+    def test_two_degenerate_distinct_findings_same_anchor_never_merge(self) -> None:
+        # The original F1 reproduction: no distinguishing classified evidence
+        # at all. Whatever they mint, both are non-matchable, so neither can
+        # inherit the other's identity via the hand-off.
+        common = dict(
+            repository="github.com/acme/app", location="src/api/users.py:120",
+            anchor_fragment="row = db.execute(q)",
+        )
+        a = fi.build_descriptor(behavioral_claim_text="reason one", **common)
+        b = fi.build_descriptor(behavioral_claim_text="reason two", **common)
+        self.assertFalse(fi.is_matchable(a))
+        self.assertFalse(fi.is_matchable(b))
+        self.assertEqual(
+            fi.effective_identity(a, matched_prior_identity="fid_v1_" + "b" * 32),
+            fi.mint_identity(a),
+        )
+
+    def test_defect_kind_wording_does_not_move_the_identity(self) -> None:
+        # F1: free-form defect-kind phrasing is not a hash discriminator.
+        a = _descriptor(defect_kind_text="missing null check")
+        b = _descriptor(defect_kind_text="no null-check!")
+        self.assertNotEqual(a.defect_kind, b.defect_kind)
+        self.assertEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_leading_negation_in_a_clause_is_not_erased(self) -> None:
+        # F5: a clause starting with `!` (negation) must keep it, so a defect
+        # and its logical opposite do not mint one identity.
+        neg = _descriptor(
+            behavioral_claim_text="the guard runs so !authorized paths execute",
+        )
+        pos = _descriptor(
+            behavioral_claim_text="the guard runs so authorized paths execute",
+        )
+        self.assertIn("!", neg.behavior_key)
+        self.assertNotIn("!", pos.behavior_key)
+        self.assertNotEqual(fi.mint_identity(neg), fi.mint_identity(pos))
+
+    def test_leading_operator_token_in_a_clause_survives(self) -> None:
+        # `!=` at a clause boundary keeps its leading `!`.
+        a = _descriptor(behavioral_claim_text="cmp is wrong so != is used")
+        b = _descriptor(behavioral_claim_text="cmp is wrong so == is used")
+        self.assertNotEqual(a.behavior_key, b.behavior_key)
+        self.assertNotEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_trailing_sentence_punctuation_is_still_trimmed(self) -> None:
+        a = _descriptor(behavioral_claim_text="a so the value is dropped")
+        b = _descriptor(behavioral_claim_text="a so the value is dropped!!")
+        self.assertEqual(a.behavior_key, b.behavior_key)
+        self.assertEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_construct_alone_is_not_a_strong_discriminator(self) -> None:
+        d = fi.build_descriptor(
+            repository="r", location="a/b.py:1", anchor_fragment="x = 1",
+            construct="statement",  # classified, but still weak
+        )
+        self.assertEqual(d.construct, "statement")
+        self.assertFalse(fi.is_matchable(d))
+
+
+class NormalizationSafetyTests(unittest.TestCase):
+    """F2: comment normalization is safe for quoted strings and `//`."""
+
+    def test_url_string_literal_is_preserved(self) -> None:
+        a = _descriptor(anchor_fragment='http.get("https://host/admin")')
+        b = _descriptor(anchor_fragment='http.get("https://host/guest")')
+        self.assertIn('"https://host/admin"', a.anchor_tokens)
+        self.assertNotEqual(a.anchor_tokens, b.anchor_tokens)
+        self.assertNotEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_hash_inside_string_literal_is_kept(self) -> None:
+        a = _descriptor(anchor_fragment='style(color="#fff")')
+        b = _descriptor(anchor_fragment='style(color="#000")')
+        self.assertIn('"#fff"', a.anchor_tokens)
+        self.assertNotEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_hash_comment_outside_string_is_stripped(self) -> None:
+        a = _descriptor(anchor_fragment="x = compute(y)  # first note")
+        b = _descriptor(anchor_fragment="x = compute(y)  # different note")
+        self.assertEqual(a.anchor_tokens, ("x", "=", "compute", "(", "y", ")"))
+        self.assertEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_floor_division_operator_is_preserved(self) -> None:
+        floor = _descriptor(anchor_fragment="pages = total // size")
+        true_div = _descriptor(anchor_fragment="pages = total / size")
+        self.assertIn("//", floor.anchor_tokens)
+        self.assertNotEqual(floor.anchor_tokens, true_div.anchor_tokens)
+        self.assertNotEqual(fi.mint_identity(floor), fi.mint_identity(true_div))
+
+    def test_block_comment_inside_string_is_kept(self) -> None:
+        d = _descriptor(anchor_fragment='log("/* not a comment */ value")')
+        self.assertIn('"/* not a comment */ value"', d.anchor_tokens)
+
+
+class SentinelTests(unittest.TestCase):
+    """docs/finding-stable-identity.md §4 — absent vs. unclassifiable."""
+
+    def test_absent_and_unclassifiable_are_distinct(self) -> None:
+        self.assertIsNot(fi.ABSENT, fi.UNCLASSIFIABLE)
+        self.assertNotEqual(fi.ABSENT, fi.UNCLASSIFIABLE)
+
+    def test_missing_symbol_is_absent_not_guessed(self) -> None:
+        d = fi.build_descriptor(
+            repository="r", location="a/b.py:1", anchor_fragment="x=1",
+            mechanism_fragment="x=1", symbol=None,
+        )
+        self.assertIs(d.symbol, fi.ABSENT)
+
+    def test_unseparable_claim_yields_unclassifiable_keys(self) -> None:
+        d = _descriptor(behavioral_claim_text="payment processed twice on retry")
+        self.assertIs(d.cause_key, fi.UNCLASSIFIABLE)
+        self.assertIs(d.behavior_key, fi.UNCLASSIFIABLE)
+
+    def test_absent_symbol_still_discriminates_by_other_fields(self) -> None:
+        a = fi.build_descriptor(
+            repository="r", location="a/b.py:1", anchor_fragment="x = 1",
+            mechanism_fragment="x = 1", symbol=None,
+        )
+        b = fi.build_descriptor(
+            repository="r", location="a/b.py:1", anchor_fragment="y = 2",
+            mechanism_fragment="y = 2", symbol=None,
+        )
+        self.assertNotEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_sentinels_serialize_to_distinct_markers(self) -> None:
+        self.assertNotEqual(fi._encode(fi.ABSENT), fi._encode(fi.UNCLASSIFIABLE))
+
+
+class FailClosedTests(unittest.TestCase):
+    """docs/finding-stable-identity.md §7."""
+
+    def test_source_less_finding_is_not_matchable_but_still_minted(self) -> None:
+        d = fi.build_descriptor(
+            repository="r", location="repository",
+            behavioral_claim_text="architecture is unclear", anchor_fragment=None,
+            mechanism_fragment=None,
+        )
+        self.assertFalse(fi.is_matchable(d))
+        self.assertTrue(fi.mint_identity(d).startswith("fid_v1_"))
+
+    def test_unresolvable_repository_is_not_matchable(self) -> None:
+        self.assertFalse(fi.is_matchable(_descriptor(repository="")))
+
+    def test_unclassifiable_location_is_not_matchable(self) -> None:
+        d = _descriptor(location="somewhere in the payments area")
+        self.assertIs(d.location_intent, fi.UNCLASSIFIABLE)
+        self.assertFalse(fi.is_matchable(d))
+
+    def test_source_backed_finding_is_matchable(self) -> None:
+        self.assertTrue(fi.is_matchable(_descriptor()))
+
+
+class OfflineDeterminismTests(unittest.TestCase):
+    def test_identity_is_reproducible_across_fresh_descriptor_instances(self) -> None:
+        values = {fi.mint_identity(_descriptor()) for _ in range(25)}
+        self.assertEqual(len(values), 1)
+
+    def test_serialization_is_pure_text_over_the_discriminating_subset(self) -> None:
+        blob = fi.canonical_serialization(_descriptor())
+        self.assertTrue(blob.startswith("v1\x1e"))
+        for name in fi.DISCRIMINATING_FIELDS:
+            self.assertIn(name, blob)
+        self.assertIn("cause_key", fi.DISCRIMINATING_FIELDS)
+        self.assertIn("behavior_key", fi.DISCRIMINATING_FIELDS)
+        for excluded in ("context_tokens", "neighboring_syntax", "defect_kind", "behavioral_claim"):
+            self.assertNotIn(excluded, blob)
+
+
+if __name__ == "__main__":
+    unittest.main()
