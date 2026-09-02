@@ -195,9 +195,15 @@ def behavioral_claim(raw: Optional[str]) -> MaybeStr:
     return re.sub(r"\s+", " ", raw.strip()).casefold()
 
 
-# Prose clauses are trimmed of surrounding whitespace and sentence
-# punctuation so a trailing "." or "," does not re-mint an identity (§6.1).
-_CLAUSE_EDGE = " \t\n\r.,;:!?"
+# A prose clause is trimmed of *trailing* whitespace and sentence
+# punctuation so "twice." does not re-mint an identity (§6.1). The trim is
+# trailing-only: a *leading* "!" is negation and must survive (a leading
+# strip would merge a defect with its opposite — matching-strategy.md §2).
+_CLAUSE_TRAIL = " \t\n\r.,;:!?"
+
+
+def _trim_clause(clause: str) -> str:
+    return clause.rstrip(_CLAUSE_TRAIL).lstrip(" \t\n\r")
 
 
 def _split_claim(claim: MaybeStr) -> Optional[tuple[str, str]]:
@@ -206,8 +212,8 @@ def _split_claim(claim: MaybeStr) -> Optional[tuple[str, str]]:
     for connective in CAUSE_BEHAVIOR_CONNECTIVES:
         idx = claim.find(connective)
         if idx != -1:
-            head = claim[:idx].strip(_CLAUSE_EDGE)
-            tail = claim[idx + len(connective) :].strip(_CLAUSE_EDGE)
+            head = _trim_clause(claim[:idx])
+            tail = _trim_clause(claim[idx + len(connective) :])
             return head, tail
     return None
 

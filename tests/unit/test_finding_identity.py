@@ -284,6 +284,32 @@ class CollisionBoundaryTests(unittest.TestCase):
         self.assertNotEqual(a.defect_kind, b.defect_kind)
         self.assertEqual(fi.mint_identity(a), fi.mint_identity(b))
 
+    def test_leading_negation_in_a_clause_is_not_erased(self) -> None:
+        # F5: a clause starting with `!` (negation) must keep it, so a defect
+        # and its logical opposite do not mint one identity.
+        neg = _descriptor(
+            behavioral_claim_text="the guard runs so !authorized paths execute",
+        )
+        pos = _descriptor(
+            behavioral_claim_text="the guard runs so authorized paths execute",
+        )
+        self.assertIn("!", neg.behavior_key)
+        self.assertNotIn("!", pos.behavior_key)
+        self.assertNotEqual(fi.mint_identity(neg), fi.mint_identity(pos))
+
+    def test_leading_operator_token_in_a_clause_survives(self) -> None:
+        # `!=` at a clause boundary keeps its leading `!`.
+        a = _descriptor(behavioral_claim_text="cmp is wrong so != is used")
+        b = _descriptor(behavioral_claim_text="cmp is wrong so == is used")
+        self.assertNotEqual(a.behavior_key, b.behavior_key)
+        self.assertNotEqual(fi.mint_identity(a), fi.mint_identity(b))
+
+    def test_trailing_sentence_punctuation_is_still_trimmed(self) -> None:
+        a = _descriptor(behavioral_claim_text="a so the value is dropped")
+        b = _descriptor(behavioral_claim_text="a so the value is dropped!!")
+        self.assertEqual(a.behavior_key, b.behavior_key)
+        self.assertEqual(fi.mint_identity(a), fi.mint_identity(b))
+
     def test_construct_alone_is_not_a_strong_discriminator(self) -> None:
         d = fi.build_descriptor(
             repository="r", location="a/b.py:1", anchor_fragment="x = 1",
