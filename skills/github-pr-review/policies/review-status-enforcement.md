@@ -4,10 +4,16 @@ Governs the **optional, exact-HEAD, machine-readable GitHub review
 status/check** that `github-pr-review` may publish for a reviewed PR, its
 authorization split, enforcement-state detection, and the explicit opt-in
 setup that makes the status a required merge check. Canonical index:
-[`github-review.md`](github-review.md). This gate runs **after**
-everything in [`review-output.md`](review-output.md) has resolved — the
-verdict, HEAD revalidation, and the review-action authorization gate — and
-adds nothing to the verdict or to native-event authority.
+[`github-review.md`](github-review.md). This gate runs **after** the
+verdict, HEAD revalidation, and the review-action authorization gate in
+[`review-output.md`](review-output.md) have resolved, and adds nothing to
+the verdict or to native-event authority. Its publication is placed
+**before the final human-facing summary comment** — the one review
+submission whose body carries that summary — so that
+`final review comment == last publication event` holds and nothing this
+review owns is published after the summary (see
+[`review-output.md`](review-output.md), "Submission ordering"). This
+ordering is the same whether or not `human_review_output` is enabled.
 
 ## Separate from native review events
 

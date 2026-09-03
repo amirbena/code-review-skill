@@ -117,6 +117,38 @@ closing disclosure line in
 "Self-review (informational COMMENT)" — not by a separate, heavier
 format.
 
+This review body **is** the final human-facing summary comment for the
+run: `final review comment == last publication event` (see "Submission
+ordering"). Nothing this review owns — an inline comment, the review
+event, an optional machine-readable status/check, or an edit to any of
+them — is published after it.
+
+### Concise human-style summary (opt-in)
+
+When the invocation selects `human_review_output` — normalized from
+natural language per
+[`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+"`human_review_output` phrasings" (there is no required flag such as
+`--human-review-output`) — this review body is rendered in the concise
+senior-engineer voice defined in
+[`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+"Concise human-style summary (opt-in)": a short opening on merge safety
+and the top concern, then what's good / what's concerning / what to
+change in prose, each referenced finding keeping its `P0` / `P1` / `P2`
+label, an intentional trade-off optionally raised as a question, and no
+review-process or machine metadata. Inline comments still own each
+finding's full detail; the concise body still carries one summary-pointer
+line per inline finding so every finding appears exactly once.
+
+The option is **presentation only**. Mode on and mode off produce the
+identical finalized findings, severities, inline comments, GitHub review
+state (`APPROVE` / `REQUEST_CHANGES` / `COMMENT`), mechanical decision,
+and optional machine-readable status — only the wording of this final
+summary changes. When the option is off (the default), the body uses the
+existing structured shape unchanged. The self-review informational
+`COMMENT` uses the same concise body plus its unchanged closing
+disclosure line.
+
 ## Remediation guidance
 
 Apply the shared
@@ -273,27 +305,55 @@ finalize findings (dedupe, severity, inline eligibility)
     ↓
 verify current PR HEAD
     ↓
+apply the review-action authorization gate
+    ↓
 construct one review: body + inline comments + event
     ↓
-submit that one review submission
+re-confirm current PR HEAD == reviewed HEAD
+(if it advanced: withhold the status, do NOT submit the review — the
+review is stale; re-review the new delta per "HEAD revalidation")
+    ↓
+publish any optional machine-readable status/check for the reviewed SHA
+    ↓
+submit that one review submission  ← final review-owned publication
 or report why no formal review can be submitted
 ```
 
 Verifying HEAD happens immediately before constructing/submitting the
-review, not after — see "HEAD revalidation" above. The review body and
-inline comments are always submitted together as one review submission
-per "Batched review construction and submission" above; there is no
-separate "publish inline comments" step followed later by a separate
-"publish summary" step.
+review, not after — see "HEAD revalidation" above. Because the optional
+machine-readable status is now published between HEAD revalidation and the
+submission, HEAD is re-confirmed once more immediately before that status
+publication, and that single re-confirmation gates **both** the status
+and the review submission: if HEAD has advanced, the status is withheld
+(`STATUS WITHHELD (HEAD advanced)`) **and** the review is not submitted
+for the stale reviewed SHA — the review is stale and the "HEAD
+revalidation" re-review path applies. The status is never withheld for a
+HEAD advance while the review is still submitted for that same stale SHA.
+The review body and inline comments are always submitted together as one
+review submission per "Batched review construction and submission" above;
+there is no separate "publish inline comments" step followed later by a
+separate "publish summary" step.
+
+**The final human-facing summary comment is the last publication event of
+the run** — `final review comment == last publication event`. The one
+review submission carries that summary as its body (see "Final summary"),
+so the optional machine-readable status/check is published **before** that
+submission, never after it. After the review submission, this run
+publishes nothing further and edits nothing it already published — no
+comment, no inline comment, no status, no check. This ordering is
+identical whether or not `human_review_output` is enabled; the option
+changes only the wording of that final summary, not its position.
 
 ## Optional machine-readable review status
 
 After this file's gates resolve — verdict, HEAD revalidation, and the
 review-action authorization gate — an optional, exact-HEAD,
 machine-readable GitHub status/check may be published for the reviewed
-SHA. It is a separate, optional signal from the native `APPROVE` /
-`REQUEST_CHANGES` event, it never merges, and its blocking-vs-positive
-authorization split, enforcement-state detection, and explicit opt-in
-required-check setup are owned by
+SHA. It is published **before the final summary comment** (the one review
+submission), so nothing this review owns is published after that summary
+— see "Submission ordering". It is a separate, optional signal from the
+native `APPROVE` / `REQUEST_CHANGES` event, it never merges, and its
+blocking-vs-positive authorization split, enforcement-state detection,
+and explicit opt-in required-check setup are owned by
 [`review-status-enforcement.md`](review-status-enforcement.md). This file
 does not restate that behavior.

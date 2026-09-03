@@ -253,6 +253,23 @@ strongly it is recommended before commit.
 - **Finding details.** Apply
   [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
   "Finding-detail precedence." `include_finding_details` defaults to `true`.
+- **Concise human-style output (opt-in).** When the invocation selects
+  `human_review_output` (natural language only — "make the review shorter
+  and more human", "like a senior engineer"; per
+  [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+  "`human_review_output` phrasings"; default `false`), render the
+  human-facing body (Result → Decision) in the concise senior-engineer
+  voice from
+  [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+  "Concise human-style summary (opt-in)": a short merge-safety opening,
+  then what's good / what's concerning / what to change in prose, each
+  referenced finding keeping its `P0` / `P1` / `P2` label, an intentional
+  trade-off optionally raised as a question, and no review-process wording.
+  It re-renders only that body — the trailing "Review Metadata" and
+  "Review scope contract" sections still follow it, subordinate and
+  unchanged, and nothing else is appended after the summary. The option is
+  output-only: findings, severities, evidence, reconciliation, source
+  attribution, and the mechanical Decision are identical on and off.
 - **Review State** (base/HEAD SHAs, synchronization status, raw
   counts) is machine/orchestration-oriented detail — it is subordinate,
   appearing only inside the trailing "Review Metadata" section as plain
