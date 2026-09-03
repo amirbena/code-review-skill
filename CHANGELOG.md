@@ -18,6 +18,44 @@ when the change reaches `main`. See
 - Safe, repository-declared runtime validation evidence for both review Skills
   (#138).
 
+## v1.1.0 — 2026-09-03
+
+### Added
+
+- Opt-in **`human_review_output`** presentation mode for both Skills,
+  requested in ordinary natural language (for example "make the review
+  shorter and more human", "review it like a senior engineer", "use
+  concise review comments") with no CLI-style flag. When enabled, only
+  the final human-facing review summary is rendered in a concise
+  senior-engineer voice — what's good / what's concerning / what to
+  change, in prose, each referenced finding keeping its `P0` / `P1` / `P2`
+  label, an intentional trade-off optionally raised as a question, and no
+  review-process or machine metadata. Default off; presentation only — it
+  never changes finding detection, severity, deduplication, the
+  mechanically derived verdict, the GitHub review state, inline comments,
+  any machine-readable status, or publication ordering, and mode on/off
+  produce identical findings and severities. Normalized deterministically
+  from a fixed, exhaustive phrase vocabulary in
+  `shared/policies/invocation-options.md` (#140).
+
+### Changed
+
+- `github-pr-review` now pins the publication order of a review run so
+  that **`final review comment == last publication event`**: the one
+  batched review submission (body + inline comments + event) carries the
+  final human-facing summary and is the last review-owned publication;
+  any optional machine-readable status/check is published **before** that
+  submission, never after it; nothing review-owned is published or edited
+  afterward. HEAD is re-confirmed immediately before that status
+  publication and that single re-confirmation gates both the status and
+  the review submission — a HEAD advance withholds the status **and**
+  blocks the submission, routing to the existing HEAD-revalidation
+  re-review path. The single atomic review submission and the
+  review-action authorization gate are unchanged. Ordering is identical
+  whether or not `human_review_output` is enabled
+  (`skills/github-pr-review/policies/review-output.md`, "Submission
+  ordering") (#140).
+
 ## v1.0.3 — 2026-08-29
 
 ### Added

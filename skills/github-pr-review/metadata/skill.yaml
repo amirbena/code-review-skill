@@ -31,6 +31,7 @@ capabilities:
   git: required
   github_access: required-for-github-state
   github_review_permissions: required-for-active-publication
+  human_review_output: optional # presentation-only; natural-language opt-in ("make the review shorter and more human" / "like a senior engineer"), no CLI flag; renders only the final human-facing summary in a concise senior-engineer voice; never changes findings/severity/dedup/verdict/review-state/inline-comments/machine-readable-status or publication ordering; see ../../../shared/policies/invocation-options.md
   external_review_context: optional # caller-supplied requirements / pasted Jira / GitHub Issue / HLD / ADR / plan / PR description; see ../../../shared/policies/review-context.md and ../policies/review-context.md
   jira_context_resolution: optional # only when a Jira reference is supplied; resolved via an available Jira MCP/connector, read-only; unresolved -> JIRA CONTEXT UNRESOLVED (no inference fallback); see ../../../shared/policies/review-context.md "Jira context resolution"
   prior_review_evidence: considered-when-available # the PR's own prior reviews/comments; see ../../../shared/policies/review-evidence.md and ../policies/review-evidence.md
@@ -51,6 +52,7 @@ output:
   mutates_repository_governance: false-except-explicit-required-check-setup # only the separate opt-in setup action adds the one status context to required checks; it preserves every unrelated rule, required check, bypass actor, and approval/stale-review setting; never merges
   can_merge: false # never; merge authority is not inferred from a clean verdict, approval authorization, a submitted approval, or a published status
   executes_target_repository_code: conditional # only an exact safe command declared by the target repository, per ../../../shared/policies/runtime-validation.md
+  final_summary_is_last_publication: true # final review comment == last publication event; any machine-readable status is published before it; nothing review-owned is published or edited after it; identical whether or not human_review_output is on; see ../policies/review-output.md "Submission ordering"
 
 shared:
   policies:

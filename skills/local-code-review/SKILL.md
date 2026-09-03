@@ -142,6 +142,14 @@ current invocation only per
   never removes the mandatory concise `Fix`.
 - `include_finding_details` (default `true`) — the optional supporting
   `Details` field.
+- `human_review_output` (boolean, default `false`) — requested in natural
+  language ("make the review shorter and more human", "like a senior
+  engineer"; no flag). Renders only the human-facing body (Result →
+  Decision) in a concise senior-engineer voice; the trailing "Review
+  Metadata" / "Review scope contract" sections still follow it unchanged.
+  Output-only: it never changes the Review Target, inspection, evidence,
+  finding identity, severity, deduplication, PR-context reconciliation, or
+  the mechanical Decision.
 
 ## 2. Required Policy Loading
 

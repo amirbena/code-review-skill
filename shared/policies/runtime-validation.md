@@ -15,6 +15,14 @@ repository: it must not edit source files, create or alter Git state, call
 GitHub write APIs, or perform another repository mutation. A command that
 cannot be shown to meet that boundary is not run.
 
+An isolated checkout by itself is not the required execution boundary. It is
+repository context for review and may still share the reviewer's host
+filesystem, credentials, network, or other ambient state. Repository
+validation remains dormant and unavailable unless the consuming runtime can
+separately establish and verify every required isolation property below.
+The metadata capability value `conditional` describes this contract: it does
+not imply that any current runtime supports live execution.
+
 This policy does not authorize autofixes, generated reproductions, CI
 orchestration, retries, matrix execution, dependency installation, service
 startup, deployment, or any other expansion of review scope.

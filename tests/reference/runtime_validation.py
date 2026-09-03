@@ -91,18 +91,15 @@ class ValidationRecord:
 
 @dataclass
 class FakeRepository:
-    """A repository/process double whose state makes mutation observable."""
+    """A process double that makes boundary admission observable.
+
+    The model does not simulate a host sandbox. Boundary fields are admission
+    controls, and a started process records the verified boundary only.
+    """
 
     files: dict[str, str] = field(default_factory=lambda: {"src/app.py": "value = 1\n"})
-    host_sentinel: str = ""
-    host_secret: str = ""
-    unrelated_files: dict[str, str] = field(default_factory=dict)
     process_invocations: list[tuple[str, ...]] = field(default_factory=list)
     boundary_invocations: list[ExecutionBoundary] = field(default_factory=list)
-    git_writes: int = 0
-    github_writes: int = 0
-    host_accesses: int = 0
-    network_attempts: int = 0
 
     def snapshot(self) -> tuple[tuple[str, str], ...]:
         return tuple(sorted(self.files.items()))
@@ -200,7 +197,7 @@ def run_validation(
 def apply_validation_to_review(
     findings: Sequence[decisions.Finding], records: Sequence[ValidationRecord]
 ) -> tuple[tuple[decisions.Finding, ...], decisions.Decision]:
-    """Validation evidence cannot erase findings or create a second decision."""
+    """Keep validation evidence separate from finding/decision derivation."""
     del records  # Records are evidence; the caller separately adds failures.
     retained = tuple(findings)
     return retained, decisions.derive_decision(retained)

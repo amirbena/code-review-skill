@@ -14,7 +14,36 @@ OPTION_CONCEPTS = {
     "include_fix_prompt": "fix prompt",
     "include_fix_guidance": "fix guidance",
     "include_finding_details": "finding details",
+    "human_review_output": "human review output",
 }
+
+# Small, fixed phrase vocabularies for options that are normally requested
+# conversationally rather than by name. Mirrors
+# shared/policies/invocation-options.md, "`human_review_output` phrasings" —
+# keep the two in exact sync.
+OPTION_EXTRA_AFFIRMATIVE: dict[str, tuple[str, ...]] = {
+    "human_review_output": (
+        "shorter and more human",
+        "more human and shorter",
+        "like a senior engineer",
+        "as a senior engineer",
+        "concise review comments",
+        "concise review comment",
+    ),
+}
+OPTION_EXTRA_NEGATIVE: dict[str, tuple[str, ...]] = {
+    "human_review_output": (
+        "keep the full summary",
+        "keep the default summary",
+        "do not shorten the review",
+        "don't shorten the review",
+    ),
+}
+
+
+def _phrase_regex(phrase: str) -> str:
+    """A whitespace-flexible, word-bounded matcher for a fixed phrase."""
+    return r"(?<![\w])" + r"\s+".join(re.escape(w) for w in phrase.split()) + r"(?![\w])"
 
 
 def _canonical_values(text: str, option: str) -> set[bool]:
@@ -38,11 +67,11 @@ def _natural_values(text: str, option: str) -> set[bool]:
         rf"(?<![\w]){re.escape(spaced)}(?![\w])",
         rf"(?<![\w]){re.escape(hyphenated)}(?![\w])",
         rf"\b(?:include|show|give me)(?: a| the)? {re.escape(concept)}\b",
-    )
+    ) + tuple(_phrase_regex(p) for p in OPTION_EXTRA_AFFIRMATIVE.get(option, ()))
     negative = (
         rf"\bdo not (?:include|show|give me)(?: a| the)? {re.escape(concept)}\b",
         rf"\b(?:no|hide) {re.escape(concept)}\b",
-    )
+    ) + tuple(_phrase_regex(p) for p in OPTION_EXTRA_NEGATIVE.get(option, ()))
     negative_match = any(re.search(p, lowered) for p in negative)
     if negative_match:
         values.add(False)

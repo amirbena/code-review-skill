@@ -32,6 +32,14 @@ Repository-backed mode never changes the review standard, the severity model,
 the decision derivation, or the publication contract. It only widens what
 Repository Context the reviewer can consult.
 
+The isolated checkout in repository-backed mode is not the runtime-validation
+execution boundary. It is a plain review-context checkout and, by itself, does
+not isolate the reviewer's filesystem, credentials, network, privileges,
+resources, or disposable state. The shared runtime-validation contract stays
+dormant until an external runtime supplies and verifiably checks that boundary;
+checkout isolation alone must therefore never turn validation into a live
+execution capability.
+
 ## Normalized PR source
 
 Real GitHub metadata and a local simulation both resolve to one

@@ -155,6 +155,56 @@ human-facing review and clearly subordinate, per
 </details>
 ```
 
+## Concise human-style body (opt-in)
+
+When the invocation selects `human_review_output` (natural language only —
+"make the review shorter and more human", "review it like a senior
+engineer", "use concise review comments"; per
+[`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+"`human_review_output` phrasings"), this review body is written in the
+concise senior-engineer voice from
+[`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+"Concise human-style summary (opt-in)" instead of the structured shape
+above:
+
+```markdown
+## Code Review
+
+Not safe to merge at `<short-sha>` yet — the P1 on the auth path is the
+blocker.
+
+**What's good:** the retry handling is clean and the new tests actually
+exercise the failure path.
+
+**What's concerning:** `P1` — authorization provenance can be forged
+through the trusted boundary (`src/review/authz.py:142`); `P1` — a stale
+HEAD can still receive a formal review action (`src/review/output.py:88`).
+`P2` — the validation output hides which check failed.
+
+Was routing the settled-tradeoff case straight to the caller here
+deliberate?
+
+### Decision
+**REQUEST CHANGES**
+```
+
+- Every blocking finding still appears — once — as a summary-pointer line
+  keeping its `P0` / `P1` / `P2` label and `` `path:line` ``; the inline
+  comment still owns its `Evidence` / `Impact` / `Fix`.
+- No review mode, SHAs beyond the short opening reference, counts, action
+  mode, worker/aggregation wording, or the `Review metadata` block.
+- The `Result` / `Decision` value is the same single mechanically derived
+  decision; findings, severities, inline comments, the GitHub review
+  event, and any machine-readable status are **byte-identical** to the
+  mode-off review — only this body's wording changes.
+- A self-review uses this same concise body as its informational
+  `COMMENT`, keeping the closing disclosure line from "Self-review
+  (informational COMMENT)".
+- This body is still submitted as part of the **one** batched review
+  submission, which stays the final publication event for the run (see
+  [`../policies/review-output.md`](../policies/review-output.md),
+  "Submission ordering").
+
 ## Rules
 
 - **Verdict first.** The `Result` line states the outcome in plain

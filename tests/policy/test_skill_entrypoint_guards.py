@@ -33,8 +33,11 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # well below the pre-refactor size (local 374, github 490). Raising one
 # should be a deliberate, reviewed act — not something a drive-by edit
 # does silently. Intermediate refactor sizes are not encoded here.
+# github raised 350 -> 365 for Issue #140 (the `human_review_output`
+# presentation option and the final-summary publication-ordering
+# invariant, both wired into section 1 and section 4).
 LOCAL_MAX_LINES = 260
-GITHUB_MAX_LINES = 350
+GITHUB_MAX_LINES = 365
 
 
 def _norm(path) -> str:

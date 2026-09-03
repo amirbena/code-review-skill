@@ -80,12 +80,19 @@ construct one review: body + inline comments
 apply the review-action authorization gate (APPROVE only in
 explicitly-authorized auto-action mode; else withhold + report reason)
     ↓
-submit permitted Approve/Request Changes
-or report why formal submission is unavailable
+re-confirm HEAD == reviewed HEAD (immediately before the submission); if
+it advanced → withhold the status AND do not submit → the review is
+stale: re-review the new delta ("HEAD revalidation")
     ↓
 optional: publish the one exact-HEAD machine-readable status for the
 reviewed SHA (blocking status allowed even for a self-review; success
-status only under APPROVE-level authorization; withhold if HEAD advanced)
+status only under APPROVE-level authorization)
+— published before the final summary comment
+    ↓
+submit permitted Approve/Request Changes (or informational COMMENT)
+or report why formal submission is unavailable
+— this one review submission carries the final human-facing summary and
+is the last review-owned publication of the run
     ↓
 finally: remove the temporary checkout (success, any failure, interruption)
     ↓
@@ -105,9 +112,9 @@ stop
    process), this invocation is a **self-review**: set
    `formal_review_mutation_allowed = false` and **continue** — the full
    review still runs (same evidence and process as an external review),
-   but step 14 submits no `APPROVE` and no formal `REQUEST_CHANGES` on the
-   reviewer's own work. There is no `REVIEW SKIPPED`; analysis is not
-   skipped. If identity or controlling authority cannot be resolved with
+   but the review-action authorization gate (step 14) permits no `APPROVE`
+   and no formal `REQUEST_CHANGES` on the reviewer's own work, and step 16
+   submits none. There is no `REVIEW SKIPPED`; analysis is not skipped. If identity or controlling authority cannot be resolved with
    confidence, treat the invocation as a self-review for the mutation
    boundary (fail closed). This resolution precedes and is independent of
    the ownership check in step 2.
@@ -207,7 +214,7 @@ stop
    runtime-validation policy.
    On failure, clean up. Optional mode records a visible API-only degradation;
    required mode returns `REVIEW INCOMPLETE` / `REPOSITORY CONTEXT
-   UNAVAILABLE` and starts no workers. See step 17 for mandatory cleanup.
+   UNAVAILABLE` and starts no workers. See step 18 for mandatory cleanup.
 6. Determine event-specific capability, including draft, fork,
    comment-only, and permission-limited states, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
@@ -374,66 +381,96 @@ stop
     delta re-review, with the previously reviewed SHA and current HEAD
     when delta) per
     [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
-    "Reporting the mode."
+    "Reporting the mode." **If the current invocation normalized
+    `human_review_output`** (the presentation-option normalization at the
+    top of this flow, per
+    [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md)),
+    render the body in the concise senior-engineer voice per
+    [`../templates/external-review-summary.md`](../templates/external-review-summary.md),
+    "Concise human-style body (opt-in)" — same finalized findings,
+    severities, inline comments, and decision; only the body wording
+    differs. Do not submit anything yet.
 14. **Apply the review-action authorization gate** per
     [`../policies/review-action-authorization.md`](../policies/review-action-authorization.md)
     and [`../policies/review-output.md`](../policies/review-output.md),
     "Review-action authorization gate," using the mode resolved in step 6
-    and the HEAD confirmed in step 12. **If step 1 resolved this as a
-    self-review** (`formal_review_mutation_allowed = false`): submit no
-    formal review decision — not `APPROVE`, not `REQUEST_CHANGES` —
-    regardless of mode, natural-language request, or authorization. Publish
-    the finalized review body as an informational `COMMENT` (verdict,
-    reviewed HEAD, findings, and a note that the formal decision was
-    withheld by policy), and report `Comments: COMMENTS PUBLISHED` /
+    and the HEAD confirmed in step 12, to determine the permitted outcome;
+    the outcome is executed by the single batched submission in step 16,
+    not here. **If step 1 resolved this as a self-review**
+    (`formal_review_mutation_allowed = false`): submit no formal review
+    decision — not `APPROVE`, not `REQUEST_CHANGES` — regardless of mode,
+    natural-language request, or authorization. Publish the finalized
+    review body as an informational `COMMENT` (verdict, reviewed HEAD,
+    findings, and a note that the formal decision was withheld by policy)
+    as the run's final publication in step 16, and report
+    `Comments: COMMENTS PUBLISHED` /
     `Mutation: WITHHELD (self-review: reviewer is the PR author)`. A
-    `COMMENT` is not approval, request-changes, or merge authorization.
-    The verdict is not changed. Otherwise (external review): in
-    **recommendation-only** mode, submit no GitHub mutation — return the
-    finalized review body and findings to the caller and report
-    `Mutation: WITHHELD (<reason>)`. In **block-only** mode, submit
+    `COMMENT` is not approval, request-changes, or merge authorization. The
+    verdict is not changed. Otherwise (external review): in
+    **recommendation-only** mode the permitted outcome is no GitHub
+    mutation (`Mutation: WITHHELD (<reason>)`); in **block-only** mode,
     `REQUEST_CHANGES` only for a blocking reasoning result and never
-    `APPROVE` for a clean one. In **explicitly-authorized auto-action**
+    `APPROVE` for a clean one; in **explicitly-authorized auto-action**
     mode — only with trusted authorization for this exact action,
     established reviewer independence, and all principle-7 guarantees
-    holding — submit that one review: body, inline comments, and the
-    permitted **Approve** or **Request Changes** event together, per
+    holding — the permitted **Approve** or **Request Changes** event.
+15. **Publish any optional machine-readable status** for the reviewed SHA
+    per
+    [`../policies/review-status-enforcement.md`](../policies/review-status-enforcement.md),
+    **before** the final summary comment. First re-confirm the live PR HEAD
+    still equals the reviewed SHA — the status is published between HEAD
+    revalidation (step 12) and the submission (step 16), so this is the
+    HEAD check immediately before the submission per
+    [`../policies/review-output.md`](../policies/review-output.md), "HEAD
+    revalidation." **If HEAD has advanced, withhold the status
+    (`STATUS WITHHELD (HEAD advanced)`) AND do not submit the review in
+    step 16**: the review is stale — review the new delta, re-finalize
+    findings against the current HEAD (re-evaluating escalation per step 9
+    if this was a delta re-review), and only then re-run steps 13–16. The
+    status is never withheld for a HEAD advance while the review is still
+    submitted for that same stale SHA. When HEAD still matches, map the
+    canonical verdict:
+    `CHANGES REQUIRED` / `REVIEW INCOMPLETE` / any unresolved or ungraded
+    state → a **blocking** (non-`success`) status, which is blocking-only
+    enforcement and may be published even for a self-review; `REVIEW CLEAN`
+    → a **`success`** status only when this external review holds the same
+    trusted, PR/HEAD-scoped positive authorization and reviewer
+    independence a native `APPROVE` requires — a self-review, or any
+    ambiguity, never publishes `success`. Only the authoritative aggregator
+    publishes it; parallel workers never do. Never merge. Adding the
+    context to the base branch's required checks is a separate, explicitly
+    requested setup action per that policy, never performed here.
+16. **Submit the one review** — only when step 15's HEAD re-confirmation
+    still holds (a HEAD advance detected there aborts this step and sends
+    the flow back through re-review). Submit the body (concise per step 13
+    when `human_review_output` is on), inline comments, and the permitted
+    event from step 14 — as a single batched submission per
     [`../policies/review-output.md`](../policies/review-output.md),
-    "Batched review construction and submission." If GitHub
-    rejects a specific resolved inline location during this step, apply
-    the [`../policies/finding-placement.md`](../policies/finding-placement.md)
-    "Rejected inline location fallback" (move that finding's full
-    form into the body) and complete the submission — do not drop the
-    finding and do not abandon the rest of the review. If GitHub
-    otherwise disallows the formal event, preserve the clean/blocking
-    reasoning result and report why no final formal review was submitted.
-    Never claim a GitHub mutation that did not succeed, and never submit
-    more than one review for this finalized finding set.
-15. Return separate reasoning, action-mode, comments-publication, and
+    "Batched review construction and submission." For a self-review, this
+    is the informational `COMMENT` carrying the same body (with the closing
+    disclosure line) and reports `Comments: COMMENTS PUBLISHED` /
+    `Mutation: WITHHELD (self-review: reviewer is the PR author)`. If GitHub
+    rejects a specific resolved inline location, apply the
+    [`../policies/finding-placement.md`](../policies/finding-placement.md)
+    "Rejected inline location fallback" (move that finding's full form into
+    the body) and complete the submission — do not drop the finding and do
+    not abandon the rest of the review. If GitHub otherwise disallows the
+    formal event, preserve the clean/blocking reasoning result and report
+    why no final formal review was submitted. Never claim a GitHub mutation
+    that did not succeed, and never submit more than one review for this
+    finalized finding set. **This one review submission carries the final
+    human-facing summary and is the last review-owned publication of the
+    run** (`final review comment == last publication event`): after it,
+    publish nothing further for this review and edit nothing already
+    published — no comment, no inline comment, no status, no check.
+17. Return separate reasoning, action-mode, comments-publication, and
     decision-publication statuses per
     [`../policies/review-output.md`](../policies/review-output.md),
     "Final decision" and "Review-action authorization gate," whether or
     not GitHub mutation succeeded. A withheld mutation is reported
     explicitly with its reason; a clean reasoning result with a withheld
     approval is never reported as "approved."
-16. **Optional machine-readable status.** After the gate in step 14, the
-    Skill may publish one stable, aggregated, exact-HEAD GitHub
-    status/check for the reviewed SHA per
-    [`../policies/review-status-enforcement.md`](../policies/review-status-enforcement.md).
-    Re-confirm the live HEAD still equals the reviewed SHA first; if it
-    advanced, withhold and report `STATUS WITHHELD (HEAD advanced)`. Map
-    the canonical verdict: `CHANGES REQUIRED` / `REVIEW INCOMPLETE` / any
-    unresolved or ungraded state → a **blocking** (non-`success`) status,
-    which is blocking-only enforcement and may be published even for a
-    self-review; `REVIEW CLEAN` → a **`success`** status only when this
-    external review holds the same trusted, PR/HEAD-scoped positive
-    authorization and reviewer independence a native `APPROVE` requires —
-    a self-review, or any ambiguity, never publishes `success`. Only the
-    authoritative aggregator publishes it; parallel workers never do.
-    Never merge. Adding the context to the base branch's required checks
-    is a separate, explicitly requested setup action per that policy,
-    never performed here.
-17. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
+18. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
     step 5, remove it now — and on **every** other exit path: a
     `NO NEW DELTA` / `REVIEW INCOMPLETE` return, a self-review that
     withholds its formal event, any context-resolution failure after the

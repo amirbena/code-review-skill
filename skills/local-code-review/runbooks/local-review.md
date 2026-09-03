@@ -86,6 +86,15 @@ return P0/P1/P2 findings, each attributed to its source category
 stop
 ```
 
+`local-code-review` operates on the user's real working tree in place. That
+working tree is review input, not a disposable execution boundary, so local
+review does not itself make repository validation available and must not imply
+that target-repository code may run. A runtime-validation outcome may be
+recorded only when an external runner separately supplies and verifiably
+establishes the shared policy's required boundary; otherwise the dormant
+capability remains `unavailable` (or `skipped` when a supplied boundary cannot
+be verified).
+
 ## Execution efficiency (does not change what is inspected)
 
 Steps 1–5 below are read-only Git inspection commands, but they are not
@@ -276,7 +285,17 @@ which a value must be resolved before it is used, or what is reported.
     [`review-summary.md`](../../../shared/templates/review-summary.md),
     including the terse optional "Context" / "PR Context" notes per
     [`../templates/local-review-report.md`](../templates/local-review-report.md)
-    when steps 7/8 ran and materially shaped the review. Apply
+    when steps 7/8 ran and materially shaped the review. If the current
+    invocation normalized `human_review_output` (per
+    [`invocation-options.md`](../../../shared/policies/invocation-options.md)),
+    render that body in the concise senior-engineer voice per
+    [`review-summary.md`](../../../shared/templates/review-summary.md),
+    "Concise human-style summary (opt-in)" and
+    [`../templates/local-review-report.md`](../templates/local-review-report.md),
+    "Concise human-style output (opt-in)" — the trailing "Review Metadata"
+    and "Review scope contract" sections still follow it unchanged, and the
+    findings, severities, evidence, and mechanical Decision are identical to
+    the mode-off report. Apply
     [`remediation-guidance.md`](../../../shared/policies/remediation-guidance.md)
     after findings and the mechanical Decision are finalized. If and only if
     `include_fix_prompt=true`, append a full implementation prompt where the

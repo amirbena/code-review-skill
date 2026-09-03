@@ -37,6 +37,9 @@ class CanonicalPolicyTests(unittest.TestCase):
             "This policy does not authorize autofixes",
             "After target-repository instruction discovery",
             "Runtime validation executes target-repository-controlled code",
+            "isolated checkout by itself is not the required execution boundary",
+            "remains dormant and unavailable",
+            "conditional",
             "command-source trust",
             "execution-payload trust",
             "static command screening is necessary but insufficient",
@@ -102,7 +105,15 @@ class WiringTests(unittest.TestCase):
         text = normalized(CHECKOUT)
         self.assertIn("runtime-validation.md", text)
         self.assertIn("exact declared command", text)
+        self.assertIn("is not the runtime-validation execution boundary", text)
+        self.assertIn("dormant", text)
         self.assertNotIn("tests/builds/linters — those remain future work", text)
+
+    def test_local_review_does_not_supply_repository_execution_boundary(self) -> None:
+        text = normalized(LOCAL_RUNBOOK)
+        self.assertIn("user's real working tree in place", text)
+        self.assertIn("does not itself make repository validation available", text)
+        self.assertIn("target-repository code may run", text)
 
     def test_summary_validation_contract_uses_the_four_outcomes(self) -> None:
         text = normalized(SUMMARY)

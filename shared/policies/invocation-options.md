@@ -16,10 +16,23 @@ language interpretation.
 - `include_finding_details` — controls presentation of a populated `Details`
   field. The local Skill defaults it to `true`; the GitHub Skill defaults it
   to `false`.
+- `human_review_output` — default `false` for both Skills; selects a concise,
+  senior-engineer-voice rendering of the **final human-facing review summary**
+  in place of the default structured summary shape. The user-facing contract
+  is natural language (see "Deterministic normalization"); there is no
+  required CLI-style flag such as `--human-review-output`, though a forwarded
+  canonical `human_review_output=true|false` assignment is still honored for
+  mediation parity. It changes only the wording of the final summary — never
+  the findings, their severity, deduplication, the mechanically derived
+  verdict, the GitHub review state, inline comments, any machine-readable
+  status, or the order in which a review's artifacts are published: in both
+  modes `github-pr-review` keeps the final human-facing summary as the last
+  review-owned publication of the run (its `review-output.md`, "Submission
+  ordering").
 
 Options affect presentation only. They never change review scope, evidence,
 finding identity, severity, deduplication, decision derivation, mutation
-authority, approval, or HEAD/SHA validation.
+authority, approval, HEAD/SHA validation, or publication ordering.
 
 ## Deterministic normalization
 
@@ -36,11 +49,32 @@ underscores treated as equivalent inside the option name:
 - an explicit negative request: `do not include a fix prompt`, `no fix
   guidance`, or `hide finding details`.
 
-The finite vocabulary is the three canonical option concepts: `fix prompt`,
-`fix guidance`, and `finding details`. Ordinary mentions, questions about an
-option, quoted examples, and vague requests such as “make it helpful” or “be
-detailed” are ambiguous and do not set a flag. Do not use sentiment, urgency,
-severity, prior turns, or a general NLP classifier to infer a value.
+The finite vocabulary is the four canonical option concepts: `fix prompt`,
+`fix guidance`, `finding details`, and `human review output`. Ordinary
+mentions, questions about an option, quoted examples, and vague requests such
+as “make it helpful”, “be detailed”, or “make it nicer” are ambiguous and do
+not set a flag. Do not use sentiment, urgency, severity, prior turns, or a
+general NLP classifier to infer a value.
+
+### `human_review_output` phrasings
+
+Because this option is normally requested conversationally rather than by
+name, it additionally recognizes a small, fixed set of explicit phrasings
+(case-insensitively, whitespace-flexible), alongside the canonical
+`human_review_output=true|false` assignment and the bare option name
+(`human_review_output`, `human review output`, `human-review-output`):
+
+- affirmative: `shorter and more human`, `more human and shorter`, `like a
+  senior engineer`, `as a senior engineer`, `concise review comments`,
+  `concise review comment`;
+- negative: `keep the full summary`, `keep the default summary`, `do not
+  shorten the review`, `don't shorten the review`.
+
+This phrase set is exhaustive: it is the whole vocabulary for this option.
+Anything outside it — “make it nicer”, “be brief”, “tighten it up”, a
+question about the option — is ambiguous and does not set the flag. When both
+an affirmative and a negative phrasing appear, the values conflict and the
+option falls through to the Skill default, exactly like the other options.
 
 Resolve each option independently with this precedence:
 

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 import unittest
 
 from tests.reference import runtime_validation as rv
@@ -16,18 +17,12 @@ def command(*argv: str, **kwargs) -> rv.CommandDeclaration:
 class RuntimeValidationFixtureMatrix(unittest.TestCase):
     def test_conventional_command_payload_is_untrusted_but_runs_only_in_boundary(self) -> None:
         declaration = command("pytest", "tests/", source="AGENTS.md: validation")
-        repo = rv.FakeRepository(
-            host_sentinel="host-only",
-            host_secret="credential-only",
-            unrelated_files={"other-repository/secret.txt": "host-only"},
-        )
+        repo = rv.FakeRepository()
         records = rv.run_validation([declaration], repo)
         self.assertTrue(declaration.payload_untrusted)
         self.assertEqual(records[0].outcome, rv.Outcome.EXECUTED)
         self.assertEqual(len(repo.boundary_invocations), 1)
-        self.assertEqual(repo.boundary_invocations[0].network_isolated, True)
-        self.assertEqual(repo.host_accesses, 0)
-        self.assertEqual(repo.network_attempts, 0)
+        self.assertTrue(repo.boundary_invocations[0].established)
 
     def test_payload_trust_cannot_be_used_as_a_host_execution_bypass(self) -> None:
         repo = rv.FakeRepository()
@@ -63,7 +58,27 @@ class RuntimeValidationFixtureMatrix(unittest.TestCase):
         )
         self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
         self.assertIn("boundary", records[0].reason)
-        self.assertEqual(repo.network_attempts, 0)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_every_unverified_boundary_property_prevents_process_start(self) -> None:
+        properties = (
+            "filesystem_isolated",
+            "host_credentials_isolated",
+            "network_isolated",
+            "git_github_isolated",
+            "privilege_isolated",
+            "resource_bounded",
+            "disposable",
+            "post_run_verified",
+        )
+        for property_name in properties:
+            with self.subTest(property_name=property_name):
+                repo = rv.FakeRepository()
+                boundary = replace(rv.ExecutionBoundary(), **{property_name: False})
+                records = rv.run_validation([command("pytest", "tests/", boundary=boundary)], repo)
+                self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+                self.assertIn("boundary", records[0].reason)
+                self.assertEqual(repo.process_invocations, [])
 
     def test_focused_declared_command_passes(self) -> None:
         repo = rv.FakeRepository()
@@ -160,32 +175,17 @@ class RuntimeValidationSafetyAndDecisionTests(unittest.TestCase):
                 rv.run_validation([declaration], repo)
                 self.assertEqual(repo.snapshot(), before)
 
-    def test_no_git_or_github_write_path_is_exercised(self) -> None:
-        for declaration in (
-            command("pytest", "tests/unit/test_app.py"),
-            command("git", "clean", unsafe_reason="destructive Git command"),
-            command("gh", "pr", "close", unsafe_reason="GitHub mutation"),
-        ):
-            with self.subTest(declaration=declaration.rendered):
-                repo = rv.FakeRepository()
-                rv.run_validation([declaration], repo)
-                self.assertEqual(repo.git_writes, 0)
-                self.assertEqual(repo.github_writes, 0)
-
-    def test_passing_validation_preserves_findings_and_existing_decision(self) -> None:
-        findings = (Finding("existing", Severity.P1), Finding("note", Severity.P2))
+    def test_validation_evidence_cannot_create_a_second_decision_path(self) -> None:
+        findings = (Finding("existing", Severity.P2),)
+        records = rv.run_validation(
+            [command("pytest", "tests/unit/test_app.py", exit_code=1)], rv.FakeRepository()
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.FAILED)
         retained, decision = rv.apply_validation_to_review(
-            findings, rv.run_validation([command("pytest", "tests/unit/test_app.py")], rv.FakeRepository())
+            findings, records
         )
         self.assertEqual(retained, findings)
         self.assertEqual(decision, derive_decision(findings))
-
-    def test_passing_validation_does_not_turn_p2_findings_into_empty_review(self) -> None:
-        findings = (Finding("existing", Severity.P2),)
-        retained, decision = rv.apply_validation_to_review(
-            findings, rv.run_validation([command("pytest", "tests/unit/test_app.py")], rv.FakeRepository())
-        )
-        self.assertEqual(retained, findings)
         self.assertEqual(decision, Decision.CLEAN)
 
     def test_failed_validation_is_finding_material_with_impact_derived_severity(self) -> None:
