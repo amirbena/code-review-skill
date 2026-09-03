@@ -13,6 +13,11 @@ when the change reaches `main`. See
 
 ## Unreleased
 
+_Nothing yet. New entries land here and move under a version heading at
+release time._
+
+## v1.1.0 — 2026-09-03
+
 ### Added
 
 - Opt-in **`human_review_output`** presentation mode for both Skills,
