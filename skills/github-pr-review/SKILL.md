@@ -157,11 +157,17 @@ without new evidence, and missing an unresolved prior issue — never
 blindly inherited, always reconciled against the current PR HEAD.
 
 **Optional — presentation options:** `include_fix_guidance` (default
-`true`) and `include_finding_details` (default `false`), normalized per
+`true`), `include_finding_details` (default `false`), and
+`human_review_output` (default `false`), normalized per
 [`invocation-options.md`](../../shared/policies/invocation-options.md)
 using only the current invocation; a finding-level decision may still show
 materially useful context. `include_fix_prompt` is recognized for
-direct/mediated parity but stays local-only.
+direct/mediated parity but stays local-only. `human_review_output` is a
+natural-language opt-in (no CLI flag — e.g. "review it like a senior
+engineer", "use concise review comments") that renders only the **final
+human-facing summary** in a concise senior-engineer voice; it never
+changes findings, severity, verdict, GitHub review state, inline comments,
+any machine-readable status, or the publication order.
 
 ## 2. Required Policy Loading
 
@@ -239,7 +245,12 @@ passive review.
   formal review can be submitted. Never a standalone comment per finding;
   never split across submissions; human-readable content precedes machine
   metadata. A self-review completes the full analysis and reports its
-  verdict but submits no formal event.
+  verdict but submits no formal event. That one review submission carries
+  the **final human-facing summary** and is the last review-owned
+  publication of the run (`final review comment == last publication
+  event`; any machine-readable status precedes it — see
+  [`policies/review-output.md`](policies/review-output.md), "Submission
+  ordering"); `human_review_output` only renders that summary concisely.
 
 The reasoning result and the GitHub mutation are reported **separately**:
 an active invocation states its `Action mode` (`recommendation-only` /

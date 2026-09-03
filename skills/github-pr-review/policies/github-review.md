@@ -79,8 +79,12 @@ findings and decision;
 and runs last — only after the verdict, HEAD revalidation, and the
 review-action authorization gate in
 [`review-output.md`](review-output.md) have resolved — and adds nothing
-to the verdict or to native-event authority. See each file for its own
-cross-references; this list is not restated per-section elsewhere. The shared semantics behind the
+to the verdict or to native-event authority; its publication is placed
+before the final human-facing summary comment so that
+`final review comment == last publication event`
+([`review-output.md`](review-output.md), "Submission ordering"). See each
+file for its own cross-references; this list is not restated per-section
+elsewhere. The shared semantics behind the
 optional context files live in
 [`review-context.md`](../../../shared/policies/review-context.md) and
 [`review-evidence.md`](../../../shared/policies/review-evidence.md), and the

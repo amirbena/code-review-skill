@@ -97,6 +97,49 @@ important concern or attention point; include scope only when useful>
   never produces a blocking decision no matter how strongly it is
   recommended.
 
+## Concise human-style summary (opt-in)
+
+When the invocation selects `human_review_output` (per
+[`../policies/invocation-options.md`](../policies/invocation-options.md),
+"`human_review_output` phrasings"), the **final human-facing summary** is
+rendered in a concise senior-engineer voice **instead of** the structured
+canonical shape above. Everything upstream is unchanged: the same
+investigation, the same evidence-backed findings, the same P0/P1/P2
+severities, the same mechanically derived decision, and — for
+`github-pr-review` — the same GitHub review state, the same inline
+comments, and the same optional machine-readable status. Only the wording
+of this final summary differs.
+
+The concise form reads like a short review note a strong engineer would
+leave by hand:
+
+- a one- or two-sentence opening that says whether the change is safe to
+  merge / proceed and names the single biggest concern;
+- **what's good** — a sentence or two of concrete, specific praise (omit
+  if nothing specific stands out);
+- **what's concerning** / **what to change** — the findings that need
+  action, in prose, each still carrying its `P0` / `P1` / `P2` label when
+  it is referenced;
+- an apparently intentional trade-off may be raised as a question
+  ("was returning `null` to the caller here deliberate?") rather than
+  asserted as a defect.
+
+It **excludes** internal review-process language and investigation
+metadata entirely — review mode, base/head SHAs, file or finding counts,
+action mode, parallel-worker / aggregation wording, and the subordinate
+machine-metadata block are all left out of this comment. It does not
+restate a finding's full `Evidence` / `Impact` / `Fix` block when that
+detail is already published elsewhere (e.g. a GitHub inline comment).
+
+This is presentation only. It never changes finding detection, severity
+classification, finding identity or deduplication, re-review semantics,
+the blocking / non-blocking decision, or — where a Skill has them — the
+GitHub review-state selection and publication ordering. Mode on and mode
+off produce identical findings and severities (and, for `github-pr-review`,
+identical GitHub review state and machine-readable status), and differ
+only in the text of this final summary. When the option is off (the
+default), the structured canonical shape above is used unchanged.
+
 ## Machine metadata is subordinate
 
 Internal/orchestration state (reviewed HEAD or base/head SHAs, raw

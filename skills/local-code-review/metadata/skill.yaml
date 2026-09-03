@@ -28,6 +28,7 @@ modes:
 capabilities:
   git: required
   local_repository_access: required
+  human_review_output: optional # presentation-only; natural-language opt-in ("make the review shorter and more human" / "like a senior engineer"), no CLI flag; renders only the human-facing body in a concise senior-engineer voice, trailing metadata unchanged; never changes findings/severity/dedup/reconciliation or the mechanical Decision; see ../../../shared/policies/invocation-options.md
   external_review_context: optional # free-form requirements / pasted Jira / GitHub Issue / HLD / ADR / plan; see ../../../shared/policies/review-context.md and ../policies/review-context.md
   jira_context_resolution: optional # only when a Jira reference is supplied; resolved via an available Jira MCP/connector, read-only; unresolved -> JIRA CONTEXT UNRESOLVED (no inference fallback); see ../../../shared/policies/review-context.md "Jira context resolution"
   github_read_access: optional # PR reference -> prior review evidence (../../../shared/policies/review-evidence.md, ../policies/pr-context.md); GitHub Issue reference -> read-only Issue retrieval

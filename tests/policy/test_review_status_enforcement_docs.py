@@ -137,20 +137,26 @@ class WiredIntoEntrypointAndRunbooks(unittest.TestCase):
         self.assertIn("A new HEAD inherits no green.", t)
         self.assertIn("policies/review-status-enforcement.md", t)
 
-    def test_active_runbook_publishes_after_the_gate_and_binds_head(self) -> None:
+    def test_active_runbook_publishes_after_the_gate_and_before_the_final_summary(
+        self,
+    ) -> None:
         raw = ACTIVE_RUNBOOK.read_text(encoding="utf-8")
         t = _norm(ACTIVE_RUNBOOK)
-        self.assertIn("Optional machine-readable status.", t)
+        self.assertIn("Publish any optional machine-readable status", t)
         self.assertIn("review-status-enforcement.md", t)
         self.assertIn("STATUS WITHHELD (HEAD advanced)", t)
-        self.assertLess(
-            raw.index("submit permitted Approve/Request Changes"),
-            raw.index("Optional machine-readable status"),
-        )
-        self.assertLess(
-            raw.index("Optional machine-readable status"),
-            raw.index("Guaranteed cleanup"),
-        )
+        # Issue #140: the status is published after the review-action
+        # authorization gate resolves, but BEFORE the one review submission
+        # that carries the final human-facing summary — which is the last
+        # review-owned publication of the run.
+        self.assertIn("final review comment == last publication event", t)
+        gate = raw.index("**Apply the review-action authorization gate**")
+        status = raw.index("**Publish any optional machine-readable status**")
+        submit = raw.index("**Submit the one review**")
+        cleanup = raw.index("Guaranteed cleanup")
+        self.assertLess(gate, status)
+        self.assertLess(status, submit)
+        self.assertLess(submit, cleanup)
 
     def test_passive_runbook_publishes_no_status(self) -> None:
         t = _norm(PASSIVE_RUNBOOK)

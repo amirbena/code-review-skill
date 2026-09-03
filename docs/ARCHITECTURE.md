@@ -114,7 +114,11 @@ snapshot, and other opaque or machine-produced changes
 shared/policies/invocation-options.md
     ↓
 deterministic current-invocation normalization for presentation options,
-including per-Skill finding-detail defaults and finding-level precedence
+including per-Skill finding-detail defaults and finding-level precedence,
+and the natural-language-only `human_review_output` opt-in (default off,
+no CLI flag) that selects a concise senior-engineer rendering of the final
+summary without touching findings, severity, verdict, review state, or
+publication ordering
 
 shared/templates/finding.md
     ↓
@@ -128,7 +132,9 @@ shared/templates/review-summary.md
     ↓
 one canonical human-facing review body shape (result, what changed,
 strengths, findings, validation, decision), rendered differently per
-delivery surface — machine metadata stays subordinate to it
+delivery surface — machine metadata stays subordinate to it; an opt-in
+concise senior-engineer rendering (`human_review_output`) is an
+alternative projection of the same decision, findings, and severities
 
 skills/local-code-review/
     ↓
@@ -155,7 +161,12 @@ mutation authorization scoped to the invocation/repo/PR/HEAD/action;
 reviewer independence as *authority* separation, not just a different
 username; fail closed on ambiguity), reviewer delta re-review, PR scope
 and pagination, review reasoning (logical cohorts, code-impact/dependency
-analysis), finding placement, batched publication/decision, the optional
+analysis), finding placement, batched publication/decision with a fixed
+publication order (`final review comment == last publication event`: the
+one batched review carries the final human-facing summary; any
+machine-readable status is published before that submission; nothing
+review-owned is published or edited after it — identical whether or not
+`human_review_output` is on), the optional
 exact-HEAD **machine-readable review status**
 (`policies/review-status-enforcement.md`: one stable aggregated
 status/check bound to the reviewed SHA, separate from native
@@ -787,6 +798,13 @@ in staged package metadata, then checked for containment and existence.
   `true` locally and `false` on GitHub; a per-finding decision overrides the
   invocation, which overrides the Skill default. The option never changes the
   canonical finding data, severity, or decision.
+- **The final-summary voice is presentation-only.** `human_review_output`
+  (default `false` for both Skills, requested in natural language, no CLI
+  flag) selects a concise senior-engineer rendering of the final
+  human-facing summary. Mode on and mode off produce identical findings,
+  severities, deduplication, verdict, GitHub review state, inline comments,
+  and machine-readable status — and the identical publication order — and
+  differ only in the wording of that final summary.
 - **Human-facing report formatting is not implied by shared reasoning.**
   Each Skill's own template owns the presentation appropriate to its own
   delivery surface, per

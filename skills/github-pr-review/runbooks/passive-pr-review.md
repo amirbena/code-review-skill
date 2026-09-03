@@ -233,7 +233,14 @@ finally: remove the temporary checkout (success, any failure, interruption)
    [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
    stating the review mode used per
    [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
-   "Reporting the mode."
+   "Reporting the mode." If the current invocation normalized
+   `human_review_output` (per
+   [`invocation-options.md`](../../../shared/policies/invocation-options.md)),
+   render the human-facing summary in the concise senior-engineer voice per
+   [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+   "Concise human-style summary (opt-in)" — same findings, severities, and
+   verdict; only the summary wording differs. Passive review publishes
+   nothing, so the report is a single returned document either way.
 9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
    step 4, remove it — on this path and on every other: a
    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the
