@@ -6,6 +6,7 @@ Applies shared policies:
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
+[`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
 [`invocation-options.md`](../../../shared/policies/invocation-options.md),
 plus this Skill's own policy family starting at
@@ -155,7 +156,8 @@ finally: remove the temporary checkout (success, any failure, interruption)
    `core.hooksPath=/dev/null`, `GIT_CONFIG_NOSYSTEM=1`, `--no-tags`, no
    submodule update. The checkout is **read-only** Repository Context; the
    PR delta stays `merge-base(base_sha, head_sha)..head_sha`; the target
-   repo's tests/builds/linters/hooks/scripts are never run. On clone/fetch
+   repo's commands are never run outside the shared runtime-validation policy.
+   On clone/fetch
    failure, clean up. Optional mode records a visible API-only degradation;
    required mode returns `REVIEW INCOMPLETE` / `REPOSITORY CONTEXT
    UNAVAILABLE` and starts no review execution. Cleanup is mandatory on every
@@ -169,6 +171,15 @@ finally: remove the temporary checkout (success, any failure, interruption)
    repository's API-visible paths in API-only mode, never from the Skill's own
    source checkout. Build one normalized per-file Repository Instruction Context
    before reviewing; unrelated subtree instructions are not read or applied.
+
+   **Resolve and optionally execute runtime validation** per the shared
+   [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
+   policy. Use only declarations and blast-radius context already resolved
+   for this target; carry exactly one outcome record per selected command (or
+   the explicit no-command result) into the shared `Validation` section. The
+   shared policy owns command eligibility, execution-boundary gating, and all
+   safety semantics; this runbook only sequences the step and carries its
+   records forward.
 
    **Plan review execution** per
    [`../policies/parallel-review.md`](../policies/parallel-review.md) and the

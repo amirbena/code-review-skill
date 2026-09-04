@@ -77,7 +77,8 @@ resolve PR + authenticated identity, PR author, controlling authority
   → repository access mode (API-only | optional | required checkout);
     determine formal-review capability; resolve review-action mode +
     mutation authorization (default recommendation-only; ambiguity fails closed)
-  → discover per-file AGENTS.md/CLAUDE.md; plan execution (sequential or
+  → discover per-file AGENTS.md/CLAUDE.md; apply runtime-validation policy;
+    plan execution (sequential or
     read-only parallel workers per dimension — same findings and decision)
   → inspect diff + surrounding code as logical cohorts within the PR's
     realistic blast radius; apply repository conventions
@@ -179,6 +180,7 @@ Shared, always (as one batched operation):
 [`review-context.md`](../../shared/policies/review-context.md)
 (requirement-context sections bind only when context is supplied),
 [`review-evidence.md`](../../shared/policies/review-evidence.md),
+[`runtime-validation.md`](../../shared/policies/runtime-validation.md),
 [`git-safety.md`](../../shared/policies/git-safety.md),
 [`review-ownership.md`](../../shared/policies/review-ownership.md),
 [`file-reviewability.md`](../../shared/policies/file-reviewability.md),

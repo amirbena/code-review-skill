@@ -51,6 +51,7 @@ REFERENCE_TEST_MODULES = (
     "finding_contract.py",
     "invocation_options.py",
     "finding_identity.py",
+    "runtime_validation.py",
 )
 
 # module -> (packaged canonical source that must carry the same contract,
@@ -126,6 +127,16 @@ MODULE_TO_PACKAGED_POLICY_HEADINGS = {
             "## Deterministic normalization",
             "## Invocation isolation and mediation parity",
             "## Finding-detail precedence",
+        ),
+    ),
+    "runtime_validation.py": (
+        REPO_ROOT / "shared" / "policies" / "runtime-validation.md",
+        (
+            "## Purpose and boundary",
+            "## Declaring and discovering commands",
+            "## Safety gate",
+            "## Outcome contract",
+            "## Findings and decision semantics",
         ),
     ),
 }
@@ -212,7 +223,12 @@ class PackagingScriptParityTests(unittest.TestCase):
         )
 
     def test_new_shared_policies_are_in_both(self) -> None:
-        for name in ("review-context.md", "review-evidence.md", "parallel-review.md"):
+        for name in (
+            "review-context.md",
+            "review-evidence.md",
+            "parallel-review.md",
+            "runtime-validation.md",
+        ):
             self.assertIn(name, _sh_array(self.sh, "shared_policies"))
             self.assertIn(name, _ps1_array(self.ps1, "sharedPolicies"))
 

@@ -99,6 +99,12 @@ still-relevant, resolved, stale, duplicate, settled decision, or
 speculative discussion, and reconciling without blind inheritance —
 consumed by both Skills
 
+shared/policies/runtime-validation.md
+    ↓
+optional, safe evidence from an exact command declared by the target
+repository; narrow selection, read-only safety gates, explicit outcomes, and
+unchanged finding/decision semantics — consumed by both Skills
+
 shared/policies/parallel-review.md
     ↓
 portable parallel-review contract: sequential/parallel equivalence,
@@ -295,6 +301,7 @@ Reconcile findings  (normalize → deduplicate → reconcile overlapping/
     ↓
 Shared Review Semantics  (shared/policies/)
     ├── scope validation (incl. scope-boundary reasoning against context)
+    ├── optional runtime validation evidence (shared/policies/runtime-validation.md)
     ├── correctness
     ├── regression analysis
     ├── architecture / repository invariants

@@ -17,7 +17,10 @@ diff/API alone provide.
   integration (`pr-scope.md`). No local checkout.
 - **Optional repository-backed enrichment** — additionally materialise an isolated,
   read-only, detached checkout at the PR head so the reviewer can read
-  surrounding files and run safe Git read commands. Failure is reported as a
+  surrounding files and run safe Git read commands or validation commands
+  permitted by the shared
+  [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
+  policy. Failure is reported as a
   visible degradation and the review continues API-only.
 - **Required repository-backed review** — the caller explicitly requires deep
   repository inspection. Checkout preparation and verification are a
@@ -28,6 +31,14 @@ diff/API alone provide.
 Repository-backed mode never changes the review standard, the severity model,
 the decision derivation, or the publication contract. It only widens what
 Repository Context the reviewer can consult.
+
+The isolated checkout in repository-backed mode is not the runtime-validation
+execution boundary. It is a plain review-context checkout and, by itself, does
+not isolate the reviewer's filesystem, credentials, network, privileges,
+resources, or disposable state. The shared runtime-validation contract stays
+dormant until an external runtime supplies and verifiably checks that boundary;
+checkout isolation alone must therefore never turn validation into a live
+execution capability.
 
 ## Normalized PR source
 
@@ -101,8 +112,10 @@ inspecting repository policies, architecture, neighbouring implementation,
 tests and configuration **as text**.
 
 Never, automatically, against the target repository: run its tests, builds,
-linters, package installation, application code, Git hooks, or any script.
-Cloning untrusted code is not permission to execute it — see "Security".
+linters, package installation, application code, Git hooks, or any script
+unless the shared runtime-validation policy explicitly permits that exact
+declared command. Cloning untrusted code is not permission to execute it —
+see "Security".
 
 ## Repository Context must not widen the Review Target
 
@@ -175,8 +188,8 @@ the checkout root.
   stays [`review-output.md`](review-output.md)'s; maximum positive action is
   **Approve**.
 - No merge enforcement, required status checks, ruleset/branch-protection
-  changes, or execution of PR tests/builds/linters — those remain future
-  work, not part of this policy.
+  changes, or execution outside the shared runtime-validation policy — those
+  remain future work, not part of this checkout policy.
 - The checkout lifecycle is independent of any parallel-review worker
   isolation — see [`parallel-review.md`](parallel-review.md), "Shared
   checkout vs. worker copies."

@@ -48,7 +48,8 @@ and never widens the PR delta.
 
 No blocking findings at `a1b2c3d`.
 
-Validation passed: 761 tests and repository checks.
+Validation: `executed` — `python -m pytest tests/` (declared by repository
+validation docs; exit 0, evidence observed).
 
 ### Decision
 **APPROVE**
@@ -71,7 +72,8 @@ Not safe to merge at `a1b2c3d` yet; see the inline comments for detail.
 - **P2 — Validation output hides the failing check name**
   `scripts/validate.py:117`
 
-Validation passed: 761 tests and repository checks.
+Validation: `executed` — `python -m pytest tests/` (declared by repository
+validation docs; exit 0, evidence observed).
 
 ### Decision
 **REQUEST CHANGES**

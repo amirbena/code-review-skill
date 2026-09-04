@@ -13,6 +13,7 @@ Applies shared policies:
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
+[`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
 [`git-safety.md`](../../../shared/policies/git-safety.md),
 [`invocation-options.md`](../../../shared/policies/invocation-options.md),
@@ -68,6 +69,9 @@ PR reference supplied? → yes → read/classify/reconcile relevant PR
                                  above (scope never expands to the PR)
                                → no  → unchanged
     ↓
+resolve the shared runtime-validation policy; optionally execute one safe
+declared command and carry its outcome record into Validation
+    ↓
 inspect relevant surrounding code
     ↓
 review against code + repository conventions, focused per any supplied
@@ -81,6 +85,15 @@ return P0/P1/P2 findings, each attributed to its source category
     ↓
 stop
 ```
+
+`local-code-review` operates on the user's real working tree in place. That
+working tree is review input, not a disposable execution boundary, so local
+review does not itself make repository validation available and must not imply
+that target-repository code may run. A runtime-validation outcome may be
+recorded only when an external runner separately supplies and verifiably
+establishes the shared policy's required boundary; otherwise the dormant
+capability remains `unavailable` (or `skipped` when a supplied boundary cannot
+be verified).
 
 ## Execution efficiency (does not change what is inspected)
 
@@ -212,6 +225,14 @@ which a value must be resolved before it is used, or what is reported.
    current local delta without blindly inheriting it); this runbook does
    not restate them. If no PR reference was supplied, skip this step
    entirely and proceed directly to the review step below.
+8a. **Resolve and optionally execute runtime validation** per the shared
+   [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
+   policy. Use the target repository instruction context and the changed
+   delta's blast radius already resolved above. Carry exactly one outcome
+   record per selected command, or the explicit no-command result, into the
+   shared `Validation` section. The shared policy owns command eligibility,
+   execution-boundary gating, and all safety semantics; this runbook only
+   sequences the step and carries its records forward.
 9. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

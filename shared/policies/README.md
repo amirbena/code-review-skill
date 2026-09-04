@@ -28,6 +28,7 @@ packaged Skill is installed; they do not depend on this repository.
 | [`review-context.md`](review-context.md) | The concepts a review reasons over and how optional caller-supplied requirement/scope material is used without widening the target. |
 | [`review-evidence.md`](review-evidence.md) | How a review uses previously produced review information (prior comments/decisions) — reconciled against the current target, not inherited. |
 | [`repository-instructions.md`](repository-instructions.md) | Discovering and applying the target repository's own `AGENTS.md`/`CLAUDE.md` hierarchy before evaluating changed files. |
+| [`runtime-validation.md`](runtime-validation.md) | Safe, repository-declared validation evidence: narrow command selection, read-only safety gates, four explicit outcomes, and unchanged finding/decision semantics. |
 | [`file-reviewability.md`](file-reviewability.md) | Evidence-based classification of changed files whose direct line-by-line review is low-value or impossible (vendored, generated, minified, binary, snapshots). |
 | [`git-safety.md`](git-safety.md) | How both Skills inspect a target repository without mutating it. |
 | [`review-ownership.md`](review-ownership.md) | One review scope has one Code Review Agent owner; the access-vs-ownership distinction and parallel-review guards. |
