@@ -1,14 +1,18 @@
 # ARCHITECTURE.md
 
-This document describes the conceptual architecture of this repository's
-two Code Review Agent Skills. It is intentionally decoupled from any
-specific runtime implementation — see [`AGENTS.md`](../AGENTS.md)
-("Global invariants" — runtime neutrality; and the **Agent via Skill**
-vocabulary it defines) and
+The conceptual architecture of this repository's two Code Review Agent
+Skills: the components, how they relate, the review lifecycle, and the
+boundaries and invariants that hold across both. It is decoupled from any
+specific runtime — see [`AGENTS.md`](../AGENTS.md) ("Global invariants" —
+runtime neutrality; the **Agent via Skill** vocabulary) and
 [`policies/skill-development-policy.md`](../policies/skill-development-policy.md),
-"Portable Core, Optional Runtime Adapters." For why this architecture
-exists — how it differs from Claude Code's
-own native review, GitHub-native review, and third-party reviewers — see
+"Portable Core, Optional Runtime Adapters."
+
+This document is a **map, not a contract**. Exact behavioral semantics
+live in the canonical policies and runbooks it links; user-facing usage
+guidance for optional capabilities lives in
+[`docs/features/`](features/README.md). For *why* these Skills exist
+alongside native and third-party reviewers, see
 [`CODE_REVIEW_COMPARISON.md`](CODE_REVIEW_COMPARISON.md).
 
 ## The mental model in one picture
@@ -44,22 +48,21 @@ Skills, so P0/P1/P2 semantics never diverge. Everything below the split is
 | Context model | review target / review context / repository context / existing review evidence | a thin per-Skill application (the local delta vs. the PR) |
 | State inspection | — | local Git state vs. GitHub PR state |
 | Delivery | the canonical report and finding shapes | a local report vs. GitHub publication |
-| Extra machinery | — | `github-pr-review` only: temporary checkout, parallel workers, self-review mutation boundary (analysis allowed, self-approval not), review-action authorization (verdict ≠ mutation authority), SHA-bound delta re-review |
+| Extra machinery | — | `github-pr-review` only: temporary checkout, parallel workers, self-review mutation boundary, review-action authorization, SHA-bound delta re-review, optional machine-readable status |
 
 ### Where to read next
 
-You do not need to read the numbered sections in order — each is
-self-contained. Jump to what you need:
+Each numbered section is self-contained — jump to what you need.
 
 | To understand… | Read |
 |---|---|
 | which file owns what, and how it maps into an archive | §1 Module Map, §7 Packaging |
-| the review-target / review-context / evidence vocabulary | §1 (shared model) and §2, "Normalize Inputs" |
+| the review-target / review-context / evidence vocabulary | §1, and §2 "Normalize Inputs" |
 | the end-to-end review pipeline | §2 Core Pipeline |
-| who owns policy vs. runbook vs. output | §1 "Thin runbooks", §3 Separation of Concerns, §9 |
-| what the caller owns, and the Skill does not | §4 Orchestration Boundary, §5 Handoff Between Skills |
-| what is packaged vs. repository-only or test-only | §7 Packaging, §8 discovery metadata |
-| what is deliberately not built | §2, "Future work" |
+| who owns policy vs. runbook vs. output | §1 "Thin runbooks", §3, §9 |
+| what the caller owns and the Skill does not | §4 Orchestration Boundary, §5 Handoff |
+| what is deliberately not built | §2 "Future work" |
+| how to invoke an optional capability as a user | [`docs/features/`](features/README.md) |
 
 ## 1. Module Map
 
@@ -74,180 +77,63 @@ local-code-review    github-pr-review
  local report        GitHub delivery
 ```
 
-```text
-AGENTS.md
-    ↓
-repository rules (development of *this* repository)
+`shared/` holds one copy of every rule both Skills apply. Neither Skill
+owns a copy of the severity model, evidence requirements, review-scope
+rules, or the context / evidence model.
 
-shared/policies/
-    ↓
-review-scope, severity, evidence, repository-instructions, git-safety,
-review-ownership — one copy each, consumed by both Skills (and packaged
-with either, so each archive is self-contained)
+| Location | Owns | Canonical detail |
+|---|---|---|
+| [`shared/policies/`](../shared/policies/README.md) | portable review semantics used identically by both Skills | scope, severity, evidence, repository-instruction discovery, git-safety, review-ownership, review-context, review-evidence, runtime-validation, parallel-review, file-reviewability, invocation-options |
+| [`shared/templates/`](../shared/templates/) | the canonical finding and review-summary shapes; each delivery surface renders one projection of them | [`finding.md`](../shared/templates/finding.md), [`review-summary.md`](../shared/templates/review-summary.md) |
+| [`skills/local-code-review/`](../skills/local-code-review/SKILL.md) | local-Git-specific rules with no PR analogue | invocation approval, repository-state categories + staged-delta fingerprint, thin local applications of the shared context / prior-evidence model |
+| [`skills/github-pr-review/`](../skills/github-pr-review/SKILL.md) | GitHub-delivery rules with no local analogue, indexed from [`policies/github-review.md`](../skills/github-pr-review/policies/github-review.md) | review authority + self-review mutation boundary, [review-action authorization](../skills/github-pr-review/policies/review-action-authorization.md), reviewer delta re-review, PR scope + pagination, repository-backed checkout, finding placement, batched publication + ordering, optional [machine-readable review status](../skills/github-pr-review/policies/review-status-enforcement.md) |
 
-shared/policies/review-context.md
-    ↓
-the review-target / review-context / repository-context /
-existing-review-evidence model, plus requirement-context semantics
-(evidence hierarchy, focus mapping, scope-boundary reasoning, explicit
-non-goals) — consumed by both Skills
-
-shared/policies/review-evidence.md
-    ↓
-Existing Review Evidence: classifying prior findings/comments as
-still-relevant, resolved, stale, duplicate, settled decision, or
-speculative discussion, and reconciling without blind inheritance —
-consumed by both Skills
-
-shared/policies/runtime-validation.md
-    ↓
-optional, safe evidence from an exact command declared by the target
-repository; narrow selection, read-only safety gates, explicit outcomes, and
-unchanged finding/decision semantics — consumed by both Skills
-
-shared/policies/parallel-review.md
-    ↓
-portable parallel-review contract: sequential/parallel equivalence,
-capability detection, worker input/output, execution-policy gate,
-centralized aggregation, failure handling — packaged with both Skills,
-wired into github-pr-review
-
-shared/policies/file-reviewability.md
-    ↓
-evidence-based handling for generated, vendored, lock, minified, binary,
-snapshot, and other opaque or machine-produced changes
-
-shared/policies/invocation-options.md
-    ↓
-deterministic current-invocation normalization for presentation options,
-including per-Skill finding-detail defaults and finding-level precedence,
-and the natural-language-only `human_review_output` opt-in (default off,
-no CLI flag) that selects a concise senior-engineer rendering of the final
-summary without touching findings, severity, verdict, review state, or
-publication ordering
-
-shared/templates/finding.md
-    ↓
-one canonical finding contract — a compact, field-oriented
-`id`/`severity`/`title`/`Location`/`Evidence`/`Impact`/`Fix` shape,
-concise by default, with a controlled `Details` field for genuinely
-complex findings; the fields are the stable contract, the rendering is
-one projection of them, and it is rendered per delivery surface
-
-shared/templates/review-summary.md
-    ↓
-one canonical human-facing review body shape (result, what changed,
-strengths, findings, validation, decision), rendered differently per
-delivery surface — machine metadata stays subordinate to it; an opt-in
-concise senior-engineer rendering (`human_review_output`) is an
-alternative projection of the same decision, findings, and severities
-
-skills/local-code-review/
-    ↓
-SKILL.md (stateless, bounded) + its own runbook/template/metadata
-
-skills/github-pr-review/
-    ↓
-SKILL.md + its own GitHub-specific policy/runbooks/templates/metadata
-```
-
-Neither Skill owns a copy of the severity model, evidence requirements,
-review-scope rules, or the review-context / existing-review-evidence model
-— all reference [`shared/policies/`](../shared/policies/) directly.
-`github-pr-review` additionally has its own policy family, indexed from
-[`policies/github-review.md`](../skills/github-pr-review/policies/github-review.md),
-for GitHub-specific delivery rules with no local-review analogue: review
-authority and the self-review mutation boundary (authorship forbids a
-formal self-review event but never blocks analysis or the verdict),
-**review-action authorization**
-(`policies/review-action-authorization.md`: review analysis is separate
-from GitHub mutation authority — a non-mutating `recommendation-only`
-default, `block-only`, and `explicitly-authorized auto-action`; trusted
-mutation authorization scoped to the invocation/repo/PR/HEAD/action;
-reviewer independence as *authority* separation, not just a different
-username; fail closed on ambiguity), reviewer delta re-review, PR scope
-and pagination, review reasoning (logical cohorts, code-impact/dependency
-analysis), finding placement, batched publication/decision with a fixed
-publication order (`final review comment == last publication event`: the
-one batched review carries the final human-facing summary; any
-machine-readable status is published before that submission; nothing
-review-owned is published or edited after it — identical whether or not
-`human_review_output` is on), the optional
-exact-HEAD **machine-readable review status**
-(`policies/review-status-enforcement.md`: one stable aggregated
-status/check bound to the reviewed SHA, separate from native
-Approve/Request Changes; a blocking status is blocking-only enforcement
-allowed even for a self-review, a `success` status needs APPROVE-level
-positive authorization and is never published by a self-review; a new
-HEAD inherits no green; enforcement-state detection across rulesets and
-classic branch protection; and an explicit opt-in, minimal, preserving
-required-check setup that never merges), the opt-in
-**repository-backed checkout** lifecycle (`policies/repository-checkout.md`:
-isolated temporary clone, base/head fidelity, read-only inspection,
-security, guaranteed cleanup) — plus three **thin PR applications** of a
-shared model (`policies/review-context.md`: the PR is the review target,
-scope-boundary reasoning for a PR; `policies/review-evidence.md`: the PR's
-own prior reviews/comments as Existing Review Evidence;
-`policies/parallel-review.md`: threshold signals, shared checkout vs. worker
-copies, and per-runtime realisation for the shared parallel contract).
-`local-code-review` has its own analogous policy family under
-`skills/local-code-review/policies/`, for local-Git-specific rules with no
-PR analogue: invocation approval, the repository-state category
-definitions (including push/synchronization status and the staged-delta
-fingerprint re-review contract), and two thin local applications of the
-shared model (`policies/review-context.md`: the local delta is the review
-target; `policies/pr-context.md`: an optional associated PR's prior
-findings/decisions as Existing Review Evidence). The optional review
-context accepts, uniformly, free-form requirements, explicit user
-instructions, a Jira/tracker ticket, an explicitly supplied GitHub Issue
-(no automatic PR↔Issue discovery), an HLD/ADR, or an implementation plan.
+The optional review context accepts, uniformly, free-form requirements,
+explicit user instructions, a Jira/tracker ticket, an explicitly supplied
+GitHub Issue (no automatic PR↔Issue discovery), an HLD/ADR, or an
+implementation plan — see
+[`shared/policies/review-context.md`](../shared/policies/review-context.md).
 
 ### Thin runbooks, canonical policy owners
 
 A runbook is an execution document, not a second policy store — see
 [`policies/skill-development-policy.md`](../policies/skill-development-policy.md),
-"Runbook Design," for the canonical rule. It defines flow, phase ordering, and which policy governs each
-phase; it does not restate that policy's decision tables, edge-case
-semantics, or state-interpretation rules. Concretely:
+"Runbook Design." It defines flow, phase ordering, and which policy
+governs each phase; it does not restate that policy's decision tables or
+edge-case semantics.
 
 ```text
-Shared policy (shared/policies/)
-    → reusable review semantics (scope, evidence, severity, and the
-      behavioral heuristics below), identical across both Skills
-
-Skill-specific policy (skills/<name>/policies/)
-    → semantics unique to that Skill (local Git-state mechanics and
-      optional-input handling for local-code-review; GitHub delivery
-      mechanics for github-pr-review)
-
-Runbook (skills/<name>/runbooks/)
-    → execution flow and phase ordering only; each step names the
-      policy that governs it rather than repeating that policy's text
+Shared policy (shared/policies/)      → reusable review semantics, identical across both Skills
+Skill-specific policy (skills/<name>/policies/) → semantics unique to that Skill
+Runbook (skills/<name>/runbooks/)     → execution flow and phase ordering only; each step
+                                        names the policy that governs it
 ```
 
 `skills/local-code-review/runbooks/local-review.md` and
 `skills/local-code-review/policies/repository-state.md` are the clearest
-example: Git category detection, push/sync status, and the complete
-staged-fingerprint precondition/comparison contract live entirely in the
-policy; the runbook states only when each is resolved and applied in the
-execution flow.
+example: Git category detection, push/sync status, and the
+staged-fingerprint contract live entirely in the policy; the runbook
+states only when each is applied.
 
 ## 2. Core Pipeline (per Skill)
 
-At a glance, every review — either Skill, either delivery mode — runs three
-phases:
+Every review — either Skill, either delivery mode — runs three phases:
 
 1. **Resolve inputs** — turn the invocation into normalized presentation
-   options, a Review Target, optional Review Context, Repository Context, and
-   optional Existing Review Evidence (nothing below the target ever widens it).
-2. **Reason** — inspect state read-only, compute the exact delta, optionally
-   prepare a repository-backed checkout, plan sequential or parallel
-   execution, produce candidate findings, then reconcile them centrally.
+   options, a Review Target, optional Review Context, Repository Context,
+   and optional Existing Review Evidence. Nothing below the target ever
+   widens it.
+2. **Reason** — inspect state read-only, compute the exact delta,
+   optionally prepare a repository-backed checkout, plan sequential or
+   parallel execution, produce candidate findings, then reconcile them
+   centrally.
 3. **Decide and deliver** — one aggregator applies the shared severity
-   model to produce one P0/P1/P2 set and one decision, rendered as a local
-   report or a GitHub review.
+   model to produce one P0/P1/P2 set and one decision, rendered as a
+   local report or a GitHub review.
 
-The detailed stage list below expands those three phases.
+The stage diagram below expands those phases. It is conceptual reading
+order, not a required implementation shape; repository-backed modes and
+parallel workers apply to `github-pr-review` only.
 
 ```text
 Review Invocation
@@ -261,27 +147,25 @@ Resolve External Context
     └── supplied free-form context    (consumed directly, no resolution)
     ↓
 Normalize Inputs
-    ├── Review Target        (local delta | GitHub PR delta)
-    ├── Review Context        (optional: user instructions / resolved Jira /
-    │                          GitHub Issue / HLD / ADR / plan / PR description)
+    ├── Review Target        (local delta | GitHub PR delta — never widened below)
+    ├── Review Context       (optional: user instructions / resolved Jira /
+    │                         GitHub Issue / HLD / ADR / plan / PR description)
     ├── Repository Context   (repository snapshot / API-accessible files;
-    │                          applicable AGENTS.md hierarchy; repository
-    │                          policies; architecture/docs; surrounding code;
-    │                          tests/config)
+    │                         applicable AGENTS.md hierarchy; policies;
+    │                         architecture/docs; surrounding code; tests/config)
     └── Existing Review Evidence (optional: prior findings, resolved
                                   findings, settled decisions, prior comments)
     ↓
-Git / GitHub State Inspector
+Git / GitHub State Inspector          (read-only)
     ↓
 Review Delta Resolver
     ↓
 Prepare Repository Context
-    ├── GitHub/API-only mode         (no checkout)
-    ├── Temporary repository-backed mode (mode family)
+    ├── GitHub/API-only mode              (no checkout; the only mode for local review)
+    ├── Temporary repository-backed mode  (github-pr-review; isolated, read-only,
+    │                                      detached checkout at head_sha)
     ├── Optional repository-backed enrichment (failure → visible API-only degradation)
-    └── Required repository-backed review (failure → REVIEW INCOMPLETE):
-          mkdtemp → blobless clone → fetch base/head → detached checkout at
-          head_sha; read-only; PR delta stays merge-base(base,head)..head
+    └── Required repository-backed review     (failure → REVIEW INCOMPLETE, no workers)
     ↓
 Resolve changed files and one normalized per-file AGENTS.md hierarchy
     ↓
@@ -291,10 +175,8 @@ Plan Review Execution
           dimensions + expected latency benefit (read-only workers,
           same PR base/head snapshot; execution optimisation only)
     ↓
-Review workers  (each: Review Target, Review Context, Repository Context
-                 location + snapshot identity, resolved instruction-context
-                 identity, Existing Review Evidence, assigned dimension,
-                 applicable policies → candidate findings only)
+Review workers  (each: identical normalized inputs + one assigned dimension
+                 → candidate findings only; never publish, never decide)
     ↓
 Reconcile findings  (normalize → deduplicate → reconcile overlapping/
                      conflicting → canonical severity)
@@ -302,9 +184,7 @@ Reconcile findings  (normalize → deduplicate → reconcile overlapping/
 Shared Review Semantics  (shared/policies/)
     ├── scope validation (incl. scope-boundary reasoning against context)
     ├── optional runtime validation evidence (shared/policies/runtime-validation.md)
-    ├── correctness
-    ├── regression analysis
-    ├── architecture / repository invariants
+    ├── correctness / regression / architecture invariants
     └── severity classification  (shared/policies/severity.md)
     ↓
 Canonical final decision  (one aggregator; worker order never matters;
@@ -318,216 +198,108 @@ Cleanup  (github-pr-review: remove the temporary checkout on every exit
           path — success, failure, interruption — guarded delete only)
 ```
 
-This flow is conceptual guidance, not a required implementation shape — the
-Skills are natural-language instruction packages, and the ordering above is
-the reading order their `SKILL.md` and runbooks already imply. Repository-backed
-modes and parallel workers apply to `github-pr-review` only;
-`local-code-review` and API-only `github-pr-review` skip those stages entirely
-with no loss of correctness.
-
 ### Stage responsibilities
 
-- **Review Invocation** — for `local-code-review`: "review this local
-  implementation state," optionally with review context (free-form text or a
-  Jira / GitHub Issue reference) and/or an associated PR reference. For
-  `github-pr-review`: a PR URL, a PR number with repository context, or a
-  repository + PR number, optionally with review context (free-form text or a
-  Jira / GitHub Issue reference; the PR description is always available).
-- **Resolve External Context** — before review reasoning, turn *references*
-  into normalized context, per
+Each stage below names its canonical owner rather than restating the
+rule.
+
+- **Resolve External Context** — turn *references* into normalized
+  context before review reasoning:
   [`shared/policies/review-context.md`](../shared/policies/review-context.md),
-  "Input form" and "Jira context resolution." Free-form text is consumed
-  directly. A **Jira reference** triggers the shared policy's explicit,
-  numbered **"Resolution procedure"** — (1) identify an available Jira
-  integration (a Jira MCP server, a Jira connector, or an equivalent
-  runtime-exposed Jira read tool — a capability, not a hard-coded
-  transport); (2) invoke it read-only to fetch the issue's contents;
-  (3) fetch relevant comments and linked requirement context when supported;
-  (4) normalize into Review Context (the downstream shared policies consume
-  the normalized context, never a raw connector payload); (5) continue only
-  on success. Jira access is **retrieval only** — no issue edits,
-  transitions, comments, field changes, ticket creation, or assignment. If
-  any step fails (no integration, authentication or authorization failure,
-  issue not found, malformed reference, connector/MCP error or timeout), the
-  Skill returns the explicit
-  `JIRA CONTEXT UNRESOLVED` outcome and does not perform the Jira-scoped
-  review — it never infers the ticket from its key, the branch name, the PR
-  title, a commit message, or surrounding text. A **GitHub Issue reference**
-  is resolved through read-only GitHub access when available, or supplied as
-  pasted text; there is **no automatic PR↔Issue discovery**. Supplying no
-  Jira reference is always valid — Jira is never mandatory.
-- **Normalize Inputs** — resolves the repository, base branch, and (for
-  `github-pr-review`) the PR itself, and separates the four concepts owned
-  by [`shared/policies/review-context.md`](../shared/policies/review-context.md)
-  and [`shared/policies/review-evidence.md`](../shared/policies/review-evidence.md):
-  the **review target** (never widened by anything below it), optional
-  **review context** (intended scope/requirements — focuses attention and
-  enables scope-boundary reasoning), **repository context**, and optional
-  **existing review evidence** (prior findings/decisions, reconciled not
-  inherited — always against the *current* target, so a resolved thread is
-  evidence of a past conclusion, not proof of present correctness, and a
-  changed PR HEAD re-classifies every prior human finding; automation/bot
-  comments contribute observations only and never settle a decision alone —
-  [`shared/policies/review-evidence.md`](../shared/policies/review-evidence.md),
-  "Interpret prior evidence against the current target" and "Comment
-  authorship"). Missing optional inputs change nothing.
+  "Jira context resolution" and "Reference-based context." Free-form text
+  is consumed directly; a Jira reference runs the shared numbered
+  resolution procedure (read-only) or returns `JIRA CONTEXT UNRESOLVED`;
+  a GitHub Issue reference resolves through read-only GitHub or pasted
+  text. Jira is never mandatory.
+- **Normalize Inputs** — separates the four concepts owned by
+  [`review-context.md`](../shared/policies/review-context.md) and
+  [`review-evidence.md`](../shared/policies/review-evidence.md): the
+  **review target** (never widened), optional **review context**,
+  **repository context**, and optional **Existing Review Evidence**
+  (reconciled against the *current* target, never inherited). Missing
+  optional inputs change nothing.
 - **Git / GitHub State Inspector** — read-only inspection of Git state
-  (branch, HEAD, staged/unstaged/untracked) and, for `github-pr-review`,
-  GitHub state (PR metadata, base/head SHA, checks, existing comments,
-  prior reviews with their `APPROVED` / `CHANGES_REQUESTED` / `COMMENTED`
-  state, review comments, issue comments, and review-thread `isResolved`
-  state where GitHub exposes it — retrieved paginated-to-exhaustion via an
-  authenticated GitHub integration, `gh api` + GraphQL `reviewThreads` being
-  one example, per
-  [`skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md),
-  "Retrieving prior review activity"). Never mutates state.
+  and, for `github-pr-review`, GitHub state (PR metadata, base/head SHA,
+  checks, prior reviews with their state, review/issue comments, thread
+  resolved state), retrieved paginated-to-exhaustion. Never mutates.
 - **Review Delta Resolver** — computes exactly what must be reviewed: the
-  committed delta relative to base, plus any local-only commits, staged
-  changes, unstaged changes, and relevant untracked files (local), or the
-  PR's full or bounded-delta diff (GitHub).
-- **Prepare Repository Context** — in **API-only mode** (default, and the
-  only mode for `local-code-review`), surrounding context comes from
-  API/working-tree reads. In optional or required **temporary repository-backed mode**
-  (`github-pr-review` — [`skills/github-pr-review/policies/repository-checkout.md`](../skills/github-pr-review/policies/repository-checkout.md)),
-  the Skill also materialises an isolated, read-only, detached checkout at
-  the PR head: `mkdtemp` under a safe scratch parent → blobless clone
-  (`--no-checkout --no-tags --filter=blob:none`) → fetch base/head refs
-  (SHA fallback) → detached checkout of the immutable `head_sha`, verified.
-  Both real GitHub metadata and the repository's local PR simulation resolve
-  to one `NormalizedPrSource` the checkout consumes. It stays **read-only** —
-  no target-repository tests/builds/linters/hooks/scripts run; the PR delta
-  remains `merge-base(base_sha, head_sha)..head_sha` and surrounding files
-  never become independent review targets. Every Git call runs with
-  `core.hooksPath=/dev/null`, `GIT_CONFIG_NOSYSTEM=1`, `--no-tags`, no
-  submodule update. Optional failure visibly degrades to API-only. Required
-  failure is pre-grading `REVIEW INCOMPLETE` with repository context
-  unavailable, and no workers start. The temporary directory is owned
-  by one lifecycle with guarded cleanup on every exit path (see "Cleanup").
-- **Repository Instruction Resolver** — after target/changed-file resolution,
-  resolve root-to-specific applicable `AGENTS.md` chains once from the same
-  repository snapshot. Missing files are valid; applicable unreadable or
-  unsafe paths make context incomplete. The normalized per-file mapping and
-  identity go unchanged to sequential execution or every worker and never
-  widen the Review Target.
-- **Plan Review Execution** — sequential is the default. Detect the runtime's parallel capability
-  (`none` / isolated sub-agents / experimental agent teams, usable only when
-  already enabled / native concurrent agents; uncertain → `none`). Use
-  parallel **read-only** workers only when a capability exists **and** at
-  least two materially independent analysis dimensions can run from the same
-  normalized inputs with an expected latency benefit. File count alone is
-  never a gate; dependent dimensions remain sequential. Parallelism is an execution
-  optimisation only — [`shared/policies/parallel-review.md`](../shared/policies/parallel-review.md)
-  requires that sequential and parallel runs reach the same findings and
-  decision, and the Skill never mutates the user's configuration to obtain a
-  capability.
-- **Review workers** — each worker gets one bounded, normalized input
-  (identical Review Target, Review Context, Repository Context location and
-  snapshot identity, resolved instruction context and identity, and Existing
-  Review Evidence across a run; its own assigned dimension and
-  policies) and returns **structured candidate findings only**. It never
-  publishes and never derives the final decision.
-- **Reconcile findings** — one centralized aggregation stage: normalize →
-  deduplicate (same location + normalized claim; carry the higher candidate
-  severity, report once) → reconcile overlapping/conflicting findings. Worker
-  completion order never affects the result.
-- **Repository Context Loader** — loads relevant surrounding context
-  beyond the raw diff: repository-local instructions, architecture docs,
-  related tests, contracts, schemas, and conventions — from the temporary
-  checkout when repository-backed mode prepared one, otherwise from
-  API/working-tree reads.
-- **Canonical final decision** — only the aggregating reviewer applies
-  [`shared/policies/severity.md`](../shared/policies/severity.md)'s
-  mechanical derivation to produce the one P0/P1/P2 set and one
-  `REVIEW CLEAN` / `CHANGES REQUIRED` (local) or `Approve` / `Request
-  Changes` (GitHub). A **required** review dimension that no worker produced
-  and the parent could not recover yields `REVIEW INCOMPLETE` — never a
-  clean/approved result. Parallelism cannot manufacture `REVIEW CLEAN`.
-- **Cleanup** — for `github-pr-review` repository-backed mode, the temporary
-  checkout is removed on **every** exit path (success, review/worker
-  failure, context-resolution failure after allocation, publication failure,
-  interruption the runtime surfaces), in a `finally`/equivalent. Deletion is
-  refused unless the target resolves inside the scratch parent, is not the
-  scratch parent itself, and carries this Skill's ownership marker — no
-  unconstrained recursive delete.
-- **Shared Review Semantics** — the single review reasoning
-  model defined by `shared/policies/review-scope.md`, plus scope validation
-  against any supplied review context per
-  [`shared/policies/review-context.md`](../shared/policies/review-context.md),
-  "Scope-boundary reasoning." Identical regardless of which
-  Skill or delivery mode invokes it. Beyond the baseline concern list, this
-  model reasons in the same local-first, signal-triggered style about four
-  higher-value behavioral concerns when the diff's own shape makes them
-  relevant: whether new business/validation/state-transition logic
-  duplicates an existing canonical owner rather than reusing it; whether a
-  multi-step, retryable, or externally re-triggerable flow leaves safe or
-  stranded state on partial failure, and whether any claimed recovery path
-  is actually evidenced; whether a changed contract, return value, or
-  exception is followed to its real callers, including exceptions that are
-  now swallowed, translated, or masked by a fallback; and, only once a
-  change actually has a production-operational failure mode worth
-  detecting or diagnosing (an explicit applicability gate — commonly
-  backend/service/queue/integration/retry/background-job changes,
-  conditionally frontend changes with an established client telemetry
-  convention, usually not agent-instruction/prompt/policy/static-doc
-  changes unless they carry runtime behavior of their own), whether that
-  failure path stays diagnosable through the repository's own established
-  metrics/alerts or logging convention. None of these expand the model
-  into a repository-wide audit — each is gated on a concrete signal in the
-  diff and scaled to blast radius exactly like the model's other
-  reasoning, per `shared/policies/review-scope.md` and
-  `shared/policies/evidence.md`.
-- **Severity classification** — every actionable finding is assigned
-  exactly one severity: P0, P1, or P2, per
-  [`shared/policies/severity.md`](../shared/policies/severity.md). The final
-  decision is derived mechanically from blocking severities; supplied
-  context and reconciled prior evidence inform which findings exist and at
-  what severity, never a separate decision path.
-- **Skill-Specific Output** — `local-code-review` always returns a
-  structured report. `github-pr-review` either returns a report (passive) or
-  publishes to GitHub (active). The delivery adapter never changes the
-  underlying findings or severities.
+  committed / staged / unstaged / untracked delta (local), or the PR's
+  full or bounded-delta diff (GitHub).
+- **Prepare Repository Context** — API/working-tree reads by default. In
+  optional or required repository-backed mode
+  ([`repository-checkout.md`](../skills/github-pr-review/policies/repository-checkout.md)),
+  `github-pr-review` also materialises an isolated, read-only, detached
+  checkout at the immutable PR `head_sha`; the PR delta stays
+  `merge-base(base,head)..head`; no target-repository code runs.
+- **Repository Instruction Resolver** — resolve applicable root-to-specific
+  `AGENTS.md` chains once from the same snapshot
+  ([`repository-instructions.md`](../shared/policies/repository-instructions.md));
+  the mapping goes unchanged to sequential execution or every worker and
+  never widens the target.
+- **Plan Review Execution** — sequential by default; parallel read-only
+  workers only with a detected runtime capability **and** two materially
+  independent dimensions **and** expected latency benefit
+  ([`parallel-review.md`](../shared/policies/parallel-review.md)).
+  Sequential and parallel runs must reach the same findings and decision;
+  the Skill never mutates user configuration to obtain a capability.
+- **Review workers** — each gets one bounded, normalized input and its
+  own dimension, and returns **candidate findings only** — never
+  publishes, never derives the decision, never sees another worker's
+  output.
+- **Reconcile findings** — one centralized stage: normalize → deduplicate
+  (same location + normalized claim; carry the higher candidate severity,
+  report once) → reconcile overlapping/conflicting. Worker completion
+  order never affects the result.
+- **Shared Review Semantics** — the single reasoning model in
+  [`review-scope.md`](../shared/policies/review-scope.md), plus optional
+  runtime-validation evidence
+  ([`runtime-validation.md`](../shared/policies/runtime-validation.md)) —
+  a validation run adds evidence only and never rewrites a finding or the
+  decision.
+- **Canonical final decision** — only the aggregator applies
+  [`severity.md`](../shared/policies/severity.md)'s mechanical derivation:
+  one P0/P1/P2 set and one `REVIEW CLEAN` / `CHANGES REQUIRED` (local) or
+  `Approve` / `Request Changes` (GitHub). A missing required dimension
+  yields `REVIEW INCOMPLETE` — never a clean/approved result.
+- **Skill-Specific Output** — the delivery adapter never changes the
+  underlying findings or severities. `github-pr-review`'s active
+  publication and any Approve/Request Changes stay the aggregating
+  reviewer's, once.
+- **Cleanup** — `github-pr-review` removes any temporary checkout on
+  every exit path with a guarded delete (inside the scratch parent, not
+  the parent itself, ownership marker present).
 
 ### Implemented since the initial design
 
-- **Temporary repository-backed GitHub PR review** — `github-pr-review` has
-  an opt-in mode that materialises an isolated, read-only, detached checkout
-  at the PR head (`skills/github-pr-review/policies/repository-checkout.md`).
-  It is context only: the PR stays the Review Target and no target-repository
-  code runs.
-- **Portable parallel review** — an opt-in execution optimisation with
+- **Temporary repository-backed GitHub PR review** — opt-in isolated,
+  read-only checkout at the PR head; context only
+  ([`repository-checkout.md`](../skills/github-pr-review/policies/repository-checkout.md)).
+- **Portable parallel review** — opt-in execution optimisation with
   capability detection and a sequential fallback
-  (`shared/policies/parallel-review.md`), realised via Claude Code Agent
-  Teams, Cursor subagents, or Codex concurrent agents where available.
-  Semantics are unchanged: one aggregator, one decision.
-- **Review-action authorization** — `github-pr-review` separates review
-  analysis from GitHub mutation authority
-  (`skills/github-pr-review/policies/review-action-authorization.md`). The
-  review always runs and produces a verdict; whether that verdict is
-  *submitted* as an `APPROVE` / `REQUEST_CHANGES` event is a separate
-  authorized decision. **Self-review is allowed; self-approval is not** —
-  authorship (the reviewer is the PR author, or shares the author's
-  controlling authority) forbids submitting any formal self-review event,
-  but never blocks the analysis or rewrites the verdict; there is no
-  `REVIEW SKIPPED`. For an external review, the default is non-mutating
-  (`recommendation-only`); `APPROVE` is submitted only in
-  `explicitly-authorized auto-action` mode, only under trusted mutation
-  authorization (independent of the review-performing/orchestrating
-  agent, scoped to the invocation/repo/PR/reviewed HEAD/action) and
-  genuine reviewer independence (authority separation, not merely a
-  different GitHub username). Agent-controlled flags, prompts, generated
-  instructions, nested Skill/agent invocations, alternate tokens, and
-  alternate identities cannot establish it; ambiguity fails closed. A
-  verdict is not authorization (`REVIEW CLEAN` ≠ `APPROVE`) and approval
-  is not merge authority (`APPROVE` ≠ `MERGE`). As a portable Skill with
-  no runtime of its own, it cannot cryptographically verify provenance —
-  it guarantees the safe default and the capability boundary and relies
-  on the runtime for an independent authorization channel.
+  ([`parallel-review.md`](../shared/policies/parallel-review.md); runtime
+  facts in [`runtime-parallelism.md`](runtime-parallelism.md)).
+- **Review-action authorization** — review analysis is separate from
+  GitHub mutation authority
+  ([`review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md)):
+  a non-mutating `recommendation-only` default, `block-only`, and
+  `explicitly-authorized auto-action`; self-review is allowed but
+  self-approval is not; a verdict is not authorization and `APPROVE` is
+  not merge authority.
+- **Optional machine-readable review status** — one stable aggregated,
+  exact-HEAD status/check derived from the same canonical verdict
+  ([`review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md)).
+- **Opt-in `human_review_output` and `include_fix_prompt`** — presentation
+  and remediation options normalized deterministically from a fixed
+  vocabulary
+  ([`invocation-options.md`](../shared/policies/invocation-options.md)).
+
+Usage guidance for all of the above is in
+[`docs/features/`](features/README.md).
 
 ### Future work (not implemented)
 
-The following are deliberately **not** part of the current architecture and
-are documented here only to mark them as future phases — no code, policy, or
-runbook implements them today:
+Deliberately **not** part of the current architecture — no code, policy,
+or runbook implements them today:
 
 - **Automatic branch-protection / ruleset configuration beyond the one
   opt-in required-check setup** — `github-pr-review` can add its single
@@ -535,46 +307,36 @@ runbook implements them today:
   through an explicit, separately requested setup action that preserves
   every unrelated rule, required check, bypass actor, and
   approval/stale-review setting
-  (`policies/review-status-enforcement.md`). It never changes
-  approval-count rules, `dismiss_stale_reviews_on_push`,
-  `require_last_push_approval`, or bypass actors, and never merges — its
-  maximum positive action remains **Approve** / a `success` status.
+  ([`review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md)).
+  It never changes approval-count rules,
+  `dismiss_stale_reviews_on_push`, `require_last_push_approval`, or bypass
+  actors, and never merges.
 - **Automatic execution of PR code** — neither Skill runs the target
-  repository's tests, linters, build, hooks, or arbitrary commands, even in
-  repository-backed mode. Cloning untrusted PR code is not permission to
-  execute it.
-- **Cross-review stable finding identity** — a movement-tolerant identifier
-  that lets a re-review tell "the same defect again" from "a new defect"
-  after line numbers, surrounding code, or wording changed. It is distinct
-  from the same-HEAD publish de-duplication identity `github-pr-review`
-  already computes
-  ([`../skills/github-pr-review/policies/pr-scope.md`](../skills/github-pr-review/policies/pr-scope.md),
-  "Existing review awareness"). The requirements are captured in
-  [`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md), the
-  selected precision-first matching strategy is recorded in
-  [`findings/finding-matching-strategy.md`](findings/finding-matching-strategy.md), and the
-  canonical deterministic derivation of the stable identifier and its
-  descriptor primitives is contracted in
-  [`findings/finding-stable-identity.md`](findings/finding-stable-identity.md) (with a test-only
-  reference model). No packaged policy, runbook, or code attaches the
-  identifier at Skill runtime or performs stateful re-review today. The
-  two-state finding lifecycle and its evidence-gated
-  transitions are defined in
-  [`findings/finding-lifecycle-contract.md`](findings/finding-lifecycle-contract.md); no runtime
-  applies that contract yet. These contracts share the
-  [`findings/`](findings/README.md) directory.
+  repository's tests, linters, build, hooks, or arbitrary commands, even
+  in repository-backed mode. Cloning untrusted PR code is not permission
+  to execute it.
+- **Cross-review stable finding identity** — a movement-tolerant
+  identifier distinguishing "the same defect again" from "a new defect."
+  Requirements in
+  [`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md),
+  matching strategy in
+  [`findings/finding-matching-strategy.md`](findings/finding-matching-strategy.md),
+  the deterministic derivation in
+  [`findings/finding-stable-identity.md`](findings/finding-stable-identity.md)
+  (test-only reference model), and the two-state lifecycle in
+  [`findings/finding-lifecycle-contract.md`](findings/finding-lifecycle-contract.md).
+  No packaged policy, runbook, or code attaches the identifier at Skill
+  runtime yet.
 - **Stateful re-review keyed off a reviewed SHA** — loading a prior
   reviewed state and computing what changed since it. The reviewed-SHA
-  state model this depends on — the minimal recorded fields, which commit
-  is authoritative when history moves, reviewer ownership, and
-  invalidation on rebase/force-push — is contracted in
-  [`findings/reviewed-sha-state-contract.md`](findings/reviewed-sha-state-contract.md). The
-  Skills already record and revalidate an exact reviewed HEAD, bind the
-  optional machine-readable status to it, and scope a same-reviewer delta
-  re-review to `previously reviewed SHA → current HEAD`
-  (`skills/github-pr-review/policies/reviewer-delta-review.md`,
-  `policies/review-status-enforcement.md`); no code loads a prior reviewed
-  state to compute a finding-level delta from it yet.
+  state model is contracted in
+  [`findings/reviewed-sha-state-contract.md`](findings/reviewed-sha-state-contract.md).
+  The Skills already record and revalidate an exact reviewed HEAD and
+  scope a same-reviewer delta re-review to
+  `previously reviewed SHA → current HEAD`; no code loads a prior
+  reviewed state to compute a finding-level delta from it yet.
+
+These contracts share the [`findings/`](findings/README.md) directory.
 
 ## 3. Separation of Concerns
 
@@ -583,140 +345,66 @@ runbook implements them today:
 | Review reasoning (what's wrong, why, severity) | shared/policies/, consumed identically by both Skills |
 | Local Git state inspection | `local-code-review` |
 | GitHub state inspection + delivery (comments, Approve/Request Changes) | `github-pr-review` |
-| Orchestration (which Skill runs when, loop control, fix application) | The calling workflow / Team Lead — **never** either Skill |
-| Implementation ownership (writing/fixing code) | The implementing Agent or developer — **never** either Skill |
+| Orchestration (which Skill runs when, loop control, fix application) | the calling workflow / Team Lead — **never** either Skill |
+| Implementation ownership (writing/fixing code) | the implementing Agent or developer — **never** either Skill |
 
 ## 4. Orchestration Boundary
 
 Neither Skill owns orchestration. The runtime, Team Lead, or implementing
-Agent is responsible for:
-
-- deciding when to invoke `local-code-review`;
-- deciding whether to invoke it again, and how many times;
-- applying fixes based on returned findings;
-- committing and pushing;
-- deciding when to open/update a PR;
-- deciding when to invoke `github-pr-review`, and in which mode.
-
-This discretion is bounded, not open-ended in two independent ways.
-
-First, invoking `local-code-review` at all is never automatic. Every
-single invocation — the first review of an implementation and any later
-re-review after fixes — requires the orchestrator to have already
-obtained fresh, explicit user approval scoped to that one run. An
-approval that authorized one invocation never authorizes another; the
-orchestrator must ask again before each subsequent invocation, including
-immediately after fixing findings from the previous one. See
-[`policies/review-orchestration-policy.md`](../policies/review-orchestration-policy.md),
-"Explicit User Approval Required for `local-code-review` Invocation."
-
-Second, it never extends to an implementing Agent invoking
-`github-pr-review` against the PR it just opened or updated for its own
-implementation work. Opening/updating that PR is the terminal step of the
-implementation workflow — see
-[`policies/review-orchestration-policy.md`](../policies/review-orchestration-policy.md),
-"Implementation Workflow Termination and Reviewer/Author Separation."
-`github-pr-review` is a reviewer-role Skill invoked by a genuinely
-separate reviewer or review task, not a post-implementation validation
-step chained onto the same workflow.
+Agent decides when to invoke a Skill, whether to invoke it again, when to
+apply fixes, and when to open/update a PR.
 
 ```text
-Orchestrator
-    ↓
-chooses Skill
-    ↓
-Skill reviews once
-    ↓
-returns result
+Orchestrator → chooses Skill → Skill reviews once → returns result
 ```
 
-The orchestrator owns repetition; the Skill does not remember previous
-invocations. This is why `local-code-review` ships with no
-`review-config.yaml` or `max_loops` setting — loop limits are an
-orchestration-level configuration concern, outside either Skill's
-package. A separate orchestration layer may default to something like 3
-iterations, but that default lives outside these Skills.
+That discretion is bounded two ways, both owned by
+[`policies/review-orchestration-policy.md`](../policies/review-orchestration-policy.md):
+
+- **`local-code-review` is never automatic.** Every invocation — the
+  first and every re-review after fixes — requires fresh, explicit user
+  approval scoped to that one run
+  ([`invocation-approval.md`](../skills/local-code-review/policies/invocation-approval.md)).
+- **An implementing Agent never reviews its own PR.** Opening/updating
+  that PR is the terminal step of the implementation workflow;
+  `github-pr-review` is invoked by a genuinely separate reviewer.
+
+The orchestrator owns repetition; the Skill keeps no memory of prior
+invocations, which is why `local-code-review` ships no `max_loops`
+setting.
 
 ## 5. Handoff Between Skills
 
 ```text
 Implementation Agent (implementation finished, or a fix just applied)
-    ↓
-ask user: run local-code-review for this run?
-    ↓
-explicit approval for this run?
-├── no  → continue without review
-└── yes
-     ↓
-   Local Code Review Skill (single invocation — this run only)
-     ↓
-   findings
-     ↓
-   Implementation Agent fixes (if any)
-     ↓
-   [no automatic re-run — ask the user again before another invocation]
-    ↓
-local implementation accepted by orchestrator
-    ↓
-push / open or update PR
-    ↓
-STOP (implementation workflow ends here)
+    ↓  ask user: run local-code-review for this run?
+    ├── no  → continue without review
+    └── yes → Local Code Review Skill (one invocation) → findings → fixes
+                 ↓  [no automatic re-run — ask again before another invocation]
+local implementation accepted → push / open or update PR → STOP
 
 — separate reviewer / review task —
     ↓
-GitHub PR Review Skill
+GitHub PR Review Skill  (reviews the PR's actual current state, regardless of history)
 ```
 
-Each `Local Code Review Skill` box above represents exactly one
-invocation, gated by its own fresh, explicit user approval obtained
-immediately beforehand. Approval for one invocation never carries over
-to a later one — see
-[`policies/review-orchestration-policy.md`](../policies/review-orchestration-policy.md),
-"Explicit User Approval Required for `local-code-review` Invocation." A
-"no" at any
-approval gate is a fully valid outcome: the implementation workflow
-continues straight to local acceptance, push, and PR without review.
-
-`local-code-review` does not automatically invoke `github-pr-review`,
-and neither does the implementing Agent that just opened or updated the
-PR — see
-[`policies/review-orchestration-policy.md`](../policies/review-orchestration-policy.md),
-"Implementation Workflow Termination and Reviewer/Author Separation."
-`github-pr-review` is
-invoked by a genuinely separate reviewer (a different Agent/identity, or
-a dedicated review task against an existing PR), never as an automatic
-continuation of the same implementation workflow. `github-pr-review`
-does not assume `local-code-review` was previously run — it reviews the
-PR's actual current state regardless of history. They are independently
-invokable, and each may be used without the other.
+Each `Local Code Review Skill` box is exactly one invocation gated by its
+own fresh approval. A "no" at any gate is fully valid. `github-pr-review`
+does not assume `local-code-review` ran; the two are independently
+invokable.
 
 ## 6. External PR Workflow (`github-pr-review`)
 
 ```text
 External GitHub PR
-    ↓
-Resolve reviewer identity + PR author
-    ↓
-Inspect authoritative PR HEAD
-    ↓
-Review
-    ↓
-Inline findings
-    ↓
-P0 / P1 / P2
-    ↓
-Permitted Approve/Request Changes event
-or explicit formal-review unavailability
-    ↓
-Stop
+    ↓ resolve reviewer identity + PR author (+ controlling authority)
+    ↓ inspect authoritative PR HEAD
+    ↓ review → inline findings → P0 / P1 / P2
+    ↓ permitted Approve / Request Changes event, or explicit formal-review unavailability
+    ↓ stop
 ```
 
-Maximum automated positive action: **Approve**. No merge occurs — the
-repository owner or their merge workflow performs the merge separately,
-following
-[`policies/git-pr-merge-policy.md`](../policies/git-pr-merge-policy.md)'s
-merge-strategy rules when this repository's own PRs are the ones being
-merged. See
+Maximum automated positive action: **Approve**. No merge occurs — see
 [`skills/github-pr-review/runbooks/active-pr-review.md`](../skills/github-pr-review/runbooks/active-pr-review.md).
 
 ## 7. Packaging: Source Layout vs. Distribution Layout
@@ -735,157 +423,106 @@ skills/<name>/metadata/…            →   metadata/…
 shared/policies/…, shared/templates/…  →  shared/policies/…, shared/templates/…
 ```
 
-`scripts/package-skills.sh` / `scripts/package-skills.ps1` assemble this
-distribution layout by staging each Skill's files under `dist/.staging/`,
-dropping the `skills/<name>/` source prefix so `SKILL.md` lands at the
-archive root, then zipping the staged tree's *contents* (not the staging
-folder itself) into `dist/*.zip`. Staging is removed after a successful
-build, so normal output is just the two zips under `dist/`.
+`scripts/package-skills.sh` / `scripts/package-skills.ps1` stage each
+Skill's files under `dist/.staging/`, drop the `skills/<name>/` prefix so
+`SKILL.md` lands at the archive root, then zip the staged tree's
+*contents* into `dist/*.zip`. Because `SKILL.md` moves from source depth 2
+to depth 0, its links into `shared/` change from `../../shared/...` to
+`shared/...`, and nested files (source depth 3) change from
+`../../../shared/...` to `../shared/...`. Packaging applies exactly that
+narrow, deterministic text substitution across the staged Markdown —
+Skill-internal links are untouched, and the canonical source files remain
+the single source of truth.
 
-Because `SKILL.md` moves from `skills/<name>/SKILL.md` (source depth 2)
-to the archive root (depth 0), its relative links into `shared/` change
-from `../../shared/...` to `shared/...`; nested files one level under the
-Skill (`runbooks/`, `templates/`, `policies/`, source depth 3) change
-from `../../../shared/...` to `../shared/...`. The packaging scripts
-apply this as a narrow, deterministic text substitution across the
-staged Markdown files — scoped to exactly those two link prefixes — after
-copying and before archiving. Skill-internal links (`../SKILL.md`,
-`runbooks/...`, etc.) are untouched, since a Skill's own internal
-relative depth is unchanged by removing the shared `skills/<name>/`
-wrapper. The canonical source files in `skills/<name>/` remain the single
-source of truth; only the staged copies are rewritten.
+Repository-development files — `AGENTS.md`, `policies/`, `docs/`
+(including this file and everything under [`features/`](features/README.md)),
+and the root `README.md` — are **never** packaged, and no packaged Skill
+resource may depend on them
+([`policies/skill-development-policy.md`](../policies/skill-development-policy.md)).
 
 ## 8. Agent Skills Discovery vs. Operational Behavior
 
-Each `SKILL.md`'s YAML frontmatter (`name` and `description`) is Agent Skills
-discovery metadata only — it exists so a runtime can find and activate the
-right Skill without loading anything else. It carries no review policy of
-its own.
-
 ```text
-SKILL.md frontmatter
-    ↓
-Skill discovery (name, description)
-
-SKILL.md body
-    ↓
-core operating instructions (identity, inputs, workflow, mutation boundary)
-
-shared/policies/, runbooks/, templates/
-    ↓
-detailed review rules, procedures, and output contracts, loaded as needed
+SKILL.md frontmatter → Skill discovery (name, description) only — no review policy
+SKILL.md body        → core operating instructions (identity, inputs, workflow, boundaries)
+shared/policies/, runbooks/, templates/ → detailed rules, procedures, output contracts
 ```
 
-`skills/<name>/metadata/skill.yaml` remains separate package metadata
-(version, capabilities, packaged-file manifest) for consumers outside the
-Agent Skills discovery path; its `name`/`description` are a mirror of the
-canonical values in `SKILL.md`'s frontmatter, not a second source of truth.
-Packaging fails unless both values are exactly equal. Resource paths remain
-repository-relative in canonical source metadata and are narrowly adapted
-in staged package metadata, then checked for containment and existence.
+`skills/<name>/metadata/skill.yaml` is separate package metadata for
+consumers outside the Agent Skills discovery path; its
+`name`/`description` mirror `SKILL.md`'s frontmatter, and packaging fails
+unless they are exactly equal.
 
 ## 9. Reasoning vs. Delivery vs. Ownership
 
-- **Review reasoning** is Skill-agnostic and delivery-mode-agnostic: the
+- **Review reasoning is Skill-agnostic and delivery-mode-agnostic** — the
   same shared policies and severity model apply in `local-code-review`
-  and in both modes of `github-pr-review`.
-- **The canonical finding contract is shared, its rendering is a
-  projection.** Both Skills render the one compact, field-oriented finding
-  shape in
-  [`shared/templates/finding.md`](../shared/templates/finding.md)
-  (`id`/`severity`/`title`/`Location`/`Evidence`/`Impact`/`Fix`, concise
-  by default, with a controlled `Details` field for complex findings). The
-  human projection reads problem → impact → fix → optional supporting detail.
-  The fields are the stable, agent-parseable contract; each surface (local
-  report, GitHub review body, GitHub inline comment) projects the same
-  fields. A future machine-readable renderer would be another projection —
-  it would not redesign the review reasoning model or the severity/
-  decision semantics.
+  and both modes of `github-pr-review`.
+- **The canonical finding contract is shared; its rendering is a
+  projection.** Both Skills render the one field-oriented shape in
+  [`finding.md`](../shared/templates/finding.md); each surface projects
+  the same fields.
 - **Detail is presentation-only.** `include_finding_details` defaults to
-  `true` locally and `false` on GitHub; a per-finding decision overrides the
-  invocation, which overrides the Skill default. The option never changes the
-  canonical finding data, severity, or decision.
+  `true` locally and `false` on GitHub; it never changes the finding
+  data, severity, or decision.
 - **The final-summary voice is presentation-only.** `human_review_output`
-  (default `false` for both Skills, requested in natural language, no CLI
-  flag) selects a concise senior-engineer rendering of the final
+  (default `false` for both Skills, natural-language-only — there is no
+  CLI flag) selects a concise senior-engineer rendering of the final
   human-facing summary. Mode on and mode off produce identical findings,
-  severities, deduplication, verdict, GitHub review state, inline comments,
-  and machine-readable status — and the identical publication order — and
-  differ only in the wording of that final summary.
-- **Human-facing report formatting is not implied by shared reasoning.**
-  Each Skill's own template owns the presentation appropriate to its own
-  delivery surface, per
-  [`shared/templates/review-summary.md`](../shared/templates/review-summary.md),
-  "Machine metadata is subordinate": `local-code-review`'s
-  [`templates/local-review-report.md`](../skills/local-code-review/templates/local-review-report.md)
-  renders its trailing metadata as plain Markdown and relevance-gates
-  which fields appear (a report read directly in a terminal/chat has no
-  use for a collapsible widget, and an initial review with nothing
-  staged has no use for a fixed, empty-input fingerprint every time),
-  while `github-pr-review`'s
-  [`templates/external-review-summary.md`](../skills/github-pr-review/templates/external-review-summary.md)
-  legitimately wraps its own optional subordinate metadata in a
-  collapsible `<details>` block, since GitHub natively renders and
-  collapses it. Neither choice is more "correct" than the other — they
-  are Skill-specific answers to different delivery surfaces, and a
-  change to one Skill's presentation must not be read as implying the
-  other should match it.
-- **GitHub submission capability** is separate from reasoning. A clean or
-  blocking result remains valid even when the authenticated account (for
-  example, the PR author) cannot submit the corresponding formal review.
-- **Analysis eligibility is separate from mutation eligibility.**
-  Authorship never blocks analysis: a self-review (the reviewer is the PR
-  author, or shares the author's controlling authority) runs the full
-  review and produces a verdict, but never submits a formal `APPROVE` /
-  `REQUEST_CHANGES` on its own work — self-review is allowed, self-approval
-  is not, and there is no `REVIEW SKIPPED`.
-- **GitHub mutation authority** is separate again from both reasoning and
-  submission *capability*. For an external review, even when reasoning is
-  clean and the account *could* submit an `APPROVE`, the event is
-  submitted only in `explicitly-authorized auto-action` mode under
-  trusted, scoped authorization and genuine reviewer independence
-  (`skills/github-pr-review/policies/review-action-authorization.md`). The
-  default is `recommendation-only`; a verdict is not authorization and
-  approval is not merge authority. This gate composes with — never
-  replaces — HEAD revalidation, stale-review protection, reviewer
-  ownership, delta re-review, and the mechanical severity → decision
-  derivation.
-- **Git/GitHub state inspection** is read-only and never assumes GitHub
-  is authoritative when local state diverges from it — see
-  [`skills/local-code-review/runbooks/local-review.md`](../skills/local-code-review/runbooks/local-review.md).
-- **GitHub delivery** is the only stage permitted to mutate PR state
-  (comments, review decisions), owned exclusively by `github-pr-review`
-  in active mode.
-- **Orchestration ownership** (deciding which Skill runs when, enforcing
-  one-reviewer-per-scope, enforcing any loop limit) belongs to the
-  calling workflow — see section 4.
-- **Implementation ownership** always belongs to the implementing Agent
+  severities, deduplication, verdict, GitHub review state, inline
+  comments, machine-readable status, and publication order.
+- **Publication ordering is fixed for `github-pr-review`.**
+  `final review comment == last publication event`: the one batched
+  review submission (body + inline comments + event) carries the final
+  human-facing summary and is the last review-owned publication; any
+  optional machine-readable review status is published **before** it;
+  nothing review-owned is published or edited afterward
+  ([`review-output.md`](../skills/github-pr-review/policies/review-output.md),
+  "Submission ordering").
+- **Analysis, submission capability, and mutation authority are three
+  separate things.** A clean or blocking result stays valid even when the
+  account cannot submit the formal review; authorship never blocks
+  analysis but forbids a formal self-review event; and for an external
+  review, submitting `APPROVE` / `REQUEST_CHANGES` requires
+  `explicitly-authorized auto-action` mode under trusted, scoped
+  authorization and genuine reviewer independence
+  ([`review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md)).
+  This gate composes with — never replaces — HEAD revalidation,
+  stale-review protection, reviewer ownership, delta re-review, and the
+  mechanical severity → decision derivation.
+- **The optional machine-readable review status** is derived from the same
+  canonical verdict, never a second engine; a blocking status is
+  blocking-only enforcement allowed even for a self-review, a `success`
+  status needs the same positive authorization as `APPROVE`, and a new
+  HEAD inherits no green
+  ([`review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md)).
+- **Git/GitHub state inspection is read-only** and never assumes GitHub is
+  authoritative when local state diverges.
+- **GitHub delivery** is the only stage permitted to mutate PR state, and
+  only `github-pr-review` in active mode.
+- **Orchestration ownership** belongs to the calling workflow (§4);
+  **implementation ownership** always belongs to the implementing Agent
   or developer, never to either Skill.
 
 ## 10. Portable Core, Optional Runtime Adapters
 
-The portable core is `SKILL.md` plus the canonical package-relative policies,
-runbooks, templates, shared resources, and portable package metadata. It owns
-all normative review semantics and expresses external dependencies as
-capabilities rather than vendor-specific tools.
+The portable core is `SKILL.md` plus the canonical package-relative
+policies, runbooks, templates, shared resources, and portable package
+metadata. It owns all normative review semantics and expresses external
+dependencies as capabilities, not vendor-specific tools.
 
-Runtime adapters are subordinate optional resources. They may improve
-discovery, UI presentation, or runtime configuration, but they cannot redefine
-review scope, severity, mutation boundaries, output contracts, or dependency
-requirements. Ignoring or removing an adapter leaves a coherent Skill. The
-current `agents/openai.yaml` files contain only optional Codex UI metadata and
-are not referenced by the portable core.
-
-Installation location is a consumer concern, not a package format. The same
-standalone package can be placed under a runtime-supported destination such as
-`.agents/skills/<name>/`, `.claude/skills/<name>/`,
-`.cursor/skills/<name>/`, or `.opencode/skills/<name>/`; each archive still
-keeps `SKILL.md` at its own root.
+Runtime adapters are subordinate optional resources — they may improve
+discovery, presentation, or configuration, but cannot redefine review
+scope, severity, mutation boundaries, output contracts, or dependency
+requirements. Ignoring or removing an adapter leaves a coherent Skill.
+Installation location (`.agents/skills/<name>/`, `.claude/skills/<name>/`,
+`.cursor/skills/<name>/`, `.opencode/skills/<name>/`, …) is a consumer
+concern; each archive keeps `SKILL.md` at its own root.
 
 ### Documentation-backed compatibility matrix
 
-This matrix records format conclusions from current product documentation. It
-is not a claim that every runtime loaded these packages during validation.
+Format conclusions from current product documentation — not a claim that
+every runtime loaded these packages during validation.
 
 | Concern | Claude | Codex | Cursor | OpenCode |
 |---|---|---|---|---|
@@ -896,10 +533,5 @@ is not a claim that every runtime loaded these packages during validation.
 | Optional adapter used here | none | `agents/openai.yaml` | none | none |
 
 The common canonical frontmatter deliberately contains only `name` and
-`description`. Although the open Agent Skills specification defines additional
-optional keys, the current Codex validation guidance accepts a narrower set;
-keeping capability requirements in the Skill body avoids coupling canonical
-validity to optional-field handling. Claude- or Cursor-specific frontmatter is
-not required, and OpenCode documents both directory-based supporting resources
-and `.agents/skills` discovery. Actual runtime loading is reported separately
-from documentation and static package validation.
+`description`; keeping capability requirements in the Skill body avoids
+coupling canonical validity to optional-field handling.

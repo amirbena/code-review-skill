@@ -42,20 +42,22 @@ Acceptance criteria:
 - validation must run before execution
 ```
 
-- **Review context** — free-form requirements, a pasted ticket/Issue, an
-  HLD/ADR, an implementation plan, or a bare Jira key (resolved read-only
-  before the review). It focuses attention and enables scope-boundary
-  reasoning; it never overrides the actual code and never widens the
-  review beyond the current delta.
-- **PR reference** — an associated PR whose prior findings and settled
-  decisions are reconciled against your local delta, so the review does
-  not re-litigate what a reviewer already settled.
-- **`include_fix_prompt`** (default off) — when on, qualifying findings
-  append a coding-agent-ready implementation prompt. Output only; nothing
-  else changes.
-
-A plain request with no context is fully supported and behaves exactly
-as before these inputs existed.
+A plain request with no context is fully supported. Optional add-ons,
+each with a usage guide under `docs/features/`:
+[review context & prior review evidence](../../docs/features/review-context.md)
+(requirements, a ticket/Issue, an HLD/ADR, a plan, a Jira key resolved
+read-only, or an associated PR's prior findings) focuses the review
+without widening the local delta;
+[`include_fix_prompt`](../../docs/features/fix-prompt.md) adds a
+coding-agent-ready prompt to qualifying findings;
+[`human_review_output`](../../docs/features/human-review-output.md) renders
+the summary in a concise senior-engineer voice.
+[Runtime validation evidence](../../docs/features/runtime-validation.md)
+applies automatically when the repository declares a suitable command and
+the runtime provides a verified isolation boundary. The
+[parallel-review](../../docs/features/parallel-review.md) contract is
+shared, but parallel execution is currently wired into `github-pr-review`,
+not `local-code-review`.
 
 ## What a review looks like
 
@@ -102,6 +104,12 @@ These are summaries. The binding text lives in
 ## Deeper documentation
 
 - [`SKILL.md`](SKILL.md) — the execution entry contract
+- Feature guides — how to use the optional capabilities:
+  [review context](../../docs/features/review-context.md),
+  [runtime validation](../../docs/features/runtime-validation.md),
+  [parallel review](../../docs/features/parallel-review.md),
+  [human-style output](../../docs/features/human-review-output.md),
+  [fix prompt](../../docs/features/fix-prompt.md)
 - [`runbooks/local-review.md`](runbooks/local-review.md) — the full
   numbered procedure
 - [`policies/`](policies/repository-state.md) — the rules this Skill owns

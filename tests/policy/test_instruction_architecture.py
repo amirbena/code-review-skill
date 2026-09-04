@@ -26,6 +26,7 @@ USER_FACING_GUIDANCE_DIRS = (
     POLICIES_DIR,
     SHARED_POLICIES_DIR,
     REPO_ROOT / "tests",
+    REPO_ROOT / "docs" / "features",
 )
 PACKAGE_SCRIPTS = (
     REPO_ROOT / "scripts" / "package-skills.sh",
@@ -209,6 +210,106 @@ class NavigationalReadmeConventionTests(unittest.TestCase):
         self.assertEqual(missing, [], f"user-facing guidance dirs without a README: {missing}")
 
 
+FEATURES_DIR = REPO_ROOT / "docs" / "features"
+
+
+class FeatureCatalogTests(unittest.TestCase):
+    """docs/features/README.md is the capability catalog: every feature
+    guide is a real, linked page, and its links resolve."""
+
+    def setUp(self) -> None:
+        self.readme = FEATURES_DIR / "README.md"
+        self.assertTrue(self.readme.is_file())
+        self.raw = self.readme.read_text(encoding="utf-8")
+
+    def test_catalog_links_every_feature_guide(self) -> None:
+        on_disk = {p.name for p in FEATURES_DIR.glob("*.md")} - {"README.md"}
+        self.assertTrue(on_disk, "no feature guides found under docs/features/")
+        for name in sorted(on_disk):
+            self.assertIn(
+                f"]({name})", self.raw, f"docs/features/README.md does not list {name}"
+            )
+
+    def test_catalog_names_the_supporting_skill_and_activation(self) -> None:
+        t = _norm(self.readme)
+        # It is a catalog, not just a link list: it states support + activation.
+        self.assertIn("which Skill supports it", t)
+        self.assertIn("Default / conditional / requested", t)
+        # And it draws the boundary of what is NOT a feature guide.
+        self.assertIn("Not a feature guide", t)
+
+    def test_catalog_relative_links_resolve(self) -> None:
+        broken = [
+            target
+            for target in LINK_RE.findall(self.raw)
+            if not target.startswith(("http://", "https://", "mailto:"))
+            and not (self.readme.parent / target.split("#", 1)[0]).exists()
+        ]
+        self.assertEqual(broken, [], f"broken links in docs/features/README.md: {broken}")
+
+    def test_feature_guides_are_never_packaged(self) -> None:
+        # docs/ is repository-development documentation; no package script
+        # may stage a docs/features/ path.
+        for script in PACKAGE_SCRIPTS:
+            text = script.read_text(encoding="utf-8")
+            self.assertNotIn("docs/features", text, f"{script.name} references docs/features/")
+
+
+class ThinReadmeDisciplineTests(unittest.TestCase):
+    """The README-layering rule survives beyond one issue: it is a stated
+    AGENTS.md invariant routed to its canonical policy."""
+
+    def test_agents_states_the_thin_layered_documentation_invariant(self) -> None:
+        t = _norm(AGENTS)
+        self.assertIn("Thin, layered documentation.", t)
+        self.assertIn("capability catalog", t)
+        self.assertIn("](docs/features/README.md)", AGENTS.read_text(encoding="utf-8"))
+
+    def test_documentation_policy_owns_the_layering_and_duplication_rule(self) -> None:
+        # Concept checks, not verbatim sentences: harmless copy edits that
+        # keep the meaning must not break this test.
+        t = _norm(DOCUMENTATION_POLICY).lower()
+        self.assertIn("thin readme discipline", t)  # the stable lead-in anchor
+        self.assertIn("smallest", t)  # the smallest-layer principle
+        # A canonical policy/runbook outranks explanatory docs on conflict.
+        self.assertTrue(
+            "canonical" in t and "wins" in t and "conflict" in t,
+            "documentation-policy.md must state that the canonical doc wins a conflict",
+        )
+
+    def test_agents_routes_the_documentation_impact_check(self) -> None:
+        t = _norm(AGENTS)
+        self.assertIn("documentation-impact check", t)
+        # An implementation-only change must not force a README edit.
+        self.assertIn("no user-visible effect", _norm(AGENTS).lower())
+        # It stays a summary that routes, not the full matrix.
+        self.assertIn("](policies/documentation-policy.md)", AGENTS.read_text(encoding="utf-8"))
+        self.assertNotIn("docs/features/<name>.md", t)  # matrix lives in the policy
+
+    def test_documentation_policy_owns_the_capability_impact_rule(self) -> None:
+        raw = DOCUMENTATION_POLICY.read_text(encoding="utf-8")
+        heading = "### Documentation impact for capability changes"
+        self.assertIn(heading, raw)  # stable structural anchor
+        # Scope the concept checks to that section.
+        section = _norm(DOCUMENTATION_POLICY).lower().split(heading.lower(), 1)[1]
+        section = section.split("## navigational readme", 1)[0]
+        self.assertIn("documentation-impact check", section)
+        self.assertIn("smallest", section)  # route to the smallest affected layer
+        # Implementation-only changes do not require a README/doc edit.
+        self.assertTrue(
+            "implementation" in section
+            and ("no readme" in section or "needs no" in section or "no user-visible" in section),
+            "the section must say an implementation-only change needs no README edit",
+        )
+        # A known-affected surface left stale means the change is incomplete.
+        self.assertTrue(
+            "incomplete" in section and "stale" in section,
+            "the section must treat a stale known-affected surface as incomplete work",
+        )
+        # It is documentation governance, not a mechanical source-diff mapping.
+        self.assertIn("not a mechanical", section)
+
+
 class PackagingBoundaryTests(unittest.TestCase):
     # Repository-development files that must never enter a packaged archive.
     UNPACKAGED = set(ROUTED_POLICIES) | {"README.md"}
@@ -257,6 +358,17 @@ class PackagingBoundaryTests(unittest.TestCase):
                 names = set(zf.namelist())
             self.assertEqual(
                 names & banned, set(), f"{archive.name} ships repository-development files"
+            )
+            # Repository-level documentation under docs/ (the architecture
+            # map, the feature guides, release notes, …) is never packaged.
+            # Guard the built artifact directly, not just the package script.
+            docs_entries = sorted(
+                n for n in names if n == "docs" or n.startswith("docs/")
+            )
+            self.assertEqual(
+                docs_entries,
+                [],
+                f"{archive.name} ships repository documentation: {docs_entries}",
             )
 
 

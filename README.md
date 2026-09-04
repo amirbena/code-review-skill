@@ -87,34 +87,30 @@ not only what it finds:
 - **Read-only** — no edits, commits, pushes, merges, or branch management.
 - **Opt-in local review** — `local-code-review` needs fresh, explicit user
   approval for every invocation, including each re-review after a fix.
-- **Self-review prevention** — `github-pr-review` compares the
-  authenticated identity against the PR author and skips self-review before
-  any analysis.
+- **Self-review is allowed; self-approval is not** — `github-pr-review`
+  analyzes its own PR and produces a real verdict, but never submits a
+  formal `APPROVE` / `REQUEST_CHANGES` on the reviewer's own work.
+- **Analysis is separate from GitHub mutation authority** — an active
+  review defaults to non-mutating `recommendation-only`; a formal
+  Approve / Request Changes is submitted only under independently trusted,
+  PR/HEAD-scoped authorization with genuine reviewer independence.
 - **One reviewer owner per scope**, **exact reviewed-HEAD tracking**, and
   **HEAD revalidation before the decision**, so a changed HEAD is never
   approved as the SHA that was actually reviewed.
 - **Shared P0/P1/P2 severity model** with a mechanical blocking rule,
   identical in both Skills.
 
-Implemented: an opt-in isolated read-only temporary PR checkout, and opt-in
-parallel review with a sequential fallback. **Not** implemented: GitHub
-merge-blocking / required status checks, and any execution of the target
-repository's code. See
+**Optional and advanced capabilities** — review context, runtime
+validation evidence, parallel review, human-style output, delta / SHA-aware
+re-review, GitHub publication & review authorization, and the coding-agent
+fix prompt — each has a short usage guide, with which Skill supports it
+and how it is activated, in the capability catalog
+[`docs/features/`](docs/features/README.md).
+
+**Not** implemented: any GitHub-side merge or auto-merge,
+branch-protection changes beyond one opt-in required-check setup, and any
+execution of the target repository's code. See
 [`docs/CODE_REVIEW_COMPARISON.md`](docs/CODE_REVIEW_COMPARISON.md) §3 and §10.
-
-### Review context and prior review evidence (optional)
-
-Both Skills accept an optional **review context** — free-form requirements,
-explicit user instructions, a Jira/tracker ticket, an explicitly supplied
-GitHub Issue (no automatic PR↔Issue discovery), an HLD/ADR, or an
-implementation plan. It focuses attention and enables scope-boundary
-reasoning; it never widens the review target. Relevant **prior review
-evidence** is reconciled against the *current* target, not blindly
-inherited — a resolved thread is evidence of a past conclusion, not proof
-the current code is correct, and automation/bot comments contribute
-observations only. Both are defined once in
-[`shared/policies/review-context.md`](shared/policies/review-context.md) and
-[`shared/policies/review-evidence.md`](shared/policies/review-evidence.md).
 
 ## Requirements
 
@@ -177,11 +173,12 @@ are rewritten during staging — are described in
 
 | Read this | For |
 |---|---|
+| [`skills/local-code-review/README.md`](skills/local-code-review/README.md) · [`skills/github-pr-review/README.md`](skills/github-pr-review/README.md) | per-Skill onboarding — purpose, invocation, capabilities, boundaries |
+| [`docs/features/`](docs/features/README.md) | usage guides for the optional/advanced capabilities — what each does and how to ask for it |
 | [`docs/CODE_REVIEW_COMPARISON.md`](docs/CODE_REVIEW_COMPARISON.md) | why these Skills exist alongside Claude Code, GitHub-native, and third-party reviewers, and the full `local-code-review` vs. `github-pr-review` matrix |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | the high-level mental model, module boundaries, the review pipeline, and the orchestration boundary between the Skills and their caller |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | the architecture overview — components, relationships, the review pipeline, boundaries, and links to canonical detail |
 | [`AGENTS.md`](AGENTS.md) + [`policies/`](policies/) | this repository's canonical development entrypoint — global invariants, instruction precedence, and a routing table into the focused development, Git/PR/merge, validation, documentation, Skill-development, and review-orchestration policies |
-| [`docs/runtime-parallelism.md`](docs/runtime-parallelism.md) | the isolated per-runtime facts behind the portable parallel-review contract |
-| [`skills/local-code-review/README.md`](skills/local-code-review/README.md) · [`skills/github-pr-review/README.md`](skills/github-pr-review/README.md) | per-Skill onboarding |
+| [`docs/runtime-parallelism.md`](docs/runtime-parallelism.md) | the isolated per-runtime facts behind the portable parallel-review contract (linked from the [parallel-review guide](docs/features/parallel-review.md)) |
 | [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md) · [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md) | the complete, normative Skill definitions |
 | [`SECURITY.md`](SECURITY.md) | how to report a vulnerability privately |
 | [`CHANGELOG.md`](CHANGELOG.md) | notable user-facing changes per release |
