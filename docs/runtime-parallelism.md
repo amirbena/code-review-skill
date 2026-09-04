@@ -7,6 +7,7 @@ only, not the packaged policies.
 - Portable contract: [`../shared/policies/parallel-review.md`](../shared/policies/parallel-review.md)
 - PR application + capability table:
   [`../skills/github-pr-review/policies/parallel-review.md`](../skills/github-pr-review/policies/parallel-review.md)
+- User-facing usage guide: [`features/parallel-review.md`](features/parallel-review.md)
 
 This file is **not** packaged into either Skill archive.
 

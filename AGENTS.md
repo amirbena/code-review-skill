@@ -112,6 +112,28 @@ canonical, detailed rule lives in the policy named after it.
 - **One canonical home per rule.** A normative rule has exactly one
   canonical location. Other files (this one included) summarize and link;
   they do not restate a rule in a way that can drift independently.
+- **Thin, layered documentation.** README files are orientation and
+  navigation surfaces, not capability encyclopedias: the root
+  [`README.md`](README.md) gives the product overview, Skill selection,
+  high-level capability categories, and links onward; each Skill
+  `README.md` gives that Skill's purpose, basic usage, a compact
+  capability/difference summary, key boundaries, and links onward;
+  [`docs/features/README.md`](docs/features/README.md) is the capability
+  catalog (which Skill supports each optional/advanced feature and how it
+  is activated); [`docs/features/`](docs/features/README.md) pages explain
+  one capability's usage; [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+  is the concise system map; `policies/` and runbooks own exact
+  semantics. Prefer a link to the smallest appropriate layer over copying
+  an explanation into several READMEs, and do not grow a README merely to
+  make a capability discoverable. READMEs and feature guides are
+  explanatory — a canonical policy or runbook wins any conflict. A
+  capability change — adding, removing, or renaming a capability,
+  changing which Skill supports it, its default / conditional / requested
+  state, how it is invoked or enabled, its user-visible limits, or its
+  canonical semantics — requires a **documentation-impact check** that
+  updates the smallest affected layer; an implementation change with no
+  user-visible effect requires no README change. Canonical:
+  [`policies/documentation-policy.md`](policies/documentation-policy.md).
 
 ---
 
@@ -210,8 +232,9 @@ responsibility.
   small number of meaningful domains over many tiny files.
 - Give every **directory people navigate directly** to find policies,
   contracts, or guidance a concise navigational README entrypoint (this
-  applies to `policies/`, `shared/policies/`, and `tests/` today — not to
-  every directory). The canonical rule is in
+  applies to `policies/`, `shared/policies/`, `tests/`, and
+  `docs/features/` today — not to every directory). The canonical rule is
+  in
   [`policies/documentation-policy.md`](policies/documentation-policy.md),
   "Navigational README for user-facing policy/guidance directories."
 - Add a rule to this file's Global invariants only when it truly applies
