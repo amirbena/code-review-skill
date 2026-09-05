@@ -27,6 +27,7 @@ USER_FACING_GUIDANCE_DIRS = (
     SHARED_POLICIES_DIR,
     REPO_ROOT / "tests",
     REPO_ROOT / "docs" / "features",
+    REPO_ROOT / "docs" / "benchmark",
 )
 PACKAGE_SCRIPTS = (
     REPO_ROOT / "scripts" / "package-skills.sh",

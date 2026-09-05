@@ -1,0 +1,150 @@
+# Worked example for docs/benchmark/fixture-format.md (Issue #50).
+#
+# One benchmark case: a crafted patch to a small Python web module that
+# introduces (a) a SQL-injection sink and (b) a user-controlled filesystem
+# path, and adds no tests. It exercises all four variance constructs the
+# format defines:
+#
+#   * required finding with `alternatives`  -> sqli-user-lookup
+#     (one defect, two acceptable report locations/phrasings)
+#   * `any_of` group                        -> unsafe-export-path
+#     (two genuinely different acceptable defects, either is fine)
+#   * `match: optional` + severity list     -> missing-security-test
+#     (optional finding whose severity may acceptably be P1 or P2)
+#
+# It is NOT part of the benchmark corpus (Issue #51 owns that); it exists
+# only so the format has a realistic, validated reference.
+
+format: benchmark-case/v1
+
+id: example-sqli-and-unsafe-path
+title: "SQL injection and user-controlled export path in the users module"
+
+input:
+  # Exactly one of `patch` / `repo_ref`. This case is self-contained, so it
+  # ships an inline unified diff plus the pre-image it applies onto.
+  patch: |
+    diff --git a/app/users.py b/app/users.py
+    index 1111111..2222222 100644
+    --- a/app/users.py
+    +++ b/app/users.py
+    @@ -1,12 +1,20 @@
+     import sqlite3
+
+    -from .db import get_connection
+    +from .db import get_connection
+    +
+    +REPORT_ROOT = "/var/app/reports"
+
+
+     def get_user(username):
+    -    conn = get_connection()
+    -    cur = conn.execute(
+    -        "SELECT id, email FROM users WHERE username = ?", (username,)
+    -    )
+    -    return cur.fetchone()
+    +    conn = get_connection()
+    +    query = f"SELECT id, email FROM users WHERE username = '{username}'"
+    +    cur = conn.execute(query)
+    +    return cur.fetchone()
+    +
+    +
+    +def export_report(name):
+    +    path = REPORT_ROOT + "/" + name
+    +    with open(path) as fh:
+    +        return fh.read()
+  base:
+    app/users.py: |
+      import sqlite3
+
+      from .db import get_connection
+
+
+      def get_user(username):
+          conn = get_connection()
+          cur = conn.execute(
+              "SELECT id, email FROM users WHERE username = ?", (username,)
+          )
+          return cur.fetchone()
+
+expected:
+  # Optional: the mechanically-derived decision for a fully-correct review.
+  # Must not contradict the required findings' severities.
+  decision: changes-required
+
+  # `exhaustive` (the default): the union of the required findings, the
+  # optional findings, their alternatives, and every any_of member is the
+  # complete set of acceptable findings for this case. Anything else a
+  # reviewer emits is an unexpected finding.
+  findings_completeness: exhaustive
+
+  findings:
+    # (1) One required defect, two acceptable descriptions/locations.
+    - key: sqli-user-lookup
+      match: required
+      severity: P0
+      location:
+        location_intent: line
+        path: app/users.py
+        symbol: get_user
+        anchor: "f\"SELECT id, email FROM users WHERE username = '{username}'\""
+      claim: >-
+        username is interpolated straight into the SQL string, so a crafted
+        username changes the executed query (SQL injection).
+      defect_kind: sql-injection
+      alternatives:
+        # Same defect, reported on the execute() call instead of the f-string.
+        - location:
+            location_intent: line
+            path: app/users.py
+            symbol: get_user
+            anchor: "conn.execute(query)"
+          claim: >-
+            the query passed to conn.execute is built from unsanitized input
+            rather than a parameterized statement.
+
+    # (2) Genuinely alternative acceptable findings: either framing is fine.
+    - key: unsafe-export-path
+      match: required
+      any_of:
+        - key: path-traversal
+          severity: P0
+          location:
+            location_intent: line
+            path: app/users.py
+            symbol: export_report
+            anchor: "REPORT_ROOT + \"/\" + name"
+          claim: >-
+            name is concatenated into a filesystem path with no containment
+            check, so "../" escapes REPORT_ROOT (path traversal).
+          defect_kind: path-traversal
+        - key: unvalidated-report-name
+          severity: P1
+          location:
+            location_intent: symbol
+            path: app/users.py
+            symbol: export_report
+          claim: >-
+            export_report accepts an arbitrary name and performs no
+            validation or allowlisting before opening the file.
+          defect_kind: missing-input-validation
+
+    # (3) Optional finding, (4) with explicitly permitted severity variance.
+    - key: missing-security-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/users.py
+      claim: >-
+        the change adds two security-sensitive code paths and no test
+        covering either.
+      defect_kind: missing-test
+
+metadata:
+  source: crafted
+  tags: [security, correctness]
+  rationale: >-
+    Covers two distinct high-severity sink types (injection and path
+    handling) in one small diff, and exercises every variance construct so
+    the format itself stays tested.
