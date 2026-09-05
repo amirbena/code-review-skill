@@ -90,7 +90,7 @@ with no resolution step:
 - migration, security, performance, or rollout requirements/constraints.
 
 A caller may optionally label the source (e.g. `Context source: Jira
-BILLPAY-1234`) to aid traceability; an unlabeled free-form block is equally
+PROJECT-1234`) to aid traceability; an unlabeled free-form block is equally
 valid.
 
 ### Reference-based context — requires resolution
@@ -248,7 +248,7 @@ ReviewContext
 - source_type: optional (free-form | user-instructions | jira | github-issue |
   hld | adr | implementation-plan | bug-description | incident-followup |
   pr-description | acceptance-criteria | other)
-- source_name: optional (e.g. "BILLPAY-1234", "Payments HLD", "#412")
+- source_name: optional (e.g. "PROJECT-1234", "Payments HLD", "#412")
 - raw_context: the supplied text
 - intended_behavior: what the change is supposed to accomplish
 - acceptance_criteria: explicit pass/fail conditions, if stated
@@ -396,7 +396,7 @@ make the relationship visible in the finding's own Evidence, per
 P1 — Validation can be bypassed in recurring-payment execution
 
 Evidence:
-Context source: Jira BILLPAY-1234, acceptance criteria — "CC/RTP validation
+Context source: Jira PROJECT-1234, acceptance criteria — "CC/RTP validation
 before every execution path." <concrete code evidence that the
 recurring-payment path executes without going through that validation>.
 ```

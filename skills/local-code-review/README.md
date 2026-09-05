@@ -27,7 +27,7 @@ Ask for it in plain language — there is no required syntax:
 ```text
 review my local changes before I push
 run a local code review of the current diff
-review the working tree against BILLPAY-1234's acceptance criteria
+review the working tree against PROJECT-1234's acceptance criteria
 ```
 
 Optionally attach context to focus the review (all optional, any
@@ -36,7 +36,7 @@ combination):
 ```text
 /local-code-review
 
-Context: Jira BILLPAY-1234
+Context: Jira PROJECT-1234
 Acceptance criteria:
 - reject unsupported CC + RTP combinations
 - validation must run before execution

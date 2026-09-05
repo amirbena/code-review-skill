@@ -54,14 +54,14 @@ the input did not exist and never asks for it. Jira is never mandatory.
 ```text
 /local-code-review
 
-Context source: Jira BILLPAY-1234
+Context source: Jira PROJECT-1234
 Acceptance criteria:
 - reject unsupported CC + RTP combinations
 - validation must occur before execution
 ```
 
 ```text
-review the working tree against BILLPAY-1234's acceptance criteria
+review the working tree against PROJECT-1234's acceptance criteria
 review my local changes; the design is in docs/adr/0007-idempotency.md
 review these changes and reconcile against PR #812's earlier findings
 ```
