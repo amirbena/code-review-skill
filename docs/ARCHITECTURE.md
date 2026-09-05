@@ -329,6 +329,18 @@ or runbook implements them today:
   runtime yet.
 These contracts share the [`findings/`](findings/README.md) directory.
 
+- **Measurable code-review quality benchmark** — a repeatable check of
+  whether a Skill change improved or regressed review quality against a
+  fixed corpus. The canonical machine-readable format for a single
+  benchmark case (identity, patch / repository-reference input, expected
+  findings, severity, location detail, typed variance constructs,
+  fail-closed versioning) is defined in
+  [`benchmark/fixture-format.md`](benchmark/fixture-format.md); the corpus,
+  runner, and regression reporting are not built yet.
+  Repository-development docs in the
+  [`benchmark/`](benchmark/README.md) directory; nothing benchmark is
+  packaged.
+
 **Now implemented:** the orchestration around a stateful delta
 re-review — eligibility for reconciling prior finding/lifecycle state,
 loading it from GitHub-native evidence, classifying the current pass

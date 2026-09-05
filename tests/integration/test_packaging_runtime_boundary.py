@@ -53,6 +53,7 @@ REFERENCE_TEST_MODULES = (
     "finding_identity.py",
     "runtime_validation.py",
     "delta_re_review.py",
+    "benchmark_fixture.py",
 )
 
 # module -> (packaged canonical source that must carry the same contract,
