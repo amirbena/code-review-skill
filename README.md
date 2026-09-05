@@ -139,9 +139,8 @@ read-only Git safety, and the documentation-UX standards in
 [`policies/documentation-policy.md`](policies/documentation-policy.md).
 Opening a PR here applies
 [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md)
-automatically — it captures behavior/contracts, governance/distribution,
-validation, and optional reviewer focus in a compact human- and agent-readable
-shape.
+automatically — its compact What / Validation / Review shape keeps Issue,
+contract, governance, packaging, changelog, and review traceability scannable.
 
 Validation and packaging run from the repository root:
 
