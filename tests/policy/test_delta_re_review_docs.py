@@ -91,11 +91,12 @@ class DeltaReReviewContractTests(unittest.TestCase):
         self.assertIn("comprehensive delta/regression fixture matrix", section)
         self.assertIn("Orchestrating the load", section)
 
-    def test_status_section_names_65_as_future_canonical_home(self) -> None:
+    def test_status_section_names_65_as_installed_canonical_home(self) -> None:
         self.assertIn("## Status and canonical home", self.raw)
         self.assertIn(
-            "this document is the contract record", self.text
+            "this document is now a historical design record", self.text
         )
+        self.assertIn("stateful-delta-rereview.md", self.raw)
 
     def test_not_packaged_into_either_skill(self) -> None:
         self.assertIn("not** packaged into either Skill archive", self.text)

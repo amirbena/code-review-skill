@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Test-only reference for delta re-review semantics (Issue #64).
 
+Not runtime logic, not packaged — the packaged Skills are Markdown/YAML
+only, matching tests/reference/finding_identity.py's own framing. The
+packaged runtime installation is
+skills/github-pr-review/policies/stateful-delta-rereview.md (Issue #65).
+
 Mirrors docs/findings/delta-re-review-contract.md: change-class
 classification, the delta-is-not-a-finding-boundary invariant,
 blast-radius attribution, settled-assumption reconsideration, and the
@@ -12,9 +17,6 @@ second identity or matching system. `MatchOutcome` and `LifecycleState`
 are declared here only because #59's/#62's own outcome vocabulary is
 documented, not (yet) exposed as an importable Python enum; their members
 are named identically to the canonical docs on purpose.
-
-Not runtime logic, not packaged — the packaged Skills are Markdown/YAML
-only, matching tests/reference/finding_identity.py's own framing.
 """
 
 from __future__ import annotations

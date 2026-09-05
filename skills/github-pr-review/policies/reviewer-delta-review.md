@@ -125,6 +125,18 @@ review exists. Independently inspect the full relevant PR change and
 reach independent conclusions; prior reviews may inform investigation but
 never substitute for it.
 
+## Reconciling prior findings within the delta
+
+This policy decides only *which commits* this invocation reviews. Once
+that boundary is set, whether reliable prior finding/lifecycle state
+exists to reconcile against — and, if so, how the current pass's
+observations are classified against it (unresolved, moved, fixed,
+reopened, newly introduced, or ambiguous) — is owned by
+[`stateful-delta-rereview.md`](stateful-delta-rereview.md), installing
+the semantic contract behind Issue #64. That policy's own escalation
+triggers apply in addition to, not instead of, "Escalating from delta to
+full review" below.
+
 ## Reporting the mode
 
 State which mode was used concisely in the human-facing review, per

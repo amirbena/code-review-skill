@@ -52,6 +52,7 @@ REFERENCE_TEST_MODULES = (
     "invocation_options.py",
     "finding_identity.py",
     "runtime_validation.py",
+    "delta_re_review.py",
 )
 
 # module -> (packaged canonical source that must carry the same contract,
@@ -137,6 +138,20 @@ MODULE_TO_PACKAGED_POLICY_HEADINGS = {
             "## Safety gate",
             "## Outcome contract",
             "## Findings and decision semantics",
+        ),
+    ),
+    "delta_re_review.py": (
+        REPO_ROOT
+        / "skills"
+        / "github-pr-review"
+        / "policies"
+        / "stateful-delta-rereview.md",
+        (
+            "## 1. Reuse, do not redefine",
+            "## 3. Reconciliation — the #64 change classes, operationally",
+            "## 4. Blast radius and regressions",
+            "## 5. Previously settled non-findings and assumptions",
+            "## 6. Escalation to a broader/full review",
         ),
     ),
 }
