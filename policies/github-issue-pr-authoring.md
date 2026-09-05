@@ -71,35 +71,77 @@ live in the child Issues, not the parent.
 
 ## Pull Requests
 
-The body answers four questions: **what changed**, **why**, **how it was
-validated**, and **anything a reviewer should look at closely**. A typical
-shape:
+A PR description is a concise change summary and navigation surface, not a
+second specification. It answers: **what changed and why**, **where the
+canonical detail lives**, **how the change was validated**, and **the review
+state when a review occurred**. A normal shape is:
 
 ```markdown
-## What changed
-- ...
+Fixes #123
 
-## Why
-Short explanation.
+## What
+Short explanation of the change and why it exists.
+
+- Two to five high-value bullets when useful.
+- Links to canonical detail.
 
 ## Validation
-- `command` — pass
+- Full suite: ...
+- Focused validation: ...
 
-## Review notes
-Only when something is non-obvious.
+## Review
+`local-code-review`: REVIEW CLEAN on `<sha>`.
 ```
 
-Keep the compact traceability fields in
-[`../.github/PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md):
-behavior/contracts, governance, policy/documentation, packaging/portability,
-validation, and optional reviewer focus. Fill what applies and mark the rest
-`None` / `N/A`; brevity never drops required review or traceability
-information.
+`## Review` may be omitted when no review has occurred. The headings guide the
+information architecture; authors may use equivalent concise prose rather than
+copying the template byte for byte. Keep the Issue-closing reference and link
+to the smallest canonical source that owns detailed behavior or decisions.
 
-Do not include: a full chronology of the work; every command run; full
-test output; the Issue's requirements restated; architecture already
-documented elsewhere; large code already visible in the diff; filler such
-as "carefully reviewed all files". Link the Issue or the document instead.
+Summarize; do not reproduce Issue acceptance criteria, complete policy or
+runbook semantics, large schemas or matrices, fixture catalogs, implementation
+reports, architecture already documented elsewhere, code visible in the diff,
+or a chronology of the work. Detailed design belongs in Issues, docs, policies,
+or runbooks. Detailed findings belong in the review artifact, not copied
+wholesale into the PR description. Prefer one sentence or bullet plus a link.
+
+### Enforced useful-content limit
+
+The repository GitHub Actions check measures the actual current
+`pull_request.body` by invoking
+[`../scripts/pr_description_length.py`](../scripts/pr_description_length.py).
+That module's `PR_BODY_HARD_LIMIT` constant is the sole authoritative numeric
+limit; workflow YAML, policy, and tests must reuse it rather than implement
+another counter.
+
+Template structure/completeness and useful-content length are separate
+contracts. They may share workflow infrastructure, but the length validator
+does not define required headings or placeholder completeness, and a structural
+validator must not introduce a second body-measurement implementation.
+
+The canonical metric normalizes CRLF and bare CR line endings to LF, removes
+HTML comments (including template guidance), trims leading and trailing
+whitespace, and counts Unicode code points in the remaining Markdown. Internal
+Markdown syntax, links, whitespace, and line breaks count. Diff size, commit
+messages, and generated GitHub metadata outside the PR body do not.
+
+The current 6,000-code-point limit was selected from a recent representative
+sample measured with that exact algorithm:
+
+| PR | Character of change | Useful code points | Result |
+|---|---|---:|---|
+| #127 | small automation hardening | 2,037 | pass |
+| #144 | documentation-heavy refactor | 3,197 | pass |
+| #146 | medium/complex runtime policy | 3,885 | pass |
+| #114 | complex release automation | 5,428 | pass |
+| #112 | complex review-status enforcement | 5,971 | pass |
+| #147 | unusually detailed regression-fixture report | 6,158 | fail |
+| #148 | motivating duplicate-specification outlier | 6,543 | fail |
+| #136 | unusually detailed identity-contract report | 6,745 | fail |
+
+This places the hard limit just above the observed legitimate complex range
+while catching the recent outlier band, including #148. If the constant changes,
+this evidence and its drift test must change with it.
 
 ## Validation reporting
 
@@ -128,10 +170,9 @@ under review — an RFC / discussion Issue, an incident postmortem, a formal
 design proposal. That is a deliberate choice for that Issue, not the
 default for routine agent-authored Issues and PRs.
 
-## Not a character limit
+## Length and clarity
 
-This policy targets cognitive load and scanability, not a line or
-character count. The sizes in the table above are typical ranges, not
-thresholds to game, and nothing here licenses trimming a body below the
-point of clarity. Preserve required review and traceability information;
-move detail into a linked document rather than deleting it.
+Issue sizes above remain guidance rather than mechanical limits. PR bodies have
+the deterministic useful-content limit defined above, but authors should not
+game it or trim below clarity: summarize the change and move detail into a
+linked canonical document.

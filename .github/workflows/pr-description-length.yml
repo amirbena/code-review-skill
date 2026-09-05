@@ -1,0 +1,33 @@
+name: Validate PR description length
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out trusted validator
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Bootstrap validator for introducing pull request
+        if: ${{ hashFiles('scripts/pr_description_length.py') == '' }}
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Enforce useful-content limit
+        run: python scripts/pr_description_length.py --event-path "$GITHUB_EVENT_PATH"

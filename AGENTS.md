@@ -134,6 +134,11 @@ canonical, detailed rule lives in the policy named after it.
   updates the smallest affected layer; an implementation change with no
   user-visible effect requires no README change. Canonical:
   [`policies/documentation-policy.md`](policies/documentation-policy.md).
+- **Concise, layered PR descriptions.** Pull-request descriptions are concise
+  change summaries and navigation surfaces, not duplicate specifications;
+  detailed requirements and semantics stay in their canonical Issues, docs,
+  policies, or runbooks. Canonical:
+  [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md).
 
 ---
 

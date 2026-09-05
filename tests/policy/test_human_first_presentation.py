@@ -59,21 +59,17 @@ class PullRequestTemplateTests(unittest.TestCase):
         headings = re.findall(r"^## (.+)$", text, re.M)
         self.assertEqual(
             headings,
-            ["What changed", "Why", "Behavior and contracts", "Governance and distribution", "Validation", "Reviewer focus"],
+            ["What", "Validation", "Review"],
         )
-        self.assertLess(len(text.splitlines()), 50)
+        self.assertLess(len(text.splitlines()), 35)
 
-    def test_required_governance_traceability_remains(self) -> None:
+    def test_compact_contract_traceability_remains(self) -> None:
         text = PR_TEMPLATE.read_text(encoding="utf-8")
         for concept in (
-            "Governance impact",
-            "Policy / documentation impact",
-            "Packaging / portability impact",
-            "reviewer ownership",
-            "invocation approval",
-            "severity/decision",
-            "mutation",
-            "HEAD/SHA safety",
+            "Behavior / contracts:",
+            "Governance / policy:",
+            "Packaging / portability:",
+            "Changelog:",
         ):
             self.assertIn(concept, text)
 
