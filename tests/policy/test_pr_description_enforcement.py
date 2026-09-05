@@ -86,9 +86,14 @@ class WorkflowContractTests(unittest.TestCase):
 
     def test_uses_minimal_permissions(self) -> None:
         self.assertEqual(self.workflow["permissions"], {"contents": "read"})
-        checkout = self.workflow["jobs"]["validate"]["steps"][0]
-        self.assertIs(checkout["with"]["persist-credentials"], False)
-        self.assertEqual(checkout["with"]["ref"], "${{ github.event.pull_request.base.sha }}")
+        steps = self.workflow["jobs"]["validate"]["steps"]
+        checkouts = [step for step in steps if str(step.get("uses", "")).startswith("actions/checkout")]
+        self.assertEqual(len(checkouts), 2)
+        self.assertEqual(checkouts[0]["with"]["ref"], "${{ github.event.pull_request.base.sha }}")
+        self.assertEqual(checkouts[1]["with"]["ref"], "${{ github.event.pull_request.head.sha }}")
+        self.assertIn("hashFiles('scripts/pr_description_length.py') == ''", checkouts[1]["if"])
+        for checkout in checkouts:
+            self.assertIs(checkout["with"]["persist-credentials"], False)
 
     def test_delegates_event_payload_to_canonical_validator(self) -> None:
         run = self.workflow["jobs"]["validate"]["steps"][-1]["run"]

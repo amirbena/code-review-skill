@@ -11,11 +11,18 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out pull request
+      - name: Check out trusted validator
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Bootstrap validator for introducing pull request
+        if: ${{ hashFiles('scripts/pr_description_length.py') == '' }}
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
