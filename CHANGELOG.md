@@ -13,6 +13,11 @@ when the change reaches `main`. See
 
 ## Unreleased
 
+_Nothing yet. New entries land here and move under a version heading at
+release time._
+
+## v1.3.0 — 2026-09-05
+
 ### Added
 
 - Add packaged stateful delta re-review for GitHub PR reviews, including
