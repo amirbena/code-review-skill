@@ -43,6 +43,24 @@ entry must sit under one of these `### <Category>` headings:
 | `Fixed`, `Security` | **patch** | compatible fix or refinement |
 | `Removed`, `Breaking` (`Breaking Changes`) | **major** | breaking compatibility change |
 
+Choose between `Changed` and `Fixed` by SemVer intent:
+
+- Use `Changed` for an **intentional backward-compatible behavior or capability
+  change**: behavior changes by design, supported behavior broadens or changes,
+  workflow or contract semantics change, or users face a new behavioral
+  expectation. This is a minor bump.
+- Use `Fixed` for a **compatible correction or refinement** that restores or
+  cleans up intended behavior without adding a capability. Examples include a
+  bug or regression fix; wording, example, or stale runtime-guidance correction;
+  product-neutral or compatibility-preserving cleanup; an accompanying
+  regression guard; or fail-closed tightening to already-intended semantics.
+  This is a patch bump.
+
+**Decision rule:** if users receive a new or intentionally changed capability,
+use `Added` or `Changed`; if the change corrects, cleans up, or restores intended
+compatible behavior, use `Fixed`. The canonical category-selection contract is
+[`../policies/release-changelog-policy.md`](../policies/release-changelog-policy.md).
+
 When entries span several categories, the **highest** bump wins
 (`major` > `minor` > `patch`). A `### Changed` entry that actually breaks
 compatibility must be moved under `### Removed` or `### Breaking` so the
