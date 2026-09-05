@@ -13,8 +13,12 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- Add packaged stateful delta re-review for GitHub PR reviews, including
+  prior-finding reconciliation, regression/blast-radius handling,
+  settled-assumption invalidation, and fail-closed escalation to broader
+  review (#65).
 
 ## v1.2.0 — 2026-09-04
 
