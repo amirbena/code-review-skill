@@ -24,6 +24,7 @@ runtime behavior.
 | [`finding-stable-identity.md`](finding-stable-identity.md) | *How* the stable identifier and its descriptor primitives are constructed — the canonical deterministic derivation, with a test-only reference model. | [#60](https://github.com/amirbena/code-review-skill/issues/60) |
 | [`finding-lifecycle-contract.md`](finding-lifecycle-contract.md) | The `OPEN` / `RESOLVED` state of one identity across reviews and its evidence-gated transitions. | [#62](https://github.com/amirbena/code-review-skill/issues/62) |
 | [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md) | The reviewed-SHA state a re-review compares against — the recorded fields, which commit is authoritative, and invalidation. | [#63](https://github.com/amirbena/code-review-skill/issues/63) |
+| [`delta-re-review-contract.md`](delta-re-review-contract.md) | The review delta's semantics — change classes, delta-as-optimization, regression/blast-radius surfacing, settled-assumption reconsideration, and escalation to a broader/full review. | [#64](https://github.com/amirbena/code-review-skill/issues/64) |
 
 The identity regression suite required by
 [#61](https://github.com/amirbena/code-review-skill/issues/61) lives in

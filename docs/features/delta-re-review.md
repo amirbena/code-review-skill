@@ -77,5 +77,8 @@ the reason).
 [`review-output.md`](../../skills/github-pr-review/policies/review-output.md),
 "Final decision" ·
 [`shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md)
+· the finding-level semantics a delta re-review must follow (change
+classes, regression/blast-radius surfacing, escalation) in
+[`../findings/delta-re-review-contract.md`](../findings/delta-re-review-contract.md)
 · future stateful re-review work in
 [`../findings/README.md`](../findings/README.md).

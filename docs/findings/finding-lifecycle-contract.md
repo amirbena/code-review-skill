@@ -286,8 +286,9 @@ ambiguous relationship to preserved prior identities remains in provenance.
 - **#60 — stable IDs:** owns identity/descriptor construction, serialization,
   propagation, and fresh-ID assignment. This contract defines none of those.
 - **#64 — review delta semantics:** owns scope, coverage, change classes, and
-  re-surface/suppress behavior. It must supply affirmative relevant coverage
-  before this contract permits resolution.
+  re-surface/suppress behavior, contracted in
+  [`delta-re-review-contract.md`](delta-re-review-contract.md). It must supply
+  affirmative relevant coverage before this contract permits resolution.
 - **#65 — stateful implementation:** owns loading, application, persistence,
   output fields, fallback, and provenance representation. It will load prior
   lifecycle state, obtain current coverage/evidence, invoke #59 with recurrence
