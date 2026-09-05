@@ -334,7 +334,11 @@ or runbook implements them today:
   The Skills already record and revalidate an exact reviewed HEAD and
   scope a same-reviewer delta re-review to
   `previously reviewed SHA → current HEAD`; no code loads a prior
-  reviewed state to compute a finding-level delta from it yet.
+  reviewed state to compute a finding-level delta from it yet. The
+  semantics such a delta must follow — change classes, regression/blast-
+  radius surfacing, settled-assumption reconsideration, and escalation —
+  are contracted in
+  [`findings/delta-re-review-contract.md`](findings/delta-re-review-contract.md).
 
 These contracts share the [`findings/`](findings/README.md) directory.
 

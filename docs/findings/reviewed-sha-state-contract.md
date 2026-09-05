@@ -633,7 +633,7 @@ explicitly does **not** define:
 
 | Not defined here | Owner |
 |---|---|
-| Review delta / re-review semantics — change classes, which prior findings re-surface vs. suppress, how base movement folds into the delta | [#64](https://github.com/amirbena/code-review-skill/issues/64) |
+| Review delta / re-review semantics — change classes, which prior findings re-surface vs. suppress, how base movement folds into the delta | [#64](https://github.com/amirbena/code-review-skill/issues/64), contracted in [`delta-re-review-contract.md`](delta-re-review-contract.md) |
 | Loading prior state, applying transitions, emitting per-finding state, the full-review fallback implementation | [#65](https://github.com/amirbena/code-review-skill/issues/65) |
 | Re-review regression fixtures and their assertions | [#66](https://github.com/amirbena/code-review-skill/issues/66) |
 | Finding lifecycle states (`new` / `open` / `resolved` / `superseded` / `no longer applicable`) and transitions | [#62](https://github.com/amirbena/code-review-skill/issues/62) |
