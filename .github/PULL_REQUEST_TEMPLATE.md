@@ -10,7 +10,7 @@ Fixes #
 - **Behavior / contracts:**
 - **Governance / policy:** None
 - **Packaging / portability:** None
-- **Changelog:** required — `## Unreleased` entry / not required — <short reason> (see `docs/RELEASE.md`)
+- **Changelog:** required — `## Unreleased` entry / not required — <short reason> (`Fixed` = compatible correction/refinement; `Changed` = intentional backward-compatible behavior/capability change; see `docs/RELEASE.md`)
 
 ## Validation
 
