@@ -67,7 +67,7 @@ how the reviewer will be used — packaging both is rarely needed.
      ```text
      /local-code-review
 
-     Context source: Jira BILLPAY-1234
+     Context source: Jira PROJECT-1234
      Acceptance criteria:
      - reject unsupported CC + RTP combinations
      - validation must occur before execution

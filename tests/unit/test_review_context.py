@@ -60,14 +60,14 @@ class AcceptanceCriteriaTests(unittest.TestCase):
         ctx = rc.ReviewContext(
             raw_context="reject unsupported CC + RTP combinations",
             source_type="jira",
-            source_name="BILLPAY-1234",
+            source_name="PROJECT-1234",
             acceptance_criteria=(
                 "reject unsupported CC + RTP combinations",
                 "preserve per-company IXP",
                 "validation must occur before execution",
             ),
         )
-        self.assertEqual(ctx.source_name, "BILLPAY-1234")
+        self.assertEqual(ctx.source_name, "PROJECT-1234")
         self.assertEqual(len(ctx.acceptance_criteria), 3)
 
     def test_focus_area_overlapping_delta_is_in_scope(self) -> None:

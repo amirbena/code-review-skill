@@ -13,8 +13,10 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Changed
+
+- Generalize review-context examples to remove product-specific references
+  and add a repository guard preventing their reintroduction (#151).
 
 ## v1.3.0 — 2026-09-05
 
