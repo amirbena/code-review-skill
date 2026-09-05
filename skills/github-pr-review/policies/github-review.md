@@ -24,6 +24,10 @@ review-action-authorization.md  review analysis vs. GitHub mutation authority;
         ↓
 reviewer-delta-review.md    delta re-review vs. normal review mode
         ↓
+stateful-delta-rereview.md  eligibility for reconciling prior finding/lifecycle
+                            state; #64 change-class reconciliation, blast
+                            radius, settled assumptions, escalation
+        ↓
 pr-scope.md                 complete PR scope, pagination, prior-review awareness
         ↓
 repository-checkout.md      optional isolated temporary checkout for richer
@@ -63,6 +67,11 @@ authorization gate."
 [`reviewer-delta-review.md`](reviewer-delta-review.md) explicitly runs
 after the self-review mutation-boundary check, and applies to a
 self-review exactly as to an external review;
+[`stateful-delta-rereview.md`](stateful-delta-rereview.md) runs
+immediately after `reviewer-delta-review.md` has resolved the delta
+boundary, and governs only whether/how prior finding and lifecycle state
+is reconciled within that boundary — it never changes the boundary
+itself and never runs when no delta boundary was selected;
 [`repository-checkout.md`](repository-checkout.md) is optional, runs after
 [`pr-scope.md`](pr-scope.md) has established the PR's base/head, and never
 changes the Review Target — the PR delta;

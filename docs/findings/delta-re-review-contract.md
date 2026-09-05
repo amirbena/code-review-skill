@@ -8,13 +8,15 @@ recognize, how each maps to the [`finding-lifecycle-contract.md`](finding-lifecy
 transitions, which prior findings re-surface vs. suppress, and when bounded
 delta re-review must escalate to a broader/full review.
 
-This is authoritative until [#65](https://github.com/amirbena/code-review-skill/issues/65)
-installs equivalent runtime behavior in a packaged shared policy. That
-policy then becomes the single normative source and this document becomes
-its design record, exactly as
+[#65](https://github.com/amirbena/code-review-skill/issues/65) has
+installed the equivalent runtime behavior in the packaged policy
+[`skills/github-pr-review/policies/stateful-delta-rereview.md`](../../skills/github-pr-review/policies/stateful-delta-rereview.md).
+That policy is now the single normative source for delta re-review
+semantics and this document is its design record — see "Status and
+canonical home" below — exactly as
 [`finding-identity-requirements.md`](finding-identity-requirements.md) and
-[`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md) already
-describe for themselves.
+[`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md)
+describe for their own eventual installation.
 
 ## Canonical invariant
 
@@ -315,14 +317,17 @@ document the dependency here rather than absorbing it.
 
 ## Status and canonical home
 
-Until [#65](https://github.com/amirbena/code-review-skill/issues/65)
-implements stateful re-review, **this document is the contract record**
-for delta re-review semantics. Once #65 establishes the canonical runtime
-rule in a packaged resource, that policy becomes the single normative
-source and this document becomes a historical contract record that links
-to it — the same lifecycle already described in
+[#65](https://github.com/amirbena/code-review-skill/issues/65) has
+implemented stateful re-review. The canonical runtime rule now lives in
+the packaged policy
+[`skills/github-pr-review/policies/stateful-delta-rereview.md`](../../skills/github-pr-review/policies/stateful-delta-rereview.md);
+that policy is the single normative source for delta re-review semantics
+and **this document is now a historical design record** — it must not
+evolve the same rules independently, only link to the canonical policy —
+the same lifecycle already described for
 [`finding-identity-requirements.md`](finding-identity-requirements.md)
-and [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md).
+and [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md),
+which remain contract records until their own installing issues land.
 
 This is a repository-development doc, like its siblings in this
 directory: **not** packaged into either Skill archive, and no packaged

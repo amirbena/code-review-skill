@@ -199,6 +199,7 @@ sub-policies in authoritative order —
 [`review-authority.md`](policies/review-authority.md),
 [`review-action-authorization.md`](policies/review-action-authorization.md),
 [`reviewer-delta-review.md`](policies/reviewer-delta-review.md),
+[`stateful-delta-rereview.md`](policies/stateful-delta-rereview.md),
 [`pr-scope.md`](policies/pr-scope.md),
 [`repository-checkout.md`](policies/repository-checkout.md) (repository-backed
 inspection only),
@@ -289,6 +290,10 @@ known; a different reviewer, no prior review, or any ambiguity defaults
 to a normal full review. The self-review mutation boundary is resolved
 first but never changes mode selection. Applies identically to passive
 and active review.
+
+Reconciling prior finding/lifecycle state within that boundary — failing
+closed when unreliable, escalating to full review when invalidated — is
+owned by [`policies/stateful-delta-rereview.md`](policies/stateful-delta-rereview.md).
 
 ## 7. Review Action Authority and Mutation Boundary
 

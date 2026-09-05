@@ -327,6 +327,7 @@ if ($Skill -eq "github" -or $Skill -eq "all") {
     "policies/review-authority.md",
     "policies/review-action-authorization.md",
     "policies/reviewer-delta-review.md",
+    "policies/stateful-delta-rereview.md",
     "policies/pr-scope.md",
     "policies/repository-checkout.md",
     "policies/review-context.md",

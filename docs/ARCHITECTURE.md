@@ -327,20 +327,33 @@ or runbook implements them today:
   [`findings/finding-lifecycle-contract.md`](findings/finding-lifecycle-contract.md).
   No packaged policy, runbook, or code attaches the identifier at Skill
   runtime yet.
-- **Stateful re-review keyed off a reviewed SHA** — loading a prior
-  reviewed state and computing what changed since it. The reviewed-SHA
-  state model is contracted in
-  [`findings/reviewed-sha-state-contract.md`](findings/reviewed-sha-state-contract.md).
-  The Skills already record and revalidate an exact reviewed HEAD and
-  scope a same-reviewer delta re-review to
-  `previously reviewed SHA → current HEAD`; no code loads a prior
-  reviewed state to compute a finding-level delta from it yet. The
-  semantics such a delta must follow — change classes, regression/blast-
-  radius surfacing, settled-assumption reconsideration, and escalation —
-  are contracted in
-  [`findings/delta-re-review-contract.md`](findings/delta-re-review-contract.md).
-
 These contracts share the [`findings/`](findings/README.md) directory.
+
+**Now implemented:** the orchestration around a stateful delta
+re-review — eligibility for reconciling prior finding/lifecycle state,
+loading it from GitHub-native evidence, classifying the current pass
+against it (unresolved / moved / fixed / reopened / newly introduced /
+ambiguous), attributable blast-radius and settled-assumption
+reconsideration, and escalation to a full review — is packaged runtime
+policy in `github-pr-review`:
+[`stateful-delta-rereview.md`](../skills/github-pr-review/policies/stateful-delta-rereview.md)
+(Issue #65), installing the semantics
+[`findings/delta-re-review-contract.md`](findings/delta-re-review-contract.md)
+(#64) contracted. It reconciles findings using the vocabulary
+[`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md)
+(#58) and
+[`findings/finding-matching-strategy.md`](findings/finding-matching-strategy.md)
+(#59) define and applies the transitions
+[`findings/finding-lifecycle-contract.md`](findings/finding-lifecycle-contract.md)
+(#62) defines, and reconstructs a Reviewed State Record per
+[`findings/reviewed-sha-state-contract.md`](findings/reviewed-sha-state-contract.md)
+(#63) from GitHub-native evidence, but it does not itself install a
+packaged matching
+*algorithm* or stable-identity constructor — those remain reviewer
+judgment applying the documented discipline until #59/#60 separately
+package one. `local-code-review` does not load this policy: it is
+architecturally stateless (no persisted reviewed-state analogue between
+invocations).
 
 ## 3. Separation of Concerns
 

@@ -11,9 +11,19 @@ Like [`../runtime-parallelism.md`](../runtime-parallelism.md), these are
 repository-development docs: **not** packaged into either Skill archive,
 and no packaged Skill resource depends on them. They are explanatory /
 design records — the normative rule for each concern lives in the file
-named for it, and moves into a packaged `shared/` policy when
-[#65](https://github.com/amirbena/code-review-skill/issues/65) installs the
-runtime behavior.
+named for it.
+
+[#65](https://github.com/amirbena/code-review-skill/issues/65) has
+installed the orchestration around these contracts —
+[`delta-re-review-contract.md`](delta-re-review-contract.md) (#64)
+specifically — as packaged runtime behavior in
+[`skills/github-pr-review/policies/stateful-delta-rereview.md`](../../skills/github-pr-review/policies/stateful-delta-rereview.md).
+That policy consumes, without redefining, the identity/matching
+vocabulary (#58/#59/#60), the lifecycle transitions (#62), and the
+reviewed-state record (#63) documented below; none of those four have
+their own packaged algorithm/schema yet — see each document's own
+"Status and canonical home" for what still awaits its own installing
+issue.
 
 ## Document map
 

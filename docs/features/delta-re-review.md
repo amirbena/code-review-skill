@@ -73,12 +73,16 @@ the reason).
 ## Canonical semantics
 
 [`skills/github-pr-review/policies/reviewer-delta-review.md`](../../skills/github-pr-review/policies/reviewer-delta-review.md)
-· `NO NEW DELTA` in
+governs *which commits* a delta re-review covers. Once that boundary is
+set, [`skills/github-pr-review/policies/stateful-delta-rereview.md`](../../skills/github-pr-review/policies/stateful-delta-rereview.md)
+(Issue #65) governs *whether reliable prior finding/lifecycle state
+exists to reconcile against, and how* — eligibility, change-class
+reconciliation, attributable blast-radius/settled-assumption
+re-evaluation, and escalation to a full review — installing the
+semantics [`../findings/delta-re-review-contract.md`](../findings/delta-re-review-contract.md)
+(#64) contracted. Also: `NO NEW DELTA` in
 [`review-output.md`](../../skills/github-pr-review/policies/review-output.md),
 "Final decision" ·
 [`shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md)
-· the finding-level semantics a delta re-review must follow (change
-classes, regression/blast-radius surfacing, escalation) in
-[`../findings/delta-re-review-contract.md`](../findings/delta-re-review-contract.md)
-· future stateful re-review work in
-[`../findings/README.md`](../findings/README.md).
+· the broader regression/fixture matrix in
+[`../findings/README.md`](../findings/README.md) (#66).
