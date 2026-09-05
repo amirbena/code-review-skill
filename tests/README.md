@@ -12,7 +12,7 @@ packaging boundary is enforced by
 |---|---|
 | `reference/` | Test-only reference implementations mirroring packaged policy decision tables (`decision_semantics.py`, `review_context.py`, `jira_context.py`, `parallel_review.py`, `repository_instructions.py`, `runtime_validation.py`, `pr_checkout.py`, …). Imported by tests; never run directly. |
 | `support/` | Shared test infrastructure: `pr_simulation.py` (local bare-repo PR harness) and `paths.py` (the one canonical `REPO_ROOT`). |
-| `unit/` | Unit coverage for the `reference/` models, including `test_finding_identity_regression.py` — the data-driven finding-identity regression corpus (#61) with its induced-regression / mutation check. |
+| `unit/` | Unit coverage for the `reference/` models, including `test_finding_identity_regression.py` — the data-driven finding-identity regression corpus (#61) — and `test_rereview_regression_fixtures.py` — the data-driven stateful delta re-review regression corpus (#66) of paired before/after review histories — each with its induced-regression / mutation check. |
 | `integration/` | Coverage that shells out to real Git or builds the packaged archives. |
 | `policy/` | Prose / documentation-contract checks over `AGENTS.md`, `policies/`, `shared/policies/`, and each Skill's files. |
 | `repository/` | Repository-hygiene checks (e.g. `.gitignore`). |

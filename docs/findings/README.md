@@ -42,6 +42,18 @@ The identity regression suite required by
 and exercises the reference model in
 [`../../tests/reference/finding_identity.py`](../../tests/reference/finding_identity.py).
 
+The stateful re-review regression fixtures required by
+[#66](https://github.com/amirbena/code-review-skill/issues/66) live in
+[`../../tests/unit/test_rereview_regression_fixtures.py`](../../tests/unit/test_rereview_regression_fixtures.py):
+paired before/after review histories that assert re-review mode, change
+class, lifecycle event/state (inheriting
+[`finding-lifecycle-contract.md`](finding-lifecycle-contract.md) §9's
+fifteen scenarios), surfaced/suppressed findings, the mechanical decision,
+finding-identity continuity, and exact-reviewed-HEAD binding — driven
+entirely through the existing
+[`../../tests/reference/`](../../tests/reference/) models for #64/#62/#60
+and severity, with an induced-regression / mutation check.
+
 ## Related
 
 The architecture map is [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
