@@ -189,6 +189,16 @@ class CorpusExecutionTests(unittest.TestCase):
         self.assertEqual(run.exit_code, 0)
         self.assertTrue(all(r.produced_findings for r in run.case_results))
 
+    def test_malformed_yaml_fixture_fails_the_run_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            corpus = Path(tmp)
+            (corpus / "bad.yaml").write_text("a:\n  - b\n c\n", encoding="utf-8")
+            run = br.run_corpus(corpus, clean_reviewer)
+        self.assertFalse(run.ok)
+        self.assertEqual(run.error, "corpus-parse-failed")
+        self.assertEqual(run.case_results, ())
+        self.assertNotEqual(run.exit_code, 0)
+
 
 class IsolationTests(unittest.TestCase):
     def test_reviewer_sees_a_real_materialized_workspace(self) -> None:
@@ -281,6 +291,34 @@ class IsolationTests(unittest.TestCase):
             self.assertNotEqual(ws.resolve(), origin.resolve())
         self.assertFalse(ws.exists(), "isolated clone cleaned up")
 
+    def test_pr_repo_ref_is_an_explicit_setup_error_not_a_wrong_checkout(self) -> None:
+        # A `pr` ref needs GitHub retrieval (out of scope); the reference
+        # runner must fail explicitly rather than silently check out `base`
+        # or the clone's default branch.
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            origin, _sha = _repo_ref_origin(parent)
+            src = _dirty_source_repo(parent)
+            before = br.capture_repo_state(src)
+            case = _case(
+                {
+                    "format": "benchmark-case/v1",
+                    "id": "synthetic-pr-ref",
+                    "title": "pr ref is not materializable here",
+                    "input": {"repo_ref": {"repo": "local/x", "pr": 7}},
+                    "expected": {"findings": []},
+                }
+            )
+            run = br.run_cases(
+                [case], clean_reviewer, source_repo=src, workspace_parent=parent,
+                repo_ref_resolver=lambda ref: origin,
+            )
+            self.assertTrue(run.ok, "a per-case setup failure is not a run failure")
+            (res,) = run.case_results
+            self.assertEqual(res.status, "error")
+            self.assertEqual(res.error, "workspace-setup-failed")
+            self.assertEqual(br.capture_repo_state(src), before)
+
 
 class SourceRepositorySafetyTests(unittest.TestCase):
     """The issue's Validation section: a deliberately dirty source repo is
@@ -360,6 +398,35 @@ class SourceRepositorySafetyTests(unittest.TestCase):
         self.assertFalse(run.ok)
         self.assertNotEqual(run.exit_code, 0)
         self.assertEqual(run.error, "source-checkout-mutated")
+
+    def test_content_only_mutation_of_pre_existing_dirt_is_detected(self) -> None:
+        # `git status --porcelain` codes are unchanged by a content-only
+        # edit to an already-dirty file; the snapshot must still catch it
+        # (contract §4 "byte for byte").
+        for target, kind in (
+            ("also.py", "pre-existing unstaged-modified tracked file"),
+            ("scratch.txt", "pre-existing untracked file"),
+        ):
+            with self.subTest(mutation=kind):
+                with tempfile.TemporaryDirectory() as tmp:
+                    parent = Path(tmp)
+                    src = _dirty_source_repo(parent)
+                    porcelain_before = br.capture_repo_state(src).porcelain
+
+                    def append_bytes(_ws: Path, _t=target):
+                        (src / _t).write_text("EXTRA\n", encoding="utf-8")
+                        return []
+
+                    run = br.run_selected(
+                        CORPUS_DIR, "no-op-comment-and-rename", append_bytes,
+                        source_repo=src, workspace_parent=parent,
+                    )
+                    porcelain_after = br.capture_repo_state(src).porcelain
+                # porcelain codes really are unchanged...
+                self.assertEqual(porcelain_before, porcelain_after)
+                # ...but the run still fails on the content digest / diff.
+                self.assertFalse(run.ok)
+                self.assertEqual(run.error, "source-checkout-mutated")
 
     def test_failed_cleanup_is_a_run_level_execution_failure(self) -> None:
         def refuse_cleanup(_p: Path):

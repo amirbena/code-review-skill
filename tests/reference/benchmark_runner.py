@@ -24,6 +24,7 @@ failing case.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import shutil
 import subprocess
@@ -159,12 +160,37 @@ class RunResult:
 @dataclass(frozen=True)
 class RepoState:
     """Observable state of a protected source checkout. Compared by value
-    before/after a run; never requires the repo to be clean."""
+    before/after a run; never requires the repo to be clean.
+
+    ``porcelain`` alone only records *which* paths changed and their status
+    code — not content — so a content-only mutation of an already-dirty
+    tracked file or an already-untracked file would be invisible. To make
+    the "byte-for-byte unchanged" guarantee (runner-contract.md §4) real,
+    the snapshot also carries the full tracked-change diff and a digest of
+    every untracked file's bytes.
+    """
 
     head: str
     porcelain: str
     branches: tuple[str, ...]
     stash: tuple[str, ...]
+    tracked_diff: str
+    untracked_digest: tuple[tuple[str, str], ...]
+
+
+def _untracked_digest(repo: Path) -> tuple[tuple[str, str], ...]:
+    listing = _git(
+        repo, "ls-files", "--others", "--exclude-standard", "-z"
+    ).stdout.split("\0")
+    out: list[tuple[str, str]] = []
+    for rel in filter(None, listing):
+        path = repo / rel
+        try:
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        except OSError:
+            digest = "<unreadable>"
+        out.append((rel, digest))
+    return tuple(sorted(out))
 
 
 def capture_repo_state(repo: Path) -> RepoState:
@@ -181,6 +207,8 @@ def capture_repo_state(repo: Path) -> RepoState:
             )
         ),
         stash=tuple(_git(repo, "stash", "list").stdout.splitlines()),
+        tracked_diff=_git(repo, "-c", "core.fileMode=false", "diff", "HEAD").stdout,
+        untracked_digest=_untracked_digest(repo),
     )
 
 
@@ -222,21 +250,32 @@ def _materialize_repo_ref(
     case: bf.BenchmarkCase, workspace: Path, resolver: RepoRefResolver | None
 ) -> None:
     """Obtain the referenced state as a disposable clone in ``workspace``.
-    Never reuses a protected source checkout (contract §3)."""
+    Never reuses a protected source checkout (contract §3).
+
+    This reference runner materializes ``commit`` refs only. ``base``
+    (fixture-format.md §6.2) is the diff-comparison ref, **not** a checkout
+    target, and is ignored here. A ``pr`` ref needs GitHub retrieval, which
+    is out of scope (contract §3) — it is an explicit setup failure rather
+    than a silent checkout of the wrong revision.
+    """
     if resolver is None:
         raise _WorkspaceSetupFailed("no repo_ref resolver supplied")
     ref = case.input["repo_ref"]
+    commit = ref.get("commit")
+    if not commit:
+        raise _WorkspaceSetupFailed(
+            "repo_ref without 'commit' (e.g. a 'pr' ref) is not materializable "
+            "by the reference runner"
+        )
     origin = Path(resolver(ref))
     if not origin.exists():
         raise _WorkspaceSetupFailed(f"repo_ref origin does not exist: {origin}")
     cloned = _git(workspace.parent, "clone", "-q", str(origin), str(workspace), check=False)
     if cloned.returncode != 0:
         raise _WorkspaceSetupFailed(cloned.stderr.strip() or "git clone failed")
-    target = ref.get("commit") or ref.get("base")
-    if target:
-        checked = _git(workspace, "checkout", "-q", str(target), check=False)
-        if checked.returncode != 0:
-            raise _WorkspaceSetupFailed(f"cannot checkout {target!r}")
+    checked = _git(workspace, "checkout", "-q", str(commit), check=False)
+    if checked.returncode != 0:
+        raise _WorkspaceSetupFailed(f"cannot checkout {commit!r}")
 
 
 def run_case(
@@ -295,7 +334,14 @@ def _load_corpus(corpus_dir: Path) -> list[bf.BenchmarkCase]:
 
     cases: list[bf.BenchmarkCase] = []
     for path in sorted(corpus_dir.glob("*.yaml")):
-        cases.append(bf.parse_case(yaml.safe_load(path.read_text(encoding="utf-8"))))
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            # A syntactically broken fixture is a parse failure too — fail
+            # closed like a schema violation (contract §2), never propagate
+            # a raw YAMLError out of a run.
+            raise bf.FixtureFormatError(f"{path.name}: invalid YAML: {exc}") from exc
+        cases.append(bf.parse_case(data))
     return cases
 
 

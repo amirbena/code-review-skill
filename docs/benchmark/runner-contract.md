@@ -128,10 +128,14 @@ regardless of case outcome:
   unstaged diffs, untracked files, branch list, and stash list are
   identical to before — byte for byte.
 - **Integrity is verified around execution.** The runner captures
-  observable state of the caller / source repository — at minimum `HEAD`
-  and `git status --porcelain`, and SHOULD also branch list and stash
-  list — **before** and **after** the run, and compares them. It does
-  this without requiring or making the repository clean.
+  observable state of the caller / source repository **before** and
+  **after** the run and compares them, without requiring or making the
+  repository clean. `git status --porcelain` records *which* paths
+  changed, not their content, so a snapshot sufficient for the
+  byte-for-byte guarantee also captures content: at minimum `HEAD`, the
+  porcelain status, the full tracked-change diff (`git diff HEAD`), and a
+  per-file digest of untracked content; it SHOULD also capture the branch
+  list and stash list.
 - **A detected mutation is an execution failure.** If the after-snapshot
   differs from the before-snapshot, the run reports execution failure
   (§7) even if every individual case's review completed.
