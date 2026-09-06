@@ -3,3 +3,10 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# JetBrains IDE (IntelliJ IDEA / PyCharm) local project metadata
+.idea/
+.idea_modules/
+*.iml
+*.ipr
+*.iws

@@ -27,8 +27,9 @@ Everything else is **not** release-worthy on its own: documentation
 maintenance files such as `CHANGELOG.md` itself.
 
 The classification lives in one place — the module-level constants in
-`release_worthiness.py`. Extend it by adding a path prefix or an exact
-file name there, with a matching case in
+[`../scripts/release_lib/classification.py`](../scripts/release_lib/classification.py).
+Extend it by adding a path prefix or an exact file name there, with a
+matching case in
 [`../tests/unit/test_release_worthiness.py`](../tests/unit/test_release_worthiness.py).
 
 ## Deterministic SemVer classification
@@ -79,7 +80,9 @@ The `## Unreleased` entries that existed before this contract predate the
 category rules. They ship as a **single PATCH release** regardless of
 their headings: with the latest release at `v1.0.2`, the accumulated
 pre-policy set publishes as `v1.0.3`. This is encoded as
-`PRE_POLICY_BASELINE_TAG` in `release_worthiness.py` and retires itself
+`PRE_POLICY_BASELINE_TAG` in
+[`../scripts/release_lib/semver_policy.py`](../scripts/release_lib/semver_policy.py)
+and retires itself
 automatically — once `v1.0.3` is the latest tag, every later release uses
 the category rules above. Historical entries can never trigger a `minor`
 or `major` bump.
