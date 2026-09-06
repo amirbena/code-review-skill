@@ -338,8 +338,14 @@ These contracts share the [`findings/`](findings/README.md) directory.
   [`benchmark/fixture-format.md`](benchmark/fixture-format.md). The initial
   corpus — one crafted fixture per review category, with its
   case-selection rationale — lives in
-  [`benchmark/corpus/`](benchmark/corpus/README.md); the runner and
-  regression reporting are not built yet.
+  [`benchmark/corpus/`](benchmark/corpus/README.md). How a run executes
+  the reviewer over the corpus — per-case isolation into a disposable
+  workspace, the repository-safety invariants, cleanup, and the per-case
+  result shape — is
+  [`benchmark/runner-contract.md`](benchmark/runner-contract.md), with a
+  test-only reference runner
+  (`tests/reference/benchmark_runner.py`); regression reporting across
+  runs is not built yet.
   Repository-development docs in the
   [`benchmark/`](benchmark/README.md) directory; nothing benchmark is
   packaged.
