@@ -198,6 +198,9 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "## Logical Cohort Review",
         "review related changes together rather than treating files or hunks "
         "as isolated units",
+        "## Architectural Placement Review",
+        "Architectural placement and execution-lifecycle fidelity",
+        "not a second scope model",
         "## Code Impact / Dependency Analysis",
         "never as an unrelated pre-existing-defect audit",
         "No dedicated code-graph tool or vendor capability is required for "
@@ -295,6 +298,7 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
     ),
     "review-reasoning.md": (
         "## Logical Cohort Review",
+        "## Architectural Placement Review",
         "## Code Impact / Dependency Analysis",
     ),
     "finding-placement.md": (

@@ -39,7 +39,8 @@ review-context.md           optional supplied context (Jira / Issue / HLD / ADR 
 review-evidence.md          prior reviews/comments as Existing Review Evidence;
                             settled vs. speculative; no blind inheritance
         ↓
-review-reasoning.md         logical cohorts, code impact / dependency analysis
+review-reasoning.md         logical cohorts, architectural placement,
+                            code impact / dependency analysis
         ↓
 parallel-review.md          optional parallel workers per review dimension;
                             execution optimisation only; centralized aggregation

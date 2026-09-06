@@ -38,6 +38,21 @@ the trigger, structural-vs-separate finding rule, model-completeness questions,
 canonical-owner and external-package guidance, evidence requirements, and
 re-review behavior; this PR-specific policy does not restate them.
 
+## Architectural Placement Review
+
+When a PR change plausibly affects a semantic-risk category listed there —
+control flow, side effects, retry/exception behavior, transaction
+boundaries, authorization, routing/dispatch, idempotency, state-mutation
+ordering, or another lifecycle contract — apply
+[`review-scope.md`](../../../shared/policies/review-scope.md),
+"Architectural placement and execution-lifecycle fidelity," before
+finalizing findings. That shared section owns the triggers, the bounded
+caller/callee/owning-boundary expansion ladder, the stop conditions, the
+ineligible-versus-must-execute-and-fail distinction, and the both-locations
+evidence requirement; this PR-specific policy does not restate them. It is
+one application of the existing proportional-scope and evidence rules, not
+a second scope model.
+
 ## Code Impact / Dependency Analysis
 
 The durable invariant — a finding located outside the changed lines is valid

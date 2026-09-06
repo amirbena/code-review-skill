@@ -13,8 +13,17 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- Both review Skills now detect architecturally misplaced behavior — code
+  that is locally correct but sits at the wrong point in the surrounding
+  execution flow (an eligibility decision made inside execution, a check
+  duplicated below the layer that owns it, a mutation before its
+  precondition) — via bounded, semantically triggered context expansion
+  along the caller/callee/owning-boundary chain, with explicit stop
+  conditions and an "insufficient evidence is terminal" rule. Extends the
+  existing proportional-scope and evidence model rather than adding a
+  second one (#153).
 
 ## v1.4.0 — 2026-09-05
 

@@ -47,8 +47,10 @@ regardless of which review engine or model executes it.
 
 This same scaling — investigate no further than the change's own realistic
 blast radius — governs the targeted searches in
-[`review-scope.md`](review-scope.md), "Existing behavior ownership" and
-"Failure state, retry safety, and recovery," identically to any other
-cross-file reasoning: neither is a license for a repository-wide audit, and
-a finding under either still requires the same confirmed-defect /
-credible-risk / optional-improvement evidence labeling above.
+[`review-scope.md`](review-scope.md), "Existing behavior ownership,"
+"Failure state, retry safety, and recovery," and "Architectural placement
+and execution-lifecycle fidelity" (its bounded caller/callee/owning-boundary
+context expansion), identically to any other cross-file reasoning: none is a
+license for a repository-wide audit, and a finding under any of them still
+requires the same confirmed-defect / credible-risk / optional-improvement
+evidence labeling above.
