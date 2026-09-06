@@ -31,7 +31,9 @@ workflows change.
 
 ### 1. PR quality and validation
 
-Runs on the pull request, read-only, and gates merge:
+Runs on the pull request, read-only. `validate.yml` and the `Release
+worthiness` `assess` job are the required status checks on the `main`
+ruleset ([`../docs/RELEASE.md`](../docs/RELEASE.md)):
 
 - **`validate.yml`** — Skill metadata validation plus the full
   `tests/` suite.
@@ -100,7 +102,7 @@ Conceptual stages from a pull request to a published release:
                                        + CHANGELOG coverage + SemVer + dry-run packaging
         │
         ▼
-  merge to main
+  merge to main   (assess re-runs read-only on the push)
         │
         ▼
   release-worthiness: plan (READ-ONLY, trusted main)
