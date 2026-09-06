@@ -593,6 +593,12 @@ class BuiltArchiveContentTests(unittest.TestCase):
             "## Root-cause and model-completeness pass", self.review_scope_text
         )
 
+    def test_archive_contains_architectural_placement_policy(self) -> None:
+        self.assertIn(
+            "## Architectural placement and execution-lifecycle fidelity",
+            self.review_scope_text,
+        )
+
     def test_archive_contains_shared_remediation_policy(self) -> None:
         self.assertIn("## Evidence-grounded direction", self.remediation_text)
         self.assertIn("include_fix_prompt", self.remediation_text)
@@ -656,6 +662,12 @@ class GitHubArchiveContentTests(unittest.TestCase):
     def test_root_cause_model_completeness_policy_is_packaged(self) -> None:
         self.assertIn(
             "## Root-cause and model-completeness pass", self.review_scope_text
+        )
+
+    def test_architectural_placement_policy_is_packaged(self) -> None:
+        self.assertIn(
+            "## Architectural placement and execution-lifecycle fidelity",
+            self.review_scope_text,
         )
 
     def test_shared_remediation_policy_is_packaged(self) -> None:

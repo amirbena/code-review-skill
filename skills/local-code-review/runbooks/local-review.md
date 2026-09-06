@@ -248,8 +248,9 @@ which a value must be resolved before it is used, or what is reported.
    itself gathers from the actual code. This step applies
    [`review-scope.md`](../../../shared/policies/review-scope.md) in full,
    including "Related changes as one unit," "Existing behavior ownership,"
-   "Root-cause and model-completeness pass," and "Failure state, retry safety,
-   and recovery" (the last three
+   "Root-cause and model-completeness pass," "Failure state, retry safety,
+   and recovery," and "Architectural placement and execution-lifecycle
+   fidelity" (the last four
    signal-triggered per that policy's own gating conditions — not applied
    unconditionally to every diff), and
    [`evidence.md`](../../../shared/policies/evidence.md), "Findings beyond

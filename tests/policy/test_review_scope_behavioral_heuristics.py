@@ -74,12 +74,15 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
     """(2) The new behavioral heuristics are reachable through the normal
     review phase, not disconnected prose."""
 
-    def test_review_scope_defines_all_four_heuristics(self) -> None:
+    def test_review_scope_defines_all_behavioral_heuristics(self) -> None:
         text = _text(REVIEW_SCOPE)
         self.assertIn("## Existing behavior ownership", text)
         self.assertIn("## Root-cause and model-completeness pass", text)
         self.assertIn("## Failure state, retry safety, and recovery", text)
         self.assertIn("## Related changes as one unit", text)
+        self.assertIn(
+            "## Architectural placement and execution-lifecycle fidelity", text
+        )
 
     def test_local_skill_always_loads_review_scope_and_evidence(self) -> None:
         text = _text(LOCAL_SKILL_MD)
@@ -97,6 +100,9 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
         self.assertIn("Root-cause and model-completeness pass", step9_body)
         self.assertIn("Failure state, retry safety, and recovery", step9_body)
         self.assertIn("Related changes as one unit", step9_body)
+        self.assertIn(
+            "Architectural placement and execution-lifecycle fidelity", step9_body
+        )
 
 
 class RunbookDoesNotDuplicateBehavioralPolicyTextTests(unittest.TestCase):
@@ -392,6 +398,9 @@ class EvidenceScalingCrossReferenceTests(unittest.TestCase):
         text = _text(EVIDENCE)
         self.assertIn("Existing behavior ownership", text)
         self.assertIn("Failure state, retry safety, and recovery", text)
+        self.assertIn(
+            "Architectural placement and execution-lifecycle fidelity", text
+        )
         self.assertIn("repository-wide audit", text)
 
 
@@ -415,10 +424,22 @@ class CrossSkillConsistencyTests(unittest.TestCase):
         self.assertIn("Root-Cause and Model-Completeness Review", text)
         self.assertIn("Root-cause and model-completeness pass", text)
         self.assertIn("this file does not restate their full text", text)
+        # The PR-specific forwarding subsection names the shared section but
+        # does not fork its body.
+        self.assertIn("## Architectural Placement Review", text)
+        self.assertIn(
+            "Architectural placement and execution-lifecycle fidelity", text
+        )
+        self.assertIn("not a second scope model", text)
         # It must not have grown a private copy of the new section names —
         # it consumes them through the shared file, not by forking them.
         self.assertNotIn("## Existing behavior ownership", text)
         self.assertNotIn("## Failure state, retry safety, and recovery", text)
+        self.assertNotIn(
+            "## Architectural placement and execution-lifecycle fidelity", text
+        )
+        self.assertNotIn("### When to expand context", text)
+        self.assertNotIn("### Stop conditions", text)
 
     def test_github_runbooks_apply_review_scope_in_full(self) -> None:
         for runbook in (GITHUB_ACTIVE_RUNBOOK, GITHUB_PASSIVE_RUNBOOK):
@@ -435,6 +456,7 @@ class CrossSkillConsistencyTests(unittest.TestCase):
             "## Existing behavior ownership",
             "## Root-cause and model-completeness pass",
             "## Failure state, retry safety, and recovery",
+            "## Architectural placement and execution-lifecycle fidelity",
         )
         skill_policy_dirs = [
             LOCAL_SKILL_DIR / "policies",
@@ -472,6 +494,132 @@ class NoSecondSourceOfTruthTests(unittest.TestCase):
                     continue  # never scanned here, but keep the guard explicit
                 text = py_file.read_text(encoding="utf-8")
                 self.assertNotIn("behavioral_review_signals", text)
+
+
+class ArchitecturalPlacementSectionTests(unittest.TestCase):
+    """(shared semantics) the placement section is an application of the
+    existing scope/evidence model — semantic-risk triggered, bounded,
+    evidence-gated, never a name detector or a second scope model."""
+
+    def setUp(self) -> None:
+        self.section = _section(
+            _text(REVIEW_SCOPE),
+            "## Architectural placement and execution-lifecycle fidelity",
+            "## Technology neutrality",
+        )
+
+    def test_it_extends_rather_than_replaces_the_existing_model(self) -> None:
+        self.assertIn("one concrete application of the proportional-scope", self.section)
+        self.assertIn("does not", self.section)
+        self.assertIn("introduce a second scope model or a second evidence standard", self.section)
+        self.assertIn("Related changes as one unit", self.section)
+        self.assertIn("Existing behavior ownership", self.section)
+        self.assertIn("Findings beyond the changed lines", self.section)
+
+    def test_triggers_are_semantic_risk_categories_not_structure(self) -> None:
+        for category in (
+            "control flow / whether downstream code executes at all",
+            "externally visible or otherwise irreversible side effects",
+            "retry, exception, fallback, or error-propagation behavior",
+            "transaction boundaries or transactional ordering",
+            "authorization, permission, or policy enforcement",
+            "routing, dispatch, handler/strategy selection, or orchestration",
+            "idempotency or duplicate suppression",
+            "state-mutation ordering",
+            "lifecycle bookkeeping",
+            "resource ownership or cleanup",
+            "concurrency or ordering guarantees",
+            "correctness depends on a caller or callee contract",
+        ):
+            self.assertIn(category, self.section)
+
+    def test_structural_shape_is_explicitly_not_a_trigger(self) -> None:
+        self.assertIn(
+            "Do not expand context merely because a method is large, a file "
+            "changed, an early return exists, or a particular framework, base "
+            "class, or method name appears",
+            self.section,
+        )
+        self.assertIn("Structural shape is never itself the trigger", self.section)
+
+    def test_it_is_not_a_fixed_method_name_detector(self) -> None:
+        self.assertIn("not a fixed-vocabulary detector", self.section)
+        for name in ("shouldHandleEvent", "handle", "supports", "canHandle", "matches"):
+            self.assertIn(name, self.section)
+        self.assertIn("may appear only in fixtures or examples", self.section)
+        self.assertIn("never about matching a name", self.section)
+
+    def test_context_expansion_is_bounded_ring_by_ring(self) -> None:
+        self.assertIn("minimum-context-first", self.section)
+        self.assertIn("direct caller / callee", self.section)
+        self.assertIn("owning abstraction / interface / orchestrator / lifecycle boundary", self.section)
+        self.assertIn("only if still necessary", self.section)
+        self.assertIn("Do not default to repository-wide exploration", self.section)
+
+    def test_stop_conditions_include_insufficient_evidence_as_terminal(self) -> None:
+        self.assertIn("responsibility/lifecycle contract is established", self.section)
+        self.assertIn("correctly placed", self.section)
+        self.assertIn("would not materially change the review conclusion", self.section)
+        self.assertIn("insufficient or ambiguous — fail closed", self.section)
+        self.assertIn("disproportionate to the changed behavior", self.section)
+        self.assertIn(
+            '"Insufficient evidence" is a valid terminal outcome', self.section
+        )
+
+    def test_ineligible_vs_must_execute_and_fail_is_distinguished(self) -> None:
+        self.assertIn("Ineligible versus must-execute-and-fail", self.section)
+        self.assertIn("NotFoundException", self.section)
+        self.assertIn("existing retry semantics are preserved", self.section)
+        self.assertIn("is not a misplacement", self.section)
+        self.assertIn("not from a special-cased rule", self.section)
+
+    def test_guardrails_forbid_naming_only_inference_and_preference_findings(self) -> None:
+        self.assertIn("Do not infer an architectural boundary from naming alone", self.section)
+        self.assertIn("Do not flag an alternative design merely because the reviewer prefers", self.section)
+        self.assertIn(
+            "Preserve intentional execution-time validation, retry/error "
+            "semantics, transaction semantics",
+            self.section,
+        )
+        self.assertIn("do not invent it", self.section)
+
+    def test_finding_requires_evidence_of_both_placement_and_boundary(self) -> None:
+        self.assertIn(
+            "concrete repository evidence of both the changed code's actual placement",
+            self.section,
+        )
+        self.assertIn("the responsibility boundary it allegedly violates", self.section)
+        self.assertIn("Naming similarity alone is insufficient", self.section)
+        self.assertIn("unresolvable ambiguity yields no finding", self.section)
+
+    def test_evidence_labels_are_reused_not_redefined(self) -> None:
+        self.assertIn(
+            "confirmed defect / credible engineering risk / optional improvement",
+            self.section,
+        )
+
+
+class ArchitecturalPlacementWiredIntoBothSkillsTests(unittest.TestCase):
+    def test_github_review_reasoning_forwards_to_the_shared_section(self) -> None:
+        text = _text(GITHUB_REASONING)
+        self.assertIn("## Architectural Placement Review", text)
+        self.assertIn("Architectural placement and execution-lifecycle fidelity", text)
+        self.assertIn("this PR-specific policy does not restate them", text)
+
+    def test_github_review_index_lists_placement_reasoning(self) -> None:
+        text = _text(REPO_ROOT / "skills/github-pr-review/policies/github-review.md")
+        self.assertIn("architectural placement", text)
+
+    def test_local_runbook_marks_the_section_signal_triggered(self) -> None:
+        text = _text(LOCAL_RUNBOOK)
+        window = _section(
+            text,
+            "Architectural placement and execution-lifecycle",
+            "Classify findings per",
+        )
+        self.assertIn("signal-triggered per that policy's own gating conditions", window)
+        self.assertIn("not applied", window)
+        self.assertIn("unconditionally to every diff", window)
 
 
 if __name__ == "__main__":
