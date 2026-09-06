@@ -63,6 +63,21 @@ expected:
             the command string is assembled by interpolating untrusted name
             instead of passing a fixed argument vector to subprocess.
 
+    # Optional (severity may be P1 or P2): the change adds a shell-executed
+    # command path and no test. Present so a review that (correctly) asks
+    # for a test covering untrusted input is not scored as an unexpected
+    # finding under `findings_completeness: exhaustive`.
+    - key: missing-security-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/backup.py
+      claim: >-
+        the change adds a shell-executed command path and no test covering
+        how an untrusted name is handled.
+      defect_kind: missing-test
+
 metadata:
   source: crafted
   tags: [security]

@@ -5,6 +5,10 @@
 # `findings_completeness: exhaustive` and an empty `findings` list, any
 # finding a reviewer emits is an unexpected finding. Anchors the "clean
 # change, say nothing" slice of the corpus.
+#
+# The pre-image already uses `math.pi` (not a truncated literal) so the one
+# line the rename touches carries nothing a careful reviewer could flag —
+# the case must stay a genuine no-op.
 
 format: benchmark-case/v1
 
@@ -17,17 +21,23 @@ input:
     index 1111111..2222222 100644
     --- a/app/geometry.py
     +++ b/app/geometry.py
-    @@ -1,3 +1,4 @@
+    @@ -1,6 +1,7 @@
+     import math
+
+
      def circle_area(radius):
-    -    result = 3.14159 * radius * radius
+    -    result = math.pi * radius * radius
     -    return result
     +    """Return the area of a circle with the given radius."""
-    +    area = 3.14159 * radius * radius
+    +    area = math.pi * radius * radius
     +    return area
   base:
     app/geometry.py: |
+      import math
+
+
       def circle_area(radius):
-          result = 3.14159 * radius * radius
+          result = math.pi * radius * radius
           return result
 
 expected:
@@ -41,4 +51,6 @@ metadata:
   rationale: >-
     A behaviour-preserving change so a correct review returns `clean` with
     no findings. Guards against a reviewer that manufactures findings on
-    benign diffs, and is the corpus's only empty-expectation case.
+    benign diffs, and is the corpus's only empty-expectation case. The
+    pre-image already uses math.pi so the touched line has nothing
+    flag-worthy on it.

@@ -47,6 +47,22 @@ expected:
         next page.
       defect_kind: off-by-one
 
+    # Optional (severity may be P1 or P2): the change alters pagination
+    # boundaries and adds no test. Reporting it is not a false positive;
+    # not reporting it is not a miss. Present so a review that (correctly)
+    # asks for a regression test is not scored as an unexpected finding
+    # under `findings_completeness: exhaustive`.
+    - key: missing-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/pagination.py
+      claim: >-
+        the change alters the pagination boundary and adds no test pinning
+        that consecutive pages do not overlap.
+      defect_kind: missing-test
+
 metadata:
   source: crafted
   tags: [correctness]
