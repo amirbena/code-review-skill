@@ -4,7 +4,8 @@ coverage, the Unreleased roll, changelog-section extraction, the release
 preflight / verify gates, and the main() / $GITHUB_OUTPUT contract.
 
 The pure logic is tested directly; the Git/GitHub command wrappers are
-exercised through a fake runner injected in place of ``rw._git`` / ``rw._gh``.
+exercised through a fake runner injected in place of ``rw.gitgh._git`` /
+``rw.gitgh._gh`` (the Git/GitHub plumbing module).
 """
 
 from __future__ import annotations
@@ -461,8 +462,8 @@ class _FakeGit:
 
 class ReleasePreflightTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._real_git = rw._git
-        self.addCleanup(setattr, rw, "_git", self._real_git)
+        self._real_git = rw.gitgh._git
+        self.addCleanup(setattr, rw.gitgh, "_git", self._real_git)
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
 
@@ -472,7 +473,7 @@ class ReleasePreflightTests(unittest.TestCase):
         return path
 
     def _run(self, version: str, fake: _FakeGit, changelog_text: str) -> int:
-        rw._git = fake
+        rw.gitgh._git = fake
         cl = self._changelog(changelog_text)
         with contextlib.redirect_stdout(io.StringIO()):
             return rw.main(["--changelog", str(cl), "release-preflight", "--version", version])
@@ -505,9 +506,9 @@ class ReleaseVerifyTests(unittest.TestCase):
     SHA = "a" * 40
 
     def setUp(self) -> None:
-        self._real_git, self._real_gh = rw._git, rw._gh
-        self.addCleanup(setattr, rw, "_git", self._real_git)
-        self.addCleanup(setattr, rw, "_gh", self._real_gh)
+        self._real_git, self._real_gh = rw.gitgh._git, rw.gitgh._gh
+        self.addCleanup(setattr, rw.gitgh, "_git", self._real_git)
+        self.addCleanup(setattr, rw.gitgh, "_gh", self._real_gh)
 
     def _good_git(self, **overrides) -> _FakeGit:
         base = dict(
@@ -527,7 +528,7 @@ class ReleaseVerifyTests(unittest.TestCase):
         return lambda args, repo_root: json.dumps(payload)
 
     def _run(self, git: _FakeGit, gh, expected: str = SHA) -> int:
-        rw._git, rw._gh = git, gh
+        rw.gitgh._git, rw.gitgh._gh = git, gh
         with contextlib.redirect_stdout(io.StringIO()):
             return rw.main(
                 [
@@ -685,13 +686,13 @@ class AutoReleasePlanTests(unittest.TestCase):
     SKILL_DIFF = "skills/local-code-review/SKILL.md\n"
 
     def setUp(self) -> None:
-        self._real_git = rw._git
-        self.addCleanup(setattr, rw, "_git", self._real_git)
+        self._real_git = rw.gitgh._git
+        self.addCleanup(setattr, rw.gitgh, "_git", self._real_git)
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
 
     def _run(self, fake: _FakeGit, changelog_text: str):
-        rw._git = fake
+        rw.gitgh._git = fake
         cl = Path(self._tmp.name) / "CHANGELOG.md"
         cl.write_text(changelog_text, encoding="utf-8")
         out = Path(self._tmp.name) / "gh-out.txt"
@@ -804,19 +805,19 @@ class AutoReleasePlanTests(unittest.TestCase):
 
 class LatestReleaseTagTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._real_git = rw._git
-        self.addCleanup(setattr, rw, "_git", self._real_git)
+        self._real_git = rw.gitgh._git
+        self.addCleanup(setattr, rw.gitgh, "_git", self._real_git)
 
     def test_picks_highest_valid_semver_tag(self) -> None:
-        rw._git = _FakeGit(sorted_tags="v1.0.10\nv1.0.9\nv1.0.2\n")
+        rw.gitgh._git = _FakeGit(sorted_tags="v1.0.10\nv1.0.9\nv1.0.2\n")
         self.assertEqual(rw.latest_release_tag(Path(".")), "v1.0.10")
 
     def test_skips_non_semver_lines(self) -> None:
-        rw._git = _FakeGit(sorted_tags="v1.2\nnightly\nv1.0.3\nv1.0.2\n")
+        rw.gitgh._git = _FakeGit(sorted_tags="v1.2\nnightly\nv1.0.3\nv1.0.2\n")
         self.assertEqual(rw.latest_release_tag(Path(".")), "v1.0.3")
 
     def test_none_when_no_tags(self) -> None:
-        rw._git = _FakeGit(sorted_tags="")
+        rw.gitgh._git = _FakeGit(sorted_tags="")
         self.assertIsNone(rw.latest_release_tag(Path(".")))
 
 
