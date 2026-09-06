@@ -414,7 +414,7 @@ class PureReleaseHelperTests(unittest.TestCase):
 
 
 class _FakeGit:
-    """Stand-in for rw._git dispatching on the leading git args."""
+    """Stand-in for rw.gitgh._git dispatching on the leading git args."""
 
     def __init__(
         self,

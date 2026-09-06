@@ -41,8 +41,9 @@ from release_lib.semver_policy import (
 )
 from release_lib.semver_version import derive_next_version, validate_semver
 
-# Shown verbatim as the top-level ``--help`` description; keep it in sync
-# with scripts/release_worthiness.py's module docstring.
+# Canonical text for the top-level ``--help`` description, rendered verbatim
+# by argparse. Kept here (not read from a module docstring) so the CLI's
+# user-facing wording has one owner.
 _DESCRIPTION = """Classify a change set as release-worthy, enforce CHANGELOG coverage, and
 drive the deterministic parts of the direct-to-main release flow.
 
