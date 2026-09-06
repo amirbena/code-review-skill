@@ -1,0 +1,73 @@
+# Benchmark corpus case (Issue #51). Format: docs/benchmark/fixture-format.md.
+#
+# Category: correctness. A refactor of a pagination helper introduces an
+# off-by-one on the slice end, so every page returns one extra row that also
+# appears at the top of the next page. One required P1 finding; no security
+# or quality angle, so this case isolates "did the reviewer catch a plain
+# logic bug introduced by a change".
+
+format: benchmark-case/v1
+
+id: correctness-off-by-one-pagination
+title: "Off-by-one page end index duplicates a row across pages"
+
+input:
+  patch: |
+    diff --git a/app/pagination.py b/app/pagination.py
+    index 1111111..2222222 100644
+    --- a/app/pagination.py
+    +++ b/app/pagination.py
+    @@ -1,3 +1,4 @@
+     def page(items, page_number, page_size):
+         offset = (page_number - 1) * page_size
+    -    return items[offset : offset + page_size]
+    +    end = offset + page_size + 1
+    +    return items[offset:end]
+  base:
+    app/pagination.py: |
+      def page(items, page_number, page_size):
+          offset = (page_number - 1) * page_size
+          return items[offset : offset + page_size]
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: page-end-off-by-one
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/pagination.py
+        symbol: page
+        anchor: "offset + page_size + 1"
+      claim: >-
+        the page end index adds one to offset + page_size, so each page
+        returns one extra item that also appears as the first item of the
+        next page.
+      defect_kind: off-by-one
+
+    # Optional (severity may be P1 or P2): the change alters pagination
+    # boundaries and adds no test. Reporting it is not a false positive;
+    # not reporting it is not a miss. Present so a review that (correctly)
+    # asks for a regression test is not scored as an unexpected finding
+    # under `findings_completeness: exhaustive`.
+    - key: missing-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/pagination.py
+      claim: >-
+        the change alters the pagination boundary and adds no test pinning
+        that consecutive pages do not overlap.
+      defect_kind: missing-test
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    A minimal, unambiguous logic bug with no security or style dimension:
+    the review must notice that a change presented as a harmless refactor
+    silently alters output. Anchors the "plain correctness" slice of the
+    corpus.

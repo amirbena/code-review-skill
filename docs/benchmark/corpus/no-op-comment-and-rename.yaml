@@ -1,0 +1,56 @@
+# Benchmark corpus case (Issue #51). Format: docs/benchmark/fixture-format.md.
+#
+# Category: no-op. The change adds a docstring and renames a local variable;
+# behaviour is identical. The correct review reports nothing. With
+# `findings_completeness: exhaustive` and an empty `findings` list, any
+# finding a reviewer emits is an unexpected finding. Anchors the "clean
+# change, say nothing" slice of the corpus.
+#
+# The pre-image already uses `math.pi` (not a truncated literal) so the one
+# line the rename touches carries nothing a careful reviewer could flag —
+# the case must stay a genuine no-op.
+
+format: benchmark-case/v1
+
+id: no-op-comment-and-rename
+title: "Docstring added and a local variable renamed, no behaviour change"
+
+input:
+  patch: |
+    diff --git a/app/geometry.py b/app/geometry.py
+    index 1111111..2222222 100644
+    --- a/app/geometry.py
+    +++ b/app/geometry.py
+    @@ -1,6 +1,7 @@
+     import math
+
+
+     def circle_area(radius):
+    -    result = math.pi * radius * radius
+    -    return result
+    +    """Return the area of a circle with the given radius."""
+    +    area = math.pi * radius * radius
+    +    return area
+  base:
+    app/geometry.py: |
+      import math
+
+
+      def circle_area(radius):
+          result = math.pi * radius * radius
+          return result
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    A behaviour-preserving change so a correct review returns `clean` with
+    no findings. Guards against a reviewer that manufactures findings on
+    benign diffs, and is the corpus's only empty-expectation case. The
+    pre-image already uses math.pi so the touched line has nothing
+    flag-worthy on it.
