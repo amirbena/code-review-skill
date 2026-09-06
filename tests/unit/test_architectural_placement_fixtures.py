@@ -99,6 +99,14 @@ class Fixture:
     # Negative: the check must stay on the execution path so an
     # exception/retry contract is honored (missing-entity / NotFoundException).
     must_execute_and_fail: bool = False
+    # Stop condition 3 — the near ring already settled the conclusion and
+    # inspecting further siblings / the repository contract would not change
+    # it, so expansion stops before the full ladder is walked.
+    deeper_expansion_would_not_change_conclusion: bool = False
+    # Stop condition 5 — an owning boundary might exist, but only an
+    # unrelated repository-wide sweep disproportionate to the changed
+    # behavior could find it; fail closed without that sweep.
+    owning_boundary_beyond_proportionate_reach: bool = False
     cross_file: bool = False
     # Output is functionally identical either way, but lifecycle / side-effect
     # semantics differ (handler still runs, action still recorded, ...).
@@ -141,6 +149,13 @@ def _evaluate(fx: Fixture, *, mutation: str | None = None) -> Result:
     # already carries what that expansion would find.
     boundary = fx.boundary
 
+    # Stop condition 5 — "continuing would require unrelated repository-wide
+    # exploration disproportionate to the changed behavior." A boundary may
+    # exist somewhere, but the near rings do not reach it and running the
+    # sweep is out of proportion to a small change → fail closed.
+    if boundary is None and fx.owning_boundary_beyond_proportionate_reach:
+        return Result(True, STOP_DISPROPORTIONATE, "NO_FINDING")
+
     # Stop condition 4 — "repository evidence is insufficient or ambiguous
     # — fail closed, do not invent the architecture." No owning boundary
     # found at all, OR a boundary whose semantics are unrelated, OR
@@ -170,6 +185,14 @@ def _evaluate(fx: Fixture, *, mutation: str | None = None) -> Result:
     # execution-path placement is correct → stop condition 2.
     if fx.must_execute_and_fail and mutation != "ignore_retry_contract":
         return Result(True, STOP_CORRECTLY_PLACED, "NO_FINDING")
+
+    # Stop condition 3 — "additional context would not materially change the
+    # review conclusion." The direct caller / owning phase already answered
+    # the placement question; walking the remaining rings (every sibling
+    # implementation, the full repository contract) would not change it.
+    if fx.deeper_expansion_would_not_change_conclusion:
+        outcome = "FINDING" if fx.placement_conflicts_with_boundary else "NO_FINDING"
+        return Result(True, STOP_NO_MATERIAL_CHANGE, outcome)
 
     # Stop condition 2 — "the surrounding architecture establishes that the
     # changed behavior is correctly placed." Nothing to report.
@@ -434,6 +457,63 @@ FIXTURES: tuple[Fixture, ...] = (
         expected_stop=STOP_NOT_TRIGGERED,
         expected_outcome="NO_FINDING",
     ),
+    # 13. Negative — a boundary-looking method name but no semantic-risk
+    #     trigger: renaming `validate()` to `canProcess()` and inlining a
+    #     pure format check. Name shape alone must not expand context.
+    Fixture(
+        name="authorization_looking_name_no_policy_effect",
+        family="negative: structural shape is not a trigger",
+        changed_behavior="helper renamed to canProcess() and a whitespace-"
+        "trim check moved into it; no auth, control-flow, or side-effect change",
+        trigger=Trigger.NONE,
+        structural_signals=("predicate-style method name", "early return"),
+        boundary=Boundary(
+            location="RequestGuard.authorize()",
+            kind="authorization boundary",
+            owns_this_decision=False,
+            evidence_sufficient=True,
+        ),
+        local_only_conclusion="NO_FINDING",
+        expected_expansion=False,
+        expected_stop=STOP_NOT_TRIGGERED,
+        expected_outcome="NO_FINDING",
+    ),
+    # 14. Negative — stop condition 3: the near ring already settles it.
+    Fixture(
+        name="near_ring_settles_conclusion",
+        family="negative: deeper expansion would not change the conclusion",
+        changed_behavior="tenant-scope guard added in resolve(); the single "
+        "direct caller already shows the request context is tenant-bound "
+        "before resolve() runs",
+        trigger=Trigger.CONTROL_FLOW,
+        boundary=Boundary(
+            location="RequestContext (direct caller)",
+            kind="request-scoping phase",
+            owns_this_decision=True,
+            evidence_sufficient=True,
+        ),
+        placement_conflicts_with_boundary=False,
+        deeper_expansion_would_not_change_conclusion=True,
+        local_only_conclusion="NO_FINDING",
+        expected_stop=STOP_NO_MATERIAL_CHANGE,
+        expected_outcome="NO_FINDING",
+    ),
+    # 15. Negative — stop condition 5: an owning boundary might exist, but
+    #     only a repository-wide sweep out of proportion to a one-line guard
+    #     could find it. Fail closed without the sweep.
+    Fixture(
+        name="owning_boundary_needs_disproportionate_sweep",
+        family="negative: expansion would be disproportionate",
+        changed_behavior="one-line rate-limit guard added in a leaf util; any "
+        "gateway that might own rate limiting is in another service with no "
+        "call path visible from this repository",
+        trigger=Trigger.CONTROL_FLOW,
+        boundary=None,
+        owning_boundary_beyond_proportionate_reach=True,
+        local_only_conclusion="NO_FINDING",
+        expected_stop=STOP_DISPROPORTIONATE,
+        expected_outcome="NO_FINDING",
+    ),
 )
 
 
@@ -453,17 +533,41 @@ class ArchitecturalPlacementFixtureTests(unittest.TestCase):
                 self.assertEqual(res.outcome, fx.expected_outcome)
 
     def test_structural_signals_alone_never_expand_context(self) -> None:
-        for fx in FIXTURES:
-            if fx.trigger is Trigger.NONE:
-                with self.subTest(fixture=fx.name):
-                    self.assertTrue(fx.structural_signals)
-                    self.assertFalse(_evaluate(fx).expanded)
+        none_trigger = [f for f in FIXTURES if f.trigger is Trigger.NONE]
+        # At least two structurally different shapes — a large early-returning
+        # helper and a predicate/boundary-looking method name — neither of
+        # which is a trigger on its own.
+        self.assertGreaterEqual(len(none_trigger), 2)
+        for fx in none_trigger:
+            with self.subTest(fixture=fx.name):
+                self.assertTrue(fx.structural_signals)
+                self.assertFalse(_evaluate(fx).expanded)
+                self.assertEqual(_evaluate(fx).outcome, "NO_FINDING")
 
     def test_insufficient_evidence_is_a_terminal_no_finding(self) -> None:
         seen = [f for f in FIXTURES if f.expected_stop == STOP_INSUFFICIENT_EVIDENCE]
-        self.assertGreaterEqual(len(seen), 3)  # cases 6, 8, 9 at least
+        # no_owning_boundary_in_repo, predicate_has_unrelated_semantics,
+        # ownership_evidence_is_ambiguous.
+        self.assertGreaterEqual(len(seen), 3)
         for fx in seen:
             self.assertEqual(_evaluate(fx).outcome, "NO_FINDING")
+
+    def test_every_stop_condition_is_exercised_by_the_corpus(self) -> None:
+        # The policy lists a "does not apply" case plus five stop conditions;
+        # the corpus must drive each one through the transcription, not just
+        # name them.
+        reached = {_evaluate(fx).stop for fx in FIXTURES}
+        self.assertEqual(
+            reached,
+            {
+                STOP_NOT_TRIGGERED,
+                STOP_CONTRACT_ESTABLISHED,
+                STOP_CORRECTLY_PLACED,
+                STOP_NO_MATERIAL_CHANGE,
+                STOP_INSUFFICIENT_EVIDENCE,
+                STOP_DISPROPORTIONATE,
+            },
+        )
 
     def test_must_execute_and_fail_negative_is_not_a_misplacement(self) -> None:
         fx = next(f for f in FIXTURES if f.must_execute_and_fail)

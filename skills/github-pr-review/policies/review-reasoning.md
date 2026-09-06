@@ -40,19 +40,18 @@ re-review behavior; this PR-specific policy does not restate them.
 
 ## Architectural Placement Review
 
-When a PR change plausibly affects control flow, side effects,
-retry/exception behavior, transaction boundaries, authorization, routing or
-dispatch, idempotency, state-mutation ordering, or another lifecycle
-contract, apply
+When a PR change plausibly affects a semantic-risk category listed there —
+control flow, side effects, retry/exception behavior, transaction
+boundaries, authorization, routing/dispatch, idempotency, state-mutation
+ordering, or another lifecycle contract — apply
 [`review-scope.md`](../../../shared/policies/review-scope.md),
 "Architectural placement and execution-lifecycle fidelity," before
-finalizing findings. That shared section owns the semantic triggers, the
-bounded caller/callee/owning-boundary context-expansion ladder, the stop
-conditions (including "insufficient evidence" as a valid terminal outcome),
-the ineligible-versus-must-execute-and-fail distinction, and the
-both-locations evidence requirement; this PR-specific policy does not
-restate them. It is one application of the existing proportional-scope and
-evidence rules, not a second scope model.
+finalizing findings. That shared section owns the triggers, the bounded
+caller/callee/owning-boundary expansion ladder, the stop conditions, the
+ineligible-versus-must-execute-and-fail distinction, and the both-locations
+evidence requirement; this PR-specific policy does not restate them. It is
+one application of the existing proportional-scope and evidence rules, not
+a second scope model.
 
 ## Code Impact / Dependency Analysis
 
