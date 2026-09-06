@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Structural contract checks for the benchmark fixture format (#50).
+"""Structural contract checks for the benchmark fixture format (#50) and
+the initial benchmark corpus (#51).
 
 Pins docs/benchmark/fixture-format.md and its directory README so the
 canonical invariant, the schema/versioning fail-closed rule, the four typed
 variance constructs, the reused shared vocabulary, and the deferred-scope
-boundaries cannot drift silently. Prose assertions are whitespace-normalized;
-structural ones target headings and literal terms.
+boundaries cannot drift silently. Also pins docs/benchmark/corpus/README.md
+as the case-selection rationale record. Prose assertions are
+whitespace-normalized; structural ones target headings and literal terms.
 """
 
 import unittest
@@ -18,6 +20,9 @@ EXAMPLE = REPO_ROOT / "docs" / "benchmark" / "examples" / "example-case.yaml"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
 REFERENCE = REPO_ROOT / "tests" / "reference" / "benchmark_fixture.py"
 UNIT_TEST = REPO_ROOT / "tests" / "unit" / "test_benchmark_fixture.py"
+CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
+CORPUS_README = CORPUS_DIR / "README.md"
+CORPUS_UNIT_TEST = REPO_ROOT / "tests" / "unit" / "test_benchmark_corpus.py"
 
 
 class FixtureFormatContractTests(unittest.TestCase):
@@ -176,8 +181,10 @@ class DirectoryNavigationTests(unittest.TestCase):
         raw = README.read_text(encoding="utf-8")
         self.assertIn("](fixture-format.md)", raw)
         self.assertIn("](examples/example-case.yaml)", raw)
+        self.assertIn("](corpus/README.md)", raw)
         self.assertIn("not** packaged", raw)
         self.assertIn("#50", raw)
+        self.assertIn("#51", raw)
 
     def test_architecture_links_to_the_benchmark_directory(self) -> None:
         raw = ARCHITECTURE.read_text(encoding="utf-8")
@@ -201,6 +208,64 @@ class WorkedExampleFileTests(unittest.TestCase):
         raw = EXAMPLE.read_text(encoding="utf-8")
         self.assertIn("format: benchmark-case/v1", raw)
         self.assertIn("NOT part of the benchmark corpus", raw)
+
+
+class CorpusDirectoryTests(unittest.TestCase):
+    """The #51 corpus directory is present, small, and its README is the
+    case-selection rationale record — pinned so it cannot be silently
+    emptied or turned into an undocumented bulk dump."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.fixtures = sorted(CORPUS_DIR.glob("*.yaml"))
+        cls.readme_raw = CORPUS_README.read_text(encoding="utf-8")
+        cls.readme_text = " ".join(cls.readme_raw.split())
+
+    def test_corpus_has_a_small_set_of_v1_fixtures(self) -> None:
+        self.assertTrue(CORPUS_DIR.is_dir())
+        self.assertGreaterEqual(len(self.fixtures), 4)
+        self.assertLessEqual(len(self.fixtures), 12)
+        for path in self.fixtures:
+            self.assertIn(
+                "format: benchmark-case/v1",
+                path.read_text(encoding="utf-8"),
+                f"{path.name} does not declare the v1 format",
+            )
+
+    def test_readme_records_the_selection_rationale_and_non_goals(self) -> None:
+        self.assertIn("Selection principle", self.readme_raw)
+        self.assertIn("one per review category", self.readme_text)
+        self.assertIn("Intentionally small", self.readme_raw)
+        for token in ("#51", "#40", "#52", "#53"):
+            self.assertIn(token, self.readme_raw)
+        self.assertIn("not** packaged", self.readme_text)
+
+    def test_readme_links_every_fixture_and_the_validator(self) -> None:
+        for path in self.fixtures:
+            self.assertIn(f"]({path.name})", self.readme_raw, f"README omits {path.name}")
+        self.assertIn("](../fixture-format.md)", self.readme_raw)
+        self.assertIn("](../../../tests/unit/test_benchmark_corpus.py)", self.readme_raw)
+        self.assertIn(
+            "](../../../tests/reference/benchmark_fixture.py)", self.readme_raw
+        )
+
+    def test_corpus_covers_the_four_named_categories(self) -> None:
+        joined = "\n".join(p.read_text(encoding="utf-8") for p in self.fixtures)
+        for tag in ("correctness", "security", "quality", "no-op"):
+            self.assertIn(tag, joined, f"no corpus fixture tagged {tag}")
+
+    def test_worked_example_is_not_copied_into_the_corpus(self) -> None:
+        for path in self.fixtures:
+            self.assertNotIn(
+                "example-sqli-and-unsafe-path",
+                path.read_text(encoding="utf-8"),
+                f"{path.name} reuses the worked example id",
+            )
+
+    def test_corpus_unit_test_uses_the_single_reference_validator(self) -> None:
+        raw = CORPUS_UNIT_TEST.read_text(encoding="utf-8")
+        self.assertIn("from tests.reference import benchmark_fixture as bf", raw)
+        self.assertIn("never defines a second one", raw)
 
 
 if __name__ == "__main__":

@@ -335,8 +335,11 @@ These contracts share the [`findings/`](findings/README.md) directory.
   benchmark case (identity, patch / repository-reference input, expected
   findings, severity, location detail, typed variance constructs,
   fail-closed versioning) is defined in
-  [`benchmark/fixture-format.md`](benchmark/fixture-format.md); the corpus,
-  runner, and regression reporting are not built yet.
+  [`benchmark/fixture-format.md`](benchmark/fixture-format.md). The initial
+  corpus — one crafted fixture per review category, with its
+  case-selection rationale — lives in
+  [`benchmark/corpus/`](benchmark/corpus/README.md); the runner and
+  regression reporting are not built yet.
   Repository-development docs in the
   [`benchmark/`](benchmark/README.md) directory; nothing benchmark is
   packaged.

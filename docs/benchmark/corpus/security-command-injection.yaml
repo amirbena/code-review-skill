@@ -1,0 +1,72 @@
+# Benchmark corpus case (Issue #51). Format: docs/benchmark/fixture-format.md.
+#
+# Category: security. A change swaps an argument-vector subprocess call for a
+# shell string built by interpolating an untrusted `name`, so a crafted name
+# runs arbitrary commands. One required P0 finding, reported acceptably on
+# either the subprocess call or the f-string that feeds it (the format's
+# `alternatives` construct). Deliberately a different sink from the worked
+# example's SQL injection so the corpus covers a second injection class.
+
+format: benchmark-case/v1
+
+id: security-command-injection
+title: "Command injection via shell=True on an interpolated archive name"
+
+input:
+  patch: |
+    diff --git a/app/backup.py b/app/backup.py
+    index 1111111..2222222 100644
+    --- a/app/backup.py
+    +++ b/app/backup.py
+    @@ -1,6 +1,6 @@
+     import subprocess
+
+
+     def make_archive(name):
+    -    args = ["tar", "-czf", name + ".tar.gz", "data/"]
+    -    return subprocess.run(args, check=True)
+    +    cmd = f"tar -czf {name}.tar.gz data/"
+    +    return subprocess.run(cmd, shell=True, check=True)
+  base:
+    app/backup.py: |
+      import subprocess
+
+
+      def make_archive(name):
+          args = ["tar", "-czf", name + ".tar.gz", "data/"]
+          return subprocess.run(args, check=True)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: shell-command-injection
+      match: required
+      severity: P0
+      location:
+        location_intent: line
+        path: app/backup.py
+        symbol: make_archive
+        anchor: "subprocess.run(cmd, shell=True"
+      claim: >-
+        name is interpolated into a shell command string that runs with
+        shell=True, so a crafted name executes arbitrary commands (command
+        injection).
+      defect_kind: command-injection
+      alternatives:
+        - location:
+            location_intent: line
+            path: app/backup.py
+            symbol: make_archive
+            anchor: "f\"tar -czf {name}.tar.gz data/\""
+          claim: >-
+            the command string is assembled by interpolating untrusted name
+            instead of passing a fixed argument vector to subprocess.
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Covers a second high-severity injection class beyond the worked
+    example's SQL injection, and exercises `alternatives` on a required
+    finding where the same defect is fairly reported at two sites.

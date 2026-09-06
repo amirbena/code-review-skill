@@ -1,0 +1,62 @@
+# Benchmark corpus case (Issue #51). Format: docs/benchmark/fixture-format.md.
+#
+# Category: quality. A new dispatch branch copy-pastes the message-formatting
+# call from the existing branch instead of computing it once before the
+# dispatch. The change is correct and safe; the only finding is a P2
+# maintainability issue, so the mechanical decision stays `clean`. Anchors
+# the "quality-only, non-blocking" slice of the corpus.
+
+format: benchmark-case/v1
+
+id: quality-duplicated-branch-logic
+title: "New sms branch duplicates the format_message call from the email branch"
+
+input:
+  patch: |
+    diff --git a/app/notify.py b/app/notify.py
+    index 1111111..2222222 100644
+    --- a/app/notify.py
+    +++ b/app/notify.py
+    @@ -1,6 +1,9 @@
+     def notify(user, kind):
+         if kind == "email":
+             msg = format_message(user)
+             send_email(user.email, msg)
+    +    elif kind == "sms":
+    +        msg = format_message(user)
+    +        send_sms(user.phone, msg)
+         else:
+             raise ValueError(kind)
+  base:
+    app/notify.py: |
+      def notify(user, kind):
+          if kind == "email":
+              msg = format_message(user)
+              send_email(user.email, msg)
+          else:
+              raise ValueError(kind)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: duplicated-format-message-call
+      match: required
+      severity: P2
+      location:
+        location_intent: symbol
+        path: app/notify.py
+        symbol: notify
+        anchor: "elif kind == \"sms\":"
+      claim: >-
+        the sms branch repeats msg = format_message(user) verbatim from the
+        email branch instead of computing msg once before the dispatch.
+      defect_kind: duplicated-logic
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    A safe, correct change whose only issue is maintainability, so a correct
+    review reports one P2 and still returns `clean`. Keeps the corpus from
+    conflating "has a finding" with "blocks the change".
