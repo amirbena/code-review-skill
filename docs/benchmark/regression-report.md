@@ -120,9 +120,9 @@ runner's recorded output — never recomputed by re-running the reviewer:
 
 The **cross-run stability key** is coarse and documented: a produced
 finding is keyed by a normalized location built from the adapter's
-**identity-bearing** location fields only (path — path-normalized —
-symbol, anchor, scope), together with its stable defect/claim
-discriminator when the adapter supplies one. Positional fields
+**identity-bearing** location fields only — `location_intent`, `path` /
+`file` (path-normalized), `symbol`, `anchor` — together with its stable
+defect/claim discriminator when the adapter supplies one. Positional fields
 (`line`/`col` and friends) are deliberately **excluded** — line numbers
 drift as code moves, so a reviewer whose output shifts by a line still
 pairs as *retained* rather than as a drop + gain. Severity is likewise
@@ -154,6 +154,13 @@ undifferentiated delta list):
 | **improvement** | `status` went `error` → `executed`; **or** the gained set is non-empty and the dropped set is empty; **or** a retained finding's severity fell with nothing offsetting it. | Reported in its own clearly separate block. |
 | **mixed** | Both dropped and gained are non-empty, or the stability key was ambiguous (§4), or status and finding-set signals disagree. | Grouped **with the regressions** — fail closed; a human decides. |
 | **unchanged** | Identical `status`, empty dropped and gained sets, identical severity histogram. | Collapsed to a count; listed by `id` only. |
+
+The **Rendering** column describes the human-facing presentation of the
+report. It is not a statement about the machine serialization: that always
+emits the full per-case record (status, dropped, gained, retained with a
+per-entry `severity_changed` flag, severity histogram) for **every** class,
+`unchanged` included, so `totals` always reconcile against the per-case
+detail (§6).
 
 This classification is intentionally metric-free: it reports that the
 reviewer's *observable output* for a case changed in a direction, not
