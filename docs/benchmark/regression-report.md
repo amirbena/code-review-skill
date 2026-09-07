@@ -113,15 +113,19 @@ runner's recorded output — never recomputed by re-running the reviewer:
    baseline's into:
    - **dropped** — in the baseline, absent from the candidate;
    - **gained** — in the candidate, absent from the baseline;
-   - **retained** — present in both (possibly with a severity change,
-     which is reported alongside).
+   - **retained** — present in both. Every retained finding is listed, each
+     flagged with whether its severity changed between the runs.
 3. **Severity histogram.** The per-severity counts (`P0` / `P1` / `P2`)
    of `produced_findings` in each run, and their difference.
 
 The **cross-run stability key** is coarse and documented: a produced
-finding is keyed by a normalized location (the location fields the adapter
-supplied, path-normalized) together with its stable defect/claim
-discriminator when the adapter supplies one. Severity is deliberately
+finding is keyed by a normalized location built from the adapter's
+**identity-bearing** location fields only (path — path-normalized —
+symbol, anchor, scope), together with its stable defect/claim
+discriminator when the adapter supplies one. Positional fields
+(`line`/`col` and friends) are deliberately **excluded** — line numbers
+drift as code moves, so a reviewer whose output shifts by a line still
+pairs as *retained* rather than as a drop + gain. Severity is likewise
 **not** part of the key — a finding that persists across runs at a
 changed severity is a *retained* finding with a reported severity change,
 not a simultaneous drop and gain. The key exists only to pair findings
@@ -169,7 +173,8 @@ computed only from the per-case classes and deltas above:
 - **Total dropped / gained / retained** produced findings across all
   compared cases.
 - **Aggregate severity histogram delta** — baseline vs candidate
-  `produced_findings` counts per severity, summed over the corpus.
+  `produced_findings` counts per severity, summed over all cases present
+  in both runs (added and removed cases have no counterpart to difference).
 - **`has_regressions`** — a single boolean: true iff the regression class
   or the mixed class or the removed-case set is non-empty. This is the
   flag a CI gate acts on; it is distinct from report process health (§9).

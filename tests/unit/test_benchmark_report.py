@@ -39,9 +39,19 @@ from tests.support.paths import REPO_ROOT
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
 
 
-def _pf(severity: str, path: str, *, claim: str = "c", defect: str | None = None) -> br.ProducedFinding:
+def _pf(
+    severity: str,
+    path: str,
+    *,
+    claim: str = "c",
+    defect: str | None = None,
+    line: int | None = None,
+) -> br.ProducedFinding:
     extra = {"defect_kind": defect} if defect else {}
-    return br.ProducedFinding(severity=severity, location={"path": path}, claim=claim, extra=extra)
+    location: dict = {"path": path}
+    if line is not None:
+        location["line"] = line
+    return br.ProducedFinding(severity=severity, location=location, claim=claim, extra=extra)
 
 
 def _case(cid: str, *findings: br.ProducedFinding, status: str = "executed", error: str | None = None) -> br.CaseResult:
@@ -150,6 +160,22 @@ class MixedAndFailClosedTests(unittest.TestCase):
         self.assertEqual(report.counts["mixed"], 1)
         self.assertTrue(report.has_regressions)
 
+    def test_line_number_drift_pairs_as_retained_not_mixed(self) -> None:
+        # Same defect, same claim, moved by a few lines between runs — the
+        # stability key excludes positional fields, so this is `unchanged`,
+        # never a spurious drop + gain.
+        report = _compare(
+            _baseline(_case("c", _pf("P1", "m.py", defect="bug", line=10))),
+            [_case("c", _pf("P1", "m.py", defect="bug", line=14))],
+        )
+        self.assertEqual(report.counts["mixed"], 0)
+        self.assertEqual(report.counts["regression"], 0)
+        self.assertEqual(report.counts["unchanged"], 1)
+        self.assertFalse(report.has_regressions)
+        self.assertEqual(report.total_dropped, 0)
+        self.assertEqual(report.total_gained, 0)
+        self.assertEqual(report.total_retained, 1)
+
 
 class IdentityGuardTests(unittest.TestCase):
     def test_corpus_id_mismatch_is_a_report_error(self) -> None:
@@ -203,6 +229,25 @@ class DeterministicOutputTests(unittest.TestCase):
             brp.compare(a, [_case("c")], candidate_corpus_id="k", candidate_adapter_id="y").as_dict(),
             brp.compare(b, [_case("c")], candidate_corpus_id="k", candidate_adapter_id="y").as_dict(),
         )
+
+    def test_serialized_retained_reconciles_with_totals_retained(self) -> None:
+        # totals.retained counts every retained finding; the per-case
+        # `retained` arrays must list all of them (severity_changed flags
+        # the moved ones) so the two views of the report agree.
+        baseline = _baseline(
+            _case("c", _pf("P1", "a.py", defect="x"), _pf("P2", "b.py", defect="y")),
+        )
+        candidate = [
+            _case("c", _pf("P0", "a.py", defect="x"), _pf("P2", "b.py", defect="y")),
+        ]
+        as_dict = _compare(baseline, candidate).as_dict()
+        serialized_retained = [
+            r for group in as_dict["cases"].values() for c in group for r in c["retained"]
+        ]
+        self.assertEqual(len(serialized_retained), as_dict["totals"]["retained"])
+        self.assertEqual(as_dict["totals"]["retained"], 2)
+        changed = [r for r in serialized_retained if r["severity_changed"]]
+        self.assertEqual([r["location"] for r in changed], ["path=a.py"])
 
 
 class BaselineIsNeverWrittenTests(unittest.TestCase):

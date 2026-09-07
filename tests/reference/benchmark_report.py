@@ -114,13 +114,26 @@ class BaselineArtifact:
 # --------------------------------------------------------------------------
 
 
+# Identity-bearing location fields only. Positional / coordinate fields
+# (`line`, `lines`, `col`, …) are deliberately excluded from the stability
+# key: line numbers drift as code moves (regression-report.md §4, and
+# fixture-format.md "Advisory only … line numbers move"), so folding them
+# in would make a reviewer whose output shifts by a line look like a
+# simultaneous drop + gain (a spurious `mixed`).
+_IDENTITY_LOCATION_FIELDS = ("location_intent", "path", "file", "symbol", "anchor")
+
+
 def _normalize_location(location: Any) -> str:
-    """Coarse, path-normalized rendering of whatever location shape the
+    """Coarse, identity-only rendering of whatever location shape the
     adapter supplied. Deliberately lossy — this only has to be stable
-    across two runs of the same case, not semantically precise (§4)."""
+    across two runs of the same case, not semantically precise (§4), and it
+    excludes positional fields so a one-line drift still pairs as
+    *retained* rather than drop + gain."""
     if isinstance(location, Mapping):
         parts = []
-        for key in sorted(location):
+        for key in _IDENTITY_LOCATION_FIELDS:
+            if key not in location:
+                continue
             value = location[key]
             if key in {"path", "file"} and isinstance(value, str):
                 value = _normalize_path(value)
@@ -207,6 +220,7 @@ class RetainedFinding:
             "discriminator": self.key[1],
             "baseline_severity": self.baseline_severity,
             "candidate_severity": self.candidate_severity,
+            "severity_changed": self.severity_changed,
         }
 
 
@@ -245,7 +259,10 @@ class CaseDelta:
             },
             "dropped": [f.as_dict() for f in self.dropped],
             "gained": [f.as_dict() for f in self.gained],
-            "retained": [r.as_dict() for r in self.retained if r.severity_changed],
+            # Every retained finding is listed; `severity_changed` flags the
+            # ones whose severity moved. Emitting all of them keeps the
+            # per-case view reconcilable with `totals.retained` (§6).
+            "retained": [r.as_dict() for r in self.retained],
             "severity_histogram": {
                 "baseline": dict(self.severity_histogram_baseline),
                 "candidate": dict(self.severity_histogram_candidate),

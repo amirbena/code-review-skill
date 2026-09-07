@@ -70,7 +70,9 @@ class RegressionReportContractTests(unittest.TestCase):
         for token in ("**dropped**", "**gained**", "**retained**"):
             self.assertIn(token, self.raw)
         self.assertIn("cross-run stability key", self.text)
-        self.assertIn("Severity is deliberately **not** part of the key", self.text)
+        self.assertIn("identity-bearing** location fields only", self.text)
+        self.assertIn("Positional fields (`line`/`col` and friends) are deliberately **excluded**", self.text)
+        self.assertIn("Severity is likewise **not** part of the key", self.text)
         self.assertIn("is **not** the #41 expected-vs-produced match relation", self.text)
 
     def test_regression_and_improvement_are_distinct_classes(self) -> None:
