@@ -13,6 +13,11 @@ when the change reaches `main`. See
 
 ## Unreleased
 
+_Nothing yet. New entries land here and move under a version heading at
+release time._
+
+## v1.6.0 — 2026-09-07
+
 ### Added
 
 - Both review Skills now perform affected-test / test-impact analysis: when a
