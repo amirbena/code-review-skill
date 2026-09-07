@@ -680,8 +680,7 @@ class AffectedTestImpactAnalysisTests(unittest.TestCase):
     def test_discovery_is_not_claimed_exhaustive(self) -> None:
         self.assertIn("No exhaustive impact discovery", self.section)
         self.assertIn(
-            "not to\nprove every affected test was found".replace("\n", " "),
-            self.section,
+            "not to prove every affected test was found", self.section
         )
 
     def test_read_only_never_runs_target_repository_tests(self) -> None:
@@ -693,14 +692,9 @@ class AffectedTestImpactAnalysisTests(unittest.TestCase):
 
     def test_not_a_repository_wide_test_audit(self) -> None:
         self.assertIn("Not a repository-wide test audit", self.section)
+        self.assertIn("merely shares a name or module", self.section)
         self.assertIn(
-            "merely shares a\nname or module".replace("\n", " "), self.section
-        )
-        self.assertIn(
-            "pre-existing test weakness the\nchange does not touch".replace(
-                "\n", " "
-            ),
-            self.section,
+            "pre-existing test weakness the change does not touch", self.section
         )
 
     def test_reuses_existing_evidence_and_decision_model(self) -> None:
