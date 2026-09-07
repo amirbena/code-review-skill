@@ -350,9 +350,16 @@ These contracts share the [`findings/`](findings/README.md) directory.
   metric-free regression-vs-improvement rule, and the deliberate
   baseline-refresh step — is
   [`benchmark/regression-report.md`](benchmark/regression-report.md), with
-  a test-only reference report (`tests/reference/benchmark_report.py`);
-  scoring a run against the fixtures' expectations (precision / recall /
-  pass rates) is a separate later concern.
+  a test-only reference report (`tests/reference/benchmark_report.py`).
+  When a produced finding *matches* an expected benchmark finding — the
+  two match axes (location, defect), the three-valued
+  `MATCH` / `NEAR_MISS` / `NO_MATCH` result, the fixed tolerances, and how
+  the fixture's allowed-alternative constructs resolve — is
+  [`benchmark/match-criteria.md`](benchmark/match-criteria.md), with a
+  test-only reference matcher (`tests/reference/benchmark_match.py`); it is
+  the pairing relation the quality metrics (false-negative / false-positive
+  counts, severity accuracy, duplicate noise) will be built on, and those
+  metrics are still a separate later concern.
   Repository-development docs in the
   [`benchmark/`](benchmark/README.md) directory; nothing benchmark is
   packaged.

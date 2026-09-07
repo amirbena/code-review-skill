@@ -59,8 +59,10 @@ score.
   checkout.
 
 This contract does **not** define: the expected-vs-produced match
-relation, false-positive / false-negative accounting, precision/recall,
-retrieval thresholds, or aggregate quality metrics
+relation ([#54](https://github.com/amirbena/code-review-skill/issues/54),
+[`match-criteria.md`](match-criteria.md)); false-positive / false-negative
+accounting, precision/recall, retrieval thresholds, or aggregate quality
+metrics built on it
 ([#41](https://github.com/amirbena/code-review-skill/issues/41)); the
 regression report across runs
 ([#53](https://github.com/amirbena/code-review-skill/issues/53),
@@ -172,12 +174,15 @@ like timing if present). Each result carries at least:
 
 The runner records `produced_findings` exactly as the adapter returned
 them. It does **not** compare them to the fixture's `expected` block,
-attach match verdicts, or compute pass/fail — that is #41/#53.
+attach match verdicts, or compute pass/fail — that is #54 (the match
+relation) and #41/#53 (metrics and reporting).
 
 `expected`-vs-`produced` comparison *structure* (pairing a result with its
 fixture's expectations for a downstream matcher) MAY be emitted alongside
-the per-case result, but the **match relation itself** and any scoring are
-out of scope (§9).
+the per-case result, but the **match relation itself**
+([#54](https://github.com/amirbena/code-review-skill/issues/54),
+[`match-criteria.md`](match-criteria.md)) and any scoring are out of scope
+(§9).
 
 ## 7. Execution status and exit code
 
@@ -196,7 +201,8 @@ out of scope (§9).
 
 | Not defined here | Owner |
 |---|---|
-| The expected-vs-produced match relation, FP/FN accounting, precision/recall, retrieval thresholds, aggregate quality metrics | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
+| The expected-vs-produced match relation — deciding when a produced finding satisfies an expected spec, an `alternatives` restatement, or an `any_of` member | [#54](https://github.com/amirbena/code-review-skill/issues/54) — [`match-criteria.md`](match-criteria.md) |
+| FP/FN accounting, precision/recall, retrieval thresholds, aggregate quality metrics built on that relation | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
 | Regression reporting across runs (seeded-regression detection, run-to-run comparison) | [#53](https://github.com/amirbena/code-review-skill/issues/53) — [`regression-report.md`](regression-report.md) |
 | CI wiring / scheduled execution | tracked on [#40](https://github.com/amirbena/code-review-skill/issues/40) |
 | Container / sandbox orchestration, a hosted service, database persistence, dashboards | out of scope for the epic; a container is at most a *future* isolation mechanism, not required by this contract |

@@ -105,18 +105,19 @@ class FixtureFormatContractTests(unittest.TestCase):
         self.assertNotIn("any future matcher\n  ([#59]", self.raw)
         self.assertNotIn("issues/59) (matching)", self.raw)
 
-    def test_benchmark_matcher_ownership_routes_to_52_and_41(self) -> None:
-        # F1: result capture/comparison -> #52; the match relation + FP/FN
-        # metrics -> #41; a dedicated matcher stays unassigned, no new issue.
+    def test_benchmark_matcher_ownership_routes_to_54_52_and_41(self) -> None:
+        # Result capture/comparison -> #52; the expected-vs-produced match
+        # relation -> #54 (match-criteria.md); FP/FN + quality metrics on
+        # top of it -> #41 / #55-#57.
         boundary = " ".join(self.raw.split("## 13. Scope boundaries", 1)[1].split())
         self.assertIn("per-case expected-vs-produced comparison structure", boundary)
         self.assertIn("expected-vs-produced **match relation**", boundary)
-        self.assertIn("false-positive / false-negative accounting", boundary)
+        self.assertIn("issues/54", boundary)
+        self.assertIn("match-criteria.md", boundary)
+        self.assertIn("False-positive / false-negative accounting", boundary)
         self.assertIn("issues/52", boundary)
         self.assertIn("issues/41", boundary)
-        # The "On the benchmark matcher" note: unassigned, no new issue needed.
-        self.assertIn("not separately assigned", boundary)
-        self.assertIn("none is required today", boundary)
+        # The "On the benchmark matcher" note keeps #59 as prior-art only.
         self.assertIn("is **closed", boundary)
         self.assertIn("stateful-re-review finding-*identity* research", boundary)
 
