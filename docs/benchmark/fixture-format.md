@@ -396,7 +396,7 @@ exercising the test-only reference validator
 |---|---|
 | The benchmark corpus and case-selection rationale record | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | The runner: executing the review path per case, capturing produced findings/severities, comparing them against a fixture's expectations (the per-case expected-vs-produced comparison structure), emitting per-case results, single-case vs. whole-corpus runs | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
-| Regression reporting across runs (seeded-regression detection) | [#53](https://github.com/amirbena/code-review-skill/issues/53) |
+| Regression reporting across runs (seeded-regression detection) | [#53](https://github.com/amirbena/code-review-skill/issues/53) — [`regression-report.md`](regression-report.md) |
 | The expected-vs-produced **match relation** itself — deciding when a produced finding satisfies an expected spec, an `alternatives` restatement, or an `any_of` member — together with false-positive / false-negative accounting, precision/recall, retrieval thresholds, and aggregate quality metrics | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
 | Profile-specific and risky-change fixture selection | [#47](https://github.com/amirbena/code-review-skill/issues/47) / [#48](https://github.com/amirbena/code-review-skill/issues/48) |
 | The P0/P1/P2 definitions and the decision derivation | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |

@@ -344,8 +344,15 @@ These contracts share the [`findings/`](findings/README.md) directory.
   result shape — is
   [`benchmark/runner-contract.md`](benchmark/runner-contract.md), with a
   test-only reference runner
-  (`tests/reference/benchmark_runner.py`); regression reporting across
-  runs is not built yet.
+  (`tests/reference/benchmark_runner.py`). Comparing a candidate run
+  against a stored baseline — the baseline result artifact, the
+  corpus-identity guard, the per-case and aggregate deltas, the
+  metric-free regression-vs-improvement rule, and the deliberate
+  baseline-refresh step — is
+  [`benchmark/regression-report.md`](benchmark/regression-report.md), with
+  a test-only reference report (`tests/reference/benchmark_report.py`);
+  scoring a run against the fixtures' expectations (precision / recall /
+  pass rates) is a separate later concern.
   Repository-development docs in the
   [`benchmark/`](benchmark/README.md) directory; nothing benchmark is
   packaged.

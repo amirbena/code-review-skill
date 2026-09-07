@@ -55,6 +55,7 @@ REFERENCE_TEST_MODULES = (
     "delta_re_review.py",
     "benchmark_fixture.py",
     "benchmark_runner.py",
+    "benchmark_report.py",
 )
 
 # module -> (packaged canonical source that must carry the same contract,

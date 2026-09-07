@@ -63,7 +63,8 @@ relation, false-positive / false-negative accounting, precision/recall,
 retrieval thresholds, or aggregate quality metrics
 ([#41](https://github.com/amirbena/code-review-skill/issues/41)); the
 regression report across runs
-([#53](https://github.com/amirbena/code-review-skill/issues/53)); CI
+([#53](https://github.com/amirbena/code-review-skill/issues/53),
+[`regression-report.md`](regression-report.md)); CI
 wiring; or container/sandbox orchestration, a hosted service, or result
 persistence beyond writing per-case files (§8).
 
@@ -196,7 +197,7 @@ out of scope (§9).
 | Not defined here | Owner |
 |---|---|
 | The expected-vs-produced match relation, FP/FN accounting, precision/recall, retrieval thresholds, aggregate quality metrics | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
-| Regression reporting across runs (seeded-regression detection, run-to-run comparison) | [#53](https://github.com/amirbena/code-review-skill/issues/53) |
+| Regression reporting across runs (seeded-regression detection, run-to-run comparison) | [#53](https://github.com/amirbena/code-review-skill/issues/53) — [`regression-report.md`](regression-report.md) |
 | CI wiring / scheduled execution | tracked on [#40](https://github.com/amirbena/code-review-skill/issues/40) |
 | Container / sandbox orchestration, a hosted service, database persistence, dashboards | out of scope for the epic; a container is at most a *future* isolation mechanism, not required by this contract |
 | The fixture format and the corpus | [#50](https://github.com/amirbena/code-review-skill/issues/50) / [#51](https://github.com/amirbena/code-review-skill/issues/51) |

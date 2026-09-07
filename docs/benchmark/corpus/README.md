@@ -11,11 +11,13 @@ Every case conforms to
 [`../fixture-format.md`](../fixture-format.md). Like the rest of
 [`../`](../README.md) this is **not** packaged into either Skill archive
 and no packaged Skill resource depends on it. The corpus is consumed only
-by the repository's own test suite today; the runner
-([#52](https://github.com/amirbena/code-review-skill/issues/52)) and
-regression reporting
-([#53](https://github.com/amirbena/code-review-skill/issues/53)) are not
-built yet.
+by the repository's own test suite today, through the runner contract
+([#52](https://github.com/amirbena/code-review-skill/issues/52),
+[`../runner-contract.md`](../runner-contract.md)) and the run-to-run
+regression report
+([#53](https://github.com/amirbena/code-review-skill/issues/53),
+[`../regression-report.md`](../regression-report.md)); neither is packaged
+and no Skill launches either.
 
 ## Selection principle
 
