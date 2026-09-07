@@ -34,8 +34,11 @@ from tests.reference import benchmark_runner as br
 _SEVERITY_ORDINAL = {"P2": 0, "P1": 1, "P0": 2}
 _SEVERITIES = ("P0", "P1", "P2")
 
-# Class render order (regression-report.md §7).
+# Class render order (regression-report.md §7). ``added`` / ``removed`` are
+# reported as their own top-level id lists, not grouped case deltas, so the
+# per-case section iterates ``_GROUPED_CLASSES``.
 CLASS_ORDER = ("regression", "mixed", "improvement", "added", "removed", "unchanged")
+_GROUPED_CLASSES = tuple(c for c in CLASS_ORDER if c not in ("added", "removed"))
 
 
 class ReportError(RuntimeError):
@@ -45,6 +48,11 @@ class ReportError(RuntimeError):
     ``docs/benchmark/regression-report.md`` §9: an unparseable artifact or
     a ``corpus_id`` mismatch (§3). Finding regressions is never this error
     — it is a well-formed report with ``has_regressions`` true.
+
+    This reference model is handed already-decoded run results, so the only
+    failure it raises here is the ``corpus_id`` mismatch (plus a duplicate
+    case id); artifact/candidate *parsing* is the caller's concern and is
+    out of this projection's scope.
     """
 
 
@@ -115,12 +123,21 @@ def _normalize_location(location: Any) -> str:
         for key in sorted(location):
             value = location[key]
             if key in {"path", "file"} and isinstance(value, str):
-                value = value.replace("\\", "/").lstrip("./")
+                value = _normalize_path(value)
             parts.append(f"{key}={value}")
         return "|".join(parts)
     if isinstance(location, str):
         return location.replace("\\", "/").strip()
     return repr(location)
+
+
+def _normalize_path(path: str) -> str:
+    """Backslashes to slashes, drop a single leading ``./``. Deliberately
+    minimal — enough to pair ``./a/b`` with ``a/b`` without mangling a
+    dotfile like ``.env`` (which ``str.lstrip('./')`` would turn into
+    ``env``)."""
+    path = path.replace("\\", "/").strip()
+    return path[2:] if path.startswith("./") else path
 
 
 def stability_key(finding: br.ProducedFinding) -> tuple[str, str]:
@@ -350,7 +367,7 @@ class RegressionReport:
 
     @property
     def counts(self) -> dict[str, int]:
-        out = {name: len(self._by_class(name)) for name in ("regression", "improvement", "mixed", "unchanged")}
+        out = {name: len(self._by_class(name)) for name in _GROUPED_CLASSES}
         out["added"] = len(self.added_case_ids)
         out["removed"] = len(self.removed_case_ids)
         return out
@@ -388,7 +405,7 @@ class RegressionReport:
         section, classes in a fixed order, no run-specific noise."""
         grouped = {
             name: [d.as_dict() for d in sorted(self._by_class(name), key=lambda x: x.id)]
-            for name in ("regression", "mixed", "improvement", "unchanged")
+            for name in _GROUPED_CLASSES
         }
         return {
             "identity": {
