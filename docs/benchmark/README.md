@@ -18,14 +18,16 @@ concern lives in the file named for it.
 | [`fixture-format.md`](fixture-format.md) | The canonical machine-readable format for a single benchmark case — case identity, input (inline patch or repository reference), expected findings, expected severity, expected location detail, the four typed variance constructs (same-defect alternatives, alternative findings, optional findings, permitted severity variance), optional metadata, schema/versioning, and fail-closed validation. | [#50](https://github.com/amirbena/code-review-skill/issues/50) |
 | [`corpus/README.md`](corpus/README.md) | The initial benchmark corpus — a small set of `benchmark-case/v1` fixtures, one per review category (correctness, security, quality, no-op), with the case-selection rationale recorded per case and in the directory README. | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | [`runner-contract.md`](runner-contract.md) | How a benchmark run executes the reviewer over the corpus — per-case isolation into a disposable workspace, the repository-safety invariants for every protected source checkout, cleanup on success and failure, the machine-readable per-case result shape, single-case vs. whole-corpus runs, and the exit-status rule. | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
+| [`regression-report.md`](regression-report.md) | How a candidate run is compared against a stored baseline — the baseline result artifact, the corpus-identity guard, the per-case and aggregate deltas, the metric-free rule that separates a regression from an improvement, deterministic output, and the deliberate baseline-refresh step. | [#53](https://github.com/amirbena/code-review-skill/issues/53) |
 
-Not yet written (tracked on #40): regression reporting
-([#53](https://github.com/amirbena/code-review-skill/issues/53)). The
-corpus and its case-selection rationale
+The four documents above cover the whole epic-[#40](https://github.com/amirbena/code-review-skill/issues/40)
+benchmark surface. The corpus and its case-selection rationale
 ([#51](https://github.com/amirbena/code-review-skill/issues/51)) live in
 [`corpus/`](corpus/README.md); the runner contract
 ([#52](https://github.com/amirbena/code-review-skill/issues/52)) is
-[`runner-contract.md`](runner-contract.md).
+[`runner-contract.md`](runner-contract.md); the run-to-run regression
+report ([#53](https://github.com/amirbena/code-review-skill/issues/53)) is
+[`regression-report.md`](regression-report.md).
 
 ## Worked example
 
@@ -58,6 +60,23 @@ mirrors it and is exercised by
 [`../../tests/unit/test_benchmark_runner.py`](../../tests/unit/test_benchmark_runner.py),
 including the deliberately-dirty-source-repo safety regression. Nothing
 here is packaged and no Skill launches it.
+
+## Regression report
+
+[`regression-report.md`](regression-report.md) (#53) fixes how a candidate
+run is compared against a stored **baseline** run: joined by case `id`,
+every per-case and aggregate delta is reported, and cases that got worse
+(a dropped finding, an `executed` → `error` flip, a severity rise) are
+called out distinctly from cases that got better; a `mixed`/ambiguous case
+fails closed with the regressions. It is a pure run-to-run diff — it never
+reads a fixture's `expected` block and computes no score, so it catches a
+seeded regression before the quality-metric layer (#41) exists — and it
+never writes the baseline: a refresh is a deliberate, committed step. The
+test-only reference report
+[`../../tests/reference/benchmark_report.py`](../../tests/reference/benchmark_report.py)
+mirrors it and is exercised by
+[`../../tests/unit/test_benchmark_report.py`](../../tests/unit/test_benchmark_report.py),
+including the seeded-regression diff and the stable-output check.
 
 ## Related
 
