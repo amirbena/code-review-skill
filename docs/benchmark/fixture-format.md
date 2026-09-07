@@ -238,7 +238,7 @@ carries its own `match` (§8.4).
 | `location_intent` | yes | Closed enum `line` / `symbol` / `file` / `cross-file` / `repository` (§1). |
 | `path` | yes unless `location_intent` is `repository` | Repo-relative POSIX path. |
 | `symbol` | no | Enclosing qualified symbol, when known. |
-| `anchor` | no | A short verbatim substring of the post-image at/near the defect site. This is the measurable hook: a later benchmark expected-vs-produced matcher (§13) can check that a reviewer's reported location resolves to code containing `anchor`, **without** this contract implementing matching. |
+| `anchor` | no | A short verbatim substring of the post-image at/near the defect site. This is the measurable hook: the benchmark expected-vs-produced matcher ([`match-criteria.md`](match-criteria.md), #54) checks that a reviewer's reported location resolves to code containing `anchor` within the proximity window, **without** this contract implementing matching. |
 | `lines` | no | `{ start, end }` (1-based, `start ≤ end`) in the **post-image**. **Advisory only** — never the binding identity, because line numbers move (see [`../findings/finding-identity-requirements.md`](../findings/finding-identity-requirements.md) §4.3). |
 
 ### 8.4 `any_of` group — genuinely alternative acceptable findings
@@ -397,27 +397,30 @@ exercising the test-only reference validator
 | The benchmark corpus and case-selection rationale record | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | The runner: executing the review path per case, capturing produced findings/severities, comparing them against a fixture's expectations (the per-case expected-vs-produced comparison structure), emitting per-case results, single-case vs. whole-corpus runs | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
 | Regression reporting across runs (seeded-regression detection) | [#53](https://github.com/amirbena/code-review-skill/issues/53) — [`regression-report.md`](regression-report.md) |
-| The expected-vs-produced **match relation** itself — deciding when a produced finding satisfies an expected spec, an `alternatives` restatement, or an `any_of` member — together with false-positive / false-negative accounting, precision/recall, retrieval thresholds, and aggregate quality metrics | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
+| The expected-vs-produced **match relation** itself — deciding when a produced finding satisfies an expected spec, an `alternatives` restatement, or an `any_of` member | [#54](https://github.com/amirbena/code-review-skill/issues/54) — [`match-criteria.md`](match-criteria.md) |
+| False-positive / false-negative accounting, precision/recall, retrieval thresholds, and aggregate quality metrics built on that relation | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
 | Profile-specific and risky-change fixture selection | [#47](https://github.com/amirbena/code-review-skill/issues/47) / [#48](https://github.com/amirbena/code-review-skill/issues/48) |
 | The P0/P1/P2 definitions and the decision derivation | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
 | The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
 
-**On the benchmark matcher.** No current roadmap issue is *solely* a
-"benchmark expected-vs-produced matcher": the capability is split above —
-#52 owns capturing produced findings and the per-case comparison
-structure, #41 owns the match relation and the FP/FN quality metrics that
-make it measurable. A dedicated matcher component is therefore **not
-separately assigned**, and epic
-[#40](https://github.com/amirbena/code-review-skill/issues/40) would add a
-child issue for one only if #52 and #41 together prove insufficient — none
-is required today. GitHub Issue
+**On the benchmark matcher.** The benchmark *expected-vs-produced* match
+relation — deciding when a produced finding satisfies an expected spec, an
+`alternatives` restatement, or an `any_of` member — is owned by GitHub
+Issue [#54](https://github.com/amirbena/code-review-skill/issues/54) and
+specified in [`match-criteria.md`](match-criteria.md). #52 owns capturing
+produced findings and the per-case comparison structure that relation
+feeds; #41 with #55–#57 owns turning matches and misses into quality
+metrics; epic
+[#40](https://github.com/amirbena/code-review-skill/issues/40) tracks the
+benchmark surface those sit on. GitHub Issue
 [#59](https://github.com/amirbena/code-review-skill/issues/59) is **closed
-stateful-re-review finding-*identity* research** and is **not** an owner
-here; [`../findings/finding-matching-strategy.md`](../findings/finding-matching-strategy.md)
-is referenced by this contract only as reusable prior-art vocabulary
-(`MATCH` / `NO MATCH` / `AMBIGUOUS`) and matching discipline
-(defect-continuity + site-continuity), never as benchmark roadmap
-ownership.
+stateful-re-review finding-*identity* research** and is **not** the owner
+of benchmark *expected-vs-produced* matching;
+[`../findings/finding-matching-strategy.md`](../findings/finding-matching-strategy.md)
+is referenced by this contract and by `match-criteria.md` only as reusable
+prior-art vocabulary (`MATCH` / `NO MATCH` / `AMBIGUOUS`) and matching
+discipline (defect-continuity + site-continuity), never as benchmark
+roadmap ownership.
 
 ## Status and canonical home
 

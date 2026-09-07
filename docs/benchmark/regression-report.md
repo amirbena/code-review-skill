@@ -243,7 +243,8 @@ precision/recall. Those are #41 and are computed from the fixtures'
 
 | Not defined here | Owner |
 |---|---|
-| The expected-vs-produced match relation, false-positive / false-negative accounting, precision/recall, retrieval thresholds, aggregate quality metrics / scores | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
+| The expected-vs-produced match relation — deciding when a produced finding satisfies an expected spec | [#54](https://github.com/amirbena/code-review-skill/issues/54) — [`match-criteria.md`](match-criteria.md) |
+| False-positive / false-negative accounting, precision/recall, retrieval thresholds, aggregate quality metrics / scores | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
 | Executing the reviewer over the corpus, per-case isolation, the per-case result shape this report consumes | [`runner-contract.md`](runner-contract.md) / [#52](https://github.com/amirbena/code-review-skill/issues/52) |
 | The fixture format and the corpus | [#50](https://github.com/amirbena/code-review-skill/issues/50) / [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | Automatic baseline promotion / "update on green" | out of scope for [#53](https://github.com/amirbena/code-review-skill/issues/53) by its Non-Goals |
