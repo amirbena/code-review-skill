@@ -230,6 +230,24 @@ class LocationAxisTests(unittest.TestCase):
         )
         self.assertEqual(r, bm.LocationMatch.EXACT)
 
+    def test_repository_intent_matches_a_repository_scoped_finding_that_carries_a_path(self) -> None:
+        exp = _exp(path=None, intent="repository", claim="no CI config anywhere")
+        produced = br.ProducedFinding(
+            severity="P2",
+            location={"location_intent": "repository", "path": ".github/"},
+            claim="no CI config anywhere",
+        )
+        self.assertEqual(
+            bm.location_match(bm.Descriptor.from_expected(exp), bm.Descriptor.from_produced(produced)),
+            bm.LocationMatch.EXACT,
+        )
+        # a non-repository-scoped finding with a path is only NEAR
+        file_scoped = br.ProducedFinding(severity="P2", location={"path": ".github/ci.yml"}, claim="x")
+        self.assertEqual(
+            bm.location_match(bm.Descriptor.from_expected(exp), bm.Descriptor.from_produced(file_scoped)),
+            bm.LocationMatch.NEAR,
+        )
+
     def test_anchor_off_the_reported_line_is_near(self) -> None:
         post_image = "\n".join(f"line {i}" for i in range(1, 30))  # 'unsafe(' nowhere
         exp = _exp(path="a/x.py", anchor="unsafe(", lines=(5, 5), claim="c")

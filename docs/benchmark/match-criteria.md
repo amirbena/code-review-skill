@@ -224,9 +224,11 @@ sub-spec or `any_of` member, and whether the entry was `required`.
   the token overlap is exact rational arithmetic, not a
   platform-dependent float.
 - **Ties resolve deterministically.** When several produced findings tie
-  for an entry's best result, the one with the lexicographically
-  smallest normalized location wins; when several expected sub-specs tie,
-  the primary wins, then alternatives in document order.
+  for an entry's best result, the earliest one wins — the lowest index in
+  the runner's ordered `produced_findings` list ([`runner-contract.md`](runner-contract.md)
+  §6); when several expected sub-specs or `any_of` members tie, the
+  primary (or the first member in document order) wins, then
+  `alternatives` in document order.
 - **Two readers, same verdict.** The worked examples (§8) are the
   conformance bar: two people applying §3–§6 to them must reach the same
   `MATCH` / `NEAR_MISS` / `NO_MATCH` for every row.

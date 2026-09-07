@@ -24,6 +24,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
+from fractions import Fraction
 from typing import Any, Mapping, Sequence
 
 from tests.reference import benchmark_fixture as bf
@@ -31,8 +32,10 @@ from tests.reference import benchmark_runner as br
 
 # ── fixed tolerances (match-criteria.md §3, §4, §7) ───────────────────────
 PROXIMITY_LINES = 3
-CLAIM_CORRESPONDS_SIM = 0.5
-CLAIM_RELATED_SIM = 0.25
+# Claim-overlap thresholds as exact rationals, so the comparison never
+# depends on binary-float representation (match-criteria.md §7).
+CLAIM_CORRESPONDS_SIM = Fraction(1, 2)
+CLAIM_RELATED_SIM = Fraction(1, 4)
 
 _STOPWORDS = frozenset(
     {"the", "and", "that", "this", "from", "with", "into", "for", "not", "are", "was", "its", "has"}
@@ -181,7 +184,8 @@ def _within_window(a: tuple[int, int], b: tuple[int, int], window: int) -> bool:
 
 def location_match(expected: Descriptor, produced: Descriptor, *, post_image: str | None = None) -> LocationMatch:
     if expected.intent == "repository":
-        return LocationMatch.EXACT if not produced.path else LocationMatch.NEAR
+        repo_scoped = produced.intent == "repository" or not produced.path
+        return LocationMatch.EXACT if repo_scoped else LocationMatch.NEAR
     if not expected.path:  # non-repository intent must carry a path (fixture-format §8.3)
         return LocationMatch.NEAR if produced.path else LocationMatch.NONE
     if not produced.path:
@@ -220,7 +224,8 @@ def defect_match(expected: Descriptor, produced: Descriptor) -> DefectMatch:
         return DefectMatch.UNRELATED
     if e <= p or p <= e:
         return DefectMatch.CORRESPONDS
-    sim = len(e & p) / len(e | p)
+    # Exact rational overlap — no platform-dependent float (match-criteria.md §7).
+    sim = Fraction(len(e & p), len(e | p))
     if sim >= CLAIM_CORRESPONDS_SIM:
         return DefectMatch.CORRESPONDS
     if sim >= CLAIM_RELATED_SIM:
