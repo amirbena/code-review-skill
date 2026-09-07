@@ -105,7 +105,9 @@ A reasonable default split (adjust to the change, do not force all five):
 - **Correctness / regression** — logic, edge cases, failure/retry safety,
   contract/exception propagation.
 - **Tests / configuration inspection** — test adequacy, missing regression
-  tests, config/infra/CI changes (read as text only).
+  tests, the impact of the change on existing tests that depend on the
+  changed behavior (see [`review-scope.md`](review-scope.md), "Affected-test
+  / test-impact analysis"), config/infra/CI changes (read as text only).
 - **Existing-review reconciliation** — prior findings / settled decisions
   per [`review-evidence.md`](review-evidence.md).
 

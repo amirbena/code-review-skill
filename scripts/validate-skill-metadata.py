@@ -206,6 +206,9 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "No dedicated code-graph tool or vendor capability is required for "
         "this analysis.",
         "never merely because a dependent file or symbol exists",
+        "## Affected-Test Impact Review",
+        "Affected-test / test-impact analysis",
+        "never run the target repository's tests",
     ),
     "finding-placement.md": (
         "## Inline comment eligibility",
@@ -300,6 +303,7 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
         "## Logical Cohort Review",
         "## Architectural Placement Review",
         "## Code Impact / Dependency Analysis",
+        "## Affected-Test Impact Review",
     ),
     "finding-placement.md": (
         "## Inline comment eligibility",

@@ -600,6 +600,11 @@ class BuiltArchiveContentTests(unittest.TestCase):
             self.review_scope_text,
         )
 
+    def test_archive_contains_affected_test_impact_policy(self) -> None:
+        self.assertIn(
+            "## Affected-test / test-impact analysis", self.review_scope_text
+        )
+
     def test_archive_contains_shared_remediation_policy(self) -> None:
         self.assertIn("## Evidence-grounded direction", self.remediation_text)
         self.assertIn("include_fix_prompt", self.remediation_text)
@@ -669,6 +674,11 @@ class GitHubArchiveContentTests(unittest.TestCase):
         self.assertIn(
             "## Architectural placement and execution-lifecycle fidelity",
             self.review_scope_text,
+        )
+
+    def test_affected_test_impact_policy_is_packaged(self) -> None:
+        self.assertIn(
+            "## Affected-test / test-impact analysis", self.review_scope_text
         )
 
     def test_shared_remediation_policy_is_packaged(self) -> None:

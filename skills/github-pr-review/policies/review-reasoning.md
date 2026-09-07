@@ -75,3 +75,23 @@ Findings produced from this reasoning still require concrete evidence per
 — a dependency relationship is relevant to a finding only when it demonstrates
 a concrete defect, regression, contract violation, or other actionable issue,
 never merely because a dependent file or symbol exists.
+
+## Affected-Test Impact Review
+
+When a PR changes observable production behavior — a changed return value,
+status, error, or emitted event; an altered calculation, validation, or
+state-transition rule; a new or removed branch; or a modified public
+contract — apply
+[`review-scope.md`](../../../shared/policies/review-scope.md),
+"Affected-test / test-impact analysis," before finalizing findings. That
+shared section owns the trigger, the located-test re-validation and new-path
+coverage steps, the read-only boundary (inspect test code as text; never run
+the target repository's tests), the not-"did the PR add tests?" framing, and
+the evidence and no-repository-wide-audit limits; this PR-specific policy
+does not restate them. It is one application of the existing
+proportional-scope and evidence rules, not a second scope model.
+
+When the reviewing engine has no native cross-reference capability, bound the
+search to tests reachable by ordinary repository search from a changed
+symbol, endpoint, message/event type, error type, or shared fixture, and stop
+once that is enough to judge regression risk.

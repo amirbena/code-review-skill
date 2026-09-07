@@ -13,8 +13,20 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- Both review Skills now perform affected-test / test-impact analysis: when a
+  change alters observable production behavior, the reviewer traces that
+  change into the existing tests that encode or depend on the behavior —
+  including tests outside the changed-file set that ordinary repository
+  search can reach — and evaluates whether their assertions, fixtures,
+  mocks, and expected errors/statuses are still valid, and whether a newly
+  introduced path has meaningful regression coverage. Signal-triggered,
+  read-only (test code is inspected as text; target-repository tests are
+  never run), bounded to the change's blast radius, and evidence-gated — it
+  is not a "did the PR add tests?" check and never forces a test change for
+  every production change. Extends the existing proportional-scope and
+  evidence model rather than adding a second one (#160).
 
 ## v1.5.0 — 2026-09-06
 

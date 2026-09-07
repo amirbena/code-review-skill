@@ -35,6 +35,7 @@ products evolve.
 | Human-style summary output | opt-in `human_review_output` (natural language; no flag) renders the returned report's summary in a concise senior-engineer voice; findings / severity / decision unchanged | same opt-in; renders the final review summary comment (and self-review `COMMENT`) concisely; findings / severity / review state / machine-readable status unchanged |
 | Publication ordering | one returned document; human-facing summary last, trailing machine metadata subordinate | `final review comment == last publication event` — one batched review (inline + body + event); any machine-readable status published before it; nothing review-owned after it; identical whether or not `human_review_output` is on |
 | Root-cause / model-completeness reasoning | shared `review-scope.md` pass | shared, identical |
+| Affected-test / test-impact analysis | shared `review-scope.md` pass — behavioral change traced into existing dependent tests | shared, identical |
 | Intended use case | pre-PR implementation review | independent review of an existing PR |
 
 **What each mode intentionally does *not* do**
@@ -152,10 +153,12 @@ reading the diff carefully — [`review-scope.md`](../shared/policies/review-sco
 behavior ownership" (does this change duplicate an existing canonical implementation of the same
 business/validation/state semantics rather than reusing it), "Failure state, retry safety, and
 recovery" (partial-failure state, retry/idempotency safety, evidenced recovery, and proportional
-observability, as one signal-triggered reasoning move), and "Architectural placement and
+observability, as one signal-triggered reasoning move), "Architectural placement and
 execution-lifecycle fidelity" (is the changed code locally correct but at the wrong point in the
 surrounding execution flow — decided, checked, or mutated in the wrong lifecycle phase — resolved
-by bounded caller/callee/owning-boundary context expansion). These remain local-first and
+by bounded caller/callee/owning-boundary context expansion), and "Affected-test / test-impact
+analysis" (a behavioral change traced into the existing tests that depend on it — an unchanged
+test now asserting the wrong behavior, or a new path left without regression protection). These remain local-first and
 signal-triggered, not a general checklist: each activates only when the diff's own shape gives
 concrete reason to, and none licenses a repository-wide audit — see those sections' own text.
 The governance layer, by contrast, is specified in full detail, because it is not the kind of
