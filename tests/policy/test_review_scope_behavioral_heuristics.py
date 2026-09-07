@@ -83,6 +83,7 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
         self.assertIn(
             "## Architectural placement and execution-lifecycle fidelity", text
         )
+        self.assertIn("## Affected-test / test-impact analysis", text)
 
     def test_local_skill_always_loads_review_scope_and_evidence(self) -> None:
         text = _text(LOCAL_SKILL_MD)
@@ -103,6 +104,7 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
         self.assertIn(
             "Architectural placement and execution-lifecycle fidelity", step9_body
         )
+        self.assertIn("Affected-test / test-impact analysis", step9_body)
 
 
 class RunbookDoesNotDuplicateBehavioralPolicyTextTests(unittest.TestCase):
@@ -401,6 +403,7 @@ class EvidenceScalingCrossReferenceTests(unittest.TestCase):
         self.assertIn(
             "Architectural placement and execution-lifecycle fidelity", text
         )
+        self.assertIn("Affected-test / test-impact analysis", text)
         self.assertIn("repository-wide audit", text)
 
 
@@ -431,12 +434,19 @@ class CrossSkillConsistencyTests(unittest.TestCase):
             "Architectural placement and execution-lifecycle fidelity", text
         )
         self.assertIn("not a second scope model", text)
+        # The affected-test forwarding subsection names the shared section
+        # without forking its heading or body.
+        self.assertIn("## Affected-Test Impact Review", text)
+        self.assertIn("Affected-test / test-impact analysis", text)
         # It must not have grown a private copy of the new section names —
         # it consumes them through the shared file, not by forking them.
         self.assertNotIn("## Existing behavior ownership", text)
         self.assertNotIn("## Failure state, retry safety, and recovery", text)
         self.assertNotIn(
             "## Architectural placement and execution-lifecycle fidelity", text
+        )
+        self.assertNotIn(
+            "## Affected-test / test-impact analysis", text
         )
         self.assertNotIn("### When to expand context", text)
         self.assertNotIn("### Stop conditions", text)
@@ -457,6 +467,7 @@ class CrossSkillConsistencyTests(unittest.TestCase):
             "## Root-cause and model-completeness pass",
             "## Failure state, retry safety, and recovery",
             "## Architectural placement and execution-lifecycle fidelity",
+            "## Affected-test / test-impact analysis",
         )
         skill_policy_dirs = [
             LOCAL_SKILL_DIR / "policies",
@@ -618,6 +629,120 @@ class ArchitecturalPlacementWiredIntoBothSkillsTests(unittest.TestCase):
             "Classify findings per",
         )
         self.assertIn("signal-triggered per that policy's own gating conditions", window)
+        self.assertIn("not applied", window)
+        self.assertIn("unconditionally to every diff", window)
+
+
+class AffectedTestImpactAnalysisTests(unittest.TestCase):
+    """(shared semantics) affected-test / test-impact analysis is
+    signal-triggered, read-only, evidence-gated, bounded to blast radius,
+    and explicitly not a "did the PR add tests?" check or a second scope
+    model."""
+
+    def setUp(self) -> None:
+        self.section = _section(
+            _text(REVIEW_SCOPE),
+            "## Affected-test / test-impact analysis",
+            "## Technology neutrality",
+        )
+
+    def test_reasoning_chain_runs_from_changed_code_into_dependent_tests(self) -> None:
+        self.assertIn(
+            "affected observable behavior / contract / branch / interaction",
+            self.section,
+        )
+        self.assertIn(
+            "existing tests that exercise or depend on that behavior", self.section
+        )
+        self.assertIn("regression / coverage impact", self.section)
+
+    def test_unchanged_tests_outside_the_diff_are_in_bounds_evidence(self) -> None:
+        self.assertIn("frequently not in the diff", self.section)
+        self.assertIn('complement of "Related changes as one unit"', self.section)
+        self.assertIn(
+            "including tests outside the changed-file set", self.section
+        )
+
+    def test_it_is_signal_triggered_not_every_diff(self) -> None:
+        self.assertIn("### When this applies — signal-triggered", self.section)
+        self.assertIn(
+            "does not trigger it and requires no action", self.section
+        )
+
+    def test_it_is_not_did_the_pr_add_tests(self) -> None:
+        self.assertIn('not "did the PR add tests?"', self.section)
+        self.assertIn(
+            "a production change is never required to add or modify a test "
+            "on its own",
+            self.section,
+        )
+
+    def test_discovery_is_not_claimed_exhaustive(self) -> None:
+        self.assertIn("No exhaustive impact discovery", self.section)
+        self.assertIn(
+            "not to\nprove every affected test was found".replace("\n", " "),
+            self.section,
+        )
+
+    def test_read_only_never_runs_target_repository_tests(self) -> None:
+        self.assertIn(
+            "authorizes running the target repository's tests", self.section
+        )
+        self.assertIn("git-safety.md", self.section)
+        self.assertIn("runtime-validation.md", self.section)
+
+    def test_not_a_repository_wide_test_audit(self) -> None:
+        self.assertIn("Not a repository-wide test audit", self.section)
+        self.assertIn(
+            "merely shares a\nname or module".replace("\n", " "), self.section
+        )
+        self.assertIn(
+            "pre-existing test weakness the\nchange does not touch".replace(
+                "\n", " "
+            ),
+            self.section,
+        )
+
+    def test_reuses_existing_evidence_and_decision_model(self) -> None:
+        self.assertIn("adds no second scope or evidence model", self.section)
+        self.assertIn(
+            "confirmed defect / credible engineering risk / optional improvement",
+            self.section,
+        )
+        self.assertIn("still derives the decision mechanically", self.section)
+
+    def test_severity_examples_follow_severity_md_bar(self) -> None:
+        self.assertIn("is typically P1", self.section)
+        self.assertIn("a lower-risk gap is P2", self.section)
+
+
+class AffectedTestImpactWiredIntoBothSkillsTests(unittest.TestCase):
+    def test_github_review_reasoning_forwards_to_the_shared_section(self) -> None:
+        text = _text(GITHUB_REASONING)
+        self.assertIn("## Affected-Test Impact Review", text)
+        self.assertIn("Affected-test / test-impact analysis", text)
+        self.assertIn("this PR-specific policy does not restate them", text)
+        self.assertIn("not a second scope model", text)
+
+    def test_github_review_index_lists_affected_test_reasoning(self) -> None:
+        text = _text(REPO_ROOT / "skills/github-pr-review/policies/github-review.md")
+        self.assertIn("affected-test", text)
+
+    def test_both_github_runbooks_name_the_forwarding_subsection(self) -> None:
+        for runbook in (GITHUB_ACTIVE_RUNBOOK, GITHUB_PASSIVE_RUNBOOK):
+            text = _text(runbook)
+            self.assertIn("Affected-Test Impact Review", text)
+
+    def test_local_runbook_marks_the_section_signal_triggered(self) -> None:
+        text = _text(LOCAL_RUNBOOK)
+        window = _section(
+            text,
+            "Affected-test / test-impact analysis",
+            "Classify findings per",
+        )
+        self.assertIn(
+            "signal-triggered per that policy's own gating conditions", window
+        )
         self.assertIn("not applied", window)
         self.assertIn("unconditionally to every diff", window)
 

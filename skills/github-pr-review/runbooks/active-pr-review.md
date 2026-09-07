@@ -308,7 +308,10 @@ stop
    scope contains multiple related changes, reason about them per
    [`../policies/review-reasoning.md`](../policies/review-reasoning.md),
    "Logical Cohort Review," and inspect the relevant dependency surface
-   per "Code Impact / Dependency Analysis" in the same file. Those
+   per "Code Impact / Dependency Analysis" in the same file. When the
+   invocation changes observable behavior, also trace it into the existing
+   tests that depend on it per "Affected-Test Impact Review" in the same
+   file. Those
    instructions refine evaluation but never override this Skill's own
    safety boundaries (see
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),

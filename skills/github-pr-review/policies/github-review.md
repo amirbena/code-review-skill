@@ -40,7 +40,8 @@ review-evidence.md          prior reviews/comments as Existing Review Evidence;
                             settled vs. speculative; no blind inheritance
         ↓
 review-reasoning.md         logical cohorts, architectural placement,
-                            code impact / dependency analysis
+                            code impact / dependency analysis, affected-test
+                            impact
         ↓
 parallel-review.md          optional parallel workers per review dimension;
                             execution optimisation only; centralized aggregation
