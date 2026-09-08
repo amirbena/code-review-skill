@@ -28,8 +28,10 @@ when the change reaches `main`. See
   semantically valid fix candidates before applying a deterministic
   tie-break, and only then GitHub commentability. Finding identity,
   severity, deduplication, the one-authoritative-representation rule, and
-  the single batched submission are unaffected by publication placement
-  (#164).
+  the single batched submission are unaffected by publication placement.
+  The shared finding contract gains an optional `evidence location` field
+  and an explicit "fix/action location unresolved" annotation, which
+  `local-code-review` output inherits (#164).
 
 ## v1.6.0 — 2026-09-07
 
