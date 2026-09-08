@@ -13,6 +13,11 @@ when the change reaches `main`. See
 
 ## Unreleased
 
+_Nothing yet. New entries land here and move under a version heading at
+release time._
+
+## v1.7.0 — 2026-09-08
+
 ### Changed
 
 - `github-pr-review` now anchors each inline review comment at the
