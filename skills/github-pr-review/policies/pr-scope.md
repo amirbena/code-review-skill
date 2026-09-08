@@ -94,12 +94,24 @@ new state.
 For each candidate finding, compute a deterministic internal identity from
 the PR HEAD SHA, normalized file path, relevant side and line/range (or a
 stable cross-cutting location), severity, and normalized finding title or
-category. Human-facing `F1`, `F2`, ... display IDs remain separate; a hash or
-serialized identity need not be exposed. When the same workflow already
-published the same identity for the same PR and HEAD, do not publish the
-finding again, though it may still appear in returned reasoning. If complete
-prior activity cannot be retrieved, report deduplication uncertainty rather
-than asserting idempotency.
+category. The file path and line/range component is the finding's
+**canonical semantic fix/action location** where one is resolved — the
+place the repository must change to resolve the finding, per
+[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+"Fix/action location, evidence location, publication" — never the
+eventual GitHub publication anchor. An inline→review-body switch, a
+GitHub API rejection, or a diff limitation therefore does not change a
+finding's identity. When the fix/action location is unresolved, use the
+best-known (evidence-scoped) coordinate marked as unresolved, so identity
+stays deterministic yet is never matched as equal to a resolved
+fix/action location at the same coordinate; the evidence location is not
+reclassified as a fix/action location. Human-facing `F1`, `F2`, ...
+display IDs remain separate; a hash or serialized identity need not be
+exposed. When the same workflow already published the same identity for
+the same PR and HEAD, do not publish the finding again, though it may
+still appear in returned reasoning. If complete prior activity cannot be
+retrieved, report deduplication uncertainty rather than asserting
+idempotency.
 
 A changed HEAD starts a new authoritative review state. Prior findings may
 inform investigation, but they are neither automatically resolved nor

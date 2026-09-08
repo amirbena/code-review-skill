@@ -92,6 +92,16 @@ setup action).
   is a throwaway clone, never the target repo, and no target-repository
   code runs in it
   ([`repository-checkout.md`](../../skills/github-pr-review/policies/repository-checkout.md)).
+- **Inline comments anchor at the fix/action location** — the line an
+  author must change to resolve a finding — not merely where the problem
+  is observable or where GitHub happens to allow a comment. A finding
+  whose fix/action location is outside the PR diff, not inline-commentable,
+  or unresolved is surfaced at review-summary level with an explicit path
+  (or an explicit unresolved marker) and remediation, never attached to an
+  unrelated nearby line; finding identity and deduplication are unaffected
+  by where the finding is published
+  ([`finding-placement.md`](../../skills/github-pr-review/policies/finding-placement.md),
+  "Anchor at the fix/action location").
 
 ## Canonical semantics
 

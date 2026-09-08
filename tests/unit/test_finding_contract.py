@@ -204,6 +204,102 @@ class ReviewSummaryAlignmentTests(unittest.TestCase):
         )
 
 
+class EvidenceVsFixLocationTests(unittest.TestCase):
+    """Issue #164: the finding's `location` is the canonical fix/action
+    location; a distinct evidence location renders explicitly; an
+    unresolved fix/action location is stated, never promoted from the
+    evidence location."""
+
+    def test_no_evidence_location_line_when_it_equals_location(self) -> None:
+        rendered = fc.render_full(
+            _finding(evidence_location="src/pay/retry.py:88")
+        )
+        self.assertNotIn("**Evidence location:**", rendered)
+
+    def test_no_evidence_location_line_when_unset(self) -> None:
+        self.assertNotIn("**Evidence location:**", fc.render_full(_finding()))
+
+    def test_distinct_evidence_location_renders_after_location(self) -> None:
+        rendered = fc.render_full(
+            _finding(evidence_location="src/pay/gateway.py:200")
+        )
+        self.assertIn("- **Evidence location:** src/pay/gateway.py:200", rendered)
+        self.assertLess(
+            rendered.index("**Location:**"), rendered.index("**Evidence location:**")
+        )
+        self.assertLess(
+            rendered.index("**Evidence location:**"), rendered.index("**Evidence:**")
+        )
+
+    def test_canonical_field_order_survives_the_evidence_location_line(self) -> None:
+        rendered = fc.render_full(
+            _finding(evidence_location="src/pay/gateway.py:200")
+        )
+        for a, b in (
+            ("**Location:**", "**Evidence:**"),
+            ("**Evidence:**", "**Impact:**"),
+            ("**Impact:**", "**Fix:**"),
+        ):
+            self.assertLess(rendered.index(a), rendered.index(b))
+
+    def test_unresolved_fix_location_is_annotated_not_promoted(self) -> None:
+        rendered = fc.render_full(
+            _finding(
+                location="src/pay/gateway.py:200",
+                evidence_location="src/pay/gateway.py:200",
+                fix_location_resolved=False,
+            )
+        )
+        self.assertIn(
+            "_(evidence location; fix/action location unresolved)_", rendered
+        )
+        # no separate Evidence location line in the unresolved case
+        self.assertNotIn("**Evidence location:**", rendered)
+        self.assertFalse(fc.renders_evidence_location(
+            _finding(
+                evidence_location="src/pay/gateway.py:200",
+                fix_location_resolved=False,
+            )
+        ))
+
+    def test_unresolved_annotation_follows_source_state_annotation(self) -> None:
+        rendered = fc.render_full(
+            _finding(
+                location_source_annotation="unstaged",
+                fix_location_resolved=False,
+            )
+        )
+        self.assertIn(
+            "`src/pay/retry.py:88` _(unstaged)_ "
+            "_(evidence location; fix/action location unresolved)_",
+            rendered,
+        )
+
+    def test_inline_rendering_never_adds_an_evidence_location_line(self) -> None:
+        rendered = fc.render_inline(
+            _finding(evidence_location="src/pay/gateway.py:200")
+        )
+        self.assertNotIn("Evidence location:", rendered)
+
+    def test_summary_pointer_uses_the_canonical_fix_action_location(self) -> None:
+        pointer = fc.render_summary_pointer(
+            _finding(
+                location="src/pay/retry.py:88",
+                evidence_location="src/pay/gateway.py:200",
+            )
+        )
+        self.assertIn("`src/pay/retry.py:88`", pointer)
+        self.assertNotIn("gateway.py", pointer)
+
+    def test_new_fields_are_optional_and_backward_compatible(self) -> None:
+        # a finding constructed the old way still renders identically
+        self.assertNotIn("Evidence location", fc.render_full(_finding()))
+        self.assertEqual(
+            fc.missing_mandatory_fields(_finding(), surface=fc.Surface.LOCAL_REPORT),
+            (),
+        )
+
+
 class SeveritySemanticsUnchangedTests(unittest.TestCase):
     def test_only_the_three_canonical_severities_exist(self) -> None:
         self.assertEqual(

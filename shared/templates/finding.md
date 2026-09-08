@@ -45,9 +45,18 @@ make the human-facing review a machine-only format.
   owned solely by [`../policies/severity.md`](../policies/severity.md);
 - **title** — a short, concrete problem statement (what is actually
   wrong — not a vague category like "pagination issue");
-- **location** — the most precise useful location available: file,
-  changed line/range, symbol/function, or narrow section. Prefer
-  precision; never invent a location that doesn't exist;
+- **location** — the finding's **canonical location**: the fix/action
+  location, i.e. the most precise place an author must change to resolve
+  the finding (file, changed line/range, symbol/function, or narrow
+  section). Prefer precision; never invent a location that doesn't exist.
+  An unqualified `Location` means this actionable location is resolved
+  (the backward-compatible default). It is a semantic property of the
+  finding and is never set from where a review platform happens to allow
+  a comment — see "Fix/action location, evidence location, publication";
+- **evidence location** — optional: where the reviewer observed evidence
+  of the problem, when that differs from the resolved fix/action
+  location. Rendered only when it adds information (see "Optional and
+  surface-specific fields");
 - **evidence** — the concrete implementation behavior supporting the
   finding, per [`../policies/evidence.md`](../policies/evidence.md) — not
   speculation;
@@ -63,6 +72,38 @@ make the human-facing review a machine-only format.
   [`../policies/remediation-guidance.md`](../policies/remediation-guidance.md);
   that policy still owns what the guidance may and may not say, and this
   rename to a shorter field label never changes it.
+
+## Fix/action location, evidence location, publication
+
+Three things a finding may involve are kept distinct and never collapsed:
+
+1. **Evidence / detection location** — where evidence of the problem was
+   observed.
+2. **Canonical fix / action location** — where the repository must change
+   to resolve the finding. This is the finding's `location` field above,
+   and it is pure finding semantics.
+3. **Publication anchor** — where a delivery surface (for example, a
+   GitHub inline comment) actually places the finding. This is a
+   surface constraint owned by each Skill's placement policy, not a
+   finding field.
+
+The normal progression is **evidence location → canonical fix/action
+location → publication anchor**. A surface that cannot anchor at the
+canonical fix/action location changes only where the finding is
+published — normally the full finding moves to a review-body / report
+section — and never rewrites the `location` value or the finding's
+identity.
+
+**No silent promotion.** When evidence is established but an actionable
+fix/action location cannot be confidently determined, the finding states
+that explicitly rather than presenting the evidence location as the fix
+location: `location` carries the best-known coordinate with the trailing
+annotation `_(evidence location; fix/action location unresolved)_`, and
+`Evidence` still carries the full supporting evidence. An evidence
+location is never labeled or consumed as a resolved fix/action location
+merely because nothing better was found. The rendered finding always
+makes clear what is known, what is unresolved, and what evidence supports
+it.
 
 ## Finding quality contract
 
@@ -128,6 +169,13 @@ Optional fields appear **only when they add information**. An empty or
 placeholder field is never rendered — no `Location:` line with nothing
 after it, no `Details:` heading with boilerplate under it.
 
+- **evidence location** — the evidence / detection location from
+  "Fix/action location, evidence location, publication" when it differs
+  from the resolved fix/action `location`. On the full rendering it is
+  its own line directly after `Location` (see "Canonical full
+  rendering"); on a surface that already supplies the anchor (a GitHub
+  inline comment) it is folded into `evidence` prose instead. Absent
+  when it coincides with `location` or adds nothing;
 - **details** — the longer explanation permitted by "When a longer
   explanation is justified" above. Visibility follows
   [`../policies/invocation-options.md`](../policies/invocation-options.md),
@@ -186,6 +234,29 @@ detail-visibility decision is true adds one `Details` field after `Fix`:
   explanation supporting the finding — a short paragraph, not an essay>
 ```
 
+When the evidence was observed somewhere other than the resolved
+fix/action location, one `Evidence location` line is added directly after
+`Location` (omitted when the two coincide):
+
+```markdown
+### <id> [<severity>] <short, concrete title>
+
+- **Location:** `<fix/action path>:<line-or-range>`
+- **Evidence location:** `<where the evidence was observed>`
+- **Evidence:** <concrete evidence, concise>
+- **Impact:** <concrete engineering consequence, concise>
+- **Fix:** <concrete correction direction, not a patch>
+```
+
+When the fix/action location is unresolved, no `Evidence location` line
+is added; `Location` instead carries the best-known coordinate with the
+trailing unresolved annotation (see "Fix/action location, evidence
+location, publication"):
+
+```markdown
+- **Location:** `<observed path>:<line-or-range>` _(evidence location; fix/action location unresolved)_
+```
+
 ### Location source annotation
 
 When a Skill appends its source-state classification, it goes after the
@@ -210,6 +281,13 @@ not required to add one, and must not force repository-state categories
 onto PR findings that don't have them. A Skill that has no such concept
 simply renders the `Location` line without a trailing annotation.
 
+The `_(evidence location; fix/action location unresolved)_` marker from
+"Fix/action location, evidence location, publication" is a second
+permitted strict trailing addition on this same line. When both apply,
+render the source-state annotation first, then the unresolved marker;
+neither replaces, reorders, or hides the `` `<path>:<line-or-range>` ``
+value.
+
 ## Canonical inline rendering
 
 Used for a GitHub inline review comment, where the platform supplies the
@@ -229,11 +307,20 @@ Fix: <concrete correction direction, when useful>
 A justified longer explanation adds a single `Details:` line after `Fix:`, on
 the same visibility terms as the full rendering.
 
+The inline anchor is the finding's canonical fix/action location, not the
+evidence location and not a line chosen because the platform allows a
+comment there (see "Fix/action location, evidence location, publication",
+and each Skill's placement policy). When the evidence was observed
+elsewhere, name that evidence/source location inside the `Evidence:`
+prose — there is no separate `Evidence location:` line on this surface.
+
 ## Canonical summary-pointer rendering
 
 Used when the finding's full representation is published elsewhere (for
 example, a GitHub inline comment) and the review body only needs to
-reference it — never both in full:
+reference it — never both in full. The `` `<path>:<line-or-range>` `` is
+the canonical fix/action location (or the best-known coordinate with the
+unresolved annotation when the fix/action location is unresolved):
 
 ```markdown
 - **<severity> — <short title>**
@@ -260,4 +347,11 @@ reference it — never both in full:
 - a finding has exactly one authoritative full representation. If it is
   published in full at one location (e.g. inline), every other location
   uses the summary-pointer form instead of repeating the full finding;
+- `location` is the canonical fix/action location and is never derived
+  from where a platform allows a comment; an `evidence location` renders
+  only when it differs from `location` and adds information (see
+  "Fix/action location, evidence location, publication");
+- an evidence location is never relabeled as a resolved fix/action
+  location — an unresolved fix/action location is stated explicitly with
+  the trailing annotation;
 - `fix` is a direction, never an implemented patch.

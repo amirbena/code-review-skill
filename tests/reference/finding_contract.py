@@ -68,7 +68,7 @@ class Finding:
     id: str
     severity: Severity
     title: str
-    location: str
+    location: str  # the canonical fix/action location (finding semantics)
     evidence: str
     impact: str
     fix: str
@@ -77,6 +77,15 @@ class Finding:
     long_form_category: Optional[str] = None
     location_source_annotation: Optional[str] = None  # local-only, e.g. "staged"
     implementation_prompt: Optional[str] = None  # local-only, opt-in
+    # Where evidence was observed, when it differs from the resolved
+    # fix/action location. Never rendered when it equals `location` or when
+    # the fix/action location is unresolved.
+    evidence_location: Optional[str] = None
+    # False => an actionable fix/action location could not be resolved; the
+    # `location` value carries the best-known coordinate and the Location
+    # line gets the explicit unresolved annotation. `location` is never a
+    # promoted evidence location.
+    fix_location_resolved: bool = True
 
 
 def missing_mandatory_fields(finding: Finding, *, surface: Surface) -> tuple[str, ...]:
@@ -114,7 +123,20 @@ def _location_line(finding: Finding) -> str:
     value = f"`{finding.location}`"
     if finding.location_source_annotation:
         value += f" _({finding.location_source_annotation})_"
+    # Strict trailing addition; source-state annotation first, then this.
+    if not finding.fix_location_resolved:
+        value += " _(evidence location; fix/action location unresolved)_"
     return f"- **Location:** {value}"
+
+
+def renders_evidence_location(finding: Finding) -> bool:
+    """A distinct `Evidence location` line renders only when the fix/action
+    location is resolved and a different evidence location is set."""
+    return bool(
+        finding.fix_location_resolved
+        and finding.evidence_location
+        and finding.evidence_location != finding.location
+    )
 
 
 def render_full(
@@ -135,6 +157,8 @@ def render_full(
         raise ValueError("use render_inline for the GitHub inline surface")
     lines = [f"### {finding.id} [{finding.severity.value}] {finding.title}", ""]
     lines.append(_location_line(finding))
+    if renders_evidence_location(finding):
+        lines.append(f"- **Evidence location:** {finding.evidence_location}")
     lines.append(f"- **Evidence:** {finding.evidence}")
     lines.append(f"- **Impact:** {finding.impact}")
     lines.append(f"- **Fix:** {finding.fix}")

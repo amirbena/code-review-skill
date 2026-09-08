@@ -240,7 +240,15 @@ strongly it is recommended before commit.
   "Attribution in findings," so the report says precisely where each
   finding came from. This annotation is specific to this Skill's local
   Git working-tree model; it is not part of the shared template's
-  required fields.
+  required fields. The shared template may also append its own
+  `_(evidence location; fix/action location unresolved)_` marker on the
+  same `Location` line for a finding whose actionable location could not
+  be resolved, and may render a separate `Evidence location` line when the
+  evidence was observed away from the fix/action location — see
+  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+  "Fix/action location, evidence location, publication." When both trailing
+  annotations apply, this Skill's source-category annotation comes first,
+  then the unresolved marker.
 - **Validation** follows the shared
   [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
   contract and records `executed`, `skipped`, `failed`, or `unavailable`

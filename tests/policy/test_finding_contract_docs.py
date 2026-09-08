@@ -130,6 +130,67 @@ class SharedFindingContractTests(unittest.TestCase):
         self.assertIn("single optional Details field", body)
         self.assertIn("still not an open-ended essay", body)
 
+    def test_three_location_concepts_are_distinct(self) -> None:
+        # Issue #164: evidence/detection vs canonical fix/action vs
+        # publication anchor stay separate; commentability never sets it.
+        self.assertIn(
+            "## Fix/action location, evidence location, publication", self.text
+        )
+        section = re.search(
+            r"## Fix/action location, evidence location, publication\n(.*?)\n## ",
+            self.text,
+            re.S,
+        )
+        self.assertIsNotNone(section)
+        body = _norm(section.group(1))
+        self.assertIn("Evidence / detection location", body)
+        self.assertIn("Canonical fix / action location", body)
+        self.assertIn("Publication anchor", body)
+        self.assertIn(
+            "evidence location → canonical fix/action location → publication anchor",
+            body,
+        )
+        self.assertIn("never rewrites the location value", body)
+        self.assertIn("No silent promotion", body)
+        self.assertIn(
+            "evidence location; fix/action location unresolved", body
+        )
+        self.assertIn(
+            "never labeled or consumed as a resolved fix/action location", body
+        )
+
+    def test_location_field_is_the_canonical_fix_action_location(self) -> None:
+        norm = self.norm
+        self.assertIn("the finding's canonical location: the fix/action location", norm)
+        self.assertIn(
+            "never set from where a review platform happens to allow a comment", norm
+        )
+        # and the rules restate the no-promotion invariant
+        self.assertIn(
+            "an evidence location is never relabeled as a resolved fix/action location",
+            norm,
+        )
+
+    def test_full_rendering_shows_optional_evidence_location_line(self) -> None:
+        block = re.search(
+            r"## Canonical full rendering\n(.*?)\n## ", self.text, re.S
+        )
+        self.assertIsNotNone(block)
+        body = block.group(1)
+        self.assertIn("**Evidence location:**", body)
+        # it sits between Location and Evidence in the variant that shows it
+        variant = next(
+            b
+            for b in re.findall(r"```markdown\n(.*?)\n```", body, re.S)
+            if "**Evidence location:**" in b
+        )
+        self.assertLess(
+            variant.index("**Location:**"), variant.index("**Evidence location:**")
+        )
+        self.assertLess(
+            variant.index("**Evidence location:**"), variant.index("**Evidence:**")
+        )
+
     def test_optional_fields_never_render_as_empty_boilerplate(self) -> None:
         self.assertIn("## Optional and surface-specific fields", self.text)
         self.assertIn("only when they add information", self.norm)

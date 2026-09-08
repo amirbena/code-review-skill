@@ -13,8 +13,25 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Changed
+
+- `github-pr-review` now anchors each inline review comment at the
+  location an author must change to resolve the finding — its **canonical
+  fix/action location** — rather than merely where the problem is
+  observable or where GitHub happens to permit a comment. Findings now
+  distinguish three things: the evidence/detection location, the canonical
+  fix/action location, and the GitHub publication anchor. A finding whose
+  fix/action location is outside the PR diff, not inline-commentable, or
+  unresolved is surfaced at review-summary level with an explicit path (or
+  an explicit unresolved marker) and remediation, instead of being
+  attached to an unrelated nearby line. Anchor selection resolves
+  semantically valid fix candidates before applying a deterministic
+  tie-break, and only then GitHub commentability. Finding identity,
+  severity, deduplication, the one-authoritative-representation rule, and
+  the single batched submission are unaffected by publication placement.
+  The shared finding contract gains an optional `evidence location` field
+  and an explicit "fix/action location unresolved" annotation, which
+  `local-code-review` output inherits (#164).
 
 ## v1.6.0 — 2026-09-07
 

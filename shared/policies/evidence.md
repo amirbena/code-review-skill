@@ -38,6 +38,15 @@ defect was noticed while reading nearby or dependent code. Do not turn
 impact/dependency reasoning into an unrelated audit of the existing
 codebase.
 
+When the evidence for a finding sits at one location but the change that
+resolves it belongs at another (or vice versa), the finding distinguishes
+the evidence/detection location from the canonical fix/action location per
+[`../templates/finding.md`](../templates/finding.md), "Fix/action location,
+evidence location, publication." A Skill that anchors findings to a review
+surface prefers the resolved fix/action location; when that location
+cannot be confidently determined, the finding states so explicitly rather
+than treating the evidence location as the fix.
+
 Scale this to the change: a small, clearly isolated change needs little or
 no dependency exploration beyond confirming it doesn't affect anything else;
 a change with a wide realistic blast radius (a shared contract, schema, or
