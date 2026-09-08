@@ -66,7 +66,7 @@ class AnchorAtFixLocationSectionTests(unittest.TestCase):
         order_markers = [
             "Identify the semantically valid fix/action candidate",
             "Discard candidates that are only evidence/observation locations",
-            "select\ndeterministically" .replace("\n", " "),
+            "select deterministically",
             "Only now evaluate GitHub inline-commentability",
         ]
         positions = [self.section.index(m) for m in order_markers]
@@ -92,7 +92,7 @@ class AnchorAtFixLocationSectionTests(unittest.TestCase):
         self.assertIn(
             "Fix/action location resolved but not inline-commentable", self.section
         )
-        self.assertIn("the canonical fix/action location\nis unchanged".replace("\n", " "), self.section)
+        self.assertIn("the canonical fix/action location is unchanged", self.section)
         self.assertIn("Move the finding's full representation into the review body", self.section)
         self.assertIn(
             "Do not attach it to an unrelated or merely-nearby line", self.section
@@ -102,11 +102,11 @@ class AnchorAtFixLocationSectionTests(unittest.TestCase):
     def test_unresolved_fix_location_is_explicit_not_promoted(self) -> None:
         self.assertIn("Fix/action location unresolved", self.section)
         self.assertIn(
-            "no actionable fix/action location can be\nconfidently determined".replace("\n", " "),
+            "no actionable fix/action location can be confidently determined",
             self.section,
         )
         self.assertIn(
-            "never anchored to the evidence line as\nthough that were the fix".replace("\n", " "),
+            "never anchored to the evidence line as though that were the fix",
             self.section,
         )
 
@@ -115,9 +115,8 @@ class AnchorAtFixLocationSectionTests(unittest.TestCase):
         self.assertIn("never change the finding's Location", self.section)
         self.assertIn("its identity, its severity, deduplication", self.section)
         self.assertIn(
-            "keyed on the canonical semantic\nfix/action location, not on the GitHub publication anchor".replace(
-                "\n", " "
-            ),
+            "keyed on the canonical semantic fix/action location, "
+            "not on the GitHub publication anchor",
             self.section,
         )
 
@@ -159,7 +158,7 @@ class WiringTests(unittest.TestCase):
     def test_summary_template_covers_the_new_fallbacks(self) -> None:
         norm = _norm(SUMMARY.read_text(encoding="utf-8"))
         self.assertIn("fix/action location is outside the PR diff / not inline-commentable", norm)
-        self.assertIn("fix/action location is\nunresolved".replace("\n", " "), norm)
+        self.assertIn("fix/action location is unresolved", norm)
         self.assertIn("non-authoritative navigation aid", norm)
 
     def test_runbook_step_11_orders_semantics_before_commentability(self) -> None:
@@ -176,9 +175,8 @@ class WiringTests(unittest.TestCase):
     def test_shared_evidence_policy_points_at_the_distinction(self) -> None:
         norm = _norm(SHARED_EVIDENCE.read_text(encoding="utf-8"))
         self.assertIn(
-            "distinguishes\nthe evidence/detection location from the canonical fix/action location".replace(
-                "\n", " "
-            ),
+            "distinguishes the evidence/detection location from the "
+            "canonical fix/action location",
             norm,
         )
         self.assertIn("prefers the resolved fix/action location", norm)
