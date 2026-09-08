@@ -65,10 +65,16 @@ Details: <supporting technical context, concise>
   already-reviewed, unchanged HEAD (see
   [`../policies/pr-scope.md`](../policies/pr-scope.md), "Existing
   review awareness");
-- attach to the narrowest relevant changed line; if a finding is
-  cross-cutting, spans multiple files, or otherwise cannot attach
-  meaningfully to one line, it belongs in the review body instead (see
-  [`../policies/finding-placement.md`](../policies/finding-placement.md), "Inline
+- anchor at the finding's canonical fix/action location — the line an
+  author changes to resolve it — not merely where the problem is
+  observable and not a line chosen because GitHub allows a comment there
+  (see
+  [`../policies/finding-placement.md`](../policies/finding-placement.md),
+  "Anchor at the fix/action location"). The `Evidence` text may name a
+  distinct evidence/source location, including one in another file. If
+  the fix/action location is unresolved, is not inline-commentable, or
+  the finding is cross-cutting / spans multiple files, the finding
+  belongs in the review body instead (see the same policy, "Inline
   comment eligibility").
 
 ## Example

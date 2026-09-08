@@ -13,6 +13,16 @@ cause. This is the content of a finding's **Fix** field in
 [`../templates/finding.md`](../templates/finding.md); the shorter field label
 does not change what this policy governs. Prefer the canonical owner of an
 invariant over patches at each symptom.
+
+The **Fix** direction targets or describes the finding's canonical
+fix/action location when one is known
+([`../templates/finding.md`](../templates/finding.md), "Fix/action
+location, evidence location, publication"). Remediation prose is
+semantically connected to where the finding is anchored, but it does not
+by itself decide publication placement: placement follows the resolved
+finding-location contract, and a Skill's own placement policy (for
+`github-pr-review`, `finding-placement.md`, "Anchor at the fix/action
+location") remains its canonical owner.
 The root-cause and model-completeness rules in
 [`review-scope.md`](review-scope.md) govern grouping: one structural finding
 gets one coherent remediation direction, not one instruction per manifestation.

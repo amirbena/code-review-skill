@@ -212,6 +212,9 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
     ),
     "finding-placement.md": (
         "## Inline comment eligibility",
+        "## Anchor at the fix/action location",
+        "Commentable in the GitHub diff",
+        "never discovers or overrides",
         "## No duplicate findings",
         "## Rejected inline location fallback",
         "MUST NOT be dropped and MUST NOT be silently reattached",
@@ -307,6 +310,7 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
     ),
     "finding-placement.md": (
         "## Inline comment eligibility",
+        "## Anchor at the fix/action location",
         "## No duplicate findings",
         "## Rejected inline location fallback",
     ),

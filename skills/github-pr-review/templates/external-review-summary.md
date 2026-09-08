@@ -76,11 +76,20 @@ inline — that content lives in the inline comment.
 
 ## Fallback: a finding with no valid inline anchor
 
-Only a finding that could **not** be attached to a line (cross-cutting,
-spans files, or GitHub rejected the anchor) gets its full block in the
+Only a finding that could **not** be attached to its canonical fix/action
+location inline — cross-cutting, spans files, the fix/action location is
+outside the PR diff / not inline-commentable, the fix/action location is
+unresolved, or GitHub rejected the anchor — gets its full block in the
 body, per
 [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
-"Canonical full rendering":
+"Canonical full rendering". The body finding carries the explicit
+fix/action `path:line` (or the `_(evidence location; fix/action location
+unresolved)_` marker) and its remediation, and may cite the evidence
+location; any inline pointer left at an in-diff evidence location is a
+short, non-authoritative navigation aid, never a second copy of the
+finding (see
+[`../policies/finding-placement.md`](../policies/finding-placement.md),
+"Anchor at the fix/action location"):
 
 ```markdown
 ### Findings

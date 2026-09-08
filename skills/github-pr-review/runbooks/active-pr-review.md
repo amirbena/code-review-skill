@@ -366,7 +366,14 @@ stop
     [`../policies/finding-placement.md`](../policies/finding-placement.md),
     "Inline comment eligibility" — inline-eligible findings render with
     [`../templates/inline-finding.md`](../templates/inline-finding.md);
-    the rest render in full within the review body. No publication has
+    the rest render in full within the review body. Anchor each
+    inline-eligible finding at its canonical fix/action location per that
+    policy's "Anchor at the fix/action location" — semantic candidate
+    resolution before GitHub commentability, never a line chosen because
+    GitHub allows a comment there. A fix/action location that is
+    unresolved or not inline-commentable moves the finding to the body
+    with its explicit path/location (or unresolved marker); the finding's
+    canonical location and identity are not altered. No publication has
     occurred yet.
 12. Re-check the current PR HEAD against the recorded HEAD (see
     [`../policies/review-output.md`](../policies/review-output.md), "HEAD
@@ -457,7 +464,10 @@ stop
     [`../policies/finding-placement.md`](../policies/finding-placement.md)
     "Rejected inline location fallback" (move that finding's full form into
     the body) and complete the submission — do not drop the finding and do
-    not abandon the rest of the review. If GitHub otherwise disallows the
+    not abandon the rest of the review. This mirrors the proactive
+    "Fix/action location resolved but not inline-commentable" case handled
+    in step 11; either way the finding's canonical location and identity
+    are unchanged. If GitHub otherwise disallows the
     formal event, preserve the clean/blocking reasoning result and report
     why no final formal review was submitted. Never claim a GitHub mutation
     that did not succeed, and never submit more than one review for this
