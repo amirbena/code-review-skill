@@ -1,0 +1,89 @@
+# Root-cause / duplicate consolidation corpus case (Issue #185, parent #177).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# Two off-by-one defects that look alike but have independent causes and
+# independent fixes, in two unrelated modules that share no code:
+#
+#   * app/pagination.py::page drops the `- 1` when converting a 1-based page
+#     number to an offset, so page 1 skips the first `page_size` rows.
+#   * app/history.py::recent slices `entries[-limit - 1:]`, returning one
+#     stale entry more than asked for.
+#
+# Both are "an index expression is off by one", but consolidating them into a
+# single finding would be wrong — there is no shared symbol, import, or fix.
+#
+# Expected: TWO separate required findings. This guards against
+# over-merging distinct defects that merely rhyme (#177 non-goal:
+# "Suppressing distinct defects that merely look similar").
+
+format: benchmark-case/v1
+
+id: consolidation-similar-but-independent-defects
+title: "Two look-alike off-by-one bugs in unrelated modules stay separate findings"
+
+input:
+  patch: |
+    diff --git a/app/pagination.py b/app/pagination.py
+    index 1111111..2222222 100644
+    --- a/app/pagination.py
+    +++ b/app/pagination.py
+    @@ -1,3 +1,3 @@
+     def page(items, page_number, page_size):
+    -    offset = (page_number - 1) * page_size
+    +    offset = page_number * page_size
+         return items[offset : offset + page_size]
+    diff --git a/app/history.py b/app/history.py
+    index 3333333..4444444 100644
+    --- a/app/history.py
+    +++ b/app/history.py
+    @@ -1,2 +1,2 @@
+     def recent(entries, limit):
+    -    return entries[-limit:]
+    +    return entries[-limit - 1 :]
+  base:
+    app/pagination.py: |
+      def page(items, page_number, page_size):
+          offset = (page_number - 1) * page_size
+          return items[offset : offset + page_size]
+    app/history.py: |
+      def recent(entries, limit):
+          return entries[-limit:]
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: pagination-offset-drops-first-page
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/pagination.py
+        symbol: page
+        anchor: "offset = page_number * page_size"
+      claim: >-
+        the offset no longer subtracts one from the 1-based page number, so
+        page 1 starts at page_size and the first page_size rows are never
+        returned.
+      defect_kind: off-by-one
+
+    - key: history-window-returns-one-extra
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/history.py
+        symbol: recent
+        anchor: "entries[-limit - 1 :]"
+      claim: >-
+        the slice takes limit + 1 trailing entries instead of limit, so
+        recent returns one more (older) entry than the caller requested.
+      defect_kind: off-by-one
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Two defects of the same class in modules that share no code. A correct
+    review reports them as two independent findings; merging them under a
+    single "off-by-one root cause" would be over-consolidation.

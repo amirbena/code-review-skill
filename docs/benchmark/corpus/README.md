@@ -58,6 +58,17 @@ and no Skill launches either.
 Per-case provenance and a one-paragraph rationale also live in each
 fixture's `metadata` block (`source`, `tags`, `rationale`).
 
+## Related sub-corpora
+
+- [`consolidation/`](consolidation/README.md) — a focused
+  `benchmark-case/v1` sub-corpus for root-cause / duplicate finding
+  consolidation (Issue
+  [#185](https://github.com/amirbena/code-review-skill/issues/185), parent
+  [#177](https://github.com/amirbena/code-review-skill/issues/177)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/test_consolidation_corpus.py`](../../../tests/unit/test_consolidation_corpus.py)).
+  The four category cases above are unaffected by it.
+
 ## Validation
 
 [`../../../tests/unit/test_benchmark_corpus.py`](../../../tests/unit/test_benchmark_corpus.py)
