@@ -503,7 +503,8 @@ shared/policies/…, shared/templates/…  →  shared/policies/…, shared/temp
 [`scripts/package-manifest.json`](../scripts/package-manifest.json) is the
 single source of truth for archive names, copied resources, their archive
 destinations, and required-entry guards. `scripts/package-skills.sh` /
-`scripts/package-skills.ps1` consume it and stage each Skill's files under
+`scripts/package-skills.ps1` consume it through the shared containment
+validator in `scripts/package_manifest.py` and stage each Skill's files under
 `dist/.staging/`, drop the `skills/<name>/` prefix so
 `SKILL.md` lands at the archive root, then zip the staged tree's
 *contents* into `dist/*.zip`. Because `SKILL.md` moves from source depth 2

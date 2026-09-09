@@ -17,6 +17,7 @@ dist_dir="${repo_root}/dist"
 staging_root="${dist_dir}/.staging"
 metadata_validator="${script_dir}/validate-skill-metadata.py"
 package_manifest="${script_dir}/package-manifest.json"
+package_manifest_helper="${script_dir}/package_manifest.py"
 
 target="${1:-all}"
 case "${target}" in
@@ -30,49 +31,7 @@ esac
 manifest_query() {
   local package_target="$1"
   local query="$2"
-  python3 - "${package_manifest}" "${package_target}" "${query}" <<'PYEOF'
-import json, pathlib, sys
-
-manifest_path, target, query = sys.argv[1:]
-with open(manifest_path, encoding="utf-8") as f:
-    manifest = json.load(f)
-if manifest.get("schema_version") != 1:
-    sys.exit("error: unsupported package manifest schema_version")
-try:
-    skill = manifest["skills"][target]
-except KeyError:
-    sys.exit(f"error: package manifest has no target {target!r}")
-archive = pathlib.PurePosixPath(skill["archive"])
-if archive.name != skill["archive"] or archive.suffix != ".zip":
-    sys.exit("error: package archive must be a relative .zip filename")
-if pathlib.PurePosixPath(skill["name"]).name != skill["name"]:
-    sys.exit("error: package Skill name must be one path segment")
-
-entries = [*manifest["shared_files"], *skill["files"]]
-destinations = {entry["destination"] for entry in entries}
-for required in skill["required_entries"]:
-    required_path = pathlib.PurePosixPath(required)
-    if required_path.is_absolute() or ".." in required_path.parts or required not in destinations:
-        sys.exit(f"error: invalid required package entry: {required}")
-
-if query in ("name", "archive"):
-    print(skill[query])
-elif query == "files":
-    seen_destinations = set()
-    for entry in entries:
-        source = pathlib.PurePosixPath(entry["source"])
-        destination = pathlib.PurePosixPath(entry["destination"])
-        if source.is_absolute() or destination.is_absolute() or ".." in source.parts or ".." in destination.parts:
-            sys.exit("error: package manifest paths must stay repository/package relative")
-        if entry["destination"] in seen_destinations:
-            sys.exit(f"error: duplicate package destination: {entry['destination']}")
-        seen_destinations.add(entry["destination"])
-        print(f"{entry['source']}\t{entry['destination']}")
-elif query == "required_entries":
-    print("\n".join(skill["required_entries"]))
-else:
-    sys.exit(f"error: unsupported package manifest query {query!r}")
-PYEOF
+  python3 "${package_manifest_helper}" "${package_manifest}" "${package_target}" "${query}"
 }
 
 require_archive_entry() {

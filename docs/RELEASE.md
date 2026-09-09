@@ -19,7 +19,8 @@ A change is release-worthy when it affects either:
 - **Packaging / distribution** — the files that determine what the
   shipped archives contain or whether they build:
   `scripts/package-skills.sh`, `scripts/package-skills.ps1`,
-  `scripts/package-manifest.json`, `scripts/validate-skill-metadata.py`.
+  `scripts/package-manifest.json`, `scripts/package_manifest.py`,
+  `scripts/validate-skill-metadata.py`.
 
 Everything else is **not** release-worthy on its own: documentation
 (including each Skill's `README.md` and `shared/`'s READMEs), tests,

@@ -13,6 +13,8 @@ import json
 import re
 import shutil
 import subprocess
+import sys
+import tempfile
 import unittest
 import zipfile
 from pathlib import Path
@@ -22,6 +24,7 @@ from tests.support.paths import REPO_ROOT
 
 PACKAGE_SCRIPT = REPO_ROOT / "scripts" / "package-skills.sh"
 PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "package-manifest.json"
+PACKAGE_MANIFEST_HELPER = REPO_ROOT / "scripts" / "package_manifest.py"
 
 # The test-only reference modules live in tests/reference/; the PR
 # simulation harness lives in tests/support/.
@@ -255,6 +258,40 @@ class DeclaredPackageFileListTests(unittest.TestCase):
                 self.assertNotIn("..", destination.parts)
                 self.assertTrue((REPO_ROOT / source).is_file(), entry["source"])
             self.assertLessEqual(set(skill["required_entries"]), set(destinations))
+
+    def _validate_mutated_manifest(self, mutate) -> subprocess.CompletedProcess[str]:
+        manifest = _package_manifest()
+        mutate(manifest)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "manifest.json"
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+            return subprocess.run(
+                [sys.executable, str(PACKAGE_MANIFEST_HELPER), str(path), "local", "validate"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+    def test_manifest_rejects_repository_development_shared_source(self) -> None:
+        result = self._validate_mutated_manifest(
+            lambda manifest: manifest["shared_files"].append(
+                {"source": "AGENTS.md", "destination": "AGENTS.md"}
+            )
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("shared package source escapes approved roots", result.stderr)
+
+    def test_manifest_rejects_cross_skill_source(self) -> None:
+        result = self._validate_mutated_manifest(
+            lambda manifest: manifest["skills"]["local"]["files"].append(
+                {
+                    "source": "skills/github-pr-review/policies/github-review.md",
+                    "destination": "policies/github-review.md",
+                }
+            )
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Skill package source escapes skills/local-code-review/", result.stderr)
 
     def test_local_file_list_is_non_empty_and_sane(self) -> None:
         self.assertIn("SKILL.md", self.local_files)

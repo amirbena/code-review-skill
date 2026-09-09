@@ -28,6 +28,7 @@ $distDir = Join-Path $repoRoot "dist"
 $stagingRoot = Join-Path $distDir ".staging"
 $metadataValidator = Join-Path $scriptDir "validate-skill-metadata.py"
 $packageManifestPath = Join-Path $scriptDir "package-manifest.json"
+$packageManifestHelper = Join-Path $scriptDir "package_manifest.py"
 $pythonCommand = if (Get-Command "python" -ErrorAction SilentlyContinue) {
   "python"
 } elseif (Get-Command "python3" -ErrorAction SilentlyContinue) {
@@ -114,6 +115,8 @@ function Package-Skill {
     [string]$PackageTarget
   )
 
+  & $pythonCommand $packageManifestHelper $packageManifestPath $PackageTarget validate
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   $skill = $packageManifest.skills.$PackageTarget
   if ($null -eq $skill) {
     Write-Error "package manifest has no target '$PackageTarget'"
@@ -121,16 +124,6 @@ function Package-Skill {
   }
   $skillName = $skill.name
   $archiveName = $skill.archive
-  if ([System.IO.Path]::IsPathRooted($archiveName) -or
-      [System.IO.Path]::GetFileName($archiveName) -ne $archiveName -or
-      [System.IO.Path]::GetExtension($archiveName) -ne ".zip") {
-    Write-Error "package archive must be a relative .zip filename"
-    exit 1
-  }
-  if ([System.IO.Path]::GetFileName($skillName) -ne $skillName) {
-    Write-Error "package Skill name must be one path segment"
-    exit 1
-  }
   $skillSrc = Join-Path $repoRoot "skills/$SkillName"
   $stageDir = Join-Path $stagingRoot ([System.IO.Path]::GetFileNameWithoutExtension($archiveName))
   $archivePath = Join-Path $distDir $archiveName
@@ -150,19 +143,7 @@ function Package-Skill {
   New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
 
   $entries = @($packageManifest.shared_files) + @($skill.files)
-  $destinations = @{}
   foreach ($entry in $entries) {
-    foreach ($pathValue in @($entry.source, $entry.destination)) {
-      if ([System.IO.Path]::IsPathRooted($pathValue) -or ($pathValue -split '[/\\]') -contains '..') {
-        Write-Error "package manifest paths must stay repository/package relative: $pathValue"
-        exit 1
-      }
-    }
-    if ($destinations.ContainsKey($entry.destination)) {
-      Write-Error "duplicate package destination: $($entry.destination)"
-      exit 1
-    }
-    $destinations[$entry.destination] = $true
     $sourcePath = Join-Path $repoRoot $entry.source
     if (-not (Test-Path $sourcePath -PathType Leaf)) {
       Write-Error "required package source missing: $($entry.source)"
@@ -171,14 +152,6 @@ function Package-Skill {
     $destPath = Join-Path $stageDir $entry.destination
     New-Item -ItemType Directory -Path (Split-Path -Parent $destPath) -Force | Out-Null
     Copy-Item -Path $sourcePath -Destination $destPath
-  }
-  foreach ($requiredEntry in $skill.required_entries) {
-    if ([System.IO.Path]::IsPathRooted($requiredEntry) -or
-        ($requiredEntry -split '[/\\]') -contains '..' -or
-        -not $destinations.ContainsKey($requiredEntry)) {
-      Write-Error "invalid required package entry: $requiredEntry"
-      exit 1
-    }
   }
 
   # Adapt relative links into shared/ across every packaged Markdown
