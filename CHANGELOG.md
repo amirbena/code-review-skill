@@ -13,6 +13,11 @@ when the change reaches `main`. See
 
 ## Unreleased
 
+_Nothing yet. New entries land here and move under a version heading at
+release time._
+
+## v1.8.1 — 2026-09-09
+
 ### Fixed
 
 - Replaced the payments-domain illustration used for review context
