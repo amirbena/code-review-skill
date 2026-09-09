@@ -203,6 +203,62 @@ def render_inline(
     return "\n".join(lines)
 
 
+def render_human_inline(
+    finding: Finding,
+    *,
+    include_finding_details: Optional[bool] = None,
+    finding_detail_override: Optional[bool] = None,
+) -> str:
+    """The opt-in concise "human inline" rendering (finding.md, "Canonical
+    human inline rendering"), selected by `human_inline_findings`.
+
+    A re-voicing of the *same fields* onto the GitHub inline surface: a
+    heading that keeps the severity (``P2: …``, never ``[P2] …``) and
+    names the finding, then prose that still carries evidence, impact, and
+    fix — with no ``Evidence:`` / ``Impact:`` / ``Fix:`` labels. `id` and
+    `Location` are supplied by the surface, exactly as for
+    :func:`render_inline`. This model preserves the *structural*
+    invariants a test can check; the real prose is generated, not
+    templated.
+    """
+    heading = f"{finding.severity.value}: {finding.title}"
+    # Evidence -> impact -> fix, woven into prose rather than labelled.
+    parts = [finding.evidence, finding.impact, finding.fix]
+    show_details = (
+        finding_detail_override
+        if finding_detail_override is not None
+        else include_finding_details
+        if include_finding_details is not None
+        else False
+    )
+    if finding.details is not None and show_details:
+        parts.append(finding.details)
+    prose = " ".join(p.strip() for p in parts if p and p.strip())
+    return f"{heading}\n\n{prose}"
+
+
+def human_inline_preserves_semantics(finding: Finding) -> bool:
+    """The structured and human inline renderings are two projections of
+    one semantic finding: same severity, identity, and canonical location,
+    same mandatory core, and no labelled ``Evidence:`` / ``Impact:`` /
+    ``Fix:`` block in the human form."""
+    human = render_human_inline(finding)
+    if not human.startswith(f"{finding.severity.value}: "):
+        return False
+    if f"[{finding.severity.value}]" in human:
+        return False
+    if any(label in human for label in ("Evidence:", "Impact:", "Fix:")):
+        return False
+    # the mandatory core is still fully present for the inline surface
+    if missing_mandatory_fields(finding, surface=Surface.GITHUB_INLINE):
+        return False
+    # every semantic field's substance still reaches the reader
+    return all(
+        value.strip() in human
+        for value in (finding.evidence, finding.impact, finding.fix)
+    )
+
+
 def render_summary_pointer(finding: Finding) -> str:
     """The pointer form used when the full finding lives elsewhere."""
     return f"- **{finding.severity.value} — {finding.title}**\n  `{finding.location}`"

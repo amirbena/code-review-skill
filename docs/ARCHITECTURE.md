@@ -288,7 +288,8 @@ rule.
 - **Optional machine-readable review status** — one stable aggregated,
   exact-HEAD status/check derived from the same canonical verdict
   ([`review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md)).
-- **Opt-in `human_review_output` and `include_fix_prompt`** — presentation
+- **Opt-in `human_review_output` (with its derived companion
+  `human_inline_findings`) and `include_fix_prompt`** — presentation
   and remediation options normalized deterministically from a fixed
   vocabulary
   ([`invocation-options.md`](../shared/policies/invocation-options.md)).
@@ -520,9 +521,16 @@ unless they are exactly equal.
 - **The final-summary voice is presentation-only.** `human_review_output`
   (default `false` for both Skills, natural-language-only — there is no
   CLI flag) selects a concise senior-engineer rendering of the final
-  human-facing summary. Mode on and mode off produce identical findings,
-  severities, deduplication, verdict, GitHub review state, inline
-  comments, machine-readable status, and publication order.
+  human-facing summary. Its derived companion `human_inline_findings`
+  (default `explicit_value ?? human_review_output`) extends the same voice
+  to `github-pr-review`'s inline review comments — a severity-keeping
+  heading plus prose in place of the `Evidence` / `Impact` / `Fix` block.
+  Mode on and mode off produce identical findings, severities,
+  deduplication, verdict, GitHub review state, finding identity, canonical
+  fix/action anchors and the `#164` / `#165` body fallback,
+  machine-readable status, and publication order — only the wording of the
+  summary (and, under `human_inline_findings`, the inline comments)
+  changes.
 - **Publication ordering is fixed for `github-pr-review`.**
   `final review comment == last publication event`: the one batched
   review submission (body + inline comments + event) carries the final

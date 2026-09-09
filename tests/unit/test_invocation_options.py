@@ -13,12 +13,15 @@ LOCAL_DEFAULTS = {
     "include_fix_guidance": True,
     "include_finding_details": True,
     "human_review_output": False,
+    # no static default: derived from human_review_output when unset
+    "human_inline_findings": False,
 }
 GITHUB_DEFAULTS = {
     "include_fix_prompt": False,
     "include_fix_guidance": True,
     "include_finding_details": False,
     "human_review_output": False,
+    "human_inline_findings": False,
 }
 
 
@@ -167,17 +170,102 @@ class HumanReviewOutputOptionTests(unittest.TestCase):
                 normalize("review this", defaults=defaults)["human_review_output"]
             )
 
-    def test_selecting_human_output_changes_no_other_option(self) -> None:
+    def test_selecting_human_output_changes_no_unrelated_option(self) -> None:
         # Semantic-equivalence guard: turning the summary voice on/off leaves
-        # every other normalized option exactly as it was.
+        # every option other than the human-rendering pair exactly as it was.
+        # `human_inline_findings` co-varies *by design* (derived default).
         off = normalize("review this PR", defaults=GITHUB_DEFAULTS)
         on = normalize(
             "review this PR, and make the review shorter and more human",
             defaults=GITHUB_DEFAULTS,
         )
         self.assertTrue(on.pop("human_review_output"))
+        self.assertTrue(on.pop("human_inline_findings"))
         off.pop("human_review_output", None)
+        off.pop("human_inline_findings", None)
         self.assertEqual(on, off)
+
+
+class HumanInlineFindingsOptionTests(unittest.TestCase):
+    """Issue #166: the companion inline-rendering option whose default is
+    derived — `human_inline_findings = explicit_value ?? human_review_output`
+    — and which acts only on `github-pr-review`'s inline-comment surface."""
+
+    def test_derived_default_follows_human_review_output(self) -> None:
+        # unset: inherits whatever human_review_output resolved to
+        self.assertFalse(
+            normalize("review this PR", defaults=GITHUB_DEFAULTS)["human_inline_findings"]
+        )
+        on = normalize("review it like a senior engineer", defaults=GITHUB_DEFAULTS)
+        self.assertTrue(on["human_review_output"])
+        self.assertTrue(on["human_inline_findings"])
+        canonical = normalize("human_review_output=true", defaults=GITHUB_DEFAULTS)
+        self.assertTrue(canonical["human_inline_findings"])
+
+    def test_explicit_false_wins_while_summary_stays_human(self) -> None:
+        for text in (
+            "review it like a senior engineer; human_inline_findings=false",
+            "make the review shorter and more human, but keep the structured inline comments",
+            "review like a senior engineer and keep the inline comment template",
+        ):
+            with self.subTest(text=text):
+                result = normalize(text, defaults=GITHUB_DEFAULTS)
+                self.assertTrue(result["human_review_output"])
+                self.assertFalse(result["human_inline_findings"])
+
+    def test_explicit_true_wins_while_summary_stays_structured(self) -> None:
+        for text in (
+            "human_inline_findings=true",
+            "review this PR and use human inline findings",
+            "give me human inline comments",
+        ):
+            with self.subTest(text=text):
+                result = normalize(text, defaults=GITHUB_DEFAULTS)
+                self.assertFalse(result["human_review_output"])
+                self.assertTrue(result["human_inline_findings"])
+
+    def test_canonical_false_beats_a_natural_affirmative(self) -> None:
+        result = normalize(
+            "use human inline findings; human_inline_findings=false",
+            defaults=GITHUB_DEFAULTS,
+        )
+        self.assertFalse(result["human_inline_findings"])
+
+    def test_conflicting_natural_values_fall_back_to_the_derived_default(self) -> None:
+        text = "use human inline findings but keep the structured inline comments"
+        # ambiguous -> derived default -> follows human_review_output (off here)
+        self.assertFalse(normalize(text, defaults=GITHUB_DEFAULTS)["human_inline_findings"])
+        on = "review like a senior engineer; " + text
+        self.assertTrue(normalize(on, defaults=GITHUB_DEFAULTS)["human_inline_findings"])
+
+    def test_vague_language_does_not_set_it(self) -> None:
+        for text in ("make it nicer", "be brief", "tighten the comments up"):
+            with self.subTest(text=text):
+                self.assertFalse(
+                    normalize(text, defaults=GITHUB_DEFAULTS)["human_inline_findings"]
+                )
+
+    def test_direct_and_mediated_forms_have_parity(self) -> None:
+        direct = normalize("use human inline findings", defaults=GITHUB_DEFAULTS)
+        mediated = normalize("human_inline_findings=true", defaults=GITHUB_DEFAULTS)
+        self.assertEqual(direct, mediated)
+
+    def test_it_does_not_leak_between_invocations(self) -> None:
+        first = normalize("review like a senior engineer", defaults=GITHUB_DEFAULTS)
+        second = normalize("review this PR", defaults=GITHUB_DEFAULTS)
+        self.assertTrue(first["human_inline_findings"])
+        self.assertFalse(second["human_inline_findings"])
+
+    def test_local_defaults_also_carry_the_derived_value(self) -> None:
+        # normalized for parity; the Skill simply has no inline surface to act on
+        self.assertFalse(
+            normalize("review this", defaults=LOCAL_DEFAULTS)["human_inline_findings"]
+        )
+        self.assertTrue(
+            normalize("review like a senior engineer", defaults=LOCAL_DEFAULTS)[
+                "human_inline_findings"
+            ]
+        )
 
 
 if __name__ == "__main__":

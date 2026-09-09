@@ -24,11 +24,34 @@ language interpretation.
   canonical `human_review_output=true|false` assignment is still honored for
   mediation parity. It changes only the wording of the final summary — never
   the findings, their severity, deduplication, the mechanically derived
-  verdict, the GitHub review state, inline comments, any machine-readable
-  status, or the order in which a review's artifacts are published: in both
-  modes `github-pr-review` keeps the final human-facing summary as the last
-  review-owned publication of the run (its `review-output.md`, "Submission
-  ordering").
+  verdict, the GitHub review state, the semantic content of inline comments,
+  any machine-readable status, or the order in which a review's artifacts are
+  published: in both modes `github-pr-review` keeps the final human-facing
+  summary as the last review-owned publication of the run (its
+  `review-output.md`, "Submission ordering"). By its companion option's
+  derived default it also selects `human_inline_findings` (below), so
+  enabling senior mode yields a coherent human-facing review end to end
+  without a second request.
+- `human_inline_findings` — has **no fixed Skill default**: its value is
+  derived as `explicit_value ?? human_review_output` (see
+  "`human_inline_findings` derived default and phrasings"). It selects the
+  same concise, senior-engineer-voice rendering for **GitHub inline review
+  findings** that `human_review_output` selects for the final summary — a
+  short heading that keeps the `P0` / `P1` / `P2` severity and names the
+  finding, then compact prose in place of the `Evidence:` / `Impact:` /
+  `Fix:` labelled block (see
+  [`../templates/finding.md`](../templates/finding.md), "Canonical human
+  inline rendering"). It acts only where a Skill publishes inline review
+  comments — `github-pr-review`; `local-code-review` normalizes it for
+  direct/mediated parity but has no inline-comment surface, so it has no
+  effect on local output. Like the other options it is presentation only:
+  it never changes finding detection, severity, identity, deduplication,
+  evidence or remediation requirements, the mechanically derived verdict,
+  the GitHub review state, the batched single submission, the canonical
+  fix/action location, the evidence/detection location, the publication
+  anchor (`github-pr-review`'s `finding-placement.md` is unchanged and
+  remains authoritative for placement), or publication ordering — only the
+  wording of an inline finding.
 
 Options affect presentation only. They never change review scope, evidence,
 finding identity, severity, deduplication, decision derivation, mutation
@@ -76,6 +99,45 @@ question about the option — is ambiguous and does not set the flag. When both
 an affirmative and a negative phrasing appear, the values conflict and the
 option falls through to the Skill default, exactly like the other options.
 
+### `human_inline_findings` derived default and phrasings
+
+`human_inline_findings` has no fixed Skill default of its own. After every
+other option is resolved for the current invocation, it is set to:
+
+```text
+human_inline_findings = explicit_value ?? human_review_output
+```
+
+— the explicitly resolved value when this invocation set one, otherwise the
+already-resolved value of `human_review_output`. So enabling senior mode
+("review it like a senior engineer") gives a coherent human-facing review —
+summary *and* inline findings — with no second request, and the sub-option
+is only stated explicitly to opt **out**, or to opt in on its own.
+
+An explicit value always wins over the derived default, in either direction
+and independently of `human_review_output`:
+
+- `human_review_output=false` + `human_inline_findings=true` → structured
+  summary, human-rendered inline findings;
+- `human_review_output=true` + `human_inline_findings=false` → human
+  summary, structured `[<severity>] / Evidence / Impact / Fix` inline
+  findings.
+
+Recognized explicit forms (case-insensitively, whitespace-flexible),
+alongside the canonical `human_inline_findings=true|false` assignment and
+the bare option name (`human_inline_findings`, `human inline findings`,
+`human-inline-findings`):
+
+- affirmative: `human inline findings`, `human inline comments`;
+- negative: `keep the structured inline comments`, `keep the structured
+  inline findings`, `keep the inline comment template`.
+
+This phrase set is exhaustive for this option. Anything outside it is
+ambiguous and does not set it; the derived default then applies. When both
+an affirmative and a negative phrasing appear, the values conflict and the
+option falls through to the derived default, exactly like the other options
+fall through to their Skill default.
+
 Resolve each option independently with this precedence:
 
 ```text
@@ -85,9 +147,13 @@ explicit canonical false
 > Skill default
 ```
 
-Conflicting natural-language values are ambiguous and fall through to the
-Skill default. A canonical value resolves only its own option; text about one
-option never changes another.
+For `human_inline_findings` the last rung is the derived default
+(`human_review_output`'s resolved value), applied after every other option
+is resolved. Conflicting natural-language values are ambiguous and fall
+through to that last rung. A canonical value resolves only its own option;
+text about one option never changes another (the `human_inline_findings`
+derived default is not "another option changing it" — it is this option's
+defined default, used only when this invocation set no explicit value).
 
 ## Invocation isolation and mediation parity
 

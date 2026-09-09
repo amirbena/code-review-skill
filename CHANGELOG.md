@@ -13,8 +13,28 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- `github-pr-review` can now render **GitHub inline review findings** in
+  the same concise senior-engineer voice `human_review_output` already
+  applies to the final summary, via a companion option
+  (`human_inline_findings`) whose default is derived —
+  `explicit_value ?? human_review_output` — so enabling senior-review mode
+  ("review it like a senior engineer") produces a coherent human-facing
+  review end to end: a short heading that keeps the `P0` / `P1` / `P2`
+  severity and names the finding, then compact prose carrying the
+  evidence, the engineering consequence, and the correction direction
+  without `Evidence:` / `Impact:` / `Fix:` labels. An explicit
+  `human_inline_findings=false` keeps the structured inline block under a
+  concise summary; an explicit `human_inline_findings=true` re-voices the
+  inline comments on their own. The re-voicing is presentation only:
+  finding detection, severity, identity, deduplication, evidence and
+  remediation requirements, the mechanical decision, the GitHub review
+  state, the batched single submission, the canonical fix/action anchor,
+  and the `#164` / `#165` body-fallback behaviour are all unchanged —
+  structured and human renderings are two projections of the same
+  semantic finding. `local-code-review` has no inline-comment surface and
+  is unaffected (#166).
 
 ## v1.7.0 — 2026-09-08
 

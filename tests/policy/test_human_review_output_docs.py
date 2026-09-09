@@ -205,9 +205,16 @@ class GithubSummaryTemplateConciseOptIn(unittest.TestCase):
             self.t,
         )
 
-    def test_byte_identical_to_mode_off_except_wording(self) -> None:
-        self.assertIn("byte-identical to the mode-off review", self.t)
-        self.assertIn("only this body's wording changes", self.t)
+    def test_semantic_equivalence_with_mode_off(self) -> None:
+        # findings/identity/anchors/decision identical; inline comments are the
+        # same findings — byte-identical with the sub-option off, re-voiced
+        # (still the same finding) with it on.
+        self.assertIn("are identical to the mode-off review", self.t)
+        self.assertIn(
+            "byte-identical to the mode-off review when human_inline_findings is off",
+            self.t,
+        )
+        self.assertIn("Only presentation wording changes", self.t)
 
     def test_still_one_batched_submission_and_last_event(self) -> None:
         self.assertIn(
@@ -288,6 +295,111 @@ class WiredConsistentlyIntoBothSkills(unittest.TestCase):
         self.assertIn("(opt-in)", SHARED_SUMMARY.read_text(encoding="utf-8"))
         self.assertIn("(opt-in)", GH_SUMMARY.read_text(encoding="utf-8"))
         self.assertIn("(opt-in)", LOCAL_REPORT.read_text(encoding="utf-8"))
+
+
+class HumanInlineFindingsSubOption(unittest.TestCase):
+    """Issue #166: the companion `human_inline_findings` option — derived
+    default `explicit_value ?? human_review_output`, presentation-only,
+    `github-pr-review` inline surface only, and never a placement change."""
+
+    INLINE = REPO_ROOT / "skills/github-pr-review/templates/inline-finding.md"
+    PLACEMENT = REPO_ROOT / "skills/github-pr-review/policies/finding-placement.md"
+    FEATURE = REPO_ROOT / "docs/features/human-review-output.md"
+
+    def test_shared_policy_defines_the_derived_default(self) -> None:
+        t = _norm(INVOCATION)
+        self.assertIn("human_inline_findings derived default and phrasings", t)
+        self.assertIn("human_inline_findings = explicit_value ?? human_review_output", t)
+        self.assertIn("has no fixed Skill default of its own", t)
+        # explicit value wins in either direction, independent of the parent
+        self.assertIn(
+            "human_review_output=false + human_inline_findings=true → structured "
+            "summary, human-rendered inline findings",
+            t,
+        )
+        self.assertIn("This phrase set is exhaustive for this option", t)
+
+    def test_shared_finding_template_carries_the_human_inline_projection(self) -> None:
+        path = REPO_ROOT / "shared/templates/finding.md"
+        raw = path.read_text(encoding="utf-8")
+        self.assertIn("## Canonical human inline rendering", raw)
+        t = _norm(path)
+        self.assertIn("re-voicing, not a weaker finding", t)
+        self.assertIn("severity stays visible first", t)
+        self.assertIn("two renderings of one semantic finding", t)
+        self.assertIn("never moves the comment off the", t)
+
+    def test_inline_template_documents_the_opt_in_shape_and_invariants(self) -> None:
+        raw = self.INLINE.read_text(encoding="utf-8")
+        self.assertIn("## Human-rendered inline finding (opt-in)", raw)
+        t = _norm(self.INLINE)
+        self.assertIn("re-voicing of the same finding, not a different or weaker one", t)
+        self.assertIn("still shown first, in the heading", t)
+        self.assertIn("the comment still sits at the finding's canonical fix/action location", t)
+        self.assertIn("Rendering voice never move", t)  # "moves a finding"
+        self.assertIn("this comment uses the structured block above, unchanged", t)
+
+    def test_placement_policy_states_rendering_is_orthogonal(self) -> None:
+        raw = self.PLACEMENT.read_text(encoding="utf-8")
+        self.assertIn("### Rendering voice does not change placement", raw)
+        t = _norm(self.PLACEMENT)
+        self.assertIn("presentation-only and orthogonal to this policy", t)
+        self.assertIn("never changes inline-comment eligibility", t)
+        self.assertIn(
+            "This policy remains authoritative for placement regardless of "
+            "rendering voice",
+            t,
+        )
+
+    def test_review_output_policy_ties_the_pair_together(self) -> None:
+        t = _norm(GH_OUTPUT)
+        self.assertIn("derived companion option human_inline_findings", t)
+        self.assertIn("Both options are presentation only", t)
+        self.assertIn("the #164 / #165 body-fallback behaviour", t)
+        self.assertIn(
+            "When both options are off (the default), the body and the inline "
+            "comments use the existing structured shapes unchanged",
+            t,
+        )
+
+    def test_summary_template_has_the_companion_section(self) -> None:
+        raw = (REPO_ROOT / "shared/templates/review-summary.md").read_text(encoding="utf-8")
+        self.assertIn("### Companion inline rendering (`human_inline_findings`)", raw)
+        raw_gh = GH_SUMMARY.read_text(encoding="utf-8")
+        self.assertIn("## Human-rendered inline findings (opt-in)", raw_gh)
+
+    def test_active_runbook_wires_the_option_into_construct_and_submit(self) -> None:
+        raw = GH_ACTIVE.read_text(encoding="utf-8")
+        construct = raw.index("also normalized `human_inline_findings`")
+        submit = raw.index("senior-voiced")
+        self.assertLess(construct, submit)
+        self.assertLess(submit, raw.index("Guaranteed cleanup"))
+        t = _norm(GH_ACTIVE)
+        self.assertIn(
+            "same findings, severities, canonical fix/action anchors, #164 / #165 "
+            "inline→body fallback, and decision; only the inline wording differs",
+            t,
+        )
+
+    def test_github_metadata_declares_the_option(self) -> None:
+        raw = GH_METADATA.read_text(encoding="utf-8")
+        self.assertIn("human_inline_findings: optional", raw)
+        self.assertIn("explicit_value ?? human_review_output", raw)
+        self.assertIn("only inline wording", raw)
+
+    def test_local_side_is_inert_but_declared_for_parity(self) -> None:
+        raw = LOCAL_METADATA.read_text(encoding="utf-8")
+        self.assertIn("human_inline_findings: optional", raw)
+        self.assertIn("no effect on local output", raw)
+        t = _norm(LOCAL_SKILL)
+        self.assertIn("recognized here only for direct/mediated normalization parity", t)
+
+    def test_feature_doc_documents_the_companion_option(self) -> None:
+        raw = self.FEATURE.read_text(encoding="utf-8")
+        self.assertIn("## Companion option: `human_inline_findings`", raw)
+        t = _norm(self.FEATURE)
+        self.assertIn("explicit_value ?? human_review_output", t)
+        self.assertIn("two renderings of one semantic finding", t)
 
 
 class DocsRecordBothContracts(unittest.TestCase):

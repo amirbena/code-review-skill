@@ -254,7 +254,9 @@ finally: remove the temporary checkout (success, any failure, interruption)
    [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
    "Concise human-style summary (opt-in)" — same findings, severities, and
    verdict; only the summary wording differs. Passive review publishes
-   nothing, so the report is a single returned document either way.
+   nothing and posts no inline comments, so `human_inline_findings` (the
+   companion option normalized alongside it) has no distinct surface to
+   act on here; the report is a single returned document either way.
 9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
    step 4, remove it — on this path and on every other: a
    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the

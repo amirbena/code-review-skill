@@ -158,17 +158,20 @@ without new evidence, and missing an unresolved prior issue — never
 blindly inherited, always reconciled against the current PR HEAD.
 
 **Optional — presentation options:** `include_fix_guidance` (default
-`true`), `include_finding_details` (default `false`), and
-`human_review_output` (default `false`), normalized per
+`true`), `include_finding_details` (default `false`),
+`human_review_output` (default `false`), and its derived companion
+`human_inline_findings` (default `explicit_value ?? human_review_output`),
+normalized per
 [`invocation-options.md`](../../shared/policies/invocation-options.md)
-using only the current invocation; a finding-level decision may still show
-materially useful context. `include_fix_prompt` is recognized for
-direct/mediated parity but stays local-only. `human_review_output` is a
-natural-language opt-in (no CLI flag — e.g. "review it like a senior
-engineer", "use concise review comments") that renders only the **final
-human-facing summary** in a concise senior-engineer voice; it never
-changes findings, severity, verdict, GitHub review state, inline comments,
-any machine-readable status, or the publication order.
+using only the current invocation. `include_fix_prompt` stays local-only.
+`human_review_output` is a natural-language opt-in (no CLI flag — e.g.
+"review it like a senior engineer") rendering the **final summary** in a
+concise senior-engineer voice; `human_inline_findings` extends that voice
+to the **inline comments**
+([`templates/inline-finding.md`](templates/inline-finding.md)). Both are
+presentation-only: findings, severity, identity, dedup, verdict, review
+state, the canonical fix/action anchor and `#164` / `#165` fallback, and
+machine-readable status are unchanged.
 
 ## 2. Required Policy Loading
 

@@ -140,14 +140,30 @@ review-process or machine metadata. Inline comments still own each
 finding's full detail; the concise body still carries one summary-pointer
 line per inline finding so every finding appears exactly once.
 
-The option is **presentation only**. Mode on and mode off produce the
-identical finalized findings, severities, inline comments, GitHub review
-state (`APPROVE` / `REQUEST_CHANGES` / `COMMENT`), mechanical decision,
-and optional machine-readable status — only the wording of this final
-summary changes. When the option is off (the default), the body uses the
-existing structured shape unchanged. The self-review informational
-`COMMENT` uses the same concise body plus its unchanged closing
-disclosure line.
+`human_review_output` re-words this final summary. Its derived companion
+option `human_inline_findings` — default `explicit_value ??
+human_review_output`, so on by default under senior mode — re-words the
+**inline comments** to match, per
+[`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+"`human_inline_findings` derived default and phrasings" and
+[`../templates/inline-finding.md`](../templates/inline-finding.md),
+"Human-rendered inline finding (opt-in)". An explicit
+`human_inline_findings=false` keeps the structured
+`[<severity>] / Evidence / Impact / Fix` inline block under a concise
+body; an explicit `human_inline_findings=true` re-voices the inline
+comments even when this body is structured.
+
+Both options are **presentation only**. Mode on and mode off produce the
+identical finalized findings, severities, finding identity,
+deduplication, canonical fix/action locations, publication anchors, the
+`#164` / `#165` body-fallback behaviour, GitHub review state
+(`APPROVE` / `REQUEST_CHANGES` / `COMMENT`), mechanical decision,
+publication ordering, and optional machine-readable status — only the
+wording changes: this final summary always, and the inline comments when
+`human_inline_findings` is on. When both options are off (the default),
+the body and the inline comments use the existing structured shapes
+unchanged. The self-review informational `COMMENT` uses the same concise
+body plus its unchanged closing disclosure line.
 
 ## Remediation guidance
 

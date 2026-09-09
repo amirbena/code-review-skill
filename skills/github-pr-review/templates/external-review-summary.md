@@ -199,13 +199,23 @@ deliberate?
 
 - Every blocking finding still appears — once — as a summary-pointer line
   keeping its `P0` / `P1` / `P2` label and `` `path:line` ``; the inline
-  comment still owns its `Evidence` / `Impact` / `Fix`.
+  comment still owns each finding's full detail — its `Evidence` /
+  `Impact` / `Fix` in the structured rendering, or the equivalent
+  senior-engineer prose when `human_inline_findings` is on (see
+  "Human-rendered inline findings (opt-in)" below).
 - No review mode, SHAs beyond the short opening reference, counts, action
   mode, worker/aggregation wording, or the `Review metadata` block.
 - The `Result` / `Decision` value is the same single mechanically derived
-  decision; findings, severities, inline comments, the GitHub review
-  event, and any machine-readable status are **byte-identical** to the
-  mode-off review — only this body's wording changes.
+  decision. Findings, severities, finding identity, deduplication,
+  publication anchors, the GitHub review event, and any machine-readable
+  status are **identical** to the mode-off review. Inline comments carry
+  the **same findings** either way: byte-identical to the mode-off review
+  when `human_inline_findings` is off, and — when it is on (its derived
+  default under `human_review_output`) — the same severity, identity,
+  anchor, evidence content, remediation, and decision re-voiced per
+  [`inline-finding.md`](inline-finding.md), "Human-rendered inline
+  finding (opt-in)". Only presentation wording changes — this body, and
+  (when `human_inline_findings` is on) the inline comments.
 - A self-review uses this same concise body as its informational
   `COMMENT`, keeping the closing disclosure line from "Self-review
   (informational COMMENT)".
@@ -213,6 +223,30 @@ deliberate?
   submission, which stays the final publication event for the run (see
   [`../policies/review-output.md`](../policies/review-output.md),
   "Submission ordering").
+
+## Human-rendered inline findings (opt-in)
+
+`human_inline_findings` (see
+[`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+"`human_inline_findings` derived default and phrasings") extends the
+senior-engineer voice to the **inline comments**, so a
+`human_review_output` review reads coherently end to end. Its default is
+`human_review_output`'s resolved value; an explicit
+`human_inline_findings=false` keeps the structured
+`[<severity>] / Evidence / Impact / Fix` inline block while this body
+stays concise, and an explicit `human_inline_findings=true` re-voices the
+inline comments even when this body is structured.
+
+The inline re-voicing is presentation only and is governed by
+[`inline-finding.md`](inline-finding.md), "Human-rendered inline finding
+(opt-in)" and
+[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+"Canonical human inline rendering". It changes no finding's severity,
+identity, deduplication, evidence, remediation, decision, or
+**publication anchor** — every anchor-selection and body-fallback rule in
+[`../policies/finding-placement.md`](../policies/finding-placement.md)
+applies unchanged. The body still carries exactly one summary-pointer
+line per inline finding.
 
 ## Rules
 
