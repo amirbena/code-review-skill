@@ -112,9 +112,12 @@ rendered in a concise senior-engineer voice **instead of** the structured
 canonical shape above. Everything upstream is unchanged: the same
 investigation, the same evidence-backed findings, the same P0/P1/P2
 severities, the same mechanically derived decision, and — for
-`github-pr-review` — the same GitHub review state, the same inline
-comments, and the same optional machine-readable status. Only the wording
-of this final summary differs.
+`github-pr-review` — the same GitHub review state, the same set of inline
+findings at the same locations, and the same optional machine-readable
+status. Only the wording of this final summary differs (and, where a
+Skill also publishes inline review findings, the wording of those when
+the companion option `human_inline_findings` is on — see "Companion
+inline rendering (`human_inline_findings`)" below).
 
 The concise form reads like a short review note a strong engineer would
 leave by hand:
@@ -143,8 +146,28 @@ the blocking / non-blocking decision, or — where a Skill has them — the
 GitHub review-state selection and publication ordering. Mode on and mode
 off produce identical findings and severities (and, for `github-pr-review`,
 identical GitHub review state and machine-readable status), and differ
-only in the text of this final summary. When the option is off (the
-default), the structured canonical shape above is used unchanged.
+only in the text of this final summary — and, when `human_inline_findings`
+is on, in the wording of the inline findings, which stay the same
+findings at the same locations. When the option is off (the default), the
+structured canonical shape above is used unchanged.
+
+### Companion inline rendering (`human_inline_findings`)
+
+`human_review_output` re-voices this summary. Where a Skill also publishes
+**inline** review findings (`github-pr-review`), the companion option
+`human_inline_findings` re-voices those to match — a short heading that
+keeps the `P0` / `P1` / `P2` severity and names the finding, then compact
+prose in place of the `Evidence:` / `Impact:` / `Fix:` labelled block
+(see [`finding.md`](finding.md), "Canonical human inline rendering") — so
+a senior-mode review is coherent end to end. Its default is derived:
+`explicit_value ?? human_review_output`, so enabling senior mode enables
+it too; it is set explicitly only to opt out (structured inline block
+under a concise summary) or to opt in on its own. Same presentation-only
+guarantee: the inline findings keep their detection, severity, identity,
+deduplication, evidence, remediation, decision, canonical fix/action
+location, and publication anchor; only the inline wording changes. See
+[`../policies/invocation-options.md`](../policies/invocation-options.md),
+"`human_inline_findings` derived default and phrasings".
 
 ## Machine metadata is subordinate
 

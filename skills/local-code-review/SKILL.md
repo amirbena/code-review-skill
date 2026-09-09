@@ -150,6 +150,10 @@ current invocation only per
   Output-only: it never changes the Review Target, inspection, evidence,
   finding identity, severity, deduplication, PR-context reconciliation, or
   the mechanical Decision.
+- `human_inline_findings` (derived default — `explicit_value ??
+  human_review_output`) — a `github-pr-review` inline-comment concept,
+  recognized here only for direct/mediated normalization parity; it has
+  no effect on local output (no inline-comment surface).
 
 ## 2. Required Policy Loading
 

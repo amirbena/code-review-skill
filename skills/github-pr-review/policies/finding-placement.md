@@ -106,6 +106,22 @@ submission. Finding identity is keyed on the canonical semantic
 fix/action location, not on the GitHub publication anchor — see
 [`pr-scope.md`](pr-scope.md), "Existing review awareness."
 
+### Rendering voice does not change placement
+
+`human_inline_findings` (see
+[`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+"`human_inline_findings` derived default and phrasings") re-voices an
+inline finding as concise senior-engineer prose instead of the
+`[<severity>] / Evidence / Impact / Fix` block. It is **presentation-only
+and orthogonal to this policy**: it never changes inline-comment
+eligibility, the anchor-selection order above, the deterministic
+tie-break, the canonical fix/action location, the evidence/detection
+location, or the inline→body fallback for a fix/action location that is
+unresolved or not inline-commentable. A finding is *placed* identically
+whether it renders as the structured block or as the human rendering;
+only the comment's wording differs. This policy remains authoritative for
+placement regardless of rendering voice.
+
 ## No duplicate findings
 
 Each finding has exactly one authoritative full representation, per

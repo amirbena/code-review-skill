@@ -24,11 +24,16 @@ human/agent-readable rendering (the compact field-oriented block below,
 The **fields** are the contract. The **rendering** is one projection of
 those fields. The default projection is the compact, field-oriented block
 in "Canonical full rendering" — highly scannable for a human, and
-predictable enough for a coding agent to parse and act on. A future
-additional renderer (for example a machine-readable one) would be another
-projection of the same fields; it would not change the finding fields,
-the severity model, the evidence bar, or the decision derivation. Do not
-make the human-facing review a machine-only format.
+predictable enough for a coding agent to parse and act on. The opt-in
+concise **human inline rendering** ("Canonical human inline rendering"
+below — `github-pr-review` inline surface only, selected by
+`human_inline_findings`) is another such projection: it re-voices an
+inline finding the way a senior engineer would write the comment by hand.
+A future additional renderer (for example a machine-readable one) would be
+another projection of the same fields; none of these change the finding
+fields, the severity model, the evidence bar, the finding's identity, its
+canonical location, or the decision derivation. Do not make the
+human-facing review a machine-only format.
 
 ## Fields
 
@@ -314,6 +319,68 @@ and each Skill's placement policy). When the evidence was observed
 elsewhere, name that evidence/source location inside the `Evidence:`
 prose — there is no separate `Evidence location:` line on this surface.
 
+## Canonical human inline rendering
+
+An **opt-in** projection of the same fields onto a GitHub inline comment,
+selected by `human_inline_findings` (see
+[`../policies/invocation-options.md`](../policies/invocation-options.md),
+"`human_inline_findings` derived default and phrasings" — its default is
+derived from `human_review_output`). Used only by `github-pr-review`, and
+only for the inline surface: `local-code-review` has no inline comments,
+and the full / summary-pointer renderings above are never affected.
+
+It reads the way a strong senior engineer would leave the comment by
+hand — a short heading that keeps the severity and names the concrete
+finding, then compact prose:
+
+```text
+<severity>: <short, concrete finding — what is actually wrong>
+
+<one to three short paragraphs that carry the concrete problem and the
+evidence for it, the engineering consequence when it is material or
+non-obvious, and an actionable correction direction when one is useful.
+A genuine open question or trade-off is phrased as a question, not
+asserted as a defect.>
+```
+
+Example:
+
+```text
+P2: Retry eligibility logic is duplicated
+
+The same eligibility decision is implemented in both the sync and async
+flows, so the behaviour can drift when one path changes and the other is
+missed. I'd centralise it behind one policy/helper and have both flows
+call that.
+```
+
+Rules — this is a re-voicing, not a weaker finding:
+
+- **severity stays visible first**, in the heading, as `P0` / `P1` /
+  `P2` (here `P2: …`, never `[P2] …`);
+- the **mandatory core still holds** — What / Where / Evidence / Impact /
+  Fix per "Finding quality contract". "Where" is the inline anchor the
+  surface supplies (the canonical fix/action location, unchanged); the
+  other four are carried by the prose instead of by labelled fields, and
+  none may be dropped, softened to a vague gesture, or replaced by
+  generic "consider improving this" language;
+- **concise by default** per "Conciseness contract"; two paragraphs is
+  not required and the length adapts to the finding;
+- **evidence-based** per [`../policies/evidence.md`](../policies/evidence.md);
+  genuine **uncertainty is preserved** as a question rather than asserted;
+  **no praise** on an inline comment;
+- a justified longer explanation ("When a longer explanation is
+  justified") is folded into the prose as one extra short paragraph on
+  the same visibility terms as `Details` elsewhere — never re-introduced
+  as a `Details:` label;
+- the finding's **identity, severity, deduplication, canonical
+  fix/action location, evidence/detection location, and publication
+  anchor are exactly those of the structured inline rendering above** —
+  structured and human inline are two renderings of one semantic
+  finding, and the choice of rendering never moves the comment off the
+  canonical fix/action location or into the review body (that is decided
+  only by each Skill's placement policy, independent of voice).
+
 ## Canonical summary-pointer rendering
 
 Used when the finding's full representation is published elsewhere (for
@@ -337,6 +404,13 @@ unresolved annotation when the fix/action location is unresolved):
   `Details` field is allowed only for a finding in one of the categories
   in "When a longer explanation is justified" and rendered only per the
   detail-precedence rule in `invocation-options.md`;
+- the opt-in **human inline rendering** (`human_inline_findings`,
+  `github-pr-review` inline surface only) re-voices an inline finding as
+  senior-engineer prose without `Evidence:` / `Impact:` / `Fix:` labels;
+  it keeps the severity in the heading, the full mandatory core, the
+  evidence bar, and the finding's identity, severity, deduplication, and
+  canonical location — a projection, never a weaker finding (see
+  "Canonical human inline rendering");
 - optional fields render only when populated — never as an empty or
   placeholder line (see "Optional and surface-specific fields");
 - evidence-based — no generic "this could be improved" without a

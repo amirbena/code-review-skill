@@ -399,7 +399,18 @@ stop
     [`../templates/external-review-summary.md`](../templates/external-review-summary.md),
     "Concise human-style body (opt-in)" — same finalized findings,
     severities, inline comments, and decision; only the body wording
-    differs. Do not submit anything yet.
+    differs. **If the invocation also normalized `human_inline_findings`**
+    (its default follows `human_review_output` per
+    [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+    "`human_inline_findings` derived default and phrasings"), render each
+    inline comment in the same concise senior-engineer voice per
+    [`../templates/inline-finding.md`](../templates/inline-finding.md),
+    "Human-rendered inline finding (opt-in)" — same findings, severities,
+    canonical fix/action anchors, `#164` / `#165` inline→body fallback,
+    and decision; only the inline wording differs. An explicit
+    `human_inline_findings=false` keeps the structured
+    `[<severity>] / Evidence / Impact / Fix` inline block. Do not submit
+    anything yet.
 14. **Apply the review-action authorization gate** per
     [`../policies/review-action-authorization.md`](../policies/review-action-authorization.md)
     and [`../policies/review-output.md`](../policies/review-output.md),
@@ -453,7 +464,8 @@ stop
 16. **Submit the one review** — only when step 15's HEAD re-confirmation
     still holds (a HEAD advance detected there aborts this step and sends
     the flow back through re-review). Submit the body (concise per step 13
-    when `human_review_output` is on), inline comments, and the permitted
+    when `human_review_output` is on), the inline comments (senior-voiced
+    per step 13 when `human_inline_findings` is on), and the permitted
     event from step 14 — as a single batched submission per
     [`../policies/review-output.md`](../policies/review-output.md),
     "Batched review construction and submission." For a self-review, this

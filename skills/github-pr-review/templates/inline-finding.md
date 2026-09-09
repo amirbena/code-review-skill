@@ -91,3 +91,53 @@ workflow can still reach REVIEW CLEAN.
 Fix: Exhaust pagination and verify scope completeness before permitting
 a clean review decision.
 ```
+
+## Human-rendered inline finding (opt-in)
+
+When the invocation normalizes `human_inline_findings` (see
+[`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+"`human_inline_findings` derived default and phrasings" — its default is
+derived from `human_review_output`, so senior-mode reviews get this by
+default), this comment is rendered in the concise senior-engineer voice
+from
+[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+"Canonical human inline rendering" instead of the
+`[<severity>] / Evidence / Impact / Fix` block above — a short heading
+that keeps the severity and names the finding, then compact prose:
+
+```text
+P2: Retry eligibility logic is duplicated
+
+The same eligibility decision is implemented in both the sync and async
+flows, so the behaviour can drift when one path changes and the other is
+missed. I'd centralise it behind one policy/helper and have both flows
+call that.
+```
+
+This is a re-voicing of the **same finding**, not a different or weaker
+one. Unchanged:
+
+- **severity** — still shown first, in the heading (`P2: …`, not
+  `[P2] …`);
+- the mandatory What / Where / Evidence / Impact / Fix core — evidence,
+  the engineering consequence when it is material, and the actionable
+  correction direction are still all present, carried by the prose; a
+  genuine open question stays a question; no praise, no generic
+  "consider refactoring";
+- evidence and remediation requirements, finding identity and
+  deduplication, the one-authoritative-representation rule, same-HEAD /
+  re-review awareness, and the batched single review submission;
+- the **publication anchor** — the comment still sits at the finding's
+  canonical fix/action location per
+  [`../policies/finding-placement.md`](../policies/finding-placement.md),
+  "Anchor at the fix/action location", the prose may still name a
+  distinct evidence/source location (including one in another file), and
+  an unresolved or not-inline-commentable fix/action location still
+  falls back to the review body per that policy. Rendering voice never
+  moves a finding.
+
+A justified longer explanation (`include_finding_details` or a
+finding-level decision) folds into the prose as one extra short
+paragraph rather than a `Details:` label. When `human_inline_findings`
+is off — explicitly, or because `human_review_output` is off and nothing
+enabled it — this comment uses the structured block above, unchanged.

@@ -90,6 +90,87 @@ class InlineRenderingShapeTests(unittest.TestCase):
         )
 
 
+class HumanInlineRenderingTests(unittest.TestCase):
+    """Issue #166: the opt-in concise "human inline" rendering
+    (`human_inline_findings`) is a re-voicing of the *same* finding — not a
+    weaker one and not a relocation."""
+
+    def test_heading_keeps_severity_and_drops_the_bracket_form(self) -> None:
+        rendered = fc.render_human_inline(_finding(severity=fc.Severity.P2))
+        self.assertTrue(rendered.startswith("P2: "))
+        self.assertNotIn("[P2]", rendered)
+
+    def test_no_evidence_impact_fix_labels(self) -> None:
+        rendered = fc.render_human_inline(_finding())
+        for label in ("Evidence:", "Impact:", "Fix:"):
+            self.assertNotIn(label, rendered)
+
+    def test_semantic_content_of_every_core_field_survives(self) -> None:
+        f = _finding()
+        rendered = fc.render_human_inline(f)
+        self.assertIn(f.evidence, rendered)
+        self.assertIn(f.impact, rendered)
+        self.assertIn(f.fix, rendered)
+
+    def test_mandatory_core_is_still_complete_on_the_inline_surface(self) -> None:
+        self.assertEqual(
+            fc.missing_mandatory_fields(_finding(), surface=fc.Surface.GITHUB_INLINE),
+            (),
+        )
+
+    def test_structured_and_human_are_two_renderings_of_one_finding(self) -> None:
+        f = _finding(
+            evidence_location="src/pay/gateway.py:200",  # distinct evidence loc
+        )
+        self.assertTrue(fc.human_inline_preserves_semantics(f))
+        structured = fc.render_inline(f)
+        human = fc.render_human_inline(f)
+        # same severity, same title substance, no relocation: neither inline
+        # form carries an id/Location machine field, and the pointer (which
+        # *does* carry location) is identical regardless of inline voice.
+        self.assertTrue(structured.startswith("[P1] "))
+        self.assertTrue(human.startswith("P1: "))
+        self.assertEqual(
+            fc.render_summary_pointer(f),
+            "- **P1 — Retry can duplicate processing**\n  `src/pay/retry.py:88`",
+        )
+
+    def test_distinct_evidence_location_can_be_named_in_prose_without_moving_anchor(self) -> None:
+        # the human prose may reference the evidence location; the finding's
+        # canonical location (the inline anchor) is unchanged.
+        f = _finding(evidence_location="src/pay/gateway.py:200")
+        self.assertEqual(f.location, "src/pay/retry.py:88")
+        self.assertIn("`src/pay/retry.py:88`", fc.render_summary_pointer(f))
+        self.assertNotIn("gateway.py", fc.render_summary_pointer(f))
+
+    def test_unresolved_fix_location_is_not_promoted_by_the_human_voice(self) -> None:
+        f = _finding(
+            location="src/pay/gateway.py:200",
+            evidence_location="src/pay/gateway.py:200",
+            fix_location_resolved=False,
+        )
+        # rendering voice is orthogonal to the resolved/unresolved state
+        self.assertFalse(fc.renders_evidence_location(f))
+        self.assertTrue(fc.human_inline_preserves_semantics(f))
+
+    def test_details_default_off_inline_and_folds_into_prose_when_selected(self) -> None:
+        f = _finding(
+            details="Ordering: worker A commits after worker B reads.",
+            long_form_category="concurrency_or_ordering",
+        )
+        self.assertNotIn("worker A commits", fc.render_human_inline(f))
+        with_details = fc.render_human_inline(f, finding_detail_override=True)
+        self.assertIn("worker A commits", with_details)
+        self.assertNotIn("Details:", with_details)
+
+    def test_structured_rendering_is_unchanged_when_the_option_is_not_used(self) -> None:
+        # existing callers that select the structured inline shape are intact
+        rendered = fc.render_inline(_finding())
+        self.assertTrue(rendered.startswith("[P1] "))
+        for label in ("Evidence:", "Impact:", "Fix:"):
+            self.assertIn(label, rendered)
+
+
 class MandatoryCoreTests(unittest.TestCase):
     def test_publishable_finding_has_no_missing_core_fields(self) -> None:
         self.assertEqual(

@@ -35,9 +35,11 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # does silently. Intermediate refactor sizes are not encoded here.
 # github raised 350 -> 365 for Issue #140 (the `human_review_output`
 # presentation option and the final-summary publication-ordering
-# invariant, both wired into section 1 and section 4).
+# invariant, both wired into section 1 and section 4), then 365 -> 370 for
+# Issue #166 (the derived companion option `human_inline_findings`, wired
+# into the section-1 presentation-options paragraph).
 LOCAL_MAX_LINES = 260
-GITHUB_MAX_LINES = 365
+GITHUB_MAX_LINES = 370
 
 
 def _norm(path) -> str:
