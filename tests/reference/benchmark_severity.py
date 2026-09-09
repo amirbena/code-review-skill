@@ -112,7 +112,6 @@ def compute_case_severity_accuracy(
 
     produced = case_result.produced_findings
     pairing = bmet.resolve_pairing(case, produced, post_image=post_image)
-    entry_by_key = {e.key: e for e in case.findings}
 
     exact = over = under = 0
     mismatches: list[dict[str, Any]] = []
