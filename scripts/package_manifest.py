@@ -11,6 +11,8 @@ from typing import Any
 
 
 def _relative_path(value: str, label: str) -> PurePosixPath:
+    if not value or value == "." or "\\" in value or any(char in value for char in "\r\n\t"):
+        raise ValueError(f"{label} must use a safe POSIX-style relative path: {value!r}")
     path = PurePosixPath(value)
     if path.is_absolute() or ".." in path.parts:
         raise ValueError(f"{label} must stay repository/package relative: {value}")
@@ -27,7 +29,8 @@ def load_target(manifest_path: Path, target: str) -> tuple[dict[str, Any], list[
         raise ValueError(f"package manifest has no target {target!r}") from exc
 
     skill_name = skill["name"]
-    if PurePosixPath(skill_name).name != skill_name:
+    skill_name_path = _relative_path(skill_name, "package Skill name")
+    if len(skill_name_path.parts) != 1:
         raise ValueError("package Skill name must be one path segment")
     archive = _relative_path(skill["archive"], "package archive")
     if archive.name != skill["archive"] or archive.suffix != ".zip":

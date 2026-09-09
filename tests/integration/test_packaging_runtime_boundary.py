@@ -293,6 +293,36 @@ class DeclaredPackageFileListTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Skill package source escapes skills/local-code-review/", result.stderr)
 
+    def test_manifest_rejects_windows_style_path_escapes(self) -> None:
+        mutations = (
+            lambda manifest: manifest["skills"]["local"].update(
+                archive="..\\outside.zip"
+            ),
+            lambda manifest: manifest["skills"]["local"].update(
+                name="..\\github-pr-review"
+            ),
+            lambda manifest: manifest["skills"]["local"]["files"].append(
+                {
+                    "source": "skills/local-code-review\\..\\github-pr-review/SKILL.md",
+                    "destination": "copied-skill.md",
+                }
+            ),
+            lambda manifest: manifest["skills"]["local"]["files"].append(
+                {
+                    "source": "skills/local-code-review/SKILL.md",
+                    "destination": "..\\outside.md",
+                }
+            ),
+            lambda manifest: manifest["skills"]["local"]["required_entries"].append(
+                "..\\outside.md"
+            ),
+        )
+        for mutate in mutations:
+            with self.subTest(mutate=mutate):
+                result = self._validate_mutated_manifest(mutate)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("safe POSIX-style relative path", result.stderr)
+
     def test_local_file_list_is_non_empty_and_sane(self) -> None:
         self.assertIn("SKILL.md", self.local_files)
         self.assertIn("policies/review-context.md", self.local_files)
