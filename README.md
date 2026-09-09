@@ -69,8 +69,8 @@ how the reviewer will be used — packaging both is rarely needed.
 
      Context source: Jira PROJECT-1234
      Acceptance criteria:
-     - reject unsupported CC + RTP combinations
-     - validation must occur before execution
+     - reject writes to a record while it is locked
+     - validation must occur before the write is persisted
      ```
 
      A bare `/local-code-review` with no context is fully supported.

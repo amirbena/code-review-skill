@@ -393,12 +393,12 @@ make the relationship visible in the finding's own Evidence, per
 [`../templates/finding.md`](../templates/finding.md):
 
 ```text
-P1 — Validation can be bypassed in recurring-payment execution
+P1 — Validation can be bypassed on the bulk-update path
 
 Evidence:
-Context source: Jira PROJECT-1234, acceptance criteria — "CC/RTP validation
-before every execution path." <concrete code evidence that the
-recurring-payment path executes without going through that validation>.
+Context source: Jira PROJECT-1234, acceptance criteria — "a record is
+validated before every write path." <concrete code evidence that the
+bulk-update path persists without going through that validation>.
 ```
 
 Use it when it materially explains why the behavior is incorrect or risky —
