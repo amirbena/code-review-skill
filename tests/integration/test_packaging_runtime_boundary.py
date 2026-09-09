@@ -232,6 +232,12 @@ class PackagingScriptParityTests(unittest.TestCase):
         self.assertIn('Get-Command "python3"', self.ps1)
         self.assertNotIn("& python3 $metadataValidator", self.ps1)
 
+    def test_powershell_treats_manifest_sources_as_literal_paths(self) -> None:
+        self.assertIn("Test-Path -LiteralPath $sourcePath -PathType Leaf", self.ps1)
+        self.assertIn("Copy-Item -LiteralPath $sourcePath -Destination $destPath", self.ps1)
+        self.assertNotIn("Test-Path $sourcePath", self.ps1)
+        self.assertNotIn("Copy-Item -Path $sourcePath", self.ps1)
+
 
 class DeclaredPackageFileListTests(unittest.TestCase):
     """Structural checks on the declarative package manifest."""
@@ -322,6 +328,71 @@ class DeclaredPackageFileListTests(unittest.TestCase):
                 result = self._validate_mutated_manifest(mutate)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("safe POSIX-style relative path", result.stderr)
+
+    def test_manifest_rejects_windows_drives_roots_and_wildcards(self) -> None:
+        mutations = (
+            lambda manifest: manifest["skills"]["local"].update(
+                archive="C:outside.zip"
+            ),
+            lambda manifest: manifest["skills"]["local"]["files"].append(
+                {
+                    "source": "skills/local-code-review/SKILL.md",
+                    "destination": "C:/outside",
+                }
+            ),
+            lambda manifest: manifest["skills"]["local"]["files"].append(
+                {
+                    "source": "skills/local-code-review/SKILL.md",
+                    "destination": "//server/share/outside.md",
+                }
+            ),
+            lambda manifest: manifest["skills"]["local"]["files"].append(
+                {
+                    "source": "skills/local-code-review/foo/*.md",
+                    "destination": "wildcard-star.md",
+                }
+            ),
+            lambda manifest: manifest["skills"]["local"]["files"].append(
+                {
+                    "source": "skills/local-code-review/foo/?ar.txt",
+                    "destination": "wildcard-question.md",
+                }
+            ),
+            lambda manifest: manifest["skills"]["local"]["files"].append(
+                {
+                    "source": "skills/local-code-review/foo/[ab].txt",
+                    "destination": "wildcard-brackets.md",
+                }
+            ),
+            lambda manifest: manifest["skills"]["local"].update(
+                archive="local-*-review.zip"
+            ),
+            lambda manifest: manifest["skills"]["local"]["files"].append(
+                {
+                    "source": "skills/local-code-review/SKILL.md",
+                    "destination": "templates/[draft].md",
+                }
+            ),
+        )
+        for mutate in mutations:
+            with self.subTest(mutate=mutate):
+                result = self._validate_mutated_manifest(mutate)
+                self.assertNotEqual(result.returncode, 0)
+
+    def test_manifest_accepts_ordinary_posix_relative_paths(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(PACKAGE_MANIFEST_HELPER),
+                str(PACKAGE_MANIFEST),
+                "local",
+                "validate",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_local_file_list_is_non_empty_and_sane(self) -> None:
         self.assertIn("SKILL.md", self.local_files)

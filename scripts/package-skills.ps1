@@ -145,13 +145,13 @@ function Package-Skill {
   $entries = @($packageManifest.shared_files) + @($skill.files)
   foreach ($entry in $entries) {
     $sourcePath = Join-Path $repoRoot $entry.source
-    if (-not (Test-Path $sourcePath -PathType Leaf)) {
+    if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
       Write-Error "required package source missing: $($entry.source)"
       exit 1
     }
     $destPath = Join-Path $stageDir $entry.destination
     New-Item -ItemType Directory -Path (Split-Path -Parent $destPath) -Force | Out-Null
-    Copy-Item -Path $sourcePath -Destination $destPath
+    Copy-Item -LiteralPath $sourcePath -Destination $destPath
   }
 
   # Adapt relative links into shared/ across every packaged Markdown

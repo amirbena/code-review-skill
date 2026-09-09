@@ -6,15 +6,26 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
 
 def _relative_path(value: str, label: str) -> PurePosixPath:
-    if not value or value == "." or "\\" in value or any(char in value for char in "\r\n\t"):
+    if (
+        not value
+        or value == "."
+        or any(char in value for char in "\\\r\n\t*?[]")
+    ):
         raise ValueError(f"{label} must use a safe POSIX-style relative path: {value!r}")
     path = PurePosixPath(value)
-    if path.is_absolute() or ".." in path.parts:
+    windows_path = PureWindowsPath(value)
+    if (
+        path.is_absolute()
+        or ".." in path.parts
+        or windows_path.drive
+        or windows_path.root
+        or windows_path.is_absolute()
+    ):
         raise ValueError(f"{label} must stay repository/package relative: {value}")
     return path
 
