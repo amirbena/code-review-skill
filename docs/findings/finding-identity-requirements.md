@@ -193,6 +193,71 @@ alone, or from file + line alone: the first fails scenarios 1, 2, and 4
 above; the second fails scenario 3 above and scenarios 1–5 in §2. Identity
 is derived from *the defect in its program element*.
 
+### Shared root cause versus repeated independent pattern
+
+Scenario 3.2 ("a different semantic location / program element") and
+root-cause **consolidation**
+([`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md),
+"Shared root cause versus independent findings") draw the same line from
+opposite sides, and MUST stay consistent:
+
+- **One shared defect-bearing element reaching many sites** — a single
+  validator, helper, query, config value, or invariant whose one
+  incorrectness propagates to multiple call paths, and which **one fix
+  resolves everywhere** — is **one finding**. Its identity is that element
+  and its defect (§1, §2: identity follows the defect, not each call site).
+  The reached call paths are that finding's blast radius, carried in the
+  rendered **affected locations** list
+  ([`../../shared/templates/finding.md`](../../shared/templates/finding.md),
+  "Affected locations on a consolidated finding"), not as separate
+  identities.
+- **The same pattern independently re-implemented at N sites** — each site
+  its own defective code, each needing its own fix — is **N findings**, one
+  per site (§3.2). No shared element, no consolidation.
+
+Consolidation is therefore **not** a §6 collision: §6 forbids two
+*materially distinct* defects sharing one identity, whereas a consolidated
+finding is one defect observed at several reachable sites, established by
+positive root-cause evidence rather than inferred from similarity.
+
+#### Cross-review: the many-to-one relationship
+
+On a **re-review** where a prior review recorded several separate per-site
+identities, the raw relationship of those prior identities to one current
+consolidated candidate is a many-to-one topology. Matching
+([`finding-matching-strategy.md`](finding-matching-strategy.md)) returns
+`AMBIGUOUS` for that topology — split/collapse is a hard disqualifier there
+and this section does not relax it — so the consolidated finding is minted a
+**fresh** identity, never one reused from a prior per-site finding.
+
+What happens to the prior per-site identities is owned by the lifecycle
+model ([`finding-lifecycle-contract.md`](finding-lifecycle-contract.md) §4),
+not by this document:
+
+- **Default — ordinary ambiguous many-to-one.** If the many-to-one shape is
+  all there is — topology, or similar wording, or a bare `AMBIGUOUS` result
+  — each prior identity records `UNCERTAIN` and its established state is
+  preserved (§6, §7; lifecycle scenario 12). No consolidation, no merge, no
+  resolution.
+- **Positively established shared root cause.** Only when the current
+  review independently meets the root-cause evidence bar in
+  [`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md)
+  — a single shared defect-bearing element, ≥2 concrete manifestations or
+  one demonstrated shared failure path, causal not correlated, one fix that
+  resolves all — **and** ties each prior identity's defect to that one cause
+  do the prior identities receive the lifecycle `CONSOLIDATED` disposition:
+  folded into the fresh consolidated identity, each **still `OPEN`** (not
+  resolved, not `SUPERSEDED`), each site retained in the consolidated
+  finding's affected-locations list. A folded identity resolves only later,
+  if and when the consolidated finding itself meets the full resolution bar.
+
+This is **not** a relaxation of §6. §6 forbids *materially distinct* defects
+sharing one identity and forbids *inferring* a merge from uncertainty;
+`CONSOLIDATED` does neither — it requires positive, independent root-cause
+evidence that the manifestations are one defect, mints a fresh identity
+rather than reusing a prior one, and resolves nothing. When that evidence is
+absent, §6's fail-safe direction (prefer splitting) governs unchanged.
+
 ---
 
 ## 4. Inputs available at review time

@@ -42,7 +42,18 @@ class LifecycleState(Enum):
 
 
 class ChangeClass(Enum):
-    """The six #64 change classes (delta-re-review-contract.md, §2)."""
+    """The six #64 change classes (delta-re-review-contract.md, §2).
+
+    Root-cause finding *consolidation* (#177) adds no seventh member: a
+    re-review collapse still classifies as ``AMBIGUOUS`` here (split/collapse
+    is a #59 disqualifier, unchanged). The ``CONSOLIDATED`` lifecycle
+    disposition (#62 §4) is applied on top of that ``AMBIGUOUS``
+    classification when the reviewer's root-cause pass positively
+    establishes one shared cause — it is a lifecycle concern, not a
+    mechanical change class, and is modelled that way in
+    ``tests/unit/test_rereview_regression_fixtures.py`` (``expect_class =
+    AMBIGUOUS``, ``expect_event = "CONSOLIDATED"``).
+    """
 
     UNCHANGED = "unchanged"
     FIXED = "fixed"

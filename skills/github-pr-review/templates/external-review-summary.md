@@ -105,7 +105,27 @@ finding (see
 - **Fix:** <concrete correction direction, not a patch>
 - **Details:** <only when a finding-level decision or
   `include_finding_details=true` selects materially useful context>
+
+#### F3 [P1] `sanitize_path` bypass reaches two call paths
+
+- **Location:** `app/pathsafe.py:5`
+- **Affected locations:**
+  - `app/reports.py:read_report` — routes user input through `sanitize_path`
+  - `app/exports.py:read_export` — same shared helper, same bypass
+- **Evidence:** <the shared cause, concise>
+- **Impact:** <combined engineering consequence across the affected sites>
+- **Fix:** <one correction direction at the shared cause / canonical owner>
 ```
+
+A **consolidated root-cause finding** (one shared cause reaching at least
+two sites) always renders in the body, with its required, exhaustive
+`Affected locations` list of two or more sites directly after `Location`,
+per
+[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+"Affected locations on a consolidated finding" and
+[`../policies/finding-placement.md`](../policies/finding-placement.md),
+"Inline comment eligibility" — it is one body finding, never one inline
+comment per affected call path.
 
 ## Self-review (informational COMMENT)
 

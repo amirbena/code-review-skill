@@ -48,7 +48,8 @@ The stateful re-review regression fixtures required by
 paired before/after review histories that assert re-review mode, change
 class, lifecycle event/state (inheriting
 [`finding-lifecycle-contract.md`](finding-lifecycle-contract.md) §9's
-fifteen scenarios), surfaced/suppressed findings, the mechanical decision,
+sixteen scenarios, including the row-16 `CONSOLIDATED` disposition),
+surfaced/suppressed findings, the mechanical decision,
 finding-identity continuity, and exact-reviewed-HEAD binding — driven
 entirely through the existing
 [`../../tests/reference/`](../../tests/reference/) models for #64/#62/#60

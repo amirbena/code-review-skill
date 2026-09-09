@@ -174,10 +174,11 @@ def resolve_rereview_mode(
 
 # ---------------------------------------------------------------------------
 # Lifecycle event + resulting state — a direct transcription of
-# finding-lifecycle-contract.md §7 (the #62 state-transition table). #62 §10
-# tells #66 to "inherit the fifteen scenarios in §9 and assert state plus
-# event"; #62's vocabulary is documented, not an importable enum, so it is
-# transcribed here verbatim and nowhere else.
+# finding-lifecycle-contract.md §7 (the #62 state-transition table) and its §4
+# `CONSOLIDATED` disposition. #62 §10 tells #66 to "inherit the sixteen
+# scenarios in §9 and assert state plus event"; #62's vocabulary is
+# documented, not an importable enum, so it is transcribed here verbatim and
+# nowhere else.
 # ---------------------------------------------------------------------------
 
 _CARRY = "NO TRANSITION"
@@ -191,12 +192,20 @@ def lifecycle_event_and_state(
     resolution_evidence: Optional[ResolutionEvidence],
     recurrence_evidence: bool,
     review_aborted: bool,
+    consolidation_established: bool = False,
 ) -> tuple[str, Optional[LifecycleState]]:
     if review_aborted:
         return "UNCERTAIN", prior_state  # §7 last row: prior state preserved
     if prior_state is None:
         return "DETECTED", LifecycleState.OPEN
     if match_outcome is MatchOutcome.AMBIGUOUS:
+        # §4 "Reviewer-established root-cause consolidation": a many-to-one
+        # relationship stays UNCERTAIN unless the current review positively
+        # establishes one shared root cause (never inferred from N->1
+        # topology). Even then the folded prior identity stays OPEN — the
+        # CONSOLIDATED event resolves nothing.
+        if consolidation_established and prior_state is LifecycleState.OPEN:
+            return "CONSOLIDATED", LifecycleState.OPEN
         return "UNCERTAIN", prior_state
     if prior_state is LifecycleState.OPEN:
         if match_outcome is MatchOutcome.MATCH:
@@ -299,6 +308,7 @@ class FindingDelta:
     still_present_evidence: bool = False
     resolution_evidence: Optional[ResolutionEvidence] = None
     recurrence_evidence: bool = False
+    consolidation_established: bool = False
     touched_by_delta: bool = False
     blast_radius_attributable: bool = False
     independently_supported: bool = False
@@ -332,6 +342,7 @@ class FindingDelta:
             resolution_evidence=self.resolution_evidence,
             recurrence_evidence=self.recurrence_evidence,
             review_aborted=self.review_aborted,
+            consolidation_established=self.consolidation_established,
         )
 
 
@@ -725,6 +736,48 @@ def _scenarios() -> list[Scenario]:
                 expect_state=_OPEN, expect_surfaced=True,
             ),
         ),
+        expect_decision=Decision.CHANGES_REQUIRED,
+    ))
+    add(Scenario(
+        id="consolidated/reviewer-establishes-one-shared-root-cause",
+        group="ambiguous",
+        why="#62 §9 row 16 / §4: the matcher still returns AMBIGUOUS for the "
+        "N->1 topology, but the current review positively establishes one "
+        "shared root cause under review-scope.md, so each prior per-site "
+        "identity folds into the one consolidated finding via CONSOLIDATED — "
+        "state stays OPEN, nothing is resolved.",
+        lifecycle_ref=16,
+        findings=(
+            FindingDelta(
+                key="prior A, folded into the shared-cause finding",
+                prior_state=_OPEN, match_outcome=_AMBIG, still_present_evidence=True,
+                consolidation_established=True, severity=Severity.P1,
+                expect_class=ChangeClass.AMBIGUOUS, expect_event="CONSOLIDATED",
+                expect_state=_OPEN, expect_surfaced=True,
+            ),
+            FindingDelta(
+                key="prior B, folded into the shared-cause finding",
+                prior_state=_OPEN, match_outcome=_AMBIG, still_present_evidence=True,
+                consolidation_established=True, severity=Severity.P1,
+                expect_class=ChangeClass.AMBIGUOUS, expect_event="CONSOLIDATED",
+                expect_state=_OPEN, expect_surfaced=True,
+            ),
+        ),
+        expect_decision=Decision.CHANGES_REQUIRED,
+    ))
+    add(Scenario(
+        id="consolidated/no-positive-evidence-stays-uncertain",
+        group="ambiguous",
+        why="#62 §4 fail-open: the same N->1 topology without a positively "
+        "established shared cause never enters the CONSOLIDATED path — it "
+        "stays UNCERTAIN with each prior identity and state preserved.",
+        findings=(FindingDelta(
+            key="prior, N->1 topology only, no shared-cause evidence",
+            prior_state=_OPEN, match_outcome=_AMBIG, still_present_evidence=True,
+            consolidation_established=False, severity=Severity.P1,
+            expect_class=ChangeClass.AMBIGUOUS, expect_event="UNCERTAIN",
+            expect_state=_OPEN, expect_surfaced=True,
+        ),),
         expect_decision=Decision.CHANGES_REQUIRED,
     ))
     add(Scenario(
@@ -1340,7 +1393,10 @@ class ReReviewRegressionTests(unittest.TestCase):
             ChangeClass.MOVED: {"STILL_PRESENT"},
             ChangeClass.REOPENED: {"REOPENED"},
             ChangeClass.NEWLY_INTRODUCED: {"DETECTED"},
-            ChangeClass.AMBIGUOUS: {"UNCERTAIN"},
+            # AMBIGUOUS classifies the raw N->1 topology; the lifecycle layer
+            # yields UNCERTAIN by default, or CONSOLIDATED (§4) when the
+            # reviewer positively establishes one shared root cause.
+            ChangeClass.AMBIGUOUS: {"UNCERTAIN", "CONSOLIDATED"},
         }
         for s in SCENARIOS:
             for fd in s.findings:
@@ -1372,11 +1428,12 @@ class CoverageGuardTests(unittest.TestCase):
         }
         self.assertEqual(seen, set(ChangeClass))
 
-    def test_all_fifteen_lifecycle_contract_scenarios_are_inherited(self) -> None:
+    def test_all_lifecycle_contract_scenarios_are_inherited(self) -> None:
         """finding-lifecycle-contract.md §10: #66 fixtures must inherit the
-        fifteen §9 scenarios and assert state plus event."""
+        §9 scenarios (1-15 plus the row-16 CONSOLIDATED disposition) and
+        assert state plus event."""
         refs = {s.lifecycle_ref for s in SCENARIOS if s.lifecycle_ref is not None}
-        self.assertEqual(refs, set(range(1, 16)))
+        self.assertEqual(refs, set(range(1, 17)))
 
     def test_each_lifecycle_ref_asserts_state_and_event(self) -> None:
         for s in SCENARIOS:

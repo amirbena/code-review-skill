@@ -88,7 +88,7 @@ establishes this same discipline for `NEW`/`STILL_PRESENT`/`REOPENED`).
 | **Moved** | The delta relocates the prior defect-bearing condition (refactor, rename, file move, extraction) without resolving it; a definite #59 `MATCH` still holds. | Definite `MATCH` at the new location and positive evidence the same defect-bearing condition remains. | `STILL_PRESENT`, state stays `OPEN`. A move is never, by itself, a `NO MATCH` — see §6 of #59's discipline and §8 below. |
 | **Reopened** | A `RESOLVED` prior identity has positive current recurrence evidence and a definite #59 `MATCH` under the recurrence exception. | The canonical recurrence handshake in #62 §6: prior `RESOLVED` state, positive recurrence-candidate evidence, `MATCH` under the recurrence exception. | `REOPENED`, state becomes `OPEN`. |
 | **Newly introduced** | A current observation attributable to the delta (directly or via blast radius, §4) has no inherited prior identity and independently satisfies the finding evidence bar. | No `MATCH` to any prior identity; the observation stands on its own evidence. | `DETECTED`, state `OPEN`, exactly as any first detection. |
-| **Ambiguous** | Matching cannot establish a definite relationship between a prior identity and a current candidate (split, collapse, insufficient identity evidence, or contested continuity). | #59 returns `AMBIGUOUS` for the relationship under consideration. | `UNCERTAIN`, prior state preserved (#62 §4, §7). Never resolved into a confident transition by this contract or by lower confidence heuristics. |
+| **Ambiguous** | Matching cannot establish a definite relationship between a prior identity and a current candidate (split, collapse, insufficient identity evidence, or contested continuity). | #59 returns `AMBIGUOUS` for the relationship under consideration. | `UNCERTAIN`, prior state preserved (#62 §4, §7). An `AMBIGUOUS` outcome is never **inferred** into a confident `Fixed`/`Moved`/`Reopened`/resolution transition by this contract or by any lower-confidence heuristic. The one non-`UNCERTAIN` outcome is the #62 **`CONSOLIDATED`** disposition — and it is not such an inference: it applies only to a `collapse` where the current review positively establishes one shared root cause, it resolves nothing, and each folded prior identity stays `OPEN` (see "Consolidation is not a change class" below). |
 
 Notes:
 
@@ -105,6 +105,37 @@ Notes:
   boundary require; this contract does not mint additional persisted
   classes. Where a class's evidence bar is unmet, the outcome is
   `Ambiguous`/`UNCERTAIN`, never a fabricated class of its own.
+
+### Consolidation is not a change class
+
+Root-cause finding consolidation
+([`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md))
+does **not** add a seventh change class. A re-review where several prior
+per-site identities relate to one current consolidated candidate is a
+`collapse`, and this contract's classifier still calls that **`Ambiguous`**
+— split/collapse is a #59 disqualifier, unchanged. What differs is only the
+**#62 lifecycle disposition** applied on top of that `Ambiguous`
+classification:
+
+- **Default.** `Ambiguous` → `UNCERTAIN`, every prior identity and its state
+  preserved (#62 §4, §7). Consolidation is never inferred from the `N→1`
+  matching topology of the prior finding set, from descriptor similarity, or
+  from a bare `AMBIGUOUS` result.
+- **Positively established shared root cause.** Only when the current review
+  independently meets the `review-scope.md` root-cause evidence bar (shared
+  mechanism identified; ≥2 concrete manifestations or one demonstrated
+  shared failure path; causal, not correlated; one correction resolves all)
+  **and** ties each prior identity's defect to that one shared cause do the
+  prior identities receive #62's **`CONSOLIDATED`** disposition (#62 §4,
+  scenario 16): folded into the one authoritative consolidated finding
+  (itself a fresh #60 identity), each still `OPEN` — consolidation resolves
+  nothing — with every folded site kept in the finding's affected-locations
+  list.
+
+The classifier is unchanged; the `CONSOLIDATED` disposition is owned by #62
+and applied at runtime by
+[`../../skills/github-pr-review/policies/stateful-delta-rereview.md`](../../skills/github-pr-review/policies/stateful-delta-rereview.md)
+§3.
 
 ## 3. Delta is an optimization, not a finding boundary
 
@@ -251,7 +282,11 @@ delta re-review can no longer produce a trustworthy result:**
   such that the reviewer cannot tell, for most of the prior finding set,
   whether it is `Unchanged`, `Moved`, `Fixed`, or superseded by something
   new. A single ambiguous identity does not trigger escalation; a
-  delta that makes matching broadly unreliable does.
+  delta that makes matching broadly unreliable does. A `collapse` the
+  current review resolves with the `CONSOLIDATED` lifecycle disposition
+  (§2, "Consolidation is not a change class") is a *confident*
+  determination, not an unresolved ambiguity, and does not count toward
+  this trigger.
 - **Review boundaries.** The reviewed-state preconditions from
   [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md) §2/§7
   are violated for the region under evaluation (e.g. base movement whose
@@ -288,6 +323,7 @@ concept it must not collapse:
 | Moved code ≠ a new finding | A definite `MATCH` after a move produces `STILL_PRESENT` (#62 §4, "`MATCH`"), not `DETECTED`. Treating every move as new would silently manufacture false resolutions and false detections. |
 | Resolved identity ≠ a clean fix | `RESOLVED` says one identity's defect is gone (#62 §5); it says nothing about whether the resolving change introduced a different defect (§3, §5 above). |
 | Ambiguity ≠ a confident lifecycle transition | `AMBIGUOUS` authorizes no transition (#62 §4, §7); this contract's change classes never convert an `AMBIGUOUS` #59 outcome into `Fixed`, `Moved`, or `Reopened` by inference, however plausible the inference looks. |
+| Reviewer-established consolidation ≠ matcher collapse | #59 returns `AMBIGUOUS` for every `N→1` topology and transfers nothing (its split/collapse disqualifier is unchanged), and this contract still classifies that collapse as `Ambiguous` (§2). `CONSOLIDATED` (#62 §4) is not a change class — it is the #62 lifecycle disposition the reviewer's root-cause pass establishes with positive evidence on top of that `Ambiguous` classification; it mints a fresh identity for the consolidated finding, keeps each folded prior identity `OPEN`, and resolves nothing. |
 
 Every change class in §2 is defined in terms of a #58/#59/#60/#62 concept
 (a matching outcome, an evidence bar, a lifecycle event) — never as an

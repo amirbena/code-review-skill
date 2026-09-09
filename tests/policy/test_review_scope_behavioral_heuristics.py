@@ -220,6 +220,88 @@ class RootCauseAndModelCompletenessTests(unittest.TestCase):
         self.assertIn("verify on re-review that the corrected invariant covers the related paths", self.section)
         self.assertIn("same unfixed mechanism reconciles to the same finding", self.section)
 
+    def test_shared_root_cause_versus_independent_findings_is_defined_with_examples(self) -> None:
+        self.assertIn("A shared root cause is a single defect-bearing element", self.section)
+        self.assertIn(
+            "one correction at that element resolves every manifestation", self.section
+        )
+        self.assertIn("A common theme is not a common cause.", self.section)
+        # worked contrast: one symbol many callers -> consolidate; unrelated
+        # look-alikes -> separate
+        self.assertIn("one authoritative finding on is_valid_email", self.section)
+        self.assertIn("emits two findings and does not merge them", self.section)
+
+    def test_authoritative_consolidated_finding_shape_lists_affected_locations(self) -> None:
+        self.assertIn("emit one finding with a single identity", self.section)
+        # F2: at least two sites, exhaustive, required / not publishable without it
+        self.assertIn(
+            "Consolidation applies only when the shared cause reaches at least "
+            "two manifestation sites.",
+            self.section,
+        )
+        self.assertIn(
+            "plus an affected-locations list that names every known manifestation site",
+            self.section,
+        )
+        self.assertIn("so the list is exhaustive for the sites the review found", self.section)
+        self.assertIn(
+            "the affected-locations list is required — a consolidated finding "
+            "without it is not publishable",
+            self.section,
+        )
+        self.assertIn("rendered on every delivery surface", self.section)
+        self.assertIn("Affected locations on a consolidated finding", self.section)
+        self.assertIn("An ordinary single-site finding never carries the field.", self.section)
+
+    def test_consolidation_fails_open_to_separate_findings(self) -> None:
+        self.assertIn(
+            "Consolidation requires the shared cause to be positively established",
+            self.section,
+        )
+        self.assertIn("emit separate findings rather than over-merging", self.section)
+        self.assertIn(
+            "A false split is visible duplicate noise a reader can reconcile; "
+            "an over-merge silently drops a distinct defect.",
+            self.section,
+        )
+        self.assertIn("When confidence is not there, split.", self.section)
+
+    def test_rereview_routes_identity_handling_to_the_lifecycle_model(self) -> None:
+        # F1: no "supersede"; route to the finding-identity / lifecycle model;
+        # ordinary many-to-one stays ambiguous; only positive root-cause
+        # evidence folds (CONSOLIDATED); nothing resolved.
+        self.assertNotIn("supersede", self.section.lower())
+        self.assertIn(
+            "Consolidation also reconciles in the other direction on re-review.",
+            self.section,
+        )
+        self.assertIn("emit the single authoritative consolidated finding (a new finding identity)", self.section)
+        self.assertIn(
+            "How the prior per-site finding identities are then handled is owned "
+            "by the repository's finding-identity and lifecycle model, not "
+            "restated here",
+            self.section,
+        )
+        self.assertIn(
+            "ordinary many-to-one matching (several prior identities that merely "
+            "appear to map to one candidate) stays ambiguous",
+            self.section,
+        )
+        self.assertIn(
+            "consolidation is never inferred from that topology or from wording similarity",
+            self.section,
+        )
+        self.assertIn(
+            "only a positively established shared cause folds the prior identities "
+            "into the consolidated finding (the lifecycle model's CONSOLIDATED disposition)",
+            self.section,
+        )
+        self.assertIn("nothing is treated as resolved", self.section)
+        self.assertIn(
+            "when the shared cause is not positively established, keep the findings separate",
+            self.section,
+        )
+
     def test_existing_review_evidence_triggers_but_does_not_prove_root_cause(self) -> None:
         self.assertIn("may trigger this pass as Existing Review Evidence", self.section)
         self.assertIn("never widen the current Review Target", self.section)

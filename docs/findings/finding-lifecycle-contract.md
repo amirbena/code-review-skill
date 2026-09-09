@@ -19,11 +19,21 @@ OPEN  <-------------------->  RESOLVED
       RESOLVED      REOPENED
 ```
 
-`NEW`, `STILL_PRESENT` / `UNCHANGED`, and `REOPENED` describe how a review
-reached a state; they are not additional states. `AMBIGUOUS` / `UNKNOWN`
-describes insufficient transition evidence, not the defect's state.
+`NEW`, `STILL_PRESENT` / `UNCHANGED`, `REOPENED`, and `CONSOLIDATED` describe
+how a review reached a state; they are not additional states. `AMBIGUOUS` /
+`UNKNOWN` describes insufficient transition evidence, not the defect's state.
 `SUPERSEDED` and `NO_LONGER_APPLICABLE` are reasons an identity may enter
 `RESOLVED`, not independently live states.
+
+`CONSOLIDATED` is the one event that a many-to-one relationship can produce
+without staying `UNCERTAIN`. It is not a matching outcome and never inferred
+from `N→1` topology or descriptor similarity: it requires the current
+review's root-cause pass to positively establish, under
+[`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md)
+("Shared root cause versus independent findings"), that several prior
+per-site identities are manifestations of one shared defect. It keeps each
+folded identity `OPEN` — consolidation resolves nothing — and is defined in
+§4 below.
 
 ```text
 DETECTED       STILL_PRESENT       RESOLVED       REOPENED
@@ -44,8 +54,8 @@ state. It never fills an evidence gap with a transition.
 - **Lifecycle state** — the last established current truth for one identity:
   `OPEN` or `RESOLVED`.
 - **Lifecycle event** — the evidence-backed explanation for a review's effect
-  on that state: `DETECTED`, `STILL_PRESENT`, `RESOLVED`, `REOPENED`, or
-  `UNCERTAIN`.
+  on that state: `DETECTED`, `STILL_PRESENT`, `RESOLVED`, `REOPENED`,
+  `CONSOLIDATED`, or `UNCERTAIN`.
 - **Positive resolution evidence** — affirmative proof that a successfully
   completed review covered and re-evaluated the prior defect-bearing condition
   and established that it is absent.
@@ -93,6 +103,7 @@ resolution reasons.
 | `STILL_PRESENT` | A prior `OPEN` identity remains `OPEN`. | Definite `MATCH` and positive current evidence that the same defect-bearing condition remains, including after a partial modification. |
 | `RESOLVED` | A prior `OPEN` identity enters `RESOLVED`. | Every resolution requirement in §5. |
 | `REOPENED` | A prior `RESOLVED` identity returns to `OPEN`. | Definite `MATCH` and positive current evidence that the same logical defect exists again. |
+| `CONSOLIDATED` | A prior `OPEN` identity is folded into one authoritative consolidated finding because the current review positively established it as one manifestation of a single shared defect. State stays `OPEN`; the identity is represented by the consolidated finding, not independently re-emitted. | The current review meets the root-cause evidence bar in [`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md) (shared mechanism identified; at least two concrete manifestations or one demonstrated shared failure path; causal, not merely correlated; one correction resolves all) **and** shows this prior identity's defect is a consequence of that shared cause. `N→1` matching topology, descriptor/prose similarity, or a bare `AMBIGUOUS` outcome never suffice. |
 | `UNCERTAIN` | The review cannot safely establish a transition. | Ambiguous matching, insufficient coverage, incomplete review, or another explicit evidence gap; preserve prior state. |
 
 Each applied event needs enough provenance to reconstruct the chain: prior
@@ -139,6 +150,49 @@ satisfy the finding evidence bar, they can be `OPEN` in their own chains, but
 be presented as proof they are logically new rather than ambiguous
 continuations.
 
+### Reviewer-established root-cause consolidation (`CONSOLIDATED`)
+
+`AMBIGUOUS` (above) is the default and the only outcome the **matcher** can
+produce for a many-to-one relationship — split/collapse is a #59 disqualifier,
+and that false-merge safeguard is unchanged. `CONSOLIDATED` is a distinct,
+higher-bar disposition the **current review's root-cause pass** establishes,
+not the matcher:
+
+- **Gate — positive root-cause evidence, never topology.** It applies only
+  when the current review independently meets the root-cause evidence bar in
+  [`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md)
+  — a shared defect-bearing element identified, at least two concrete
+  manifestations (or one demonstrated shared failure path), causal rather
+  than correlated, one correction that resolves every manifestation — **and**
+  ties each prior per-site identity's defect to that one shared cause. The
+  `N→1` shape of the prior finding set, similar wording, and a bare
+  `AMBIGUOUS` matcher result are each insufficient on their own. Absent this
+  positive establishment, the relationship stays `AMBIGUOUS` → `UNCERTAIN`,
+  every prior identity and state preserved, exactly as `AMBIGUOUS` above.
+- **The consolidated finding.** It is a fresh identity via `DETECTED` → `OPEN`
+  (the matcher returns `AMBIGUOUS` for the topology, so no prior identity is
+  transferred), minted deterministically by #60 from the shared-cause
+  descriptor. Its provenance records the folded prior identities.
+- **Each folded prior identity.** Receives the `CONSOLIDATED` event; **state
+  stays `OPEN`** — consolidation resolves nothing, and non-emission of its
+  per-site finding is representation by the consolidated finding, not absence
+  (§5, "Merely failing to emit a finding is not an observation of absence").
+  Its site and evidence are retained in the consolidated finding's
+  **affected locations** list
+  ([`../../shared/templates/finding.md`](../../shared/templates/finding.md),
+  "Affected locations on a consolidated finding"). It is not independently
+  re-emitted while consolidated.
+- **Later resolution.** The shared defect is resolved only when the
+  consolidated identity itself meets the full §5 resolution bar. When it
+  does, each identity folded into it also resolves, reason `CONSOLIDATED`
+  (§5). Consolidation never uses `SUPERSEDED` — that reason means a newer
+  explicit obligation proved the old defect no longer applies, which is not
+  what consolidation asserts.
+- **Reversibility / fail-safe.** A later review that cannot re-establish the
+  shared cause does not infer un-consolidation. It records `UNCERTAIN` for
+  the relationship and preserves the last established state; when in doubt,
+  do not merge and do not resolve.
+
 ## 5. Resolution evidence
 
 An `OPEN → RESOLVED` transition requires **all** of the following:
@@ -156,8 +210,14 @@ An `OPEN → RESOLVED` transition requires **all** of the following:
 5. **No continuity ambiguity.** Matching, moves, splits, collapses, or competing
    candidates leave no uncertainty about whether the defect persists.
 6. **Evidence trace.** Concrete coverage and absence evidence is retained with
-   a reason when relevant: `FIXED`, `CODE_REMOVED`, `SUPERSEDED`, or
-   `NO_LONGER_APPLICABLE`.
+   a reason when relevant: `FIXED`, `CODE_REMOVED`, `SUPERSEDED`,
+   `NO_LONGER_APPLICABLE`, or `CONSOLIDATED`.
+
+`CONSOLIDATED` is the reason recorded for a prior identity that resolved only
+because the single shared cause it was folded into (§4,
+"Reviewer-established root-cause consolidation") itself met this bar — never
+because its own per-site finding stopped being emitted. Consolidation on its
+own resolves nothing.
 
 “The later review did not emit it,” “no `MATCH` was found,” a clean overall
 decision, and a changed line outside the relevant behavior are each
@@ -221,7 +281,8 @@ with `UNCERTAIN`; no reopen is fabricated.
 | `OPEN` | not applicable | `MATCH` | Current defect evidence is missing or contradictory | `UNCERTAIN`; re-evaluate inputs | `OPEN` preserved |
 | `OPEN` | not applicable | `NO MATCH` | Completed review, verified relevant coverage, positive absence evidence, no ambiguity | `RESOLVED` | `RESOLVED` |
 | `OPEN` | not applicable | `NO MATCH` | No verified coverage or only non-emission | `UNCERTAIN` | `OPEN` preserved |
-| `OPEN` | not applicable | `AMBIGUOUS` | Any coverage | `UNCERTAIN` | `OPEN` preserved |
+| `OPEN` | not applicable | `AMBIGUOUS` | Any coverage; no positive root-cause establishment | `UNCERTAIN` | `OPEN` preserved |
+| `OPEN` | not applicable | `AMBIGUOUS` (`N→1` topology) | Current review meets the `review-scope.md` root-cause bar and ties this identity's defect to the one shared cause now emitted as one consolidated finding | `CONSOLIDATED` | `OPEN` preserved; folded into the consolidated finding, not resolved |
 | `RESOLVED` | yes; enables recurrence evaluation | `MATCH` | Same defect and logical site independently established | `REOPENED` | `OPEN` |
 | `RESOLVED` | yes; enables recurrence evaluation | `NO MATCH` | Identity continuity not established | `NO TRANSITION` for prior identity | `RESOLVED` |
 | `RESOLVED` | yes; enables recurrence evaluation | `AMBIGUOUS` | Identity continuity remains uncertain | `UNCERTAIN` | `RESOLVED` preserved |
@@ -234,8 +295,15 @@ Impossible or unsupported transitions:
   `AMBIGUOUS → STILL_PRESENT`;
 - `OPEN → RESOLVED` from non-emission, `NO MATCH` alone, or overall
   `REVIEW CLEAN`;
+- `OPEN → RESOLVED` from a `CONSOLIDATED` event — consolidation folds a prior
+  identity's representation but never resolves it; the folded identity
+  resolves only later, when the consolidated finding itself meets §5;
 - `RESOLVED → OPEN` from similarity, severity change, or `NO MATCH`;
-- a split/collapse creating parent, child, merged, or superseded relationships;
+- a split/collapse creating parent, child, merged, or superseded
+  relationships from matching topology or descriptor similarity alone
+  (reviewer-established `CONSOLIDATED` per §4 is the sole many-to-one
+  exception, it requires positive root-cause evidence, and it resolves
+  nothing);
 - `OPEN → NEW` or `RESOLVED → NEW`; `NEW` is not a state;
 - any transition written by an aborted/incomplete review.
 
@@ -272,17 +340,30 @@ attempted review.
 | 13 | Review aborts before sufficient coverage | either | any/unavailable | Completion requirement fails | `UNCERTAIN` | prior state preserved |
 | 14 | Code containing finding is deleted | `OPEN` | `NO MATCH` | Completed review verifies covered deletion and no continuation | `RESOLVED` (`CODE_REMOVED`) | `RESOLVED` |
 | 15 | Site moves/refactors and matches definitively | `OPEN` | `MATCH` | Unique site/defect continuity; defect remains | `STILL_PRESENT` | `OPEN` |
+| 16 | Prior per-site findings positively established as one shared root cause | `OPEN` for each | `AMBIGUOUS` (`N→1` topology) | Current review meets the `review-scope.md` root-cause bar; each prior identity's defect shown to be a consequence of the one shared cause | `CONSOLIDATED` each | each `OPEN` preserved, folded into one fresh consolidated identity; nothing resolved |
 
 For scenarios 11 and 12, fresh identities assigned to independently supported
 current candidates do not prove those candidates logically new; their
 ambiguous relationship to preserved prior identities remains in provenance.
+
+Scenario 16 is the **only** many-to-one relationship that does not stay
+`UNCERTAIN`: it requires the reviewer's positive root-cause establishment
+(§4), never matching topology or similarity, and even then it resolves
+nothing — each folded identity stays `OPEN`. Without that establishment,
+scenario 12 governs.
 
 ## 10. Downstream boundaries
 
 - **#59 — matching strategy:** owns proof gates, matching outcomes, and
   split/collapse ambiguity. This contract supplies prior `RESOLVED` state and
   recurrence-candidate context for its existing exception, then consumes its
-  outcome unchanged; it does not weaken or redefine matching.
+  outcome unchanged; it does not weaken or redefine matching. The
+  `CONSOLIDATED` event (§4) does not change any matcher outcome: a
+  many-to-one relationship is still `AMBIGUOUS` at the matching layer, and
+  the consolidated finding is still a fresh #60 identity. `CONSOLIDATED` is
+  authorized by the review's root-cause pass
+  ([`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md)),
+  not by #59.
 - **#60 — stable IDs:** owns identity/descriptor construction, serialization,
   propagation, and fresh-ID assignment. This contract defines none of those.
 - **#64 — review delta semantics:** owns scope, coverage, change classes, and
@@ -292,10 +373,13 @@ ambiguous relationship to preserved prior identities remains in provenance.
 - **#65 — stateful implementation:** owns loading, application, persistence,
   output fields, fallback, and provenance representation. It will load prior
   lifecycle state, obtain current coverage/evidence, invoke #59 with recurrence
-  context when applicable, and only then apply this transition table. It must
-  not add lifecycle semantics.
+  context when applicable, and only then apply this transition table,
+  including the `CONSOLIDATED` disposition (§4) when the current pass's
+  root-cause reasoning establishes it. It must not add lifecycle semantics.
+  The installed runtime rule is
+  [`../../skills/github-pr-review/policies/stateful-delta-rereview.md`](../../skills/github-pr-review/policies/stateful-delta-rereview.md).
 - **#66 — regression fixtures:** owns executable histories. Its fixtures must
-  inherit the fifteen scenarios in §9 and assert state plus event.
+  inherit the sixteen scenarios in §9 and assert state plus event.
 
 This document does not change the current finding schema, output rendering,
 same-HEAD de-duplication, reviewed-state storage, matching algorithm, severity

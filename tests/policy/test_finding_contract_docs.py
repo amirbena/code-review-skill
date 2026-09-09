@@ -200,6 +200,96 @@ class SharedFindingContractTests(unittest.TestCase):
         # id/location dropped only on the GitHub inline surface
         self.assertIn("omitted on a GitHub inline comment", self.norm)
 
+    def test_consolidated_finding_carries_an_affected_locations_field(self) -> None:
+        # Issue #177: one shared cause reaching >=2 sites -> one finding
+        # plus a required, exhaustive affected-locations list.
+        self.assertIn("affected locations", self.norm)
+        self.assertIn("It never replaces location", self.norm)
+        self.assertIn(
+            "## Affected locations on a consolidated finding", self.text
+        )
+        section = re.search(
+            r"## Affected locations on a consolidated finding\n(.*?)\n## ",
+            self.text,
+            re.S,
+        )
+        self.assertIsNotNone(section)
+        body = _norm(section.group(1))
+        self.assertIn("reaches at least two sites", body)
+        self.assertIn(
+            "the list is required on such a finding and part of its mandatory core",
+            body,
+        )
+        self.assertIn(
+            "a consolidated finding rendered without it, or with fewer than two "
+            "entries, is not publishable",
+            body,
+        )
+        self.assertIn("it is exhaustive for the manifestation sites the review found", body)
+        self.assertIn(
+            "rendered on every surface that renders the finding", body
+        )
+        self.assertIn(
+            "does not change the finding's identity, severity, evidence bar, "
+            "canonical location",
+            body,
+        )
+        self.assertIn(
+            "never used to pack unrelated findings into one entry", body
+        )
+
+    def test_affected_locations_field_is_not_both_optional_and_required(self) -> None:
+        # F2: the contract must not describe the field as simultaneously
+        # optional and required.
+        self.assertIn(
+            "conditionally required", _norm(self.text)
+        )
+        # the Fields entry names it required-on-consolidated / absent otherwise
+        self.assertIn("required, on every consolidated root-cause finding", self.norm)
+        self.assertIn(
+            "absent on every ordinary single-site finding", self.norm
+        )
+        # the "Optional and surface-specific fields" entry explicitly says it is
+        # not optional on a consolidated finding
+        opt = re.search(
+            r"## Optional and surface-specific fields\n(.*?)\n## ", self.text, re.S
+        )
+        self.assertIsNotNone(opt)
+        opt_body = _norm(opt.group(1))
+        self.assertIn("affected locations", opt_body)
+        self.assertIn("It is **not optional**".replace("**", ""), opt_body)
+        self.assertIn("listed here only for its surface-specific", opt_body)
+        # the mandatory-core section carries the consolidated addition
+        qc = re.search(
+            r"## Finding quality contract\n(.*?)\n## ", self.text, re.S
+        )
+        self.assertIsNotNone(qc)
+        qc_body = _norm(qc.group(1))
+        self.assertIn(
+            "not publishable without an exhaustive affected-locations list of "
+            "at least two known manifestation sites",
+            qc_body,
+        )
+
+    def test_full_rendering_has_a_consolidated_variant_with_affected_locations(self) -> None:
+        block = re.search(
+            r"## Canonical full rendering\n(.*?)\n## ", self.text, re.S
+        )
+        self.assertIsNotNone(block)
+        body = block.group(1)
+        self.assertIn("**Affected locations:**", body)
+        variant = next(
+            b
+            for b in re.findall(r"```markdown\n(.*?)\n```", body, re.S)
+            if "**Affected locations:**" in b
+        )
+        self.assertLess(
+            variant.index("- **Location:**"), variant.index("**Affected locations:**")
+        )
+        self.assertLess(
+            variant.index("**Affected locations:**"), variant.index("**Evidence:**")
+        )
+
     def test_inline_rendering_drops_id_and_location(self) -> None:
         block = re.search(
             r"## Canonical inline rendering\n(.*?)\n## ", self.text, re.S
@@ -260,6 +350,32 @@ class SkillRenderingsAlignTests(unittest.TestCase):
                 "When a longer explanation is justified",
                 path.read_text(encoding="utf-8"),
             )
+
+    def test_all_three_surfaces_expose_the_affected_locations_rendering(self) -> None:
+        # F3 (#177): consolidated findings must retain affected locations on
+        # each delivery surface, deferring to the shared contract.
+        for path in (LOCAL_REPORT, GITHUB_BODY, GITHUB_INLINE):
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("consolidated root-cause finding", text, path.name)
+            self.assertIn(
+                "Affected locations on a consolidated finding", text, path.name
+            )
+        # the two full-rendering surfaces show the structured list
+        for path in (LOCAL_REPORT, GITHUB_BODY):
+            examples = self._rendered_examples(path)
+            self.assertIn("**Affected locations:**", examples, path.name)
+        # the inline surface routes it to the body, never one comment per site
+        inline = _norm(GITHUB_INLINE.read_text(encoding="utf-8"))
+        self.assertIn("never split into one inline comment per affected call path", inline)
+
+    def test_github_body_places_consolidated_findings_in_the_body(self) -> None:
+        body = _norm(GITHUB_BODY.read_text(encoding="utf-8"))
+        self.assertIn(
+            "A consolidated root-cause finding (one shared cause reaching at "
+            "least two sites) always renders in the body",
+            body,
+        )
+        self.assertIn("it is one body finding, never one inline comment per affected call path", body)
 
     def test_per_skill_detail_defaults_and_github_override_are_explicit(self) -> None:
         local = _norm(LOCAL_REPORT.read_text(encoding="utf-8"))

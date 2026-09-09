@@ -113,6 +113,65 @@ than merely correlated; state the impact; and connect the correction/owner
 direction to that evidence. Passing examples alone or historical similarity
 does not prove a structural cause.
 
+### Shared root cause versus independent findings
+
+A **shared root cause** is a single defect-bearing element — one validator,
+helper, query, configuration value, contract, or invariant — whose one
+incorrectness propagates to multiple call paths or sites, such that one
+correction at that element resolves every manifestation. The other
+manifestations are that defect's blast radius, not separate defects.
+
+Findings are **independent**, and stay separate, when each site carries its
+own defective code and its own fix, even when the sites rhyme: the same
+*pattern* re-implemented in unrelated modules, look-alike arithmetic or
+off-by-one errors that share no symbol or import, or a merely thematic
+resemblance ("no timezone discipline", "validation missing somewhere"). A
+common theme is not a common cause.
+
+Worked contrast:
+
+- *Consolidate.* A shared `is_valid_email` is loosened so four callers
+  (`register`, `change_email`, `subscribe`, `invite`) all inherit the
+  weakened check — one symbol, one fix, four affected call paths — so the
+  review emits one authoritative finding on `is_valid_email` that names the
+  four call paths, not one near-duplicate finding per caller.
+- *Keep separate.* Two off-by-one bugs, one in `pagination.page` and one in
+  `history.recent`, sit in unrelated modules that share no code — two
+  causes, two fixes — so the review emits two findings and does not merge
+  them under one "off-by-one root cause".
+
+### The authoritative consolidated finding
+
+Consolidation applies only when the shared cause reaches **at least two**
+manifestation sites. When it does, emit one finding with a single identity,
+one severity (the highest justified across the manifestations, per
+[`severity.md`](severity.md)), one evidence block establishing the shared
+cause, and one remediation direction aimed at that cause or its canonical
+owner — plus an **affected-locations list** that names **every** known
+manifestation site (call path, caller, or occurrence), so the list is
+exhaustive for the sites the review found and none is hidden. On a
+consolidated finding the affected-locations list is required — a consolidated
+finding without it is not publishable — and it is rendered on every delivery
+surface, human-readable and structured alike, per
+[`../templates/finding.md`](../templates/finding.md), "Affected locations on
+a consolidated finding." The finding's canonical location is the shared
+cause; the affected-locations list carries the sites it reaches. An ordinary
+single-site finding never carries the field. `Evidence` may still walk
+through a representative subset of the sites; the affected-locations list is
+what preserves the complete known blast radius. Identity, severity, the
+evidence bar, and the mechanical decision derivation are unchanged — this is
+the blast-radius enumeration this pass already requires, given one stable
+place to record it.
+
+### Fail open toward separate findings
+
+Consolidation requires the shared cause to be positively established to the
+evidence standard above. When it is only plausible — the sites sit in
+different layers, share no element, each needs its own fix, and only a theme
+connects them — emit separate findings rather than over-merging. A false
+split is visible duplicate noise a reader can reconcile; an over-merge
+silently drops a distinct defect. When confidence is not there, split.
+
 ### Canonical owner and external dependencies
 
 Apply "Existing behavior ownership" above to the structural cause. When a
@@ -153,6 +212,30 @@ covers the related paths, not only the originally reported examples. A new
 symptom from the same unfixed mechanism reconciles to the same finding rather
 than receiving a renamed permutation; a materially different residual defect
 remains separate.
+
+Consolidation also reconciles in the other direction on re-review. When a
+prior review recorded several separate per-site findings and the current
+review independently establishes — to the root-cause evidence standard above
+— that they are manifestations of one shared cause, emit the single
+authoritative consolidated finding (a new finding identity), and carry every
+prior site and its evidence in the affected-locations list so nothing is
+lost. Do not also re-emit the per-site findings alongside it.
+
+How the prior per-site finding identities are then handled is owned by the
+repository's finding-identity and lifecycle model, not restated here, and
+this section never widens or weakens it:
+
+- ordinary many-to-one matching (several prior identities that merely appear
+  to map to one candidate) stays ambiguous — each prior identity and its
+  state are preserved, and consolidation is never inferred from that
+  topology or from wording similarity;
+- only a positively established shared cause folds the prior identities into
+  the consolidated finding (the lifecycle model's `CONSOLIDATED`
+  disposition). Even then nothing is treated as resolved — a folded identity
+  stays open until the consolidated finding itself is fixed — and every
+  folded site remains visible in the affected-locations list;
+- when the shared cause is not positively established, keep the findings
+  separate (the fail-open above).
 
 Repeated historical findings in one semantic area may trigger this pass as
 Existing Review Evidence, but they never widen the current Review Target and
