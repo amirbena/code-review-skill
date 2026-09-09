@@ -76,71 +76,80 @@ def _errored(case: bf.BenchmarkCase) -> br.CaseResult:
 
 # ── §7 worked examples, verbatim ───────────────────────────────────────
 
-# Each row: (name, produced findings, clusters, duplicate_clusters, redundant, rate)
+# Each row: (name, result_fn, clusters, duplicate_clusters, redundant, rate),
+# where result_fn(case) builds the runner CaseResult for that row — an
+# executed case with its produced findings, or the errored row 9.
+def _exec_row(*produced: br.ProducedFinding):
+    return lambda case: _executed(case, *produced)
+
+
 def _worked_examples():
     # 1 — two unrelated findings, no duplication
     yield (
         "1 no duplication",
-        [_pf("a.py", 40, defect_kind="command-injection"),
-         _pf("b.py", 88, defect_kind="path-traversal")],
+        _exec_row(_pf("a.py", 40, defect_kind="command-injection"),
+                  _pf("b.py", 88, defect_kind="path-traversal")),
         2, 0, 0, Fraction(0),
     )
 
     # 2 — one root cause reported twice
     yield (
         "2 reported twice",
-        [_pf("a.py", 40, defect_kind="command-injection"),
-         _pf("a.py", 40, defect_kind="command-injection")],
+        _exec_row(_pf("a.py", 40, defect_kind="command-injection"),
+                  _pf("a.py", 40, defect_kind="command-injection")),
         1, 1, 1, Fraction(1, 2),
     )
 
     # 3 — triple report of one root cause
     yield (
         "3 triple report",
-        [_pf("a.py", 40, defect_kind="sql-injection")] * 3,
+        _exec_row(*([_pf("a.py", 40, defect_kind="sql-injection")] * 3)),
         1, 1, 2, Fraction(2, 3),
     )
 
     # 4 — same line, genuinely different defects (EXACT + UNRELATED -> NO_MATCH)
     yield (
         "4 different defects same line",
-        [_pf("a.py", 40, defect_kind="command-injection"),
-         _pf("a.py", 40, defect_kind="resource-leak")],
+        _exec_row(_pf("a.py", 40, defect_kind="command-injection"),
+                  _pf("a.py", 40, defect_kind="resource-leak")),
         2, 0, 0, Fraction(0),
     )
 
     # 5 — same kind, different file (NONE location -> NO_MATCH)
     yield (
         "5 same kind different file",
-        [_pf("a.py", 40, defect_kind="sql-injection"),
-         _pf("b.py", 40, defect_kind="sql-injection")],
+        _exec_row(_pf("a.py", 40, defect_kind="sql-injection"),
+                  _pf("b.py", 40, defect_kind="sql-injection")),
         2, 0, 0, Fraction(0),
     )
 
     # 6 — claim-overlap CORRESPONDS with no defect_kind, within the +/-3 window
     yield (
         "6 claim overlap correspond",
-        [_pf("a.py", 40, claim="SQL injection in the user query builder"),
-         _pf("a.py", 41, claim="SQL injection in user query builder")],
+        _exec_row(_pf("a.py", 40, claim="SQL injection in the user query builder"),
+                  _pf("a.py", 41, claim="SQL injection in user query builder")),
         1, 1, 1, Fraction(1, 2),
     )
 
     # 7 — same location, only related claims (EXACT + RELATED -> NEAR_MISS)
     yield (
         "7 related claim near miss",
-        [_pf("a.py", 40, claim="cache invalidation race timing"),
-         _pf("a.py", 40, claim="cache invalidation missing lock")],
+        _exec_row(_pf("a.py", 40, claim="cache invalidation race timing"),
+                  _pf("a.py", 40, claim="cache invalidation missing lock")),
         2, 0, 0, Fraction(0),
     )
 
     # 8 — transitive chain: 40-43 and 43-46 are edges, 40-46 is not
     yield (
         "8 transitive chain",
-        [_pf("a.py", 40, defect_kind="resource-leak"),
-         _pf("a.py", 43, defect_kind="resource-leak"),
-         _pf("a.py", 46, defect_kind="resource-leak")],
+        _exec_row(_pf("a.py", 40, defect_kind="resource-leak"),
+                  _pf("a.py", 43, defect_kind="resource-leak"),
+                  _pf("a.py", 46, defect_kind="resource-leak")),
         1, 1, 2, Fraction(2, 3),
     )
+
+    # 9 — errored case: produced nothing, contributes nothing (rate null)
+    yield ("9 errored empty", _errored, 0, 0, 0, None)
 
 
 WORKED = list(_worked_examples())
@@ -149,48 +158,46 @@ WORKED = list(_worked_examples())
 class WorkedExampleTests(unittest.TestCase):
     def test_every_worked_example_counts_as_documented(self) -> None:
         case = _case()
-        for name, produced, clusters, dup_clusters, redundant, rate in WORKED:
+        for name, result_fn, clusters, dup_clusters, redundant, rate in WORKED:
             with self.subTest(row=name):
-                m = bdup.compute_case_duplicate_noise(case, _executed(case, *produced))
+                m = bdup.compute_case_duplicate_noise(case, result_fn(case))
                 self.assertEqual(
                     (m.clusters, m.duplicate_clusters, m.redundant_findings, m.duplicate_rate),
                     (clusters, dup_clusters, redundant, rate),
                     m.as_dict(),
                 )
 
-    def test_errored_row_9_contributes_nothing(self) -> None:
+    def test_errored_row_9_reports_errored_status(self) -> None:
         case = _case()
-        m = bdup.compute_case_duplicate_noise(case, _errored(case))
+        name, result_fn, *_ = WORKED[-1]
+        m = bdup.compute_case_duplicate_noise(case, result_fn(case))
         self.assertEqual(m.status, "errored")
-        self.assertEqual(
-            (m.produced, m.clusters, m.duplicate_clusters, m.redundant_findings),
-            (0, 0, 0, 0),
-        )
+        self.assertEqual(m.produced, 0)
         self.assertIsNone(m.duplicate_rate)
 
     def test_redundant_equals_produced_minus_clusters(self) -> None:
         case = _case()
-        for name, produced, *_ in WORKED:
+        for name, result_fn, *_ in WORKED:
             with self.subTest(row=name):
-                m = bdup.compute_case_duplicate_noise(case, _executed(case, *produced))
+                m = bdup.compute_case_duplicate_noise(case, result_fn(case))
                 self.assertEqual(m.redundant_findings, m.produced - m.clusters)
 
     def test_worked_examples_are_deterministic(self) -> None:
         case = _case()
         first = [
-            bdup.compute_case_duplicate_noise(case, _executed(case, *p)).as_dict()
-            for _, p, *_ in WORKED
+            bdup.compute_case_duplicate_noise(case, result_fn(case)).as_dict()
+            for _, result_fn, *_ in WORKED
         ]
         second = [
-            bdup.compute_case_duplicate_noise(case, _executed(case, *p)).as_dict()
-            for _, p, *_ in WORKED
+            bdup.compute_case_duplicate_noise(case, result_fn(case)).as_dict()
+            for _, result_fn, *_ in WORKED
         ]
         self.assertEqual(first, second)
 
     def test_cluster_members_are_recorded_for_duplicate_clusters_only(self) -> None:
         case = _case()
-        _, produced, *_ = WORKED[7]  # row 8: transitive chain {0,1,2}
-        m = bdup.compute_case_duplicate_noise(case, _executed(case, *produced))
+        _, result_fn, *_ = WORKED[7]  # row 8: transitive chain {0,1,2}
+        m = bdup.compute_case_duplicate_noise(case, result_fn(case))
         self.assertEqual(len(m.cluster_members), 1)
         self.assertEqual(m.cluster_members[0]["representative_index"], 0)
         self.assertEqual(m.cluster_members[0]["member_indices"], [0, 1, 2])
