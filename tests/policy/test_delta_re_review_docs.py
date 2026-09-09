@@ -25,7 +25,7 @@ class DeltaReReviewContractTests(unittest.TestCase):
             self.text,
         )
 
-    def test_all_change_classes_are_defined(self) -> None:
+    def test_all_six_change_classes_are_defined(self) -> None:
         for change_class in (
             "**Unchanged**",
             "**Fixed**",
@@ -33,32 +33,37 @@ class DeltaReReviewContractTests(unittest.TestCase):
             "**Reopened**",
             "**Newly introduced**",
             "**Ambiguous**",
-            "**Consolidated**",
         ):
             self.assertIn(change_class, self.raw)
+        # consolidation is NOT a seventh change class
+        self.assertIn("### Consolidation is not a change class", self.raw)
+        self.assertNotIn("**Consolidated**", self.raw)
 
-    def test_consolidated_class_is_reviewer_gated_and_maps_to_lifecycle_event(self) -> None:
-        text = self.text
-        self.assertIn(
-            "The current review's root-cause pass positively establishes", text
+    def test_consolidation_is_a_lifecycle_disposition_not_a_change_class(self) -> None:
+        section = " ".join(
+            self.raw.split("### Consolidation is not a change class", 1)[1]
+            .split("## 3.", 1)[0]
+            .split()
         )
-        self.assertIn("`CONSOLIDATED` (#62 §4)", text)
-        self.assertIn("each folded prior identity stays `OPEN`", text)
-        self.assertIn("nothing is resolved", text)
+        self.assertIn("does **not** add a seventh change class", section)
         self.assertIn(
-            "The `N→1` matching topology, descriptor similarity, or a bare "
-            "`AMBIGUOUS` never suffice.",
-            text,
+            "this contract's classifier still calls that **`Ambiguous`**", section
         )
-        self.assertIn("Absent the positive establishment, `Ambiguous` governs.", text)
-        # not counted toward the escalation "matching broadly unreliable" trigger
+        self.assertIn("split/collapse is a #59 disqualifier, unchanged", section)
+        # default vs positively-established
+        self.assertIn("`Ambiguous` → `UNCERTAIN`, every prior identity and its state", section)
         self.assertIn(
-            "A `Consolidated` outcome is a *confident* determination, not an "
-            "ambiguity, and does not count toward this trigger.",
-            text,
+            "Consolidation is never inferred from the `N→1` matching topology of "
+            "the prior finding set, from descriptor similarity, or from a bare "
+            "`AMBIGUOUS` result.",
+            section,
         )
+        self.assertIn("prior identities receive #62's **`CONSOLIDATED`** disposition", section)
+        self.assertIn("each still `OPEN` — consolidation resolves nothing", section)
+        self.assertIn("The classifier is unchanged", section)
         # §8: reviewer-established consolidation is not the matcher's collapse
         self.assertIn("Reviewer-established consolidation ≠ matcher collapse", self.raw)
+        self.assertIn("`CONSOLIDATED` (#62 §4) is not a change class", self.raw)
 
     def test_change_classes_map_to_lifecycle_events(self) -> None:
         for event in ("`RESOLVED`", "`STILL_PRESENT`", "`REOPENED`", "`DETECTED`", "`UNCERTAIN`"):

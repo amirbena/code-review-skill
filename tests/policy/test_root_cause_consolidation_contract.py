@@ -74,18 +74,24 @@ class OrdinaryManyToOneStillAmbiguousTests(unittest.TestCase):
 
     def test_delta_and_stateful_keep_ambiguous_as_the_default(self) -> None:
         d = _norm(DELTA)
+        # consolidation is explicitly NOT a seventh #64 change class; the
+        # collapse still classifies as Ambiguous
+        self.assertIn("### Consolidation is not a change class", d)
+        self.assertIn("does **not** add a seventh change class", d)
         self.assertIn(
-            "It is a\nmany-to-one relationship that does **not** stay `Ambiguous` "
-            "only because\nthe reviewer positively established one shared cause — "
-            "never because\nthe prior finding set has an `N→1` shape.".replace(
-                "\n", " "
-            ),
-            d,
+            "this contract's classifier still calls that **`Ambiguous`**", d
         )
+        self.assertIn("The classifier is unchanged", d)
+        self.assertNotIn("**Consolidated**", d)  # no peer change-class row
         s = _norm(STATEFUL)
         self.assertIn("`AMBIGUOUS` for the relationship under consideration | "
                       "Ambiguous | `UNCERTAIN`, prior state preserved", s)
         self.assertIn("`AMBIGUOUS` never becomes a confident transition", s)
+        # §1 still says six change classes and §3 stays consistent with it
+        self.assertIn("the six change classes", s)
+        self.assertIn(
+            "Ambiguous (still — collapse is a #59 disqualifier)", s
+        )
 
 
 class ConsolidatedDispositionDefinedInEveryOwnerTests(unittest.TestCase):
@@ -101,16 +107,24 @@ class ConsolidatedDispositionDefinedInEveryOwnerTests(unittest.TestCase):
             n = _norm(path)
             self.assertIn("review-scope.md", n, path.name)
             self.assertIn("root-cause evidence", n, path.name)
+            names_the_shape = (
+                "N→1" in n or "N->1" in n or "many-to-one" in n or "collapse" in n
+            )
+            says_shape_is_insufficient = (
+                "topology" in n
+                or "shape of the prior finding set" in n
+                or "never trigger it" in n
+                or "never suffice" in n
+                or "each insufficient on their own" in n
+            )
             self.assertTrue(
-                ("N→1" in n or "N->1" in n or "many-to-one" in n)
-                and "topology" in n,
-                f"{path.name}: must say topology alone never triggers it",
+                names_the_shape and says_shape_is_insufficient,
+                f"{path.name}: must say the N→1 shape alone never triggers it",
             )
 
     def test_consolidation_resolves_nothing(self) -> None:
         self.assertIn("consolidation resolves nothing", _norm(LIFECYCLE))
-        self.assertIn("each folded prior identity stays `OPEN`", _norm(DELTA))
-        self.assertIn("nothing is resolved", _norm(DELTA))
+        self.assertIn("each still `OPEN` — consolidation resolves nothing", _norm(DELTA))
         self.assertIn("each folded prior identity stays `OPEN`", _norm(STATEFUL))
         self.assertIn("nothing resolved", _norm(STATEFUL))
         self.assertIn(

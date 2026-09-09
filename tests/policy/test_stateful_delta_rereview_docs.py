@@ -84,21 +84,35 @@ class StatefulDeltaRereviewPolicyTests(unittest.TestCase):
         section = " ".join(
             self.raw.split("## 3. Reconciliation", 1)[1].split("## 4.", 1)[0].split()
         )
-        # a row in the §3 step-3 table maps the consolidation case
-        self.assertIn("| Consolidated |", section)
-        self.assertIn("`CONSOLIDATED` (#62 §4)", section)
-        self.assertIn("each folded prior identity stays `OPEN`", section)
+        # the §3 step-3 table row for the consolidation case classifies as
+        # Ambiguous (NOT a seventh change class) with a CONSOLIDATED event
+        self.assertIn("`AMBIGUOUS` `N→1` collapse", section)
+        self.assertIn(
+            "Ambiguous (still — collapse is a #59 disqualifier)", section
+        )
+        self.assertIn(
+            "`CONSOLIDATED` (#62 §4), not a seventh change class: each folded "
+            "prior identity stays `OPEN`",
+            section,
+        )
         self.assertIn("nothing resolved", section)
+        # §1 still says "six change classes" and must stay consistent
+        self.assertIn(
+            "the six change classes", " ".join(self.raw.split())
+        )
         # step 4 bullet: never inferred from AMBIGUOUS / topology
-        self.assertIn("`Consolidated` is never an inference from `AMBIGUOUS`", section)
+        self.assertIn("Consolidation is never an inference from `AMBIGUOUS`", section)
+        self.assertIn(
+            "A many-to-one collapse still classifies as `Ambiguous` (it is not a "
+            "seventh change class)",
+            section,
+        )
         self.assertIn(
             "The `N→1` shape of the prior finding set, similar wording, and a "
             "low-confidence hunch never trigger it.",
             section,
         )
         self.assertIn("A `CONSOLIDATED` prior identity is `OPEN`, not resolved", section)
-        # the matcher outcome for the topology is still AMBIGUOUS
-        self.assertIn("`AMBIGUOUS` `N→1` topology", section)
 
     def test_blast_radius_is_evidence_based_and_bounded(self) -> None:
         section = self.raw.split("## 4. Blast radius", 1)[1].split("## 5.", 1)[0]

@@ -160,7 +160,7 @@ candidate observation:
    | Prior `RESOLVED` identity, recurrence-candidate evidence, `MATCH` under the #62 §6 recurrence exception | Reopened | `REOPENED`, becomes `OPEN` |
    | No `MATCH` to any prior identity, independently meets the finding evidence bar | Newly introduced | `DETECTED` |
    | `AMBIGUOUS` for the relationship under consideration | Ambiguous | `UNCERTAIN`, prior state preserved |
-   | `AMBIGUOUS` `N→1` topology, **and** this pass's root-cause reasoning ([`../../../shared/policies/review-scope.md`](../../../shared/policies/review-scope.md), "The authoritative consolidated finding") positively establishes several prior per-site identities as manifestations of one shared defect | Consolidated | `CONSOLIDATED` (#62 §4): each folded prior identity stays `OPEN`, represented by the one consolidated finding (a fresh identity); nothing resolved |
+   | `AMBIGUOUS` `N→1` collapse, **and** this pass's root-cause reasoning ([`../../../shared/policies/review-scope.md`](../../../shared/policies/review-scope.md), "The authoritative consolidated finding") positively establishes several prior per-site identities as manifestations of one shared defect | Ambiguous (still — collapse is a #59 disqualifier) | `CONSOLIDATED` (#62 §4), not a seventh change class: each folded prior identity stays `OPEN`, represented by the one consolidated finding (a fresh identity); nothing resolved |
 
 4. **Apply the #62 transition**, never a shortcut around its evidence
    bars. In particular:
@@ -182,18 +182,21 @@ candidate observation:
      prior finding not visible in the literal changed lines is
      `Unchanged`, not `Fixed`, unless the #62 §5 resolution bar is
      actually met (#64 §2, "Unchanged" notes).
-   - **`Consolidated` is never an inference from `AMBIGUOUS`.** A
-     many-to-one relationship stays `Ambiguous`/`UNCERTAIN` with every
+   - **Consolidation is never an inference from `AMBIGUOUS`.** A
+     many-to-one collapse still classifies as `Ambiguous` (it is not a
+     seventh change class); it stays `Ambiguous`/`UNCERTAIN` with every
      prior identity and state preserved unless this pass *independently*
      meets the root-cause evidence bar in
      [`../../../shared/policies/review-scope.md`](../../../shared/policies/review-scope.md)
-     and ties each prior identity's defect to one shared cause. The `N→1`
-     shape of the prior finding set, similar wording, and a low-confidence
-     hunch never trigger it. A `CONSOLIDATED` prior identity is `OPEN`,
-     not resolved; its per-site finding folds into the consolidated
-     finding's affected-locations list, and it resolves only if and when
-     that consolidated finding later meets the full #62 §5 bar — a bare
-     `CONSOLIDATED` event never resolves it.
+     and ties each prior identity's defect to one shared cause, in which
+     case #62's `CONSOLIDATED` disposition applies on top of that
+     `Ambiguous` classification. The `N→1` shape of the prior finding
+     set, similar wording, and a low-confidence hunch never trigger it. A
+     `CONSOLIDATED` prior identity is `OPEN`, not resolved; its per-site
+     finding folds into the consolidated finding's affected-locations
+     list, and it resolves only if and when that consolidated finding
+     later meets the full #62 §5 bar — a bare `CONSOLIDATED` event never
+     resolves it.
 
 ## 4. Blast radius and regressions
 
