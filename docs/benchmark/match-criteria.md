@@ -262,7 +262,7 @@ the **entry outcome** is `MATCH`.
 |---|---|
 | False-negative / false-positive counts, precision/recall, per-case and aggregate quality metrics, the produced↔expected set-pairing resolution | [#55](https://github.com/amirbena/code-review-skill/issues/55) |
 | Severity accuracy over the matched set (over- vs under-severity, exact-match rate) | [#56](https://github.com/amirbena/code-review-skill/issues/56) |
-| Duplicate / same-root-cause clustering and the noise metric | [#57](https://github.com/amirbena/code-review-skill/issues/57) |
+| Duplicate / same-root-cause clustering and the noise metric | [#57](https://github.com/amirbena/code-review-skill/issues/57) — [`duplicate-noise.md`](duplicate-noise.md) |
 | A single blended quality score or a merge gate | out of scope for [#41](https://github.com/amirbena/code-review-skill/issues/41) by its Non-Goals |
 | The cross-revision stable finding identity mechanism (produced-vs-earlier-produced) | [#42](https://github.com/amirbena/code-review-skill/issues/42) / [#59](https://github.com/amirbena/code-review-skill/issues/59) |
 | The fixture format (`location`, `claim`, `defect_kind`, variance constructs) and the corpus | [#50](https://github.com/amirbena/code-review-skill/issues/50) / [#51](https://github.com/amirbena/code-review-skill/issues/51) |

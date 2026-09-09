@@ -22,6 +22,7 @@ concern lives in the file named for it.
 | [`match-criteria.md`](match-criteria.md) | When a produced review finding matches an expected benchmark finding — the two match axes (location, defect), the three-valued `MATCH` / `NEAR_MISS` / `NO_MATCH` result, the fixed tolerances, and how `alternatives` / `any_of` / `match: optional` resolve. The pairing relation the [#41](https://github.com/amirbena/code-review-skill/issues/41) quality metrics are built on. | [#54](https://github.com/amirbena/code-review-skill/issues/54) |
 | [`missed-and-incorrect-findings.md`](missed-and-incorrect-findings.md) | Turning match results into **missed-finding (false-negative)** and **incorrect-finding (false-positive)** counts — the deterministic produced↔expected one-to-one pairing (`MATCH` edges only, fixture document order), the per-case and aggregate counts, how `match: optional` / `any_of` / `findings_completeness` change the accounting, and how the counts render alongside the regression report's deltas without gating it. | [#55](https://github.com/amirbena/code-review-skill/issues/55) |
 | [`severity-accuracy.md`](severity-accuracy.md) | Measuring, over the #55 matched set, how often a matched finding carries a permitted expected severity — the **exact** / **over-severity** / **under-severity** classification on the P0 > P1 > P2 ordinal, the `severity`-list and `any_of` member resolution, the per-case and aggregate counts with a single exact-rational exact-match rate, and how they render alongside the regression report's deltas without gating it. | [#56](https://github.com/amirbena/code-review-skill/issues/56) |
+| [`duplicate-noise.md`](duplicate-noise.md) | Measuring duplicate / same-root-cause noise over a case's **produced findings alone** — the same-root-cause edge (the #54 `MATCH` cell applied to a pair of produced findings, unchanged), connected-component clustering, the redundant-finding count and its exact-rational duplicate rate per case and in aggregate, the highest-noise-cases list, and how they render alongside the regression report's deltas without gating it. | [#57](https://github.com/amirbena/code-review-skill/issues/57) |
 
 The first four documents cover the whole epic-[#40](https://github.com/amirbena/code-review-skill/issues/40)
 benchmark surface; [`match-criteria.md`](match-criteria.md) ([#54](https://github.com/amirbena/code-review-skill/issues/54))
@@ -33,7 +34,10 @@ first of those metrics — the false-negative / false-positive counts — and
 [`severity-accuracy.md`](severity-accuracy.md)
 ([#56](https://github.com/amirbena/code-review-skill/issues/56)) is the
 second — the exact / over-severity / under-severity split over the matched
-set. The corpus and its case-selection rationale
+set — and [`duplicate-noise.md`](duplicate-noise.md)
+([#57](https://github.com/amirbena/code-review-skill/issues/57)) is the
+third — the same-root-cause clustering of produced findings and the
+redundant-finding count. The corpus and its case-selection rationale
 ([#51](https://github.com/amirbena/code-review-skill/issues/51)) live in
 [`corpus/`](corpus/README.md); the runner contract
 ([#52](https://github.com/amirbena/code-review-skill/issues/52)) is
@@ -151,6 +155,29 @@ mirrors it (executed by
 [`../../tests/unit/test_benchmark_severity.py`](../../tests/unit/test_benchmark_severity.py),
 including every §7 worked example) and consumes the single reference
 pairing and matcher.
+
+## Duplicate noise
+
+[`duplicate-noise.md`](duplicate-noise.md) (#57) is the third #41 quality
+metric. Over a case's **produced findings alone** — no expected finding,
+no #55 pairing — it takes every unordered pair of produced findings,
+calls it a same-root-cause edge exactly when the #54 relation is `MATCH`
+(location EXACT and defect CORRESPONDS, the matcher applied verbatim in
+either direction), and groups the findings into **connected components**.
+A cluster of `k` findings contributes `k − 1` redundant findings; the
+per-case and aggregate records carry the cluster and redundant-finding
+counts plus an exact-rational duplicate **rate** (`null` when the case
+produced nothing), and the report section adds a `highest_noise_cases`
+list ranked by redundant findings. It renders **alongside** the regression
+report's per-case deltas without ever changing `has_regressions`, defines
+no second match relation, adds no axis or tolerance, and specifies no
+de-duplication behaviour for the reviewer itself (a #57 non-goal). The
+test-only reference metric
+[`../../tests/reference/benchmark_dupes.py`](../../tests/reference/benchmark_dupes.py)
+mirrors it (executed by
+[`../../tests/unit/test_benchmark_dupes.py`](../../tests/unit/test_benchmark_dupes.py),
+including every §7 worked example) and consumes the single reference
+matcher.
 
 ## Related
 
