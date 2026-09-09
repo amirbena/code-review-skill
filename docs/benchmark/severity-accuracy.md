@@ -251,7 +251,7 @@ accordingly.
 |---|---|
 | The produced↔expected pairing, and the missed-finding / incorrect-finding counts it feeds | [#55](https://github.com/amirbena/code-review-skill/issues/55) — [`missed-and-incorrect-findings.md`](missed-and-incorrect-findings.md) |
 | The produced-vs-expected `MATCH` / `NEAR_MISS` / `NO_MATCH` relation, its axes and tolerances | [#54](https://github.com/amirbena/code-review-skill/issues/54) — [`match-criteria.md`](match-criteria.md) |
-| Duplicate / same-root-cause clustering and the noise metric | [#57](https://github.com/amirbena/code-review-skill/issues/57) |
+| Duplicate / same-root-cause clustering and the noise metric | [#57](https://github.com/amirbena/code-review-skill/issues/57) — [`duplicate-noise.md`](duplicate-noise.md) |
 | A single blended quality score, precision / recall / pass rate, or a merge gate | out of scope for [#41](https://github.com/amirbena/code-review-skill/issues/41) by its Non-Goals |
 | The run-to-run diff itself (`dropped` / `gained` / `retained`, the severity-rise regression rule) | [#53](https://github.com/amirbena/code-review-skill/issues/53) — [`regression-report.md`](regression-report.md) |
 | The fixture format, the `severity` list construct, and the corpus | [#50](https://github.com/amirbena/code-review-skill/issues/50) / [#51](https://github.com/amirbena/code-review-skill/issues/51) |

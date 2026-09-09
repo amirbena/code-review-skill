@@ -374,8 +374,17 @@ These contracts share the [`findings/`](findings/README.md) directory.
   P0 > P1 > P2 ordinal, with a single exact-rational exact-match rate and
   the same render-alongside-without-gating rule — is
   [`benchmark/severity-accuracy.md`](benchmark/severity-accuracy.md), with a
-  test-only reference metric (`tests/reference/benchmark_severity.py`);
-  duplicate noise is still a separate later concern.
+  test-only reference metric (`tests/reference/benchmark_severity.py`). The
+  third — measuring duplicate / same-root-cause noise over a case's
+  **produced findings alone**, by treating a produced-finding pair as a
+  same-root-cause edge exactly when the #54 relation is `MATCH`, grouping
+  the findings into connected components, and counting the redundant
+  findings (each cluster beyond its first) per case and in aggregate with a
+  single exact-rational duplicate rate and a highest-noise-cases list, on
+  the same render-alongside-without-gating rule — is
+  [`benchmark/duplicate-noise.md`](benchmark/duplicate-noise.md), with a
+  test-only reference metric (`tests/reference/benchmark_dupes.py`); it
+  defines no de-duplication behaviour for the reviewer itself.
   Repository-development docs in the
   [`benchmark/`](benchmark/README.md) directory; nothing benchmark is
   packaged.

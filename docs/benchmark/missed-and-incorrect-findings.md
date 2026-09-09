@@ -319,7 +319,7 @@ close.
 |---|---|
 | The produced-vs-expected `MATCH` / `NEAR_MISS` / `NO_MATCH` relation, its axes and tolerances | [#54](https://github.com/amirbena/code-review-skill/issues/54) — [`match-criteria.md`](match-criteria.md) |
 | Severity accuracy over the paired set (over- vs under-severity, exact-severity rate) | [#56](https://github.com/amirbena/code-review-skill/issues/56) |
-| Duplicate / same-root-cause clustering and the noise metric | [#57](https://github.com/amirbena/code-review-skill/issues/57) |
+| Duplicate / same-root-cause clustering and the noise metric | [#57](https://github.com/amirbena/code-review-skill/issues/57) — [`duplicate-noise.md`](duplicate-noise.md) |
 | A single blended quality score, precision / recall / pass rate, or a merge gate | out of scope for [#41](https://github.com/amirbena/code-review-skill/issues/41) by its Non-Goals |
 | The run-to-run diff itself (`dropped` / `gained` / `retained`, regression vs improvement) | [#53](https://github.com/amirbena/code-review-skill/issues/53) — [`regression-report.md`](regression-report.md) |
 | The fixture format, the variance constructs, and the corpus | [#50](https://github.com/amirbena/code-review-skill/issues/50) / [#51](https://github.com/amirbena/code-review-skill/issues/51) |
