@@ -62,6 +62,17 @@ human-facing review a machine-only format.
   of the problem, when that differs from the resolved fix/action
   location. Rendered only when it adds information (see "Optional and
   surface-specific fields");
+- **affected locations** — required on a **consolidated root-cause
+  finding** (one finding standing in for one shared defect-bearing element
+  that reaches multiple sites, per
+  [`../policies/review-scope.md`](../policies/review-scope.md), "Shared
+  root cause versus independent findings"): a list naming every
+  manifestation site the shared cause reaches — call path, caller, or
+  occurrence — each with a one-line note. It never replaces `location`,
+  which stays the shared cause / fix-action location; it enumerates the
+  blast radius so no affected site is hidden. Absent on an ordinary
+  single-site finding (see "Affected locations on a consolidated
+  finding");
 - **evidence** — the concrete implementation behavior supporting the
   finding, per [`../policies/evidence.md`](../policies/evidence.md) — not
   speculation;
@@ -109,6 +120,31 @@ location is never labeled or consumed as a resolved fix/action location
 merely because nothing better was found. The rendered finding always
 makes clear what is known, what is unresolved, and what evidence supports
 it.
+
+## Affected locations on a consolidated finding
+
+A **consolidated root-cause finding** represents one shared defect-bearing
+element whose single incorrectness reaches several sites (see
+[`../policies/review-scope.md`](../policies/review-scope.md), "The
+authoritative consolidated finding"). It keeps the normal single `id`,
+severity, evidence, and fix; its `location` is the shared cause. It
+additionally carries an **affected locations** list:
+
+- every manifestation site is named — call path, caller, or occurrence —
+  with a short note on how the shared cause reaches it;
+- the list is rendered on **every** surface that renders the finding — the
+  full rendering, the GitHub inline surface, the human inline voice, and
+  the summary-pointer form — so an affected site is never dropped from a
+  human-readable or a structured projection;
+- it does not change the finding's identity, severity, evidence bar,
+  canonical `location`, or the mechanical decision derivation. It is the
+  blast-radius enumeration the root-cause pass already requires, given one
+  stable field.
+
+An ordinary finding that names a single site does not get this field, and
+the field is never used to pack unrelated findings into one entry — that is
+the over-merge "Fail open toward separate findings" in
+[`../policies/review-scope.md`](../policies/review-scope.md) forbids.
 
 ## Finding quality contract
 
@@ -185,6 +221,11 @@ after it, no `Details:` heading with boilerplate under it.
   explanation is justified" above. Visibility follows
   [`../policies/invocation-options.md`](../policies/invocation-options.md),
   "Finding-detail precedence"; absent when not populated or not selected;
+- **affected locations** — the manifestation-site list of a consolidated
+  root-cause finding (see "Affected locations on a consolidated finding").
+  Present only on such a finding; when present it renders on every
+  surface, unlike the other entries here it is not suppressed on the
+  inline surface — it is folded into the prose there;
 - **source annotation on `location`** — a Skill may append a short
   parenthetical after the location value when it has its own concept that
   classifies *where the finding's evidence came from* within that Skill's
@@ -262,6 +303,22 @@ location, publication"):
 - **Location:** `<observed path>:<line-or-range>` _(evidence location; fix/action location unresolved)_
 ```
 
+A **consolidated root-cause finding** adds an `Affected locations` list
+directly after `Location` (see "Affected locations on a consolidated
+finding"); `Location` is the shared cause:
+
+```markdown
+### <id> [<severity>] <short, concrete title>
+
+- **Location:** `<shared-cause path>:<line-or-range>`
+- **Affected locations:**
+  - `<path>:<line-or-range>` — <how the shared cause reaches this site>
+  - `<path>:<line-or-range>` — <how the shared cause reaches this site>
+- **Evidence:** <the shared cause, concise>
+- **Impact:** <combined engineering consequence across the affected sites>
+- **Fix:** <one correction direction at the shared cause / canonical owner>
+```
+
 ### Location source annotation
 
 When a Skill appends its source-state classification, it goes after the
@@ -318,6 +375,12 @@ comment there (see "Fix/action location, evidence location, publication",
 and each Skill's placement policy). When the evidence was observed
 elsewhere, name that evidence/source location inside the `Evidence:`
 prose — there is no separate `Evidence location:` line on this surface.
+
+For a **consolidated root-cause finding**, name the affected call paths
+inside the prose — the `Evidence:` block, or a short `Affected call paths:`
+list after `Fix:` — so no manifestation site is dropped on this surface.
+The anchor stays the shared cause (see "Affected locations on a
+consolidated finding").
 
 ## Canonical human inline rendering
 
@@ -379,7 +442,9 @@ Rules — this is a re-voicing, not a weaker finding:
   structured and human inline are two renderings of one semantic
   finding, and the choice of rendering never moves the comment off the
   canonical fix/action location or into the review body (that is decided
-  only by each Skill's placement policy, independent of voice).
+  only by each Skill's placement policy, independent of voice);
+- a **consolidated root-cause finding** still names every affected call
+  path in the prose — the re-voicing never drops a manifestation site.
 
 ## Canonical summary-pointer rendering
 
@@ -392,6 +457,15 @@ unresolved annotation when the fix/action location is unresolved):
 ```markdown
 - **<severity> — <short title>**
   `<path>:<line-or-range>`
+```
+
+For a **consolidated root-cause finding** the pointer adds a one-line
+affected-locations count or list so the reader still sees the finding
+reaches several sites:
+
+```markdown
+- **<severity> — <short title>**
+  `<shared-cause path>:<line-or-range>` — affects `<path:line>`, `<path:line>`, …
 ```
 
 ## Rules
@@ -413,6 +487,10 @@ unresolved annotation when the fix/action location is unresolved):
   "Canonical human inline rendering");
 - optional fields render only when populated — never as an empty or
   placeholder line (see "Optional and surface-specific fields");
+- a **consolidated root-cause finding** additionally carries an **affected
+  locations** list naming every manifestation site the shared cause
+  reaches; it is rendered on every surface and never replaces `location`
+  (see "Affected locations on a consolidated finding");
 - evidence-based — no generic "this could be improved" without a
   concrete basis;
 - impact is explicit and distinct from the title — it explains

@@ -621,6 +621,7 @@ def validate(skill_root: Path, containment_root: Path) -> None:
             "## Canonical full rendering",
             "## Canonical human inline rendering",
             "## Canonical summary-pointer rendering",
+            "## Affected locations on a consolidated finding",
             "one authoritative full representation",
         ),
         "shared finding template",

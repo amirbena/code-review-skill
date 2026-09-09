@@ -193,6 +193,41 @@ alone, or from file + line alone: the first fails scenarios 1, 2, and 4
 above; the second fails scenario 3 above and scenarios 1–5 in §2. Identity
 is derived from *the defect in its program element*.
 
+### Shared root cause versus repeated independent pattern
+
+Scenario 3.2 ("a different semantic location / program element") and
+root-cause **consolidation**
+([`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md),
+"Shared root cause versus independent findings") draw the same line from
+opposite sides, and MUST stay consistent:
+
+- **One shared defect-bearing element reaching many sites** — a single
+  validator, helper, query, config value, or invariant whose one
+  incorrectness propagates to multiple call paths, and which **one fix
+  resolves everywhere** — is **one finding**. Its identity is that element
+  and its defect (§1, §2: identity follows the defect, not each call site).
+  The reached call paths are that finding's blast radius, carried in the
+  rendered **affected locations** list
+  ([`../../shared/templates/finding.md`](../../shared/templates/finding.md),
+  "Affected locations on a consolidated finding"), not as separate
+  identities.
+- **The same pattern independently re-implemented at N sites** — each site
+  its own defective code, each needing its own fix — is **N findings**, one
+  per site (§3.2). No shared element, no consolidation.
+
+Consolidation is therefore **not** a §6 collision: §6 forbids two
+*materially distinct* defects sharing one identity, whereas a consolidated
+finding is one defect observed at several reachable sites. It is likewise
+**not** a lifecycle many-to-one collapse of distinct identities — it applies
+only when the review positively establishes the single shared cause to the
+root-cause evidence bar in `review-scope.md`. When that confidence is
+absent, §6 and §7 govern unchanged: resolve toward distinct identities and
+emit separate findings. On a re-review, prior separate per-site findings for
+what is in fact one shared cause reconcile to the single consolidated
+identity because they describe the same underlying defect (§1); every prior
+site stays visible in the affected locations list, so nothing is silently
+dropped or merged.
+
 ---
 
 ## 4. Inputs available at review time

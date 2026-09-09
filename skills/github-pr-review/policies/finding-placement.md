@@ -21,7 +21,15 @@ finding's placement:
   architectural/systemic, concerns missing behavior with no natural
   changed-line anchor, the relevant location falls outside the changed
   diff, GitHub cannot attach a comment there, the finding concerns review
-  completeness itself, or forcing an inline location would mislead.
+  completeness itself, or forcing an inline location would mislead. A
+  **consolidated root-cause finding** (one shared cause reaching multiple
+  call paths, per
+  [`../../../shared/policies/review-scope.md`](../../../shared/policies/review-scope.md),
+  "The authoritative consolidated finding") is placed here with its
+  affected-locations list — one finding, not one inline comment per
+  affected call path. An optional short, non-authoritative inline pointer
+  at the shared cause is allowed on the same terms as the other body
+  cases below.
   Rendered with the full-finding form in
   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md)
   inside [`../templates/external-review-summary.md`](../templates/external-review-summary.md).

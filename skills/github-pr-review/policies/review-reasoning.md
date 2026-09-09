@@ -34,9 +34,16 @@ invariant are prescribed here.
 When related candidate findings indicate one shared mechanism, apply
 [`review-scope.md`](../../../shared/policies/review-scope.md), "Root-cause and
 model-completeness pass," before finalizing findings. That shared section owns
-the trigger, structural-vs-separate finding rule, model-completeness questions,
-canonical-owner and external-package guidance, evidence requirements, and
-re-review behavior; this PR-specific policy does not restate them.
+the trigger, structural-vs-separate finding rule (including consolidating one
+shared cause into a single authoritative finding with an affected-locations
+list, and the fail-open to separate findings when the shared cause is not
+established), model-completeness questions, canonical-owner and
+external-package guidance, evidence requirements, and re-review behavior
+(including reconciling prior separate per-site findings to the consolidated
+one); this PR-specific policy does not restate them. A consolidated
+cross-path finding is placed per
+[`finding-placement.md`](finding-placement.md), not split into one inline
+comment per affected call path.
 
 ## Architectural Placement Review
 

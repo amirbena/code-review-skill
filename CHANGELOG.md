@@ -13,8 +13,22 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- The shared root-cause review pass now defines **finding
+  consolidation**: when one shared defect-bearing element (a validator,
+  helper, config value, invariant) reaches multiple call paths, both
+  Skills emit a single authoritative finding — one identity, one
+  severity, one fix direction — with an **affected-locations list**
+  naming every manifestation site, rendered on every human-readable and
+  structured surface. Detection fails open: when the shared cause is not
+  positively established, separate findings are emitted rather than
+  over-merged. On a re-review, a consolidated finding reconciles with —
+  and supersedes — prior separate per-site findings for the same cause.
+  Criteria with worked examples, the authoritative-finding shape, and the
+  identity/lifecycle reconciliation are in
+  `shared/policies/review-scope.md`, `shared/templates/finding.md`, and
+  `docs/findings/finding-identity-requirements.md`.
 
 ## v1.8.1 — 2026-09-09
 

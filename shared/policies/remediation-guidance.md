@@ -26,6 +26,10 @@ location") remains its canonical owner.
 The root-cause and model-completeness rules in
 [`review-scope.md`](review-scope.md) govern grouping: one structural finding
 gets one coherent remediation direction, not one instruction per manifestation.
+The direction targets the shared cause or its canonical owner; the
+manifestation sites are enumerated in the finding's affected-locations list
+([`../templates/finding.md`](../templates/finding.md), "Affected locations on
+a consolidated finding"), not repeated as separate directions.
 
 For an external package, distinguish local misuse from an upstream defect. Fix
 local misuse locally. Recommend an upgrade only when a fixed version or range is

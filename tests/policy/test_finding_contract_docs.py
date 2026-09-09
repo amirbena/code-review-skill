@@ -200,6 +200,56 @@ class SharedFindingContractTests(unittest.TestCase):
         # id/location dropped only on the GitHub inline surface
         self.assertIn("omitted on a GitHub inline comment", self.norm)
 
+    def test_consolidated_finding_carries_an_affected_locations_field(self) -> None:
+        # Issue #177: one shared cause reaching many sites -> one finding
+        # plus an enumerated affected-locations list.
+        self.assertIn("affected locations", self.norm)
+        self.assertIn("required on a consolidated root-cause finding", self.norm)
+        self.assertIn("It never replaces location", self.norm)
+        self.assertIn(
+            "## Affected locations on a consolidated finding", self.text
+        )
+        section = re.search(
+            r"## Affected locations on a consolidated finding\n(.*?)\n## ",
+            self.text,
+            re.S,
+        )
+        self.assertIsNotNone(section)
+        body = _norm(section.group(1))
+        self.assertIn(
+            "keeps the normal single id, severity, evidence, and fix", body
+        )
+        self.assertIn(
+            "rendered on every surface that renders the finding", body
+        )
+        self.assertIn(
+            "does not change the finding's identity, severity, evidence bar, "
+            "canonical location",
+            body,
+        )
+        self.assertIn(
+            "never used to pack unrelated findings into one entry", body
+        )
+
+    def test_full_rendering_has_a_consolidated_variant_with_affected_locations(self) -> None:
+        block = re.search(
+            r"## Canonical full rendering\n(.*?)\n## ", self.text, re.S
+        )
+        self.assertIsNotNone(block)
+        body = block.group(1)
+        self.assertIn("**Affected locations:**", body)
+        variant = next(
+            b
+            for b in re.findall(r"```markdown\n(.*?)\n```", body, re.S)
+            if "**Affected locations:**" in b
+        )
+        self.assertLess(
+            variant.index("- **Location:**"), variant.index("**Affected locations:**")
+        )
+        self.assertLess(
+            variant.index("**Affected locations:**"), variant.index("**Evidence:**")
+        )
+
     def test_inline_rendering_drops_id_and_location(self) -> None:
         block = re.search(
             r"## Canonical inline rendering\n(.*?)\n## ", self.text, re.S

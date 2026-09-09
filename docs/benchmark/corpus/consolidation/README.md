@@ -5,8 +5,14 @@ Repository-development artifact for GitHub Issue
 capability: [#177](https://github.com/amirbena/code-review-skill/issues/177)
 (root-cause finding consolidation). This is a **focused sub-corpus** of
 [`benchmark-case/v1`](../../fixture-format.md) fixtures that pin the
-expected consolidation classifications *before* the reviewer logic in #177
-exists, and keep it from regressing afterwards.
+expected consolidation classifications for the #177 reviewer behavior —
+now defined in
+[`../../../../shared/policies/review-scope.md`](../../../../shared/policies/review-scope.md)
+("Shared root cause versus independent findings", "The authoritative
+consolidated finding", "Fail open toward separate findings") and
+[`../../../../shared/templates/finding.md`](../../../../shared/templates/finding.md)
+("Affected locations on a consolidated finding") — and keep it from
+regressing.
 
 Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
