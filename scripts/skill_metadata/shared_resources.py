@@ -36,10 +36,10 @@ def check_shared_resources(skill_root: Path, containment_root: Path) -> None:
     reviewability = containment_root / "shared" / "policies" / "file-reviewability.md"
     if not reviewability.is_file():
         raise SystemExit("error: Skill package missing shared file-reviewability policy")
-    skill_text = (skill_root / "SKILL.md").read_text(encoding="utf-8")
-    if "file-reviewability.md" not in skill_text:
+    skill_md = skill_root / "SKILL.md"
+    if "file-reviewability.md" not in skill_md.read_text(encoding="utf-8"):
         raise SystemExit(
-            f"error: {skill_root / 'SKILL.md'} does not reference file-reviewability policy"
+            f"error: {skill_md} does not reference file-reviewability policy"
         )
     check_markers(
         reviewability.read_text(encoding="utf-8"),
