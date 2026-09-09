@@ -40,6 +40,10 @@ PACKAGING_FILES = frozenset(
     }
 )
 
+# Directories whose every file is packaging/distribution machinery (the
+# Skill-metadata validator package behind scripts/validate-skill-metadata.py).
+PACKAGING_PREFIXES = ("scripts/skill_metadata/",)
+
 # Trees that never, on their own, require a release.
 NON_RELEASE_TREES = {
     "tests/": "tests",
@@ -81,7 +85,7 @@ def classify_path(path: str) -> str:
     name = p.rsplit("/", 1)[-1]
 
     # Packaging files win before the generic scripts/ maintenance bucket.
-    if p in PACKAGING_FILES:
+    if p in PACKAGING_FILES or p.startswith(PACKAGING_PREFIXES):
         return "packaging"
 
     if p.startswith(SKILL_CONTENT_ROOT):
