@@ -25,7 +25,7 @@ class DeltaReReviewContractTests(unittest.TestCase):
             self.text,
         )
 
-    def test_all_six_change_classes_are_defined(self) -> None:
+    def test_all_change_classes_are_defined(self) -> None:
         for change_class in (
             "**Unchanged**",
             "**Fixed**",
@@ -33,8 +33,32 @@ class DeltaReReviewContractTests(unittest.TestCase):
             "**Reopened**",
             "**Newly introduced**",
             "**Ambiguous**",
+            "**Consolidated**",
         ):
             self.assertIn(change_class, self.raw)
+
+    def test_consolidated_class_is_reviewer_gated_and_maps_to_lifecycle_event(self) -> None:
+        text = self.text
+        self.assertIn(
+            "The current review's root-cause pass positively establishes", text
+        )
+        self.assertIn("`CONSOLIDATED` (#62 §4)", text)
+        self.assertIn("each folded prior identity stays `OPEN`", text)
+        self.assertIn("nothing is resolved", text)
+        self.assertIn(
+            "The `N→1` matching topology, descriptor similarity, or a bare "
+            "`AMBIGUOUS` never suffice.",
+            text,
+        )
+        self.assertIn("Absent the positive establishment, `Ambiguous` governs.", text)
+        # not counted toward the escalation "matching broadly unreliable" trigger
+        self.assertIn(
+            "A `Consolidated` outcome is a *confident* determination, not an "
+            "ambiguity, and does not count toward this trigger.",
+            text,
+        )
+        # §8: reviewer-established consolidation is not the matcher's collapse
+        self.assertIn("Reviewer-established consolidation ≠ matcher collapse", self.raw)
 
     def test_change_classes_map_to_lifecycle_events(self) -> None:
         for event in ("`RESOLVED`", "`STILL_PRESENT`", "`REOPENED`", "`DETECTED`", "`UNCERTAIN`"):

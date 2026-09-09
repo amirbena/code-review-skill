@@ -233,12 +233,25 @@ class RootCauseAndModelCompletenessTests(unittest.TestCase):
 
     def test_authoritative_consolidated_finding_shape_lists_affected_locations(self) -> None:
         self.assertIn("emit one finding with a single identity", self.section)
+        # F2: at least two sites, exhaustive, required / not publishable without it
         self.assertIn(
-            "plus an affected-locations list that names every manifestation site",
+            "Consolidation applies only when the shared cause reaches at least "
+            "two manifestation sites.",
+            self.section,
+        )
+        self.assertIn(
+            "plus an affected-locations list that names every known manifestation site",
+            self.section,
+        )
+        self.assertIn("so the list is exhaustive for the sites the review found", self.section)
+        self.assertIn(
+            "the affected-locations list is required — a consolidated finding "
+            "without it is not publishable",
             self.section,
         )
         self.assertIn("rendered on every delivery surface", self.section)
         self.assertIn("Affected locations on a consolidated finding", self.section)
+        self.assertIn("An ordinary single-site finding never carries the field.", self.section)
 
     def test_consolidation_fails_open_to_separate_findings(self) -> None:
         self.assertIn(
@@ -253,16 +266,41 @@ class RootCauseAndModelCompletenessTests(unittest.TestCase):
         )
         self.assertIn("When confidence is not there, split.", self.section)
 
-    def test_rereview_reconciles_prior_separate_findings_to_consolidated(self) -> None:
-        self.assertIn("Consolidation also reconciles in the other direction.", self.section)
+    def test_rereview_routes_identity_handling_to_the_lifecycle_model(self) -> None:
+        # F1: no "supersede"; route to the finding-identity / lifecycle model;
+        # ordinary many-to-one stays ambiguous; only positive root-cause
+        # evidence folds (CONSOLIDATED); nothing resolved.
+        self.assertNotIn("supersede", self.section.lower())
         self.assertIn(
-            "let it reconcile with, and supersede, those prior separate findings",
+            "Consolidation also reconciles in the other direction on re-review.",
+            self.section,
+        )
+        self.assertIn("emit the single authoritative consolidated finding (a new finding identity)", self.section)
+        self.assertIn(
+            "How the prior per-site finding identities are then handled is owned "
+            "by the repository's finding-identity and lifecycle model, not "
+            "restated here",
             self.section,
         )
         self.assertIn(
-            "every prior site stays visible in the affected-locations list", self.section
+            "ordinary many-to-one matching (several prior identities that merely "
+            "appear to map to one candidate) stays ambiguous",
+            self.section,
         )
-        self.assertIn("not a lifecycle collapse of distinct identities", self.section)
+        self.assertIn(
+            "consolidation is never inferred from that topology or from wording similarity",
+            self.section,
+        )
+        self.assertIn(
+            "only a positively established shared cause folds the prior identities "
+            "into the consolidated finding (the lifecycle model's CONSOLIDATED disposition)",
+            self.section,
+        )
+        self.assertIn("nothing is treated as resolved", self.section)
+        self.assertIn(
+            "when the shared cause is not positively established, keep the findings separate",
+            self.section,
+        )
 
     def test_existing_review_evidence_triggers_but_does_not_prove_root_cause(self) -> None:
         self.assertIn("may trigger this pass as Existing Review Evidence", self.section)

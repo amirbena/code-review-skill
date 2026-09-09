@@ -20,7 +20,8 @@ class FindingLifecycleContractTests(unittest.TestCase):
         self.assertIn("| `OPEN` |", self.raw)
         self.assertIn("| `RESOLVED` |", self.raw)
         self.assertIn(
-            "`NEW`, `STILL_PRESENT` / `UNCHANGED`, and `REOPENED`", self.text
+            "`NEW`, `STILL_PRESENT` / `UNCHANGED`, `REOPENED`, and `CONSOLIDATED`",
+            self.text,
         )
 
     def test_event_set_is_complete(self) -> None:
@@ -29,9 +30,42 @@ class FindingLifecycleContractTests(unittest.TestCase):
             "`STILL_PRESENT`",
             "`RESOLVED`",
             "`REOPENED`",
+            "`CONSOLIDATED`",
             "`UNCERTAIN`",
         ):
             self.assertIn(f"| {event} |", self.raw)
+
+    def test_consolidated_event_is_reviewer_gated_and_resolves_nothing(self) -> None:
+        section = " ".join(
+            self.raw.split(
+                "### Reviewer-established root-cause consolidation", 1
+            )[1].split("## 5. Resolution evidence", 1)[0].split()
+        )
+        # the matcher outcome for a many-to-one relationship is unchanged
+        self.assertIn(
+            "the only outcome the **matcher** can produce for a many-to-one",
+            section,
+        )
+        self.assertIn("split/collapse is a #59 disqualifier", section)
+        self.assertIn("that false-merge safeguard is unchanged", section)
+        # gated on positive root-cause evidence, never topology / similarity
+        self.assertIn("positive root-cause evidence, never topology", section)
+        self.assertIn(
+            "The `N→1` shape of the prior finding set, similar wording, and a "
+            "bare `AMBIGUOUS` matcher result are each insufficient on their own.",
+            section,
+        )
+        self.assertIn(
+            "Absent this positive establishment, the relationship stays "
+            "`AMBIGUOUS` → `UNCERTAIN`",
+            section,
+        )
+        # a fresh identity for the consolidated finding; no prior identity transferred
+        self.assertIn("fresh identity via `DETECTED` → `OPEN`", section)
+        # folded prior identities stay OPEN; consolidation resolves nothing
+        self.assertIn("**state stays `OPEN`** — consolidation resolves nothing", section)
+        self.assertIn("Consolidation never uses `SUPERSEDED`", section)
+        self.assertIn("when in doubt,\ndo not merge and do not resolve".replace("\n", " "), section)
 
     def test_matching_boundary_names_all_outcomes(self) -> None:
         for heading in ("### `MATCH`", "### `NO MATCH`", "### `AMBIGUOUS`"):
@@ -108,7 +142,14 @@ class FindingLifecycleContractTests(unittest.TestCase):
     def test_required_scenarios_are_present(self) -> None:
         rows = [line for line in self.raw.splitlines() if line.startswith("| ")]
         scenario_rows = [line for line in rows if line.split("|")[1].strip().isdigit()]
-        self.assertEqual(15, len(scenario_rows))
+        self.assertEqual(16, len(scenario_rows))
+        # row 16 is the CONSOLIDATED disposition
+        self.assertTrue(
+            any(
+                r.split("|")[1].strip() == "16" and "CONSOLIDATED" in r
+                for r in scenario_rows
+            )
+        )
 
     def test_cross_issue_boundaries_are_explicit(self) -> None:
         for issue in ("#59", "#60", "#64", "#65", "#66"):

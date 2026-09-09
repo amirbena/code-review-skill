@@ -10,15 +10,20 @@
 # per-call-site findings.
 #
 # Expected on re-review: ONE authoritative consolidated finding on
-# `sanitize_path` that reconciles with — supersedes — the two prior separate
-# findings. Not two findings, and not a third "new" one. With
-# `findings_completeness: exhaustive`, re-emitting the per-call-site pair is
-# an unexpected finding.
+# `sanitize_path` — the two prior per-call-site findings fold into it via the
+# lifecycle `CONSOLIDATED` disposition (positive shared-root-cause evidence:
+# one shared helper, one fix, both call paths). Not two findings, and not a
+# third "new" one. The two prior identities stay OPEN (folded, not resolved)
+# and every prior site is carried in the consolidated finding's
+# affected-locations list. With `findings_completeness: exhaustive`,
+# re-emitting the per-call-site pair is an unexpected finding.
 #
 # NOTE: `benchmark-case/v1` has no dedicated prior-review field; the prior
 # findings are supplied through `input.context` (§6.3). A first-class
 # re-review input is left to a later fixture-format revision (see #177), not
-# this corpus.
+# this corpus. The lifecycle disposition itself (CONSOLIDATED: OPEN, folded,
+# resolves nothing) is defined in docs/findings/finding-lifecycle-contract.md
+# §4 and skills/github-pr-review/policies/stateful-delta-rereview.md §3.
 
 format: benchmark-case/v1
 
@@ -107,8 +112,10 @@ expected:
         pass, so a crafted name such as "....//" leaves "../" behind and
         escapes REPORT_ROOT; both read_report and read_export inherit the
         bypass from this one helper. This single authoritative finding
-        reconciles the two separate per-call-site findings from the prior
-        review.
+        consolidates the two per-call-site findings from the prior review:
+        both prior identities fold into it (CONSOLIDATED) and remain OPEN —
+        neither is treated as resolved — with each call path listed in the
+        affected-locations list.
       defect_kind: path-traversal
 
     - key: missing-path-traversal-test
@@ -127,6 +134,9 @@ metadata:
   tags: [security]
   rationale: >-
     Consolidation must survive re-review: when a prior review recorded one
-    defect as several per-site findings, the re-review reconciles them to
-    the single authoritative finding rather than carrying the duplicates
-    forward or raising a third finding.
+    defect as several per-site findings and the current review positively
+    establishes the shared cause, those prior identities fold into the single
+    authoritative finding (CONSOLIDATED — OPEN, not resolved) rather than
+    being carried forward as duplicates or joined by a third finding.
+    Ordinary ambiguous many-to-one matching, with no such positive evidence,
+    stays UNCERTAIN and is out of scope for this case.

@@ -27,9 +27,10 @@ the single reference validator
 
 - **One case per consolidation outcome #177 names.** Shared-cause →
   consolidate; look-alike but independent → stay separate; shared cause
-  but low confidence → fall back to separate; re-review → reconcile prior
-  separate findings to the consolidated one. A regression in any one
-  outcome surfaces as a single failing fixture.
+  but low confidence → fall back to separate; re-review with positive
+  shared-cause evidence → prior per-site findings fold into the
+  consolidated one (`CONSOLIDATED` — `OPEN`, not resolved). A regression
+  in any one outcome surfaces as a single failing fixture.
 - **Each case isolates its outcome.** The defects are plain and
   single-dimension (a loosened validator, two off-by-ones, two naive
   datetimes, one weak sanitizer) so a miss is unambiguously about
@@ -50,7 +51,7 @@ the single reference validator
 | [`consolidation-shared-validator-many-call-paths.yaml`](consolidation-shared-validator-many-call-paths.yaml) | shared cause → **one** authoritative finding | `is_valid_email` is loosened from `re.fullmatch` to `re.match`; four callers inherit the weakened check | report **one P0/P1** finding on `is_valid_email` naming the affected call paths — not one finding per caller (an `optional` missing-regression-test note is also acceptable) | `changes-required` |
 | [`consolidation-similar-but-independent-defects.yaml`](consolidation-similar-but-independent-defects.yaml) | look-alike but independent → **separate** findings | two off-by-one bugs in unrelated modules that share no code | report **two** independent **P1** findings; do not merge them under one "off-by-one root cause" | `changes-required` |
 | [`consolidation-shared-cause-low-confidence-fallback.yaml`](consolidation-shared-cause-low-confidence-fallback.yaml) | shared cause, low confidence → **separate** findings (fallback) | two naive-vs-aware datetime defects in different layers; a common "no timezone discipline" cause is plausible but not established | report **two** separate **P1** findings rather than an over-merged "timezone handling" finding | `changes-required` |
-| [`consolidation-rereview-reconciles-to-authoritative.yaml`](consolidation-rereview-reconciles-to-authoritative.yaml) | re-review → **reconcile** prior separate findings | a shared weak `sanitize_path` used by two call paths; `input.context` carries a prior review's two per-call-site findings | report **one P1** authoritative finding on `sanitize_path` that reconciles the two prior findings — not two, not a third new one | `changes-required` |
+| [`consolidation-rereview-reconciles-to-authoritative.yaml`](consolidation-rereview-reconciles-to-authoritative.yaml) | re-review → prior per-site findings **fold** into the consolidated one | a shared weak `sanitize_path` used by two call paths; `input.context` carries a prior review's two per-call-site findings | report **one P1** authoritative finding on `sanitize_path` — the two prior findings fold into it (`CONSOLIDATED`, `OPEN`, not resolved), not two, not a third new one | `changes-required` |
 
 Per-case provenance and a one- or two-sentence rationale also live in each
 fixture's `metadata` block (`source`, `tags`, `rationale`) and in the
@@ -64,8 +65,15 @@ supplies the earlier review's two findings through `input.context`
 ([`../../fixture-format.md`](../../fixture-format.md) §6.3), treated as
 prior review evidence per
 [`../../../../shared/policies/review-evidence.md`](../../../../shared/policies/review-evidence.md).
-A dedicated re-review fixture shape is left to a later `format` revision
-under #177, not this corpus.
+The lifecycle disposition the case pins — `CONSOLIDATED`: the prior
+per-site identities fold into the fresh consolidated identity, stay
+`OPEN`, and resolve nothing; ordinary ambiguous many-to-one stays
+`UNCERTAIN` — is defined in
+[`../../../findings/finding-lifecycle-contract.md`](../../../findings/finding-lifecycle-contract.md)
+§4 and installed in
+[`../../../../skills/github-pr-review/policies/stateful-delta-rereview.md`](../../../../skills/github-pr-review/policies/stateful-delta-rereview.md)
+§3. A dedicated re-review fixture shape is left to a later `format`
+revision under #177, not this corpus.
 
 ## Validation
 

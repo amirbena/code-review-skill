@@ -217,16 +217,46 @@ opposite sides, and MUST stay consistent:
 
 Consolidation is therefore **not** a §6 collision: §6 forbids two
 *materially distinct* defects sharing one identity, whereas a consolidated
-finding is one defect observed at several reachable sites. It is likewise
-**not** a lifecycle many-to-one collapse of distinct identities — it applies
-only when the review positively establishes the single shared cause to the
-root-cause evidence bar in `review-scope.md`. When that confidence is
-absent, §6 and §7 govern unchanged: resolve toward distinct identities and
-emit separate findings. On a re-review, prior separate per-site findings for
-what is in fact one shared cause reconcile to the single consolidated
-identity because they describe the same underlying defect (§1); every prior
-site stays visible in the affected locations list, so nothing is silently
-dropped or merged.
+finding is one defect observed at several reachable sites, established by
+positive root-cause evidence rather than inferred from similarity.
+
+#### Cross-review: the many-to-one relationship
+
+On a **re-review** where a prior review recorded several separate per-site
+identities, the raw relationship of those prior identities to one current
+consolidated candidate is a many-to-one topology. Matching
+([`finding-matching-strategy.md`](finding-matching-strategy.md)) returns
+`AMBIGUOUS` for that topology — split/collapse is a hard disqualifier there
+and this section does not relax it — so the consolidated finding is minted a
+**fresh** identity, never one reused from a prior per-site finding.
+
+What happens to the prior per-site identities is owned by the lifecycle
+model ([`finding-lifecycle-contract.md`](finding-lifecycle-contract.md) §4),
+not by this document:
+
+- **Default — ordinary ambiguous many-to-one.** If the many-to-one shape is
+  all there is — topology, or similar wording, or a bare `AMBIGUOUS` result
+  — each prior identity records `UNCERTAIN` and its established state is
+  preserved (§6, §7; lifecycle scenario 12). No consolidation, no merge, no
+  resolution.
+- **Positively established shared root cause.** Only when the current
+  review independently meets the root-cause evidence bar in
+  [`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md)
+  — a single shared defect-bearing element, ≥2 concrete manifestations or
+  one demonstrated shared failure path, causal not correlated, one fix that
+  resolves all — **and** ties each prior identity's defect to that one cause
+  do the prior identities receive the lifecycle `CONSOLIDATED` disposition:
+  folded into the fresh consolidated identity, each **still `OPEN`** (not
+  resolved, not `SUPERSEDED`), each site retained in the consolidated
+  finding's affected-locations list. A folded identity resolves only later,
+  if and when the consolidated finding itself meets the full resolution bar.
+
+This is **not** a relaxation of §6. §6 forbids *materially distinct* defects
+sharing one identity and forbids *inferring* a merge from uncertainty;
+`CONSOLIDATED` does neither — it requires positive, independent root-cause
+evidence that the manifestations are one defect, mints a fresh identity
+rather than reusing a prior one, and resolves nothing. When that evidence is
+absent, §6's fail-safe direction (prefer splitting) governs unchanged.
 
 ---
 

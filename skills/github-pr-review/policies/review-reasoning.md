@@ -35,15 +35,19 @@ When related candidate findings indicate one shared mechanism, apply
 [`review-scope.md`](../../../shared/policies/review-scope.md), "Root-cause and
 model-completeness pass," before finalizing findings. That shared section owns
 the trigger, structural-vs-separate finding rule (including consolidating one
-shared cause into a single authoritative finding with an affected-locations
-list, and the fail-open to separate findings when the shared cause is not
-established), model-completeness questions, canonical-owner and
-external-package guidance, evidence requirements, and re-review behavior
-(including reconciling prior separate per-site findings to the consolidated
-one); this PR-specific policy does not restate them. A consolidated
-cross-path finding is placed per
-[`finding-placement.md`](finding-placement.md), not split into one inline
-comment per affected call path.
+shared cause into a single authoritative finding with a required, exhaustive
+affected-locations list of at least two sites, and the fail-open to separate
+findings when the shared cause is not positively established),
+model-completeness questions, canonical-owner and external-package guidance,
+evidence requirements, and how re-review reconciles the prior finding set;
+this PR-specific policy does not restate them. On a re-review, whether prior
+per-site finding identities fold into the consolidated finding is governed by
+[`stateful-delta-rereview.md`](stateful-delta-rereview.md) (§3, the
+`CONSOLIDATED` disposition — positive root-cause evidence only, never `N→1`
+topology, and it resolves nothing), which this policy also does not restate.
+A consolidated cross-path finding is placed per
+[`finding-placement.md`](finding-placement.md) — one body finding, not one
+inline comment per affected call path.
 
 ## Architectural Placement Review
 

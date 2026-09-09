@@ -80,6 +80,26 @@ class StatefulDeltaRereviewPolicyTests(unittest.TestCase):
             "Disappearance from the diff is never, by itself, resolution", section
         )
 
+    def test_reconciliation_defines_consolidated_as_a_reviewer_gated_disposition(self) -> None:
+        section = " ".join(
+            self.raw.split("## 3. Reconciliation", 1)[1].split("## 4.", 1)[0].split()
+        )
+        # a row in the §3 step-3 table maps the consolidation case
+        self.assertIn("| Consolidated |", section)
+        self.assertIn("`CONSOLIDATED` (#62 §4)", section)
+        self.assertIn("each folded prior identity stays `OPEN`", section)
+        self.assertIn("nothing resolved", section)
+        # step 4 bullet: never inferred from AMBIGUOUS / topology
+        self.assertIn("`Consolidated` is never an inference from `AMBIGUOUS`", section)
+        self.assertIn(
+            "The `N→1` shape of the prior finding set, similar wording, and a "
+            "low-confidence hunch never trigger it.",
+            section,
+        )
+        self.assertIn("A `CONSOLIDATED` prior identity is `OPEN`, not resolved", section)
+        # the matcher outcome for the topology is still AMBIGUOUS
+        self.assertIn("`AMBIGUOUS` `N→1` topology", section)
+
     def test_blast_radius_is_evidence_based_and_bounded(self) -> None:
         section = self.raw.split("## 4. Blast radius", 1)[1].split("## 5.", 1)[0]
         self.assertIn("Evidence-based attribution only", section)
@@ -134,7 +154,13 @@ class StatefulDeltaRereviewPolicyTests(unittest.TestCase):
             self.raw.split("## 9. Output", 1)[1].split("## 10.", 1)[0]
         )
         self.assertIn(
-            "`DETECTED`, `STILL_PRESENT`, `RESOLVED`, `REOPENED`, or `UNCERTAIN`",
+            "`DETECTED`, `STILL_PRESENT`, `RESOLVED`, `REOPENED`, "
+            "`CONSOLIDATED`, or `UNCERTAIN`",
+            section,
+        )
+        self.assertIn(
+            "A `CONSOLIDATED` prior identity is reported as folded into its "
+            "consolidated finding and still `OPEN`, never as resolved.",
             section,
         )
 

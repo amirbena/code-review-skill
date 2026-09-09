@@ -142,20 +142,26 @@ Worked contrast:
 
 ### The authoritative consolidated finding
 
-When consolidation applies, emit one finding with a single identity, one
-severity (the highest justified across the manifestations, per
+Consolidation applies only when the shared cause reaches **at least two**
+manifestation sites. When it does, emit one finding with a single identity,
+one severity (the highest justified across the manifestations, per
 [`severity.md`](severity.md)), one evidence block establishing the shared
 cause, and one remediation direction aimed at that cause or its canonical
-owner — plus an affected-locations list that names every manifestation site
-(call path, caller, or occurrence) so none is hidden. The affected-locations
-list is a required field of a consolidated finding and is rendered on every
-delivery surface, human-readable and structured alike, per
+owner — plus an **affected-locations list** that names **every** known
+manifestation site (call path, caller, or occurrence), so the list is
+exhaustive for the sites the review found and none is hidden. On a
+consolidated finding the affected-locations list is required — a consolidated
+finding without it is not publishable — and it is rendered on every delivery
+surface, human-readable and structured alike, per
 [`../templates/finding.md`](../templates/finding.md), "Affected locations on
 a consolidated finding." The finding's canonical location is the shared
-cause; the affected-locations list carries the sites it reaches. Identity,
-severity, the evidence bar, and the mechanical decision derivation are
-unchanged — this is the blast-radius enumeration this pass already requires,
-given one stable place to record it.
+cause; the affected-locations list carries the sites it reaches. An ordinary
+single-site finding never carries the field. `Evidence` may still walk
+through a representative subset of the sites; the affected-locations list is
+what preserves the complete known blast radius. Identity, severity, the
+evidence bar, and the mechanical decision derivation are unchanged — this is
+the blast-radius enumeration this pass already requires, given one stable
+place to record it.
 
 ### Fail open toward separate findings
 
@@ -207,17 +213,29 @@ symptom from the same unfixed mechanism reconciles to the same finding rather
 than receiving a renamed permutation; a materially different residual defect
 remains separate.
 
-Consolidation also reconciles in the other direction. When a prior review
-recorded several separate per-site findings and the current review
-establishes — to the evidence standard above — that they are manifestations
-of one shared cause, emit the single authoritative consolidated finding and
-let it reconcile with, and supersede, those prior separate findings rather
-than adding a new finding alongside them. Its identity follows the shared
-underlying defect, not each site; every prior site stays visible in the
-affected-locations list, so no prior finding is silently dropped or merged.
-This is not a lifecycle collapse of distinct identities: it applies only when
-the shared cause is confidently established, and when it is not, the prior
-findings stay separate.
+Consolidation also reconciles in the other direction on re-review. When a
+prior review recorded several separate per-site findings and the current
+review independently establishes — to the root-cause evidence standard above
+— that they are manifestations of one shared cause, emit the single
+authoritative consolidated finding (a new finding identity), and carry every
+prior site and its evidence in the affected-locations list so nothing is
+lost. Do not also re-emit the per-site findings alongside it.
+
+How the prior per-site finding identities are then handled is owned by the
+repository's finding-identity and lifecycle model, not restated here, and
+this section never widens or weakens it:
+
+- ordinary many-to-one matching (several prior identities that merely appear
+  to map to one candidate) stays ambiguous — each prior identity and its
+  state are preserved, and consolidation is never inferred from that
+  topology or from wording similarity;
+- only a positively established shared cause folds the prior identities into
+  the consolidated finding (the lifecycle model's `CONSOLIDATED`
+  disposition). Even then nothing is treated as resolved — a folded identity
+  stays open until the consolidated finding itself is fixed — and every
+  folded site remains visible in the affected-locations list;
+- when the shared cause is not positively established, keep the findings
+  separate (the fail-open above).
 
 Repeated historical findings in one semantic area may trigger this pass as
 Existing Review Evidence, but they never widen the current Review Target and

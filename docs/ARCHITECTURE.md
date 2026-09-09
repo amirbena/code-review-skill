@@ -393,7 +393,7 @@ These contracts share the [`findings/`](findings/README.md) directory.
 re-review — eligibility for reconciling prior finding/lifecycle state,
 loading it from GitHub-native evidence, classifying the current pass
 against it (unresolved / moved / fixed / reopened / newly introduced /
-ambiguous), attributable blast-radius and settled-assumption
+ambiguous / consolidated), attributable blast-radius and settled-assumption
 reconsideration, and escalation to a full review — is packaged runtime
 policy in `github-pr-review`:
 [`stateful-delta-rereview.md`](../skills/github-pr-review/policies/stateful-delta-rereview.md)

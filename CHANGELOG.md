@@ -17,18 +17,29 @@ when the change reaches `main`. See
 
 - The shared root-cause review pass now defines **finding
   consolidation**: when one shared defect-bearing element (a validator,
-  helper, config value, invariant) reaches multiple call paths, both
-  Skills emit a single authoritative finding — one identity, one
-  severity, one fix direction — with an **affected-locations list**
-  naming every manifestation site, rendered on every human-readable and
-  structured surface. Detection fails open: when the shared cause is not
-  positively established, separate findings are emitted rather than
-  over-merged. On a re-review, a consolidated finding reconciles with —
-  and supersedes — prior separate per-site findings for the same cause.
-  Criteria with worked examples, the authoritative-finding shape, and the
-  identity/lifecycle reconciliation are in
-  `shared/policies/review-scope.md`, `shared/templates/finding.md`, and
-  `docs/findings/finding-identity-requirements.md`.
+  helper, config value, invariant) reaches **at least two** call paths,
+  both Skills emit a single authoritative finding — one identity, one
+  severity, one fix direction — with a **required, exhaustive
+  affected-locations list** naming every known manifestation site,
+  rendered on every human-readable and structured surface (a consolidated
+  finding is not publishable without it). Detection fails open: when the
+  shared cause is not positively established, separate findings are
+  emitted rather than over-merged.
+- On a re-review, whether prior separate per-site finding identities fold
+  into the consolidated finding is now governed by a new explicit
+  **`CONSOLIDATED`** lifecycle disposition. It applies **only** when the
+  review positively establishes one shared root cause under
+  `review-scope.md` — never inferred from `N→1` matching topology or
+  wording similarity, which stay `AMBIGUOUS`/`UNCERTAIN` with every prior
+  identity preserved. A folded identity stays `OPEN` (consolidation
+  resolves nothing and never reuses `SUPERSEDED`) and its site is kept in
+  the affected-locations list. Defined across
+  `docs/findings/finding-lifecycle-contract.md` (§4, scenario 16),
+  `finding-identity-requirements.md`, `finding-matching-strategy.md`,
+  `delta-re-review-contract.md`, and the packaged
+  `skills/github-pr-review/policies/stateful-delta-rereview.md`;
+  `review-scope.md` and `shared/templates/finding.md` carry the reviewer
+  criteria and the finding shape.
 
 ## v1.8.1 — 2026-09-09
 

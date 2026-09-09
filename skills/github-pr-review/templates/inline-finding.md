@@ -75,7 +75,17 @@ Details: <supporting technical context, concise>
   the fix/action location is unresolved, is not inline-commentable, or
   the finding is cross-cutting / spans multiple files, the finding
   belongs in the review body instead (see the same policy, "Inline
-  comment eligibility").
+  comment eligibility");
+- a **consolidated root-cause finding** (one shared cause reaching two or
+  more call paths) is placed in the review body, not inline, and is never
+  split into one inline comment per affected call path (see
+  [`../policies/finding-placement.md`](../policies/finding-placement.md),
+  "Inline comment eligibility"). If a short non-authoritative inline
+  pointer at the shared cause is used, it names the affected call paths in
+  its prose — the required, exhaustive affected-locations list lives with
+  the body finding, per
+  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+  "Affected locations on a consolidated finding".
 
 ## Example
 

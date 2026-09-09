@@ -590,6 +590,20 @@ If supported later, store ambiguity as non-authoritative metadata containing
 candidate prior identities and the decision trace. It must never suppress,
 resolve, merge, or transfer lifecycle state.
 
+A many-to-one (collapse) relationship stays `AMBIGUOUS` here regardless of
+how confident anyone is that the prior findings share a cause — collapse is
+a §2 disqualifier and this matcher transfers nothing for it. When the
+enclosing review's root-cause pass
+([`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md),
+"Shared root cause versus independent findings") *positively* establishes,
+on its own evidence bar, that several prior per-site findings are
+manifestations of one shared defect, that is a separate #62 lifecycle
+disposition (`CONSOLIDATED`) applied to the prior identities — not a fourth
+matcher outcome. The matcher still returns `AMBIGUOUS`, still mints a fresh
+identity for the consolidated candidate, and still transfers no identity;
+`CONSOLIDATED` keeps every folded prior identity `OPEN` and resolves
+nothing. Topology or descriptor similarity alone never reaches it.
+
 ## 6. Why the alternatives were rejected
 
 - **Path + line/range:** fails ordinary line movement and reuses identity for a
@@ -637,7 +651,10 @@ bypass the two authoritative proof gates.
 
 Define how lifecycle consumes only definite matches. `AMBIGUOUS` must not imply
 resolved, reopened, superseded, or no-longer-applicable. The candidate set is
-advisory evidence only.
+advisory evidence only. #62 defines exactly one many-to-one disposition that
+is not `UNCERTAIN` — a reviewer-established `CONSOLIDATED` — and it is gated
+on the root-cause evidence bar, not on this matcher's output, and resolves
+nothing.
 
 ### #64 — review delta semantics
 

@@ -80,6 +80,30 @@ invariant violation, or evidence that needs brief context) adds one
 `include_finding_details` resolves true (default `true`) or a finding-level
 decision enables it. An ordinary finding does not.
 
+A **consolidated root-cause finding** — one finding standing in for one
+shared defect-bearing element that reaches at least two sites, per
+[`../../../shared/policies/review-scope.md`](../../../shared/policies/review-scope.md),
+"The authoritative consolidated finding" — renders an
+`- **Affected locations:**` list directly after `Location`, per
+[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+"Affected locations on a consolidated finding":
+
+```markdown
+#### F2 [P1] `is_valid_email` accepts partial matches
+
+- **Location:** `app/validators.py:7` _(committed)_
+- **Affected locations:**
+  - `app/accounts.py:register` — rejects nothing a prefix-match passes
+  - `app/newsletter.py:subscribe` — same weakened check
+- **Evidence:** <the shared cause, concise>
+- **Impact:** <combined engineering consequence across the affected sites>
+- **Fix:** <one correction direction at the shared cause / canonical owner>
+```
+
+The list is required on such a finding, exhaustive for the sites the
+review found, and carries at least two entries; an ordinary single-site
+finding never renders it.
+
 ### Validation
 - <one record per selected command, or an explicit no-command record, per
   [`../../../shared/policies/runtime-validation.md`](../../../shared/policies/runtime-validation.md):
@@ -230,7 +254,12 @@ strongly it is recommended before commit.
   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
   "When a longer explanation is justified" (non-obvious cross-file
   behavior, a concurrency/ordering bug, a security implication, a complex
-  invariant violation, or evidence needing brief context). The `Location`
+  invariant violation, or evidence needing brief context). A consolidated
+  root-cause finding additionally renders the required `Affected locations`
+  list after `Location`, per
+  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+  "Affected locations on a consolidated finding" (exhaustive, at least two
+  entries); an ordinary single-site finding does not. The `Location`
   value also carries this Skill's optional trailing annotation naming the
   finding's source category — `(committed)`, `(staged)`, `(unstaged)`, or
   `(untracked)` — per

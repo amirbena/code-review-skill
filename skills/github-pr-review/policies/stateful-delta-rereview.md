@@ -65,11 +65,15 @@ schema. It orchestrates the existing ones:
   policy does not add a fourth outcome, a confidence score, or a
   heuristic shortcut around any of the three.
 - **Lifecycle** (#62) — states `OPEN`/`RESOLVED` and events `DETECTED`,
-  `STILL_PRESENT`, `RESOLVED`, `REOPENED`, `UNCERTAIN` exactly as this
-  repository's lifecycle design record defines them, including its §5
-  resolution evidence bar and §6 reopen/recurrence handshake. This
-  policy supplies the coverage and delta-attribution inputs those bars
-  require (§3, §4 below); it does not loosen either bar.
+  `STILL_PRESENT`, `RESOLVED`, `REOPENED`, `CONSOLIDATED`, `UNCERTAIN`
+  exactly as this repository's lifecycle design record defines them,
+  including its §5 resolution evidence bar, its §6 reopen/recurrence
+  handshake, and its §4 `CONSOLIDATED` disposition (a prior per-site
+  identity folded — `OPEN`, not resolved — into one authoritative
+  consolidated finding when this pass positively establishes one shared
+  root cause; see §3 step 3 below). This policy supplies the coverage and
+  delta-attribution inputs those bars require (§3, §4 below); it does not
+  loosen either bar.
 - **Delta semantics** (#64) — the six change classes, blast-radius rule,
   settled-assumption rule, and escalation triggers this repository's
   delta re-review design record defines, consumed verbatim below.
@@ -156,6 +160,7 @@ candidate observation:
    | Prior `RESOLVED` identity, recurrence-candidate evidence, `MATCH` under the #62 §6 recurrence exception | Reopened | `REOPENED`, becomes `OPEN` |
    | No `MATCH` to any prior identity, independently meets the finding evidence bar | Newly introduced | `DETECTED` |
    | `AMBIGUOUS` for the relationship under consideration | Ambiguous | `UNCERTAIN`, prior state preserved |
+   | `AMBIGUOUS` `N→1` topology, **and** this pass's root-cause reasoning ([`../../../shared/policies/review-scope.md`](../../../shared/policies/review-scope.md), "The authoritative consolidated finding") positively establishes several prior per-site identities as manifestations of one shared defect | Consolidated | `CONSOLIDATED` (#62 §4): each folded prior identity stays `OPEN`, represented by the one consolidated finding (a fresh identity); nothing resolved |
 
 4. **Apply the #62 transition**, never a shortcut around its evidence
    bars. In particular:
@@ -177,6 +182,18 @@ candidate observation:
      prior finding not visible in the literal changed lines is
      `Unchanged`, not `Fixed`, unless the #62 §5 resolution bar is
      actually met (#64 §2, "Unchanged" notes).
+   - **`Consolidated` is never an inference from `AMBIGUOUS`.** A
+     many-to-one relationship stays `Ambiguous`/`UNCERTAIN` with every
+     prior identity and state preserved unless this pass *independently*
+     meets the root-cause evidence bar in
+     [`../../../shared/policies/review-scope.md`](../../../shared/policies/review-scope.md)
+     and ties each prior identity's defect to one shared cause. The `N→1`
+     shape of the prior finding set, similar wording, and a low-confidence
+     hunch never trigger it. A `CONSOLIDATED` prior identity is `OPEN`,
+     not resolved; its per-site finding folds into the consolidated
+     finding's affected-locations list, and it resolves only if and when
+     that consolidated finding later meets the full #62 §5 bar — a bare
+     `CONSOLIDATED` event never resolves it.
 
 ## 4. Blast radius and regressions
 
@@ -294,8 +311,10 @@ even when every prior finding resolved to `RESOLVED` in the same pass
 When eligibility (§2) held for this invocation, the human-facing review
 additionally states, for each finding carried forward or newly reported,
 its lifecycle event from §3's table (`DETECTED`, `STILL_PRESENT`,
-`RESOLVED`, `REOPENED`, or `UNCERTAIN`) alongside its normal severity and
-evidence — never in place of them. When eligibility did not hold (§2
+`RESOLVED`, `REOPENED`, `CONSOLIDATED`, or `UNCERTAIN`) alongside its
+normal severity and evidence — never in place of them. A `CONSOLIDATED`
+prior identity is reported as folded into its consolidated finding and
+still `OPEN`, never as resolved. When eligibility did not hold (§2
 fail-closed) or this pass escalated (§6), state that plainly (for
 example, "no prior reviewed state was available; every finding below is
 a first detection" or "escalated to a full review: <trigger>") rather
