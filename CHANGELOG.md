@@ -13,6 +13,11 @@ when the change reaches `main`. See
 
 ## Unreleased
 
+_Nothing yet. New entries land here and move under a version heading at
+release time._
+
+## v1.9.2 — 2026-09-09
+
 ### Fixed
 
 - Packaging now reads archive names, resource mappings, destinations, and
