@@ -359,8 +359,16 @@ These contracts share the [`findings/`](findings/README.md) directory.
   [`benchmark/match-criteria.md`](benchmark/match-criteria.md), with a
   test-only reference matcher (`tests/reference/benchmark_match.py`); it is
   the pairing relation the quality metrics (false-negative / false-positive
-  counts, severity accuracy, duplicate noise) will be built on, and those
-  metrics are still a separate later concern.
+  counts, severity accuracy, duplicate noise) are built on. The first of
+  those metrics — turning match results into **missed-finding
+  (false-negative)** and **incorrect-finding (false-positive)** counts per
+  case and in aggregate, via a deterministic produced↔expected one-to-one
+  pairing, gated by `match: optional` / `any_of` / `findings_completeness`,
+  and rendered alongside the regression report's deltas without gating it —
+  is
+  [`benchmark/missed-and-incorrect-findings.md`](benchmark/missed-and-incorrect-findings.md),
+  with a test-only reference metric (`tests/reference/benchmark_metrics.py`);
+  severity accuracy and duplicate noise are still separate later concerns.
   Repository-development docs in the
   [`benchmark/`](benchmark/README.md) directory; nothing benchmark is
   packaged.
