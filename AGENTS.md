@@ -143,6 +143,15 @@ canonical, detailed rule lives in the policy named after it.
   refinements use `Fixed`; intentional backward-compatible behavior or
   capability changes use `Changed` or `Added`. Canonical:
   [`policies/release-changelog-policy.md`](policies/release-changelog-policy.md).
+- **Contribution ownership and Issue classification.** An agent that creates
+  or materially restructures GitHub Issues considers ownership and blast
+  radius, classifies contributor suitability (maintainer-led / good first
+  issue / contributor-owned), and consults the canonical contribution
+  policy. It never marks sensitive core review behavior as beginner work
+  merely because the implementation looks small, considers extracting safe
+  contributor child Issues from larger Epics, and preserves maintainer
+  ownership of semantic and architectural contracts. Canonical:
+  [`policies/contribution-ownership-policy.md`](policies/contribution-ownership-policy.md).
 
 ---
 
@@ -197,6 +206,7 @@ normative).
 | Clean task end state, Python cache/bytecode cleanup, shell/PowerShell script parity, running repository validation & packaging | [`policies/validation-and-clean-exit.md`](policies/validation-and-clean-exit.md) |
 | Repository documentation (`README.md`, `docs/`, Skill `README.md`) — structure and reading experience | [`policies/documentation-policy.md`](policies/documentation-policy.md) |
 | Content of agent-authored GitHub Issues and Pull Requests — how much detail belongs in the body, per-field size guidance, PR summary shape, summarized validation, linking canonical docs instead of duplicating them | [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md) |
+| Ownership and contributor-suitability classification of GitHub Issues — contribution classes, classification criteria (blast radius, not patch size), assignment behavior, Epic decomposition, sensitive areas excluded from first issues, handling ambiguous cases | [`policies/contribution-ownership-policy.md`](policies/contribution-ownership-policy.md) |
 | CHANGELOG category selection and its deterministic SemVer intent | [`policies/release-changelog-policy.md`](policies/release-changelog-policy.md) |
 | Skill behavior, Skill packaging, runbook / policy / template ownership, runtime adapters, portability of packaged resources | [`policies/skill-development-policy.md`](policies/skill-development-policy.md) |
 | Review orchestration — implementer/reviewer separation, the `local-code-review` approval gate, review ownership, Skill-consumer branch discipline, human-facing review publication | [`policies/review-orchestration-policy.md`](policies/review-orchestration-policy.md) |

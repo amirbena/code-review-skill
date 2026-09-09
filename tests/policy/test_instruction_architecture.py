@@ -47,6 +47,10 @@ ROUTED_POLICIES = {
     "validation-and-clean-exit.md": "Python cache/bytecode cleanup around commits",
     "documentation-policy.md": "User journey first.",
     "github-issue-pr-authoring.md": "Agent-complete internally, human-scannable externally",
+    "contribution-ownership-policy.md": (
+        "Blast radius, coupling to review semantics, and validation difficulty "
+        "decide contributor suitability"
+    ),
     "release-changelog-policy.md": "Decision rule:",
     "skill-development-policy.md": "Portable Core, Optional Runtime Adapters",
     "review-orchestration-policy.md": "One review scope → one Code Review Agent owner",

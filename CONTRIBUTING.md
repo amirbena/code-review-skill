@@ -3,6 +3,52 @@
 Contributions are welcome. You do not need maintainer permission before
 starting an open issue labeled `help wanted` or `good first issue`.
 
+## Contribution paths
+
+Issues carry an ownership label so you can tell at a glance what kind of
+work an Issue is. `Good First Issue != unimportant`, and
+`Contributor-owned != maintainer-only`.
+
+### `good first issue`
+
+Choose this when you are new to the repository and want a bounded task
+whose expected behavior is already well defined — fixtures, regression
+corpora, docs, bounded tests, or isolated tooling. You are primarily
+implementing an established contract and can validate the result
+deterministically without learning the whole reviewer. An Issue also
+tagged `type:infrastructure` is an *automation* good first issue:
+validators, packaging/reference checks, CI diagnostics, or maintenance
+scripts.
+
+### `contributor-owned`
+
+Choose this when you are comfortable taking ownership of a whole
+capability. The Issue defines boundaries, invariants, and acceptance
+criteria but intentionally leaves the implementation and design approach
+open. You are expected to investigate the repository, propose the
+approach, and drive the work through implementation, tests,
+documentation, and review. It may be large or hard — that is expected.
+
+### `maintainer-led`
+
+Semantic and architectural contracts — finding identity and semantics,
+severity, the review decision, evidence thresholds, deduplication,
+re-review state, GitHub enforcement, autofix authorization, privileged
+release behavior, shared cross-Skill contracts. Do not claim the
+core-semantic part of this work without coordinating on the Issue first.
+A `maintainer-led` Epic often still has child Issues labeled
+`good first issue` or `contributor-owned` that are open for you to take.
+
+### A natural progression
+
+```text
+good first issue  →  bounded contributor work  →  contributor-owned capability / Epic
+```
+
+The full classification model is the canonical
+[`policies/contribution-ownership-policy.md`](policies/contribution-ownership-policy.md);
+this section is the human-facing summary.
+
 ## Choose and claim an issue
 
 1. Choose an open, unclaimed issue with one of the contribution-ready labels.
