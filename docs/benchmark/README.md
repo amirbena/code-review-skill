@@ -21,14 +21,19 @@ concern lives in the file named for it.
 | [`regression-report.md`](regression-report.md) | How a candidate run is compared against a stored baseline — the baseline result artifact, the corpus-identity guard, the per-case and aggregate deltas, the metric-free rule that separates a regression from an improvement, deterministic output, and the deliberate baseline-refresh step. | [#53](https://github.com/amirbena/code-review-skill/issues/53) |
 | [`match-criteria.md`](match-criteria.md) | When a produced review finding matches an expected benchmark finding — the two match axes (location, defect), the three-valued `MATCH` / `NEAR_MISS` / `NO_MATCH` result, the fixed tolerances, and how `alternatives` / `any_of` / `match: optional` resolve. The pairing relation the [#41](https://github.com/amirbena/code-review-skill/issues/41) quality metrics are built on. | [#54](https://github.com/amirbena/code-review-skill/issues/54) |
 | [`missed-and-incorrect-findings.md`](missed-and-incorrect-findings.md) | Turning match results into **missed-finding (false-negative)** and **incorrect-finding (false-positive)** counts — the deterministic produced↔expected one-to-one pairing (`MATCH` edges only, fixture document order), the per-case and aggregate counts, how `match: optional` / `any_of` / `findings_completeness` change the accounting, and how the counts render alongside the regression report's deltas without gating it. | [#55](https://github.com/amirbena/code-review-skill/issues/55) |
+| [`severity-accuracy.md`](severity-accuracy.md) | Measuring, over the #55 matched set, how often a matched finding carries a permitted expected severity — the **exact** / **over-severity** / **under-severity** classification on the P0 > P1 > P2 ordinal, the `severity`-list and `any_of` member resolution, the per-case and aggregate counts with a single exact-rational exact-match rate, and how they render alongside the regression report's deltas without gating it. | [#56](https://github.com/amirbena/code-review-skill/issues/56) |
 
 The first four documents cover the whole epic-[#40](https://github.com/amirbena/code-review-skill/issues/40)
 benchmark surface; [`match-criteria.md`](match-criteria.md) ([#54](https://github.com/amirbena/code-review-skill/issues/54))
 adds the expected-vs-produced match relation that the epic-[#41](https://github.com/amirbena/code-review-skill/issues/41)
-quality metrics (#55–#57) consume, and
+quality metrics (#55–#57) consume;
 [`missed-and-incorrect-findings.md`](missed-and-incorrect-findings.md)
 ([#55](https://github.com/amirbena/code-review-skill/issues/55)) is the
-first of those metrics — the false-negative / false-positive counts. The corpus and its case-selection rationale
+first of those metrics — the false-negative / false-positive counts — and
+[`severity-accuracy.md`](severity-accuracy.md)
+([#56](https://github.com/amirbena/code-review-skill/issues/56)) is the
+second — the exact / over-severity / under-severity split over the matched
+set. The corpus and its case-selection rationale
 ([#51](https://github.com/amirbena/code-review-skill/issues/51)) live in
 [`corpus/`](corpus/README.md); the runner contract
 ([#52](https://github.com/amirbena/code-review-skill/issues/52)) is
@@ -124,6 +129,28 @@ mirrors it (executed by
 [`../../tests/unit/test_benchmark_metrics.py`](../../tests/unit/test_benchmark_metrics.py),
 including every §8 worked example) and delegates every pairwise decision to
 the single reference matcher.
+
+## Severity accuracy
+
+[`severity-accuracy.md`](severity-accuracy.md) (#56) is the second #41
+quality metric. Over **exactly** the matched pairs the #55 pairing
+produced, it compares each produced severity against the permitted expected
+severities of the entry that pair satisfied and classifies the pair as
+**exact** (a permitted value), **over-severity** (more severe than the
+whole permitted band), or **under-severity** (neither). The three outcomes
+partition the matched set, so `exact + over + under == matched`. A
+`severity` list permits a band; an `any_of` group is scored against the
+achieving member's severity. The per-case and aggregate records carry the
+counts plus an exact-match **rate** as an exact `fractions.Fraction`
+(`null` when nothing matched), and render **alongside** the regression
+report's per-case deltas without ever changing `has_regressions`. It never
+pairs or re-pairs a finding and redefines nothing about P0/P1/P2 (duplicate
+noise is #57). The test-only reference metric
+[`../../tests/reference/benchmark_severity.py`](../../tests/reference/benchmark_severity.py)
+mirrors it (executed by
+[`../../tests/unit/test_benchmark_severity.py`](../../tests/unit/test_benchmark_severity.py),
+including every §7 worked example) and consumes the single reference
+pairing and matcher.
 
 ## Related
 

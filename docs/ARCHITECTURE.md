@@ -367,8 +367,15 @@ These contracts share the [`findings/`](findings/README.md) directory.
   and rendered alongside the regression report's deltas without gating it —
   is
   [`benchmark/missed-and-incorrect-findings.md`](benchmark/missed-and-incorrect-findings.md),
-  with a test-only reference metric (`tests/reference/benchmark_metrics.py`);
-  severity accuracy and duplicate noise are still separate later concerns.
+  with a test-only reference metric (`tests/reference/benchmark_metrics.py`).
+  The second — measuring, over that same matched set, how often a matched
+  finding carries a permitted expected severity, and splitting the
+  mismatches into **over-severity** and **under-severity** on the
+  P0 > P1 > P2 ordinal, with a single exact-rational exact-match rate and
+  the same render-alongside-without-gating rule — is
+  [`benchmark/severity-accuracy.md`](benchmark/severity-accuracy.md), with a
+  test-only reference metric (`tests/reference/benchmark_severity.py`);
+  duplicate noise is still a separate later concern.
   Repository-development docs in the
   [`benchmark/`](benchmark/README.md) directory; nothing benchmark is
   packaged.
