@@ -56,8 +56,8 @@ the input did not exist and never asks for it. Jira is never mandatory.
 
 Context source: Jira PROJECT-1234
 Acceptance criteria:
-- reject unsupported CC + RTP combinations
-- validation must occur before execution
+- reject writes to a record while it is locked
+- validation must occur before the write is persisted
 ```
 
 ```text

@@ -13,8 +13,15 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Fixed
+
+- Replaced the payments-domain illustration used for review context
+  (`CC + RTP` combinations, `CC/RTP` validation, the recurring-payment
+  execution path) with a domain-neutral resource/lock example across the
+  packaged `shared/policies/review-context.md`, the local report
+  template, the READMEs, the feature guide, and the context test corpus.
+  Documentation and examples only — review detection, severity, evidence,
+  and decision semantics are unchanged.
 
 ## v1.8.0 — 2026-09-09
 

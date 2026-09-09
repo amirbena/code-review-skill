@@ -38,8 +38,8 @@ combination):
 
 Context: Jira PROJECT-1234
 Acceptance criteria:
-- reject unsupported CC + RTP combinations
-- validation must run before execution
+- reject writes to a record while it is locked
+- validation must run before the write is persisted
 ```
 
 A plain request with no context is fully supported. Optional add-ons,

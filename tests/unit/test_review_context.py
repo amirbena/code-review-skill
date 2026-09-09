@@ -58,13 +58,13 @@ class AcceptanceCriteriaTests(unittest.TestCase):
 
     def test_jira_context_with_acceptance_criteria_normalizes_fully(self) -> None:
         ctx = rc.ReviewContext(
-            raw_context="reject unsupported CC + RTP combinations",
+            raw_context="reject writes to a record while it is locked",
             source_type="jira",
             source_name="PROJECT-1234",
             acceptance_criteria=(
-                "reject unsupported CC + RTP combinations",
-                "preserve per-company IXP",
-                "validation must occur before execution",
+                "reject writes to a record while it is locked",
+                "preserve the existing lock owner",
+                "validation must occur before the write is persisted",
             ),
         )
         self.assertEqual(ctx.source_name, "PROJECT-1234")

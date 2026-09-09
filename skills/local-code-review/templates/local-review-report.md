@@ -35,7 +35,7 @@ this review — see
 context was supplied>
 - Reviewed against supplied context`<: source-name, if given>`.
 - Focus areas it identified: `<concrete list, e.g. "validation ordering
-  in the recurring-payment path">`.
+  on the record-write path">`.
 - Non-goals it stated: `<n>` (kept out of scope) — omit this line if none
   apply.
 - Mismatches noted: `<n>` (context appears stale/conflicting; flagged
