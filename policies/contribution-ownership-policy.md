@@ -65,14 +65,18 @@ the existing Type / Area / Priority labels — it never overloads them.
 | --- | --- | --- |
 | Maintainer-led | `maintainer-led` | Assign `amirbena` when ownership is active; otherwise unassigned. |
 | Good First Issue | `good first issue` (+ `help wanted`) | Normally unassigned. |
-| Automation Good First Issue | `good first issue` + `type:infrastructure` (+ `help wanted`) | Normally unassigned. |
+| Automation Good First Issue | `good first issue` on an Issue whose Type is Infrastructure (+ `help wanted`) | Normally unassigned. |
 | Contributor-owned | `contributor-owned` (+ `help wanted`) | Normally unassigned unless someone already owns it. |
 
 No dedicated `automation-good-first-issue` label exists: `good first
-issue` composed with `type:infrastructure` (or an automation-flavored
+issue` on an Infrastructure-typed Issue (or one in an automation-flavored
 `area:*`, e.g. `area:packaging-portability`) communicates the same thing
-with less taxonomy. No ownership semantics are added to Type / Area /
-Priority.
+with less taxonomy. The `type:` / `area:` / `priority:` labels are
+derived from the Issue Form and reconciled on every edit by
+[`../scripts/sync_issue_labels.py`](../scripts/sync_issue_labels.py), so
+the Infrastructure signal must come from the form's **Type** field — a
+hand-added `type:infrastructure` label on a differently-typed Issue is
+reverted. No ownership semantics are added to Type / Area / Priority.
 
 ### A. Maintainer-led
 
@@ -113,8 +117,9 @@ commands.
 
 These Issues must stay isolated from severity/decision semantics, finding
 identity, publication semantics, privileged release mutation, and
-enforcement-bypass behavior. They are represented by composition
-(`good first issue` + `type:infrastructure`), not a dedicated label.
+enforcement-bypass behavior. They are represented by composition —
+`good first issue` on an Infrastructure-typed Issue (or one in an
+automation-flavored `area:*`) — not a dedicated label.
 
 ### D. Contributor-owned
 
@@ -158,9 +163,10 @@ architecture. Do **not** manufacture tiny child Issues solely to produce
    contracts), classify **Maintainer-led** — even when the change looks
    small. Assign `amirbena` when ownership is active.
 3. Otherwise, if it is bounded, deterministically verifiable, and cannot
-   silently move review outcomes, classify **Good First Issue**
-   (compose with `type:infrastructure` when the work is automation /
-   tooling). Leave it unassigned and add `help wanted`.
+   silently move review outcomes, classify **Good First Issue**. For
+   automation / tooling work, set the Issue's **Type** to Infrastructure
+   so the label automation applies `type:infrastructure`. Leave it
+   unassigned and add `help wanted`.
 4. If it is a substantial capability with a clean boundary and explicit
    invariants but intentionally open design, classify **Contributor-owned**.
    Leave it unassigned and add `help wanted`.

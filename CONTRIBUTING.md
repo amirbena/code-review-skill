@@ -15,10 +15,10 @@ Choose this when you are new to the repository and want a bounded task
 whose expected behavior is already well defined — fixtures, regression
 corpora, docs, bounded tests, or isolated tooling. You are primarily
 implementing an established contract and can validate the result
-deterministically without learning the whole reviewer. An Issue also
-tagged `type:infrastructure` is an *automation* good first issue:
-validators, packaging/reference checks, CI diagnostics, or maintenance
-scripts.
+deterministically without learning the whole reviewer. An Issue whose
+Type is Infrastructure (label `type:infrastructure`) is an *automation*
+good first issue: validators, packaging/reference checks, CI diagnostics,
+or maintenance scripts.
 
 ### `contributor-owned`
 
