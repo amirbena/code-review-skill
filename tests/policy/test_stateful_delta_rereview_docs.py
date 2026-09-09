@@ -25,6 +25,7 @@ DELTA_REVIEW = REPO_ROOT / "skills" / "github-pr-review" / "policies" / "reviewe
 LOCAL_SKILL = REPO_ROOT / "skills" / "local-code-review" / "SKILL.md"
 PACKAGE_SH = REPO_ROOT / "scripts" / "package-skills.sh"
 PACKAGE_PS1 = REPO_ROOT / "scripts" / "package-skills.ps1"
+PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "package-manifest.json"
 
 
 class StatefulDeltaRereviewPolicyTests(unittest.TestCase):
@@ -228,13 +229,11 @@ class WiringTests(unittest.TestCase):
         text = LOCAL_SKILL.read_text(encoding="utf-8")
         self.assertNotIn("stateful-delta-rereview.md", text)
 
-    def test_packaging_scripts_declare_the_new_policy_file(self) -> None:
-        for script in (PACKAGE_SH, PACKAGE_PS1):
-            self.assertIn(
-                "policies/stateful-delta-rereview.md",
-                script.read_text(encoding="utf-8"),
-                script.name,
-            )
+    def test_package_manifest_declares_the_new_policy_file(self) -> None:
+        self.assertIn(
+            "policies/stateful-delta-rereview.md",
+            PACKAGE_MANIFEST.read_text(encoding="utf-8"),
+        )
 
 
 if __name__ == "__main__":

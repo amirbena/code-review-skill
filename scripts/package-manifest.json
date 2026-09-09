@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "shared_files": [
+    { "source": "shared/policies/review-scope.md", "destination": "shared/policies/review-scope.md" },
+    { "source": "shared/policies/severity.md", "destination": "shared/policies/severity.md" },
+    { "source": "shared/policies/evidence.md", "destination": "shared/policies/evidence.md" },
+    { "source": "shared/policies/repository-instructions.md", "destination": "shared/policies/repository-instructions.md" },
+    { "source": "shared/policies/runtime-validation.md", "destination": "shared/policies/runtime-validation.md" },
+    { "source": "shared/policies/git-safety.md", "destination": "shared/policies/git-safety.md" },
+    { "source": "shared/policies/review-ownership.md", "destination": "shared/policies/review-ownership.md" },
+    { "source": "shared/policies/file-reviewability.md", "destination": "shared/policies/file-reviewability.md" },
+    { "source": "shared/policies/review-context.md", "destination": "shared/policies/review-context.md" },
+    { "source": "shared/policies/review-evidence.md", "destination": "shared/policies/review-evidence.md" },
+    { "source": "shared/policies/parallel-review.md", "destination": "shared/policies/parallel-review.md" },
+    { "source": "shared/policies/invocation-options.md", "destination": "shared/policies/invocation-options.md" },
+    { "source": "shared/policies/remediation-guidance.md", "destination": "shared/policies/remediation-guidance.md" },
+    { "source": "shared/templates/finding.md", "destination": "shared/templates/finding.md" },
+    { "source": "shared/templates/review-summary.md", "destination": "shared/templates/review-summary.md" },
+    { "source": "LICENSE", "destination": "LICENSE" }
+  ],
+  "skills": {
+    "local": {
+      "name": "local-code-review",
+      "archive": "local-code-review-skill.zip",
+      "files": [
+        { "source": "skills/local-code-review/SKILL.md", "destination": "SKILL.md" },
+        { "source": "skills/local-code-review/agents/openai.yaml", "destination": "agents/openai.yaml" },
+        { "source": "skills/local-code-review/metadata/skill.yaml", "destination": "metadata/skill.yaml" },
+        { "source": "skills/local-code-review/policies/invocation-approval.md", "destination": "policies/invocation-approval.md" },
+        { "source": "skills/local-code-review/policies/repository-state.md", "destination": "policies/repository-state.md" },
+        { "source": "skills/local-code-review/policies/review-context.md", "destination": "policies/review-context.md" },
+        { "source": "skills/local-code-review/policies/pr-context.md", "destination": "policies/pr-context.md" },
+        { "source": "skills/local-code-review/runbooks/local-review.md", "destination": "runbooks/local-review.md" },
+        { "source": "skills/local-code-review/templates/local-review-report.md", "destination": "templates/local-review-report.md" }
+      ],
+      "required_entries": ["SKILL.md", "LICENSE"]
+    },
+    "github": {
+      "name": "github-pr-review",
+      "archive": "github-pr-review-skill.zip",
+      "files": [
+        { "source": "skills/github-pr-review/SKILL.md", "destination": "SKILL.md" },
+        { "source": "skills/github-pr-review/agents/openai.yaml", "destination": "agents/openai.yaml" },
+        { "source": "skills/github-pr-review/metadata/skill.yaml", "destination": "metadata/skill.yaml" },
+        { "source": "skills/github-pr-review/policies/github-review.md", "destination": "policies/github-review.md" },
+        { "source": "skills/github-pr-review/policies/review-authority.md", "destination": "policies/review-authority.md" },
+        { "source": "skills/github-pr-review/policies/review-action-authorization.md", "destination": "policies/review-action-authorization.md" },
+        { "source": "skills/github-pr-review/policies/reviewer-delta-review.md", "destination": "policies/reviewer-delta-review.md" },
+        { "source": "skills/github-pr-review/policies/stateful-delta-rereview.md", "destination": "policies/stateful-delta-rereview.md" },
+        { "source": "skills/github-pr-review/policies/pr-scope.md", "destination": "policies/pr-scope.md" },
+        { "source": "skills/github-pr-review/policies/repository-checkout.md", "destination": "policies/repository-checkout.md" },
+        { "source": "skills/github-pr-review/policies/review-context.md", "destination": "policies/review-context.md" },
+        { "source": "skills/github-pr-review/policies/review-evidence.md", "destination": "policies/review-evidence.md" },
+        { "source": "skills/github-pr-review/policies/review-reasoning.md", "destination": "policies/review-reasoning.md" },
+        { "source": "skills/github-pr-review/policies/parallel-review.md", "destination": "policies/parallel-review.md" },
+        { "source": "skills/github-pr-review/policies/finding-placement.md", "destination": "policies/finding-placement.md" },
+        { "source": "skills/github-pr-review/policies/review-output.md", "destination": "policies/review-output.md" },
+        { "source": "skills/github-pr-review/policies/review-status-enforcement.md", "destination": "policies/review-status-enforcement.md" },
+        { "source": "skills/github-pr-review/runbooks/passive-pr-review.md", "destination": "runbooks/passive-pr-review.md" },
+        { "source": "skills/github-pr-review/runbooks/active-pr-review.md", "destination": "runbooks/active-pr-review.md" },
+        { "source": "skills/github-pr-review/templates/inline-finding.md", "destination": "templates/inline-finding.md" },
+        { "source": "skills/github-pr-review/templates/external-review-summary.md", "destination": "templates/external-review-summary.md" }
+      ],
+      "required_entries": ["SKILL.md", "LICENSE", "templates/external-review-summary.md"]
+    }
+  }
+}

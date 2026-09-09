@@ -500,8 +500,11 @@ skills/<name>/metadata/…            →   metadata/…
 shared/policies/…, shared/templates/…  →  shared/policies/…, shared/templates/…
 ```
 
-`scripts/package-skills.sh` / `scripts/package-skills.ps1` stage each
-Skill's files under `dist/.staging/`, drop the `skills/<name>/` prefix so
+[`scripts/package-manifest.json`](../scripts/package-manifest.json) is the
+single source of truth for archive names, copied resources, their archive
+destinations, and required-entry guards. `scripts/package-skills.sh` /
+`scripts/package-skills.ps1` consume it and stage each Skill's files under
+`dist/.staging/`, drop the `skills/<name>/` prefix so
 `SKILL.md` lands at the archive root, then zip the staged tree's
 *contents* into `dist/*.zip`. Because `SKILL.md` moves from source depth 2
 to depth 0, its links into `shared/` change from `../../shared/...` to

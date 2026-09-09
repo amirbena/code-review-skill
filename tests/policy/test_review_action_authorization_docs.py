@@ -31,6 +31,7 @@ METADATA = GITHUB / "metadata" / "skill.yaml"
 SUMMARY_TEMPLATE = GITHUB / "templates" / "external-review-summary.md"
 PKG_SH = REPO_ROOT / "scripts" / "package-skills.sh"
 PKG_PS1 = REPO_ROOT / "scripts" / "package-skills.ps1"
+PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "package-manifest.json"
 # The Skill-metadata validator's declarative tables (GITHUB_POLICY_ORDER).
 # Since #194 the validator is a package; the tables live here.
 VALIDATOR = REPO_ROOT / "scripts" / "skill_metadata" / "expectations.py"
@@ -513,13 +514,11 @@ class WiredIntoMetadataAndTemplate(unittest.TestCase):
 
 
 class WiredIntoScripts(unittest.TestCase):
-    def test_both_package_scripts_ship_the_policy(self) -> None:
-        for script in (PKG_SH, PKG_PS1):
-            self.assertIn(
-                "policies/review-action-authorization.md",
-                script.read_text(encoding="utf-8"),
-                script.name,
-            )
+    def test_package_manifest_ships_the_policy(self) -> None:
+        self.assertIn(
+            "policies/review-action-authorization.md",
+            PACKAGE_MANIFEST.read_text(encoding="utf-8"),
+        )
 
     def test_validator_orders_the_policy_after_review_authority(self) -> None:
         raw = VALIDATOR.read_text(encoding="utf-8")
