@@ -221,6 +221,34 @@ jobs:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
+      - name: Resolve the authenticated release App bot identity
+        id: bot-identity
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          set -euo pipefail
+          # Attribute the release commit to the GitHub App that actually
+          # authenticated this job. The slug is what GitHub returned when the
+          # token was minted (not a transform of the App's display name); the
+          # bot login is always "<slug>[bot]", and its numeric user id comes
+          # straight from the API. Fail the release if either cannot be
+          # resolved rather than fall back to a guessed identity.
+          if [ -z "${APP_SLUG}" ]; then
+            echo "::error::actions/create-github-app-token returned no app-slug; cannot resolve the release App bot identity."
+            exit 1
+          fi
+          bot_login="${APP_SLUG}[bot]"
+          bot_id="$(gh api "/users/${bot_login}" --jq '.id')"
+          if ! printf '%s' "${bot_id}" | grep -Eq '^[0-9]+$'; then
+            echo "::error::Could not resolve a numeric user id for ${bot_login} from the GitHub API; refusing to attribute the release commit to a fallback identity."
+            exit 1
+          fi
+          bot_email="${bot_id}+${bot_login}@users.noreply.github.com"
+          echo "login=${bot_login}" >> "$GITHUB_OUTPUT"
+          echo "email=${bot_email}" >> "$GITHUB_OUTPUT"
+          echo "Release commits will be attributed to ${bot_login} <${bot_email}>"
+
       - name: Check out main
         uses: actions/checkout@v4
         with:
@@ -259,8 +287,8 @@ jobs:
       - name: Commit release preparation to main
         id: commit
         run: |
-          git config user.name "release-automation[bot]"
-          git config user.email "release-automation[bot]@users.noreply.github.com"
+          git config user.name "${{ steps.bot-identity.outputs.login }}"
+          git config user.email "${{ steps.bot-identity.outputs.email }}"
           git add CHANGELOG.md
           git commit -m "chore(release): v${{ needs.plan.outputs.version }} [skip ci]"
           sha="$(git rev-parse HEAD)"

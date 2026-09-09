@@ -281,6 +281,61 @@ class AssessJobSemverTests(unittest.TestCase):
         self.assertLess(classify, semver)
 
 
+class ReleaseCommitAttributionTests(unittest.TestCase):
+    """The release commit is attributed to the GitHub App that authenticated
+    the protected push — resolved at run time, never a hard-coded slug."""
+
+    def setUp(self) -> None:
+        self.steps = _load()["jobs"]["publish"]["steps"]
+        self.raw = WORKFLOW.read_text(encoding="utf-8")
+
+    def test_no_hard_coded_release_automation_bot_identity(self) -> None:
+        self.assertNotIn("release-automation[bot]", self.raw)
+        self.assertNotIn("release-automation", self.raw)
+
+    def test_identity_is_resolved_from_the_minted_app_token(self) -> None:
+        step = _step(self.steps, "Resolve the authenticated release App bot identity")
+        self.assertEqual(step.get("id"), "bot-identity")
+        self.assertEqual(step["env"]["GH_TOKEN"], "${{ steps.app-token.outputs.token }}")
+        self.assertEqual(step["env"]["APP_SLUG"], "${{ steps.app-token.outputs.app-slug }}")
+        run = step["run"]
+        # Identity comes from GitHub, keyed by the token's own app-slug.
+        self.assertIn("gh api", run)
+        self.assertIn('"/users/${bot_login}"', run)
+        self.assertIn("bot_login=\"${APP_SLUG}[bot]\"", run)
+        # Canonical noreply form: <ID>+<bot-login>@users.noreply.github.com
+        self.assertIn("${bot_id}+${bot_login}@users.noreply.github.com", run)
+
+    def test_resolution_runs_after_minting_and_before_the_release_commit(self) -> None:
+        mint = _step_index(self.steps, "create-github-app-token")
+        resolve = _step_index(self.steps, "Resolve the authenticated release App bot identity")
+        commit = _step_index(self.steps, "Commit release preparation to main")
+        self.assertLess(mint, resolve)
+        self.assertLess(resolve, commit)
+
+    def test_commit_step_configures_git_from_the_resolved_identity(self) -> None:
+        commit = _step(self.steps, "Commit release preparation to main")
+        run = commit["run"]
+        self.assertIn(
+            'git config user.name "${{ steps.bot-identity.outputs.login }}"', run
+        )
+        self.assertIn(
+            'git config user.email "${{ steps.bot-identity.outputs.email }}"', run
+        )
+
+    def test_resolution_fails_closed_with_no_fallback_identity(self) -> None:
+        step = _step(self.steps, "Resolve the authenticated release App bot identity")
+        run = step["run"]
+        self.assertIn("set -euo pipefail", run)
+        # Both an unresolved slug and a non-numeric user id must abort the
+        # release job; extra guards are fine, silently continuing is not.
+        self.assertGreaterEqual(run.count("exit 1"), 2)
+        self.assertIn('if [ -z "${APP_SLUG}" ]; then', run)
+        self.assertIn("grep -Eq '^[0-9]+$'", run)
+        # No fallback to a hard-coded identity anywhere in the resolution.
+        self.assertNotIn("release-automation", run)
+
+
 class SupportingArtifactsTests(unittest.TestCase):
     def test_classifier_script_present_with_shebang(self) -> None:
         self.assertTrue(SCRIPT.is_file())
