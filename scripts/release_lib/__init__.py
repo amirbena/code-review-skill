@@ -13,5 +13,7 @@ Module map:
 - ``semver_policy``   — deterministic ``### <Category>`` -> patch/minor/major
 - ``remote_state``    — pure comparisons over ``git`` / ``gh`` command output
 - ``gitgh``           — the read-only Git/GitHub queries the CLI depends on
-- ``cli``             — argument parsing and the thin command handlers
+- ``assessment``      — release classification plus CHANGELOG coverage state
+- ``commands``        — focused command handlers and their output helpers
+- ``cli``             — argument parsing and dispatch
 """

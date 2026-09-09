@@ -27,7 +27,8 @@ from release_lib.classification import (
     classify_path,
     classify_paths,
 )
-from release_lib.cli import Assessment, assess, build_parser, main
+from release_lib.assessment import Assessment, assess
+from release_lib.cli import build_parser, main
 from release_lib.gitgh import (
     changed_files,
     latest_release_tag,
