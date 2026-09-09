@@ -1,0 +1,123 @@
+# Root-cause / duplicate consolidation corpus case (Issue #185, parent #177).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# One shared incorrect validator with many failing call paths. `is_valid_email`
+# is loosened from `re.fullmatch` to `re.match`, so every caller
+# (`register`, `change_email`, `subscribe`, `invite`) now accepts a value that
+# is only a prefix-match — e.g. an address with an embedded newline and a
+# trailing payload. The defect has one cause and one fix, in one symbol.
+#
+# Expected: ONE authoritative required finding on the shared validator that
+# names the affected call paths — not one near-duplicate finding per caller.
+# With `findings_completeness: exhaustive`, a second finding for another call
+# site is an unexpected finding.
+
+format: benchmark-case/v1
+
+id: consolidation-shared-validator-many-call-paths
+title: "One loosened email validator breaks four call paths; expect one authoritative finding"
+
+input:
+  patch: |
+    diff --git a/app/validators.py b/app/validators.py
+    index 1111111..2222222 100644
+    --- a/app/validators.py
+    +++ b/app/validators.py
+    @@ -1,7 +1,7 @@
+     import re
+
+     _EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+
+
+     def is_valid_email(value):
+    -    return re.fullmatch(_EMAIL_RE, value or "") is not None
+    +    return re.match(_EMAIL_RE, value or "") is not None
+  base:
+    app/validators.py: |
+      import re
+
+      _EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+
+
+      def is_valid_email(value):
+          return re.fullmatch(_EMAIL_RE, value or "") is not None
+    app/accounts.py: |
+      from .validators import is_valid_email
+
+
+      def register(email, password):
+          if not is_valid_email(email):
+              raise ValueError("invalid email")
+          _create_user(email, password)
+
+
+      def change_email(user, email):
+          if not is_valid_email(email):
+              raise ValueError("invalid email")
+          user.email = email
+          user.save()
+    app/newsletter.py: |
+      from .validators import is_valid_email
+
+
+      def subscribe(email):
+          if not is_valid_email(email):
+              return False
+          _add_subscriber(email)
+          return True
+    app/teams.py: |
+      from .validators import is_valid_email
+
+
+      def invite(team, email):
+          if not is_valid_email(email):
+              raise ValueError("invalid email")
+          _send_invite(team, email)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    # Severity variance permitted: the weakened check is injection-capable
+    # (a prefix match accepts a multiline value), but the seeded callers are
+    # abstract, so P0 and P1 are both defensible reads. The list keeps the
+    # case from penalising either; the decision is `changes-required` under
+    # both.
+    - key: loosened-email-validation-shared-cause
+      match: required
+      severity: [P0, P1]
+      location:
+        location_intent: cross-file
+        path: app/validators.py
+        symbol: is_valid_email
+        anchor: 're.match(_EMAIL_RE, value or "")'
+      claim: >-
+        is_valid_email switches from re.fullmatch to re.match, so it accepts
+        any value whose prefix matches the pattern (for example an address
+        with an embedded newline and a trailing payload); every caller —
+        accounts.register, accounts.change_email, newsletter.subscribe, and
+        teams.invite — inherits the weakened check from this one symbol.
+      defect_kind: incorrect-validation
+
+    # Optional (severity may be P1 or P2): the validator's contract changed
+    # and no test pins that a non-fullmatch value is now rejected. Reporting
+    # it is not a false positive; not reporting it is not a miss.
+    - key: missing-validation-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/validators.py
+      claim: >-
+        the change alters what is_valid_email accepts and adds no test
+        pinning that a partial-match value is rejected.
+      defect_kind: missing-test
+
+metadata:
+  source: crafted
+  tags: [correctness, security]
+  rationale: >-
+    Pins the core consolidation behaviour: a single shared cause with many
+    manifestations must yield one authoritative finding that lists the
+    affected call paths, not one finding per caller. The exhaustive
+    completeness makes any per-call-site duplicate an unexpected finding.

@@ -1,0 +1,107 @@
+# Root-cause / duplicate consolidation corpus case (Issue #185, parent #177).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# Two naive-vs-aware datetime defects in different layers:
+#
+#   * app/orders.py::stamp_order stores `datetime.now()` (naive local time)
+#     as an order timestamp.
+#   * app/reports.py::in_window parses a cutoff with `strptime` (naive) and
+#     compares it against timezone-aware timestamps, which raises or compares
+#     wrongly.
+#
+# A shared "the codebase has no timezone discipline" cause is *plausible*,
+# but nothing in the change demonstrates a single common origin: the two
+# sites are in different layers, were written for different reasons, share no
+# helper, and each needs its own fix. Confidence in a single consolidatable
+# root cause is low.
+#
+# Expected: the reviewer falls back to TWO separate findings rather than
+# merging them into one authoritative "timezone handling" finding
+# (#177: "when a shared cause is not confident, emit separate findings
+# rather than over-merging").
+
+format: benchmark-case/v1
+
+id: consolidation-shared-cause-low-confidence-fallback
+title: "Plausibly shared timezone cause with low confidence falls back to separate findings"
+
+input:
+  patch: |
+    diff --git a/app/orders.py b/app/orders.py
+    index 1111111..2222222 100644
+    --- a/app/orders.py
+    +++ b/app/orders.py
+    @@ -1,5 +1,5 @@
+     from datetime import datetime, timezone
+
+
+     def stamp_order(order):
+    -    order.created_at = datetime.now(tz=timezone.utc)
+    +    order.created_at = datetime.now()
+    diff --git a/app/reports.py b/app/reports.py
+    index 3333333..4444444 100644
+    --- a/app/reports.py
+    +++ b/app/reports.py
+    @@ -1,6 +1,6 @@
+     from datetime import datetime
+
+
+     def in_window(timestamp, cutoff_text):
+    -    cutoff = datetime.fromisoformat(cutoff_text)
+    +    cutoff = datetime.strptime(cutoff_text, "%Y-%m-%d")
+         return timestamp >= cutoff
+  base:
+    app/orders.py: |
+      from datetime import datetime, timezone
+
+
+      def stamp_order(order):
+          order.created_at = datetime.now(tz=timezone.utc)
+    app/reports.py: |
+      from datetime import datetime
+
+
+      def in_window(timestamp, cutoff_text):
+          cutoff = datetime.fromisoformat(cutoff_text)
+          return timestamp >= cutoff
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: orders-created-at-now-naive
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/orders.py
+        symbol: stamp_order
+        anchor: "order.created_at = datetime.now()"
+      claim: >-
+        created_at is set from datetime.now() with no timezone, so stored
+        order timestamps are naive local time and no longer comparable with
+        the aware timestamps produced elsewhere.
+      defect_kind: naive-datetime
+
+    - key: reports-cutoff-parsed-naive
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/reports.py
+        symbol: in_window
+        anchor: 'datetime.strptime(cutoff_text, "%Y-%m-%d")'
+      claim: >-
+        cutoff is parsed with strptime into a naive datetime and then
+        compared against timestamp, so in_window raises or compares wrongly
+        whenever timestamp is timezone-aware.
+      defect_kind: naive-datetime
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    A shared root cause is plausible but not confidently established — two
+    layers, two fixes, no shared code. The corpus pins the fail-open path:
+    low-confidence shared cause yields separate findings, not an
+    over-merged authoritative one.

@@ -1,0 +1,132 @@
+# Root-cause / duplicate consolidation corpus case (Issue #185, parent #177).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# A re-review. `sanitize_path` "strips" traversal with a single
+# `value.replace("../", "")`, which `....//` defeats (one non-recursive pass
+# leaves `../`), and both `read_report` and `read_export` route through it.
+# An earlier review of this change
+# (carried in `input.context` as prior review evidence, per
+# shared/policies/review-evidence.md) raised the SAME defect as TWO separate
+# per-call-site findings.
+#
+# Expected on re-review: ONE authoritative consolidated finding on
+# `sanitize_path` that reconciles with — supersedes — the two prior separate
+# findings. Not two findings, and not a third "new" one. With
+# `findings_completeness: exhaustive`, re-emitting the per-call-site pair is
+# an unexpected finding.
+#
+# NOTE: `benchmark-case/v1` has no dedicated prior-review field; the prior
+# findings are supplied through `input.context` (§6.3). A first-class
+# re-review input is left to a later fixture-format revision (see #177), not
+# this corpus.
+
+format: benchmark-case/v1
+
+id: consolidation-rereview-reconciles-to-authoritative
+title: "Re-review consolidates two prior per-call-site findings into one authoritative finding"
+
+input:
+  patch: |
+    diff --git a/app/pathsafe.py b/app/pathsafe.py
+    index 1111111..2222222 100644
+    --- a/app/pathsafe.py
+    +++ b/app/pathsafe.py
+    @@ -1,3 +1,7 @@
+     import os
+
+     REPORT_ROOT = "/var/app/reports"
+    +
+    +
+    +def sanitize_path(value):
+    +    return os.path.join(REPORT_ROOT, value.replace("../", ""))
+    diff --git a/app/reports.py b/app/reports.py
+    index 3333333..4444444 100644
+    --- a/app/reports.py
+    +++ b/app/reports.py
+    @@ -1,6 +1,6 @@
+    -from .pathsafe import REPORT_ROOT
+    +from .pathsafe import sanitize_path
+
+
+     def read_report(name):
+    -    with open(REPORT_ROOT + "/" + name) as fh:
+    +    with open(sanitize_path(name)) as fh:
+             return fh.read()
+    diff --git a/app/exports.py b/app/exports.py
+    index 5555555..6666666 100644
+    --- a/app/exports.py
+    +++ b/app/exports.py
+    @@ -1 +1,7 @@
+     # exports helpers
+    +from .pathsafe import sanitize_path
+    +
+    +
+    +def read_export(name):
+    +    with open(sanitize_path(name)) as fh:
+    +        return fh.read()
+  base:
+    app/pathsafe.py: |
+      import os
+
+      REPORT_ROOT = "/var/app/reports"
+    app/reports.py: |
+      from .pathsafe import REPORT_ROOT
+
+
+      def read_report(name):
+          with open(REPORT_ROOT + "/" + name) as fh:
+              return fh.read()
+    app/exports.py: |
+      # exports helpers
+  context: |
+    Context source: prior review of an earlier revision of this same change
+    (this is a re-review). The previous review raised two separate findings,
+    both still unaddressed in the current revision:
+      1. P1 path traversal in app/reports.py::read_report — the sanitizer
+         removes only a literal "../" in one pass, so "....//" leaves "../"
+         behind and escapes REPORT_ROOT.
+      2. P1 path traversal in app/exports.py::read_export — same sanitize_path
+         call, same bypass.
+    The current revision routes both call paths through the one shared
+    sanitize_path helper.
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: shared-sanitizer-bypass-consolidated
+      match: required
+      severity: P1
+      location:
+        location_intent: cross-file
+        path: app/pathsafe.py
+        symbol: sanitize_path
+        anchor: 'value.replace("../", "")'
+      claim: >-
+        sanitize_path strips only a literal "../" in a single non-recursive
+        pass, so a crafted name such as "....//" leaves "../" behind and
+        escapes REPORT_ROOT; both read_report and read_export inherit the
+        bypass from this one helper. This single authoritative finding
+        reconciles the two separate per-call-site findings from the prior
+        review.
+      defect_kind: path-traversal
+
+    - key: missing-path-traversal-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/pathsafe.py
+      claim: >-
+        sanitize_path is introduced as the shared containment check and no
+        test pins that a "....//"-style name cannot escape REPORT_ROOT.
+      defect_kind: missing-test
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Consolidation must survive re-review: when a prior review recorded one
+    defect as several per-site findings, the re-review reconciles them to
+    the single authoritative finding rather than carrying the duplicates
+    forward or raising a third finding.
