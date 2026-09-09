@@ -140,12 +140,6 @@ class CaseMetrics:
         }
 
 
-def _required_entry_count(case: bf.BenchmarkCase) -> int:
-    """Every ``required`` entry counts once — an ``any_of`` group included
-    (missed-and-incorrect-findings.md §3)."""
-    return sum(1 for entry in case.findings if entry.required)
-
-
 def compute_case_metrics(
     case: bf.BenchmarkCase,
     case_result: br.CaseResult,

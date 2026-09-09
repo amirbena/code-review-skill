@@ -196,7 +196,7 @@ For every case the metric record carries:
 | Field | Meaning |
 |---|---|
 | `id` | Case id ([`fixture-format.md`](fixture-format.md) §5). |
-| `status` | `executed` or `errored`, echoed from the runner (§4). |
+| `status` | Derived from the runner's per-case result (§4): a runner `executed` passes through as `executed`; a runner `error` (or a missing per-case result) is flagged `errored`. |
 | `findings_completeness` | `exhaustive` / `at-least`, echoed — it changes how `false_positives` is read (§4). |
 | `false_negatives` | Count — unpaired `required` entries (§3). |
 | `false_positives` | Count — §4. |
@@ -243,6 +243,14 @@ This contract defines that section.
   baseline`); and the same three-column shape for the aggregate. Cases are
   ordered by `id`, exactly as the rest of the report
   ([`regression-report.md`](regression-report.md) §7).
+- A case `id` in only one of the two runs has no per-case Δ row (there is
+  nothing to difference); the baseline-vs-candidate section lists such ids
+  in `added_case_ids` / `removed_case_ids`, mirroring the run-to-run
+  report's own added/removed handling
+  ([`regression-report.md`](regression-report.md) §3). The aggregate
+  three-column row is still a whole-run count on each side per §5, so an
+  added or removed case is reflected in the aggregate Δ even though it has
+  no per-case row.
 - The section is **computed independently** of the run-to-run diff and
   **never changes** `has_regressions` or the report's process exit status
   ([`regression-report.md`](regression-report.md) §6, §9). A rising
