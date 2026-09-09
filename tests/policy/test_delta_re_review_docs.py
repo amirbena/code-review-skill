@@ -65,6 +65,30 @@ class DeltaReReviewContractTests(unittest.TestCase):
         self.assertIn("Reviewer-established consolidation ≠ matcher collapse", self.raw)
         self.assertIn("`CONSOLIDATED` (#62 §4) is not a change class", self.raw)
 
+    def test_ambiguous_row_states_consolidated_is_not_an_inference(self) -> None:
+        """The §2 `Ambiguous` "Maps to" cell must not read as offering
+        `CONSOLIDATED` and then denying it — it explicitly frames the
+        "never a confident transition" rule as an anti-inference rule and
+        `CONSOLIDATED` as its evidence-gated exception, not a heuristic."""
+        row = next(
+            line
+            for line in self.raw.splitlines()
+            if line.startswith("| **Ambiguous** |")
+        )
+        self.assertIn("`UNCERTAIN`, prior state preserved (#62 §4, §7).", row)
+        self.assertIn(
+            "never **inferred** into a confident "
+            "`Fixed`/`Moved`/`Reopened`/resolution transition",
+            row,
+        )
+        self.assertIn(
+            "The one non-`UNCERTAIN` outcome is the #62 **`CONSOLIDATED`** "
+            "disposition — and it is not such an inference",
+            row,
+        )
+        self.assertIn("it resolves nothing", row)
+        self.assertIn("each folded prior identity stays `OPEN`", row)
+
     def test_change_classes_map_to_lifecycle_events(self) -> None:
         for event in ("`RESOLVED`", "`STILL_PRESENT`", "`REOPENED`", "`DETECTED`", "`UNCERTAIN`"):
             self.assertIn(event, self.raw)
