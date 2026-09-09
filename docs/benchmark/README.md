@@ -20,11 +20,15 @@ concern lives in the file named for it.
 | [`runner-contract.md`](runner-contract.md) | How a benchmark run executes the reviewer over the corpus — per-case isolation into a disposable workspace, the repository-safety invariants for every protected source checkout, cleanup on success and failure, the machine-readable per-case result shape, single-case vs. whole-corpus runs, and the exit-status rule. | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
 | [`regression-report.md`](regression-report.md) | How a candidate run is compared against a stored baseline — the baseline result artifact, the corpus-identity guard, the per-case and aggregate deltas, the metric-free rule that separates a regression from an improvement, deterministic output, and the deliberate baseline-refresh step. | [#53](https://github.com/amirbena/code-review-skill/issues/53) |
 | [`match-criteria.md`](match-criteria.md) | When a produced review finding matches an expected benchmark finding — the two match axes (location, defect), the three-valued `MATCH` / `NEAR_MISS` / `NO_MATCH` result, the fixed tolerances, and how `alternatives` / `any_of` / `match: optional` resolve. The pairing relation the [#41](https://github.com/amirbena/code-review-skill/issues/41) quality metrics are built on. | [#54](https://github.com/amirbena/code-review-skill/issues/54) |
+| [`missed-and-incorrect-findings.md`](missed-and-incorrect-findings.md) | Turning match results into **missed-finding (false-negative)** and **incorrect-finding (false-positive)** counts — the deterministic produced↔expected one-to-one pairing (`MATCH` edges only, fixture document order), the per-case and aggregate counts, how `match: optional` / `any_of` / `findings_completeness` change the accounting, and how the counts render alongside the regression report's deltas without gating it. | [#55](https://github.com/amirbena/code-review-skill/issues/55) |
 
 The first four documents cover the whole epic-[#40](https://github.com/amirbena/code-review-skill/issues/40)
 benchmark surface; [`match-criteria.md`](match-criteria.md) ([#54](https://github.com/amirbena/code-review-skill/issues/54))
 adds the expected-vs-produced match relation that the epic-[#41](https://github.com/amirbena/code-review-skill/issues/41)
-quality metrics (#55–#57) consume. The corpus and its case-selection rationale
+quality metrics (#55–#57) consume, and
+[`missed-and-incorrect-findings.md`](missed-and-incorrect-findings.md)
+([#55](https://github.com/amirbena/code-review-skill/issues/55)) is the
+first of those metrics — the false-negative / false-positive counts. The corpus and its case-selection rationale
 ([#51](https://github.com/amirbena/code-review-skill/issues/51)) live in
 [`corpus/`](corpus/README.md); the runner contract
 ([#52](https://github.com/amirbena/code-review-skill/issues/52)) is
@@ -96,6 +100,30 @@ test-only reference matcher
 mirrors it and is exercised by
 [`../../tests/unit/test_benchmark_match.py`](../../tests/unit/test_benchmark_match.py),
 which encodes every worked example as a data-driven case.
+
+## Missed & incorrect findings
+
+[`missed-and-incorrect-findings.md`](missed-and-incorrect-findings.md)
+(#55) is the first #41 quality metric: it turns `match-criteria.md`
+results into **false-negative** (missed) and **false-positive**
+(incorrect) counts, per case and in aggregate. It first resolves a
+deterministic one-to-one pairing between produced findings and expected
+entries — `MATCH` edges only, greedy in fixture document order — then
+counts unpaired `required` entries as misses and union-`NO_MATCH`
+unconsumed produced findings as false positives (only when the case is
+`findings_completeness: exhaustive`; `at-least` tolerates them).
+`match: optional` and unsatisfied `any_of` groups are handled per
+`fixture-format.md` §9, near-misses are surfaced as a strict subset of the
+misses without double-counting, and the counts render **alongside** the
+regression report's per-case deltas without ever changing
+`has_regressions`. It computes no score, rate, or severity judgement
+(severity accuracy is #56; duplicate noise is #57). The test-only
+reference metric
+[`../../tests/reference/benchmark_metrics.py`](../../tests/reference/benchmark_metrics.py)
+mirrors it (executed by
+[`../../tests/unit/test_benchmark_metrics.py`](../../tests/unit/test_benchmark_metrics.py),
+including every §8 worked example) and delegates every pairwise decision to
+the single reference matcher.
 
 ## Related
 

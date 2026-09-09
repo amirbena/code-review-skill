@@ -57,6 +57,7 @@ REFERENCE_TEST_MODULES = (
     "benchmark_runner.py",
     "benchmark_report.py",
     "benchmark_match.py",
+    "benchmark_metrics.py",
 )
 
 # module -> (packaged canonical source that must carry the same contract,
