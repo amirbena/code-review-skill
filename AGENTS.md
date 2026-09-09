@@ -112,6 +112,17 @@ canonical, detailed rule lives in the policy named after it.
 - **One canonical home per rule.** A normative rule has exactly one
   canonical location. Other files (this one included) summarize and link;
   they do not restate a rule in a way that can drift independently.
+- **File size is a review trigger, not a limit.** When a production file
+  (a Skill resource, policy, runbook, template, script, workflow, or
+  reference doc) grows past roughly 300 lines, treat that as a prompt to
+  check whether it owns more than one responsibility, restates a contract
+  that is canonical elsewhere, mixes orchestration with implementation, or
+  has a natural extraction boundary. If one applies, decompose along that
+  boundary while preserving behavior, public contracts, and packaging; if
+  none applies and the file is genuinely cohesive, a large file is fine.
+  Line count alone is never a CI-enforced limit. The current inventory and
+  decomposition sequence live in
+  [`docs/large-file-decomposition.md`](docs/large-file-decomposition.md).
 - **Thin, layered documentation.** README files are orientation and
   navigation surfaces, not capability encyclopedias: the root
   [`README.md`](README.md) gives the product overview, Skill selection,
