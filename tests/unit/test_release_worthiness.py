@@ -85,6 +85,16 @@ class ClassifyPathTests(unittest.TestCase):
         ):
             self.assertEqual(rw.classify_path(path), "packaging", path)
 
+    def test_skill_metadata_validator_package_is_release_worthy(self) -> None:
+        # The validator behind scripts/validate-skill-metadata.py is a
+        # package; editing any of its modules stays release-worthy.
+        for path in (
+            "scripts/skill_metadata/expectations.py",
+            "scripts/skill_metadata/orchestrator.py",
+            "scripts/skill_metadata/github_family.py",
+        ):
+            self.assertEqual(rw.classify_path(path), "packaging", path)
+
     def test_non_packaging_scripts_are_maintenance(self) -> None:
         self.assertEqual(rw.classify_path("scripts/claim_issue.py"), "repo-maintenance")
         self.assertEqual(rw.classify_path("scripts/release_worthiness.py"), "repo-maintenance")

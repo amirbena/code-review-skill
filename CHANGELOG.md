@@ -13,8 +13,13 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Fixed
+
+- Internal: the Skill discovery-metadata validator behind
+  `scripts/validate-skill-metadata.py` is now a thin entrypoint over a
+  focused `scripts/skill_metadata/` package (expectation tables, link /
+  metadata / shared-resource / per-Skill checkers, orchestrator, CLI).
+  No change to what is validated, the CLI, error messages, or exit codes.
 
 ## v1.9.0 — 2026-09-09
 
