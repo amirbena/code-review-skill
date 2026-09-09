@@ -327,9 +327,13 @@ class ReleaseCommitAttributionTests(unittest.TestCase):
         step = _step(self.steps, "Resolve the authenticated release App bot identity")
         run = step["run"]
         self.assertIn("set -euo pipefail", run)
-        # An unresolved slug or a non-numeric user id aborts the release job.
-        self.assertEqual(run.count("exit 1"), 2)
+        # Both an unresolved slug and a non-numeric user id must abort the
+        # release job; extra guards are fine, silently continuing is not.
+        self.assertGreaterEqual(run.count("exit 1"), 2)
+        self.assertIn('if [ -z "${APP_SLUG}" ]; then', run)
         self.assertIn("grep -Eq '^[0-9]+$'", run)
+        # No fallback to a hard-coded identity anywhere in the resolution.
+        self.assertNotIn("release-automation", run)
 
 
 class SupportingArtifactsTests(unittest.TestCase):
