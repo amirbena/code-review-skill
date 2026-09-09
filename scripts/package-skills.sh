@@ -16,6 +16,8 @@ repo_root="$(cd "${script_dir}/.." && pwd)"
 dist_dir="${repo_root}/dist"
 staging_root="${dist_dir}/.staging"
 metadata_validator="${script_dir}/validate-skill-metadata.py"
+package_manifest="${script_dir}/package-manifest.json"
+package_manifest_helper="${script_dir}/package_manifest.py"
 
 target="${1:-all}"
 case "${target}" in
@@ -26,46 +28,10 @@ case "${target}" in
     ;;
 esac
 
-# Shared files, by package-relative destination path.
-shared_policies=(
-  "review-scope.md"
-  "severity.md"
-  "evidence.md"
-  "repository-instructions.md"
-  "runtime-validation.md"
-  "git-safety.md"
-  "review-ownership.md"
-  "file-reviewability.md"
-  "review-context.md"
-  "review-evidence.md"
-  "parallel-review.md"
-  "invocation-options.md"
-  "remediation-guidance.md"
-)
-shared_templates=(
-  "finding.md"
-  "review-summary.md"
-)
-
-# Runtime assets that must be present in the packaged github-pr-review
-# archive, verified independently of the general skill_files allowlist
-# passed to package_skill below — so a future edit that drops an entry
-# from that allowlist still fails packaging instead of silently shipping
-# an incomplete archive. external-review-summary.md is a required
-# runtime dependency (referenced by SKILL.md and both runbooks), not
-# repository-only documentation.
-github_required_runtime_templates=(
-  "templates/external-review-summary.md"
-)
-
-require_source_file() {
-  local skill_name="$1"
-  local skill_src="$2"
-  local rel_path="$3"
-  if [[ ! -f "${skill_src}/${rel_path}" ]]; then
-    echo "error: required runtime template missing for ${skill_name}: skills/${skill_name}/${rel_path}" >&2
-    exit 1
-  fi
+manifest_query() {
+  local package_target="$1"
+  local query="$2"
+  python3 "${package_manifest_helper}" "${package_manifest}" "${package_target}" "${query}"
 }
 
 require_archive_entry() {
@@ -169,68 +135,42 @@ adapt_metadata_paths() {
 }
 
 package_skill() {
-  local skill_name="$1"       # e.g. local-code-review
-  local archive_stem="$2"     # e.g. local-code-review-skill
-  shift 2
-  local skill_files=("$@")    # paths relative to skills/<skill_name>/
-
+  local package_target="$1"
+  local skill_name
+  local archive_name
+  skill_name="$(manifest_query "${package_target}" name)"
+  archive_name="$(manifest_query "${package_target}" archive)"
   local skill_src="${repo_root}/skills/${skill_name}"
-  local stage_dir="${staging_root}/${archive_stem}"
-  local archive_path="${dist_dir}/${archive_stem}.zip"
+  local stage_dir="${staging_root}/${archive_name%.zip}"
+  local archive_path="${dist_dir}/${archive_name}"
 
   if [[ ! -d "${skill_src}" ]]; then
     echo "error: required Skill directory missing: skills/${skill_name}" >&2
     exit 1
   fi
-  if [[ ! -f "${skill_src}/SKILL.md" ]]; then
-    echo "error: required Skill entry point missing: skills/${skill_name}/SKILL.md" >&2
-    exit 1
-  fi
-  if [[ ! -f "${repo_root}/LICENSE" ]]; then
-    echo "error: required repository license missing: LICENSE" >&2
-    exit 1
-  fi
   python3 "${metadata_validator}" "${skill_src}" --containment-root "${repo_root}"
-  for f in "${skill_files[@]}"; do
-    if [[ ! -f "${skill_src}/${f}" ]]; then
-      echo "error: required Skill file missing: skills/${skill_name}/${f}" >&2
-      exit 1
-    fi
-  done
-  for f in "${shared_policies[@]}"; do
-    if [[ ! -f "${repo_root}/shared/policies/${f}" ]]; then
-      echo "error: required shared policy missing: shared/policies/${f}" >&2
-      exit 1
-    fi
-  done
-  for f in "${shared_templates[@]}"; do
-    if [[ ! -f "${repo_root}/shared/templates/${f}" ]]; then
-      echo "error: required shared template missing: shared/templates/${f}" >&2
-      exit 1
-    fi
-  done
 
   # Only ever clean our own controlled staging/output location, and only
   # ever write generated content under dist/.
   rm -rf "${stage_dir}"
-  mkdir -p "${stage_dir}/shared/policies" "${stage_dir}/shared/templates"
+  mkdir -p "${stage_dir}"
 
-  for f in "${shared_policies[@]}"; do
-    cp "${repo_root}/shared/policies/${f}" "${stage_dir}/shared/policies/${f}"
-  done
-  for f in "${shared_templates[@]}"; do
-    cp "${repo_root}/shared/templates/${f}" "${stage_dir}/shared/templates/${f}"
-  done
-
-  # Copy SKILL.md to the archive root, and every other Skill-specific
-  # file to its package-root-relative location (dropping the
-  # skills/<skill_name>/ source prefix).
-  for f in "SKILL.md" "${skill_files[@]}"; do
-    dest="${stage_dir}/${f}"
-    mkdir -p "$(dirname "${dest}")"
-    cp "${skill_src}/${f}" "${dest}"
-  done
-  cp "${repo_root}/LICENSE" "${stage_dir}/LICENSE"
+  local manifest_files
+  manifest_files="$(mktemp)"
+  if ! manifest_query "${package_target}" files > "${manifest_files}"; then
+    rm -f "${manifest_files}"
+    exit 1
+  fi
+  while IFS=$'\t' read -r source destination; do
+    if [[ ! -f "${repo_root}/${source}" ]]; then
+      rm -f "${manifest_files}"
+      echo "error: required package source missing: ${source}" >&2
+      exit 1
+    fi
+    mkdir -p "$(dirname "${stage_dir}/${destination}")"
+    cp "${repo_root}/${source}" "${stage_dir}/${destination}"
+  done < "${manifest_files}"
+  rm -f "${manifest_files}"
 
   # Adapt relative links into shared/ across every packaged Markdown
   # file (skill-local links like ../SKILL.md or runbooks/... need no
@@ -263,14 +203,16 @@ package_skill() {
   )
 
   # --- Verify archive contents ---
-  if ! unzip -l "${archive_path}" | awk '{print $4}' | grep -qx "SKILL.md"; then
-    echo "error: archive missing root SKILL.md: ${archive_path}" >&2
+  local required_entries
+  required_entries="$(mktemp)"
+  if ! manifest_query "${package_target}" required_entries > "${required_entries}"; then
+    rm -f "${required_entries}"
     exit 1
   fi
-  if ! unzip -l "${archive_path}" | awk '{print $4}' | grep -qx "LICENSE"; then
-    echo "error: archive missing root LICENSE: ${archive_path}" >&2
-    exit 1
-  fi
+  while IFS= read -r required_entry; do
+    require_archive_entry "${archive_path}" "${required_entry}"
+  done < "${required_entries}"
+  rm -f "${required_entries}"
   if unzip -l "${archive_path}" | awk '{print $4}' | grep -q '^skills/'; then
     echo "error: archive must not contain a nested skills/ directory: ${archive_path}" >&2
     exit 1
@@ -285,45 +227,11 @@ echo "Repository root: ${repo_root}"
 mkdir -p "${dist_dir}"
 
 if [[ "${target}" == "local" || "${target}" == "all" ]]; then
-  package_skill "local-code-review" "local-code-review-skill" \
-    "agents/openai.yaml" \
-    "metadata/skill.yaml" \
-    "policies/invocation-approval.md" \
-    "policies/repository-state.md" \
-    "policies/review-context.md" \
-    "policies/pr-context.md" \
-    "runbooks/local-review.md" \
-    "templates/local-review-report.md"
+  package_skill "local"
 fi
 
 if [[ "${target}" == "github" || "${target}" == "all" ]]; then
-  for f in "${github_required_runtime_templates[@]}"; do
-    require_source_file "github-pr-review" "${repo_root}/skills/github-pr-review" "${f}"
-  done
-  package_skill "github-pr-review" "github-pr-review-skill" \
-    "agents/openai.yaml" \
-    "metadata/skill.yaml" \
-    "policies/github-review.md" \
-    "policies/review-authority.md" \
-    "policies/review-action-authorization.md" \
-    "policies/reviewer-delta-review.md" \
-    "policies/stateful-delta-rereview.md" \
-    "policies/pr-scope.md" \
-    "policies/repository-checkout.md" \
-    "policies/review-context.md" \
-    "policies/review-evidence.md" \
-    "policies/review-reasoning.md" \
-    "policies/parallel-review.md" \
-    "policies/finding-placement.md" \
-    "policies/review-output.md" \
-    "policies/review-status-enforcement.md" \
-    "runbooks/passive-pr-review.md" \
-    "runbooks/active-pr-review.md" \
-    "templates/inline-finding.md" \
-    "templates/external-review-summary.md"
-  for f in "${github_required_runtime_templates[@]}"; do
-    require_archive_entry "${dist_dir}/github-pr-review-skill.zip" "${f}"
-  done
+  package_skill "github"
 fi
 
 # Remove the now-empty staging root if packaging left nothing behind.

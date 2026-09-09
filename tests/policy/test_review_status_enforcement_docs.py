@@ -29,6 +29,7 @@ PASSIVE_RUNBOOK = GITHUB / "runbooks" / "passive-pr-review.md"
 METADATA = GITHUB / "metadata" / "skill.yaml"
 PKG_SH = REPO_ROOT / "scripts" / "package-skills.sh"
 PKG_PS1 = REPO_ROOT / "scripts" / "package-skills.ps1"
+PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "package-manifest.json"
 # The Skill-metadata validator's declarative tables (GITHUB_POLICY_ORDER /
 # _MARKERS). Since #194 the validator is a package; the tables live here.
 VALIDATOR = REPO_ROOT / "scripts" / "skill_metadata" / "expectations.py"
@@ -174,13 +175,11 @@ class WiredIntoMetadataAndScripts(unittest.TestCase):
         self.assertIn("publishes_machine_readable_status: conditional", raw)
         self.assertIn("can_merge: false", raw)
 
-    def test_both_package_scripts_ship_the_policy(self) -> None:
-        for script in (PKG_SH, PKG_PS1):
-            self.assertIn(
-                "policies/review-status-enforcement.md",
-                script.read_text(encoding="utf-8"),
-                script.name,
-            )
+    def test_package_manifest_ships_the_policy(self) -> None:
+        self.assertIn(
+            "policies/review-status-enforcement.md",
+            PACKAGE_MANIFEST.read_text(encoding="utf-8"),
+        )
 
     def test_validator_orders_and_marks_the_policy(self) -> None:
         raw = VALIDATOR.read_text(encoding="utf-8")

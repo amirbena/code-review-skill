@@ -421,14 +421,13 @@ class PythonScriptsCodingPolicyWiringTests(unittest.TestCase):
 
 
 class PackagedArchivesCarryTheSharedModelTests(unittest.TestCase):
-    def test_package_scripts_list_the_new_shared_policies(self) -> None:
-        for script in ("package-skills.sh", "package-skills.ps1"):
-            t = (REPO_ROOT / "scripts" / script).read_text(encoding="utf-8")
-            self.assertIn("review-context.md", t)
-            self.assertIn("review-evidence.md", t)
+    def test_package_manifest_lists_the_new_shared_policies(self) -> None:
+        t = (REPO_ROOT / "scripts" / "package-manifest.json").read_text(encoding="utf-8")
+        self.assertIn("review-context.md", t)
+        self.assertIn("review-evidence.md", t)
 
     def test_github_package_lists_the_two_new_policies(self) -> None:
-        t = (REPO_ROOT / "scripts" / "package-skills.sh").read_text(encoding="utf-8")
+        t = (REPO_ROOT / "scripts" / "package-manifest.json").read_text(encoding="utf-8")
         self.assertIn('"policies/review-context.md"', t)
         self.assertIn('"policies/review-evidence.md"', t)
 

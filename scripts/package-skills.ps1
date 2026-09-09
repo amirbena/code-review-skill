@@ -27,6 +27,8 @@ $repoRoot = Resolve-Path (Join-Path $scriptDir "..")
 $distDir = Join-Path $repoRoot "dist"
 $stagingRoot = Join-Path $distDir ".staging"
 $metadataValidator = Join-Path $scriptDir "validate-skill-metadata.py"
+$packageManifestPath = Join-Path $scriptDir "package-manifest.json"
+$packageManifestHelper = Join-Path $scriptDir "package_manifest.py"
 $pythonCommand = if (Get-Command "python" -ErrorAction SilentlyContinue) {
   "python"
 } elseif (Get-Command "python3" -ErrorAction SilentlyContinue) {
@@ -36,69 +38,10 @@ $pythonCommand = if (Get-Command "python" -ErrorAction SilentlyContinue) {
   exit 1
 }
 
-# Shared files, by package-relative destination path — kept in sync with
-# scripts/package-skills.sh.
-$sharedPolicies = @(
-  "review-scope.md",
-  "severity.md",
-  "evidence.md",
-  "repository-instructions.md",
-  "runtime-validation.md",
-  "git-safety.md",
-  "review-ownership.md",
-  "file-reviewability.md",
-  "review-context.md",
-  "review-evidence.md",
-  "parallel-review.md",
-  "invocation-options.md",
-  "remediation-guidance.md"
-)
-$sharedTemplates = @(
-  "finding.md",
-  "review-summary.md"
-)
-
-# Runtime assets that must be present in the packaged github-pr-review
-# archive, verified independently of the general -SkillFiles allowlist
-# passed to Package-Skill below — so a future edit that drops an entry
-# from that allowlist still fails packaging instead of silently shipping
-# an incomplete archive. external-review-summary.md is a required
-# runtime dependency (referenced by SKILL.md and both runbooks), not
-# repository-only documentation. Kept in sync with the equivalent guard
-# in scripts/package-skills.sh.
-$githubRequiredRuntimeTemplates = @(
-  "templates/external-review-summary.md"
-)
-
-function Require-SourceFile {
-  param(
-    [string]$SkillName,
-    [string]$SkillSrc,
-    [string]$RelPath
-  )
-  $path = Join-Path $SkillSrc $RelPath
-  if (-not (Test-Path $path -PathType Leaf)) {
-    Write-Error "required runtime template missing for $SkillName`: skills/$SkillName/$RelPath"
-    exit 1
-  }
-}
-
-function Require-ArchiveEntry {
-  param(
-    [string]$ArchivePath,
-    [string]$RelPath
-  )
-  Add-Type -AssemblyName System.IO.Compression.FileSystem
-  $zip = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
-  try {
-    $entryNames = $zip.Entries | ForEach-Object { $_.FullName }
-  } finally {
-    $zip.Dispose()
-  }
-  if (-not ($entryNames -contains $RelPath)) {
-    Write-Error "archive missing required runtime asset: $ArchivePath ($RelPath)"
-    exit 1
-  }
+$packageManifest = Get-Content -Path $packageManifestPath -Raw | ConvertFrom-Json
+if ($packageManifest.schema_version -ne 1) {
+  Write-Error "unsupported package manifest schema_version"
+  exit 1
 }
 
 # Rewrite relative links into shared/ so they resolve from the archive
@@ -169,76 +112,47 @@ function Adapt-MetadataPaths {
 
 function Package-Skill {
   param(
-    [string]$SkillName,      # e.g. local-code-review
-    [string]$ArchiveStem,    # e.g. local-code-review-skill
-    [string[]]$SkillFiles    # paths relative to skills/<SkillName>/
+    [string]$PackageTarget
   )
 
+  & $pythonCommand $packageManifestHelper $packageManifestPath $PackageTarget validate
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  $skill = $packageManifest.skills.$PackageTarget
+  if ($null -eq $skill) {
+    Write-Error "package manifest has no target '$PackageTarget'"
+    exit 1
+  }
+  $skillName = $skill.name
+  $archiveName = $skill.archive
   $skillSrc = Join-Path $repoRoot "skills/$SkillName"
-  $stageDir = Join-Path $stagingRoot $ArchiveStem
-  $archivePath = Join-Path $distDir "$ArchiveStem.zip"
+  $stageDir = Join-Path $stagingRoot ([System.IO.Path]::GetFileNameWithoutExtension($archiveName))
+  $archivePath = Join-Path $distDir $archiveName
 
   if (-not (Test-Path $skillSrc -PathType Container)) {
     Write-Error "required Skill directory missing: skills/$SkillName"
     exit 1
   }
-  if (-not (Test-Path (Join-Path $skillSrc "SKILL.md") -PathType Leaf)) {
-    Write-Error "required Skill entry point missing: skills/$SkillName/SKILL.md"
-    exit 1
-  }
-  if (-not (Test-Path (Join-Path $repoRoot "LICENSE") -PathType Leaf)) {
-    Write-Error "required repository license missing: LICENSE"
-    exit 1
-  }
   & $pythonCommand $metadataValidator $skillSrc --containment-root $repoRoot
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  foreach ($f in $SkillFiles) {
-    $path = Join-Path $skillSrc $f
-    if (-not (Test-Path $path -PathType Leaf)) {
-      Write-Error "required Skill file missing: skills/$SkillName/$f"
-      exit 1
-    }
-  }
-  foreach ($f in $sharedPolicies) {
-    $path = Join-Path $repoRoot "shared/policies/$f"
-    if (-not (Test-Path $path -PathType Leaf)) {
-      Write-Error "required shared policy missing: shared/policies/$f"
-      exit 1
-    }
-  }
-  foreach ($f in $sharedTemplates) {
-    $path = Join-Path $repoRoot "shared/templates/$f"
-    if (-not (Test-Path $path -PathType Leaf)) {
-      Write-Error "required shared template missing: shared/templates/$f"
-      exit 1
-    }
-  }
 
   # Only ever clean our own controlled staging/output location, and only
   # ever write generated content under dist/.
   if (Test-Path $stageDir) {
     Remove-Item -Recurse -Force $stageDir
   }
-  New-Item -ItemType Directory -Path (Join-Path $stageDir "shared/policies") -Force | Out-Null
-  New-Item -ItemType Directory -Path (Join-Path $stageDir "shared/templates") -Force | Out-Null
+  New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
 
-  foreach ($f in $sharedPolicies) {
-    Copy-Item -Path (Join-Path $repoRoot "shared/policies/$f") -Destination (Join-Path $stageDir "shared/policies/$f")
-  }
-  foreach ($f in $sharedTemplates) {
-    Copy-Item -Path (Join-Path $repoRoot "shared/templates/$f") -Destination (Join-Path $stageDir "shared/templates/$f")
-  }
-
-  # Copy SKILL.md to the archive root, and every other Skill-specific
-  # file to its package-root-relative location (dropping the
-  # skills/<SkillName>/ source prefix).
-  $allFiles = @("SKILL.md") + $SkillFiles
-  foreach ($f in $allFiles) {
-    $destPath = Join-Path $stageDir $f
+  $entries = @($packageManifest.shared_files) + @($skill.files)
+  foreach ($entry in $entries) {
+    $sourcePath = Join-Path $repoRoot $entry.source
+    if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+      Write-Error "required package source missing: $($entry.source)"
+      exit 1
+    }
+    $destPath = Join-Path $stageDir $entry.destination
     New-Item -ItemType Directory -Path (Split-Path -Parent $destPath) -Force | Out-Null
-    Copy-Item -Path (Join-Path $skillSrc $f) -Destination $destPath
+    Copy-Item -LiteralPath $sourcePath -Destination $destPath
   }
-  Copy-Item -Path (Join-Path $repoRoot "LICENSE") -Destination (Join-Path $stageDir "LICENSE")
 
   # Adapt relative links into shared/ across every packaged Markdown
   # file (skill-local links like ../SKILL.md or runbooks/... need no
@@ -281,13 +195,11 @@ function Package-Skill {
   } finally {
     $zip.Dispose()
   }
-  if (-not ($entryNames -contains "SKILL.md")) {
-    Write-Error "archive missing root SKILL.md: $archivePath"
-    exit 1
-  }
-  if (-not ($entryNames -contains "LICENSE")) {
-    Write-Error "archive missing root LICENSE: $archivePath"
-    exit 1
+  foreach ($requiredEntry in $skill.required_entries) {
+    if (-not ($entryNames -contains $requiredEntry)) {
+      Write-Error "archive missing required runtime asset: $archivePath ($requiredEntry)"
+      exit 1
+    }
   }
   if ($entryNames | Where-Object { $_ -like "skills/*" }) {
     Write-Error "archive must not contain a nested skills/ directory: $archivePath"
@@ -303,49 +215,11 @@ Write-Host "Repository root: $repoRoot"
 New-Item -ItemType Directory -Path $distDir -Force | Out-Null
 
 if ($Skill -eq "local" -or $Skill -eq "all") {
-  Package-Skill -SkillName "local-code-review" -ArchiveStem "local-code-review-skill" -SkillFiles @(
-    "agents/openai.yaml",
-    "metadata/skill.yaml",
-    "policies/invocation-approval.md",
-    "policies/repository-state.md",
-    "policies/review-context.md",
-    "policies/pr-context.md",
-    "runbooks/local-review.md",
-    "templates/local-review-report.md"
-  )
+  Package-Skill -PackageTarget "local"
 }
 
 if ($Skill -eq "github" -or $Skill -eq "all") {
-  $githubSkillSrc = Join-Path $repoRoot "skills/github-pr-review"
-  foreach ($f in $githubRequiredRuntimeTemplates) {
-    Require-SourceFile -SkillName "github-pr-review" -SkillSrc $githubSkillSrc -RelPath $f
-  }
-  Package-Skill -SkillName "github-pr-review" -ArchiveStem "github-pr-review-skill" -SkillFiles @(
-    "agents/openai.yaml",
-    "metadata/skill.yaml",
-    "policies/github-review.md",
-    "policies/review-authority.md",
-    "policies/review-action-authorization.md",
-    "policies/reviewer-delta-review.md",
-    "policies/stateful-delta-rereview.md",
-    "policies/pr-scope.md",
-    "policies/repository-checkout.md",
-    "policies/review-context.md",
-    "policies/review-evidence.md",
-    "policies/review-reasoning.md",
-    "policies/parallel-review.md",
-    "policies/finding-placement.md",
-    "policies/review-output.md",
-    "policies/review-status-enforcement.md",
-    "runbooks/passive-pr-review.md",
-    "runbooks/active-pr-review.md",
-    "templates/inline-finding.md",
-    "templates/external-review-summary.md"
-  )
-  $githubArchivePath = Join-Path $distDir "github-pr-review-skill.zip"
-  foreach ($f in $githubRequiredRuntimeTemplates) {
-    Require-ArchiveEntry -ArchivePath $githubArchivePath -RelPath $f
-  }
+  Package-Skill -PackageTarget "github"
 }
 
 # Remove the now-empty staging root if packaging left nothing behind.

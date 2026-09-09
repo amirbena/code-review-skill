@@ -36,6 +36,8 @@ PACKAGING_FILES = frozenset(
     {
         "scripts/package-skills.sh",
         "scripts/package-skills.ps1",
+        "scripts/package-manifest.json",
+        "scripts/package_manifest.py",
         "scripts/validate-skill-metadata.py",
     }
 )

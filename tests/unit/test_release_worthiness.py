@@ -81,6 +81,8 @@ class ClassifyPathTests(unittest.TestCase):
         for path in (
             "scripts/package-skills.sh",
             "scripts/package-skills.ps1",
+            "scripts/package-manifest.json",
+            "scripts/package_manifest.py",
             "scripts/validate-skill-metadata.py",
         ):
             self.assertEqual(rw.classify_path(path), "packaging", path)
