@@ -23,9 +23,12 @@ separately establish and verify every required isolation property below.
 The metadata capability value `conditional` describes this contract: it does
 not imply that any current runtime supports live execution.
 
-This policy does not authorize autofixes, generated reproductions, CI
-orchestration, retries, matrix execution, dependency installation, service
-startup, deployment, or any other expansion of review scope.
+This policy does not authorize autofixes, CI orchestration, retries, matrix
+execution, dependency installation, service startup, deployment, or any other
+expansion of review scope. It authorizes exactly one narrow generation path —
+the smallest targeted reproduction for a single suspected finding, under
+"Targeted validation of a suspected finding" below — and that path is
+disposable, boundary-bound, and can never become a repository change.
 
 ## Trust model and execution boundary
 
@@ -176,9 +179,133 @@ then derive the existing review decision exactly once through
 decision path, change the `REVIEW CLEAN` / `CHANGES REQUIRED` or
 `Approve` / `Request Changes` mapping, or authorize a Git/GitHub action.
 
+## Targeted validation of a suspected finding
+
+The sections above cover **repository-declared commands** as general evidence
+about the change. This section covers a second, narrower mode: gaining
+**runtime evidence for one specific suspected finding** by running the
+smallest safe reproduction of it. Both modes share the same trust model,
+execution boundary, and safety gate above; nothing here relaxes them.
+
+Targeted validation is **never mandatory**. A finding that already rests on
+sufficient static evidence per [`evidence.md`](evidence.md) is complete
+without it, and the absence, unavailability, or inconclusiveness of a
+targeted run never blocks, downgrades, or weakens such a finding.
+
+### Eligibility
+
+Eligibility is about the **finding and its reproduction**, not about whether a
+runtime can execute it. Consider targeted validation for a finding only when
+**all** hold:
+
+- the finding is a **suspected** defect whose correctness genuinely hinges
+  on runtime behavior that static reasoning left uncertain — not a finding
+  already confidently established, and not a stylistic or structural
+  observation;
+- the smallest reproduction is a **bounded, deterministic, non-interactive**
+  check whose pass/fail cleanly distinguishes "defect real" from "code
+  correct";
+- it needs no capability the isolated boundary lacks — no network, secrets,
+  services, additional dependency installation, or external state beyond a
+  focused check already running against the reviewed work copy.
+
+If any of these fails, the finding was never a candidate for a targeted run:
+do not attempt one, and it keeps state `reasoned` (see "Finding validation
+state").
+
+Boundary availability is a **separate** gate applied only to an eligible
+finding: when the disposable execution boundary in "Trust model and execution
+boundary" cannot be established or post-run verified for this run, that is not
+an eligibility failure — the finding was a genuine candidate, so it is
+recorded `attempted-inconclusive` per "Budget and fail-safe", never
+`reasoned`.
+
+### Selecting or generating the smallest reproduction
+
+Prefer **selecting an existing repository test** that already exercises the
+suspected path over generating anything. Generate a reproduction only when no
+existing test isolates the behavior, and then keep it **minimal**: a single
+focused test or script, self-contained, deterministic, asserting exactly the
+one behavior in question, with no repository-convention side effects (no new
+fixtures in the tree, no config edits, no broad harness). One reproduction
+per finding; do not expand it into a matrix or retry it after a clean or
+inconclusive result.
+
+### Generated artifacts never enter the working tree
+
+A generated reproduction exists **only inside the disposable boundary's
+ephemeral workspace**. It is never written into the reviewed work copy,
+never `git add`-ed, staged, committed, stashed, or otherwise placed in the
+target repository's Git state, and never emitted as a review artifact the
+caller could mistake for a proposed patch. The post-run verification already
+required by the safety gate must additionally confirm that **no generated
+validation file, and no modification from the run, remains in the reviewed
+source tree or Git state**. If that cannot be verified, the boundary is
+treated as breached: discard the result and record the finding as
+`attempted-inconclusive` with that reason. The reproduction's *content* may
+be summarized in the validation evidence as text; it is never delivered as an
+applyable change.
+
+### Budget and fail-safe
+
+Every targeted run has a strict wall-clock timeout and the bounded resource
+ceiling from the execution boundary. A run that exceeds either is terminated
+and recorded `attempted-inconclusive` with reason `budget exceeded`. Likewise
+record `attempted-inconclusive` when the boundary is unavailable or
+unverifiable, the reproduction cannot be made safe, or the observed result
+neither confirms nor disproves the suspicion. In every one of these cases the
+finding keeps its static evidence and remains valid. Never widen the budget,
+retry, or fall back to unsandboxed execution to force a conclusive result.
+
+### Finding validation state
+
+Every finding carries exactly one **validation state**, surfaced on the
+finding per [`../templates/finding.md`](../templates/finding.md):
+
+- `reasoned` — no targeted validation was attempted, or the finding was
+  ineligible; it rests on static evidence alone. This is the default and is
+  always sufficient.
+- `runtime-confirmed` — a targeted reproduction ran inside the boundary and
+  its pass/fail evidence **confirms** the suspected defect (the reproduction
+  failed exactly as the finding predicts, or a disproof-style check
+  demonstrated the incorrect behavior). Include the bounded run evidence.
+- `attempted-inconclusive` — a targeted reproduction was attempted but did
+  not yield a confirmation: boundary unavailable or unverifiable, budget
+  exceeded, unsafe to run, artifact-leak check failed, or an ambiguous
+  result. Include what was attempted and why it was inconclusive.
+
+When a targeted run instead **disproves** the suspicion — the reproduction
+passes, showing the code behaves correctly — the finding is **not raised**;
+record the run and its pass evidence in the shared `Validation` section so
+the disproof is visible. Any residual, independently evidenced concern is a
+separate finding in state `reasoned`.
+
+The validation state is **provenance, not a severity input**. It never
+raises, lowers, or overrides the severity derived from impact per
+[`severity.md`](severity.md), never changes a finding's identity or
+deduplication, and never creates a second decision path. `runtime-confirmed`
+does not escalate a P2; `attempted-inconclusive` does not de-escalate a P1.
+Severity and the `REVIEW CLEAN` / `CHANGES REQUIRED` (or `Approve` /
+`Request Changes`) mapping are derived exactly once, after findings are
+finalized, exactly as they would be without any targeted run.
+
+### Outcome recording
+
+Each attempted targeted validation also produces one entry in the shared
+`Validation` section, using the same `executed` / `failed` / `skipped` /
+`unavailable` vocabulary as a declared command, plus the finding id it
+targeted and the resulting finding validation state. A disproving run is
+recorded there even though it raises no finding. `skipped` and `unavailable`
+targeted attempts are never represented as passing and never silently
+dropped.
+
 ## Where this runs in the review flow
 
 After target-repository instruction discovery and before findings are
 finalized, each Skill's runbook resolves this policy, optionally performs the
-bounded validation, and carries its outcome records into the shared
+bounded declared-command validation and any eligible targeted per-finding
+validation, and carries its outcome records into the shared
 [`review-summary.md`](../templates/review-summary.md) `Validation` section.
+Targeted validation runs against suspected findings as they are formed and
+before the finding set is finalized, so each finding carries its validation
+state into the finalized set; it never runs after the decision is derived.

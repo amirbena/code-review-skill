@@ -189,7 +189,8 @@ Reconcile findings  (normalize → deduplicate → reconcile overlapping/
     ↓
 Shared Review Semantics  (shared/policies/)
     ├── scope validation (incl. scope-boundary reasoning against context)
-    ├── optional runtime validation evidence (shared/policies/runtime-validation.md)
+    ├── optional runtime validation evidence — declared command and/or targeted
+    │   per-finding reproduction (shared/policies/runtime-validation.md)
     ├── correctness / regression / architecture invariants
     └── severity classification  (shared/policies/severity.md)
     ↓
@@ -265,8 +266,10 @@ rule.
   [`review-scope.md`](../shared/policies/review-scope.md), plus optional
   runtime-validation evidence
   ([`runtime-validation.md`](../shared/policies/runtime-validation.md)) —
-  a validation run adds evidence only and never rewrites a finding or the
-  decision.
+  a declared-command run and/or a targeted per-finding reproduction, each
+  adding evidence only: a validation run never rewrites a finding or the
+  decision, and a finding's `reasoned` / `runtime-confirmed` /
+  `attempted-inconclusive` state is provenance, not a severity input.
 - **Canonical final decision** — only the aggregator applies
   [`severity.md`](../shared/policies/severity.md)'s mechanical derivation:
   one P0/P1/P2 set and one `REVIEW CLEAN` / `CHANGES REQUIRED` (local) or

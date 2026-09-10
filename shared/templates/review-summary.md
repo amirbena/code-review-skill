@@ -52,6 +52,10 @@ important concern or attention point; include scope only when useful>
   exactly `executed`, `skipped`, `failed`, or `unavailable`; include the exact
   command, declaration source, scope/justification, observed evidence, and a
   reason where applicable>
+- <one entry per attempted targeted per-finding validation: the targeted
+  finding id, the `executed` / `failed` / `skipped` / `unavailable` outcome,
+  the resulting finding validation state, and bounded run evidence; a
+  disproving run is recorded here even though it raises no finding>
 
 ### Decision
 **<decision label>**
@@ -99,7 +103,13 @@ important concern or attention point; include scope only when useful>
   shared [`runtime-validation.md`](../policies/runtime-validation.md)
   contract: every selected command is explicitly `executed`, `skipped`,
   `failed`, or `unavailable`, with exact command and reason/evidence;
-  non-execution is never a pass.
+  non-execution is never a pass. A **targeted per-finding** validation is
+  recorded here too — the targeted finding id, the same
+  `executed` / `failed` / `skipped` / `unavailable` outcome, and the
+  resulting finding validation state (`runtime-confirmed` /
+  `attempted-inconclusive`, or a disproving run that raised no finding).
+  Targeted validation state never changes a finding's severity or the
+  Decision.
 - **Requirement coverage** — conditional and distinct from Findings. It is
   absent when no authoritative task contract was supplied. When present it
   follows [`requirement-coverage.md`](../policies/requirement-coverage.md),

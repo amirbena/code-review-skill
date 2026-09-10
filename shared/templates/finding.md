@@ -93,6 +93,17 @@ human-facing review a machine-only format.
   [`../policies/remediation-guidance.md`](../policies/remediation-guidance.md);
   that policy still owns what the guidance may and may not say, and this
   rename to a shorter field label never changes it;
+- **runtime validation** — optional: the finding's validation state from a
+  targeted runtime check per
+  [`../policies/runtime-validation.md`](../policies/runtime-validation.md),
+  "Targeted validation of a suspected finding" — one of `runtime-confirmed`
+  (a bounded, isolated reproduction confirmed the suspected defect) or
+  `attempted-inconclusive` (a reproduction was attempted but was unavailable,
+  timed out, unsafe, leaked, or ambiguous). The implicit default `reasoned`
+  (no targeted validation attempted or the finding was ineligible) is not
+  rendered. It is a provenance annotation, never a severity input: it never
+  calculates or changes severity, identity, deduplication, or the decision
+  derivation (see "Runtime validation state and provenance");
 - **contextual evidence** — optional: the contextual-evidence entries
   (requirement / acceptance criterion / accepted decision / repository
   policy / feedback / historical note / pre-existing-risk note) whose
@@ -207,6 +218,42 @@ named here rather than linked because it is not a packaged resource).
   as `evidence location`). See
   [`finding-rendering.md`](finding-rendering.md).
 
+## Runtime validation state and provenance
+
+A finding may additionally carry a **runtime validation** state produced by a
+targeted, isolated reproduction per
+[`../policies/runtime-validation.md`](../policies/runtime-validation.md),
+"Targeted validation of a suspected finding". It is a second kind of
+provenance, orthogonal to contextual evidence:
+
+- **Three states, one always applies.** `reasoned` (the default — no targeted
+  validation was attempted or the finding was ineligible; static evidence
+  alone), `runtime-confirmed` (a bounded reproduction ran inside the required
+  execution boundary and its pass/fail evidence confirmed the suspected
+  defect), or `attempted-inconclusive` (a reproduction was attempted but the
+  boundary was unavailable or unverifiable, the run exceeded its budget, it
+  could not be made safe, its generated artifact could not be shown to stay
+  out of the working tree, or the result was ambiguous).
+- **Static evidence stays sufficient.** `reasoned` and
+  `attempted-inconclusive` findings are complete on their `Evidence` field
+  alone; a missing, unavailable, or inconclusive targeted run never blocks,
+  downgrades, or weakens a finding.
+- **Provenance, not a severity input.** The state never calculates, raises,
+  lowers, or overrides the severity derived from impact per
+  [`../policies/severity.md`](../policies/severity.md), and never changes the
+  finding's identity, its deduplication, or the mechanical decision
+  derivation. `runtime-confirmed` does not escalate a P2;
+  `attempted-inconclusive` does not de-escalate a P1.
+- **A disproved suspicion is not a finding.** When a targeted run shows the
+  code behaves correctly, no finding is raised for that suspicion; the run
+  and its pass evidence are recorded in the review's `Validation` section,
+  not as a finding.
+- **Surface rendering.** Rendered only when the state is `runtime-confirmed`
+  or `attempted-inconclusive` (the `reasoned` default is never rendered, like
+  every other absent optional field). On the full rendering it is its own
+  line; on the GitHub inline surface it folds into `evidence` prose. See
+  [`finding-rendering.md`](finding-rendering.md).
+
 ## Finding quality contract
 
 Every finding must independently answer: **What? Where? Evidence?
@@ -296,6 +343,12 @@ after it, no `Details:` heading with boilerplate under it.
   risky; on the full rendering it is its own line, on the GitHub inline
   surface it folds into `evidence` prose. Absent on a finding that rests on
   code evidence alone. It never carries or changes a severity;
+- **runtime validation** — the finding's targeted-validation state (see
+  "Runtime validation state and provenance"). Rendered only when it is
+  `runtime-confirmed` or `attempted-inconclusive`; the `reasoned` default is
+  never rendered. On the full rendering it is its own line, on the GitHub
+  inline surface it folds into `evidence` prose. It never carries or changes
+  a severity, identity, deduplication, or the decision derivation;
 - **affected locations** — the manifestation-site list of a consolidated
   root-cause finding. It is **not optional**: on a consolidated finding it
   is required and part of the mandatory core ("Finding quality contract"
@@ -377,4 +430,10 @@ rendering-specific rules are in
   problem, never carries or changes a severity, and never alters the
   finding's identity, deduplication, or decision derivation (see "Contextual
   evidence and provenance");
+- the optional **runtime validation** field records the finding's
+  targeted-validation state (`reasoned` / `runtime-confirmed` /
+  `attempted-inconclusive`); it renders only for the two non-default states,
+  a `reasoned` or inconclusive finding is complete on static evidence alone,
+  and the state never carries or changes a severity, identity, deduplication,
+  or decision derivation (see "Runtime validation state and provenance");
 - `fix` is a direction, never an implemented patch.

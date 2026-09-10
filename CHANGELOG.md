@@ -13,8 +13,19 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- Both review Skills can now attach **targeted runtime evidence to a
+  suspected finding**: the smallest safe reproduction (an existing repository
+  test, or a minimal generated check) runs inside the same disposable
+  isolation boundary as declared-command validation, and every finding
+  carries one validation state — `reasoned` (static only, the default),
+  `runtime-confirmed`, or `attempted-inconclusive` (boundary unavailable,
+  budget exceeded, unsafe, leaked, or ambiguous). A disproving run raises no
+  finding. Generated reproduction code stays in the ephemeral boundary and
+  can never enter the reviewed working tree; the state is provenance only and
+  never changes a finding's severity, identity, or the review decision.
+  (#128)
 
 ## v1.11.0 — 2026-09-10
 
