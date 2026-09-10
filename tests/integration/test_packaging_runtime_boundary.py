@@ -123,12 +123,20 @@ MODULE_TO_PACKAGED_POLICY_HEADINGS = {
             "## Comment authorship: human review vs. automation output",
         ),
     ),
-    "finding_contract.py": (
+    # Issue #198 split the finding template: finding.md keeps the field /
+    # quality contract, finding-rendering.md carries the rendering exemplars.
+    # finding_contract.py mirrors both, so both packaged files are checked.
+    "finding_contract.py (contract)": (
         REPO_ROOT / "shared" / "templates" / "finding.md",
         (
             "## Conciseness contract",
             "## When a longer explanation is justified",
             "## Optional and surface-specific fields",
+        ),
+    ),
+    "finding_contract.py (rendering)": (
+        REPO_ROOT / "shared" / "templates" / "finding-rendering.md",
+        (
             "## Canonical full rendering",
             "## Canonical inline rendering",
         ),

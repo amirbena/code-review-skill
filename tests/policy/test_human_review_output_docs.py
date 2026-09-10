@@ -320,7 +320,9 @@ class HumanInlineFindingsSubOption(unittest.TestCase):
         self.assertIn("This phrase set is exhaustive for this option", t)
 
     def test_shared_finding_template_carries_the_human_inline_projection(self) -> None:
-        path = REPO_ROOT / "shared/templates/finding.md"
+        # The rendering exemplars, incl. the human inline projection, moved to
+        # finding-rendering.md (Issue #198); finding.md keeps the contract.
+        path = REPO_ROOT / "shared/templates/finding-rendering.md"
         raw = path.read_text(encoding="utf-8")
         self.assertIn("## Canonical human inline rendering", raw)
         t = _norm(path)

@@ -30,6 +30,10 @@ import yaml
 from tests.support.paths import REPO_ROOT
 
 REVIEW_SCOPE = REPO_ROOT / "shared/policies/review-scope.md"
+# The root-cause / model-completeness consolidation sub-domain was extracted
+# from review-scope.md into its own canonical shared policy (Issue #198);
+# review-scope.md keeps a linking overview.
+ROOT_CAUSE = REPO_ROOT / "shared/policies/root-cause-consolidation.md"
 FINDING_TMPL = REPO_ROOT / "shared/templates/finding.md"
 IDENTITY = REPO_ROOT / "docs/findings/finding-identity-requirements.md"
 LIFECYCLE = REPO_ROOT / "docs/findings/finding-lifecycle-contract.md"
@@ -154,10 +158,12 @@ class ConsolidatedDispositionDefinedInEveryOwnerTests(unittest.TestCase):
 
 
 class ReviewScopeRoutesRatherThanRedefinesTests(unittest.TestCase):
-    """Invariant 4 — no second competing definition in review-scope.md."""
+    """Invariant 4 — no second competing definition; the consolidation
+    routing/default/exception prose lives in the extracted canonical home
+    (root-cause-consolidation.md), review-scope.md only links to it."""
 
     def setUp(self) -> None:
-        self.n = _norm(REVIEW_SCOPE)
+        self.n = _norm(ROOT_CAUSE)
 
     def test_no_supersede_verb(self) -> None:
         self.assertNotIn("supersede", self.n.lower())
@@ -187,9 +193,12 @@ class ReviewScopeRoutesRatherThanRedefinesTests(unittest.TestCase):
         )
 
     def test_does_not_restate_lifecycle_state_machine(self) -> None:
-        # review-scope.md must not grow its own OPEN/RESOLVED state table
-        self.assertNotIn("OPEN → RESOLVED", REVIEW_SCOPE.read_text(encoding="utf-8"))
-        self.assertNotIn("| `RESOLVED` |", REVIEW_SCOPE.read_text(encoding="utf-8"))
+        # neither review-scope.md nor its extracted consolidation home grows
+        # its own OPEN/RESOLVED state table
+        for path in (REVIEW_SCOPE, ROOT_CAUSE):
+            raw = path.read_text(encoding="utf-8")
+            self.assertNotIn("OPEN → RESOLVED", raw)
+            self.assertNotIn("| `RESOLVED` |", raw)
 
 
 class AffectedLocationsCardinalityTests(unittest.TestCase):
@@ -200,7 +209,7 @@ class AffectedLocationsCardinalityTests(unittest.TestCase):
         self.assertIn(
             "Consolidation applies only when the shared cause reaches **at "
             "least two**\nmanifestation sites".replace("\n", " "),
-            _norm(REVIEW_SCOPE),
+            _norm(ROOT_CAUSE),
         )
 
     def test_finding_template_marks_it_conditionally_required_and_exhaustive(self) -> None:
