@@ -30,22 +30,21 @@ _NUMERIC_RE = re.compile(r"^[0-9]+$")
 def cmd_resolve_base_ref(args: argparse.Namespace) -> int:
     """Emit ``ref=`` — what the ``assess`` job diffs HEAD against.
 
-    On ``pull_request`` the base is the PR base commit and must be
-    present. On any other event (push / manual dispatch) it is the
-    previous ``v*`` tag, or empty when there is no prior release — the
-    downstream classifier treats an empty base as "whole tree in scope".
+    On ``pull_request`` the base is the PR base commit. On any other event
+    (push / manual dispatch) it is the previous ``v*`` tag. Either can come
+    back empty (a PR event that somehow carries no ``base.sha``, or a push
+    with no prior release); an empty ``ref`` is passed through unchanged —
+    the downstream ``assess`` classifier falls back to the previous ``v*``
+    tag for it, matching the shell block this replaced.
     """
     repo_root = Path(args.repo_root).resolve()
 
     if args.event_name == "pull_request":
         ref = (args.pr_base_sha or "").strip()
-        if not ref:
-            print("::error::pull_request event with no pull_request.base.sha to diff against")
-            return 1
     else:
         ref = gitgh.previous_release_tag(repo_root) or ""
 
-    print(f"Base ref: {ref or '(none — whole tree in scope)'}")
+    print(f"Base ref: {ref or '(none — assess falls back to the previous v* tag)'}")
     emit_output(args.github_output, ref=ref)
     return 0
 

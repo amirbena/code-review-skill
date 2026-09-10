@@ -851,10 +851,12 @@ class ResolveBaseRefTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(outputs["ref"], "d" * 40)
 
-    def test_pull_request_without_a_base_sha_fails_closed(self) -> None:
+    def test_pull_request_without_a_base_sha_passes_through_empty(self) -> None:
+        # Matches the shell block this replaced: emit an empty ref and let
+        # `assess` fall back to the previous v* tag, rather than hard-failing.
         rc, outputs = self._run("--event-name", "pull_request", "--pr-base-sha", "")
-        self.assertEqual(rc, 1)
-        self.assertNotIn("ref", outputs)
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["ref"], "")
 
     def test_push_uses_the_previous_release_tag(self) -> None:
         rc, outputs = self._run(

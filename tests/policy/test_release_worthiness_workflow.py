@@ -338,6 +338,22 @@ class ExtractedHelperWiringTests(unittest.TestCase):
         self.jobs = _load()["jobs"]
         self.raw = WORKFLOW.read_text(encoding="utf-8")
 
+    def test_subcommand_steps_run_after_checkout_and_python_setup(self) -> None:
+        # Both extracted subcommands invoke `python scripts/release_worthiness.py`,
+        # which only exists once the repo is checked out and Python is on PATH.
+        # A step order that put either before checkout would still satisfy the
+        # mint < resolve < commit ordering test but break the job at run time.
+        for job, needle in (
+            ("assess", "Determine base ref"),
+            ("publish", "Resolve the authenticated release App bot identity"),
+        ):
+            steps = self.jobs[job]["steps"]
+            call = _step_index(steps, needle)
+            checkout = _step_index(steps, "actions/checkout")
+            setup_python = _step_index(steps, "actions/setup-python")
+            self.assertLess(checkout, call, job)
+            self.assertLess(setup_python, call, job)
+
     def test_assess_base_ref_comes_from_the_resolve_base_ref_subcommand(self) -> None:
         step = _step(self.jobs["assess"]["steps"], "Determine base ref")
         self.assertEqual(step.get("id"), "base")
