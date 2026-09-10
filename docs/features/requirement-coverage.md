@@ -51,7 +51,8 @@ dropped. Status is never based on keyword or embedding similarity.
   explicitly supplied through supported Review Context resolution.
 - `not_applicable` may represent an explicitly excluded obligation or one whose
   applicability cannot be resolved from an ambiguous authoritative contract;
-  its explanation makes that distinction explicit.
+  the latter carries explicit `ambiguity` and makes aggregate coverage
+  `incomplete`, while proven non-applicability does not.
 
 Exact semantics and the machine-readable schema are in
 [`shared/policies/requirement-coverage.md`](../../shared/policies/requirement-coverage.md).

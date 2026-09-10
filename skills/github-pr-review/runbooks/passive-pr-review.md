@@ -57,6 +57,8 @@ dimension missing → REVIEW INCOMPLETE, never REVIEW CLEAN
     ↓
 produce findings
     ↓
+derive conditional requirement coverage (all renderings preserve it)
+    ↓
 return human-readable report
     ↓
 finally: remove the temporary checkout (success, any failure, interruption)

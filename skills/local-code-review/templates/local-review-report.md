@@ -161,7 +161,8 @@ or, when clean:
 Safe to proceed: no blocking or non-blocking findings were identified.
 
 <optional concise What changed and Validation sections; omit Findings when
-empty>
+empty. When requirement coverage was active, include the full conditional
+Requirement coverage section before Validation; omit it only when inert.>
 
 ### Decision
 **REVIEW CLEAN**
@@ -271,6 +272,9 @@ serve are owned by the linked policies and are not restated here.
   appended after the summary. The option is output-only: findings,
   severities, evidence, reconciliation, source attribution, and the
   mechanical Decision are identical on and off.
+  Active requirement coverage also remains visible with its overall signal
+  and every requirement/status; its wording may be condensed, but it is
+  omitted only when coverage analysis was inert.
 - **Review State** (base/HEAD SHAs, synchronization status, raw counts)
   is subordinate machine detail — it appears only inside the trailing
   "Review Metadata" section as plain Markdown, never ahead of the

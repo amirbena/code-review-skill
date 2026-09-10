@@ -81,6 +81,8 @@ review context
     ↓
 classify findings by severity (source never changes the classification)
     ↓
+derive conditional requirement coverage (all renderings preserve it)
+    ↓
 derive decision mechanically from blocking severities (P0/P1)
     ↓
 return P0/P1/P2 findings, each attributed to its source category

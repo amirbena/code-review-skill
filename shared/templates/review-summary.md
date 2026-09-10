@@ -103,7 +103,10 @@ important concern or attention point; include scope only when useful>
 - **Requirement coverage** — conditional and distinct from Findings. It is
   absent when no authoritative task contract was supplied. When present it
   follows [`requirement-coverage.md`](../policies/requirement-coverage.md),
-  appears before Validation, and never changes severity or Decision.
+  appears before Validation, and never changes severity or Decision. It is a
+  semantic invariant across findings, clean, structured, and human-style
+  renderings: presentation may be condensed, but no active coverage result or
+  requirement may be discarded.
 - **Decision** — an unambiguous label plus one sentence tying it to the
   findings. Never leave the reader to compute the outcome from raw P0/P1/P2
   counts. The decision itself is derived mechanically from blocking
@@ -139,6 +142,9 @@ leave by hand:
 - **what's concerning** / **what to change** — the findings that need
   action, in prose, each still carrying its `P0` / `P1` / `P2` label when
   it is referenced;
+- **requirement coverage** — when analysis was active, the overall signal and
+  every requirement/status remain visible in concise prose; omit it when
+  coverage was inert;
 - an apparently intentional trade-off may be raised as a question
   ("was returning `null` to the caller here deliberate?") rather than
   asserted as a defect.
@@ -158,7 +164,8 @@ off produce identical findings and severities (and, for `github-pr-review`,
 identical GitHub review state and machine-readable status), and differ
 only in the text of this final summary — and, when `human_inline_findings`
 is on, in the wording of the inline findings, which stay the same
-findings at the same locations. When the option is off (the default), the
+findings at the same locations. Requirement-coverage content is likewise
+unchanged. When the option is off (the default), the
 structured canonical shape above is used unchanged.
 
 ### Companion inline rendering (`human_inline_findings`)

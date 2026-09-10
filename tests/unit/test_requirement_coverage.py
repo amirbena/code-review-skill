@@ -46,11 +46,35 @@ class ActivationTests(unittest.TestCase):
 
 
 class CoverageFixtureTests(unittest.TestCase):
-    def test_partial_fixture_reports_missing_requirement(self) -> None:
-        rows = (
-            row("R1", rc.RequirementStatus.PARTIALLY_EVIDENCED),
-            row("R2", rc.RequirementStatus.NOT_EVIDENCED),
+    def test_partial_fixture_derives_missing_requirement_from_evidence(self) -> None:
+        requirements = (
+            rc.RequirementAssessment(
+                "R1",
+                "Validate create and update writes before persistence.",
+                SOURCE,
+                ("create", "update"),
+                (
+                    rc.ObligationEvidence(
+                        "create",
+                        ("src/writes.py:42 — create calls validate",),
+                        ("tests/test_writes.py:18 — create validation",),
+                    ),
+                ),
+                test_required=True,
+            ),
+            rc.RequirementAssessment(
+                "R2",
+                "Reject writes while the record is locked.",
+                SOURCE,
+                ("lock-rejection",),
+                (),
+                test_required=True,
+                inspection_evidence=(
+                    "src/writes.py:20-70 — no lock-state rejection branch",
+                ),
+            ),
         )
+        rows = tuple(rc.classify(requirement) for requirement in requirements)
         model = rc.to_machine_model(rows)
         self.assertEqual(model["requirement_coverage"]["status"], "incomplete")
         self.assertEqual(
@@ -58,11 +82,24 @@ class CoverageFixtureTests(unittest.TestCase):
             ["partially_evidenced", "not_evidenced"],
         )
 
-    def test_full_fixture_reports_complete_with_citations(self) -> None:
-        rows = (
-            row("R1", rc.RequirementStatus.IMPLEMENTED),
-            row("R2", rc.RequirementStatus.IMPLEMENTED, evidence=("tests/test_writes.py:18",)),
+        self.assertIn("update", rows[0].explanation)
+        self.assertIn("lock-rejection", rows[1].explanation)
+
+    def test_full_fixture_derives_complete_with_citations(self) -> None:
+        requirements = (
+            rc.RequirementAssessment(
+                "R1",
+                "Validate create and update writes before persistence.",
+                SOURCE,
+                ("create", "update"),
+                (
+                    rc.ObligationEvidence("create", ("src/writes.py:42",), ("tests/test_writes.py:18",)),
+                    rc.ObligationEvidence("update", ("src/writes.py:57",), ("tests/test_writes.py:31",)),
+                ),
+                test_required=True,
+            ),
         )
+        rows = tuple(rc.classify(requirement) for requirement in requirements)
         model = rc.to_machine_model(rows)
         self.assertEqual(model["requirement_coverage"]["status"], "complete")
         for item in model["requirement_coverage"]["requirements"]:
@@ -70,27 +107,39 @@ class CoverageFixtureTests(unittest.TestCase):
             self.assertTrue(item["evidence"])
 
     def test_ambiguous_requirement_is_retained_explicitly(self) -> None:
-        rows = (
-            row(
-                "R1",
-                rc.RequirementStatus.NOT_APPLICABLE,
-                evidence=(),
-                ambiguity="The contract does not define legacy mode.",
-            ),
+        assessment = rc.RequirementAssessment(
+            "R1",
+            "Support legacy mode where relevant.",
+            SOURCE,
+            ("legacy-mode",),
+            (),
+            applicability=rc.Applicability.AMBIGUOUS,
+            ambiguity="The contract does not define legacy mode.",
         )
+        rows = (rc.classify(assessment),)
         model = rc.to_machine_model(rows)
         item = model["requirement_coverage"]["requirements"][0]
-        self.assertEqual(model["requirement_coverage"]["status"], "complete")
+        self.assertEqual(model["requirement_coverage"]["status"], "incomplete")
         self.assertEqual(item["status"], "not_applicable")
         self.assertIn("ambiguity", item)
 
-    def test_non_applicable_rows_are_not_dropped(self) -> None:
-        rows = (
-            row("R1", rc.RequirementStatus.IMPLEMENTED),
-            row("R2", rc.RequirementStatus.NOT_APPLICABLE, evidence=()),
+    def test_genuinely_inapplicable_requirement_can_be_complete(self) -> None:
+        assessment = rc.RequirementAssessment(
+            "R1",
+            "Exercise the Windows-only write path.",
+            SOURCE,
+            ("windows-write",),
+            (),
+            applicability=rc.Applicability.NOT_APPLICABLE,
+            applicability_evidence=(
+                "Issue scope explicitly limits this target to Linux.",
+            ),
         )
+        rows = (rc.classify(assessment),)
         model = rc.to_machine_model(rows)
-        self.assertEqual(len(model["requirement_coverage"]["requirements"]), 2)
+        self.assertEqual(model["requirement_coverage"]["status"], "complete")
+        self.assertEqual(len(model["requirement_coverage"]["requirements"]), 1)
+        self.assertNotIn("ambiguity", model["requirement_coverage"]["requirements"][0])
 
 
 class ModelInvariantTests(unittest.TestCase):
@@ -100,7 +149,7 @@ class ModelInvariantTests(unittest.TestCase):
             {"implemented", "partially_evidenced", "not_evidenced", "not_applicable"},
         )
 
-    def test_non_applicable_is_only_status_allowed_without_target_evidence(self) -> None:
+    def test_only_ambiguous_not_applicable_allows_no_evidence(self) -> None:
         for status in (
             rc.RequirementStatus.IMPLEMENTED,
             rc.RequirementStatus.PARTIALLY_EVIDENCED,
@@ -108,6 +157,27 @@ class ModelInvariantTests(unittest.TestCase):
         ):
             with self.subTest(status=status), self.assertRaises(ValueError):
                 rc.validate((row("R1", status, evidence=()),))
+        with self.assertRaises(ValueError):
+            rc.validate((row("R1", rc.RequirementStatus.NOT_APPLICABLE, evidence=()),))
+        rc.validate(
+            (
+                row(
+                    "R1",
+                    rc.RequirementStatus.NOT_APPLICABLE,
+                    evidence=(),
+                    ambiguity="Applicability unresolved.",
+                ),
+            )
+        )
+
+    def test_serialization_preserves_preclassified_rows(self) -> None:
+        model = rc.to_machine_model(
+            (row("R1", rc.RequirementStatus.PARTIALLY_EVIDENCED),)
+        )
+        self.assertEqual(
+            model["requirement_coverage"]["requirements"][0]["status"],
+            "partially_evidenced",
+        )
 
     def test_completeness_does_not_contain_severity_or_decision(self) -> None:
         model = rc.to_machine_model((row("R1", rc.RequirementStatus.NOT_EVIDENCED),))

@@ -56,12 +56,14 @@ requirement_coverage:
       ambiguity: <optional unresolved ambiguity or authoritative conflict>
 ```
 
-`status` is `complete` only when every entry is `implemented` or
-`not_applicable`. It is `incomplete` when any entry is
-`partially_evidenced` or `not_evidenced`. A `not_applicable` entry with an
-unresolved ambiguity remains explicit but does not make the signal incomplete;
-the explanation must make the uncertainty visible so a reader does not
-mistake it for proven implementation.
+`status` is `complete` only when every applicable entry is `implemented`,
+every `not_applicable` entry has affirmative evidence that it does not apply,
+and no entry carries unresolved `ambiguity`. It is `incomplete` when any entry
+is `partially_evidenced` or `not_evidenced`, or when unresolved ambiguity
+prevents a defensible coverage/applicability conclusion. The four status values
+remain unchanged for compatibility: an unresolved applicability question uses
+`not_applicable` plus the required `ambiguity` field, but that modifier makes
+aggregate coverage incomplete rather than falsely claiming completion.
 
 ## Per-requirement status
 
@@ -70,7 +72,7 @@ mistake it for proven implementation.
 | `implemented` | Concrete code/config evidence covers the whole obligation, plus relevant test or observed validation evidence when the behavior is testable. A test name, comment, identifier, or keyword match alone is insufficient. |
 | `partially_evidenced` | Concrete evidence proves part of the obligation, but another independently necessary path, condition, or verification is absent or cannot be established. Cite both what is evidenced and the uncovered portion. |
 | `not_evidenced` | Inspection found no concrete evidence that the current target implements the obligation, or concrete code/test evidence shows it is missing. State the inspected location or missing path; non-observation without a bounded inspection is insufficient. |
-| `not_applicable` | Authoritative context explicitly excludes the obligation from this target, the obligation is already satisfied outside the target and the supplied contract does not require changing it, or ambiguity/conflict prevents a defensible applicability judgment. Cite that basis and record ambiguity when present. |
+| `not_applicable` | Affirmative evidence establishes that the obligation does not apply to this target, or unresolved ambiguity/conflict prevents a defensible applicability judgment. Cite the basis. The latter case must carry `ambiguity` and makes aggregate coverage incomplete; it is not equivalent to proven non-applicability. |
 
 Every status needs a non-empty explanation. `implemented`,
 `partially_evidenced`, and `not_evidenced` need concrete current-target code,
@@ -121,7 +123,13 @@ clarification settles it.
 
 - R1 → `not_applicable`, with `ambiguity` explaining that applicability cannot
   be decided from the authoritative contract. The entry is retained, not
-  silently discarded or upgraded to `implemented`.
+  silently discarded or upgraded to `implemented`; overall coverage is
+  `incomplete` until authoritative evidence resolves applicability.
+
+A genuinely inapplicable requirement—for example, a Windows-only criterion
+when the authoritative contract explicitly limits this target to Linux—also
+uses `not_applicable`, cites that scope evidence, carries no `ambiguity`, and
+does not prevent `complete`.
 
 ### No contract
 
@@ -137,3 +145,9 @@ Validation. Show the overall `complete` / `incomplete` signal and every row's
 identifier, status, source citation, evidence, and explanation. Machine
 consumers may use the YAML-equivalent shape above; human-facing output remains
 primary.
+
+This section is a semantic invariant across every supported rendering:
+findings or clean, structured or human-style, local or GitHub. Its presentation
+may be condensed, but once coverage analysis ran, no output mode may omit the
+overall signal or any requirement. When coverage was inert, every mode omits
+the section entirely.
