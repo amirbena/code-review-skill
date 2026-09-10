@@ -51,6 +51,24 @@ fix/action location, one `Evidence location` line is added directly after
 - **Fix:** <concrete correction direction, not a patch>
 ```
 
+When contextual evidence informed the finding and materially explains why
+the behavior is incorrect or risky, one `Contextual evidence` line is added
+after `Evidence` (see [`finding.md`](finding.md), "Contextual evidence and
+provenance"). It is a provenance record and never carries a severity;
+absent on a finding that rests on code evidence alone:
+
+```markdown
+### <id> [<severity>] <short, concrete title>
+
+- **Location:** `<path>:<line-or-range>`
+- **Evidence:** <concrete evidence, concise>
+- **Contextual evidence:** <the requirement / acceptance criterion /
+  accepted decision / repository policy / feedback / historical note that
+  informed this finding — source and the specific clause>
+- **Impact:** <concrete engineering consequence, concise>
+- **Fix:** <concrete correction direction, not a patch>
+```
+
 When the fix/action location is unresolved, no `Evidence location` line
 is added; `Location` instead carries the best-known coordinate with the
 trailing unresolved annotation (see "Fix/action location, evidence
@@ -132,6 +150,11 @@ comment there (see "Fix/action location, evidence location, publication",
 and each Skill's placement policy). When the evidence was observed
 elsewhere, name that evidence/source location inside the `Evidence:`
 prose — there is no separate `Evidence location:` line on this surface.
+
+When contextual evidence informed the finding, name it inside the
+`Evidence:` prose as well — there is no separate `Contextual evidence:`
+line on this surface (see [`finding.md`](finding.md), "Contextual evidence
+and provenance").
 
 For a **consolidated root-cause finding**, name the affected call paths
 inside the prose — the `Evidence:` block, or a short `Affected call paths:`

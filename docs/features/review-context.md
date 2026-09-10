@@ -23,6 +23,18 @@ is reconciled against the *current* target — a resolved thread is
 evidence of a past conclusion, not proof the current code is correct, and
 a reintroduced defect is a fresh finding.
 
+Contextual evidence is **typed**: a requirement, an acceptance criterion,
+an accepted decision, or a repository policy is *authoritative*; prior
+implementation feedback, historical background, a pre-existing-risk note,
+or informal chat/Slack discussion is *informational*. An informational
+source never silently overrides an explicit requirement or an approved
+decision — a genuine conflict is reported, not resolved by ranking. A
+finding can cite the contextual evidence that justified it (the optional
+**contextual evidence** provenance field), and that provenance never
+raises, lowers, or overrides the finding's severity. The full model —
+authority table, resolution outcomes, worked examples — is
+[`docs/review-context/contextual-evidence-model.md`](../review-context/contextual-evidence-model.md).
+
 ## When it is useful
 
 - The change implements a ticket or acceptance criteria you can paste in.
@@ -91,4 +103,8 @@ review #812; context is Jira ACME-42
 
 [`shared/policies/review-context.md`](../../shared/policies/review-context.md)
 · [`shared/policies/review-evidence.md`](../../shared/policies/review-evidence.md)
+· the typed contextual-evidence model in
+[`../review-context/contextual-evidence-model.md`](../review-context/contextual-evidence-model.md)
+· the finding provenance field in
+[`../../shared/templates/finding.md`](../../shared/templates/finding.md)
 · architecture context in [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §2.

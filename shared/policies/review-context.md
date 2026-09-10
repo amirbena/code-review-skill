@@ -292,6 +292,16 @@ bulk-update path persists without going through that validation>.
 Use it when it materially explains why the behavior is incorrect or risky —
 not on every finding, and never as a second, duplicate listing of the finding.
 
+The finding carries this provenance in its optional **contextual evidence**
+field, per [`../templates/finding.md`](../templates/finding.md), "Contextual
+evidence and provenance". The typed authority of each contextual source
+(authoritative vs. informational), the rule that an informal discussion never
+silently overrides an explicit requirement or an approved decision, and the
+resolution of conflicting, stale, or ambiguous context are the
+contextual-evidence model — a repository-development design record, named
+here rather than linked because it is not a packaged resource. This policy is
+not the place to restate that model.
+
 ## Output
 
 Supplied context that had no material effect on the review is not called out.

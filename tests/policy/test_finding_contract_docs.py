@@ -297,6 +297,53 @@ class SharedFindingContractTests(unittest.TestCase):
             variant.index("**Affected locations:**"), variant.index("**Evidence:**")
         )
 
+    def test_contextual_evidence_provenance_field_is_documented(self) -> None:
+        # Issue #118: optional provenance field, evidence-gated, never a
+        # severity input, folds into evidence prose on the inline surface.
+        self.assertIn("## Contextual evidence and provenance", self.text)
+        section = re.search(
+            r"## Contextual evidence and provenance\n(.*?)\n## ", self.text, re.S
+        )
+        self.assertIsNotNone(section)
+        body = _norm(section.group(1))
+        self.assertIn("A finding is always attributable to code evidence", body)
+        self.assertIn("Optional and evidence-gated", body)
+        self.assertIn("Provenance is not a severity input", body)
+        self.assertIn(
+            "never calculates, raises, lowers, or overrides severity", body
+        )
+        self.assertIn(
+            "never changes the finding's identity, its deduplication, or the "
+            "mechanical decision derivation",
+            body,
+        )
+        self.assertIn("folds into evidence prose", body)
+        # the rendering exemplar carries the optional line
+        self.assertIn("**Contextual evidence:**", self.rendering)
+        variant = next(
+            b
+            for b in re.findall(r"```markdown\n(.*?)\n```", self.rendering, re.S)
+            if "**Contextual evidence:**" in b
+        )
+        self.assertLess(
+            variant.index("**Evidence:**"), variant.index("**Contextual evidence:**")
+        )
+        self.assertLess(
+            variant.index("**Contextual evidence:**"), variant.index("**Impact:**")
+        )
+
+    def test_contextual_evidence_is_optional_not_mandatory_core(self) -> None:
+        opt = re.search(
+            r"## Optional and surface-specific fields\n(.*?)\n## ", self.text, re.S
+        )
+        self.assertIsNotNone(opt)
+        opt_body = _norm(opt.group(1))
+        self.assertIn("contextual evidence", opt_body)
+        self.assertIn("Absent on a finding that rests on code evidence alone", opt_body)
+        # not added to the mandatory-core question
+        self.assertIn("What? Where? Evidence? Impact? Fix?", self.norm)
+        self.assertNotIn("What? Where? Evidence? Contextual", self.norm)
+
     def test_inline_rendering_drops_id_and_location(self) -> None:
         block = re.search(
             r"## Canonical inline rendering\n(.*?)\n## ", self.rendering, re.S

@@ -92,7 +92,22 @@ human-facing review a machine-only format.
   governed by
   [`../policies/remediation-guidance.md`](../policies/remediation-guidance.md);
   that policy still owns what the guidance may and may not say, and this
-  rename to a shorter field label never changes it.
+  rename to a shorter field label never changes it;
+- **contextual evidence** — optional: the contextual-evidence entries
+  (requirement / acceptance criterion / accepted decision / repository
+  policy / feedback / historical note / pre-existing-risk note) whose
+  provenance informed the finding — recorded when that context is *why the
+  finding is attributable to this change*, or is the authoritative evidence
+  that a requirement or an approved decision is violated. It is a provenance
+  record, not a severity input: it never calculates or changes severity (see
+  "Contextual evidence and provenance"). Rendered only when it materially
+  explains why the behavior is incorrect or risky (see "Optional and
+  surface-specific fields"). This is the finding-side of "Tracing findings
+  back to context" in
+  [`../policies/review-context.md`](../policies/review-context.md); the typed
+  authority and resolution rules for contextual evidence are the
+  contextual-evidence model design record (a repository-development document,
+  not a packaged resource, so it is named here, not linked).
 
 ## Fix/action location, evidence location, publication
 
@@ -155,6 +170,42 @@ An ordinary finding that names a single site does not get this field, and
 the field is never used to pack unrelated findings into one entry — that is
 the over-merge "Fail open toward separate findings" in
 [`../policies/review-scope.md`](../policies/review-scope.md) forbids.
+
+## Contextual evidence and provenance
+
+A finding is always attributable to **code evidence** — the concrete
+implementation behavior in its `Evidence` field, per
+[`../policies/evidence.md`](../policies/evidence.md). It may additionally
+carry **provenance**: the optional **contextual evidence** field lists the
+caller-supplied contextual-evidence entries that informed it — a
+requirement, an acceptance criterion, an accepted decision, a repository
+policy, prior implementation feedback, a historical note, or a
+pre-existing-risk note. This is the finding-side of "Tracing findings back
+to context" in
+[`../policies/review-context.md`](../policies/review-context.md), given one
+stable field; the typed authority of each source and the rules for
+conflicting, stale, ambiguous, or non-authoritative context are owned by the
+contextual-evidence model design record (a repository-development document,
+named here rather than linked because it is not a packaged resource).
+
+- **Optional and evidence-gated.** It renders only when the contextual
+  evidence materially explains why the behavior is incorrect or risky — not
+  on every finding, and never as a second, duplicate listing of the finding.
+  When it adds nothing it is absent, like every other optional field.
+- **Provenance is not a severity input.** Authoritative contextual evidence
+  may supply the evidence that a requirement or an approved decision is
+  violated, and that established violation feeds the finding's
+  independently derived severity per
+  [`../policies/severity.md`](../policies/severity.md) exactly as any code
+  evidence would. The provenance annotation **itself** never calculates,
+  raises, lowers, or overrides severity, and never changes the finding's
+  identity, its deduplication, or the mechanical decision derivation.
+  Severity is never inherited from a context source's own wording or
+  emphasis.
+- **Surface rendering.** On the full rendering it is its own line; on the
+  GitHub inline surface it folds into `evidence` prose (the same treatment
+  as `evidence location`). See
+  [`finding-rendering.md`](finding-rendering.md).
 
 ## Finding quality contract
 
@@ -239,6 +290,12 @@ after it, no `Details:` heading with boilerplate under it.
   explanation is justified" above. Visibility follows
   [`../policies/invocation-options.md`](../policies/invocation-options.md),
   "Finding-detail precedence"; absent when not populated or not selected;
+- **contextual evidence** — the provenance entries that informed the finding
+  (see "Contextual evidence and provenance"). Rendered only when the
+  contextual evidence materially explains why the behavior is incorrect or
+  risky; on the full rendering it is its own line, on the GitHub inline
+  surface it folds into `evidence` prose. Absent on a finding that rests on
+  code evidence alone. It never carries or changes a severity;
 - **affected locations** — the manifestation-site list of a consolidated
   root-cause finding. It is **not optional**: on a consolidated finding it
   is required and part of the mandatory core ("Finding quality contract"
@@ -315,4 +372,9 @@ rendering-specific rules are in
 - an evidence location is never relabeled as a resolved fix/action
   location — an unresolved fix/action location is stated explicitly with
   the trailing annotation;
+- the optional **contextual evidence** field records the provenance that
+  informed a finding; it renders only when it materially explains the
+  problem, never carries or changes a severity, and never alters the
+  finding's identity, deduplication, or decision derivation (see "Contextual
+  evidence and provenance");
 - `fix` is a direction, never an implemented patch.

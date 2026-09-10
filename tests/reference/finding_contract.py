@@ -86,6 +86,11 @@ class Finding:
     # line gets the explicit unresolved annotation. `location` is never a
     # promoted evidence location.
     fix_location_resolved: bool = True
+    # Issue #118: optional provenance — the contextual-evidence entries that
+    # informed the finding (each a short "source: clause" string). Rendered
+    # only when it materially explains the problem; folds into `evidence`
+    # prose on the GitHub inline surface. Never carries or changes severity.
+    context_evidence: tuple[str, ...] = ()
 
 
 def missing_mandatory_fields(finding: Finding, *, surface: Surface) -> tuple[str, ...]:
@@ -139,6 +144,13 @@ def renders_evidence_location(finding: Finding) -> bool:
     )
 
 
+def renders_context_evidence(finding: Finding) -> bool:
+    """The optional `Contextual evidence` provenance line renders only when
+    at least one contextual-evidence entry informed the finding (Issue
+    #118). It is independent of severity and of the location fields."""
+    return bool(finding.context_evidence)
+
+
 def render_full(
     finding: Finding,
     *,
@@ -160,6 +172,10 @@ def render_full(
     if renders_evidence_location(finding):
         lines.append(f"- **Evidence location:** {finding.evidence_location}")
     lines.append(f"- **Evidence:** {finding.evidence}")
+    if renders_context_evidence(finding):
+        lines.append(
+            f"- **Contextual evidence:** {'; '.join(finding.context_evidence)}"
+        )
     lines.append(f"- **Impact:** {finding.impact}")
     lines.append(f"- **Fix:** {finding.fix}")
     if (
@@ -189,7 +205,11 @@ def render_inline(
 ) -> str:
     """The GitHub inline-comment rendering (finding.md, "Canonical inline
     rendering"): severity first, no `id`, no `Location`."""
-    lines = [f"[{finding.severity.value}] {finding.title}", "", f"Evidence: {finding.evidence}"]
+    evidence = finding.evidence
+    if renders_context_evidence(finding):
+        # folds into evidence prose on this surface — no separate line
+        evidence = f"{evidence} (contextual evidence: {'; '.join(finding.context_evidence)})"
+    lines = [f"[{finding.severity.value}] {finding.title}", "", f"Evidence: {evidence}"]
     lines += ["", f"Impact: {finding.impact}", "", f"Fix: {finding.fix}"]
     show_details = (
         finding_detail_override

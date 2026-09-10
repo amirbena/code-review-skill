@@ -381,6 +381,50 @@ class EvidenceVsFixLocationTests(unittest.TestCase):
         )
 
 
+class ContextualEvidenceProvenanceTests(unittest.TestCase):
+    """Issue #118: the optional `contextual evidence` provenance field is
+    rendered only when set, folds into evidence prose on the inline surface,
+    stays out of the mandatory core, and never carries a severity."""
+
+    def test_absent_by_default_and_backward_compatible(self) -> None:
+        f = _finding()
+        self.assertFalse(fc.renders_context_evidence(f))
+        self.assertNotIn("Contextual evidence", fc.render_full(f))
+        self.assertNotIn("contextual evidence", fc.render_inline(f))
+        self.assertEqual(
+            fc.missing_mandatory_fields(f, surface=fc.Surface.LOCAL_REPORT), ()
+        )
+
+    def test_full_rendering_puts_it_after_evidence_before_impact(self) -> None:
+        f = _finding(
+            context_evidence=("Jira PROJECT-1234 acceptance criteria: validate before every write",)
+        )
+        rendered = fc.render_full(f)
+        self.assertIn("- **Contextual evidence:** Jira PROJECT-1234", rendered)
+        self.assertLess(
+            rendered.index("**Evidence:**"), rendered.index("**Contextual evidence:**")
+        )
+        self.assertLess(
+            rendered.index("**Contextual evidence:**"), rendered.index("**Impact:**")
+        )
+
+    def test_inline_folds_provenance_into_evidence_prose(self) -> None:
+        f = _finding(context_evidence=("ADR 0007: server-side UUIDv7 keys",))
+        rendered = fc.render_inline(f)
+        self.assertNotIn("Contextual evidence:", rendered)  # no separate line
+        self.assertIn("contextual evidence: ADR 0007", rendered)
+        self.assertTrue(rendered.startswith("[P1] "))
+
+    def test_provenance_is_not_part_of_the_mandatory_core(self) -> None:
+        self.assertNotIn("context_evidence", fc.MANDATORY_CORE)
+
+    def test_provenance_field_is_not_severity_shaped(self) -> None:
+        f = _finding(context_evidence=("ticket says critical",), severity=fc.Severity.P2)
+        # the string content never changes the rendered severity token
+        self.assertTrue(fc.render_full(f).startswith("### F1 [P2] "))
+        self.assertTrue(fc.render_inline(f).startswith("[P2] "))
+
+
 class SeveritySemanticsUnchangedTests(unittest.TestCase):
     def test_only_the_three_canonical_severities_exist(self) -> None:
         self.assertEqual(
