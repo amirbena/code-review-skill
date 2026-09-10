@@ -20,6 +20,32 @@ inside a disposable isolation boundary, and records exactly one outcome:
 A passing run **adds evidence only** — it never removes, downgrades, or
 rewrites a finding, and never changes the verdict mapping.
 
+## Targeted validation of a suspected finding
+
+The same policy also lets the review gain runtime evidence for **one
+specific suspected finding** by running the smallest safe reproduction of
+it — preferring an existing repository test, and otherwise a minimal
+generated check — inside the same disposable isolation boundary. Every
+finding then carries one **validation state**:
+
+- `reasoned` — no targeted validation was attempted, or the finding was
+  ineligible; it rests on static evidence alone (the default, always
+  sufficient, and not rendered);
+- `runtime-confirmed` — a bounded, isolated reproduction confirmed the
+  suspected defect;
+- `attempted-inconclusive` — a reproduction was attempted but the boundary
+  was unavailable, the run exceeded its time/resource budget, it could not
+  be made safe, its generated artifact could not be shown to stay out of
+  the working tree, or the result was ambiguous.
+
+A run that instead **disproves** the suspicion raises no finding; the
+pass evidence is recorded in `Validation`. Generated reproduction code
+lives only in the ephemeral boundary — it is never written into, staged
+in, or committed to the reviewed working tree, and post-run verification
+confirms nothing leaked. Targeted validation is never mandatory, and the
+state is provenance only: it never changes a finding's severity, identity,
+or the decision.
+
 ## When it is useful
 
 - The repository documents a fast, focused check for the area you
@@ -66,6 +92,11 @@ by having a declared command and a runtime sandbox.
   so explicitly.
 - The isolated checkout used for context is **not** by itself the
   execution boundary.
+- **Targeted validation is never mandatory and never a repository change.**
+  A generated reproduction stays in the ephemeral boundary; it is never
+  written to, staged in, or committed to the working tree, and an
+  unavailable, timed-out, unsafe, or ambiguous attempt is recorded
+  `attempted-inconclusive` while the finding keeps its static evidence.
 
 ## Canonical semantics
 

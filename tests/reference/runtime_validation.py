@@ -111,6 +111,24 @@ class FakeRepository:
         self.process_invocations.append(argv)
         self.boundary_invocations.append(boundary)
 
+    def run_reproduction(self, reproduction, boundary: ExecutionBoundary) -> None:
+        """Run a targeted reproduction inside the boundary's ephemeral workspace.
+
+        A correct runner never touches ``files``; ``leaks`` models a buggy
+        runner that writes the generated artifact into the reviewed tree so the
+        caller's post-run verification has something to catch.
+        """
+        if not boundary.established:
+            raise AssertionError("fake runner must not start outside the boundary")
+        self.process_invocations.append(("<targeted-reproduction>", reproduction.kind))
+        self.boundary_invocations.append(boundary)
+        if getattr(reproduction, "leaks", False):
+            self.files["tests/_generated_repro.py"] = "def test_repro():\n    assert False\n"
+
+    def restore(self, snapshot: tuple[tuple[str, str], ...]) -> None:
+        """Discard everything the run left behind; recover the reviewed tree."""
+        self.files = dict(snapshot)
+
 
 def _selected(declarations: Sequence[CommandDeclaration]) -> CommandDeclaration | None:
     relevant = [item for item in declarations if item.relevant]
@@ -210,3 +228,151 @@ def failure_finding(
     if record.outcome is not Outcome.FAILED:
         raise ValueError("only failed validation produces validation finding material")
     return decisions.Finding("validation-failure", impact, origin="validation")
+
+
+# --------------------------------------------------------------------------- #
+# Targeted validation of a suspected finding (#128)
+#
+# A second, narrower mode of the same policy: run the smallest safe, isolated
+# reproduction of ONE suspected finding to gain runtime evidence for it. It
+# reuses ExecutionBoundary / FakeRepository above; nothing here relaxes the
+# trust model. Every finding ends with exactly one ValidationState.
+# --------------------------------------------------------------------------- #
+
+
+class ValidationState(Enum):
+    """The finding-facing classification carried by every finding."""
+
+    REASONED = "reasoned"
+    RUNTIME_CONFIRMED = "runtime-confirmed"
+    ATTEMPTED_INCONCLUSIVE = "attempted-inconclusive"
+
+
+@dataclass(frozen=True)
+class TargetedReproduction:
+    """The smallest reproduction of one suspected finding."""
+
+    kind: str = "generated"  # "selected" existing repo test, or "generated"
+    deterministic: bool = True
+    non_interactive: bool = True
+    # eligibility: needs nothing the isolated boundary lacks
+    needs_unavailable_capability: bool = False
+    # discovered while preparing the run: cannot be made side-effect free
+    safe: bool = True
+    # simulated run behaviour
+    defect_present: bool = True  # ground truth the fake run reflects
+    times_out: bool = False
+    ambiguous: bool = False  # ran but neither confirms nor disproves
+    leaks: bool = False  # a buggy runner that writes the generated file into the tree
+
+
+@dataclass(frozen=True)
+class SuspectedFinding:
+    """A finding still being formed, before the set is finalized."""
+
+    id: str
+    severity: decisions.Severity
+    hinges_on_runtime: bool = True  # static reasoning left it genuinely uncertain
+    already_confident: bool = False  # already established without a run => ineligible
+    reproduction: TargetedReproduction | None = None
+    boundary: ExecutionBoundary = field(default_factory=ExecutionBoundary)
+    budget_seconds: float = 30.0
+    run_seconds: float = 1.0
+
+
+@dataclass(frozen=True)
+class TargetedValidationResult:
+    finding_id: str
+    state: ValidationState
+    raised: bool  # False => suspicion disproved, no finding is raised
+    attempted: bool  # False => ineligible, nothing ran, no Validation entry
+    outcome: Outcome | None = None  # the Validation-section outcome when attempted
+    reason: str = ""
+    evidence: str = ""
+
+
+def _reproduction_run(
+    finding: SuspectedFinding, repository: FakeRepository
+) -> TargetedValidationResult:
+    repro = finding.reproduction
+    assert repro is not None
+    before = repository.snapshot()
+    repository.run_reproduction(repro, finding.boundary)
+
+    if repository.snapshot() != before:
+        # A generated artifact / mutation reached the tree: discard and recover.
+        repository.restore(before)
+        return TargetedValidationResult(
+            finding.id, ValidationState.ATTEMPTED_INCONCLUSIVE, raised=True,
+            attempted=True, outcome=Outcome.SKIPPED,
+            reason="generated-artifact leak check failed; result discarded",
+        )
+    if repro.ambiguous:
+        return TargetedValidationResult(
+            finding.id, ValidationState.ATTEMPTED_INCONCLUSIVE, raised=True,
+            attempted=True, outcome=Outcome.FAILED,
+            reason="reproduction ran but neither confirmed nor disproved",
+        )
+    if repro.defect_present:
+        return TargetedValidationResult(
+            finding.id, ValidationState.RUNTIME_CONFIRMED, raised=True,
+            attempted=True, outcome=Outcome.EXECUTED,
+            evidence="isolated reproduction failed exactly as the finding predicts",
+        )
+    return TargetedValidationResult(
+        finding.id, ValidationState.REASONED, raised=False,
+        attempted=True, outcome=Outcome.EXECUTED,
+        evidence="isolated reproduction passed; suspected defect disproved",
+    )
+
+
+def run_targeted_validation(
+    finding: SuspectedFinding, repository: FakeRepository
+) -> TargetedValidationResult:
+    """Attempt the smallest safe reproduction for one suspected finding."""
+    repro = finding.reproduction
+    if (
+        repro is None
+        or finding.already_confident
+        or not finding.hinges_on_runtime
+        or repro.needs_unavailable_capability
+        or not repro.deterministic
+        or not repro.non_interactive
+    ):
+        return TargetedValidationResult(
+            finding.id, ValidationState.REASONED, raised=True, attempted=False,
+            reason="ineligible for targeted validation; static evidence stands",
+        )
+
+    if not finding.boundary.available or not finding.boundary.established:
+        return TargetedValidationResult(
+            finding.id, ValidationState.ATTEMPTED_INCONCLUSIVE, raised=True,
+            attempted=True, outcome=Outcome.UNAVAILABLE,
+            reason="isolated execution boundary unavailable or unverifiable",
+        )
+    if not repro.safe:
+        return TargetedValidationResult(
+            finding.id, ValidationState.ATTEMPTED_INCONCLUSIVE, raised=True,
+            attempted=True, outcome=Outcome.SKIPPED,
+            reason="reproduction cannot be made safe",
+        )
+    if repro.times_out or finding.run_seconds > finding.budget_seconds:
+        # Terminate; never widen the budget or retry.
+        return TargetedValidationResult(
+            finding.id, ValidationState.ATTEMPTED_INCONCLUSIVE, raised=True,
+            attempted=True, outcome=Outcome.SKIPPED, reason="budget exceeded",
+        )
+    return _reproduction_run(finding, repository)
+
+
+def finalized_finding(
+    finding: SuspectedFinding, result: TargetedValidationResult
+) -> decisions.Finding | None:
+    """Project a validated suspicion onto the canonical decision Finding.
+
+    The validation state is provenance only: it never appears in, and never
+    changes, the severity the decision derivation consumes.
+    """
+    if not result.raised:
+        return None
+    return decisions.Finding(finding.id, finding.severity, origin="diff")

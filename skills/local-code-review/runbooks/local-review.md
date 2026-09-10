@@ -234,9 +234,15 @@ which a value must be resolved before it is used, or what is reported.
    policy. Use the target repository instruction context and the changed
    delta's blast radius already resolved above. Carry exactly one outcome
    record per selected command, or the explicit no-command result, into the
-   shared `Validation` section. The shared policy owns command eligibility,
-   execution-boundary gating, and all safety semantics; this runbook only
-   sequences the step and carries its records forward.
+   shared `Validation` section. This also covers **targeted per-finding
+   validation**: for an eligible suspected finding, run the smallest safe,
+   isolated reproduction before the finding set is finalized and carry the
+   finding's validation state (`reasoned` / `runtime-confirmed` /
+   `attempted-inconclusive`) and its `Validation` record forward. The shared
+   policy owns eligibility, generation limits, the no-leak-into-the-tree
+   guarantee, budget/fail-safe behavior, execution-boundary gating, and all
+   safety semantics; this runbook only sequences the step and carries its
+   records forward.
 9. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

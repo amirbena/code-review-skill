@@ -69,6 +69,24 @@ absent on a finding that rests on code evidence alone:
 - **Fix:** <concrete correction direction, not a patch>
 ```
 
+When a targeted runtime check produced a `runtime-confirmed` or
+`attempted-inconclusive` state, one `Runtime validation` line is added after
+`Evidence` (see [`finding.md`](finding.md), "Runtime validation state and
+provenance"). The `reasoned` default is never rendered. It is a provenance
+record and never carries a severity:
+
+```markdown
+### <id> [<severity>] <short, concrete title>
+
+- **Location:** `<path>:<line-or-range>`
+- **Evidence:** <concrete evidence, concise>
+- **Runtime validation:** runtime-confirmed — <bounded reproduction and its
+  pass/fail evidence> _(or)_ attempted-inconclusive — <what was attempted and
+  why it did not confirm>
+- **Impact:** <concrete engineering consequence, concise>
+- **Fix:** <concrete correction direction, not a patch>
+```
+
 When the fix/action location is unresolved, no `Evidence location` line
 is added; `Location` instead carries the best-known coordinate with the
 trailing unresolved annotation (see "Fix/action location, evidence
@@ -155,6 +173,12 @@ When contextual evidence informed the finding, name it inside the
 `Evidence:` prose as well — there is no separate `Contextual evidence:`
 line on this surface (see [`finding.md`](finding.md), "Contextual evidence
 and provenance").
+
+When a targeted runtime check produced a `runtime-confirmed` or
+`attempted-inconclusive` state, state it inside the `Evidence:` prose too —
+there is no separate `Runtime validation:` line on this surface (see
+[`finding.md`](finding.md), "Runtime validation state and provenance"). The
+`reasoned` default is not mentioned.
 
 For a **consolidated root-cause finding**, name the affected call paths
 inside the prose — the `Evidence:` block, or a short `Affected call paths:`

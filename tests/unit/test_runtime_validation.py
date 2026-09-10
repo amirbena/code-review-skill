@@ -216,5 +216,164 @@ class RuntimeValidationSafetyAndDecisionTests(unittest.TestCase):
         )
 
 
+class TargetedFindingValidationLifecycle(unittest.TestCase):
+    """Lifecycle matrix for targeted per-finding validation (#128)."""
+
+    def suspected(self, **kwargs) -> rv.SuspectedFinding:
+        kwargs.setdefault("id", "F1")
+        kwargs.setdefault("severity", Severity.P1)
+        kwargs.setdefault("reproduction", rv.TargetedReproduction())
+        return rv.SuspectedFinding(**kwargs)
+
+    def test_runtime_confirmed_when_isolated_reproduction_reproduces_the_defect(self) -> None:
+        repo = rv.FakeRepository()
+        finding = self.suspected(reproduction=rv.TargetedReproduction(defect_present=True))
+        result = rv.run_targeted_validation(finding, repo)
+        self.assertEqual(result.state, rv.ValidationState.RUNTIME_CONFIRMED)
+        self.assertEqual(result.outcome, rv.Outcome.EXECUTED)
+        self.assertTrue(result.raised and result.attempted)
+        self.assertTrue(result.evidence)
+        self.assertEqual(len(repo.boundary_invocations), 1)
+
+    def test_disproved_suspicion_raises_no_finding_but_records_pass_evidence(self) -> None:
+        repo = rv.FakeRepository()
+        finding = self.suspected(reproduction=rv.TargetedReproduction(defect_present=False))
+        result = rv.run_targeted_validation(finding, repo)
+        self.assertFalse(result.raised)
+        self.assertEqual(result.state, rv.ValidationState.REASONED)
+        self.assertEqual(result.outcome, rv.Outcome.EXECUTED)
+        self.assertIn("disproved", result.evidence)
+        self.assertIsNone(rv.finalized_finding(finding, result))
+
+    def test_ambiguous_run_is_attempted_inconclusive(self) -> None:
+        repo = rv.FakeRepository()
+        finding = self.suspected(reproduction=rv.TargetedReproduction(ambiguous=True))
+        result = rv.run_targeted_validation(finding, repo)
+        self.assertEqual(result.state, rv.ValidationState.ATTEMPTED_INCONCLUSIVE)
+        self.assertIn("neither confirmed nor disproved", result.reason)
+
+    def test_timeout_terminates_and_is_attempted_inconclusive_without_retry(self) -> None:
+        repo = rv.FakeRepository()
+        finding = self.suspected(run_seconds=120.0, budget_seconds=30.0)
+        result = rv.run_targeted_validation(finding, repo)
+        self.assertEqual(result.state, rv.ValidationState.ATTEMPTED_INCONCLUSIVE)
+        self.assertEqual(result.reason, "budget exceeded")
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_times_out_flag_is_also_budget_exceeded(self) -> None:
+        result = rv.run_targeted_validation(
+            self.suspected(reproduction=rv.TargetedReproduction(times_out=True)),
+            rv.FakeRepository(),
+        )
+        self.assertEqual(result.state, rv.ValidationState.ATTEMPTED_INCONCLUSIVE)
+        self.assertEqual(result.reason, "budget exceeded")
+
+    def test_unsafe_reproduction_is_attempted_inconclusive_and_never_starts(self) -> None:
+        repo = rv.FakeRepository()
+        result = rv.run_targeted_validation(
+            self.suspected(reproduction=rv.TargetedReproduction(safe=False)), repo
+        )
+        self.assertEqual(result.state, rv.ValidationState.ATTEMPTED_INCONCLUSIVE)
+        self.assertIn("cannot be made safe", result.reason)
+        self.assertEqual(result.outcome, rv.Outcome.SKIPPED)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_unavailable_boundary_is_attempted_inconclusive_without_host_fallback(self) -> None:
+        repo = rv.FakeRepository()
+        for boundary in (
+            rv.ExecutionBoundary(available=False),
+            rv.ExecutionBoundary(post_run_verified=False),
+        ):
+            with self.subTest(boundary=boundary):
+                result = rv.run_targeted_validation(self.suspected(boundary=boundary), repo)
+                self.assertEqual(result.state, rv.ValidationState.ATTEMPTED_INCONCLUSIVE)
+                self.assertEqual(result.outcome, rv.Outcome.UNAVAILABLE)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_ineligible_finding_stays_reasoned_and_is_never_attempted(self) -> None:
+        repo = rv.FakeRepository()
+        for finding in (
+            self.suspected(reproduction=None),
+            self.suspected(already_confident=True),
+            self.suspected(hinges_on_runtime=False),
+            self.suspected(reproduction=rv.TargetedReproduction(needs_unavailable_capability=True)),
+        ):
+            with self.subTest(finding=finding):
+                result = rv.run_targeted_validation(finding, repo)
+                self.assertEqual(result.state, rv.ValidationState.REASONED)
+                self.assertFalse(result.attempted)
+                self.assertIsNone(result.outcome)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_generated_artifact_leak_is_caught_discarded_and_marked_inconclusive(self) -> None:
+        repo = rv.FakeRepository()
+        before = repo.snapshot()
+        result = rv.run_targeted_validation(
+            self.suspected(reproduction=rv.TargetedReproduction(leaks=True)), repo
+        )
+        self.assertEqual(result.state, rv.ValidationState.ATTEMPTED_INCONCLUSIVE)
+        self.assertIn("leak", result.reason)
+        self.assertEqual(repo.snapshot(), before, "reviewed tree must be recovered")
+
+    def test_reviewed_tree_is_unchanged_on_every_targeted_path(self) -> None:
+        cases = [
+            self.suspected(reproduction=rv.TargetedReproduction(defect_present=True)),
+            self.suspected(reproduction=rv.TargetedReproduction(defect_present=False)),
+            self.suspected(reproduction=rv.TargetedReproduction(ambiguous=True)),
+            self.suspected(reproduction=rv.TargetedReproduction(safe=False)),
+            self.suspected(reproduction=rv.TargetedReproduction(leaks=True)),
+            self.suspected(boundary=rv.ExecutionBoundary(available=False)),
+            self.suspected(run_seconds=999.0),
+            self.suspected(reproduction=None),
+        ]
+        for finding in cases:
+            with self.subTest(finding=finding):
+                repo = rv.FakeRepository()
+                before = repo.snapshot()
+                rv.run_targeted_validation(finding, repo)
+                self.assertEqual(repo.snapshot(), before)
+
+    def test_every_finding_exposes_exactly_one_of_three_states(self) -> None:
+        observed = {
+            rv.run_targeted_validation(finding, rv.FakeRepository()).state
+            for finding in (
+                self.suspected(reproduction=rv.TargetedReproduction(defect_present=True)),
+                self.suspected(reproduction=None),
+                self.suspected(reproduction=rv.TargetedReproduction(ambiguous=True)),
+            )
+        }
+        self.assertEqual(
+            observed,
+            {
+                rv.ValidationState.RUNTIME_CONFIRMED,
+                rv.ValidationState.REASONED,
+                rv.ValidationState.ATTEMPTED_INCONCLUSIVE,
+            },
+        )
+        for state in rv.ValidationState:
+            self.assertIn(state.value, {"reasoned", "runtime-confirmed", "attempted-inconclusive"})
+
+    def test_validation_state_never_changes_severity_or_decision(self) -> None:
+        for state_repro, expected in (
+            (rv.TargetedReproduction(defect_present=True), rv.ValidationState.RUNTIME_CONFIRMED),
+            (rv.TargetedReproduction(ambiguous=True), rv.ValidationState.ATTEMPTED_INCONCLUSIVE),
+        ):
+            finding = self.suspected(severity=Severity.P2, reproduction=state_repro)
+            result = rv.run_targeted_validation(finding, rv.FakeRepository())
+            self.assertEqual(result.state, expected)
+            projected = rv.finalized_finding(finding, result)
+            self.assertEqual(projected.severity, Severity.P2)
+            self.assertEqual(derive_decision([projected]), Decision.CLEAN)
+
+        blocking = self.suspected(
+            severity=Severity.P1,
+            reproduction=rv.TargetedReproduction(ambiguous=True),
+        )
+        result = rv.run_targeted_validation(blocking, rv.FakeRepository())
+        self.assertEqual(result.state, rv.ValidationState.ATTEMPTED_INCONCLUSIVE)
+        projected = rv.finalized_finding(blocking, result)
+        self.assertEqual(derive_decision([projected]), Decision.CHANGES_REQUIRED)
+
+
 if __name__ == "__main__":
     unittest.main()

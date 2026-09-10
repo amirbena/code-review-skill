@@ -12,6 +12,9 @@ from tests.support.paths import REPO_ROOT
 
 POLICY = REPO_ROOT / "shared/policies/runtime-validation.md"
 SUMMARY = REPO_ROOT / "shared/templates/review-summary.md"
+FINDING = REPO_ROOT / "shared/templates/finding.md"
+FINDING_RENDERING = REPO_ROOT / "shared/templates/finding-rendering.md"
+FEATURE_DOC = REPO_ROOT / "docs/features/runtime-validation.md"
 LOCAL_SKILL = REPO_ROOT / "skills/local-code-review/SKILL.md"
 GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 LOCAL_RUNBOOK = REPO_ROOT / "skills/local-code-review/runbooks/local-review.md"
@@ -90,6 +93,76 @@ class CanonicalPolicyTests(unittest.TestCase):
             "cannot create a second decision path",
         ):
             self.assertIn(phrase, self.text)
+
+
+class TargetedFindingValidationContractTests(unittest.TestCase):
+    """#128 — targeted per-finding validation is pinned into the shared policy."""
+
+    def setUp(self) -> None:
+        self.text = normalized(POLICY)
+        self.raw = POLICY.read_text(encoding="utf-8")
+
+    def test_policy_defines_the_targeted_mode_and_its_eligibility(self) -> None:
+        for phrase in (
+            "Targeted validation of a suspected finding",
+            "Targeted validation is never mandatory",
+            "the finding is a suspected defect",
+            "bounded, deterministic, non-interactive",
+            "Prefer selecting an existing repository test",
+            "One reproduction per finding",
+        ):
+            self.assertIn(phrase, self.text)
+
+    def test_generated_artifacts_cannot_become_a_repository_change(self) -> None:
+        for phrase in (
+            "Generated artifacts never enter the working tree",
+            "only inside the disposable boundary's ephemeral workspace",
+            "never git add-ed, staged, committed, stashed",
+            "no generated validation file, and no modification from the run, remains in the reviewed source tree or Git state",
+            "never delivered as an applyable change",
+        ):
+            self.assertIn(phrase, self.text)
+
+    def test_budget_and_fail_safe_are_deterministic(self) -> None:
+        for phrase in (
+            "strict wall-clock timeout",
+            "budget exceeded",
+            "boundary is unavailable or unverifiable",
+            "the reproduction cannot be made safe",
+            "Never widen the budget, retry, or fall back to unsandboxed execution",
+        ):
+            self.assertIn(phrase, self.text)
+
+    def test_three_states_and_severity_neutrality(self) -> None:
+        for token in ("`reasoned`", "`runtime-confirmed`", "`attempted-inconclusive`"):
+            self.assertIn(token, self.raw)
+        for phrase in (
+            "Every finding carries exactly one validation state",
+            "provenance, not a severity input",
+            "runtime-confirmed does not escalate a P2",
+            "attempted-inconclusive does not de-escalate a P1",
+            "the finding is not raised",
+            "derived exactly once, after findings are finalized",
+        ):
+            self.assertIn(phrase, self.text)
+
+    def test_finding_template_carries_the_state_as_non_severity_provenance(self) -> None:
+        finding = normalized(FINDING)
+        self.assertIn("Runtime validation state and provenance", finding)
+        for token in ("reasoned", "runtime-confirmed", "attempted-inconclusive"):
+            self.assertIn(token, finding)
+        self.assertIn("Provenance, not a severity input", finding)
+        self.assertIn("Static evidence stays sufficient", finding)
+        rendering = normalized(FINDING_RENDERING)
+        self.assertIn("Runtime validation", rendering)
+        self.assertIn("reasoned default is never rendered", rendering)
+
+    def test_feature_doc_documents_the_targeted_mode(self) -> None:
+        doc = normalized(FEATURE_DOC)
+        self.assertIn("Targeted validation of a suspected finding", doc)
+        for token in ("reasoned", "runtime-confirmed", "attempted-inconclusive"):
+            self.assertIn(token, doc)
+        self.assertIn("committed to the reviewed working tree", doc)
 
 
 class WiringTests(unittest.TestCase):
