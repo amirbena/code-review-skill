@@ -12,6 +12,8 @@ from release_lib.commands import (
     cmd_prepare_changelog,
     cmd_release_preflight,
     cmd_release_verify,
+    cmd_resolve_app_identity,
+    cmd_resolve_base_ref,
 )
 
 _DESCRIPTION = """Classify a change set as release-worthy, enforce CHANGELOG coverage, and
@@ -92,6 +94,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="required release asset filename (repeatable)",
     )
     verify.set_defaults(func=cmd_release_verify)
+
+    base_ref = sub.add_parser(
+        "resolve-base-ref",
+        help="print the diff base the assess job classifies against (PR base commit, or previous v* tag)",
+    )
+    base_ref.add_argument("--event-name", required=True, help="the triggering GitHub event (github.event_name)")
+    base_ref.add_argument("--pr-base-sha", default="", help="pull_request.base.sha (required on pull_request, ignored otherwise)")
+    base_ref.add_argument("--github-output", default=None, help="path for the ref output")
+    base_ref.set_defaults(func=cmd_resolve_base_ref)
+
+    app_identity = sub.add_parser(
+        "resolve-app-identity",
+        help="resolve the release-commit Git identity from the minted release App's slug; fails closed with no fallback",
+    )
+    app_identity.add_argument("--app-slug", required=True, help="app-slug from actions/create-github-app-token")
+    app_identity.add_argument("--github-output", default=None, help="path for the login/email outputs")
+    app_identity.set_defaults(func=cmd_resolve_app_identity)
     return parser
 
 
