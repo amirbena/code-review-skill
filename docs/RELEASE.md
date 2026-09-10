@@ -91,9 +91,10 @@ or `major` bump.
 ## The global changelog model
 
 [`../CHANGELOG.md`](../CHANGELOG.md) is the single durable history.
-Release worthiness is always evaluated over **all changes since the
-previous `v*` tag**, and `## Unreleased` is the coverage for that whole
-release set — **not one entry per pull request**.
+Release planning is evaluated over **all changes since the previous `v*`
+tag**, and `## Unreleased` is the coverage for that whole release set —
+**not one entry per pull request**. (A PR check narrows the boundary to
+what that PR contributes; see **PR / push checks** below.)
 
 - A release-worthy change **must** be represented by at least one bullet
   under `## Unreleased`, beneath a recognized `### <Category>` heading
@@ -113,8 +114,12 @@ entry, the check fails with an actionable message.
 
 On every pull request and every push to `main`, the `assess` job
 (`contents: read`, `persist-credentials: false`) classifies the change
-set against the previous `v*` tag (or the PR base) and, when it is
-release-worthy:
+set. On a push it classifies everything since the previous `v*` tag. On a
+pull request it classifies only what the PR itself contributes — the diff
+against the **merge-base with the PR's current base branch** — so
+release-worthy history that entered the branch through a sync/merge from
+`main` is never treated as a new CHANGELOG obligation for the PR. When
+the classified set is release-worthy the job:
 
 1. enforces `## Unreleased` coverage (fails closed if missing);
 2. classifies the proposed SemVer impact with `classify-semver --strict`

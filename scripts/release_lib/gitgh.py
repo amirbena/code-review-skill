@@ -59,6 +59,26 @@ def latest_release_tag(repo_root: Path) -> str | None:
     return None
 
 
+def rev_parse_commit(repo_root: Path, rev: str) -> str | None:
+    """The commit SHA `rev` resolves to, or `None` when it does not exist."""
+    try:
+        out = _git(["rev-parse", "--verify", "--quiet", f"{rev}^{{commit}}"], repo_root)
+    except subprocess.CalledProcessError:
+        return None
+    sha = out.strip()
+    return sha or None
+
+
+def merge_base(repo_root: Path, a: str, b: str) -> str | None:
+    """The best common ancestor of `a` and `b`, or `None` when there is none."""
+    try:
+        out = _git(["merge-base", a, b], repo_root)
+    except subprocess.CalledProcessError:
+        return None
+    sha = out.strip()
+    return sha or None
+
+
 def changed_files(repo_root: Path, base_ref: str | None) -> list[str]:
     """Repository-relative paths changed between `base_ref` (default: previous
     `v*` tag) and HEAD."""

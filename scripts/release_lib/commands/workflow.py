@@ -5,7 +5,8 @@ These two subcommands replace multi-line ``run: |`` blocks in
 unit-tested here and the YAML only wires inputs to outputs:
 
 * ``resolve-base-ref`` — the diff base the ``assess`` job classifies
-  against (the PR base commit, or the previous ``v*`` tag on a push).
+  against (the merge-base with the PR's current base branch, or the
+  previous ``v*`` tag on a push).
 * ``resolve-app-identity`` — the Git identity for the release commit,
   resolved from the minted release App's own slug via the GitHub API,
   failing closed rather than guessing.
@@ -27,20 +28,40 @@ from release_lib.commands.shared import emit_output
 _NUMERIC_RE = re.compile(r"^[0-9]+$")
 
 
+def _pull_request_base_ref(repo_root: Path, base_branch: str, base_sha: str) -> str:
+    """The point HEAD forked from the PR's *current* base branch.
+
+    Using the live base-branch tip (fetched into ``origin/<branch>`` by the
+    workflow) rather than the event payload's ``base.sha`` keeps
+    release-worthy history that entered the branch only through a
+    sync/merge from the base from being attributed to the PR. Falls back
+    to ``base.sha`` when the branch ref is unavailable (an older event
+    payload, or the fetch step did not run) — ``assess`` diffs it
+    three-dot, so its own merge-base still applies.
+    """
+    base_branch = base_branch.strip()
+    if base_branch:
+        tip = gitgh.rev_parse_commit(repo_root, f"origin/{base_branch}")
+        if tip:
+            return gitgh.merge_base(repo_root, tip, "HEAD") or tip
+    return base_sha.strip()
+
+
 def cmd_resolve_base_ref(args: argparse.Namespace) -> int:
     """Emit ``ref=`` — what the ``assess`` job diffs HEAD against.
 
-    On ``pull_request`` the base is the PR base commit. On any other event
-    (push / manual dispatch) it is the previous ``v*`` tag. Either can come
-    back empty (a PR event that somehow carries no ``base.sha``, or a push
-    with no prior release); an empty ``ref`` is passed through unchanged —
-    the downstream ``assess`` classifier falls back to the previous ``v*``
-    tag for it, matching the shell block this replaced.
+    On ``pull_request`` the base is the merge-base with the PR's current
+    base branch. On any other event (push / manual dispatch) it is the
+    previous ``v*`` tag. Either can come back empty (a PR event that
+    carries no base branch and no ``base.sha``, or a push with no prior
+    release); an empty ``ref`` is passed through unchanged — the
+    downstream ``assess`` classifier falls back to the previous ``v*`` tag
+    for it.
     """
     repo_root = Path(args.repo_root).resolve()
 
     if args.event_name == "pull_request":
-        ref = (args.pr_base_sha or "").strip()
+        ref = _pull_request_base_ref(repo_root, args.pr_base_ref or "", args.pr_base_sha or "")
     else:
         ref = gitgh.previous_release_tag(repo_root) or ""
 
