@@ -13,8 +13,16 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Fixed
+
+- Internal: the shared review contracts are split along their existing
+  architectural boundaries — the finding rendering exemplars into
+  `shared/templates/finding-rendering.md`, Jira context resolution into
+  `shared/policies/jira-context.md`, and the root-cause-consolidation and
+  affected-test analysis sub-domains into their own shared policies — each
+  cross-linked from a thin overview in the original file. Relocation only;
+  no change to review semantics, severity, the finding contract, or output
+  behavior. (#198)
 
 ## v1.9.2 — 2026-09-09
 
