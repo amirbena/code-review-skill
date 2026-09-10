@@ -269,7 +269,14 @@ rule.
   every exit path with a guarded delete (inside the scratch parent, not
   the parent itself, ownership marker present).
 
-### Implemented since the initial design
+### Optional capabilities
+
+Capabilities layered on the core pipeline — some explicitly opt-in, some
+automatically scoped when their precondition holds — each leaving a
+coherent Skill when absent or not engaged. Whether each is default,
+conditional, or requested is owned by
+[`docs/features/`](features/README.md), which also carries usage guidance
+for every one of them.
 
 - **Temporary repository-backed GitHub PR review** — opt-in isolated,
   read-only checkout at the PR head; context only
@@ -293,9 +300,60 @@ rule.
   and remediation options normalized deterministically from a fixed
   vocabulary
   ([`invocation-options.md`](../shared/policies/invocation-options.md)).
+- **Stateful delta re-review** — packaged runtime policy in `github-pr-review`
+  ([`stateful-delta-rereview.md`](../skills/github-pr-review/policies/stateful-delta-rereview.md),
+  Issue #65): when prior GitHub-native review evidence exists, a re-review
+  reconciles prior finding/lifecycle state, classifies the current pass
+  (unresolved / moved / fixed / reopened / newly introduced / ambiguous /
+  consolidated), reconsiders attributable blast radius and settled
+  assumptions, and escalates to a full review when the prior state cannot
+  seed a safe comparison. It installs the semantics contracted in
+  [`findings/delta-re-review-contract.md`](findings/delta-re-review-contract.md)
+  (#64), applies the transitions in
+  [`findings/finding-lifecycle-contract.md`](findings/finding-lifecycle-contract.md)
+  (#62), and reconstructs a Reviewed State Record per
+  [`findings/reviewed-sha-state-contract.md`](findings/reviewed-sha-state-contract.md)
+  (#63). It installs **no** matching *algorithm* or stable-identity
+  constructor — those stay reviewer judgment applying the documented
+  discipline. `local-code-review` does not load this policy: it is
+  architecturally stateless between invocations.
 
-Usage guidance for all of the above is in
-[`docs/features/`](features/README.md).
+### Repository-development instrumentation (not packaged)
+
+Contracts and tooling that support developing these Skills. They are
+repository-development material — **not** part of either packaged archive,
+and no packaged Skill resource depends on them.
+
+- **Cross-review finding-identity contracts** — the requirements
+  ([`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md),
+  #58), the precision-first matching strategy
+  ([`findings/finding-matching-strategy.md`](findings/finding-matching-strategy.md),
+  #59), and the deterministic descriptor/identity derivation
+  ([`findings/finding-stable-identity.md`](findings/finding-stable-identity.md),
+  #60, with a test-only reference model) are settled. Their Skill-runtime
+  wiring is still open — see "Future work" below. These contracts share
+  the [`findings/`](findings/README.md) directory.
+- **Code-review quality benchmark** — a repeatable check of whether a
+  Skill change improved or regressed review quality against a fixed
+  corpus. The single-case machine-readable format is
+  [`benchmark/fixture-format.md`](benchmark/fixture-format.md); the initial
+  crafted corpus is [`benchmark/corpus/`](benchmark/corpus/README.md); a
+  run's per-case isolation, repository-safety invariants, and result shape
+  are [`benchmark/runner-contract.md`](benchmark/runner-contract.md);
+  produced↔expected pairing is
+  [`benchmark/match-criteria.md`](benchmark/match-criteria.md), the
+  relation the quality metrics build on —
+  [`benchmark/missed-and-incorrect-findings.md`](benchmark/missed-and-incorrect-findings.md)
+  (false-negative / false-positive counts),
+  [`benchmark/severity-accuracy.md`](benchmark/severity-accuracy.md)
+  (over-/under-severity), and
+  [`benchmark/duplicate-noise.md`](benchmark/duplicate-noise.md)
+  (same-root-cause redundancy) — each rendered alongside the
+  regression comparison in
+  [`benchmark/regression-report.md`](benchmark/regression-report.md)
+  without gating it. Every reference metric under `tests/reference/` is
+  test-only; nothing benchmark is packaged. Repository-development docs
+  live in the [`benchmark/`](benchmark/README.md) directory.
 
 ### Future work (not implemented)
 
@@ -316,104 +374,17 @@ or runbook implements them today:
   repository's tests, linters, build, hooks, or arbitrary commands, even
   in repository-backed mode. Cloning untrusted PR code is not permission
   to execute it.
-- **Cross-review stable finding identity** — a movement-tolerant
-  identifier distinguishing "the same defect again" from "a new defect."
-  Requirements in
-  [`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md),
-  matching strategy in
-  [`findings/finding-matching-strategy.md`](findings/finding-matching-strategy.md),
-  the deterministic derivation in
-  [`findings/finding-stable-identity.md`](findings/finding-stable-identity.md)
-  (test-only reference model), and the two-state lifecycle in
-  [`findings/finding-lifecycle-contract.md`](findings/finding-lifecycle-contract.md).
-  No packaged policy, runbook, or code attaches the identifier at Skill
-  runtime yet.
-These contracts share the [`findings/`](findings/README.md) directory.
-
-- **Measurable code-review quality benchmark** — a repeatable check of
-  whether a Skill change improved or regressed review quality against a
-  fixed corpus. The canonical machine-readable format for a single
-  benchmark case (identity, patch / repository-reference input, expected
-  findings, severity, location detail, typed variance constructs,
-  fail-closed versioning) is defined in
-  [`benchmark/fixture-format.md`](benchmark/fixture-format.md). The initial
-  corpus — one crafted fixture per review category, with its
-  case-selection rationale — lives in
-  [`benchmark/corpus/`](benchmark/corpus/README.md). How a run executes
-  the reviewer over the corpus — per-case isolation into a disposable
-  workspace, the repository-safety invariants, cleanup, and the per-case
-  result shape — is
-  [`benchmark/runner-contract.md`](benchmark/runner-contract.md), with a
-  test-only reference runner
-  (`tests/reference/benchmark_runner.py`). Comparing a candidate run
-  against a stored baseline — the baseline result artifact, the
-  corpus-identity guard, the per-case and aggregate deltas, the
-  metric-free regression-vs-improvement rule, and the deliberate
-  baseline-refresh step — is
-  [`benchmark/regression-report.md`](benchmark/regression-report.md), with
-  a test-only reference report (`tests/reference/benchmark_report.py`).
-  When a produced finding *matches* an expected benchmark finding — the
-  two match axes (location, defect), the three-valued
-  `MATCH` / `NEAR_MISS` / `NO_MATCH` result, the fixed tolerances, and how
-  the fixture's allowed-alternative constructs resolve — is
-  [`benchmark/match-criteria.md`](benchmark/match-criteria.md), with a
-  test-only reference matcher (`tests/reference/benchmark_match.py`); it is
-  the pairing relation the quality metrics (false-negative / false-positive
-  counts, severity accuracy, duplicate noise) are built on. The first of
-  those metrics — turning match results into **missed-finding
-  (false-negative)** and **incorrect-finding (false-positive)** counts per
-  case and in aggregate, via a deterministic produced↔expected one-to-one
-  pairing, gated by `match: optional` / `any_of` / `findings_completeness`,
-  and rendered alongside the regression report's deltas without gating it —
-  is
-  [`benchmark/missed-and-incorrect-findings.md`](benchmark/missed-and-incorrect-findings.md),
-  with a test-only reference metric (`tests/reference/benchmark_metrics.py`).
-  The second — measuring, over that same matched set, how often a matched
-  finding carries a permitted expected severity, and splitting the
-  mismatches into **over-severity** and **under-severity** on the
-  P0 > P1 > P2 ordinal, with a single exact-rational exact-match rate and
-  the same render-alongside-without-gating rule — is
-  [`benchmark/severity-accuracy.md`](benchmark/severity-accuracy.md), with a
-  test-only reference metric (`tests/reference/benchmark_severity.py`). The
-  third — measuring duplicate / same-root-cause noise over a case's
-  **produced findings alone**, by treating a produced-finding pair as a
-  same-root-cause edge exactly when the #54 relation is `MATCH`, grouping
-  the findings into connected components, and counting the redundant
-  findings (each cluster beyond its first) per case and in aggregate with a
-  single exact-rational duplicate rate and a highest-noise-cases list, on
-  the same render-alongside-without-gating rule — is
-  [`benchmark/duplicate-noise.md`](benchmark/duplicate-noise.md), with a
-  test-only reference metric (`tests/reference/benchmark_dupes.py`); it
-  defines no de-duplication behaviour for the reviewer itself.
-  Repository-development docs in the
-  [`benchmark/`](benchmark/README.md) directory; nothing benchmark is
-  packaged.
-
-**Now implemented:** the orchestration around a stateful delta
-re-review — eligibility for reconciling prior finding/lifecycle state,
-loading it from GitHub-native evidence, classifying the current pass
-against it (unresolved / moved / fixed / reopened / newly introduced /
-ambiguous / consolidated), attributable blast-radius and settled-assumption
-reconsideration, and escalation to a full review — is packaged runtime
-policy in `github-pr-review`:
-[`stateful-delta-rereview.md`](../skills/github-pr-review/policies/stateful-delta-rereview.md)
-(Issue #65), installing the semantics
-[`findings/delta-re-review-contract.md`](findings/delta-re-review-contract.md)
-(#64) contracted. It reconciles findings using the vocabulary
-[`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md)
-(#58) and
-[`findings/finding-matching-strategy.md`](findings/finding-matching-strategy.md)
-(#59) define and applies the transitions
-[`findings/finding-lifecycle-contract.md`](findings/finding-lifecycle-contract.md)
-(#62) defines, and reconstructs a Reviewed State Record per
-[`findings/reviewed-sha-state-contract.md`](findings/reviewed-sha-state-contract.md)
-(#63) from GitHub-native evidence, but it does not itself install a
-packaged matching
-*algorithm* or stable-identity constructor — those remain reviewer
-judgment applying the documented discipline until #59/#60 separately
-package one. `local-code-review` does not load this policy: it is
-architecturally stateless (no persisted reviewed-state analogue between
-invocations).
+- **Runtime attachment of the cross-review stable finding identifier** —
+  the requirements, the matching strategy, the deterministic
+  descriptor/identity derivation, and the two-state lifecycle are all
+  settled contracts (see "Repository-development instrumentation" above);
+  what is unbuilt is the Skill-runtime wiring. No packaged policy,
+  runbook, or code mints or propagates the movement-tolerant identifier
+  during a review yet, so distinguishing "the same defect again" from "a
+  new defect" across runs stays reviewer judgment applying the documented
+  discipline. The stateful delta re-review policy consumes the lifecycle
+  vocabulary but installs no matching algorithm or stable-identity
+  constructor.
 
 ## 3. Separation of Concerns
 
