@@ -35,6 +35,32 @@ _GIT_ENV = {
     "GIT_TERMINAL_PROMPT": "0",
 }
 
+_UNCOVERED_CHANGELOG = """\
+# Changelog
+
+## Unreleased
+
+_Nothing yet._
+
+## v1.0.0 — 2026-01-01
+
+- prior release
+"""
+
+_COVERED_CHANGELOG = """\
+# Changelog
+
+## Unreleased
+
+### Added
+
+- The PR's own release-worthy change (#215).
+
+## v1.0.0 — 2026-01-01
+
+- prior release
+"""
+
 
 def _git(cwd: Path, *args: str) -> str:
     proc = subprocess.run(
@@ -112,6 +138,19 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
         )
         return pairs["ref"]
 
+    def _assess(self, base_ref: str, changelog_text: str) -> int:
+        changelog = Path(self._tmp.name) / "CHANGELOG.md"
+        changelog.write_text(changelog_text, encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()):
+            return rw.main([
+                "--repo-root", str(self.work),
+                "--changelog", str(changelog),
+                "assess",
+                "--require-changelog",
+                "--base-ref", base_ref,
+                "--github-output", str(Path(self._tmp.name) / "assess-out.txt"),
+            ])
+
     def test_docs_only_pr_is_not_dragged_release_worthy_by_synced_main(self) -> None:
         _commit(self.work, "docs/feature.md", "just docs\n", "D: docs-only PR change")
         _git(self.work, "merge", "--no-edit", "origin/main")
@@ -146,6 +185,33 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
         self.assertIn("skills/local-code-review/policies/new-rule.md", files)
         self.assertNotIn("skills/github-pr-review/runbooks/other.md", files)
         self.assertTrue(rw.classify_paths(files).release_worthy)
+
+    def test_synced_pr_with_matching_unreleased_coverage_passes_the_gate(self) -> None:
+        # End-to-end: resolve-base-ref (synced branch) -> assess. The PR's
+        # own release-worthy change is covered under `## Unreleased`, so the
+        # gate passes even though newer `main` history was merged in.
+        _commit(
+            self.work,
+            "skills/local-code-review/policies/new-rule.md",
+            "this PR's own release-worthy change\n",
+            "D: release-worthy PR change",
+        )
+        _git(self.work, "merge", "--no-edit", "origin/main")
+
+        self.assertEqual(self._assess(self._resolve_pr_base(), _COVERED_CHANGELOG), 0)
+
+    def test_synced_pr_with_its_own_uncovered_change_still_fails_closed(self) -> None:
+        # End-to-end: the synced-in `main` history is excluded, but the PR's
+        # own uncovered release-worthy change still fails the CHANGELOG gate.
+        _commit(
+            self.work,
+            "skills/local-code-review/policies/new-rule.md",
+            "this PR's own release-worthy change, with no changelog entry\n",
+            "D: uncovered release-worthy PR change",
+        )
+        _git(self.work, "merge", "--no-edit", "origin/main")
+
+        self.assertEqual(self._assess(self._resolve_pr_base(), _UNCOVERED_CHANGELOG), 1)
 
     def test_push_boundary_still_uses_the_previous_release_tag(self) -> None:
         # The accumulated-set boundary for main is unchanged: no PR base
