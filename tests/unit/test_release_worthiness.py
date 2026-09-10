@@ -100,6 +100,10 @@ class ClassifyPathTests(unittest.TestCase):
     def test_non_packaging_scripts_are_maintenance(self) -> None:
         self.assertEqual(rw.classify_path("scripts/claim_issue.py"), "repo-maintenance")
         self.assertEqual(rw.classify_path("scripts/release_worthiness.py"), "repo-maintenance")
+        # CI-only release automation helper — never shipped in an archive.
+        self.assertEqual(
+            rw.classify_path("scripts/release/verify-skill-archives.sh"), "repo-maintenance"
+        )
 
     def test_docs_tests_ci_policy_are_not_release_worthy(self) -> None:
         for path, category in (
@@ -812,6 +816,134 @@ class AutoReleasePlanTests(unittest.TestCase):
         rc, outputs, text = self._run(fake, _unreleased("### Added", "", "- feat"))
         self.assertEqual(rc, 1)
         self.assertEqual(outputs["should_release"], "false")
+        self.assertIn("::error::", text)
+
+
+class ResolveBaseRefTests(unittest.TestCase):
+    """The seam the assess job consumes: `ref=` in $GITHUB_OUTPUT — the PR
+    base commit on a pull_request, the previous v* tag otherwise, empty
+    when there is no prior release."""
+
+    def setUp(self) -> None:
+        self._real_git = rw.gitgh._git
+        self.addCleanup(setattr, rw.gitgh, "_git", self._real_git)
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+
+    def _run(self, *args: str, git: _FakeGit | None = None):
+        if git is not None:
+            rw.gitgh._git = git
+        out = Path(self._tmp.name) / "gh-out.txt"
+        if out.exists():
+            out.unlink()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = rw.main(["resolve-base-ref", "--github-output", str(out), *args])
+        outputs = dict(
+            line.split("=", 1) for line in out.read_text(encoding="utf-8").splitlines() if "=" in line
+        ) if out.is_file() else {}
+        return rc, outputs
+
+    def test_pull_request_uses_the_pr_base_sha(self) -> None:
+        rc, outputs = self._run(
+            "--event-name", "pull_request", "--pr-base-sha", "d" * 40,
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["ref"], "d" * 40)
+
+    def test_pull_request_without_a_base_sha_passes_through_empty(self) -> None:
+        # Matches the shell block this replaced: emit an empty ref and let
+        # `assess` fall back to the previous v* tag, rather than hard-failing.
+        rc, outputs = self._run("--event-name", "pull_request", "--pr-base-sha", "")
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["ref"], "")
+
+    def test_push_uses_the_previous_release_tag(self) -> None:
+        rc, outputs = self._run(
+            "--event-name", "push", git=_FakeGit(describe="v1.2.3\n"),
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["ref"], "v1.2.3")
+
+    def test_push_with_no_prior_tag_emits_empty_ref(self) -> None:
+        def _no_tag(args, repo_root):  # noqa: ANN001 - test shim
+            raise subprocess.CalledProcessError(128, ["git", *args])
+
+        rc, outputs = self._run("--event-name", "workflow_dispatch", git=_no_tag)
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["ref"], "")
+
+    def test_pr_base_sha_is_ignored_off_a_pull_request(self) -> None:
+        rc, outputs = self._run(
+            "--event-name", "push", "--pr-base-sha", "e" * 40,
+            git=_FakeGit(describe="v9.9.9\n"),
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["ref"], "v9.9.9")
+
+
+class ResolveAppIdentityTests(unittest.TestCase):
+    """The seam the publish job consumes: `login=` / `email=` for the
+    release commit, resolved from the minted App's slug, failing closed
+    with no fallback identity."""
+
+    def setUp(self) -> None:
+        self._real_gh = rw.gitgh._gh
+        self.addCleanup(setattr, rw.gitgh, "_gh", self._real_gh)
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+
+    def _run(self, slug: str, gh):
+        rw.gitgh._gh = gh
+        out = Path(self._tmp.name) / "gh-out.txt"
+        if out.exists():
+            out.unlink()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = rw.main(["resolve-app-identity", "--app-slug", slug, "--github-output", str(out)])
+        outputs = dict(
+            line.split("=", 1) for line in out.read_text(encoding="utf-8").splitlines() if "=" in line
+        ) if out.is_file() else {}
+        return rc, outputs, buf.getvalue()
+
+    def _gh_user_id(self, user_id: str, expect_login: str | None = None):
+        def _gh(args, repo_root):  # noqa: ANN001 - test shim
+            self.assertEqual(args[:1], ["api"])
+            if expect_login is not None:
+                self.assertEqual(args[1], f"/users/{expect_login}")
+            return f"{user_id}\n"
+
+        return _gh
+
+    def test_resolves_login_and_canonical_noreply_email(self) -> None:
+        rc, outputs, _ = self._run(
+            "my-release-app", self._gh_user_id("12345", expect_login="my-release-app[bot]")
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["login"], "my-release-app[bot]")
+        self.assertEqual(outputs["email"], "12345+my-release-app[bot]@users.noreply.github.com")
+
+    def test_empty_slug_fails_closed(self) -> None:
+        called = []
+        rc, outputs, text = self._run("", lambda *a, **k: called.append(a))
+        self.assertEqual(rc, 1)
+        self.assertEqual(outputs, {})
+        self.assertEqual(called, [])
+        self.assertIn("::error::", text)
+
+    def test_non_numeric_user_id_fails_closed(self) -> None:
+        rc, outputs, text = self._run("slug", self._gh_user_id("not-a-number"))
+        self.assertEqual(rc, 1)
+        self.assertEqual(outputs, {})
+        self.assertIn("fallback identity", text)
+
+    def test_github_api_failure_fails_closed(self) -> None:
+        def _boom(args, repo_root):  # noqa: ANN001 - test shim
+            raise subprocess.CalledProcessError(1, ["gh", *args])
+
+        rc, outputs, text = self._run("slug", _boom)
+        self.assertEqual(rc, 1)
+        self.assertEqual(outputs, {})
         self.assertIn("::error::", text)
 
 

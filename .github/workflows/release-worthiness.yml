@@ -66,39 +66,31 @@ jobs:
       - name: Determine base ref
         id: base
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "ref=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"
-          else
-            prev="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
-            echo "ref=${prev}" >> "$GITHUB_OUTPUT"
-          fi
+          python scripts/release_worthiness.py resolve-base-ref \
+            --event-name "${{ github.event_name }}" \
+            --pr-base-sha "${{ github.event.pull_request.base.sha }}" \
+            --github-output "$GITHUB_OUTPUT"
 
       - name: Classify change set and enforce CHANGELOG coverage
         id: classify
         run: |
-          args="assess --require-changelog --github-output $GITHUB_OUTPUT"
-          if [ -n "${{ steps.base.outputs.ref }}" ]; then
-            args="$args --base-ref ${{ steps.base.outputs.ref }}"
-          fi
-          python scripts/release_worthiness.py $args
+          python scripts/release_worthiness.py assess \
+            --require-changelog \
+            --base-ref "${{ steps.base.outputs.ref }}" \
+            --github-output "$GITHUB_OUTPUT"
 
       - name: Classify proposed SemVer impact
         id: semver
         if: steps.classify.outputs.release_worthy == 'true'
         run: python scripts/release_worthiness.py classify-semver --strict --github-output "$GITHUB_OUTPUT"
 
-      - name: Build Skill package archives
+      - name: Build and verify Skill package archives
         if: steps.classify.outputs.release_worthy == 'true'
-        run: ./scripts/package-skills.sh all
+        run: ./scripts/release/verify-skill-archives.sh --build
 
-      - name: Verify package integrity
+      - name: Check the packaging runtime boundary
         if: steps.classify.outputs.release_worthy == 'true'
-        run: |
-          for archive in dist/*.zip; do
-            echo "== ${archive} =="
-            unzip -t "${archive}"
-          done
-          python -m unittest tests.integration.test_packaging_runtime_boundary
+        run: python -m unittest tests.integration.test_packaging_runtime_boundary
 
       - name: Upload Skill archives
         if: steps.classify.outputs.release_worthy == 'true'
@@ -221,34 +213,6 @@ jobs:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
-      - name: Resolve the authenticated release App bot identity
-        id: bot-identity
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
-        run: |
-          set -euo pipefail
-          # Attribute the release commit to the GitHub App that actually
-          # authenticated this job. The slug is what GitHub returned when the
-          # token was minted (not a transform of the App's display name); the
-          # bot login is always "<slug>[bot]", and its numeric user id comes
-          # straight from the API. Fail the release if either cannot be
-          # resolved rather than fall back to a guessed identity.
-          if [ -z "${APP_SLUG}" ]; then
-            echo "::error::actions/create-github-app-token returned no app-slug; cannot resolve the release App bot identity."
-            exit 1
-          fi
-          bot_login="${APP_SLUG}[bot]"
-          bot_id="$(gh api "/users/${bot_login}" --jq '.id')"
-          if ! printf '%s' "${bot_id}" | grep -Eq '^[0-9]+$'; then
-            echo "::error::Could not resolve a numeric user id for ${bot_login} from the GitHub API; refusing to attribute the release commit to a fallback identity."
-            exit 1
-          fi
-          bot_email="${bot_id}+${bot_login}@users.noreply.github.com"
-          echo "login=${bot_login}" >> "$GITHUB_OUTPUT"
-          echo "email=${bot_email}" >> "$GITHUB_OUTPUT"
-          echo "Release commits will be attributed to ${bot_login} <${bot_email}>"
-
       - name: Check out main
         uses: actions/checkout@v4
         with:
@@ -265,6 +229,18 @@ jobs:
       - name: Install dev dependencies
         run: python -m pip install -r requirements-dev.txt
 
+      # After checkout + Python so the extracted helper is on disk; still
+      # before any repository mutation, and it fails closed with no
+      # fallback identity (see scripts/release_lib/commands/workflow.py).
+      - name: Resolve the authenticated release App bot identity
+        id: bot-identity
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          python scripts/release_worthiness.py resolve-app-identity \
+            --app-slug "${{ steps.app-token.outputs.app-slug }}" \
+            --github-output "$GITHUB_OUTPUT"
+
       - name: Preflight — release-worthy since last tag, changelog notes, new valid version/tag
         run: |
           python scripts/release_worthiness.py release-preflight \
@@ -275,14 +251,7 @@ jobs:
         run: python scripts/release_worthiness.py prepare-changelog --version "${{ needs.plan.outputs.version }}"
 
       - name: Build and verify Skill archives
-        run: |
-          ./scripts/package-skills.sh all
-          for archive in dist/*.zip; do
-            echo "== ${archive} =="
-            unzip -t "${archive}"
-          done
-          test -f dist/local-code-review-skill.zip
-          test -f dist/github-pr-review-skill.zip
+        run: ./scripts/release/verify-skill-archives.sh --build
 
       - name: Commit release preparation to main
         id: commit

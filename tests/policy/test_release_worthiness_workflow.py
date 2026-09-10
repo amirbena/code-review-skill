@@ -283,7 +283,13 @@ class AssessJobSemverTests(unittest.TestCase):
 
 class ReleaseCommitAttributionTests(unittest.TestCase):
     """The release commit is attributed to the GitHub App that authenticated
-    the protected push — resolved at run time, never a hard-coded slug."""
+    the protected push — resolved at run time, never a hard-coded slug.
+
+    The resolution logic itself (``<slug>[bot]`` → GitHub user id → canonical
+    noreply email, failing closed on an unresolved slug or non-numeric id)
+    lives in ``release_lib.commands.workflow`` and is covered by
+    ``tests/unit/test_release_worthiness.py``; here we only pin the workflow
+    wiring."""
 
     def setUp(self) -> None:
         self.steps = _load()["jobs"]["publish"]["steps"]
@@ -297,14 +303,12 @@ class ReleaseCommitAttributionTests(unittest.TestCase):
         step = _step(self.steps, "Resolve the authenticated release App bot identity")
         self.assertEqual(step.get("id"), "bot-identity")
         self.assertEqual(step["env"]["GH_TOKEN"], "${{ steps.app-token.outputs.token }}")
-        self.assertEqual(step["env"]["APP_SLUG"], "${{ steps.app-token.outputs.app-slug }}")
         run = step["run"]
-        # Identity comes from GitHub, keyed by the token's own app-slug.
-        self.assertIn("gh api", run)
-        self.assertIn('"/users/${bot_login}"', run)
-        self.assertIn("bot_login=\"${APP_SLUG}[bot]\"", run)
-        # Canonical noreply form: <ID>+<bot-login>@users.noreply.github.com
-        self.assertIn("${bot_id}+${bot_login}@users.noreply.github.com", run)
+        # Delegates to the tested helper, keyed by the token's own app-slug,
+        # and writes login/email back for the commit step to consume.
+        self.assertIn("release_worthiness.py resolve-app-identity", run)
+        self.assertIn('--app-slug "${{ steps.app-token.outputs.app-slug }}"', run)
+        self.assertIn('--github-output "$GITHUB_OUTPUT"', run)
 
     def test_resolution_runs_after_minting_and_before_the_release_commit(self) -> None:
         mint = _step_index(self.steps, "create-github-app-token")
@@ -323,17 +327,66 @@ class ReleaseCommitAttributionTests(unittest.TestCase):
             'git config user.email "${{ steps.bot-identity.outputs.email }}"', run
         )
 
-    def test_resolution_fails_closed_with_no_fallback_identity(self) -> None:
-        step = _step(self.steps, "Resolve the authenticated release App bot identity")
+
+class ExtractedHelperWiringTests(unittest.TestCase):
+    """Reusable shell logic lives in tested helpers; the YAML only wires
+    inputs to outputs. The behaviour of each helper is covered by
+    ``tests/unit/test_release_worthiness.py`` (the two subcommands) and by
+    the helper script's own executable contract."""
+
+    def setUp(self) -> None:
+        self.jobs = _load()["jobs"]
+        self.raw = WORKFLOW.read_text(encoding="utf-8")
+
+    def test_subcommand_steps_run_after_checkout_and_python_setup(self) -> None:
+        # Both extracted subcommands invoke `python scripts/release_worthiness.py`,
+        # which only exists once the repo is checked out and Python is on PATH.
+        # A step order that put either before checkout would still satisfy the
+        # mint < resolve < commit ordering test but break the job at run time.
+        for job, needle in (
+            ("assess", "Determine base ref"),
+            ("publish", "Resolve the authenticated release App bot identity"),
+        ):
+            steps = self.jobs[job]["steps"]
+            call = _step_index(steps, needle)
+            checkout = _step_index(steps, "actions/checkout")
+            setup_python = _step_index(steps, "actions/setup-python")
+            self.assertLess(checkout, call, job)
+            self.assertLess(setup_python, call, job)
+
+    def test_assess_base_ref_comes_from_the_resolve_base_ref_subcommand(self) -> None:
+        step = _step(self.jobs["assess"]["steps"], "Determine base ref")
+        self.assertEqual(step.get("id"), "base")
         run = step["run"]
-        self.assertIn("set -euo pipefail", run)
-        # Both an unresolved slug and a non-numeric user id must abort the
-        # release job; extra guards are fine, silently continuing is not.
-        self.assertGreaterEqual(run.count("exit 1"), 2)
-        self.assertIn('if [ -z "${APP_SLUG}" ]; then', run)
-        self.assertIn("grep -Eq '^[0-9]+$'", run)
-        # No fallback to a hard-coded identity anywhere in the resolution.
-        self.assertNotIn("release-automation", run)
+        self.assertIn("release_worthiness.py resolve-base-ref", run)
+        self.assertIn('--event-name "${{ github.event_name }}"', run)
+        self.assertIn('--pr-base-sha "${{ github.event.pull_request.base.sha }}"', run)
+        # No inline `git describe` / branching left in the workflow.
+        self.assertNotIn("git describe", self.raw)
+
+    def test_classify_step_passes_the_resolved_base_ref_unconditionally(self) -> None:
+        step = _step(self.jobs["assess"]["steps"], "Classify change set and enforce CHANGELOG coverage")
+        run = step["run"]
+        self.assertIn('--base-ref "${{ steps.base.outputs.ref }}"', run)
+        # The old shell arg-accumulation is gone.
+        self.assertNotIn('args="', run)
+
+    def test_both_jobs_build_archives_through_the_shared_helper(self) -> None:
+        helper = "scripts/release/verify-skill-archives.sh"
+        self.assertTrue((REPO_ROOT / helper).is_file())
+        for job in ("assess", "publish"):
+            steps = self.jobs[job]["steps"]
+            build = _step(steps, "Build and verify Skill")
+            self.assertIn(helper, build["run"])
+        # No job re-implements the "package then unzip -t every zip" loop.
+        self.assertNotIn("unzip -t", self.raw)
+        self.assertNotIn("scripts/package-skills.sh all", self.raw)
+
+    def test_helper_declares_it_is_ci_only_with_no_powershell_counterpart(self) -> None:
+        text = (REPO_ROOT / "scripts" / "release" / "verify-skill-archives.sh").read_text(encoding="utf-8")
+        self.assertTrue(text.startswith("#!/usr/bin/env bash"))
+        self.assertIn("CI-only", text)
+        self.assertIn("PowerShell", text)
 
 
 class SupportingArtifactsTests(unittest.TestCase):
