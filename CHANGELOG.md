@@ -13,6 +13,11 @@ when the change reaches `main`. See
 
 ## Unreleased
 
+_Nothing yet. New entries land here and move under a version heading at
+release time._
+
+## v1.10.0 — 2026-09-10
+
 ### Added
 
 - A finding can now record the **contextual evidence** that justified it —
