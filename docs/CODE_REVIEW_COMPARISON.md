@@ -115,6 +115,13 @@ The governance features below are this repository's differentiated, durable cont
   including every re-review after a fix.
 - **A portable P0/P1/P2 severity model** with an explicit blocking rule, shared identically by
   both Skills.
+- **Deterministic change-risk / review-depth classification** — a fixed catalog of change-risk
+  signals (auth/access-control, migration/schema, concurrency, public API contract, sensitive
+  path, infra/config, diff size, with authoritative `≥` diff-size thresholds) maps by an
+  inspectable, reproducible ordering to one `standard` / `elevated` / `deep` review-depth level
+  emitted with every review. It makes "review riskier changes more deeply" a stated rule rather
+  than an implicit hope; it is never a finding, never a merge gate, and never skips review for
+  low-risk changes ([`change-risk-signals.md`](../shared/policies/change-risk-signals.md)).
 - **Explicit Approve / Request Changes semantics** — `github-pr-review` can submit a formal
   GitHub review decision when authorized to, not merely a passive comment. That authorization is
   a trusted, independently sourced, PR/HEAD-scoped signal — never the review's own verdict, a
@@ -212,6 +219,7 @@ today, and this document does not describe one as though it did.
 | Mutation prohibition | Varies by product | Explicit |
 | Runtime portability | Usually vendor-specific | Core requirement |
 | Final repository-defined decision semantics | Varies by product | Explicit |
+| Deterministic change-risk / review-depth classification | Rare / implicit | Explicit |
 
 This is a conceptual comparison, not a claim that every external reviewer lacks every governance
 feature listed — capability varies by product and changes over time. "Explicit" means the

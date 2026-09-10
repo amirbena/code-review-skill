@@ -69,3 +69,11 @@ any other cross-file reasoning: none is a license for a repository-wide
 audit, and a finding under any of them still requires the same
 confirmed-defect / credible-risk / optional-improvement evidence labeling
 above.
+
+The deterministic `standard` / `elevated` / `deep` review-depth
+classification in
+[`change-risk-signals.md`](change-risk-signals.md) is the inspectable
+form of this same "scale to the change" idea: it tunes how much effort a
+review spends looking, never the evidence bar a finding must clear. A
+`deep` classification does not lower the labeling requirement above, and a
+`standard` one does not excuse missing a finding the evidence supports.

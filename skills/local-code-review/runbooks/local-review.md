@@ -10,6 +10,7 @@ any apparent difference.
 
 Applies shared policies:
 [`review-scope.md`](../../../shared/policies/review-scope.md),
+[`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
@@ -73,6 +74,9 @@ PR reference supplied? → yes → read/classify/reconcile relevant PR
     ↓
 resolve the shared runtime-validation policy; optionally execute one safe
 declared command and carry its outcome record into Validation
+    ↓
+classify change-risk depth (standard / elevated / deep) from the complete
+delta per change-risk-signals.md; record it and its activating signals
     ↓
 inspect relevant surrounding code
     ↓
@@ -243,6 +247,20 @@ which a value must be resolved before it is used, or what is reported.
    guarantee, budget/fail-safe behavior, execution-boundary gating, and all
    safety semantics; this runbook only sequences the step and carries its
    records forward.
+8b. **Classify change-risk depth** per
+   [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md).
+   Using the complete local delta established in steps 3–4 (and its changed
+   files, excluding non-reviewable ones per
+   [`file-reviewability.md`](../../../shared/policies/file-reviewability.md)),
+   detect the catalog signals, deduplicate overlapping labels per underlying
+   fact, resolve each occurrence to its highest applicable tier, and derive
+   the `standard` / `elevated` / `deep` level by that policy's
+   "Classification ordering." Record the level and every activating signal
+   with its evidence for the report's subordinate metadata (step 13). This
+   classification is always produced — `standard` with no signals is a
+   normal result — and never becomes a finding, a severity, or an input to
+   the Decision; that policy owns the diff-size thresholds, the depth-only
+   tie-break, and the non-goals, and this runbook does not restate them.
 9. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

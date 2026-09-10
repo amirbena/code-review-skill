@@ -3,6 +3,7 @@
 Reviews an existing GitHub Pull Request **without publishing anything**.
 Applies shared policies:
 [`review-scope.md`](../../../shared/policies/review-scope.md),
+[`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
@@ -47,6 +48,9 @@ plan review execution: reliable capability AND 2+ independent dimensions
    AND expected latency benefit
    → workers per dimension (read-only, same PR base/head snapshot); else
    sequential
+    ↓
+classify change-risk depth (standard / elevated / deep) from the PR delta
+per change-risk-signals.md; record it and its activating signals
     ↓
 inspect diff and surrounding code (incl. scope-boundary reasoning)
     ↓
@@ -201,6 +205,21 @@ finally: remove the temporary checkout (success, any failure, interruption)
    instruction-context identity, Existing Review Evidence) and its dimension's
    policies, returning candidate findings only; otherwise review
    sequentially. Both forms must reach the same findings.
+5a. **Classify change-risk depth** per
+   [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md).
+   From the established PR delta and its changed files (excluding
+   non-reviewable ones per
+   [`file-reviewability.md`](../../../shared/policies/file-reviewability.md)),
+   detect the catalog signals, deduplicate overlapping labels per
+   underlying fact, resolve each occurrence to its highest applicable tier,
+   and derive the `standard` / `elevated` / `deep` level by that policy's
+   "Classification ordering." Record the level and every activating signal
+   with its evidence for the subordinate metadata block (step 8). It is
+   always produced (`standard` with no signals is a normal result), is
+   emitted only as subordinate metadata, and never becomes a finding, a
+   severity, or an input to the verdict. The diff-size thresholds, the
+   depth-only tie-break, and the non-goals are owned by that policy and
+   are not restated here.
 6. Review the diff against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

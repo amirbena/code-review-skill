@@ -13,8 +13,23 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- Every review now classifies its change into a deterministic
+  **review-depth level** — `standard`, `elevated`, or `deep` — from a
+  fixed catalog of **change-risk signals** (auth/access-control,
+  migration/schema, concurrency, public API contract, sensitive path,
+  infra/config, and diff size, with authoritative `≥ 150` / `≥ 600`
+  changed-line and `≥ 10` / `≥ 30` changed-file thresholds). Overlapping
+  signal labels on one changed fact count once and resolve to their
+  highest tier; two independent `elevated` signals, or any `deep` signal,
+  make the review `deep`. The level and its activating signals are emitted
+  in the review's subordinate metadata. It makes the existing
+  "scale the review to the change" guidance explicit and inspectable — it
+  is not a second scope model, never becomes a finding, never changes
+  severity or the mechanical decision, and never skips review for
+  low-risk changes. New shared policy
+  `shared/policies/change-risk-signals.md`. (#86)
 
 ## v1.13.0 — 2026-09-10
 
