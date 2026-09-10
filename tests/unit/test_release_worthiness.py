@@ -442,9 +442,11 @@ class _FakeGit:
         ls_remote_tags: str = "",
         ls_remote_main: str = "",
         rev_parse: str | None = None,
+        merge_base: str | None = None,
     ) -> None:
         self.describe = describe
         self.diff = diff
+        self.merge_base = merge_base
         self.tag_list = tag_list
         # `git tag --list --sort=-v:refname <glob>` output; defaults to the
         # exact-match tag_list when the test does not distinguish them.
@@ -471,6 +473,10 @@ class _FakeGit:
             if self.rev_parse is None:
                 raise subprocess.CalledProcessError(128, ["git", *a])
             return self.rev_parse
+        if a[:1] == ["merge-base"]:
+            if self.merge_base is None:
+                raise subprocess.CalledProcessError(1, ["git", *a])
+            return self.merge_base
         if a[:1] == ["ls-remote"]:
             return self.ls_remote_tags if "--tags" in a else self.ls_remote_main
         raise AssertionError(f"unexpected git call: {a}")
@@ -820,9 +826,9 @@ class AutoReleasePlanTests(unittest.TestCase):
 
 
 class ResolveBaseRefTests(unittest.TestCase):
-    """The seam the assess job consumes: `ref=` in $GITHUB_OUTPUT — the PR
-    base commit on a pull_request, the previous v* tag otherwise, empty
-    when there is no prior release."""
+    """The seam the assess job consumes: `ref=` in $GITHUB_OUTPUT — the
+    merge-base with the PR's current base branch on a pull_request, the
+    previous v* tag otherwise, empty when there is no prior release."""
 
     def setUp(self) -> None:
         self._real_git = rw.gitgh._git
@@ -844,7 +850,41 @@ class ResolveBaseRefTests(unittest.TestCase):
         ) if out.is_file() else {}
         return rc, outputs
 
-    def test_pull_request_uses_the_pr_base_sha(self) -> None:
+    def test_pull_request_uses_merge_base_with_current_base_branch(self) -> None:
+        # origin/main resolves to its live tip; the emitted ref is the fork
+        # point, not the (possibly stale) payload base.sha.
+        rc, outputs = self._run(
+            "--event-name", "pull_request",
+            "--pr-base-ref", "main",
+            "--pr-base-sha", "d" * 40,
+            git=_FakeGit(rev_parse="a" * 40 + "\n", merge_base="f" * 40 + "\n"),
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["ref"], "f" * 40)
+
+    def test_pull_request_unresolvable_base_ref_falls_back_to_base_sha(self) -> None:
+        # origin/main is not present (fetch step skipped / older payload):
+        # fall back to base.sha, which assess still diffs three-dot.
+        rc, outputs = self._run(
+            "--event-name", "pull_request",
+            "--pr-base-ref", "main",
+            "--pr-base-sha", "d" * 40,
+            git=_FakeGit(rev_parse=None),
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["ref"], "d" * 40)
+
+    def test_pull_request_merge_base_failure_falls_back_to_the_tip(self) -> None:
+        rc, outputs = self._run(
+            "--event-name", "pull_request",
+            "--pr-base-ref", "main",
+            "--pr-base-sha", "d" * 40,
+            git=_FakeGit(rev_parse="a" * 40 + "\n", merge_base=None),
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["ref"], "a" * 40)
+
+    def test_pull_request_without_a_base_ref_uses_the_pr_base_sha(self) -> None:
         rc, outputs = self._run(
             "--event-name", "pull_request", "--pr-base-sha", "d" * 40,
         )

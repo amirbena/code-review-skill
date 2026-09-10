@@ -360,9 +360,20 @@ class ExtractedHelperWiringTests(unittest.TestCase):
         run = step["run"]
         self.assertIn("release_worthiness.py resolve-base-ref", run)
         self.assertIn('--event-name "${{ github.event_name }}"', run)
+        self.assertIn('--pr-base-ref "${{ github.event.pull_request.base.ref }}"', run)
         self.assertIn('--pr-base-sha "${{ github.event.pull_request.base.sha }}"', run)
         # No inline `git describe` / branching left in the workflow.
         self.assertNotIn("git describe", self.raw)
+
+    def test_assess_fetches_the_pr_base_branch_before_resolving_the_base_ref(self) -> None:
+        steps = self.jobs["assess"]["steps"]
+        fetch = _step(steps, "Fetch the PR base branch")
+        self.assertEqual(fetch["if"], "github.event_name == 'pull_request'")
+        self.assertIn("git fetch", fetch["run"])
+        self.assertIn("refs/remotes/origin/${{ github.event.pull_request.base.ref }}", fetch["run"])
+        checkout = _step_index(steps, "actions/checkout")
+        self.assertLess(checkout, _step_index(steps, "Fetch the PR base branch"))
+        self.assertLess(_step_index(steps, "Fetch the PR base branch"), _step_index(steps, "Determine base ref"))
 
     def test_classify_step_passes_the_resolved_base_ref_unconditionally(self) -> None:
         step = _step(self.jobs["assess"]["steps"], "Classify change set and enforce CHANGELOG coverage")

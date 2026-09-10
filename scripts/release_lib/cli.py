@@ -97,10 +97,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     base_ref = sub.add_parser(
         "resolve-base-ref",
-        help="print the diff base the assess job classifies against (PR base commit, or previous v* tag)",
+        help="print the diff base the assess job classifies against "
+        "(merge-base with the PR's current base branch, or previous v* tag)",
     )
     base_ref.add_argument("--event-name", required=True, help="the triggering GitHub event (github.event_name)")
-    base_ref.add_argument("--pr-base-sha", default="", help="pull_request.base.sha (required on pull_request, ignored otherwise)")
+    base_ref.add_argument(
+        "--pr-base-ref", default="",
+        help="pull_request.base.ref branch name; its fetched origin/<ref> tip is the fork point (pull_request only)",
+    )
+    base_ref.add_argument(
+        "--pr-base-sha", default="",
+        help="pull_request.base.sha; fallback fork point when origin/<pr-base-ref> is unavailable (pull_request only)",
+    )
     base_ref.add_argument("--github-output", default=None, help="path for the ref output")
     base_ref.set_defaults(func=cmd_resolve_base_ref)
 

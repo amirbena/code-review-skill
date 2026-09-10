@@ -63,11 +63,24 @@ jobs:
       - name: Install dev dependencies
         run: python -m pip install -r requirements-dev.txt
 
+      # The diff base for a PR is the fork point from the *current* base
+      # branch, so release-worthy history pulled in by a sync/merge from
+      # main is never charged to the PR. `fetch-depth: 0` already populated
+      # origin/<base.ref>; refresh it, and fall back to it (or base.sha) if
+      # the refresh cannot run.
+      - name: Fetch the PR base branch
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags --quiet origin \
+            "+refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}" \
+            || echo "base branch refresh skipped; using origin/${{ github.event.pull_request.base.ref }} from checkout"
+
       - name: Determine base ref
         id: base
         run: |
           python scripts/release_worthiness.py resolve-base-ref \
             --event-name "${{ github.event_name }}" \
+            --pr-base-ref "${{ github.event.pull_request.base.ref }}" \
             --pr-base-sha "${{ github.event.pull_request.base.sha }}" \
             --github-output "$GITHUB_OUTPUT"
 
