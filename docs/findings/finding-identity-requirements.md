@@ -102,6 +102,14 @@ consistent with the same-HEAD identity (§5.6).
 
 ## 2. Must-survive scenarios (identity stays the same)
 
+> **Canonical ownership.** This section, together with §3, is the single
+> authoritative home of the must-survive / must-change scenario set.
+> [`finding-stable-identity.md`](finding-stable-identity.md) references it and
+> **MUST NOT maintain an independent copy** of the scenario set; a local
+> summary or explanatory prose that points back here is fine.
+> [`finding-matching-strategy.md`](finding-matching-strategy.md) derives its
+> constraints from these same scenarios.
+
 The defective code and the defect are materially unchanged; only the
 surroundings or the presentation moved. Identity **MUST** be stable across
 all of these:
@@ -155,6 +163,10 @@ problem.
 ---
 
 ## 3. Must-change scenarios (a new identity is required)
+
+This section is the other half of the canonical scenario set owned here
+(§2). The same non-duplication rule applies: downstream documents reference
+it and **MUST NOT maintain an independent copy**.
 
 Textual or positional similarity **MUST NOT** collapse these into one
 identity:
@@ -261,6 +273,15 @@ absent, §6's fail-safe direction (prefer splitting) governs unchanged.
 ---
 
 ## 4. Inputs available at review time
+
+> **Canonical ownership.** This section is the single authoritative home of
+> the identity input inventory — guaranteed (§4.1), conditional /
+> present-only-sometimes (§4.2), and unavailable / never-assumed (§4.3).
+> [`finding-stable-identity.md`](finding-stable-identity.md) §2 references it
+> and **MUST NOT maintain an independent copy** of the inventory; it adds only
+> its own derivation-specific rules on top.
+> [`finding-matching-strategy.md`](finding-matching-strategy.md) §1 draws its
+> available-inputs and portability boundary from the same inventory.
 
 **Availability is not identity-binding.** This section lists the signals an
 identity mechanism *may read*. Listing a signal here does **not** permit
@@ -486,6 +507,13 @@ descriptor primitives in
 repository-development contract, with a test-only reference model). That
 document owns *how* the identifier and primitives are constructed; this
 document remains the authority on *what* identity must and must not do.
+
+As part of that split, this document is also the canonical owner of the
+**input inventory** (§4) and the **must-survive / must-change scenario set**
+(§2, §3). [`finding-stable-identity.md`](finding-stable-identity.md) references
+those sections rather than maintaining its own copies;
+[`finding-matching-strategy.md`](finding-matching-strategy.md) derives its
+matching constraints from the same material.
 
 When a later issue
 ([#65](https://github.com/amirbena/code-review-skill/issues/65)) installs the

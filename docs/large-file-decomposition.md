@@ -80,9 +80,9 @@ only where a real boundary or genuine duplication exists.
 
 | File | Lines | Tag | Rationale and target shape |
 | --- | ---: | --- | --- |
-| `docs/ARCHITECTURE.md` | 621 | keep (prune) | The system map — deliberately broad. No structural split. `### Future work (not implemented)` (~117 lines) and `### Implemented since the initial design` are drift; relocate or trim so it stays a current map. |
-| `docs/findings/finding-identity-requirements.md` | 497 | reduce duplication | Overlaps `finding-stable-identity.md` on inputs (guaranteed / optional / unavailable) and must-survive / must-change scenarios. Target: one owner for the shared input/scenario tables; the other references it. Keep both docs (requirements vs. derivation). |
-| `docs/findings/finding-stable-identity.md` | 410 | reduce duplication | Paired with the row above. |
+| `docs/ARCHITECTURE.md` | 621 | completed | Issue #200 pruned the drift: `### Implemented since the initial design` became `### Optional capabilities` (present tense), the benchmark harness and the now-packaged stateful delta re-review moved to a new `### Repository-development instrumentation (not packaged)` subsection, and `### Future work (not implemented)` was trimmed to the three genuinely-unbuilt items. No structural split; §-numbering and role as the system map preserved. |
+| `docs/findings/finding-identity-requirements.md` | 497 | completed | Issue #200 made this document the single declared owner of the input inventory (§4) and the must-survive / must-change scenario set (§2, §3), with ownership markers under those headings. |
+| `docs/findings/finding-stable-identity.md` | 410 | completed | Paired with the row above: §2 keeps its derivation-specific rules and a short rationale but no longer re-lists the guaranteed inputs, referencing `finding-identity-requirements.md` §4 as owner. |
 | `docs/findings/finding-matching-strategy.md` | 693 | keep | Explicitly a research recommendation — longer content is the point. Keep; ensure normative algorithm text is not a competing copy of the identity/lifecycle contracts. |
 | `docs/findings/reviewed-sha-state-contract.md` | 647 | keep | Canonical contract; the A–G required examples serve two-reader determinism. Keep. |
 | `docs/findings/finding-lifecycle-contract.md` | 386 | keep | Distinct canonical contract. Keep; verify the "Terminology and ownership" section does not diverge from the delta-re-review contract. |
@@ -119,8 +119,8 @@ tags above, not the numbers, decide whether a step is still worth doing.
 9. `skills/github-pr-review/SKILL.md` → trim restated ownership/authorization detail to pointers.
 10. `active-pr-review.md` + `local-review.md` runbooks → procedure-only.
 11. `stateful-delta-rereview.md`, `local-review-report.md`, `external-review-summary.md` → de-duplicate against canonical owners.
-12. `docs/ARCHITECTURE.md` → prune drift sections (no structural split).
-13. `finding-identity-requirements.md` ↔ `finding-stable-identity.md` → single owner for the shared tables.
+12. `docs/ARCHITECTURE.md` → prune drift sections (no structural split). *(done — Issue #200.)*
+13. `finding-identity-requirements.md` ↔ `finding-stable-identity.md` → single owner for the shared tables. *(done — Issue #200.)*
 
 Steps 1–5 land before 6–11, and 6–11 before 12–13: executable and
 Skill-runtime material is decomposed before long-form documentation.

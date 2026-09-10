@@ -102,21 +102,28 @@ state persistence, or a rendered output schema.
 
 ## 2. Inputs
 
-Per [`finding-identity-requirements.md`](finding-identity-requirements.md) §4
-and [`finding-matching-strategy.md`](finding-matching-strategy.md) §1, both
-Skills can supply: repository identity; normalized repository-relative path (or
-an explicit no-single-file intent); the finding `title`, `evidence`, `impact`,
-`fix`; the changed set; and the current file content at the compared revision.
-Line/range, enclosing symbol, construct kind, surrounding source context,
-rename/refactor mappings, and prior findings are **conditional** — present for
-some findings only.
+The descriptor and the minted identity are a pure function of a fixed input
+set, so which signals are guaranteed, which are conditional, and which must
+never be assumed matters directly to this construction: a primitive built from
+a guaranteed input is always computable, and a primitive whose input is
+conditional must resolve to `ABSENT` (§4) rather than a guess whenever that
+input is missing.
 
-A conditional input that is absent produces `ABSENT` (§4). It never produces a
-guessed value and never widens equivalence.
+**The canonical input inventory is owned by
+[`finding-identity-requirements.md`](finding-identity-requirements.md) §4** —
+guaranteed (§4.1), conditional (§4.2), and unavailable / never-assumed (§4.3).
+This document does not maintain its own copy of that inventory; where a
+primitive rule below names an input, read §4 for its availability guarantees.
+[`finding-matching-strategy.md`](finding-matching-strategy.md) §1 reads the same
+inventory.
 
-The construction must not require a language server, a per-language parser, a
-semantic index, a network service, runtime observation, Git history beyond the
-two compared states, or generated prose to stay word-for-word stable.
+What this section adds on top is derivation-specific:
+
+- A conditional input that is absent produces `ABSENT` (§4). It never produces a
+  guessed value and never widens equivalence.
+- The construction must not require a language server, a per-language parser, a
+  semantic index, a network service, runtime observation, Git history beyond the
+  two compared states, or generated prose to stay word-for-word stable.
 
 ## 3. Descriptor primitives — canonical construction
 
@@ -148,11 +155,12 @@ The single tokenizer used by `anchor_tokens`, `context_tokens`,
 6. Preserve order and multiplicity. Case is preserved (identifiers and
    negation carry meaning).
 
-This normalization is stable across the must-survive formatting scenarios in
-[`finding-identity-requirements.md`](finding-identity-requirements.md) §2
-(whitespace, indentation, line wrapping, brace style, trailing commas, comment
-reflow, line-number movement) and does not merge the must-change scenarios in
-§3 (a changed operator, literal, identifier, or negation changes the tokens).
+This normalization is stable across the must-survive formatting scenarios
+owned by [`finding-identity-requirements.md`](finding-identity-requirements.md)
+§2 (whitespace, indentation, line wrapping, brace style, trailing commas,
+comment reflow, line-number movement) and does not merge the must-change
+scenarios owned there in §3 (a changed operator, literal, identifier, or
+negation changes the tokens).
 
 ### 3.2 Primitive rules
 
