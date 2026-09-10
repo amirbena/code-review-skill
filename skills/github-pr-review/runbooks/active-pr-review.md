@@ -3,6 +3,7 @@
 Reviews an existing GitHub Pull Request and publishes findings and a final
 decision. Applies shared policies:
 [`review-scope.md`](../../../shared/policies/review-scope.md),
+[`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
@@ -64,6 +65,9 @@ plan review execution: reliable capability AND 2+ independent dimensions
    AND expected latency benefit
    → workers per dimension (read-only, same PR base/head snapshot); else
    sequential
+    ↓
+classify change-risk depth (standard / elevated / deep) from the PR delta
+per change-risk-signals.md; record it and its activating signals
     ↓
 review (incl. scope-boundary reasoning against supplied context)
     ↓
@@ -304,6 +308,21 @@ stop
    dimension's policies, and returns candidate findings only. Otherwise
    review sequentially. Sequential and parallel execution must reach the
    same findings and decision.
+8a. **Classify change-risk depth** per
+   [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md).
+   From the established PR delta and its changed files (excluding
+   non-reviewable ones per
+   [`file-reviewability.md`](../../../shared/policies/file-reviewability.md)),
+   detect the catalog signals, deduplicate overlapping labels per
+   underlying fact, resolve each occurrence to its highest applicable tier,
+   and derive the `standard` / `elevated` / `deep` level by that policy's
+   "Classification ordering." Record the level and every activating signal
+   with its evidence for the subordinate metadata block (step 13). It is
+   always produced (`standard` with no signals is a normal result), is
+   emitted only as subordinate metadata, and never becomes a finding, a
+   severity, or an input to the verdict or the review-action gate. The
+   diff-size thresholds, the depth-only tie-break, and the non-goals are
+   owned by that policy and are not restated here.
 9. Review per
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

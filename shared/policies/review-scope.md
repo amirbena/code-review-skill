@@ -355,6 +355,25 @@ location/re-validation/coverage procedure, the finding bar, and the
 boundaries are owned by
 [`affected-test-analysis.md`](affected-test-analysis.md).
 
+## Change-risk signals and review depth
+
+Every review classifies its change into a deterministic review-depth
+level — `standard`, `elevated`, or `deep` — from a fixed catalog of
+change-risk signals (auth/access-control, migration/schema, concurrency,
+public API contract, sensitive path, infra/config, and diff size). The
+signal catalog, the exact classification ordering, the authoritative
+diff-size thresholds, and the requirement that the level and its
+activating signals are emitted with the review are owned by
+[`change-risk-signals.md`](change-risk-signals.md) and are not restated
+here.
+
+This is not a second scope model. Blast radius is still scoped per
+[`evidence.md`](evidence.md), "Findings beyond the changed lines";
+findings, labels, severity, and the mechanical decision are unchanged;
+the depth level never becomes a finding and is never a merge gate. It
+only makes the "scale the review to the change" guidance already in this
+policy and [`evidence.md`](evidence.md) explicit and inspectable.
+
 ## Technology neutrality
 
 Every Skill built on this policy must remain technology-neutral. It must

@@ -23,6 +23,7 @@ packaged Skill is installed; they do not depend on this repository.
 | Policy | Responsibility (one line) |
 | --- | --- |
 | [`review-scope.md`](review-scope.md) | What any review examines — the review target and its boundary — independent of which Skill runs. |
+| [`change-risk-signals.md`](change-risk-signals.md) | The fixed change-risk signal catalog and the deterministic signal → `standard`/`elevated`/`deep` review-depth classification emitted with every review. Not a merge gate. |
 | [`root-cause-consolidation.md`](root-cause-consolidation.md) | The bounded root-cause / model-completeness pass: when related failures consolidate into one authoritative finding, the shared-cause evidence bar, and re-review reconciliation. |
 | [`affected-test-analysis.md`](affected-test-analysis.md) | The signal-triggered pass that traces a behavioral change into existing tests that depend on it — frequently tests not in the diff. |
 | [`severity.md`](severity.md) | The single P0/P1/P2 severity each finding receives and the mechanical severity → decision derivation. |

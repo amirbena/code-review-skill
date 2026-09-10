@@ -2,6 +2,7 @@
   "schema_version": 1,
   "shared_files": [
     { "source": "shared/policies/review-scope.md", "destination": "shared/policies/review-scope.md" },
+    { "source": "shared/policies/change-risk-signals.md", "destination": "shared/policies/change-risk-signals.md" },
     { "source": "shared/policies/root-cause-consolidation.md", "destination": "shared/policies/root-cause-consolidation.md" },
     { "source": "shared/policies/affected-test-analysis.md", "destination": "shared/policies/affected-test-analysis.md" },
     { "source": "shared/policies/severity.md", "destination": "shared/policies/severity.md" },
