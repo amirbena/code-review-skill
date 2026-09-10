@@ -71,7 +71,6 @@ superficial code similarity exists, and it is not a repository-wide
 duplication audit — the search stays targeted to what the current change's
 own shape suggests already has an owner.
 
-
 ## Root-cause and model-completeness pass
 
 When several observed failures may be manifestations of one underlying

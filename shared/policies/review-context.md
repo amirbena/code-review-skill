@@ -108,7 +108,6 @@ reasoning it must be resolved to normalized context:
 A reference is never treated as if the identifier itself carried the ticket's
 requirements.
 
-
 ## Jira context resolution
 
 When the caller supplies a Jira reference, it is resolved to normalized

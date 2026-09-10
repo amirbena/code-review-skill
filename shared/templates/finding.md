@@ -17,18 +17,21 @@ canonical finding contract   (the fields below — the stable, externally
                               visible shape both Skills and any consuming
                               agent rely on)
     ↓
-human/agent-readable rendering (the compact field-oriented block below,
+human/agent-readable rendering (the compact field-oriented blocks in
+                                [`finding-rendering.md`](finding-rendering.md),
                                 projected onto each delivery surface)
 ```
 
 The **fields** are the contract. The **rendering** is one projection of
-those fields. The default projection is the compact, field-oriented block
-in "Canonical full rendering" — highly scannable for a human, and
-predictable enough for a coding agent to parse and act on. The opt-in
-concise **human inline rendering** ("Canonical human inline rendering"
-below — `github-pr-review` inline surface only, selected by
-`human_inline_findings`) is another such projection: it re-voices an
-inline finding the way a senior engineer would write the comment by hand.
+those fields, defined in
+[`finding-rendering.md`](finding-rendering.md). The default projection is
+the compact, field-oriented block in "Canonical full rendering" — highly
+scannable for a human, and predictable enough for a coding agent to parse
+and act on. The opt-in concise **human inline rendering** ("Canonical
+human inline rendering" there — `github-pr-review` inline surface only,
+selected by `human_inline_findings`) is another such projection: it
+re-voices an inline finding the way a senior engineer would write the
+comment by hand.
 A future additional renderer (for example a machine-readable one) would be
 another projection of the same fields; none of these change the finding
 fields, the severity model, the evidence bar, the finding's identity, its
@@ -227,7 +230,8 @@ after it, no `Details:` heading with boilerplate under it.
 - **evidence location** — the evidence / detection location from
   "Fix/action location, evidence location, publication" when it differs
   from the resolved fix/action `location`. On the full rendering it is
-  its own line directly after `Location` (see "Canonical full
+  its own line directly after `Location` (see
+  [`finding-rendering.md`](finding-rendering.md), "Canonical full
   rendering"); on a surface that already supplies the anchor (a GitHub
   inline comment) it is folded into `evidence` prose instead. Absent
   when it coincides with `location` or adds nothing;
@@ -246,7 +250,8 @@ after it, no `Details:` heading with boilerplate under it.
 - **source annotation on `location`** — a Skill may append a short
   parenthetical after the location value when it has its own concept that
   classifies *where the finding's evidence came from* within that Skill's
-  source-state model (see "Location source annotation" below). Present
+  source-state model (see [`finding-rendering.md`](finding-rendering.md),
+  "Location source annotation"). Present
   only for a Skill that has such a concept;
 - **implementation prompt** — `local-code-review` only, and only under its
   explicit `include_fix_prompt` opt-in, appended after `Fix` and before

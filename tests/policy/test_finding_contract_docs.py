@@ -340,7 +340,13 @@ class SkillRenderingsAlignTests(unittest.TestCase):
         self.assertNotIn("Location:", examples)
 
     def test_no_skill_makes_json_the_primary_finding_shape(self) -> None:
-        for path in (LOCAL_REPORT, GITHUB_BODY, GITHUB_INLINE, SHARED_FINDING):
+        for path in (
+            LOCAL_REPORT,
+            GITHUB_BODY,
+            GITHUB_INLINE,
+            SHARED_FINDING,
+            SHARED_FINDING_RENDERING,
+        ):
             text = path.read_text(encoding="utf-8")
             self.assertNotIn("```json", text)
 
