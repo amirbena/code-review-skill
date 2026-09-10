@@ -13,11 +13,6 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
-
-## v1.12.0 — 2026-09-10
-
 ### Added
 
 - Every finding now carries one **unified `confidence` value** — a small
@@ -31,6 +26,10 @@ release time._
   itself, changes P0/P1/P2 severity or the mechanically derived review
   decision. The closed value set, entry criteria, and mapping are documented
   in the new finding-confidence model (`docs/finding-confidence/`). (#178)
+
+## v1.12.0 — 2026-09-10
+
+### Added
 
 - Both review Skills can now attach **targeted runtime evidence to a
   suspected finding**: the smallest safe reproduction (an existing repository
