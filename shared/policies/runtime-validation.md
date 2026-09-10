@@ -194,7 +194,9 @@ targeted run never blocks, downgrades, or weakens such a finding.
 
 ### Eligibility
 
-Attempt targeted validation for a finding only when **all** hold:
+Eligibility is about the **finding and its reproduction**, not about whether a
+runtime can execute it. Consider targeted validation for a finding only when
+**all** hold:
 
 - the finding is a **suspected** defect whose correctness genuinely hinges
   on runtime behavior that static reasoning left uncertain — not a finding
@@ -205,12 +207,18 @@ Attempt targeted validation for a finding only when **all** hold:
   correct";
 - it needs no capability the isolated boundary lacks — no network, secrets,
   services, additional dependency installation, or external state beyond a
-  focused check already running against the reviewed work copy;
-- the disposable execution boundary in "Trust model and execution boundary"
-  is established and post-run verifiable for this run.
+  focused check already running against the reviewed work copy.
 
-If any condition fails, do not attempt execution: the finding stays on its
-static evidence with state `reasoned` (see "Finding validation state").
+If any of these fails, the finding was never a candidate for a targeted run:
+do not attempt one, and it keeps state `reasoned` (see "Finding validation
+state").
+
+Boundary availability is a **separate** gate applied only to an eligible
+finding: when the disposable execution boundary in "Trust model and execution
+boundary" cannot be established or post-run verified for this run, that is not
+an eligibility failure — the finding was a genuine candidate, so it is
+recorded `attempted-inconclusive` per "Budget and fail-safe", never
+`reasoned`.
 
 ### Selecting or generating the smallest reproduction
 

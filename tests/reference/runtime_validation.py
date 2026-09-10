@@ -111,7 +111,9 @@ class FakeRepository:
         self.process_invocations.append(argv)
         self.boundary_invocations.append(boundary)
 
-    def run_reproduction(self, reproduction, boundary: ExecutionBoundary) -> None:
+    def run_reproduction(
+        self, reproduction: TargetedReproduction, boundary: ExecutionBoundary
+    ) -> None:
         """Run a targeted reproduction inside the boundary's ephemeral workspace.
 
         A correct runner never touches ``files``; ``leaks`` models a buggy
@@ -122,7 +124,7 @@ class FakeRepository:
             raise AssertionError("fake runner must not start outside the boundary")
         self.process_invocations.append(("<targeted-reproduction>", reproduction.kind))
         self.boundary_invocations.append(boundary)
-        if getattr(reproduction, "leaks", False):
+        if reproduction.leaks:
             self.files["tests/_generated_repro.py"] = "def test_repro():\n    assert False\n"
 
     def restore(self, snapshot: tuple[tuple[str, str], ...]) -> None:
