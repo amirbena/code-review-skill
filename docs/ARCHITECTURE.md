@@ -271,9 +271,12 @@ rule.
 
 ### Optional capabilities
 
-Capabilities layered on the core pipeline, each opt-in and each leaving a
-coherent Skill when unused. Usage guidance for every one of them is in
-[`docs/features/`](features/README.md).
+Capabilities layered on the core pipeline — some explicitly opt-in, some
+automatically scoped when their precondition holds — each leaving a
+coherent Skill when absent or not engaged. Whether each is default,
+conditional, or requested is owned by
+[`docs/features/`](features/README.md), which also carries usage guidance
+for every one of them.
 
 - **Temporary repository-backed GitHub PR review** — opt-in isolated,
   read-only checkout at the PR head; context only
