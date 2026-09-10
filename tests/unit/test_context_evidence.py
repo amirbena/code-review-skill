@@ -341,25 +341,22 @@ class InducedRegressionTests(unittest.TestCase):
     corpus is only meaningful if it is sensitive to the behavior it pins."""
 
     def _corpus_holds(self) -> bool:
-        try:
-            for case in WORKED_EXAMPLES:
-                got = ce.resolve(**case["resolve_kwargs"])
-                if got is not case["expected_resolution"]:
+        for case in WORKED_EXAMPLES:
+            got = ce.resolve(**case["resolve_kwargs"])
+            if got is not case["expected_resolution"]:
+                return False
+            if ce.can_establish_finding(got) != case["can_establish_finding"]:
+                return False
+            if "override_check" in case:
+                src, tgt, expected = case["override_check"]
+                if ce.can_override(src, tgt) != expected:
                     return False
-                if ce.can_establish_finding(got) != case["can_establish_finding"]:
+            if "origin" in case:
+                if ce.attribute_finding_origin(
+                    **case["origin"]["kwargs"]
+                ) is not case["origin"]["expected"]:
                     return False
-                if "override_check" in case:
-                    src, tgt, expected = case["override_check"]
-                    if ce.can_override(src, tgt) != expected:
-                        return False
-                if "origin" in case:
-                    if ce.attribute_finding_origin(
-                        **case["origin"]["kwargs"]
-                    ) is not case["origin"]["expected"]:
-                        return False
-            return True
-        finally:
-            pass
+        return True
 
     def test_baseline_corpus_holds(self) -> None:
         self.assertTrue(self._corpus_holds())

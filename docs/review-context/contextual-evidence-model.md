@@ -98,7 +98,13 @@ it being upvoted, or from it being old.
   discussion.** A later, direct statement of intent from a maintainer wins
   over an older contradictory one; ordinary later discussion does not reopen
   a settled decision (see
-  [`review-evidence.md`](../../shared/policies/review-evidence.md)).
+  [`review-evidence.md`](../../shared/policies/review-evidence.md)). Such a
+  direct maintainer conclusion is classified as an `accepted_decision` per
+  §3 ("a direct maintainer conclusion"), not as `informal_discussion` — this
+  is not an informational source overriding an approved decision, it is a
+  newer authoritative one superseding an older one. An ordinary reviewer's
+  PR comment does not carry this weight (it is `implementation_feedback`
+  until ratified).
 - **Actual code always wins on what currently happens.** Contextual evidence
   describes *intended* behavior and *scope*; it never substitutes for reading
   the implementation, and it never converts "the context says X" into "X is
@@ -365,12 +371,15 @@ Outcome: report the ambiguity where it is material to a finding; do not
 Context supplied:
   accepted_decision — ADR 0005: "All timestamps are stored as epoch
   milliseconds."
-  informal_discussion — later, in the PR thread, the maintainer states
+  accepted_decision — later, in the PR thread, the maintainer states
   directly: "We moved to RFC 3339 strings in ADR 0018; 0005 is superseded."
+  (A direct maintainer conclusion is an accepted_decision per §3, not
+  informal_discussion — an ordinary PR comment would not carry this weight.)
 Delta:
   Stores timestamps as RFC 3339 strings.
-Resolution: a newer explicit maintainer clarification contradicts the older
-  accepted decision -> DISREGARD_STALE for ADR 0005.
+Resolution: a newer accepted_decision (the maintainer's direct conclusion /
+  ADR 0018) contradicts the older accepted decision -> DISREGARD_STALE for
+  ADR 0005.
 Outcome: no finding against the delta for following ADR 0018. Note the
   supersession only if it materially affects the reasoning shown.
 ```
