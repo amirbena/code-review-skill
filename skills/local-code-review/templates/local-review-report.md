@@ -187,155 +187,95 @@ strongly it is recommended before commit.
 
 ## Rules
 
+These are the report's **rendering** rules; the review semantics they
+serve are owned by the linked policies and are not restated here.
+
 - The human-facing body (Result → What changed → What was done well →
-  [Context, when applicable] → [PR Context, when applicable] → [Findings,
-  when present]
-  → Validation → Decision) is primary and always appears first — see
+  [Context] → [PR Context] → [Findings] → Validation → Decision) is
+  primary and always appears first — see
   [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md).
-- **Unresolved supplied Jira reference.** If the caller supplied a Jira
-  reference and it could not be resolved (see
+- **Unresolved supplied Jira reference** — the report is not graded: it
+  leads with `**Result: ⚠️ Jira context unresolved**`, names the
+  reference and integration(s) attempted, uses no key/branch/PR-title
+  inference, omits Findings and Decision, and its machine outcome is
+  `JIRA CONTEXT UNRESOLVED`. Canonical:
   [`../../../shared/policies/review-context.md`](../../../shared/policies/review-context.md),
-  "Jira context resolution"), this runbook stops before grading: the
-  returned report leads with `**Result: ⚠️ Jira context unresolved**`, names
-  the Jira reference and the integration(s) attempted, states that no
-  key/branch/PR-title inference was used, and omits the graded Findings and
-  Decision sections. The concise machine outcome is `JIRA CONTEXT
-  UNRESOLVED` (not a graded `REVIEW CLEAN` / `CHANGES REQUIRED`).
-  Re-invoking without a Jira reference yields a normal unscoped review.
-- **Context** is entirely optional and appears only when the caller
-  supplied review context (per
-  [`../policies/review-context.md`](../policies/review-context.md)) and
-  it materially shaped the review — see that policy, "Output." It is
-  omitted completely, with no placeholder or empty section, whenever no
-  review context was supplied — this is the no-context
-  backward-compatible case and the default. A context-derived finding's
-  provenance belongs in that finding's own **Evidence** field, per that
-  policy's "Tracing findings back to context," not as a duplicate entry
-  here — this section is a concise pointer, never a second listing of
-  the findings themselves. Supplied context guides investigation; it
-  never substitutes for implementation evidence and never adds a second
-  decision path — see
-  [`../policies/review-context.md`](../policies/review-context.md),
-  "Evidence hierarchy," and
-  [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
-  "Decision derivation (mechanical)."
-- **PR Context** is entirely optional and appears only when the caller
-  supplied a PR reference and it materially shaped the review (a
-  reconciled finding, a violated or superseded decision) — see
-  [`../policies/pr-context.md`](../policies/pr-context.md), "Output." It
-  is omitted completely, with no placeholder or empty section, whenever
-  no PR reference was supplied — this is the no-PR backward-compatible
-  case and the default. A reconciled finding's provenance (e.g. "still
-  valid per PR review, evidence reused") belongs in that finding's own
-  **Evidence** field, not as a duplicate entry here — this section is a
-  concise pointer, never a second listing of the findings themselves.
-- Decision is exactly `REVIEW CLEAN` or `CHANGES REQUIRED`, derived
+  "Jira context resolution".
+- **Context** and **PR Context** are optional pointer sections, each
+  rendered only when the corresponding input was supplied and materially
+  shaped the review, and omitted completely otherwise — no placeholder,
+  no empty section. For `Context` this is the default backward-compatible
+  case; for `PR Context`, this is the no-PR backward-compatible case and
+  the default. A context- or PR-derived finding's provenance belongs in
+  that finding's own **Evidence** field, never as a second listing here.
+  Canonical: [`../policies/review-context.md`](../policies/review-context.md),
+  "Output"; [`../policies/pr-context.md`](../policies/pr-context.md),
+  "Output".
+- **Decision** is exactly `REVIEW CLEAN` or `CHANGES REQUIRED`, derived
   mechanically per
   [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
-  "Decision derivation (mechanical)": `REVIEW CLEAN` iff no P0/P1
-  finding is present among the finalized findings; `CHANGES REQUIRED`
-  iff at least one is. Any number of P2 findings, however strongly they
-  are recommended, never by themselves produce `CHANGES REQUIRED` —
-  including a P2 that originates from a violated repository convention
-  (see
-  [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
-  "Repository conventions and severity," and
-  [`../../../shared/policies/repository-instructions.md`](../../../shared/policies/repository-instructions.md),
-  "Conventions determine findings, not severity"). The one-sentence
-  rationale explains this mechanical result; it is never an independent
-  subjective call that could contradict it.
+  "Decision derivation (mechanical)"; any number of P2 findings never
+  produce `CHANGES REQUIRED`. The one-sentence rationale explains that
+  mechanical result and never contradicts it.
 - Every finding uses the compact full rendering in
-  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md):
-  a stable ID (`F1`, `F2`, ...) and `[severity]` on the heading, then the
-  field-oriented `Location` / `Evidence` / `Impact` / `Fix` block. Each
-  field is concise by default — a sentence or two, not a paragraph;
-  concision never drops evidence, impact, or fix. A `Details` field is
-  added only for a finding in one of the categories in
-  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
-  "When a longer explanation is justified" (non-obvious cross-file
-  behavior, a concurrency/ordering bug, a security implication, a complex
-  invariant violation, or evidence needing brief context). A consolidated
-  root-cause finding additionally renders the required `Affected locations`
-  list after `Location`, per
-  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
-  "Affected locations on a consolidated finding" (exhaustive, at least two
-  entries); an ordinary single-site finding does not. The `Location`
-  value also carries this Skill's optional trailing annotation naming the
-  finding's source category — `(committed)`, `(staged)`, `(unstaged)`, or
-  `(untracked)` — per
-  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
-  "Location source annotation," and
+  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md)
+  (stable `F<n>` id + `[severity]` heading, then
+  `Location` / `Evidence` / `Impact` / `Fix`), each field concise but
+  never dropping evidence, impact, or fix. A `Details` field is added
+  only for a finding that satisfies that contract's "When a longer
+  explanation is justified"; a consolidated root-cause finding renders
+  the required `Affected locations` list after `Location`. The `Location`
+  value also carries this Skill's local trailing source-category
+  annotation — `(committed)` / `(staged)` / `(unstaged)` / `(untracked)`
+  — per that contract's "Location source annotation" and
   [`../policies/repository-state.md`](../policies/repository-state.md),
-  "Attribution in findings," so the report says precisely where each
-  finding came from. This annotation is specific to this Skill's local
-  Git working-tree model; it is not part of the shared template's
-  required fields. The shared template may also append its own
-  `_(evidence location; fix/action location unresolved)_` marker on the
-  same `Location` line for a finding whose actionable location could not
-  be resolved, and may render a separate `Evidence location` line when the
-  evidence was observed away from the fix/action location — see
-  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
-  "Fix/action location, evidence location, publication." When both trailing
-  annotations apply, this Skill's source-category annotation comes first,
-  then the unresolved marker.
-- **Validation** follows the shared
+  "Attribution in findings"; when the shared unresolved-fix marker also
+  applies, the source-category annotation comes first.
+- **Validation** records `executed` / `skipped` / `failed` /
+  `unavailable` explicitly per the shared
   [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
-  contract and records `executed`, `skipped`, `failed`, or `unavailable`
-  explicitly. If this Skill did not run a command, record the reason rather
-  than implying it passed.
+  contract; non-execution is never implied to have passed.
 - **Remediation rendering.** Apply
   [`../../../shared/policies/remediation-guidance.md`](../../../shared/policies/remediation-guidance.md).
-  `include_fix_prompt` defaults to `false`; when false, omit the
-  **Implementation prompt** field completely. When explicitly true, add at
-  most one prompt per root-cause finding where justified, after the concise
-  `Fix` direction. Do not create permutation prompts, invent uninspected
-  architecture, or emit a prompt for a clean review. The flag affects output
-  only: findings, severities, evidence, reconciliation, and Decision are
+  `include_fix_prompt` defaults to `false` (omit the **Implementation
+  prompt** field entirely); when explicitly true, at most one prompt per
+  root-cause finding, after the concise `Fix`. The flag is output-only:
+  findings, severities, evidence, reconciliation, and Decision are
   identical on and off.
 - **Finding details.** Apply
   [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
   "Finding-detail precedence." `include_finding_details` defaults to `true`.
 - **Concise human-style output (opt-in).** When the invocation selects
-  `human_review_output` (natural language only — "make the review shorter
-  and more human", "like a senior engineer"; per
+  `human_review_output` (natural language only — per
   [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
   "`human_review_output` phrasings"; default `false`), render the
-  human-facing body (Result → Decision) in the concise senior-engineer
-  voice from
+  human-facing body in the concise senior-engineer voice from
   [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
-  "Concise human-style summary (opt-in)": a short merge-safety opening,
-  then what's good / what's concerning / what to change in prose, each
-  referenced finding keeping its `P0` / `P1` / `P2` label, an intentional
-  trade-off optionally raised as a question, and no review-process wording.
-  It re-renders only that body — the trailing "Review Metadata" and
-  "Review scope contract" sections still follow it, subordinate and
-  unchanged, and nothing else is appended after the summary. The option is
-  output-only: findings, severities, evidence, reconciliation, source
-  attribution, and the mechanical Decision are identical on and off.
-- **Review State** (base/HEAD SHAs, synchronization status, raw
-  counts) is machine/orchestration-oriented detail — it is subordinate,
-  appearing only inside the trailing "Review Metadata" section as plain
-  Markdown, never ahead of the human-facing review and never wrapped in
-  GitHub-oriented HTML (e.g. `<details>`/`<summary>`), which offers no
-  benefit for a report read directly in a terminal or chat surface. This
-  is a deliberate, Skill-specific presentation choice, not an implication
-  that every Code Review Skill in this repository must render metadata
-  identically — see "Relevance-aware metadata rendering" below and
+  "Concise human-style summary (opt-in)". It re-renders only that body —
+  the trailing "Review Metadata" and "Review scope contract" sections
+  still follow it, subordinate and unchanged, and nothing else is
+  appended after the summary. The option is output-only: findings,
+  severities, evidence, reconciliation, source attribution, and the
+  mechanical Decision are identical on and off.
+- **Review State** (base/HEAD SHAs, synchronization status, raw counts)
+  is subordinate machine detail — it appears only inside the trailing
+  "Review Metadata" section as plain Markdown, never ahead of the
+  human-facing review and never wrapped in GitHub-oriented HTML
+  (`<details>` / `<summary>`), which adds nothing for a report read in a
+  terminal. This is a Skill-specific presentation choice; shared review
+  reasoning does not imply identical human-facing formatting, so
+  `github-pr-review`'s template legitimately uses a collapsible block —
+  see
   [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
-  "Machine metadata is subordinate," for why `github-pr-review`'s own
-  template legitimately renders its own optional subordinate metadata as
-  a collapsible `<details>` block instead: shared review reasoning does
-  not imply identical human-facing formatting, and each Skill's template
-  owns the presentation appropriate to its own delivery surface.
-- **Review scope contract** is required in every report, initial or
-  re-review: state plainly whether committed/staged/unstaged/untracked
-  state was included and whether this is an initial review or a
-  re-review. A category intentionally excluded from scope is stated as
-  excluded with a reason, never silently dropped.
-- **No loop/orchestration metadata.** This report does not track review
+  "Machine metadata is subordinate".
+- **Review scope contract** is required in every report: state plainly
+  whether committed/staged/unstaged/untracked state was included and
+  whether this is an initial review or a re-review. An excluded category
+  is stated as excluded with a reason, never silently dropped.
+- **No loop/orchestration metadata.** This report never tracks review
   iteration count, a configured maximum, or whether another iteration is
-  allowed — that information belongs to the orchestrator, never to this
-  Skill (see [`../SKILL.md`](../SKILL.md)).
+  allowed — that belongs to the orchestrator (see
+  [`../SKILL.md`](../SKILL.md)).
 - Return only what the implementing Agent needs to act.
 
 ### Relevance-aware metadata rendering
