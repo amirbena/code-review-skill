@@ -20,7 +20,9 @@ Applies shared policies:
 [`review-context.md`](../../../shared/policies/review-context.md) (the shared
 review-target / review-context / repository-context / existing-review-evidence
 model — its requirement-context and scope-boundary sections bind only when
-context is supplied), and the shared human-facing output shape in
+context is supplied),
+[`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md)
+(conditional task-contract coverage), and the shared human-facing output shape in
 [`review-summary.md`](../../../shared/templates/review-summary.md), plus
 this Skill's own
 [`../policies/invocation-approval.md`](../policies/invocation-approval.md)
@@ -78,6 +80,8 @@ review against code + repository conventions, focused per any supplied
 review context
     ↓
 classify findings by severity (source never changes the classification)
+    ↓
+derive conditional requirement coverage (all renderings preserve it)
     ↓
 derive decision mechanically from blocking severities (P0/P1)
     ↓
@@ -281,6 +285,13 @@ which a value must be resolved before it is used, or what is reported.
     including any that were revised, merged, or discarded during review —
     before composing the report; do not report findings piecemeal as they
     are discovered.
+10a. If step 7 produced at least one authoritative requirement or acceptance
+    criterion, apply
+    [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md)
+    to the inspected target now: retain every decomposed requirement, assign
+    its evidence-backed status, and derive the separate task-relative
+    completeness signal. If no activating contract exists, skip this step and
+    emit nothing for it.
 11. Derive the Decision mechanically per
     [`severity.md`](../../../shared/policies/severity.md), "Decision
     derivation (mechanical)," from the finalized findings. This is the
@@ -288,7 +299,8 @@ which a value must be resolved before it is used, or what is reported.
     top of it.
 12. Compose the human-facing body per
     [`review-summary.md`](../../../shared/templates/review-summary.md),
-    including the terse optional "Context" / "PR Context" notes per
+    including the terse optional "Context" / "PR Context" notes and the
+    conditional Requirement coverage section per
     [`../templates/local-review-report.md`](../templates/local-review-report.md)
     when steps 7/8 ran and materially shaped the review. If the current
     invocation normalized `human_review_output` (per

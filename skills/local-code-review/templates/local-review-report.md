@@ -104,6 +104,20 @@ The list is required on such a finding, exhaustive for the sites the
 review found, and carries at least two entries; an ordinary single-site
 finding never renders it.
 
+### Requirement coverage
+**Overall: `<complete | incomplete>`**
+
+- **R1 — `<implemented | partially_evidenced | not_evidenced | not_applicable>`**
+  `<source citation>`
+  - Evidence: `<code/test/validation evidence>`
+  - Explanation: `<status justification; include ambiguity when applicable>`
+
+<Omit this entire section unless authoritative requirements or acceptance
+criteria activated
+[`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md).
+When active, retain every requirement and place this section before
+Validation.>
+
 ### Validation
 - <one record per selected command, or an explicit no-command record, per
   [`../../../shared/policies/runtime-validation.md`](../../../shared/policies/runtime-validation.md):
@@ -147,7 +161,8 @@ or, when clean:
 Safe to proceed: no blocking or non-blocking findings were identified.
 
 <optional concise What changed and Validation sections; omit Findings when
-empty>
+empty. When requirement coverage was active, include the full conditional
+Requirement coverage section before Validation; omit it only when inert.>
 
 ### Decision
 **REVIEW CLEAN**
@@ -257,6 +272,9 @@ serve are owned by the linked policies and are not restated here.
   appended after the summary. The option is output-only: findings,
   severities, evidence, reconciliation, source attribution, and the
   mechanical Decision are identical on and off.
+  Active requirement coverage also remains visible with its overall signal
+  and every requirement/status; its wording may be condensed, but it is
+  omitted only when coverage analysis was inert.
 - **Review State** (base/HEAD SHAs, synchronization status, raw counts)
   is subordinate machine detail — it appears only inside the trailing
   "Review Metadata" section as plain Markdown, never ahead of the

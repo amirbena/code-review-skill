@@ -7,6 +7,7 @@ decision. Applies shared policies:
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
+[`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
 [`invocation-options.md`](../../../shared/policies/invocation-options.md),
 plus this Skill's own policy family starting at
@@ -72,6 +73,8 @@ dimension missing → REVIEW INCOMPLETE, never REVIEW CLEAN
 deduplicate same-HEAD findings
     ↓
 finalize findings and resolve inline eligibility
+    ↓
+derive conditional requirement coverage (all renderings preserve it)
     ↓
 re-check HEAD
     ↓
@@ -371,6 +374,12 @@ stop
     with its explicit path/location (or unresolved marker); the finding's
     canonical location and identity are not altered. No publication has
     occurred yet.
+11a. When resolved review context contains authoritative requirements or
+    acceptance criteria, apply
+    [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md)
+    to the inspected PR and carry its separate task-relative completeness
+    signal into the review body. With no activating contract, emit nothing
+    for it.
 12. Re-check the current PR HEAD against the recorded HEAD (see
     [`../policies/review-output.md`](../policies/review-output.md), "HEAD
     revalidation"), immediately before constructing the review. If it

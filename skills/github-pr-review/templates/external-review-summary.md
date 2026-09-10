@@ -27,6 +27,11 @@ subordinate — a short trailing block, never the body.
 
 No blocking findings at `<short-sha>`.
 
+### Requirement coverage
+**Overall: `complete`**
+
+- **R1 — `implemented`** — `<source citation>`; `<code/test evidence>`
+
 Validation: `executed` — `<exact command>` (declared at `<source>`, exit 0,
 <bounded evidence>).
 
@@ -34,7 +39,9 @@ Validation: `executed` — `<exact command>` (declared at `<source>`, exit 0,
 **APPROVE**
 ```
 
-That is the whole clean review — no `What was done well`, no `Findings`,
+When coverage analysis was active, the conditional section shown above is
+part of the clean review. When it was inert, omit that section; the remainder
+is the whole clean review — no `What was done well`, no `Findings`,
 no `Areas inspected`, no restated "no issues" prose, no review-mode or
 mutation lines. Add one sentence only if a strength or follow-up
 genuinely helps the author. `Reviewed HEAD` and counts live in the
@@ -63,12 +70,24 @@ addressed; see the inline comments for detail.
 - **P2 — Validation output hides the failing check name**
   `scripts/validate.py:117`
 
+### Requirement coverage
+**Overall: `incomplete`**
+
+- **R1 — `implemented`** — `<source citation>`; `<code/test evidence>`
+- **R2 — `not_evidenced`** — `<source citation>`; `<inspected missing path and explanation>`
+
 Validation: `failed` — `<exact command>` (declared at `<source>`, exit
 <status>, <bounded evidence/reason>).
 
 ### Decision
 **REQUEST CHANGES**
 ```
+
+Omit `Requirement coverage` unless authoritative requirements or acceptance
+criteria activate
+[`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md).
+When active, include every requirement before Validation. Its completeness
+signal never changes finding severity or the mechanically derived Decision.
 
 Do **not** repeat `Evidence` / `Impact` / `Fix` / `Details` /
 multi-paragraph reasoning in the body for a finding that was published
@@ -213,6 +232,9 @@ HEAD can still receive a formal review action (`src/review/output.py:88`).
 Was routing the settled-tradeoff case straight to the caller here
 deliberate?
 
+**Requirement coverage:** `incomplete` — R1 `implemented` (`<source>`;
+`<evidence>`); R2 `not_evidenced` (`<source>`; `<evidence/explanation>`).
+
 ### Decision
 **REQUEST CHANGES**
 ```
@@ -236,6 +258,9 @@ deliberate?
   [`inline-finding.md`](inline-finding.md), "Human-rendered inline
   finding (opt-in)". Only presentation wording changes — this body, and
   (when `human_inline_findings` is on) the inline comments.
+- Active requirement coverage remains visible in this concise body with its
+  overall signal and every requirement/status; only its wording is condensed.
+  Omit it entirely when coverage analysis was inert.
 - A self-review uses this same concise body as its informational
   `COMMENT`, keeping the closing disclosure line from "Self-review
   (informational COMMENT)".
