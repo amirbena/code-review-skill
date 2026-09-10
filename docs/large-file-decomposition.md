@@ -60,9 +60,9 @@ reason to split and is never CI-enforced.
 
 | File | Lines | Tag | Rationale and target shape |
 | --- | ---: | --- | --- |
-| `shared/templates/finding.md` | 528 | split | Mixes the normative finding-field contract (fields, quality contract, conciseness contract, location semantics) with several canonical rendering blocks (full / inline / human-inline / summary-pointer). Target: the field contract in one home, the rendering exemplars in a sibling template/example file. Coordinate with `tests/policy/test_finding_contract_docs.py` and `test_output_format_separation.py`. |
-| `shared/policies/review-context.md` | 441 | extract | The four-concepts context model carries a large, self-contained **Jira context resolution** sub-domain (transport-neutral procedure, comments handling, precondition rules). Target: extract Jira resolution into its own shared policy; keep the model, precedence, and boundaries here. |
-| `shared/policies/review-scope.md` | 593 | split | Base scope now also owns root-cause / model-completeness consolidation (added for #177), architectural-placement & execution-lifecycle fidelity, and affected-test / test-impact analysis (added for #160). At least the root-cause-consolidation and affected-test sub-domains are separable shared policies that `review-scope.md` would link. |
+| `shared/templates/finding.md` | 528 | completed | Issue #198 split the field/quality contract (kept in `finding.md`) from the canonical rendering exemplars (full / inline / human-inline / summary-pointer), now in `shared/templates/finding-rendering.md`; the two are cross-linked and both packaged. |
+| `shared/policies/review-context.md` | 441 | completed | Issue #198 extracted the **Jira context resolution** sub-domain (transport-neutral procedure, comment classification, precondition rules) into `shared/policies/jira-context.md`; `review-context.md` keeps the four-concepts model, precedence, boundaries, and a linking overview. |
+| `shared/policies/review-scope.md` | 593 | completed | Issue #198 extracted the root-cause / model-completeness consolidation sub-domain into `shared/policies/root-cause-consolidation.md` and the affected-test / test-impact analysis sub-domain into `shared/policies/affected-test-analysis.md`; `review-scope.md` keeps base scope, architectural-placement fidelity, and a linking overview under each moved heading. |
 | `skills/github-pr-review/SKILL.md` | 368 | reduce duplication | Sections 6–7 (Reviewer Ownership & Delta Re-Review; Review Action Authority & Mutation Boundary) restate material owned by `policies/stateful-delta-rereview.md` and `policies/review-action-authorization.md`. Target: entry contract + navigation + high-level flow + pointers. |
 | `skills/github-pr-review/runbooks/active-pr-review.md` | 510 | reduce duplication | Two headers only (`## Flow`, `## Steps`) over a ~400-line step monolith. Target: procedure only; behavioral invariants restated from `review-output.md` / `review-action-authorization.md` / `stateful-delta-rereview.md` move to (or stay in) those policies and are referenced. Split step groups only if it stays procedural. |
 | `skills/local-code-review/runbooks/local-review.md` | 363 | reduce duplication | `## Re-review discipline` and `## Constraints` overlap `policies/invocation-approval.md` and shared review-scope. Target: keep the procedure, reference the contracts. |
@@ -113,9 +113,9 @@ tags above, not the numbers, decide whether a step is still worth doing.
 3. `scripts/package-skills.{sh,ps1}` → shared declarative package manifest.
 4. `.github/workflows/release-worthiness.yml` → shell logic into tested helpers.
 5. *(optional)* `scripts/claim_issue.py` → `scripts/claim_lib/` primitives.
-6. `shared/templates/finding.md` → contract / rendering split.
-7. `shared/policies/review-context.md` → extract Jira resolution policy.
-8. `shared/policies/review-scope.md` → extract root-cause-consolidation and affected-test sub-policies.
+6. `shared/templates/finding.md` → contract / rendering split. *(done — Issue #198, `finding-rendering.md`.)*
+7. `shared/policies/review-context.md` → extract Jira resolution policy. *(done — Issue #198, `jira-context.md`.)*
+8. `shared/policies/review-scope.md` → extract root-cause-consolidation and affected-test sub-policies. *(done — Issue #198, `root-cause-consolidation.md` + `affected-test-analysis.md`.)*
 9. `skills/github-pr-review/SKILL.md` → trim restated ownership/authorization detail to pointers.
 10. `active-pr-review.md` + `local-review.md` runbooks → procedure-only.
 11. `stateful-delta-rereview.md`, `local-review-report.md`, `external-review-summary.md` → de-duplicate against canonical owners.

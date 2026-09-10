@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Jira context-resolution coverage: jira_context.py tables plus prose checks.
 
-Contract: shared/policies/review-context.md, "Jira context resolution".
+Contract: shared/policies/jira-context.md (the resolution procedure,
+precondition rules, and comment classification), which is the extracted
+sub-domain of shared/policies/review-context.md, "Jira context resolution"
+(Issue #198). review-context.md keeps the model + a linking overview.
 """
 
 from __future__ import annotations
@@ -14,6 +17,7 @@ from tests.reference import jira_context as jc
 from tests.support.paths import REPO_ROOT
 
 SHARED_CONTEXT = REPO_ROOT / "shared/policies/review-context.md"
+SHARED_JIRA = REPO_ROOT / "shared/policies/jira-context.md"
 LOCAL = REPO_ROOT / "skills/local-code-review"
 GITHUB = REPO_ROOT / "skills/github-pr-review"
 
@@ -21,6 +25,13 @@ GITHUB = REPO_ROOT / "skills/github-pr-review"
 def _text(path: Path) -> str:
     raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
     return re.sub(r"\s+", " ", raw)
+
+
+def _jira_policy_text() -> str:
+    # The shared Jira contract spans two files since Issue #198: the model +
+    # overview in review-context.md and the resolution sub-domain in
+    # jira-context.md. Prose assertions match against the pair.
+    return _text(SHARED_CONTEXT) + " " + _text(SHARED_JIRA)
 
 
 class NoJiraUnchangedTests(unittest.TestCase):
@@ -31,7 +42,7 @@ class NoJiraUnchangedTests(unittest.TestCase):
         )
 
     def test_policy_states_jira_is_never_mandatory(self) -> None:
-        t = _text(SHARED_CONTEXT)
+        t = _jira_policy_text()
         self.assertIn("It never makes Jira required for reviews that do not supply one", t)
         self.assertIn("This does not make Jira mandatory for ordinary reviews", t)
 
@@ -92,9 +103,9 @@ class OperationalProcedureTests(unittest.TestCase):
         self.assertTrue(jc.comment_retrieval_is_part_of_the_procedure())
 
     def test_shared_policy_has_a_numbered_resolution_procedure(self) -> None:
-        raw = SHARED_CONTEXT.read_text(encoding="utf-8")
+        raw = SHARED_JIRA.read_text(encoding="utf-8")
         self.assertIn("### Resolution procedure", raw)
-        t = _text(SHARED_CONTEXT)
+        t = _text(SHARED_JIRA)
         # each operational step is present as an ordered instruction
         self.assertIn("1. Identify an available Jira-capable integration", t)
         self.assertIn("2. Invoke it in read-only mode", t)
@@ -141,7 +152,7 @@ class NormalizedFieldsTests(unittest.TestCase):
         self.assertIsNone(jc.normalize_field("raw_payload"))
 
     def test_policy_lists_the_retrieval_fields_and_forbids_raw_payload(self) -> None:
-        t = _text(SHARED_CONTEXT)
+        t = _jira_policy_text()
         for field in ("issue key", "summary", "description", "issue type",
                       "acceptance criteria", "components", "labels",
                       "parent/epic", "linked issues", "explicit non-goals",
@@ -182,7 +193,7 @@ class JiraCommentClassificationTests(unittest.TestCase):
         )
 
     def test_policy_classifies_comments_and_warns_against_over_promotion(self) -> None:
-        t = _text(SHARED_CONTEXT)
+        t = _jira_policy_text()
         for cls in ("settled clarification", "accepted decision", "implementation note",
                     "unresolved question", "speculative suggestion", "rejected approach",
                     "superseded discussion"):
@@ -215,7 +226,7 @@ class ResolutionFailureTests(unittest.TestCase):
         )
 
     def test_policy_enumerates_all_failure_modes_and_the_outcome_label(self) -> None:
-        t = _text(SHARED_CONTEXT)
+        t = _jira_policy_text()
         self.assertIn("no Jira integration is available", t)
         self.assertIn("authentication fails", t)
         self.assertIn("authorization fails", t)
@@ -254,7 +265,7 @@ class NoInferenceFallbackTests(unittest.TestCase):
         self.assertTrue(jc.jira_reference_is_context_pointer_not_contents())
 
     def test_policy_forbids_inference_from_key_branch_pr_title_and_copied_metadata(self) -> None:
-        t = _text(SHARED_CONTEXT)
+        t = _jira_policy_text()
         self.assertIn(
             "do not infer ticket contents from the ticket key, the branch name, the "
             "PR title, a commit message, surrounding text, or copied issue metadata "
@@ -323,13 +334,13 @@ class ReadOnlyGovernanceTests(unittest.TestCase):
         self.assertIn(
             "never edits an issue, transitions it, adds a comment, changes a "
             "field, creates a ticket, or assigns a user",
-            _text(SHARED_CONTEXT),
+            _text(SHARED_JIRA),
         )
         for meta in (LOCAL / "metadata/skill.yaml", GITHUB / "metadata/skill.yaml"):
             self.assertIn("read-only", meta.read_text(encoding="utf-8"))
 
     def test_capability_is_transport_agnostic(self) -> None:
-        t = _text(SHARED_CONTEXT)
+        t = _jira_policy_text()
         self.assertIn("Resolution depends on the capability", t)
         self.assertIn("Do not hard-code review semantics to one transport", t)
         self.assertIn("never a raw connector payload", t)

@@ -2,6 +2,8 @@
   "schema_version": 1,
   "shared_files": [
     { "source": "shared/policies/review-scope.md", "destination": "shared/policies/review-scope.md" },
+    { "source": "shared/policies/root-cause-consolidation.md", "destination": "shared/policies/root-cause-consolidation.md" },
+    { "source": "shared/policies/affected-test-analysis.md", "destination": "shared/policies/affected-test-analysis.md" },
     { "source": "shared/policies/severity.md", "destination": "shared/policies/severity.md" },
     { "source": "shared/policies/evidence.md", "destination": "shared/policies/evidence.md" },
     { "source": "shared/policies/repository-instructions.md", "destination": "shared/policies/repository-instructions.md" },
@@ -10,11 +12,13 @@
     { "source": "shared/policies/review-ownership.md", "destination": "shared/policies/review-ownership.md" },
     { "source": "shared/policies/file-reviewability.md", "destination": "shared/policies/file-reviewability.md" },
     { "source": "shared/policies/review-context.md", "destination": "shared/policies/review-context.md" },
+    { "source": "shared/policies/jira-context.md", "destination": "shared/policies/jira-context.md" },
     { "source": "shared/policies/review-evidence.md", "destination": "shared/policies/review-evidence.md" },
     { "source": "shared/policies/parallel-review.md", "destination": "shared/policies/parallel-review.md" },
     { "source": "shared/policies/invocation-options.md", "destination": "shared/policies/invocation-options.md" },
     { "source": "shared/policies/remediation-guidance.md", "destination": "shared/policies/remediation-guidance.md" },
     { "source": "shared/templates/finding.md", "destination": "shared/templates/finding.md" },
+    { "source": "shared/templates/finding-rendering.md", "destination": "shared/templates/finding-rendering.md" },
     { "source": "shared/templates/review-summary.md", "destination": "shared/templates/review-summary.md" },
     { "source": "LICENSE", "destination": "LICENSE" }
   ],

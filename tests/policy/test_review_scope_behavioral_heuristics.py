@@ -21,6 +21,11 @@ LOCAL_SKILL_DIR = REPO_ROOT / "skills/local-code-review"
 GITHUB_SKILL_DIR = REPO_ROOT / "skills/github-pr-review"
 
 REVIEW_SCOPE = SHARED_DIR / "policies/review-scope.md"
+# The root-cause / model-completeness and affected-test sub-domains were
+# extracted from review-scope.md into their own canonical shared policies
+# (Issue #198); review-scope.md keeps a linking overview under each heading.
+ROOT_CAUSE = SHARED_DIR / "policies/root-cause-consolidation.md"
+AFFECTED_TEST = SHARED_DIR / "policies/affected-test-analysis.md"
 EVIDENCE = SHARED_DIR / "policies/evidence.md"
 LOCAL_SKILL_MD = LOCAL_SKILL_DIR / "SKILL.md"
 LOCAL_RUNBOOK = LOCAL_SKILL_DIR / "runbooks/local-review.md"
@@ -166,9 +171,8 @@ class OwnershipReuseIsTargetedTests(unittest.TestCase):
 class RootCauseAndModelCompletenessTests(unittest.TestCase):
     def setUp(self) -> None:
         self.section = _section(
-            _text(REVIEW_SCOPE),
+            _text(ROOT_CAUSE),
             "## Root-cause and model-completeness pass",
-            "## Failure state, retry safety, and recovery",
         )
 
     def test_multiple_symptoms_trigger_a_structural_pass_without_fixed_threshold(self) -> None:
@@ -723,9 +727,8 @@ class AffectedTestImpactAnalysisTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.section = _section(
-            _text(REVIEW_SCOPE),
+            _text(AFFECTED_TEST),
             "## Affected-test / test-impact analysis",
-            "## Technology neutrality",
         )
 
     def test_reasoning_chain_runs_from_changed_code_into_dependent_tests(self) -> None:

@@ -36,10 +36,15 @@ REPO_ROOT_ONLY_DOC_BASENAMES = {
 SHARED_FINDING_MARKERS = (
     "**impact**",
     "## Finding quality contract",
+    "## Affected locations on a consolidated finding",
+)
+# Issue #198: the canonical rendering exemplars were split out of finding.md
+# into shared/templates/finding-rendering.md; finding.md keeps the field /
+# quality contract above.
+SHARED_FINDING_RENDERING_MARKERS = (
     "## Canonical full rendering",
     "## Canonical human inline rendering",
     "## Canonical summary-pointer rendering",
-    "## Affected locations on a consolidated finding",
     "one authoritative full representation",
 )
 SHARED_REVIEW_SUMMARY_MARKERS = (

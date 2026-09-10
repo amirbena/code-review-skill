@@ -32,8 +32,10 @@ invariant are prescribed here.
 ## Root-Cause and Model-Completeness Review
 
 When related candidate findings indicate one shared mechanism, apply
-[`review-scope.md`](../../../shared/policies/review-scope.md), "Root-cause and
-model-completeness pass," before finalizing findings. That shared section owns
+[`root-cause-consolidation.md`](../../../shared/policies/root-cause-consolidation.md),
+"Root-cause and model-completeness pass" (routed from
+[`review-scope.md`](../../../shared/policies/review-scope.md)), before
+finalizing findings. That shared section owns
 the trigger, structural-vs-separate finding rule (including consolidating one
 shared cause into a single authoritative finding with a required, exhaustive
 affected-locations list of at least two sites, and the fail-open to separate
@@ -93,8 +95,10 @@ When a PR changes observable production behavior — a changed return value,
 status, error, or emitted event; an altered calculation, validation, or
 state-transition rule; a new or removed branch; or a modified public
 contract — apply
-[`review-scope.md`](../../../shared/policies/review-scope.md),
-"Affected-test / test-impact analysis," before finalizing findings. That
+[`affected-test-analysis.md`](../../../shared/policies/affected-test-analysis.md),
+"Affected-test / test-impact analysis" (routed from
+[`review-scope.md`](../../../shared/policies/review-scope.md)), before
+finalizing findings. That
 shared section owns the trigger, the located-test re-validation and new-path
 coverage steps, the read-only boundary (inspect test code as text; never run
 the target repository's tests), the not-"did the PR add tests?" framing, and

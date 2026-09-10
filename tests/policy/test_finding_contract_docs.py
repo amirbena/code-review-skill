@@ -17,6 +17,10 @@ import unittest
 from tests.support.paths import REPO_ROOT
 
 SHARED_FINDING = REPO_ROOT / "shared/templates/finding.md"
+# Issue #198 split the canonical rendering exemplars out of finding.md into a
+# sibling; finding.md keeps the field/quality contract, the renderings live
+# here. The two are cross-linked.
+SHARED_FINDING_RENDERING = REPO_ROOT / "shared/templates/finding-rendering.md"
 SHARED_SUMMARY = REPO_ROOT / "shared/templates/review-summary.md"
 LOCAL_REPORT = REPO_ROOT / "skills/local-code-review/templates/local-review-report.md"
 GITHUB_BODY = REPO_ROOT / "skills/github-pr-review/templates/external-review-summary.md"
@@ -38,6 +42,9 @@ class SharedFindingContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.text = SHARED_FINDING.read_text(encoding="utf-8")
         self.norm = _norm(self.text)
+        # The rendering exemplars moved to finding-rendering.md (Issue #198).
+        self.rendering = SHARED_FINDING_RENDERING.read_text(encoding="utf-8")
+        self.rnorm = _norm(self.rendering)
 
     def test_contract_vs_rendering_boundary_is_documented(self) -> None:
         # review reasoning -> canonical finding contract -> rendering, and
@@ -54,7 +61,7 @@ class SharedFindingContractTests(unittest.TestCase):
 
     def test_canonical_full_rendering_is_the_compact_field_block(self) -> None:
         block = re.search(
-            r"## Canonical full rendering\n(.*?)\n## ", self.text, re.S
+            r"## Canonical full rendering\n(.*?)\n## ", self.rendering, re.S
         )
         self.assertIsNotNone(block)
         body = block.group(1)
@@ -71,7 +78,7 @@ class SharedFindingContractTests(unittest.TestCase):
         details_block = next(
             (
                 b
-                for b in re.findall(r"```markdown\n(.*?)\n```", self.text, re.S)
+                for b in re.findall(r"```markdown\n(.*?)\n```", self.rendering, re.S)
                 if "**Details:**" in b
             ),
             None,
@@ -173,7 +180,7 @@ class SharedFindingContractTests(unittest.TestCase):
 
     def test_full_rendering_shows_optional_evidence_location_line(self) -> None:
         block = re.search(
-            r"## Canonical full rendering\n(.*?)\n## ", self.text, re.S
+            r"## Canonical full rendering\n(.*?)\n## ", self.rendering, re.S
         )
         self.assertIsNotNone(block)
         body = block.group(1)
@@ -273,7 +280,7 @@ class SharedFindingContractTests(unittest.TestCase):
 
     def test_full_rendering_has_a_consolidated_variant_with_affected_locations(self) -> None:
         block = re.search(
-            r"## Canonical full rendering\n(.*?)\n## ", self.text, re.S
+            r"## Canonical full rendering\n(.*?)\n## ", self.rendering, re.S
         )
         self.assertIsNotNone(block)
         body = block.group(1)
@@ -292,7 +299,7 @@ class SharedFindingContractTests(unittest.TestCase):
 
     def test_inline_rendering_drops_id_and_location(self) -> None:
         block = re.search(
-            r"## Canonical inline rendering\n(.*?)\n## ", self.text, re.S
+            r"## Canonical inline rendering\n(.*?)\n## ", self.rendering, re.S
         )
         self.assertIsNotNone(block)
         body = block.group(1)
@@ -333,7 +340,13 @@ class SkillRenderingsAlignTests(unittest.TestCase):
         self.assertNotIn("Location:", examples)
 
     def test_no_skill_makes_json_the_primary_finding_shape(self) -> None:
-        for path in (LOCAL_REPORT, GITHUB_BODY, GITHUB_INLINE, SHARED_FINDING):
+        for path in (
+            LOCAL_REPORT,
+            GITHUB_BODY,
+            GITHUB_INLINE,
+            SHARED_FINDING,
+            SHARED_FINDING_RENDERING,
+        ):
             text = path.read_text(encoding="utf-8")
             self.assertNotIn("```json", text)
 
