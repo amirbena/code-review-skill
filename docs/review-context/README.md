@@ -23,11 +23,12 @@ reference them by name.
 | --- | --- | --- |
 | [`contextual-evidence-model.md`](contextual-evidence-model.md) | The typed contextual-evidence model — every evidence type marked authoritative or informational, the authority/trust rules, the deterministic resolution table for conflicting / stale / ambiguous / non-authoritative evidence, provenance-aware findings, scope/intent and introduced-vs-pre-existing use, the precision-preservation analysis, and the smallest useful first implementation. | [#118](https://github.com/amirbena/code-review-skill/issues/118) |
 
-Two follow-on issues build on this model without redefining it:
-[#176](https://github.com/amirbena/code-review-skill/issues/176)
-(requirement / acceptance-criteria coverage) and
-[#178](https://github.com/amirbena/code-review-skill/issues/178) (unified
-finding confidence / evidence-state field).
+Two follow-on capabilities build on this model without redefining it:
+requirement / acceptance-criteria coverage is defined by the packaged
+[`requirement-coverage.md`](../../shared/policies/requirement-coverage.md)
+contract ([#176](https://github.com/amirbena/code-review-skill/issues/176)),
+while [#178](https://github.com/amirbena/code-review-skill/issues/178) tracks a
+unified finding confidence / evidence-state field.
 
 ## Related
 

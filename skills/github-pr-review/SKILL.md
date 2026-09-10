@@ -182,6 +182,9 @@ Shared, always (as one batched operation):
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),
 [`review-context.md`](../../shared/policies/review-context.md)
 (requirement-context sections bind only when context is supplied),
+[`requirement-coverage.md`](../../shared/policies/requirement-coverage.md)
+(binds only when authoritative requirements or acceptance criteria are
+supplied),
 [`review-evidence.md`](../../shared/policies/review-evidence.md),
 [`runtime-validation.md`](../../shared/policies/runtime-validation.md),
 [`git-safety.md`](../../shared/policies/git-safety.md),

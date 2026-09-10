@@ -371,6 +371,12 @@ stop
     with its explicit path/location (or unresolved marker); the finding's
     canonical location and identity are not altered. No publication has
     occurred yet.
+11a. When resolved review context contains authoritative requirements or
+    acceptance criteria, apply
+    [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md)
+    to the inspected PR and carry its separate task-relative completeness
+    signal into the review body. With no activating contract, emit nothing
+    for it.
 12. Re-check the current PR HEAD against the recorded HEAD (see
     [`../policies/review-output.md`](../policies/review-output.md), "HEAD
     revalidation"), immediately before constructing the review. If it

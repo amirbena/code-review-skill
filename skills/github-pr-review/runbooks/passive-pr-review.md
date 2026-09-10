@@ -7,6 +7,7 @@ Applies shared policies:
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
+[`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
 [`invocation-options.md`](../../../shared/policies/invocation-options.md),
 plus this Skill's own policy family starting at
@@ -257,6 +258,11 @@ finally: remove the temporary checkout (success, any failure, interruption)
    nothing and posts no inline comments, so `human_inline_findings` (the
    companion option normalized alongside it) has no distinct surface to
    act on here; the report is a single returned document either way.
+8a. When resolved external context contains authoritative requirements or
+   acceptance criteria, apply
+   [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md)
+   to the inspected PR and include its separate completeness signal in the
+   report. With no activating contract, emit no coverage section or signal.
 9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
    step 4, remove it — on this path and on every other: a
    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the

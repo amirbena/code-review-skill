@@ -12,6 +12,7 @@
     { "source": "shared/policies/review-ownership.md", "destination": "shared/policies/review-ownership.md" },
     { "source": "shared/policies/file-reviewability.md", "destination": "shared/policies/file-reviewability.md" },
     { "source": "shared/policies/review-context.md", "destination": "shared/policies/review-context.md" },
+    { "source": "shared/policies/requirement-coverage.md", "destination": "shared/policies/requirement-coverage.md" },
     { "source": "shared/policies/jira-context.md", "destination": "shared/policies/jira-context.md" },
     { "source": "shared/policies/review-evidence.md", "destination": "shared/policies/review-evidence.md" },
     { "source": "shared/policies/parallel-review.md", "destination": "shared/policies/parallel-review.md" },

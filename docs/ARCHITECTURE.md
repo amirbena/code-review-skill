@@ -83,7 +83,7 @@ rules, or the context / evidence model.
 
 | Location | Owns | Canonical detail |
 |---|---|---|
-| [`shared/policies/`](../shared/policies/README.md) | portable review semantics used identically by both Skills | scope, root-cause consolidation, affected-test analysis, severity, evidence, repository-instruction discovery, git-safety, review-ownership, review-context, jira-context, review-evidence, runtime-validation, parallel-review, file-reviewability, invocation-options |
+| [`shared/policies/`](../shared/policies/README.md) | portable review semantics used identically by both Skills | scope, root-cause consolidation, affected-test analysis, severity, evidence, repository-instruction discovery, git-safety, review-ownership, review-context, requirement coverage, jira-context, review-evidence, runtime-validation, parallel-review, file-reviewability, invocation-options |
 | [`shared/templates/`](../shared/templates/) | the canonical finding and review-summary shapes; each delivery surface renders one projection of them | [`finding.md`](../shared/templates/finding.md) (field contract), [`finding-rendering.md`](../shared/templates/finding-rendering.md) (rendering exemplars), [`review-summary.md`](../shared/templates/review-summary.md) |
 | [`skills/local-code-review/`](../skills/local-code-review/SKILL.md) | local-Git-specific rules with no PR analogue | invocation approval, repository-state categories + staged-delta fingerprint, thin local applications of the shared context / prior-evidence model |
 | [`skills/github-pr-review/`](../skills/github-pr-review/SKILL.md) | GitHub-delivery rules with no local analogue, indexed from [`policies/github-review.md`](../skills/github-pr-review/policies/github-review.md) | review authority + self-review mutation boundary, [review-action authorization](../skills/github-pr-review/policies/review-action-authorization.md), reviewer delta re-review, PR scope + pagination, repository-backed checkout, finding placement, batched publication + ordering, optional [machine-readable review status](../skills/github-pr-review/policies/review-status-enforcement.md) |
@@ -93,6 +93,12 @@ explicit user instructions, a Jira/tracker ticket, an explicitly supplied
 GitHub Issue (no automatic PR↔Issue discovery), an HLD/ADR, or an
 implementation plan — see
 [`shared/policies/review-context.md`](../shared/policies/review-context.md).
+When that context contains authoritative requirements or acceptance criteria,
+the shared
+[`requirement-coverage.md`](../shared/policies/requirement-coverage.md) policy
+adds an evidence-backed per-requirement assessment and a task-relative
+complete/incomplete signal; it remains independent of finding severity and the
+review decision.
 
 ### Thin runbooks, canonical policy owners
 

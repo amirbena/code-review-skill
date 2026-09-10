@@ -13,8 +13,15 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- Both review Skills now report requirement / acceptance-criteria coverage
+  when authoritative task context is supplied: each requirement receives an
+  evidence-backed `implemented`, `partially_evidenced`, `not_evidenced`, or
+  `not_applicable` status plus a separate task-relative completeness signal.
+  With no supplied contract the capability is inert, and completeness never
+  changes P0/P1/P2 severity or the mechanically derived review decision.
+  (#176)
 
 ## v1.10.0 — 2026-09-10
 

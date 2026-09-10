@@ -166,6 +166,7 @@ Always, as one batched operation:
 [`review-context.md`](../../shared/policies/review-context.md) (its
 requirement-context and scope-boundary sections bind only when context is
 supplied),
+[`requirement-coverage.md`](../../shared/policies/requirement-coverage.md) (conditional),
 [`git-safety.md`](../../shared/policies/git-safety.md),
 [`file-reviewability.md`](../../shared/policies/file-reviewability.md)
 (every changed-file category, including generated/opaque content),
@@ -184,7 +185,8 @@ definitions, per-category detection commands, staged-delta fingerprint).
 Conditionally, only when its own input is supplied per section 1: the
 shared `review-context.md` requirement-context / scope-boundary sections
 plus [`policies/review-context.md`](policies/review-context.md) (review
-context); the shared
+context), plus shared `requirement-coverage.md` for authoritative task-contract
+context; the shared
 [`review-evidence.md`](../../shared/policies/review-evidence.md) plus
 [`policies/pr-context.md`](policies/pr-context.md) (PR reference). Each
 loads independently. **This policy is never loaded or applied when no PR
@@ -205,7 +207,7 @@ per invocation, rendering the shared shape in
 Result, What changed, optional What was done well, an optional Context
 section (only when review context materially shaped the review), an
 optional PR Context section (only when a PR reference materially shaped
-it), Findings (omitted when the finalized set is empty), Validation, and
+it), Findings (omitted when empty), conditional Requirement coverage, Validation, and
 a Decision of `REVIEW CLEAN` or `CHANGES REQUIRED` derived mechanically
 from blocking (P0/P1) severities.
 

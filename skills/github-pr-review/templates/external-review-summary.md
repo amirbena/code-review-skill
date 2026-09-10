@@ -63,12 +63,24 @@ addressed; see the inline comments for detail.
 - **P2 — Validation output hides the failing check name**
   `scripts/validate.py:117`
 
+### Requirement coverage
+**Overall: `incomplete`**
+
+- **R1 — `implemented`** — `<source citation>`; `<code/test evidence>`
+- **R2 — `not_evidenced`** — `<source citation>`; `<inspected missing path and explanation>`
+
 Validation: `failed` — `<exact command>` (declared at `<source>`, exit
 <status>, <bounded evidence/reason>).
 
 ### Decision
 **REQUEST CHANGES**
 ```
+
+Omit `Requirement coverage` unless authoritative requirements or acceptance
+criteria activate
+[`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md).
+When active, include every requirement before Validation. Its completeness
+signal never changes finding severity or the mechanically derived Decision.
 
 Do **not** repeat `Evidence` / `Impact` / `Fix` / `Details` /
 multi-paragraph reasoning in the body for a finding that was published

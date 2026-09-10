@@ -41,6 +41,12 @@ important concern or attention point; include scope only when useful>
   cases [`finding.md`](finding.md), "When a longer explanation is
   justified" allows.
 
+### Requirement coverage
+<only when an authoritative task contract activates
+  [`requirement-coverage.md`](../policies/requirement-coverage.md): overall
+  `complete` / `incomplete`, followed by every requirement's identifier,
+  status, source citation, concrete evidence, and explanation>
+
 ### Validation
 - <one entry per selected command, or an explicit no-command entry, using
   exactly `executed`, `skipped`, `failed`, or `unavailable`; include the exact
@@ -94,6 +100,10 @@ important concern or attention point; include scope only when useful>
   contract: every selected command is explicitly `executed`, `skipped`,
   `failed`, or `unavailable`, with exact command and reason/evidence;
   non-execution is never a pass.
+- **Requirement coverage** — conditional and distinct from Findings. It is
+  absent when no authoritative task contract was supplied. When present it
+  follows [`requirement-coverage.md`](../policies/requirement-coverage.md),
+  appears before Validation, and never changes severity or Decision.
 - **Decision** — an unambiguous label plus one sentence tying it to the
   findings. Never leave the reader to compute the outcome from raw P0/P1/P2
   counts. The decision itself is derived mechanically from blocking

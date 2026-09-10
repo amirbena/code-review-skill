@@ -104,6 +104,20 @@ The list is required on such a finding, exhaustive for the sites the
 review found, and carries at least two entries; an ordinary single-site
 finding never renders it.
 
+### Requirement coverage
+**Overall: `<complete | incomplete>`**
+
+- **R1 — `<implemented | partially_evidenced | not_evidenced | not_applicable>`**
+  `<source citation>`
+  - Evidence: `<code/test/validation evidence>`
+  - Explanation: `<status justification; include ambiguity when applicable>`
+
+<Omit this entire section unless authoritative requirements or acceptance
+criteria activated
+[`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md).
+When active, retain every requirement and place this section before
+Validation.>
+
 ### Validation
 - <one record per selected command, or an explicit no-command record, per
   [`../../../shared/policies/runtime-validation.md`](../../../shared/policies/runtime-validation.md):

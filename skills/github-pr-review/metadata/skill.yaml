@@ -34,6 +34,7 @@ capabilities:
   human_review_output: optional # presentation-only; natural-language opt-in ("make the review shorter and more human" / "like a senior engineer"), no CLI flag; renders only the final human-facing summary in a concise senior-engineer voice; never changes findings/severity/dedup/verdict/review-state/machine-readable-status or publication ordering; see ../../../shared/policies/invocation-options.md
   human_inline_findings: optional # presentation-only; derived default `explicit_value ?? human_review_output` (invocation-options.md "`human_inline_findings` derived default and phrasings"); extends the senior-engineer voice to inline review comments (severity-keeping heading + prose in place of Evidence/Impact/Fix); no CLI flag; never changes findings/severity/identity/dedup/verdict/review-state/machine-readable-status, the canonical fix/action anchor, the #164/#165 body fallback, or publication ordering — only inline wording; see ../policies/finding-placement.md and ../templates/inline-finding.md
   external_review_context: optional # caller-supplied requirements / pasted Jira / GitHub Issue / HLD / ADR / plan / PR description; see ../../../shared/policies/review-context.md and ../policies/review-context.md
+  requirement_coverage: conditional # activates only for authoritative requirements / acceptance criteria; emits evidence-backed per-requirement status plus task-relative completeness; see ../../../shared/policies/requirement-coverage.md
   jira_context_resolution: optional # only when a Jira reference is supplied; resolved via an available Jira MCP/connector, read-only; unresolved -> JIRA CONTEXT UNRESOLVED (no inference fallback); see ../../../shared/policies/review-context.md "Jira context resolution"
   prior_review_evidence: considered-when-available # the PR's own prior reviews/comments; see ../../../shared/policies/review-evidence.md and ../policies/review-evidence.md
   repository_access_mode: api-only|optional-repository-backed|required-repository-backed # required checkout failure is REVIEW INCOMPLETE; see ../policies/repository-checkout.md
@@ -66,6 +67,7 @@ shared:
     - ../../../shared/policies/review-ownership.md
     - ../../../shared/policies/file-reviewability.md
     - ../../../shared/policies/review-context.md
+    - ../../../shared/policies/requirement-coverage.md
     - ../../../shared/policies/review-evidence.md
     - ../../../shared/policies/parallel-review.md
     - ../../../shared/policies/invocation-options.md

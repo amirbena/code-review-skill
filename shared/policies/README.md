@@ -28,6 +28,7 @@ packaged Skill is installed; they do not depend on this repository.
 | [`severity.md`](severity.md) | The single P0/P1/P2 severity each finding receives and the mechanical severity → decision derivation. |
 | [`evidence.md`](evidence.md) | Every finding must rest on concrete repository evidence; what counts as evidence. |
 | [`review-context.md`](review-context.md) | The concepts a review reasons over and how optional caller-supplied requirement/scope material is used without widening the target. |
+| [`requirement-coverage.md`](requirement-coverage.md) | Per-requirement implementation evidence and the task-relative complete/incomplete signal when an authoritative contract is supplied. |
 | [`jira-context.md`](jira-context.md) | Transport-neutral resolution of a supplied Jira reference into normalized review context, and the precondition rules when it cannot be resolved. |
 | [`review-evidence.md`](review-evidence.md) | How a review uses previously produced review information (prior comments/decisions) — reconciled against the current target, not inherited. |
 | [`repository-instructions.md`](repository-instructions.md) | Discovering and applying the target repository's own `AGENTS.md`/`CLAUDE.md` hierarchy before evaluating changed files. |
