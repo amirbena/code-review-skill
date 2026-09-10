@@ -442,7 +442,10 @@ The smallest slice that delivers the capability:
 - source adapters — Jira, GitHub Issues/PR comments, Slack, ADR ingestion;
 - automatic PR↔Issue discovery (linkage stays whatever the caller states);
 - a machine-readable provenance block in review output — waits on the #67
-  output schema and #178's unified confidence / evidence-state field;
+  output schema; #178's unified confidence / evidence-state field is now
+  defined (the [finding-confidence model](../finding-confidence/finding-confidence-model.md))
+  and rolls this model's authoritative/informational typing into one
+  `confidence` value without redefining it;
 - any runtime that retrieves, resolves, infers, or auto-attaches contextual
   evidence during a review.
 

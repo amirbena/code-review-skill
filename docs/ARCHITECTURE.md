@@ -352,6 +352,21 @@ and no packaged Skill resource depends on them.
   [#176](https://github.com/amirbena/code-review-skill/issues/176) and
   [#178](https://github.com/amirbena/code-review-skill/issues/178) build on
   it without redefining it.
+- **Finding-confidence model** — the one machine-readable evidence-state
+  value a finding carries: the closed set `confirmed` / `credible` /
+  `runtime-validation-unavailable` / `external-contract-unvalidated` /
+  `insufficient-context`, the per-value entry criteria, the mapping that
+  rolls the #128 runtime-validation state and the #118 authoritative/
+  informational provenance into this one field, the `credible` default, and
+  the rule that a lower value never lowers the evidence bar, the severity, or
+  the review decision
+  ([`finding-confidence/README.md`](finding-confidence/README.md) →
+  [`finding-confidence/finding-confidence-model.md`](finding-confidence/finding-confidence-model.md),
+  #178, with a test-only reference model). Its one packaged touch-point is
+  the optional **confidence** field on
+  [`../shared/templates/finding.md`](../shared/templates/finding.md); the #67
+  machine-readable output schema wiring is deferred — see "Future work"
+  below.
 - **Cross-review finding-identity contracts** — the requirements
   ([`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md),
   #58), the precision-first matching strategy
@@ -420,8 +435,14 @@ or runbook implements them today:
   field. No code retrieves, resolves, infers, or auto-attaches contextual
   evidence; there is no Jira / GitHub Issue / Slack / ADR ingestion
   adapter, no automatic PR↔Issue discovery, and no machine-readable
-  provenance block in review output (that waits on the #67 output schema
-  and #178's unified confidence / evidence-state field).
+  provenance block in review output (that waits on the #67 output schema).
+- **Machine-readable review output schema** — #178 defines the unified
+  finding `confidence` field and its values (the finding-confidence model,
+  "Repository-development instrumentation" above), and the finding template
+  renders it in human output. The #67 JSON-style schema document that would
+  carry `confidence`, `severity`, `location`, and the rest as a formal
+  contract for machine consumers, and its versioning (#68), are still
+  unbuilt.
 
 ## 3. Separation of Concerns
 

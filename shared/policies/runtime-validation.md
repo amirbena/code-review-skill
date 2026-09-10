@@ -289,6 +289,16 @@ Severity and the `REVIEW CLEAN` / `CHANGES REQUIRED` (or `Approve` /
 `Request Changes`) mapping are derived exactly once, after findings are
 finalized, exactly as they would be without any targeted run.
 
+This state is the runtime-specific input to the finding's single unified
+`confidence` value per [`../templates/finding.md`](../templates/finding.md),
+"Confidence and evidence state": `runtime-confirmed` rolls up as `confirmed`
+and `attempted-inconclusive` as `runtime-validation-unavailable`, alongside
+the contextual-evidence provenance. The unified value is likewise provenance
+only — it never lowers the evidence bar, the severity, or the decision. The
+closed value set and its derivation are the finding-confidence model
+(a repository-development design record, named here rather than linked
+because it is not a packaged resource).
+
 ### Outcome recording
 
 Each attempted targeted validation also produces one entry in the shared

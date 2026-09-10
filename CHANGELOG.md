@@ -15,6 +15,18 @@ when the change reaches `main`. See
 
 ### Added
 
+- Every finding now carries one **unified `confidence` value** — a small
+  closed set (`confirmed`, `credible`, `runtime-validation-unavailable`,
+  `external-contract-unvalidated`, `insufficient-context`) that says how sure
+  the reviewer is the defect is real, without a probability score. It rolls
+  the runtime-validation state (#128) and the authoritative/informational
+  context provenance (#118) into one machine-readable field, defaults to
+  `credible`, and renders in human output only when it is not that default.
+  A lower value never lowers the evidence bar for reporting and never, by
+  itself, changes P0/P1/P2 severity or the mechanically derived review
+  decision. The closed value set, entry criteria, and mapping are documented
+  in the new finding-confidence model (`docs/finding-confidence/`). (#178)
+
 - Both review Skills can now attach **targeted runtime evidence to a
   suspected finding**: the smallest safe reproduction (an existing repository
   test, or a minimal generated check) runs inside the same disposable

@@ -425,6 +425,60 @@ class ContextualEvidenceProvenanceTests(unittest.TestCase):
         self.assertTrue(fc.render_inline(f).startswith("[P2] "))
 
 
+class ConfidenceEvidenceStateTests(unittest.TestCase):
+    """Issue #178: the unified `confidence` field renders only when it is
+    not the `credible` default, folds into evidence prose on the inline
+    surface, stays out of the mandatory core, and never carries a severity
+    or lowers the evidence bar."""
+
+    def test_default_is_credible_and_not_rendered(self) -> None:
+        f = _finding()
+        self.assertEqual(f.confidence, "credible")
+        self.assertFalse(fc.renders_confidence(f))
+        self.assertNotIn("Confidence:", fc.render_full(f))
+        self.assertNotIn("confidence:", fc.render_inline(f))
+        self.assertEqual(
+            fc.missing_mandatory_fields(f, surface=fc.Surface.LOCAL_REPORT), ()
+        )
+
+    def test_non_default_value_renders_after_evidence_before_impact(self) -> None:
+        f = _finding(confidence="confirmed")
+        rendered = fc.render_full(f)
+        self.assertIn("- **Confidence:** confirmed", rendered)
+        self.assertLess(
+            rendered.index("**Evidence:**"), rendered.index("**Confidence:**")
+        )
+        self.assertLess(
+            rendered.index("**Confidence:**"), rendered.index("**Impact:**")
+        )
+
+    def test_confidence_line_follows_the_runtime_and_context_lines(self) -> None:
+        f = _finding(
+            context_evidence=("ADR 0007: server-side keys",),
+            confidence="insufficient-context",
+        )
+        rendered = fc.render_full(f)
+        self.assertLess(
+            rendered.index("**Contextual evidence:**"),
+            rendered.index("**Confidence:**"),
+        )
+
+    def test_inline_folds_confidence_into_evidence_prose(self) -> None:
+        f = _finding(confidence="runtime-validation-unavailable")
+        rendered = fc.render_inline(f)
+        self.assertNotIn("Confidence:", rendered)  # no separate line
+        self.assertIn("(confidence: runtime-validation-unavailable)", rendered)
+        self.assertTrue(rendered.startswith("[P1] "))
+
+    def test_confidence_is_not_part_of_the_mandatory_core(self) -> None:
+        self.assertNotIn("confidence", fc.MANDATORY_CORE)
+
+    def test_confidence_string_never_changes_the_rendered_severity(self) -> None:
+        f = _finding(confidence="confirmed", severity=fc.Severity.P2)
+        self.assertTrue(fc.render_full(f).startswith("### F1 [P2] "))
+        self.assertTrue(fc.render_inline(f).startswith("[P2] "))
+
+
 class SeveritySemanticsUnchangedTests(unittest.TestCase):
     def test_only_the_three_canonical_severities_exist(self) -> None:
         self.assertEqual(

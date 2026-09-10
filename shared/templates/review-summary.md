@@ -109,6 +109,10 @@ important concern or attention point; include scope only when useful>
   resulting finding validation state (`runtime-confirmed` /
   `attempted-inconclusive`, or a disproving run that raised no finding).
   Targeted validation state never changes a finding's severity or the
+  Decision. It rolls up, together with any contextual-evidence provenance,
+  into the finding's single `confidence` value per
+  [`finding.md`](finding.md), "Confidence and evidence state" — which is
+  likewise presentation/provenance only and never changes severity or the
   Decision.
 - **Requirement coverage** — conditional and distinct from Findings. It is
   absent when no authoritative task contract was supplied. When present it

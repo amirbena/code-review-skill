@@ -55,6 +55,7 @@ REFERENCE_TEST_MODULES = (
     "repository_instructions.py",
     "remediation_guidance.py",
     "finding_contract.py",
+    "finding_confidence.py",
     "invocation_options.py",
     "finding_identity.py",
     "runtime_validation.py",

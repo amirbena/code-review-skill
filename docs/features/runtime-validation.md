@@ -46,6 +46,16 @@ confirms nothing leaked. Targeted validation is never mandatory, and the
 state is provenance only: it never changes a finding's severity, identity,
 or the decision.
 
+This state, together with any contextual-evidence provenance, rolls up into
+the finding's single **confidence** value — one of `confirmed`, `credible`
+(the default), `runtime-validation-unavailable`, `external-contract-unvalidated`,
+or `insufficient-context` — shown on a finding only when it is not the
+default. It is the one machine-readable evidence-state field; like the
+underlying states it is presentation/provenance only and never lowers the
+evidence bar, the severity, or the review decision. Canonical semantics:
+[`shared/templates/finding.md`](../../shared/templates/finding.md),
+"Confidence and evidence state".
+
 ## When it is useful
 
 - The repository documents a fast, focused check for the area you
