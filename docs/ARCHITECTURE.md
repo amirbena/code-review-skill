@@ -217,7 +217,12 @@ rule.
   **review target** (never widened), optional **review context**,
   **repository context**, and optional **Existing Review Evidence**
   (reconciled against the *current* target, never inherited). Missing
-  optional inputs change nothing.
+  optional inputs change nothing. Supplied review context carries typed
+  authority — authoritative vs. informational — per the contextual-evidence
+  model ([`review-context/contextual-evidence-model.md`](review-context/contextual-evidence-model.md),
+  #118); an informational source never silently overrides an explicit
+  requirement or an approved decision, and a finding may record the
+  contextual evidence that informed it.
 - **Git / GitHub State Inspector** — read-only inspection of Git state
   and, for `github-pr-review`, GitHub state (PR metadata, base/head SHA,
   checks, prior reviews with their state, review/issue comments, thread
@@ -324,6 +329,20 @@ Contracts and tooling that support developing these Skills. They are
 repository-development material — **not** part of either packaged archive,
 and no packaged Skill resource depends on them.
 
+- **Contextual-evidence model** — the typed model for using
+  caller-supplied context as evidence: every evidence type marked
+  authoritative or informational, the authority/non-override rules, the
+  deterministic resolution outcomes for conflicting / stale / ambiguous
+  context, provenance-aware findings, and the smallest-useful first slice
+  ([`review-context/README.md`](review-context/README.md) →
+  [`review-context/contextual-evidence-model.md`](review-context/contextual-evidence-model.md),
+  #118, with a test-only reference model). Its one packaged touch-point is
+  the optional **contextual evidence** field on
+  [`../shared/templates/finding.md`](../shared/templates/finding.md); source
+  adapters and runtime attachment are deferred — see "Future work" below.
+  [#176](https://github.com/amirbena/code-review-skill/issues/176) and
+  [#178](https://github.com/amirbena/code-review-skill/issues/178) build on
+  it without redefining it.
 - **Cross-review finding-identity contracts** — the requirements
   ([`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md),
   #58), the precision-first matching strategy
@@ -385,6 +404,15 @@ or runbook implements them today:
   discipline. The stateful delta re-review policy consumes the lifecycle
   vocabulary but installs no matching algorithm or stable-identity
   constructor.
+- **Contextual-evidence source adapters and runtime attachment** — the
+  contextual-evidence model (#118, "Repository-development instrumentation"
+  above) is consumed today as reviewer discipline over context the caller
+  already supplies, plus the optional **contextual evidence** finding
+  field. No code retrieves, resolves, infers, or auto-attaches contextual
+  evidence; there is no Jira / GitHub Issue / Slack / ADR ingestion
+  adapter, no automatic PR↔Issue discovery, and no machine-readable
+  provenance block in review output (that waits on the #67 output schema
+  and #178's unified confidence / evidence-state field).
 
 ## 3. Separation of Concerns
 

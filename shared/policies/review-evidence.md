@@ -212,6 +212,19 @@ levels, no general comment analytics. When authorship cannot be determined,
 treat the item as non-authoritative for "settled" purposes and re-verify it
 against the current target.
 
+The authoritative-vs-informational typing of *contextual* evidence more
+broadly — a requirement, an acceptance criterion, an accepted decision, a
+repository policy, unratified implementation feedback, historical context, a
+pre-existing-risk note, informal discussion — and the rule that a
+non-authoritative source never silently overrides an explicit requirement or
+an approved decision, are owned by the contextual-evidence model (a
+repository-development design record, named here rather than linked because
+it is not a packaged resource). This policy keeps ownership of how *prior
+review evidence* is classified and reconciled; `implementation_feedback`
+becomes authoritative only once it is ratified into a settled decision per
+"Settled decisions" above, at which point the accepted artifact is the
+evidence.
+
 ## Boundaries
 
 - **Read-only.** Using prior evidence never grants a mutation capability.

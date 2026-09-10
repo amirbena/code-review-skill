@@ -13,8 +13,21 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- A finding can now record the **contextual evidence** that justified it —
+  the caller-supplied requirement, acceptance criterion, accepted decision,
+  repository policy, feedback, or historical/pre-existing-risk note whose
+  provenance informed the finding. It is an optional field on the shared
+  finding template, rendered only when it materially explains the problem,
+  and it never carries or changes a finding's severity, identity,
+  deduplication, or the review decision. The typed authority of each
+  context source (authoritative vs. informational), the rule that an
+  informal discussion never silently overrides an explicit requirement or an
+  approved decision, and the resolution of conflicting / stale / ambiguous
+  context are documented in the new contextual-evidence model
+  (`docs/review-context/`). No automatic context retrieval, resolution, or
+  attachment is added. (#118)
 
 ## v1.9.4 — 2026-09-10
 

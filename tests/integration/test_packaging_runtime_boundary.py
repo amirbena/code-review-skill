@@ -48,6 +48,7 @@ REFERENCE_TEST_MODULES = (
     "reviewer_ownership.py",
     "staged_fingerprint.py",
     "jira_context.py",
+    "context_evidence.py",
     "pr_checkout.py",
     "pr_simulation.py",
     "parallel_review.py",
