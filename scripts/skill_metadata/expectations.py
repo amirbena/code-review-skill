@@ -38,6 +38,7 @@ SHARED_FINDING_MARKERS = (
     "## Finding quality contract",
     "## Affected locations on a consolidated finding",
     "## Contextual evidence and provenance",
+    "## Confidence and evidence state",
 )
 # Issue #198: the canonical rendering exemplars were split out of finding.md
 # into shared/templates/finding-rendering.md; finding.md keeps the field /

@@ -91,6 +91,15 @@ class Finding:
     # only when it materially explains the problem; folds into `evidence`
     # prose on the GitHub inline surface. Never carries or changes severity.
     context_evidence: tuple[str, ...] = ()
+    # Issue #178: the finding's one machine-readable evidence-state value —
+    # one of "confirmed", "credible", "runtime-validation-unavailable",
+    # "external-contract-unvalidated", "insufficient-context". Defaults to
+    # "credible" (the floor every reported finding has already met); rendered
+    # only when it is not that default; folds into `evidence` prose on the
+    # GitHub inline surface. Never lowers the evidence bar and never carries
+    # or changes severity, identity, or the decision. See
+    # tests/reference/finding_confidence.py for the value set and derivation.
+    confidence: str = "credible"
 
 
 def missing_mandatory_fields(finding: Finding, *, surface: Surface) -> tuple[str, ...]:
@@ -151,6 +160,21 @@ def renders_context_evidence(finding: Finding) -> bool:
     return bool(finding.context_evidence)
 
 
+def renders_confidence(finding: Finding) -> bool:
+    """The optional `Confidence` line (Issue #178) renders only when the
+    value is not the `credible` default — the same "only when it adds
+    information" rule every other optional field follows. It never lowers
+    the evidence bar and is independent of severity.
+
+    This reference does not model the `Runtime validation` line (Issue #128
+    added its own reference module), so the further human-surface
+    suppression — dropping a `confidence` that merely restates a shown
+    `Runtime validation` line — lives in
+    ``tests/reference/finding_confidence.py``
+    (``renders_human_confidence``)."""
+    return finding.confidence != "credible"
+
+
 def render_full(
     finding: Finding,
     *,
@@ -176,6 +200,8 @@ def render_full(
         lines.append(
             f"- **Contextual evidence:** {'; '.join(finding.context_evidence)}"
         )
+    if renders_confidence(finding):
+        lines.append(f"- **Confidence:** {finding.confidence}")
     lines.append(f"- **Impact:** {finding.impact}")
     lines.append(f"- **Fix:** {finding.fix}")
     if (
@@ -209,6 +235,9 @@ def render_inline(
     if renders_context_evidence(finding):
         # folds into evidence prose on this surface — no separate line
         evidence = f"{evidence} (contextual evidence: {'; '.join(finding.context_evidence)})"
+    if renders_confidence(finding):
+        # folds into evidence prose on this surface — no separate line
+        evidence = f"{evidence} (confidence: {finding.confidence})"
     lines = [f"[{finding.severity.value}] {finding.title}", "", f"Evidence: {evidence}"]
     lines += ["", f"Impact: {finding.impact}", "", f"Fix: {finding.fix}"]
     show_details = (

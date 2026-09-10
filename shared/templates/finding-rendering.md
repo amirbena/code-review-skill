@@ -87,6 +87,29 @@ record and never carries a severity:
 - **Fix:** <concrete correction direction, not a patch>
 ```
 
+When the finding's `confidence` value is anything other than the `credible`
+default **and it is not merely the roll-up of a `Runtime validation` line
+already shown** (a `runtime-confirmed` line with `confidence` `confirmed`, or
+an `attempted-inconclusive` line with `confidence`
+`runtime-validation-unavailable`), one `Confidence` line is added after
+`Evidence` (and after any `Runtime validation` line) — see
+[`finding.md`](finding.md), "Confidence and evidence state". The `credible`
+default is never rendered, and neither is a value a shown `Runtime
+validation` line already conveys. It never lowers the evidence bar and never
+carries a severity:
+
+```markdown
+### <id> [<severity>] <short, concrete title>
+
+- **Location:** `<path>:<line-or-range>`
+- **Evidence:** <concrete evidence, concise>
+- **Confidence:** confirmed _(or)_ runtime-validation-unavailable _(or)_
+  external-contract-unvalidated _(or)_ insufficient-context — <one clause on
+  the unresolved basis, when the value is not `confirmed`>
+- **Impact:** <concrete engineering consequence, concise>
+- **Fix:** <concrete correction direction, not a patch>
+```
+
 When the fix/action location is unresolved, no `Evidence location` line
 is added; `Location` instead carries the best-known coordinate with the
 trailing unresolved annotation (see "Fix/action location, evidence
@@ -179,6 +202,13 @@ When a targeted runtime check produced a `runtime-confirmed` or
 there is no separate `Runtime validation:` line on this surface (see
 [`finding.md`](finding.md), "Runtime validation state and provenance"). The
 `reasoned` default is not mentioned.
+
+When the finding's `confidence` value is not the `credible` default, state it
+inside the `Evidence:` prose as well — there is no separate `Confidence:`
+line on this surface (see [`finding.md`](finding.md), "Confidence and
+evidence state"). The `credible` default is not mentioned, nor is a value the
+prose already conveys through an equivalent `runtime-confirmed` /
+`attempted-inconclusive` mention.
 
 For a **consolidated root-cause finding**, name the affected call paths
 inside the prose — the `Evidence:` block, or a short `Affected call paths:`
@@ -287,6 +317,12 @@ quality-contract rules are in [`finding.md`](finding.md), "Rules".
 - optional fields render only when populated — never as an empty or
   placeholder line (see [`finding.md`](finding.md), "Optional and
   surface-specific fields");
+- the **Confidence** line renders on the full rendering only when the value
+  is not the `credible` default and is not already conveyed by a shown
+  `Runtime validation` line; on the inline surface it folds into the
+  `Evidence:` prose, never as its own line; it never lowers the evidence bar
+  and never carries a severity (see [`finding.md`](finding.md), "Confidence
+  and evidence state");
 - a finding has exactly one authoritative full representation. If it is
   published in full at one location (e.g. inline), every other location
   uses the summary-pointer form instead of repeating the full finding.

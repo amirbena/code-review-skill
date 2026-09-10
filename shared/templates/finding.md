@@ -119,6 +119,22 @@ human-facing review a machine-only format.
   authority and resolution rules for contextual evidence are the
   contextual-evidence model design record (a repository-development document,
   not a packaged resource, so it is named here, not linked).
+- **confidence** — the finding's single machine-readable evidence-state
+  value: exactly one of `confirmed`, `credible`, `runtime-validation-unavailable`,
+  `external-contract-unvalidated`, or `insufficient-context`. It is the one
+  epistemic-state field — the `runtime validation` and `contextual evidence`
+  fields above are provenance detail that feed it, not independent verdicts.
+  The default is `credible` (every reported finding has already cleared the
+  evidence bar); it renders in human output only when it is not that default
+  and not already implied by a shown `Runtime validation` line (see
+  "Confidence and evidence state" for the exact rule).
+  A lower value **never** lowers the evidence bar for reporting and never, by
+  itself, changes severity, identity, deduplication, or the decision
+  derivation (see "Confidence and evidence state"). The closed value set,
+  per-value entry criteria, and the mapping from the runtime-validation and
+  contextual-evidence states are the finding-confidence model design record
+  (a repository-development document, not a packaged resource, so it is named
+  here, not linked).
 
 ## Fix/action location, evidence location, publication
 
@@ -213,6 +229,12 @@ named here rather than linked because it is not a packaged resource).
   identity, its deduplication, or the mechanical decision derivation.
   Severity is never inherited from a context source's own wording or
   emphasis.
+- **The epistemic roll-up is `confidence`.** This field lists *which context
+  informed the finding*; how sure the reviewer is is expressed once, in
+  `confidence` (see "Confidence and evidence state"). An authoritative source
+  that proves a violation the code exhibits contributes `confirmed`; an
+  unresolved authoritative question contributes `insufficient-context`;
+  informational context contributes nothing.
 - **Surface rendering.** On the full rendering it is its own line; on the
   GitHub inline surface it folds into `evidence` prose (the same treatment
   as `evidence location`). See
@@ -253,6 +275,72 @@ provenance, orthogonal to contextual evidence:
   every other absent optional field). On the full rendering it is its own
   line; on the GitHub inline surface it folds into `evidence` prose. See
   [`finding-rendering.md`](finding-rendering.md).
+- **The epistemic roll-up is `confidence`.** This field records *what
+  targeted reproduction ran and its result*; the finding's single
+  machine-readable evidence-state value is `confidence` (see "Confidence and
+  evidence state"), into which `runtime-confirmed` maps as `confirmed` and
+  `attempted-inconclusive` maps as `runtime-validation-unavailable`. The two
+  fields never disagree — one is the runtime detail, the other the unified
+  state.
+
+## Confidence and evidence state
+
+Every finding carries exactly one **confidence** value — the single
+machine-readable field that says how sure the reviewer is that the defect is
+real. It is a small closed set of named states, never a probability score or
+an "AI confidence %".
+
+- **The closed value set.** `confirmed` (the evidence directly demonstrates
+  the incorrect behavior — a `runtime-confirmed` targeted run, direct static
+  proof, or an authoritative context source that proves a violation the code
+  exhibits); `credible` (a plausible failure mode with concrete evidence but
+  not directly demonstrated — the default and the floor); `runtime-validation-unavailable`
+  (an eligible targeted run was attempted and came back `attempted-inconclusive`);
+  `external-contract-unvalidated` (credible on the code in view, but
+  correctness turns on an external contract the reviewer could not inspect
+  within the review boundary); `insufficient-context` (concrete code evidence
+  of a problem, but a bounded, material piece of caller context needed to
+  characterize it was missing — the `REPORT_AMBIGUITY` case). The per-value
+  entry criteria and the deterministic derivation order are the
+  finding-confidence model design record (a repository-development document,
+  named here, not linked because it is not a packaged resource).
+- **One field, not three.** `runtime validation` and `contextual evidence`
+  above are provenance detail — *what ran*, *what informed the finding*. The
+  epistemic verdict is expressed once, here. `runtime-confirmed` →
+  `confirmed`; `attempted-inconclusive` → `runtime-validation-unavailable`;
+  an authoritative context source that proves a violation → `confirmed`; an
+  unresolved authoritative context question → `insufficient-context`;
+  informational context contributes nothing. The fields never contradict
+  each other.
+- **Default.** When a Skill does not compute confidence, the value is
+  `credible`. Every reported finding has already met the evidence bar in
+  [`../policies/evidence.md`](../policies/evidence.md), so `credible` asserts
+  exactly what reporting the finding already asserts. A finding is never
+  emitted with an absent or unknown confidence.
+- **It never lowers the bar, the severity, or the decision.** A value below
+  `confirmed` is an annotation on a finding that has *already* cleared the
+  evidence bar — it is never a licence to report one that has not, and
+  `insufficient-context` in particular never turns a speculative hunch into a
+  reportable finding. `confidence` never calculates, raises, lowers, or
+  overrides the P0/P1/P2 severity per
+  [`../policies/severity.md`](../policies/severity.md); `confirmed` does not
+  escalate a P2 and the three open-question values do not de-escalate a P1 or
+  suppress a finding. The mechanical decision derivation never reads
+  `confidence`. It never changes a finding's identity or deduplication.
+- **Surface rendering.** Rendered only when the value is **not** the
+  `credible` default (the same rule every other optional field follows),
+  **and** omitted from human output when it would only repeat a `Runtime
+  validation` line already shown on the finding — a `runtime-confirmed` line
+  present alongside `confidence` `confirmed`, or an `attempted-inconclusive`
+  line alongside `confidence` `runtime-validation-unavailable`. It still
+  renders when the value adds something that line does not: a `confirmed`
+  established by static or contextual evidence, `external-contract-unvalidated`,
+  or `insufficient-context`. On the full rendering it is its own line after
+  `Evidence` (and after any `Runtime validation` line); on the GitHub inline
+  surface it folds into `evidence` prose. See
+  [`finding-rendering.md`](finding-rendering.md). The **machine-readable
+  output always carries `confidence`**, regardless of this human-surface
+  suppression.
 
 ## Finding quality contract
 
@@ -349,6 +437,16 @@ after it, no `Details:` heading with boilerplate under it.
   never rendered. On the full rendering it is its own line, on the GitHub
   inline surface it folds into `evidence` prose. It never carries or changes
   a severity, identity, deduplication, or the decision derivation;
+- **confidence** — the finding's unified evidence-state value (see
+  "Confidence and evidence state"). Rendered only when it is **not** the
+  `credible` default **and** it is not already implied by a shown `Runtime
+  validation` line (see that section for the suppression rule). On the full
+  rendering it is its own line after `Evidence` (after any `Runtime
+  validation` line), on the GitHub inline surface it folds into `evidence`
+  prose. It never lowers the evidence bar and never carries or changes a
+  severity, identity, deduplication, or the decision derivation; the
+  machine-readable schema always carries it regardless of the human-surface
+  suppression;
 - **affected locations** — the manifestation-site list of a consolidated
   root-cause finding. It is **not optional**: on a consolidated finding it
   is required and part of the mandatory core ("Finding quality contract"
@@ -436,4 +534,13 @@ rendering-specific rules are in
   a `reasoned` or inconclusive finding is complete on static evidence alone,
   and the state never carries or changes a severity, identity, deduplication,
   or decision derivation (see "Runtime validation state and provenance");
+- the **confidence** field records the finding's one unified evidence-state
+  value (`confirmed` / `credible` / `runtime-validation-unavailable` /
+  `external-contract-unvalidated` / `insufficient-context`), rolling up the
+  runtime-validation and contextual-evidence provenance into a single
+  machine-readable state; it defaults to `credible`, renders in human output
+  only when it is not that default and not already implied by a shown
+  `Runtime validation` line, never lowers the evidence bar for reporting, and
+  never by itself changes severity, identity, deduplication, or the decision
+  derivation (see "Confidence and evidence state");
 - `fix` is a direction, never an implemented patch.
