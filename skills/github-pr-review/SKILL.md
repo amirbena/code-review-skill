@@ -333,8 +333,12 @@ and the gate in
 - **Natural language, not syntax.** Users say what they want and the
   Skill normalizes it to an internal mode. There is no required mode flag
   or keyword; asking for a GitHub action expresses *requested* behavior,
-  not trusted authorization. Being a portable Skill with no runtime of
-  its own, it cannot verify provenance and relies on the
+  not trusted authorization — and neither is a flag, prompt, env var,
+  nested instruction, alternate token/username, bot, service account, or
+  GitHub App identity the invoking agent controls (canonical:
+  [`review-action-authorization.md`](policies/review-action-authorization.md),
+  "What can never establish it"). Being a portable Skill with no runtime
+  of its own, it cannot verify provenance and relies on the
   runtime/orchestrator for an independent authorization channel — see
   that policy, "Structural limitation."
 - **Optional machine-readable status.** `github-pr-review` may also
