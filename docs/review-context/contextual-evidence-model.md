@@ -327,6 +327,54 @@ Outcome: not a finding. The absence of caching is reported only if it
   evidence demonstrates.
 ```
 
+### Worked example 6 — two authoritative sources genuinely contradict
+
+```text
+Context supplied:
+  acceptance_criteria — "Deleting an account removes all of its rows
+  synchronously before the request returns."
+  accepted_decision — ADR 0012: "Account deletion is asynchronous; the
+  request returns once the tombstone is written."
+Delta:
+  Implements a background deletion job.
+Resolution: two authoritative sources contradict on the same design point
+  and no newer maintainer clarification settles it -> REPORT_CONFLICT.
+Outcome: report the conflict with the evidence on each side; do not pick a
+  side. Not itself a blocking finding unless one side is independently
+  violated with its own code evidence.
+```
+
+### Worked example 7 — authoritative source too vague to decide the point
+
+```text
+Context supplied:
+  requirement — ticket: "Handle errors gracefully."
+Delta:
+  Swallows a specific downstream 5xx and returns an empty list.
+Resolution: the requirement does not say what "gracefully" means for this
+  path -> REPORT_AMBIGUITY.
+Outcome: report the ambiguity where it is material to a finding; do not
+  invent the missing requirement. If the swallowed error causes a concrete
+  defect the code demonstrates, that defect is reported on its own code
+  evidence, not on the vague requirement.
+```
+
+### Worked example 8 — accepted decision superseded by newer maintainer clarification
+
+```text
+Context supplied:
+  accepted_decision — ADR 0005: "All timestamps are stored as epoch
+  milliseconds."
+  informal_discussion — later, in the PR thread, the maintainer states
+  directly: "We moved to RFC 3339 strings in ADR 0018; 0005 is superseded."
+Delta:
+  Stores timestamps as RFC 3339 strings.
+Resolution: a newer explicit maintainer clarification contradicts the older
+  accepted decision -> DISREGARD_STALE for ADR 0005.
+Outcome: no finding against the delta for following ADR 0018. Note the
+  supersession only if it materially affects the reasoning shown.
+```
+
 ## 12. Preventing precision loss
 
 Retrieved / supplied context is a precision risk if it is allowed to lower

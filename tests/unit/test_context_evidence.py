@@ -72,6 +72,33 @@ WORKED_EXAMPLES = (
         "expected_resolution": R.TREAT_AS_INFORMATIONAL_ONLY,
         "can_establish_finding": False,
     },
+    {
+        "name": "6 — two authoritative sources genuinely contradict",
+        "resolve_kwargs": {
+            "supporting_types": [T.ACCEPTANCE_CRITERIA, T.ACCEPTED_DECISION],
+            "contradicting_authoritative": True,
+        },
+        "expected_resolution": R.REPORT_CONFLICT,
+        "can_establish_finding": False,
+    },
+    {
+        "name": "7 — authoritative source too vague to decide the point",
+        "resolve_kwargs": {
+            "supporting_types": [T.REQUIREMENT],
+            "authoritative_source_is_vague": True,
+        },
+        "expected_resolution": R.REPORT_AMBIGUITY,
+        "can_establish_finding": False,
+    },
+    {
+        "name": "8 — accepted decision superseded by newer maintainer clarification",
+        "resolve_kwargs": {
+            "supporting_types": [T.ACCEPTED_DECISION],
+            "superseded_by_newer_maintainer_clarification": True,
+        },
+        "expected_resolution": R.DISREGARD_STALE,
+        "can_establish_finding": False,
+    },
 )
 
 
@@ -282,6 +309,15 @@ class GovernanceTests(unittest.TestCase):
 
 
 class WorkedExampleCorpusTests(unittest.TestCase):
+    def test_corpus_covers_every_resolution_outcome(self) -> None:
+        covered = {ce.resolve(**c["resolve_kwargs"]) for c in WORKED_EXAMPLES}
+        self.assertEqual(
+            covered,
+            set(ce.Resolution),
+            "the worked-example corpus must exercise every resolution outcome so "
+            "the induced-regression check is sensitive to each",
+        )
+
     def test_every_design_record_example_classifies_as_documented(self) -> None:
         for case in WORKED_EXAMPLES:
             with self.subTest(case=case["name"]):
@@ -345,6 +381,9 @@ class InducedRegressionTests(unittest.TestCase):
             ce.authority_of = original  # type: ignore[assignment]
 
     def test_mutant_resolve_conflict_becomes_use_authoritative_is_caught(self) -> None:
+        # Worked example 6 is a REPORT_CONFLICT corpus row, so collapsing
+        # REPORT_CONFLICT into USE_AUTHORITATIVE (silently siding with the
+        # higher-ranked source) must break the corpus.
         original = ce.resolve
 
         def mutant(**kwargs):
@@ -353,26 +392,23 @@ class InducedRegressionTests(unittest.TestCase):
 
         ce.resolve = mutant  # type: ignore[assignment]
         try:
-            # example 4's REPORT_CONFLICT-without-contract path is exercised
-            # separately in ResolutionTableTests; here confirm the mutant is
-            # observable through resolve's own contract.
-            self.assertIs(
-                ce.resolve(
-                    supporting_types=[T.REQUIREMENT, T.REPOSITORY_POLICY],
-                    requirement_vs_repo_policy_conflict=True,
-                ),
-                R.USE_AUTHORITATIVE,
-            )
-            self.assertNotEqual(
-                original(
-                    supporting_types=[T.REQUIREMENT, T.REPOSITORY_POLICY],
-                    requirement_vs_repo_policy_conflict=True,
-                ),
-                ce.resolve(
-                    supporting_types=[T.REQUIREMENT, T.REPOSITORY_POLICY],
-                    requirement_vs_repo_policy_conflict=True,
-                ),
-            )
+            self.assertFalse(self._corpus_holds())
+        finally:
+            ce.resolve = original  # type: ignore[assignment]
+
+    def test_mutant_resolve_drops_stale_check_is_caught(self) -> None:
+        # Worked example 8 is a DISREGARD_STALE corpus row.
+        original = ce.resolve
+
+        def mutant(**kwargs):
+            kwargs = dict(kwargs)
+            kwargs["superseded_by_newer_maintainer_clarification"] = False
+            kwargs["contradicted_by_repo_architecture_it_predates"] = False
+            return original(**kwargs)
+
+        ce.resolve = mutant  # type: ignore[assignment]
+        try:
+            self.assertFalse(self._corpus_holds())
         finally:
             ce.resolve = original  # type: ignore[assignment]
 

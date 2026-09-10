@@ -108,8 +108,9 @@ class DesignRecordExistsAndIsTypedTests(unittest.TestCase):
         t = _norm(MODEL)
         self.assertIn("Using authoritative context for scope / intent validation", t)
         self.assertIn("Introduced-versus-pre-existing attribution", t)
-        # at least the five worked examples the reference corpus mirrors
-        for n in range(1, 6):
+        # every worked example the reference corpus mirrors — covering all
+        # five resolution outcomes
+        for n in range(1, 9):
             self.assertIn(f"Worked example {n}", t)
 
     def test_precision_preservation_analysis_exists(self) -> None:
