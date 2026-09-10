@@ -13,6 +13,11 @@ when the change reaches `main`. See
 
 ## Unreleased
 
+_Nothing yet. New entries land here and move under a version heading at
+release time._
+
+## v1.9.3 — 2026-09-10
+
 ### Fixed
 
 - Internal: the shared review contracts are split along their existing
