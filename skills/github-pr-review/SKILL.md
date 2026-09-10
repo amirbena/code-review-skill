@@ -284,19 +284,17 @@ never carry an approval even when authorization otherwise existed.
 ## 6. Reviewer Ownership and Delta Re-Review
 
 Distinct from the Agent-level scope ownership above, this governs
-*review-mode* selection for one already-owned PR review, and is owned by
-[`policies/reviewer-delta-review.md`](policies/reviewer-delta-review.md).
-In summary: delta-only re-review is allowed only when the current
-authenticated reviewer is the same identity as the immediately preceding
-completed review of this PR *and* that review's reviewed SHA is reliably
-known; a different reviewer, no prior review, or any ambiguity defaults
-to a normal full review. The self-review mutation boundary is resolved
-first but never changes mode selection. Applies identically to passive
-and active review.
-
-Reconciling prior finding/lifecycle state within that boundary — failing
-closed when unreliable, escalating to full review when invalidated — is
-owned by [`policies/stateful-delta-rereview.md`](policies/stateful-delta-rereview.md).
+*review-mode* selection for one already-owned PR review, owned by
+[`policies/reviewer-delta-review.md`](policies/reviewer-delta-review.md):
+delta-only re-review is allowed only when the current authenticated
+reviewer is the same identity as the immediately preceding completed
+review of this PR *and* that review's reviewed SHA is reliably known; any
+other case defaults to a full review, and the self-review mutation
+boundary is resolved first but never changes mode selection. Reconciling
+prior finding/lifecycle state within that boundary — failing closed when
+unreliable, escalating to full review when invalidated — is owned by
+[`policies/stateful-delta-rereview.md`](policies/stateful-delta-rereview.md).
+Applies identically to passive and active review.
 
 ## 7. Review Action Authority and Mutation Boundary
 
@@ -304,56 +302,49 @@ owned by [`policies/stateful-delta-rereview.md`](policies/stateful-delta-rerevie
 Skill always produces a full review and a mechanically derived reasoning
 result; whether that result is *submitted* to GitHub as an `APPROVE` /
 `REQUEST_CHANGES` event is a separate, authorized decision governed by
-[`policies/review-action-authorization.md`](policies/review-action-authorization.md).
+[`policies/review-action-authorization.md`](policies/review-action-authorization.md)
+and the gate in
+[`policies/review-output.md`](policies/review-output.md),
+"Review-action authorization gate."
 
 - **A review verdict is not authorization.** `REVIEW CLEAN` never
-  automatically means GitHub `APPROVE`.
-- **Approval is not merge authority.** `APPROVE` never automatically
-  means `MERGE`, and this Skill never merges.
+  automatically means GitHub `APPROVE`, and `APPROVE` is never merge
+  authority — this Skill never merges.
 - **Self-review is allowed; self-approval is not.** When the reviewer is
-  the PR author (or under the same controlling authority), the full
-  analysis runs and reports a verdict; the result may be published as an
+  the PR author (or shares a controlling authority), the full analysis
+  runs and reports a verdict, and the result may be published as an
   informational `COMMENT`, but **no formal APPROVE / REQUEST_CHANGES
   event is ever submitted on the reviewer's own work** — regardless of
   mode, natural-language request, or authorization. The verdict is
   reported with "GitHub review mutation withheld: reviewer is the PR
   author" and is not rewritten.
-- **The default is non-mutating (recommendation-only).** A review runs
-  and returns findings and a verdict with no GitHub mutation unless a
-  stronger mode is established. Passive review is always
-  recommendation-only. A caller never needs to say "do not approve".
-- **`APPROVE` is submitted only in explicitly-authorized auto-action
-  mode** — only when both trusted mutation authorization for that exact
-  action (from a principal independent of the agent performing or
-  orchestrating the review, via a channel that agent cannot author,
-  forge, or replay, scoped to this invocation / repo / PR / reviewed
-  HEAD / single action) **and** reviewer independence (authority
-  separation, not merely a different GitHub username) are established. A
-  flag, prompt, env var, nested instruction, alternate token/username,
-  bot, service account, or GitHub App identity the invoking agent
-  controls never establishes either.
-- **Ambiguity fails closed** to recommendation-only (or block-only for a
-  blocking result where independence and GitHub permission hold).
+- **The default is non-mutating (recommendation-only).** A review returns
+  findings and a verdict with no GitHub mutation unless a stronger mode
+  is established; passive review is always recommendation-only, and a
+  caller never needs to say "do not approve". **`APPROVE` is submitted
+  only in explicitly-authorized auto-action mode** — only with both
+  trusted mutation authorization for that exact action (from a principal
+  independent of the agent performing or orchestrating the review, via a
+  channel it cannot author, forge, or replay, scoped to this invocation /
+  repo / PR / reviewed HEAD / single action) **and** reviewer
+  independence (authority separation, not merely a different GitHub
+  username). Ambiguity fails closed to recommendation-only (or block-only
+  for a blocking result where independence and GitHub permission hold).
 - **Natural language, not syntax.** Users say what they want and the
   Skill normalizes it to an internal mode. There is no required mode flag
-  or keyword. Asking for a GitHub action expresses *requested* behavior —
-  it is not itself trusted authorization.
-- Being a portable Skill with no runtime of its own, this Skill cannot
-  cryptographically verify provenance; it guarantees the safe default and
-  the capability boundary and relies on the runtime/orchestrator for an
-  independent authorization channel — see that policy, "Structural
-  limitation."
-
+  or keyword; asking for a GitHub action expresses *requested* behavior,
+  not trusted authorization. Being a portable Skill with no runtime of
+  its own, it cannot verify provenance and relies on the
+  runtime/orchestrator for an independent authorization channel — see
+  that policy, "Structural limitation."
 - **Optional machine-readable status.** `github-pr-review` may also
   publish one stable, aggregated, exact-HEAD GitHub status/check for the
-  reviewed SHA — separate from the native `APPROVE` / `REQUEST_CHANGES`
-  event. A **blocking** status is blocking-only enforcement and may be
-  published even by a self-review (it can only make the gate stricter); a
-  **success** status is a positive/unblocking action requiring the same
-  trusted authorization and reviewer independence as `APPROVE`, and is
-  **never** published by a self-review. A new HEAD inherits no green.
-  Making the status a required merge check is an explicit, opt-in setup
-  action, never part of an ordinary review. Canonical:
+  reviewed SHA, separate from the native `APPROVE` / `REQUEST_CHANGES`
+  event: a **blocking** status may be published even by a self-review; a
+  **success** status requires the same trusted authorization and reviewer
+  independence as `APPROVE` and is **never** published by a self-review.
+  A new HEAD inherits no green. Making the status a required merge check
+  is an explicit, opt-in setup action. Canonical:
   [`review-status-enforcement.md`](policies/review-status-enforcement.md).
 
 This Skill must never: edit implementation files, commit, push

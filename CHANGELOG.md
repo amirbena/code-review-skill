@@ -13,8 +13,17 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Fixed
+
+- Internal: the `github-pr-review` entrypoint and both review-output
+  templates (`external-review-summary.md`, `local-review-report.md`) no
+  longer restate rules owned by their canonical policies — the template
+  `## Rules` sections and `SKILL.md` sections 6–7 are trimmed to rendering
+  shape plus pointers to `review-output.md`,
+  `review-action-authorization.md`, `finding-placement.md`,
+  `remediation-guidance.md`, and the shared finding/severity contracts.
+  Wording only; no change to review semantics, the authorization boundary,
+  finding rendering, or output behavior. (#199)
 
 ## v1.9.3 — 2026-09-10
 
