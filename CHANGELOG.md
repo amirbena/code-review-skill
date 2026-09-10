@@ -13,6 +13,11 @@ when the change reaches `main`. See
 
 ## Unreleased
 
+_Nothing yet. New entries land here and move under a version heading at
+release time._
+
+## v1.9.4 — 2026-09-10
+
 ### Fixed
 
 - Internal: the `github-pr-review` entrypoint and both review-output
