@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.23.0 — 2026-09-11
+
+### Changed
+
+- Consolidated `github-pr-review`'s Skill-specific policy loading index into `policies/github-review.md` as the single canonical owner, removing duplicate re-listing from `SKILL.md` (#243).
+
 ## v1.22.0 — 2026-09-11
 
 ### Changed
