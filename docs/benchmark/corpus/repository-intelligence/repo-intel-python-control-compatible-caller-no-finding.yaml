@@ -1,0 +1,61 @@
+# Repository-intelligence corpus case (Issue #129). Format:
+# docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# Python, call-site trigger -- the negative / control case. This is the
+# case that proves retrieval breadth alone does not inflate findings:
+# normalize_whitespace() is generalized from trimming only the ends
+# (s.strip()) to also collapsing internal whitespace (" ".join(s.split())).
+# The call-site trigger fires and ring 1 successfully resolves the only
+# caller, make_slug() (supplied via `input.base`, unchanged by the diff),
+# with valid provenance -- exactly like the positive cases in this corpus.
+#
+# Unlike the positive cases, the retrieved relationship is *compatible*
+# with the change: make_slug() lowercases and replaces spaces with hyphens
+# regardless of how many consecutive spaces existed, so the more thorough
+# normalization changes nothing observable for this caller. Expected: no
+# additional finding, and `influential_relationships` is empty even though
+# the relationship itself was legitimately retrieved with provenance --
+# retrieving more context must never, by itself, create a finding.
+
+format: benchmark-case/v1
+
+id: repo-intel-python-control-compatible-caller-no-finding
+title: "Call-site trigger resolves a compatible caller: no finding from retrieval breadth alone"
+
+input:
+  patch: |
+    diff --git a/app/text/normalize.py b/app/text/normalize.py
+    index 1111111..2222222 100644
+    --- a/app/text/normalize.py
+    +++ b/app/text/normalize.py
+    @@ -1,3 +1,3 @@
+     def normalize_whitespace(s):
+    -    return s.strip()
+    +    return " ".join(s.split())
+  base:
+    app/text/normalize.py: |
+      def normalize_whitespace(s):
+          return s.strip()
+    app/text/slugify.py: |
+      from app.text.normalize import normalize_whitespace
+
+
+      def make_slug(title):
+          cleaned = normalize_whitespace(title)
+          return cleaned.lower().replace(" ", "-")
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    The call-site trigger resolves its only caller successfully, with
+    provenance, exactly as the positive fixtures in this corpus do -- but
+    the relationship is compatible with the change. Pins that a
+    successfully retrieved relationship is not itself grounds for a
+    finding, and that influential_relationships stays empty when no
+    retrieved relationship materially changes the conclusion.

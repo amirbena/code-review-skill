@@ -1,0 +1,71 @@
+# Repository-intelligence corpus case (Issue #129). Format:
+# docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# Python, call-site trigger attempted, ambiguous resolution -- the
+# safe-failure case. BaseHandler.process's behavior changes; dispatch to a
+# concrete Handler subclass goes through a string-keyed registry where the
+# key is external request data, not a static literal anywhere in the
+# reviewed code. A relationship-aware resolver cannot determine, from the
+# reviewed code alone, which concrete subclass's process() override a given
+# external caller reaches.
+#
+# Expected: the candidate stays unresolved (ambiguous) -- it is never
+# promoted to a resolved edge, never marked influential, and never used to
+# invent a finding. The review reports insufficient evidence for the
+# dispatch question rather than guessing which concrete subclass is
+# affected. `findings: []` pins that no finding is manufactured for
+# thoroughness.
+
+format: benchmark-case/v1
+
+id: repo-intel-python-dynamic-dispatch-safe-failure
+title: "Dynamic string-keyed dispatch resolves as ambiguous, not an invented relationship"
+
+input:
+  patch: |
+    diff --git a/app/handlers/base.py b/app/handlers/base.py
+    index 1111111..2222222 100644
+    --- a/app/handlers/base.py
+    +++ b/app/handlers/base.py
+    @@ -1,6 +1,8 @@
+     class BaseHandler:
+         def process(self, payload):
+    -        self.validate(payload)
+    -        return self.run(payload)
+    +        # Callers are now expected to have already validated the
+    +        # payload before calling process().
+    +        return self.run(payload)
+  base:
+    app/handlers/base.py: |
+      class BaseHandler:
+          def process(self, payload):
+              self.validate(payload)
+              return self.run(payload)
+    app/handlers/registry.py: |
+      from app.handlers.invoice import InvoiceHandler
+      from app.handlers.refund import RefundHandler
+
+      HANDLERS = {
+          "invoice": InvoiceHandler,
+          "refund": RefundHandler,
+      }
+
+
+      def dispatch(kind, payload):
+          handler_cls = HANDLERS[kind]
+          return handler_cls().process(payload)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins the safe-failure requirement mechanically: a call-site trigger
+    fires on BaseHandler.process, but the concrete subclass reached through
+    registry.py's string-keyed dispatch cannot be resolved statically from
+    external request data. The corpus asserts this stays an unresolved
+    diagnostic, never an invented relationship or a manufactured finding.

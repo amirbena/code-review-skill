@@ -13,8 +13,15 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Changed
+
+- `repository-expansion.md` and `evidence.md` each name (without linking
+  or duplicating) the new repository-intelligence design record — the
+  typed entity/relationship model, retrieval bounds, provenance, snapshot
+  staleness, and relationship-influence attribution for what a fired
+  repository-expansion trigger resolves inside its authorized ring.
+  Reference-only: `repository-expansion.md`'s trigger catalog, ring
+  ceiling, and reporting contract are unchanged (#129).
 
 ## v1.15.0 — 2026-09-11
 

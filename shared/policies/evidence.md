@@ -85,3 +85,11 @@ migration/schema, or config consumer): a bounded, ring-based procedure
 for how far each trigger is followed, with its maximum ring scaled by the
 change-risk depth. It governs only where an investigation looks, never
 what counts as a finding or how a finding is labeled.
+
+The repository-intelligence model design record (a repository-development
+document, not a packaged resource, so it is named here, not linked) types
+what a fired [`repository-expansion.md`](repository-expansion.md) trigger
+resolves inside its authorized ring — entities, relationships, provenance,
+snapshot identity and staleness, and relationship-influence attribution —
+without changing this section's evidence bar or that policy's ring
+ceiling.

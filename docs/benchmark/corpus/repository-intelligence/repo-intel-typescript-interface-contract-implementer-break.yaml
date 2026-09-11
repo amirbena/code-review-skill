@@ -1,0 +1,111 @@
+# Repository-intelligence corpus case (Issue #129). Format:
+# docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# TypeScript, interface/contract trigger. Cache.get()'s return type is
+# narrowed from Promise<string | null> to Promise<string> (a cache miss now
+# throws instead of returning null); RedisCache.ts is updated in the SAME
+# diff to throw on miss, correctly matching the new contract. The diff
+# looks internally consistent on its own.
+#
+# A diff-only review sees only the interface and the one implementer that
+# changed together. A relationship-aware review follows the
+# interface/contract trigger (a changed interface with implementers) into
+# ring 2 (the owning interface) then ring 3 (sibling implementers) and
+# resolves src/cache/InMemoryCache.ts, untouched by the diff, whose get()
+# still returns string | null on a cache miss -- now inconsistent with the
+# updated contract.
+
+format: benchmark-case/v1
+
+id: repo-intel-typescript-interface-contract-implementer-break
+title: "Interface/contract trigger catches a sibling implementer left inconsistent with a narrowed Cache.get() contract"
+
+input:
+  patch: |
+    diff --git a/src/cache/Cache.ts b/src/cache/Cache.ts
+    index 1111111..2222222 100644
+    --- a/src/cache/Cache.ts
+    +++ b/src/cache/Cache.ts
+    @@ -1,3 +1,3 @@
+     export interface Cache {
+    -  get(key: string): Promise<string | null>;
+    +  get(key: string): Promise<string>;
+     }
+    diff --git a/src/cache/RedisCache.ts b/src/cache/RedisCache.ts
+    index 3333333..4444444 100644
+    --- a/src/cache/RedisCache.ts
+    +++ b/src/cache/RedisCache.ts
+    @@ -1,10 +1,12 @@
+     import { Cache } from "./Cache";
+    +import { CacheMiss } from "./errors";
+
+     export class RedisCache implements Cache {
+       async get(key: string): Promise<string> {
+         const value = await this.client.get(key);
+    -    if (value === null) {
+    -      return null as unknown as string;
+    -    }
+    -    return value;
+    +    if (value === null) {
+    +      throw new CacheMiss(key);
+    +    }
+    +    return value;
+       }
+     }
+  base:
+    src/cache/Cache.ts: |
+      export interface Cache {
+        get(key: string): Promise<string | null>;
+      }
+    src/cache/RedisCache.ts: |
+      import { Cache } from "./Cache";
+
+      export class RedisCache implements Cache {
+        async get(key: string): Promise<string> {
+          const value = await this.client.get(key);
+          if (value === null) {
+            return null as unknown as string;
+          }
+          return value;
+        }
+      }
+    src/cache/InMemoryCache.ts: |
+      import { Cache } from "./Cache";
+
+      export class InMemoryCache implements Cache {
+        private store = new Map<string, string>();
+
+        async get(key: string): Promise<string | null> {
+          return this.store.has(key) ? this.store.get(key)! : null;
+        }
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: in-memory-cache-still-returns-null-after-contract-narrowed
+      match: required
+      severity: P1
+      location:
+        location_intent: cross-file
+        path: src/cache/InMemoryCache.ts
+        symbol: get
+        anchor: "return this.store.has(key) ? this.store.get(key)! : null;"
+      claim: >-
+        Cache.get()'s contract was narrowed to Promise<string>, throwing on
+        a miss instead of returning null, and RedisCache was updated to
+        match; InMemoryCache still implements the old contract and returns
+        null on a miss, breaking any caller written against the updated
+        no-null guarantee.
+      defect_kind: interface-contract-violation
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    The diff is internally consistent between the interface and the one
+    implementer shown; only resolving the interface/contract trigger into
+    the untouched sibling implementer reveals the break. Demonstrates the
+    interface/contract trigger's relationship-aware gain in a second
+    language shape.

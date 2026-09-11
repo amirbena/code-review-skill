@@ -415,6 +415,20 @@ and no packaged Skill resource depends on them.
   without gating it. Every reference metric under `tests/reference/` is
   test-only; nothing benchmark is packaged. Repository-development docs
   live in the [`benchmark/`](benchmark/README.md) directory.
+- **Repository-intelligence model** — the candidate-architecture
+  comparison and recommended minimal model for what a fired
+  [`repository-expansion.md`](../shared/policies/repository-expansion.md)
+  (#87) trigger resolves inside its authorized ring: the typed
+  entity/relationship model, provenance, snapshot identity and staleness
+  (reject-and-rebuild on mismatch, never silent reuse), and
+  relationship-influence attribution
+  ([`repository-intelligence/README.md`](repository-intelligence/README.md) →
+  [`repository-intelligence/repository-intelligence-model.md`](repository-intelligence/repository-intelligence-model.md),
+  #129, with a test-only reference model). It has **no** packaged
+  touch-point: #87's trigger catalog, ring ceiling, and reporting contract
+  are unchanged, and no finding-template field is added — the eventual
+  representation of relationship-influence attribution in the packaged
+  finding contract is deferred; see "Future work" below.
 
 ### Future work (not implemented)
 
@@ -461,6 +475,16 @@ or runbook implements them today:
   carry `confidence`, `severity`, `location`, and the rest as a formal
   contract for machine consumers, and its versioning (#68), are still
   unbuilt.
+- **Repository-intelligence retrieval and a packaged relationship-influence
+  field** — the repository-intelligence model (#129, "Repository-development
+  instrumentation" above) is a design record and a test-only reference
+  model only. No code in this repository builds, persists, or queries a
+  repository graph; no runtime retrieves entities or relationships during a
+  review; [`repository-expansion.md`](../shared/policies/repository-expansion.md)
+  (#87)'s trigger catalog, ring ceiling, and reporting contract are
+  unchanged. There is no packaged finding field carrying
+  `influential_relationships` — that representation is left to a later,
+  separately-scoped implementation issue once the model is validated.
 
 ## 3. Separation of Concerns
 
