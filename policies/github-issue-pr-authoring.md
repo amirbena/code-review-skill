@@ -85,6 +85,9 @@ Short explanation of the change and why it exists.
 - Two to five high-value bullets when useful.
 - Links to canonical detail.
 
+Release category: Fixed
+Release entry: Short one-line CHANGELOG entry describing the fix.
+
 ## Validation
 - Full suite: ...
 - Focused validation: ...
@@ -97,6 +100,29 @@ Short explanation of the change and why it exists.
 information architecture; authors may use equivalent concise prose rather than
 copying the template byte for byte. Keep the Issue-closing reference and link
 to the smallest canonical source that owns detailed behavior or decisions.
+
+### Validate release intent before opening or updating a PR
+
+`Release category:` must be one of `Added`, `Changed`, `Deprecated`, `Fixed`,
+`Security`, `Removed`, `Breaking`, or `none` — see
+[`release-changelog-policy.md`](release-changelog-policy.md) for the
+category-to-SemVer contract. Before running `gh pr create` or `gh pr edit`,
+validate the drafted body locally and offline against the existing,
+deterministic checker — the same one CI runs — rather than waiting for CI to
+catch an invalid or missing category:
+
+```bash
+PR_BODY="$(cat pr-body.md)" python3 scripts/release_worthiness.py assess \
+  --base-ref <base> --pr-body-env PR_BODY --require-release-intent
+```
+
+Pass the drafted body through the named environment variable, never as a
+literal CLI argument. Treat this as a pre-mutation gate: if it fails, fix the
+`Release category:` / `Release entry:` lines in the draft and re-run it before
+calling `gh pr create` / `gh pr edit` — do not open or update the PR on a
+failing check. This reuses `scripts/release_worthiness.py`'s existing
+`assess --require-release-intent` contract; do not reimplement category
+validation elsewhere.
 
 Summarize; do not reproduce Issue acceptance criteria, complete policy or
 runbook semantics, large schemas or matrices, fixture catalogs, implementation
