@@ -95,11 +95,16 @@ ordering over the in-scope changed files:
    oversized cluster further by its changed files' sub-directory
    structure, repeating the directory-seed step one level deeper, as long
    as no step-2 coherence link is broken by the split.
-4. **Size-floor merge.** A cluster left with very few changed lines after
-   steps 1–3 merges into the coherence-adjacent partition it merged toward
-   in step 2, or otherwise into the directory-adjacent partition with the
-   nearest parent path, so partitioning does not manufacture many
-   trivially small partitions out of an otherwise ordinary change.
+4. **Size-floor merge.** A cluster whose own diff-size measurement falls
+   below the size floor — changed lines **< 60** and changed files **< 3**
+   (10% of step 3's per-partition cap) — merges into the coherence-adjacent
+   partition it merged toward in step 2, or otherwise into the
+   directory-adjacent partition whose parent directory path is the nearest
+   ancestor, ties broken by lexicographic path order, so partitioning does
+   not manufacture many trivially small partitions out of an otherwise
+   ordinary change. This merge is mechanical given the measurement; like
+   step 1 and step 3, it introduces no reviewer discretion beyond step 2's
+   coherence-evidence evaluation.
 5. **Oversized-partition flag.** A coherence-linked cluster that still
    exceeds the step-3 cap after step 3's split attempt (a single
    changed file or an inseparable coherent group that alone is larger

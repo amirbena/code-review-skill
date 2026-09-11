@@ -51,6 +51,7 @@ class Partition:
     partition_id: str
     files: tuple[ChangedFile, ...]
     capped: bool = False
+    coherence_merges: tuple[str, ...] = ()
 
     @property
     def changed_lines(self) -> int:
@@ -81,6 +82,7 @@ class PartitioningResult:
                         "changed_lines": p.changed_lines,
                         "changed_files": p.changed_files,
                         "capped": p.capped,
+                        "coherence_merges": list(p.coherence_merges),
                     }
                     for p in self.partitions
                 ]
@@ -122,11 +124,26 @@ def build_partitions(files: Sequence["ChangedFile"]) -> PartitioningResult:
     partitions = []
     for idx, key in enumerate(sorted(groups), start=1):
         group_files = tuple(groups[key])
+        # A group formed by an evidenced coherence merge (step 2) carries a
+        # brief evidenced reason per file it pulled in beyond the first, so
+        # the machine-readable model can show *why* the merge happened, not
+        # just that it did. A plain directory-seed group (step 1, no
+        # coherence evidence) records none.
+        is_coherence_group = any(f.coherence_group == key for f in group_files)
+        coherence_merges = (
+            tuple(
+                f"{f.path} merged into {key} (coherence_group={key})"
+                for f in group_files[1:]
+            )
+            if is_coherence_group and len(group_files) > 1
+            else ()
+        )
         partitions.append(
             Partition(
                 partition_id=f"P{idx}",
                 files=group_files,
                 capped=_exceeds_cap(group_files),
+                coherence_merges=coherence_merges,
             )
         )
     return PartitioningResult(activated=True, partitions=tuple(partitions))

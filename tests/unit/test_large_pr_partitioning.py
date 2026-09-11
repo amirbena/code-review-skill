@@ -72,6 +72,27 @@ class PartitionConstructionTests(unittest.TestCase):
             {f.path for f in merged[0].files},
             {"api/controller.py", "schema/dto.py"},
         )
+        self.assertEqual(len(merged[0].coherence_merges), 1)
+
+    def test_directory_seeded_group_records_no_coherence_merge(self) -> None:
+        files = [
+            ChangedFile("a/x.py", "a", 700),
+            ChangedFile("a/y.py", "a", 600),
+        ]
+        result = build_partitions(files)
+        directory_group = next(p for p in result.partitions if len(p.files) == 2)
+        self.assertEqual(directory_group.coherence_merges, ())
+
+    def test_to_machine_model_carries_coherence_merges(self) -> None:
+        files = [
+            ChangedFile("api/controller.py", "api", 400, coherence_group="feature-x"),
+            ChangedFile("schema/dto.py", "schema", 300, coherence_group="feature-x"),
+            ChangedFile("unrelated/thing.py", "unrelated", 500),
+        ]
+        result = build_partitions(files)
+        model = result.to_machine_model()["large_pr_partitioning"]
+        merged_entry = next(p for p in model["partitions"] if len(p["files"]) == 2)
+        self.assertEqual(len(merged_entry["coherence_merges"]), 1)
 
     def test_oversized_coherent_group_flagged_capped_not_split(self) -> None:
         files = [
