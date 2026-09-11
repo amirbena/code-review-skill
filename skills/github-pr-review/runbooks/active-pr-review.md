@@ -5,6 +5,7 @@ decision. Applies shared policies:
 [`review-scope.md`](../../../shared/policies/review-scope.md),
 [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
 [`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
+[`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
@@ -73,6 +74,13 @@ per change-risk-signals.md; record it and its activating signals
 resolve fired repository-expansion triggers and their bounded rings
 (ceiling scaled by the depth above) per repository-expansion.md; record
 the triggers, rings reached, and locations inspected
+    ↓
+diff size reaches the partitioning threshold? → yes → partition into
+                                                   coherent review units per
+                                                   large-pr-partitioning.md
+                                                   (each unit reviewed and
+                                                   aggregated below)
+                                                 → no  → review as one unit
     ↓
 review (incl. scope-boundary reasoning against supplied context)
     ↓
@@ -341,6 +349,27 @@ stop
    the verdict or the review-action gate. The trigger catalog, the ring
    procedure, and the depth-scaled ceiling are owned by that policy and
    are not restated here.
+8c. **Partition large changes** per
+   [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md).
+   When the established PR delta's diff-size measurement (the same
+   exclusion of non-reviewable files as step 8a) reaches that policy's
+   partitioning threshold, build coherent review units by its
+   deterministic directory-seed / evidence-based coherence-merge / size-cap
+   procedure; otherwise review the delta as a single unit as before. When
+   partitioned, apply step 9 below (review) separately to each unit, then
+   fold every unit's findings into step 10's aggregation — extended here to
+   also reconcile and de-duplicate **across partitions**, including
+   cross-partition consolidation per
+   [`root-cause-consolidation.md`](../../../shared/policies/root-cause-consolidation.md)
+   — into **one** finding set before step 11 (finalize findings) onward,
+   which run exactly once, over that combined set, never per partition.
+   Record whether partitioning
+   activated and, if so, the partitions built for the subordinate
+   metadata block (step 13); an unpartitioned review records nothing for
+   this field. This is never a second scope or evidence model and never
+   changes the verdict or the review-action gate; that policy owns the
+   threshold, the construction procedure, and the aggregation contract,
+   and this runbook does not restate them.
 9. Review per
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
@@ -381,7 +410,7 @@ stop
    scope per [`../policies/pr-scope.md`](../policies/pr-scope.md),
    "Complete PR scope and pagination," and continue reviewing from there
    rather than completing the review as delta-only.
-10. **If parallel workers were used, aggregate first** per the shared
+10. **If parallel workers were used, or the change was partitioned per `large-pr-partitioning.md`, aggregate first** per the shared
     [`parallel-review.md`](../../../shared/policies/parallel-review.md),
     "Centralized aggregation": normalize → deduplicate (same location + same
     normalized claim; carry the higher candidate severity, report once) →

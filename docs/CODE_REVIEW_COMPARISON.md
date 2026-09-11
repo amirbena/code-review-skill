@@ -129,6 +129,14 @@ The governance features below are this repository's differentiated, durable cont
   "how far did the review actually look" reproducible rather than left to per-review judgement; it
   is never a merge gate and never expands to another repository
   ([`repository-expansion.md`](../shared/policies/repository-expansion.md)).
+- **Deterministic large-PR partitioning** — once a change's diff size crosses a fixed
+  threshold, it is split into coherent review units by a deterministic directory-seed /
+  evidence-based coherence-merge / size-cap procedure, each unit fully reviewed, with
+  findings aggregated and de-duplicated (including cross-partition root-cause
+  consolidation) into one final review. It exists so that an unusually large change
+  never receives a shallower review than a small one, and it is never a merge gate and
+  never a license to split the pull request itself
+  ([`large-pr-partitioning.md`](../shared/policies/large-pr-partitioning.md)).
 - **Explicit Approve / Request Changes semantics** — `github-pr-review` can submit a formal
   GitHub review decision when authorized to, not merely a passive comment. That authorization is
   a trusted, independently sourced, PR/HEAD-scoped signal — never the review's own verdict, a
@@ -228,6 +236,7 @@ today, and this document does not describe one as though it did.
 | Final repository-defined decision semantics | Varies by product | Explicit |
 | Deterministic change-risk / review-depth classification | Rare / implicit | Explicit |
 | Deterministic repository-expansion rules (how far context expansion goes) | Rare / implicit | Explicit |
+| Deterministic large-PR partitioning (coherent units, aggregation, de-duplication) | Rare / implicit | Explicit |
 
 This is a conceptual comparison, not a claim that every external reviewer lacks every governance
 feature listed — capability varies by product and changes over time. "Explicit" means the

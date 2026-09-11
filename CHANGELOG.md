@@ -16,6 +16,26 @@ when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.17.0 — 2026-09-11
+
+### Added
+
+- An unusually large change now gets **deterministic large-PR
+  partitioning** instead of one shallow single-pass review. Once a
+  change's diff size (excluding non-reviewable files) reaches double
+  `change-risk-signals.md`'s `deep` threshold (changed lines ≥ 1200, or
+  changed files ≥ 60), it is split into coherent review units by a
+  deterministic directory-seed / evidence-based coherence-merge / size-cap
+  procedure; each unit is fully reviewed against the unchanged shared
+  policy stack, and the units' findings are aggregated and de-duplicated
+  — including cross-partition root-cause consolidation — into one final
+  review. A change under the threshold is reviewed as a single unit
+  exactly as before. Partitioning is never a merge gate, never splits the
+  pull request itself, and never produces a shallower review than an
+  unpartitioned one; whether it activated, and the partitions built, are
+  emitted in the review's subordinate metadata only when it activated.
+  New shared policy `shared/policies/large-pr-partitioning.md` (#88).
+
 ## v1.16.0 — 2026-09-11
 
 ### Changed
