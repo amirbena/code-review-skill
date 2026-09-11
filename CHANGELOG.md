@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.18.0 — 2026-09-11
+
+### Changed
+
+- Tighten github-pr-review's review output with a stable heading, a reader-visible severity legend, and reduced verbosity/no tool disclosure (#226).
+
 ## v1.17.0 — 2026-09-11
 
 ### Added
