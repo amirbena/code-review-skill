@@ -77,3 +77,11 @@ form of this same "scale to the change" idea: it tunes how much effort a
 review spends looking, never the evidence bar a finding must clear. A
 `deep` classification does not lower the labeling requirement above, and a
 `standard` one does not excuse missing a finding the evidence supports.
+
+[`repository-expansion.md`](repository-expansion.md) makes the "scale
+dependency exploration to blast radius" instruction above concrete for a
+fixed set of triggers (a changed call site, interface/contract,
+migration/schema, or config consumer): a bounded, ring-based procedure
+for how far each trigger is followed, with its maximum ring scaled by the
+change-risk depth. It governs only where an investigation looks, never
+what counts as a finding or how a finding is labeled.

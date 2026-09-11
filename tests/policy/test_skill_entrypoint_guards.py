@@ -39,8 +39,10 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # Issue #166 (the derived companion option `human_inline_findings`, wired
 # into the section-1 presentation-options paragraph).
 # local raised 260 -> 261 for Issue #86 (the always-on change-risk /
-# review-depth classification added to the section-2 required-policy batch).
-LOCAL_MAX_LINES = 261
+# review-depth classification added to the section-2 required-policy batch),
+# then 261 -> 262 for Issue #87 (the always-on repository-expansion rules
+# added to the same batch).
+LOCAL_MAX_LINES = 262
 GITHUB_MAX_LINES = 370
 
 

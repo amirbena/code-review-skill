@@ -11,6 +11,7 @@ any apparent difference.
 Applies shared policies:
 [`review-scope.md`](../../../shared/policies/review-scope.md),
 [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
+[`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
@@ -77,6 +78,10 @@ declared command and carry its outcome record into Validation
     ↓
 classify change-risk depth (standard / elevated / deep) from the complete
 delta per change-risk-signals.md; record it and its activating signals
+    ↓
+resolve fired repository-expansion triggers and their bounded rings
+(ceiling scaled by the depth above) per repository-expansion.md; record
+the triggers, rings reached, and locations inspected
     ↓
 inspect relevant surrounding code
     ↓
@@ -261,6 +266,19 @@ which a value must be resolved before it is used, or what is reported.
    normal result — and never becomes a finding, a severity, or an input to
    the Decision; that policy owns the diff-size thresholds, the depth-only
    tie-break, and the non-goals, and this runbook does not restate them.
+8c. **Resolve repository expansion** per
+   [`repository-expansion.md`](../../../shared/policies/repository-expansion.md).
+   Using the complete local delta established above, detect any fired
+   expansion trigger (call site, interface/contract, migration/schema,
+   config consumer), follow it through the bounded, ring-based procedure
+   whose ceiling is scaled by the change-risk depth from step 8b, and
+   record every fired trigger with the ring reached and the locations
+   inspected for the report's subordinate metadata (step 13). A change
+   with no fired trigger still records that outcome as "none." This
+   expansion decision is always produced, never becomes a finding, and
+   never changes the Decision; that policy owns the trigger catalog, the
+   ring procedure, and the depth-scaled ceiling, and this runbook does
+   not restate them.
 9. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

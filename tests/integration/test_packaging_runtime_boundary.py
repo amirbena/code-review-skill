@@ -226,6 +226,7 @@ class PackagingScriptParityTests(unittest.TestCase):
             "parallel-review.md",
             "runtime-validation.md",
             "change-risk-signals.md",
+            "repository-expansion.md",
         ):
             self.assertIn(f"shared/policies/{name}", _shared_destinations())
 
