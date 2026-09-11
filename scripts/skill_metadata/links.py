@@ -29,17 +29,26 @@ def iter_markdown_links(text: str) -> Iterator[tuple[int, str]]:
             yield line_no, link
 
 
-def resolve_local_markdown_link(
-    md_file: Path, link: str, containment_root: Path
-) -> Path | None:
+def _resolve_markdown_target(md_file: Path, link: str) -> Path | None:
+    """Resolve a local Markdown link to an absolute path; ``None`` for
+    external URLs, mailto links, and fragment-only links. Containment is
+    enforced by the callers, so a path escaping the root is still returned.
+    """
     if link.startswith(("http://", "https://", "mailto:")):
         return None
     target = link.split("#", 1)[0].strip()
     if not target:
         return None
-    return require_inside(
-        md_file.parent / target, containment_root, f"{md_file} link {link!r}"
-    )
+    return (md_file.parent / target).resolve()
+
+
+def resolve_local_markdown_link(
+    md_file: Path, link: str, containment_root: Path
+) -> Path | None:
+    resolved = _resolve_markdown_target(md_file, link)
+    if resolved is None:
+        return None
+    return require_inside(resolved, containment_root, f"{md_file} link {link!r}")
 
 
 def find_broken_markdown_links(
@@ -53,8 +62,17 @@ def find_broken_markdown_links(
     for md_file in md_files:
         text = md_file.read_text(encoding="utf-8")
         for line_no, link in iter_markdown_links(text):
-            resolved = resolve_local_markdown_link(md_file, link, root)
+            resolved = _resolve_markdown_target(md_file, link)
             if resolved is None:
+                continue
+            try:
+                resolved.relative_to(root)
+            except ValueError:
+                # A link escaping the containment root can never resolve to a
+                # file inside it. Report it like any other broken link so one
+                # malformed link cannot abort the whole scan; packaging checks
+                # still fail hard through resolve_local_markdown_link.
+                broken.append(BrokenMarkdownLink(md_file, line_no, link))
                 continue
             missing = not resolved.is_file() if require_file else not resolved.exists()
             if missing:

@@ -61,6 +61,39 @@ class ValidateMarkdownLinksTests(unittest.TestCase):
             self.assertEqual(ctx.exception.code, 1)
             self.assertIn("AGENTS.md:1: broken link 'policies/missing.md'", stderr.getvalue())
 
+    def test_containment_escaping_link_is_reported_not_fatal(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "AGENTS.md"
+            source.write_text(
+                "[escape](../outside.md) [missing](policies/nope.md)\n",
+                encoding="utf-8",
+            )
+            # One escaping link must not abort the scan before the rest of the
+            # report is produced (repo-wide validation path).
+            broken = links.find_broken_markdown_links([source], root)
+            self.assertEqual(
+                [(item.line, item.target) for item in broken],
+                [(1, "../outside.md"), (1, "policies/nope.md")],
+            )
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                with self.assertRaises(SystemExit) as ctx:
+                    links.check_repository_markdown_links(root, [source])
+            self.assertEqual(ctx.exception.code, 1)
+            report = stderr.getvalue()
+            self.assertIn("broken link '../outside.md'", report)
+            self.assertIn("broken link 'policies/nope.md'", report)
+
+    def test_packaging_containment_still_fails_hard_on_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "SKILL.md"
+            source.write_text("[escape](../outside.md)\n", encoding="utf-8")
+            with self.assertRaises(SystemExit) as ctx:
+                links.resolve_local_markdown_link(source, "../outside.md", root)
+            self.assertIn("escapes root", str(ctx.exception))
+
     def test_repository_passes_validation(self) -> None:
         links.check_repository_markdown_links(REPO_ROOT, links.tracked_markdown_files(REPO_ROOT))
 
