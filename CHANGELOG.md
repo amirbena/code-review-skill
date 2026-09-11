@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.21.1 — 2026-09-11
+
+### Fixed
+
+- Shrink duplicated root-cause/affected-test prose in review-scope.md into thin pointers to their canonical policies (#240).
+
 ## v1.21.0 — 2026-09-11
 
 ### Changed
