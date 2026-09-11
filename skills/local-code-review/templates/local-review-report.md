@@ -141,7 +141,7 @@ proceed.
 - Change-risk depth: <standard | elevated | deep>
 - Change-risk signals: <none | comma-separated `signal (tier) — evidence` entries, one per resolved occurrence>
 - Repository expansion: <none | comma-separated `trigger (ring N) — locations` entries, one per fired trigger>
-- Large-PR partitioning: <omitted when inactive | `<n> partitions` plus any `capped` or cross-partition de-duplication note, when activated>
+- Large-PR partitioning: `<n> partitions` plus any `capped` or cross-partition de-duplication note — shown only when partitioning activated; omitted entirely otherwise
 
 **Review scope contract** (per
 [`../policies/repository-state.md`](../policies/repository-state.md)) —

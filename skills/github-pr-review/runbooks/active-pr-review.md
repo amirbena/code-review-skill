@@ -76,12 +76,10 @@ resolve fired repository-expansion triggers and their bounded rings
 the triggers, rings reached, and locations inspected
     ↓
 diff size reaches the partitioning threshold? → yes → partition into
-                                                   coherent review units
-                                                   per
-                                                   large-pr-partitioning.md;
-                                                   review each unit, then
-                                                   aggregate and
-                                                   de-duplicate findings
+                                                   coherent review units per
+                                                   large-pr-partitioning.md
+                                                   (each unit reviewed and
+                                                   aggregated below)
                                                  → no  → review as one unit
     ↓
 review (incl. scope-boundary reasoning against supplied context)
@@ -358,11 +356,14 @@ stop
    partitioning threshold, build coherent review units by its
    deterministic directory-seed / evidence-based coherence-merge / size-cap
    procedure; otherwise review the delta as a single unit as before. When
-   partitioned, apply step 9 onward to each unit, then aggregate and
-   de-duplicate the units' findings — including cross-partition
-   consolidation per
+   partitioned, apply step 9 below (review) separately to each unit, then
+   fold every unit's findings into step 10's aggregation — extended here to
+   also reconcile and de-duplicate **across partitions**, including
+   cross-partition consolidation per
    [`root-cause-consolidation.md`](../../../shared/policies/root-cause-consolidation.md)
-   — before finalizing the one finding set. Record whether partitioning
+   — into **one** finding set before step 11 (finalize findings) onward,
+   which run exactly once, over that combined set, never per partition.
+   Record whether partitioning
    activated and, if so, the partitions built for the subordinate
    metadata block (step 13); an unpartitioned review records nothing for
    this field. This is never a second scope or evidence model and never
@@ -409,7 +410,7 @@ stop
    scope per [`../policies/pr-scope.md`](../policies/pr-scope.md),
    "Complete PR scope and pagination," and continue reviewing from there
    rather than completing the review as delta-only.
-10. **If parallel workers were used, aggregate first** per the shared
+10. **If parallel workers were used, or the change was partitioned per `large-pr-partitioning.md`, aggregate first** per the shared
     [`parallel-review.md`](../../../shared/policies/parallel-review.md),
     "Centralized aggregation": normalize → deduplicate (same location + same
     normalized claim; carry the higher candidate severity, report once) →
