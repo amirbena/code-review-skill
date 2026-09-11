@@ -108,15 +108,22 @@ understandable without GitHub. Good standalone names include
 
 ## Changelog
 
-You do not need to touch `CHANGELOG.md` for a trivial change. You **do**
-need one bullet under `## Unreleased` when your change is *release-worthy*
-— it affects shipped Skill content (`skills/`, packaged `shared/`) or the
-packaging/distribution scripts. A concise entry (your PR title with its
-number) is enough; do not paste commit prose.
+Never edit `CHANGELOG.md`. When your change is *release-worthy* — it
+affects shipped Skill content (`skills/`, packaged `shared/`) or the
+packaging/distribution scripts — fill in the two release-intent lines of
+the PR template instead:
 
-The PR template has a `Changelog:` line for stating this explicitly, and
-the `Release worthiness` check fails closed if a release-worthy change has
-no `## Unreleased` entry. Full convention: [`docs/RELEASE.md`](docs/RELEASE.md).
+- `Release category:` — `Added`, `Changed`, `Deprecated`, `Fixed`,
+  `Security`, `Removed`, or `Breaking`;
+- `Release entry:` — one line describing the change for users (the PR
+  number is appended for you).
+
+Leave `Release category: none` for anything else. The `Release worthiness`
+check fails closed if a release-worthy PR has no valid release intent, and
+its run summary shows the entry that will be generated; editing the
+description re-runs it. The release automation writes the entry into
+`CHANGELOG.md` when it publishes. Full convention:
+[`docs/RELEASE.md`](docs/RELEASE.md).
 
 ## Review and merge
 

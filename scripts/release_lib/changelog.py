@@ -87,6 +87,12 @@ def roll_unreleased(changelog_text: str, version: str, today: str) -> str:
     return text
 
 
+def has_version_section(changelog_text: str, version: str) -> bool:
+    """True when CHANGELOG.md already has a `## v<version>` heading."""
+    heading = re.compile(rf"^##\s+v{re.escape(version)}(\s|$)")
+    return any(heading.match(line) for line in changelog_text.splitlines())
+
+
 def extract_version_section(changelog_text: str, version: str) -> str:
     """Return the notes under `## v<version> — …`, up to the next `## ` heading.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Classify a change set as release-worthy, enforce CHANGELOG coverage, and
+"""Classify a change set as release-worthy, enforce PR release intent, and
 drive the deterministic parts of the direct-to-main release flow.
 
 Thin CLI entrypoint. The flow is split into focused modules under
@@ -7,9 +7,9 @@ Thin CLI entrypoint. The flow is split into focused modules under
 only wires ``sys.argv`` to them and re-exports their public names so
 existing importers keep working. End-to-end release policy: docs/RELEASE.md.
 
-Release worthiness is always evaluated over *all* changes since the
-previous ``v*`` tag. ``## Unreleased`` is the coverage for that whole
-release set, never one entry per pull request.
+A pull request declares its CHANGELOG entry in its description; the
+trusted release flow on ``main`` generates ``## Unreleased`` from every
+merged pull request since the previous ``v*`` tag.
 """
 
 from __future__ import annotations
@@ -19,8 +19,17 @@ import sys
 from release_lib import gitgh
 from release_lib.changelog import (
     extract_version_section,
+    has_version_section,
     roll_unreleased,
     unreleased_has_coverage,
+)
+from release_lib.changelog_generation import (
+    ChangelogGenerationError,
+    GeneratedEntry,
+    collect_entries,
+    compose_unreleased,
+    generate_changelog,
+    pr_number_from_subject,
 )
 from release_lib.classification import (
     Classification,
@@ -34,6 +43,12 @@ from release_lib.gitgh import (
     latest_release_tag,
     previous_release_tag,
     tag_exists,
+)
+from release_lib.release_intent import (
+    ReleaseIntent,
+    ReleaseIntentError,
+    parse_release_intent,
+    render_bullet,
 )
 from release_lib.remote_state import (
     parse_ref_lines,
@@ -59,12 +74,23 @@ __all__ = [
     "classify_path",
     "classify_paths",
     "extract_version_section",
+    "has_version_section",
     "roll_unreleased",
     "unreleased_has_coverage",
+    "ChangelogGenerationError",
+    "GeneratedEntry",
+    "collect_entries",
+    "compose_unreleased",
+    "generate_changelog",
+    "pr_number_from_subject",
     "changed_files",
     "latest_release_tag",
     "previous_release_tag",
     "tag_exists",
+    "ReleaseIntent",
+    "ReleaseIntentError",
+    "parse_release_intent",
+    "render_bullet",
     "parse_ref_lines",
     "release_assets_present",
     "resolved_tag_commit",

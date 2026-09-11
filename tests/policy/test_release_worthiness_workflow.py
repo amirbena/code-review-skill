@@ -9,10 +9,12 @@ a merge that ships nothing releasable never starts a write-capable job or
 the `release` Environment gate. `publish` is the only job with
 contents: write and the only one that mints the trusted release App
 token; the workflow never uses pull_request_target and cannot recurse.
-`publish` runs its steps in the order preflight → changelog →
+`publish` runs its steps in the order generate → preflight → changelog →
 build/verify → commit(main) → push(main) → verify-main → tag → push-tag →
 publish-release → verify-release, with the tag and published assets bound
-to the pushed main commit SHA.
+to the pushed main commit SHA. The PR check takes CHANGELOG coverage from
+the PR description's release intent, which reaches scripts through env
+only — never a `run:` interpolation.
 """
 
 from __future__ import annotations
@@ -96,7 +98,7 @@ class PermissionsTests(unittest.TestCase):
 
     def test_plan_is_read_only_and_no_persisted_creds(self) -> None:
         plan = self.jobs["plan"]
-        self.assertEqual(plan["permissions"], {"contents": "read"})
+        self.assertEqual(plan["permissions"], {"contents": "read", "pull-requests": "read"})
         checkout = next(
             s for s in plan["steps"]
             if isinstance(s.get("uses"), str) and s["uses"].startswith("actions/checkout")
@@ -109,6 +111,13 @@ class PermissionsTests(unittest.TestCase):
             if (job.get("permissions") or {}).get("contents") == "write"
         ]
         self.assertEqual(writers, ["publish"])
+
+    def test_every_other_grant_is_read_only(self) -> None:
+        for name, job in self.jobs.items():
+            for scope, level in (job.get("permissions") or {}).items():
+                if (name, scope) == ("publish", "contents"):
+                    continue
+                self.assertEqual(level, "read", f"{name}: {scope}")
 
     def test_only_publish_job_mints_the_app_token(self) -> None:
         minters = [
@@ -149,6 +158,11 @@ class PlanJobTests(unittest.TestCase):
         self.assertEqual(step.get("id"), "plan")
         self.assertIn("auto-release-plan", step["run"])
         self.assertNotIn("inputs.version", yaml.safe_dump(self.plan))
+
+    def test_reads_merged_prs_with_the_job_token_and_summarizes_the_notes(self) -> None:
+        step = _step(self.plan["steps"], "Plan the release")
+        self.assertEqual(step["env"]["GH_TOKEN"], "${{ github.token }}")
+        self.assertIn('--step-summary "$GITHUB_STEP_SUMMARY"', step["run"])
 
     def test_exposes_plan_outputs_for_publish(self) -> None:
         outputs = self.plan["outputs"]
@@ -216,6 +230,7 @@ class PublishFlowOrderingTests(unittest.TestCase):
 
     def test_direct_to_main_then_tag_then_release(self) -> None:
         order = [
+            "Generate CHANGELOG Unreleased",
             "Preflight",
             "Roll CHANGELOG Unreleased",
             "Build and verify Skill archives",
@@ -229,6 +244,16 @@ class PublishFlowOrderingTests(unittest.TestCase):
         ]
         indices = [_step_index(self.steps, needle) for needle in order]
         self.assertEqual(indices, sorted(indices), f"steps out of order: {indices}")
+
+    def test_generation_runs_from_the_planned_baseline_after_checkout(self) -> None:
+        step = _step(self.steps, "Generate CHANGELOG Unreleased")
+        self.assertIn("release_worthiness.py generate-changelog", step["run"])
+        self.assertIn('--base-ref "${{ needs.plan.outputs.baseline }}"', step["run"])
+        self.assertEqual(step["env"]["GH_TOKEN"], "${{ github.token }}")
+        self.assertLess(
+            _step_index(self.steps, "Resolve the authenticated release App bot identity"),
+            _step_index(self.steps, "Generate CHANGELOG Unreleased"),
+        )
 
     def test_preflight_uses_the_planned_version_and_baseline(self) -> None:
         preflight = _step(self.steps, "Preflight")
@@ -265,20 +290,49 @@ class PublishFlowOrderingTests(unittest.TestCase):
         self.assertIn("dist/github-pr-review-skill.zip", run)
 
 
-class AssessJobSemverTests(unittest.TestCase):
+class AssessJobReleaseIntentTests(unittest.TestCase):
+    """The PR check takes CHANGELOG coverage from the PR description's
+    release intent; contributor text reaches the script through env only."""
+
+    CONTRIBUTOR_TEXT = (
+        "github.event.pull_request.body",
+        "github.event.pull_request.title",
+        "github.event.pull_request.head.ref",
+        "github.head_ref",
+    )
+
     def setUp(self) -> None:
-        self.steps = _load()["jobs"]["assess"]["steps"]
+        self.data = _load()
+        self.steps = self.data["jobs"]["assess"]["steps"]
+        self.step = _step(self.steps, "Classify change set and enforce release intent")
 
-    def test_pr_check_classifies_semver_impact_strictly(self) -> None:
-        step = _step(self.steps, "Classify proposed SemVer impact")
-        self.assertIn("classify-semver", step["run"])
-        self.assertIn("--strict", step["run"])
-        self.assertEqual(step.get("id"), "semver")
+    def test_description_edits_rerun_the_check(self) -> None:
+        types = _on(self.data)["pull_request"]["types"]
+        for event in ("opened", "synchronize", "reopened", "edited"):
+            self.assertIn(event, types)
 
-    def test_semver_classification_runs_after_worthiness_classification(self) -> None:
-        classify = _step_index(self.steps, "Classify change set and enforce CHANGELOG coverage")
-        semver = _step_index(self.steps, "Classify proposed SemVer impact")
-        self.assertLess(classify, semver)
+    def test_pr_body_reaches_the_script_through_env_only(self) -> None:
+        self.assertEqual(self.step["env"]["PR_BODY"], "${{ github.event.pull_request.body }}")
+        run = self.step["run"]
+        self.assertIn("--pr-body-env PR_BODY", run)
+        self.assertIn("--require-release-intent", run)
+        self.assertIn('--step-summary "$GITHUB_STEP_SUMMARY"', run)
+
+    def test_intent_is_enforced_on_pull_requests_only(self) -> None:
+        self.assertEqual(self.step["env"]["EVENT_NAME"], "${{ github.event_name }}")
+        self.assertIn('if [ "${EVENT_NAME}" = "pull_request" ]', self.step["run"])
+
+    def test_no_run_step_interpolates_contributor_text(self) -> None:
+        for name, job in self.data["jobs"].items():
+            for step in job["steps"]:
+                run = str(step.get("run", ""))
+                for expr in self.CONTRIBUTOR_TEXT:
+                    self.assertNotIn(expr, run, f"{name}: {step.get('name')}")
+
+    def test_coverage_no_longer_comes_from_a_changelog_edit(self) -> None:
+        blob = yaml.safe_dump(self.data["jobs"]["assess"])
+        self.assertNotIn("classify-semver", blob)
+        self.assertNotIn("--require-changelog", blob)
 
 
 class ReleaseCommitAttributionTests(unittest.TestCase):
@@ -376,7 +430,7 @@ class ExtractedHelperWiringTests(unittest.TestCase):
         self.assertLess(_step_index(steps, "Fetch the PR base branch"), _step_index(steps, "Determine base ref"))
 
     def test_classify_step_passes_the_resolved_base_ref_unconditionally(self) -> None:
-        step = _step(self.jobs["assess"]["steps"], "Classify change set and enforce CHANGELOG coverage")
+        step = _step(self.jobs["assess"]["steps"], "Classify change set and enforce release intent")
         run = step["run"]
         self.assertIn('--base-ref "${{ steps.base.outputs.ref }}"', run)
         # The old shell arg-accumulation is gone.

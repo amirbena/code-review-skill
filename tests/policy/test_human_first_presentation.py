@@ -70,6 +70,8 @@ class PullRequestTemplateTests(unittest.TestCase):
             "Governance / policy:",
             "Packaging / portability:",
             "Changelog:",
+            "Release category:",
+            "Release entry:",
         ):
             self.assertIn(concept, text)
 

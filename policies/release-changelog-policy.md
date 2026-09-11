@@ -6,9 +6,20 @@ archive**. See [`../docs/RELEASE.md`](../docs/RELEASE.md) for the release flow
 and [`../scripts/release_worthiness.py`](../scripts/release_worthiness.py) for
 the deterministic implementation.
 
+## Where the category is declared
+
+A pull request declares its category, with a one-line entry, as the
+`Release category:` / `Release entry:` lines of its description.
+Contributors never edit `CHANGELOG.md`: its `## Unreleased` section is
+generated from merged pull requests by the trusted release flow on `main`.
+`none` is valid only for a change that is not release-worthy. The parsing
+and generation contract lives in [`../docs/RELEASE.md`](../docs/RELEASE.md)
+("Release intent").
+
 ## Category-to-SemVer contract
 
-The category heading under `## Unreleased` determines the version bump:
+The category — declared per pull request and rendered as the entry's
+`### <Category>` heading under `## Unreleased` — determines the version bump:
 
 | Category | Bump |
 | --- | --- |

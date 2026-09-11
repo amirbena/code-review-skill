@@ -1,12 +1,14 @@
 # Releasing
 
 This repository infers whether a change is **release-worthy** from the
-files it touches, derives the next SemVer version from the CHANGELOG
-categories, and publishes the GitHub Release automatically once the work
-merges to `main` — contributors maintain neither a release checklist nor
-a version number. The rules are deterministic and enforced by
-[`../scripts/release_worthiness.py`](../scripts/release_worthiness.py) and
-the `Release worthiness` GitHub Action
+files it touches, takes each release-worthy pull request's CHANGELOG entry
+from the **release intent** declared in its description, derives the next
+SemVer version from those categories, and publishes the GitHub Release
+automatically once the work merges to `main` — contributors maintain
+neither a release checklist, a version number, nor `CHANGELOG.md`. The
+rules are deterministic (no LLM, agent, or paid per-PR execution) and
+enforced by [`../scripts/release_worthiness.py`](../scripts/release_worthiness.py)
+and the `Release worthiness` GitHub Action
 ([`../.github/workflows/release-worthiness.yml`](../.github/workflows/release-worthiness.yml)).
 
 ## What counts as release-worthy
@@ -33,11 +35,44 @@ Extend it by adding a path prefix or an exact file name there, with a
 matching case in
 [`../tests/unit/test_release_worthiness.py`](../tests/unit/test_release_worthiness.py).
 
+## Release intent
+
+A pull request declares its CHANGELOG entry in its **description**, never by
+editing `CHANGELOG.md`. The PR template carries the two lines:
+
+```text
+- **Release category:** Fixed
+- **Release entry:** Clarify how re-review reconciles resolved threads
+```
+
+- `Release category:` is one of `Added`, `Changed`, `Deprecated`, `Fixed`,
+  `Security`, `Removed`, `Breaking`, or `none` (case-insensitive; the list
+  marker, bold, and backticks are optional). Choose it by the SemVer rules
+  below.
+- `Release entry:` is one line of prose written for users — not a heading,
+  list item, or quote. The PR number is appended at release time
+  (`… (#123).`), so there is no need to add it.
+- A release-worthy PR **must** declare a real category and an entry.
+  `none` — the template default — is for PRs that ship nothing.
+- A PR that is not release-worthy needs nothing; a category it declares
+  anyway is ignored, and the check says so.
+
+Parsing is strict and deterministic: HTML comments (the template's
+guidance) and fenced code blocks are ignored, each line may appear only
+once, and prose is never guessed at. Parser:
+[`../scripts/release_lib/release_intent.py`](../scripts/release_lib/release_intent.py).
+
+Maintainers may still curate `## Unreleased` by hand, for example a
+cross-cutting note. Hand-written bullets must sit under a recognized
+`### <Category>` heading; they are kept, and a PR whose `(#N)` already
+appears in one is not generated a second time.
+
 ## Deterministic SemVer classification
 
 The release's version bump is decided from the **Keep a Changelog
-category headings** under `## Unreleased`, never from free judgement. Each
-entry must sit under one of these `### <Category>` headings:
+category** of every pending entry — the `Release category:` each merged
+pull request declared, which becomes that entry's `### <Category>` heading
+under `## Unreleased` — never from free judgement:
 
 | Category | Bump | Meaning |
 | --- | --- | --- |
@@ -64,16 +99,16 @@ compatible behavior, use `Fixed`. The canonical category-selection contract is
 [`../policies/release-changelog-policy.md`](../policies/release-changelog-policy.md).
 
 When entries span several categories, the **highest** bump wins
-(`major` > `minor` > `patch`). A `### Changed` entry that actually breaks
-compatibility must be moved under `### Removed` or `### Breaking` so the
-bump reflects it.
+(`major` > `minor` > `patch`). A change declared `Changed` that actually
+breaks compatibility must be declared `Removed` or `Breaking` so the bump
+reflects it.
 
-Classification **fails closed**. If `## Unreleased` has an entry outside
-any recognized `### <Category>` heading, or under an unrecognized one, the
-automation stops before any tag/release mutation and a maintainer must fix
-the section. `release_worthiness.py classify-semver` reports the impact;
-the PR check runs it with `--strict` so ambiguity is caught at review
-time.
+Classification **fails closed**. An unrecognized `Release category:`, or a
+hand-written `## Unreleased` entry outside any recognized
+`### <Category>` heading or under an unrecognized one, stops the automation
+before any tag/release mutation. The PR check catches these at review
+time; `release_worthiness.py classify-semver --strict` reports the impact
+of the current `## Unreleased` for a maintainer.
 
 ### One-time migration
 
@@ -90,48 +125,69 @@ or `major` bump.
 
 ## The global changelog model
 
-[`../CHANGELOG.md`](../CHANGELOG.md) is the single durable history.
-Release planning is evaluated over **all changes since the previous `v*`
-tag**, and `## Unreleased` is the coverage for that whole release set —
-**not one entry per pull request**. (A PR check narrows the boundary to
-what that PR contributes; see **PR / push checks** below.)
+[`../CHANGELOG.md`](../CHANGELOG.md) is the single durable history. Release
+planning is evaluated over **all changes since the latest `vX.Y.Z` tag**,
+and its `## Unreleased` section is **generated** — only by the trusted
+release flow on `main`, never on a contributor branch. For each
+first-parent commit since that tag that is release-worthy on its own, the
+generator:
 
-- A release-worthy change **must** be represented by at least one bullet
-  under `## Unreleased`, beneath a recognized `### <Category>` heading
-  (see **Deterministic SemVer classification**), before a release is cut.
-  Prefer a concise deterministic entry — a PR title with its number is
-  enough. Do not paste commit-message prose.
-- A change that is not release-worthy does **not** need to touch
-  `CHANGELOG.md`. Trivial PRs stay friction-free.
-- The PR template carries a `Changelog:` line so the intent is explicit
-  in review.
+1. reads the pull request number from the squash-merge subject (`… (#N)`)
+   or a `Merge pull request #N` subject;
+2. reads that pull request through the GitHub API and requires it to be
+   merged, with exactly that commit as its merge commit;
+3. parses its release intent and renders `- <entry> (#N).` under
+   `### <Category>`.
 
-The `Release worthiness` PR/push check **fails closed**: if the change
-set since the last tag is release-worthy and `## Unreleased` has no
-entry, the check fails with an actionable message.
+Sections render in a fixed order (`Breaking`, `Removed`, `Added`,
+`Changed`, `Deprecated`, `Fixed`, `Security`), hand-curated bullets first
+and generated ones in merge order, so the same repository state always
+generates the same bytes. Generation **fails closed**, naming the pull
+request and the reason, when a release-worthy commit names no pull
+request, the pull request cannot be read or is not the one behind that
+commit, or its release intent is missing, malformed, or `none`. The fix
+is to edit the merged PR's description and re-run the workflow
+(`workflow_dispatch`). Generator:
+[`../scripts/release_lib/changelog_generation.py`](../scripts/release_lib/changelog_generation.py).
+
+Release intent is read when the release is planned, so an edit to a merged
+PR's description before its release changes the published entry. `plan`
+writes the notes it generated to its run summary; with required reviewers
+on the `release` Environment, a maintainer sees them before approving
+`publish`.
 
 ## PR / push checks (read-only)
 
-On every pull request and every push to `main`, the `assess` job
-(`contents: read`, `persist-credentials: false`) classifies the change
-set. On a push it classifies everything since the previous `v*` tag. On a
-pull request it classifies only what the PR itself contributes — the diff
-against the **merge-base with the PR's current base branch** — so
-release-worthy history that entered the branch through a sync/merge from
-`main` is never treated as a new CHANGELOG obligation for the PR. When
-the classified set is release-worthy the job:
+On every pull request (opened, synchronized, reopened, or its description
+edited) and every push to `main`, the `assess` job (`contents: read`,
+`persist-credentials: false`) classifies the change set. On a push it
+classifies everything since the previous `v*` tag. On a pull request it
+classifies only what the PR itself contributes — the diff against the
+**merge-base with the PR's current base branch** — so release-worthy
+history that entered the branch through a sync/merge from `main` is never
+treated as a new obligation for the PR. When the classified set is
+release-worthy the job:
 
-1. enforces `## Unreleased` coverage (fails closed if missing);
-2. classifies the proposed SemVer impact with `classify-semver --strict`
-   (fails closed if the section is ambiguous — see above);
+1. on a pull request, requires valid release intent in the description
+   (fails closed if it is missing, malformed, or `none`), and fails closed
+   if a hand-edited `## Unreleased` is unclassifiable;
+2. writes a _"release recommended"_ run summary with the proposed bump and
+   the exact CHANGELOG entry the release will generate;
 3. builds both archives with `scripts/package-skills.sh all`;
 4. verifies archive integrity (`unzip -t` plus the packaging
    runtime-boundary test);
-5. uploads the archives and writes a _"release recommended"_ summary that
-   names the proposed bump.
+5. uploads the archives.
 
-It never mutates the repository, it never receives the release App
-credentials, and it never creates a tag or a Release.
+A push to `main` has no PR description, so release intent is not checked
+there; `plan` is the authoritative gate.
+
+The PR description reaches the script only through an environment variable
+(`--pr-body-env PR_BODY`). It is never interpolated into a shell `run:`
+step, never written to `$GITHUB_OUTPUT` or the log, and appears in the run
+summary only inside a code fence. The job needs no token, so it behaves
+identically on a fork pull request. It never mutates the repository, never
+receives the release App credentials, and never creates a tag or a
+Release.
 
 ## Automatic publication from `main`
 
@@ -139,41 +195,47 @@ Once release-worthy work merges to `main`, the automation publishes it —
 no maintainer runs anything, and no one supplies a version.
 
 The read-only **`plan`** job runs on every non-`[skip ci]` push to `main`
-(and on `workflow_dispatch` for recovery). It holds no write permission
-and never touches the release App credentials. It **plans** the release
-with `release_worthiness.py auto-release-plan`:
+(and on `workflow_dispatch` for recovery). It holds `contents: read` and
+`pull-requests: read` only and never touches the release App credentials.
+It **plans** the release with `release_worthiness.py auto-release-plan`:
 
 - finds the latest valid `vX.Y.Z` tag — the version baseline;
 - classifies everything since that tag; if nothing is release-worthy it
   reports `should_release=false` and the job is a **clean no-op**;
-- if `## Unreleased` has no entries (the accumulated set is already
-  released), it is likewise a no-op — this is what makes a **retry after a
-  completed release** safe;
+- generates `## Unreleased` in memory from the merged PRs' release intent,
+  **failing closed** as described above;
+- if `## Unreleased` is still empty, it is likewise a no-op;
 - derives the bump (`patch` / `minor` / `major`, or `patch` under the
   one-time migration), **failing closed** if classification is ambiguous;
 - derives the next version from the baseline tag;
-- if that tag already exists, treats the set as already released (no-op).
+- if that tag already exists, treats the set as already released (no-op) —
+  this is what makes a **retry after a completed release** safe; if
+  `CHANGELOG.md` already has that version's heading, the release was
+  partially published (see below) and it is also a no-op;
+- writes the generated release notes to the run summary.
 
 Only when `plan` reports `should_release=true` does the **`publish`** job
 run — the sole job granted `contents: write` and the only one behind the
 `release` Environment. A merge that ships nothing releasable never starts
 it. Its ordered flow fails closed before publishing if any step fails:
 
-1. **Preflight** — release-worthy changes since the baseline tag,
+1. **Generates** `## Unreleased` from the merged PRs' release intent — the
+   same deterministic generation `plan` previewed.
+2. **Preflight** — release-worthy changes since the baseline tag,
    `## Unreleased` has notes, `vX.Y.Z` is a valid, not-yet-existing tag.
-2. Rolls `## Unreleased` into `## vX.Y.Z — <date>`.
-3. Builds **and verifies** both Skill archives (`package-skills.sh all`,
+3. Rolls `## Unreleased` into `## vX.Y.Z — <date>`.
+4. Builds **and verifies** both Skill archives (`package-skills.sh all`,
    `unzip -t`, presence checks).
-4. Commits the changelog roll directly to `main`
+5. Commits the generated, rolled changelog directly to `main`
    (`chore(release): vX.Y.Z [skip ci]`).
-5. Pushes that commit and re-fetches to confirm `origin/main` advanced to
+6. Pushes that commit and re-fetches to confirm `origin/main` advanced to
    exactly that SHA.
-6. Creates an **annotated** `vX.Y.Z` tag at that exact pushed commit.
-7. Pushes the tag.
-8. Creates the GitHub Release from the tag, notes taken from the matching
+7. Creates an **annotated** `vX.Y.Z` tag at that exact pushed commit.
+8. Pushes the tag.
+9. Creates the GitHub Release from the tag, notes taken from the matching
    `CHANGELOG.md` section, both verified Skill ZIPs attached.
-9. Verifies the live tag commit, `origin/main`, and the published
-   Release's tag and assets all match the release commit.
+10. Verifies the live tag commit, `origin/main`, and the published
+    Release's tag and assets all match the release commit.
 
 The `release-publish` concurrency group serializes publication. The
 release commit is `[skip ci]` and the workflow listens on no tag or
@@ -182,8 +244,8 @@ release commit is `[skip ci]` and the workflow listens on no tag or
 **Retry and recovery.** A re-run after a completed release is a safe
 no-op (the accumulated set is already published). If a publish fails
 **after** the changelog roll was committed to `main` but before the tag
-was pushed, `auto-release-plan` will report nothing to release (the
-`## Unreleased` section is already rolled); a maintainer finishes that one
+was pushed, `auto-release-plan` reports nothing to release (`CHANGELOG.md`
+already has the `## vX.Y.Z` heading); a maintainer finishes that one
 release by hand — tag the pushed `chore(release): vX.Y.Z` commit and
 `gh release create` from it — after which automation resumes normally.
 
@@ -210,7 +272,8 @@ Rulesets) with:
 
 The built-in `GITHUB_TOKEN` (the “GitHub Actions” actor) **cannot** be
 selected as a ruleset bypass actor, so the `publish` job does not rely on
-it for the protected mutations — it uses the App token instead.
+it for the protected mutations — it uses the App token instead. It only
+uses `GITHUB_TOKEN` to *read* merged pull requests for generation.
 
 ### 2. The “Skill Release Automation” GitHub App
 
@@ -242,13 +305,18 @@ If the Environment has no rules it simply passes through.
 | Trigger | Job | `permissions` | Runs contributor code | Mutates repo |
 | --- | --- | --- | --- | --- |
 | `pull_request`, `push` to `main` | `assess` | `contents: read` | yes | never |
-| `push` to `main` (non-`[skip ci]`), `workflow_dispatch` | `plan` | `contents: read` | no — checks out `main` | never — derives the version only |
-| after `plan`, when a release is due | `publish` | `contents: write` | no — checks out `main` | commits to `main`, tags, publishes a Release, using the App token |
+| `push` to `main` (non-`[skip ci]`), `workflow_dispatch` | `plan` | `contents: read`, `pull-requests: read` | no — checks out `main` | never — generates notes and derives the version in memory |
+| after `plan`, when a release is due | `publish` | `contents: write`, `pull-requests: read` | no — checks out `main` | commits to `main`, tags, publishes a Release, using the App token |
 
 - No `pull_request_target`; the read-only jobs check out with
   `persist-credentials: false`. Neither `plan` nor `publish` runs on
   `pull_request`, so contributor-controlled code never reaches the App
   credentials.
+- Contributor-controlled text (a PR description) is passed to scripts
+  through environment variables or read through the API by trusted code,
+  never interpolated into a shell `run:` step. It enters `CHANGELOG.md`
+  only through the `publish` job's generation step on `main`; no bot ever
+  commits to a contributor or fork branch.
 - The write-capable `publish` job checks out `main` and runs only
   repository code from that trusted ref.
 - Protected mutations use the App token, never `GITHUB_TOKEN`; branch
