@@ -208,24 +208,9 @@ with parallel workers —
 [`parallel-review.md`](../../shared/policies/parallel-review.md).
 
 This Skill's own: the canonical index
-[`policies/github-review.md`](policies/github-review.md) and its
-sub-policies in authoritative order —
-[`review-authority.md`](policies/review-authority.md),
-[`review-action-authorization.md`](policies/review-action-authorization.md),
-[`reviewer-delta-review.md`](policies/reviewer-delta-review.md),
-[`stateful-delta-rereview.md`](policies/stateful-delta-rereview.md),
-[`pr-scope.md`](policies/pr-scope.md),
-[`repository-checkout.md`](policies/repository-checkout.md) (repository-backed
-inspection only),
-[`review-context.md`](policies/review-context.md),
-[`review-evidence.md`](policies/review-evidence.md),
-[`review-reasoning.md`](policies/review-reasoning.md),
-[`parallel-review.md`](policies/parallel-review.md) (parallel workers
-only), [`finding-placement.md`](policies/finding-placement.md),
-[`review-output.md`](policies/review-output.md), and
-[`review-status-enforcement.md`](policies/review-status-enforcement.md)
-(optional machine-readable status; loaded only when that signal or its
-setup is in play).
+[`policies/github-review.md`](policies/github-review.md), which owns the
+complete Skill-specific sub-policy set and its authoritative loading
+order.
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one review standard.
