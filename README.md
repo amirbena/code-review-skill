@@ -150,6 +150,7 @@ source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
 python3 scripts/validate-skill-metadata.py skills/local-code-review --containment-root .
 python3 scripts/validate-skill-metadata.py skills/github-pr-review --containment-root .
+python3 scripts/validate-markdown-links.py
 python3 -m unittest discover -s tests -t .
 ./scripts/package-skills.sh all
 ```
