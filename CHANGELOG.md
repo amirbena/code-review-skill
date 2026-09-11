@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.20.0 — 2026-09-11
+
+### Changed
+
+- `github-pr-review`'s senior/human presentation now covers passive review findings and active fallback findings, not just the final summary and inline comments; publishing a previously produced passive review asks once which presentation to use; the senior-intent phrase vocabulary is expanded (`senior review`, `senior code review`, `senior PR review`, `review this as a senior`) (#230).
+
 ## v1.19.0 — 2026-09-11
 
 ### Added
