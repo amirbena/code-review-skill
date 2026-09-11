@@ -86,18 +86,16 @@ formal_review_mutation_allowed = false
 ```
 
 The full review runs — same evidence, same process, same mechanical
-verdict derivation — and produces findings, P0/P1/P2 classifications, and
-a `REVIEW CLEAN` / `CHANGES REQUIRED` verdict. The result **may** be
-published to GitHub as an informational review `COMMENT` (the verdict,
-the reviewed HEAD, the findings, and a note that the formal decision was
-withheld by policy). It does **not** submit a formal review **decision**:
-`APPROVE` on one's own work is **always** forbidden, and `REQUEST_CHANGES`
-is not submitted as a formal self-review action either. The verdict is
-reported unchanged. A `COMMENT` is an informational publication, not a
-governance decision — it never counts as approval, request-changes, or
-merge authorization, and must not be used as a route to any of them.
+verdict derivation — and produces the outcome (both the clean and the
+blocking case) documented in full by
+[`review-authority.md`](review-authority.md), "Self-review capability",
+"Example outcomes": a reported `REVIEW CLEAN` / `CHANGES REQUIRED`
+verdict, an optional informational `COMMENT` publication, and a withheld
+formal decision. That policy is the canonical owner of the worked
+example; it is not repeated here.
 
-This boundary is **absolute for a self-review** — no review-action mode,
+This boundary is **absolute for a self-review** — `APPROVE` on one's own
+work is **always** forbidden, and no review-action mode,
 natural-language request, flag, prompt, or trusted external authorization
 can make a self-review submit a formal event (`APPROVE` / `REQUEST_CHANGES`). Trusted authorization and
 the reviewer-independence rules below decide whether an **external**
