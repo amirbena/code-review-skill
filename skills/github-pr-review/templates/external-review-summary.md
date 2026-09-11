@@ -21,7 +21,7 @@ subordinate — a short trailing block, never the body.
 ## Clean review
 
 ```markdown
-## Code Review
+## Review Summary
 
 **Result: ✅ REVIEW CLEAN**
 
@@ -56,7 +56,7 @@ comment, so the body lists it in **one concise line** — severity, title,
 location — and nothing more.
 
 ```markdown
-## Code Review
+## Review Summary
 
 **Result: ⚠️ CHANGES REQUIRED**
 
@@ -65,11 +65,11 @@ addressed; see the inline comments for detail.
 
 ### Findings
 
-- **P1 — Authorization provenance can bypass the trusted boundary**
+- **P1 (Blocking) — Authorization provenance can bypass the trusted boundary**
   `src/review/authz.py:142`
-- **P1 — Stale HEAD can still receive a formal review action**
+- **P1 (Blocking) — Stale HEAD can still receive a formal review action**
   `src/review/output.py:88`
-- **P2 — Validation output hides the failing check name**
+- **P2 (Non-Blocking) — Validation output hides the failing check name**
   `scripts/validate.py:117`
 
 ### Requirement coverage
@@ -115,10 +115,10 @@ finding (see
 ```markdown
 ### Findings
 
-- **P1 — Authorization provenance can bypass the trusted boundary**
+- **P1 (Blocking) — Authorization provenance can bypass the trusted boundary**
   `src/review/authz.py:142`
 
-#### F2 [P2] Config schema drift spans three unlinked files
+#### F2 [P2 (Non-Blocking)] Config schema drift spans three unlinked files
 
 - **Location:** `config/*.yaml` (schema vs. loader vs. docs)
 - **Evidence:** <concrete evidence — no single line to anchor to>
@@ -127,7 +127,7 @@ finding (see
 - **Details:** <only when a finding-level decision or
   `include_finding_details=true` selects materially useful context>
 
-#### F3 [P1] `sanitize_path` bypass reaches two call paths
+#### F3 [P1 (Blocking)] `sanitize_path` bypass reaches two call paths
 
 - **Location:** `app/pathsafe.py:5`
 - **Affected locations:**
@@ -157,7 +157,7 @@ published as an informational GitHub review `COMMENT`. No formal
 a note on the `Decision` line and one closing disclosure line:
 
 ```markdown
-## Code Review
+## Review Summary
 
 **Result: ✅ REVIEW CLEAN**
 
@@ -244,7 +244,7 @@ concise senior-engineer voice from
 above:
 
 ```markdown
-## Code Review
+## Review Summary
 
 Not safe to merge at `<short-sha>` yet — the P1 on the auth path is the
 blocker.
@@ -252,10 +252,11 @@ blocker.
 **What's good:** the retry handling is clean and the new tests actually
 exercise the failure path.
 
-**What's concerning:** `P1` — authorization provenance can be forged
-through the trusted boundary (`src/review/authz.py:142`); `P1` — a stale
-HEAD can still receive a formal review action (`src/review/output.py:88`).
-`P2` — the validation output hides which check failed.
+**What's concerning:** `P1 (Blocking)` — authorization provenance can be
+forged through the trusted boundary (`src/review/authz.py:142`);
+`P1 (Blocking)` — a stale HEAD can still receive a formal review action
+(`src/review/output.py:88`). `P2 (Non-Blocking)` — the validation output
+hides which check failed.
 
 Was routing the settled-tradeoff case straight to the caller here
 deliberate?
@@ -326,6 +327,22 @@ line per inline finding.
 These are the body's **rendering** rules. The review semantics they serve
 are owned by the linked policies and are not restated here.
 
+- **Stable heading.** The body always starts `## Review Summary` — for
+  the clean, findings, fallback, and self-review-`COMMENT` cases, and
+  identically under `human_review_output`. Canonical:
+  [`../policies/review-output.md`](../policies/review-output.md), "Stable
+  review-body heading".
+- **Severity legend.** Every finding heading shows the severity code with
+  its compact canonical parenthetical (`P0 (Critical)` / `P1 (Blocking)` /
+  `P2 (Non-Blocking)`), rendered once, never as a repeated explanatory
+  paragraph. Canonical:
+  [`../policies/review-output.md`](../policies/review-output.md), "Reader-
+  visible severity legend".
+- **Density and no disclosure.** Both rendering modes follow the
+  density/de-duplication guidance and never disclose the underlying
+  agent/model/tool. Canonical:
+  [`../policies/review-output.md`](../policies/review-output.md),
+  "Density and de-duplication" and "No agent/model/tool disclosure".
 - **Verdict first, no manufactured sections.** `Result` states the
   outcome in plain language (`REVIEW CLEAN` / `CHANGES REQUIRED`) and the
   `Decision` line restates it as the GitHub action actually submitted (or

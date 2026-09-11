@@ -50,7 +50,16 @@ human-facing review a machine-only format.
   first, in the `[P0]` / `[P1]` / `[P2]` form. This is presentation only:
   the P0/P1/P2 definitions, the blocking rule, and the mechanical
   severity → decision derivation are unchanged by this template and are
-  owned solely by [`../policies/severity.md`](../policies/severity.md);
+  owned solely by [`../policies/severity.md`](../policies/severity.md).
+  A Skill may additionally render a short, canonical parenthetical next
+  to the code (e.g. `P1 (Blocking)`) so a reader unfamiliar with this
+  model still sees the meaning at a glance — this is a **per-Skill
+  rendering override point**, defined and applied once by that Skill's
+  own output policy (`github-pr-review` defines and applies one in its
+  own `policies/review-output.md`), never a second, independently
+  invented severity model; the bare `[P0]` / `[P1]` / `[P2]` form above
+  remains the default for a Skill that declares no such legend
+  (`local-code-review` declares none and is unaffected);
 - **title** — a short, concrete problem statement (what is actually
   wrong — not a vague category like "pagination issue");
 - **location** — the finding's **canonical location**: the fix/action

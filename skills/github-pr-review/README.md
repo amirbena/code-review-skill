@@ -46,7 +46,7 @@ runtime support them.
 ## What a review looks like
 
 ```markdown
-## Code Review
+## Review Summary
 
 **Result: ⚠️ CHANGES REQUIRED**
 
@@ -54,9 +54,9 @@ Not safe to merge at `a1b2c3d` yet; see the inline comments for detail.
 
 ### Findings
 
-- **P1 — Pagination can stop after page one and pass a false clean review**
+- **P1 (Blocking) — Pagination can stop after page one and pass a false clean review**
   `src/reviews/scan.py:84`
-- **P2 — Validation output hides the failing check name**
+- **P2 (Non-Blocking) — Validation output hides the failing check name**
   `scripts/validate.py:117`
 
 ### Decision
