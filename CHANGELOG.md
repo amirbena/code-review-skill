@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.21.0 — 2026-09-11
+
+### Changed
+
+- Senior/human review voice is now consistent across inline, full-body, and summary renderings — no first-person hedging on required fixes, no manufactured praise labels (#233).
+
 ## v1.20.1 — 2026-09-11
 
 ### Fixed
