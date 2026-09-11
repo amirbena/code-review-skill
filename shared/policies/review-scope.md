@@ -74,24 +74,18 @@ own shape suggests already has an owner.
 ## Root-cause and model-completeness pass
 
 When several observed failures may be manifestations of one underlying
-mechanism — related defects with the same failure shape, repeated fixes
-that move the failure, individually correct helpers whose composition
-remains unsafe, the same invariant bypassed through multiple paths, a
-missing model/state dimension, or several special cases accumulating around
-one abstraction — do not stop at enumerating symptom permutations. Perform a
-bounded root-cause / model-completeness pass: ask whether the failures share
-a mechanism, whether one structural correction eliminates the related
-failures, and whether an existing canonical owner already implements the
-behavior.
+mechanism, this pass participates instead of enumerating symptom
+permutations. The trigger signals, the consolidate-vs-keep-separate
+evidence bar, the affected-locations requirement on a consolidated
+finding, the canonical-owner / external-dependency rules, and re-review
+reconciliation are owned by
+[`root-cause-consolidation.md`](root-cause-consolidation.md) and are not
+restated here.
 
-When a single shared defect-bearing element reaches **at least two**
-manifestation sites, emit one authoritative consolidated finding (with an
-exhaustive affected-locations list) rather than near-duplicate per-site
-findings; when the shared cause is only plausible, fail open to separate
-findings. The full evidence bar, the consolidate-vs-keep-separate contrast,
-the affected-locations requirement, the canonical-owner / external-dependency
-rules, and re-review reconciliation are owned by
-[`root-cause-consolidation.md`](root-cause-consolidation.md).
+This is not a second scope model: findings, labels, severity, and the
+mechanical decision derivation are unchanged; it only determines whether
+related manifestations are consolidated into one authoritative finding or
+kept separate.
 
 ## Failure state, retry safety, and recovery
 
@@ -339,21 +333,19 @@ like any other finding, and unresolvable ambiguity yields no finding.
 
 ## Affected-test / test-impact analysis
 
-When a change alters observable production behavior, tracing only whether the
-*changed code* has tests is not enough: an *unchanged* test elsewhere may
-assert an output the change just altered, depend on a fixture the change
-invalidated, encode an expected error/status the change moved, or stop short
-of a branch the change just introduced. This pass is signal-triggered — a
-changed return value, status, error, event, calculation, validation,
-state-transition rule, branch/precondition, collaborator interaction, or
-public contract — and does not apply to a pure refactor, a docs-only change,
-or a change with no plausible existing test dependency.
+When a change alters observable production behavior, this pass traces the
+change into existing tests that encode or depend on that behavior —
+frequently tests not in the diff — rather than only checking whether the
+changed code itself has tests. The signal-triggered scope (which changes
+qualify and which do not), the location/re-validation/coverage procedure,
+the finding bar, and the read-only boundaries are owned by
+[`affected-test-analysis.md`](affected-test-analysis.md) and are not
+restated here.
 
-It is read-only, bounded to the change's realistic blast radius, not a
-"did the PR add tests?" check, and not a repository-wide test audit. The
-location/re-validation/coverage procedure, the finding bar, and the
-boundaries are owned by
-[`affected-test-analysis.md`](affected-test-analysis.md).
+This is not a second scope model: it is bounded to the change's realistic
+blast radius per [`evidence.md`](evidence.md), "Findings beyond the
+changed lines," and is never a "did the PR add tests?" check or a
+repository-wide test audit.
 
 ## Change-risk signals and review depth
 
