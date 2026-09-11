@@ -216,16 +216,28 @@ class SelfReviewIsAllowedSelfApprovalIsNot(unittest.TestCase):
             self.t,
         )
 
+    def test_self_review_outcome_points_at_the_canonical_worked_example(self) -> None:
+        # #239: the full clean/blocking worked example is owned once, by
+        # review-authority.md — this policy points at it instead of
+        # independently restating it.
+        self.assertIn("review-authority.md", self.t)
+        self.assertIn("Self-review capability", self.t)
+        self.assertIn("canonical owner of the worked", self.t)
+        self.assertIn("REVIEW CLEAN / CHANGES REQUIRED", self.t)
+
     def test_self_review_may_publish_informational_comment_not_a_decision(self) -> None:
-        self.assertIn("published to GitHub as an informational review COMMENT", self.t)
-        self.assertIn("does not submit a formal review decision", self.t)
+        # Substance lives in the canonical owner (review-authority.md), not
+        # duplicated here — see test above and WiredIntoReviewAuthority.
+        t = _norm(AUTHORITY)
+        self.assertIn("publish its result to GitHub as an informational review COMMENT", t)
+        self.assertIn("does not submit a formal review decision", t)
         self.assertIn(
             "A COMMENT is an informational publication, not a governance decision",
-            self.t,
+            t,
         )
         self.assertIn(
             "never counts as approval, request-changes, or merge authorization",
-            self.t,
+            t,
         )
 
 

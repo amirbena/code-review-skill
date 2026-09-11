@@ -158,6 +158,16 @@ canonical, detailed rule lives in the policy named after it.
   refinements use `Fixed`; intentional backward-compatible behavior or
   capability changes use `Changed` or `Added`. Canonical:
   [`policies/release-changelog-policy.md`](policies/release-changelog-policy.md).
+- **Release intent belongs in the PR body, checked before opening it.**
+  A release-worthy change must declare `Release category:` / `Release
+  entry:` lines in the pull request description — CHANGELOG.md is never
+  edited directly. Before running `gh pr create` or `gh pr edit`, validate
+  the drafted body locally with the same deterministic checker CI runs
+  (`scripts/release_worthiness.py assess --require-release-intent`)
+  instead of waiting for CI to catch a missing or invalid category.
+  Canonical:
+  [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md),
+  "Validate release intent before opening or updating a PR".
 - **Contribution ownership and Issue classification.** An agent that creates
   or materially restructures GitHub Issues considers ownership and blast
   radius, classifies contributor suitability (maintainer-led / good first
