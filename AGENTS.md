@@ -78,11 +78,15 @@ canonical, detailed rule lives in the policy named after it.
   APIs, or subagent-orchestration syntax. Runtime adapters may exist
   separately but never fork these rules. Canonical:
   [`policies/skill-development-policy.md`](policies/skill-development-policy.md).
-- **Dedicated task branch.** Every materially separate task runs on a
-  freshly created task branch off synchronized `main`; never implement
-  directly on `main` or continue on a previous task's branch, and never
-  discard or blend unrelated local work to get there. Canonical:
-  [`policies/repository-workflow.md`](policies/repository-workflow.md).
+- **Dedicated task branch.** Before implementing any issue, confirm the
+  work is on an appropriate dedicated feature/fix branch created from the
+  required base branch. Every materially separate task runs on a freshly
+  created task branch off synchronized `main`; never implement directly
+  on `main` or continue on a previous task's branch, and never discard or
+  blend unrelated local work to get there. This is an agent workflow
+  check, not something recorded as evidence in repository history (no
+  empty commits, PR checklist items, or file comments asserting it).
+  Canonical: [`policies/repository-workflow.md`](policies/repository-workflow.md).
 - **Read-only Git safety.** Destructive Git shortcuts (`git reset
   --hard`, `git clean -fd`, force push, ancestry-hiding branch deletion,
   history rewriting for convenience) are prohibited; on unexpected state,
