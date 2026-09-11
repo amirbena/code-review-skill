@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.20.1 — 2026-09-11
+
+### Fixed
+
+- Validate repository-wide Markdown links and report broken policy, runbook, and template references (#221).
+
 ## v1.20.0 — 2026-09-11
 
 ### Changed
