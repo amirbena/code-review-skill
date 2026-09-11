@@ -6,6 +6,7 @@ decision. Applies shared policies:
 [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
 [`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
 [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
+[`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
@@ -92,6 +93,10 @@ deduplicate same-HEAD findings
 finalize findings and resolve inline eligibility
     ↓
 derive conditional requirement coverage (all renderings preserve it)
+    ↓
+evaluate review coverage (complete / incomplete) per
+review-stopping-criteria.md, scaled by the depth (and partitions) above;
+incomplete → REVIEW INCOMPLETE, never REVIEW CLEAN / Approve
     ↓
 re-check HEAD
     ↓
@@ -451,6 +456,21 @@ stop
     to the inspected PR and carry its separate task-relative completeness
     signal into the review body. With no activating contract, emit nothing
     for it.
+11b. **Evaluate review coverage** per
+    [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md).
+    Using the change-risk depth from step 8a and, when it activated, the
+    partitions from step 8c, determine whether every pass that depth (and
+    partitioning, when applicable) requires — including step 10's
+    required-dimension check and every partition's aggregation — actually
+    reached its own already-defined stop condition. Record `coverage:
+    complete` or `incomplete` with its reason(s) for the review's
+    subordinate metadata. When `incomplete`, the reasoning result for step
+    13 onward is `REVIEW INCOMPLETE` per
+    [`../policies/review-output.md`](../policies/review-output.md), "Final
+    decision" — never `REVIEW CLEAN` / `Approve`, regardless of what the
+    finding set alone would otherwise produce. This step never discards or
+    re-evaluates any finding already finalized in step 11; it only
+    determines whether the review that gathered them finished.
 12. Re-check the current PR HEAD against the recorded HEAD (see
     [`../policies/review-output.md`](../policies/review-output.md), "HEAD
     revalidation"), immediately before constructing the review. If it

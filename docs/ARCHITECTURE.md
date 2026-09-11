@@ -83,7 +83,7 @@ rules, or the context / evidence model.
 
 | Location | Owns | Canonical detail |
 |---|---|---|
-| [`shared/policies/`](../shared/policies/README.md) | portable review semantics used identically by both Skills | scope, change-risk signal / review-depth classification, repository-expansion triggers and bounds, large-PR partitioning, root-cause consolidation, affected-test analysis, severity, evidence, repository-instruction discovery, git-safety, review-ownership, review-context, requirement coverage, jira-context, review-evidence, runtime-validation, parallel-review, file-reviewability, invocation-options |
+| [`shared/policies/`](../shared/policies/README.md) | portable review semantics used identically by both Skills | scope, change-risk signal / review-depth classification, repository-expansion triggers and bounds, large-PR partitioning, review stopping criteria, root-cause consolidation, affected-test analysis, severity, evidence, repository-instruction discovery, git-safety, review-ownership, review-context, requirement coverage, jira-context, review-evidence, runtime-validation, parallel-review, file-reviewability, invocation-options |
 | [`shared/templates/`](../shared/templates/) | the canonical finding and review-summary shapes; each delivery surface renders one projection of them | [`finding.md`](../shared/templates/finding.md) (field contract), [`finding-rendering.md`](../shared/templates/finding-rendering.md) (rendering exemplars), [`review-summary.md`](../shared/templates/review-summary.md) |
 | [`skills/local-code-review/`](../skills/local-code-review/SKILL.md) | local-Git-specific rules with no PR analogue | invocation approval, repository-state categories + staged-delta fingerprint, thin local applications of the shared context / prior-evidence model |
 | [`skills/github-pr-review/`](../skills/github-pr-review/SKILL.md) | GitHub-delivery rules with no local analogue, indexed from [`policies/github-review.md`](../skills/github-pr-review/policies/github-review.md) | review authority + self-review mutation boundary, [review-action authorization](../skills/github-pr-review/policies/review-action-authorization.md), reviewer delta re-review, PR scope + pagination, repository-backed checkout, finding placement, batched publication + ordering, optional [machine-readable review status](../skills/github-pr-review/policies/review-status-enforcement.md) |
@@ -125,9 +125,21 @@ reviews each unit against the unchanged shared policy stack, then
 aggregates and de-duplicates the units' findings (including
 cross-partition root-cause consolidation) into the one final review. A
 change under the threshold is unaffected and reviewed as a single unit as
-before. What the depth level changes about review stopping criteria
-remains owned by that separate, still-open concern, not by this
-classification.
+before.
+
+Completing the family, the always-on
+[`review-stopping-criteria.md`](../shared/policies/review-stopping-criteria.md)
+pass defines when all of the above is actually **done**: complete
+coverage requires every pass the change-risk depth activates — and, when
+partitioning activated, every partition — to have reached its own
+already-defined stop condition. Coverage, `complete` or `incomplete` with
+its reason, is emitted the same way the depth/expansion pair is. It is
+the one field in that subordinate block that is not merely descriptive:
+an `incomplete` coverage state overrides what
+[`severity.md`](../shared/policies/severity.md)'s mechanical derivation
+would otherwise render, producing the incomplete/ungraded outcome
+(`REVIEW INCOMPLETE`) instead of a clean or blocking result, so that an
+unfinished review is never mistaken for a clean one.
 
 ### Thin runbooks, canonical policy owners
 

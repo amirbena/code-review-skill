@@ -83,6 +83,17 @@ finalized yet — finalize it first, per
 (finalize findings → derive decision → compose the report, in that
 order, once), and only then derive and render the decision.
 
+This derivation assumes the review that produced the finding set actually
+reached complete coverage. When it did not, per
+[`review-stopping-criteria.md`](review-stopping-criteria.md), the
+review's rendered primary outcome is the incomplete state instead of the
+clean/blocking value this derivation would otherwise produce — that
+policy owns the coverage definition and the incomplete label, and this
+derivation is not restated or bypassed by it: findings are still
+classified and this mechanical derivation still runs exactly as above,
+it is only the top-level rendered outcome that the coverage state can
+override.
+
 ## Repository conventions and severity
 
 A target repository's own instructions (`AGENTS.md`, `CLAUDE.md`, or

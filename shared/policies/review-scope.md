@@ -414,6 +414,26 @@ and labeled exactly as an unpartitioned review would be; partitioning only
 changes how an unusually large diff is organized for review, never what
 counts as a finding or its severity.
 
+## Review stopping criteria
+
+Every review evaluates whether it reached **complete coverage** — every
+pass required by the change's classified depth above (and, when
+[`large-pr-partitioning.md`](large-pr-partitioning.md) activated, every
+partition) actually reached its own already-defined stop condition, not
+merely attempted. Coverage, complete or not, is emitted with the review.
+When coverage is `incomplete`, the review's primary outcome renders the
+incomplete state instead of a clean or blocking decision, no matter what
+[`severity.md`](severity.md)'s mechanical derivation would otherwise
+produce from the findings gathered so far. The coverage definition, the
+closed set of incomplete triggers, and the labeling requirement are owned
+by [`review-stopping-criteria.md`](review-stopping-criteria.md) and are
+not restated here.
+
+This is not a second scope model either: coverage never changes what
+counts as a finding, its evidence label, or its severity — it only states
+plainly whether the review that produced those findings actually finished,
+and ensures an unfinished review is never mistaken for a clean one.
+
 ## Technology neutrality
 
 Every Skill built on this policy must remain technology-neutral. It must

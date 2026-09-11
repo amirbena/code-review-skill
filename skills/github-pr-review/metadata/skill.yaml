@@ -62,6 +62,7 @@ shared:
     - ../../../shared/policies/change-risk-signals.md
     - ../../../shared/policies/repository-expansion.md
     - ../../../shared/policies/large-pr-partitioning.md
+    - ../../../shared/policies/review-stopping-criteria.md
     - ../../../shared/policies/severity.md
     - ../../../shared/policies/evidence.md
     - ../../../shared/policies/repository-instructions.md

@@ -149,7 +149,11 @@ additive documentation and changes no Skill's rendered output by itself.
   derivation (mechanical)" — it is never an independent judgment call
   that can contradict that derivation, and a non-blocking finding (P2)
   never produces a blocking decision no matter how strongly it is
-  recommended.
+  recommended. When coverage is `incomplete` per
+  [`review-stopping-criteria.md`](../policies/review-stopping-criteria.md),
+  this label and the matching Result render the incomplete/ungraded
+  outcome instead — the one case where the primary body's outcome is not
+  the plain clean/blocking derivation above.
 
 ## Concise human-style summary (opt-in)
 
@@ -272,21 +276,38 @@ change-risk depth and its activating signals per
 [`../policies/change-risk-signals.md`](../policies/change-risk-signals.md),
 the fired repository-expansion triggers and rings reached per
 [`../policies/repository-expansion.md`](../policies/repository-expansion.md),
+the coverage state per
+[`../policies/review-stopping-criteria.md`](../policies/review-stopping-criteria.md),
 or other automation state) is never part of the primary human-facing body
 above. Where publishing it is genuinely useful to a
 caller or automation, append it after the human-facing body, clearly
 subordinate — always last, always visually secondary to the Result →
 ... → Decision body above it.
 
-The **one exception to consumer-gating** below is the pair of always-on
+The **one exception to consumer-gating** below is the trio of always-on
 process classifications: the change-risk depth per
-[`../policies/change-risk-signals.md`](../policies/change-risk-signals.md)
-and the repository-expansion decisions per
-[`../policies/repository-expansion.md`](../policies/repository-expansion.md).
-Both are always emitted in this subordinate block — on every review,
-including a clean `standard` review with no signals and no fired
-expansion trigger — never as a finding and never in a way that implies a
-verdict. Every other field stays consumer-gated.
+[`../policies/change-risk-signals.md`](../policies/change-risk-signals.md),
+the repository-expansion decisions per
+[`../policies/repository-expansion.md`](../policies/repository-expansion.md),
+and the coverage state per
+[`../policies/review-stopping-criteria.md`](../policies/review-stopping-criteria.md).
+All three are always emitted in this subordinate block — on every review,
+including a clean `standard` review with no signals, no fired expansion
+trigger, and complete coverage — never as a finding and never in a way
+that implies a verdict, with one exception described next: coverage.
+Every other field stays consumer-gated.
+
+**Coverage is the one field in this block that is not merely
+descriptive.** Change-risk depth and repository-expansion never imply a
+verdict; coverage does, by design — per
+[`review-stopping-criteria.md`](../policies/review-stopping-criteria.md),
+"Labeling," an `incomplete` coverage state also overrides what the
+primary Result and Decision render: they show the incomplete/ungraded
+outcome instead of the clean or blocking value
+[`../policies/severity.md`](../policies/severity.md)'s mechanical
+derivation would otherwise produce, so that an incomplete review is never
+mistaken for a clean one. Findings already gathered are still reported in
+full; only the top-level outcome label is affected.
 
 This shared template fixes *that* the metadata is subordinate and
 appended last; it does not fix the concrete markup used to render it.

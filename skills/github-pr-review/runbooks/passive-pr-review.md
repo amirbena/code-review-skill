@@ -6,6 +6,7 @@ Applies shared policies:
 [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
 [`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
 [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
+[`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
@@ -75,6 +76,10 @@ dimension missing → REVIEW INCOMPLETE, never REVIEW CLEAN
 produce findings
     ↓
 derive conditional requirement coverage (all renderings preserve it)
+    ↓
+evaluate review coverage (complete / incomplete) per
+review-stopping-criteria.md, scaled by the depth (and partitions) above;
+incomplete → REVIEW INCOMPLETE, never REVIEW CLEAN
     ↓
 return human-readable report
     ↓
@@ -336,6 +341,16 @@ finally: remove the temporary checkout (success, any failure, interruption)
    [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md)
    to the inspected PR and include its separate completeness signal in the
    report. With no activating contract, emit no coverage section or signal.
+8b. **Evaluate review coverage** per
+   [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md).
+   Using the change-risk depth from step 5a and, when it activated, the
+   partitions from step 5c, determine whether every pass that depth (and
+   partitioning, when applicable) requires — including step 7's
+   required-dimension check — actually reached its own already-defined
+   stop condition. Record `coverage: complete` or `incomplete` with its
+   reason(s) in the report's subordinate metadata. When `incomplete`, the
+   report's outcome is `REVIEW INCOMPLETE` — never a clean report,
+   regardless of what the finding set alone would otherwise produce.
 9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
    step 4, remove it — on this path and on every other: a
    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the

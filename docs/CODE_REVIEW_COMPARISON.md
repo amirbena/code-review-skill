@@ -137,6 +137,13 @@ The governance features below are this repository's differentiated, durable cont
   never receives a shallower review than a small one, and it is never a merge gate and
   never a license to split the pull request itself
   ([`large-pr-partitioning.md`](../shared/policies/large-pr-partitioning.md)).
+- **Deterministic review stopping criteria** — every review states whether it reached
+  complete coverage: every pass its change-risk depth (and, when activated, every
+  partition) requires must reach its own already-defined stop condition. An incomplete
+  review is never rendered as clean — its outcome overrides the mechanical decision
+  derivation with an explicit incomplete/ungraded result, while any findings already
+  gathered are still reported in full
+  ([`review-stopping-criteria.md`](../shared/policies/review-stopping-criteria.md)).
 - **Explicit Approve / Request Changes semantics** — `github-pr-review` can submit a formal
   GitHub review decision when authorized to, not merely a passive comment. That authorization is
   a trusted, independently sourced, PR/HEAD-scoped signal — never the review's own verdict, a
@@ -237,6 +244,7 @@ today, and this document does not describe one as though it did.
 | Deterministic change-risk / review-depth classification | Rare / implicit | Explicit |
 | Deterministic repository-expansion rules (how far context expansion goes) | Rare / implicit | Explicit |
 | Deterministic large-PR partitioning (coherent units, aggregation, de-duplication) | Rare / implicit | Explicit |
+| Deterministic review stopping criteria (coverage, incomplete never renders as clean) | Rare / implicit | Explicit |
 
 This is a conceptual comparison, not a claim that every external reviewer lacks every governance
 feature listed — capability varies by product and changes over time. "Explicit" means the
