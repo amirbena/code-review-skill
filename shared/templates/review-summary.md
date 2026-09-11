@@ -172,15 +172,22 @@ the companion option `human_inline_findings` is on — see "Companion
 inline rendering (`human_inline_findings`)" below).
 
 The concise form reads like a short review note a strong engineer would
-leave by hand:
+leave by hand. Its **voice** — how it leads with the defect, separates
+required from optional, avoids boilerplate and manufactured praise, and
+states each fact once — is owned by
+[`finding-rendering.md`](finding-rendering.md), "Senior voice contract";
+this section states only the summary's own shape:
 
 - a one- or two-sentence opening that says whether the change is safe to
   merge / proceed and names the single biggest concern;
-- **what's good** — a sentence or two of concrete, specific praise (omit
-  if nothing specific stands out);
+- **what's good** — specific, evidence-backed praise only, never a
+  required slot (see "Senior voice contract", "No dedicated praise
+  slot" — omit entirely if nothing specific stands out);
 - **what's concerning** / **what to change** — the findings that need
   action, in prose, each still carrying its `P0` / `P1` / `P2` label when
-  it is referenced;
+  it is referenced, with any required correction stated directly per
+  "Senior voice contract", "Required fixes are stated directly, not as
+  first-person suggestions";
 - **requirement coverage** — when analysis was active, the overall signal and
   every requirement/status remain visible in concise prose; omit it when
   coverage was inert;
@@ -214,7 +221,8 @@ structured canonical shape above is used unchanged.
 `human_inline_findings` re-voices those to match — a short heading that
 keeps the `P0` / `P1` / `P2` severity and names the finding, then compact
 prose in place of the `Evidence:` / `Impact:` / `Fix:` labelled block
-(see [`finding.md`](finding.md), "Canonical human inline rendering") — so
+(see [`finding-rendering.md`](finding-rendering.md), "Canonical human
+inline rendering") — so
 a senior-mode review is coherent end to end. Its default is derived:
 `explicit_value ?? human_review_output`, so enabling senior mode enables
 it too; it is set explicitly only to opt out (structured inline block
@@ -263,47 +271,20 @@ the body or inline are exactly the same whether this rendering is on or
 off — only the wording of the body finding's `Evidence` / `Impact` /
 `Fix` content changes.
 
-### Density, de-duplication, and voice tightening (`github-pr-review` only)
+### Density, de-duplication, and voice tightening
 
-This subsection is an explicit, opt-in extension that only
-`github-pr-review` applies to its own rendering — both the structured
-shape and the senior voice above — per its own `policies/review-output.md`
-and `templates/external-review-summary.md` (not linked from here for the
-same packaging reason as the heading override above: this shared
-template must not depend on another Skill's directory existing
-alongside it), which state exactly where and how it applies. It is
-additive documentation, inert for any consumer that does not opt into it:
-`local-code-review` does not reference this subsection, and its own
-report format, density, and senior-voice wording (per its own
-`templates/local-review-report.md`, "Concise human-style output
-(opt-in)") are unaffected and unchanged by it.
-
-- omit a section entirely when it would add no information, rather than
-  rendering it with placeholder or boilerplate content;
-- never restate the diff — describe what changed and why, not a
-  line-by-line narration of the patch;
-- never narrate file-by-file inspection or reproduction mechanics beyond
-  what the `Validation` / [`runtime-validation.md`](../policies/runtime-validation.md)
-  contract already records — the reader needs the result, not a
-  transcript of the review process;
-- never repeat the same evidence in more than one place across the
-  summary line, a fallback full finding, and its inline comment — each
-  fact appears once, in its one authoritative location;
-- let the output's length scale with the number and complexity of
-  findings, never with the number of available template sections — a
-  two-finding review and a ten-finding review do not carry the same
-  fixed scaffolding;
-- there is **no numeric word or line cap** — concision comes from cutting
-  restatement and process narration, never from truncating evidence,
-  impact, or fix;
-- read like a concise human review: natural short paragraphs, minimal
-  headings, no evidence repeated across sections, and no meta-commentary
-  about the review process itself (no "I reviewed file X then file Y",
-  no narrating that a reproduction was attempted beyond the Validation /
-  runtime-validation record) — while every existing evidence/rigor
-  guarantee (the same findings, severities, decision, and anchors) stays
-  exactly as specified elsewhere in this shape and in
-  [`finding.md`](finding.md).
+This density/de-duplication/no-boilerplate guidance describes the voice
+itself, not a GitHub-specific mechanism, so it is owned once, for both
+Skills, by [`finding-rendering.md`](finding-rendering.md), "Senior voice
+contract", "Density, de-duplication, and voice tightening" — applying to
+every senior-voice rendering (inline, full-body, and this summary prose)
+for both Skills alike. `local-code-review` inherits it through the same
+link this "Concise human-style summary (opt-in)" section already is —
+via its own `templates/local-review-report.md`, "Concise human-style
+output (opt-in)" — with no separate wiring needed. `github-pr-review`'s
+own `policies/review-output.md` and `templates/external-review-summary.md`
+apply it identically (not linked from here for the same packaging reason
+as the heading override above).
 
 ## Machine metadata is subordinate
 
