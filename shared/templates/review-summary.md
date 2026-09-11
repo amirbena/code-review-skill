@@ -293,13 +293,12 @@ and the coverage state per
 [`../policies/review-stopping-criteria.md`](../policies/review-stopping-criteria.md).
 All three are always emitted in this subordinate block — on every review,
 including a clean `standard` review with no signals, no fired expansion
-trigger, and complete coverage — never as a finding and never in a way
-that implies a verdict, with one exception described next: coverage.
-Every other field stays consumer-gated.
+trigger, and complete coverage. The change-risk depth and
+repository-expansion pair render never as a finding and never in a way
+that implies a verdict. Every other field stays consumer-gated.
 
 **Coverage is the one field in this block that is not merely
-descriptive.** Change-risk depth and repository-expansion never imply a
-verdict; coverage does, by design — per
+descriptive.** Per
 [`review-stopping-criteria.md`](../policies/review-stopping-criteria.md),
 "Labeling," an `incomplete` coverage state also overrides what the
 primary Result and Decision render: they show the incomplete/ungraded

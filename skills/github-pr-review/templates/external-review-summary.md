@@ -209,12 +209,15 @@ The `coverage` field per
 [`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md)
 is always present, like `change_risk_depth` and
 `repository_expansion_triggers` — but it is **not** effect-free the way
-those two are: when it is `incomplete`, the reasoning result above (and
-this block's own `decision`) is `REVIEW INCOMPLETE` instead of whatever
-the mechanical derivation from findings alone would otherwise produce, so
-that an incomplete review is never mistaken for `REVIEW CLEAN` / Approve.
-Findings already gathered are still reported in full; only the top-level
-outcome is overridden.
+those two are: when it is `incomplete`, the reasoning result above is
+`REVIEW INCOMPLETE` instead of whatever the mechanical derivation from
+findings alone would otherwise produce, so that an incomplete review is
+never mistaken for `REVIEW CLEAN` / Approve. This block's own `decision`
+field still records whichever GitHub action was actually taken —
+typically `comment`, since the review-action authorization gate still
+applies — never `approve`; `REVIEW INCOMPLETE` is not itself a value of
+that field. Findings already gathered are still reported in full; only
+the top-level outcome is overridden.
 
 Append the remaining machine/process state only if a downstream consumer
 (orchestration, automated re-review, audit) actually needs it, after the
