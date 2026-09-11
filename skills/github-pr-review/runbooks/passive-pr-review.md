@@ -332,10 +332,18 @@ finally: remove the temporary checkout (success, any failure, interruption)
    render the human-facing summary in the concise senior-engineer voice per
    [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
    "Concise human-style summary (opt-in)" — same findings, severities, and
-   verdict; only the summary wording differs. Passive review publishes
-   nothing and posts no inline comments, so `human_inline_findings` (the
-   companion option normalized alongside it) has no distinct surface to
-   act on here; the report is a single returned document either way.
+   verdict; only the summary wording differs. Passive review has no inline
+   surface, so every finding is a body finding: render each one using the
+   human full rendering in
+   [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+   "Canonical human full rendering" instead of the structured full
+   rendering, per this Skill's own
+   [`../policies/review-output.md`](../policies/review-output.md), "Concise
+   human-style summary (opt-in)" — same identity, severity, location, and
+   evidence; only the wording differs. Passive review publishes nothing and
+   posts no inline comments, so `human_inline_findings` (the companion
+   option normalized alongside it) has no distinct surface to act on here;
+   the report is a single returned document either way.
 8a. When resolved external context contains authoritative requirements or
    acceptance criteria, apply
    [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md)

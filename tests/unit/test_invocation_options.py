@@ -186,6 +186,59 @@ class HumanReviewOutputOptionTests(unittest.TestCase):
         self.assertEqual(on, off)
 
 
+class SeniorPhraseExpansionTests(unittest.TestCase):
+    """Issue #227: the expanded senior-intent phrase vocabulary for
+    `human_review_output` — common wording that previously did not resolve
+    senior mode at all."""
+
+    def test_new_affirmative_phrasings_enable_it(self) -> None:
+        for text in (
+            "senior review",
+            "do a senior code review",
+            "senior PR review",
+            "review this as a senior",
+        ):
+            with self.subTest(text=text):
+                self.assertTrue(
+                    normalize(text, defaults=GITHUB_DEFAULTS)["human_review_output"]
+                )
+
+    def test_new_negative_phrasings_force_it_off(self) -> None:
+        on = {**GITHUB_DEFAULTS, "human_review_output": True}
+        for text in ("structured format", "structured review"):
+            with self.subTest(text=text):
+                self.assertFalse(normalize(text, defaults=on)["human_review_output"])
+
+    def test_bare_as_a_senior_is_not_a_trigger(self) -> None:
+        # Deliberately excluded per Issue #227: avoid an overly broad bare
+        # "as a senior" false-positive trigger outside the closed phrase set.
+        for text in ("as a senior", "I want this as a senior would see it"):
+            with self.subTest(text=text):
+                self.assertFalse(
+                    normalize(text, defaults=GITHUB_DEFAULTS)["human_review_output"]
+                )
+
+    def test_one_shot_publish_request_with_stated_senior_intent(self) -> None:
+        result = normalize(
+            "senior review this PR and publish it", defaults=GITHUB_DEFAULTS
+        )
+        self.assertTrue(result["human_review_output"])
+        self.assertTrue(result["human_inline_findings"])
+
+    def test_one_shot_publish_request_with_stated_structured_format(self) -> None:
+        result = normalize(
+            "review #123 and post it in structured format", defaults=GITHUB_DEFAULTS
+        )
+        self.assertFalse(result["human_review_output"])
+
+    def test_plain_publish_request_resolves_nothing(self) -> None:
+        # "publish it" alone carries no presentation wording; the option
+        # falls through to the Skill default, exactly like any other
+        # invocation with no recognized phrase.
+        result = normalize("publish it", defaults=GITHUB_DEFAULTS)
+        self.assertFalse(result["human_review_output"])
+
+
 class HumanInlineFindingsOptionTests(unittest.TestCase):
     """Issue #166: the companion inline-rendering option whose default is
     derived — `human_inline_findings = explicit_value ?? human_review_output`

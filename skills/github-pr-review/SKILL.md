@@ -165,13 +165,17 @@ normalized per
 [`invocation-options.md`](../../shared/policies/invocation-options.md)
 using only the current invocation. `include_fix_prompt` stays local-only.
 `human_review_output` is a natural-language opt-in (no CLI flag — e.g.
-"review it like a senior engineer") rendering the **final summary** in a
+"review it like a senior engineer," "senior review") rendering the
+**final summary**, and any body/fallback finding rendered in full, in a
 concise senior-engineer voice; `human_inline_findings` extends that voice
-to the **inline comments**
+to the **inline comments** only
 ([`templates/inline-finding.md`](templates/inline-finding.md)). Both are
 presentation-only: findings, severity, identity, dedup, verdict, review
-state, the canonical fix/action anchor and `#164` / `#165` fallback, and
-machine-readable status are unchanged.
+state, placement, the canonical fix/action anchor and `#164` / `#165`
+fallback, and machine-readable status are unchanged. Publishing a
+previously produced passive review with no stated presentation asks once
+which to use — see `policies/review-output.md`, "Publishing a previously
+produced passive review."
 
 ## 2. Required Policy Loading
 
@@ -263,7 +267,8 @@ passive review.
   publication of the run (`final review comment == last publication
   event`; any machine-readable status precedes it — see
   [`policies/review-output.md`](policies/review-output.md), "Submission
-  ordering"); `human_review_output` only renders that summary concisely.
+  ordering"); `human_review_output` only renders that summary, and any
+  body/fallback finding, concisely.
 
 The reasoning result and the GitHub mutation are reported **separately**:
 an active invocation states its `Action mode` (`recommendation-only` /

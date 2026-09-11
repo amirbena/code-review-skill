@@ -27,6 +27,15 @@ self-review informational `COMMENT`). Inline comments still carry each
 finding's full detail — in the structured `Evidence` / `Impact` / `Fix`
 shape, or in the same senior voice when the companion option below is on.
 
+For `github-pr-review` specifically, `human_review_output` also re-voices
+any finding that is rendered **in full in the review body** rather than
+inline — every finding in a passive review (passive has no inline
+surface), and an active-review finding with no valid inline anchor. This
+keeps a senior-mode review coherent across passive and active alike: a
+finding never reads structured on one surface and senior on another. See
+[`shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),
+"Canonical human full rendering."
+
 ## Companion option: `human_inline_findings`
 
 `human_inline_findings` extends the senior-engineer voice to
@@ -70,8 +79,11 @@ inline-comment surface, so it is inert there.
 is recognised from a small, fixed vocabulary of phrases, for example:
 
 - affirmative: *"make the review shorter and more human"*, *"review it
-  like a senior engineer"*, *"use concise review comments"*;
-- negative: *"keep the full summary"*, *"do not shorten the review"*.
+  like a senior engineer"*, *"use concise review comments"*, *"senior
+  review"*, *"senior code review"*, *"senior PR review"*, *"review this
+  as a senior"*;
+- negative: *"keep the full summary"*, *"do not shorten the review"*,
+  *"structured format"*.
 
 The complete authoritative phrase set lives in
 [`shared/policies/invocation-options.md`](../../shared/policies/invocation-options.md),
@@ -91,18 +103,34 @@ review #812 and use concise review comments
 The option is normalized from the **current invocation only** — it never
 carries over to a later review or re-review in the same conversation.
 
+**Publishing a previously produced passive review.** If you ask
+`github-pr-review` to publish or post a review it already produced
+passively (e.g. "publish it" after seeing a passive result), and that
+publish request doesn't itself state a presentation, it asks once —
+Senior/human or Structured — before publishing, offering whichever
+presentation the passive result was actually shown in as the recommended
+choice, but never applying it silently. State the presentation directly
+in the same request (`review #123 and publish it like a senior
+engineer`, or `... in structured format`) to skip the question. See
+[`skills/github-pr-review/policies/review-output.md`](../../skills/github-pr-review/policies/review-output.md),
+"Publishing a previously produced passive review."
+
 ## Limitations & safety boundaries
 
 - **Presentation only.** Mode on and mode off produce identical findings,
   severities, finding identity, deduplication, the mechanically derived
   verdict, the GitHub review state (`APPROVE` / `REQUEST_CHANGES` /
-  `COMMENT`), canonical fix/action anchors, any machine-readable status,
-  and the publication order. Only wording changes — the final summary
-  always, and (under `human_inline_findings`) the inline comments.
-- `human_review_output` alone does not alter inline comments; that is the
-  companion `human_inline_findings` (on by default under senior mode).
-  Neither removes the trailing machine-metadata block from the local
-  report — that block still follows the summary unchanged.
+  `COMMENT`), canonical fix/action anchors, placement (inline vs. body),
+  any machine-readable status, and the publication order. Only wording
+  changes — the final summary always, any `github-pr-review` body/fallback
+  finding when `human_review_output` is on, and (under
+  `human_inline_findings`) the inline comments.
+- `human_review_output` alone does not alter *inline* comments; that is
+  the companion `human_inline_findings` (on by default under senior
+  mode), which is scoped to the inline surface only and never governs a
+  body/fallback finding's wording. Neither removes the trailing
+  machine-metadata block from the local report — that block still
+  follows the summary unchanged.
 
 ## Canonical semantics
 

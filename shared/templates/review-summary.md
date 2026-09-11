@@ -225,6 +225,44 @@ location, and publication anchor; only the inline wording changes. See
 [`../policies/invocation-options.md`](../policies/invocation-options.md),
 "`human_inline_findings` derived default and phrasings".
 
+### Human full rendering for body/fallback findings (`github-pr-review` only)
+
+This subsection is an explicit, opt-in extension that only
+`github-pr-review` applies, per its own `policies/review-output.md` and
+`templates/external-review-summary.md` (not linked from here for the same
+packaging reason as the heading override above). `human_review_output`
+selects the human-voiced rendering of the final summary above; for
+`github-pr-review` specifically it *also* selects the **human full
+rendering** in
+[`finding-rendering.md`](finding-rendering.md), "Canonical human full
+rendering" for any finding that is rendered in full **in the review
+body** rather than as a GitHub inline comment — a passive review's
+findings (passive has no inline surface at all), and an active-review
+finding with no valid inline anchor. This closes the gap where a finding
+published in the body would otherwise stay in the structured
+`Evidence:` / `Impact:` / `Fix:` block even while the rest of the review
+reads in senior voice.
+
+It is additive documentation, inert for any consumer that does not opt
+into it: `local-code-review` does not reference this subsection, has no
+inline/body split (every finding is already a body finding), and its own
+senior-voice wiring for its report (per its own
+`templates/local-review-report.md`, "Concise human-style output
+(opt-in)") is unaffected and unchanged.
+
+This is governed directly by `human_review_output`, **not** by
+`human_inline_findings` — that companion option stays scoped to the
+GitHub inline surface exactly as "Companion inline rendering
+(`human_inline_findings`)" above defines it, and is not redefined by this
+subsection. A summary-pointer line for a finding already published in
+full elsewhere is unaffected by either option — it stays the compact
+severity/title/location pointer it is today. Presentation only: the
+finding's detection, severity, identity, deduplication, evidence,
+remediation, canonical fix/action location, and whether it is placed in
+the body or inline are exactly the same whether this rendering is on or
+off — only the wording of the body finding's `Evidence` / `Impact` /
+`Fix` content changes.
+
 ### Density, de-duplication, and voice tightening (`github-pr-review` only)
 
 This subsection is an explicit, opt-in extension that only

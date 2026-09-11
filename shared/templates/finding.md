@@ -31,7 +31,12 @@ and act on. The opt-in concise **human inline rendering** ("Canonical
 human inline rendering" there — `github-pr-review` inline surface only,
 selected by `human_inline_findings`) is another such projection: it
 re-voices an inline finding the way a senior engineer would write the
-comment by hand.
+comment by hand. The opt-in **human full rendering** ("Canonical human
+full rendering" there — `github-pr-review` review-body/fallback surface
+only, selected directly by `human_review_output`) applies the same
+re-voicing to a finding published in full in the body instead of inline,
+keeping its `id` and `Location` since the body has no platform-supplied
+anchor.
 A future additional renderer (for example a machine-readable one) would be
 another projection of the same fields; none of these change the finding
 fields, the severity model, the evidence bar, the finding's identity, its

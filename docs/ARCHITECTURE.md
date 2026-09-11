@@ -642,17 +642,26 @@ unless they are exactly equal.
   data, severity, or decision.
 - **The final-summary voice is presentation-only.** `human_review_output`
   (default `false` for both Skills, natural-language-only — there is no
-  CLI flag) selects a concise senior-engineer rendering of the final
-  human-facing summary. Its derived companion `human_inline_findings`
-  (default `explicit_value ?? human_review_output`) extends the same voice
-  to `github-pr-review`'s inline review comments — a severity-keeping
+  CLI flag; a closed vocabulary that includes senior-review phrasings
+  such as "senior review" and "review this as a senior") selects a concise
+  senior-engineer rendering of the final human-facing summary, and, for
+  `github-pr-review` specifically, of any finding rendered in full in the
+  review body rather than inline — a passive review's findings, or an
+  active fallback finding with no valid inline anchor. Its derived
+  companion `human_inline_findings` (default
+  `explicit_value ?? human_review_output`) extends the same voice, scoped
+  only to `github-pr-review`'s inline review comments — a severity-keeping
   heading plus prose in place of the `Evidence` / `Impact` / `Fix` block.
   Mode on and mode off produce identical findings, severities,
   deduplication, verdict, GitHub review state, finding identity, canonical
-  fix/action anchors and the `#164` / `#165` body fallback,
+  fix/action anchors, placement, and the `#164` / `#165` body fallback,
   machine-readable status, and publication order — only the wording of the
-  summary (and, under `human_inline_findings`, the inline comments)
-  changes.
+  summary, of a body/fallback finding, and (under `human_inline_findings`)
+  of the inline comments changes. Publishing a previously produced
+  passive review with no stated presentation asks once which to use,
+  rather than silently defaulting to structured
+  ([`review-output.md`](../skills/github-pr-review/policies/review-output.md),
+  "Publishing a previously produced passive review").
 - **Publication ordering is fixed for `github-pr-review`.**
   `final review comment == last publication event`: the one batched
   review submission (body + inline comments + event) carries the final

@@ -50,8 +50,13 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # 263 -> 264. github's file is currently 370 lines with the same #89
 # addition applied, so GITHUB_MAX_LINES is pinned at 370 rather than kept
 # at the unused #88-era 371.
+# Issue #227 (senior/human presentation consistency across passive and
+# active publication: body/fallback findings following `human_review_output`,
+# the expanded senior-phrase vocabulary, and the passive-review
+# publish-format question) raised github 370 -> 375 in section 1 and
+# section 4. local is unaffected (github-pr-review only) and stays 264.
 LOCAL_MAX_LINES = 264
-GITHUB_MAX_LINES = 370
+GITHUB_MAX_LINES = 375
 
 
 def _norm(path) -> str:

@@ -234,8 +234,11 @@ selected by `human_inline_findings` (see
 [`../policies/invocation-options.md`](../policies/invocation-options.md),
 "`human_inline_findings` derived default and phrasings" — its default is
 derived from `human_review_output`). Used only by `github-pr-review`, and
-only for the inline surface: `local-code-review` has no inline comments,
-and the full / summary-pointer renderings above are never affected.
+only for the inline surface: `local-code-review` has no inline comments.
+The summary-pointer rendering is never affected by either presentation
+option. The full rendering above has its own opt-in human projection —
+selected by `human_review_output` directly, not by `human_inline_findings`
+— defined next in "Canonical human full rendering."
 
 It reads the way a strong senior engineer would leave the comment by
 hand — a short heading that keeps the severity and names the concrete
@@ -295,6 +298,88 @@ Rules — this is a re-voicing, not a weaker finding:
 - a **consolidated root-cause finding** still names every affected call
   path in the prose — the re-voicing never drops a manifestation site.
 
+## Canonical human full rendering
+
+An **opt-in** projection of the same fields onto a finding rendered **in
+full in the review body** rather than as a GitHub inline comment — used by
+`github-pr-review` for a passive review's findings (passive has no inline
+surface, so every finding is rendered this way) and for an active-review
+finding with no valid inline anchor (see each Skill's own placement
+policy). Selected directly by `human_review_output` (see
+[`../policies/invocation-options.md`](../policies/invocation-options.md),
+"`human_review_output` phrasings"), **not** by `human_inline_findings` —
+that option is scoped to the GitHub inline surface only and is not
+redefined by this section. `local-code-review` has no inline/body split
+(every finding is already a body finding); it is unaffected and keeps its
+own senior-voice summary wiring exactly as it stands today.
+
+Unlike the inline rendering, this surface has no platform-supplied anchor,
+so the finding's `id` and canonical `Location` are kept as their own line,
+exactly as in the canonical full rendering; only the `Evidence` /
+`Impact` / `Fix` block below them is re-voiced as senior-engineer prose,
+the same way "Canonical human inline rendering" re-voices the inline
+block:
+
+```text
+### <id> <severity>: <short, concrete title>
+
+`<path>:<line-or-range>`
+
+<one to three short paragraphs that carry the concrete problem and the
+evidence for it, the engineering consequence when it is material or
+non-obvious, and an actionable correction direction when one is useful.
+A genuine open question or trade-off is phrased as a question, not
+asserted as a defect.>
+```
+
+Example:
+
+```text
+### F2 P2: Retry eligibility logic is duplicated
+
+`app/retry.py:41-58`
+
+The same eligibility decision is implemented in both the sync and async
+flows, so the behaviour can drift when one path changes and the other is
+missed. I'd centralise it behind one policy/helper and have both flows
+call that.
+```
+
+This is a re-voicing of the **same finding**, on the same terms as the
+human inline rendering:
+
+- **severity stays visible first**, in the heading, next to `id` (here
+  `F2 P2: …`, never `[P2] …`);
+- **`id` and `Location` stay their own line** — the body has no anchor to
+  omit them in favor of, unlike the inline surface;
+- the **mandatory What / Where / Evidence / Impact / Fix core** is fully
+  present — carried by the prose for the last three, none dropped,
+  softened, or replaced by generic language;
+- an `evidence location`, `contextual evidence`, `runtime validation`, or
+  `confidence` line that the structured full rendering would show is
+  folded into the prose instead — the same fold-in treatment the inline
+  rendering uses — rather than added as its own labelled line;
+- a justified longer explanation folds into the prose as one extra short
+  paragraph, on the same visibility terms as `Details` elsewhere, never
+  re-introduced as a `Details:` label;
+- **concise by default**, **no meta-commentary about the review process**,
+  **evidence-based**, genuine **uncertainty preserved as a question**, and
+  **no praise** — the same rules as the human inline rendering;
+- the finding's **identity, severity, deduplication, canonical
+  fix/action location, evidence/detection location, and the fact that it
+  is published in the body rather than inline are exactly those of the
+  structured full rendering** — structured and human full are two
+  renderings of one semantic finding; rendering voice never moves it
+  between the body and an inline comment (that is decided only by each
+  Skill's placement policy, independent of voice);
+- a **consolidated root-cause finding** keeps its `Affected locations`
+  list (see "Affected locations on a consolidated finding" in
+  [`finding.md`](finding.md)), either as its own line or folded into the
+  prose, so no manifestation site is dropped.
+
+When `human_review_output` is off — explicitly, or because nothing set
+it — a body finding uses the structured full rendering above, unchanged.
+
 ## Canonical summary-pointer rendering
 
 Used when the finding's full representation is published elsewhere (for
@@ -329,6 +414,14 @@ quality-contract rules are in [`finding.md`](finding.md), "Rules".
   evidence bar, and the finding's identity, severity, deduplication, and
   canonical location — a projection, never a weaker finding (see
   "Canonical human inline rendering");
+- the opt-in **human full rendering** (`human_review_output`,
+  `github-pr-review` body/fallback surface only) applies the same
+  re-voicing to a finding rendered in full in the review body, keeping
+  `id` and `Location` as their own line since the body has no
+  platform-supplied anchor; it is selected directly by
+  `human_review_output`, not by `human_inline_findings`, and is likewise
+  a projection, never a weaker finding (see "Canonical human full
+  rendering");
 - optional fields render only when populated — never as an empty or
   placeholder line (see [`finding.md`](finding.md), "Optional and
   surface-specific fields");

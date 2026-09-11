@@ -359,8 +359,9 @@ class HumanInlineFindingsSubOption(unittest.TestCase):
         self.assertIn("Both options are presentation only", t)
         self.assertIn("the #164 / #165 body-fallback behaviour", t)
         self.assertIn(
-            "When both options are off (the default), the body and the inline "
-            "comments use the existing structured shapes unchanged",
+            "When both options are off (the default), the body, its "
+            "full/fallback findings, and the inline comments use the existing "
+            "structured shapes unchanged",
             t,
         )
 
