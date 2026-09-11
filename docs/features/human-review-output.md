@@ -7,7 +7,11 @@ voice instead of the default structured shape: a short opening on merge
 safety and the top concern, then *what's good / what's concerning / what
 to change* in prose, each referenced finding keeping its `P0` / `P1` /
 `P2` label, an intentional trade-off optionally raised as a question, and
-no review-process or machine metadata.
+no review-process or machine metadata. The voice itself — leading with the
+defect, no dedicated praise slot, no first-person/hedging on a required
+fix, and the rest of the shared voice rules — is owned by one place:
+[`shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),
+"Senior voice contract".
 
 It is normalized internally to the `human_review_output` option (default
 `false`).
@@ -47,11 +51,11 @@ engineering consequence, and the correction direction — without the
 `Evidence:` / `Impact:` / `Fix:` labels:
 
 ```text
-P2: Retry eligibility logic is duplicated
+P2: Sync and async retry paths decide eligibility separately
 
-The same eligibility decision is implemented in both flows, so the
-behaviour can drift when one path changes and the other is missed. I'd
-centralise it behind one helper and have both flows call that.
+`should_retry()` in the sync flow and the inline check in
+`AsyncRunner.retry` already disagree on 429 handling. Move eligibility
+into one helper that both paths call.
 ```
 
 Its default is **derived** — `explicit_value ?? human_review_output` — so
@@ -138,5 +142,7 @@ engineer`, or `... in structured format`) to skip the question. See
 "`human_review_output` phrasings" ·
 [`shared/templates/review-summary.md`](../../shared/templates/review-summary.md),
 "Concise human-style summary (opt-in)" ·
+[`shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),
+"Senior voice contract" (the single owner of the voice rules themselves) ·
 [`skills/github-pr-review/policies/review-output.md`](../../skills/github-pr-review/policies/review-output.md),
 "Concise human-style summary (opt-in)".

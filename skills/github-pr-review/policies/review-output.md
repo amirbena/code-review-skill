@@ -174,11 +174,12 @@ them — is published after it.
 ### Density and de-duplication
 
 Both rendering modes (structured and `human_review_output`) follow the
-explicit, testable density/de-duplication guidance in
-[`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
-"Density, de-duplication, and voice tightening (`github-pr-review`
-only)": omit empty/low-value sections, never restate the diff, never
-narrate file-by-file inspection or reproduction mechanics beyond the
+explicit, testable density/de-duplication guidance owned once, for both
+Skills, by
+[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+"Senior voice contract", "Density, de-duplication, and voice tightening":
+omit empty/low-value sections, never restate the diff, never narrate
+file-by-file inspection or reproduction mechanics beyond the
 `Validation` / `runtime-validation.md` record, never repeat the same
 evidence across the summary line, a fallback full finding, and its
 inline comment, and let output length scale with the number and

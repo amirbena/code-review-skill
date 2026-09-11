@@ -228,19 +228,31 @@ class DensityAndDeduplicationGuidance(unittest.TestCase):
     NUMERIC_CAP_PATTERN = re.compile(r"\b\d+[\s-]?(words?|lines?)\b", re.I)
 
     def test_shared_summary_carries_the_scoped_subsection(self) -> None:
+        # Issue #231: this guidance describes the voice itself, not a
+        # GitHub-specific mechanism, so it moved into the single shared
+        # "Senior voice contract" owner and is no longer scoped
+        # "github-pr-review only" — local-code-review now inherits it too
+        # through the same existing link. review-summary.md keeps only a
+        # pointer to the new owner.
         raw = SHARED_SUMMARY.read_text(encoding="utf-8")
-        self.assertIn(
+        self.assertIn("### Density, de-duplication, and voice tightening", raw)
+        self.assertNotIn(
             "### Density, de-duplication, and voice tightening (`github-pr-review` only)",
             raw,
         )
         t = _norm(SHARED_SUMMARY)
+        self.assertIn("Senior voice contract", t)
+        self.assertIn("local-code-review inherits it", t)
+
+        rendering_t = _norm(SHARED_FINDING_RENDERING)
+        self.assertIn("## Senior voice contract", SHARED_FINDING_RENDERING.read_text(encoding="utf-8"))
         for rule in (
             "never restate the diff",
             "never repeat the same evidence",
             "no numeric word or line cap",
             "scale with the number and complexity of",
         ):
-            self.assertIn(rule, t)
+            self.assertIn(rule, rendering_t)
 
     def test_review_output_wires_the_guidance_in(self) -> None:
         raw = GH_OUTPUT.read_text(encoding="utf-8")
@@ -266,7 +278,10 @@ class SeniorModeVoiceTightening(unittest.TestCase):
     evidence while every existing evidence/rigor field stays required."""
 
     def test_scoped_subsection_names_the_voice_rules(self) -> None:
-        t = _norm(SHARED_SUMMARY)
+        # Issue #231: these voice rules now live once, in the shared
+        # "Senior voice contract" in finding-rendering.md, rather than
+        # restated in review-summary.md's own subsection.
+        t = _norm(SHARED_FINDING_RENDERING)
         self.assertIn("natural short paragraphs, minimal", t.replace("\n", " "))
         self.assertIn("no meta-commentary", t)
 

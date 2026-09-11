@@ -280,26 +280,26 @@ engineer", "use concise review comments"; per
 "`human_review_output` phrasings"), this review body is written in the
 concise senior-engineer voice from
 [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
-"Concise human-style summary (opt-in)" instead of the structured shape
-above:
+"Concise human-style summary (opt-in)" — whose voice is owned by
+[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+"Senior voice contract" — instead of the structured shape above:
 
 ```markdown
 ## Review Summary
 
-Not safe to merge at `<short-sha>` yet — the P1 on the auth path is the
-blocker.
-
-**What's good:** the retry handling is clean and the new tests actually
-exercise the failure path.
-
-**What's concerning:** `P1 (Blocking)` — authorization provenance can be
-forged through the trusted boundary (`src/review/authz.py:142`);
-`P1 (Blocking)` — a stale HEAD can still receive a formal review action
-(`src/review/output.py:88`). `P2 (Non-Blocking)` — the validation output
-hides which check failed.
+Not safe to merge at `<short-sha>` yet. Two blockers: authorization
+provenance can be forged through the trusted boundary
+(`P1 (Blocking)`, `src/review/authz.py:142`), and a stale HEAD can still
+receive a formal review action (`P1 (Blocking)`, `src/review/output.py:88`).
+The validation output hiding which check failed
+(`P2 (Non-Blocking)`, `scripts/validate.py:117`) is worth fixing but
+doesn't block.
 
 Was routing the settled-tradeoff case straight to the caller here
 deliberate?
+
+The retry handling is clean, and the new tests exercise the failure path
+that was previously untested.
 
 **Requirement coverage:** `incomplete` — R1 `implemented` (`<source>`;
 `<evidence>`); R2 `not_evidenced` (`<source>`; `<evidence/explanation>`).
@@ -361,8 +361,9 @@ inline comments even when this body is structured.
 The inline re-voicing is presentation only and is governed by
 [`inline-finding.md`](inline-finding.md), "Human-rendered inline finding
 (opt-in)" and
-[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
-"Canonical human inline rendering". It changes no finding's severity,
+[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+"Canonical human inline rendering" and "Senior voice contract". It
+changes no finding's severity,
 identity, deduplication, evidence, remediation, decision, or
 **publication anchor** — every anchor-selection and body-fallback rule in
 [`../policies/finding-placement.md`](../policies/finding-placement.md)

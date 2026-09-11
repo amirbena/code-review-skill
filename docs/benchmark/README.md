@@ -179,6 +179,18 @@ mirrors it (executed by
 including every §7 worked example) and consumes the single reference
 matcher.
 
+## Senior voice examples
+
+[`senior-voice-examples.md`](senior-voice-examples.md) (issue
+[#231](https://github.com/amirbena/code-review-skill/issues/231), design
+record [#229](https://github.com/amirbena/code-review-skill/issues/229))
+is a **documented reference set, not a CI gate**, unlike everything above:
+eight findings paired as their structured and senior-voice renderings,
+demonstrating the voice principles owned by
+[`../../shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),
+"Senior voice contract". It measures presentation quality, which the
+#40/#41 corpus and metrics above do not.
+
 ## Related
 
 The architecture map is [`../ARCHITECTURE.md`](../ARCHITECTURE.md).

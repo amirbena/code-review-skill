@@ -50,8 +50,8 @@ language interpretation.
   short heading that keeps the `P0` / `P1` / `P2` severity and names the
   finding, then compact prose in place of the `Evidence:` / `Impact:` /
   `Fix:` labelled block (see
-  [`../templates/finding.md`](../templates/finding.md), "Canonical human
-  inline rendering"). It acts only where a Skill publishes inline review
+  [`../templates/finding-rendering.md`](../templates/finding-rendering.md),
+  "Canonical human inline rendering"). It acts only where a Skill publishes inline review
   comments — `github-pr-review`; `local-code-review` normalizes it for
   direct/mediated parity but has no inline-comment surface, so it has no
   effect on local output. Like the other options it is presentation only:

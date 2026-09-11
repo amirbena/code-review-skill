@@ -132,32 +132,44 @@ When the invocation normalizes `human_inline_findings` (see
 derived from `human_review_output`, so senior-mode reviews get this by
 default), this comment is rendered in the concise senior-engineer voice
 from
-[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
 "Canonical human inline rendering" instead of the
 `[<severity>] / Evidence / Impact / Fix` block above — a short heading
 that keeps the severity, its compact legend meaning, and names the
-finding, then compact prose:
+finding, then compact prose. The voice itself is owned by the shared
+[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+"Senior voice contract" — including no dedicated praise slot and no
+first-person/hedging on a required fix:
 
 ```text
-P2 (Non-Blocking): Retry eligibility logic is duplicated
+P1 (Blocking): Paginated file listing stops after page 1
 
-The same eligibility decision is implemented in both the sync and async
-flows, so the behaviour can drift when one path changes and the other is
-missed. I'd centralise it behind one policy/helper and have both flows
-call that.
+`list_files()` reads only the first page, so a large PR can reach a
+false clean review with files that were never seen. Exhaust the
+pagination before permitting a clean decision.
+```
+
+```text
+P2 (Non-Blocking): Sync and async retry paths decide eligibility
+separately
+
+`should_retry()` in the sync flow and the inline check in
+`AsyncRunner.retry` already disagree on 429 handling. Move eligibility
+into one helper that both paths call.
 ```
 
 This is a re-voicing of the **same finding**, not a different or weaker
 one. Unchanged:
 
 - **severity** — still shown first, in the heading, with the same
-  compact legend meaning as the structured form (`P2 (Non-Blocking): …`,
-  not `[P2] …`);
+  compact legend meaning as the structured form (`P1 (Blocking): …`,
+  not `[P1] …`);
 - the mandatory What / Where / Evidence / Impact / Fix core — evidence,
   the engineering consequence when it is material, and the actionable
   correction direction are still all present, carried by the prose; a
   genuine open question stays a question; no praise, no generic
-  "consider refactoring";
+  "consider refactoring", and a required fix like this one is stated
+  directly, never as a first-person suggestion;
 - evidence and remediation requirements, finding identity and
   deduplication, the one-authoritative-representation rule, same-HEAD /
   re-review awareness, and the batched single review submission;
