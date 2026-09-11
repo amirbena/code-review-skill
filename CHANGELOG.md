@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.19.0 — 2026-09-11
+
+### Added
+
+- Add review stopping criteria: every review now states whether it reached complete coverage, and an incomplete review is never rendered as clean (#228).
+
 ## v1.18.0 — 2026-09-11
 
 ### Changed
