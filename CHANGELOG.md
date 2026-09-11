@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.23.1 — 2026-09-11
+
+### Fixed
+
+- Consolidate the duplicated self-review worked example in github-pr-review's policies into a single canonical owner (#244).
+
 ## v1.23.0 — 2026-09-11
 
 ### Changed
