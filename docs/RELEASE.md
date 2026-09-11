@@ -142,12 +142,21 @@ generator:
 Sections render in a fixed order (`Breaking`, `Removed`, `Added`,
 `Changed`, `Deprecated`, `Fixed`, `Security`), hand-curated bullets first
 and generated ones in merge order, so the same repository state always
-generates the same bytes. Generation **fails closed**, naming the pull
-request and the reason, when a release-worthy commit names no pull
-request, the pull request cannot be read or is not the one behind that
-commit, or its release intent is missing, malformed, or `none`. The fix
-is to edit the merged PR's description and re-run the workflow
-(`workflow_dispatch`). Generator:
+generates the same bytes. Generation **fails closed**, naming the reason,
+in two distinct cases with two distinct fixes:
+
+- the pull request's release intent is missing, malformed, or `none` (or
+  the PR cannot be read, or is not the one behind that commit) — edit the
+  merged PR's description, then re-run the workflow (`workflow_dispatch`);
+- a release-worthy commit's own subject on `main` names no pull request
+  (its trailing `(#N)`, or the `Merge pull request #N` form, is missing —
+  trailing punctuation such as a period or `!` is tolerated) — this is
+  **not** fixed by editing any PR description; the commit itself needs
+  correcting (for example, by cutting the next release from a later
+  commit once a fixed workflow run is possible, or by a maintainer's
+  manual, out-of-band release that advances the baseline tag past it).
+
+Generator:
 [`../scripts/release_lib/changelog_generation.py`](../scripts/release_lib/changelog_generation.py).
 
 Release intent is read when the release is planned, so an edit to a merged

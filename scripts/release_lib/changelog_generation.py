@@ -33,7 +33,9 @@ from release_lib.release_intent import (
 from release_lib.semver_policy import AmbiguousReleaseImpact
 
 _SUBSECTION_RE = re.compile(r"^###\s+(.+?)\s*$")
-_SQUASH_REF_RE = re.compile(r"\(#(\d+)\)\s*$")
+# Trailing punctuation (a maintainer's edit to the squash-merge title box,
+# e.g. adding a period) must not defeat detection.
+_SQUASH_REF_RE = re.compile(r"\(#(\d+)\)[.!?:;,]*\s*$")
 _MERGE_REF_RE = re.compile(r"^Merge pull request #(\d+)\b")
 
 
@@ -66,7 +68,12 @@ def collect_entries(repo_root: Path, baseline: str) -> list[GeneratedEntry]:
             continue
         number = pr_number_from_subject(subject)
         if number is None:
-            problems.append(f"release-worthy commit {sha[:12]} does not name a merged pull request '(#N)'")
+            # Not fixable by editing a PR description: the commit subject on
+            # `main` itself does not name a merged pull request.
+            problems.append(
+                f"release-worthy commit {sha[:12]} has no '(#N)' pull request reference in its subject; "
+                "the commit itself needs correcting, not any PR description"
+            )
             continue
         try:
             pr = gitgh.pull_request(repo_root, number)

@@ -50,7 +50,11 @@ class Assessment:
 
     @property
     def blocked(self) -> bool:
-        return self.intent_checked and (self.missing_intent is not None or self.curated_problem is not None)
+        """Only a release-worthy PR can block — an unrelated PR is never
+        failed by CHANGELOG.md content it didn't touch."""
+        if not (self.intent_checked and self.release_worthy):
+            return False
+        return self.missing_intent is not None or self.curated_problem is not None
 
 
 def _curated_problem(changelog_text: str) -> str | None:

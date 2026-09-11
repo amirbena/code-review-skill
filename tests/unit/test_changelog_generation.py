@@ -137,6 +137,19 @@ class PrNumberFromSubjectTests(unittest.TestCase):
         self.assertEqual(pr_number_from_subject("Merge pull request #7 from a/b"), 7)
         self.assertIsNone(pr_number_from_subject("chore(release): v1.2.0 [skip ci]"))
 
+    def test_tolerates_trailing_punctuation_from_an_edited_squash_title(self) -> None:
+        # A maintainer commonly cleans up the pre-filled squash-merge title
+        # box before confirming; that must not defeat detection.
+        for subject, expected in (
+            ("Tighten a rule (#42).", 42),
+            ("Tighten a rule (#42)!", 42),
+            ("Tighten a rule (#42)?", 42),
+            ("Tighten a rule (#42);", 42),
+            ("Tighten a rule (#42), thanks!", None),  # trailing prose is still unparseable
+        ):
+            with self.subTest(subject=subject):
+                self.assertEqual(pr_number_from_subject(subject), expected)
+
 
 class ComposeUnreleasedTests(unittest.TestCase):
     ENTRIES = [
@@ -248,6 +261,9 @@ class CollectEntriesTests(_PatchedRepoCase):
         problems = ctx.exception.problems
         self.assertEqual(len(problems), 6)
         self.assertIn(_sha(1)[:12], problems[0])
+        # Correctly points at the commit, not a PR description, as the fix.
+        self.assertIn("the commit itself needs correcting", problems[0])
+        self.assertNotIn("edit the merged PR's description", problems[0].lower())
         self.assertIn("PR #21", problems[1])
         self.assertIn("'Release category: none'", problems[2])
         self.assertIn("PR #23", problems[3])

@@ -14,12 +14,11 @@ from release_lib.commands.shared import resolve_changelog
 from release_lib.semver_policy import AmbiguousReleaseImpact
 from release_lib.semver_version import validate_semver
 
-INTENT_FIX_HINT = (
-    "Every release-worthy pull request merged since the baseline tag needs "
-    "'Release category:' and 'Release entry:' lines in its description. Edit "
-    "the merged PR's description, then re-run this workflow (workflow_dispatch). "
-    "See docs/RELEASE.md."
-)
+# Each problem above names its own fix — a missing/invalid PR description
+# (edit the PR, then re-run via workflow_dispatch) or an unparseable commit
+# subject on `main` (the commit itself needs correcting, not a PR
+# description). This is a neutral pointer, not a one-size-fits-all fix.
+INTENT_FIX_HINT = "See docs/RELEASE.md, 'The global changelog model', for how to resolve each problem above."
 
 
 def cmd_generate_changelog(args: argparse.Namespace) -> int:

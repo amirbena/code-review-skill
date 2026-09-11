@@ -334,6 +334,16 @@ class MainAssessContractTests(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertIn("not classifiable", text)
 
+    def test_unrelated_non_release_worthy_pr_ignores_preexisting_malformed_unreleased(self) -> None:
+        # A malformed hand-curated '## Unreleased' left over elsewhere must
+        # never fail an unrelated PR that never touches the changelog.
+        rc, outputs, text, _, _ = self._assess(
+            "docs/typo.md", body="Fix a typo.\nRelease category: none\n", changelog=_unreleased("- uncategorized")
+        )
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["release_worthy"], "false")
+        self.assertNotIn("not classifiable", text)
+
     def test_without_require_flag_reports_but_exits_zero(self) -> None:
         rc, outputs, text, _, _ = self._assess("skills/local-code-review/SKILL.md", body="", require=False)
         self.assertEqual(rc, 0)
