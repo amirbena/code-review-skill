@@ -94,6 +94,14 @@ with findings aggregated and de-duplicated — including across partitions
 organized for review, never what counts as a finding, its evidence label,
 or its severity.
 
+[`review-stopping-criteria.md`](review-stopping-criteria.md) defines when
+all of the above is actually done: complete coverage requires every pass
+the classified depth activates, and every partition when partitioning
+activated, to have reached its own stop condition. An incomplete review
+still reports every finding it actually gathered with the same evidence
+standard as a complete one; incompleteness only changes the review's
+top-level outcome label, never a finding's evidence bar.
+
 The repository-intelligence model design record (a repository-development
 document, not a packaged resource, so it is named here, not linked) types
 what a fired [`repository-expansion.md`](repository-expansion.md) trigger

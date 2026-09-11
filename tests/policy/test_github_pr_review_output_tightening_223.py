@@ -51,10 +51,19 @@ SEVERITY_LEGEND = {
 # anything, via `git hash-object`. Issue #223 must not modify any of these
 # files — this is the "local-code-review is provably unaffected" guard the
 # Issue's cross-Skill boundary and acceptance criteria require.
+#
+# LOCAL_REPORT's, LOCAL_RUNBOOK's, and LOCAL_SKILL's hashes were re-captured
+# after Issue #89 (review-stopping-criteria.md) made deliberate,
+# separately-owned changes to local-review-report.md (the always-on Coverage
+# metadata field and the REVIEW INCOMPLETE decision variant),
+# local-review.md (the new "Evaluate review coverage" step), and SKILL.md
+# (the required-policy link) — unrelated to #223's github-pr-review
+# tightening, which this guard exists to catch. The other files in this map
+# are untouched by #89 and keep their original #223-era hashes.
 LOCAL_BASELINE_HASHES = {
-    LOCAL_REPORT: "4b2529c68c26bcc6260f7278566e1c726fa2a3cb",
-    LOCAL_RUNBOOK: "54fb4278d6f03087dac3c8fa4b190161c491907a",
-    LOCAL_SKILL: "971d9633ec3a70da6287c2832c7c0f6cf2b80544",
+    LOCAL_REPORT: "01a26fd8e9c79241fa1ee252cb5bb7c094161960",
+    LOCAL_RUNBOOK: "47c7dabf60261367fc4c71c03910abcbb5a58c99",
+    LOCAL_SKILL: "44b6e6953d2847f6c999d5824d41d235b6fd9435",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "1b5238723eab4308407c137c554fa3a169e8b482",
     LOCAL_POLICY_DIR / "repository-state.md": "6293471f64a02ad8bd43b2d823dba3fa21d37b28",

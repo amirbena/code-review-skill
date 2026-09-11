@@ -45,8 +45,13 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # large-PR partitioning policy added to the same batch).
 # github raised ... 370 -> 371 for Issue #88 (the same conditional
 # large-PR partitioning policy added to the section-2 required-policy batch).
-LOCAL_MAX_LINES = 263
-GITHUB_MAX_LINES = 371
+# Issue #89 (the always-on review-stopping-criteria policy added to the
+# same section-2 required-policy batch on both Skills) raised local
+# 263 -> 264. github's file is currently 370 lines with the same #89
+# addition applied, so GITHUB_MAX_LINES is pinned at 370 rather than kept
+# at the unused #88-era 371.
+LOCAL_MAX_LINES = 264
+GITHUB_MAX_LINES = 370
 
 
 def _norm(path) -> str:

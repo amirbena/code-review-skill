@@ -205,6 +205,20 @@ de-duplication note. A PR that stayed under the threshold omits the field
 entirely — it is never rendered as an empty/`none` placeholder the way
 the always-on pair is.
 
+The `coverage` field per
+[`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md)
+is always present, like `change_risk_depth` and
+`repository_expansion_triggers` — but it is **not** effect-free the way
+those two are: when it is `incomplete`, the reasoning result above is
+`REVIEW INCOMPLETE` instead of whatever the mechanical derivation from
+findings alone would otherwise produce, so that an incomplete review is
+never mistaken for `REVIEW CLEAN` / Approve. This block's own `decision`
+field still records whichever GitHub action was actually taken —
+typically `comment`, since the review-action authorization gate still
+applies — never `approve`; `REVIEW INCOMPLETE` is not itself a value of
+that field. Findings already gathered are still reported in full; only
+the top-level outcome is overridden.
+
 Append the remaining machine/process state only if a downstream consumer
 (orchestration, automated re-review, audit) actually needs it, after the
 human-facing review and clearly subordinate, per
@@ -221,6 +235,7 @@ human-facing review and clearly subordinate, per
 - change_risk_signals: `none` | `<signal (tier) — evidence>` per resolved occurrence
 - repository_expansion_triggers: `none` | `<trigger (ring N) — locations>` per fired trigger
 - large_pr_partitioning: `<n> partitions, <capped/dedup note>` — omitted entirely when inactive
+- coverage: `complete` | `incomplete — <reason(s)>`
 - P0: <n>
 - P1: <n>
 - P2: <n>
@@ -355,6 +370,13 @@ are owned by the linked policies and are not restated here.
   self-evident. Canonical:
   [`../policies/review-output.md`](../policies/review-output.md), "Final
   summary".
+- **Incomplete coverage overrides the verdict.** When `coverage` per
+  [`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md)
+  is `incomplete`, `Result` and `Decision` render `REVIEW INCOMPLETE`
+  instead of `REVIEW CLEAN` / `CHANGES REQUIRED`, with a one-sentence
+  reason tied to the metadata block's `coverage` value — never `Approve`,
+  never a clean-reading `Result`. Findings actually gathered before
+  coverage was interrupted still render in full.
 - **Findings own their detail inline; the body owns the list.** An
   inline-published finding gets exactly one summary-pointer line
   (severity — title, then `` `path:line` ``) and nothing else — no
