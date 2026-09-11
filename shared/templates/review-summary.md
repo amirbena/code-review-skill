@@ -63,6 +63,27 @@ important concern or attention point; include scope only when useful>
 <one-sentence rationale tied to the findings above>
 ```
 
+### Heading is a per-Skill override point
+
+The `## Code Review` line above is this shared shape's **default**
+heading — the exact value `local-code-review` renders unchanged in its
+own `templates/local-review-report.md` (not linked from here: this
+shared template is packaged standalone into every consuming Skill's own
+archive, and must never depend on another Skill's directory existing
+alongside it — see [`finding-rendering.md`](finding-rendering.md),
+"Location source annotation" for the same packaging constraint). A
+consuming Skill may override **only this one heading line** for its own
+delivery surface, without forking any other part of this shape:
+`github-pr-review` overrides it to `## Review Summary` in its own
+`templates/external-review-summary.md`, consistently for every rendered
+case (clean, findings, fallback, and the self-review informational
+`COMMENT`) and for both the structured and the `human_review_output`
+senior-voice rendering below. This is the **only** override point this
+shared shape defines — every other section, its order, and its content
+rules stay identical across both Skills. A Skill that declares no
+override renders the default heading shown above; this paragraph is
+additive documentation and changes no Skill's rendered output by itself.
+
 ## Section rules
 
 - **Result** — states the outcome in plain language immediately, e.g.
@@ -128,7 +149,11 @@ important concern or attention point; include scope only when useful>
   derivation (mechanical)" — it is never an independent judgment call
   that can contradict that derivation, and a non-blocking finding (P2)
   never produces a blocking decision no matter how strongly it is
-  recommended.
+  recommended. When coverage is `incomplete` per
+  [`review-stopping-criteria.md`](../policies/review-stopping-criteria.md),
+  this label and the matching Result render the incomplete/ungraded
+  outcome instead — the one case where the primary body's outcome is not
+  the plain clean/blocking derivation above.
 
 ## Concise human-style summary (opt-in)
 
@@ -200,6 +225,86 @@ location, and publication anchor; only the inline wording changes. See
 [`../policies/invocation-options.md`](../policies/invocation-options.md),
 "`human_inline_findings` derived default and phrasings".
 
+### Human full rendering for body/fallback findings (`github-pr-review` only)
+
+This subsection is an explicit, opt-in extension that only
+`github-pr-review` applies, per its own `policies/review-output.md` and
+`templates/external-review-summary.md` (not linked from here for the same
+packaging reason as the heading override above). `human_review_output`
+selects the human-voiced rendering of the final summary above; for
+`github-pr-review` specifically it *also* selects the **human full
+rendering** in
+[`finding-rendering.md`](finding-rendering.md), "Canonical human full
+rendering" for any finding that is rendered in full **in the review
+body** rather than as a GitHub inline comment — a passive review's
+findings (passive has no inline surface at all), and an active-review
+finding with no valid inline anchor. This closes the gap where a finding
+published in the body would otherwise stay in the structured
+`Evidence:` / `Impact:` / `Fix:` block even while the rest of the review
+reads in senior voice.
+
+It is additive documentation, inert for any consumer that does not opt
+into it: `local-code-review` does not reference this subsection, has no
+inline/body split (every finding is already a body finding), and its own
+senior-voice wiring for its report (per its own
+`templates/local-review-report.md`, "Concise human-style output
+(opt-in)") is unaffected and unchanged.
+
+This is governed directly by `human_review_output`, **not** by
+`human_inline_findings` — that companion option stays scoped to the
+GitHub inline surface exactly as "Companion inline rendering
+(`human_inline_findings`)" above defines it, and is not redefined by this
+subsection. A summary-pointer line for a finding already published in
+full elsewhere is unaffected by either option — it stays the compact
+severity/title/location pointer it is today. Presentation only: the
+finding's detection, severity, identity, deduplication, evidence,
+remediation, canonical fix/action location, and whether it is placed in
+the body or inline are exactly the same whether this rendering is on or
+off — only the wording of the body finding's `Evidence` / `Impact` /
+`Fix` content changes.
+
+### Density, de-duplication, and voice tightening (`github-pr-review` only)
+
+This subsection is an explicit, opt-in extension that only
+`github-pr-review` applies to its own rendering — both the structured
+shape and the senior voice above — per its own `policies/review-output.md`
+and `templates/external-review-summary.md` (not linked from here for the
+same packaging reason as the heading override above: this shared
+template must not depend on another Skill's directory existing
+alongside it), which state exactly where and how it applies. It is
+additive documentation, inert for any consumer that does not opt into it:
+`local-code-review` does not reference this subsection, and its own
+report format, density, and senior-voice wording (per its own
+`templates/local-review-report.md`, "Concise human-style output
+(opt-in)") are unaffected and unchanged by it.
+
+- omit a section entirely when it would add no information, rather than
+  rendering it with placeholder or boilerplate content;
+- never restate the diff — describe what changed and why, not a
+  line-by-line narration of the patch;
+- never narrate file-by-file inspection or reproduction mechanics beyond
+  what the `Validation` / [`runtime-validation.md`](../policies/runtime-validation.md)
+  contract already records — the reader needs the result, not a
+  transcript of the review process;
+- never repeat the same evidence in more than one place across the
+  summary line, a fallback full finding, and its inline comment — each
+  fact appears once, in its one authoritative location;
+- let the output's length scale with the number and complexity of
+  findings, never with the number of available template sections — a
+  two-finding review and a ten-finding review do not carry the same
+  fixed scaffolding;
+- there is **no numeric word or line cap** — concision comes from cutting
+  restatement and process narration, never from truncating evidence,
+  impact, or fix;
+- read like a concise human review: natural short paragraphs, minimal
+  headings, no evidence repeated across sections, and no meta-commentary
+  about the review process itself (no "I reviewed file X then file Y",
+  no narrating that a reproduction was attempted beyond the Validation /
+  runtime-validation record) — while every existing evidence/rigor
+  guarantee (the same findings, severities, decision, and anchors) stays
+  exactly as specified elsewhere in this shape and in
+  [`finding.md`](finding.md).
+
 ## Machine metadata is subordinate
 
 Internal/orchestration state (reviewed HEAD or base/head SHAs, raw
@@ -209,21 +314,37 @@ change-risk depth and its activating signals per
 [`../policies/change-risk-signals.md`](../policies/change-risk-signals.md),
 the fired repository-expansion triggers and rings reached per
 [`../policies/repository-expansion.md`](../policies/repository-expansion.md),
+the coverage state per
+[`../policies/review-stopping-criteria.md`](../policies/review-stopping-criteria.md),
 or other automation state) is never part of the primary human-facing body
 above. Where publishing it is genuinely useful to a
 caller or automation, append it after the human-facing body, clearly
 subordinate — always last, always visually secondary to the Result →
 ... → Decision body above it.
 
-The **one exception to consumer-gating** below is the pair of always-on
+The **one exception to consumer-gating** below is the trio of always-on
 process classifications: the change-risk depth per
-[`../policies/change-risk-signals.md`](../policies/change-risk-signals.md)
-and the repository-expansion decisions per
-[`../policies/repository-expansion.md`](../policies/repository-expansion.md).
-Both are always emitted in this subordinate block — on every review,
-including a clean `standard` review with no signals and no fired
-expansion trigger — never as a finding and never in a way that implies a
-verdict. Every other field stays consumer-gated.
+[`../policies/change-risk-signals.md`](../policies/change-risk-signals.md),
+the repository-expansion decisions per
+[`../policies/repository-expansion.md`](../policies/repository-expansion.md),
+and the coverage state per
+[`../policies/review-stopping-criteria.md`](../policies/review-stopping-criteria.md).
+All three are always emitted in this subordinate block — on every review,
+including a clean `standard` review with no signals, no fired expansion
+trigger, and complete coverage. The change-risk depth and
+repository-expansion pair render never as a finding and never in a way
+that implies a verdict. Every other field stays consumer-gated.
+
+**Coverage is the one field in this block that is not merely
+descriptive.** Per
+[`review-stopping-criteria.md`](../policies/review-stopping-criteria.md),
+"Labeling," an `incomplete` coverage state also overrides what the
+primary Result and Decision render: they show the incomplete/ungraded
+outcome instead of the clean or blocking value
+[`../policies/severity.md`](../policies/severity.md)'s mechanical
+derivation would otherwise produce, so that an incomplete review is never
+mistaken for a clean one. Findings already gathered are still reported in
+full; only the top-level outcome label is affected.
 
 This shared template fixes *that* the metadata is subordinate and
 appended last; it does not fix the concrete markup used to render it.

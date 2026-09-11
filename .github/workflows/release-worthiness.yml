@@ -4,14 +4,17 @@ name: Release worthiness
 # distribution, and — from trusted main — publishes the release.
 #
 # On PRs and pushes the `assess` job is read-only: it classifies the
-# change set against the latest v* tag, enforces CHANGELOG coverage, and
-# classifies the proposed SemVer impact. It never mutates the repository.
+# change set and, on a PR, requires a release-worthy change to declare its
+# release intent (CHANGELOG category + one-line entry) in the PR
+# description — contributors never edit CHANGELOG.md. It never mutates
+# the repository.
 #
 # On a non-[skip ci] push to main (and, for recovery, workflow_dispatch)
-# the read-only `plan` job derives the next version from the accumulated
-# `## Unreleased` entries — no human supplies one. Only when it reports a
-# classified, release-worthy accumulated set does the `publish` job run:
-# it rolls the changelog, builds and verifies both Skill archives, commits
+# the read-only `plan` job generates `## Unreleased` from the merged PRs'
+# release intent and derives the next version from it — no human supplies
+# one. Only when it reports a classified, release-worthy accumulated set
+# does the `publish` job run: it generates and rolls the changelog, builds
+# and verifies both Skill archives, commits
 # to main, tags, and publishes the GitHub Release, all through the trusted
 # release GitHub App. A normal merge that ships nothing releasable never
 # starts `publish` at all — no write token, no release Environment gate.
@@ -22,6 +25,8 @@ name: Release worthiness
 
 on:
   pull_request:
+    # `edited`: fixing the release intent in the description re-runs the check.
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
   workflow_dispatch:
@@ -84,18 +89,28 @@ jobs:
             --pr-base-sha "${{ github.event.pull_request.base.sha }}" \
             --github-output "$GITHUB_OUTPUT"
 
-      - name: Classify change set and enforce CHANGELOG coverage
+      # The PR description is contributor text: it reaches the script only
+      # through env (PR_BODY), never interpolated into this shell step. On a
+      # push there is no description, so release intent is not enforced here;
+      # `plan` is the authoritative gate on main. The script writes the
+      # release-recommended summary, with the entry that will be generated.
+      - name: Classify change set and enforce release intent
         id: classify
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
+          set -euo pipefail
+          intent=()
+          if [ "${EVENT_NAME}" = "pull_request" ]; then
+            intent=(--require-release-intent --pr-body-env PR_BODY --pr-number "${PR_NUMBER}")
+          fi
           python scripts/release_worthiness.py assess \
-            --require-changelog \
             --base-ref "${{ steps.base.outputs.ref }}" \
-            --github-output "$GITHUB_OUTPUT"
-
-      - name: Classify proposed SemVer impact
-        id: semver
-        if: steps.classify.outputs.release_worthy == 'true'
-        run: python scripts/release_worthiness.py classify-semver --strict --github-output "$GITHUB_OUTPUT"
+            --github-output "$GITHUB_OUTPUT" \
+            --step-summary "$GITHUB_STEP_SUMMARY" \
+            "${intent[@]}"
 
       - name: Build and verify Skill package archives
         if: steps.classify.outputs.release_worthy == 'true'
@@ -113,28 +128,14 @@ jobs:
           path: dist/*.zip
           if-no-files-found: error
 
-      - name: Release-recommended summary
-        if: steps.classify.outputs.release_worthy == 'true'
-        run: |
-          {
-            echo "## Release recommended"
-            echo
-            echo "This change affects a Skill or its packaged distribution. It publishes automatically once merged to \`main\`."
-            echo
-            echo "- Trigger: ${{ steps.classify.outputs.reason }}"
-            echo "- CHANGELOG \`Unreleased\` coverage: ${{ steps.classify.outputs.changelog_covered }}"
-            echo "- Proposed SemVer impact: ${{ steps.semver.outputs.semver_impact }}"
-            echo
-            echo "See \`docs/RELEASE.md\`."
-          } >> "$GITHUB_STEP_SUMMARY"
-
   plan:
     # Read-only. On trusted main state (a non-[skip ci] push to main, or
-    # workflow_dispatch for recovery) it derives the next version from the
-    # accumulated `## Unreleased` entries with release_worthiness.py
-    # auto-release-plan. It holds no write permission and never touches the
-    # release App credentials, so a merge that ships nothing releasable
-    # costs only this job. `publish` runs only when should_release is true.
+    # workflow_dispatch for recovery) it generates `## Unreleased` in memory
+    # from the merged PRs' release intent and derives the next version with
+    # release_worthiness.py auto-release-plan. It holds no write permission
+    # and never touches the release App credentials, so a merge that ships
+    # nothing releasable costs only this job. `publish` runs only when
+    # should_release is true.
     if: >-
       ${{ github.event_name == 'workflow_dispatch'
       || (github.event_name == 'push'
@@ -143,6 +144,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # Reads merged PRs' descriptions to generate `## Unreleased`.
+      pull-requests: read
     outputs:
       should_release: ${{ steps.plan.outputs.should_release }}
       version: ${{ steps.plan.outputs.version }}
@@ -165,9 +168,15 @@ jobs:
       - name: Install dev dependencies
         run: python -m pip install -r requirements-dev.txt
 
-      - name: Plan the release (derive version from accumulated Unreleased entries)
+      - name: Plan the release (generate Unreleased from merged PR release intent, derive version)
         id: plan
-        run: python scripts/release_worthiness.py auto-release-plan --github-output "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python scripts/release_worthiness.py auto-release-plan \
+            --github-output "$GITHUB_OUTPUT" \
+            --step-summary "$GITHUB_STEP_SUMMARY"
 
       - name: Summarize the plan
         run: |
@@ -204,6 +213,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Reads merged PRs' descriptions to generate `## Unreleased`.
+      pull-requests: read
     environment: release
     concurrency:
       group: release-publish
@@ -253,6 +264,15 @@ jobs:
           python scripts/release_worthiness.py resolve-app-identity \
             --app-slug "${{ steps.app-token.outputs.app-slug }}" \
             --github-output "$GITHUB_OUTPUT"
+
+      # The same deterministic generation `plan` previewed, now written to
+      # the working tree so preflight, the roll, and the commit see it. The
+      # only place contributor-declared entries enter CHANGELOG.md.
+      - name: Generate CHANGELOG Unreleased from merged PR release intent
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python scripts/release_worthiness.py generate-changelog --base-ref "${{ needs.plan.outputs.baseline }}"
 
       - name: Preflight — release-worthy since last tag, changelog notes, new valid version/tag
         run: |
@@ -321,7 +341,7 @@ jobs:
           {
             echo "## Released v${{ needs.plan.outputs.version }}"
             echo
-            echo "- SemVer impact: ${{ needs.plan.outputs.impact }} (derived from CHANGELOG '## Unreleased')"
+            echo "- SemVer impact: ${{ needs.plan.outputs.impact }} (derived from merged PRs' release intent)"
             echo "- main commit: \`${{ steps.commit.outputs.sha }}\`"
             echo "- annotated tag \`v${{ needs.plan.outputs.version }}\` points at that commit"
             echo "- GitHub Release published with both Skill archives, verified"

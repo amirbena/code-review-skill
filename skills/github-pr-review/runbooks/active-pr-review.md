@@ -6,6 +6,7 @@ decision. Applies shared policies:
 [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
 [`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
 [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
+[`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
@@ -36,6 +37,10 @@ reviewer is the PR author (or same controlling authority)?
 check review ownership
     ↓
 verify repository/review access
+    ↓
+publish-a-prior-passive-review with no stated presentation? → ask once
+   (Senior/human vs. Structured), recommend but never apply the prior
+   presentation, withhold publication if unresolved
     ↓
 resolve review mode (delta re-review vs. normal review)
     ↓
@@ -92,6 +97,10 @@ deduplicate same-HEAD findings
 finalize findings and resolve inline eligibility
     ↓
 derive conditional requirement coverage (all renderings preserve it)
+    ↓
+evaluate review coverage (complete / incomplete) per
+review-stopping-criteria.md, scaled by the depth (and partitions) above;
+incomplete → REVIEW INCOMPLETE, never REVIEW CLEAN / Approve
     ↓
 re-check HEAD
     ↓
@@ -150,6 +159,28 @@ stop
      Approve/Request Changes was submitted; fall back to
      [`passive-pr-review.md`](passive-pr-review.md) and clearly state
      that GitHub publication was unavailable.
+3a. **If this invocation asks to publish/post a review already produced
+   passively earlier in this same interaction**, and the current
+   invocation does not itself resolve a presentation (no explicit
+   `human_review_output` / `human_inline_findings` value or recognized
+   phrasing, per
+   [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md)),
+   ask the user once, before proceeding to step 4, which presentation to
+   publish — **Senior/human** or **Structured** — per
+   [`../policies/review-output.md`](../policies/review-output.md),
+   "Publishing a previously produced passive review." Offer the
+   presentation that passive result was actually shown in as the
+   recommended choice, but do not apply it without an answer; normalize
+   the answer as ordinary current-invocation text. If no answer can be
+   resolved (a non-interactive or mediated caller with no way to surface
+   the question), withhold publication and report
+   `Mutation: WITHHELD (publication format unresolved)` rather than
+   defaulting to structured. Skip this step entirely whenever the
+   invocation already establishes its presentation — directly, or through
+   senior intent stated in the same request (e.g. "senior review this PR
+   and publish it," "review #123 and post it in structured format") — or
+   whenever this is an ordinary fresh active review with no preceding
+   passive result to republish.
 4. **Resolve review mode** per
    [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md).
    Retrieve the immediately preceding completed review of this PR, if any,
@@ -451,6 +482,21 @@ stop
     to the inspected PR and carry its separate task-relative completeness
     signal into the review body. With no activating contract, emit nothing
     for it.
+11b. **Evaluate review coverage** per
+    [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md).
+    Using the change-risk depth from step 8a and, when it activated, the
+    partitions from step 8c, determine whether every pass that depth (and
+    partitioning, when applicable) requires — including step 10's
+    required-dimension check and every partition's aggregation — actually
+    reached its own already-defined stop condition. Record `coverage:
+    complete` or `incomplete` with its reason(s) for the review's
+    subordinate metadata. When `incomplete`, the reasoning result for step
+    13 onward is `REVIEW INCOMPLETE` per
+    [`../policies/review-output.md`](../policies/review-output.md), "Final
+    decision" — never `REVIEW CLEAN` / `Approve`, regardless of what the
+    finding set alone would otherwise produce. This step never discards or
+    re-evaluates any finding already finalized in step 11; it only
+    determines whether the review that gathered them finished.
 12. Re-check the current PR HEAD against the recorded HEAD (see
     [`../policies/review-output.md`](../policies/review-output.md), "HEAD
     revalidation"), immediately before constructing the review. If it
@@ -475,7 +521,14 @@ stop
     [`../templates/external-review-summary.md`](../templates/external-review-summary.md),
     "Concise human-style body (opt-in)" — same finalized findings,
     severities, inline comments, and decision; only the body wording
-    differs. **If the invocation also normalized `human_inline_findings`**
+    differs. This includes any finding with no valid inline anchor: it
+    still renders in full in the body (per
+    [`../policies/finding-placement.md`](../policies/finding-placement.md)),
+    but as the human full rendering per
+    [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+    "Canonical human full rendering," not the structured block — the same
+    finding, identity, severity, and location, only its wording changes.
+    **If the invocation also normalized `human_inline_findings`**
     (its default follows `human_review_output` per
     [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
     "`human_inline_findings` derived default and phrasings"), render each

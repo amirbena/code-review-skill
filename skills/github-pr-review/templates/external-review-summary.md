@@ -21,7 +21,7 @@ subordinate — a short trailing block, never the body.
 ## Clean review
 
 ```markdown
-## Code Review
+## Review Summary
 
 **Result: ✅ REVIEW CLEAN**
 
@@ -56,7 +56,7 @@ comment, so the body lists it in **one concise line** — severity, title,
 location — and nothing more.
 
 ```markdown
-## Code Review
+## Review Summary
 
 **Result: ⚠️ CHANGES REQUIRED**
 
@@ -65,11 +65,11 @@ addressed; see the inline comments for detail.
 
 ### Findings
 
-- **P1 — Authorization provenance can bypass the trusted boundary**
+- **P1 (Blocking) — Authorization provenance can bypass the trusted boundary**
   `src/review/authz.py:142`
-- **P1 — Stale HEAD can still receive a formal review action**
+- **P1 (Blocking) — Stale HEAD can still receive a formal review action**
   `src/review/output.py:88`
-- **P2 — Validation output hides the failing check name**
+- **P2 (Non-Blocking) — Validation output hides the failing check name**
   `scripts/validate.py:117`
 
 ### Requirement coverage
@@ -115,10 +115,10 @@ finding (see
 ```markdown
 ### Findings
 
-- **P1 — Authorization provenance can bypass the trusted boundary**
+- **P1 (Blocking) — Authorization provenance can bypass the trusted boundary**
   `src/review/authz.py:142`
 
-#### F2 [P2] Config schema drift spans three unlinked files
+#### F2 [P2 (Non-Blocking)] Config schema drift spans three unlinked files
 
 - **Location:** `config/*.yaml` (schema vs. loader vs. docs)
 - **Evidence:** <concrete evidence — no single line to anchor to>
@@ -127,7 +127,7 @@ finding (see
 - **Details:** <only when a finding-level decision or
   `include_finding_details=true` selects materially useful context>
 
-#### F3 [P1] `sanitize_path` bypass reaches two call paths
+#### F3 [P1 (Blocking)] `sanitize_path` bypass reaches two call paths
 
 - **Location:** `app/pathsafe.py:5`
 - **Affected locations:**
@@ -137,6 +137,31 @@ finding (see
 - **Impact:** <combined engineering consequence across the affected sites>
 - **Fix:** <one correction direction at the shared cause / canonical owner>
 ```
+
+When `human_review_output` is on, each of these body findings uses the
+**human full rendering** instead, per
+[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+"Canonical human full rendering" — the same `id` and `Location` line, the
+`Evidence` / `Impact` / `Fix` block re-voiced as senior-engineer prose:
+
+```markdown
+### Findings
+
+- **P1 (Blocking) — Authorization provenance can bypass the trusted boundary**
+  `src/review/authz.py:142`
+
+#### F2 P2 (Non-Blocking): Config schema drift spans three unlinked files
+
+`config/*.yaml` (schema vs. loader vs. docs)
+
+<concrete evidence, impact, and fix direction carried by prose instead of
+labelled fields>
+```
+
+This is the same finding, at the same location, with the same severity
+and identity — only its wording changes. See
+[`../policies/review-output.md`](../policies/review-output.md), "Concise
+human-style summary (opt-in)."
 
 A **consolidated root-cause finding** (one shared cause reaching at least
 two sites) always renders in the body, with its required, exhaustive
@@ -157,7 +182,7 @@ published as an informational GitHub review `COMMENT`. No formal
 a note on the `Decision` line and one closing disclosure line:
 
 ```markdown
-## Code Review
+## Review Summary
 
 **Result: ✅ REVIEW CLEAN**
 
@@ -205,6 +230,20 @@ de-duplication note. A PR that stayed under the threshold omits the field
 entirely — it is never rendered as an empty/`none` placeholder the way
 the always-on pair is.
 
+The `coverage` field per
+[`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md)
+is always present, like `change_risk_depth` and
+`repository_expansion_triggers` — but it is **not** effect-free the way
+those two are: when it is `incomplete`, the reasoning result above is
+`REVIEW INCOMPLETE` instead of whatever the mechanical derivation from
+findings alone would otherwise produce, so that an incomplete review is
+never mistaken for `REVIEW CLEAN` / Approve. This block's own `decision`
+field still records whichever GitHub action was actually taken —
+typically `comment`, since the review-action authorization gate still
+applies — never `approve`; `REVIEW INCOMPLETE` is not itself a value of
+that field. Findings already gathered are still reported in full; only
+the top-level outcome is overridden.
+
 Append the remaining machine/process state only if a downstream consumer
 (orchestration, automated re-review, audit) actually needs it, after the
 human-facing review and clearly subordinate, per
@@ -221,6 +260,7 @@ human-facing review and clearly subordinate, per
 - change_risk_signals: `none` | `<signal (tier) — evidence>` per resolved occurrence
 - repository_expansion_triggers: `none` | `<trigger (ring N) — locations>` per fired trigger
 - large_pr_partitioning: `<n> partitions, <capped/dedup note>` — omitted entirely when inactive
+- coverage: `complete` | `incomplete — <reason(s)>`
 - P0: <n>
 - P1: <n>
 - P2: <n>
@@ -244,7 +284,7 @@ concise senior-engineer voice from
 above:
 
 ```markdown
-## Code Review
+## Review Summary
 
 Not safe to merge at `<short-sha>` yet — the P1 on the auth path is the
 blocker.
@@ -252,10 +292,11 @@ blocker.
 **What's good:** the retry handling is clean and the new tests actually
 exercise the failure path.
 
-**What's concerning:** `P1` — authorization provenance can be forged
-through the trusted boundary (`src/review/authz.py:142`); `P1` — a stale
-HEAD can still receive a formal review action (`src/review/output.py:88`).
-`P2` — the validation output hides which check failed.
+**What's concerning:** `P1 (Blocking)` — authorization provenance can be
+forged through the trusted boundary (`src/review/authz.py:142`);
+`P1 (Blocking)` — a stale HEAD can still receive a formal review action
+(`src/review/output.py:88`). `P2 (Non-Blocking)` — the validation output
+hides which check failed.
 
 Was routing the settled-tradeoff case straight to the caller here
 deliberate?
@@ -272,7 +313,12 @@ deliberate?
   comment still owns each finding's full detail — its `Evidence` /
   `Impact` / `Fix` in the structured rendering, or the equivalent
   senior-engineer prose when `human_inline_findings` is on (see
-  "Human-rendered inline findings (opt-in)" below).
+  "Human-rendered inline findings (opt-in)" below). A finding with **no**
+  inline comment (no valid anchor) instead carries its full block directly
+  in this concise body — the human full rendering described above under
+  "Fallback: a finding with no valid inline anchor," since
+  `human_review_output` is what selects this concise body in the first
+  place.
 - No review mode, SHAs beyond the short opening reference, counts, action
   mode, worker/aggregation wording, or the `Review metadata` block.
 - The `Result` / `Decision` value is the same single mechanically derived
@@ -284,8 +330,10 @@ deliberate?
   default under `human_review_output`) — the same severity, identity,
   anchor, evidence content, remediation, and decision re-voiced per
   [`inline-finding.md`](inline-finding.md), "Human-rendered inline
-  finding (opt-in)". Only presentation wording changes — this body, and
-  (when `human_inline_findings` is on) the inline comments.
+  finding (opt-in)". Only presentation wording changes — this body
+  (including any body-rendered fallback finding, per "Fallback: a finding
+  with no valid inline anchor"), and (when `human_inline_findings` is on)
+  the inline comments.
 - Active requirement coverage remains visible in this concise body with its
   overall signal and every requirement/status; only its wording is condensed.
   Omit it entirely when coverage analysis was inert.
@@ -321,11 +369,33 @@ identity, deduplication, evidence, remediation, decision, or
 applies unchanged. The body still carries exactly one summary-pointer
 line per inline finding.
 
+`human_inline_findings` is scoped to this inline surface only. It has no
+effect on a finding rendered in full in the body — that finding's voice
+is governed directly by `human_review_output` via "Fallback: a finding
+with no valid inline anchor" above, independent of whatever
+`human_inline_findings` resolves to.
+
 ## Rules
 
 These are the body's **rendering** rules. The review semantics they serve
 are owned by the linked policies and are not restated here.
 
+- **Stable heading.** The body always starts `## Review Summary` — for
+  the clean, findings, fallback, and self-review-`COMMENT` cases, and
+  identically under `human_review_output`. Canonical:
+  [`../policies/review-output.md`](../policies/review-output.md), "Stable
+  review-body heading".
+- **Severity legend.** Every finding heading shows the severity code with
+  its compact canonical parenthetical (`P0 (Critical)` / `P1 (Blocking)` /
+  `P2 (Non-Blocking)`), rendered once, never as a repeated explanatory
+  paragraph. Canonical:
+  [`../policies/review-output.md`](../policies/review-output.md), "Reader-
+  visible severity legend".
+- **Density and no disclosure.** Both rendering modes follow the
+  density/de-duplication guidance and never disclose the underlying
+  agent/model/tool. Canonical:
+  [`../policies/review-output.md`](../policies/review-output.md),
+  "Density and de-duplication" and "No agent/model/tool disclosure".
 - **Verdict first, no manufactured sections.** `Result` states the
   outcome in plain language (`REVIEW CLEAN` / `CHANGES REQUIRED`) and the
   `Decision` line restates it as the GitHub action actually submitted (or
@@ -338,6 +408,13 @@ are owned by the linked policies and are not restated here.
   self-evident. Canonical:
   [`../policies/review-output.md`](../policies/review-output.md), "Final
   summary".
+- **Incomplete coverage overrides the verdict.** When `coverage` per
+  [`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md)
+  is `incomplete`, `Result` and `Decision` render `REVIEW INCOMPLETE`
+  instead of `REVIEW CLEAN` / `CHANGES REQUIRED`, with a one-sentence
+  reason tied to the metadata block's `coverage` value — never `Approve`,
+  never a clean-reading `Result`. Findings actually gathered before
+  coverage was interrupted still render in full.
 - **Findings own their detail inline; the body owns the list.** An
   inline-published finding gets exactly one summary-pointer line
   (severity — title, then `` `path:line` ``) and nothing else — no

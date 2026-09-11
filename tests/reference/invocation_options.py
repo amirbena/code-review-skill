@@ -38,6 +38,10 @@ OPTION_EXTRA_AFFIRMATIVE: dict[str, tuple[str, ...]] = {
         "as a senior engineer",
         "concise review comments",
         "concise review comment",
+        "senior review",
+        "senior code review",
+        "senior pr review",
+        "review this as a senior",
     ),
     "human_inline_findings": (
         "human inline findings",
@@ -50,6 +54,8 @@ OPTION_EXTRA_NEGATIVE: dict[str, tuple[str, ...]] = {
         "keep the default summary",
         "do not shorten the review",
         "don't shorten the review",
+        "structured format",
+        "structured review",
     ),
     "human_inline_findings": (
         "keep the structured inline comments",

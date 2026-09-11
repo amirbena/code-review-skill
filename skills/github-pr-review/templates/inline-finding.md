@@ -14,7 +14,7 @@ omitted here (see
 "Canonical inline rendering").
 
 ```text
-[<severity>] <short, concrete title>
+[<severity> (<compact meaning>)] <short, concrete title>
 
 Evidence: <concrete evidence — what the code actually does>
 
@@ -22,6 +22,14 @@ Impact: <concrete engineering consequence — why it matters>
 
 Fix: <concrete correction direction, when useful>
 ```
+
+`<compact meaning>` is this Skill's severity legend — `P0 (Critical)` /
+`P1 (Blocking)` / `P2 (Non-Blocking)` — per
+[`../policies/review-output.md`](../policies/review-output.md),
+"Reader-visible severity legend": e.g. `[P1 (Blocking)] Incomplete
+pagination can produce a false clean review`. It is rendered once, in
+this heading, never repeated as a separate explanatory sentence in
+`Evidence`, `Impact`, or `Fix`.
 
 A finding that meets
 [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
@@ -38,7 +46,26 @@ Details: <supporting technical context, concise>
 
 ## Rules
 
-- severity always visible first, in the `[P0]` / `[P1]` / `[P2]` form;
+- severity always visible first, in the `[P0 (Critical)]` /
+  `[P1 (Blocking)]` / `[P2 (Non-Blocking)]` form (see
+  [`../policies/review-output.md`](../policies/review-output.md),
+  "Reader-visible severity legend");
+- **one authoritative representation, minimum self-contained unit.** This
+  inline comment is the finding's one full representation once published:
+  severity + compact title in the heading, then the concrete what/why/fix
+  carried by `Evidence` / `Impact` / `Fix`. It is self-contained — a
+  reader needs nothing else to act on it — and it is never a near-
+  duplicate of the review-body line that points to it: the body carries
+  only the summary-pointer form (severity, title, location), never a
+  second copy of this comment's `Evidence` / `Impact` / `Fix` content
+  (see [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
+  "Rules");
+- no meta-commentary about the review process — state the result, not
+  that a file was inspected or a reproduction attempted, beyond what the
+  `Validation` / runtime-validation contract already records;
+- no agent/model/tool disclosure anywhere in this comment (see
+  [`../policies/review-output.md`](../policies/review-output.md), "No
+  agent/model/tool disclosure");
 - title is concise (a few words, not a sentence) and names the actual
   defect, not a vague category;
 - each field is concise by default — `Evidence`, `Impact`, and `Fix` are
@@ -56,11 +83,6 @@ Details: <supporting technical context, concise>
   with no concrete basis, and no praise on an inline comment;
 - `Fix` is concise and reviewer-facing; never append a local full
   **Implementation prompt** or a coding-agent workflow;
-- this is the finding's one authoritative full representation once
-  published — the review body references it only via the
-  summary-pointer form (see
-  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
-  "Rules") rather than repeating it;
 - no duplicated findings across multiple lines or against an
   already-reviewed, unchanged HEAD (see
   [`../policies/pr-scope.md`](../policies/pr-scope.md), "Existing
@@ -90,7 +112,7 @@ Details: <supporting technical context, concise>
 ## Example
 
 ```text
-[P1] Incomplete pagination can produce a false clean review
+[P1 (Blocking)] Incomplete pagination can produce a false clean review
 
 Evidence: This path retrieves only the first page of changed files and
 does not continue using the returned pagination cursor.
@@ -113,10 +135,11 @@ from
 [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
 "Canonical human inline rendering" instead of the
 `[<severity>] / Evidence / Impact / Fix` block above — a short heading
-that keeps the severity and names the finding, then compact prose:
+that keeps the severity, its compact legend meaning, and names the
+finding, then compact prose:
 
 ```text
-P2: Retry eligibility logic is duplicated
+P2 (Non-Blocking): Retry eligibility logic is duplicated
 
 The same eligibility decision is implemented in both the sync and async
 flows, so the behaviour can drift when one path changes and the other is
@@ -127,8 +150,9 @@ call that.
 This is a re-voicing of the **same finding**, not a different or weaker
 one. Unchanged:
 
-- **severity** — still shown first, in the heading (`P2: …`, not
-  `[P2] …`);
+- **severity** — still shown first, in the heading, with the same
+  compact legend meaning as the structured form (`P2 (Non-Blocking): …`,
+  not `[P2] …`);
 - the mandatory What / Where / Evidence / Impact / Fix core — evidence,
   the engineering consequence when it is material, and the actionable
   correction direction are still all present, carried by the prose; a

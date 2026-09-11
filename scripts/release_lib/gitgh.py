@@ -9,6 +9,7 @@ here. Tests replace ``_git`` / ``_gh`` on this module with a fake runner.
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 from typing import Sequence
@@ -101,3 +102,28 @@ def tag_exists(repo_root: Path, tag: str) -> bool:
     except subprocess.CalledProcessError:
         remote = ""
     return bool(remote.strip())
+
+
+def first_parent_commits(repo_root: Path, base_ref: str) -> list[tuple[str, str]]:
+    """`(sha, subject)` for each first-parent commit in `base_ref..HEAD`, oldest first."""
+    out = _git(["log", "--first-parent", "--reverse", "--format=%H%x1f%s", f"{base_ref}..HEAD"], repo_root)
+    commits: list[tuple[str, str]] = []
+    for line in out.splitlines():
+        sha, _, subject = line.partition("\x1f")
+        if sha.strip():
+            commits.append((sha.strip(), subject.strip()))
+    return commits
+
+
+def commit_paths(repo_root: Path, sha: str) -> list[str]:
+    """Paths one commit changed against its first parent."""
+    out = _git(["diff", "--name-only", f"{sha}^1", sha], repo_root)
+    return [line for line in out.splitlines() if line.strip()]
+
+
+def pull_request(repo_root: Path, number: int) -> dict:
+    """The pull request's REST representation (`gh` resolves the repository)."""
+    data = json.loads(_gh(["api", f"repos/{{owner}}/{{repo}}/pulls/{number}"], repo_root))
+    if not isinstance(data, dict):
+        raise ValueError(f"unexpected GitHub API response for PR #{number}")
+    return data

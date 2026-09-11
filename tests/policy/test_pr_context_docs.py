@@ -312,7 +312,9 @@ class ReportTemplateOptionalSectionTests(unittest.TestCase):
 
     def test_existing_decision_labels_are_unchanged(self) -> None:
         # Backward compatibility: the decision vocabulary a caller already
-        # parses must not have grown a third value for the PR-context case.
+        # parses must not have grown a third value for the PR-context case
+        # specifically (the PR-context feature this test class guards never
+        # introduces its own new label).
         self.assertIn("REVIEW CLEAN", self.text)
         self.assertIn("CHANGES REQUIRED", self.text)
 
@@ -324,8 +326,16 @@ class ReportTemplateOptionalSectionTests(unittest.TestCase):
         decision_labels = set(re.findall(r"\*\*([A-Z][A-Z _]+)\*\*", raw_text))
 
         # Sanity: no unexpected all-caps decision-shaped token snuck in
-        # beside the two documented labels.
-        unexpected = decision_labels - {"REVIEW CLEAN", "CHANGES REQUIRED"}
+        # beside the documented labels. `REVIEW INCOMPLETE` is a deliberate,
+        # separately-owned addition from Issue #89
+        # (review-stopping-criteria.md) — an orthogonal coverage-gated
+        # override, not a PR-context label — allowed here so this
+        # PR-context-specific guard does not regress on unrelated work.
+        unexpected = decision_labels - {
+            "REVIEW CLEAN",
+            "CHANGES REQUIRED",
+            "REVIEW INCOMPLETE",
+        }
         self.assertEqual(
             unexpected,
             set(),

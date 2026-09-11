@@ -10,7 +10,15 @@ Fixes #
 - **Behavior / contracts:**
 - **Governance / policy:** None
 - **Packaging / portability:** None
-- **Changelog:** required — `## Unreleased` entry / not required — <short reason> (`Fixed` = compatible correction/refinement; `Changed` = intentional backward-compatible behavior/capability change; see `docs/RELEASE.md`)
+- **Changelog:** generated at release from the two lines below — never edit `CHANGELOG.md` (see `docs/RELEASE.md`)
+- **Release category:** none
+- **Release entry:**
+
+<!-- Release category: Added | Changed | Deprecated | Fixed | Security | Removed | Breaking | none.
+A PR that changes shipped Skill content or packaging must pick a real category and write a one-line
+entry for users; the PR number is appended automatically.
+`Fixed` = compatible correction/refinement; `Changed` = intentional backward-compatible behavior/capability change. -->
+
 
 ## Validation
 

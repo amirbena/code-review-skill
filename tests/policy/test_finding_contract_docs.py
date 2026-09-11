@@ -380,7 +380,11 @@ class SkillRenderingsAlignTests(unittest.TestCase):
 
     def test_github_inline_is_severity_first_evidence_impact_fix(self) -> None:
         examples = self._rendered_examples(GITHUB_INLINE)
-        for token in ("[P1]", "Evidence:", "Impact:", "Fix:"):
+        # Issue #223: github-pr-review's inline heading carries the
+        # compact, reader-visible severity legend (e.g. "P1 (Blocking)"),
+        # so the rendered severity token is "[P1 (Blocking)]" rather than
+        # the bare "[P1]" — severity is still shown first.
+        for token in ("[P1 (Blocking)]", "Evidence:", "Impact:", "Fix:"):
             self.assertIn(token, examples)
         self.assertNotIn("Recommended direction:", examples)
         # inline never repeats an id/location machine field

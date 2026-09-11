@@ -31,8 +31,8 @@ capabilities:
   git: required
   github_access: required-for-github-state
   github_review_permissions: required-for-active-publication
-  human_review_output: optional # presentation-only; natural-language opt-in ("make the review shorter and more human" / "like a senior engineer"), no CLI flag; renders only the final human-facing summary in a concise senior-engineer voice; never changes findings/severity/dedup/verdict/review-state/machine-readable-status or publication ordering; see ../../../shared/policies/invocation-options.md
-  human_inline_findings: optional # presentation-only; derived default `explicit_value ?? human_review_output` (invocation-options.md "`human_inline_findings` derived default and phrasings"); extends the senior-engineer voice to inline review comments (severity-keeping heading + prose in place of Evidence/Impact/Fix); no CLI flag; never changes findings/severity/identity/dedup/verdict/review-state/machine-readable-status, the canonical fix/action anchor, the #164/#165 body fallback, or publication ordering — only inline wording; see ../policies/finding-placement.md and ../templates/inline-finding.md
+  human_review_output: optional # presentation-only; natural-language opt-in ("make the review shorter and more human" / "like a senior engineer" / "senior review" / "senior code review" / "senior pr review" / "review this as a senior"), no CLI flag; renders the final human-facing summary, and (github-pr-review only) any body/fallback finding rendered in full rather than inline — passive review's findings, and an active fallback finding with no valid inline anchor — in a concise senior-engineer voice; never changes findings/severity/dedup/verdict/review-state/machine-readable-status, placement, or publication ordering; see ../../../shared/policies/invocation-options.md and ../../../shared/templates/finding-rendering.md "Canonical human full rendering"
+  human_inline_findings: optional # presentation-only; derived default `explicit_value ?? human_review_output` (invocation-options.md "`human_inline_findings` derived default and phrasings"); extends the senior-engineer voice to inline review comments only (severity-keeping heading + prose in place of Evidence/Impact/Fix); no CLI flag; never changes findings/severity/identity/dedup/verdict/review-state/machine-readable-status, the canonical fix/action anchor, the #164/#165 body fallback, or publication ordering — only inline wording; a body/fallback finding's wording is governed by `human_review_output` directly, not this option; see ../policies/finding-placement.md and ../templates/inline-finding.md
   external_review_context: optional # caller-supplied requirements / pasted Jira / GitHub Issue / HLD / ADR / plan / PR description; see ../../../shared/policies/review-context.md and ../policies/review-context.md
   requirement_coverage: conditional # activates only for authoritative requirements / acceptance criteria; emits evidence-backed per-requirement status plus task-relative completeness; see ../../../shared/policies/requirement-coverage.md
   jira_context_resolution: optional # only when a Jira reference is supplied; resolved via an available Jira MCP/connector, read-only; unresolved -> JIRA CONTEXT UNRESOLVED (no inference fallback); see ../../../shared/policies/review-context.md "Jira context resolution"
@@ -62,6 +62,7 @@ shared:
     - ../../../shared/policies/change-risk-signals.md
     - ../../../shared/policies/repository-expansion.md
     - ../../../shared/policies/large-pr-partitioning.md
+    - ../../../shared/policies/review-stopping-criteria.md
     - ../../../shared/policies/severity.md
     - ../../../shared/policies/evidence.md
     - ../../../shared/policies/repository-instructions.md

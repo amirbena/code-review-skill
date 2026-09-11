@@ -7,18 +7,24 @@ A PR branch that has been synchronized with `main` must be assessed only
 against what it itself contributes — the merge-base with the *current*
 base branch — never against release-worthy history that entered the
 branch through that sync/merge. Regression case: issue #215 / PR #214.
+
+Also: a fork PR's `assess` run (no token, no secrets) still completes and
+fails closed on missing or malformed release intent, and `generate-changelog`
+over real squash-merge history is reproducible byte-for-byte (issue #222).
 """
 
 from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from tests.support.paths import REPO_ROOT
 
@@ -35,7 +41,7 @@ _GIT_ENV = {
     "GIT_TERMINAL_PROMPT": "0",
 }
 
-_UNCOVERED_CHANGELOG = """\
+_CHANGELOG = """\
 # Changelog
 
 ## Unreleased
@@ -47,19 +53,9 @@ _Nothing yet._
 - prior release
 """
 
-_COVERED_CHANGELOG = """\
-# Changelog
+_VALID_INTENT = "## What\n\n- **Release category:** Added\n- **Release entry:** Add a new rule\n"
 
-## Unreleased
-
-### Added
-
-- The PR's own release-worthy change (#215).
-
-## v1.0.0 — 2026-01-01
-
-- prior release
-"""
+_TOKEN_VARS = ("GH_TOKEN", "GITHUB_TOKEN", "GH_REPO", "GH_ENTERPRISE_TOKEN", "RELEASE_APP_ID", "RELEASE_APP_PRIVATE_KEY")
 
 
 def _git(cwd: Path, *args: str) -> str:
@@ -138,15 +134,17 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
         )
         return pairs["ref"]
 
-    def _assess(self, base_ref: str, changelog_text: str) -> int:
+    def _assess(self, base_ref: str, pr_body: str) -> int:
         changelog = Path(self._tmp.name) / "CHANGELOG.md"
-        changelog.write_text(changelog_text, encoding="utf-8")
-        with contextlib.redirect_stdout(io.StringIO()):
+        changelog.write_text(_CHANGELOG, encoding="utf-8")
+        with mock.patch.dict(os.environ, {"PR_BODY": pr_body}), contextlib.redirect_stdout(io.StringIO()):
             return rw.main([
                 "--repo-root", str(self.work),
                 "--changelog", str(changelog),
                 "assess",
-                "--require-changelog",
+                "--require-release-intent",
+                "--pr-body-env", "PR_BODY",
+                "--pr-number", "215",
                 "--base-ref", base_ref,
                 "--github-output", str(Path(self._tmp.name) / "assess-out.txt"),
             ])
@@ -186,9 +184,9 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
         self.assertNotIn("skills/github-pr-review/runbooks/other.md", files)
         self.assertTrue(rw.classify_paths(files).release_worthy)
 
-    def test_synced_pr_with_matching_unreleased_coverage_passes_the_gate(self) -> None:
+    def test_synced_pr_with_valid_release_intent_passes_the_gate(self) -> None:
         # End-to-end: resolve-base-ref (synced branch) -> assess. The PR's
-        # own release-worthy change is covered under `## Unreleased`, so the
+        # own release-worthy change is covered by its release intent, so the
         # gate passes even though newer `main` history was merged in.
         _commit(
             self.work,
@@ -198,11 +196,11 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
         )
         _git(self.work, "merge", "--no-edit", "origin/main")
 
-        self.assertEqual(self._assess(self._resolve_pr_base(), _COVERED_CHANGELOG), 0)
+        self.assertEqual(self._assess(self._resolve_pr_base(), _VALID_INTENT), 0)
 
     def test_synced_pr_with_its_own_uncovered_change_still_fails_closed(self) -> None:
         # End-to-end: the synced-in `main` history is excluded, but the PR's
-        # own uncovered release-worthy change still fails the CHANGELOG gate.
+        # own release-worthy change with no release intent still fails closed.
         _commit(
             self.work,
             "skills/local-code-review/policies/new-rule.md",
@@ -211,7 +209,7 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
         )
         _git(self.work, "merge", "--no-edit", "origin/main")
 
-        self.assertEqual(self._assess(self._resolve_pr_base(), _UNCOVERED_CHANGELOG), 1)
+        self.assertEqual(self._assess(self._resolve_pr_base(), "Just a description."), 1)
 
     def test_push_boundary_still_uses_the_previous_release_tag(self) -> None:
         # The accumulated-set boundary for main is unchanged: no PR base
@@ -236,6 +234,109 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
             if "=" in line
         )
         self.assertEqual(pairs["ref"], "v9.9.9")
+
+
+class ForkPullRequestSimulationTests(unittest.TestCase):
+    """A fork PR's `assess` run holds no token and no secrets. It must still
+    run to completion on real git and fail closed on missing or malformed
+    release intent, reading the description from env only."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        root = Path(self._tmp.name)
+        self.work = root / "work"
+        self.work.mkdir()
+        _git(self.work, "init", "-b", "main")
+        _git(self.work, "config", "commit.gpgsign", "false")
+        self.fork_point = _commit(self.work, "CHANGELOG.md", _CHANGELOG, "A: init")
+        _git(self.work, "checkout", "-b", "fork-feature")
+        _commit(self.work, "skills/local-code-review/policies/new-rule.md", "rule\n", "B: fork PR change")
+        self.summary = root / "summary.md"
+
+    def _run(self, body: str) -> subprocess.CompletedProcess:
+        env = {k: v for k, v in os.environ.items() if k not in _TOKEN_VARS and not k.startswith("GITHUB_")}
+        env.update(_GIT_ENV, PR_BODY=body)
+        return subprocess.run(
+            [
+                sys.executable, str(REPO_ROOT / "scripts" / "release_worthiness.py"),
+                "--repo-root", str(self.work),
+                "assess",
+                "--require-release-intent",
+                "--pr-body-env", "PR_BODY",
+                "--pr-number", "7",
+                "--base-ref", self.fork_point,
+                "--step-summary", str(self.summary),
+            ],
+            cwd=str(self.work), env=env, capture_output=True, text=True, timeout=120,
+        )
+
+    def test_missing_intent_fails_closed(self) -> None:
+        proc = self._run("Just a description.")
+        self.assertEqual(proc.returncode, 1, proc.stdout + proc.stderr)
+        self.assertIn("::error::release-worthy change has no valid release intent", proc.stdout)
+
+    def test_malformed_intent_fails_closed(self) -> None:
+        proc = self._run("Release category: Improved\nRelease entry: Something\n")
+        self.assertEqual(proc.returncode, 1, proc.stdout + proc.stderr)
+
+    def test_valid_intent_passes_and_previews_the_entry(self) -> None:
+        proc = self._run(_VALID_INTENT)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("- Add a new rule (#7).", self.summary.read_text(encoding="utf-8"))
+        self.assertNotIn("Add a new rule", proc.stdout)
+
+
+class GenerationFromRealHistoryTests(unittest.TestCase):
+    """`generate-changelog` over real squash-merge history. Only the GitHub
+    API is stubbed; the same state must generate the same bytes."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.work = Path(self._tmp.name) / "work"
+        self.work.mkdir()
+        _git(self.work, "init", "-b", "main")
+        _git(self.work, "config", "commit.gpgsign", "false")
+        _commit(self.work, "CHANGELOG.md", _CHANGELOG, "A: init")
+        _git(self.work, "tag", "v1.0.0")
+        sha11 = _commit(self.work, "skills/local-code-review/policies/a.md", "a\n", "Tighten a rule (#11)")
+        _commit(self.work, "docs/y.md", "y\n", "Docs only (#12)")
+        sha13 = _commit(self.work, "skills/github-pr-review/runbooks/b.md", "b\n", "Add a review mode (#13)")
+        self.prs = {
+            11: {"merged_at": "2026-09-10T00:00:00Z", "merge_commit_sha": sha11,
+                 "body": "Release category: Fixed\nRelease entry: Tighten a rule\n"},
+            13: {"merged_at": "2026-09-10T00:00:00Z", "merge_commit_sha": sha13,
+                 "body": "Release category: Added\nRelease entry: Add a review mode\n"},
+        }
+        self.fetched: list[int] = []
+        self.addCleanup(setattr, rw.gitgh, "_gh", rw.gitgh._gh)
+        rw.gitgh._gh = self._fake_gh
+
+    def _fake_gh(self, args, repo_root):  # noqa: ANN001 - test shim
+        number = int(list(args)[1].rsplit("/", 1)[1])
+        self.fetched.append(number)
+        return json.dumps(self.prs[number])
+
+    def _generate(self) -> str:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = rw.main([
+                "--repo-root", str(self.work),
+                "--changelog", str(self.work / "CHANGELOG.md"),
+                "generate-changelog", "--base-ref", "v1.0.0", "--check",
+            ])
+        self.assertEqual(rc, 0)
+        return buf.getvalue()
+
+    def test_generation_is_reproducible_byte_for_byte(self) -> None:
+        first = self._generate()
+        self.assertEqual(self._generate(), first)
+        self.assertIn(
+            "## Unreleased\n\n### Added\n\n- Add a review mode (#13).\n\n### Fixed\n\n- Tighten a rule (#11).\n",
+            first,
+        )
+        self.assertNotIn(12, self.fetched)
 
 
 if __name__ == "__main__":

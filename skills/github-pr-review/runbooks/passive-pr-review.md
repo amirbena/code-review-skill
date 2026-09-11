@@ -6,6 +6,7 @@ Applies shared policies:
 [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
 [`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
 [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
+[`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
@@ -75,6 +76,10 @@ dimension missing → REVIEW INCOMPLETE, never REVIEW CLEAN
 produce findings
     ↓
 derive conditional requirement coverage (all renderings preserve it)
+    ↓
+evaluate review coverage (complete / incomplete) per
+review-stopping-criteria.md, scaled by the depth (and partitions) above;
+incomplete → REVIEW INCOMPLETE, never REVIEW CLEAN
     ↓
 return human-readable report
     ↓
@@ -327,15 +332,33 @@ finally: remove the temporary checkout (success, any failure, interruption)
    render the human-facing summary in the concise senior-engineer voice per
    [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
    "Concise human-style summary (opt-in)" — same findings, severities, and
-   verdict; only the summary wording differs. Passive review publishes
-   nothing and posts no inline comments, so `human_inline_findings` (the
-   companion option normalized alongside it) has no distinct surface to
-   act on here; the report is a single returned document either way.
+   verdict; only the summary wording differs. Passive review has no inline
+   surface, so every finding is a body finding: render each one using the
+   human full rendering in
+   [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+   "Canonical human full rendering" instead of the structured full
+   rendering, per this Skill's own
+   [`../policies/review-output.md`](../policies/review-output.md), "Concise
+   human-style summary (opt-in)" — same identity, severity, location, and
+   evidence; only the wording differs. Passive review publishes nothing and
+   posts no inline comments, so `human_inline_findings` (the companion
+   option normalized alongside it) has no distinct surface to act on here;
+   the report is a single returned document either way.
 8a. When resolved external context contains authoritative requirements or
    acceptance criteria, apply
    [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md)
    to the inspected PR and include its separate completeness signal in the
    report. With no activating contract, emit no coverage section or signal.
+8b. **Evaluate review coverage** per
+   [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md).
+   Using the change-risk depth from step 5a and, when it activated, the
+   partitions from step 5c, determine whether every pass that depth (and
+   partitioning, when applicable) requires — including step 7's
+   required-dimension check — actually reached its own already-defined
+   stop condition. Record `coverage: complete` or `incomplete` with its
+   reason(s) in the report's subordinate metadata. When `incomplete`, the
+   report's outcome is `REVIEW INCOMPLETE` — never a clean report,
+   regardless of what the finding set alone would otherwise produce.
 9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
    step 4, remove it — on this path and on every other: a
    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the

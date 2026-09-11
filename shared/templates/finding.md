@@ -31,7 +31,12 @@ and act on. The opt-in concise **human inline rendering** ("Canonical
 human inline rendering" there — `github-pr-review` inline surface only,
 selected by `human_inline_findings`) is another such projection: it
 re-voices an inline finding the way a senior engineer would write the
-comment by hand.
+comment by hand. The opt-in **human full rendering** ("Canonical human
+full rendering" there — `github-pr-review` review-body/fallback surface
+only, selected directly by `human_review_output`) applies the same
+re-voicing to a finding published in full in the body instead of inline,
+keeping its `id` and `Location` since the body has no platform-supplied
+anchor.
 A future additional renderer (for example a machine-readable one) would be
 another projection of the same fields; none of these change the finding
 fields, the severity model, the evidence bar, the finding's identity, its
@@ -50,7 +55,16 @@ human-facing review a machine-only format.
   first, in the `[P0]` / `[P1]` / `[P2]` form. This is presentation only:
   the P0/P1/P2 definitions, the blocking rule, and the mechanical
   severity → decision derivation are unchanged by this template and are
-  owned solely by [`../policies/severity.md`](../policies/severity.md);
+  owned solely by [`../policies/severity.md`](../policies/severity.md).
+  A Skill may additionally render a short, canonical parenthetical next
+  to the code (e.g. `P1 (Blocking)`) so a reader unfamiliar with this
+  model still sees the meaning at a glance — this is a **per-Skill
+  rendering override point**, defined and applied once by that Skill's
+  own output policy (`github-pr-review` defines and applies one in its
+  own `policies/review-output.md`), never a second, independently
+  invented severity model; the bare `[P0]` / `[P1]` / `[P2]` form above
+  remains the default for a Skill that declares no such legend
+  (`local-code-review` declares none and is unaffected);
 - **title** — a short, concrete problem statement (what is actually
   wrong — not a vague category like "pagination issue");
 - **location** — the finding's **canonical location**: the fix/action

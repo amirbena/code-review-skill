@@ -142,6 +142,7 @@ proceed.
 - Change-risk signals: <none | comma-separated `signal (tier) — evidence` entries, one per resolved occurrence>
 - Repository expansion: <none | comma-separated `trigger (ring N) — locations` entries, one per fired trigger>
 - Large-PR partitioning: `<n> partitions` plus any `capped` or cross-partition de-duplication note — shown only when partitioning activated; omitted entirely otherwise
+- Coverage: <complete | incomplete — reason(s)>
 
 **Review scope contract** (per
 [`../policies/repository-state.md`](../policies/repository-state.md)) —
@@ -204,6 +205,34 @@ a non-blocking recommendation and does not change this decision, however
 strongly it is recommended before commit.
 ```
 
+or, when coverage is incomplete (per
+[`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md)
+— shown here with no findings gathered before the interruption; any
+findings actually gathered still render in a **Findings** section exactly
+as usual):
+
+```markdown
+**Result: ⚠️ Review Incomplete**
+
+Not fully reviewed: <concrete reason coverage did not complete, e.g. a
+required partition could not be completed>. Do not treat this as safe to
+proceed.
+
+<optional concise What changed / Findings / Validation sections for
+whatever was actually gathered before coverage was interrupted>
+
+### Decision
+**REVIEW INCOMPLETE**
+
+<one-sentence reason coverage is incomplete, tied to the reason recorded
+in Review Metadata>.
+
+### Review Metadata
+
+- ...
+- Coverage: incomplete — <reason>
+```
+
 ## Rules
 
 These are the report's **rendering** rules; the review semantics they
@@ -235,7 +264,12 @@ serve are owned by the linked policies and are not restated here.
   [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
   "Decision derivation (mechanical)"; any number of P2 findings never
   produce `CHANGES REQUIRED`. The one-sentence rationale explains that
-  mechanical result and never contradicts it.
+  mechanical result and never contradicts it. When coverage (below) is
+  `incomplete`, the Decision is instead exactly `REVIEW INCOMPLETE`,
+  leading with `**Result: ⚠️ Review Incomplete**` — this overrides the
+  mechanical derivation above so an incomplete review is never rendered
+  as `REVIEW CLEAN`; findings already gathered are still reported in
+  full.
 - Every finding uses the compact full rendering in
   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md)
   (stable `F<n>` id + `[severity]` heading, then
@@ -314,6 +348,14 @@ serve are owned by the linked policies and are not restated here.
   entirely for a change that stayed under the partitioning threshold. It
   is subordinate metadata, never a finding, and never changes the
   Decision.
+- **Coverage** (`complete` | `incomplete`, with reason(s) when
+  `incomplete`) is always rendered in "Review Metadata" per
+  [`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md).
+  Unlike change-risk depth, repository expansion, and large-PR
+  partitioning above, this is the one field that **does** change the
+  Decision: `incomplete` overrides the mechanical clean/blocking
+  derivation and renders `REVIEW INCOMPLETE` instead, per the "Decision"
+  rule above.
 - **No loop/orchestration metadata.** This report never tracks review
   iteration count, a configured maximum, or whether another iteration is
   allowed — that belongs to the orchestrator (see

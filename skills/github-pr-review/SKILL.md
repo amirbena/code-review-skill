@@ -165,13 +165,17 @@ normalized per
 [`invocation-options.md`](../../shared/policies/invocation-options.md)
 using only the current invocation. `include_fix_prompt` stays local-only.
 `human_review_output` is a natural-language opt-in (no CLI flag — e.g.
-"review it like a senior engineer") rendering the **final summary** in a
+"review it like a senior engineer," "senior review") rendering the
+**final summary**, and any body/fallback finding rendered in full, in a
 concise senior-engineer voice; `human_inline_findings` extends that voice
-to the **inline comments**
+to the **inline comments** only
 ([`templates/inline-finding.md`](templates/inline-finding.md)). Both are
 presentation-only: findings, severity, identity, dedup, verdict, review
-state, the canonical fix/action anchor and `#164` / `#165` fallback, and
-machine-readable status are unchanged.
+state, placement, the canonical fix/action anchor and `#164` / `#165`
+fallback, and machine-readable status are unchanged. Publishing a
+previously produced passive review with no stated presentation asks once
+which to use — see `policies/review-output.md`, "Publishing a previously
+produced passive review."
 
 ## 2. Required Policy Loading
 
@@ -180,6 +184,7 @@ Shared, always (as one batched operation):
 [`change-risk-signals.md`](../../shared/policies/change-risk-signals.md) (deterministic `standard`/`elevated`/`deep` review-depth classification, emitted with every review),
 [`repository-expansion.md`](../../shared/policies/repository-expansion.md) (fixed expansion-trigger catalog, bounded ring-based expansion scaled by change-risk depth, emitted with every review),
 [`large-pr-partitioning.md`](../../shared/policies/large-pr-partitioning.md) (deterministic partitioning of an unusually large diff into coherent review units, each fully reviewed, with cross-partition aggregation/de-duplication; conditional on a diff-size threshold),
+[`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md) (coverage and exit conditions scaled by change-risk depth and partitions, the closed set of incomplete triggers, and the rule that an incomplete review never renders as clean; emitted with every review),
 [`severity.md`](../../shared/policies/severity.md),
 [`evidence.md`](../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),
@@ -262,7 +267,8 @@ passive review.
   publication of the run (`final review comment == last publication
   event`; any machine-readable status precedes it — see
   [`policies/review-output.md`](policies/review-output.md), "Submission
-  ordering"); `human_review_output` only renders that summary concisely.
+  ordering"); `human_review_output` only renders that summary, and any
+  body/fallback finding, concisely.
 
 The reasoning result and the GitHub mutation are reported **separately**:
 an active invocation states its `Action mode` (`recommendation-only` /

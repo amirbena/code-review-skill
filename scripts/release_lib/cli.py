@@ -9,6 +9,7 @@ from release_lib.commands import (
     cmd_auto_release_plan,
     cmd_changelog_section,
     cmd_classify_semver,
+    cmd_generate_changelog,
     cmd_prepare_changelog,
     cmd_release_preflight,
     cmd_release_verify,
@@ -16,17 +17,18 @@ from release_lib.commands import (
     cmd_resolve_base_ref,
 )
 
-_DESCRIPTION = """Classify a change set as release-worthy, enforce CHANGELOG coverage, and
+_DESCRIPTION = """Classify a change set as release-worthy, enforce PR release intent, and
 drive the deterministic parts of the direct-to-main release flow.
 
-Classification, CHANGELOG parsing, and the release-state comparisons are
-pure and side-effect-free so they can be unit tested; the workflow
-(.github/workflows/release-worthiness.yml) supplies the changed-file list
-or a base ref, and performs the Git/GitHub mutations itself.
+Classification, release-intent parsing, CHANGELOG composition, and the
+release-state comparisons are pure and side-effect-free so they can be
+unit tested; the workflow (.github/workflows/release-worthiness.yml)
+supplies the changed-file list or a base ref, and performs the Git/GitHub
+mutations itself.
 
-Release worthiness is always evaluated over *all* changes since the
-previous ``v*`` tag. ``## Unreleased`` is the coverage for that whole
-release set, never one entry per pull request. See docs/RELEASE.md.
+A pull request declares its CHANGELOG entry in its description; the
+trusted release flow on main generates ``## Unreleased`` from the merged
+pull requests since the previous ``v*`` tag. See docs/RELEASE.md.
 """
 
 
@@ -36,18 +38,32 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--changelog", default=None, help="path to CHANGELOG.md")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    assess = sub.add_parser("assess", help="classify the change set and check CHANGELOG coverage")
+    assess = sub.add_parser("assess", help="classify the change set and check the PR's release intent")
     assess.add_argument("--base-ref", default=None, help="diff HEAD against this ref (default: previous v* tag)")
     assess.add_argument(
         "--changed-file", action="append", default=[], metavar="PATH",
         help="explicit changed path (repeatable); skips Git when given",
     )
     assess.add_argument(
-        "--require-changelog", action="store_true",
-        help="exit 1 when release-worthy and coverage is missing",
+        "--pr-body-env", default=None, metavar="NAME",
+        help="environment variable holding the PR description (never pass the text itself)",
     )
-    assess.add_argument("--github-output", default=None, help="path for release_worthy/reason outputs")
+    assess.add_argument("--pr-number", type=int, default=None, help="PR number, to render the generated entry")
+    assess.add_argument(
+        "--require-release-intent", "--require-changelog", dest="require_release_intent", action="store_true",
+        help="exit 1 when release-worthy and the PR's release intent is missing or invalid (needs --pr-body-env)",
+    )
+    assess.add_argument("--github-output", default=None, help="path for release_worthy/release_intent/reason outputs")
+    assess.add_argument("--step-summary", default=None, help="append a Markdown summary here (e.g. $GITHUB_STEP_SUMMARY)")
     assess.set_defaults(func=cmd_assess)
+
+    generate = sub.add_parser(
+        "generate-changelog",
+        help="compose '## Unreleased' from merged PRs' release intent since the baseline tag (trusted main only)",
+    )
+    generate.add_argument("--base-ref", default=None, help="baseline tag (default: latest vX.Y.Z tag)")
+    generate.add_argument("--check", action="store_true", help="print result to stdout, do not write")
+    generate.set_defaults(func=cmd_generate_changelog)
 
     prepare = sub.add_parser("prepare-changelog", help="roll '## Unreleased' entries into a versioned heading")
     prepare.add_argument("--version", required=True, help="target version X.Y.Z")
@@ -72,6 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="from trusted main, decide whether to publish and derive the next version",
     )
     plan.add_argument("--github-output", default=None, help="path for should_release/version/impact outputs")
+    plan.add_argument("--step-summary", default=None, help="append the planned release notes here (e.g. $GITHUB_STEP_SUMMARY)")
     plan.set_defaults(func=cmd_auto_release_plan)
 
     preflight = sub.add_parser(

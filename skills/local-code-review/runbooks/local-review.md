@@ -13,6 +13,7 @@ Applies shared policies:
 [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
 [`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
 [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
+[`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
@@ -100,7 +101,13 @@ classify findings by severity (source never changes the classification)
     ↓
 derive conditional requirement coverage (all renderings preserve it)
     ↓
-derive decision mechanically from blocking severities (P0/P1)
+evaluate review coverage (complete / incomplete) per
+review-stopping-criteria.md, scaled by the depth (and partitions) above
+    ↓
+coverage complete? → yes → derive decision mechanically from blocking
+                              severities (P0/P1)
+                    → no  → render the incomplete/ungraded outcome instead,
+                              never a clean/approved result
     ↓
 return P0/P1/P2 findings, each attributed to its source category
     ↓
@@ -361,7 +368,23 @@ which a value must be resolved before it is used, or what is reported.
     its evidence-backed status, and derive the separate task-relative
     completeness signal. If no activating contract exists, skip this step and
     emit nothing for it.
-11. Derive the Decision mechanically per
+10b. **Evaluate review coverage** per
+    [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md).
+    Using the change-risk depth from step 8b and, when it activated, the
+    partitions from step 8d, determine whether every pass that depth (and
+    partitioning, when applicable) requires actually reached its own
+    already-defined stop condition. Record `coverage: complete` or
+    `incomplete` with its concrete reason(s) for the report's subordinate
+    metadata (step 13) — this is always produced, the same way step 8b and
+    8c always are. This step never discards or re-evaluates any finding
+    already gathered; it only determines whether the review that gathered
+    them finished.
+11. Derive the Decision. When step 10b's coverage is `incomplete`, the
+    Decision is the incomplete/ungraded outcome per
+    [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
+    "Labeling" — never a clean/approved result, regardless of what the
+    finding set alone would otherwise produce. Otherwise, derive the
+    Decision mechanically per
     [`severity.md`](../../../shared/policies/severity.md), "Decision
     derivation (mechanical)," from the finalized findings. This is the
     only path to the decision — no independent, subjective judgment on
