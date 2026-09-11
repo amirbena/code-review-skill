@@ -63,6 +63,27 @@ important concern or attention point; include scope only when useful>
 <one-sentence rationale tied to the findings above>
 ```
 
+### Heading is a per-Skill override point
+
+The `## Code Review` line above is this shared shape's **default**
+heading — the exact value `local-code-review` renders unchanged in its
+own `templates/local-review-report.md` (not linked from here: this
+shared template is packaged standalone into every consuming Skill's own
+archive, and must never depend on another Skill's directory existing
+alongside it — see [`finding-rendering.md`](finding-rendering.md),
+"Location source annotation" for the same packaging constraint). A
+consuming Skill may override **only this one heading line** for its own
+delivery surface, without forking any other part of this shape:
+`github-pr-review` overrides it to `## Review Summary` in its own
+`templates/external-review-summary.md`, consistently for every rendered
+case (clean, findings, fallback, and the self-review informational
+`COMMENT`) and for both the structured and the `human_review_output`
+senior-voice rendering below. This is the **only** override point this
+shared shape defines — every other section, its order, and its content
+rules stay identical across both Skills. A Skill that declares no
+override renders the default heading shown above; this paragraph is
+additive documentation and changes no Skill's rendered output by itself.
+
 ## Section rules
 
 - **Result** — states the outcome in plain language immediately, e.g.
@@ -199,6 +220,48 @@ deduplication, evidence, remediation, decision, canonical fix/action
 location, and publication anchor; only the inline wording changes. See
 [`../policies/invocation-options.md`](../policies/invocation-options.md),
 "`human_inline_findings` derived default and phrasings".
+
+### Density, de-duplication, and voice tightening (`github-pr-review` only)
+
+This subsection is an explicit, opt-in extension that only
+`github-pr-review` applies to its own rendering — both the structured
+shape and the senior voice above — per its own `policies/review-output.md`
+and `templates/external-review-summary.md` (not linked from here for the
+same packaging reason as the heading override above: this shared
+template must not depend on another Skill's directory existing
+alongside it), which state exactly where and how it applies. It is
+additive documentation, inert for any consumer that does not opt into it:
+`local-code-review` does not reference this subsection, and its own
+report format, density, and senior-voice wording (per its own
+`templates/local-review-report.md`, "Concise human-style output
+(opt-in)") are unaffected and unchanged by it.
+
+- omit a section entirely when it would add no information, rather than
+  rendering it with placeholder or boilerplate content;
+- never restate the diff — describe what changed and why, not a
+  line-by-line narration of the patch;
+- never narrate file-by-file inspection or reproduction mechanics beyond
+  what the `Validation` / [`runtime-validation.md`](../policies/runtime-validation.md)
+  contract already records — the reader needs the result, not a
+  transcript of the review process;
+- never repeat the same evidence in more than one place across the
+  summary line, a fallback full finding, and its inline comment — each
+  fact appears once, in its one authoritative location;
+- let the output's length scale with the number and complexity of
+  findings, never with the number of available template sections — a
+  two-finding review and a ten-finding review do not carry the same
+  fixed scaffolding;
+- there is **no numeric word or line cap** — concision comes from cutting
+  restatement and process narration, never from truncating evidence,
+  impact, or fix;
+- read like a concise human review: natural short paragraphs, minimal
+  headings, no evidence repeated across sections, and no meta-commentary
+  about the review process itself (no "I reviewed file X then file Y",
+  no narrating that a reproduction was attempted beyond the Validation /
+  runtime-validation record) — while every existing evidence/rigor
+  guarantee (the same findings, severities, decision, and anchors) stays
+  exactly as specified elsewhere in this shape and in
+  [`finding.md`](finding.md).
 
 ## Machine metadata is subordinate
 

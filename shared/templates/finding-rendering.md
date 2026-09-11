@@ -8,6 +8,17 @@ bar, canonical location, or the decision derivation. Read
 [`finding.md`](finding.md) first — it is the contract; this file is how that
 contract is drawn.
 
+Every `[<severity>]` slot below renders the bare `P0` / `P1` / `P2` code by
+default. A Skill that defines the optional severity-legend override in
+[`finding.md`](finding.md), "Fields" (`github-pr-review` does, in its own
+`policies/review-output.md`) substitutes `[<severity> (<compact
+meaning>)]` — e.g. `[P1 (Blocking)]` — everywhere a severity is shown
+(full rendering, inline rendering, human inline heading, and
+summary-pointer), consistently, with no other change to these shapes.
+This is additive and inert for a Skill that declares no legend
+(`local-code-review` does not, and its renderings below stay exactly the
+bare-code form).
+
 ## Canonical full rendering
 
 Used wherever a finding needs its complete, standalone representation —
@@ -263,6 +274,10 @@ Rules — this is a re-voicing, not a weaker finding:
   generic "consider improving this" language;
 - **concise by default** per "Conciseness contract"; two paragraphs is
   not required and the length adapts to the finding;
+- **no meta-commentary about the review process** — no narrating that a
+  file was inspected, that a reproduction was attempted, or restating
+  investigation steps; the comment states the result, not the process
+  that produced it;
 - **evidence-based** per [`../policies/evidence.md`](../policies/evidence.md);
   genuine **uncertainty is preserved** as a question rather than asserted;
   **no praise** on an inline comment;
