@@ -1,0 +1,79 @@
+# Risk-depth corpus case (Issue #90). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Python, `concurrency` catalog signal (change-risk-signals.md:
+# concurrency -> deep, single occurrence). A "small, safe-looking"
+# refactor moves the availability check outside the lock that used to
+# guard the whole check-then-act sequence, reintroducing a classic
+# TOCTOU race: two concurrent reserve() calls can both read the same
+# `available` value before either applies its write, oversubscribing
+# stock. Nothing about the diff itself looks alarming without the
+# concurrency signal pushing depth to `deep`.
+
+format: benchmark-case/v1
+
+id: risk-depth-concurrency-signal-deep
+title: "Availability check moved outside the lock reintroduces a stock-reservation race"
+
+input:
+  patch: |
+    diff --git a/app/inventory/stock.py b/app/inventory/stock.py
+    index 1111111..2222222 100644
+    --- a/app/inventory/stock.py
+    +++ b/app/inventory/stock.py
+    @@ -6,7 +6,7 @@ _stock: dict[str, int] = {}
+
+
+     def reserve(sku: str, qty: int) -> None:
+    -    with _lock:
+    -        available = _stock.get(sku, 0)
+    -        if available < qty:
+    -            raise OutOfStock(sku)
+    -        _stock[sku] = available - qty
+    +    available = _stock.get(sku, 0)
+    +    if available < qty:
+    +        raise OutOfStock(sku)
+    +    with _lock:
+    +        _stock[sku] = available - qty
+  base:
+    app/inventory/stock.py: |
+      import threading
+
+      _lock = threading.Lock()
+      _stock: dict[str, int] = {}
+
+
+      def reserve(sku: str, qty: int) -> None:
+          with _lock:
+              available = _stock.get(sku, 0)
+              if available < qty:
+                  raise OutOfStock(sku)
+              _stock[sku] = available - qty
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: reserve-toctou-race-outside-lock
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/inventory/stock.py
+        symbol: reserve
+        anchor: "available = _stock.get(sku, 0)"
+      claim: >-
+        reserve() now reads `available` and validates it against `qty`
+        before acquiring `_lock`; two concurrent callers can both read the
+        same pre-write `available` value and both pass the check, so
+        `_stock[sku]` can go negative (oversubscription) instead of
+        raising OutOfStock for the second caller.
+      defect_kind: race-condition
+
+metadata:
+  source: crafted
+  tags: [correctness, concurrency]
+  rationale: >-
+    Demonstrates the `concurrency` catalog signal alone selecting `deep`
+    depth. The refactor reads as a harmless narrowing of the critical
+    section; only concurrency-aware review surfaces the reintroduced race.

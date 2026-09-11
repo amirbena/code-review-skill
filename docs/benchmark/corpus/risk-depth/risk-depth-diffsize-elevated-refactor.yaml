@@ -1,0 +1,158 @@
+# Risk-depth corpus case (Issue #90). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Python, `diff_size` signal only -- no catalog signal fires anywhere in
+# this change (no auth/migration/concurrency/public_api/sensitive_path/
+# infra_config label applies to any touched file). `format_currency`'s
+# parameter order is swapped at its definition and at ten call sites; the
+# change touches 11 files, crossing change-risk-signals.md's
+# `changed_files >= 10` elevated diff-size boundary on file count alone,
+# even though no single hunk is risky-looking. One call site is updated
+# incorrectly -- it still passes the old (amount, currency) order into the
+# new (currency, amount) signature -- so the size-driven elevated depth is
+# what catches a real bug a lighter pass could plausibly skip past.
+
+format: benchmark-case/v1
+
+id: risk-depth-diffsize-elevated-refactor
+title: "format_currency() parameter reorder leaves one call site passing args in the old order"
+
+input:
+  patch: |
+    diff --git a/app/utils/currency.py b/app/utils/currency.py
+    index 1111111..2222222 100644
+    --- a/app/utils/currency.py
+    +++ b/app/utils/currency.py
+    @@ -1,4 +1,4 @@
+    -def format_currency(amount, currency):
+    -    return f"{currency} {amount:,.2f}"
+    +def format_currency(currency, amount):
+    +    return f"{currency} {amount:,.2f}"
+    diff --git a/app/billing/invoice.py b/app/billing/invoice.py
+    index 1111111..2222222 100644
+    --- a/app/billing/invoice.py
+    +++ b/app/billing/invoice.py
+    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+
+     def render_invoice_total(amount, currency):
+    -    return format_currency(amount, currency)
+    +    return format_currency(currency, amount)
+    diff --git a/app/billing/receipt.py b/app/billing/receipt.py
+    index 1111111..2222222 100644
+    --- a/app/billing/receipt.py
+    +++ b/app/billing/receipt.py
+    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+
+     def render_receipt_total(amount, currency):
+    -    return format_currency(amount, currency)
+    +    return format_currency(currency, amount)
+    diff --git a/app/billing/refund.py b/app/billing/refund.py
+    index 1111111..2222222 100644
+    --- a/app/billing/refund.py
+    +++ b/app/billing/refund.py
+    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+
+     def render_refund_total(amount, currency):
+    -    return format_currency(amount, currency)
+    +    return format_currency(currency, amount)
+    diff --git a/app/billing/statement.py b/app/billing/statement.py
+    index 1111111..2222222 100644
+    --- a/app/billing/statement.py
+    +++ b/app/billing/statement.py
+    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+
+     def render_statement_total(amount, currency):
+    -    return format_currency(amount, currency)
+    +    return format_currency(currency, amount)
+    diff --git a/app/billing/credit_note.py b/app/billing/credit_note.py
+    index 1111111..2222222 100644
+    --- a/app/billing/credit_note.py
+    +++ b/app/billing/credit_note.py
+    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+
+     def render_credit_note_total(amount, currency):
+    -    return format_currency(amount, currency)
+    +    return format_currency(currency, amount)
+    diff --git a/app/billing/quote.py b/app/billing/quote.py
+    index 1111111..2222222 100644
+    --- a/app/billing/quote.py
+    +++ b/app/billing/quote.py
+    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+
+     def render_quote_total(amount, currency):
+    -    return format_currency(amount, currency)
+    +    return format_currency(currency, amount)
+    diff --git a/app/billing/estimate.py b/app/billing/estimate.py
+    index 1111111..2222222 100644
+    --- a/app/billing/estimate.py
+    +++ b/app/billing/estimate.py
+    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+
+     def render_estimate_total(amount, currency):
+    -    return format_currency(amount, currency)
+    +    return format_currency(currency, amount)
+    diff --git a/app/billing/proposal.py b/app/billing/proposal.py
+    index 1111111..2222222 100644
+    --- a/app/billing/proposal.py
+    +++ b/app/billing/proposal.py
+    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+
+     def render_proposal_total(amount, currency):
+    -    return format_currency(amount, currency)
+    +    return format_currency(currency, amount)
+    diff --git a/app/billing/dunning.py b/app/billing/dunning.py
+    index 1111111..2222222 100644
+    --- a/app/billing/dunning.py
+    +++ b/app/billing/dunning.py
+    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+
+     def render_dunning_total(amount, currency):
+    -    return format_currency(amount, currency)
+    +    return format_currency(currency, amount)
+    diff --git a/app/billing/chargeback.py b/app/billing/chargeback.py
+    index 1111111..2222222 100644
+    --- a/app/billing/chargeback.py
+    +++ b/app/billing/chargeback.py
+    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+
+     def render_chargeback_total(amount, currency):
+    -    return format_currency(amount, currency)
+    +    return format_currency(currency, amount)
+  base:
+    app/billing/payout.py: |
+      from app.utils.currency import format_currency
+
+
+      def render_payout_total(amount, currency):
+          return format_currency(amount, currency)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: payout-total-format-currency-arg-order-not-updated
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/billing/payout.py
+        symbol: render_payout_total
+        anchor: "return format_currency(amount, currency)"
+      claim: >-
+        format_currency's parameters were reordered to (currency, amount)
+        everywhere else in this change, but render_payout_total's call
+        site was left unchanged, so it now passes amount where currency is
+        expected and vice versa, producing a garbled total on payout
+        receipts.
+      defect_kind: argument-order-mismatch
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Demonstrates the `diff_size` signal alone selecting `elevated` depth
+    via the changed-files boundary (11 files >= 10), with no catalog
+    signal (auth/migration/concurrency/public_api/sensitive_path/
+    infra_config) firing on any touched file. The one call site left in
+    the old argument order is a real regression a shallow pass over 10
+    near-identical hunks could plausibly rubber-stamp.

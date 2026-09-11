@@ -68,6 +68,21 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/test_consolidation_corpus.py`](../../../tests/unit/test_consolidation_corpus.py)).
   The four category cases above are unaffected by it.
+- [`repository-intelligence/`](repository-intelligence/README.md) — a
+  focused `benchmark-case/v1` sub-corpus demonstrating
+  `repository-expansion.md`'s (#87) triggers (Issue
+  [#129](https://github.com/amirbena/code-review-skill/issues/129)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/test_repository_intelligence_corpus.py`](../../../tests/unit/test_repository_intelligence_corpus.py)).
+- [`risk-depth/`](risk-depth/README.md) — a focused `benchmark-case/v1`
+  sub-corpus for risk-based review depth and large-PR handling (Issue
+  [#90](https://github.com/amirbena/code-review-skill/issues/90), parent
+  [#48](https://github.com/amirbena/code-review-skill/issues/48)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/test_risk_depth_corpus.py`](../../../tests/unit/test_risk_depth_corpus.py)).
+  Deep depth/expansion/partitioning/coverage assertions are pinned against
+  the reference models directly in
+  [`../../../tests/unit/test_risk_based_review_scenarios.py`](../../../tests/unit/test_risk_based_review_scenarios.py).
 
 ## Validation
 

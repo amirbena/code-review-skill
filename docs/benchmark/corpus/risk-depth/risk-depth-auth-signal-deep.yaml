@@ -1,0 +1,75 @@
+# Risk-depth corpus case (Issue #90). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Python, `auth` catalog signal (change-risk-signals.md: auth -> deep,
+# single occurrence). The authenticated-role check on an admin-only report
+# endpoint is replaced by a check on a client-controlled request header --
+# a classic broken-access-control regression, and exactly the kind of
+# change the `auth` signal exists to force into `deep` review depth
+# regardless of how small the diff looks.
+
+format: benchmark-case/v1
+
+id: risk-depth-auth-signal-deep
+title: "Admin-report auth check replaced by a spoofable client header"
+
+input:
+  patch: |
+    diff --git a/app/admin/reports.py b/app/admin/reports.py
+    index 1111111..2222222 100644
+    --- a/app/admin/reports.py
+    +++ b/app/admin/reports.py
+    @@ -1,10 +1,10 @@
+     from app.auth import current_user
+     from app.reports import build_report
+    -from flask import abort
+    +from flask import abort, request
+
+
+     def get_admin_report(report_id):
+         user = current_user()
+    -    if not user.is_admin:
+    -        abort(403)
+    +    if request.headers.get("X-Admin") != "true":
+    +        abort(403)
+         return build_report(report_id)
+  base:
+    app/admin/reports.py: |
+      from app.auth import current_user
+      from app.reports import build_report
+      from flask import abort
+
+
+      def get_admin_report(report_id):
+          user = current_user()
+          if not user.is_admin:
+              abort(403)
+          return build_report(report_id)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: admin-report-auth-check-spoofable-header
+      match: required
+      severity: P0
+      location:
+        location_intent: line
+        path: app/admin/reports.py
+        symbol: get_admin_report
+        anchor: 'request.headers.get("X-Admin")'
+      claim: >-
+        The admin-only report endpoint no longer checks the authenticated
+        user's is_admin role; it checks the client-supplied X-Admin request
+        header instead, so any caller can bypass authorization by setting
+        that header.
+      defect_kind: broken-access-control
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Demonstrates the `auth` catalog signal alone selecting `deep` depth
+    (change-risk-signals.md): the diff is two lines, small enough that a
+    diff-size-only heuristic would miss it, but the signal forces deep
+    scrutiny on the specific file it touches.

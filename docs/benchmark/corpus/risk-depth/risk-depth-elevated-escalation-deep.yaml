@@ -1,0 +1,78 @@
+# Risk-depth corpus case (Issue #90). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Two DISTINCT `elevated`-tier catalog signals fire on two DISTINCT
+# observed facts in the same change: `.env.example` is a secrets-adjacent
+# file (`sensitive_path`) and `.github/workflows/deploy.yml` is CI
+# configuration (`infra_config`). change-risk-signals.md's "Classification
+# ordering" dedups overlapping labels on one fact, but these are two
+# separate facts -> two independent elevated occurrences -> escalation to
+# `deep`. The actual defect lives only in the workflow file: it echoes a
+# secret into the (publicly-readable) job log.
+
+format: benchmark-case/v1
+
+id: risk-depth-elevated-escalation-deep
+title: "Deploy workflow echoes DEPLOY_TOKEN into the CI log"
+
+input:
+  patch: |
+    diff --git a/.env.example b/.env.example
+    index 1111111..2222222 100644
+    --- a/.env.example
+    +++ b/.env.example
+    @@ -1,2 +1,3 @@
+     DATABASE_URL=postgres://localhost/app
+     REDIS_URL=redis://localhost:6379
+    +DEPLOY_TOKEN=
+    diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+    index 3333333..4444444 100644
+    --- a/.github/workflows/deploy.yml
+    +++ b/.github/workflows/deploy.yml
+    @@ -4,4 +4,5 @@ jobs:
+       deploy:
+         runs-on: ubuntu-latest
+         steps:
+    +      - run: echo "Deploying with token ${{ secrets.DEPLOY_TOKEN }}"
+           - run: ./deploy.sh
+  base:
+    .env.example: |
+      DATABASE_URL=postgres://localhost/app
+      REDIS_URL=redis://localhost:6379
+    .github/workflows/deploy.yml: |
+      name: Deploy
+      on: [push]
+      jobs:
+        deploy:
+          runs-on: ubuntu-latest
+          steps:
+            - run: ./deploy.sh
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: deploy-workflow-echoes-deploy-token
+      match: required
+      severity: P0
+      location:
+        location_intent: line
+        path: .github/workflows/deploy.yml
+        symbol: deploy
+        anchor: 'echo "Deploying with token ${{ secrets.DEPLOY_TOKEN }}"'
+      claim: >-
+        The new deploy step echoes secrets.DEPLOY_TOKEN into the job's
+        stdout, which GitHub Actions writes to the (potentially
+        readable-by-collaborators) run log, exposing the deploy token.
+      defect_kind: secret-exposure
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Demonstrates change-risk-signals.md's escalation rule: two independent
+    `elevated` occurrences (`sensitive_path` on .env.example,
+    `infra_config` on the workflow file) combine into `deep`, even though
+    neither file alone would exceed `elevated`. Also exercises the
+    per-fact dedup boundary -- these are two distinct facts, not one
+    double-labeled fact.
