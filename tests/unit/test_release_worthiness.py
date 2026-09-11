@@ -256,86 +256,157 @@ class MainAssessContractTests(unittest.TestCase):
             )
         return rc, outputs
 
-    def test_release_worthy_missing_changelog_fails_closed(self) -> None:
-        cl = self._write("CHANGELOG.md", PLACEHOLDER_CHANGELOG)
-        rc, outputs = self._run(
-            "--changelog", str(cl),
-            "assess",
-            "--changed-file", "skills/local-code-review/SKILL.md",
-            "--require-changelog",
+    VALID_INTENT = "## What\n\n- **Release category:** Fixed\n- **Release entry:** Tighten a rule\n"
+
+    def _assess(
+        self,
+        *changed: str,
+        body: str | None = None,
+        changelog: str = PLACEHOLDER_CHANGELOG,
+        require: bool = True,
+        summary: bool = False,
+        with_output: bool = True,
+    ):
+        args = ["--changelog", str(self._write("CHANGELOG.md", changelog)), "assess"]
+        for path in changed:
+            args += ["--changed-file", path]
+        if body is not None:
+            os.environ["RW_TEST_PR_BODY"] = body
+            self.addCleanup(os.environ.pop, "RW_TEST_PR_BODY", None)
+            args += ["--pr-body-env", "RW_TEST_PR_BODY", "--pr-number", "42"]
+        if require:
+            args.append("--require-release-intent")
+        summary_path = Path(self._tmp.name) / "summary.md"
+        if summary:
+            args += ["--step-summary", str(summary_path)]
+        out_path = Path(self._tmp.name) / "gh-out.txt"
+        if with_output:
+            os.environ["GITHUB_OUTPUT"] = str(out_path)
+        else:
+            os.environ.pop("GITHUB_OUTPUT", None)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = rw.main(args)
+        raw = out_path.read_text(encoding="utf-8") if out_path.is_file() else None
+        outputs = None if raw is None else dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        summary_text = summary_path.read_text(encoding="utf-8") if summary_path.is_file() else ""
+        return rc, outputs, buf.getvalue(), summary_text, raw
+
+    def test_valid_release_intent_covers_without_a_changelog_edit(self) -> None:
+        rc, outputs, _, _, _ = self._assess("skills/local-code-review/SKILL.md", body=self.VALID_INTENT)
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["release_worthy"], "true")
+        self.assertEqual(outputs["release_intent"], "valid")
+        self.assertEqual(outputs["release_category"], "Fixed")
+        self.assertEqual(outputs["semver_impact"], "patch")
+
+    def test_release_worthy_missing_intent_fails_closed_with_guidance(self) -> None:
+        rc, outputs, text, _, _ = self._assess("skills/local-code-review/SKILL.md", body="Just a description.")
+        self.assertEqual(rc, 1)
+        self.assertEqual(outputs["release_intent"], "invalid")
+        self.assertIn("::error::release-worthy change has no valid release intent", text)
+        self.assertIn("Release category:", text)
+        self.assertIn("do not edit CHANGELOG.md", text)
+
+    def test_release_worthy_malformed_category_fails_closed(self) -> None:
+        body = "- **Release category:** Improved\n- **Release entry:** Something\n"
+        rc, outputs, _, _, _ = self._assess("skills/local-code-review/SKILL.md", body=body)
+        self.assertEqual(rc, 1)
+        self.assertEqual(outputs["release_intent"], "invalid")
+
+    def test_release_worthy_none_category_fails_closed(self) -> None:
+        body = "- **Release category:** none\n- **Release entry:**\n"
+        rc, outputs, text, _, _ = self._assess("skills/local-code-review/SKILL.md", body=body)
+        self.assertEqual(rc, 1)
+        self.assertEqual(outputs["release_intent"], "none")
+        self.assertIn("release-worthy", text)
+
+    def test_hand_edited_unreleased_does_not_substitute_for_intent(self) -> None:
+        rc, _, _, _, _ = self._assess("skills/local-code-review/SKILL.md", body="", changelog=COVERED_CHANGELOG)
+        self.assertEqual(rc, 1)
+
+    def test_unclassifiable_hand_edited_unreleased_fails_closed(self) -> None:
+        rc, _, text, _, _ = self._assess(
+            "skills/local-code-review/SKILL.md",
+            body=self.VALID_INTENT,
+            changelog=_unreleased("- uncategorized entry"),
         )
         self.assertEqual(rc, 1)
-        self.assertEqual(outputs["release_worthy"], "true")
-        self.assertEqual(outputs["changelog_covered"], "false")
+        self.assertIn("not classifiable", text)
 
-    def test_release_worthy_without_require_flag_still_exits_zero(self) -> None:
-        cl = self._write("CHANGELOG.md", PLACEHOLDER_CHANGELOG)
-        rc, outputs = self._run(
-            "--changelog", str(cl),
-            "assess",
-            "--changed-file", "skills/local-code-review/SKILL.md",
+    def test_unrelated_non_release_worthy_pr_ignores_preexisting_malformed_unreleased(self) -> None:
+        # A malformed hand-curated '## Unreleased' left over elsewhere must
+        # never fail an unrelated PR that never touches the changelog.
+        rc, outputs, text, _, _ = self._assess(
+            "docs/typo.md", body="Fix a typo.\nRelease category: none\n", changelog=_unreleased("- uncategorized")
         )
         self.assertEqual(rc, 0)
-        self.assertEqual(outputs["release_worthy"], "true")
-        self.assertEqual(outputs["changelog_covered"], "false")
+        self.assertEqual(outputs["release_worthy"], "false")
+        self.assertNotIn("not classifiable", text)
 
-    def test_release_worthy_with_coverage_passes(self) -> None:
-        cl = self._write("CHANGELOG.md", COVERED_CHANGELOG)
-        rc, outputs = self._run(
-            "--changelog", str(cl),
-            "assess",
-            "--changed-file", "skills/local-code-review/SKILL.md",
-            "--require-changelog",
-        )
+    def test_without_require_flag_reports_but_exits_zero(self) -> None:
+        rc, outputs, text, _, _ = self._assess("skills/local-code-review/SKILL.md", body="", require=False)
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["release_intent"], "invalid")
+        self.assertIn("::warning::", text)
+
+    def test_require_without_a_pr_body_is_a_usage_error(self) -> None:
+        rc, _, text, _, _ = self._assess("skills/local-code-review/SKILL.md")
+        self.assertEqual(rc, 2)
+        self.assertIn("--pr-body-env", text)
+
+    def test_push_mode_classifies_without_checking_intent(self) -> None:
+        rc, outputs, _, _, _ = self._assess("skills/local-code-review/SKILL.md", require=False)
         self.assertEqual(rc, 0)
         self.assertEqual(outputs["release_worthy"], "true")
-        self.assertEqual(outputs["changelog_covered"], "true")
+        self.assertEqual(outputs["release_intent"], "not-checked")
 
     def test_docs_only_is_not_release_worthy(self) -> None:
-        cl = self._write("CHANGELOG.md", PLACEHOLDER_CHANGELOG)
-        rc, outputs = self._run(
-            "--changelog", str(cl),
-            "assess",
-            "--changed-file", "docs/ARCHITECTURE.md",
-            "--changed-file", "README.md",
-            "--require-changelog",
-        )
+        rc, outputs, _, _, _ = self._assess("docs/ARCHITECTURE.md", "README.md", body="")
         self.assertEqual(rc, 0)
         self.assertEqual(outputs["release_worthy"], "false")
 
     def test_tests_only_is_not_release_worthy(self) -> None:
-        cl = self._write("CHANGELOG.md", PLACEHOLDER_CHANGELOG)
-        rc, outputs = self._run(
-            "--changelog", str(cl),
-            "assess",
-            "--changed-file", "tests/unit/test_x.py",
-            "--require-changelog",
-        )
+        rc, outputs, _, _, _ = self._assess("tests/unit/test_x.py", body="")
         self.assertEqual(rc, 0)
         self.assertEqual(outputs["release_worthy"], "false")
 
-    def test_packaging_change_is_release_worthy_and_build_gate_applies(self) -> None:
-        cl = self._write("CHANGELOG.md", PLACEHOLDER_CHANGELOG)
-        rc, outputs = self._run(
-            "--changelog", str(cl),
-            "assess",
-            "--changed-file", "scripts/package-skills.sh",
-            "--require-changelog",
-        )
+    def test_entry_declared_on_a_non_release_worthy_pr_is_ignored_with_a_notice(self) -> None:
+        rc, _, text, summary, _ = self._assess("docs/x.md", body=self.VALID_INTENT, summary=True)
+        self.assertEqual(rc, 0)
+        self.assertIn("::notice::", text)
+        self.assertEqual(summary, "")
+
+    def test_packaging_change_is_release_worthy_and_gate_applies(self) -> None:
+        rc, outputs, _, _, _ = self._assess("scripts/package-skills.sh", body="")
         self.assertEqual(rc, 1)
         self.assertEqual(outputs["release_worthy"], "true")
 
     def test_runs_without_github_output(self) -> None:
-        cl = self._write("CHANGELOG.md", COVERED_CHANGELOG)
-        rc, outputs = self._run(
-            "--changelog", str(cl),
-            "assess",
-            "--changed-file", "skills/local-code-review/SKILL.md",
-            "--require-changelog",
-            with_output=False,
+        rc, outputs, _, _, _ = self._assess(
+            "skills/local-code-review/SKILL.md", body=self.VALID_INTENT, with_output=False
         )
         self.assertEqual(rc, 0)
         self.assertIsNone(outputs)
+
+    def test_step_summary_previews_the_generated_entry_in_a_fence(self) -> None:
+        rc, _, _, summary, _ = self._assess("skills/local-code-review/SKILL.md", body=self.VALID_INTENT, summary=True)
+        self.assertEqual(rc, 0)
+        self.assertIn("## Release recommended", summary)
+        self.assertIn("```markdown\n### Fixed\n\n- Tighten a rule (#42).\n```", summary)
+        self.assertIn("**patch**", summary)
+
+    def test_step_summary_fence_outlasts_backticks_in_the_entry(self) -> None:
+        body = "Release category: Fixed\nRelease entry: Escape ```` in `x`\n"
+        _, _, _, summary, _ = self._assess("skills/local-code-review/SKILL.md", body=body, summary=True)
+        self.assertIn("`````markdown", summary)
+
+    def test_contributor_text_never_reaches_stdout_or_outputs(self) -> None:
+        body = "Release category: Fixed\nRelease entry: ::warning::pwned\n"
+        rc, _, text, _, raw = self._assess("skills/local-code-review/SKILL.md", body=body)
+        self.assertEqual(rc, 0)
+        self.assertNotIn("pwned", text)
+        self.assertNotIn("pwned", raw)
 
     def test_prepare_changelog_check_mode_does_not_write(self) -> None:
         cl = self._write("CHANGELOG.md", COVERED_CHANGELOG)
@@ -443,10 +514,12 @@ class _FakeGit:
         ls_remote_main: str = "",
         rev_parse: str | None = None,
         merge_base: str | None = None,
+        log: str = "",
     ) -> None:
         self.describe = describe
         self.diff = diff
         self.merge_base = merge_base
+        self.log = log
         self.tag_list = tag_list
         # `git tag --list --sort=-v:refname <glob>` output; defaults to the
         # exact-match tag_list when the test does not distinguish them.
@@ -459,6 +532,8 @@ class _FakeGit:
     def __call__(self, args, repo_root):  # noqa: ANN001 - test shim
         a = list(args)
         self.calls.append(a)
+        if a[:1] == ["log"]:
+            return self.log
         if a[:1] == ["describe"]:
             return self.describe
         if a[:2] == ["diff", "--name-only"]:
