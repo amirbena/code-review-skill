@@ -54,6 +54,8 @@ Not safe to merge at `a1b2c3d` yet; see the inline comments for detail.
 
 ### Findings
 
+- **P0 (Critical) — Endpoint skips the ownership check, letting any authenticated user read another tenant's records**
+  `src/api/records.py:41`
 - **P1 (Blocking) — Pagination can stop after page one and pass a false clean review**
   `src/reviews/scan.py:84`
 - **P2 (Non-Blocking) — Validation output hides the failing check name**
