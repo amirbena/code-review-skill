@@ -178,6 +178,7 @@ machine-readable status are unchanged.
 Shared, always (as one batched operation):
 [`review-scope.md`](../../shared/policies/review-scope.md),
 [`change-risk-signals.md`](../../shared/policies/change-risk-signals.md) (deterministic `standard`/`elevated`/`deep` review-depth classification, emitted with every review),
+[`repository-expansion.md`](../../shared/policies/repository-expansion.md) (fixed expansion-trigger catalog, bounded ring-based expansion scaled by change-risk depth, emitted with every review),
 [`severity.md`](../../shared/policies/severity.md),
 [`evidence.md`](../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),

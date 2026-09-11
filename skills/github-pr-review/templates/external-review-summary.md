@@ -186,11 +186,15 @@ authorization and is never a route to any of them — see
 The deterministic `standard` / `elevated` / `deep` change-risk depth and
 its activating signals per
 [`../../../shared/policies/change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
-"Rationale emission," are always part of this subordinate block — so the
-block is present on every review, including a clean one — rendered as
-`standard` with no signals when nothing is flagged, never in the human
-body, never a finding, and with no effect on the verdict, the
-review-action gate, or any machine-readable status.
+"Rationale emission," and the fired repository-expansion triggers, rings
+reached, and inspected locations per
+[`../../../shared/policies/repository-expansion.md`](../../../shared/policies/repository-expansion.md),
+"Expansion decisions are reported," are always part of this subordinate
+block — so the block is present on every review, including a clean one —
+rendered as `standard` with no signals and `none` with no fired trigger
+when nothing is flagged, never in the human body, never a finding, and
+with no effect on the verdict, the review-action gate, or any
+machine-readable status.
 
 Append the remaining machine/process state only if a downstream consumer
 (orchestration, automated re-review, audit) actually needs it, after the
@@ -206,6 +210,7 @@ human-facing review and clearly subordinate, per
 - review_mode: `full` | `delta (previous reviewed SHA <sha>, current HEAD <sha>)`
 - change_risk_depth: `standard` | `elevated` | `deep`
 - change_risk_signals: `none` | `<signal (tier) — evidence>` per resolved occurrence
+- repository_expansion_triggers: `none` | `<trigger (ring N) — locations>` per fired trigger
 - P0: <n>
 - P1: <n>
 - P2: <n>

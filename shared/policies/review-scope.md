@@ -374,6 +374,26 @@ the depth level never becomes a finding and is never a merge gate. It
 only makes the "scale the review to the change" guidance already in this
 policy and [`evidence.md`](evidence.md) explicit and inspectable.
 
+## Repository expansion
+
+Every review evaluates a fixed catalog of **expansion triggers** — a
+changed call site's public symbol, a changed interface/contract, a
+changed migration/schema, or a changed config consumer — and, for any
+trigger that fires, follows it through a bounded, ring-based procedure
+whose maximum ring is scaled by the change-risk depth above. Which
+triggers fired, how far each was followed, and the concrete locations
+inspected are emitted with the review. The fixed trigger catalog, the
+ring procedure, the depth-scaled ceiling, and the reporting requirement
+are owned by [`repository-expansion.md`](repository-expansion.md) and
+are not restated here.
+
+This is not a second scope model either: it governs only *how far* an
+investigation looks beyond the diff to gather evidence, never what counts
+as a finding, its evidence label, or its severity — and it never replaces
+the signal-specific bounded expansion already defined above for
+architectural-placement questions, or the test-tracing procedure in
+[`affected-test-analysis.md`](affected-test-analysis.md).
+
 ## Technology neutrality
 
 Every Skill built on this policy must remain technology-neutral. It must

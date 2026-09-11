@@ -13,8 +13,22 @@ when the change reaches `main`. See
 
 ## Unreleased
 
-_Nothing yet. New entries land here and move under a version heading at
-release time._
+### Added
+
+- Every review now also evaluates a fixed catalog of **repository-expansion
+  triggers** — a changed call site's public symbol, a changed interface/
+  contract, a changed migration/schema, or a changed config-consumer — and,
+  for each one that fires, follows it through a bounded, ring-based
+  procedure (direct call sites/consumers → owning interface/schema →
+  sibling implementers, only as far as needed) whose maximum ring is
+  scaled by the existing `standard` / `elevated` / `deep` change-risk
+  depth. Expansion is deterministic given the same diff and repository
+  state, never expands across repositories, and the fired triggers, rings
+  reached, and inspected locations are emitted in the review's subordinate
+  metadata alongside the change-risk classification. It is not a second
+  scope model, never becomes a finding, and never changes severity or the
+  mechanical decision. New shared policy
+  `shared/policies/repository-expansion.md`. (#87)
 
 ## v1.14.0 — 2026-09-10
 

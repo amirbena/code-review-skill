@@ -4,6 +4,7 @@ Reviews an existing GitHub Pull Request **without publishing anything**.
 Applies shared policies:
 [`review-scope.md`](../../../shared/policies/review-scope.md),
 [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
+[`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
 [`severity.md`](../../../shared/policies/severity.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
@@ -51,6 +52,10 @@ plan review execution: reliable capability AND 2+ independent dimensions
     ↓
 classify change-risk depth (standard / elevated / deep) from the PR delta
 per change-risk-signals.md; record it and its activating signals
+    ↓
+resolve fired repository-expansion triggers and their bounded rings
+(ceiling scaled by the depth above) per repository-expansion.md; record
+the triggers, rings reached, and locations inspected
     ↓
 inspect diff and surrounding code (incl. scope-boundary reasoning)
     ↓
@@ -220,6 +225,19 @@ finally: remove the temporary checkout (success, any failure, interruption)
    severity, or an input to the verdict. The diff-size thresholds, the
    depth-only tie-break, and the non-goals are owned by that policy and
    are not restated here.
+5b. **Resolve repository expansion** per
+   [`repository-expansion.md`](../../../shared/policies/repository-expansion.md).
+   From the established PR delta, detect any fired expansion trigger
+   (call site, interface/contract, migration/schema, config consumer),
+   follow it through the bounded, ring-based procedure whose ceiling is
+   scaled by the change-risk depth from step 5a, and record every fired
+   trigger with the ring reached and the locations inspected for the
+   subordinate metadata block (step 8). A PR with no fired trigger still
+   records that outcome as "none." It is always produced, is emitted only
+   as subordinate metadata, and never becomes a finding or an input to
+   the verdict. The trigger catalog, the ring procedure, and the
+   depth-scaled ceiling are owned by that policy and are not restated
+   here.
 6. Review the diff against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

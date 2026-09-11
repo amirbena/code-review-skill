@@ -122,6 +122,13 @@ The governance features below are this repository's differentiated, durable cont
   emitted with every review. It makes "review riskier changes more deeply" a stated rule rather
   than an implicit hope; it is never a finding, never a merge gate, and never skips review for
   low-risk changes ([`change-risk-signals.md`](../shared/policies/change-risk-signals.md)).
+- **Deterministic repository-expansion rules** — a fixed catalog of expansion triggers (a changed
+  call site, interface/contract, migration/schema, or config consumer) is followed through a
+  bounded, ring-based procedure whose ceiling scales with the change-risk depth above, and the
+  fired triggers, rings reached, and inspected locations are emitted with every review. It makes
+  "how far did the review actually look" reproducible rather than left to per-review judgement; it
+  is never a merge gate and never expands to another repository
+  ([`repository-expansion.md`](../shared/policies/repository-expansion.md)).
 - **Explicit Approve / Request Changes semantics** — `github-pr-review` can submit a formal
   GitHub review decision when authorized to, not merely a passive comment. That authorization is
   a trusted, independently sourced, PR/HEAD-scoped signal — never the review's own verdict, a
@@ -220,6 +227,7 @@ today, and this document does not describe one as though it did.
 | Runtime portability | Usually vendor-specific | Core requirement |
 | Final repository-defined decision semantics | Varies by product | Explicit |
 | Deterministic change-risk / review-depth classification | Rare / implicit | Explicit |
+| Deterministic repository-expansion rules (how far context expansion goes) | Rare / implicit | Explicit |
 
 This is a conceptual comparison, not a claim that every external reviewer lacks every governance
 feature listed — capability varies by product and changes over time. "Explicit" means the

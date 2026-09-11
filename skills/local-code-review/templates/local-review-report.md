@@ -140,6 +140,7 @@ proceed.
 - P0: <n>, P1: <n>, P2: <n>
 - Change-risk depth: <standard | elevated | deep>
 - Change-risk signals: <none | comma-separated `signal (tier) — evidence` entries, one per resolved occurrence>
+- Repository expansion: <none | comma-separated `trigger (ring N) — locations` entries, one per fired trigger>
 
 **Review scope contract** (per
 [`../policies/repository-state.md`](../policies/repository-state.md)) —
@@ -297,6 +298,13 @@ serve are owned by the linked policies and are not restated here.
   [`../../../shared/policies/change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
   "Rationale emission" — including `standard` with no signals. It is
   subordinate metadata, never a finding, and never changes the Decision.
+- **Repository expansion** — the fired expansion triggers, the ring each
+  reached, and the locations inspected are always rendered in "Review
+  Metadata" per
+  [`../../../shared/policies/repository-expansion.md`](../../../shared/policies/repository-expansion.md),
+  "Expansion decisions are reported" — including "none" when no trigger
+  fired. It is subordinate metadata, never a finding, and never changes
+  the Decision.
 - **No loop/orchestration metadata.** This report never tracks review
   iteration count, a configured maximum, or whether another iteration is
   allowed — that belongs to the orchestrator (see

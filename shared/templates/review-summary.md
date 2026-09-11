@@ -207,17 +207,23 @@ P0/P1/P2 counts, a normalized machine decision code, internal finding
 identifiers, the deterministic `standard` / `elevated` / `deep`
 change-risk depth and its activating signals per
 [`../policies/change-risk-signals.md`](../policies/change-risk-signals.md),
+the fired repository-expansion triggers and rings reached per
+[`../policies/repository-expansion.md`](../policies/repository-expansion.md),
 or other automation state) is never part of the primary human-facing body
 above. Where publishing it is genuinely useful to a
 caller or automation, append it after the human-facing body, clearly
 subordinate — always last, always visually secondary to the Result →
 ... → Decision body above it.
 
-The **one exception to consumer-gating** below is the change-risk
-classification: it is always emitted in this subordinate block — on every
-review including a clean `standard` one with no signals — never as a
-finding and never in a way that implies a verdict. Every other field
-stays consumer-gated.
+The **one exception to consumer-gating** below is the pair of always-on
+process classifications: the change-risk depth per
+[`../policies/change-risk-signals.md`](../policies/change-risk-signals.md)
+and the repository-expansion decisions per
+[`../policies/repository-expansion.md`](../policies/repository-expansion.md).
+Both are always emitted in this subordinate block — on every review,
+including a clean `standard` review with no signals and no fired
+expansion trigger — never as a finding and never in a way that implies a
+verdict. Every other field stays consumer-gated.
 
 This shared template fixes *that* the metadata is subordinate and
 appended last; it does not fix the concrete markup used to render it.
