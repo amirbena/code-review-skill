@@ -88,11 +88,11 @@ formal_review_mutation_allowed = false
 The full review runs — same evidence, same process, same mechanical
 verdict derivation — and produces the outcome (both the clean and the
 blocking case) documented in full by
-[`review-authority.md`](review-authority.md), "Self-review capability",
-"Example outcomes": a reported `REVIEW CLEAN` / `CHANGES REQUIRED`
-verdict, an optional informational `COMMENT` publication, and a withheld
-formal decision. That policy is the canonical owner of the worked
-example; it is not repeated here.
+[`review-authority.md`](review-authority.md), "Self-review capability"
+(its "Example outcomes" block): a reported `REVIEW CLEAN` /
+`CHANGES REQUIRED` verdict, an optional informational `COMMENT`
+publication, and a withheld formal decision. That policy is the
+canonical owner of the worked example; it is not repeated here.
 
 This boundary is **absolute for a self-review** — `APPROVE` on one's own
 work is **always** forbidden, and no review-action mode,
