@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.22.0 — 2026-09-11
+
+### Changed
+
+- Trim duplicated family-of-four capability-wiring prose in runbooks and output templates into thin pointers to their canonical owning policies (#237) (#242).
+
 ## v1.21.1 — 2026-09-11
 
 ### Fixed
