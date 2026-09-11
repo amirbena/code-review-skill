@@ -1,0 +1,161 @@
+# Risk-depth corpus case (Issue #90). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Python + Terraform, illustrating large-pr-partitioning.md's target
+# shape: one change touching several genuinely unrelated areas (api/,
+# worker/, infra/), each with its own independent defect. A correct
+# review must not let partitioning by area cause either area's defect to
+# get dropped or merged into another area's partition (large-pr-
+# partitioning.md, "Partition construction": directory-seeded, evidence-
+# based coherence merge only -- these three directories share no
+# evidenced coherence, so they stay in separate partitions). The literal
+# `changed_lines >= 1200` / `changed_files >= 60` activation-threshold
+# arithmetic is intentionally NOT reproduced at hand-authored-fixture
+# scale here (see ./README.md) -- it is pinned directly against
+# large-pr-partitioning.md's reference model in
+# ../../../../tests/unit/test_risk_based_review_scenarios.py.
+
+format: benchmark-case/v1
+
+id: risk-depth-large-multiarea-partitioning
+title: "Multi-area change: unauthenticated internal endpoint, unbounded worker retry loop, and an open security-group egress rule"
+
+input:
+  patch: |
+    diff --git a/api/internal/metrics.py b/api/internal/metrics.py
+    index 1111111..2222222 100644
+    --- a/api/internal/metrics.py
+    +++ b/api/internal/metrics.py
+    @@ -1,7 +1,9 @@
+     from flask import Blueprint, jsonify
+    +
+     from app.metrics import collect_internal_metrics
+
+     bp = Blueprint("internal_metrics", __name__)
+
+
+     @bp.route("/internal/metrics")
+    +@bp.route("/internal/metrics/raw")
+     def internal_metrics():
+         return jsonify(collect_internal_metrics())
+    diff --git a/worker/tasks/sync.py b/worker/tasks/sync.py
+    index 3333333..4444444 100644
+    --- a/worker/tasks/sync.py
+    +++ b/worker/tasks/sync.py
+    @@ -1,8 +1,10 @@
+     def sync_remote_catalog(client):
+    -    for attempt in range(3):
+    -        try:
+    -            return client.fetch_catalog()
+    -        except TransientError:
+    -            continue
+    -    raise SyncFailed()
+    +    attempt = 0
+    +    while True:
+    +        try:
+    +            return client.fetch_catalog()
+    +        except TransientError:
+    +            attempt += 1
+    +            continue
+    diff --git a/infra/network/security_group.tf b/infra/network/security_group.tf
+    index 5555555..6666666 100644
+    --- a/infra/network/security_group.tf
+    +++ b/infra/network/security_group.tf
+    @@ -10,6 +10,12 @@ resource "aws_security_group" "app" {
+         to_port     = 443
+         cidr_blocks = ["0.0.0.0/0"]
+       }
+    +
+    +  egress {
+    +    from_port   = 0
+    +    to_port     = 65535
+    +    protocol    = "tcp"
+    +    cidr_blocks = ["0.0.0.0/0"]
+    +  }
+     }
+  base:
+    api/internal/metrics.py: |
+      from flask import Blueprint, jsonify
+      from app.metrics import collect_internal_metrics
+
+      bp = Blueprint("internal_metrics", __name__)
+
+
+      @bp.route("/internal/metrics")
+      def internal_metrics():
+          return jsonify(collect_internal_metrics())
+    worker/tasks/sync.py: |
+      def sync_remote_catalog(client):
+          for attempt in range(3):
+              try:
+                  return client.fetch_catalog()
+              except TransientError:
+                  continue
+          raise SyncFailed()
+    infra/network/security_group.tf: |
+      resource "aws_security_group" "app" {
+        egress {
+          from_port   = 443
+          to_port     = 443
+          cidr_blocks = ["0.0.0.0/0"]
+        }
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: internal-metrics-raw-route-no-auth-decorator
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: api/internal/metrics.py
+        symbol: internal_metrics
+        anchor: '@bp.route("/internal/metrics/raw")'
+      claim: >-
+        The new /internal/metrics/raw route shares internal_metrics's
+        undecorated view function, carrying forward whatever
+        internal-only assumption the original route relied on onto a
+        second, differently-named path with no independent auth check of
+        its own.
+      defect_kind: missing-input-validation
+    - key: sync-remote-catalog-unbounded-retry-loop
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: worker/tasks/sync.py
+        symbol: sync_remote_catalog
+        anchor: "while True:"
+      claim: >-
+        sync_remote_catalog's bounded 3-attempt retry loop became an
+        unbounded `while True`, so a persistently transient-erroring
+        remote catalog retries forever instead of eventually raising
+        SyncFailed(), which is now unreachable dead code.
+      defect_kind: resource-exhaustion
+    - key: security-group-open-egress-all-ports
+      match: required
+      severity: P0
+      location:
+        location_intent: line
+        path: infra/network/security_group.tf
+        symbol: aws_security_group.app
+        anchor: "to_port     = 65535"
+      claim: >-
+        The new egress rule opens all TCP ports (0-65535) to 0.0.0.0/0,
+        far broader than the existing port-443-only rule it sits next to,
+        removing any port-level egress restriction for this security
+        group.
+      defect_kind: overly-permissive-network-rule
+
+metadata:
+  source: crafted
+  tags: [security, correctness]
+  rationale: >-
+    Illustrates the multi-area shape large-pr-partitioning.md exists for:
+    three unrelated directories (api/, worker/, infra/), each with its own
+    independent, area-local defect. A correct review's per-area/per-
+    partition handling must surface all three -- partitioning by directory
+    must not cause any one area's defect to be dropped or attributed to
+    the wrong partition.
