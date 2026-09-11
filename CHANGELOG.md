@@ -13,6 +13,11 @@ when the change reaches `main`. See
 
 ## Unreleased
 
+_Nothing yet. New entries land here and move under a version heading at
+release time._
+
+## v1.15.0 — 2026-09-11
+
 ### Added
 
 - Every review now also evaluates a fixed catalog of **repository-expansion
