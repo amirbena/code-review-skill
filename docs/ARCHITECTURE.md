@@ -112,10 +112,11 @@ evaluates a fixed catalog of expansion triggers (call site, interface/
 contract, migration/schema, config consumer) and, for each one that fires,
 follows it through a bounded, ring-based procedure whose ceiling is scaled
 by that same depth level — reported the same way, in the same subordinate
-metadata. It makes the informal "scale to blast radius" guidance inspectable; it is not a second
-scope model, never a finding, and never a merge gate. What each level changes
-about repository expansion, large-change partitioning, and review stopping
-criteria is owned by those separate concerns, not by this classification.
+metadata. It makes the informal "scale to blast radius" guidance
+inspectable; neither pass is a second scope model, a finding, or a merge
+gate. What the depth level changes about large-change partitioning and
+review stopping criteria remains owned by those separate, still-open
+concerns, not by this classification.
 
 ### Thin runbooks, canonical policy owners
 
