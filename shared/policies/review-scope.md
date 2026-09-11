@@ -394,6 +394,26 @@ the signal-specific bounded expansion already defined above for
 architectural-placement questions, or the test-tracing procedure in
 [`affected-test-analysis.md`](affected-test-analysis.md).
 
+## Large-change partitioning
+
+When a change's diff size reaches a fixed, deterministic threshold, it is
+partitioned into coherent review units — built by directory seeding, then
+an evidence-based merge of units this policy's "Related changes as one
+unit" already requires reviewing together, then capped to a reviewable
+per-unit size — and each unit is reviewed against this same policy before
+all units' findings are aggregated and de-duplicated (including across
+units, per [`root-cause-consolidation.md`](root-cause-consolidation.md))
+into the one final review. A change under the threshold is reviewed as a
+single unit exactly as before. The threshold, the partition-construction
+procedure, per-partition review, and cross-partition aggregation are owned
+by [`large-pr-partitioning.md`](large-pr-partitioning.md) and are not
+restated here.
+
+This is not a second scope model: every partition is scoped, evidenced,
+and labeled exactly as an unpartitioned review would be; partitioning only
+changes how an unusually large diff is organized for review, never what
+counts as a finding or its severity.
+
 ## Technology neutrality
 
 Every Skill built on this policy must remain technology-neutral. It must

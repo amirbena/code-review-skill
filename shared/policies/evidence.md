@@ -86,6 +86,14 @@ for how far each trigger is followed, with its maximum ring scaled by the
 change-risk depth. It governs only where an investigation looks, never
 what counts as a finding or how a finding is labeled.
 
+When a change's diff size crosses a fixed threshold,
+[`large-pr-partitioning.md`](large-pr-partitioning.md) partitions it into
+coherent review units, each reviewed against this same evidence standard,
+with findings aggregated and de-duplicated — including across partitions
+— before any decision is derived. It changes how a large diff is
+organized for review, never what counts as a finding, its evidence label,
+or its severity.
+
 The repository-intelligence model design record (a repository-development
 document, not a packaged resource, so it is named here, not linked) types
 what a fired [`repository-expansion.md`](repository-expansion.md) trigger
