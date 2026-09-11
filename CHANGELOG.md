@@ -13,6 +13,11 @@ when the change reaches `main`. See
 
 ## Unreleased
 
+_Nothing yet. New entries land here and move under a version heading at
+release time._
+
+## v1.17.0 — 2026-09-11
+
 ### Added
 
 - An unusually large change now gets **deterministic large-PR
