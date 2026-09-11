@@ -49,6 +49,7 @@ REFERENCE_TEST_MODULES = (
     "staged_fingerprint.py",
     "jira_context.py",
     "context_evidence.py",
+    "repository_intelligence.py",
     "pr_checkout.py",
     "pr_simulation.py",
     "parallel_review.py",

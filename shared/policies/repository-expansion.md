@@ -131,6 +131,17 @@ repository_expansion:
 
 `triggers` is empty when no expansion trigger fired on the current change.
 
+## Relationship to the repository-intelligence model
+
+This policy stays canonical for *when* expansion happens, *which trigger*
+authorizes it, and *how far* (the ring ceiling table above) — none of that
+changes. The repository-intelligence model design record (a
+repository-development document, not a packaged resource, so it is named
+here, not linked) types what a fired trigger resolves *inside* an
+authorized ring — entity and relationship semantics, provenance, snapshot
+identity and staleness, and relationship-influence attribution — without
+re-deriving or loosening this policy's ring ceiling.
+
 ## Non-goals and ownership boundary
 
 - **Not a merge gate.** An expansion decision never blocks a merge on its

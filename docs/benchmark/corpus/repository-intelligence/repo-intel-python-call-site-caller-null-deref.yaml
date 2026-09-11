@@ -1,0 +1,91 @@
+# Repository-intelligence corpus case (Issue #129). Format:
+# docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# Python, call-site trigger. get_user() stops raising UserNotFound for a
+# missing user and instead returns None -- reads as a plausible API
+# simplification in isolation; nothing in the diff itself is wrong. The
+# defect only exists because charge_user() (unchanged, not part of the
+# diff) still relies on the old exception-raising contract: its
+# `except UserNotFound` no longer triggers, so `user` is None and
+# `user.account_id` raises AttributeError instead of a clean decline.
+#
+# A diff-only review, reading only app/users/lookup.py's hunk, has no way
+# to know any caller assumed the old contract. A relationship-aware review
+# follows the call-site trigger (get_user is a changed function with a
+# consumer) into ring 1 and resolves app/billing/charge.py::charge_user,
+# supplied here via `input.base` since it is not itself changed by the
+# patch.
+
+format: benchmark-case/v1
+
+id: repo-intel-python-call-site-caller-null-deref
+title: "Call-site trigger catches a caller-side null dereference after get_user() drops its exception contract"
+
+input:
+  patch: |
+    diff --git a/app/users/lookup.py b/app/users/lookup.py
+    index 1111111..2222222 100644
+    --- a/app/users/lookup.py
+    +++ b/app/users/lookup.py
+    @@ -1,10 +1,6 @@
+     from app.users.db import find_user
+    -from app.users.errors import UserNotFound
+
+
+     def get_user(user_id):
+    -    user = find_user(user_id)
+    -    if user is None:
+    -        raise UserNotFound(user_id)
+    -    return user
+    +    return find_user(user_id)
+  base:
+    app/users/lookup.py: |
+      from app.users.db import find_user
+      from app.users.errors import UserNotFound
+
+
+      def get_user(user_id):
+          user = find_user(user_id)
+          if user is None:
+              raise UserNotFound(user_id)
+          return user
+    app/billing/charge.py: |
+      from app.users.lookup import get_user
+      from app.users.errors import UserNotFound
+
+
+      def charge_user(user_id, amount_cents):
+          try:
+              user = get_user(user_id)
+          except UserNotFound:
+              return declined("no such user")
+          return gateway.charge(user.account_id, amount_cents)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: charge-user-null-deref-after-get-user-contract-change
+      match: required
+      severity: P1
+      location:
+        location_intent: cross-file
+        path: app/billing/charge.py
+        symbol: charge_user
+        anchor: "user.account_id"
+      claim: >-
+        get_user no longer raises UserNotFound for a missing user and
+        returns None instead; charge_user's except UserNotFound clause
+        therefore never triggers, so a missing user reaches
+        user.account_id as None and crashes with AttributeError instead of
+        a clean decline.
+      defect_kind: null-dereference
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    The changed function's new body is unobjectionable read in isolation;
+    only resolving the call-site trigger into the unchanged caller reveals
+    the broken error-handling contract. Demonstrates the relationship-aware
+    gain the call-site trigger is meant to realize.
