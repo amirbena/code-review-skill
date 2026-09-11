@@ -41,9 +41,12 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # local raised 260 -> 261 for Issue #86 (the always-on change-risk /
 # review-depth classification added to the section-2 required-policy batch),
 # then 261 -> 262 for Issue #87 (the always-on repository-expansion rules
-# added to the same batch).
-LOCAL_MAX_LINES = 262
-GITHUB_MAX_LINES = 370
+# added to the same batch), then 262 -> 263 for Issue #88 (the conditional
+# large-PR partitioning policy added to the same batch).
+# github raised ... 370 -> 371 for Issue #88 (the same conditional
+# large-PR partitioning policy added to the section-2 required-policy batch).
+LOCAL_MAX_LINES = 263
+GITHUB_MAX_LINES = 371
 
 
 def _norm(path) -> str:

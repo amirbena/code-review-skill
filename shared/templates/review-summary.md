@@ -241,3 +241,12 @@ re-review, audit), plus the always-present change-risk classification
 noted above. If nothing else needs it, the block still carries that
 classification and nothing more, rather than padding the review with
 other unused state.
+
+One field is **conditional on activation rather than consumer-gated**:
+whether [`../policies/large-pr-partitioning.md`](../policies/large-pr-partitioning.md)
+activated for this change and, when it did, the partitions built and any
+cross-partition duplicate/consolidation aggregation found. It is rendered
+only when partitioning activated; a change that stayed under that
+policy's diff-size threshold carries no partitioning line at all — it is
+not part of the always-on pair above, and its absence on an ordinary
+review is not an omission.

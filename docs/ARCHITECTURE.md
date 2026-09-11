@@ -83,7 +83,7 @@ rules, or the context / evidence model.
 
 | Location | Owns | Canonical detail |
 |---|---|---|
-| [`shared/policies/`](../shared/policies/README.md) | portable review semantics used identically by both Skills | scope, change-risk signal / review-depth classification, repository-expansion triggers and bounds, root-cause consolidation, affected-test analysis, severity, evidence, repository-instruction discovery, git-safety, review-ownership, review-context, requirement coverage, jira-context, review-evidence, runtime-validation, parallel-review, file-reviewability, invocation-options |
+| [`shared/policies/`](../shared/policies/README.md) | portable review semantics used identically by both Skills | scope, change-risk signal / review-depth classification, repository-expansion triggers and bounds, large-PR partitioning, root-cause consolidation, affected-test analysis, severity, evidence, repository-instruction discovery, git-safety, review-ownership, review-context, requirement coverage, jira-context, review-evidence, runtime-validation, parallel-review, file-reviewability, invocation-options |
 | [`shared/templates/`](../shared/templates/) | the canonical finding and review-summary shapes; each delivery surface renders one projection of them | [`finding.md`](../shared/templates/finding.md) (field contract), [`finding-rendering.md`](../shared/templates/finding-rendering.md) (rendering exemplars), [`review-summary.md`](../shared/templates/review-summary.md) |
 | [`skills/local-code-review/`](../skills/local-code-review/SKILL.md) | local-Git-specific rules with no PR analogue | invocation approval, repository-state categories + staged-delta fingerprint, thin local applications of the shared context / prior-evidence model |
 | [`skills/github-pr-review/`](../skills/github-pr-review/SKILL.md) | GitHub-delivery rules with no local analogue, indexed from [`policies/github-review.md`](../skills/github-pr-review/policies/github-review.md) | review authority + self-review mutation boundary, [review-action authorization](../skills/github-pr-review/policies/review-action-authorization.md), reviewer delta re-review, PR scope + pagination, repository-backed checkout, finding placement, batched publication + ordering, optional [machine-readable review status](../skills/github-pr-review/policies/review-status-enforcement.md) |
@@ -114,9 +114,20 @@ follows it through a bounded, ring-based procedure whose ceiling is scaled
 by that same depth level — reported the same way, in the same subordinate
 metadata. It makes the informal "scale to blast radius" guidance
 inspectable; neither pass is a second scope model, a finding, or a merge
-gate. What the depth level changes about large-change partitioning and
-review stopping criteria remains owned by those separate, still-open
-concerns, not by this classification.
+gate.
+
+When a change's diff size reaches a fixed, separate threshold — double
+`change-risk-signals.md`'s own `deep` threshold — the conditional
+[`large-pr-partitioning.md`](../shared/policies/large-pr-partitioning.md)
+pass activates: it builds coherent review units by a deterministic
+directory-seed / evidence-based coherence-merge / size-cap procedure,
+reviews each unit against the unchanged shared policy stack, then
+aggregates and de-duplicates the units' findings (including
+cross-partition root-cause consolidation) into the one final review. A
+change under the threshold is unaffected and reviewed as a single unit as
+before. What the depth level changes about review stopping criteria
+remains owned by that separate, still-open concern, not by this
+classification.
 
 ### Thin runbooks, canonical policy owners
 

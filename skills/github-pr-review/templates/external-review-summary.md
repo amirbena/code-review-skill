@@ -196,6 +196,15 @@ when nothing is flagged, never in the human body, never a finding, and
 with no effect on the verdict, the review-action gate, or any
 machine-readable status.
 
+Unlike that always-on pair, `large_pr_partitioning` per
+[`../../../shared/policies/large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md)
+is **conditional on activation**: the field is included in this block
+only when that policy's diff-size threshold activated partitioning for
+this PR, naming the partition count and any `capped` or cross-partition
+de-duplication note. A PR that stayed under the threshold omits the field
+entirely — it is never rendered as an empty/`none` placeholder the way
+the always-on pair is.
+
 Append the remaining machine/process state only if a downstream consumer
 (orchestration, automated re-review, audit) actually needs it, after the
 human-facing review and clearly subordinate, per
@@ -211,6 +220,7 @@ human-facing review and clearly subordinate, per
 - change_risk_depth: `standard` | `elevated` | `deep`
 - change_risk_signals: `none` | `<signal (tier) — evidence>` per resolved occurrence
 - repository_expansion_triggers: `none` | `<trigger (ring N) — locations>` per fired trigger
+- large_pr_partitioning: `<n> partitions, <capped/dedup note>` — omitted entirely when inactive
 - P0: <n>
 - P1: <n>
 - P2: <n>
