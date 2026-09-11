@@ -82,9 +82,12 @@ CASE_EXPECTED_DEPTH: dict[str, Depth] = {
 }
 
 # The diff-size case fires no catalog signal at all; its own patch already
-# touches 11 files (>= the 10-file elevated boundary) with zero net
-# line-count churn per hunk, so the measurement is asserted directly
-# rather than duplicating a hardcoded fact list.
+# touches 11 files (>= the 10-file elevated boundary), which alone is
+# enough to select `elevated`. `changed_lines=0` isolates the file-count
+# boundary specifically, asserted directly rather than duplicating a
+# hardcoded fact list -- it does not claim the patch has no line-level
+# churn (it does: ~2 changed lines per hunk, independently well under the
+# elevated line-count threshold).
 DIFFSIZE_CASE_DIFF_SIZE = crs.DiffSize(changed_lines=0, changed_files=11)
 
 
@@ -150,6 +153,24 @@ class SubCorpusCaseTests(unittest.TestCase):
                 )
                 self.assertEqual(case.decision, case.derived_decision)
                 self.assertEqual(case.decision, "changes-required")
+
+    def test_patch_case_anchors_occur_in_the_diff_or_base(self) -> None:
+        for path in self.files:
+            case = bf.parse_case(_load(path))
+            if case.input_kind != "patch":
+                continue
+            patch = case.input["patch"]
+            base = case.input.get("base", {})
+            base_text = "\n".join(base.values())
+            for finding in case.findings:
+                specs = finding.members if finding.is_any_of else [finding]
+                for spec in specs:
+                    locs = [spec.location, *(a.get("location") for a in spec.alternatives)]
+                    for loc in locs:
+                        anchor = (loc or {}).get("anchor")
+                        if anchor:
+                            with self.subTest(case=path.name, anchor=anchor):
+                                self.assertIn(anchor, patch + base_text)
 
 
 class SubCorpusCoverageTests(unittest.TestCase):

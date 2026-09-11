@@ -35,7 +35,7 @@ import unittest
 
 from tests.reference import change_risk_signals as crs
 from tests.reference import large_pr_partitioning as lpp
-from tests.reference import repository_expansion as re
+from tests.reference import repository_expansion as repo_exp
 from tests.reference import review_stopping_criteria as rsc
 from tests.reference.change_risk_signals import Depth
 from tests.reference.large_pr_partitioning import ChangedFile
@@ -111,7 +111,7 @@ class RepositoryExpansionTracksDepthTests(unittest.TestCase):
     def test_standard_depth_caps_expansion_at_ring_one(self) -> None:
         depth = crs.classify([fact("docs-only")]).depth
         self.assertEqual(depth, Depth.STANDARD)
-        result = re.resolve(
+        result = repo_exp.resolve(
             [
                 FiredTrigger(
                     "call_site", "helper.py", Ring.RING_3, locations=("caller.py",)
@@ -123,7 +123,7 @@ class RepositoryExpansionTracksDepthTests(unittest.TestCase):
 
     def test_deep_auth_signal_lets_expansion_reach_ring_three(self) -> None:
         depth = crs.classify([fact("auth-check", "auth")]).depth
-        result = re.resolve(
+        result = repo_exp.resolve(
             [
                 FiredTrigger(
                     "interface_contract",
@@ -138,7 +138,7 @@ class RepositoryExpansionTracksDepthTests(unittest.TestCase):
 
     def test_ceiling_never_pushes_out_a_trigger_resolved_earlier(self) -> None:
         depth = crs.classify([fact("auth-check", "auth")]).depth
-        result = re.resolve(
+        result = repo_exp.resolve(
             [FiredTrigger("config_consumer", "settings.py", Ring.RING_1)], depth
         )
         self.assertEqual(result.fired[0].resolved_at_ring, Ring.RING_1)
