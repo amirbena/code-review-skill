@@ -152,7 +152,11 @@ first, then a scannable list of the findings that need action, then stop.
 comment appears in the body as a single summary-pointer line (severity,
 title, location) and its evidence/impact/reasoning/fix are **not**
 repeated there; only a finding with no valid inline anchor carries its
-full field block in the body. Process and machine state (review mode,
+full field block in the body — the structured full rendering by default,
+or, when `human_review_output` is on, the human full rendering per the
+shared [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+"Canonical human full rendering" (see "Concise human-style summary
+(opt-in)" below). Process and machine state (review mode,
 SHAs, counts, action mode, mutation outcome) are subordinate — a short
 trailing block, never the body. A self-review publishes the **same**
 human-facing body as an informational `COMMENT`, differing only by the
@@ -213,10 +217,19 @@ review-process or machine metadata. Inline comments still own each
 finding's full detail; the concise body still carries one summary-pointer
 line per inline finding so every finding appears exactly once.
 
-`human_review_output` re-words this final summary. Its derived companion
-option `human_inline_findings` — default `explicit_value ??
-human_review_output`, so on by default under senior mode — re-words the
-**inline comments** to match, per
+`human_review_output` re-words this final summary and, for every finding
+that has no inline comment and is instead rendered in full in the body
+(a passive review's findings, or an active-review finding with no valid
+inline anchor per [`finding-placement.md`](finding-placement.md)), it
+re-words that finding too — via the shared
+[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+"Canonical human full rendering" — so a senior-mode review never leaves a
+body finding in the structured block while everything around it reads in
+senior voice. This holds identically in passive review (where every
+finding is a body finding) and in active review's inline-anchor
+fallback. Its derived companion option `human_inline_findings` — default
+`explicit_value ?? human_review_output`, so on by default under senior
+mode — separately re-words the **inline comments** to match, per
 [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
 "`human_inline_findings` derived default and phrasings" and
 [`../templates/inline-finding.md`](../templates/inline-finding.md),
@@ -224,7 +237,10 @@ human_review_output`, so on by default under senior mode — re-words the
 `human_inline_findings=false` keeps the structured
 `[<severity>] / Evidence / Impact / Fix` inline block under a concise
 body; an explicit `human_inline_findings=true` re-voices the inline
-comments even when this body is structured.
+comments even when this body is structured. `human_inline_findings` is
+never what governs a body finding's voice — that is always
+`human_review_output` directly, so an explicit `human_inline_findings`
+value has no effect on body/fallback findings.
 
 Both options are **presentation only**. Mode on and mode off produce the
 identical finalized findings, severities, finding identity,
@@ -232,11 +248,53 @@ deduplication, canonical fix/action locations, publication anchors, the
 `#164` / `#165` body-fallback behaviour, GitHub review state
 (`APPROVE` / `REQUEST_CHANGES` / `COMMENT`), mechanical decision,
 publication ordering, and optional machine-readable status — only the
-wording changes: this final summary always, and the inline comments when
+wording changes: this final summary and every body-rendered finding
+whenever `human_review_output` is on, and the inline comments when
 `human_inline_findings` is on. When both options are off (the default),
-the body and the inline comments use the existing structured shapes
-unchanged. The self-review informational `COMMENT` uses the same concise
-body plus its unchanged closing disclosure line.
+the body, its full/fallback findings, and the inline comments use the
+existing structured shapes unchanged. The self-review informational
+`COMMENT` uses the same concise body plus its unchanged closing
+disclosure line.
+
+### Publishing a previously produced passive review
+
+A passive review (`runbooks/passive-pr-review.md`) may already have been
+shown to the user — in either presentation — before a later, separate
+request asks to publish or post it (e.g. "publish it", "post the
+review"). That publish request is a fresh active-review invocation and,
+per [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+"Invocation isolation and mediation parity," normalizes presentation
+options from its own current-invocation text only — it does not inherit
+`human_review_output` from the earlier passive invocation. Left
+unaddressed, this silently republishes a different presentation than the
+one the user already saw.
+
+When the current publish request does not itself resolve a presentation
+(no explicit `human_review_output` / `human_inline_findings` value or
+recognized phrasing, per that shared policy), and it is asking to publish
+a review already produced passively earlier in this same interaction,
+`active-pr-review.md` asks the user once, before proceeding further,
+which presentation to publish — **Senior/human** or **Structured**. The
+presentation the passive review was actually shown in may be offered as
+the recommended choice (see that shared policy, "Offering, never
+applying, a prior value"), but is never silently applied without an
+answer. The answer is normalized as ordinary current-invocation text,
+exactly like any other option value. If no answer can be resolved (a
+non-interactive or mediated caller with no way to surface the question),
+withhold publication — report `Mutation: WITHHELD (publication format
+unresolved)` per "Reporting" in
+[`review-action-authorization.md`](review-action-authorization.md) —
+rather than defaulting to structured presentation.
+
+This question is asked **only** for that specific case. It is never asked
+for an ordinary active-review invocation that already establishes its
+presentation — directly (an explicit option or recognized phrasing) or
+through senior intent stated in the same request (e.g. "senior review
+this PR and publish it", "review #123 and post it in structured
+format") — and never for a fresh active review that was not preceded by a
+passive result the user already saw. See
+[`../runbooks/active-pr-review.md`](../runbooks/active-pr-review.md),
+step 3a, for the procedural placement of this check.
 
 ## Remediation guidance
 

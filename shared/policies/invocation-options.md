@@ -31,7 +31,17 @@ language interpretation.
   `review-output.md`, "Submission ordering"). By its companion option's
   derived default it also selects `human_inline_findings` (below), so
   enabling senior mode yields a coherent human-facing review end to end
-  without a second request.
+  without a second request. For `github-pr-review` specifically, this option
+  additionally selects the human-voiced rendering of any finding rendered in
+  full **in the review body** rather than as an inline comment — passive
+  review findings (passive has no inline surface), and an active-review
+  finding with no valid inline anchor — via the **human full rendering** in
+  [`../templates/finding-rendering.md`](../templates/finding-rendering.md),
+  "Canonical human full rendering"; see that Skill's own
+  `policies/review-output.md` for the exact wiring. This is a
+  `github-pr-review`-specific extension of the option's effect, stated there,
+  not a change to the option's shared default or its natural-language
+  contract; `local-code-review` has no inline/body split and is unaffected.
 - `human_inline_findings` — has **no fixed Skill default**: its value is
   derived as `explicit_value ?? human_review_output` (see
   "`human_inline_findings` derived default and phrasings"). It selects the
@@ -89,13 +99,16 @@ name, it additionally recognizes a small, fixed set of explicit phrasings
 
 - affirmative: `shorter and more human`, `more human and shorter`, `like a
   senior engineer`, `as a senior engineer`, `concise review comments`,
-  `concise review comment`;
+  `concise review comment`, `senior review`, `senior code review`,
+  `senior pr review`, `review this as a senior`;
 - negative: `keep the full summary`, `keep the default summary`, `do not
-  shorten the review`, `don't shorten the review`.
+  shorten the review`, `don't shorten the review`, `structured format`,
+  `structured review`.
 
 This phrase set is exhaustive: it is the whole vocabulary for this option.
-Anything outside it — “make it nicer”, “be brief”, “tighten it up”, a
-question about the option — is ambiguous and does not set the flag. When both
+Anything outside it — “make it nicer”, “be brief”, “tighten it up”, a bare
+`as a senior` with no `review this` / `senior review` framing, a question
+about the option — is ambiguous and does not set the flag. When both
 an affirmative and a negative phrasing appear, the values conflict and the
 option falls through to the Skill default, exactly like the other options.
 
@@ -165,6 +178,16 @@ A caller or orchestrating agent may forward the user's current-turn text or
 already-normalized canonical assignments. Both routes apply this same policy
 and must produce identical option values. An agent's paraphrase is not a new
 source of intent and must not broaden or persist the user's request.
+
+**Offering, never applying, a prior value.** A Skill may surface an earlier
+invocation's resolved `human_review_output` value as a *recommended choice*
+when asking the user an explicit presentation question (for example,
+`github-pr-review`'s "publish a previously produced passive review" case in
+its own `policies/review-output.md`). This is not "reusing" a normalized
+value in the sense this section forbids: nothing is set from it until the
+user answers, and the answer itself is current-invocation text normalized
+like any other. Silently applying the prior value without asking remains
+forbidden.
 
 ## Finding-detail precedence
 

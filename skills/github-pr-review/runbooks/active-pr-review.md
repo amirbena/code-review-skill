@@ -38,6 +38,10 @@ check review ownership
     ↓
 verify repository/review access
     ↓
+publish-a-prior-passive-review with no stated presentation? → ask once
+   (Senior/human vs. Structured), recommend but never apply the prior
+   presentation, withhold publication if unresolved
+    ↓
 resolve review mode (delta re-review vs. normal review)
     ↓
 resolve optional external context (if any): Jira reference → Jira
@@ -155,6 +159,28 @@ stop
      Approve/Request Changes was submitted; fall back to
      [`passive-pr-review.md`](passive-pr-review.md) and clearly state
      that GitHub publication was unavailable.
+3a. **If this invocation asks to publish/post a review already produced
+   passively earlier in this same interaction**, and the current
+   invocation does not itself resolve a presentation (no explicit
+   `human_review_output` / `human_inline_findings` value or recognized
+   phrasing, per
+   [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md)),
+   ask the user once, before proceeding to step 4, which presentation to
+   publish — **Senior/human** or **Structured** — per
+   [`../policies/review-output.md`](../policies/review-output.md),
+   "Publishing a previously produced passive review." Offer the
+   presentation that passive result was actually shown in as the
+   recommended choice, but do not apply it without an answer; normalize
+   the answer as ordinary current-invocation text. If no answer can be
+   resolved (a non-interactive or mediated caller with no way to surface
+   the question), withhold publication and report
+   `Mutation: WITHHELD (publication format unresolved)` rather than
+   defaulting to structured. Skip this step entirely whenever the
+   invocation already establishes its presentation — directly, or through
+   senior intent stated in the same request (e.g. "senior review this PR
+   and publish it," "review #123 and post it in structured format") — or
+   whenever this is an ordinary fresh active review with no preceding
+   passive result to republish.
 4. **Resolve review mode** per
    [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md).
    Retrieve the immediately preceding completed review of this PR, if any,
@@ -495,7 +521,14 @@ stop
     [`../templates/external-review-summary.md`](../templates/external-review-summary.md),
     "Concise human-style body (opt-in)" — same finalized findings,
     severities, inline comments, and decision; only the body wording
-    differs. **If the invocation also normalized `human_inline_findings`**
+    differs. This includes any finding with no valid inline anchor: it
+    still renders in full in the body (per
+    [`../policies/finding-placement.md`](../policies/finding-placement.md)),
+    but as the human full rendering per
+    [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+    "Canonical human full rendering," not the structured block — the same
+    finding, identity, severity, and location, only its wording changes.
+    **If the invocation also normalized `human_inline_findings`**
     (its default follows `human_review_output` per
     [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
     "`human_inline_findings` derived default and phrasings"), render each

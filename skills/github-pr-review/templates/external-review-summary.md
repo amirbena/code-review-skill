@@ -138,6 +138,31 @@ finding (see
 - **Fix:** <one correction direction at the shared cause / canonical owner>
 ```
 
+When `human_review_output` is on, each of these body findings uses the
+**human full rendering** instead, per
+[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+"Canonical human full rendering" — the same `id` and `Location` line, the
+`Evidence` / `Impact` / `Fix` block re-voiced as senior-engineer prose:
+
+```markdown
+### Findings
+
+- **P1 (Blocking) — Authorization provenance can bypass the trusted boundary**
+  `src/review/authz.py:142`
+
+#### F2 P2 (Non-Blocking): Config schema drift spans three unlinked files
+
+`config/*.yaml` (schema vs. loader vs. docs)
+
+<concrete evidence, impact, and fix direction carried by prose instead of
+labelled fields>
+```
+
+This is the same finding, at the same location, with the same severity
+and identity — only its wording changes. See
+[`../policies/review-output.md`](../policies/review-output.md), "Concise
+human-style summary (opt-in)."
+
 A **consolidated root-cause finding** (one shared cause reaching at least
 two sites) always renders in the body, with its required, exhaustive
 `Affected locations` list of two or more sites directly after `Location`,
@@ -288,7 +313,12 @@ deliberate?
   comment still owns each finding's full detail — its `Evidence` /
   `Impact` / `Fix` in the structured rendering, or the equivalent
   senior-engineer prose when `human_inline_findings` is on (see
-  "Human-rendered inline findings (opt-in)" below).
+  "Human-rendered inline findings (opt-in)" below). A finding with **no**
+  inline comment (no valid anchor) instead carries its full block directly
+  in this concise body — the human full rendering described above under
+  "Fallback: a finding with no valid inline anchor," since
+  `human_review_output` is what selects this concise body in the first
+  place.
 - No review mode, SHAs beyond the short opening reference, counts, action
   mode, worker/aggregation wording, or the `Review metadata` block.
 - The `Result` / `Decision` value is the same single mechanically derived
@@ -300,8 +330,10 @@ deliberate?
   default under `human_review_output`) — the same severity, identity,
   anchor, evidence content, remediation, and decision re-voiced per
   [`inline-finding.md`](inline-finding.md), "Human-rendered inline
-  finding (opt-in)". Only presentation wording changes — this body, and
-  (when `human_inline_findings` is on) the inline comments.
+  finding (opt-in)". Only presentation wording changes — this body
+  (including any body-rendered fallback finding, per "Fallback: a finding
+  with no valid inline anchor"), and (when `human_inline_findings` is on)
+  the inline comments.
 - Active requirement coverage remains visible in this concise body with its
   overall signal and every requirement/status; only its wording is condensed.
   Omit it entirely when coverage analysis was inert.
@@ -336,6 +368,12 @@ identity, deduplication, evidence, remediation, decision, or
 [`../policies/finding-placement.md`](../policies/finding-placement.md)
 applies unchanged. The body still carries exactly one summary-pointer
 line per inline finding.
+
+`human_inline_findings` is scoped to this inline surface only. It has no
+effect on a finding rendered in full in the body — that finding's voice
+is governed directly by `human_review_output` via "Fallback: a finding
+with no valid inline anchor" above, independent of whatever
+`human_inline_findings` resolves to.
 
 ## Rules
 

@@ -120,15 +120,24 @@ fix/action location, not on the GitHub publication anchor — see
 [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
 "`human_inline_findings` derived default and phrasings") re-voices an
 inline finding as concise senior-engineer prose instead of the
-`[<severity>] / Evidence / Impact / Fix` block. It is **presentation-only
-and orthogonal to this policy**: it never changes inline-comment
-eligibility, the anchor-selection order above, the deterministic
-tie-break, the canonical fix/action location, the evidence/detection
-location, or the inline→body fallback for a fix/action location that is
-unresolved or not inline-commentable. A finding is *placed* identically
-whether it renders as the structured block or as the human rendering;
-only the comment's wording differs. This policy remains authoritative for
-placement regardless of rendering voice.
+`[<severity>] / Evidence / Impact / Fix` block. `human_review_output`
+similarly re-voices a finding rendered in full **in the body** (per
+"Fallback: a finding with no valid inline anchor" above, and passive
+review's own always-in-body findings) via the human full rendering in
+[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+"Canonical human full rendering." Both are **presentation-only and
+orthogonal to this policy**: rendering voice never changes inline-comment
+eligibility, the anchor-selection order above, the deterministic tie-break, the
+canonical fix/action location, the evidence/detection location, or the
+inline→body fallback for a fix/action location that is unresolved or not
+inline-commentable. A finding is *placed* identically whether it renders
+as the structured block or as its human rendering (inline or full);
+only the comment's or body finding's wording differs. Rendering voice
+never moves a finding between the body and an inline comment — that
+decision is made only by this policy's anchor-selection and fallback
+rules above, independent of which rendering voice is in effect. This
+policy remains authoritative for placement regardless of rendering
+voice.
 
 ## No duplicate findings
 
