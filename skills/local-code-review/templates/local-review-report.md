@@ -331,31 +331,28 @@ serve are owned by the linked policies and are not restated here.
 - **Change-risk depth** (`standard` / `elevated` / `deep`) and its
   activating signals are always rendered in "Review Metadata" per
   [`../../../shared/policies/change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
-  "Rationale emission" — including `standard` with no signals. It is
-  subordinate metadata, never a finding, and never changes the Decision.
+  "Rationale emission" and "Non-goals and ownership boundary" — not
+  restated here.
 - **Repository expansion** — the fired expansion triggers, the ring each
   reached, and the locations inspected are always rendered in "Review
   Metadata" per
   [`../../../shared/policies/repository-expansion.md`](../../../shared/policies/repository-expansion.md),
-  "Expansion decisions are reported" — including "none" when no trigger
-  fired. It is subordinate metadata, never a finding, and never changes
-  the Decision.
+  "Expansion decisions are reported" and "Non-goals and ownership
+  boundary" — not restated here.
 - **Large-PR partitioning** — rendered in "Review Metadata" only when
   [`../../../shared/policies/large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md)
-  activated for this change, per that policy's "Reporting": the partition
-  count and any `capped` or cross-partition de-duplication note. Unlike
+  activated for this change, per that policy's "Reporting" and
+  "Non-goals and ownership boundary" — not restated here. Unlike
   change-risk depth and repository expansion, this line is omitted
-  entirely for a change that stayed under the partitioning threshold. It
-  is subordinate metadata, never a finding, and never changes the
-  Decision.
+  entirely for a change that stayed under the partitioning threshold.
 - **Coverage** (`complete` | `incomplete`, with reason(s) when
   `incomplete`) is always rendered in "Review Metadata" per
-  [`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md).
-  Unlike change-risk depth, repository expansion, and large-PR
-  partitioning above, this is the one field that **does** change the
-  Decision: `incomplete` overrides the mechanical clean/blocking
-  derivation and renders `REVIEW INCOMPLETE` instead, per the "Decision"
-  rule above.
+  [`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
+  "Labeling — incomplete must never present as clean." Unlike change-risk
+  depth, repository expansion, and large-PR partitioning above, this is
+  the one field that **does** change the Decision: `incomplete` overrides
+  the mechanical clean/blocking derivation and renders `REVIEW INCOMPLETE`
+  instead, per the "Decision" rule above.
 - **No loop/orchestration metadata.** This report never tracks review
   iteration count, a configured maximum, or whether another iteration is
   allowed — that belongs to the orchestrator (see

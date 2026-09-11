@@ -132,7 +132,8 @@ class RepositoryExpansionWiringTests(unittest.TestCase):
             with self.subTest(path=path):
                 norm = _norm(path)
                 self.assertIn("Resolve repository expansion", norm)
-                self.assertIn("never becomes a finding", norm)
+                self.assertIn("Expansion decisions are reported", norm)
+                self.assertIn("Non-goals and ownership boundary", norm)
 
     def test_local_report_renders_expansion_in_review_metadata(self) -> None:
         text = (

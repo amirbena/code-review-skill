@@ -217,9 +217,8 @@ reached, and inspected locations per
 "Expansion decisions are reported," are always part of this subordinate
 block — so the block is present on every review, including a clean one —
 rendered as `standard` with no signals and `none` with no fired trigger
-when nothing is flagged, never in the human body, never a finding, and
-with no effect on the verdict, the review-action gate, or any
-machine-readable status.
+when nothing is flagged. Non-goals and ownership for both fields per each
+policy's own "Non-goals and ownership boundary" — not restated here.
 
 Unlike that always-on pair, `large_pr_partitioning` per
 [`../../../shared/policies/large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md)
@@ -231,18 +230,15 @@ entirely — it is never rendered as an empty/`none` placeholder the way
 the always-on pair is.
 
 The `coverage` field per
-[`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md)
-is always present, like `change_risk_depth` and
-`repository_expansion_triggers` — but it is **not** effect-free the way
-those two are: when it is `incomplete`, the reasoning result above is
-`REVIEW INCOMPLETE` instead of whatever the mechanical derivation from
-findings alone would otherwise produce, so that an incomplete review is
-never mistaken for `REVIEW CLEAN` / Approve. This block's own `decision`
-field still records whichever GitHub action was actually taken —
-typically `comment`, since the review-action authorization gate still
-applies — never `approve`; `REVIEW INCOMPLETE` is not itself a value of
-that field. Findings already gathered are still reported in full; only
-the top-level outcome is overridden.
+[`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
+"Labeling — incomplete must never present as clean," is always present,
+like `change_risk_depth` and `repository_expansion_triggers` — but unlike
+those two it is the field that changes the top-level outcome (see that
+policy's "Non-goals and ownership boundary" for what it does not change).
+This block's own `decision` field still records whichever GitHub action
+was actually taken — typically `comment`, since the review-action
+authorization gate still applies — never `approve`; `REVIEW INCOMPLETE`
+is not itself a value of that field.
 
 Append the remaining machine/process state only if a downstream consumer
 (orchestration, automated re-review, audit) actually needs it, after the

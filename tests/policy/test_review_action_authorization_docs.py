@@ -482,9 +482,9 @@ class WiredIntoRunbooks(unittest.TestCase):
         # Step 14 has an explicit self-review branch: no formal decision,
         # informational COMMENT only.
         self.assertIn("If step 1 resolved this as a self-review", t)
-        self.assertIn("submit no formal review decision", t)
+        self.assertIn("the mutation boundary set there stands", t)
         self.assertIn(
-            "Publish the finalized review body as an informational COMMENT", t
+            "publish the finalized review body as an informational COMMENT", t
         )
         self.assertIn("Comments: COMMENTS PUBLISHED", t)
         self.assertIn("Mutation: WITHHELD (self-review: reviewer is the PR author)", t)
