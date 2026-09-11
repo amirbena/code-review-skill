@@ -269,10 +269,9 @@ stop
 6. Determine event-specific capability, including draft, fork,
    comment-only, and permission-limited states, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
-   "Capability matrix." (The self-review mutation boundary was resolved in
-   step 1; if this is a self-review, no formal event is submitted
-   regardless of capability.) Do not treat authentication or repository
-   access as proof that a formal review event is permitted.
+   "Capability matrix." (Self-review mutation boundary: per step 1, not
+   restated here.) Do not treat authentication or repository access as
+   proof that a formal review event is permitted.
 
    **Resolve the review-action mode and mutation authorization** per
    [`../policies/review-action-authorization.md`](../policies/review-action-authorization.md).
@@ -361,12 +360,9 @@ stop
    underlying fact, resolve each occurrence to its highest applicable tier,
    and derive the `standard` / `elevated` / `deep` level by that policy's
    "Classification ordering." Record the level and every activating signal
-   with its evidence for the subordinate metadata block (step 13). It is
-   always produced (`standard` with no signals is a normal result), is
-   emitted only as subordinate metadata, and never becomes a finding, a
-   severity, or an input to the verdict or the review-action gate. The
-   diff-size thresholds, the depth-only tie-break, and the non-goals are
-   owned by that policy and are not restated here.
+   with its evidence for the subordinate metadata block (step 13), per
+   that policy's "Rationale emission" and "Non-goals and ownership
+   boundary" — not restated here.
 8b. **Resolve repository expansion** per
    [`repository-expansion.md`](../../../shared/policies/repository-expansion.md).
    From the established PR delta, detect any fired expansion trigger
@@ -375,11 +371,9 @@ stop
    scaled by the change-risk depth from step 8a, and record every fired
    trigger with the ring reached and the locations inspected for the
    subordinate metadata block (step 13). A PR with no fired trigger still
-   records that outcome as "none." It is always produced, is emitted only
-   as subordinate metadata, and never becomes a finding or an input to
-   the verdict or the review-action gate. The trigger catalog, the ring
-   procedure, and the depth-scaled ceiling are owned by that policy and
-   are not restated here.
+   records that outcome as "none," per that policy's "Expansion decisions
+   are reported" and "Non-goals and ownership boundary" — not restated
+   here.
 8c. **Partition large changes** per
    [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md).
    When the established PR delta's diff-size measurement (the same
@@ -397,10 +391,8 @@ stop
    Record whether partitioning
    activated and, if so, the partitions built for the subordinate
    metadata block (step 13); an unpartitioned review records nothing for
-   this field. This is never a second scope or evidence model and never
-   changes the verdict or the review-action gate; that policy owns the
-   threshold, the construction procedure, and the aggregation contract,
-   and this runbook does not restate them.
+   this field, per that policy's "Reporting" and "Non-goals and
+   ownership boundary" — not restated here.
 9. Review per
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
@@ -490,13 +482,12 @@ stop
     required-dimension check and every partition's aggregation — actually
     reached its own already-defined stop condition. Record `coverage:
     complete` or `incomplete` with its reason(s) for the review's
-    subordinate metadata. When `incomplete`, the reasoning result for step
-    13 onward is `REVIEW INCOMPLETE` per
+    subordinate metadata, per that policy's "Labeling — incomplete must
+    never present as clean" and "Non-goals and ownership boundary" — not
+    restated here. When `incomplete`, the reasoning result for step 13
+    onward is `REVIEW INCOMPLETE` per
     [`../policies/review-output.md`](../policies/review-output.md), "Final
-    decision" — never `REVIEW CLEAN` / `Approve`, regardless of what the
-    finding set alone would otherwise produce. This step never discards or
-    re-evaluates any finding already finalized in step 11; it only
-    determines whether the review that gathered them finished.
+    decision."
 12. Re-check the current PR HEAD against the recorded HEAD (see
     [`../policies/review-output.md`](../policies/review-output.md), "HEAD
     revalidation"), immediately before constructing the review. If it
@@ -546,17 +537,13 @@ stop
     "Review-action authorization gate," using the mode resolved in step 6
     and the HEAD confirmed in step 12, to determine the permitted outcome;
     the outcome is executed by the single batched submission in step 16,
-    not here. **If step 1 resolved this as a self-review**
-    (`formal_review_mutation_allowed = false`): submit no formal review
-    decision — not `APPROVE`, not `REQUEST_CHANGES` — regardless of mode,
-    natural-language request, or authorization. Publish the finalized
-    review body as an informational `COMMENT` (verdict, reviewed HEAD,
-    findings, and a note that the formal decision was withheld by policy)
-    as the run's final publication in step 16, and report
-    `Comments: COMMENTS PUBLISHED` /
-    `Mutation: WITHHELD (self-review: reviewer is the PR author)`. A
-    `COMMENT` is not approval, request-changes, or merge authorization. The
-    verdict is not changed. Otherwise (external review): in
+    not here. **If step 1 resolved this as a self-review**: the mutation
+    boundary set there stands — publish the finalized review body as an
+    informational `COMMENT` (verdict, reviewed HEAD, findings, and a note
+    that the formal decision was withheld by policy) as the run's final
+    publication in step 16, and report `Comments: COMMENTS PUBLISHED` /
+    `Mutation: WITHHELD (self-review: reviewer is the PR author)`.
+    Otherwise (external review): in
     **recommendation-only** mode the permitted outcome is no GitHub
     mutation (`Mutation: WITHHELD (<reason>)`); in **block-only** mode,
     `REQUEST_CHANGES` only for a blocking reasoning result and never
@@ -598,9 +585,8 @@ stop
     event from step 14 — as a single batched submission per
     [`../policies/review-output.md`](../policies/review-output.md),
     "Batched review construction and submission." For a self-review, this
-    is the informational `COMMENT` carrying the same body (with the closing
-    disclosure line) and reports `Comments: COMMENTS PUBLISHED` /
-    `Mutation: WITHHELD (self-review: reviewer is the PR author)`. If GitHub
+    is step 14's informational `COMMENT`, carrying the same body plus the
+    closing disclosure line, with the same reported statuses. If GitHub
     rejects a specific resolved inline location, apply the
     [`../policies/finding-placement.md`](../policies/finding-placement.md)
     "Rejected inline location fallback" (move that finding's full form into

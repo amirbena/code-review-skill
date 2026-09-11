@@ -276,11 +276,9 @@ which a value must be resolved before it is used, or what is reported.
    fact, resolve each occurrence to its highest applicable tier, and derive
    the `standard` / `elevated` / `deep` level by that policy's
    "Classification ordering." Record the level and every activating signal
-   with its evidence for the report's subordinate metadata (step 13). This
-   classification is always produced — `standard` with no signals is a
-   normal result — and never becomes a finding, a severity, or an input to
-   the Decision; that policy owns the diff-size thresholds, the depth-only
-   tie-break, and the non-goals, and this runbook does not restate them.
+   with its evidence for the report's subordinate metadata (step 13), per
+   that policy's "Rationale emission" and "Non-goals and ownership
+   boundary" — not restated here.
 8c. **Resolve repository expansion** per
    [`repository-expansion.md`](../../../shared/policies/repository-expansion.md).
    Using the complete local delta established above, detect any fired
@@ -289,11 +287,9 @@ which a value must be resolved before it is used, or what is reported.
    whose ceiling is scaled by the change-risk depth from step 8b, and
    record every fired trigger with the ring reached and the locations
    inspected for the report's subordinate metadata (step 13). A change
-   with no fired trigger still records that outcome as "none." This
-   expansion decision is always produced, never becomes a finding, and
-   never changes the Decision; that policy owns the trigger catalog, the
-   ring procedure, and the depth-scaled ceiling, and this runbook does
-   not restate them.
+   with no fired trigger still records that outcome as "none," per that
+   policy's "Expansion decisions are reported" and "Non-goals and
+   ownership boundary" — not restated here.
 8d. **Partition large changes** per
    [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md).
    When the complete local delta's diff-size measurement (the same
@@ -307,12 +303,10 @@ which a value must be resolved before it is used, or what is reported.
    [`root-cause-consolidation.md`](../../../shared/policies/root-cause-consolidation.md)
    — before step 10 (classify) onward, which run exactly once, over that
    combined set, never per partition. Record whether partitioning activated
-   and, if so, the partitions built
-   for the report's subordinate metadata (step 13); an unpartitioned
-   review records nothing for this field. This is never a second scope or
-   evidence model and never changes the Decision derivation; that policy
-   owns the threshold, the construction procedure, and the aggregation
-   contract, and this runbook does not restate them.
+   and, if so, the partitions built for the report's subordinate metadata
+   (step 13); an unpartitioned review records nothing for this field, per
+   that policy's "Reporting" and "Non-goals and ownership boundary" — not
+   restated here.
 9. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
@@ -375,10 +369,9 @@ which a value must be resolved before it is used, or what is reported.
     partitioning, when applicable) requires actually reached its own
     already-defined stop condition. Record `coverage: complete` or
     `incomplete` with its concrete reason(s) for the report's subordinate
-    metadata (step 13) — this is always produced, the same way step 8b and
-    8c always are. This step never discards or re-evaluates any finding
-    already gathered; it only determines whether the review that gathered
-    them finished.
+    metadata (step 13), per that policy's "Labeling — incomplete must
+    never present as clean" and "Non-goals and ownership boundary" — not
+    restated here.
 11. Derive the Decision. When step 10b's coverage is `incomplete`, the
     Decision is the incomplete/ungraded outcome per
     [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),

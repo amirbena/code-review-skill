@@ -232,12 +232,9 @@ finally: remove the temporary checkout (success, any failure, interruption)
    underlying fact, resolve each occurrence to its highest applicable tier,
    and derive the `standard` / `elevated` / `deep` level by that policy's
    "Classification ordering." Record the level and every activating signal
-   with its evidence for the subordinate metadata block (step 8). It is
-   always produced (`standard` with no signals is a normal result), is
-   emitted only as subordinate metadata, and never becomes a finding, a
-   severity, or an input to the verdict. The diff-size thresholds, the
-   depth-only tie-break, and the non-goals are owned by that policy and
-   are not restated here.
+   with its evidence for the subordinate metadata block (step 8), per that
+   policy's "Rationale emission" and "Non-goals and ownership boundary" —
+   not restated here.
 5b. **Resolve repository expansion** per
    [`repository-expansion.md`](../../../shared/policies/repository-expansion.md).
    From the established PR delta, detect any fired expansion trigger
@@ -246,10 +243,8 @@ finally: remove the temporary checkout (success, any failure, interruption)
    scaled by the change-risk depth from step 5a, and record every fired
    trigger with the ring reached and the locations inspected for the
    subordinate metadata block (step 8). A PR with no fired trigger still
-   records that outcome as "none." It is always produced, is emitted only
-   as subordinate metadata, and never becomes a finding or an input to
-   the verdict. The trigger catalog, the ring procedure, and the
-   depth-scaled ceiling are owned by that policy and are not restated
+   records that outcome as "none," per that policy's "Expansion decisions
+   are reported" and "Non-goals and ownership boundary" — not restated
    here.
 5c. **Partition large changes** per
    [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md).
@@ -268,10 +263,8 @@ finally: remove the temporary checkout (success, any failure, interruption)
    Record whether partitioning
    activated and, if so, the partitions built for the subordinate
    metadata block (step 8); an unpartitioned review records nothing for
-   this field. This is never a second scope or evidence model and never
-   changes the verdict; that policy owns the threshold, the construction
-   procedure, and the aggregation contract, and this runbook does not
-   restate them.
+   this field, per that policy's "Reporting" and "Non-goals and
+   ownership boundary" — not restated here.
 6. Review the diff against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
@@ -356,9 +349,9 @@ finally: remove the temporary checkout (success, any failure, interruption)
    partitioning, when applicable) requires — including step 7's
    required-dimension check — actually reached its own already-defined
    stop condition. Record `coverage: complete` or `incomplete` with its
-   reason(s) in the report's subordinate metadata. When `incomplete`, the
-   report's outcome is `REVIEW INCOMPLETE` — never a clean report,
-   regardless of what the finding set alone would otherwise produce.
+   reason(s) in the report's subordinate metadata, per that policy's
+   "Labeling — incomplete must never present as clean" and "Non-goals and
+   ownership boundary" — not restated here.
 9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
    step 4, remove it — on this path and on every other: a
    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the

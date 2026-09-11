@@ -168,7 +168,8 @@ class ChangeRiskWiringTests(unittest.TestCase):
             with self.subTest(path=path):
                 norm = _norm(path)
                 self.assertIn("Classify change-risk depth", norm)
-                self.assertIn("never becomes a finding", norm)
+                self.assertIn("Rationale emission", norm)
+                self.assertIn("Non-goals and ownership boundary", norm)
 
     def test_local_report_renders_depth_and_signals_in_review_metadata(self) -> None:
         text = (
