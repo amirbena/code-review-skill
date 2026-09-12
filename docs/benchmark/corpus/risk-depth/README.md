@@ -21,7 +21,7 @@ corpus runs without network access. Like the rest of
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../tests/reference/benchmark_fixture.py`](../../../../tests/reference/benchmark_fixture.py)
+[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle
@@ -55,21 +55,21 @@ expansion `ring`, partition assignment, or `coverage` label — only
 already establishes for its own mechanism: **the corpus fixture pins the
 expected finding outcome; the reference-model case pins the mechanism.**
 Every case below has a matching scenario in
-[`../../../../tests/unit/test_risk_based_review_scenarios.py`](../../../../tests/unit/test_risk_based_review_scenarios.py)
+[`../../../../tests/unit/review/test_risk_based_review_scenarios.py`](../../../../tests/unit/review/test_risk_based_review_scenarios.py)
 that constructs the same signal/trigger/partition shape the fixture's
 rationale describes and asserts the `depth`/`ring`/`capped`/`coverage`
 value directly against
-[`change_risk_signals.py`](../../../../tests/reference/change_risk_signals.py),
-[`repository_expansion.py`](../../../../tests/reference/repository_expansion.py),
-[`large_pr_partitioning.py`](../../../../tests/reference/large_pr_partitioning.py),
+[`change_risk_signals.py`](../../../../tests/reference/review/change_risk_signals.py),
+[`repository_expansion.py`](../../../../tests/reference/review/repository_expansion.py),
+[`large_pr_partitioning.py`](../../../../tests/reference/review/large_pr_partitioning.py),
 and
-[`review_stopping_criteria.py`](../../../../tests/reference/review_stopping_criteria.py)
+[`review_stopping_criteria.py`](../../../../tests/reference/review/review_stopping_criteria.py)
 directly. The large-multiarea case's patch is deliberately **not** scaled
 up to literally cross `large-pr-partitioning.md`'s `>=1200`-line /
 `>=60`-file activation threshold — hand-authoring a genuinely large diff
 would add bulk without adding coverage; that literal threshold arithmetic
 is already exhaustively pinned in
-[`../../../../tests/unit/test_large_pr_partitioning.py`](../../../../tests/unit/test_large_pr_partitioning.py)
+[`../../../../tests/unit/review/test_large_pr_partitioning.py`](../../../../tests/unit/review/test_large_pr_partitioning.py)
 and re-exercised at realistic scale in
 `test_risk_based_review_scenarios.py`. This fixture instead pins the
 **multi-area finding-retention** property: three unrelated areas, each
@@ -101,16 +101,16 @@ corpus is scoped to `change-risk-signals.md`'s depth vocabulary and
 
 ## Validation
 
-[`../../../../tests/unit/test_risk_depth_corpus.py`](../../../../tests/unit/test_risk_depth_corpus.py)
+[`../../../../tests/unit/review/test_risk_depth_corpus.py`](../../../../tests/unit/review/test_risk_depth_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark_fixture.py`](../../../../tests/reference/benchmark_fixture.py)
+[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second
 one), and asserts: the sub-corpus stays small and documented; every
 required case is present; every case pins an explicit `decision`
 consistent with its required findings; and every case's rationale is
 reflected by an equivalent depth/expansion/partitioning assertion against
 the reference models in
-[`../../../../tests/unit/test_risk_based_review_scenarios.py`](../../../../tests/unit/test_risk_based_review_scenarios.py).
+[`../../../../tests/unit/review/test_risk_based_review_scenarios.py`](../../../../tests/unit/review/test_risk_based_review_scenarios.py).
 Matching a reviewer's output to these expectations and scoring it are out
 of scope here (Issues #41 / #52 / #54). Peer review of the expected
 findings themselves happens on the pull request.

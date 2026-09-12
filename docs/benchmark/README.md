@@ -52,7 +52,7 @@ validated `benchmark-case/v1` fixture referenced by `fixture-format.md`
 §12. It is an illustrative reference for the format, **not** a corpus case
 (the corpus is #51). Its automated validation and the negative tests for
 the format's rejection rules live in
-[`../../tests/unit/test_benchmark_fixture.py`](../../tests/unit/test_benchmark_fixture.py).
+[`../../tests/unit/benchmark/test_benchmark_fixture.py`](../../tests/unit/benchmark/test_benchmark_fixture.py).
 
 ## Corpus
 
@@ -60,7 +60,7 @@ the format's rejection rules live in
 one crafted `benchmark-case/v1` fixture per review category, each a
 self-contained inline patch with its pre-image and expected findings. The
 corpus is validated by
-[`../../tests/unit/test_benchmark_corpus.py`](../../tests/unit/test_benchmark_corpus.py)
+[`../../tests/unit/benchmark/test_benchmark_corpus.py`](../../tests/unit/benchmark/test_benchmark_corpus.py)
 through the same reference validator as the worked example.
 
 ## Runner
@@ -71,9 +71,9 @@ verbatim capture of produced findings, cleanup on both the success and
 failure path, and a hard guarantee that no protected source checkout —
 the user's tree, the caller checkout, or this repository's tree — is
 mutated, even when a case fails. The test-only reference runner
-[`../../tests/reference/benchmark_runner.py`](../../tests/reference/benchmark_runner.py)
+[`../../tests/reference/benchmark/benchmark_runner.py`](../../tests/reference/benchmark/benchmark_runner.py)
 mirrors it and is exercised by
-[`../../tests/unit/test_benchmark_runner.py`](../../tests/unit/test_benchmark_runner.py),
+[`../../tests/unit/benchmark/test_benchmark_runner.py`](../../tests/unit/benchmark/test_benchmark_runner.py),
 including the deliberately-dirty-source-repo safety regression. Nothing
 here is packaged and no Skill launches it.
 
@@ -89,9 +89,9 @@ reads a fixture's `expected` block and computes no score, so it catches a
 seeded regression before the quality-metric layer (#41) exists — and it
 never writes the baseline: a refresh is a deliberate, committed step. The
 test-only reference report
-[`../../tests/reference/benchmark_report.py`](../../tests/reference/benchmark_report.py)
+[`../../tests/reference/benchmark/benchmark_report.py`](../../tests/reference/benchmark/benchmark_report.py)
 mirrors it and is exercised by
-[`../../tests/unit/test_benchmark_report.py`](../../tests/unit/test_benchmark_report.py),
+[`../../tests/unit/benchmark/test_benchmark_report.py`](../../tests/unit/benchmark/test_benchmark_report.py),
 including the seeded-regression diff and the stable-output check.
 
 ## Match criteria
@@ -105,9 +105,9 @@ everything else `NO_MATCH`. Tolerances are fixed in the document (a
 classify every §8 worked example the same way. Matching is
 severity-independent (that is #56) and does no counting (that is #55). The
 test-only reference matcher
-[`../../tests/reference/benchmark_match.py`](../../tests/reference/benchmark_match.py)
+[`../../tests/reference/benchmark/benchmark_match.py`](../../tests/reference/benchmark/benchmark_match.py)
 mirrors it and is exercised by
-[`../../tests/unit/test_benchmark_match.py`](../../tests/unit/test_benchmark_match.py),
+[`../../tests/unit/benchmark/test_benchmark_match.py`](../../tests/unit/benchmark/test_benchmark_match.py),
 which encodes every worked example as a data-driven case.
 
 ## Missed & incorrect findings
@@ -128,9 +128,9 @@ regression report's per-case deltas without ever changing
 `has_regressions`. It computes no score, rate, or severity judgement
 (severity accuracy is #56; duplicate noise is #57). The test-only
 reference metric
-[`../../tests/reference/benchmark_metrics.py`](../../tests/reference/benchmark_metrics.py)
+[`../../tests/reference/benchmark/benchmark_metrics.py`](../../tests/reference/benchmark/benchmark_metrics.py)
 mirrors it (executed by
-[`../../tests/unit/test_benchmark_metrics.py`](../../tests/unit/test_benchmark_metrics.py),
+[`../../tests/unit/benchmark/test_benchmark_metrics.py`](../../tests/unit/benchmark/test_benchmark_metrics.py),
 including every §8 worked example) and delegates every pairwise decision to
 the single reference matcher.
 
@@ -150,9 +150,9 @@ counts plus an exact-match **rate** as an exact `fractions.Fraction`
 report's per-case deltas without ever changing `has_regressions`. It never
 pairs or re-pairs a finding and redefines nothing about P0/P1/P2 (duplicate
 noise is #57). The test-only reference metric
-[`../../tests/reference/benchmark_severity.py`](../../tests/reference/benchmark_severity.py)
+[`../../tests/reference/benchmark/benchmark_severity.py`](../../tests/reference/benchmark/benchmark_severity.py)
 mirrors it (executed by
-[`../../tests/unit/test_benchmark_severity.py`](../../tests/unit/test_benchmark_severity.py),
+[`../../tests/unit/benchmark/test_benchmark_severity.py`](../../tests/unit/benchmark/test_benchmark_severity.py),
 including every §7 worked example) and consumes the single reference
 pairing and matcher.
 
@@ -173,9 +173,9 @@ report's per-case deltas without ever changing `has_regressions`, defines
 no second match relation, adds no axis or tolerance, and specifies no
 de-duplication behaviour for the reviewer itself (a #57 non-goal). The
 test-only reference metric
-[`../../tests/reference/benchmark_dupes.py`](../../tests/reference/benchmark_dupes.py)
+[`../../tests/reference/benchmark/benchmark_dupes.py`](../../tests/reference/benchmark/benchmark_dupes.py)
 mirrors it (executed by
-[`../../tests/unit/test_benchmark_dupes.py`](../../tests/unit/test_benchmark_dupes.py),
+[`../../tests/unit/benchmark/test_benchmark_dupes.py`](../../tests/unit/benchmark/test_benchmark_dupes.py),
 including every §7 worked example) and consumes the single reference
 matcher.
 

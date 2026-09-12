@@ -13,11 +13,11 @@ the severity, or the review decision. The packaged
 field and references this document by name; it does not restate this table.
 
 The test-only reference model is
-[`../../tests/reference/finding_confidence.py`](../../tests/reference/finding_confidence.py);
+[`../../tests/reference/review/finding_confidence.py`](../../tests/reference/review/finding_confidence.py);
 its derivation corpus is exercised by
-[`../../tests/unit/test_finding_confidence.py`](../../tests/unit/test_finding_confidence.py)
+[`../../tests/unit/review/test_finding_confidence.py`](../../tests/unit/review/test_finding_confidence.py)
 and the documentation contract by
-[`../../tests/policy/test_finding_confidence_docs.py`](../../tests/policy/test_finding_confidence_docs.py).
+[`../../tests/policy/review/test_finding_confidence_docs.py`](../../tests/policy/review/test_finding_confidence_docs.py).
 
 ## 1. Problem and goal
 

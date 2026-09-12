@@ -21,7 +21,7 @@ corpus runs without network access. Like the rest of
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../tests/reference/benchmark_fixture.py`](../../../../tests/reference/benchmark_fixture.py).
+[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py).
 
 ## Selection principle
 
@@ -77,9 +77,9 @@ revision under #177, not this corpus.
 
 ## Validation
 
-[`../../../../tests/unit/test_consolidation_corpus.py`](../../../../tests/unit/test_consolidation_corpus.py)
+[`../../../../tests/unit/review/test_consolidation_corpus.py`](../../../../tests/unit/review/test_consolidation_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark_fixture.py`](../../../../tests/reference/benchmark_fixture.py)
+[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second
 one), and asserts the sub-corpus stays small, that filenames match case
 `id`s, that every case records a rationale and a consistent explicit

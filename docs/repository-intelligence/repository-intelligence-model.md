@@ -10,15 +10,15 @@ and [`shared/policies/evidence.md`](../../shared/policies/evidence.md)
 reference this document by name and do not restate its model.
 
 The test-only reference model is
-[`../../tests/reference/repository_intelligence.py`](../../tests/reference/repository_intelligence.py);
+[`../../tests/reference/review/repository_intelligence.py`](../../tests/reference/review/repository_intelligence.py);
 its behavior is exercised by
-[`../../tests/unit/test_repository_intelligence.py`](../../tests/unit/test_repository_intelligence.py)
-and [`../../tests/policy/test_repository_intelligence_docs.py`](../../tests/policy/test_repository_intelligence_docs.py).
+[`../../tests/unit/review/test_repository_intelligence.py`](../../tests/unit/review/test_repository_intelligence.py)
+and [`../../tests/policy/review/test_repository_intelligence_docs.py`](../../tests/policy/review/test_repository_intelligence_docs.py).
 The benchmark evidence for the acceptance criterion "measurable gains over
 diff-only review" is
 [`../benchmark/corpus/repository-intelligence/README.md`](../benchmark/corpus/repository-intelligence/README.md),
 exercised by
-[`../../tests/unit/test_repository_intelligence_corpus.py`](../../tests/unit/test_repository_intelligence_corpus.py).
+[`../../tests/unit/review/test_repository_intelligence_corpus.py`](../../tests/unit/review/test_repository_intelligence_corpus.py).
 
 ## 1. Problem and goal
 
@@ -215,7 +215,7 @@ reaches; it says the dispatch is ambiguous and stops there.
 Each example is also a benchmark fixture in
 [`../benchmark/corpus/repository-intelligence/`](../benchmark/corpus/repository-intelligence/README.md)
 and a case in the reference corpus
-([`../../tests/unit/test_repository_intelligence.py`](../../tests/unit/test_repository_intelligence.py)),
+([`../../tests/unit/review/test_repository_intelligence.py`](../../tests/unit/review/test_repository_intelligence.py)),
 asserted to resolve exactly as documented here. Three positive examples
 cover two language shapes (Python, TypeScript); one covers safe failure on
 ambiguity; one is a negative/control case.

@@ -224,7 +224,7 @@ severity counts:
 ## 7. Worked examples
 
 All are encoded verbatim as data-driven cases in
-[`../../tests/unit/test_benchmark_dupes.py`](../../tests/unit/test_benchmark_dupes.py);
+[`../../tests/unit/benchmark/test_benchmark_dupes.py`](../../tests/unit/benchmark/test_benchmark_dupes.py);
 two readers applying §2–§4 must reach the count columns for every row.
 Each produced finding is written as *path*`:`*line* with its `defect_kind`
 (or a claim when it has none).
@@ -275,11 +275,11 @@ home," and
 "Status and canonical home," describe for their own eventual installation.
 
 The test-only reference metric
-[`../../tests/reference/benchmark_dupes.py`](../../tests/reference/benchmark_dupes.py)
+[`../../tests/reference/benchmark/benchmark_dupes.py`](../../tests/reference/benchmark/benchmark_dupes.py)
 mirrors this document for regression coverage (executed by
-[`../../tests/unit/test_benchmark_dupes.py`](../../tests/unit/test_benchmark_dupes.py),
+[`../../tests/unit/benchmark/test_benchmark_dupes.py`](../../tests/unit/benchmark/test_benchmark_dupes.py),
 including every §7 worked example as a data-driven case). It consumes the
 single reference matcher
-[`../../tests/reference/benchmark_match.py`](../../tests/reference/benchmark_match.py)
+[`../../tests/reference/benchmark/benchmark_match.py`](../../tests/reference/benchmark/benchmark_match.py)
 and defines no second match relation or pairing. It is not packaged and is
 not a Skill.

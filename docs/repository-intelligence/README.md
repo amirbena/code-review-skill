@@ -46,7 +46,7 @@ attribution. See
   [`../../shared/policies/evidence.md`](../../shared/policies/evidence.md),
   "Findings beyond the changed lines."
 - The test-only reference model:
-  [`../../tests/reference/repository_intelligence.py`](../../tests/reference/repository_intelligence.py).
+  [`../../tests/reference/review/repository_intelligence.py`](../../tests/reference/review/repository_intelligence.py).
 - The benchmark evidence demonstrating relationship-aware context catching
   defects diff-only review misses, without unacceptable false-positive
   growth:

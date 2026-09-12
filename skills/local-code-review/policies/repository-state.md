@@ -139,7 +139,7 @@ byte string — this is a valid, stable fingerprint for "nothing staged,"
 not an error.
 
 A reference implementation used for deterministic testing lives in this
-source repository at `tests/reference/staged_fingerprint.py` (not part of
+source repository at `tests/reference/review/staged_fingerprint.py` (not part of
 either packaged Skill archive, and not linked here for that reason — the
 Skills reason from this policy text directly, not from that script).
 

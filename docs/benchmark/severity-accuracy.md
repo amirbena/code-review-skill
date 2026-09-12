@@ -224,7 +224,7 @@ does for the missed / incorrect counts:
 ## 7. Worked examples
 
 All are encoded verbatim as data-driven cases in
-[`../../tests/unit/test_benchmark_severity.py`](../../tests/unit/test_benchmark_severity.py);
+[`../../tests/unit/benchmark/test_benchmark_severity.py`](../../tests/unit/benchmark/test_benchmark_severity.py);
 two readers applying §2–§4 must reach the count columns for every row. Each
 pair is written as *permitted expected severities* → *produced severity*.
 
@@ -273,13 +273,13 @@ evolving the accounting independently — exactly as
 describe for their own eventual installation.
 
 The test-only reference metric
-[`../../tests/reference/benchmark_severity.py`](../../tests/reference/benchmark_severity.py)
+[`../../tests/reference/benchmark/benchmark_severity.py`](../../tests/reference/benchmark/benchmark_severity.py)
 mirrors this document for regression coverage (executed by
-[`../../tests/unit/test_benchmark_severity.py`](../../tests/unit/test_benchmark_severity.py),
+[`../../tests/unit/benchmark/test_benchmark_severity.py`](../../tests/unit/benchmark/test_benchmark_severity.py),
 including every §7 worked example as a data-driven case). It consumes the
 single reference pairing
-[`../../tests/reference/benchmark_metrics.py`](../../tests/reference/benchmark_metrics.py)
+[`../../tests/reference/benchmark/benchmark_metrics.py`](../../tests/reference/benchmark/benchmark_metrics.py)
 and the single reference matcher
-[`../../tests/reference/benchmark_match.py`](../../tests/reference/benchmark_match.py)
+[`../../tests/reference/benchmark/benchmark_match.py`](../../tests/reference/benchmark/benchmark_match.py)
 and defines no second pairing or match relation. It is not packaged and is
 not a Skill.

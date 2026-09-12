@@ -276,8 +276,8 @@ and [`fixture-format.md`](fixture-format.md), "Status and canonical home,"
 describe for their own eventual installation.
 
 The test-only reference report
-[`../../tests/reference/benchmark_report.py`](../../tests/reference/benchmark_report.py)
+[`../../tests/reference/benchmark/benchmark_report.py`](../../tests/reference/benchmark/benchmark_report.py)
 mirrors this document for regression coverage (executed by
-[`../../tests/unit/test_benchmark_report.py`](../../tests/unit/test_benchmark_report.py),
+[`../../tests/unit/benchmark/test_benchmark_report.py`](../../tests/unit/benchmark/test_benchmark_report.py),
 including the seeded-regression diff and the stable-output check). It is
 not packaged and is not a Skill.
