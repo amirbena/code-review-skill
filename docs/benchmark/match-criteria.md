@@ -237,7 +237,7 @@ sub-spec or `any_of` member, and whether the entry was `required`.
 
 Each row compares **one** produced finding to **one** expected spec. All
 six are encoded verbatim as data-driven cases in
-[`../../tests/unit/test_benchmark_match.py`](../../tests/unit/test_benchmark_match.py);
+[`../../tests/unit/benchmark/test_benchmark_match.py`](../../tests/unit/benchmark/test_benchmark_match.py);
 two readers applying §3–§6 must reach the `Result` column for every row.
 
 | # | Expected `location` / `claim` / `defect_kind` | Produced `location` / `claim` / `defect_kind` | Location | Defect | Result |
@@ -282,8 +282,8 @@ and [`runner-contract.md`](runner-contract.md), "Status and canonical
 home," describe for their own eventual installation.
 
 The test-only reference matcher
-[`../../tests/reference/benchmark_match.py`](../../tests/reference/benchmark_match.py)
+[`../../tests/reference/benchmark/benchmark_match.py`](../../tests/reference/benchmark/benchmark_match.py)
 mirrors this document for regression coverage (executed by
-[`../../tests/unit/test_benchmark_match.py`](../../tests/unit/test_benchmark_match.py),
+[`../../tests/unit/benchmark/test_benchmark_match.py`](../../tests/unit/benchmark/test_benchmark_match.py),
 including every §8 worked example as a data-driven case). It is not
 packaged and is not a Skill.

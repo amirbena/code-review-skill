@@ -66,29 +66,29 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   [#185](https://github.com/amirbena/code-review-skill/issues/185), parent
   [#177](https://github.com/amirbena/code-review-skill/issues/177)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../../tests/unit/test_consolidation_corpus.py`](../../../tests/unit/test_consolidation_corpus.py)).
+  ([`../../../tests/unit/review/test_consolidation_corpus.py`](../../../tests/unit/review/test_consolidation_corpus.py)).
   The four category cases above are unaffected by it.
 - [`repository-intelligence/`](repository-intelligence/README.md) — a
   focused `benchmark-case/v1` sub-corpus demonstrating
   `repository-expansion.md`'s (#87) triggers (Issue
   [#129](https://github.com/amirbena/code-review-skill/issues/129)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../../tests/unit/test_repository_intelligence_corpus.py`](../../../tests/unit/test_repository_intelligence_corpus.py)).
+  ([`../../../tests/unit/review/test_repository_intelligence_corpus.py`](../../../tests/unit/review/test_repository_intelligence_corpus.py)).
 - [`risk-depth/`](risk-depth/README.md) — a focused `benchmark-case/v1`
   sub-corpus for risk-based review depth and large-PR handling (Issue
   [#90](https://github.com/amirbena/code-review-skill/issues/90), parent
   [#48](https://github.com/amirbena/code-review-skill/issues/48)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../../tests/unit/test_risk_depth_corpus.py`](../../../tests/unit/test_risk_depth_corpus.py)).
+  ([`../../../tests/unit/review/test_risk_depth_corpus.py`](../../../tests/unit/review/test_risk_depth_corpus.py)).
   Deep depth/expansion/partitioning/coverage assertions are pinned against
   the reference models directly in
-  [`../../../tests/unit/test_risk_based_review_scenarios.py`](../../../tests/unit/test_risk_based_review_scenarios.py).
+  [`../../../tests/unit/review/test_risk_based_review_scenarios.py`](../../../tests/unit/review/test_risk_based_review_scenarios.py).
 
 ## Validation
 
-[`../../../tests/unit/test_benchmark_corpus.py`](../../../tests/unit/test_benchmark_corpus.py)
+[`../../../tests/unit/benchmark/test_benchmark_corpus.py`](../../../tests/unit/benchmark/test_benchmark_corpus.py)
 loads every `*.yaml` here through the single reference validator
-[`../../../tests/reference/benchmark_fixture.py`](../../../tests/reference/benchmark_fixture.py)
+[`../../../tests/reference/benchmark/benchmark_fixture.py`](../../../tests/reference/benchmark/benchmark_fixture.py)
 (the same one that checks the worked example), and asserts the corpus stays
 small, that filenames match case `id`s, that every case records a
 rationale, and that the four categories above are all present. Peer review

@@ -14,10 +14,10 @@ Two follow-on issues consume it without redefining it:
 finding confidence / evidence-state field).
 
 The test-only reference model is
-[`../../tests/reference/context_evidence.py`](../../tests/reference/context_evidence.py);
+[`../../tests/reference/review/context_evidence.py`](../../tests/reference/review/context_evidence.py);
 its regression corpus and the worked examples below are exercised by
-[`../../tests/unit/test_context_evidence.py`](../../tests/unit/test_context_evidence.py)
-and [`../../tests/policy/test_context_evidence_docs.py`](../../tests/policy/test_context_evidence_docs.py).
+[`../../tests/unit/review/test_context_evidence.py`](../../tests/unit/review/test_context_evidence.py)
+and [`../../tests/policy/review/test_context_evidence_docs.py`](../../tests/policy/review/test_context_evidence_docs.py).
 
 ## 1. Problem and goal
 
@@ -243,7 +243,7 @@ change** or **pre-existing**:
 ## 11. Worked examples
 
 Each example is also a row in the reference corpus
-([`../../tests/unit/test_context_evidence.py`](../../tests/unit/test_context_evidence.py)),
+([`../../tests/unit/review/test_context_evidence.py`](../../tests/unit/review/test_context_evidence.py)),
 asserted to classify exactly as documented here.
 
 ### Worked example 1 — acceptance criterion unmet → provenance-attributed finding

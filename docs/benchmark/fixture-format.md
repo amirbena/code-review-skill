@@ -385,9 +385,9 @@ filesystem path and adds no tests. It exercises every §9 construct:
 
 The automated check that this example parses and validates, plus the
 negative cases for the §11 rejection rules, lives in
-[`../../tests/unit/test_benchmark_fixture.py`](../../tests/unit/test_benchmark_fixture.py),
+[`../../tests/unit/benchmark/test_benchmark_fixture.py`](../../tests/unit/benchmark/test_benchmark_fixture.py),
 exercising the test-only reference validator
-[`../../tests/reference/benchmark_fixture.py`](../../tests/reference/benchmark_fixture.py)
+[`../../tests/reference/benchmark/benchmark_fixture.py`](../../tests/reference/benchmark/benchmark_fixture.py)
 (not runtime logic, not packaged).
 
 ## 13. Scope boundaries
@@ -433,6 +433,6 @@ NOT keep evolving the format independently — exactly as
 describes for its own eventual installation.
 
 The test-only reference validator
-[`../../tests/reference/benchmark_fixture.py`](../../tests/reference/benchmark_fixture.py)
+[`../../tests/reference/benchmark/benchmark_fixture.py`](../../tests/reference/benchmark/benchmark_fixture.py)
 mirrors this document for regression coverage. It is not packaged and is
 not the runner.

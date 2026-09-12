@@ -290,7 +290,7 @@ This contract defines that section.
 ## 8. Worked examples
 
 All are encoded verbatim as data-driven cases in
-[`../../tests/unit/test_benchmark_metrics.py`](../../tests/unit/test_benchmark_metrics.py);
+[`../../tests/unit/benchmark/test_benchmark_metrics.py`](../../tests/unit/benchmark/test_benchmark_metrics.py);
 two readers applying §2–§5 must reach the count columns for every row.
 Each case is `findings_completeness: exhaustive` unless the row says
 otherwise.
@@ -341,11 +341,11 @@ and [`regression-report.md`](regression-report.md), "Status and canonical
 home," describe for their own eventual installation.
 
 The test-only reference metric
-[`../../tests/reference/benchmark_metrics.py`](../../tests/reference/benchmark_metrics.py)
+[`../../tests/reference/benchmark/benchmark_metrics.py`](../../tests/reference/benchmark/benchmark_metrics.py)
 mirrors this document for regression coverage (executed by
-[`../../tests/unit/test_benchmark_metrics.py`](../../tests/unit/test_benchmark_metrics.py),
+[`../../tests/unit/benchmark/test_benchmark_metrics.py`](../../tests/unit/benchmark/test_benchmark_metrics.py),
 including every §8 worked example as a data-driven case). It builds on the
 single reference matcher
-[`../../tests/reference/benchmark_match.py`](../../tests/reference/benchmark_match.py)
+[`../../tests/reference/benchmark/benchmark_match.py`](../../tests/reference/benchmark/benchmark_match.py)
 and never defines a second match relation. It is not packaged and is not a
 Skill.

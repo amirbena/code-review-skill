@@ -233,8 +233,8 @@ behavior independently — exactly as
 describes for its own eventual installation.
 
 The test-only reference runner
-[`../../tests/reference/benchmark_runner.py`](../../tests/reference/benchmark_runner.py)
+[`../../tests/reference/benchmark/benchmark_runner.py`](../../tests/reference/benchmark/benchmark_runner.py)
 mirrors this document for regression coverage (executed by
-[`../../tests/unit/test_benchmark_runner.py`](../../tests/unit/test_benchmark_runner.py),
+[`../../tests/unit/benchmark/test_benchmark_runner.py`](../../tests/unit/benchmark/test_benchmark_runner.py),
 including the deliberately-dirty-source-repo safety regression). It is not
 packaged and is not a Skill.

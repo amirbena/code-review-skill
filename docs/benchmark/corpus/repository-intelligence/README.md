@@ -20,7 +20,7 @@ corpus runs without network access. Like the rest of
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../tests/reference/benchmark_fixture.py`](../../../../tests/reference/benchmark_fixture.py)
+[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle
@@ -81,9 +81,9 @@ corpus does not extend it (see
 [`../../fixture-format.md`](../../fixture-format.md) §2, "an unknown key
 anywhere is a rejection"). Those concerns are proven at the reference-model
 level instead: each case above has a matching case in
-[`../../../../tests/unit/test_repository_intelligence.py`](../../../../tests/unit/test_repository_intelligence.py)
+[`../../../../tests/unit/review/test_repository_intelligence.py`](../../../../tests/unit/review/test_repository_intelligence.py)
 that exercises
-[`../../../../tests/reference/repository_intelligence.py`](../../../../tests/reference/repository_intelligence.py)
+[`../../../../tests/reference/review/repository_intelligence.py`](../../../../tests/reference/review/repository_intelligence.py)
 directly — constructing the same resolved relationship (or unresolved
 candidate) the fixture's rationale describes, asserting its
 `influential_relationships` membership, and asserting current/stale
@@ -96,9 +96,9 @@ values).
 
 ## Validation
 
-[`../../../../tests/unit/test_repository_intelligence_corpus.py`](../../../../tests/unit/test_repository_intelligence_corpus.py)
+[`../../../../tests/unit/review/test_repository_intelligence_corpus.py`](../../../../tests/unit/review/test_repository_intelligence_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark_fixture.py`](../../../../tests/reference/benchmark_fixture.py)
+[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second
 one), and asserts: the sub-corpus stays small; per positive fixture, the
 relationship-dependent defect is absent from what a diff-only read of the

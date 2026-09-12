@@ -33,7 +33,7 @@ The classification lives in one place — the module-level constants in
 [`../scripts/release_lib/classification.py`](../scripts/release_lib/classification.py).
 Extend it by adding a path prefix or an exact file name there, with a
 matching case in
-[`../tests/unit/test_release_worthiness.py`](../tests/unit/test_release_worthiness.py).
+[`../tests/unit/release/test_path_classification.py`](../tests/unit/release/test_path_classification.py).
 
 ## Release intent
 
