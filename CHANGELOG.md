@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.23.2 — 2026-09-12
+
+### Fixed
+
+- Updated a stale test-path reference in local-code-review's repository-state policy after the tests/ reorganization (#217); no behavior change (#245).
+
 ## v1.23.1 — 2026-09-11
 
 ### Fixed
