@@ -118,7 +118,7 @@ jobs:
 
       - name: Check the packaging runtime boundary
         if: steps.classify.outputs.release_worthy == 'true'
-        run: python -m unittest tests.integration.test_packaging_runtime_boundary
+        run: python -m unittest discover -s tests/integration/packaging -t .
 
       - name: Upload Skill archives
         if: steps.classify.outputs.release_worthy == 'true'
