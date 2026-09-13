@@ -41,8 +41,9 @@ Normalized internally to the `include_severity_description` option
 
 - affirmative: *"include severity descriptions"*, *"show severity
   descriptions"*, *"show blocking/non-blocking labels"*;
-- negative: *"keep severity compact"*, *"don't include severity
-  descriptions"*, *"show only P0/P1/P2"*.
+- negative: *"keep severity compact"*, *"do not include severity
+  descriptions"*, *"don't include severity descriptions"*, *"show only
+  P0/P1/P2"*.
 
 The complete authoritative phrase set lives in
 [`shared/policies/invocation-options.md`](../../shared/policies/invocation-options.md),

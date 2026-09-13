@@ -201,8 +201,9 @@ name (`include_severity_description`, `include severity description`,
 
 - affirmative: `include severity descriptions`, `show severity
   descriptions`, `show blocking/non-blocking labels`;
-- negative: `keep severity compact`, `don't include severity
-  descriptions`, `show only p0/p1/p2`.
+- negative: `keep severity compact`, `do not include severity
+  descriptions`, `don't include severity descriptions`,
+  `show only p0/p1/p2`.
 
 This phrase set is exhaustive: it is the whole vocabulary for this
 option. Anything outside it — a bare mention of "severity", a question

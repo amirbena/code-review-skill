@@ -44,6 +44,7 @@ LOCAL_SKILL = REPO_ROOT / "skills/local-code-review/SKILL.md"
 LOCAL_POLICY_DIR = REPO_ROOT / "skills/local-code-review/policies"
 
 DOCS_FEATURE = REPO_ROOT / "docs/features/severity-description.md"
+ARCHITECTURE = REPO_ROOT / "docs/ARCHITECTURE.md"
 
 SEVERITY_LEGEND = {
     "P0": "P0 (Critical)",
@@ -88,6 +89,7 @@ class OptionDefinedInSharedInvocationOptions(unittest.TestCase):
             "show severity descriptions",
             "show blocking/non-blocking labels",
             "keep severity compact",
+            "do not include severity descriptions",
             "don't include severity descriptions",
             "show only p0/p1/p2",
         ):
@@ -314,6 +316,25 @@ class OptionalFeatureGuideExists(unittest.TestCase):
         raw = (REPO_ROOT / "docs/features/README.md").read_text(encoding="utf-8")
         self.assertIn("severity-description.md", raw)
         self.assertIn("include_severity_description", raw)
+
+
+class ArchitectureSystemMapIsUpToDate(unittest.TestCase):
+    """The concise system map in docs/ARCHITECTURE.md enumerates every
+    presentation-only invocation option by name; this new option must be
+    included in both its capability-list bullet and its per-option
+    "presentation-only" bullet in section 9, alongside its siblings."""
+
+    def test_capability_list_names_the_new_option(self) -> None:
+        raw = ARCHITECTURE.read_text(encoding="utf-8")
+        self.assertIn("`include_severity_description`", raw)
+
+    def test_reasoning_vs_delivery_section_has_its_own_bullet(self) -> None:
+        t = _norm(ARCHITECTURE)
+        self.assertIn(
+            "the severity-legend parenthetical is presentation-only".lower(),
+            t.lower(),
+        )
+        self.assertIn("include_severity_description", t)
 
 
 if __name__ == "__main__":

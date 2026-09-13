@@ -70,6 +70,7 @@ OPTION_EXTRA_NEGATIVE: dict[str, tuple[str, ...]] = {
     ),
     "include_severity_description": (
         "keep severity compact",
+        "do not include severity descriptions",
         "don't include severity descriptions",
         "show only p0/p1/p2",
     ),

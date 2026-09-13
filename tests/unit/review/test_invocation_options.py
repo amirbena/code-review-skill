@@ -358,6 +358,7 @@ class SeverityDescriptionOptionTests(unittest.TestCase):
         on = {**GITHUB_DEFAULTS, "include_severity_description": True}
         for text in (
             "keep severity compact",
+            "do not include severity descriptions",
             "don't include severity descriptions",
             "show only p0/p1/p2",
             "include_severity_description=false",
