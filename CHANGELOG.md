@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.33.0 — 2026-09-13
+
+### Changed
+
+- Generalized the Database/Migration deepening review (#281).
+
 ## v1.32.0 — 2026-09-13
 
 ### Added
