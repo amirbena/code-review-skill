@@ -9,7 +9,7 @@ design record's five outcomes; introduced-vs-pre-existing attribution does
 not let an uncorroborated note excuse a defect the change introduced; the
 finding-provenance shape carries no severity and renders nothing when empty.
 Includes an induced-regression / mutation check in the style of
-tests/unit/review/test_finding_identity_regression.py.
+tests/unit/review/findings/test_finding_identity_regression.py.
 """
 
 from __future__ import annotations

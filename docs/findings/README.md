@@ -39,13 +39,13 @@ issue.
 
 The identity regression suite required by
 [#61](https://github.com/amirbena/code-review-skill/issues/61) lives in
-[`../../tests/unit/review/test_finding_identity_regression.py`](../../tests/unit/review/test_finding_identity_regression.py)
+[`../../tests/unit/review/findings/test_finding_identity_regression.py`](../../tests/unit/review/findings/test_finding_identity_regression.py)
 and exercises the reference model in
 [`../../tests/reference/review/finding_identity.py`](../../tests/reference/review/finding_identity.py).
 
 The stateful re-review regression fixtures required by
 [#66](https://github.com/amirbena/code-review-skill/issues/66) live in
-[`../../tests/unit/review/test_rereview_regression_fixtures.py`](../../tests/unit/review/test_rereview_regression_fixtures.py):
+[`../../tests/unit/review/stateful_review/test_rereview_regression_fixtures.py`](../../tests/unit/review/stateful_review/test_rereview_regression_fixtures.py):
 paired before/after review histories that assert re-review mode, change
 class, lifecycle event/state (inheriting
 [`finding-lifecycle-contract.md`](finding-lifecycle-contract.md) §9's

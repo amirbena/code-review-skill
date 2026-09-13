@@ -81,7 +81,7 @@ corpus does not extend it (see
 [`../../fixture-format.md`](../../fixture-format.md) §2, "an unknown key
 anywhere is a rejection"). Those concerns are proven at the reference-model
 level instead: each case above has a matching case in
-[`../../../../tests/unit/review/test_repository_intelligence.py`](../../../../tests/unit/review/test_repository_intelligence.py)
+[`../../../../tests/unit/review/repository_intelligence/test_repository_intelligence.py`](../../../../tests/unit/review/repository_intelligence/test_repository_intelligence.py)
 that exercises
 [`../../../../tests/reference/review/repository_intelligence.py`](../../../../tests/reference/review/repository_intelligence.py)
 directly — constructing the same resolved relationship (or unresolved
@@ -96,7 +96,7 @@ values).
 
 ## Validation
 
-[`../../../../tests/unit/review/test_repository_intelligence_corpus.py`](../../../../tests/unit/review/test_repository_intelligence_corpus.py)
+[`../../../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py`](../../../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py)
 loads every `*.yaml` here through the same single reference validator
 [`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second
