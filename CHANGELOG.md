@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.26.0 — 2026-09-13
+
+### Added
+
+- Add an API/contract compatibility review capability to the shared review-scope policy, classifying changed OpenAPI/JSON Schema/protobuf/event/configuration contracts as compatible, breaking, or context-dependent (#175) (#251).
+
 ## v1.25.0 — 2026-09-13
 
 ### Added
