@@ -1,0 +1,61 @@
+# Distributed-systems-deepening corpus case (Issue #272, parent #84,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors distributed-systems-deepening.md's "Misleading superficial
+# signal" worked example: a file named queue_consumer.py changes only a
+# log message's argument style, with no change to message handling,
+# retry behavior, or shared state. The message-queue-adjacent filename
+# alone must not trigger the deepening capability — a suppressed false
+# positive.
+
+format: benchmark-case/v1
+
+id: distributed-systems-deepening-filename-signal-suppressed-clean
+title: "queue_consumer.py reformats log message argument style; the filename alone must not trigger deepening"
+
+input:
+  patch: |
+    diff --git a/worker/queue_consumer.py b/worker/queue_consumer.py
+    index 1111111..2222222 100644
+    --- a/worker/queue_consumer.py
+    +++ b/worker/queue_consumer.py
+    @@ -5,6 +5,6 @@
+
+     def handle_message(message):
+         if message["status"] == "ok":
+    -        logger.info("processed message id=%s" % message["id"])
+    +        logger.info("processed message id=%s", message["id"])
+         else:
+    -        logger.info("failed message id=%s" % message["id"])
+    +        logger.info("failed message id=%s", message["id"])
+  base:
+    worker/queue_consumer.py: |
+      import logging
+
+      logger = logging.getLogger(__name__)
+
+
+      def handle_message(message):
+          if message["status"] == "ok":
+              logger.info("processed message id=%s" % message["id"])
+          else:
+              logger.info("failed message id=%s" % message["id"])
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    Pins distributed-systems-deepening.md's "Misleading superficial
+    signal" worked example: the file's name and location (worker/) would
+    keyword-match a naive "message handler" trigger, but the diff only
+    changes logger.info's string-formatting style — no message handling,
+    retry, ordering, or shared-state behavior changes. Per
+    specialist-depth.md, a filename is a signal and never independently
+    sufficient, so this must resolve clean with no finding rather than
+    the capability engaging on naming alone.

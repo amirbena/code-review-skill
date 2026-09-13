@@ -1,0 +1,114 @@
+# Distributed-systems-deepening corpus case (Issue #272, parent #84,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors distributed-systems-deepening.md's "Engages — concurrent
+# interleaving" worked example: an inventory count is read, compared
+# against a requested quantity, and decremented in a separate write, with
+# evidence (the threaded Flask server) that more than one request handler
+# can reach the same shared dict concurrently and no lock/transaction
+# protects the read-decide-write sequence.
+
+format: benchmark-case/v1
+
+id: distributed-systems-deepening-concurrent-interleaving-inventory-race
+title: "reserve_item reads, decides, and writes _inventory with no lock while the server runs threaded"
+
+input:
+  patch: |
+    diff --git a/app/inventory.py b/app/inventory.py
+    index 1111111..2222222 100644
+    --- a/app/inventory.py
+    +++ b/app/inventory.py
+    @@ -5,6 +5,10 @@
+     _inventory = {"widget": 5}
+
+
+    +class OutOfStock(Exception):
+    +    pass
+    +
+    +
+     def get_count(sku):
+         return _inventory.get(sku, 0)
+
+    @@ -14,5 +18,15 @@
+         return jsonify({"sku": sku, "count": get_count(sku)})
+
+
+    +@app.route("/inventory/<sku>/reserve", methods=["POST"])
+    +def reserve_item(sku):
+    +    quantity = int(request.json["quantity"])
+    +    count = get_count(sku)
+    +    if count < quantity:
+    +        raise OutOfStock(sku)
+    +    _inventory[sku] = count - quantity
+    +    return jsonify({"sku": sku, "remaining": _inventory[sku]})
+    +
+    +
+     if __name__ == "__main__":
+         app.run(threaded=True)
+  base:
+    app/inventory.py: |
+      from flask import Flask, jsonify, request
+
+      app = Flask(__name__)
+
+      _inventory = {"widget": 5}
+
+
+      def get_count(sku):
+          return _inventory.get(sku, 0)
+
+
+      @app.route("/inventory/<sku>", methods=["GET"])
+      def inventory_status(sku):
+          return jsonify({"sku": sku, "count": get_count(sku)})
+
+
+      if __name__ == "__main__":
+          app.run(threaded=True)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: reserve-item-toctou-race
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/inventory.py
+        symbol: reserve_item
+        anchor: '_inventory[sku] = count - quantity'
+      claim: >-
+        reserve_item reads _inventory via get_count, decides against the
+        requested quantity, and writes the decremented value back in a
+        separate statement, with no lock or atomic operation guarding the
+        sequence. The server runs with app.run(threaded=True), so more
+        than one request thread can call reserve_item for the same sku
+        concurrently; two threads can both read the same count before
+        either writes, both pass the quantity check, and both decrement
+        from the same stale value, allowing the shared _inventory dict to
+        go negative or oversell stock that was never actually available.
+      defect_kind: concurrent-read-decide-write-race
+    - key: missing-concurrency-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/inventory.py
+      claim: >-
+        No test exercises reserve_item under concurrent requests for the
+        same sku, so the race would not be caught by the existing suite.
+      defect_kind: missing-concurrency-test
+
+metadata:
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    Pins distributed-systems-deepening.md's canonical "concurrent
+    interleaving" worked example: base reasoning identifies the
+    shared-state read-decide-write pattern, and the deepening capability
+    must trace that the threaded server allows more than one handler to
+    reach _inventory concurrently with no lock protecting the sequence,
+    the actual TOCTOU defect rather than a hypothetical one.

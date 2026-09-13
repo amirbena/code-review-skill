@@ -1,0 +1,91 @@
+# Distributed-systems-deepening corpus case (Issue #272, parent #84,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors distributed-systems-deepening.md's "Retry interaction" concern
+# area: a queue consumer is registered with an explicit at-least-once
+# delivery guarantee and dispatches straight into capture_payment, which
+# has no idempotency key or dedup guard on its side-effecting charge
+# call. A redelivered message therefore double-charges the customer.
+
+format: benchmark-case/v1
+
+id: distributed-systems-deepening-retry-interaction-missing-idempotency
+title: "at-least-once queue consumer calls capture_payment with no idempotency guard on the charge"
+
+input:
+  patch: |
+    diff --git a/app/payments.py b/app/payments.py
+    index 1111111..2222222 100644
+    --- a/app/payments.py
+    +++ b/app/payments.py
+    @@ -1,8 +1,14 @@
+     import ledger
+     import payment_gateway
+    +import queue_client
+
+
+     def capture_payment(payment_id, amount):
+         charge_id = payment_gateway.charge(payment_id, amount)
+         ledger.record_charge(payment_id, charge_id, amount)
+         return charge_id
+    +
+    +
+    +@queue_client.consumer("payment-capture-queue", delivery="at-least-once")
+    +def handle_capture_message(message):
+    +    capture_payment(message["payment_id"], message["amount"])
+  base:
+    app/payments.py: |
+      import ledger
+      import payment_gateway
+
+
+      def capture_payment(payment_id, amount):
+          charge_id = payment_gateway.charge(payment_id, amount)
+          ledger.record_charge(payment_id, charge_id, amount)
+          return charge_id
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: capture-payment-redelivery-double-charge
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/payments.py
+        symbol: handle_capture_message
+        anchor: 'capture_payment(message["payment_id"], message["amount"])'
+      claim: >-
+        handle_capture_message is registered on a queue consumer with an
+        explicit delivery="at-least-once" guarantee, and forwards every
+        message straight into capture_payment, which unconditionally
+        calls payment_gateway.charge with no idempotency key, dedup
+        check, or record of payment IDs already processed. When the
+        queue redelivers a message — the guarantee it explicitly
+        states — the same payment_id is charged a second time with no
+        guard anywhere in the call path preventing it.
+      defect_kind: retry-redelivery-missing-idempotency-guard
+    - key: missing-idempotency-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/payments.py
+      claim: >-
+        No test covers redelivering the same message twice through
+        handle_capture_message to confirm the customer is only charged
+        once.
+      defect_kind: missing-concurrency-test
+
+metadata:
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    Pins distributed-systems-deepening.md's "Retry interaction" concern
+    area: the queue consumer's own decorator states the at-least-once
+    guarantee explicitly (concrete evidence, not an assumption), and the
+    deepening capability must trace that capture_payment's side-effecting
+    charge call has nothing guarding it against a redelivered message —
+    the actual double-charge defect, not merely "a retry exists."

@@ -1,0 +1,104 @@
+# Distributed-systems-deepening corpus case (Issue #272, parent #84,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors distributed-systems-deepening.md's "Ownership/coordination
+# assumptions" concern area: run_daily_job's existing is_leader() check
+# establishes a single-writer (leader-only) assumption that other code
+# relies on for the shared "last_run" state. The new force_run_job method
+# writes the same shared state without checking is_leader(), so on a
+# multi-node deployment (evidenced by node_id / leader-election in the
+# base pre-image) more than one node can now write "last_run"
+# concurrently, contradicting the coordination assumption the rest of
+# the class depends on.
+
+format: benchmark-case/v1
+
+id: distributed-systems-deepening-ownership-assumption-violated
+title: "force_run_job writes shared last_run state without the leader check every other writer relies on"
+
+input:
+  patch: |
+    diff --git a/scheduler/jobs.py b/scheduler/jobs.py
+    index 1111111..2222222 100644
+    --- a/scheduler/jobs.py
+    +++ b/scheduler/jobs.py
+    @@ -15,6 +15,10 @@
+             _do_work()
+             self.store.set("last_run", time.time())
+
+    +    def force_run_job(self):
+    +        _do_work()
+    +        self.store.set("last_run", time.time())
+
+    +
+     def _do_work():
+         pass
+  base:
+    scheduler/jobs.py: |
+      import time
+
+
+      class JobScheduler:
+          def __init__(self, store, node_id):
+              self.store = store
+              self.node_id = node_id
+
+          def is_leader(self):
+              return self.store.get("leader_id") == self.node_id
+
+          def run_daily_job(self):
+              if not self.is_leader():
+                  return
+              _do_work()
+              self.store.set("last_run", time.time())
+
+
+      def _do_work():
+          pass
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: force-run-job-bypasses-leader-ownership
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: scheduler/jobs.py
+        symbol: force_run_job
+        anchor: 'self.store.set("last_run", time.time())'
+      claim: >-
+        JobScheduler is instantiated per node with its own node_id, and
+        run_daily_job's is_leader() check establishes that only the
+        elected leader is meant to write the shared "last_run" state in
+        self.store. force_run_job writes that same shared state directly,
+        with no is_leader() check, so any non-leader node in the
+        multi-node deployment can now call it concurrently with the
+        leader's own run_daily_job, contradicting the single-writer
+        coordination assumption the rest of the class depends on and
+        allowing "last_run" to be raced/overwritten by more than one
+        node.
+      defect_kind: coordination-assumption-violated-multi-writer
+    - key: missing-coordination-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: scheduler/jobs.py
+      claim: >-
+        No test covers force_run_job being invoked from a non-leader node
+        concurrently with the leader's own run_daily_job.
+      defect_kind: missing-concurrency-test
+
+metadata:
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    Pins distributed-systems-deepening.md's "Ownership/coordination
+    assumptions" concern area: the base pre-image already establishes a
+    single-writer-by-leader-election assumption other code relies on, and
+    the deepening capability must trace that the new method bypasses the
+    same check, giving concrete evidence of multiple concurrent owners
+    rather than a hypothetical one.
