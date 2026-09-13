@@ -26,7 +26,7 @@ The only logic in this module is ``_evaluate`` — a direct transcription of
 that policy section's trigger list, ladder, and stop conditions, cited
 inline. It is deliberately **not** a reusable reference model: there is no
 ``tests/reference`` module and no second definition of the review rule (see
-`tests/policy/review/test_review_scope_behavioral_heuristics.py`,
+`tests/policy/review/test_review_scope_core_wiring.py`,
 `NoSecondSourceOfTruthTests`). Two runs of the same corpus, exactly as the
 #61 / #66 regression suites:
 

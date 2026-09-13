@@ -19,7 +19,7 @@ validated by
 through the single reference validator
 [`../../tests/reference/benchmark/benchmark_fixture.py`](../../tests/reference/benchmark/benchmark_fixture.py).
 The prose-contract coverage for the packaged section itself is
-[`../../tests/policy/review/test_review_scope_behavioral_heuristics.py`](../../tests/policy/review/test_review_scope_behavioral_heuristics.py).
+[`../../tests/policy/review/test_api_contract_compatibility.py`](../../tests/policy/review/test_api_contract_compatibility.py).
 
 ## 1. Problem and goal
 

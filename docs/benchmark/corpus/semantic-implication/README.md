@@ -58,7 +58,7 @@ mechanical reference model or benchmark corpus of its own. There is no
 closed-form function from a diff's shape to "which dimensions are
 implicated," so this corpus is validated only by prose-contract tests
 against the policy text (see
-[`../../../../tests/policy/review/test_review_scope_behavioral_heuristics.py`](../../../../tests/policy/review/test_review_scope_behavioral_heuristics.py))
+[`../../../../tests/policy/review/test_semantic_implication_and_null_absence.py`](../../../../tests/policy/review/test_semantic_implication_and_null_absence.py))
 and by the structural fixture checks below — never by a second,
 hand-maintained implementation of the dimension taxonomy.
 
