@@ -1,0 +1,103 @@
+# Database-migration-deepening corpus case (Issue #279, extending #186,
+# parent #179, grandparent #82). Format: ../../fixture-format.md. See
+# ./README.md for the cluster.
+#
+# Mirrors database-migration-deepening.md's generalized "Engages --
+# MongoDB document-shape evolution" worked example, the document-store
+# counterpart to the existing relational "old/new application
+# coexistence" (column-rename) fixture: a field is renamed in the
+# `customers` collection's document shape, application code reads and
+# writes only the new field name, and no document-migration script or
+# dual-read fallback exists for documents still holding the old field
+# name -- written either before this deploy or by a still-running
+# previous application version during a rolling deploy.
+
+format: benchmark-case/v1
+
+id: database-migration-deepening-mongodb-document-shape-rename
+title: "get_shipping_address reads only shippingAddress after renaming customers.mailingAddress with no coexistence handling for the old field"
+
+input:
+  patch: |
+    diff --git a/app/customers/repository.py b/app/customers/repository.py
+    index 1111111..2222222 100644
+    --- a/app/customers/repository.py
+    +++ b/app/customers/repository.py
+    @@ -7,8 +7,9 @@ customers = db["customers"]
+     def get_shipping_address(customer_id):
+         """customers collection, ~3M documents, written by checkout and
+    -    the account-settings UI."""
+    +    the account-settings UI. mailingAddress was renamed to
+    +    shippingAddress in this change."""
+         doc = customers.find_one({"_id": customer_id})
+    -    return doc.get("mailingAddress")
+    +    return doc.get("shippingAddress")
+
+     def set_shipping_address(customer_id, address):
+    -    customers.update_one({"_id": customer_id}, {"$set": {"mailingAddress": address}})
+    +    customers.update_one({"_id": customer_id}, {"$set": {"shippingAddress": address}})
+  base:
+    app/customers/repository.py: |
+      from pymongo import MongoClient
+
+      db = MongoClient()["shop"]
+      customers = db["customers"]
+
+
+      def get_shipping_address(customer_id):
+          """customers collection, ~3M documents, written by checkout and
+          the account-settings UI."""
+          doc = customers.find_one({"_id": customer_id})
+          return doc.get("mailingAddress")
+
+      def set_shipping_address(customer_id, address):
+          customers.update_one({"_id": customer_id}, {"$set": {"mailingAddress": address}})
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: shipping-address-rename-no-old-field-coexistence
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/customers/repository.py
+        symbol: get_shipping_address
+        anchor: 'return doc.get("shippingAddress")'
+      claim: >-
+        get_shipping_address and set_shipping_address are switched to read
+        and write only the renamed shippingAddress field, on a collection
+        the function's own docstring documents as holding ~3M existing
+        documents written by checkout and the account-settings UI. No
+        document-migration script renames mailingAddress to
+        shippingAddress on existing documents, and no fallback reads the
+        old field name. Every existing document, and any document written
+        under mailingAddress by a still-running previous application
+        version during a rolling deploy, will resolve to a missing
+        shipping address after this change ships.
+      defect_kind: mongodb-document-rename-missing-coexistence
+    - key: missing-document-rename-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/customers/repository.py
+      claim: >-
+        No test seeds a customer document with the legacy mailingAddress
+        field and asserts get_shipping_address still resolves it.
+      defect_kind: missing-migration-test
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins database-migration-deepening.md's generalized "Engages --
+    MongoDB document-shape evolution" worked example, the document-store
+    counterpart to the corpus's existing relational column-rename
+    fixture: base reasoning identifies the stored-representation rename,
+    and the deepening capability must trace that neither existing
+    documents nor a still-running previous application version's writes
+    under the old field name are handled -- the actual missing
+    expand/contract staging rather than a hypothetical one -- part of
+    Issue #279's non-relational corpus extension.

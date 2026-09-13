@@ -183,13 +183,13 @@ class FailSafeTests(unittest.TestCase):
         self.text = _norm(POLICY)
 
     def test_unrecognized_tooling_section_present(self) -> None:
-        self.assertIn("Unrecognized tooling or dialect", self.text)
+        self.assertIn("Unrecognized tooling or storage technology", self.text)
 
     def test_no_speculation_language(self) -> None:
         self.assertIn(
             "this capability does not speculate about that tool's or "
-            "dialect's specific locking, online-DDL, or transactional "
-            "guarantees",
+            "storage system's specific locking, online-DDL, "
+            "transactional, or consistency guarantees",
             self.text,
         )
 
@@ -270,7 +270,9 @@ class NonGoalsTests(unittest.TestCase):
 
     def test_not_a_generic_orm_linter(self) -> None:
         self.assertIn(
-            "Not a generic ORM/query style linter", self.text
+            "Not a generic ORM/ODM/query style linter, for any storage "
+            "model",
+            self.text,
         )
 
     def test_does_not_redefine_composition_or_remediation_scope(self) -> None:

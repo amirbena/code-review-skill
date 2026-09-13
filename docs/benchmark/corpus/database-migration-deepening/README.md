@@ -15,6 +15,13 @@ capability itself is designed and packaged in
 [`../../../../shared/policies/database-migration-deepening.md`](../../../../shared/policies/database-migration-deepening.md),
 which this corpus's expectations must stay consistent with.
 
+GitHub Issue [#279](https://github.com/amirbena/code-review-skill/issues/279)
+extended this corpus with representative non-relational fixtures after
+generalizing the capability's own wording to be storage-model agnostic
+(see the capability doc's "Concern areas" and "Worked examples"); the six
+original relational fixtures are unchanged in substance and remain the
+corpus's relational instantiation, not its default.
+
 Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of [`../`](../README.md)
@@ -23,14 +30,16 @@ Skill archive and no packaged Skill resource depends on it — it is
 consumed only by this repository's own test suite, through the single
 reference validator
 [`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
-(never a second one). Every case is expressed as a Django migration
-(`django.db.migrations`), the migration framework used consistently
-across every fixture in this sub-corpus.
+(never a second one). The original six cases are each expressed as a
+Django migration (`django.db.migrations`); the three cases #279 added
+are expressed against DynamoDB (`boto3`) and MongoDB (`pymongo`) instead,
+matching the storage model each case's own worked example pins.
 
 ## Selection principle
 
-**One case per outcome shape** #186's scope requires, each isolating that
-shape so a regression in any one is unambiguous. The six cases mirror
+**One case per outcome shape** #186's (and #279's) scope requires, each
+isolating that shape so a regression in any one is unambiguous. The nine
+cases mirror
 [`database-migration-deepening.md`](../../../../shared/policies/database-migration-deepening.md)'s
 own worked examples, concern areas, and Activation section, and split
 between "the capability engages and finds a real defect" and "the
@@ -64,8 +73,29 @@ capability correctly stays quiet":
   documentation, with the schema operation itself byte-for-byte
   unchanged; file location alone does not activate the capability.
   `clean`.
+- **DynamoDB GSI/access-pattern evolution (#279)** — a new Global
+  Secondary Index is added to support a new access pattern, the handler
+  serving that pattern queries only the new index, and no backfill step
+  or dual-read fallback exists for items written before the index was
+  added, so they silently never appear in the new access pattern.
+  Mirrors the capability doc's "Engages — DynamoDB GSI/access-pattern
+  evolution" worked example. Flagged.
+- **MongoDB document-shape evolution (#279)** — a field is renamed in a
+  document collection, application code reads and writes only the new
+  field name, and no document-migration script or dual-read fallback
+  exists for documents still holding the old field name. Mirrors the
+  capability doc's "Engages — MongoDB document-shape evolution" worked
+  example, the document-store counterpart to the existing relational
+  column-rename fixture. Flagged.
+- **DynamoDB conditional-write fix, no data-model evolution (#279)** — a
+  missing `ConditionExpression` optimistic-lock check is added to an
+  existing update; no attribute, index, or item shape is added, removed,
+  or changed, and no backfill or coexistence question is raised. Mirrors
+  the capability doc's "Does not engage — ordinary NoSQL correctness, no
+  data-model evolution" worked example: the required NoSQL negative case
+  proving DynamoDB involvement alone is not activation evidence. `clean`.
 
-The three `clean` cases are deliberately distinct from each other, the
+The three original `clean` cases are deliberately distinct from each other, the
 same discipline the precedent Security and Distributed Systems deepening
 corpora use for their own three "stays quiet" reasons: the
 comment-only-edit case fails Activation condition 1 (no schema-evolution
@@ -76,11 +106,17 @@ base reasoning already suffices), and the expand/contract case satisfies
 both conditions and the capability *does* trace it, but confirms the
 sequencing and backfill are already safe — so a regression in any one of
 the three distinct "stay quiet" reasons is caught even if the other two
-stayed correct.
+stayed correct. The DynamoDB negative case #279 added follows the same
+discipline against a fourth storage model: it fails Activation condition
+2 for a distinct reason again — the domain is implicated (a stored item
+is updated) but the evidence shows only an ordinary correctness fix with
+no data-model evolution signal at all.
 
-Each case is a crafted, self-contained Django-migration patch
-(`input.patch` + `input.base`), keeping the corpus runnable without
-network access and consistent with the other corpora under
+Each of the six original cases is a crafted, self-contained
+Django-migration patch (`input.patch` + `input.base`); the three #279
+added are crafted, self-contained DynamoDB (`boto3`) or MongoDB
+(`pymongo`) patches in the same shape — keeping the corpus runnable
+without network access and consistent with the other corpora under
 [`../`](../README.md). Per Issue #186's non-goals, this corpus contains
 no cross-domain composition fixture (that is
 [#85](https://github.com/amirbena/code-review-skill/issues/85)'s job,
@@ -96,6 +132,9 @@ reusing this corpus) and adds no new severity/evidence semantics.
 | [`database-migration-deepening-expand-contract-safe-clean.yaml`](database-migration-deepening-expand-contract-safe-clean.yaml) | expand/contract sequenced and backfilled safely | report **nothing required** — the capability traces the sequencing and backfill and confirms both hold (an optional note on backfill-interruption test coverage is also acceptable) | `clean` |
 | [`database-migration-deepening-additive-nullable-column-clean.yaml`](database-migration-deepening-additive-nullable-column-clean.yaml) | additive nullable column, no deeper tracing warranted | report **nothing** — base reasoning already suffices | `clean` |
 | [`database-migration-deepening-comment-only-edit-not-implicated-clean.yaml`](database-migration-deepening-comment-only-edit-not-implicated-clean.yaml) | migration file touched with no schema-evolution content | report **nothing** — the domain is not materially implicated | `clean` |
+| [`database-migration-deepening-dynamodb-gsi-backfill-missing.yaml`](database-migration-deepening-dynamodb-gsi-backfill-missing.yaml) | DynamoDB GSI added with no backfill for pre-existing items | report one **P1**: `list_orders_by_status` queries the new `status-index` GSI, which is sparse on the newly introduced `status` attribute — pre-existing orders that never had `status` set are excluded regardless of DynamoDB's automatic index backfill — and no step populates `status` on them and no fallback exists (an optional missing-migration-test note is also acceptable) | `changes-required` |
+| [`database-migration-deepening-mongodb-document-shape-rename.yaml`](database-migration-deepening-mongodb-document-shape-rename.yaml) | MongoDB document field renamed with no coexistence handling | report one **P1**: `get_shipping_address`/`set_shipping_address` read and write only the renamed `shippingAddress` field, with no document-migration script or fallback for existing documents or a still-running previous application version still using `mailingAddress` (an optional missing-migration-test note is also acceptable) | `changes-required` |
+| [`database-migration-deepening-dynamodb-conditional-write-no-data-model-change-clean.yaml`](database-migration-deepening-dynamodb-conditional-write-no-data-model-change-clean.yaml) | DynamoDB conditional-write correctness fix, no data-model evolution | report **nothing** — an ordinary optimistic-lock fix with no attribute/index/shape change; DynamoDB involvement alone is not activation evidence | `clean` |
 
 Per-case provenance and a one- or two-sentence rationale also live in
 each fixture's `metadata` block (`source`, `tags`, `rationale`) and in

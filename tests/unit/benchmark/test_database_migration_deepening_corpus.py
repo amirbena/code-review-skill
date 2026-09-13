@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """Contract coverage for the Database / Migration deepening benchmark
-sub-corpus (Issue #186, parent #179, grandparent #82).
+sub-corpus (Issue #186, extended by Issue #279, parent #179, grandparent
+#82).
 
 The sub-corpus is
 ``docs/benchmark/corpus/database-migration-deepening/*.yaml``: a small,
 focused set of ``benchmark-case/v1`` fixtures pinning representative
 Database / Migration deepening outcomes as follow-up quality hardening for
 the capability #179 already defines — it validates domain correctness
-after the capability exists and never redesigns it.
+after the capability exists and never redesigns it. Issue #279 extended
+the original six relational (Django) fixtures with three storage-model-
+agnostic fixtures (DynamoDB and MongoDB) pinning the capability's
+generalized, non-relational worked examples; the relational fixtures are
+unchanged in substance.
 
 Like ``test_distributed_systems_deepening_corpus.py`` and
 ``test_security_deepening_corpus.py``, every fixture decodes and validates
@@ -29,7 +34,7 @@ CORPUS_DIR = (
     REPO_ROOT / "docs" / "benchmark" / "corpus" / "database-migration-deepening"
 )
 
-MIN_CASES = 6
+MIN_CASES = 9
 MAX_CASES = 10
 
 DESTRUCTIVE_DROP_COLUMN = "database-migration-deepening-destructive-drop-column"
@@ -42,6 +47,17 @@ ADDITIVE_NULLABLE_CLEAN = "database-migration-deepening-additive-nullable-column
 COMMENT_ONLY_NOT_IMPLICATED_CLEAN = (
     "database-migration-deepening-comment-only-edit-not-implicated-clean"
 )
+# Non-relational fixtures added by Issue #279's storage-model-agnostic
+# generalization of the capability.
+DYNAMODB_GSI_BACKFILL_MISSING = (
+    "database-migration-deepening-dynamodb-gsi-backfill-missing"
+)
+MONGODB_DOCUMENT_SHAPE_RENAME = (
+    "database-migration-deepening-mongodb-document-shape-rename"
+)
+DYNAMODB_CONDITIONAL_WRITE_CLEAN = (
+    "database-migration-deepening-dynamodb-conditional-write-no-data-model-change-clean"
+)
 
 REQUIRED_CASE_IDS = {
     DESTRUCTIVE_DROP_COLUMN,
@@ -50,17 +66,30 @@ REQUIRED_CASE_IDS = {
     EXPAND_CONTRACT_SAFE_CLEAN,
     ADDITIVE_NULLABLE_CLEAN,
     COMMENT_ONLY_NOT_IMPLICATED_CLEAN,
+    DYNAMODB_GSI_BACKFILL_MISSING,
+    MONGODB_DOCUMENT_SHAPE_RENAME,
+    DYNAMODB_CONDITIONAL_WRITE_CLEAN,
 }
 
 FLAGGED_CASE_IDS = {
     DESTRUCTIVE_DROP_COLUMN,
     UNSAFE_BLOCKING_LOCK,
     NULLABLE_TO_NON_NULL_NO_BACKFILL,
+    DYNAMODB_GSI_BACKFILL_MISSING,
+    MONGODB_DOCUMENT_SHAPE_RENAME,
 }
 CLEAN_CASE_IDS = {
     EXPAND_CONTRACT_SAFE_CLEAN,
     ADDITIVE_NULLABLE_CLEAN,
     COMMENT_ONLY_NOT_IMPLICATED_CLEAN,
+    DYNAMODB_CONDITIONAL_WRITE_CLEAN,
+}
+# Clean cases that carry no finding of any kind (as opposed to
+# EXPAND_CONTRACT_SAFE_CLEAN, which carries one optional test note).
+STRICTLY_CLEAN_CASE_IDS = {
+    ADDITIVE_NULLABLE_CLEAN,
+    COMMENT_ONLY_NOT_IMPLICATED_CLEAN,
+    DYNAMODB_CONDITIONAL_WRITE_CLEAN,
 }
 
 
@@ -166,11 +195,12 @@ class SubCorpusCoverageTests(unittest.TestCase):
                 self.assertEqual(case.decision, "clean")
 
     def test_strictly_clean_cases_have_no_findings_at_all(self) -> None:
-        # Unlike the expand/contract case, these two carry no finding of
-        # any kind -- the domain isn't implicated / a superficial filename
-        # signal alone doesn't trigger engagement, so there is nothing to
-        # observe at all.
-        for case_id in {ADDITIVE_NULLABLE_CLEAN, COMMENT_ONLY_NOT_IMPLICATED_CLEAN}:
+        # Unlike the expand/contract case, these carry no finding of any
+        # kind -- the domain isn't implicated, a superficial filename
+        # signal alone doesn't trigger engagement, or (the DynamoDB case)
+        # the domain is implicated but no data-model evolution signal
+        # exists -- so there is nothing to observe at all.
+        for case_id in STRICTLY_CLEAN_CASE_IDS:
             with self.subTest(case=case_id):
                 case = self.by_id[case_id]
                 self.assertEqual(list(case.findings), [])
@@ -216,6 +246,8 @@ class SubCorpusCoverageTests(unittest.TestCase):
                 "destructive-migration-still-referenced-column",
                 "blocking-lock-large-table-online-migration",
                 "nullable-to-non-null-missing-backfill",
+                "dynamodb-gsi-missing-backfill",
+                "mongodb-document-rename-missing-coexistence",
             },
         )
 
