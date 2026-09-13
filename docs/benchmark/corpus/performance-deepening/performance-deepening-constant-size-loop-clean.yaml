@@ -1,0 +1,58 @@
+# Performance-deepening corpus case (Issue #187, parent #180, grandparent
+# #82). Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# Mirrors performance-deepening.md's own "Does not engage -- bounded base
+# reasoning already suffices" worked example almost verbatim: a call is
+# added inside a loop, but the loop iterates a fixed, small,
+# compile-time-bounded list, so base reasoning confirms the bound within
+# its own pass and Activation condition 2 is never satisfied.
+
+format: benchmark-case/v1
+
+id: performance-deepening-constant-size-loop-clean
+title: "build_locale_menu adds one call per entry over a fixed four-element locale list"
+
+input:
+  patch: |
+    diff --git a/app/locale/menu.py b/app/locale/menu.py
+    index c64dfee..a65f08f 100644
+    --- a/app/locale/menu.py
+    +++ b/app/locale/menu.py
+    @@ -6,4 +6,7 @@ SUPPORTED_LOCALES = ["en", "fr", "de", "es"]
+
+
+     def build_locale_menu():
+    -    return [{"code": loc} for loc in SUPPORTED_LOCALES]
+    +    return [
+    +        {"code": loc, "label": locale_client.get_label(loc)}
+    +        for loc in SUPPORTED_LOCALES
+    +    ]
+  base:
+    app/locale/menu.py: |
+      from . import locale_client
+
+      # Fixed, compile-time-bounded set of locales this deployment ships UI
+      # translations for; adding a new locale requires a code change here.
+      SUPPORTED_LOCALES = ["en", "fr", "de", "es"]
+
+
+      def build_locale_menu():
+          return [{"code": loc} for loc in SUPPORTED_LOCALES]
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness, performance]
+  rationale: >-
+    Pins performance-deepening.md's own "Does not engage -- bounded base
+    reasoning already suffices" worked example: locale_client.get_label is
+    now called once per entry of SUPPORTED_LOCALES, but that list is a
+    fixed, compile-time-bounded four-element constant documented in its own
+    comment -- base reasoning confirms the bound is fixed and small within
+    its own bounded investigation, so no further tracing is warranted and
+    this capability does not engage, distinct from the N+1 case where the
+    loop's bound is evidence-shown to be unbounded.

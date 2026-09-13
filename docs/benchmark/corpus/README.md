@@ -126,6 +126,13 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   [#179](https://github.com/amirbena/code-review-skill/issues/179)). Same
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/benchmark/test_database_migration_deepening_corpus.py`](../../../tests/unit/benchmark/test_database_migration_deepening_corpus.py)).
+- [`performance-deepening/`](performance-deepening/README.md) — a focused
+  `benchmark-case/v1` sub-corpus pinning representative outcomes for the
+  Performance deepening specialist-depth capability (Issue
+  [#187](https://github.com/amirbena/code-review-skill/issues/187), parent
+  [#180](https://github.com/amirbena/code-review-skill/issues/180)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/benchmark/test_performance_deepening_corpus.py`](../../../tests/unit/benchmark/test_performance_deepening_corpus.py)).
 
 ## Validation
 

@@ -1,0 +1,75 @@
+# Performance-deepening corpus case (Issue #187, parent #180, grandparent
+# #82). Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# The "same logic with a bounded/batched fix" negative counterpart to the
+# N+1 case: a per-item remote call inside a loop is replaced by a single
+# batched call, on the same unbounded-cardinality shape. The Performance /
+# scale dimension is implicated and this capability traces the call path,
+# but the batching is genuinely correct, so no finding results -- the
+# domain is engaged and confirmed safe, not merely uninvolved.
+
+format: benchmark-case/v1
+
+id: performance-deepening-batched-fix-bounded-clean
+title: "get_invoice_totals replaces a per-invoice ledger call with a single batched lookup"
+
+input:
+  patch: |
+    diff --git a/app/billing/invoices.py b/app/billing/invoices.py
+    index 44dee4d..e74b5ad 100644
+    --- a/app/billing/invoices.py
+    +++ b/app/billing/invoices.py
+    @@ -8,7 +8,5 @@ def get_invoice_totals(invoice_ids):
+         period query, which can run into the thousands for high-volume
+         accounts.
+         """
+    -    return {
+    -        iid: ledger_client.get_total(iid)
+    -        for iid in invoice_ids
+    -    }
+    +    totals_by_invoice = ledger_client.get_totals_batch(invoice_ids)
+    +    return {iid: totals_by_invoice[iid] for iid in invoice_ids}
+  base:
+    app/billing/invoices.py: |
+      from . import ledger_client
+
+
+      def get_invoice_totals(invoice_ids):
+          """Fetch the total for each of the given invoices.
+
+          invoice_ids is unbounded: callers pass the full result of a billing
+          period query, which can run into the thousands for high-volume
+          accounts.
+          """
+          return {
+              iid: ledger_client.get_total(iid)
+              for iid in invoice_ids
+          }
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: missing-batched-invoice-lookup-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/billing/invoices.py
+      claim: >-
+        No test asserts get_invoice_totals issues a single ledger_client
+        call independent of len(invoice_ids), which would catch a
+        regression back to a per-invoice call.
+      defect_kind: missing-performance-regression-test
+
+metadata:
+  source: crafted
+  tags: [correctness, performance]
+  rationale: >-
+    Pins the "same logic with a bounded/batched fix -> not flagged" case
+    from Issue #187's scope, on the same unbounded-invoice-count shape as
+    the N+1 corpus case: base reasoning identifies the Performance / scale
+    dimension is implicated (a per-item call is being replaced), this
+    capability traces the call path, and confirms the replacement is a
+    single batched call rather than a multiplied one -- distinct from the
+    strictly-clean cases below, where the domain is never engaged at all.
