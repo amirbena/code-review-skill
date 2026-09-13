@@ -1,4 +1,4 @@
-"""Tests for scripts/package_domain/adaptation.py — the canonical
+"""Tests for scripts/packaging/package_domain/adaptation.py — the canonical
 shared-link and metadata-path rewriting rules shared by both platform
 packaging scripts (issue #266)."""
 

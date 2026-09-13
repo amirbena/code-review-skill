@@ -19,7 +19,7 @@ from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
 
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
+sys.path.insert(0, str(REPO_ROOT / "scripts" / "release"))
 
 import release_worthiness as rw  # noqa: E402
 from release_lib.changelog_generation import (  # noqa: E402

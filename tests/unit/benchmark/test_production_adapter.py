@@ -2,7 +2,7 @@
 """Behavioural coverage for the production reviewer adapter (Issue #250).
 
 Driven through the single production adapter module
-(``scripts/benchmark_review_adapter.py``); this module never defines a
+(``scripts/benchmark/benchmark_review_adapter.py``); this module never defines a
 second normalizer or a second subprocess-invocation boundary. What is
 proven here:
 
@@ -35,7 +35,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from scripts.benchmark_review_adapter import (
+from scripts.benchmark.benchmark_review_adapter import (
     SKILL_PLUGIN_DIR,
     ProductionReviewerAdapter,
     RuntimeUnavailableError,

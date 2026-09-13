@@ -11,7 +11,7 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
+sys.path.insert(0, str(REPO_ROOT / "scripts" / "release"))
 
 from release_lib.release_intent import (  # noqa: E402
     NO_RELEASE,

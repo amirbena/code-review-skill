@@ -115,12 +115,12 @@ machine-readable status/check:
 ## Development
 
 ```bash
-python3 scripts/validate-skill-metadata.py skills/github-pr-review --containment-root .
-./scripts/package-skills.sh github     # -> dist/github-pr-review-skill.zip
+python3 scripts/validation/validate-skill-metadata.py skills/github-pr-review --containment-root .
+./scripts/packaging/package-skills.sh github     # -> dist/github-pr-review-skill.zip
 python3 -m unittest discover -s tests -t .
 ```
 
-PowerShell packaging: `./scripts/package-skills.ps1 github`.
+PowerShell packaging: `./scripts/packaging/package-skills.ps1 github`.
 
 This README is onboarding documentation only. It carries no normative
 authority — [`SKILL.md`](SKILL.md), the `policies/`, and the shared

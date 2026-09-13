@@ -27,7 +27,7 @@ import yaml
 from tests.support.paths import REPO_ROOT
 
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "release-worthiness.yml"
-SCRIPT = REPO_ROOT / "scripts" / "release_worthiness.py"
+SCRIPT = REPO_ROOT / "scripts" / "release" / "release_worthiness.py"
 RELEASE_DOC = REPO_ROOT / "docs" / "RELEASE.md"
 
 
@@ -251,7 +251,7 @@ class ExtractedHelperWiringTests(unittest.TestCase):
         build = _step(self.jobs["package"]["steps"], "Build and verify Skill")
         self.assertIn(helper, build["run"])
         self.assertNotIn("unzip -t", self.raw)
-        self.assertNotIn("scripts/package-skills.sh all", self.raw)
+        self.assertNotIn("scripts/packaging/package-skills.sh all", self.raw)
 
 
 class RequiredReleaseGateTests(unittest.TestCase):

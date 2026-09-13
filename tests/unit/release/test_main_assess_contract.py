@@ -1,4 +1,4 @@
-"""Tests for scripts/release_worthiness.py main() / $GITHUB_OUTPUT assess contract."""
+"""Tests for scripts/release/release_worthiness.py main() / $GITHUB_OUTPUT assess contract."""
 
 from __future__ import annotations
 
@@ -183,7 +183,7 @@ class MainAssessContractTests(unittest.TestCase):
         self.assertNotIn("## Release recommended", summary)
 
     def test_packaging_change_is_release_worthy_and_gate_applies(self) -> None:
-        rc, outputs, _, _, _ = self._assess("scripts/package-skills.sh", body="")
+        rc, outputs, _, _, _ = self._assess("scripts/packaging/package-skills.sh", body="")
         self.assertEqual(rc, 1)
         self.assertEqual(outputs["release_worthy"], "true")
 

@@ -1,8 +1,8 @@
 name: Benchmark check
 
 # Dedicated, PR-level, informational check that wires the existing
-# benchmark execution (scripts/run_benchmark.py +
-# scripts/benchmark_review_adapter.py, Issue #250) into CI without
+# benchmark execution (scripts/benchmark/run_benchmark.py +
+# scripts/benchmark/benchmark_review_adapter.py, Issue #250) into CI without
 # reimplementing any of it — no second reviewer, no second runner, no
 # second evaluator, no Claude Code plugin.
 #
@@ -67,7 +67,7 @@ jobs:
       - name: Classify benchmark applicability
         id: classify
         run: |
-          python scripts/benchmark_ci_classifier.py \
+          python scripts/benchmark/benchmark_ci_classifier.py \
             --base-ref "origin/${{ github.event.pull_request.base.ref }}" \
             --github-output "$GITHUB_OUTPUT" \
             --step-summary "$GITHUB_STEP_SUMMARY"
@@ -80,7 +80,7 @@ jobs:
           python -c "
           import sys
           sys.path.insert(0, '.')
-          from scripts.benchmark_review_adapter import check_runtime_available, resolve_cli_executable, RuntimeUnavailableError
+          from scripts.benchmark.benchmark_review_adapter import check_runtime_available, resolve_cli_executable, RuntimeUnavailableError
           try:
               check_runtime_available(resolve_cli_executable())
           except RuntimeUnavailableError as exc:
@@ -102,7 +102,7 @@ jobs:
       - name: Run benchmark
         id: run_benchmark
         if: steps.classify.outputs.applicable == 'true' && steps.runtime.outputs.available == 'true'
-        run: python scripts/run_benchmark.py | tee benchmark-result.json
+        run: python scripts/benchmark/run_benchmark.py | tee benchmark-result.json
 
       - name: Publish benchmark result
         if: steps.classify.outputs.applicable == 'true' && steps.runtime.outputs.available == 'true'

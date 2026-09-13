@@ -85,7 +85,7 @@ restate the rules.
 ## Packaging
 
 Every file in this directory **except this README** is a packaged runtime
-resource: `scripts/package-skills.sh` / `scripts/package-skills.ps1` copy
+resource: `scripts/packaging/package-skills.sh` / `scripts/packaging/package-skills.ps1` copy
 them into both `dist/*.zip` archives under `shared/policies/`. This README
 is a source-tree maintainer/contributor navigation aid: a packaged Skill
 is entered through its `SKILL.md`, which links to each shared policy by

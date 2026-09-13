@@ -10,13 +10,13 @@
 # CI-only: release automation runs exclusively on Linux GitHub Actions
 # runners, so there is deliberately no PowerShell counterpart under
 # scripts/. The local packaging entrypoint for developers on any platform
-# stays scripts/package-skills.sh / scripts/package-skills.ps1.
+# stays scripts/packaging/package-skills.sh / scripts/packaging/package-skills.ps1.
 #
 # Usage:
 #   scripts/release/verify-skill-archives.sh [--build]
 #
-#   --build   Run `scripts/package-skills.sh all` first. Without it the
-#             script only verifies archives already present under dist/.
+#   --build   Run `scripts/packaging/package-skills.sh all` first. Without it
+#             the script only verifies archives already present under dist/.
 
 set -euo pipefail
 
@@ -31,14 +31,14 @@ done
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${repo_root}"
 
-manifest="scripts/package-manifest.json"
+manifest="scripts/packaging/package-manifest.json"
 expected_archives=()
 for target in local github; do
-  expected_archives+=("$(python3 scripts/package_manifest.py "${manifest}" "${target}" archive)")
+  expected_archives+=("$(python3 scripts/packaging/package_manifest.py "${manifest}" "${target}" archive)")
 done
 
 if [[ "${build}" -eq 1 ]]; then
-  ./scripts/package-skills.sh all
+  ./scripts/packaging/package-skills.sh all
 fi
 
 shopt -s nullglob

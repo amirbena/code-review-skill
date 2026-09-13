@@ -1,4 +1,4 @@
-"""Tests for scripts/release_worthiness.py preflight / verify gates and the auto-release plan."""
+"""Tests for scripts/release/release_worthiness.py preflight / verify gates and the auto-release plan."""
 
 from __future__ import annotations
 

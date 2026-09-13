@@ -184,7 +184,7 @@ canonical, detailed rule lives in the policy named after it.
   entry:` lines in the pull request description — CHANGELOG.md is never
   edited directly. Before running `gh pr create` or `gh pr edit`, validate
   the drafted body locally with the same deterministic checker CI runs
-  (`scripts/release_worthiness.py assess --require-release-intent`)
+  (`scripts/release/release_worthiness.py assess --require-release-intent`)
   instead of waiting for CI to catch a missing or invalid category.
   Canonical:
   [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md),

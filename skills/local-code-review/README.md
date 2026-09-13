@@ -123,12 +123,12 @@ These are summaries. The binding text lives in
 ## Development
 
 ```bash
-python3 scripts/validate-skill-metadata.py skills/local-code-review --containment-root .
-./scripts/package-skills.sh local     # -> dist/local-code-review-skill.zip
+python3 scripts/validation/validate-skill-metadata.py skills/local-code-review --containment-root .
+./scripts/packaging/package-skills.sh local     # -> dist/local-code-review-skill.zip
 python3 -m unittest discover -s tests -t .
 ```
 
-PowerShell packaging: `./scripts/package-skills.ps1 local`.
+PowerShell packaging: `./scripts/packaging/package-skills.ps1 local`.
 
 This README is onboarding documentation only. It carries no normative
 authority — [`SKILL.md`](SKILL.md), this Skill's `policies/`, its runbook,

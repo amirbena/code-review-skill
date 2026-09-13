@@ -10,9 +10,9 @@ from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
 
-PACKAGE_SCRIPT = REPO_ROOT / "scripts" / "package-skills.sh"
-PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "package-manifest.json"
-PACKAGE_MANIFEST_HELPER = REPO_ROOT / "scripts" / "package_manifest.py"
+PACKAGE_SCRIPT = REPO_ROOT / "scripts" / "packaging" / "package-skills.sh"
+PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
+PACKAGE_MANIFEST_HELPER = REPO_ROOT / "scripts" / "packaging" / "package_manifest.py"
 
 # The test-only reference modules live in tests/reference/; the PR
 # simulation harness lives in tests/support/.
@@ -80,5 +80,5 @@ def _shared_destinations() -> list[str]:
     return [entry["destination"] for entry in _package_manifest()["shared_files"]]
 
 
-SH = REPO_ROOT / "scripts" / "package-skills.sh"
-PS1 = REPO_ROOT / "scripts" / "package-skills.ps1"
+SH = REPO_ROOT / "scripts" / "packaging" / "package-skills.sh"
+PS1 = REPO_ROOT / "scripts" / "packaging" / "package-skills.ps1"

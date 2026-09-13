@@ -30,8 +30,8 @@ USER_FACING_GUIDANCE_DIRS = (
     REPO_ROOT / "docs" / "benchmark",
 )
 PACKAGE_SCRIPTS = (
-    REPO_ROOT / "scripts" / "package-skills.sh",
-    REPO_ROOT / "scripts" / "package-skills.ps1",
+    REPO_ROOT / "scripts" / "packaging" / "package-skills.sh",
+    REPO_ROOT / "scripts" / "packaging" / "package-skills.ps1",
 )
 SKILL_DIRS = (
     REPO_ROOT / "skills" / "local-code-review",
@@ -354,7 +354,7 @@ class PackagingBoundaryTests(unittest.TestCase):
             dist / "github-pr-review-skill.zip",
         ]
         if not all(a.is_file() for a in archives):
-            self.skipTest("archives not built; run scripts/package-skills.sh all")
+            self.skipTest("archives not built; run scripts/packaging/package-skills.sh all")
         banned = (
             {f"policies/{n}" for n in self.UNPACKAGED}
             | {"AGENTS.md", "CLAUDE.md", "shared/policies/README.md"}

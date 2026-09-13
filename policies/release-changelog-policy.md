@@ -3,7 +3,7 @@
 Canonical repository-development rules for classifying `CHANGELOG.md`
 entries by SemVer intent. This policy is **not packaged into either Skill
 archive**. See [`../docs/RELEASE.md`](../docs/RELEASE.md) for the release flow
-and [`../scripts/release_worthiness.py`](../scripts/release_worthiness.py) for
+and [`../scripts/release/release_worthiness.py`](../scripts/release/release_worthiness.py) for
 the deterministic implementation.
 
 ## Where the category is declared

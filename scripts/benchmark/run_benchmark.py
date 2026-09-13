@@ -3,7 +3,7 @@
 
 Wires the existing test-only benchmark reference modules
 (``tests/reference/benchmark/``) together with the production reviewer
-adapter (``scripts/benchmark_review_adapter.py``) to actually run the
+adapter (``scripts/benchmark/benchmark_review_adapter.py``) to actually run the
 corpus — or one selected case — against a real runtime reading the
 packaged ``local-code-review`` Skill, instead of a deterministic test
 stub. This script reimplements none of the runner, matcher, metrics, or
@@ -11,9 +11,9 @@ regression-report logic; it only calls them and prints their output.
 
 Usage::
 
-    python3 scripts/run_benchmark.py
-    python3 scripts/run_benchmark.py --case-id correctness-off-by-one-pagination
-    python3 scripts/run_benchmark.py --corpus-dir docs/benchmark/corpus --cli claude --timeout 600
+    python3 scripts/benchmark/run_benchmark.py
+    python3 scripts/benchmark/run_benchmark.py --case-id correctness-off-by-one-pagination
+    python3 scripts/benchmark/run_benchmark.py --corpus-dir docs/benchmark/corpus --cli claude --timeout 600
 
 Environment variables:
 
@@ -22,7 +22,7 @@ Environment variables:
 - ``BENCHMARK_REVIEW_CLI_ARGS`` — extra, shell-quoted args appended to
   every invocation of that CLI.
 
-Runtime availability (see ``scripts/benchmark_review_adapter.py``,
+Runtime availability (see ``scripts/benchmark/benchmark_review_adapter.py``,
 ``check_runtime_available``): before touching the corpus, any workspace, or
 the matcher/metrics, this script checks whether the configured review CLI
 executable can actually be found. If it cannot, it prints a clear,
@@ -43,11 +43,11 @@ import json
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.benchmark_review_adapter import (  # noqa: E402
+from scripts.benchmark.benchmark_review_adapter import (  # noqa: E402
     ProductionReviewerAdapter,
     RuntimeUnavailableError,
     check_runtime_available,

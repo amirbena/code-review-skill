@@ -5,7 +5,7 @@ frontmatter of a packaged root ``SKILL.md``. This is a narrow structural
 check (line 1 is the opening delimiter, a closing delimiter exists, and
 the required ``name``/``description`` fields are present with the
 expected ``name``) — not a full YAML validator, and it does not replace
-``scripts/validate-skill-metadata.py`` / ``scripts/skill_metadata/``,
+``scripts/validation/validate-skill-metadata.py`` / ``scripts/skill_metadata/``,
 which own Skill metadata semantics broadly.
 
 Prefers a real YAML parse when PyYAML is available; otherwise falls back

@@ -42,8 +42,8 @@ duplicate or fork these canonical rules.
 
 `AGENTS.md` and this repository's `policies/` govern development and
 orchestration of *this* source repository. A distributed Skill archive
-(built by [`../scripts/package-skills.sh`](../scripts/package-skills.sh) /
-[`../scripts/package-skills.ps1`](../scripts/package-skills.ps1)) never
+(built by [`../scripts/packaging/package-skills.sh`](../scripts/packaging/package-skills.sh) /
+[`../scripts/packaging/package-skills.ps1`](../scripts/packaging/package-skills.ps1)) never
 contains `AGENTS.md`, this repository's `policies/`, `docs/ARCHITECTURE.md`,
 or this repository's `README.md` — so no file that is part of a packaged
 Skill (`SKILL.md`, a packaged policy, a runbook, a template, or

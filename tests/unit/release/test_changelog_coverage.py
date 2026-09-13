@@ -1,4 +1,4 @@
-"""Tests for scripts/release_worthiness.py CHANGELOG.md Unreleased-section coverage detection."""
+"""Tests for scripts/release/release_worthiness.py CHANGELOG.md Unreleased-section coverage detection."""
 
 from __future__ import annotations
 

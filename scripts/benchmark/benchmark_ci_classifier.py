@@ -2,8 +2,8 @@
 """Deterministic PR-applicability classifier for the benchmark CI check
 (Issue #255).
 
-Deliberately independent of ``scripts/release_lib/classification.py`` /
-``scripts/release_worthiness.py``: a change set relevant to release
+Deliberately independent of ``scripts/release/release_lib/classification.py`` /
+``scripts/release/release_worthiness.py``: a change set relevant to release
 packaging is a different question from a change set that can affect
 review-quality benchmark results, and the two must never route through
 each other's decision logic or import each other's modules. Contract:
@@ -11,9 +11,9 @@ docs/benchmark/ci-integration.md.
 
 Usage::
 
-    python3 scripts/benchmark_ci_classifier.py --base-ref origin/main
-    python3 scripts/benchmark_ci_classifier.py --changed-files-from changed.txt
-    python3 scripts/benchmark_ci_classifier.py --base-ref origin/main --github-output "$GITHUB_OUTPUT"
+    python3 scripts/benchmark/benchmark_ci_classifier.py --base-ref origin/main
+    python3 scripts/benchmark/benchmark_ci_classifier.py --changed-files-from changed.txt
+    python3 scripts/benchmark/benchmark_ci_classifier.py --base-ref origin/main --github-output "$GITHUB_OUTPUT"
 """
 
 from __future__ import annotations
@@ -39,8 +39,8 @@ APPLICABLE_PREFIXES = (
 )
 APPLICABLE_EXACT_FILES = frozenset(
     {
-        "scripts/run_benchmark.py",
-        "scripts/benchmark_review_adapter.py",
+        "scripts/benchmark/run_benchmark.py",
+        "scripts/benchmark/benchmark_review_adapter.py",
     }
 )
 

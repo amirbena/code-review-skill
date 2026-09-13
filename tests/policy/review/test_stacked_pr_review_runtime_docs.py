@@ -50,8 +50,8 @@ PASSIVE_RUNBOOK = (
     REPO_ROOT / "skills" / "github-pr-review" / "runbooks" / "passive-pr-review.md"
 )
 LOCAL_SKILL = REPO_ROOT / "skills" / "local-code-review" / "SKILL.md"
-PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "package-manifest.json"
-PACKAGE_SH = REPO_ROOT / "scripts" / "package-skills.sh"
+PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
+PACKAGE_SH = REPO_ROOT / "scripts" / "packaging" / "package-skills.sh"
 
 
 class StackedPrReviewPolicyTests(unittest.TestCase):

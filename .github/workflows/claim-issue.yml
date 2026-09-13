@@ -82,7 +82,7 @@ jobs:
       - name: Plan claim action
         id: plan
         run: |
-          python3 scripts/claim_issue.py \
+          python3 scripts/governance/claim_issue.py \
             --issue-json "${RUNNER_TEMP}/issue.json" \
             --comments-json "${RUNNER_TEMP}/comments.json" \
             --repository-comments-json "${RUNNER_TEMP}/repository-comments.json" \

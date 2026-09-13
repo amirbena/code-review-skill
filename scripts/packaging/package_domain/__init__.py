@@ -1,11 +1,11 @@
 """Canonical packaging-domain logic shared by both platform orchestration
-scripts (``scripts/package-skills.sh`` and ``scripts/package-skills.ps1``).
+scripts (``scripts/packaging/package-skills.sh`` and ``scripts/packaging/package-skills.ps1``).
 
 Named ``package_domain`` rather than ``packaging`` so it never shadows
 the unrelated, widely-used PyPI ``packaging`` distribution when
 ``scripts/`` is prepended to ``sys.path``.
 
-Split out so each concern can be read on its own; ``scripts/package_adapt.py``
+Split out so each concern can be read on its own; ``scripts/packaging/package_adapt.py``
 is a thin entrypoint that calls ``main``.
 
 Module map:
@@ -15,7 +15,7 @@ Module map:
 - ``cli``        — argument parsing shared by both platform scripts
 
 This package does not own the per-Skill package manifest
-(``scripts/package-manifest.json`` / ``scripts/package_manifest.py``,
+(``scripts/packaging/package-manifest.json`` / ``scripts/packaging/package_manifest.py``,
 established by #196) or Skill discovery-metadata semantics
 (``scripts/skill_metadata/``) — both stay where they are.
 """

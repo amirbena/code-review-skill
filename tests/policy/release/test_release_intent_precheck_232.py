@@ -21,7 +21,7 @@ POLICY = REPO_ROOT / "policies" / "github-issue-pr-authoring.md"
 class ReleaseIntentPrecheckTests(unittest.TestCase):
     def test_policy_documents_local_preflight_command(self) -> None:
         policy = POLICY.read_text(encoding="utf-8")
-        self.assertIn("scripts/release_worthiness.py assess", policy)
+        self.assertIn("scripts/release/release_worthiness.py assess", policy)
         self.assertIn("--require-release-intent", policy)
         self.assertIn("--pr-body-env", policy)
         self.assertIn("gh pr create", policy)

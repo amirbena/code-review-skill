@@ -22,8 +22,8 @@ SKILL_DIRS = (
     REPO_ROOT / "skills" / "github-pr-review",
 )
 PACKAGE_SCRIPTS = (
-    REPO_ROOT / "scripts" / "package-skills.sh",
-    REPO_ROOT / "scripts" / "package-skills.ps1",
+    REPO_ROOT / "scripts" / "packaging" / "package-skills.sh",
+    REPO_ROOT / "scripts" / "packaging" / "package-skills.ps1",
 )
 
 

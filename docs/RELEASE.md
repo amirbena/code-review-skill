@@ -7,7 +7,7 @@ SemVer version from those categories, and publishes the GitHub Release
 automatically once the work merges to `main` — contributors maintain
 neither a release checklist, a version number, nor `CHANGELOG.md`. The
 rules are deterministic (no LLM, agent, or paid per-PR execution) and
-enforced by [`../scripts/release_worthiness.py`](../scripts/release_worthiness.py)
+enforced by [`../scripts/release/release_worthiness.py`](../scripts/release/release_worthiness.py)
 through two GitHub Actions workflows that share that same classification
 and changelog engine:
 
@@ -33,9 +33,9 @@ A change is release-worthy when it affects either:
   review rules under `shared/` that are packaged into both archives.
 - **Packaging / distribution** — the files that determine what the
   shipped archives contain or whether they build:
-  `scripts/package-skills.sh`, `scripts/package-skills.ps1`,
-  `scripts/package-manifest.json`, `scripts/package_manifest.py`,
-  `scripts/package_adapt.py`, `scripts/validate-skill-metadata.py`.
+  `scripts/packaging/package-skills.sh`, `scripts/packaging/package-skills.ps1`,
+  `scripts/packaging/package-manifest.json`, `scripts/packaging/package_manifest.py`,
+  `scripts/packaging/package_adapt.py`, `scripts/validation/validate-skill-metadata.py`.
 
 Everything else is **not** release-worthy on its own: documentation
 (including each Skill's `README.md` and `shared/`'s READMEs), tests,
@@ -43,7 +43,7 @@ Everything else is **not** release-worthy on its own: documentation
 maintenance files such as `CHANGELOG.md` itself.
 
 The classification lives in one place — the module-level constants in
-[`../scripts/release_lib/classification.py`](../scripts/release_lib/classification.py).
+[`../scripts/release/release_lib/classification.py`](../scripts/release/release_lib/classification.py).
 Extend it by adding a path prefix or an exact file name there, with a
 matching case in
 [`../tests/unit/release/test_path_classification.py`](../tests/unit/release/test_path_classification.py).
@@ -73,7 +73,7 @@ editing `CHANGELOG.md`. The PR template carries the two lines:
 Parsing is strict and deterministic: HTML comments (the template's
 guidance) and fenced code blocks are ignored, each line may appear only
 once, and prose is never guessed at. Parser:
-[`../scripts/release_lib/release_intent.py`](../scripts/release_lib/release_intent.py).
+[`../scripts/release/release_lib/release_intent.py`](../scripts/release/release_lib/release_intent.py).
 
 Maintainers may still curate `## Unreleased` by hand, for example a
 cross-cutting note. Hand-written bullets must sit under a recognized
@@ -130,7 +130,7 @@ category rules. They ship as a **single PATCH release** regardless of
 their headings: with the latest release at `v1.0.2`, the accumulated
 pre-policy set publishes as `v1.0.3`. This is encoded as
 `PRE_POLICY_BASELINE_TAG` in
-[`../scripts/release_lib/semver_policy.py`](../scripts/release_lib/semver_policy.py)
+[`../scripts/release/release_lib/semver_policy.py`](../scripts/release/release_lib/semver_policy.py)
 and retires itself
 automatically — once `v1.0.3` is the latest tag, every later release uses
 the category rules above. Historical entries can never trigger a `minor`
@@ -170,7 +170,7 @@ in two distinct cases with two distinct fixes:
   manual, out-of-band release that advances the baseline tag past it).
 
 Generator:
-[`../scripts/release_lib/changelog_generation.py`](../scripts/release_lib/changelog_generation.py).
+[`../scripts/release/release_lib/changelog_generation.py`](../scripts/release/release_lib/changelog_generation.py).
 
 Release intent is read when the release is planned, so an edit to a merged
 PR's description before its release changes the published entry. `plan`
@@ -212,8 +212,8 @@ per-PR verdict is never trusted or reused there.
 
 The applicability decision ("is this PR release-relevant?") is not a
 workflow-YAML `paths:` filter or job `if:` condition — it is the same
-`scripts/release_worthiness.py assess` classification the job always
-runs, from `scripts/release_lib/classification.py`. The job:
+`scripts/release/release_worthiness.py assess` classification the job always
+runs, from `scripts/release/release_lib/classification.py`. The job:
 
 1. classifies the change set;
 2. when **not** release-worthy, writes an explicit `## Release gate: not
@@ -248,7 +248,7 @@ credentials, and never creates a tag or a Release.
 classification output `release-gate` already computed, not a second
 relevance decision. It is **not** a required status check: it
 
-1. builds both archives with `scripts/package-skills.sh all`;
+1. builds both archives with `scripts/packaging/package-skills.sh all`;
 2. verifies archive integrity (`unzip -t` plus the packaging
    runtime-boundary test);
 3. uploads the archives.
@@ -268,7 +268,7 @@ every job in `release-worthiness.yml`, `release-gate` included — pending a
 maintainer's manual approval in the Actions tab, for a contributor's
 **first** pull request. This is enforced by GitHub Actions itself, at the
 workflow-run level, before any job starts; it cannot be narrowed per-job
-or worked around from workflow YAML or from `scripts/release_lib`.
+or worked around from workflow YAML or from `scripts/release/release_lib`.
 
 **This is a real residual risk, not solved by this change:** if
 `release-gate` is a required status check and a first-time contributor's

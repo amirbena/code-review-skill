@@ -18,7 +18,7 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
 
       - name: Bootstrap validator for introducing pull request
-        if: ${{ hashFiles('scripts/pr_description_length.py') == '' }}
+        if: ${{ hashFiles('scripts/validation/pr_description_length.py') == '' }}
         uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -30,4 +30,4 @@ jobs:
           python-version: "3.13"
 
       - name: Enforce useful-content limit
-        run: python scripts/pr_description_length.py --event-path "$GITHUB_EVENT_PATH"
+        run: python scripts/validation/pr_description_length.py --event-path "$GITHUB_EVENT_PATH"

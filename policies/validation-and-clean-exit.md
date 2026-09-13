@@ -73,8 +73,8 @@ internals). Repository-owned Python that any of these steps touch follows
 
 This repository intentionally ships genuine cross-platform counterpart
 scripts for the same repository capability — currently
-[`../scripts/package-skills.sh`](../scripts/package-skills.sh) and
-[`../scripts/package-skills.ps1`](../scripts/package-skills.ps1). When the
+[`../scripts/packaging/package-skills.sh`](../scripts/packaging/package-skills.sh) and
+[`../scripts/packaging/package-skills.ps1`](../scripts/packaging/package-skills.ps1). When the
 functionality represented by both a `.sh` script and its corresponding
 `.ps1` script changes, both implementations MUST be updated in the same
 task so they remain behaviorally equivalent — including their packaged
