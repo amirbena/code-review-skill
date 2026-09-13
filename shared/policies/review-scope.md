@@ -57,11 +57,16 @@ so far directs a reviewer, for an arbitrary change, to first ask *which
 system-level dimensions this change materially implicates* at all. This
 section is that base pass: for each dimension the change's own evidence
 actually implicates, it performs the minimum bounded reasoning itself — it
-is not solely a router to the deeper sections and profiles below. Those
-sections, and any opt-in specialist profile layered on top of a review, add
-further depth to a dimension this pass already activates; none of them may
-gate, weaken, narrow, or replace this base obligation, and it applies
-identically whether or not a profile is selected.
+is not solely a router to the deeper sections below. Those sections, and
+any domain-specific deepening capability layered on top of the base
+review, may add further depth to a dimension this pass already activates
+when materially warranted; none of them may gate, weaken, narrow, or
+replace this base obligation. Base semantic reasoning is unconditional
+with respect to additional domain-specific depth — a deeper capability may
+build on an implicated dimension, but it never determines whether that
+dimension is considered at all. How a deeper capability is selected,
+activated, or composed with the base review is outside this section's
+scope.
 
 ### Canonical dimensions
 

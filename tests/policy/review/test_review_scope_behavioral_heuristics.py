@@ -606,7 +606,11 @@ class SemanticImplicationSectionTests(unittest.TestCase):
     """(shared semantics) the base semantic change-implication pass detects
     materially implicated system dimensions and performs the minimum
     bounded reasoning itself, never a mandatory eight-dimension checklist,
-    and can never be gated by a specialist profile."""
+    and is unconditional with respect to any domain-specific deepening
+    capability — such a capability may add depth but can never gate
+    whether a dimension is considered at all. This is Tier-3-neutral: it
+    does not say how a deeper capability is selected, activated, or
+    composed (that is #82's scope)."""
 
     def setUp(self) -> None:
         self.section = _section(
@@ -621,12 +625,27 @@ class SemanticImplicationSectionTests(unittest.TestCase):
         )
         self.assertIn("is not solely a router", self.section)
         self.assertIn(
-            "applies identically whether or not a profile is selected", self.section
-        )
-        self.assertIn(
             "none of them may gate, weaken, narrow, or replace this base obligation",
             self.section,
         )
+
+    def test_base_reasoning_is_unconditional_on_deeper_capabilities(self) -> None:
+        self.assertIn(
+            "Base semantic reasoning is unconditional with respect to "
+            "additional domain-specific depth",
+            self.section,
+        )
+        self.assertIn(
+            "it never determines whether that dimension is considered at all",
+            self.section,
+        )
+        self.assertIn(
+            "How a deeper capability is selected, activated, or composed with "
+            "the base review is outside this section's scope",
+            self.section,
+        )
+        for stale in ("opt-in specialist profile", "profile is selected"):
+            self.assertNotIn(stale, self.section)
 
     def test_taxonomy_is_not_mutually_exclusive(self) -> None:
         self.assertIn("not a mutually-exclusive classification", self.section)

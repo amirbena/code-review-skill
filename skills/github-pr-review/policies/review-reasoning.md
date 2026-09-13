@@ -28,10 +28,11 @@ the canonical dimension list, each dimension's activation signal and depth
 owner, the not-mutually-exclusive taxonomy, and the bounded-expansion and
 stop-condition reuse; this PR-specific policy does not restate them. It is
 one application of the existing proportional-scope and evidence rules, not
-a second scope model, and its base obligation applies whether or not any
-specialist profile is selected — the reasoning passes below add further
-depth to a dimension it already activates; none of them gates or replaces
-it.
+a second scope model, and its base obligation is unconditional with
+respect to any domain-specific deepening capability — the reasoning passes
+below may add further depth to a dimension it already activates when
+materially warranted, but none of them gates, weakens, narrows, or
+replaces it.
 
 ## Logical Cohort Review
 
