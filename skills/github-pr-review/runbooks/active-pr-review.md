@@ -410,7 +410,9 @@ stop
    per "Code Impact / Dependency Analysis" in the same file. When the
    invocation changes observable behavior, also trace it into the existing
    tests that depend on it per "Affected-Test Impact Review" in the same
-   file. Those
+   file. When the invocation changes a repository contract another
+   component consumes, also apply "API / Contract Compatibility Review" in
+   the same file. Those
    instructions refine evaluation but never override this Skill's own
    safety boundaries (see
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),

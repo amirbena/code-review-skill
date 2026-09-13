@@ -8,7 +8,12 @@ capability tracked by parent Issue
 a **focused sub-corpus** of [`benchmark-case/v1`](../../fixture-format.md)
 fixtures pinning the expected `compatible` / `breaking` /
 `context-dependent` classification for the common change shapes #175's
-scope lists, **before the reviewer capability itself exists**.
+scope lists. It landed before the reviewer capability itself did; the
+capability is now designed and packaged in
+[`../../../api-compatibility/README.md`](../../../api-compatibility/README.md)
+and [`../../../../shared/policies/review-scope.md`](../../../../shared/policies/review-scope.md),
+"API / contract compatibility review," which this corpus's expectations
+must stay consistent with.
 
 Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the

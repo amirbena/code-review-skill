@@ -323,14 +323,15 @@ which a value must be resolved before it is used, or what is reported.
    [`review-scope.md`](../../../shared/policies/review-scope.md) in full,
    including "Related changes as one unit," "Semantic change-implication
    reasoning" (the base per-dimension pass the sections below add depth
-   to), "Null-like absence-risk review," "Existing behavior ownership,"
+   to), "Null-like absence-risk review," "API / contract compatibility
+   review," "Existing behavior ownership,"
    "Root-cause and model-completeness pass" (canonical home:
    [`root-cause-consolidation.md`](../../../shared/policies/root-cause-consolidation.md)),
    "Failure state, retry safety,
    and recovery," "Architectural placement and execution-lifecycle
    fidelity," and "Affected-test / test-impact analysis" (canonical home:
    [`affected-test-analysis.md`](../../../shared/policies/affected-test-analysis.md))
-   (the last seven
+   (the last eight
    signal-triggered per that policy's own gating conditions — not applied
    unconditionally to every diff), and
    [`evidence.md`](../../../shared/policies/evidence.md), "Findings beyond
