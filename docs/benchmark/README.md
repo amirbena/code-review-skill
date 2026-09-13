@@ -75,7 +75,12 @@ mutated, even when a case fails. The test-only reference runner
 mirrors it and is exercised by
 [`../../tests/unit/benchmark/test_benchmark_runner.py`](../../tests/unit/benchmark/test_benchmark_runner.py),
 including the deliberately-dirty-source-repo safety regression. Nothing
-here is packaged and no Skill launches it.
+here is packaged and no Skill launches it. A production reviewer adapter
+that drives a real runtime reading the packaged `local-code-review` Skill —
+as opposed to a deterministic test stub — is
+[`../../scripts/benchmark_review_adapter.py`](../../scripts/benchmark_review_adapter.py),
+run via the CLI entrypoint
+[`../../scripts/run_benchmark.py`](../../scripts/run_benchmark.py) (#250).
 
 ## Regression report
 

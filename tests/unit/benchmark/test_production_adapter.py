@@ -1,0 +1,392 @@
+#!/usr/bin/env python3
+"""Behavioural coverage for the production reviewer adapter (Issue #250).
+
+Driven through the single production adapter module
+(``scripts/benchmark_review_adapter.py``); this module never defines a
+second normalizer or a second subprocess-invocation boundary. What is
+proven here:
+
+1. ``parse_review_output`` normalizes representative canonical-full-
+   rendering Markdown into ``ProducedFinding`` objects: a single finding
+   with a line, a finding with a line range, multiple findings, a genuine
+   clean/no-findings report (``[]``, not an error), and a malformed report
+   (raises, rather than being silently treated as clean);
+2. the runtime-availability preflight check raises a clear,
+   ``RuntimeUnavailableError`` when the configured executable cannot be
+   found — proven against a nonexistent executable name, never against the
+   real ``claude`` CLI;
+3. the adapter's subprocess-invocation boundary, exercised through a stub
+   executable script (never the real ``claude`` CLI): it runs with
+   ``cwd=<workspace>``, captures stdout, and turns it into
+   ``ProducedFinding`` objects; and a stub that exits non-zero makes the
+   adapter raise, which is exactly what lets ``run_case``'s existing
+   per-case ``reviewer-adapter-raised`` handling take over.
+
+Real end-to-end execution against the actual ``claude`` CLI (skipped when
+unavailable) is covered separately in
+``tests/unit/benchmark/test_production_adapter_e2e.py``.
+"""
+
+from __future__ import annotations
+
+import stat
+import tempfile
+import textwrap
+import unittest
+from pathlib import Path
+
+from scripts.benchmark_review_adapter import (
+    SKILL_PLUGIN_DIR,
+    ProductionReviewerAdapter,
+    RuntimeUnavailableError,
+    check_runtime_available,
+    parse_review_output,
+    resolve_cli_executable,
+    resolve_cli_extra_args,
+)
+from tests.reference.benchmark.benchmark_runner import ProducedFinding
+
+
+class ParseReviewOutputTests(unittest.TestCase):
+    def test_single_finding_with_line(self) -> None:
+        report = textwrap.dedent(
+            """
+            ## Code Review
+
+            **Result: ⚠️ Changes Requested**
+
+            ### Findings
+
+            #### F1 [P1] Retry can duplicate processing
+
+            - **Location:** `app/retry.py:42`
+            - **Evidence:** the retry loop re-runs the side effect before checking idempotency.
+            - **Impact:** a transient failure can process the same job twice.
+            - **Fix:** check the idempotency key before retrying.
+
+            ### Decision
+            **CHANGES REQUESTED**
+            """
+        )
+        findings = parse_review_output(report)
+        self.assertEqual(len(findings), 1)
+        f = findings[0]
+        self.assertIsInstance(f, ProducedFinding)
+        self.assertEqual(f.severity, "P1")
+        self.assertEqual(f.location, {"path": "app/retry.py", "line": 42})
+        self.assertEqual(f.claim, "Retry can duplicate processing")
+
+    def test_single_finding_with_line_range(self) -> None:
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            ### F3 [P2] Sync and async retry paths decide eligibility separately
+
+            - **Location:** `app/retry.py:41-58`
+            - **Evidence:** two divergent eligibility checks.
+            - **Impact:** inconsistent retry behavior between the sync and async paths.
+            - **Fix:** move eligibility into one shared helper.
+            """
+        )
+        findings = parse_review_output(report)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(
+            findings[0].location,
+            {"path": "app/retry.py", "lines": {"start": 41, "end": 58}},
+        )
+
+    def test_multiple_findings(self) -> None:
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            #### F1 [P0] Command injection via unsanitized shell argument
+
+            - **Location:** `app/exec.py:10`
+            - **Evidence:** user input is interpolated into a shell string.
+            - **Impact:** arbitrary command execution.
+            - **Fix:** use an argument list, never shell=True with interpolated input.
+
+            #### F2 [P2] Missing regression test for pagination boundary
+
+            - **Location:** `app/pagination.py`
+            - **Evidence:** no test pins page boundaries.
+            - **Impact:** a future change could silently duplicate rows again.
+            - **Fix:** add a test asserting no overlap between consecutive pages.
+            """
+        )
+        findings = parse_review_output(report)
+        self.assertEqual(len(findings), 2)
+        self.assertEqual(findings[0].severity, "P0")
+        self.assertEqual(findings[0].location, {"path": "app/exec.py", "line": 10})
+        self.assertEqual(findings[1].severity, "P2")
+        self.assertEqual(findings[1].location, {"path": "app/pagination.py"})
+
+    def test_clean_report_returns_empty_list(self) -> None:
+        report = textwrap.dedent(
+            """
+            ## Code Review
+
+            **Result: ✅ Review Clean**
+
+            Safe to proceed: no blocking or non-blocking findings were identified.
+
+            ### Decision
+            **REVIEW CLEAN**
+
+            No P0, P1, or P2 findings were identified in the reviewed implementation
+            state.
+            """
+        )
+        self.assertEqual(parse_review_output(report), [])
+
+    def test_malformed_report_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            parse_review_output("I couldn't complete the review due to an internal error.")
+
+    def test_finding_with_unrecognized_severity_is_skipped_not_fatal(self) -> None:
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            #### F1 [WEIRD] Some anomalous heading
+
+            - **Location:** `app/x.py:1`
+
+            #### F2 [P1] A real finding
+
+            - **Location:** `app/y.py:2`
+            """
+        )
+        findings = parse_review_output(report)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].severity, "P1")
+
+    def test_finding_without_location_is_skipped_not_fatal(self) -> None:
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            #### F1 [P1] A finding whose location line is missing
+
+            - **Evidence:** something is wrong but no location was given.
+
+            #### F2 [P2] A real, well-formed finding
+
+            - **Location:** `app/y.py:2`
+            """
+        )
+        findings = parse_review_output(report)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].severity, "P2")
+
+
+class ConfigurationTests(unittest.TestCase):
+    def test_resolve_cli_executable_default(self) -> None:
+        self.assertEqual(resolve_cli_executable(env={}), "claude")
+
+    def test_resolve_cli_executable_env_override(self) -> None:
+        self.assertEqual(
+            resolve_cli_executable(env={"BENCHMARK_REVIEW_CLI": "my-claude"}),
+            "my-claude",
+        )
+
+    def test_resolve_cli_extra_args_parses_shell_quoting(self) -> None:
+        self.assertEqual(
+            resolve_cli_extra_args(env={"BENCHMARK_REVIEW_CLI_ARGS": "--model sonnet --flag 'a b'"}),
+            ["--model", "sonnet", "--flag", "a b"],
+        )
+
+    def test_resolve_cli_extra_args_empty_by_default(self) -> None:
+        self.assertEqual(resolve_cli_extra_args(env={}), [])
+
+
+class _StubCliMixin:
+    """Writes an executable stub script standing in for the real `claude`
+    CLI, so the subprocess-invocation boundary is tested without depending
+    on the real CLI at all."""
+
+    def _write_stub(self, tmp: Path, *, stdout: str, exit_code: int = 0) -> Path:
+        script = tmp / "stub-review-cli.py"
+        script.write_text(
+            "#!/usr/bin/env python3\n"
+            "import sys\n"
+            f"sys.stdout.write({stdout!r})\n"
+            f"sys.exit({exit_code})\n",
+            encoding="utf-8",
+        )
+        script.chmod(script.stat().st_mode | stat.S_IEXEC)
+        return script
+
+
+class RuntimeAvailabilityTests(unittest.TestCase, _StubCliMixin):
+    def test_missing_executable_raises_clear_error(self) -> None:
+        with self.assertRaises(RuntimeUnavailableError) as ctx:
+            check_runtime_available("definitely-not-a-real-benchmark-review-cli-xyz")
+        message = str(ctx.exception)
+        self.assertIn("definitely-not-a-real-benchmark-review-cli-xyz", message)
+        self.assertIn("BENCHMARK_REVIEW_CLI", message)
+
+    def test_present_and_usable_executable_returns_resolved_path(self) -> None:
+        # A stub that exits 0 for any invocation (including the preflight's
+        # own probe call) stands in for a present-and-working review CLI,
+        # without depending on the real `claude` CLI being installed or
+        # authenticated.
+        with tempfile.TemporaryDirectory() as tmp:
+            stub = self._write_stub(Path(tmp), stdout="**Result: ✅ Review Clean**\n", exit_code=0)
+            resolved = check_runtime_available(str(stub))
+            self.assertEqual(Path(resolved), stub)
+
+    def test_present_but_unusable_executable_raises_clear_error(self) -> None:
+        # A stub that exists and is executable (so `shutil.which` finds
+        # it) but that fails when actually invoked — e.g. `claude` present
+        # on PATH but unauthenticated, which prints "Not logged in" and
+        # exits non-zero. The preflight must catch this, not just
+        # "missing entirely".
+        with tempfile.TemporaryDirectory() as tmp:
+            stub = self._write_stub(
+                Path(tmp), stdout="Not logged in · Please run /login\n", exit_code=1
+            )
+            with self.assertRaises(RuntimeUnavailableError) as ctx:
+                check_runtime_available(str(stub))
+            message = str(ctx.exception)
+            self.assertIn(str(stub), message)
+            self.assertIn("probe invocation", message)
+
+
+class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.tmp_path = Path(self._tmp.name)
+
+    def test_adapter_runs_with_workspace_cwd_and_parses_stdout(self) -> None:
+        workspace = self.tmp_path / "workspace"
+        workspace.mkdir()
+        cwd_marker = workspace / "cwd-marker.txt"
+
+        clean_report = "**Result: ✅ Review Clean**\n"
+        stub = self.tmp_path / "stub.py"
+        stub.write_text(
+            "#!/usr/bin/env python3\n"
+            "import os, sys\n"
+            "with open('cwd-marker.txt', 'w') as fh:\n"
+            "    fh.write(os.getcwd())\n"
+            f"sys.stdout.write({clean_report!r})\n"
+            "sys.exit(0)\n",
+            encoding="utf-8",
+        )
+        stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
+
+        adapter = ProductionReviewerAdapter(executable=str(stub))
+        findings = adapter(workspace)
+
+        self.assertEqual(findings, [])
+        self.assertTrue(cwd_marker.exists())
+        self.assertEqual(Path(cwd_marker.read_text(encoding="utf-8")).resolve(), workspace.resolve())
+
+    def test_adapter_parses_findings_from_stub_output(self) -> None:
+        workspace = self.tmp_path / "workspace2"
+        workspace.mkdir()
+        report = (
+            "**Result: ⚠️ Changes Requested**\n\n"
+            "#### F1 [P1] A real finding\n\n"
+            "- **Location:** `app/y.py:2`\n"
+        )
+        stub = self._write_stub(self.tmp_path, stdout=report)
+        adapter = ProductionReviewerAdapter(executable=str(stub))
+
+        findings = adapter(workspace)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].severity, "P1")
+        self.assertEqual(findings[0].location, {"path": "app/y.py", "line": 2})
+
+    def test_adapter_raises_when_subprocess_exits_nonzero(self) -> None:
+        workspace = self.tmp_path / "workspace3"
+        workspace.mkdir()
+        stub = self._write_stub(self.tmp_path, stdout="boom", exit_code=1)
+        adapter = ProductionReviewerAdapter(executable=str(stub))
+
+        with self.assertRaises(RuntimeError):
+            adapter(workspace)
+
+    def test_adapter_raises_when_output_unparseable(self) -> None:
+        workspace = self.tmp_path / "workspace4"
+        workspace.mkdir()
+        stub = self._write_stub(self.tmp_path, stdout="not a review report at all")
+        adapter = ProductionReviewerAdapter(executable=str(stub))
+
+        with self.assertRaises(ValueError):
+            adapter(workspace)
+
+    def test_adapter_passes_plugin_dir_hint_pointing_at_this_checkout(self) -> None:
+        """The adapter passes a best-effort ``--plugin-dir`` hint pointing at
+        this checkout's own Skill directory, instead of relying purely on
+        ambient discovery — proven by a stub that records its own argv.
+
+        This proves only that the CLI *receives* this path as an argument;
+        it does not and cannot prove the CLI actually loads/executes that
+        Skill from it (this repository's ``skills/`` tree is not currently a
+        valid Claude Code plugin directory, so recognition isn't guaranteed
+        — see ``SKILL_PLUGIN_DIR``'s docstring). Verified runtime-to-Skill
+        binding is out of scope for this manual tool; see issue #255."""
+        workspace = self.tmp_path / "workspace5"
+        workspace.mkdir()
+        argv_marker = self.tmp_path / "argv.txt"
+        stub = self.tmp_path / "argv-stub.py"
+        stub.write_text(
+            "#!/usr/bin/env python3\n"
+            "import sys\n"
+            f"open({str(argv_marker)!r}, 'w').write('\\n'.join(sys.argv[1:]))\n"
+            "sys.stdout.write('**Result: \u2705 Review Clean**\\n')\n"
+            "sys.exit(0)\n",
+            encoding="utf-8",
+        )
+        stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
+
+        adapter = ProductionReviewerAdapter(executable=str(stub))
+        adapter(workspace)
+
+        argv = argv_marker.read_text(encoding="utf-8").splitlines()
+        self.assertIn("--plugin-dir", argv)
+        plugin_dir = argv[argv.index("--plugin-dir") + 1]
+        plugin_path = Path(plugin_dir)
+        self.assertTrue(plugin_path.is_absolute())
+        self.assertEqual(plugin_path, SKILL_PLUGIN_DIR)
+        self.assertTrue((plugin_path / "skills" / "local-code-review").is_dir())
+
+    def test_adapter_raised_exception_is_absorbed_by_run_case_as_per_case_error(self) -> None:
+        """Proves the integration point: an adapter failure (subprocess
+        non-zero exit here) is exactly what makes
+        ``benchmark_runner.run_case`` record a per-case
+        ``reviewer-adapter-raised`` error rather than crashing the whole
+        run — the correct place for a single case's review to fail, as
+        opposed to the runtime-unavailable preflight check."""
+        from tests.reference.benchmark import benchmark_fixture as bf
+        from tests.reference.benchmark import benchmark_runner as br
+
+        workspace_parent = self.tmp_path / "workspaces"
+        workspace_parent.mkdir()
+        stub = self._write_stub(self.tmp_path, stdout="boom", exit_code=1)
+        adapter = ProductionReviewerAdapter(executable=str(stub))
+
+        case = bf.parse_case(
+            {
+                "format": "benchmark-case/v1",
+                "id": "stub-failure-case",
+                "title": "stub",
+                "input": {
+                    "patch": "diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b\n",
+                    "base": {"x": "a\n"},
+                },
+                "expected": {"findings": []},
+            }
+        )
+        result = br.run_case(case, adapter, workspace_parent=workspace_parent)
+        self.assertEqual(result.status, "error")
+        self.assertEqual(result.error, "reviewer-adapter-raised")
+
+
+if __name__ == "__main__":
+    unittest.main()
