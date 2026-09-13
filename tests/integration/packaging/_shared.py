@@ -57,6 +57,7 @@ REFERENCE_TEST_MODULES = (
     "finding_identity.py",
     "runtime_validation.py",
     "delta_re_review.py",
+    "stacked_pr_topology.py",
     "benchmark_fixture.py",
     "benchmark_runner.py",
     "benchmark_report.py",
