@@ -11,9 +11,10 @@ and [`../review-context/README.md`](../review-context/README.md), this is
 a repository-development doc: **not** packaged into either Skill archive,
 and no packaged Skill resource depends on it. It is an explanatory / design
 record — the normative, packaged rule lives in
-[`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md),
-"API / contract compatibility review," which references this document by
-name (not by link, since this is not a packaged resource).
+[`../../shared/policies/api-contract-compatibility.md`](../../shared/policies/api-contract-compatibility.md),
+which [`review-scope.md`](../../shared/policies/review-scope.md) routes to,
+and which references this document by name (not by link, since this is not
+a packaged resource).
 
 ## Document map
 
@@ -24,8 +25,7 @@ name (not by link, since this is not a packaged resource).
 ## Related
 
 - The packaged, operative rule a reviewer actually applies:
-  [`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md),
-  "API / contract compatibility review."
+  [`../../shared/policies/api-contract-compatibility.md`](../../shared/policies/api-contract-compatibility.md).
 - The dimension this capability is a depth owner of:
   [`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md),
   "Semantic change-implication reasoning" — "API / integration contracts."

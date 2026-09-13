@@ -26,6 +26,14 @@ REVIEW_SCOPE = SHARED_DIR / "policies/review-scope.md"
 # (Issue #198); review-scope.md keeps a linking overview under each heading.
 ROOT_CAUSE = SHARED_DIR / "policies/root-cause-consolidation.md"
 AFFECTED_TEST = SHARED_DIR / "policies/affected-test-analysis.md"
+# The null-absence, failure-retry-recovery, architectural-placement, and
+# API/contract-compatibility passes were likewise extracted from
+# review-scope.md into their own canonical shared policies (Issue #264);
+# review-scope.md keeps a thin routing paragraph under each heading.
+NULL_ABSENCE_RISK = SHARED_DIR / "policies/null-absence-risk.md"
+FAILURE_RETRY_RECOVERY = SHARED_DIR / "policies/failure-retry-recovery.md"
+ARCHITECTURAL_PLACEMENT = SHARED_DIR / "policies/architectural-placement.md"
+API_CONTRACT_COMPATIBILITY = SHARED_DIR / "policies/api-contract-compatibility.md"
 EVIDENCE = SHARED_DIR / "policies/evidence.md"
 LOCAL_SKILL_MD = LOCAL_SKILL_DIR / "SKILL.md"
 LOCAL_RUNBOOK = LOCAL_SKILL_DIR / "runbooks/local-review.md"
@@ -141,12 +149,12 @@ class RunbookDoesNotDuplicateBehavioralPolicyTextTests(unittest.TestCase):
             "It triggers on a concrete signal in the diff: more than one "
             "side-effecting step"
         )
-        self.assertIn(trigger_phrase, self.policy_text)
+        self.assertIn(trigger_phrase, _text(FAILURE_RETRY_RECOVERY))
         self.assertNotIn(trigger_phrase, self.runbook_text)
 
     def test_observability_hierarchy_prose_lives_only_in_the_policy(self) -> None:
         hierarchy_phrase = "never a generic \"add more logs\" recommendation"
-        self.assertIn(hierarchy_phrase, self.policy_text)
+        self.assertIn(hierarchy_phrase, _text(FAILURE_RETRY_RECOVERY))
         self.assertNotIn(hierarchy_phrase, self.runbook_text)
 
 
@@ -334,9 +342,8 @@ class FailureRetryRecoverySignalTriggeredTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.section = _section(
-            _text(REVIEW_SCOPE),
+            _text(FAILURE_RETRY_RECOVERY),
             "## Failure state, retry safety, and recovery",
-            "## Technology neutrality",
         )
 
     def test_absent_a_signal_the_section_does_not_apply(self) -> None:
@@ -391,9 +398,8 @@ class ObservabilityApplicabilityGateTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.section = _section(
-            _text(REVIEW_SCOPE),
+            _text(FAILURE_RETRY_RECOVERY),
             "### Observability is applicability-gated, not universal",
-            "## Technology neutrality",
         )
 
     def test_gate_question_precedes_the_hierarchy(self) -> None:
@@ -450,9 +456,8 @@ class MetricsNotUniversallyRequiredTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.section = _section(
-            _text(REVIEW_SCOPE),
+            _text(FAILURE_RETRY_RECOVERY),
             "## Failure state, retry safety, and recovery",
-            "## Technology neutrality",
         )
 
     def test_established_metrics_check_is_participation_only(self) -> None:
@@ -801,9 +806,8 @@ class NullLikeAbsenceRiskSectionTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.section = _section(
-            _text(REVIEW_SCOPE),
+            _text(NULL_ABSENCE_RISK),
             "## Null-like absence-risk review",
-            "## Existing behavior ownership",
         )
 
     def test_it_is_a_semantic_rule_not_a_keyword_or_regex_match(self) -> None:
@@ -917,9 +921,8 @@ class ArchitecturalPlacementSectionTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.section = _section(
-            _text(REVIEW_SCOPE),
+            _text(ARCHITECTURAL_PLACEMENT),
             "## Architectural placement and execution-lifecycle fidelity",
-            "## Technology neutrality",
         )
 
     def test_it_extends_rather_than_replaces_the_existing_model(self) -> None:
@@ -1152,9 +1155,8 @@ class ApiContractCompatibilitySectionTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.section = _section(
-            _text(REVIEW_SCOPE),
+            _text(API_CONTRACT_COMPATIBILITY),
             "## API / contract compatibility review",
-            "## Change-risk signals and review depth",
         )
 
     def test_recognized_contract_types_are_named(self) -> None:
