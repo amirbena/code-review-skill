@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.32.0 — 2026-09-13
+
+### Added
+
+- Add a Database / Migration deepening capability for schema-evolution and migration risk review (#277).
+
 ## v1.31.0 — 2026-09-13
 
 ### Added
