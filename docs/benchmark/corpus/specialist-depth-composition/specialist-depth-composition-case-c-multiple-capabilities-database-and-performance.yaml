@@ -1,0 +1,168 @@
+# Specialist-depth-composition corpus case (Issue #85, parent #47).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# specialist-depth.md's Case C: two independently materially implicated
+# dimensions in the same change both warrant deepening and must compose
+# into one unified review, neither suppressing nor gating the other.
+# Combines (without re-deriving domain correctness itself) the shape of
+# the Database/Migration corpus's (#186) nullable-to-non-null-no-backfill
+# case with the Performance corpus's (#187) n-plus-one-in-loop case, in
+# one PR that touches both an unbacked schema tightening and an
+# unrelated per-item remote-call loop.
+
+format: benchmark-case/v1
+
+id: specialist-depth-composition-case-c-multiple-capabilities-database-and-performance
+title: "0005_require_subscription_tier drops backfill safety while get_order_summaries loses its batched inventory lookup"
+
+input:
+  patch: |
+    diff --git a/app/billing/models.py b/app/billing/models.py
+    index 1111111..2222222 100644
+    --- a/app/billing/models.py
+    +++ b/app/billing/models.py
+    @@ -7,4 +7,4 @@ class Account(models.Model):
+         predate this field and were never backfilled."""
+
+         name = models.CharField(max_length=200)
+    -    subscription_tier = models.CharField(max_length=20, null=True)
+    +    subscription_tier = models.CharField(max_length=20, null=False)
+    diff --git a/app/billing/migrations/0005_require_subscription_tier.py b/app/billing/migrations/0005_require_subscription_tier.py
+    new file mode 100644
+    index 0000000..9f1b2c3
+    --- /dev/null
+    +++ b/app/billing/migrations/0005_require_subscription_tier.py
+    @@ -0,0 +1,17 @@
+    +from django.db import migrations, models
+    +
+    +
+    +class Migration(migrations.Migration):
+    +
+    +    dependencies = [
+    +        ("billing", "0004_add_subscription_tier"),
+    +    ]
+    +
+    +    operations = [
+    +        migrations.AlterField(
+    +            model_name="account",
+    +            name="subscription_tier",
+    +            field=models.CharField(max_length=20, null=False),
+    +        ),
+    +    ]
+    diff --git a/app/orders/summaries.py b/app/orders/summaries.py
+    index 8078415..31c0e86 100644
+    --- a/app/orders/summaries.py
+    +++ b/app/orders/summaries.py
+    @@ -8,8 +8,7 @@ def get_order_summaries(order_ids):
+         customer's order history query, which can run into the thousands
+         for long-tenured customers.
+         """
+    -    inventory_by_order = inventory_client.get_inventory_batch(order_ids)
+         return [
+    -        {"order_id": oid, "inventory": inventory_by_order[oid]}
+    +        {"order_id": oid, "inventory": inventory_client.get_inventory(oid)}
+             for oid in order_ids
+         ]
+  base:
+    app/billing/models.py: |
+      from django.db import models
+
+
+      class Account(models.Model):
+          """billing_account. subscription_tier was added nullable in
+          migration 0004; accounts created before that migration predate
+          this field and were never backfilled."""
+
+          name = models.CharField(max_length=200)
+          subscription_tier = models.CharField(max_length=20, null=True)
+    app/orders/summaries.py: |
+      from . import inventory_client
+
+
+      def get_order_summaries(order_ids):
+          """Fetch an inventory summary for each of the given orders.
+
+          order_ids is unbounded: callers pass the full result of a
+          customer's order history query, which can run into the thousands
+          for long-tenured customers.
+          """
+          inventory_by_order = inventory_client.get_inventory_batch(order_ids)
+          return [
+              {"order_id": oid, "inventory": inventory_by_order[oid]}
+              for oid in order_ids
+          ]
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: subscription-tier-not-null-without-backfill
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/billing/migrations/0005_require_subscription_tier.py
+        symbol: Migration
+        anchor: 'field=models.CharField(max_length=20, null=False),'
+      claim: >-
+        Account's own docstring documents that accounts created before
+        migration 0004 added subscription_tier were never backfilled and
+        so still hold NULL. This migration tightens the column to
+        null=False with no preceding RunPython backfill step and no
+        default value, so applying it against a database that still holds
+        those legacy NULL rows fails the new constraint.
+      defect_kind: nullable-to-non-null-missing-backfill
+    - key: n-plus-one-inventory-call-per-order
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/orders/summaries.py
+        symbol: get_order_summaries
+        anchor: "inventory_client.get_inventory(oid)"
+      claim: >-
+        get_order_summaries previously fetched inventory for every order
+        in a single inventory_client.get_inventory_batch(order_ids) call;
+        the change replaces it with inventory_client.get_inventory(oid)
+        issued once per element of the order_ids loop. The function's own
+        docstring documents order_ids as unbounded -- into the thousands
+        for long-tenured customers -- so this multiplies remote calls with
+        a cardinality the evidence shows is material.
+      defect_kind: n-plus-one-remote-call
+    - key: missing-migration-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/billing/migrations/0005_require_subscription_tier.py
+      claim: >-
+        No test applies this migration against a fixture containing a
+        legacy Account row with subscription_tier still NULL.
+      defect_kind: missing-migration-test
+    - key: missing-n-plus-one-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/orders/summaries.py
+      claim: >-
+        No test asserts get_order_summaries issues a bounded number of
+        inventory calls independent of len(order_ids).
+      defect_kind: missing-performance-regression-test
+
+metadata:
+  source: crafted
+  tags: [correctness, performance]
+  rationale: >-
+    Pins specialist-depth.md's Case C ("multiple capabilities"): the
+    schema-tightening hunk independently satisfies database/migration
+    deepening's activation evidence (documented pre-existing NULLs, no
+    backfill step) and the unrelated inventory-lookup hunk independently
+    satisfies performance deepening's activation evidence (documented
+    unbounded cardinality, batched call replaced by a per-item call) --
+    two unrelated files, each on its own already warranting its own
+    capability from the moment the diff is read, distinguishing this from
+    the cascading Case F below. Both required findings must be present in
+    one unified review with neither gating or suppressing the other, and
+    neither may be demoted to optional or dropped because the other
+    capability also engaged.

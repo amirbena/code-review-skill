@@ -1,0 +1,80 @@
+# Specialist-depth-composition corpus case (Issue #85, parent #47).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# specialist-depth.md's Case D: a superficial file/path signal alone
+# never forces domain-specific deepening. Reuses the Database/Migration
+# domain corpus's (#186) comment-only-edit-not-implicated-clean scenario:
+# a file lives under migrations/ and would keyword-match a naive
+# "migration touched" trigger, but the diff only adds comments -- the
+# schema operation is byte-for-byte unchanged, so neither base
+# persistence reasoning nor database deepening has anything to flag.
+
+format: benchmark-case/v1
+
+id: specialist-depth-composition-case-d-superficial-signal-suppressed-clean
+title: "0008_add_shipping_note.py gains an explanatory comment and a clearer migration name; the operation is unchanged"
+
+input:
+  patch: |
+    diff --git a/app/orders/migrations/0008_add_shipping_note.py b/app/orders/migrations/0008_add_shipping_note.py
+    index 1111111..2222222 100644
+    --- a/app/orders/migrations/0008_add_shipping_note.py
+    +++ b/app/orders/migrations/0008_add_shipping_note.py
+    @@ -1,6 +1,10 @@
+     from django.db import migrations, models
+
+
+    +# Adds an optional free-text note field editors can attach to an
+    +# order's shipping record; purely additive, no backfill required.
+    +
+    +
+     class Migration(migrations.Migration):
+
+         dependencies = [
+    @@ -8,6 +12,8 @@ class Migration(migrations.Migration):
+         ]
+
+         operations = [
+    +        # shipping_note: nullable free-text field, see comment above.
+             migrations.AddField(
+                 model_name="order",
+                 name="shipping_note",
+  base:
+    app/orders/migrations/0008_add_shipping_note.py: |
+      from django.db import migrations, models
+
+
+      class Migration(migrations.Migration):
+
+          dependencies = [
+              ("orders", "0007_add_status_index"),
+          ]
+
+          operations = [
+              migrations.AddField(
+                  model_name="order",
+                  name="shipping_note",
+                  field=models.TextField(null=True, blank=True),
+              ),
+          ]
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins specialist-depth.md's Case D ("misleading superficial signal"):
+    the touched file's path (migrations/) is the strongest possible
+    file-location signal for database/migration deepening, yet the diff
+    changes only comments -- the AddField operation, field type, and
+    nullability are unchanged. File location alone must not force
+    activation; with no schema-evolution content to reason about, base
+    reasoning finds nothing and no domain-specific deepening capability
+    engages. Reused rather than re-derived from #186's own
+    comment-only-edit-not-implicated-clean fixture, which owns this as a
+    single-domain negative case; #85 reuses it to prove the same
+    non-activation holds at the composition level.

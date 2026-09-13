@@ -1,0 +1,102 @@
+# Specialist-depth-composition corpus case (Issue #85, parent #47).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# specialist-depth.md's Case A: a change touches a dimension the base
+# semantic-implication pass (#211) considers, but the bounded base pass
+# fully resolves it -- the added per-request list comprehension is over
+# order.items, which the docstring documents as capped at MAX_CART_ITEMS
+# (50) before this function is ever called, so no performance-deepening
+# evidence exists. The same diff introduces a real, ordinary correctness
+# defect (a broken boolean guard) that base reasoning alone must still
+# catch -- proving base reasoning stays complete even when zero
+# specialist-depth capabilities engage.
+
+format: benchmark-case/v1
+
+id: specialist-depth-composition-case-a-zero-capabilities-base-reasoning-complete
+title: "apply_discount adds a bounded per-item filter and breaks its own negative-discount guard"
+
+input:
+  patch: |
+    diff --git a/app/pricing/discount.py b/app/pricing/discount.py
+    index 1111111..2222222 100644
+    --- a/app/pricing/discount.py
+    +++ b/app/pricing/discount.py
+    @@ -8,7 +8,10 @@ DISCOUNT_CATEGORIES = {"clearance", "seasonal"}
+
+
+     def apply_discount(order, discount_percent):
+    -    if discount_percent > 100 or discount_percent < 0:
+    +    eligible_items = [
+    +        item for item in order.items if item.category in DISCOUNT_CATEGORIES
+    +    ]
+    +    if discount_percent > 100 and discount_percent < 0:
+             raise ValueError("discount_percent must be between 0 and 100")
+    -    eligible_total = sum(
+    -        item.price for item in order.items if item.category in DISCOUNT_CATEGORIES
+    -    )
+    +    eligible_total = sum(item.price for item in eligible_items)
+         return eligible_total * (100 - discount_percent) / 100
+  base:
+    app/pricing/discount.py: |
+      """Discount calculation for checkout.
+
+      order.items is capped at MAX_CART_ITEMS (50) by the checkout API
+      before apply_discount is ever called.
+      """
+
+      DISCOUNT_CATEGORIES = {"clearance", "seasonal"}
+
+
+      def apply_discount(order, discount_percent):
+          if discount_percent > 100 or discount_percent < 0:
+              raise ValueError("discount_percent must be between 0 and 100")
+          eligible_total = sum(
+              item.price for item in order.items if item.category in DISCOUNT_CATEGORIES
+          )
+          return eligible_total * (100 - discount_percent) / 100
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: discount-percent-guard-broken-by-and
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/pricing/discount.py
+        symbol: apply_discount
+        anchor: "if discount_percent > 100 and discount_percent < 0:"
+      claim: >-
+        The guard changed from `discount_percent > 100 or discount_percent
+        < 0` to `discount_percent > 100 and discount_percent < 0`. No
+        single value can be both greater than 100 and less than 0, so the
+        `and` form never raises: an out-of-range discount_percent (for
+        example -50, or 250) now silently passes through into the price
+        formula instead of being rejected, producing a nonsensical total
+        rather than the intended validation error.
+      defect_kind: validation-guard-boolean-operator-inverted
+    - key: missing-discount-guard-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/pricing/discount.py
+      claim: >-
+        No test asserts apply_discount rejects a negative or over-100
+        discount_percent.
+      defect_kind: missing-regression-test
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins specialist-depth.md's Case A ("no deepening"): the newly added
+    eligible_items comprehension iterates order.items, which the module's
+    own docstring documents as capped at 50 by the caller, so no
+    performance-deepening evidence exists and that capability must not
+    engage. The same diff's `or` -> `and` guard inversion is an ordinary
+    base-reasoning correctness defect with no domain-specific angle at
+    all; base semantic reasoning must still catch it standing alone, per
+    #82's unconditional base per-dimension obligation.

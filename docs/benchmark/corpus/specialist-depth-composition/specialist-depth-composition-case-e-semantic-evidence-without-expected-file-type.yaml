@@ -1,0 +1,118 @@
+# Specialist-depth-composition corpus case (Issue #85, parent #47).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# specialist-depth.md's Case E: semantic evidence of a persisted-state
+# implication can trigger deepening even with no .sql file and no
+# migration directory touched anywhere in the diff. No dedicated domain
+# corpus case for this exact "no expected file type" shape exists yet
+# (the closest, database-migration-deepening's DynamoDB conditional-write
+# case, still touches a data-access file whose own name signals the
+# concern) -- #85 owns a minimal integration-only fixture of its own for
+# this shape, per the issue's Scope.
+
+format: benchmark-case/v1
+
+id: specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type
+title: "session_cache.remember narrows the cached profile shape without a compatibility path for entries written under the old shape"
+
+input:
+  patch: |
+    diff --git a/app/sessions/cache.py b/app/sessions/cache.py
+    index 1111111..2222222 100644
+    --- a/app/sessions/cache.py
+    +++ b/app/sessions/cache.py
+    @@ -10,10 +10,7 @@ def remember(session_id, profile):
+         """Cache a user's profile under their session id.
+
+         Entries are read back by read_profile below for the lifetime of
+    -    the session (session TTL is 24h, so entries written by a previous
+    -    deploy are routinely still live and read back by a newer one).
+    +    the session.
+         """
+    -    redis_client.hset(
+    -        session_id, mapping={"id": profile.id, "email": profile.email, "display_name": profile.display_name}
+    -    )
+    +    redis_client.hset(session_id, mapping={"id": profile.id, "display_name": profile.display_name})
+         redis_client.expire(session_id, 24 * 60 * 60)
+
+
+     def read_profile(session_id):
+    @@ -21,4 +18,4 @@ def read_profile(session_id):
+         """Read back a cached profile written by remember above."""
+         entry = redis_client.hgetall(session_id)
+    -    return Profile(id=entry["id"], email=entry["email"], display_name=entry["display_name"])
+    +    return Profile(id=entry["id"], display_name=entry["display_name"])
+  base:
+    app/sessions/cache.py: |
+      import redis_client
+      from .models import Profile
+
+
+      def remember(session_id, profile):
+          """Cache a user's profile under their session id.
+
+          Entries are read back by read_profile below for the lifetime of
+          the session (session TTL is 24h, so entries written by a previous
+          deploy are routinely still live and read back by a newer one).
+          """
+          redis_client.hset(
+              session_id, mapping={"id": profile.id, "email": profile.email, "display_name": profile.display_name}
+          )
+          redis_client.expire(session_id, 24 * 60 * 60)
+
+
+      def read_profile(session_id):
+          """Read back a cached profile written by remember above."""
+          entry = redis_client.hgetall(session_id)
+          return Profile(id=entry["id"], email=entry["email"], display_name=entry["display_name"])
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: cache-shape-narrowed-without-coexistence-path
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/sessions/cache.py
+        symbol: read_profile
+        anchor: 'return Profile(id=entry["id"], display_name=entry["display_name"])'
+      claim: >-
+        remember's own (now-deleted) docstring documented that the 24h
+        session TTL means entries written by a previous deploy are
+        routinely still live when a newer deploy reads them back. This
+        change drops the "email" field from both the write shape and the
+        read shape in the same deploy, with no coexistence handling for
+        entries a still-live prior deploy wrote under the old shape (which
+        read_profile would now read successfully, silently discarding the
+        email field it no longer expects to be absent) or entries the new
+        code writes that an in-flight prior-deploy reader might still
+        expect to contain "email". No .sql file or migration directory is
+        touched anywhere in this diff -- the persisted-state shape change
+        lives entirely in the cache key's serialized field set.
+      defect_kind: cache-entry-shape-change-missing-coexistence
+    - key: missing-cache-shape-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/sessions/cache.py
+      claim: >-
+        No test exercises read_profile against an entry written under the
+        old (with-email) shape to confirm the transition is safe.
+      defect_kind: missing-regression-test
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins specialist-depth.md's Case E ("implication without the expected
+    file type"): the persisted-state shape change lives in a Redis cache
+    key's field set inside ordinary application code -- no .sql file, no
+    migrations/ directory, nothing a file-type/path router would ever
+    match. The evidence that forces base persistence reasoning (and, on
+    this evidence, database/persistence deepening) to engage is entirely
+    semantic: the docstring's own statement that entries routinely
+    outlive a single deploy, so a shape change with no coexistence path is
+    a real defect regardless of which file happens to hold it.
