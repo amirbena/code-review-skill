@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.36.1 — 2026-09-13
+
+### Fixed
+
+- Consolidate duplicated shell/PowerShell packaging logic behind a shared Python implementation, with no change to packaged archive contents (#290).
+
 ## v1.36.0 — 2026-09-13
 
 ### Changed
