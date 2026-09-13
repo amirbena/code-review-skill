@@ -53,11 +53,17 @@ explicitly deferred to a future CI-gate issue):
   authenticated) is caught by the preflight too, not just "missing
   entirely". This is a single additional subprocess call, not a
   retry/backoff or health-check subsystem.
-- the CLI invocation now points ``--plugin-dir`` at this checkout's own
-  repository root (see ``SKILL_PLUGIN_DIR`` below) instead of relying on
-  whatever Skill happens to be ambiently installed on the machine running
-  the benchmark, so a benchmark run is bound to the Skill as it exists in
-  this specific checkout.
+- the CLI invocation now also passes ``--plugin-dir`` pointing at this
+  checkout's own repository root (see ``SKILL_PLUGIN_DIR`` below), as a
+  **best-effort hint** rather than a verified binding: this repository's
+  ``skills/`` tree is not currently a valid Claude Code plugin directory
+  (no ``.claude-plugin/plugin.json``), so the CLI is not guaranteed to
+  recognize or load it, and may fall back to whatever ``local-code-review``
+  copy is ambiently discoverable on the machine running the benchmark
+  instead. Verified Skill-under-test provisioning/binding is a correctness
+  requirement of the later benchmark CI/gating work
+  ([#255](https://github.com/amirbena/code-review-skill/issues/255)), not
+  of this manual developer tool.
 """
 
 from __future__ import annotations
@@ -86,23 +92,27 @@ PROBE_TIMEOUT_SECONDS = 30.0
 # This checkout's own repository root (mirrors the same
 # ``Path(__file__).resolve().parents[1]`` pattern already used in
 # ``scripts/run_benchmark.py``). Passed to the review CLI's
-# ``--plugin-dir`` flag (see ``ProductionReviewerAdapter.__call__``) so the
-# benchmark is bound to the ``local-code-review`` Skill as it exists in
-# *this* checkout, not to whatever Skill happens to be ambiently installed
-# on the machine running the benchmark.
+# ``--plugin-dir`` flag (see ``ProductionReviewerAdapter.__call__``) as a
+# **best-effort hint** pointing the CLI at the ``local-code-review`` Skill
+# as it exists in *this* checkout, rather than doing nothing and leaving
+# the run entirely dependent on ambient discovery.
 #
-# Known limitation, documented here rather than engineered around: this
-# repository's ``skills/`` layout is a Skill-packaging source tree (see
-# ``scripts/package-manifest.json``), not a Claude Code *plugin* directory
-# (no ``.claude-plugin/plugin.json`` manifest). ``--plugin-dir`` is the
-# only existing CLI mechanism for pointing a one-off invocation at a local
-# directory, so it is used as the best available minimal binding; if the
-# CLI does not recognize this layout as a loadable plugin, invocations
-# fall back to the CLI's own ambient Skill discovery, and the prompt's
+# This is *not* a verified runtime-to-Skill binding, and must not be
+# described as one: this repository's ``skills/`` layout is a
+# Skill-packaging source tree (see ``scripts/package-manifest.json``), not
+# a Claude Code *plugin* directory (no ``.claude-plugin/plugin.json``
+# manifest). ``--plugin-dir`` is the only existing CLI mechanism for
+# pointing a one-off invocation at a local directory, so it is passed as
+# the smallest available hint; the CLI is not guaranteed to recognize this
+# layout as a loadable plugin, and when it does not, invocations silently
+# fall back to the CLI's own ambient Skill discovery — the prompt's
 # request to invoke ``local-code-review`` may then execute a different,
 # ambiently-installed copy of that Skill instead of this checkout's copy.
-# Provisioning a proper plugin manifest is out of scope for this manual
-# developer benchmark tool (issue #250) and is left to a future issue.
+# Provisioning a proper plugin manifest, and making Skill-under-test
+# binding an actual, verified correctness requirement, is out of scope for
+# this manual developer benchmark tool (issue #250) and belongs to the
+# later benchmark CI/gating work
+# (https://github.com/amirbena/code-review-skill/issues/255).
 SKILL_PLUGIN_DIR = Path(__file__).resolve().parents[1]
 
 

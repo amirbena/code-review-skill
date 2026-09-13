@@ -208,7 +208,8 @@ the per-case result, but the **match relation itself**
 | FP/FN accounting, precision/recall, retrieval thresholds, aggregate quality metrics built on that relation | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
 | Regression reporting across runs (seeded-regression detection, run-to-run comparison) | [#53](https://github.com/amirbena/code-review-skill/issues/53) — [`regression-report.md`](regression-report.md) |
 | A production reviewer adapter that actually drives a real runtime reading the packaged Skill (as opposed to a deterministic test stub) | [#250](https://github.com/amirbena/code-review-skill/issues/250) — [`../../scripts/benchmark_review_adapter.py`](../../scripts/benchmark_review_adapter.py) (adapter) and [`../../scripts/run_benchmark.py`](../../scripts/run_benchmark.py) (CLI entrypoint) |
-| CI wiring / scheduled execution | not owned by [#40](https://github.com/amirbena/code-review-skill/issues/40) and not owned by [#250](https://github.com/amirbena/code-review-skill/issues/250) — a separate, not-yet-filed issue if/when one exists |
+| CI wiring / scheduled execution | not owned by [#40](https://github.com/amirbena/code-review-skill/issues/40) and not owned by [#250](https://github.com/amirbena/code-review-skill/issues/250) — [#255](https://github.com/amirbena/code-review-skill/issues/255) |
+| Verified Skill-under-test provisioning/binding (a guaranteed, not merely best-effort, runtime-to-Skill binding) | [#255](https://github.com/amirbena/code-review-skill/issues/255) — a correctness requirement there; #250's `--plugin-dir` hint (below) is explicitly not this |
 | Container / sandbox orchestration, a hosted service, database persistence, dashboards | out of scope for the epic; a container is at most a *future* isolation mechanism, not required by this contract |
 | The fixture format and the corpus | [#50](https://github.com/amirbena/code-review-skill/issues/50) / [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | The P0/P1/P2 definitions and the decision derivation | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
@@ -239,12 +240,19 @@ to `run_corpus`/`run_selected` and the existing metrics
 Per the "Status and canonical home" section below, this is a pluggable
 adapter behind the fixed boundary this contract defines, not a change to
 runner behavior — this pointer is a cross-reference, not new contract
-substance. The CLI invocation binds each run to *this checkout's own*
-`local-code-review` Skill directory (via the review CLI's `--plugin-dir`
-flag) rather than an ambiently-installed Skill, and its preflight check
-verifies the runtime is actually usable, not merely present; both remain
-a manual/developer execution path only — CI wiring, scheduling, and
-merge-gate hardening stay out of scope here per the table above.
+substance. The CLI invocation passes a **best-effort** `--plugin-dir` hint
+pointing at this checkout's own repository root, rather than doing nothing
+and leaving the run entirely dependent on ambient Skill discovery — but
+this repository's `skills/` tree is not currently a valid Claude Code
+plugin directory, so the CLI is not guaranteed to recognize or load it and
+may still fall back to an ambiently-installed `local-code-review` copy.
+This is *not* a verified runtime-to-Skill binding; making that binding an
+actual correctness requirement is explicitly out of scope here and belongs
+to [#255](https://github.com/amirbena/code-review-skill/issues/255) (see
+the table above). Its preflight check verifies the runtime is actually
+usable, not merely present; both remain a manual/developer execution path
+only — CI wiring, scheduling, and merge-gate hardening stay out of scope
+here per the table above.
 
 ## Status and canonical home
 

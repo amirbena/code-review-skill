@@ -320,10 +320,17 @@ class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
         with self.assertRaises(ValueError):
             adapter(workspace)
 
-    def test_adapter_invokes_cli_with_plugin_dir_bound_to_this_checkout(self) -> None:
-        """The adapter must bind the review CLI to this checkout's own
-        Skill directory (not whatever is ambiently installed) via
-        ``--plugin-dir`` — proven by a stub that records its own argv."""
+    def test_adapter_passes_plugin_dir_hint_pointing_at_this_checkout(self) -> None:
+        """The adapter passes a best-effort ``--plugin-dir`` hint pointing at
+        this checkout's own Skill directory, instead of relying purely on
+        ambient discovery — proven by a stub that records its own argv.
+
+        This proves only that the CLI *receives* this path as an argument;
+        it does not and cannot prove the CLI actually loads/executes that
+        Skill from it (this repository's ``skills/`` tree is not currently a
+        valid Claude Code plugin directory, so recognition isn't guaranteed
+        — see ``SKILL_PLUGIN_DIR``'s docstring). Verified runtime-to-Skill
+        binding is out of scope for this manual tool; see issue #255."""
         workspace = self.tmp_path / "workspace5"
         workspace.mkdir()
         argv_marker = self.tmp_path / "argv.txt"
