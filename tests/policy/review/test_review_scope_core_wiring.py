@@ -36,7 +36,6 @@ from tests.support.policy_docs import (
     GITHUB_ACTIVE_RUNBOOK,
     GITHUB_PASSIVE_RUNBOOK,
 )
-from tests.support.policy_docs import extract_section as _section
 from tests.support.policy_docs import load_normalized_text as _text
 
 # The failure-retry-recovery pass was extracted from review-scope.md into
