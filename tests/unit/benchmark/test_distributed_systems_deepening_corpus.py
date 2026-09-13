@@ -148,12 +148,33 @@ class SubCorpusCoverageTests(unittest.TestCase):
         missing = REQUIRED_CASE_IDS - set(self.by_id)
         self.assertEqual(missing, set(), f"missing required fixtures: {missing}")
 
-    def test_clean_cases_have_no_findings_at_all(self) -> None:
+    def test_clean_cases_have_no_required_findings(self) -> None:
+        # A clean case may still carry an `optional` finding (e.g. the
+        # guarded-retry case's durability note) -- what makes it `clean`
+        # is that it carries no *required* finding, per severity.md's
+        # mechanical decision derivation.
         for case_id in CLEAN_CASE_IDS:
             with self.subTest(case=case_id):
                 case = self.by_id[case_id]
-                self.assertEqual(list(case.findings), [])
+                required = [f for f in case.findings if f.required]
+                self.assertEqual(required, [])
                 self.assertEqual(case.decision, "clean")
+
+    def test_strictly_clean_cases_have_no_findings_at_all(self) -> None:
+        # Unlike the guarded-retry case, these two carry no finding of
+        # any kind -- the domain isn't implicated / naming alone doesn't
+        # trigger engagement, so there is nothing to observe at all.
+        for case_id in {NOT_IMPLICATED_CLEAN, FILENAME_SIGNAL_CLEAN}:
+            with self.subTest(case=case_id):
+                case = self.by_id[case_id]
+                self.assertEqual(list(case.findings), [])
+
+    def test_guarded_clean_case_carries_only_an_optional_durability_note(self) -> None:
+        case = self.by_id[RETRY_GUARDED_CLEAN]
+        self.assertEqual(len(case.findings), 1)
+        finding = case.findings[0]
+        self.assertFalse(finding.required)
+        self.assertEqual(finding.key, "in-memory-idempotency-guard-not-durable")
 
     def test_flagged_cases_each_have_exactly_one_required_p1_finding(self) -> None:
         for case_id in FLAGGED_CASE_IDS:
