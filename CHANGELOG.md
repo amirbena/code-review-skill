@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.38.0 — 2026-09-13
+
+### Added
+
+- Add opt-in `include_severity_description` option to expand `github-pr-review`'s compact severity headings into their full legend (#294).
+
 ## v1.37.0 — 2026-09-13
 
 ### Changed
