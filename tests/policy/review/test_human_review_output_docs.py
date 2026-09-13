@@ -84,9 +84,13 @@ class OptionDefinedOnceInSharedPolicy(unittest.TestCase):
         self.assertIn("HEAD/SHA validation, or publication ordering", self.t)
 
     def test_the_four_concepts_are_named(self) -> None:
+        # Issue #275 added a fifth concept (`severity description`); this
+        # test's own name is kept (it predates that change) but now checks
+        # the current five-concept sentence still names the original four.
         self.assertIn(
-            "four canonical option concepts: fix prompt, fix guidance, "
-            "finding details, and human review output",
+            "five canonical option concepts: fix prompt, fix guidance, "
+            "finding details, human review output, and severity "
+            "description",
             self.t,
         )
 

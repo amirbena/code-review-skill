@@ -184,9 +184,14 @@ class StableReviewSummaryHeading(unittest.TestCase):
 
 
 class ReaderVisibleSeverityLegend(unittest.TestCase):
-    """Each rendered finding heading exposes a compact, canonical
-    human-readable severity meaning, once, with no repeated explanatory
-    paragraph — aligned with shared/policies/severity.md."""
+    """The severity-legend mapping is defined once and aligned with
+    shared/policies/severity.md; when rendered, it appears once per
+    finding heading with no repeated explanatory paragraph. Issue #275
+    made the parenthetical opt-in (default compact) — the default-vs-
+    opt-in pinning itself lives in
+    test_severity_description_option_275.py; this class only checks that
+    the mapping still exists, is still reachable somewhere in each
+    template, and is never repeated as an explanatory paragraph."""
 
     def test_legend_defined_once_and_aligned_with_severity_policy(self) -> None:
         raw = GH_OUTPUT.read_text(encoding="utf-8")
@@ -441,12 +446,15 @@ class GoldenScenarios(unittest.TestCase):
         ).group(1)
         # The inline-eligible finding appears as a bare summary-pointer
         # line in the body (no Evidence/Impact/Fix block for it) while the
-        # no-anchor finding gets its full block.
-        self.assertIn("P1 (Blocking) — Authorization provenance", fallback_section)
+        # no-anchor finding gets its full block. Issue #275: compact
+        # severity (no legend parenthetical) is now the default rendering
+        # for this section; the opt-in expanded form is pinned separately
+        # in test_severity_description_option_275.py.
+        self.assertIn("P1 — Authorization provenance", fallback_section)
         self.assertNotIn(
             "F1", fallback_section
         )  # the inline-published finding has no body-side id/full block
-        self.assertIn("#### F2 [P2 (Non-Blocking)]", fallback_section)
+        self.assertIn("#### F2 [P2]", fallback_section)
 
     def test_both_modes_render_review_summary_heading(self) -> None:
         raw = GH_SUMMARY.read_text(encoding="utf-8")

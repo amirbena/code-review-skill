@@ -15,6 +15,8 @@ LOCAL_DEFAULTS = {
     "human_review_output": False,
     # no static default: derived from human_review_output when unset
     "human_inline_findings": False,
+    # local-code-review has no severity legend; normalized for parity only
+    "include_severity_description": False,
 }
 GITHUB_DEFAULTS = {
     "include_fix_prompt": False,
@@ -22,6 +24,7 @@ GITHUB_DEFAULTS = {
     "include_finding_details": False,
     "human_review_output": False,
     "human_inline_findings": False,
+    "include_severity_description": False,
 }
 
 
@@ -317,6 +320,119 @@ class HumanInlineFindingsOptionTests(unittest.TestCase):
         self.assertTrue(
             normalize("review like a senior engineer", defaults=LOCAL_DEFAULTS)[
                 "human_inline_findings"
+            ]
+        )
+
+
+class SeverityDescriptionOptionTests(unittest.TestCase):
+    """Issue #275: the opt-in expanded severity-legend parenthetical on
+    `github-pr-review`'s finding-headline surfaces, default off (compact)."""
+
+    def test_default_is_compact_for_both_skills(self) -> None:
+        for defaults in (LOCAL_DEFAULTS, GITHUB_DEFAULTS):
+            self.assertFalse(defaults["include_severity_description"])
+            self.assertFalse(
+                normalize("review this PR", defaults=defaults)[
+                    "include_severity_description"
+                ]
+            )
+
+    def test_natural_affirmative_phrasings_enable_it(self) -> None:
+        for text in (
+            "include severity descriptions",
+            "show severity descriptions",
+            "show blocking/non-blocking labels",
+            "include_severity_description",
+            "include severity description",
+            "include-severity-description",
+            "include_severity_description=true",
+        ):
+            with self.subTest(text=text):
+                self.assertTrue(
+                    normalize(text, defaults=GITHUB_DEFAULTS)[
+                        "include_severity_description"
+                    ]
+                )
+
+    def test_explicit_negatives_force_it_off(self) -> None:
+        on = {**GITHUB_DEFAULTS, "include_severity_description": True}
+        for text in (
+            "keep severity compact",
+            "don't include severity descriptions",
+            "show only p0/p1/p2",
+            "include_severity_description=false",
+        ):
+            with self.subTest(text=text):
+                self.assertFalse(
+                    normalize(text, defaults=on)["include_severity_description"]
+                )
+
+    def test_ambiguous_or_vague_language_does_not_set_it(self) -> None:
+        on = {**GITHUB_DEFAULTS, "include_severity_description": True}
+        off = dict(GITHUB_DEFAULTS)
+        for text in (
+            "be more detailed",
+            "what does include_severity_description do?",
+            "severity matters here",
+        ):
+            with self.subTest(text=text):
+                self.assertTrue(
+                    normalize(text, defaults=on)["include_severity_description"]
+                )
+                self.assertFalse(
+                    normalize(text, defaults=off)["include_severity_description"]
+                )
+
+    def test_canonical_false_beats_a_natural_affirmative_phrasing(self) -> None:
+        result = normalize(
+            "show severity descriptions; include_severity_description=false",
+            defaults=GITHUB_DEFAULTS,
+        )
+        self.assertFalse(result["include_severity_description"])
+
+    def test_conflicting_natural_values_fall_back_to_default(self) -> None:
+        text = "show severity descriptions but keep severity compact"
+        self.assertFalse(
+            normalize(text, defaults=GITHUB_DEFAULTS)["include_severity_description"]
+        )
+        on = {**GITHUB_DEFAULTS, "include_severity_description": True}
+        self.assertTrue(normalize(text, defaults=on)["include_severity_description"])
+
+    def test_direct_and_mediated_forms_have_parity(self) -> None:
+        direct = normalize("show severity descriptions", defaults=GITHUB_DEFAULTS)
+        mediated = normalize(
+            "include_severity_description=true", defaults=GITHUB_DEFAULTS
+        )
+        self.assertEqual(direct, mediated)
+
+    def test_it_does_not_leak_between_invocations(self) -> None:
+        first = normalize("show severity descriptions", defaults=GITHUB_DEFAULTS)
+        second = normalize("review this PR", defaults=GITHUB_DEFAULTS)
+        self.assertTrue(first["include_severity_description"])
+        self.assertFalse(second["include_severity_description"])
+
+    def test_it_does_not_change_any_other_option(self) -> None:
+        off = normalize("review this PR", defaults=GITHUB_DEFAULTS)
+        on = normalize(
+            "review this PR and show severity descriptions",
+            defaults=GITHUB_DEFAULTS,
+        )
+        self.assertTrue(on.pop("include_severity_description"))
+        off.pop("include_severity_description", None)
+        self.assertEqual(on, off)
+
+    def test_local_defaults_normalize_for_parity_only(self) -> None:
+        # local-code-review has no severity legend at all; the option
+        # still normalizes deterministically for cross-Skill parity even
+        # though the Skill has nothing to act on.
+        self.assertTrue(
+            normalize("show severity descriptions", defaults=LOCAL_DEFAULTS)[
+                "include_severity_description"
+            ]
+        )
+        self.assertFalse(
+            normalize("review this", defaults=LOCAL_DEFAULTS)[
+                "include_severity_description"
             ]
         )
 

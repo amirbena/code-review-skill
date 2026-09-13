@@ -39,9 +39,12 @@ attach [review context](../../docs/features/review-context.md) (a ticket,
 Issue, ADR, plan, or a Jira key resolved read-only) to focus the review
 without widening the PR delta; ask for
 [human-style output](../../docs/features/human-review-output.md) ("review
-it like a senior engineer") for a concise summary. Runtime validation
-evidence and parallel review apply automatically when the repository and
-runtime support them.
+it like a senior engineer") for a concise summary; ask to
+[show severity descriptions](../../docs/features/severity-description.md)
+("show blocking/non-blocking labels") to expand the compact `P0` / `P1` /
+`P2` headings — compact is the default. Runtime validation evidence and
+parallel review apply automatically when the repository and runtime
+support them.
 
 ## What a review looks like
 
@@ -54,11 +57,11 @@ Not safe to merge at `a1b2c3d` yet; see the inline comments for detail.
 
 ### Findings
 
-- **P0 (Critical) — Endpoint skips the ownership check, letting any authenticated user read another tenant's records**
+- **P0 — Endpoint skips the ownership check, letting any authenticated user read another tenant's records**
   `src/api/records.py:41`
-- **P1 (Blocking) — Pagination can stop after page one and pass a false clean review**
+- **P1 — Pagination can stop after page one and pass a false clean review**
   `src/reviews/scan.py:84`
-- **P2 (Non-Blocking) — Validation output hides the failing check name**
+- **P2 — Validation output hides the failing check name**
   `scripts/validate.py:117`
 
 ### Decision

@@ -16,6 +16,7 @@ OPTION_CONCEPTS = {
     "include_finding_details": "finding details",
     "human_review_output": "human review output",
     "human_inline_findings": "human inline findings",
+    "include_severity_description": "severity description",
 }
 
 # Options with no fixed Skill default: after every other option is resolved,
@@ -47,6 +48,11 @@ OPTION_EXTRA_AFFIRMATIVE: dict[str, tuple[str, ...]] = {
         "human inline findings",
         "human inline comments",
     ),
+    "include_severity_description": (
+        "include severity descriptions",
+        "show severity descriptions",
+        "show blocking/non-blocking labels",
+    ),
 }
 OPTION_EXTRA_NEGATIVE: dict[str, tuple[str, ...]] = {
     "human_review_output": (
@@ -61,6 +67,11 @@ OPTION_EXTRA_NEGATIVE: dict[str, tuple[str, ...]] = {
         "keep the structured inline comments",
         "keep the structured inline findings",
         "keep the inline comment template",
+    ),
+    "include_severity_description": (
+        "keep severity compact",
+        "don't include severity descriptions",
+        "show only p0/p1/p2",
     ),
 }
 

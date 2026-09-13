@@ -64,7 +64,12 @@ human-facing review a machine-only format.
   own `policies/review-output.md`), never a second, independently
   invented severity model; the bare `[P0]` / `[P1]` / `[P2]` form above
   remains the default for a Skill that declares no such legend
-  (`local-code-review` declares none and is unaffected);
+  (`local-code-review` declares none and is unaffected). For
+  `github-pr-review`, that parenthetical is itself opt-in, controlled by
+  the `include_severity_description` invocation option (default `false`
+  — see [`../policies/invocation-options.md`](../policies/invocation-options.md)):
+  the bare `[P0]` / `[P1]` / `[P2]` form is this Skill's own default too,
+  not only the fallback for a Skill that declares no legend at all;
 - **title** — a short, concrete problem statement (what is actually
   wrong — not a vague category like "pagination issue");
 - **location** — the finding's **canonical location**: the fix/action
