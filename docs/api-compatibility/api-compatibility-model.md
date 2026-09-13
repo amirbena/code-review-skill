@@ -149,6 +149,34 @@ runs exactly once, over the finalized findings.
   never a second, competing tool;
 - any per-finding numeric or probabilistic compatibility score.
 
+**Rejected alternatives:**
+
+- **A dedicated `context-dependent` fixture-format decision token**,
+  distinct from the existing `clean` / `changes-required` pair, so an
+  "add enum member"-shaped case could pin its ambiguity directly as a
+  decision rather than as an optional finding under `clean`. Rejected: it
+  would have required a fixture-format change ahead of, and independent
+  of, this capability, duplicating a decision the mechanical severity
+  model already expresses through the optional-finding / no-finding
+  distinction — see [`fixture-format.md`](../benchmark/fixture-format.md)
+  §7 and the #184 corpus README's own note on this exact question.
+- **A standalone schema-diff script or tool** (invoked as a build/CI step
+  to mechanically compute compatible/breaking) instead of reviewer
+  prose. Rejected as the first implementation: it would require choosing
+  and maintaining a parser per contract type (OpenAPI, protobuf, JSON
+  Schema, ad hoc DTOs), duplicating existing schema-linter tooling this
+  capability explicitly does not compete with (see
+  [`README.md`](README.md), "Non-goals"), and would not generalize to a
+  public API model or DTO with no machine-readable schema at all — the
+  case reviewer semantic reasoning already covers uniformly.
+- **Treating "enum member added" as unconditionally compatible** (the
+  simplest possible rule, ignoring exhaustive-switch consumers).
+  Rejected: it would silently under-report the #184
+  `api-compat-add-enum-member-context-dependent.yaml` case's whole reason
+  for existing — the matched add/remove pair is pinned specifically to
+  show that "an enum changed" is not, by itself, a safe compatible/
+  breaking signal.
+
 ## 7. Relationship to existing canonical policies
 
 - [`review-scope.md`](../../shared/policies/review-scope.md), "Semantic

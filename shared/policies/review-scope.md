@@ -620,10 +620,13 @@ This section adds no new severity, finding category, or probability
 score: a breaking-shape finding is labeled confirmed defect / credible
 engineering risk per [`evidence.md`](evidence.md) like any other finding,
 and classified per [`severity.md`](severity.md) — a consumer-facing
-contract break is typically P1, scaled by the change's actual blast
-radius per [`evidence.md`](evidence.md), "Findings beyond the changed
-lines," when the real consumer surface is broader or narrower than the
-change alone shows. The closed change-shape table above, the recognized
+contract break is typically P1. Per [`evidence.md`](evidence.md),
+"Findings beyond the changed lines," the search for affected consumers
+scales with the change's actual blast radius when the real consumer
+surface is broader or narrower than the change alone shows; that scoping
+decides whether a break is evidenced at all, never the severity once it
+is — blast radius never raises or lowers a finding's severity. The closed
+change-shape table above, the recognized
 contract types and their diff-recognition detail, and the smallest useful
 first implementation are the API/contract compatibility model design
 record (a repository-development document, named here, not linked because
