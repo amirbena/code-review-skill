@@ -103,6 +103,13 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   [#175](https://github.com/amirbena/code-review-skill/issues/175)). Same
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/benchmark/test_api_compatibility_corpus.py`](../../../tests/unit/benchmark/test_api_compatibility_corpus.py)).
+- [`security-deepening/`](security-deepening/README.md) — a focused
+  `benchmark-case/v1` sub-corpus pinning representative outcomes for the
+  Security deepening specialist-depth capability (Issue
+  [#271](https://github.com/amirbena/code-review-skill/issues/271), parent
+  [#83](https://github.com/amirbena/code-review-skill/issues/83)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/benchmark/test_security_deepening_corpus.py`](../../../tests/unit/benchmark/test_security_deepening_corpus.py)).
 
 ## Validation
 
