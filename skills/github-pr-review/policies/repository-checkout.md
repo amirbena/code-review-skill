@@ -87,7 +87,12 @@ Establish, from the normalized source, before reviewing:
 
 - repository identity (`repo_url`) — do not assume the current checkout, if
   any, is the target repository;
-- PR base ref and base SHA — do not assume local `main` equals the PR base;
+- PR base ref and base SHA — do not assume local `main` equals the PR base.
+  When the PR's declared base is itself another open PR's branch (a
+  stacked/dependent-PR layer), the base ref/SHA resolved here is the
+  **effective review base**
+  [`stacked-pr-review.md`](stacked-pr-review.md) derives — that parent
+  PR's current head — never the repository's default/target branch;
 - PR head ref and head SHA — do not assume the head exists locally, and do
   not assume branch names are unique;
 - the merge-base of base and head;
@@ -103,6 +108,13 @@ When `main` advanced after the feature branch was created, the PR base SHA
 still identifies the intended base. Compute scope from
 `merge-base(base_sha, head_sha)..head_sha`, not from the current tip of the
 base branch — otherwise unrelated later base commits leak into the delta.
+For a stacked-PR layer, this is the same rule applied to the effective
+review base instead of the root: if the immediate parent PR advances after
+this layer was cut, scope is still `merge-base(effective_base_sha,
+head_sha)..head_sha` against the recorded effective-base SHA, not the
+parent's current tip — [`stacked-pr-review.md`](stacked-pr-review.md), §5,
+governs whether that parent's advancement additionally triggers a
+re-review of this layer.
 
 ## Read-only inspection
 

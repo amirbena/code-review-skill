@@ -37,7 +37,12 @@ resolve optional external context (if any): Jira reference → Jira
 MCP/connector (read-only); unresolvable → JIRA CONTEXT UNRESOLVED, stop.
 GitHub Issue reference → read-only GitHub, or pasted text. Free-form → direct
     ↓
-resolve changed files (incl. prior reviews / comments as Existing Review Evidence)
+resolve stack topology: is the declared base the repository's default/
+target branch (ordinary review, no-op) or another open PR (a stack
+layer)? derive the effective review base, or fail safe to a wider scope
+    ↓
+resolve changed files (incl. prior reviews / comments as Existing Review Evidence),
+against the effective review base for a stack layer
     ↓
 repository-backed inspection requested? → yes → mkdtemp → blobless clone →
    fetch base/head → detached checkout at head_sha (read-only; remote
@@ -141,10 +146,22 @@ finally: remove the temporary checkout (success, any failure, interruption)
    context step is optional; absence changes nothing; it never changes the
    review mode, never widens the PR delta, and never adds a review target.
 4. Through an available authenticated GitHub integration, retrieve PR
-   metadata and base/head SHA. For a normal review, retrieve the complete
+   metadata and base/head SHA. **Before computing any delta, resolve stack
+   topology** per
+   [`../policies/stacked-pr-review.md`](../policies/stacked-pr-review.md):
+   determine whether the declared base ref *is* the repository's
+   default/target branch (the ordinary case — stop here; nothing below
+   changes) or corresponds to another **open** PR (a stack layer). For a
+   stack layer, walk the chain to the root, or fail safe to a wider scope
+   per that policy's §4 when the chain or merge-base cannot be resolved
+   cleanly. The resulting **effective review base** (the root, or the
+   immediate parent's current head SHA) is what every step below uses as
+   "the base."
+
+   For a normal review, retrieve the complete
    paginated changed-file set and a complete diff per
    [`../policies/pr-scope.md`](../policies/pr-scope.md), "Complete PR scope
-   and pagination." For a delta re-review, retrieve the bounded delta
+   and pagination," computed against the effective review base. For a delta re-review, retrieve the bounded delta
    between the previously reviewed SHA and the current PR HEAD, plus
    enough surrounding context to confirm the requested fix, absence of
    regression, and continued validity of the previous review's
@@ -327,7 +344,10 @@ finally: remove the temporary checkout (success, any failure, interruption)
    [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
    stating the review mode used per
    [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
-   "Reporting the mode." If the current invocation normalized
+   "Reporting the mode," and the stacked-PR context resolved in step 4 —
+   the detected stack and active layer, or "no stack detected" — per
+   [`../policies/stacked-pr-review.md`](../policies/stacked-pr-review.md),
+   §7. If the current invocation normalized
    `human_review_output` (per
    [`invocation-options.md`](../../../shared/policies/invocation-options.md)),
    render the human-facing summary in the concise senior-engineer voice per

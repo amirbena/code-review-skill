@@ -10,6 +10,13 @@ specific to retrieving that scope from GitHub.
 
 ## Complete PR scope and pagination
 
+When [`stacked-pr-review.md`](stacked-pr-review.md) has resolved this PR
+as a stack layer, "the base" throughout this section means the
+**effective review base** that policy derives (the immediate parent PR's
+current head) — never the repository's default/target branch. This
+changes nothing about the pagination/completeness discipline below; it
+only changes which SHA the diff/scope is computed against.
+
 Never assume one API/CLI response contains the complete PR. Follow pagination
 to exhaustion for changed files and for every collection used to establish
 review state or deduplication, including reviews, review comments, issue

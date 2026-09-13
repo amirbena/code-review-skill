@@ -372,6 +372,33 @@ for every one of them.
   constructor — those stay reviewer judgment applying the documented
   discipline. `local-code-review` does not load this policy: it is
   architecturally stateless between invocations.
+- **Stacked/dependent PR review** — packaged runtime policy in
+  `github-pr-review`
+  ([`stacked-pr-review.md`](../skills/github-pr-review/policies/stacked-pr-review.md),
+  Issue #119): when a PR's declared base is itself another open PR rather
+  than the repository's default/target branch, the review detects the
+  stack (`root -> PR A -> PR B -> ...`), derives the effective review base
+  (the immediate parent's current head), and scopes the Review Target to
+  this layer's owned delta; the lower stack is Repository Context, never
+  an additional review target, though the existing blast-radius rule still
+  attributes a defect to this layer when the owned delta causally reaches
+  it. It extends
+  [`stateful-delta-rereview.md`](../skills/github-pr-review/policies/stateful-delta-rereview.md)'s
+  escalation triggers with the stack-specific case of a lower layer
+  changing after this layer was reviewed (no re-review / bounded partial
+  re-review / full escalation, by ancestry and blast-radius attribution),
+  annotates the existing Reviewed State Record's base-branch field with
+  effective-base provenance rather than introducing a parallel record, and
+  fails safe to a **wider**, never narrower, scope on ambiguous or broken
+  topology (an unresolved merge-base, a rebased/retargeted/closed lower
+  PR, or a cyclic chain). The final review states the detected stack and
+  the active layer
+  ([`review-output.md`](../skills/github-pr-review/policies/review-output.md),
+  "Stacked-PR context"). A PR based directly on the repository's
+  default/target branch takes exactly the same path as before this
+  capability existed. It installs the semantics contracted in
+  [`findings/stacked-pr-review-contract.md`](findings/stacked-pr-review-contract.md)
+  (#119).
 
 ### Repository-development instrumentation (not packaged)
 
@@ -508,18 +535,6 @@ or runbook implements them today:
   unchanged. There is no packaged finding field carrying
   `influential_relationships` — that representation is left to a later,
   separately-scoped implementation issue once the model is validated.
-- **Stacked-PR / dependent-change review** — the stacked-topology contract
-  (#119, [`findings/stacked-pr-review-contract.md`](findings/stacked-pr-review-contract.md),
-  with a test-only reference model) defines effective-base selection,
-  owned-vs-inherited delta, the additional persisted SHA(s) it layers onto
-  the #63 Reviewed State Record, partial-vs-full re-review when a lower
-  stack layer changes, and safe-failure fallback tiers for ambiguous or
-  broken topology. No code detects stack topology, queries open PRs by
-  base ref, or renders the detected stack in review output yet — a review
-  of a PR whose base is another feature branch is handled today only by
-  the existing base/head fidelity rule in
-  [`repository-checkout.md`](../skills/github-pr-review/policies/repository-checkout.md),
-  without the layer/owned-vs-inherited framing this contract adds.
 
 ## 3. Separation of Concerns
 

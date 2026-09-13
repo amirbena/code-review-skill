@@ -56,6 +56,7 @@
         { "source": "skills/github-pr-review/policies/review-action-authorization.md", "destination": "policies/review-action-authorization.md" },
         { "source": "skills/github-pr-review/policies/reviewer-delta-review.md", "destination": "policies/reviewer-delta-review.md" },
         { "source": "skills/github-pr-review/policies/stateful-delta-rereview.md", "destination": "policies/stateful-delta-rereview.md" },
+        { "source": "skills/github-pr-review/policies/stacked-pr-review.md", "destination": "policies/stacked-pr-review.md" },
         { "source": "skills/github-pr-review/policies/pr-scope.md", "destination": "policies/pr-scope.md" },
         { "source": "skills/github-pr-review/policies/repository-checkout.md", "destination": "policies/repository-checkout.md" },
         { "source": "skills/github-pr-review/policies/review-context.md", "destination": "policies/review-context.md" },

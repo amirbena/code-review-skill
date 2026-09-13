@@ -55,7 +55,11 @@ schema. It orchestrates the existing ones:
   prior review/issue comments per
   [`review-evidence.md`](review-evidence.md). There is no separate
   on-disk store — the strongest available GitHub evidence *is* the
-  record.
+  record. When [`stacked-pr-review.md`](stacked-pr-review.md) has
+  resolved this PR as a stack layer, the base-branch-name field carries
+  one additional annotation — effective-base provenance (root vs. another
+  open PR, and that PR's identity) — per that policy's §6; this is not a
+  second field or a parallel record.
 - **Finding identity / matching** (#58/#59/#60) — `MATCH`, `NO MATCH`,
   `AMBIGUOUS` exactly as this repository's identity and matching design
   records define them, using the same stable-identity construction
@@ -261,6 +265,15 @@ invents no numeric threshold (file/line/finding counts) beyond them:
   condition fails for a way that §2's fail-closed path alone does not
   already cover (for example, base movement whose interaction with the
   delta cannot be reconciled from recorded state).
+- **Stacked-PR lower-layer trigger** — for a PR
+  [`stacked-pr-review.md`](stacked-pr-review.md) has resolved as a stack
+  layer, that policy's §5 table applies its own
+  ancestry-broken/blast-radius-attributable classification to a change in
+  the immediate parent PR; its `FULL_ESCALATION` outcome is this same
+  full-review escalation, and its `PARTIAL_BLAST_RADIUS` outcome is an
+  ordinary bounded delta re-review under §4 above, applied across the
+  layer boundary — neither is a fifth semantic trigger distinct from the
+  four above, only their stack-layer instantiation.
 
 When in doubt, escalate. Escalating is not a failure outcome: a delta
 re-review that escalates and completes as a full review still supersedes
@@ -342,6 +355,7 @@ define, and must not be read as redefining:
 | Which commits the delta covers, `NO NEW DELTA`, and mode reporting | [`reviewer-delta-review.md`](reviewer-delta-review.md) |
 | HEAD revalidation mechanics and exact-HEAD status binding themselves | [`review-output.md`](review-output.md), [`review-status-enforcement.md`](review-status-enforcement.md) |
 | The comprehensive delta/regression fixture matrix and executable scenario histories | [#66](https://github.com/amirbena/code-review-skill/issues/66) |
+| Stack-topology detection, effective review base, owned-vs-inherited delta scoping, and safe-failure fallback | [`stacked-pr-review.md`](stacked-pr-review.md) (#119) |
 
 `local-code-review` does not load this policy: it is architecturally
 stateless (`skills/local-code-review/SKILL.md`, "Statelessness and

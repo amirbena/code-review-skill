@@ -155,6 +155,99 @@ def simulated_pr(
         shutil.rmtree(root, ignore_errors=True)
 
 
+@dataclass(frozen=True)
+class SimulatedStackedPr:
+    """A real, two-layer git topology: main -> PR A -> PR B (#119).
+
+    Backs the genuine end-to-end stacked-review test — real git branches,
+    real merge-base computation, real checkout — as opposed to the pure
+    synthetic-topology reference model in stacked_pr_topology.py.
+    """
+
+    root: Path
+    origin_url: str
+    main_sha: str
+    pr_a_head_sha: str
+    pr_b_head_sha: str
+    pr_a_files: tuple[str, ...]
+    pr_b_files: tuple[str, ...]
+
+    def pr_a_source(self) -> NormalizedPrSource:
+        """PR A, an ordinary (non-stacked) PR based on main."""
+        return NormalizedPrSource(
+            repo_url=self.origin_url,
+            pr_number=201,
+            base_ref="refs/heads/main",
+            base_sha=self.main_sha,
+            head_ref="refs/heads/pr-a",
+            head_sha=self.pr_a_head_sha,
+        )
+
+    def pr_b_source_against_effective_base(self) -> NormalizedPrSource:
+        """PR B, correctly scoped against its effective review base (PR A's
+        head) per stacked-pr-review.md — the fix this Issue installs."""
+        return NormalizedPrSource(
+            repo_url=self.origin_url,
+            pr_number=202,
+            base_ref="refs/heads/pr-a",
+            base_sha=self.pr_a_head_sha,
+            head_ref="refs/heads/pr-b",
+            head_sha=self.pr_b_head_sha,
+        )
+
+    def pr_b_source_against_root_bug(self) -> NormalizedPrSource:
+        """PR B incorrectly scoped against the repository root (`main`) —
+        the pre-#119 bug the Issue describes: "reviewing B against `main`
+        incorrectly pulls in A's changes." Kept only so the regression
+        test can prove the fix actually changes the outcome."""
+        return NormalizedPrSource(
+            repo_url=self.origin_url,
+            pr_number=202,
+            base_ref="refs/heads/main",
+            base_sha=self.main_sha,
+            head_ref="refs/heads/pr-b",
+            head_sha=self.pr_b_head_sha,
+        )
+
+
+@contextlib.contextmanager
+def simulated_stacked_pr(*, parent: Optional[Path] = None) -> Iterator[SimulatedStackedPr]:
+    """Yield a SimulatedStackedPr backed by real repos on disk, then remove
+    everything. Topology: origin.git (bare) <- author-work/
+    {main: M; pr-a branched from main with commit A; pr-b branched from
+    pr-a with commit B}."""
+    root = Path(tempfile.mkdtemp(prefix="pr-stack-sim-", dir=str(parent) if parent else None))
+    try:
+        origin = root / "origin.git"
+        _git(root, "init", "--bare", "-b", "main", str(origin))
+        work = root / "author-work"
+        _git(root, "clone", str(origin), str(work))
+        _git(work, "config", "commit.gpgsign", "false")
+
+        main_sha = _commit(work, "README.md", "root\n", "M: init main")
+        _git(work, "push", "origin", "main")
+
+        _git(work, "checkout", "-b", "pr-a")
+        pr_a_head_sha = _commit(work, "a.txt", "A's change\n", "A: PR A's own commit")
+        _git(work, "push", "origin", "pr-a")
+
+        _git(work, "checkout", "-b", "pr-b")
+        pr_b_head_sha = _commit(work, "b.txt", "B's change\n", "B: PR B's own commit")
+        _git(work, "push", "origin", "pr-b")
+
+        yield SimulatedStackedPr(
+            root=root,
+            origin_url=str(origin),
+            main_sha=main_sha,
+            pr_a_head_sha=pr_a_head_sha,
+            pr_b_head_sha=pr_b_head_sha,
+            pr_a_files=("a.txt",),
+            pr_b_files=("b.txt",),
+        )
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 def unreadable_source(parent: Optional[Path] = None) -> NormalizedPrSource:
     """A NormalizedPrSource pointing at a path that is not a repository —
     stands in for an auth/clone failure without needing credentials."""
