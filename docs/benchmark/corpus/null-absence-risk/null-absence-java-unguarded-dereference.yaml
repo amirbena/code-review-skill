@@ -1,0 +1,97 @@
+# Null-like absence-risk corpus case (Issue #121). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Java. A real, credible null-pointer-dereference risk: UserRepository's
+# own contract documents that findById returns null when no user exists,
+# and the new notify() method calls user.getEmail() immediately with no
+# null check anywhere on the path. This is the "real dereference risk is
+# surfaced" case required by Issue #121's acceptance criteria.
+
+format: benchmark-case/v1
+
+id: null-absence-java-unguarded-dereference
+title: "UserNotifier.notify() dereferences a User that UserRepository documents as nullable"
+
+input:
+  patch: |
+    diff --git a/src/main/java/app/user/UserNotifier.java b/src/main/java/app/user/UserNotifier.java
+    index 1111111..2222222 100644
+    --- a/src/main/java/app/user/UserNotifier.java
+    +++ b/src/main/java/app/user/UserNotifier.java
+    @@ -7,6 +7,7 @@ public class UserNotifier {
+         }
+
+         public String notify(long userId) {
+    -        return "notified";
+    +        User user = repository.findById(userId);
+    +        return "notified " + user.getEmail();
+         }
+     }
+  base:
+    src/main/java/app/user/UserNotifier.java: |
+      package app.user;
+
+      public class UserNotifier {
+          private final UserRepository repository;
+
+          public UserNotifier(UserRepository repository) {
+              this.repository = repository;
+          }
+
+          public String notify(long userId) {
+              return "notified";
+          }
+      }
+    src/main/java/app/user/UserRepository.java: |
+      package app.user;
+
+      public interface UserRepository {
+          // Returns null when no user with this id exists.
+          User findById(long userId);
+      }
+    src/main/java/app/user/User.java: |
+      package app.user;
+
+      public class User {
+          private final String email;
+
+          public User(String email) {
+              this.email = email;
+          }
+
+          public String getEmail() {
+              return email;
+          }
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: notify-dereferences-nullable-finduser-result
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: src/main/java/app/user/UserNotifier.java
+        symbol: notify
+        anchor: 'return "notified " + user.getEmail();'
+      claim: >-
+        UserRepository.findById is documented to return null when no user
+        with the given id exists, and notify() passes an arbitrary caller-
+        supplied userId straight into it with no existence guarantee. The
+        new code calls user.getEmail() immediately with no null check
+        anywhere on this path, so any userId that does not resolve to an
+        existing user throws a NullPointerException instead of the method
+        returning normally.
+      defect_kind: null-pointer-dereference
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Demonstrates the core "Null-like absence-risk review" obligation: a
+    concrete, evidence-backed null-pointer-dereference risk where the
+    absence is documented by the callee's own contract and the caller
+    performs no check before dereferencing — not theoretical nullability,
+    a reachable failure path.

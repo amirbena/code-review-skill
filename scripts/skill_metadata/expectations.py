@@ -242,6 +242,8 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "applies only after review authority",
         "## Semantic Implication Review",
         "Semantic change-implication reasoning",
+        "## Null-Like Absence-Risk Review",
+        "Null-like absence-risk review",
         "## Logical Cohort Review",
         "review related changes together rather than treating files or hunks "
         "as isolated units",
@@ -353,6 +355,7 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
     ),
     "review-reasoning.md": (
         "## Semantic Implication Review",
+        "## Null-Like Absence-Risk Review",
         "## Logical Cohort Review",
         "## Architectural Placement Review",
         "## Code Impact / Dependency Analysis",

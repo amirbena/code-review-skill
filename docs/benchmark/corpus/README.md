@@ -83,6 +83,18 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   Deep depth/expansion/partitioning/coverage assertions are pinned against
   the reference models directly in
   [`../../../tests/unit/review/test_risk_based_review_scenarios.py`](../../../tests/unit/review/test_risk_based_review_scenarios.py).
+- [`semantic-implication/`](semantic-implication/README.md) — a focused
+  `benchmark-case/v1` sub-corpus for the base semantic change-implication
+  reasoning pass (Issue
+  [#211](https://github.com/amirbena/code-review-skill/issues/211)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/review/test_semantic_implication_corpus.py`](../../../tests/unit/review/test_semantic_implication_corpus.py)).
+- [`null-absence-risk/`](null-absence-risk/README.md) — a focused
+  `benchmark-case/v1` sub-corpus for the cross-language null-like
+  absence-risk review requirement (Issue
+  [#121](https://github.com/amirbena/code-review-skill/issues/121)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/review/test_null_absence_corpus.py`](../../../tests/unit/review/test_null_absence_corpus.py)).
 
 ## Validation
 

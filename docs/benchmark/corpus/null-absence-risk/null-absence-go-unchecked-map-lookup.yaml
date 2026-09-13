@@ -1,0 +1,71 @@
+# Null-like absence-risk corpus case (Issue #121). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Go. An optional/lookup-result absence path: a map-of-pointers lookup
+# that Go returns as the zero value (nil) on a missing key, used without
+# the two-value `, ok` absence check. This is the "lookup or optional-
+# return path with unchecked absence is surfaced" case required by Issue
+# #121's acceptance criteria, and covers the Go side of the explicit
+# C#/Python/Go requirement.
+
+format: benchmark-case/v1
+
+id: null-absence-go-unchecked-map-lookup
+title: "SessionUserID dereferences a map lookup's nil zero-value without the ok check"
+
+input:
+  patch: |
+    diff --git a/pkg/cache/session.go b/pkg/cache/session.go
+    index 1111111..2222222 100644
+    --- a/pkg/cache/session.go
+    +++ b/pkg/cache/session.go
+    @@ -5,3 +5,8 @@ type Session struct {
+     }
+
+     var sessions = map[string]*Session{}
+    +
+    +func SessionUserID(token string) string {
+    +	s := sessions[token]
+    +	return s.UserID
+    +}
+  base:
+    pkg/cache/session.go: |
+      package cache
+
+      type Session struct {
+          UserID string
+      }
+
+      var sessions = map[string]*Session{}
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: session-user-id-derefs-missing-map-lookup
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: pkg/cache/session.go
+        symbol: SessionUserID
+        anchor: return s.UserID
+      claim: >-
+        sessions[token] is a single-value map index, which in Go returns
+        the map's value-type zero value — a nil *Session — when token is
+        not a key in sessions, rather than signaling absence any other
+        way. SessionUserID never uses the two-value `s, ok := sessions[token]`
+        form to detect that case, so any token not currently present in
+        sessions (expired, evicted, or simply unknown) makes s.UserID
+        dereference a nil pointer and panic.
+      defect_kind: unchecked-map-lookup-nil-dereference
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Demonstrates the "optional or lookup results ... used without an
+    absence check" pattern from review-scope.md's "Credible absence
+    paths" list: Go's map-lookup zero-value idiom is a language-specific
+    shape of the same cross-language absence risk, not a special case
+    requiring its own rule.

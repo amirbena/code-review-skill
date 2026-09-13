@@ -106,7 +106,8 @@ A reasonable default split (adjust to the change, do not force all five):
   [`review-scope.md`](review-scope.md), "Semantic change-implication
   reasoning").
 - **Correctness / regression** — logic, edge cases, failure/retry safety,
-  contract/exception propagation.
+  contract/exception propagation, and credible null-like absence risk (see
+  [`review-scope.md`](review-scope.md), "Null-like absence-risk review").
 - **Tests / configuration inspection** — test adequacy, missing regression
   tests, the impact of the change on existing tests that depend on the
   changed behavior (see [`review-scope.md`](review-scope.md), "Affected-test

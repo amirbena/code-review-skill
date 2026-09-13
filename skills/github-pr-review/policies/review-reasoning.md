@@ -34,6 +34,19 @@ below may add further depth to a dimension it already activates when
 materially warranted, but none of them gates, weakens, narrows, or
 replaces it.
 
+## Null-Like Absence-Risk Review
+
+Apply [`review-scope.md`](../../../shared/policies/review-scope.md),
+"Null-like absence-risk review," to the PR's changed data-flow and
+control-flow whenever the reviewed language admits a null-pointer,
+`undefined`/`null`, `nil`, or `None` absence failure. That shared section
+owns the cross-language semantic rule (never a regex or keyword match),
+the credible-absence-path patterns, the interoperability/escape-hatch
+boundaries, and the suppression rule for guarded, type-guaranteed, or
+upstream-validated values; this PR-specific policy does not restate them.
+It introduces no new finding category or severity — a surfaced risk is
+classified and evidenced exactly like any other finding.
+
 ## Logical Cohort Review
 
 The durable invariant — review related changes together rather than treating
