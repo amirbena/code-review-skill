@@ -1,0 +1,110 @@
+# Database-migration-deepening corpus case (Issue #186, parent #179,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors database-migration-deepening.md's own "Engages -- online
+# migration against a live table" worked example, applied to a
+# nullable-to-non-null transition rather than a fresh column: an existing
+# nullable column is tightened to NOT NULL with no RunPython backfill
+# step and no default, while the model's own docstring documents that
+# rows predating the column was introduced were never populated.
+
+format: benchmark-case/v1
+
+id: database-migration-deepening-nullable-to-non-null-no-backfill
+title: "0005_require_subscription_tier tightens subscription_tier to NOT NULL with no backfill for legacy NULL rows"
+
+input:
+  patch: |
+    diff --git a/app/billing/models.py b/app/billing/models.py
+    index 1111111..2222222 100644
+    --- a/app/billing/models.py
+    +++ b/app/billing/models.py
+    @@ -7,4 +7,4 @@ class Account(models.Model):
+         predate this field and were never backfilled."""
+
+         name = models.CharField(max_length=200)
+    -    subscription_tier = models.CharField(max_length=20, null=True)
+    +    subscription_tier = models.CharField(max_length=20, null=False)
+    diff --git a/app/billing/migrations/0005_require_subscription_tier.py b/app/billing/migrations/0005_require_subscription_tier.py
+    new file mode 100644
+    index 0000000..9f1b2c3
+    --- /dev/null
+    +++ b/app/billing/migrations/0005_require_subscription_tier.py
+    @@ -0,0 +1,17 @@
+    +from django.db import migrations, models
+    +
+    +
+    +class Migration(migrations.Migration):
+    +
+    +    dependencies = [
+    +        ("billing", "0004_add_subscription_tier"),
+    +    ]
+    +
+    +    operations = [
+    +        migrations.AlterField(
+    +            model_name="account",
+    +            name="subscription_tier",
+    +            field=models.CharField(max_length=20, null=False),
+    +        ),
+    +    ]
+  base:
+    app/billing/models.py: |
+      from django.db import models
+
+
+      class Account(models.Model):
+          """billing_account. subscription_tier was added nullable in
+          migration 0004; accounts created before that migration predate
+          this field and were never backfilled."""
+
+          name = models.CharField(max_length=200)
+          subscription_tier = models.CharField(max_length=20, null=True)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: subscription-tier-not-null-without-backfill
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/billing/migrations/0005_require_subscription_tier.py
+        symbol: Migration
+        anchor: 'field=models.CharField(max_length=20, null=False),'
+      claim: >-
+        Account's own docstring documents that accounts created before
+        migration 0004 added subscription_tier were never backfilled and
+        so still hold NULL. This migration tightens the column to
+        null=False with no preceding RunPython backfill step and no
+        default value. Applying it against a database that still holds
+        those legacy NULL rows will either fail outright when Postgres
+        enforces the new NOT NULL constraint, or (if the deploy sequence
+        races ahead of a backfill that does not exist in this change)
+        leave no valid value for those rows to satisfy the constraint
+        with.
+      defect_kind: nullable-to-non-null-missing-backfill
+    - key: missing-migration-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/billing/migrations/0005_require_subscription_tier.py
+      claim: >-
+        No test applies this migration against a fixture containing a
+        legacy Account row with subscription_tier still NULL to confirm
+        the migration path handles it.
+      defect_kind: missing-migration-test
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins database-migration-deepening.md's "Engages -- online migration
+    against a live table" worked example, applied to a nullable-to-non-null
+    transition: base reasoning identifies the constraint tightening, and
+    the deepening capability must trace that the model's own documented
+    history shows existing rows will not satisfy the new constraint and no
+    backfill step exists in the diff, the actual missing-backfill defect
+    rather than a hypothetical one.

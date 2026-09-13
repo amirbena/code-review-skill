@@ -1,0 +1,115 @@
+# Database-migration-deepening corpus case (Issue #186, parent #179,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors database-migration-deepening.md's "Destructive and online
+# migrations" concern area: a migration drops a column outright with no
+# deprecation period, while the model's own docstring documents the table
+# as the live, actively-written primary identity table, and a sibling
+# module (UserSerializer) still reads the column being dropped. The loss
+# is neither reversible nor shown to be accounted for.
+
+format: benchmark-case/v1
+
+id: database-migration-deepening-destructive-drop-column
+title: "0007_remove_legacy_email drops accounts_user.legacy_email while UserSerializer still reads it"
+
+input:
+  patch: |
+    diff --git a/app/accounts/models.py b/app/accounts/models.py
+    index 1111111..2222222 100644
+    --- a/app/accounts/models.py
+    +++ b/app/accounts/models.py
+    @@ -6,7 +6,6 @@ class User(models.Model):
+
+         email = models.EmailField(unique=True)
+    -    legacy_email = models.EmailField(null=True, blank=True)
+         created_at = models.DateTimeField(auto_now_add=True)
+    diff --git a/app/accounts/migrations/0007_remove_legacy_email.py b/app/accounts/migrations/0007_remove_legacy_email.py
+    new file mode 100644
+    index 0000000..3a9c1d4
+    --- /dev/null
+    +++ b/app/accounts/migrations/0007_remove_legacy_email.py
+    @@ -0,0 +1,12 @@
+    +from django.db import migrations
+    +
+    +
+    +class Migration(migrations.Migration):
+    +
+    +    dependencies = [
+    +        ("accounts", "0006_add_email_unique_index"),
+    +    ]
+    +
+    +    operations = [
+    +        migrations.RemoveField(model_name="user", name="legacy_email"),
+    +    ]
+  base:
+    app/accounts/models.py: |
+      from django.db import models
+
+
+      class User(models.Model):
+          """accounts_user -- the primary identity table, ~40M rows,
+          written on every login and read on every authenticated
+          request."""
+
+          email = models.EmailField(unique=True)
+          legacy_email = models.EmailField(null=True, blank=True)
+          created_at = models.DateTimeField(auto_now_add=True)
+    app/accounts/serializers.py: |
+      from rest_framework import serializers
+
+      from .models import User
+
+
+      class UserSerializer(serializers.ModelSerializer):
+          class Meta:
+              model = User
+              fields = ["email", "legacy_email", "created_at"]
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: legacy-email-drop-breaks-serializer-and-live-table
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/accounts/migrations/0007_remove_legacy_email.py
+        symbol: Migration
+        anchor: 'migrations.RemoveField(model_name="user", name="legacy_email")'
+      claim: >-
+        User.legacy_email is dropped outright by RemoveField with no
+        deprecation period, default fallback, or reversibility, on a
+        table the model's own docstring documents as accounts_user, the
+        primary identity table with ~40M rows written on every login.
+        app/accounts/serializers.py's UserSerializer.Meta.fields still
+        lists "legacy_email" and is not updated in this change, so
+        serializing a User after this migration applies raises because
+        the field no longer exists on the model -- the diff's own
+        evidence shows the drop is not actually safe to apply against
+        this live, actively-written table.
+      defect_kind: destructive-migration-still-referenced-column
+    - key: missing-migration-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/accounts/migrations/0007_remove_legacy_email.py
+      claim: >-
+        No test covers applying this migration against a fixture with
+        existing legacy_email data, or exercises UserSerializer after the
+        column is dropped.
+      defect_kind: missing-migration-test
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins database-migration-deepening.md's "Destructive and online
+    migrations" concern area: base reasoning identifies the schema drop,
+    and the deepening capability must trace that a sibling module still
+    reads the dropped column and that the table is documented as live and
+    actively written, the actual unaccounted-for loss rather than a
+    hypothetical one.

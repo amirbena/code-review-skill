@@ -1,0 +1,78 @@
+# Database-migration-deepening corpus case (Issue #186, parent #179,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors database-migration-deepening.md's "Misleading superficial
+# signal" worked example verbatim: a file under migrations/ changes only
+# a comment and the migration's descriptive `name`, with no change to
+# the schema operation, data movement, or transactional behavior it
+# performs. File location alone does not activate this capability.
+
+format: benchmark-case/v1
+
+id: database-migration-deepening-comment-only-edit-not-implicated-clean
+title: "0008_add_shipping_note.py gains an explanatory comment and a clearer migration name; the operation is unchanged"
+
+input:
+  patch: |
+    diff --git a/app/orders/migrations/0008_add_shipping_note.py b/app/orders/migrations/0008_add_shipping_note.py
+    index 1111111..2222222 100644
+    --- a/app/orders/migrations/0008_add_shipping_note.py
+    +++ b/app/orders/migrations/0008_add_shipping_note.py
+    @@ -1,6 +1,10 @@
+     from django.db import migrations, models
+
+
+    +# Adds an optional free-text note field editors can attach to an
+    +# order's shipping record; purely additive, no backfill required.
+    +
+    +
+     class Migration(migrations.Migration):
+
+         dependencies = [
+    @@ -8,6 +12,8 @@ class Migration(migrations.Migration):
+         ]
+
+         operations = [
+    +        # shipping_note: nullable free-text field, see comment above.
+             migrations.AddField(
+                 model_name="order",
+                 name="shipping_note",
+  base:
+    app/orders/migrations/0008_add_shipping_note.py: |
+      from django.db import migrations, models
+
+
+      class Migration(migrations.Migration):
+
+          dependencies = [
+              ("orders", "0007_add_status_index"),
+          ]
+
+          operations = [
+              migrations.AddField(
+                  model_name="order",
+                  name="shipping_note",
+                  field=models.TextField(null=True, blank=True),
+              ),
+          ]
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins database-migration-deepening.md's "Misleading superficial
+    signal" worked example: the file lives under migrations/ and would
+    keyword-match a naive "migration touched" trigger, but the diff only
+    adds explanatory comments -- the AddField operation, its field type,
+    and its nullability are byte-for-byte unchanged. Base reasoning finds
+    no schema-evolution content to reason about at all, so Activation
+    condition 1 is never satisfied and this capability does not engage --
+    distinct from the additive-nullable-column case, where a real schema
+    operation is present and Activation condition 1 holds but condition 2
+    does not.

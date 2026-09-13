@@ -1,0 +1,100 @@
+# Database-migration-deepening corpus case (Issue #186, parent #179,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors database-migration-deepening.md's "Locking and table rewrites"
+# concern area: a migration builds a UNIQUE index with a plain
+# CREATE UNIQUE INDEX statement (no CONCURRENTLY) against a table the
+# model's own docstring documents as large and under continuous write
+# load. Postgres takes an ACCESS EXCLUSIVE lock for the duration of a
+# non-concurrent index build, blocking all reads and writes on the table
+# until it completes.
+
+format: benchmark-case/v1
+
+id: database-migration-deepening-unsafe-online-blocking-lock
+title: "0012_add_status_v2_index builds a UNIQUE index without CONCURRENTLY on the actively-written orders_order table"
+
+input:
+  patch: |
+    diff --git a/app/orders/migrations/0012_add_status_v2_index.py b/app/orders/migrations/0012_add_status_v2_index.py
+    new file mode 100644
+    index 0000000..7c2e9a1
+    --- /dev/null
+    +++ b/app/orders/migrations/0012_add_status_v2_index.py
+    @@ -0,0 +1,16 @@
+    +from django.db import migrations
+    +
+    +
+    +class Migration(migrations.Migration):
+    +
+    +    dependencies = [
+    +        ("orders", "0011_add_status_v2_column"),
+    +    ]
+    +
+    +    operations = [
+    +        migrations.RunSQL(
+    +            sql="CREATE UNIQUE INDEX orders_order_status_v2_idx "
+    +                "ON orders_order (status_v2);",
+    +            reverse_sql="DROP INDEX orders_order_status_v2_idx;",
+    +        ),
+    +    ]
+  base:
+    app/orders/models.py: |
+      from django.db import models
+
+
+      class Order(models.Model):
+          """orders_order -- ~50M rows, sustained ~200 writes/sec from the
+          checkout and fulfillment services; never safe to lock for more
+          than a few milliseconds."""
+
+          status = models.CharField(max_length=20)
+          status_v2 = models.CharField(max_length=20, null=True, blank=True)
+          created_at = models.DateTimeField(auto_now_add=True)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: create-index-blocks-orders-order
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/orders/migrations/0012_add_status_v2_index.py
+        symbol: Migration
+        anchor: 'CREATE UNIQUE INDEX orders_order_status_v2_idx'
+      claim: >-
+        The migration builds orders_order_status_v2_idx with a plain
+        CREATE UNIQUE INDEX statement, not CREATE UNIQUE INDEX
+        CONCURRENTLY. Order's own docstring documents orders_order as
+        ~50M rows under sustained ~200 writes/sec from the checkout and
+        fulfillment services. A non-concurrent index build takes an
+        ACCESS EXCLUSIVE lock on the table for the full duration of the
+        build, blocking every read and write against orders_order --
+        including checkout and fulfillment -- until it finishes, on a
+        table the evidence shows cannot tolerate that.
+      defect_kind: blocking-lock-large-table-online-migration
+    - key: missing-migration-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/orders/migrations/0012_add_status_v2_index.py
+      claim: >-
+        No test or migration-plan check verifies this index build runs
+        CONCURRENTLY or is exercised against a table of representative
+        size before merge.
+      defect_kind: missing-migration-test
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins database-migration-deepening.md's "Locking and table rewrites"
+    concern area: base reasoning identifies the new index, and the
+    deepening capability must trace that the table's documented size and
+    write volume make the non-concurrent build's blocking behavior
+    material, the actual unsafe-online-migration defect rather than a
+    hypothetical one.
