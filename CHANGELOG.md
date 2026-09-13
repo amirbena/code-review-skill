@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.31.0 — 2026-09-13
+
+### Added
+
+- Add Distributed Systems deepening capability for evidence-driven concurrency/distributed-system investigation (#274).
+
 ## v1.30.0 — 2026-09-13
 
 ### Added
