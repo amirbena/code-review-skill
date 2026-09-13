@@ -43,7 +43,10 @@ This contract **reuses, and does not redefine**:
   [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md) (#63);
 - change classes, blast-radius attribution, settled-assumption
   reconsideration, and the semantic escalation triggers —
-  [`delta-re-review-contract.md`](delta-re-review-contract.md) (#64);
+  [`delta-re-review-contract.md`](delta-re-review-contract.md) (#64), now
+  a historical design record whose canonical semantics live in
+  [`stateful-delta-rereview.md`](../../skills/github-pr-review/policies/stateful-delta-rereview.md)
+  (#65) (see "Status and canonical home" below);
 - lifecycle states/events (`OPEN`/`RESOLVED`;
   `DETECTED`/`STILL_PRESENT`/`RESOLVED`/`REOPENED`/`UNCERTAIN`) and
   finding-identity/matching outcomes
