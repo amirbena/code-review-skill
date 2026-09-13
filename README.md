@@ -12,6 +12,11 @@ behavior.
 
 Licensed under the [Apache License 2.0](LICENSE).
 
+Explanatory, navigational documentation — onboarding, a Skill-selection
+guide, and a dated AI code-review landscape comparison — lives in the
+[GitHub Wiki](https://github.com/amirbena/code-review-skill/wiki). It
+never overrides the canonical files in this repository.
+
 ## What this repository provides
 
 | Skill | Reviews | Delivers |
