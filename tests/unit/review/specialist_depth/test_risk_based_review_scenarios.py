@@ -3,7 +3,7 @@ large-PR handling (Issue #90).
 
 Issues #86-#89 each pin their own reference model in isolation
 (``tests/unit/review/test_change_risk_signals.py``,
-``tests/unit/review/test_repository_expansion.py``,
+``tests/unit/review/repository_intelligence/test_repository_expansion.py``,
 ``tests/unit/review/test_large_pr_partitioning.py``,
 ``tests/unit/review/test_review_stopping_criteria.py``). This module does not
 repeat that per-model coverage; it exercises them **chained together**,

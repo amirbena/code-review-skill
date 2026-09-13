@@ -66,35 +66,35 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   [#185](https://github.com/amirbena/code-review-skill/issues/185), parent
   [#177](https://github.com/amirbena/code-review-skill/issues/177)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../../tests/unit/review/test_consolidation_corpus.py`](../../../tests/unit/review/test_consolidation_corpus.py)).
+  ([`../../../tests/unit/review/root_cause/test_consolidation_corpus.py`](../../../tests/unit/review/root_cause/test_consolidation_corpus.py)).
   The four category cases above are unaffected by it.
 - [`repository-intelligence/`](repository-intelligence/README.md) — a
   focused `benchmark-case/v1` sub-corpus demonstrating
   `repository-expansion.md`'s (#87) triggers (Issue
   [#129](https://github.com/amirbena/code-review-skill/issues/129)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../../tests/unit/review/test_repository_intelligence_corpus.py`](../../../tests/unit/review/test_repository_intelligence_corpus.py)).
+  ([`../../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py`](../../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py)).
 - [`risk-depth/`](risk-depth/README.md) — a focused `benchmark-case/v1`
   sub-corpus for risk-based review depth and large-PR handling (Issue
   [#90](https://github.com/amirbena/code-review-skill/issues/90), parent
   [#48](https://github.com/amirbena/code-review-skill/issues/48)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../../tests/unit/review/test_risk_depth_corpus.py`](../../../tests/unit/review/test_risk_depth_corpus.py)).
+  ([`../../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py`](../../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py)).
   Deep depth/expansion/partitioning/coverage assertions are pinned against
   the reference models directly in
-  [`../../../tests/unit/review/test_risk_based_review_scenarios.py`](../../../tests/unit/review/test_risk_based_review_scenarios.py).
+  [`../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py`](../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py).
 - [`semantic-implication/`](semantic-implication/README.md) — a focused
   `benchmark-case/v1` sub-corpus for the base semantic change-implication
   reasoning pass (Issue
   [#211](https://github.com/amirbena/code-review-skill/issues/211)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../../tests/unit/review/test_semantic_implication_corpus.py`](../../../tests/unit/review/test_semantic_implication_corpus.py)).
+  ([`../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py`](../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py)).
 - [`null-absence-risk/`](null-absence-risk/README.md) — a focused
   `benchmark-case/v1` sub-corpus for the cross-language null-like
   absence-risk review requirement (Issue
   [#121](https://github.com/amirbena/code-review-skill/issues/121)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../../tests/unit/review/test_null_absence_corpus.py`](../../../tests/unit/review/test_null_absence_corpus.py)).
+  ([`../../../tests/unit/review/root_cause/test_null_absence_corpus.py`](../../../tests/unit/review/root_cause/test_null_absence_corpus.py)).
 - [`api-compatibility/`](api-compatibility/README.md) — a focused
   `benchmark-case/v1` sub-corpus pinning the expected compatible /
   breaking / context-dependent classification for the API / contract

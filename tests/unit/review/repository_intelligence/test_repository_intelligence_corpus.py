@@ -30,7 +30,7 @@ What is proven here:
 Matching a reviewer's output to these expectations, scoring it, and the
 runner are out of scope (Issues #41 / #52 / #54). Relationship-influence
 attribution and snapshot-identity/staleness are reference-model concerns
-proven in ``tests/unit/review/test_repository_intelligence.py``, not here — see
+proven in ``tests/unit/review/repository_intelligence/test_repository_intelligence.py``, not here — see
 the corpus README, "Relationship-influence attribution and staleness are
 reference-model concerns."
 """

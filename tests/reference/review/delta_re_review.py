@@ -51,7 +51,7 @@ class ChangeClass(Enum):
     classification when the reviewer's root-cause pass positively
     establishes one shared cause — it is a lifecycle concern, not a
     mechanical change class, and is modelled that way in
-    ``tests/unit/review/test_rereview_regression_fixtures.py`` (``expect_class =
+    ``tests/unit/review/stateful_review/test_rereview_regression_fixtures.py`` (``expect_class =
     AMBIGUOUS``, ``expect_event = "CONSOLIDATED"``).
     """
 

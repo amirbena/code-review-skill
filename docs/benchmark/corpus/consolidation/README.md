@@ -77,7 +77,7 @@ revision under #177, not this corpus.
 
 ## Validation
 
-[`../../../../tests/unit/review/test_consolidation_corpus.py`](../../../../tests/unit/review/test_consolidation_corpus.py)
+[`../../../../tests/unit/review/root_cause/test_consolidation_corpus.py`](../../../../tests/unit/review/root_cause/test_consolidation_corpus.py)
 loads every `*.yaml` here through the same single reference validator
 [`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second

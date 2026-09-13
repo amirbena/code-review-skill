@@ -55,7 +55,7 @@ expansion `ring`, partition assignment, or `coverage` label — only
 already establishes for its own mechanism: **the corpus fixture pins the
 expected finding outcome; the reference-model case pins the mechanism.**
 Every case below has a matching scenario in
-[`../../../../tests/unit/review/test_risk_based_review_scenarios.py`](../../../../tests/unit/review/test_risk_based_review_scenarios.py)
+[`../../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py`](../../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py)
 that constructs the same signal/trigger/partition shape the fixture's
 rationale describes and asserts the `depth`/`ring`/`capped`/`coverage`
 value directly against
@@ -101,7 +101,7 @@ corpus is scoped to `change-risk-signals.md`'s depth vocabulary and
 
 ## Validation
 
-[`../../../../tests/unit/review/test_risk_depth_corpus.py`](../../../../tests/unit/review/test_risk_depth_corpus.py)
+[`../../../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py`](../../../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py)
 loads every `*.yaml` here through the same single reference validator
 [`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second
@@ -110,7 +110,7 @@ required case is present; every case pins an explicit `decision`
 consistent with its required findings; and every case's rationale is
 reflected by an equivalent depth/expansion/partitioning assertion against
 the reference models in
-[`../../../../tests/unit/review/test_risk_based_review_scenarios.py`](../../../../tests/unit/review/test_risk_based_review_scenarios.py).
+[`../../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py`](../../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py).
 Matching a reviewer's output to these expectations and scoring it are out
 of scope here (Issues #41 / #52 / #54). Peer review of the expected
 findings themselves happens on the pull request.

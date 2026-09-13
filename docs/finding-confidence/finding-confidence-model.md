@@ -15,9 +15,9 @@ field and references this document by name; it does not restate this table.
 The test-only reference model is
 [`../../tests/reference/review/finding_confidence.py`](../../tests/reference/review/finding_confidence.py);
 its derivation corpus is exercised by
-[`../../tests/unit/review/test_finding_confidence.py`](../../tests/unit/review/test_finding_confidence.py)
+[`../../tests/unit/review/findings/test_finding_confidence.py`](../../tests/unit/review/findings/test_finding_confidence.py)
 and the documentation contract by
-[`../../tests/policy/review/test_finding_confidence_docs.py`](../../tests/policy/review/test_finding_confidence_docs.py).
+[`../../tests/policy/review/findings/test_finding_confidence_docs.py`](../../tests/policy/review/findings/test_finding_confidence_docs.py).
 
 ## 1. Problem and goal
 

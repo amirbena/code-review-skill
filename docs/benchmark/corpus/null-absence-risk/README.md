@@ -59,7 +59,7 @@ header comment.
 
 ## Validation
 
-[`../../../../tests/unit/review/test_null_absence_corpus.py`](../../../../tests/unit/review/test_null_absence_corpus.py)
+[`../../../../tests/unit/review/root_cause/test_null_absence_corpus.py`](../../../../tests/unit/review/root_cause/test_null_absence_corpus.py)
 loads every `*.yaml` here through the same single reference validator
 [`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
 used for the worked example and every other corpus. It never defines a second

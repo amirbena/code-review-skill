@@ -29,7 +29,7 @@ What is proven here:
 
 Deep depth/expansion/partitioning/coverage *mechanism* assertions — not
 tied to a specific corpus fixture — live in
-``tests/unit/review/test_risk_based_review_scenarios.py``. The runner, and
+``tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py``. The runner, and
 matching a reviewer's output to these expectations, are out of scope here
 (Issues #41 / #52 / #54).
 """
@@ -66,7 +66,7 @@ REQUIRED_CASE_IDS = {
 
 # Ties each fixture's rationale to the signal shape that produces it,
 # fed straight into the same reference model
-# tests/unit/review/test_risk_based_review_scenarios.py exercises directly.
+# tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py exercises directly.
 CASE_SIGNAL_FACTS: dict[str, list[crs.ObservedFact]] = {
     AUTH_SIGNAL_DEEP: [crs.ObservedFact("f1", frozenset({"auth"}))],
     CONCURRENCY_SIGNAL_DEEP: [crs.ObservedFact("f1", frozenset({"concurrency"}))],
