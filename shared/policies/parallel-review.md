@@ -102,8 +102,9 @@ A reasonable default split (adjust to the change, do not force all five):
   unrelated; scope-boundary reasoning against supplied context.
 - **Architecture / repository invariants** — repository policies,
   interfaces/contracts, architectural constraints, and the system-level
-  dimensions a change materially implicates (see [`review-scope.md`](review-scope.md),
-  "Semantic change-implication reasoning").
+  dimensions a change materially implicates (see
+  [`review-scope.md`](review-scope.md), "Semantic change-implication
+  reasoning").
 - **Correctness / regression** — logic, edge cases, failure/retry safety,
   contract/exception propagation.
 - **Tests / configuration inspection** — test adequacy, missing regression

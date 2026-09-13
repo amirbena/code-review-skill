@@ -1,0 +1,49 @@
+# Semantic-implication corpus case (Issue #211). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Python. A behavior-preserving pure-function extraction with no external
+# contract, no persisted shape, no shared mutable state, no trust-boundary
+# crossing, no user-facing surface, and no deployment/infra involvement.
+# None of the eight canonical dimensions fire: a correct review performs
+# no per-dimension analysis and reports no output for this pass — the
+# "no signal, no analysis, no not-applicable record" rule.
+
+format: benchmark-case/v1
+
+id: semantic-implication-no-signal-clean-extraction
+title: "Pure currency-formatting helper extracted with identical behavior"
+
+input:
+  patch: |
+    diff --git a/app/report/format.py b/app/report/format.py
+    index 1111111..2222222 100644
+    --- a/app/report/format.py
+    +++ b/app/report/format.py
+    @@ -1,3 +1,6 @@
+     def format_currency(amount_cents):
+    +    return _format_dollars(amount_cents)
+    +
+    +
+    +def _format_dollars(amount_cents):
+         dollars = amount_cents / 100
+         return "$%.2f" % dollars
+  base:
+    app/report/format.py: |
+      def format_currency(amount_cents):
+          dollars = amount_cents / 100
+          return "$%.2f" % dollars
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality, no-op]
+  rationale: >-
+    Demonstrates a change with no material activation signal for any of
+    the eight canonical dimensions in "Semantic change-implication
+    reasoning" — a purely local, pure-function extraction with identical
+    behavior. The correct outcome is no per-dimension analysis and no
+    output for this pass, never a manufactured finding to appear thorough.

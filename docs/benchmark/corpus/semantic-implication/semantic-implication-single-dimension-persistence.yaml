@@ -1,0 +1,80 @@
+# Semantic-implication corpus case (Issue #211). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Python. Single dimension: data/persistence. The daily export writer
+# renests the persisted amount field, but the reconciliation reader it
+# feeds is not in the diff and still reads the old flat key. Nothing about
+# this touches concurrency, security, an external API contract, a user
+# interface, or infrastructure — it is a pure persisted-shape compatibility
+# break with an existing reader, exactly the "Data / persistence" dimension
+# review-scope.md's "Semantic change-implication reasoning" section
+# defines.
+
+format: benchmark-case/v1
+
+id: semantic-implication-single-dimension-persistence
+title: "Export writer renests amount_cents, silently breaking the untouched reconciliation reader"
+
+input:
+  patch: |
+    diff --git a/jobs/export.py b/jobs/export.py
+    index 1111111..2222222 100644
+    --- a/jobs/export.py
+    +++ b/jobs/export.py
+    @@ -3,5 +3,5 @@ import json
+     def write_export(records, path):
+         with open(path, "w") as f:
+             for r in records:
+    -            f.write(json.dumps({"id": r.id, "amount_cents": r.amount_cents}) + "\n")
+    +            f.write(json.dumps({"id": r.id, "amount": {"cents": r.amount_cents}}) + "\n")
+  base:
+    jobs/export.py: |
+      import json
+
+      def write_export(records, path):
+          with open(path, "w") as f:
+              for r in records:
+                  f.write(json.dumps({"id": r.id, "amount_cents": r.amount_cents}) + "\n")
+    jobs/reconcile.py: |
+      import json
+
+      def reconcile(path, ledger):
+          mismatches = []
+          with open(path) as f:
+              for line in f:
+                  rec = json.loads(line)
+                  expected = ledger.get(rec["id"], 0)
+                  if rec.get("amount_cents", 0) != expected:
+                      mismatches.append(rec["id"])
+          return mismatches
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: export-amount-renested-breaks-reconcile-reader
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: jobs/export.py
+        symbol: write_export
+        anchor: 'f.write(json.dumps({"id": r.id, "amount": {"cents": r.amount_cents}}) + "\n")'
+      claim: >-
+        write_export now nests the amount under `amount: {cents: ...}`, but
+        jobs/reconcile.py (untouched by this diff) still reads the flat
+        `amount_cents` key via `rec.get("amount_cents", 0)`, which will now
+        always default to 0 for every newly written record — reconcile()
+        will report a mismatch for every non-zero ledger entry going
+        forward, an existing reader broken by a persisted-shape change
+        outside the diff's own file.
+      defect_kind: persisted-shape-compatibility-break
+
+metadata:
+  source: crafted
+  tags: [correctness, quality]
+  rationale: >-
+    Demonstrates the "Data / persistence" dimension activating alone:
+    schema/persisted-shape change signal, one existing reader broken, no
+    concurrency, security, API-contract, user-facing, or infra signal
+    present anywhere in the diff or base.
