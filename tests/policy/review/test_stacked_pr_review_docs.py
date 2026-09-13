@@ -272,9 +272,14 @@ class StatusAndCanonicalHomeTests(unittest.TestCase):
             self.text,
         )
 
-    def test_future_packaged_policy_becomes_normative(self) -> None:
+    def test_status_section_names_119_as_installed_canonical_home(self) -> None:
+        self.assertIn("## Status and canonical home", DOC.read_text(encoding="utf-8"))
         self.assertIn(
-            "that policy becomes the single normative source", self.text
+            "this document is now a historical design record", self.text
+        )
+        self.assertIn("stacked-pr-review.md", DOC.read_text(encoding="utf-8"))
+        self.assertIn(
+            "that policy is the single normative source", self.text
         )
 
 
@@ -293,10 +298,16 @@ class CrossReferenceConsistencyTests(unittest.TestCase):
             ARCHITECTURE.read_text(encoding="utf-8"),
         )
 
-    def test_architecture_doc_lists_it_under_future_work(self) -> None:
+    def test_architecture_doc_lists_it_as_implemented_not_future_work(self) -> None:
         raw = ARCHITECTURE.read_text(encoding="utf-8")
-        future_work = raw.split("### Future work (not implemented)", 1)[1]
-        self.assertIn("stacked-pr-review-contract.md", future_work)
+        before_future_work, future_work = raw.split(
+            "### Future work (not implemented)", 1
+        )
+        # Runtime landed (#119): the contract is referenced from the
+        # implemented-capability section, and no longer listed as future work.
+        self.assertIn("stacked-pr-review-contract.md", before_future_work)
+        self.assertIn("stacked-pr-review.md", before_future_work)
+        self.assertNotIn("stacked-pr-review-contract.md", future_work)
 
     def test_no_packaged_resource_markdown_links_to_this_repo_dev_doc(self) -> None:
         packaged_roots = (

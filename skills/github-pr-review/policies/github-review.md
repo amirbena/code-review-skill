@@ -28,6 +28,10 @@ stateful-delta-rereview.md  eligibility for reconciling prior finding/lifecycle
                             state; #64 change-class reconciliation, blast
                             radius, settled assumptions, escalation
         ↓
+stacked-pr-review.md       stack topology detection; effective review base;
+                            owned vs. inherited delta; safe-failure fallback;
+                            #119 lower-layer re-review trigger
+        ↓
 pr-scope.md                 complete PR scope, pagination, prior-review awareness
         ↓
 repository-checkout.md      optional isolated temporary checkout for richer
@@ -75,6 +79,14 @@ immediately after `reviewer-delta-review.md` has resolved the delta
 boundary, and governs only whether/how prior finding and lifecycle state
 is reconciled within that boundary — it never changes the boundary
 itself and never runs when no delta boundary was selected;
+[`stacked-pr-review.md`](stacked-pr-review.md) runs next and resolves
+whether the PR's declared base is the repository's default/target branch
+(the ordinary, non-stacked case, which is a no-op for everything
+downstream) or another open PR (a stack layer) — when the latter, it
+derives the effective review base that [`pr-scope.md`](pr-scope.md) and
+[`repository-checkout.md`](repository-checkout.md) use in place of the
+root for scope retrieval and base/head fidelity, never widening the
+Review Target;
 [`repository-checkout.md`](repository-checkout.md) is optional, runs after
 [`pr-scope.md`](pr-scope.md) has established the PR's base/head, and never
 changes the Review Target — the PR delta;

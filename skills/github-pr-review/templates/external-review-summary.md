@@ -206,6 +206,45 @@ authorization and is never a route to any of them — see
 [`../policies/review-authority.md`](../policies/review-authority.md),
 "Self-review capability."
 
+## Stacked-PR context
+
+Per [`../policies/review-output.md`](../policies/review-output.md),
+"Stacked-PR context," this is an always-present field in the subordinate
+metadata block, rendered as `none detected` for the ordinary, non-stacked
+case (a PR based directly on the repository's default/target branch) —
+identical in spirit to how `change_risk_depth` always renders even when
+nothing unusual fired:
+
+```markdown
+- stacked_pr: `none detected` (base is the repository's default branch)
+```
+
+or, when [`../policies/stacked-pr-review.md`](../policies/stacked-pr-review.md)
+resolved a stack:
+
+```markdown
+- stacked_pr: `main -> #41 -> #52` — reviewing layer 2 of 2 (`#52`);
+  effective base: `#41` at `a1b2c3d`
+```
+
+or, when a safe-failure fallback applied:
+
+```markdown
+- stacked_pr: fallback applied (`tier1_single_hop`: merge-base ambiguous
+  beyond immediate base) — reviewed as a single-hop PR against its own
+  declared base
+```
+
+A one-sentence opening note is added to the human-facing summary only
+when a stack was actually detected or a fallback applied (e.g. "Reviewing
+layer 2 of 2 in the detected stack `main -> #41 -> #52`; findings below
+are scoped to this PR's own commits against `#41`."); the ordinary
+non-stacked case adds no opening prose, matching how the always-on
+`change_risk_depth`/`repository_expansion_triggers` pair stays silent in
+prose while still present in the metadata block. This field never changes
+finding severity, identity, placement, or the mechanically derived
+decision.
+
 ## Optional subordinate metadata
 
 The deterministic `standard` / `elevated` / `deep` change-risk depth and
@@ -252,6 +291,7 @@ human-facing review and clearly subordinate, per
 
 - reviewed_head: `<sha>`
 - review_mode: `full` | `delta (previous reviewed SHA <sha>, current HEAD <sha>)`
+- stacked_pr: `none detected` | `<root -> ... -> current>, layer <n> of <n>, effective base <identity>@<sha>` | `fallback applied (<tier>: <reason>)`
 - change_risk_depth: `standard` | `elevated` | `deep`
 - change_risk_signals: `none` | `<signal (tier) — evidence>` per resolved occurrence
 - repository_expansion_triggers: `none` | `<trigger (ring N) — locations>` per fired trigger

@@ -136,6 +136,23 @@ deduplication, evidence requirements, or the decision derivation owned by
 `severity.md`. `local-code-review` defines no such legend and continues
 to render the bare `[P0]` / `[P1]` / `[P2]` form.
 
+## Stacked-PR context
+
+When [`stacked-pr-review.md`](stacked-pr-review.md) has resolved this PR's
+stack topology, the review states, for the layer under review: the
+detected stack root-to-current (`main -> PR A -> PR B`), or "no stack
+detected"/the fallback tier and reason when one applied; which layer is
+under review; and the effective review base actually used, when it
+differs from the repository's default/target branch. This is a required,
+always-present field — like `change_risk_depth` — rendered as "no stack
+detected" for the ordinary, non-stacked case so its presence never
+changes the visible output of the overwhelming majority of reviews.
+Concrete rendering is owned by
+[`../templates/external-review-summary.md`](../templates/external-review-summary.md),
+"Stacked-PR context." This field never changes finding severity, identity,
+placement, or the mechanical decision derivation — it is presentation of
+the scope already resolved, not a new decision input.
+
 ## Final summary
 
 A single human-readable review body, using

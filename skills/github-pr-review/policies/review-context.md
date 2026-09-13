@@ -90,6 +90,13 @@ delta re-review). Context focuses attention *within* that target and enables
 scope-boundary reasoning about it; it never widens it, and never pulls
 unrelated files or commits into review.
 
+For a PR [`stacked-pr-review.md`](stacked-pr-review.md) resolves as a
+stack layer, "the PR delta" above means that layer's **owned delta**
+(against the effective review base, not the root); the lower stack's
+**inherited delta** is Repository Context, read for understanding but
+never an additional review target, exactly like any other surrounding
+code — see that policy's §3.
+
 ## Scope-boundary reasoning for a PR
 
 Apply the shared policy's "Scope-boundary reasoning" to the PR: detect

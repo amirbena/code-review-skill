@@ -71,9 +71,12 @@ for review-action authority; the canonical policies own the rest.
 resolve PR + authenticated identity, PR author, controlling authority
   → self-review? full analysis still runs; no formal event on own work
   → resolve review mode (delta re-review vs. normal review)
+  → resolve stack topology: base is the default branch (no-op), or another
+    open PR — a stack layer whose effective base is that PR's head
   → [optional] resolve a Jira reference (read-only; else JIRA CONTEXT UNRESOLVED)
-  → retrieve the complete required PR scope for that mode, paginated to
-    exhaustion (incl. prior reviews/comments as Existing Review Evidence)
+  → retrieve the complete required PR scope for that mode (against the
+    effective review base), paginated to exhaustion (incl. prior
+    reviews/comments as Existing Review Evidence)
   → repository access mode (API-only | optional | required checkout);
     determine formal-review capability; resolve review-action mode +
     mutation authorization (default recommendation-only; ambiguity fails closed)
@@ -292,6 +295,18 @@ prior finding/lifecycle state within that boundary — failing closed when
 unreliable, escalating to full review when invalidated — is owned by
 [`policies/stateful-delta-rereview.md`](policies/stateful-delta-rereview.md).
 Applies identically to passive and active review.
+
+**Stacked/dependent PRs.** When a PR's declared base is itself another
+open PR rather than the repository's default/target branch,
+[`policies/stacked-pr-review.md`](policies/stacked-pr-review.md) derives
+the effective review base (the immediate parent's current head) and
+scopes review to this layer's owned delta; the lower stack is read-only
+Repository Context, never an additional review target. It extends
+`stateful-delta-rereview.md`'s escalation triggers with the stack-specific
+case of a lower layer changing after this layer was reviewed, and the
+final review states the detected stack and the active layer. A PR based
+directly on the repository's default/target branch is unaffected — every
+rule above applies exactly as before this capability existed.
 
 ## 7. Review Action Authority and Mutation Boundary
 

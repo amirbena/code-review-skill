@@ -50,7 +50,12 @@ GitHub Issue reference → read-only GitHub, or pasted text. Free-form → direc
     ↓
 resolve authoritative HEAD
     ↓
-retrieve complete paginated PR scope (incl. prior reviews / comments)
+resolve stack topology: is the declared base the repository's default/
+target branch (ordinary review, no-op) or another open PR (a stack
+layer)? derive the effective review base, or fail safe to a wider scope
+    ↓
+retrieve complete paginated PR scope (incl. prior reviews / comments),
+against the effective review base for a stack layer
     ↓
 repository-backed inspection requested? → yes → mkdtemp → blobless clone →
    fetch base/head → detached checkout at head_sha (read-only; remote
@@ -230,11 +235,25 @@ stop
    This context step is optional; absence changes nothing. It never changes
    the review mode resolved above, never widens the PR delta, and never adds
    a review target.
-5. Resolve and record the authoritative PR HEAD SHA. For a normal
+5. Resolve and record the authoritative PR HEAD SHA. **Before computing
+   any delta, resolve stack topology** per
+   [`../policies/stacked-pr-review.md`](../policies/stacked-pr-review.md):
+   resolve the PR's declared base ref/SHA, and determine whether it *is*
+   the repository's default/target branch (the ordinary case — stop here;
+   nothing below changes) or corresponds to another **open** PR (a stack
+   layer). For a stack layer, walk the chain to the root, or fail safe to
+   a wider scope per that policy's §4 when the chain or merge-base cannot
+   be resolved cleanly — never silently narrow scope. The **effective
+   review base** this resolves (the root, or the immediate parent's
+   current head SHA) is what every step below uses as "the base" —
+   never the repository's default/target branch when they differ.
+
+   For a normal
    review, retrieve the complete paginated changed-file set and complete
    diff per [`../policies/pr-scope.md`](../policies/pr-scope.md), "Complete
-   PR scope and pagination." For a delta re-review, retrieve the bounded
-   delta between the previously reviewed SHA and the current PR HEAD, plus
+   PR scope and pagination," computed against the effective review base.
+   For a delta re-review, retrieve the bounded delta between the previously
+   reviewed SHA and the current PR HEAD, plus
    enough surrounding context to confirm the requested fix, absence of
    regression, and continued validity of the previous review's assumptions
    — full-PR retrieval is not required unless the delta later escalates to
@@ -251,7 +270,10 @@ stop
    Resolve the `NormalizedPrSource` (repo identity, base ref/SHA, head
    ref/SHA, pull ref if any) from the PR metadata already retrieved — do not
    assume the current checkout is the target repo, that local `main` is the
-   PR base, or that the head exists locally. Then, owned by one lifecycle
+   PR base, or that the head exists locally. For a stack layer, the
+   `NormalizedPrSource`'s base ref/SHA are the **effective review base**
+   resolved above (the immediate parent PR's branch/head), not the
+   repository's default/target branch. Then, owned by one lifecycle
    with cleanup in a `finally`: mkdtemp under a safe scratch parent (never a
    user working directory) → blobless clone (`--no-checkout --no-tags
    --filter=blob:none`) → fetch `pull_ref`/`base_ref`/`head_ref`, falling
@@ -512,7 +534,12 @@ stop
     delta re-review, with the previously reviewed SHA and current HEAD
     when delta) per
     [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
-    "Reporting the mode." **If the current invocation normalized
+    "Reporting the mode." State the stacked-PR context resolved in step 5
+    — the detected stack and active layer, or "no stack detected" — per
+    [`../policies/stacked-pr-review.md`](../policies/stacked-pr-review.md),
+    §7, and
+    [`../policies/review-output.md`](../policies/review-output.md),
+    "Stacked-PR context". **If the current invocation normalized
     `human_review_output`** (the presentation-option normalization at the
     top of this flow, per
     [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md)),

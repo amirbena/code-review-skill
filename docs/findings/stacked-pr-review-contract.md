@@ -456,9 +456,15 @@ B's own changes are read as context, never as C's findings.
 
 ## Status and canonical home
 
-Until a future implementation issue installs equivalent runtime behavior
-in a packaged resource, **this document is the contract record** for
-stacked-PR / dependent-change review.
+[#119](https://github.com/amirbena/code-review-skill/issues/119) has
+implemented stacked/dependent-PR review at runtime. The canonical runtime
+rule now lives in the packaged policy
+[`skills/github-pr-review/policies/stacked-pr-review.md`](../../skills/github-pr-review/policies/stacked-pr-review.md);
+that policy is the single normative source for stack-topology detection,
+effective-base derivation, owned-vs-inherited delta scoping, safe-failure
+fallback, and the lower-layer re-review trigger, and **this document is
+now a historical design record** — it must not evolve the same rules
+independently, only link to the canonical policy.
 
 **Existing canonical contracts are unchanged and remain authoritative for
 what they already own.** This document adds the stack-topology layer on
@@ -484,23 +490,17 @@ top of them; it does not restate or override:
   this contract does not introduce a single reviewer owning an entire
   stack).
 
-Because this is a repository-development doc, **no packaged Skill
-resource depends on it** (see [`../../AGENTS.md`](../../AGENTS.md),
-"Packaged Skills are independent of repository-level instructions"), and
-it is not part of either Skill archive.
-
-Once a future issue establishes the canonical runtime rule in a packaged
-resource (a `shared/policies/` file, or an extension of
-[`repository-checkout.md`](../../skills/github-pr-review/policies/repository-checkout.md)
-or
-[`stateful-delta-rereview.md`](../../skills/github-pr-review/policies/stateful-delta-rereview.md)
-— the path is that issue's to choose), **that policy becomes the single
-normative source.** This document then becomes a historical contract
-record: it MUST link to the canonical policy and MUST NOT keep evolving
-the same rules independently — the same lifecycle already described for
+This is a repository-development doc, like its siblings in this
+directory: **not** packaged into either Skill archive, and no packaged
+Skill resource depends on it (see [`../../AGENTS.md`](../../AGENTS.md),
+"Packaged Skills are independent of repository-level instructions"). It
+remains contract-record framing for the sections above; only this
+"Status and canonical home" section is updated to point at the installed
+runtime policy — the same lifecycle already described for
 [`finding-identity-requirements.md`](finding-identity-requirements.md),
 [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md), and
-[`delta-re-review-contract.md`](delta-re-review-contract.md).
+[`delta-re-review-contract.md`](delta-re-review-contract.md), which
+remain contract records until their own installing issues land.
 
 ## Scope boundaries
 
