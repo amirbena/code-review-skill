@@ -126,18 +126,17 @@ finally: remove the temporary checkout (success, any failure, interruption)
    shared [`review-context.md`](../../../shared/policies/review-context.md).
    If the caller supplied a **Jira reference** (key or URL), execute the
    shared [`review-context.md`](../../../shared/policies/review-context.md),
-   "Jira context resolution" → **"Resolution procedure"** in order before
-   review reasoning: (1) identify an available Jira MCP / connector /
-   runtime-exposed Jira read tool; (2) invoke it **read-only** to fetch the
-   referenced issue's contents (not the key/URL/branch/PR-title/commit/copied
-   metadata); (3) fetch relevant issue comments and linked requirement
-   context when the integration supports them; (4) normalize into Review
-   Context (classify comments per "Jira comments" — not every comment becomes
-   an acceptance criterion); (5) continue only after successful resolution.
-   If **any** of steps 1–4 fails — no integration, authentication failure,
-   authorization failure, issue not found, malformed reference, or
-   connector/MCP error or timeout — report the `JIRA CONTEXT UNRESOLVED`
-   reasoning result per
+   "Jira context resolution" → **"Resolution procedure"**, before review
+   reasoning: identify an available Jira MCP / connector / runtime-exposed
+   Jira read tool; invoke it **read-only** to fetch the referenced issue's
+   contents (not the key/URL/branch/PR-title/commit/copied metadata); fetch
+   relevant issue comments and linked requirement context when the
+   integration supports them; normalize into Review Context (classify
+   comments per "Jira comments" — not every comment becomes an acceptance
+   criterion); continue only after successful resolution. Any failure along
+   that procedure — no integration, authentication failure, authorization
+   failure, issue not found, malformed reference, or connector/MCP error or
+   timeout — reports the `JIRA CONTEXT UNRESOLVED` reasoning result per
    [`../policies/review-output.md`](../policies/review-output.md), "Final
    decision," and stop: do not infer the ticket from its key/branch/PR
    title/surrounding text/copied metadata, and produce no graded report. A
@@ -188,15 +187,13 @@ finally: remove the temporary checkout (success, any failure, interruption)
    HEAD is correct. Absent prior activity changes nothing.
 
    Resolve the requested repository-access mode and, for optional or required
-   repository-backed inspection, prepare
-   an isolated temporary checkout per
+   repository-backed inspection, prepare the checkout per
    [`../policies/repository-checkout.md`](../policies/repository-checkout.md)
    — resolve the `NormalizedPrSource` from the retrieved PR metadata (repo
-   identity, base ref/SHA, head ref/SHA, pull ref); mkdtemp under a safe
-   scratch parent → blobless clone → fetch base/head (SHA fallback) →
-   detached checkout of the immutable `head_sha`. Every Git call:
-   `core.hooksPath=/dev/null`, `GIT_CONFIG_NOSYSTEM=1`, `--no-tags`, no
-   submodule update. The checkout is **read-only** Repository Context; the
+   identity, base ref/SHA, head ref/SHA, pull ref); its lifecycle (mkdtemp →
+   blobless clone → fetch → detached checkout of the immutable `head_sha`),
+   safety flags, and failure classification apply exactly as specified there,
+   not restated here. The checkout is **read-only** Repository Context; the
    PR delta stays `merge-base(base_sha, head_sha)..head_sha`; the target
    repo's commands are never run outside the shared runtime-validation policy.
    On clone/fetch
@@ -216,72 +213,59 @@ finally: remove the temporary checkout (success, any failure, interruption)
 
    **Resolve and optionally execute runtime validation** per the shared
    [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
-   policy. Use only declarations and blast-radius context already resolved
-   for this target; carry exactly one outcome record per selected command (or
-   the explicit no-command result) into the shared `Validation` section. This
-   also covers **targeted per-finding validation**: for an eligible suspected
-   finding, run the smallest safe, isolated reproduction before the finding
-   set is finalized and carry the finding's validation state
-   (`reasoned` / `runtime-confirmed` / `attempted-inconclusive`) and its
-   `Validation` record forward. The shared policy owns eligibility,
-   generation limits, the no-leak-into-the-tree guarantee, budget/fail-safe
-   behavior, execution-boundary gating, and all safety semantics; this
-   runbook only sequences the step and carries its records forward.
+   policy, including its **targeted per-finding** mode: carry each selected
+   command's outcome record (or the explicit no-command result) into the
+   shared `Validation` section, and carry each validated finding's state
+   (`reasoned` / `runtime-confirmed` / `attempted-inconclusive`) forward with
+   it. The shared policy owns eligibility, generation limits, the
+   no-leak-into-the-tree guarantee, budget/fail-safe behavior,
+   execution-boundary gating, and all safety semantics; this runbook only
+   sequences the step and carries its records forward.
 
    **Plan review execution** per
    [`../policies/parallel-review.md`](../policies/parallel-review.md) and the
    shared [`parallel-review.md`](../../../shared/policies/parallel-review.md):
    detect the runtime's parallel capability (never enable an experimental
-   one by mutating configuration); if present **and** at least two materially
-   independent dimensions can run from the normalized input with an expected
-   latency benefit, split into read-only workers by dimension, each with the
-   identical normalized input (same PR base/head snapshot, Review Context,
-   Repository Context location and snapshot identity, identical resolved
-   instruction-context identity, Existing Review Evidence) and its dimension's
-   policies, returning candidate findings only; otherwise review
-   sequentially. Both forms must reach the same findings.
+   one by mutating configuration); if present with at least two materially
+   independent dimensions and an expected latency benefit, split into
+   read-only workers sharing identical normalized input, returning candidate
+   findings only; otherwise review sequentially. Both forms must reach the
+   same findings.
 5a. **Classify change-risk depth** per
-   [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md).
-   From the established PR delta and its changed files (excluding
-   non-reviewable ones per
+   [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md):
+   detect the catalog signals in the established PR delta (excluding
+   non-reviewable files per
    [`file-reviewability.md`](../../../shared/policies/file-reviewability.md)),
-   detect the catalog signals, deduplicate overlapping labels per
-   underlying fact, resolve each occurrence to its highest applicable tier,
-   and derive the `standard` / `elevated` / `deep` level by that policy's
-   "Classification ordering." Record the level and every activating signal
-   with its evidence for the subordinate metadata block (step 8), per that
-   policy's "Rationale emission" and "Non-goals and ownership boundary" —
-   not restated here.
-5b. **Resolve repository expansion** per
-   [`repository-expansion.md`](../../../shared/policies/repository-expansion.md).
-   From the established PR delta, detect any fired expansion trigger
-   (call site, interface/contract, migration/schema, config consumer),
-   follow it through the bounded, ring-based procedure whose ceiling is
-   scaled by the change-risk depth from step 5a, and record every fired
-   trigger with the ring reached and the locations inspected for the
-   subordinate metadata block (step 8). A PR with no fired trigger still
-   records that outcome as "none," per that policy's "Expansion decisions
-   are reported" and "Non-goals and ownership boundary" — not restated
-   here.
-5c. **Partition large changes** per
-   [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md).
-   When the established PR delta's diff-size measurement (the same
-   exclusion of non-reviewable files as step 5a) reaches that policy's
-   partitioning threshold, build coherent review units by its
-   deterministic directory-seed / evidence-based coherence-merge / size-cap
-   procedure; otherwise review the delta as a single unit as before. When
-   partitioned, apply step 6 below (review) separately to each unit, then
-   fold every unit's findings into step 7's aggregation — extended here to
-   also reconcile and de-duplicate **across partitions**, including
-   cross-partition consolidation per
-   [`root-cause-consolidation.md`](../../../shared/policies/root-cause-consolidation.md)
-   — into **one** finding set before step 8 (finalize findings) onward,
-   which run exactly once, over that combined set, never per partition.
-   Record whether partitioning
-   activated and, if so, the partitions built for the subordinate
-   metadata block (step 8); an unpartitioned review records nothing for
-   this field, per that policy's "Reporting" and "Non-goals and
+   deduplicate, and resolve each to its highest applicable tier to derive the
+   `standard` / `elevated` / `deep` level per that policy's "Classification
+   ordering." Record the level and activating signals for the subordinate
+   metadata block (step 8) per "Rationale emission" and "Non-goals and
    ownership boundary" — not restated here.
+5b. **Resolve repository expansion** per
+   [`repository-expansion.md`](../../../shared/policies/repository-expansion.md):
+   from the established PR delta, follow any fired expansion trigger (call
+   site, interface/contract, migration/schema, config consumer) through the
+   bounded, ring-based procedure whose ceiling is scaled by the change-risk
+   depth from step 5a. Record every fired trigger with the ring reached and
+   the locations inspected — or "none" when nothing fired — for the
+   subordinate metadata block (step 8), per "Expansion decisions are
+   reported" and "Non-goals and ownership boundary" — not restated here.
+5c. **Partition large changes** per
+   [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md):
+   when the established PR delta's diff-size measurement (same exclusion of
+   non-reviewable files as step 5a) reaches that policy's partitioning
+   threshold, build coherent review units by its deterministic
+   directory-seed / coherence-merge / size-cap procedure; otherwise review
+   the delta as a single unit as before. When partitioned, apply step 6
+   separately to each unit, then fold every unit's findings into step 7's
+   aggregation — extended here to also reconcile and de-duplicate **across
+   partitions** (including cross-partition consolidation per
+   [`root-cause-consolidation.md`](../../../shared/policies/root-cause-consolidation.md))
+   into **one** finding set before step 8 onward, which run exactly once,
+   never per partition. Record whether partitioning activated and, if so,
+   the partitions built for the subordinate metadata block (step 8); an
+   unpartitioned review records nothing for this field, per "Reporting" and
+   "Non-goals and ownership boundary" — not restated here.
 6. Review the diff against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
@@ -382,15 +366,14 @@ finally: remove the temporary checkout (success, any failure, interruption)
    to the inspected PR and include its separate completeness signal in the
    report. With no activating contract, emit no coverage section or signal.
 8b. **Evaluate review coverage** per
-   [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md).
-   Using the change-risk depth from step 5a and, when it activated, the
-   partitions from step 5c, determine whether every pass that depth (and
-   partitioning, when applicable) requires — including step 7's
-   required-dimension check — actually reached its own already-defined
-   stop condition. Record `coverage: complete` or `incomplete` with its
-   reason(s) in the report's subordinate metadata, per that policy's
-   "Labeling — incomplete must never present as clean" and "Non-goals and
-   ownership boundary" — not restated here.
+   [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
+   using the change-risk depth from step 5a and, when it activated, the
+   partitions from step 5c: confirm every pass that depth (and partitioning)
+   requires — including step 7's required-dimension check — actually reached
+   its own stop condition. Record `coverage: complete` or `incomplete` with
+   its reason(s) in the report's subordinate metadata, per "Labeling —
+   incomplete must never present as clean" and "Non-goals and ownership
+   boundary" — not restated here.
 9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
    step 4, remove it — on this path and on every other: a
    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the
