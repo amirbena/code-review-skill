@@ -192,3 +192,21 @@ concrete depth owner of the "API / integration contracts" dimension
 activated by "Semantic Implication Review" above, alongside — never
 replacing — this file's own "Affected-Test Impact Review" and
 "Architectural Placement Review," and it is not a second scope model.
+
+## Dependency / Supply-Chain Deepening Review
+
+When a PR changes a dependency manifest or lockfile, a container
+base-image reference, or a CI/automation action reference, apply
+[`review-scope.md`](../../../shared/policies/review-scope.md),
+"Dependency / supply-chain deepening review." That shared section owns
+the recognized manifest/lockfile/build-file inputs, the concern areas
+(major-version compatibility, runtime/platform requirement changes,
+dependency expansion, provenance/trust and unpinned automation
+references, build/runtime incompatibility), the fail-closed rule for an
+unrecognized format, and the reuse of the existing evidence and severity
+model; this PR-specific policy does not restate them. It is one concrete
+depth owner of the "Infrastructure / deployment" dimension activated by
+"Semantic Implication Review" above, it is not a generic dependency-update
+linter or vulnerability/CVE scanner, and it is not a second scope model. A
+manifest, lockfile, Dockerfile, or package-related filename changing is
+never by itself sufficient to engage it.

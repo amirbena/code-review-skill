@@ -329,14 +329,15 @@ which a value must be resolved before it is used, or what is reported.
    domain-specific reasoning is warranted and how 0..N such capabilities
    compose — never whether a dimension is considered at all),
    "Null-like absence-risk review," "API / contract compatibility
-   review," "Existing behavior ownership,"
+   review," "Dependency / supply-chain deepening review," "Existing
+   behavior ownership,"
    "Root-cause and model-completeness pass" (canonical home:
    [`root-cause-consolidation.md`](../../../shared/policies/root-cause-consolidation.md)),
    "Failure state, retry safety,
    and recovery," "Architectural placement and execution-lifecycle
    fidelity," and "Affected-test / test-impact analysis" (canonical home:
    [`affected-test-analysis.md`](../../../shared/policies/affected-test-analysis.md))
-   (the last eight
+   (the last nine
    signal-triggered per that policy's own gating conditions — not applied
    unconditionally to every diff), and
    [`evidence.md`](../../../shared/policies/evidence.md), "Findings beyond

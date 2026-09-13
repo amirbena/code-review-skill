@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.35.0 — 2026-09-13
+
+### Added
+
+- Add a Dependency / Supply-Chain deepening review capability to the shared review-scope policy, reasoning about materially implicated dependency/build/supply-chain compatibility, expansion, provenance, and build/runtime risk (#181) (#284).
+
 ## v1.34.0 — 2026-09-13
 
 ### Added

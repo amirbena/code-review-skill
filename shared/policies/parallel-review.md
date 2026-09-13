@@ -114,7 +114,10 @@ A reasonable default split (adjust to the change, do not force all five):
 - **Tests / configuration inspection** — test adequacy, missing regression
   tests, the impact of the change on existing tests that depend on the
   changed behavior (see [`review-scope.md`](review-scope.md), "Affected-test
-  / test-impact analysis"), config/infra/CI changes (read as text only).
+  / test-impact analysis"), config/infra/CI changes (read as text only),
+  and materially implicated dependency/build/supply-chain semantics (see
+  [`review-scope.md`](review-scope.md), "Dependency / supply-chain
+  deepening review").
 - **Existing-review reconciliation** — prior findings / settled decisions
   per [`review-evidence.md`](review-evidence.md).
 

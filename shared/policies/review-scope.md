@@ -125,9 +125,9 @@ deliberately not an eight-dimension checklist run on every diff.
   behavior, a startup/shutdown sequence). Base reasoning: does the change
   behave correctly across the environments and deployment states it can
   actually run in, and does it fail safely if a dependency it now assumes
-  is unavailable. Depth owner: no dedicated owner contract exists yet in
-  this repository; this base obligation is currently the full extent of
-  review for this dimension.
+  is unavailable. Depth owner: "Dependency / supply-chain deepening
+  review" below, for materially implicated dependency/build/supply-chain
+  semantics specifically.
 - **Security / trust boundaries** — signal: a value crosses from a less
   trusted context into a more trusted one, or the change touches
   authentication, authorization, or a policy-enforcement decision. Base
@@ -699,6 +699,89 @@ configuration reader outside the diff's own repository. It never fetches
 or retrieves another repository's consumer code to resolve that ambiguity;
 an unresolved consumer surface is exactly the fail-closed case above, not
 a reason to expand retrieval.
+
+## Dependency / supply-chain deepening review
+
+Signal: the change modifies a dependency manifest or lockfile (for example
+`package.json`/`package-lock.json`, `requirements.txt`/`poetry.lock`/
+`Pipfile.lock`, `go.mod`/`go.sum`, `Cargo.toml`/`Cargo.lock`, `pom.xml`/
+`build.gradle`), a container base-image reference (a Dockerfile `FROM`
+line), or a CI/automation action reference (a GitHub Actions workflow's
+`uses:` line or equivalent). Recognizing that one of these files changed
+is a diff-level signal only — it is never itself the finding: a manifest,
+lockfile, build file, or package-related filename changing does not by
+itself activate this pass; the change's own evidence still has to show one
+of the concern areas below before anything is reported.
+
+Concern areas — each requires its own evidence before a finding is
+raised, never merely because the qualifying file changed:
+
+- **Major-version compatibility** — a dependency bump crosses a
+  semver-major (or ecosystem-equivalent) boundary. Flag when the diff's
+  own evidence — a changelog or release-notes reference present in the
+  change, a known breaking change for that dependency, or call sites in
+  the diff still using an API the new major version removed or altered —
+  shows the bump requires an adaptation the diff does not make.
+- **Runtime/platform requirement changes** — the minimum language,
+  runtime, or platform version is raised (an `engines` field, a
+  `requires-python`, a Dockerfile base-image tag, a CI runner or toolchain
+  version). Flag when the codebase or its build/CI configuration still
+  depends on a feature or behavior unavailable at the new minimum, or when
+  the change silently narrows the versions the repository claims to
+  support.
+- **Dependency expansion** — a lockfile diff adds materially more
+  transitive dependencies than the direct manifest change would explain.
+  Flag when the expansion is disproportionate and unexplained by the
+  change's own evidence — never merely because a lockfile was
+  regenerated; a routine patch-level bump's incidental lockfile churn is
+  not itself a finding.
+- **Provenance / trust and unpinned automation references** — a CI action
+  or automation reference is pinned to a mutable ref (a branch or
+  floating-tag alias) instead of an immutable commit SHA where the
+  repository's own existing convention pins other references that way, or
+  a dependency's source changes (its registry, or a registry package
+  replaced by a git/URL dependency) in a way that changes who is trusted
+  to publish it. Flag when the change's own evidence shows the reference
+  or source is less verifiable than what the repository already relies on
+  elsewhere — never merely because a `uses:` line or source URL changed.
+- **Build/runtime incompatibility** — a build-file change (Dockerfile,
+  `build.gradle`, `pom.xml`, a compiler/toolchain pin) changes the
+  compiler, toolchain, or runtime version code is built or run with, where
+  the code's own evidence — syntax or an API it uses — is incompatible
+  with that version.
+
+Fail-closed on an unrecognized manifest, lockfile, or build-file format:
+when the format cannot be parsed or understood well enough to reason about
+any concern area above, this pass raises no speculative finding for it —
+mirrors, and does not replace, the same fail-closed discipline "API /
+contract compatibility review" and "Architectural placement and
+execution-lifecycle fidelity" above already apply to insufficient
+evidence, not a new evidence standard invented for this section alone.
+
+This section adds no new severity, finding category, or score: a
+dependency/supply-chain finding is labeled confirmed defect / credible
+engineering risk per [`evidence.md`](evidence.md) like any other finding,
+and classified per [`severity.md`](severity.md) exactly like any other
+finding. Per [`evidence.md`](evidence.md), "Findings beyond the changed
+lines," the search for affected call sites or usages scales with the
+change's actual blast radius — never a repository-wide dependency audit.
+
+This is not a second scope model, and it is not a generic
+dependency-update linter or a vulnerability/CVE scanner: it is one
+concrete depth owner, for materially implicated dependency/build/
+supply-chain semantics specifically, of the "Infrastructure / deployment"
+dimension in "Semantic change-implication reasoning" above. A manifest,
+lockfile, Dockerfile, or package-related filename changing is never by
+itself sufficient to engage this pass — activation follows the same
+evidence-driven composition [`specialist-depth.md`](specialist-depth.md)
+defines, never a file-type or path router. It does not resolve or install
+dependencies, does not duplicate a dedicated vulnerability/SCA scanner or
+CVE feed, and does not enforce a dependency policy this repository has not
+itself defined. The recognized manifest/lockfile/build-file inputs, their
+diff-recognition detail, and the smallest useful first implementation are
+the dependency/supply-chain deepening model design record (a
+repository-development document, named here, not linked because it is not
+a packaged resource).
 
 ## Change-risk signals and review depth
 

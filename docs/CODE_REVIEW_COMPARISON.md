@@ -39,6 +39,7 @@ products evolve.
 | Semantic change-implication reasoning | shared `review-scope.md` base pass — detects which system-level dimensions (user-facing, concurrency, data/persistence, API contracts, infra/deployment, security, operability, performance/scale) a change materially implicates and performs the minimum bounded reasoning for each | shared, identical |
 | Null-like absence-risk review | shared `review-scope.md` pass — cross-language, evidence-gated detection of credible null/undefined/nil/None absence risk in changed data-flow and control-flow, including interoperability/escape-hatch boundaries; suppressed where a guard, type guarantee, or upstream validation already makes the value safe | shared, identical |
 | API / contract compatibility review | shared `review-scope.md` pass — classifies a changed OpenAPI/JSON Schema/protobuf definition, public API model, event/message schema, or configuration contract's change shape as compatible / breaking / context-dependent; fails closed (no invented breakage claim) when the actual consumer surface cannot be established | shared, identical |
+| Dependency / supply-chain deepening review | shared `review-scope.md` pass — evidence-gated depth owner of the infra/deployment dimension for a changed dependency manifest, lockfile, container base-image reference, or CI/automation action reference; reasons about major-version compatibility, runtime/platform requirement changes, dependency expansion, provenance/trust and unpinned automation references, and build/runtime incompatibility; a manifest/lockfile/build file changing is never by itself sufficient to activate it, and an unrecognized format fails closed with no speculative finding | shared, identical |
 | Intended use case | pre-PR implementation review | independent review of an existing PR |
 
 **What each mode intentionally does *not* do**
@@ -200,7 +201,12 @@ analysis" (a behavioral change traced into the existing tests that depend on it 
 test now asserting the wrong behavior, or a new path left without regression protection), and
 "API / contract compatibility review" (classifying a changed schema, public API model, or
 event/message contract's change shape as compatible / breaking / context-dependent, failing
-closed rather than inventing a breakage claim when the actual consumer surface is unresolvable).
+closed rather than inventing a breakage claim when the actual consumer surface is unresolvable),
+and "Dependency / supply-chain deepening review" (reasoning about a changed dependency manifest,
+lockfile, container base-image reference, or CI/automation action reference for major-version
+compatibility, runtime/platform requirement changes, dependency expansion, provenance/trust and
+unpinned automation references, and build/runtime incompatibility, never merely because such a
+file changed).
 These remain local-first and
 signal-triggered, not a general checklist: each activates only when the diff's own shape gives
 concrete reason to, and none licenses a repository-wide audit — see those sections' own text.
