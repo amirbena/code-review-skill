@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.24.0 — 2026-09-13
+
+### Added
+
+- Add a base semantic change-implication reasoning pass to the shared review-scope policy, detecting which system-level dimensions a change materially implicates (#211) (#246).
+
 ## v1.23.2 — 2026-09-12
 
 ### Fixed
