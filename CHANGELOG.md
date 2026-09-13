@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.36.0 — 2026-09-13
+
+### Changed
+
+- Reorganize the shared review-scope policy into focused owner files for architectural placement, API/contract compatibility, null-like absence risk, and failure/retry/recovery reasoning, with no change to review behavior (#288).
+
 ## v1.35.0 — 2026-09-13
 
 ### Added
