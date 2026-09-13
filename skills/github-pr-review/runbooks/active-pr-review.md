@@ -438,6 +438,9 @@ stop
    tests that depend on it per "Affected-Test Impact Review" in the same
    file. When the invocation changes a repository contract another
    component consumes, also apply "API / Contract Compatibility Review" in
+   the same file. When the invocation changes a dependency manifest,
+   lockfile, container base-image reference, or CI/automation action
+   reference, also apply "Dependency / Supply-Chain Deepening Review" in
    the same file. Those
    instructions refine evaluation but never override this Skill's own
    safety boundaries (see

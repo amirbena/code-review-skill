@@ -92,6 +92,7 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
         self.assertIn("## Semantic change-implication reasoning", text)
         self.assertIn("## Null-like absence-risk review", text)
         self.assertIn("## API / contract compatibility review", text)
+        self.assertIn("## Dependency / supply-chain deepening review", text)
 
     def test_local_skill_always_loads_review_scope_and_evidence(self) -> None:
         text = _text(LOCAL_SKILL_MD)
@@ -116,6 +117,7 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
         )
         self.assertIn("Affected-test / test-impact analysis", step9_body)
         self.assertIn("API / contract compatibility review", step9_body)
+        self.assertIn("Dependency / supply-chain deepening review", step9_body)
 
 
 class RunbookDoesNotDuplicateBehavioralPolicyTextTests(unittest.TestCase):
@@ -541,6 +543,10 @@ class CrossSkillConsistencyTests(unittest.TestCase):
         # shared section but does not fork its body.
         self.assertIn("## API / Contract Compatibility Review", text)
         self.assertIn("API / contract compatibility review", text)
+        # The dependency/supply-chain forwarding subsection names the shared
+        # section but does not fork its body.
+        self.assertIn("## Dependency / Supply-Chain Deepening Review", text)
+        self.assertIn("Dependency / supply-chain deepening review", text)
         # It must not have grown a private copy of the new section names —
         # it consumes them through the shared file, not by forking them.
         self.assertNotIn("## Existing behavior ownership", text)
@@ -556,6 +562,7 @@ class CrossSkillConsistencyTests(unittest.TestCase):
         )
         self.assertNotIn("## Null-like absence-risk review", text)
         self.assertNotIn("## API / contract compatibility review", text)
+        self.assertNotIn("## Dependency / supply-chain deepening review", text)
         self.assertNotIn("### When to expand context", text)
         self.assertNotIn("### Stop conditions", text)
 
@@ -579,6 +586,7 @@ class CrossSkillConsistencyTests(unittest.TestCase):
             "## Semantic change-implication reasoning",
             "## Null-like absence-risk review",
             "## API / contract compatibility review",
+            "## Dependency / supply-chain deepening review",
         )
         skill_policy_dirs = [
             LOCAL_SKILL_DIR / "policies",
@@ -692,12 +700,20 @@ class SemanticImplicationSectionTests(unittest.TestCase):
             self.assertIn(dimension, self.section)
         self.assertEqual(self.section.count("Depth owner:"), 8)
 
-    def test_two_dimensions_have_no_dedicated_owner_yet(self) -> None:
+    def test_one_dimension_has_no_dedicated_owner_yet(self) -> None:
         self.assertEqual(
             self.section.count(
                 "no dedicated owner contract exists yet in this repository"
             ),
-            2,
+            1,
+        )
+
+    def test_infrastructure_dimension_depth_owner_names_dependency_supply_chain(
+        self,
+    ) -> None:
+        self.assertIn(
+            'Depth owner: "Dependency / supply-chain deepening review" below',
+            self.section,
         )
 
     def test_worked_multi_dimension_example_names_four_implicated_dimensions(self) -> None:
@@ -1274,6 +1290,162 @@ class ApiContractCompatibilityWiredIntoBothSkillsTests(unittest.TestCase):
     def test_parallel_review_cites_the_shared_section(self) -> None:
         text = _text(SHARED_DIR / "policies/parallel-review.md")
         self.assertIn("API / contract compatibility review", text)
+
+
+class DependencySupplyChainDeepeningSectionTests(unittest.TestCase):
+    """(shared semantics) the dependency/supply-chain deepening pass
+    reasons about materially implicated compatibility, expansion,
+    provenance, and build/runtime risk in a changed dependency manifest,
+    lockfile, container base-image reference, or CI/automation action
+    reference — never merely because one of those files changed — ties the
+    outcome to the existing severity/evidence model, and fails closed on
+    an unrecognized format rather than inventing a finding (Issue #181)."""
+
+    def setUp(self) -> None:
+        self.section = _section(
+            _text(REVIEW_SCOPE),
+            "## Dependency / supply-chain deepening review",
+            "## Change-risk signals and review depth",
+        )
+
+    def test_recognized_inputs_are_named(self) -> None:
+        for recognized_input in (
+            "package.json",
+            "requirements.txt",
+            "go.mod",
+            "Cargo.toml",
+            "build.gradle",
+            "Dockerfile",
+            "GitHub Actions workflow",
+        ):
+            self.assertIn(recognized_input, self.section)
+
+    def test_recognition_signal_is_never_itself_the_finding(self) -> None:
+        self.assertIn("it is never itself the finding", self.section)
+        self.assertIn(
+            "a manifest, lockfile, build file, or package-related filename "
+            "changing does not by itself activate this pass",
+            self.section,
+        )
+
+    def test_all_concern_areas_are_present(self) -> None:
+        for concern in (
+            "Major-version compatibility",
+            "Runtime/platform requirement changes",
+            "Dependency expansion",
+            "Provenance / trust and unpinned automation references",
+            "Build/runtime incompatibility",
+        ):
+            self.assertIn(concern, self.section)
+
+    def test_concern_areas_require_evidence_not_mere_file_change(self) -> None:
+        self.assertIn(
+            "never merely because the qualifying file changed",
+            self.section,
+        )
+        self.assertIn("not itself a finding", self.section)
+
+    def test_fail_closed_rule_on_unrecognized_format(self) -> None:
+        self.assertIn(
+            "Fail-closed on an unrecognized manifest, lockfile, or "
+            "build-file format",
+            self.section,
+        )
+        self.assertIn("raises no speculative finding for it", self.section)
+
+    def test_reuses_existing_fail_closed_discipline_not_a_new_standard(self) -> None:
+        self.assertIn("API / contract compatibility review", self.section)
+        self.assertIn(
+            "Architectural placement and execution-lifecycle fidelity",
+            self.section,
+        )
+        self.assertIn(
+            "not a new evidence standard invented for this section alone",
+            self.section,
+        )
+
+    def test_no_new_severity_or_score_and_ties_to_existing_model(self) -> None:
+        self.assertIn(
+            "adds no new severity, finding category, or score", self.section
+        )
+        self.assertIn("evidence.md", self.section)
+        self.assertIn("severity.md", self.section)
+
+    def test_design_record_named_not_linked(self) -> None:
+        self.assertIn(
+            "dependency/supply-chain deepening model design record",
+            self.section,
+        )
+        self.assertIn("not linked because", self.section)
+
+    def test_never_a_generic_linter_or_file_type_router(self) -> None:
+        self.assertIn("not a generic", self.section)
+        self.assertIn("dependency-update linter", self.section)
+        self.assertIn("vulnerability/CVE", self.section)
+        self.assertIn(
+            "never by itself sufficient to engage this pass", self.section
+        )
+        self.assertIn("never a file-type or path router", self.section)
+
+    def test_it_is_the_depth_owner_of_infrastructure_deployment(self) -> None:
+        self.assertIn(
+            'of the "Infrastructure / deployment"', self.section
+        )
+        self.assertIn("Semantic change-implication reasoning", self.section)
+        self.assertIn("not a second scope model", self.section)
+
+    def test_does_not_resolve_install_or_enforce_undefined_policy(self) -> None:
+        self.assertIn("does not resolve or install", self.section)
+        self.assertIn("dedicated vulnerability/SCA scanner", self.section)
+        self.assertIn(
+            "does not enforce a dependency policy this repository has not",
+            self.section,
+        )
+
+    def test_dimension_depth_owner_line_names_this_section(self) -> None:
+        text = _text(REVIEW_SCOPE)
+        dimension_section = _section(
+            text,
+            "Infrastructure / deployment",
+            "Security / trust boundaries",
+        )
+        self.assertIn(
+            "Dependency / supply-chain deepening review", dimension_section
+        )
+
+
+class DependencySupplyChainDeepeningWiredIntoBothSkillsTests(unittest.TestCase):
+    def test_github_review_reasoning_forwards_to_the_shared_section(self) -> None:
+        text = _text(GITHUB_REASONING)
+        self.assertIn("## Dependency / Supply-Chain Deepening Review", text)
+        self.assertIn("Dependency / supply-chain deepening review", text)
+        self.assertIn("this PR-specific policy does not restate them", text)
+
+    def test_github_review_index_lists_dependency_supply_chain(self) -> None:
+        text = _text(REPO_ROOT / "skills/github-pr-review/policies/github-review.md")
+        self.assertIn("dependency / supply-chain", text)
+
+    def test_both_github_runbooks_name_the_forwarding_subsection(self) -> None:
+        for runbook in (GITHUB_ACTIVE_RUNBOOK, GITHUB_PASSIVE_RUNBOOK):
+            text = _text(runbook)
+            self.assertIn("Dependency / Supply-Chain Deepening Review", text)
+
+    def test_local_runbook_marks_the_section_signal_triggered(self) -> None:
+        text = _text(LOCAL_RUNBOOK)
+        window = _section(
+            text,
+            "Dependency / supply-chain deepening review",
+            "Classify findings per",
+        )
+        self.assertIn(
+            "signal-triggered per that policy's own gating conditions", window
+        )
+        self.assertIn("not applied", window)
+        self.assertIn("unconditionally to every diff", window)
+
+    def test_parallel_review_cites_the_shared_section(self) -> None:
+        text = _text(SHARED_DIR / "policies/parallel-review.md")
+        self.assertIn("Dependency / supply-chain deepening review", text)
 
 
 if __name__ == "__main__":
