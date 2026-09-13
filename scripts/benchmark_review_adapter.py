@@ -41,6 +41,23 @@ distinct on purpose:
 Nothing here changes the ``ReviewerAdapter`` type or ``ProducedFinding``'s
 fields; this module only ever returns
 ``tests.reference.benchmark.benchmark_runner.ProducedFinding`` instances.
+
+Two small, deliberately minimal hardenings on top of the above (code review
+follow-up to Issue #250; both stay a manual/developer execution path — not
+a CI gate, not a merge gate, not a hardened pipeline; that hardening is
+explicitly deferred to a future CI-gate issue):
+
+- :func:`check_runtime_available` now also runs one short, real probe
+  invocation of the resolved executable after confirming it is on
+  ``PATH``, so "installed but unusable" (e.g. present but not
+  authenticated) is caught by the preflight too, not just "missing
+  entirely". This is a single additional subprocess call, not a
+  retry/backoff or health-check subsystem.
+- the CLI invocation now points ``--plugin-dir`` at this checkout's own
+  repository root (see ``SKILL_PLUGIN_DIR`` below) instead of relying on
+  whatever Skill happens to be ambiently installed on the machine running
+  the benchmark, so a benchmark run is bound to the Skill as it exists in
+  this specific checkout.
 """
 
 from __future__ import annotations
@@ -64,6 +81,29 @@ CLI_ENV_VAR = "BENCHMARK_REVIEW_CLI"
 CLI_ARGS_ENV_VAR = "BENCHMARK_REVIEW_CLI_ARGS"
 DEFAULT_CLI = "claude"
 DEFAULT_TIMEOUT_SECONDS = 300.0
+PROBE_TIMEOUT_SECONDS = 30.0
+
+# This checkout's own repository root (mirrors the same
+# ``Path(__file__).resolve().parents[1]`` pattern already used in
+# ``scripts/run_benchmark.py``). Passed to the review CLI's
+# ``--plugin-dir`` flag (see ``ProductionReviewerAdapter.__call__``) so the
+# benchmark is bound to the ``local-code-review`` Skill as it exists in
+# *this* checkout, not to whatever Skill happens to be ambiently installed
+# on the machine running the benchmark.
+#
+# Known limitation, documented here rather than engineered around: this
+# repository's ``skills/`` layout is a Skill-packaging source tree (see
+# ``scripts/package-manifest.json``), not a Claude Code *plugin* directory
+# (no ``.claude-plugin/plugin.json`` manifest). ``--plugin-dir`` is the
+# only existing CLI mechanism for pointing a one-off invocation at a local
+# directory, so it is used as the best available minimal binding; if the
+# CLI does not recognize this layout as a loadable plugin, invocations
+# fall back to the CLI's own ambient Skill discovery, and the prompt's
+# request to invoke ``local-code-review`` may then execute a different,
+# ambiently-installed copy of that Skill instead of this checkout's copy.
+# Provisioning a proper plugin manifest is out of scope for this manual
+# developer benchmark tool (issue #250) and is left to a future issue.
+SKILL_PLUGIN_DIR = Path(__file__).resolve().parents[1]
 
 
 class RuntimeUnavailableError(RuntimeError):
@@ -102,6 +142,15 @@ def check_runtime_available(executable: str | None = None) -> str:
     not — the caller (the CLI entrypoint) must call this *before* touching
     the corpus, any workspace, or the matcher/metrics, and must exit
     non-zero on failure rather than running anything.
+
+    Being on ``PATH`` is not sufficient by itself: the executable can be
+    installed but unusable (e.g. present but not authenticated, which
+    exits non-zero with "Not logged in" rather than reviewing anything).
+    So, after confirming presence, this also runs one short, real probe
+    invocation of the resolved executable and raises the same error if
+    that probe fails — the same simple pattern
+    ``tests/unit/benchmark/test_production_adapter_e2e.py``'s
+    ``_probe_runtime()`` helper already uses for its own skip-gating.
     """
     exe = executable or resolve_cli_executable()
     found = shutil.which(exe)
@@ -111,6 +160,27 @@ def check_runtime_available(executable: str | None = None) -> str:
             "Install Claude Code (https://claude.com/claude-code) so the "
             f"'{exe}' command is available, or point {CLI_ENV_VAR} at the "
             "correct executable name/path."
+        )
+    try:
+        probe = subprocess.run(
+            [found, "-p", "reply with the single word: ok", "--output-format", "text"],
+            capture_output=True,
+            text=True,
+            timeout=PROBE_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeUnavailableError(
+            f"review runtime executable {exe!r} was found on PATH at {found!r}, "
+            f"but a probe invocation could not be run: {exc}. Point {CLI_ENV_VAR} "
+            "at a working executable."
+        ) from exc
+    if probe.returncode != 0:
+        raise RuntimeUnavailableError(
+            f"review runtime executable {exe!r} was found on PATH at {found!r}, "
+            f"but a probe invocation exited {probe.returncode} (e.g. not "
+            f"authenticated): {probe.stderr.strip()[:500]!r}. Run "
+            f"'{exe} -p \"hello\" --output-format text' manually to diagnose, "
+            f"or point {CLI_ENV_VAR} at a working executable."
         )
     return found
 
@@ -259,6 +329,10 @@ class ProductionReviewerAdapter:
             _REVIEW_PROMPT,
             "--output-format",
             "text",
+            "--plugin-dir",
+            str(SKILL_PLUGIN_DIR),
+            "--allowedTools",
+            "Bash(git *) Read Grep Glob",
             *self.extra_args,
         ]
         completed = subprocess.run(

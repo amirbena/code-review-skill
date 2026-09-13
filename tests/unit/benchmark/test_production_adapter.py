@@ -36,6 +36,7 @@ import unittest
 from pathlib import Path
 
 from scripts.benchmark_review_adapter import (
+    SKILL_PLUGIN_DIR,
     ProductionReviewerAdapter,
     RuntimeUnavailableError,
     check_runtime_available,
@@ -201,26 +202,6 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(resolve_cli_extra_args(env={}), [])
 
 
-class RuntimeAvailabilityTests(unittest.TestCase):
-    def test_missing_executable_raises_clear_error(self) -> None:
-        with self.assertRaises(RuntimeUnavailableError) as ctx:
-            check_runtime_available("definitely-not-a-real-benchmark-review-cli-xyz")
-        message = str(ctx.exception)
-        self.assertIn("definitely-not-a-real-benchmark-review-cli-xyz", message)
-        self.assertIn("BENCHMARK_REVIEW_CLI", message)
-
-    def test_present_executable_returns_resolved_path(self) -> None:
-        # `python3` (or `python`) is present in every environment this suite
-        # runs in, and is not the real review CLI — used only to prove the
-        # "found" branch without depending on `claude` being installed.
-        import shutil
-        import sys
-
-        resolved = check_runtime_available(sys.executable)
-        self.assertTrue(shutil.which(sys.executable))
-        self.assertEqual(Path(resolved).name, Path(sys.executable).name)
-
-
 class _StubCliMixin:
     """Writes an executable stub script standing in for the real `claude`
     CLI, so the subprocess-invocation boundary is tested without depending
@@ -237,6 +218,41 @@ class _StubCliMixin:
         )
         script.chmod(script.stat().st_mode | stat.S_IEXEC)
         return script
+
+
+class RuntimeAvailabilityTests(unittest.TestCase, _StubCliMixin):
+    def test_missing_executable_raises_clear_error(self) -> None:
+        with self.assertRaises(RuntimeUnavailableError) as ctx:
+            check_runtime_available("definitely-not-a-real-benchmark-review-cli-xyz")
+        message = str(ctx.exception)
+        self.assertIn("definitely-not-a-real-benchmark-review-cli-xyz", message)
+        self.assertIn("BENCHMARK_REVIEW_CLI", message)
+
+    def test_present_and_usable_executable_returns_resolved_path(self) -> None:
+        # A stub that exits 0 for any invocation (including the preflight's
+        # own probe call) stands in for a present-and-working review CLI,
+        # without depending on the real `claude` CLI being installed or
+        # authenticated.
+        with tempfile.TemporaryDirectory() as tmp:
+            stub = self._write_stub(Path(tmp), stdout="**Result: ✅ Review Clean**\n", exit_code=0)
+            resolved = check_runtime_available(str(stub))
+            self.assertEqual(Path(resolved), stub)
+
+    def test_present_but_unusable_executable_raises_clear_error(self) -> None:
+        # A stub that exists and is executable (so `shutil.which` finds
+        # it) but that fails when actually invoked — e.g. `claude` present
+        # on PATH but unauthenticated, which prints "Not logged in" and
+        # exits non-zero. The preflight must catch this, not just
+        # "missing entirely".
+        with tempfile.TemporaryDirectory() as tmp:
+            stub = self._write_stub(
+                Path(tmp), stdout="Not logged in · Please run /login\n", exit_code=1
+            )
+            with self.assertRaises(RuntimeUnavailableError) as ctx:
+                check_runtime_available(str(stub))
+            message = str(ctx.exception)
+            self.assertIn(str(stub), message)
+            self.assertIn("probe invocation", message)
 
 
 class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
@@ -303,6 +319,35 @@ class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
 
         with self.assertRaises(ValueError):
             adapter(workspace)
+
+    def test_adapter_invokes_cli_with_plugin_dir_bound_to_this_checkout(self) -> None:
+        """The adapter must bind the review CLI to this checkout's own
+        Skill directory (not whatever is ambiently installed) via
+        ``--plugin-dir`` — proven by a stub that records its own argv."""
+        workspace = self.tmp_path / "workspace5"
+        workspace.mkdir()
+        argv_marker = self.tmp_path / "argv.txt"
+        stub = self.tmp_path / "argv-stub.py"
+        stub.write_text(
+            "#!/usr/bin/env python3\n"
+            "import sys\n"
+            f"open({str(argv_marker)!r}, 'w').write('\\n'.join(sys.argv[1:]))\n"
+            "sys.stdout.write('**Result: \u2705 Review Clean**\\n')\n"
+            "sys.exit(0)\n",
+            encoding="utf-8",
+        )
+        stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
+
+        adapter = ProductionReviewerAdapter(executable=str(stub))
+        adapter(workspace)
+
+        argv = argv_marker.read_text(encoding="utf-8").splitlines()
+        self.assertIn("--plugin-dir", argv)
+        plugin_dir = argv[argv.index("--plugin-dir") + 1]
+        plugin_path = Path(plugin_dir)
+        self.assertTrue(plugin_path.is_absolute())
+        self.assertEqual(plugin_path, SKILL_PLUGIN_DIR)
+        self.assertTrue((plugin_path / "skills" / "local-code-review").is_dir())
 
     def test_adapter_raised_exception_is_absorbed_by_run_case_as_per_case_error(self) -> None:
         """Proves the integration point: an adapter failure (subprocess

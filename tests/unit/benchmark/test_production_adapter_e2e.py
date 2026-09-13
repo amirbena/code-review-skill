@@ -3,18 +3,15 @@
 conditional on the real review runtime actually being available.
 
 This test never fabricates success when the runtime is unavailable. It
-checks two things before attempting the real path, and skips with a clear
-reason (rather than faking a clean/empty result) if either fails:
+runs the same preflight check the production entrypoint runs
+(``check_runtime_available`` — on PATH at all, *and* a lightweight probe
+invocation actually succeeds, since being on PATH is not sufficient by
+itself: e.g. the binary may be installed but not authenticated, which
+exits non-zero with "Not logged in" rather than reviewing anything) and
+skips with a clear reason (rather than faking a clean/empty result) if it
+raises.
 
-1. ``shutil.which("claude")`` (the configured default,
-   ``scripts.benchmark_review_adapter.DEFAULT_CLI``) — is the executable on
-   PATH at all;
-2. a lightweight probe invocation of that CLI actually succeeds — the
-   binary being on PATH is not sufficient by itself (e.g. it may be
-   installed but not authenticated, which exits non-zero with "Not logged
-   in" rather than reviewing anything).
-
-When both checks pass, it drives one real corpus case through the
+When that check passes, it drives one real corpus case through the
 production adapter end-to-end via ``run_selected`` and asserts only that
 the pipeline executes and that metrics can be computed from the result —
 never specific finding content, since a real LLM's output is not
@@ -23,11 +20,13 @@ deterministic.
 
 from __future__ import annotations
 
-import shutil
-import subprocess
 import unittest
 
-from scripts.benchmark_review_adapter import DEFAULT_CLI, ProductionReviewerAdapter
+from scripts.benchmark_review_adapter import (
+    ProductionReviewerAdapter,
+    RuntimeUnavailableError,
+    check_runtime_available,
+)
 from tests.reference.benchmark import benchmark_metrics as bm
 from tests.reference.benchmark import benchmark_runner as br
 from tests.support.paths import REPO_ROOT
@@ -38,23 +37,14 @@ REAL_CASE_ID = "correctness-off-by-one-pagination"
 
 def _probe_runtime() -> str | None:
     """Return None if the real review runtime is actually usable, else a
-    human-readable reason it is not (used as the skip reason)."""
-    if not shutil.which(DEFAULT_CLI):
-        return f"real review runtime ({DEFAULT_CLI!r}) not found on PATH"
+    human-readable reason it is not (used as the skip reason). Delegates
+    to the same ``check_runtime_available`` preflight the production
+    entrypoint uses, so this test exercises the identical binding/probe
+    path rather than a second, hand-rolled one."""
     try:
-        probe = subprocess.run(
-            [DEFAULT_CLI, "-p", "reply with the single word: ok", "--output-format", "text"],
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-    except Exception as exc:  # noqa: BLE001 - any probe failure means "not usable here"
-        return f"probe invocation of {DEFAULT_CLI!r} raised: {exc}"
-    if probe.returncode != 0:
-        return (
-            f"probe invocation of {DEFAULT_CLI!r} exited {probe.returncode} "
-            f"(e.g. not authenticated): {probe.stderr.strip()[:300]!r}"
-        )
+        check_runtime_available()
+    except RuntimeUnavailableError as exc:
+        return str(exc)
     return None
 
 

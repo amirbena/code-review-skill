@@ -239,7 +239,12 @@ to `run_corpus`/`run_selected` and the existing metrics
 Per the "Status and canonical home" section below, this is a pluggable
 adapter behind the fixed boundary this contract defines, not a change to
 runner behavior — this pointer is a cross-reference, not new contract
-substance.
+substance. The CLI invocation binds each run to *this checkout's own*
+`local-code-review` Skill directory (via the review CLI's `--plugin-dir`
+flag) rather than an ambiently-installed Skill, and its preflight check
+verifies the runtime is actually usable, not merely present; both remain
+a manual/developer execution path only — CI wiring, scheduling, and
+merge-gate hardening stay out of scope here per the table above.
 
 ## Status and canonical home
 
