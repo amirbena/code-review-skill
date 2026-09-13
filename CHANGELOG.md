@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.34.0 — 2026-09-13
+
+### Added
+
+- Add Performance deepening capability for evidence-driven cardinality, call-path, batching, hot-path, amplification, and memory/concurrency depth (#180) (#283).
+
 ## v1.33.0 — 2026-09-13
 
 ### Changed
