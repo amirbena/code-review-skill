@@ -1,0 +1,94 @@
+# Distributed-systems-deepening corpus case (Issue #272, parent #84,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors distributed-systems-deepening.md's "Does not engage — bounded
+# base reasoning already suffices" worked example, applied to retry
+# interaction: capture_payment already guards its side-effecting charge
+# with a dedup set checked before payment_gateway.charge is ever called,
+# so the new at-least-once queue consumer's redelivered messages are
+# already safe. The deepening capability traces the same retry path as
+# the sibling flagged case and confirms nothing further needs reporting
+# beyond the durability of the in-memory guard itself, which is carried
+# as an optional finding rather than treated as required or as out of
+# scope.
+
+format: benchmark-case/v1
+
+id: distributed-systems-deepening-retry-idempotency-guarded-clean
+title: "New at-least-once consumer calls capture_payment, which already guards the charge with a dedup check"
+
+input:
+  patch: |
+    diff --git a/app/billing.py b/app/billing.py
+    index 1111111..2222222 100644
+    --- a/app/billing.py
+    +++ b/app/billing.py
+    @@ -1,5 +1,6 @@
+     import ledger
+     import payment_gateway
+    +import queue_client
+
+     _processed_payment_ids = set()
+
+    @@ -11,3 +12,8 @@
+         ledger.record_charge(payment_id, charge_id, amount)
+         _processed_payment_ids.add(payment_id)
+         return charge_id
+    +
+    +
+    +@queue_client.consumer("billing-capture-queue", delivery="at-least-once")
+    +def handle_capture_message(message):
+    +    capture_payment(message["payment_id"], message["amount"])
+  base:
+    app/billing.py: |
+      import ledger
+      import payment_gateway
+
+      _processed_payment_ids = set()
+
+
+      def capture_payment(payment_id, amount):
+          if payment_id in _processed_payment_ids:
+              return ledger.get_charge_id(payment_id)
+          charge_id = payment_gateway.charge(payment_id, amount)
+          ledger.record_charge(payment_id, charge_id, amount)
+          _processed_payment_ids.add(payment_id)
+          return charge_id
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: in-memory-idempotency-guard-not-durable
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: line
+        path: app/billing.py
+        symbol: capture_payment
+        anchor: '_processed_payment_ids = set()'
+      claim: >-
+        _processed_payment_ids is a plain in-process set with no
+        persistence, so a redelivery that arrives after the process
+        restarts or redeploys finds an empty guard and charges the
+        payment again; the guard only protects redeliveries handled
+        within the same process lifetime.
+      defect_kind: idempotency-guard-not-durable
+
+metadata:
+  source: crafted
+  tags: [concurrency]
+  rationale: >-
+    Pins distributed-systems-deepening.md's "bounded base reasoning
+    already suffices" worked example applied to retry interaction:
+    capture_payment already checks _processed_payment_ids before calling
+    payment_gateway.charge, so a redelivered message from the new
+    at-least-once consumer returns the already-recorded charge instead of
+    charging twice within the same process lifetime. The deepening
+    capability's retry-interaction tracing confirms the guard holds for
+    that scenario, so nothing required needs reporting — the direct
+    counterpart to the sibling missing-idempotency case — while an
+    optional finding acknowledges the guard's in-memory durability as a
+    defensible secondary observation, so a reviewer that raises it is not
+    scored as producing an unexpected finding.
