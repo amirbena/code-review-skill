@@ -92,12 +92,15 @@ expected:
         list_orders_by_status serves the operational dashboard exclusively
         through the new status-index GSI on a table the function's own
         docstring documents as holding ~8M live items written continuously
-        by checkout and fulfillment. DynamoDB only populates a GSI going
-        forward from when it is created; items already in the table before
-        status-index existed are never retroactively indexed. This change
-        adds no backfill step and no fallback to a base-table scan, so
-        every order placed before this change silently never appears in
-        the status-index query results, even though the item itself still
+        by checkout and fulfillment. DynamoDB GSIs are sparse: an item is
+        only projected into the index if it carries the indexed
+        attribute. status is a newly introduced attribute, so pre-existing
+        orders never had it set and are excluded from status-index
+        regardless of DynamoDB's automatic backfill of the index from
+        existing items. This change adds no step to populate status on
+        existing orders and no fallback to a base-table scan, so every
+        order placed before this change silently never appears in the
+        status-index query results, even though the item itself still
         exists in the table.
       defect_kind: dynamodb-gsi-missing-backfill
     - key: missing-gsi-backfill-regression-test
@@ -119,8 +122,9 @@ metadata:
     DynamoDB GSI/access-pattern evolution" worked example, the key-value
     counterpart to the corpus's existing relational backfill fixture: base
     reasoning identifies the new stored-representation (the GSI), and the
-    deepening capability must trace that DynamoDB does not retroactively
-    populate a newly created index, so pre-existing items are silently
-    excluded from the new access pattern with no backfill or dual-read
-    fallback in the diff -- part of Issue #279's non-relational corpus
-    extension.
+    deepening capability must trace that the new index is sparse on the
+    newly introduced status attribute, so pre-existing items that never
+    had status set are silently excluded from the new access pattern
+    regardless of DynamoDB's automatic index backfill, with no step to
+    populate status on those items and no dual-read fallback in the diff
+    -- part of Issue #279's non-relational corpus extension.
