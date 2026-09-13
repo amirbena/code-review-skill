@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.28.0 — 2026-09-13
+
+### Added
+
+- Add a remediation-scope-boundary reasoning requirement to the shared review-scope contract, separating a finding's validity/severity from how much of its remediation the current task/PR boundary must absorb vs. defer as a `Follow-up` (#258) (#263).
+
 ## v1.27.0 — 2026-09-13
 
 ### Added
