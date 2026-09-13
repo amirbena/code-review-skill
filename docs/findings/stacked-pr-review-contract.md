@@ -9,15 +9,25 @@ SHA(s) must be persisted for reliable re-review, what triggers a partial vs.
 full re-review of an upper layer when a lower layer changes, and how
 ambiguous or broken stack topology fails safely.
 
-This document is **contract / requirements only**, exactly like its
-[#63](https://github.com/amirbena/code-review-skill/issues/63) /
-[#64](https://github.com/amirbena/code-review-skill/issues/64) siblings. It
-does not implement stack detection, re-derive existing base/head-fidelity
-mechanics, or redefine finding identity, matching, or lifecycle. Wherever a
-section below stops at "enough state for a downstream pass to decide," that
-decision belongs to
-[#65](https://github.com/amirbena/code-review-skill/issues/65) or a future
-stacked-review implementation issue, not to this document.
+This document is **contract / requirements only**, in the same repository-
+development-record sense as
+[#63](https://github.com/amirbena/code-review-skill/issues/63)'s
+[`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md), which
+remains an active contract record. Its
+[#64](https://github.com/amirbena/code-review-skill/issues/64) sibling,
+[`delta-re-review-contract.md`](delta-re-review-contract.md), has already
+progressed one stage further along that same lifecycle: since
+[#65](https://github.com/amirbena/code-review-skill/issues/65) installed
+the equivalent runtime behavior, that document is now a **historical
+design record**, and the single normative source for delta re-review
+semantics is the packaged policy
+[`stateful-delta-rereview.md`](../../skills/github-pr-review/policies/stateful-delta-rereview.md).
+This document does not implement stack detection, re-derive existing
+base/head-fidelity mechanics, or redefine finding identity, matching, or
+lifecycle. Wherever a section below stops at "enough state for a
+downstream pass to decide," that decision belongs to #65's analogue for
+stacked-PR review — a future stacked-review implementation issue — not to
+this document.
 
 This is a repository-development doc, like
 [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md) and
@@ -241,9 +251,10 @@ stack-layer instance of #63 §3's "base branch advanced" case — the
 mechanism is identical; only the fact that "the base" here is another PR,
 not the root, is new.
 
-Resolving this trigger reuses
-[`delta-re-review-contract.md`](delta-re-review-contract.md) unchanged —
-it does not invent a second escalation model:
+Resolving this trigger reuses the same escalation model
+[`delta-re-review-contract.md`](delta-re-review-contract.md) (#64)
+records and [`stateful-delta-rereview.md`](../../skills/github-pr-review/policies/stateful-delta-rereview.md)
+(#65) now normatively implements — it does not invent a second one:
 
 | Condition on layer `N-1`'s new commits (relative to layer `N`'s recorded effective-base SHA) | Effect on layer `N`'s re-review |
 |---|---|
@@ -453,9 +464,11 @@ top of them; it does not restate or override:
 - [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md) (#63)
   — the Reviewed State Record fields §4 above populates for a stack layer,
   the authoritative-SHA rule, and reviewer ownership;
-- [`delta-re-review-contract.md`](delta-re-review-contract.md) (#64) —
-  change classes, blast-radius attribution, and the semantic escalation
-  triggers §5 and §6 reuse unchanged;
+- [`delta-re-review-contract.md`](delta-re-review-contract.md) (#64), now
+  a historical design record whose canonical semantics live in
+  [`stateful-delta-rereview.md`](../../skills/github-pr-review/policies/stateful-delta-rereview.md)
+  (#65) — change classes, blast-radius attribution, and the semantic
+  escalation triggers §5 and §6 reuse unchanged;
 - [`../../skills/github-pr-review/policies/repository-checkout.md`](../../skills/github-pr-review/policies/repository-checkout.md)
   — base/head fidelity mechanics this contract applies without a new
   algorithm;
