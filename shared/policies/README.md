@@ -44,6 +44,7 @@ packaged Skill is installed; they do not depend on this repository.
 | [`invocation-options.md`](invocation-options.md) | Deterministic, invocation-scoped normalization of shared presentation options and finding-detail precedence. |
 | [`remediation-guidance.md`](remediation-guidance.md) | Advisory fix direction on findings; never changes finding identity, severity, dedup, or the derived verdict. |
 | [`remediation-scope-boundary.md`](remediation-scope-boundary.md) | The mandatory three-part reasoning that separates a finding's validity/severity from how much of its remediation the current task/PR boundary must absorb versus defer as a `Follow-up`. Never changes severity, identity, or the decision derivation. |
+| [`specialist-depth.md`](specialist-depth.md) | The composition contract for domain-specific deepening capabilities: evidence-driven activation, 0..N composability, cascading activation bounded by `repository-expansion.md`, and orthogonality to `remediation-scope-boundary.md`. Never decides whether a dimension is considered — that stays with `review-scope.md`'s base pass. |
 
 Templates shared by both Skills live in
 [`../templates/`](../templates/) (`finding.md` — the finding-field contract,

@@ -72,12 +72,15 @@ SEVERITY_LEGEND = {
 # also deliberate and unrelated to #223. LOCAL_RUNBOOK was re-captured
 # again after Issue #258 (step 10 now also applies the new
 # "remediation-scope-boundary.md" reasoning to each material finding) —
+# also deliberate and unrelated to #223. LOCAL_RUNBOOK was re-captured
+# again after Issue #82 (step 9 now also names the new "Domain-specific
+# deepening pass" shared section, canonical home specialist-depth.md) —
 # also deliberate and unrelated to #223. The other files in this map are
-# untouched by #89/#237/#211/#121/#175/#258 and keep their original
+# untouched by #89/#237/#211/#121/#175/#258/#82 and keep their original
 # #223-era hashes.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "1abf7c6a28f6d6b73a845aa8c8f9e06e7d062a82",
-    LOCAL_RUNBOOK: "e6c05178d43c06447d153c15cfcb8f67412431dc",
+    LOCAL_RUNBOOK: "0b94187bad00ffd38b1a006ea6cea8ce38040460",
     LOCAL_SKILL: "44b6e6953d2847f6c999d5824d41d235b6fd9435",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "1b5238723eab4308407c137c554fa3a169e8b482",

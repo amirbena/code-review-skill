@@ -65,8 +65,8 @@ replace this base obligation. Base semantic reasoning is unconditional
 with respect to additional domain-specific depth — a deeper capability may
 build on an implicated dimension, but it never determines whether that
 dimension is considered at all. How a deeper capability is selected,
-activated, or composed with the base review is outside this section's
-scope.
+activated, or composed with the base review is owned by "Domain-specific
+deepening pass" below, not by this section.
 
 ### Canonical dimensions
 
@@ -199,6 +199,28 @@ blast radius, the confirmed-defect / credible-engineering-risk /
 optional-improvement evidence labeling, and the no-repository-wide-audit
 boundary in [`evidence.md`](evidence.md) govern here exactly as they do
 everywhere else in this policy.
+
+## Domain-specific deepening pass
+
+Once "Semantic change-implication reasoning" above has identified a
+materially implicated dimension, this pass decides whether the evidence
+already gathered justifies going further with domain-specific reasoning,
+and how 0..N such deepening capabilities compose into one review. The
+activation rule (evidence-driven, never a file-type/path/framework
+router), the composition and cascading-activation model (bounded by
+[`repository-expansion.md`](repository-expansion.md)'s existing
+expansion/stop-condition contract), the orthogonality to
+[`remediation-scope-boundary.md`](remediation-scope-boundary.md)'s
+remediation-required reasoning, and the additive-only rule for explicit
+user focus are owned by
+[`specialist-depth.md`](specialist-depth.md) and are not restated here.
+
+This is not a second scope model: a domain-specific deepening capability
+never decides whether a dimension is considered at all — that obligation
+stays with the base pass above, unconditionally — and it introduces no
+new finding/severity/evidence schema; every finding it contributes still
+passes through [`severity.md`](severity.md), [`evidence.md`](evidence.md),
+and the remediation-scope-boundary pass exactly like any other finding.
 
 ## Null-like absence-risk review
 

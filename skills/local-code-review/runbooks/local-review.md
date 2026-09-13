@@ -323,7 +323,12 @@ which a value must be resolved before it is used, or what is reported.
    [`review-scope.md`](../../../shared/policies/review-scope.md) in full,
    including "Related changes as one unit," "Semantic change-implication
    reasoning" (the base per-dimension pass the sections below add depth
-   to), "Null-like absence-risk review," "API / contract compatibility
+   to), "Domain-specific deepening pass" (canonical home:
+   [`specialist-depth.md`](../../../shared/policies/specialist-depth.md);
+   decides, per dimension the base pass already activated, whether deeper
+   domain-specific reasoning is warranted and how 0..N such capabilities
+   compose — never whether a dimension is considered at all),
+   "Null-like absence-risk review," "API / contract compatibility
    review," "Existing behavior ownership,"
    "Root-cause and model-completeness pass" (canonical home:
    [`root-cause-consolidation.md`](../../../shared/policies/root-cause-consolidation.md)),

@@ -657,7 +657,8 @@ class SemanticImplicationSectionTests(unittest.TestCase):
         )
         self.assertIn(
             "How a deeper capability is selected, activated, or composed with "
-            "the base review is outside this section's scope",
+            "the base review is owned by \"Domain-specific deepening pass\" "
+            "below, not by this section",
             self.section,
         )
         for stale in ("opt-in specialist profile", "profile is selected"):

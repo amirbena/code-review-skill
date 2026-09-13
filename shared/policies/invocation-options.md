@@ -79,6 +79,15 @@ may add narrative depth to how a finding and its `Follow-up` are worded
 this behavior: on vs. off produces the same finding set, severities, and
 remediation-scope-boundary outcomes — only wording differs.
 
+The same applies to [`specialist-depth.md`](specialist-depth.md): which
+domain-specific deepening capabilities engage, how they compose, and
+their effect on findings is mandatory base reasoning applied identically
+regardless of any presentation option. `human_review_output` /
+`senior_mode` may change how a capability's contribution is worded; they
+own none of the activation or composition decision — on vs. off produces
+the same set of engaged capabilities and the same findings, only wording
+differs.
+
 ## Deterministic normalization
 
 For each allow-listed option, inspect only the caller's current invocation.
