@@ -1,0 +1,77 @@
+# Dependency/supply-chain-deepening corpus case (Issue #188, parent #181,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors dependency-supply-chain-deepening-model.md's "Runtime/platform
+# requirement changes" concern area: `requires-python` is raised from
+# >=3.8 to >=3.11, while README.md (untouched by this diff) still
+# documents support for Python 3.8-3.10 -- the change silently narrows
+# the versions the repository claims to support.
+
+format: benchmark-case/v1
+
+id: dependency-supply-chain-deepening-runtime-minimum-raised
+title: "pyproject.toml raises requires-python to >=3.11 while README.md still documents 3.8+ support"
+
+input:
+  patch: |
+    diff --git a/pyproject.toml b/pyproject.toml
+    index 1111111..2222222 100644
+    --- a/pyproject.toml
+    +++ b/pyproject.toml
+    @@ -1,6 +1,6 @@
+     [project]
+     name = "billing-worker"
+     version = "2.3.0"
+    -requires-python = ">=3.8"
+    +requires-python = ">=3.11"
+
+     [project.dependencies]
+     boto3 = "^1.34.0"
+  base:
+    pyproject.toml: |
+      [project]
+      name = "billing-worker"
+      version = "2.3.0"
+      requires-python = ">=3.8"
+
+      [project.dependencies]
+      boto3 = "^1.34.0"
+    README.md: |
+      # billing-worker
+
+      Supported Python versions: 3.8, 3.9, 3.10, and 3.11.
+
+      ## Installation
+
+      pip install billing-worker
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: requires-python-raise-contradicts-documented-support
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: pyproject.toml
+        anchor: 'requires-python = ">=3.11"'
+      claim: >-
+        requires-python is raised from >=3.8 to >=3.11, but README.md
+        still documents "Supported Python versions: 3.8, 3.9, 3.10, and
+        3.11" without being updated in this change -- the diff's own
+        evidence shows it silently narrows the versions the repository
+        claims to support, so an install on a documented-supported 3.8-3.10
+        interpreter now fails.
+      defect_kind: runtime-minimum-raise-narrows-documented-support
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins the "Runtime/platform requirement changes" concern area from
+    dependency-supply-chain-deepening-model.md: raising a minimum runtime
+    version is not itself a finding, but this diff's own evidence -- an
+    unrevised supported-versions claim the bump now contradicts -- shows
+    the change silently narrows what the repository claims to support.

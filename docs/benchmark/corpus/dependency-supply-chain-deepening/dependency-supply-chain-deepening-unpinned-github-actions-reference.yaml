@@ -1,0 +1,79 @@
+# Dependency/supply-chain-deepening corpus case (Issue #188, parent #181,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors dependency-supply-chain-deepening-model.md's "Provenance / trust
+# and unpinned automation references" concern area: a new third-party
+# GitHub Actions step is pinned to a mutable tag (`@v2`) while the
+# workflow's own existing steps (untouched by this diff) already pin every
+# other action to an immutable commit SHA -- an inconsistency with the
+# repository's own established convention.
+
+format: benchmark-case/v1
+
+id: dependency-supply-chain-deepening-unpinned-github-actions-reference
+title: "ci.yml adds a deploy step pinned to a floating tag while every existing step is pinned to a commit SHA"
+
+input:
+  patch: |
+    diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+    index 1111111..2222222 100644
+    --- a/.github/workflows/ci.yml
+    +++ b/.github/workflows/ci.yml
+    @@ -12,3 +12,7 @@ jobs:
+               node-version: "20"
+           - name: Install dependencies
+             run: npm ci
+    +      - name: Deploy
+    +        uses: some-org/deploy-action@v2
+    +        with:
+    +          token: ${{ secrets.DEPLOY_TOKEN }}
+  base:
+    .github/workflows/ci.yml: |
+      name: CI
+
+      on: [push]
+
+      jobs:
+        build:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@8f4b7f84864484a7bde6b71ad9e3fda11d7d17f1 # v4.1.1
+            - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f # v4.0.1
+              with:
+                node-version: "20"
+            - name: Install dependencies
+              run: npm ci
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: deploy-action-pinned-to-mutable-tag
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: .github/workflows/ci.yml
+        anchor: 'uses: some-org/deploy-action@v2'
+      claim: >-
+        The new Deploy step pins some-org/deploy-action to the mutable
+        tag @v2, while every existing step in this same workflow
+        (actions/checkout, actions/setup-node) is already pinned to an
+        immutable commit SHA -- the diff's own evidence shows this
+        reference is less verifiable than the repository's own
+        established convention, and the step has access to
+        secrets.DEPLOY_TOKEN, so a retargeted @v2 tag can run arbitrary
+        code with that secret.
+      defect_kind: unpinned-automation-reference-inconsistent-with-convention
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins the "Provenance / trust and unpinned automation references"
+    concern area from dependency-supply-chain-deepening-model.md: a
+    `uses:` line changing is not itself a finding, but the diff's own
+    evidence -- every sibling step in the same workflow already pinned to
+    a commit SHA -- shows this new reference is less verifiable than what
+    the repository already relies on elsewhere.

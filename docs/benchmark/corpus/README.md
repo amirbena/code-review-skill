@@ -133,6 +133,14 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   [#180](https://github.com/amirbena/code-review-skill/issues/180)). Same
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/benchmark/test_performance_deepening_corpus.py`](../../../tests/unit/benchmark/test_performance_deepening_corpus.py)).
+- [`dependency-supply-chain-deepening/`](dependency-supply-chain-deepening/README.md) —
+  a focused `benchmark-case/v1` sub-corpus pinning representative
+  outcomes for the Dependency / Supply-Chain deepening specialist-depth
+  capability (Issue
+  [#188](https://github.com/amirbena/code-review-skill/issues/188), parent
+  [#181](https://github.com/amirbena/code-review-skill/issues/181)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/benchmark/test_dependency_supply_chain_deepening_corpus.py`](../../../tests/unit/benchmark/test_dependency_supply_chain_deepening_corpus.py)).
 
 ## Validation
 
