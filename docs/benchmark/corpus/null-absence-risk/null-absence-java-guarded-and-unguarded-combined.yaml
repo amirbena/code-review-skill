@@ -1,0 +1,104 @@
+# Null-like absence-risk corpus case (Issue #121). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Java. The literal "same fixture" spot-check from Issue #121's Validation
+# section: one diff adds both an unguarded dereference of a documented-
+# nullable repository result (confirm) and a properly guarded access to
+# the identical nullable result (confirmSafely). A correct review must
+# produce exactly one finding — on confirm() only — never on
+# confirmSafely(), and never two findings for the "same" nullable source
+# merely because it appears twice.
+
+format: benchmark-case/v1
+
+id: null-absence-java-guarded-and-unguarded-combined
+title: "OrderNotifier adds an unguarded confirm() and a guarded confirmSafely() against the same nullable lookup"
+
+input:
+  patch: |
+    diff --git a/src/main/java/app/order/OrderNotifier.java b/src/main/java/app/order/OrderNotifier.java
+    index 1111111..2222222 100644
+    --- a/src/main/java/app/order/OrderNotifier.java
+    +++ b/src/main/java/app/order/OrderNotifier.java
+    @@ -5,4 +5,17 @@ public class OrderNotifier {
+         public OrderNotifier(OrderRepository repository) {
+             this.repository = repository;
+         }
+    +
+    +    public String confirm(long orderId) {
+    +        Order order = repository.findById(orderId);
+    +        return "confirmed " + order.getReference();
+    +    }
+    +
+    +    public String confirmSafely(long orderId) {
+    +        Order order = repository.findById(orderId);
+    +        if (order == null) {
+    +            return "no such order";
+    +        }
+    +        return "confirmed " + order.getReference();
+    +    }
+     }
+  base:
+    src/main/java/app/order/OrderNotifier.java: |
+      package app.order;
+
+      public class OrderNotifier {
+          private final OrderRepository repository;
+
+          public OrderNotifier(OrderRepository repository) {
+              this.repository = repository;
+          }
+      }
+    src/main/java/app/order/OrderRepository.java: |
+      package app.order;
+
+      public interface OrderRepository {
+          // Returns null when no order with this id exists.
+          Order findById(long orderId);
+      }
+    src/main/java/app/order/Order.java: |
+      package app.order;
+
+      public class Order {
+          private final String reference;
+
+          public Order(String reference) {
+              this.reference = reference;
+          }
+
+          public String getReference() {
+              return reference;
+          }
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: confirm-dereferences-nullable-finduser-result
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: src/main/java/app/order/OrderNotifier.java
+        symbol: confirm
+        anchor: 'return "confirmed " + order.getReference();'
+      claim: >-
+        OrderRepository.findById is documented to return null when no
+        order with the given id exists. confirm() calls
+        order.getReference() immediately with no null check anywhere on
+        this path, so any orderId that does not resolve to an existing
+        order throws a NullPointerException instead of the method
+        returning normally.
+      defect_kind: null-pointer-dereference
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Demonstrates the literal "same fixture" spot-check from Issue #121's
+    Validation section: one diff carries both an unguarded and a guarded
+    access to the identical nullable source in two sibling methods, and a
+    correct review must emit exactly one finding — on the unguarded
+    confirm() only, never on confirmSafely(), and never two findings for
+    what is really one nullable source appearing at two call sites.

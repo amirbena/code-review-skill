@@ -29,10 +29,12 @@ directly guarded counterpart correctly *not* reported (the suppression
 rule, not an unrelated scenario); an optional/lookup-result path with
 unchecked absence surfaced; JavaScript/TypeScript `undefined`/`null`
 property access covered; and a null-safe-language interoperability edge
-case (a Kotlin platform type from Java interop) covered. Together the
-cases span Java, Go, TypeScript, and Kotlin/Java interop — at least
-Java/Kotlin, JavaScript/TypeScript, and one of C#/Python/Go, per the
-Issue's validation requirement.
+case (a Kotlin platform type from Java interop) covered. A sixth case
+combines a guarded and an unguarded access to the identical nullable
+source **in one diff**, the literal spot-check from the Issue's
+Validation section. Together the cases span Java, Go, TypeScript, and
+Kotlin/Java interop — at least Java/Kotlin, JavaScript/TypeScript, and one
+of C#/Python/Go, per the Issue's validation requirement.
 
 ## Cases
 
@@ -43,6 +45,7 @@ Issue's validation requirement.
 | [`null-absence-go-unchecked-map-lookup.yaml`](null-absence-go-unchecked-map-lookup.yaml) | unchecked optional/lookup result | catch a Go map lookup's nil zero-value dereferenced without the two-value `ok` check | `changes-required` |
 | [`null-absence-typescript-optional-property-access.yaml`](null-absence-typescript-optional-property-access.yaml) | JS/TS undefined property access | catch an explicitly optional (`address?: Address`) field's property accessed with no optional chaining or guard | `changes-required` |
 | [`null-absence-kotlin-java-platform-type.yaml`](null-absence-kotlin-java-platform-type.yaml) | interoperability / escape hatch | catch a Kotlin call into a nullable-by-javadoc Java method (a platform type) used with no null check | `changes-required` |
+| [`null-absence-java-guarded-and-unguarded-combined.yaml`](null-absence-java-guarded-and-unguarded-combined.yaml) | suppression + surfacing, same diff | catch exactly one finding (the unguarded `confirm()`) while a sibling guarded `confirmSafely()` against the identical nullable source produces none | `changes-required` |
 
 The Java pair (`null-absence-java-unguarded-dereference.yaml` /
 `null-absence-java-guarded-clean.yaml`) is a deliberately matched pair:

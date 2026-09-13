@@ -28,7 +28,7 @@ from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "null-absence-risk"
 
-MIN_CASES = 5
+MIN_CASES = 6
 MAX_CASES = 10
 
 JAVA_UNGUARDED = "null-absence-java-unguarded-dereference"
@@ -36,6 +36,7 @@ JAVA_GUARDED_CLEAN = "null-absence-java-guarded-clean"
 GO_UNCHECKED_LOOKUP = "null-absence-go-unchecked-map-lookup"
 TS_OPTIONAL_PROPERTY = "null-absence-typescript-optional-property-access"
 KOTLIN_JAVA_PLATFORM_TYPE = "null-absence-kotlin-java-platform-type"
+JAVA_GUARDED_AND_UNGUARDED_COMBINED = "null-absence-java-guarded-and-unguarded-combined"
 
 REQUIRED_CASE_IDS = {
     JAVA_UNGUARDED,
@@ -43,6 +44,7 @@ REQUIRED_CASE_IDS = {
     GO_UNCHECKED_LOOKUP,
     TS_OPTIONAL_PROPERTY,
     KOTLIN_JAVA_PLATFORM_TYPE,
+    JAVA_GUARDED_AND_UNGUARDED_COMBINED,
 }
 
 CLEAN_CASE_IDS = {JAVA_GUARDED_CLEAN}
@@ -170,6 +172,22 @@ class SubCorpusCoverageTests(unittest.TestCase):
                 required = [f for f in case.findings if f.required]
                 self.assertEqual(len(required), 1)
                 self.assertEqual(case.decision, "changes-required")
+
+    def test_combined_case_has_the_literal_same_fixture_spot_check(self) -> None:
+        # Issue #121's Validation section: "a guarded value and an
+        # unguarded value in the same fixture produce exactly one
+        # finding." This case is the literal, single-diff demonstration —
+        # not a matched pair across two files.
+        case = self.by_id[JAVA_GUARDED_AND_UNGUARDED_COMBINED]
+        required = [f for f in case.findings if f.required]
+        self.assertEqual(len(required), 1)
+        self.assertEqual(case.decision, "changes-required")
+        patch = case.input["patch"]
+        self.assertIn("confirm(long orderId)", patch)
+        self.assertIn("confirmSafely(long orderId)", patch)
+        finding = required[0]
+        self.assertEqual(finding.location["symbol"], "confirm")
+        self.assertNotEqual(finding.location["symbol"], "confirmSafely")
 
     def test_cases_span_at_least_three_language_families(self) -> None:
         # Validation requirement: at least Java/Kotlin, JavaScript/TypeScript,
