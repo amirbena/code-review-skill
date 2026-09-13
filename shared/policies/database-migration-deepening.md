@@ -21,18 +21,26 @@ justify tracing it further than base reasoning's own bounded pass affords.
 Base persistence reasoning ("Data / persistence" in
 [`review-scope.md`](review-scope.md)) already asks, for a schema,
 migration, stored representation, or the durable shape of data written or
-read by the change, whether read/write compatibility with existing stored
+read by the change — whatever storage model the evidence establishes:
+relational tables, document collections, key-value/wide-column items, or
+anything else — whether read/write compatibility with existing stored
 data and existing readers/writers is preserved — within that base pass's
 own bounded investigation. What it cannot always afford on every change is
-*exhaustive* tracing: whether a migration is safe to apply online against a
-large, actively written table, whether a backfill's own transactional and
-locking behavior is sound, whether an expand/contract sequence actually
-keeps old and new application versions coexisting correctly across every
-deploy stage, whether a rollback of the migration or the application code
-alone would leave the system in a consistent state, or whether a large data
-movement stays within the transactional and locking bounds the surrounding
-system can tolerate. This capability is that deeper pass, engaged only when
-the evidence already gathered shows it is warranted.
+*exhaustive* tracing: whether a destructive or availability-affecting
+change to a stored representation is safe to apply online against a
+large, actively written table, collection, or partition; whether a
+backfill's own consistency and atomicity behavior — a SQL migration's
+transaction and locks, a DynamoDB backfill job's conditional writes, a
+MongoDB field-migration script's per-document updates — is sound; whether
+an expand/contract sequence actually keeps old and new application
+versions coexisting correctly across every deploy stage; whether a
+rollback of the migration or the application code alone would leave the
+system in a consistent state; or whether a large data movement stays
+within the consistency and throughput bounds the surrounding system can
+tolerate. This capability is that deeper pass, engaged only when the
+evidence already gathered shows it is warranted, reasoned about on
+whatever storage model's actual primitives the evidence establishes
+rather than assumed to be relational.
 
 ## Activation
 
@@ -42,87 +50,128 @@ Engages only when both hold:
    identified a materially implicated **Data / persistence** dimension for
    the current change; and
 2. the evidence gathered by that base pass — not the file type, path,
-   migration-tool name, or a keyword in a name — indicates the change's
-   full correctness cannot be established within base reasoning's own
-   bounded investigation: the migration is applied against a table whose
-   size or write volume makes locking/rewrite behavior material, a column
-   or constraint transition (nullable-to-non-null, type change, new
-   uniqueness/foreign-key constraint) requires existing rows to be
-   reconciled, a backfill or large data movement is involved, more than
-   one application version must read or write the schema across the
-   rollout window, rollback of the migration or the deploying application
-   depends on an assumption the base pass could not confirm, or the
-   migration's transactional boundaries determine whether a partial
-   failure leaves the schema or data in an inconsistent state.
+   migration-tool or ORM/ODM name, SDK/driver call, `.sql` extension, or a
+   keyword in a name — indicates the change's full correctness cannot be
+   established within base reasoning's own bounded investigation: a
+   stored representation's evolution is applied against an item
+   population, table, collection, or partition whose size or write volume
+   makes the storage model's own locking, rewrite, or throttling behavior
+   material; a field, column, or attribute's presence, type, or
+   uniqueness/key constraint is tightened or narrowed in a way that
+   requires existing stored items to be reconciled; a backfill or large
+   data movement is involved, regardless of whether it runs as a
+   migration script, a DynamoDB backfill job, or a MongoDB field-migration
+   script; more than one application version must read or write the
+   stored representation across the rollout window; rollback of the
+   migration or the deploying application depends on an assumption the
+   base pass could not confirm; or the storage model's own
+   consistency/atomicity primitives — a SQL migration's transactional
+   boundaries, a DynamoDB item's conditional-write/transaction semantics,
+   a MongoDB operation's per-document or multi-document atomicity —
+   determine whether a partial failure leaves the stored data in an
+   inconsistent state.
 
 A change that touches a migrations directory, a file whose name suggests
-schema relevance, or a specific migration framework does not by itself
-satisfy condition 2 — per [`specialist-depth.md`](specialist-depth.md),
-those are signals, never independently sufficient. Conversely, a change
-with no file conventionally associated with migrations can still satisfy
-both conditions when its semantic evidence shows a persisted-state
-evolution or rollout-coexistence concern (see worked examples below).
+schema relevance, a specific migration/ORM/ODM framework or tool name, or
+a NoSQL SDK/driver call does not by itself satisfy condition 2 — per
+[`specialist-depth.md`](specialist-depth.md), those are signals, never
+independently sufficient, whatever the storage model: a `.sql` file, a
+Django/Alembic/Flyway migration, a `boto3`/DynamoDB SDK call, or a
+`pymongo`/Mongoose call are each evidence only, never independently
+sufficient for activation. Conversely, a change with no file
+conventionally associated with migrations can still satisfy both
+conditions when its semantic evidence shows a persisted-state evolution or
+rollout-coexistence concern (see worked examples below), and ordinary use
+of a NoSQL store — a query, a correctness fix scoped to a single
+operation, routine CRUD — does not by itself satisfy condition 2 either
+(see the "Does not engage" worked examples below).
 
 ## Concern areas
 
 Within an activated data/persistence concern, this capability deepens
 investigation of:
 
-- **Destructive and online migrations** — whether a migration that drops,
-  renames, or narrows a column/table/constraint is safe to apply while the
-  table is live and written to, and whether the change is reversible or
-  the diff's own evidence shows the loss is deliberate and accounted for.
-- **Backfills** — whether a backfill that populates existing rows for a
-  new or changed column runs within transactional and locking bounds the
-  surrounding table's size and write volume can tolerate, and whether it
-  is idempotent/resumable if interrupted partway through.
-- **Nullable-to-non-null transitions** — whether existing rows are
-  actually guaranteed to satisfy the new constraint before or at the point
-  it is enforced, and what happens to a row written concurrently with the
-  transition.
-- **Expand/contract sequencing** — whether a schema change that must be
-  deployed in stages (add the new shape, migrate/dual-write, remove the
+- **Destructive and online migrations** — whether an evolution of a
+  stored representation that drops, renames, or narrows a field is safe
+  to apply while it is live and actively read or written, and whether the
+  change is reversible or the diff's own evidence shows the loss is
+  deliberate and accounted for. Relational example: dropping a SQL
+  column or table. Non-relational examples: removing a DynamoDB attribute
+  or GSI a live access pattern still reads, or narrowing a MongoDB
+  document field's shape or type.
+- **Backfills** — whether populating existing stored items/rows for a new
+  or changed field runs within the consistency and throughput bounds the
+  surrounding item population's size and write volume can tolerate, and
+  whether it is idempotent/resumable if interrupted partway through —
+  regardless of whether that happens via a relational migration script, a
+  DynamoDB backfill job, or a MongoDB field-migration script.
+- **Nullable-to-non-null transitions**, generalized to any field or
+  attribute's presence-or-shape guarantee tightening — whether existing
+  stored items/rows are actually guaranteed to satisfy the tightened
+  guarantee before or at the point it is enforced, and what happens to an
+  item written concurrently with the transition. This applies equally to
+  a SQL `NOT NULL` constraint, a DynamoDB attribute an access pattern now
+  assumes is always present, or a MongoDB field an application now
+  assumes is always set and correctly shaped.
+- **Expand/contract sequencing** and **Old/new application coexistence**
+  — whether a staged representation change (a new SQL column, a new
+  DynamoDB GSI, a new MongoDB document shape) that must be deployed in
+  stages (add the new shape, dual-read/dual-write or migrate, remove the
   old shape) is actually sequenced so that no stage requires application
   code that does not yet exist, or removes something a still-running
-  application version still depends on.
-- **Old/new application coexistence** — whether the schema, at every point
-  in the rollout window, remains simultaneously valid for both the
-  previous and the new application version that can be running against
-  it, not only the version the diff was written against.
-- **Rollback safety** — whether rolling back the migration alone, the
-  application alone, or both together leaves the system in a state that
-  is consistent and does not silently lose or corrupt data written under
-  the new shape.
-- **Locking and table rewrites** — whether a schema operation requires a
-  lock or full table rewrite whose duration or blocking behavior is
-  material given the table's actual size and concurrent access pattern.
+  application version still depends on — and whether the stored
+  representation, at every point in the rollout window, remains
+  simultaneously valid for both the previous and the new application
+  version that can be running against it, not only the version the diff
+  was written against.
+- **Rollback safety** — whether rolling back the migration/evolution
+  alone, the application alone, or both together leaves the system in a
+  state that is consistent and does not silently lose or corrupt data
+  written under the new shape.
+- **Locking and table rewrites** and **Transactional boundaries**,
+  generalized to a storage model's own locking, rewrite, and
+  atomicity/consistency primitives — whether a storage operation requires
+  a lock, full table/collection rewrite, or transaction whose duration,
+  blocking behavior, or atomicity scope is material given the item
+  population's actual size and concurrent access pattern, and whether a
+  failure partway through a grouped change leaves the stored data
+  partially applied and inconsistent rather than cleanly rolled back or
+  resumed. Locking and table rewrites and transactional boundaries in
+  their literal SQL sense **apply only where the evidence actually
+  establishes a storage model with those properties** (e.g. a
+  transactional SQL database). A storage model without SQL-style
+  transactions or table-level locks — for example DynamoDB, whose
+  correctness instead rests on per-item conditional writes and its own
+  transaction/transact-write-item semantics — is reasoned about on its
+  own consistency/atomicity primitives, never assumed to have locking or
+  transactional guarantees it does not provide.
 - **Large data movement** — whether a migration or accompanying script
   that moves, copies, or transforms a materially large volume of data is
   batched, bounded, and resumable, rather than a single unbounded
-  operation.
-- **Transactional boundaries** — whether the migration's own
-  transaction(s) group related schema/data changes correctly, and whether
-  a failure partway through leaves a partially-applied, inconsistent
-  state rather than cleanly rolling back or resuming.
-- **Other schema-evolution/migration-adjacent concerns** the activated
-  concern's own evidence surfaces, reasoned about with the same evidence
-  bar as the areas above — this list is representative of the
-  capability's scope, not an exhaustive checklist run unconditionally on
-  every activation.
+  operation, whatever the storage model.
+- **Other persistence-evolution/migration-adjacent concerns** the
+  activated concern's own evidence surfaces, reasoned about with the same
+  evidence bar as the areas above and on whatever storage model's actual
+  primitives the evidence establishes — this list is representative of
+  the capability's scope, not an exhaustive checklist run unconditionally
+  on every activation, and never a reason to assume relational semantics
+  a non-relational store does not have.
 
-## Unrecognized tooling or dialect
+## Unrecognized tooling or storage technology
 
-When the migration tooling or database dialect involved is not one this
-capability can reason about with confidence from the evidence available —
-an unfamiliar migration framework, a vendored/generated migration, or SQL
-whose dialect-specific locking and transactional behavior cannot be
-established from the diff and surrounding repository context — this
-capability does not speculate about that tool's or dialect's specific
-locking, online-DDL, or transactional guarantees. It reports only what the
-available evidence actually supports, or, where no concrete evidence
-supports a finding, it produces no finding for that concern rather than an
-invented one. This mirrors "insufficient evidence" remaining a valid
-terminal outcome under "Cascading activation" below.
+When the migration tooling, ORM/ODM, or storage technology involved is not
+one this capability can reason about with confidence from the evidence
+available — an unfamiliar migration framework, a vendored/generated
+migration, SQL whose dialect-specific locking and transactional behavior
+cannot be established from the diff and surrounding repository context, or
+a non-relational storage system whose consistency, atomicity, or
+indexing/access-path guarantees cannot be established from the evidence —
+this capability does not speculate about that tool's or storage system's
+specific locking, online-DDL, transactional, or consistency guarantees. It
+reports only what the available evidence actually supports, or, where no
+concrete evidence supports a finding, it produces no finding for that
+concern rather than an invented one. This mirrors "insufficient evidence"
+remaining a valid terminal outcome under "Cascading activation" below.
 
 ## Cascading activation: bounded by the existing expansion contract
 
@@ -186,6 +235,36 @@ in this change does not meet the evidence bar and is not reported.
   "schema" is touched. Semantic evidence of the persisted-state evolution
   still activates base reasoning and, given the coexistence ambiguity,
   this capability.
+- **Engages — MongoDB document-shape evolution.** A field is renamed and
+  restructured in a MongoDB collection's document shape, and the
+  application code in the same change reads and writes only the new
+  shape. Base reasoning flags the stored-representation change under
+  "Data / persistence." This capability traces whether documents already
+  persisted under the old shape, or a still-running previous application
+  version writing that old shape during a rolling deploy, are actually
+  handled — mirroring the existing SQL column-rename worked example above
+  — and reports the missing coexistence handling for old-shape documents
+  as the defect.
+- **Engages — DynamoDB GSI/access-pattern evolution.** A new Global
+  Secondary Index is added to support a new access pattern, and the
+  application code that serves that pattern reads only the new index.
+  Base reasoning flags the stored-representation change. Existing items
+  do not carry the new index's key attributes, so they will not appear
+  in the new GSI until backfilled, and no backfill step or dual-read
+  fallback exists in the diff. This capability traces the gap and
+  reports that queries against the new access pattern will silently miss
+  every item written before the index was added.
+- **Does not engage — ordinary NoSQL correctness, no data-model
+  evolution.** A DynamoDB update uses a conditional write
+  (`ConditionExpression`) to guard against a race, and the change fixes a
+  bug where the condition was missing an optimistic-lock check on a
+  version attribute — no attribute, index, or document shape is added,
+  removed, or changed, and no backfill or coexistence question is raised.
+  This is an ordinary persistence-correctness concern DynamoDB happens to
+  be involved in; it remains with base reasoning under
+  [`review-scope.md`](review-scope.md), Activation condition 2 is not
+  satisfied, and this capability does not engage. Using a NoSQL store is
+  not, by itself, activation evidence.
 - **Unrecognized tooling — fails safe.** A migration is expressed through
   an in-house or unfamiliar schema-management tool whose locking and
   online-DDL behavior cannot be established from the diff or repository
@@ -206,9 +285,10 @@ in this change does not meet the evidence bar and is not reported.
   performs the same kind of evidence-based code reasoning as the rest of
   review — it does not execute a migration, connect to a database, or
   invoke a migration tool's dry-run/plan mode.
-- **Not a generic ORM/query style linter.** It never runs an unconditional
-  checklist of ORM or query style preferences unrelated to
-  schema-evolution or migration risk; it deepens investigation of a
+- **Not a generic ORM/ODM/query style linter, for any storage model.** It
+  never runs an unconditional checklist of ORM, ODM, or query/access-
+  pattern style preferences unrelated to persistence evolution or
+  migration risk — relational or otherwise; it deepens investigation of a
   data/persistence concern base reasoning already identified as
   materially implicated by the current change, nothing broader.
 - **Migration-file presence alone is not sufficient.** A changed migration

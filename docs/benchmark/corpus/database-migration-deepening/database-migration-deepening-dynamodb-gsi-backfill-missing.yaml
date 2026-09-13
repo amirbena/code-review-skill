@@ -1,0 +1,126 @@
+# Database-migration-deepening corpus case (Issue #279, extending #186,
+# parent #179, grandparent #82). Format: ../../fixture-format.md. See
+# ./README.md for the cluster.
+#
+# Mirrors database-migration-deepening.md's generalized "Engages --
+# DynamoDB GSI/access-pattern evolution" worked example: a new Global
+# Secondary Index is added to support a new access pattern, the handler
+# serving that pattern queries only the new index, and no backfill step
+# or dual-read fallback exists for items written before the index was
+# added -- so those items silently never appear in the new access
+# pattern's results.
+
+format: benchmark-case/v1
+
+id: database-migration-deepening-dynamodb-gsi-backfill-missing
+title: "list_orders_by_status queries a new DynamoDB GSI with no backfill for orders written before the index existed"
+
+input:
+  patch: |
+    diff --git a/infra/tables/orders_table.tf b/infra/tables/orders_table.tf
+    index 1111111..2222222 100644
+    --- a/infra/tables/orders_table.tf
+    +++ b/infra/tables/orders_table.tf
+    @@ -12,4 +12,15 @@ resource "aws_dynamodb_table" "orders" {
+         name = "customer_id"
+         type = "S"
+       }
+    +
+    +  attribute {
+    +    name = "status"
+    +    type = "S"
+    +  }
+    +
+    +  global_secondary_index {
+    +    name            = "status-index"
+    +    hash_key        = "status"
+    +    projection_type = "ALL"
+    +  }
+     }
+    diff --git a/app/orders/repository.py b/app/orders/repository.py
+    new file mode 100644
+    index 0000000..7a1b2c3
+    --- /dev/null
+    +++ b/app/orders/repository.py
+    @@ -0,0 +1,15 @@
+    +import boto3
+    +
+    +table = boto3.resource("dynamodb").Table("orders")
+    +
+    +
+    +def list_orders_by_status(status):
+    +    """Serve the new 'orders by status' operational dashboard view by
+    +    querying the status-index GSI directly. Orders table holds ~8M
+    +    live items, written continuously by checkout and fulfillment."""
+    +    response = table.query(
+    +        IndexName="status-index",
+    +        KeyConditionExpression="status = :s",
+    +        ExpressionAttributeValues={":s": status},
+    +    )
+    +    return response["Items"]
+  base:
+    infra/tables/orders_table.tf: |
+      resource "aws_dynamodb_table" "orders" {
+        name         = "orders"
+        billing_mode = "PAY_PER_REQUEST"
+        hash_key     = "order_id"
+
+        attribute {
+          name = "order_id"
+          type = "S"
+        }
+
+        attribute {
+          name = "customer_id"
+          type = "S"
+        }
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: status-index-missing-backfill-for-existing-orders
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/orders/repository.py
+        symbol: list_orders_by_status
+        anchor: 'IndexName="status-index"'
+      claim: >-
+        list_orders_by_status serves the operational dashboard exclusively
+        through the new status-index GSI on a table the function's own
+        docstring documents as holding ~8M live items written continuously
+        by checkout and fulfillment. DynamoDB only populates a GSI going
+        forward from when it is created; items already in the table before
+        status-index existed are never retroactively indexed. This change
+        adds no backfill step and no fallback to a base-table scan, so
+        every order placed before this change silently never appears in
+        the status-index query results, even though the item itself still
+        exists in the table.
+      defect_kind: dynamodb-gsi-missing-backfill
+    - key: missing-gsi-backfill-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/orders/repository.py
+      claim: >-
+        No test seeds an order item predating status-index and asserts
+        list_orders_by_status still returns it.
+      defect_kind: missing-migration-test
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins database-migration-deepening.md's generalized "Engages --
+    DynamoDB GSI/access-pattern evolution" worked example, the key-value
+    counterpart to the corpus's existing relational backfill fixture: base
+    reasoning identifies the new stored-representation (the GSI), and the
+    deepening capability must trace that DynamoDB does not retroactively
+    populate a newly created index, so pre-existing items are silently
+    excluded from the new access pattern with no backfill or dual-read
+    fallback in the diff -- part of Issue #279's non-relational corpus
+    extension.

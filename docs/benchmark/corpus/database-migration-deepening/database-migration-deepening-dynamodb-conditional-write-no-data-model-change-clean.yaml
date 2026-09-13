@@ -1,0 +1,77 @@
+# Database-migration-deepening corpus case (Issue #279, extending #186,
+# parent #179, grandparent #82). Format: ../../fixture-format.md. See
+# ./README.md for the cluster.
+#
+# Mirrors database-migration-deepening.md's generalized "Does not engage
+# -- ordinary NoSQL correctness, no data-model evolution" worked example:
+# a DynamoDB update adds a missing ConditionExpression to fix a
+# lost-update race on an existing optimistic-lock version attribute. No
+# attribute, index, or item shape is added, removed, or changed, and no
+# backfill or coexistence question is raised -- an ordinary
+# persistence-correctness fix that DynamoDB happens to be involved in,
+# not a data-model evolution. Activation condition 2 is not satisfied and
+# this capability does not engage; it stays with base reasoning under
+# review-scope.md.
+
+format: benchmark-case/v1
+
+id: database-migration-deepening-dynamodb-conditional-write-no-data-model-change-clean
+title: "reserve_stock adds the missing ConditionExpression optimistic-lock check, no attribute/index/shape change"
+
+input:
+  patch: |
+    diff --git a/app/inventory/repository.py b/app/inventory/repository.py
+    index 1111111..2222222 100644
+    --- a/app/inventory/repository.py
+    +++ b/app/inventory/repository.py
+    @@ -9,8 +9,10 @@
+         table.update_item(
+             Key={"item_id": item_id},
+             UpdateExpression="SET stock = stock - :q, version = version + :one",
+    +        ConditionExpression="version = :expected_version",
+             ExpressionAttributeValues={
+                 ":q": quantity,
+                 ":one": 1,
+    +            ":expected_version": expected_version,
+             },
+         )
+  base:
+    app/inventory/repository.py: |
+      import boto3
+
+      table = boto3.resource("dynamodb").Table("inventory")
+
+
+      def reserve_stock(item_id, quantity, expected_version):
+          """inventory table. Optimistic-lock via a version attribute so
+          concurrent reservations against the same item don't oversell."""
+          table.update_item(
+              Key={"item_id": item_id},
+              UpdateExpression="SET stock = stock - :q, version = version + :one",
+              ExpressionAttributeValues={
+                  ":q": quantity,
+                  ":one": 1,
+              },
+          )
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins database-migration-deepening.md's generalized "Does not engage
+    -- ordinary NoSQL correctness, no data-model evolution" worked
+    example, the required DynamoDB negative case: reserve_stock's
+    version attribute, item shape, and table/index structure are
+    unchanged -- only a ConditionExpression optimistic-lock check is
+    added to an existing update, fixing a lost-update race. No backfill,
+    coexistence, or destructive/availability-affecting evolution signal
+    exists, so Activation condition 2 is never satisfied; this remains
+    ordinary persistence-correctness reasoning under review-scope.md and
+    the capability correctly does not engage merely because a NoSQL
+    store (DynamoDB) is involved -- part of Issue #279's non-relational
+    corpus extension.
