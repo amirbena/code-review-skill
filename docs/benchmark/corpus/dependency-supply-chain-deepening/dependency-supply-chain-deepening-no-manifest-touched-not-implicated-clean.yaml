@@ -1,0 +1,57 @@
+# Dependency/supply-chain-deepening corpus case (Issue #188, parent #181,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Negative case required by Issue #188's scope: the change touches no
+# manifest, lockfile, Dockerfile, or Actions file at all -- the "Infra-
+# structure / deployment" dimension's dependency/supply-chain depth owner
+# is not materially implicated and this pass performs no deepening,
+# distinct from the safe-patch-bump case where a qualifying file changes
+# but is not flagged.
+
+format: benchmark-case/v1
+
+id: dependency-supply-chain-deepening-no-manifest-touched-not-implicated-clean
+title: "reports.js renames a local loop variable for clarity; no manifest, lockfile, Dockerfile, or Actions file changes"
+
+input:
+  patch: |
+    diff --git a/src/reports.js b/src/reports.js
+    index 1111111..2222222 100644
+    --- a/src/reports.js
+    +++ b/src/reports.js
+    @@ -1,7 +1,7 @@
+     const _ = require("lodash");
+
+     function emailList(users) {
+    -  return users.map((u) => u.email);
+    +  return users.map((user) => user.email);
+     }
+
+     module.exports = { emailList };
+  base:
+    src/reports.js: |
+      const _ = require("lodash");
+
+      function emailList(users) {
+        return users.map((u) => u.email);
+      }
+
+      module.exports = { emailList };
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Proves the required negative case that a change touching no manifest,
+    lockfile, Dockerfile, or Actions file at all does not materially
+    implicate the dependency/supply-chain domain -- there is no
+    diff-recognition signal from dependency-supply-chain-deepening-model.md
+    section 2 to reason from at all, so this pass performs no deepening,
+    distinct from the safe-patch-bump case where a qualifying file changes
+    but the change itself is not flagged.

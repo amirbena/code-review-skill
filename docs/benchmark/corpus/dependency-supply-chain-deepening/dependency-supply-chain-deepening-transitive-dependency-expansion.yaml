@@ -1,0 +1,119 @@
+# Dependency/supply-chain-deepening corpus case (Issue #188, parent #181,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors dependency-supply-chain-deepening-model.md's "Dependency
+# expansion" concern area: package.json adds exactly one new direct
+# dependency (csv-stringify), but the package-lock.json diff adds five
+# unrelated build-tooling packages that csv-stringify's own lockfile entry
+# does not require and package.json does not otherwise reference -- an
+# expansion the manifest change does not explain.
+
+format: benchmark-case/v1
+
+id: dependency-supply-chain-deepening-transitive-dependency-expansion
+title: "package.json adds one direct dependency (csv-stringify) but package-lock.json adds five unrelated webpack/enzyme packages"
+
+input:
+  patch: |
+    diff --git a/package.json b/package.json
+    index 1111111..2222222 100644
+    --- a/package.json
+    +++ b/package.json
+    @@ -2,6 +2,7 @@
+       "name": "reporting-service",
+       "version": "1.4.0",
+       "dependencies": {
+    -    "express": "^4.18.2"
+    +    "express": "^4.18.2",
+    +    "csv-stringify": "^6.4.4"
+       }
+     }
+    diff --git a/package-lock.json b/package-lock.json
+    index 3333333..4444444 100644
+    --- a/package-lock.json
+    +++ b/package-lock.json
+    @@ -7,6 +7,30 @@
+         "express": {
+           "version": "4.18.2",
+           "resolved": "https://registry.npmjs.org/express/-/express-4.18.2.tgz"
+    +    },
+    +    "csv-stringify": {
+    +      "version": "6.4.4",
+    +      "resolved": "https://registry.npmjs.org/csv-stringify/-/csv-stringify-6.4.4.tgz"
+    +    },
+    +    "webpack": {
+    +      "version": "5.89.0",
+    +      "resolved": "https://registry.npmjs.org/webpack/-/webpack-5.89.0.tgz"
+    +    },
+    +    "webpack-cli": {
+    +      "version": "5.1.4",
+    +      "resolved": "https://registry.npmjs.org/webpack-cli/-/webpack-cli-5.1.4.tgz"
+    +    },
+    +    "terser-webpack-plugin": {
+    +      "version": "5.3.9",
+    +      "resolved": "https://registry.npmjs.org/terser-webpack-plugin/-/terser-webpack-plugin-5.3.9.tgz"
+    +    },
+    +    "enzyme": {
+    +      "version": "3.11.0",
+    +      "resolved": "https://registry.npmjs.org/enzyme/-/enzyme-3.11.0.tgz"
+    +    },
+    +    "enzyme-adapter-react-16": {
+    +      "version": "1.15.7",
+    +      "resolved": "https://registry.npmjs.org/enzyme-adapter-react-16/-/enzyme-adapter-react-16-1.15.7.tgz"
+         }
+       }
+     }
+  base:
+    package.json: |
+      {
+        "name": "reporting-service",
+        "version": "1.4.0",
+        "dependencies": {
+          "express": "^4.18.2"
+        }
+      }
+    package-lock.json: |
+      {
+        "name": "reporting-service",
+        "version": "1.4.0",
+        "lockfileVersion": 1,
+        "requires": true,
+        "dependencies": {
+          "express": {
+            "version": "4.18.2",
+            "resolved": "https://registry.npmjs.org/express/-/express-4.18.2.tgz"
+          }
+        }
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: csv-stringify-add-drags-in-unrelated-webpack-and-enzyme-packages
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: package-lock.json
+        anchor: '"webpack": {'
+      claim: >-
+        package.json adds exactly one new direct dependency,
+        csv-stringify, but package-lock.json's diff also adds webpack,
+        webpack-cli, terser-webpack-plugin, enzyme, and
+        enzyme-adapter-react-16 -- none of which csv-stringify's own
+        lockfile entry requires and none of which package.json otherwise
+        references -- a materially disproportionate expansion the manifest
+        change does not explain.
+      defect_kind: unexplained-transitive-dependency-expansion
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins the "Dependency expansion" concern area from
+    dependency-supply-chain-deepening-model.md: a lockfile diff adding
+    materially more transitive dependencies than the direct manifest
+    change would explain is flagged, distinct from the routine
+    patch-bump case where lockfile churn is proportionate and explained.

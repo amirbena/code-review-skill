@@ -1,0 +1,83 @@
+# Dependency/supply-chain-deepening corpus case (Issue #188, parent #181,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Negative case required by Issue #188's scope: a routine patch-level
+# version bump with proportionate, explained lockfile churn. Mirrors
+# dependency-supply-chain-deepening-model.md's "a manifest change with no
+# implicated concern" worked example -- touching a manifest/lockfile is
+# never by itself sufficient to engage this pass.
+
+format: benchmark-case/v1
+
+id: dependency-supply-chain-deepening-safe-patch-bump-clean
+title: "package.json bumps express ^4.18.1 -> ^4.18.2, a patch-level version with matching lockfile churn only"
+
+input:
+  patch: |
+    diff --git a/package.json b/package.json
+    index 1111111..2222222 100644
+    --- a/package.json
+    +++ b/package.json
+    @@ -2,6 +2,6 @@
+       "name": "reporting-service",
+       "version": "1.4.0",
+       "dependencies": {
+    -    "express": "^4.18.1"
+    +    "express": "^4.18.2"
+       }
+     }
+    diff --git a/package-lock.json b/package-lock.json
+    index 3333333..4444444 100644
+    --- a/package-lock.json
+    +++ b/package-lock.json
+    @@ -6,8 +6,8 @@
+       "requires": true,
+       "dependencies": {
+         "express": {
+    -      "version": "4.18.1",
+    -      "resolved": "https://registry.npmjs.org/express/-/express-4.18.1.tgz"
+    +      "version": "4.18.2",
+    +      "resolved": "https://registry.npmjs.org/express/-/express-4.18.2.tgz"
+         }
+       }
+     }
+  base:
+    package.json: |
+      {
+        "name": "reporting-service",
+        "version": "1.4.0",
+        "dependencies": {
+          "express": "^4.18.1"
+        }
+      }
+    package-lock.json: |
+      {
+        "name": "reporting-service",
+        "version": "1.4.0",
+        "lockfileVersion": 1,
+        "requires": true,
+        "dependencies": {
+          "express": {
+            "version": "4.18.1",
+            "resolved": "https://registry.npmjs.org/express/-/express-4.18.1.tgz"
+          }
+        }
+      }
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Proves the required negative case that a safe patch-level bump does
+    not by itself justify deepening: express moves 4.18.1 -> 4.18.2, no
+    semver-major boundary is crossed, no runtime minimum changes, and the
+    lockfile churn is limited to that one package's own version/resolved
+    fields -- routine, explained, and not flagged, per
+    dependency-supply-chain-deepening-model.md's "no implicated concern"
+    worked example.

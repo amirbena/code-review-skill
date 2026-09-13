@@ -1,0 +1,117 @@
+# Dependency/supply-chain-deepening corpus case (Issue #188, parent #181,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors dependency-supply-chain-deepening-model.md's "Major-version
+# compatibility" concern area: lodash is bumped across its 3.x -> 4.x
+# semver-major boundary, and `src/reports.js` (untouched by this diff)
+# still calls `_.pluck`, an API lodash 4 removed outright. The diff's own
+# evidence -- the still-present call site -- shows the bump requires an
+# adaptation this change does not make.
+
+format: benchmark-case/v1
+
+id: dependency-supply-chain-deepening-major-version-breaking-api-change
+title: "package.json bumps lodash ^3.10.1 -> ^4.17.21 while reports.js still calls the removed _.pluck"
+
+input:
+  patch: |
+    diff --git a/package.json b/package.json
+    index 1111111..2222222 100644
+    --- a/package.json
+    +++ b/package.json
+    @@ -2,7 +2,7 @@
+       "name": "reporting-service",
+       "version": "1.4.0",
+       "dependencies": {
+    -    "lodash": "^3.10.1",
+    +    "lodash": "^4.17.21",
+         "express": "^4.18.2"
+       }
+     }
+    diff --git a/package-lock.json b/package-lock.json
+    index 3333333..4444444 100644
+    --- a/package-lock.json
+    +++ b/package-lock.json
+    @@ -3,13 +3,13 @@
+       "version": "1.4.0",
+       "lockfileVersion": 1,
+       "requires": true,
+       "dependencies": {
+         "lodash": {
+    -      "version": "3.10.1",
+    -      "resolved": "https://registry.npmjs.org/lodash/-/lodash-3.10.1.tgz"
+    +      "version": "4.17.21",
+    +      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
+         },
+         "express": {
+           "version": "4.18.2",
+           "resolved": "https://registry.npmjs.org/express/-/express-4.18.2.tgz"
+         }
+       }
+     }
+  base:
+    package.json: |
+      {
+        "name": "reporting-service",
+        "version": "1.4.0",
+        "dependencies": {
+          "lodash": "^3.10.1",
+          "express": "^4.18.2"
+        }
+      }
+    package-lock.json: |
+      {
+        "name": "reporting-service",
+        "version": "1.4.0",
+        "lockfileVersion": 1,
+        "requires": true,
+        "dependencies": {
+          "lodash": {
+            "version": "3.10.1",
+            "resolved": "https://registry.npmjs.org/lodash/-/lodash-3.10.1.tgz"
+          },
+          "express": {
+            "version": "4.18.2",
+            "resolved": "https://registry.npmjs.org/express/-/express-4.18.2.tgz"
+          }
+        }
+      }
+    src/reports.js: |
+      const _ = require("lodash");
+
+      function emailList(users) {
+        return _.pluck(users, "email");
+      }
+
+      module.exports = { emailList };
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: lodash-major-bump-breaks-pluck-call-site
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: package.json
+        anchor: '"lodash": "^4.17.21",'
+      claim: >-
+        lodash is bumped across its 3.x -> 4.x semver-major boundary, a
+        release that removed `_.pluck` outright, and
+        src/reports.js's emailList still calls `_.pluck(users, "email")`
+        without adaptation -- the diff's own evidence shows this call site
+        throws a TypeError once the bump is installed, so the bump is not
+        actually safe to apply as made.
+      defect_kind: major-version-bump-removed-api-still-called
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins the "Major-version compatibility" concern area from
+    dependency-supply-chain-deepening-model.md: a major-version dependency
+    bump alone is not a finding, but this diff's own evidence -- a call
+    site still using an API the new major version removed -- shows the
+    adaptation the bump requires was never made.
