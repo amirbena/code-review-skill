@@ -38,6 +38,7 @@ products evolve.
 | Affected-test / test-impact analysis | shared `review-scope.md` pass — behavioral change traced into existing dependent tests | shared, identical |
 | Semantic change-implication reasoning | shared `review-scope.md` base pass — detects which system-level dimensions (user-facing, concurrency, data/persistence, API contracts, infra/deployment, security, operability, performance/scale) a change materially implicates and performs the minimum bounded reasoning for each | shared, identical |
 | Null-like absence-risk review | shared `review-scope.md` pass — cross-language, evidence-gated detection of credible null/undefined/nil/None absence risk in changed data-flow and control-flow, including interoperability/escape-hatch boundaries; suppressed where a guard, type guarantee, or upstream validation already makes the value safe | shared, identical |
+| API / contract compatibility review | shared `review-scope.md` pass — classifies a changed OpenAPI/JSON Schema/protobuf definition, public API model, event/message schema, or configuration contract's change shape as compatible / breaking / context-dependent; fails closed (no invented breakage claim) when the actual consumer surface cannot be established | shared, identical |
 | Intended use case | pre-PR implementation review | independent review of an existing PR |
 
 **What each mode intentionally does *not* do**
@@ -194,9 +195,13 @@ recovery" (partial-failure state, retry/idempotency safety, evidenced recovery, 
 observability, as one signal-triggered reasoning move), "Architectural placement and
 execution-lifecycle fidelity" (is the changed code locally correct but at the wrong point in the
 surrounding execution flow — decided, checked, or mutated in the wrong lifecycle phase — resolved
-by bounded caller/callee/owning-boundary context expansion), and "Affected-test / test-impact
+by bounded caller/callee/owning-boundary context expansion), "Affected-test / test-impact
 analysis" (a behavioral change traced into the existing tests that depend on it — an unchanged
-test now asserting the wrong behavior, or a new path left without regression protection). These remain local-first and
+test now asserting the wrong behavior, or a new path left without regression protection), and
+"API / contract compatibility review" (classifying a changed schema, public API model, or
+event/message contract's change shape as compatible / breaking / context-dependent, failing
+closed rather than inventing a breakage claim when the actual consumer surface is unresolvable).
+These remain local-first and
 signal-triggered, not a general checklist: each activates only when the diff's own shape gives
 concrete reason to, and none licenses a repository-wide audit — see those sections' own text.
 The governance layer, by contrast, is specified in full detail, because it is not the kind of

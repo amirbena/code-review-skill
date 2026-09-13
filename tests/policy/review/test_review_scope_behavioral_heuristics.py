@@ -91,6 +91,7 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
         self.assertIn("## Affected-test / test-impact analysis", text)
         self.assertIn("## Semantic change-implication reasoning", text)
         self.assertIn("## Null-like absence-risk review", text)
+        self.assertIn("## API / contract compatibility review", text)
 
     def test_local_skill_always_loads_review_scope_and_evidence(self) -> None:
         text = _text(LOCAL_SKILL_MD)
@@ -114,6 +115,7 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
             "Architectural placement and execution-lifecycle fidelity", step9_body
         )
         self.assertIn("Affected-test / test-impact analysis", step9_body)
+        self.assertIn("API / contract compatibility review", step9_body)
 
 
 class RunbookDoesNotDuplicateBehavioralPolicyTextTests(unittest.TestCase):
@@ -496,6 +498,7 @@ class EvidenceScalingCrossReferenceTests(unittest.TestCase):
         self.assertIn("Affected-test / test-impact analysis", text)
         self.assertIn("Semantic change-implication reasoning", text)
         self.assertIn("Null-like absence-risk review", text)
+        self.assertIn("API / contract compatibility review", text)
         self.assertIn("repository-wide audit", text)
 
 
@@ -534,6 +537,10 @@ class CrossSkillConsistencyTests(unittest.TestCase):
         # without forking its heading or body.
         self.assertIn("## Affected-Test Impact Review", text)
         self.assertIn("Affected-test / test-impact analysis", text)
+        # The API/contract compatibility forwarding subsection names the
+        # shared section but does not fork its body.
+        self.assertIn("## API / Contract Compatibility Review", text)
+        self.assertIn("API / contract compatibility review", text)
         # It must not have grown a private copy of the new section names —
         # it consumes them through the shared file, not by forking them.
         self.assertNotIn("## Existing behavior ownership", text)
@@ -548,6 +555,7 @@ class CrossSkillConsistencyTests(unittest.TestCase):
             "## Semantic change-implication reasoning", text
         )
         self.assertNotIn("## Null-like absence-risk review", text)
+        self.assertNotIn("## API / contract compatibility review", text)
         self.assertNotIn("### When to expand context", text)
         self.assertNotIn("### Stop conditions", text)
 
@@ -570,6 +578,7 @@ class CrossSkillConsistencyTests(unittest.TestCase):
             "## Affected-test / test-impact analysis",
             "## Semantic change-implication reasoning",
             "## Null-like absence-risk review",
+            "## API / contract compatibility review",
         )
         skill_policy_dirs = [
             LOCAL_SKILL_DIR / "policies",
@@ -1115,6 +1124,155 @@ class AffectedTestImpactWiredIntoBothSkillsTests(unittest.TestCase):
         )
         self.assertIn("not applied", window)
         self.assertIn("unconditionally to every diff", window)
+
+
+class ApiContractCompatibilitySectionTests(unittest.TestCase):
+    """(shared semantics) the API/contract compatibility pass classifies a
+    changed repository contract's change shape as compatible / breaking /
+    context-dependent, ties the outcome to the existing severity/evidence
+    model, and fails closed rather than inventing a breakage claim when the
+    consumer surface cannot be established (Issue #175)."""
+
+    def setUp(self) -> None:
+        self.section = _section(
+            _text(REVIEW_SCOPE),
+            "## API / contract compatibility review",
+            "## Change-risk signals and review depth",
+        )
+
+    def test_recognized_contract_types_are_named(self) -> None:
+        for contract_type in (
+            "OpenAPI",
+            "JSON Schema",
+            "protobuf",
+            "public API request/response model",
+            "event/message schema",
+            "configuration contract",
+        ):
+            self.assertIn(contract_type, self.section)
+
+    def test_recognition_signal_is_never_itself_the_finding(self) -> None:
+        self.assertIn("it is never itself the finding", self.section)
+
+    def test_all_change_shapes_are_classified(self) -> None:
+        for shape in (
+            "Additive, optional",
+            "Field or property removed",
+            "Optional narrowed to required",
+            "Property or field renamed",
+            "Enum member removed",
+            "Enum member added",
+            "Incompatible type change",
+        ):
+            self.assertIn(shape, self.section)
+        self.assertIn("context-dependent", self.section)
+
+    def test_context_dependent_shape_explains_the_ambiguity(self) -> None:
+        self.assertIn("ignores unknown members", self.section)
+        self.assertIn(
+            "exhaustive switch/case or closed-set validation", self.section
+        )
+        self.assertIn(
+            "The diff alone cannot establish which kind of consumer exists",
+            self.section,
+        )
+
+    def test_fail_closed_rule_never_invents_a_breaking_finding(self) -> None:
+        self.assertIn(
+            "this pass does not invent a required breaking finding for it",
+            self.section,
+        )
+        self.assertIn(
+            "inventing a breakage claim the diff cannot support is worse "
+            "than reporting nothing",
+            self.section,
+        )
+        self.assertIn("optional, non-blocking note", self.section)
+        self.assertIn("never raises severity or forces", self.section)
+
+    def test_reuses_existing_fail_closed_discipline_not_a_new_standard(self) -> None:
+        self.assertIn(
+            "Architectural placement and execution-lifecycle fidelity", self.section
+        )
+        self.assertIn("Semantic change-implication reasoning", self.section)
+        self.assertIn(
+            "not a new evidence standard invented for this section alone",
+            self.section,
+        )
+
+    def test_no_new_severity_or_score_and_ties_to_existing_model(self) -> None:
+        self.assertIn(
+            "adds no new severity, finding category, or probability", self.section
+        )
+        self.assertIn("evidence.md", self.section)
+        self.assertIn("severity.md", self.section)
+        self.assertIn("typically P1", self.section)
+
+    def test_design_record_named_not_linked(self) -> None:
+        self.assertIn(
+            "API/contract compatibility model design record", self.section
+        )
+        self.assertIn("not linked because", self.section)
+
+    def test_it_is_a_depth_owner_alongside_not_replacing_existing_owners(self) -> None:
+        self.assertIn("alongside, not replacing", self.section)
+        self.assertIn("Affected-test / test-impact analysis", self.section)
+        self.assertIn(
+            "Architectural placement and execution-lifecycle fidelity", self.section
+        )
+        self.assertIn("not a second scope model", self.section)
+
+    def test_never_retrieves_another_repositorys_consumer_code(self) -> None:
+        self.assertIn(
+            "It never fetches or retrieves another repository's consumer "
+            "code to resolve that ambiguity",
+            self.section,
+        )
+
+    def test_dimension_depth_owner_line_names_this_section(self) -> None:
+        text = _text(REVIEW_SCOPE)
+        dimension_section = _section(
+            text,
+            "API / integration contracts",
+            "Infrastructure / deployment",
+        )
+        self.assertIn(
+            "API / contract compatibility review", dimension_section
+        )
+
+
+class ApiContractCompatibilityWiredIntoBothSkillsTests(unittest.TestCase):
+    def test_github_review_reasoning_forwards_to_the_shared_section(self) -> None:
+        text = _text(GITHUB_REASONING)
+        self.assertIn("## API / Contract Compatibility Review", text)
+        self.assertIn("API / contract compatibility review", text)
+        self.assertIn("this PR-specific policy does not restate them", text)
+
+    def test_github_review_index_lists_api_contract_compatibility(self) -> None:
+        text = _text(REPO_ROOT / "skills/github-pr-review/policies/github-review.md")
+        self.assertIn("api / contract compatibility", text)
+
+    def test_both_github_runbooks_name_the_forwarding_subsection(self) -> None:
+        for runbook in (GITHUB_ACTIVE_RUNBOOK, GITHUB_PASSIVE_RUNBOOK):
+            text = _text(runbook)
+            self.assertIn("API / Contract Compatibility Review", text)
+
+    def test_local_runbook_marks_the_section_signal_triggered(self) -> None:
+        text = _text(LOCAL_RUNBOOK)
+        window = _section(
+            text,
+            "API / contract compatibility review",
+            "Classify findings per",
+        )
+        self.assertIn(
+            "signal-triggered per that policy's own gating conditions", window
+        )
+        self.assertIn("not applied", window)
+        self.assertIn("unconditionally to every diff", window)
+
+    def test_parallel_review_cites_the_shared_section(self) -> None:
+        text = _text(SHARED_DIR / "policies/parallel-review.md")
+        self.assertIn("API / contract compatibility review", text)
 
 
 if __name__ == "__main__":

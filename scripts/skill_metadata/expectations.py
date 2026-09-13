@@ -258,6 +258,8 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
         "## Affected-Test Impact Review",
         "Affected-test / test-impact analysis",
         "never run the target repository's tests",
+        "## API / Contract Compatibility Review",
+        "API / contract compatibility review",
     ),
     "finding-placement.md": (
         "## Inline comment eligibility",
@@ -360,6 +362,7 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
         "## Architectural Placement Review",
         "## Code Impact / Dependency Analysis",
         "## Affected-Test Impact Review",
+        "## API / Contract Compatibility Review",
     ),
     "finding-placement.md": (
         "## Inline comment eligibility",

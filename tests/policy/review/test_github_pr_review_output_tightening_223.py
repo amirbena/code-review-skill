@@ -66,12 +66,15 @@ SEVERITY_LEGEND = {
 # new "Semantic change-implication reasoning" shared section) — also
 # deliberate and unrelated to #223. LOCAL_RUNBOOK was re-captured again
 # after Issue #121 (step 9 now also names the new "Null-like absence-risk
-# review" shared section) — also deliberate and unrelated to #223. The
-# other files in this map are untouched by #89/#237/#211/#121 and keep
-# their original #223-era hashes.
+# review" shared section) — also deliberate and unrelated to #223.
+# LOCAL_RUNBOOK was re-captured again after Issue #175 (step 9 now also
+# names the new "API / contract compatibility review" shared section) —
+# also deliberate and unrelated to #223. The other files in this map are
+# untouched by #89/#237/#211/#121/#175 and keep their original #223-era
+# hashes.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "1abf7c6a28f6d6b73a845aa8c8f9e06e7d062a82",
-    LOCAL_RUNBOOK: "2926910c9f8082e9b465b44a51223ac231b350cc",
+    LOCAL_RUNBOOK: "564a69d37f66e0cb41bcf084cb61a721db858aee",
     LOCAL_SKILL: "44b6e6953d2847f6c999d5824d41d235b6fd9435",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "1b5238723eab4308407c137c554fa3a169e8b482",

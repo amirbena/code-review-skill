@@ -58,8 +58,9 @@ This same scaling — investigate no further than the change's own realistic
 blast radius — governs the targeted searches in
 [`review-scope.md`](review-scope.md), "Semantic change-implication
 reasoning" (its per-dimension bounded expansion), "Null-like absence-risk
-review," "Existing behavior ownership," "Failure state, retry safety, and
-recovery," and "Architectural placement and execution-lifecycle fidelity"
+review," "API / contract compatibility review," "Existing behavior
+ownership," "Failure state, retry safety, and recovery," and
+"Architectural placement and execution-lifecycle fidelity"
 (its bounded caller/callee/owning-boundary context expansion), and in its
 two extracted sub-policies —
 [`root-cause-consolidation.md`](root-cause-consolidation.md), "Root-cause

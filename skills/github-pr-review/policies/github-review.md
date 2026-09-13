@@ -42,7 +42,7 @@ review-evidence.md          prior reviews/comments as Existing Review Evidence;
 review-reasoning.md         semantic implication, null-like absence risk,
                             logical cohorts, architectural placement, code
                             impact / dependency analysis, affected-test
-                            impact
+                            impact, api / contract compatibility
         ↓
 parallel-review.md          optional parallel workers per review dimension;
                             execution optimisation only; centralized aggregation

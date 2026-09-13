@@ -140,3 +140,19 @@ When the reviewing engine has no native cross-reference capability, bound the
 search to tests reachable by ordinary repository search from a changed
 symbol, endpoint, message/event type, error type, or shared fixture, and stop
 once that is enough to judge regression risk.
+
+## API / Contract Compatibility Review
+
+When a PR changes a repository contract another component consumes — an
+OpenAPI/JSON Schema/protobuf definition, a public API request/response
+model, an event/message schema, or a configuration contract — apply
+[`review-scope.md`](../../../shared/policies/review-scope.md), "API /
+contract compatibility review." That shared section owns the recognized
+contract types, the compatible / breaking / context-dependent
+classification for each change shape, the fail-closed rule for an
+unresolvable consumer surface, and the reuse of the existing evidence and
+severity model; this PR-specific policy does not restate them. It is one
+concrete depth owner of the "API / integration contracts" dimension
+activated by "Semantic Implication Review" above, alongside — never
+replacing — this file's own "Affected-Test Impact Review" and
+"Architectural Placement Review," and it is not a second scope model.
