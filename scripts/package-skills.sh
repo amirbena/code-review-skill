@@ -18,6 +18,7 @@ staging_root="${dist_dir}/.staging"
 metadata_validator="${script_dir}/validate-skill-metadata.py"
 package_manifest="${script_dir}/package-manifest.json"
 package_manifest_helper="${script_dir}/package_manifest.py"
+package_adapt="${script_dir}/package_adapt.py"
 
 target="${1:-all}"
 case "${target}" in
@@ -43,95 +44,25 @@ require_archive_entry() {
   fi
 }
 
-# Rewrite relative links into shared/ so they resolve from the archive
-# root instead of from skills/<name>/. Packaging strips exactly the two
-# path segments ("skills/<name>/"), so every "../../shared/" (used by
-# SKILL.md, at source depth 2) becomes "shared/", and every
-# "../../../shared/" (used by files one level under the Skill, at source
-# depth 3: runbooks/, templates/, policies/) becomes "../shared/". This
-# is a narrow, deterministic substitution scoped to the exact link
-# prefixes that point into shared/ — it never touches any other text.
-# Guard against a regression stripping/corrupting the Agent Skills
-# YAML frontmatter of a packaged root SKILL.md. This is a narrow
-# structural check (line 1 is the opening delimiter, a closing
-# delimiter exists, and the required name/description fields are
-# present with the expected name) — not a full YAML validator. Prefers
-# python3's YAML support when available for a real parse; otherwise
-# falls back to the same structural check without attempting to
-# reimplement YAML.
+# Shared-link adaptation, metadata-path adaptation, and SKILL.md
+# frontmatter structural validation are packaging-domain rules shared
+# with scripts/package-skills.ps1; both platform scripts delegate to the
+# single canonical Python implementation in scripts/packaging/ (see
+# scripts/package_adapt.py) instead of restating the rules here.
 validate_skill_frontmatter() {
   local skill_md="$1"
   local expected_name="$2"
-
-  local first_line
-  first_line="$(head -n 1 "${skill_md}")"
-  if [[ "${first_line}" != "---" ]]; then
-    echo "error: ${skill_md} does not start with '---' frontmatter delimiter on line 1" >&2
-    exit 1
-  fi
-
-  local closing_line
-  closing_line="$(awk 'NR>1 && /^---$/ {print NR; exit}' "${skill_md}")"
-  if [[ -z "${closing_line}" ]]; then
-    echo "error: ${skill_md} frontmatter has no closing '---' delimiter" >&2
-    exit 1
-  fi
-
-  if command -v python3 >/dev/null 2>&1 && python3 -c "import yaml" >/dev/null 2>&1; then
-    python3 - "${skill_md}" "${expected_name}" <<'PYEOF'
-import sys, yaml
-skill_md, expected_name = sys.argv[1], sys.argv[2]
-with open(skill_md, encoding="utf-8") as f:
-    lines = f.read().split("\n")
-end = lines[1:].index("---") + 1
-data = yaml.safe_load("\n".join(lines[1:end])) or {}
-name = data.get("name")
-description = data.get("description")
-if not name:
-    sys.exit(f"error: {skill_md} frontmatter missing required 'name'")
-if not description:
-    sys.exit(f"error: {skill_md} frontmatter missing required 'description'")
-if name != expected_name:
-    sys.exit(f"error: {skill_md} frontmatter name '{name}' does not match expected '{expected_name}'")
-PYEOF
-    if [[ $? -ne 0 ]]; then
-      exit 1
-    fi
-  else
-    local fm_body
-    fm_body="$(sed -n "2,${closing_line}p" "${skill_md}")"
-    if ! grep -qE '^name:[[:space:]]*'"${expected_name}"'[[:space:]]*$' <<<"${fm_body}"; then
-      echo "error: ${skill_md} frontmatter missing 'name: ${expected_name}'" >&2
-      exit 1
-    fi
-    if ! grep -qE '^description:' <<<"${fm_body}"; then
-      echo "error: ${skill_md} frontmatter missing required 'description'" >&2
-      exit 1
-    fi
-    echo "note: python3 yaml module unavailable — used structural fallback validation for ${skill_md}" >&2
-  fi
+  python3 "${package_adapt}" validate-frontmatter "${skill_md}" "${expected_name}"
 }
 
 adapt_shared_links() {
   local file="$1"
-  local tmp
-  tmp="$(mktemp)"
-  sed -e 's#\.\./\.\./\.\./shared/#../shared/#g' \
-      -e 's#\.\./\.\./shared/#shared/#g' \
-      "${file}" > "${tmp}"
-  mv "${tmp}" "${file}"
+  python3 "${package_adapt}" adapt-shared-links "${file}"
 }
 
-# metadata/skill.yaml remains source-relative in the repository. Adapt only
-# its known shared-resource prefix in the staged copy, where metadata/ is one
-# level below the standalone package root.
 adapt_metadata_paths() {
   local metadata_file="$1"
-  local tmp
-  tmp="$(mktemp)"
-  sed -e 's#^\([[:space:]]*- [[:space:]]*\)\.\./\.\./\.\./shared/#\1../shared/#' \
-      "${metadata_file}" > "${tmp}"
-  mv "${tmp}" "${metadata_file}"
+  python3 "${package_adapt}" adapt-metadata-paths "${metadata_file}"
 }
 
 package_skill() {

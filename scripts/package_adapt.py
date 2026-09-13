@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""Rewrite shared-links/metadata-paths and validate SKILL.md frontmatter
+for a staged, standalone packaged Skill.
+
+Thin CLI entrypoint. The canonical implementation lives in ``packaging/``
+(see ``packaging/__init__.py`` for the map); this file only wires
+``sys.argv`` to it. Called identically by ``scripts/package-skills.sh``
+and ``scripts/package-skills.ps1``.
+
+Usage:
+    python3 scripts/package_adapt.py adapt-shared-links <file>
+    python3 scripts/package_adapt.py adapt-metadata-paths <file>
+    python3 scripts/package_adapt.py validate-frontmatter <file> <expected_name>
+"""
+
+from __future__ import annotations
+
+from packaging import main
+
+__all__ = ["main"]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

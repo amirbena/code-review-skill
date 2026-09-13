@@ -29,6 +29,7 @@ $stagingRoot = Join-Path $distDir ".staging"
 $metadataValidator = Join-Path $scriptDir "validate-skill-metadata.py"
 $packageManifestPath = Join-Path $scriptDir "package-manifest.json"
 $packageManifestHelper = Join-Path $scriptDir "package_manifest.py"
+$packageAdapt = Join-Path $scriptDir "package_adapt.py"
 $pythonCommand = if (Get-Command "python" -ErrorAction SilentlyContinue) {
   "python"
 } elseif (Get-Command "python3" -ErrorAction SilentlyContinue) {
@@ -44,70 +45,30 @@ if ($packageManifest.schema_version -ne 1) {
   exit 1
 }
 
-# Rewrite relative links into shared/ so they resolve from the archive
-# root instead of from skills/<name>/. Packaging strips exactly the two
-# path segments ("skills/<name>/"), so every "../../shared/" (used by
-# SKILL.md, at source depth 2) becomes "shared/", and every
-# "../../../shared/" (used by files one level under the Skill, at source
-# depth 3: runbooks/, templates/, policies/) becomes "../shared/". This
-# is a narrow, deterministic substitution scoped to the exact link
-# prefixes that point into shared/ — it never touches any other text.
-# Guard against a regression stripping/corrupting the Agent Skills YAML
-# frontmatter of a packaged root SKILL.md. Narrow structural check (line
-# 1 is the opening delimiter, a closing delimiter exists, required
-# name/description fields are present with the expected name) — not a
-# full YAML validator; kept in sync with the equivalent guard in
-# scripts/package-skills.sh.
+# Shared-link adaptation, metadata-path adaptation, and SKILL.md
+# frontmatter structural validation are packaging-domain rules shared
+# with scripts/package-skills.sh; both platform scripts delegate to the
+# single canonical Python implementation in scripts/packaging/ (see
+# scripts/package_adapt.py) instead of restating the rules here.
 function Test-SkillFrontmatter {
   param(
     [string]$SkillMdPath,
     [string]$ExpectedName
   )
-
-  $lines = Get-Content -Path $SkillMdPath
-  if ($lines.Count -eq 0 -or $lines[0] -ne "---") {
-    Write-Error "$SkillMdPath does not start with '---' frontmatter delimiter on line 1"
-    exit 1
-  }
-
-  $closingIndex = -1
-  for ($i = 1; $i -lt $lines.Count; $i++) {
-    if ($lines[$i] -eq "---") {
-      $closingIndex = $i
-      break
-    }
-  }
-  if ($closingIndex -eq -1) {
-    Write-Error "$SkillMdPath frontmatter has no closing '---' delimiter"
-    exit 1
-  }
-
-  $fmBody = $lines[1..($closingIndex - 1)] -join "`n"
-  if ($fmBody -notmatch "(?m)^name:\s*$([regex]::Escape($ExpectedName))\s*$") {
-    Write-Error "$SkillMdPath frontmatter missing 'name: $ExpectedName'"
-    exit 1
-  }
-  if ($fmBody -notmatch "(?m)^description:") {
-    Write-Error "$SkillMdPath frontmatter missing required 'description'"
-    exit 1
-  }
+  & $pythonCommand $packageAdapt validate-frontmatter $SkillMdPath $ExpectedName
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
 function Adapt-SharedLinks {
   param([string]$FilePath)
-  $content = Get-Content -Path $FilePath -Raw
-  $content = $content -replace [regex]::Escape("../../../shared/"), "../shared/"
-  $content = $content -replace [regex]::Escape("../../shared/"), "shared/"
-  Set-Content -Path $FilePath -Value $content -NoNewline
+  & $pythonCommand $packageAdapt adapt-shared-links $FilePath
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
-# Keep source metadata repository-relative, but adapt the exact known shared
-# resource prefix in the staged standalone package copy.
 function Adapt-MetadataPaths {
   param([string]$MetadataPath)
-  $content = Get-Content -Path $MetadataPath -Raw
-  $content = $content -replace '(?m)^(\s*-\s*)\.\./\.\./\.\./shared/', '$1../shared/'
-  Set-Content -Path $MetadataPath -Value $content -NoNewline
+  & $pythonCommand $packageAdapt adapt-metadata-paths $MetadataPath
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
 function Package-Skill {
