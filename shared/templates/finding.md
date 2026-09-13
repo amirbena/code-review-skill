@@ -159,6 +159,15 @@ human-facing review a machine-only format.
   contextual-evidence states are the finding-confidence model design record
   (a repository-development document, not a packaged resource, so it is named
   here, not linked).
+- **capability** — optional: the name of the domain-specific deepening
+  capability (per
+  [`../policies/specialist-depth.md`](../policies/specialist-depth.md))
+  whose deeper reasoning contributed this finding — e.g.
+  `security-deepening`. It is a provenance annotation, never a severity
+  input: it never calculates or changes severity, identity, deduplication,
+  or the decision derivation (see "Capability provenance"). Absent on a
+  finding base per-dimension reasoning alone already fully supports, and
+  absent when no domain-specific deepening capability engaged.
 
 ## Fix/action location, evidence location, publication
 
@@ -365,6 +374,51 @@ an "AI confidence %".
   [`finding-rendering.md`](finding-rendering.md). The **machine-readable
   output always carries `confidence`**, regardless of this human-surface
   suppression.
+
+## Capability provenance
+
+A finding may additionally name the **domain-specific deepening
+capability** (per
+[`../policies/specialist-depth.md`](../policies/specialist-depth.md))
+whose deeper reasoning contributed it — for example
+`security-deepening`. This is a third kind of provenance, alongside
+`contextual evidence` and `runtime validation`: it records *which
+capability's reasoning produced the finding*, not how sure the reviewer
+is (that stays `confidence`'s job) and not what informed it (that stays
+`contextual evidence`'s job).
+
+- **Optional, and only when a capability actually contributed.** Absent
+  on every finding base per-dimension reasoning
+  ([`../policies/review-scope.md`](../policies/review-scope.md),
+  "Semantic change-implication reasoning") already fully supports on its
+  own, and absent whenever no domain-specific deepening capability
+  engaged for this review. A capability that engages but finds nothing
+  beyond what base reasoning already established contributes no finding
+  merely to prove it ran, per
+  [`specialist-depth.md`](../policies/specialist-depth.md), "Capability-
+  contributed findings are labeled, not re-schemed."
+- **Provenance is not a severity input.** It never calculates, raises,
+  lowers, or overrides the severity derived from impact per
+  [`../policies/severity.md`](../policies/severity.md), and never changes
+  the finding's identity, its deduplication, or the mechanical decision
+  derivation. A capability-contributed finding is evaluated exactly like
+  any other finding.
+- **Does not replace `confidence`.** Which capability contributed a
+  finding says nothing about how sure the reviewer is that the defect is
+  real; a capability-contributed finding still carries its own
+  independently derived `confidence` value.
+- **Composability.** When more than one capability's reasoning
+  contributed to the same finding (for example, a cascading activation
+  per [`specialist-depth.md`](../policies/specialist-depth.md),
+  "Cascading activation"), list each contributing capability; this never
+  fragments the finding into multiple entries for the same underlying
+  defect.
+- **Surface rendering.** Rendered only when present (the same rule every
+  other optional field follows). On the full rendering it is its own
+  line after `Evidence` and any `Contextual evidence` / `Runtime
+  validation` / `Confidence` lines; on the GitHub inline surface it
+  folds into `evidence` prose — there is no separate `Capability:` line
+  on that surface. See [`finding-rendering.md`](finding-rendering.md).
 
 ## Finding quality contract
 

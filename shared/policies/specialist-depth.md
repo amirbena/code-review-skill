@@ -98,6 +98,22 @@ decision-derivation, and remediation-scope-boundary contracts as any
 other finding, and remains identifiable as ordinary review output — not
 as a separate persona's report.
 
+### Capability-contributed findings are labeled, not re-schemed
+
+A finding a domain-specific deepening capability contributes is an
+**ordinary finding** — same fields, same severity derivation, same
+evidence bar, same identity/deduplication rules. The one thing it
+additionally carries is attribution: the optional `capability` provenance
+field on the shared finding contract (see
+[`finding.md`](../templates/finding.md), "Capability provenance"), naming
+which capability's deeper reasoning contributed to it. Like `contextual
+evidence` and `runtime validation`, it is a provenance annotation only —
+it never calculates, raises, lowers, or overrides severity, and never
+changes a finding's identity, deduplication, or the decision derivation.
+It is absent on a finding base reasoning alone already fully supports. A
+capability that finds nothing beyond what base reasoning already
+established contributes no additional finding merely to prove it ran.
+
 ## Cascading activation: bounded by the existing expansion contract
 
 A deepening pass may itself surface evidence that materially implicates a
