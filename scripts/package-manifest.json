@@ -27,6 +27,7 @@
     { "source": "shared/policies/security-deepening.md", "destination": "shared/policies/security-deepening.md" },
     { "source": "shared/policies/distributed-systems-deepening.md", "destination": "shared/policies/distributed-systems-deepening.md" },
     { "source": "shared/policies/database-migration-deepening.md", "destination": "shared/policies/database-migration-deepening.md" },
+    { "source": "shared/policies/performance-deepening.md", "destination": "shared/policies/performance-deepening.md" },
     { "source": "shared/templates/finding.md", "destination": "shared/templates/finding.md" },
     { "source": "shared/templates/finding-rendering.md", "destination": "shared/templates/finding-rendering.md" },
     { "source": "shared/templates/review-summary.md", "destination": "shared/templates/review-summary.md" },

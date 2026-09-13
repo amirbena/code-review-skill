@@ -153,7 +153,10 @@ deliberately not an eight-dimension checklist run on every diff.
   merely at the scale exercised by its own tests. Depth owner:
   "Change-risk signals and review depth" below and
   [`repository-expansion.md`](repository-expansion.md) for how far dependent
-  call sites are followed.
+  call sites are followed, and, when the evidence gathered by this
+  dimension's base reasoning warrants deeper tracing than that bounded pass
+  affords, [`performance-deepening.md`](performance-deepening.md) per the
+  "Domain-specific deepening pass" below.
 
 ### Worked example — one change implicating several dimensions
 
