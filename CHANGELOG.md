@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.25.0 — 2026-09-13
+
+### Added
+
+- Add a cross-language null-like absence-risk review requirement to the shared review-scope policy, detecting credible null/undefined/nil/None dereference risk in changed code (#121) (#248).
+
 ## v1.24.0 — 2026-09-13
 
 ### Added
