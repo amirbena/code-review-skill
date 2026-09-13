@@ -1,0 +1,139 @@
+name: Benchmark check
+
+# Dedicated, PR-level, informational check that wires the existing
+# benchmark execution (scripts/run_benchmark.py +
+# scripts/benchmark_review_adapter.py, Issue #250) into CI without
+# reimplementing any of it — no second reviewer, no second runner, no
+# second evaluator, no Claude Code plugin.
+#
+# Fully independent from release-worthiness.yml: own trigger, own
+# concurrency group, own read-only permissions block, no `needs:` on any
+# release-worthiness job, and no shared classification logic — see
+# docs/benchmark/ci-integration.md.
+#
+# Contract: docs/benchmark/ci-integration.md. This check is deliberately
+# NOT required and NOT added to any branch-protection ruleset: applicable
+# PRs where the review-CLI runtime is unavailable (the common case on a
+# bare Actions runner with no secrets) complete successfully with an
+# informational "benchmark not run" summary rather than failing.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Read-only. This workflow never mutates the repository, never needs
+# write, and never touches dist/ publishing.
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmark-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Real PR head, not just the base — the benchmark must exercise the
+      # Skill content the PR is actually proposing.
+      - name: Check out PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Fetch the PR base branch
+        run: |
+          git fetch --no-tags --quiet origin \
+            "+refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}" \
+            || echo "base branch refresh skipped; using origin/${{ github.event.pull_request.base.ref }} from checkout"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dev dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Classify benchmark applicability
+        id: classify
+        run: |
+          python scripts/benchmark_ci_classifier.py \
+            --base-ref "origin/${{ github.event.pull_request.base.ref }}" \
+            --github-output "$GITHUB_OUTPUT" \
+            --step-summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Check review-CLI runtime availability
+        id: runtime
+        if: steps.classify.outputs.applicable == 'true'
+        run: |
+          set +e
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from scripts.benchmark_review_adapter import check_runtime_available, resolve_cli_executable, RuntimeUnavailableError
+          try:
+              check_runtime_available(resolve_cli_executable())
+          except RuntimeUnavailableError as exc:
+              print(f'unavailable: {exc}')
+              sys.exit(1)
+          "
+          if [ $? -eq 0 ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Applicable and the runtime is usable: run the same script a
+      # developer already runs manually and publish its output. A genuine
+      # execution failure may fail this step for diagnostic value, but the
+      # job overall is never a required merge gate (see permissions/
+      # concurrency above and docs/benchmark/ci-integration.md, "Non-
+      # blocking / informational status").
+      - name: Run benchmark
+        id: run_benchmark
+        if: steps.classify.outputs.applicable == 'true' && steps.runtime.outputs.available == 'true'
+        run: python scripts/run_benchmark.py | tee benchmark-result.json
+
+      - name: Publish benchmark result
+        if: steps.classify.outputs.applicable == 'true' && steps.runtime.outputs.available == 'true'
+        run: |
+          {
+            echo "## Benchmark result"
+            echo
+            echo '```json'
+            cat benchmark-result.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload benchmark result artifact
+        if: steps.classify.outputs.applicable == 'true' && steps.runtime.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-result
+          path: benchmark-result.json
+          if-no-files-found: warn
+
+      # Applicable but the runtime is unavailable: complete successfully
+      # with a clear, distinct informational summary. Never fails the job.
+      - name: Summarize runtime-unavailable outcome
+        if: steps.classify.outputs.applicable == 'true' && steps.runtime.outputs.available == 'false'
+        run: |
+          {
+            echo "## Benchmark not run: runtime unavailable"
+            echo
+            echo "This PR is benchmark-applicable, but no usable review-CLI runtime"
+            echo "was available on this runner. This is informational and non-blocking;"
+            echo "see docs/benchmark/ci-integration.md."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Not applicable at all: complete successfully with a distinct
+      # not-applicable summary (already written by the classifier step
+      # above), no benchmark invocation.
+      - name: Summarize not-applicable outcome
+        if: steps.classify.outputs.applicable != 'true'
+        run: |
+          echo "Benchmark check: not applicable — no review-behavior-affecting paths changed."

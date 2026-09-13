@@ -463,8 +463,14 @@ and no packaged Skill resource depends on them.
   regression comparison in
   [`benchmark/regression-report.md`](benchmark/regression-report.md)
   without gating it. Every reference metric under `tests/reference/` is
-  test-only; nothing benchmark is packaged. Repository-development docs
-  live in the [`benchmark/`](benchmark/README.md) directory.
+  test-only; nothing benchmark is packaged. A dedicated, informational
+  PR-level CI check wiring the existing benchmark execution
+  (`scripts/run_benchmark.py`, #250) into
+  `.github/workflows/benchmark-check.yml`, independent from
+  `release-worthiness.yml`, is
+  [`benchmark/ci-integration.md`](benchmark/ci-integration.md) (#255).
+  Repository-development docs live in the
+  [`benchmark/`](benchmark/README.md) directory.
 - **Repository-intelligence model** — the candidate-architecture
   comparison and recommended minimal model for what a fired
   [`repository-expansion.md`](../shared/policies/repository-expansion.md)

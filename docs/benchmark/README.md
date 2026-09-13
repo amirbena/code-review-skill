@@ -23,6 +23,7 @@ concern lives in the file named for it.
 | [`missed-and-incorrect-findings.md`](missed-and-incorrect-findings.md) | Turning match results into **missed-finding (false-negative)** and **incorrect-finding (false-positive)** counts — the deterministic produced↔expected one-to-one pairing (`MATCH` edges only, fixture document order), the per-case and aggregate counts, how `match: optional` / `any_of` / `findings_completeness` change the accounting, and how the counts render alongside the regression report's deltas without gating it. | [#55](https://github.com/amirbena/code-review-skill/issues/55) |
 | [`severity-accuracy.md`](severity-accuracy.md) | Measuring, over the #55 matched set, how often a matched finding carries a permitted expected severity — the **exact** / **over-severity** / **under-severity** classification on the P0 > P1 > P2 ordinal, the `severity`-list and `any_of` member resolution, the per-case and aggregate counts with a single exact-rational exact-match rate, and how they render alongside the regression report's deltas without gating it. | [#56](https://github.com/amirbena/code-review-skill/issues/56) |
 | [`duplicate-noise.md`](duplicate-noise.md) | Measuring duplicate / same-root-cause noise over a case's **produced findings alone** — the same-root-cause edge (the #54 `MATCH` cell applied to a pair of produced findings, unchanged), connected-component clustering, the redundant-finding count and its exact-rational duplicate rate per case and in aggregate, the highest-noise-cases list, and how they render alongside the regression report's deltas without gating it. | [#57](https://github.com/amirbena/code-review-skill/issues/57) |
+| [`ci-integration.md`](ci-integration.md) | Wiring the existing benchmark execution (`scripts/run_benchmark.py` + `scripts/benchmark_review_adapter.py`, #250) into a dedicated, informational/non-blocking PR-level CI check (`.github/workflows/benchmark-check.yml`) — the deterministic applicability classifier (`scripts/benchmark_ci_classifier.py`), the not-applicable / runtime-unavailable / ran three-state contract, and its full independence from `release-worthiness.yml`. | [#255](https://github.com/amirbena/code-review-skill/issues/255) |
 
 The first four documents cover the whole epic-[#40](https://github.com/amirbena/code-review-skill/issues/40)
 benchmark surface; [`match-criteria.md`](match-criteria.md) ([#54](https://github.com/amirbena/code-review-skill/issues/54))
@@ -195,6 +196,18 @@ demonstrating the voice principles owned by
 [`../../shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),
 "Senior voice contract". It measures presentation quality, which the
 #40/#41 corpus and metrics above do not.
+
+## CI integration
+
+[`ci-integration.md`](ci-integration.md) (#255) wires the existing #250
+benchmark execution into a **dedicated, informational** PR-level CI check,
+independent from `release-worthiness.yml`: a small deterministic path
+classifier decides applicability, an applicable PR runs
+`python3 scripts/run_benchmark.py` from its own checkout exactly as a
+developer would, and the result is published without ever becoming a
+required merge gate — an unavailable review-CLI runtime on the bare Actions
+runner is a distinct, non-failing "benchmark not run" outcome, not a
+failure. It reimplements no runner/matcher/metrics/adapter logic above.
 
 ## Related
 
