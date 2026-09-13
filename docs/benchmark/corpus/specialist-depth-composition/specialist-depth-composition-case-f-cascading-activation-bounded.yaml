@@ -1,0 +1,118 @@
+# Specialist-depth-composition corpus case (Issue #85, parent #47).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# specialist-depth.md's Case F: a deepening pass itself surfaces evidence
+# that materially implicates a further dimension, and that cascading
+# continuation stays bounded by repository-expansion.md's (#87) existing
+# ring/ceiling procedure rather than becoming unbounded "specialist calls
+# specialist" recursion. Unlike Case C (two independently-implicated
+# files, each warranting its own capability from the moment the diff is
+# read), here a single database-migration change is what surfaces the
+# performance concern once its usage is traced -- the performance finding
+# would not exist as an activation candidate without first following the
+# database finding's own evidence one hop.
+
+format: benchmark-case/v1
+
+id: specialist-depth-composition-case-f-cascading-activation-bounded
+title: "0012_drop_customer_id_index removes the only index the unbounded customer order-history lookup relies on"
+
+input:
+  patch: |
+    diff --git a/app/db/migrations/0012_drop_customer_id_index.py b/app/db/migrations/0012_drop_customer_id_index.py
+    new file mode 100644
+    index 0000000..a1b2c3d
+    --- /dev/null
+    +++ b/app/db/migrations/0012_drop_customer_id_index.py
+    @@ -0,0 +1,13 @@
+    +from django.db import migrations
+    +
+    +
+    +class Migration(migrations.Migration):
+    +
+    +    dependencies = [
+    +        ("orders", "0011_add_customer_region"),
+    +    ]
+    +
+    +    operations = [
+    +        migrations.RemoveIndex(
+    +            model_name="order",
+    +            name="orders_customer_id_idx",
+    +        ),
+    +    ]
+  base:
+    app/orders/lookup.py: |
+      import db
+
+
+      def get_orders_for_customer(customer_id):
+          """Reads via the orders_customer_id_idx index on orders_order;
+          called on every order-history page view. A long-tenured customer
+          can have tens of thousands of orders.
+          """
+          return db.query(
+              "SELECT * FROM orders_order WHERE customer_id = %s", customer_id
+          )
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: index-removal-without-usage-verification
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/db/migrations/0012_drop_customer_id_index.py
+        symbol: Migration
+        anchor: 'name="orders_customer_id_idx",'
+      claim: >-
+        The migration drops orders_customer_id_idx with no evidence in
+        the change that any query depending on it was checked or
+        migrated to a different access path first.
+      defect_kind: index-removal-without-usage-verification
+    - key: index-removal-induces-table-scan-hot-path
+      match: required
+      severity: P1
+      location:
+        location_intent: cross-file
+        path: app/orders/lookup.py
+        symbol: get_orders_for_customer
+        anchor: "SELECT * FROM orders_order WHERE customer_id = %s"
+      claim: >-
+        get_orders_for_customer's own docstring documents that it reads
+        via orders_customer_id_idx and is called on every order-history
+        page view, with customer order counts running into the tens of
+        thousands. Tracing that dependency once the migration's index
+        removal is identified shows this query loses its only index and
+        falls back to a full table scan of orders_order on every page
+        view for exactly the long-tenured customers the docstring calls
+        out -- a performance regression this migration's own diff does
+        not touch or account for.
+      defect_kind: index-removal-induces-table-scan
+    - key: missing-index-removal-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/db/migrations/0012_drop_customer_id_index.py
+      claim: >-
+        No test or migration-plan check confirms every query that
+        depended on orders_customer_id_idx was audited before removal.
+      defect_kind: missing-migration-test
+
+metadata:
+  source: crafted
+  tags: [correctness, performance]
+  rationale: >-
+    Pins specialist-depth.md's Case F ("cascading implication"): database
+    deepening's own bounded evidence-gathering on the index removal --
+    tracing which call sites the removed index served, one hop, per
+    repository-expansion.md's existing ring/ceiling procedure and not a
+    second expansion mechanism -- is what surfaces the performance
+    finding. The performance capability engages only because the
+    database capability's own reasoning led there; it is not an
+    independently-authored second concern the way Case C's unrelated
+    n-plus-one hunk is. Both findings remain ordinary findings in one
+    unified review, and neither the cascade nor the composition invents a
+    new expansion ceiling beyond #87's existing one.

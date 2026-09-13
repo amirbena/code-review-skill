@@ -142,6 +142,19 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/benchmark/test_dependency_supply_chain_deepening_corpus.py`](../../../tests/unit/benchmark/test_dependency_supply_chain_deepening_corpus.py)).
 
+- [`specialist-depth-composition/`](specialist-depth-composition/README.md) —
+  a focused `benchmark-case/v1` sub-corpus pinning the architecture-level
+  activation/composition/boundedness contract
+  [`specialist-depth.md`](../../../shared/policies/specialist-depth.md)
+  (#82) defines across 0..N domain-specific deepening capabilities (Issue
+  [#85](https://github.com/amirbena/code-review-skill/issues/85), parent
+  [#47](https://github.com/amirbena/code-review-skill/issues/47)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/benchmark/test_specialist_depth_composition_corpus.py`](../../../tests/unit/benchmark/test_specialist_depth_composition_corpus.py)).
+  Reuses fixtures from the Security (#271), Database/Migration (#186),
+  and Performance (#187) sub-corpora above as integration inputs rather
+  than re-deriving their domain correctness.
+
 ## Validation
 
 [`../../../tests/unit/benchmark/test_benchmark_corpus.py`](../../../tests/unit/benchmark/test_benchmark_corpus.py)

@@ -1,0 +1,121 @@
+# Specialist-depth-composition corpus case (Issue #85, parent #47).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# specialist-depth.md's Case G: deeper domain-specific reasoning may
+# surface a legitimate, broader architectural concern, but going deeper
+# must never by itself expand what the current change is required to
+# remediate -- that stays governed exclusively by
+# remediation-scope-boundary.md's (#258) three-part reasoning. Reuses the
+# Database/Migration domain corpus's (#186)
+# unsafe-online-blocking-lock scenario as the required, narrowly-scoped
+# finding, and adds the broader "adopt a repo-wide concurrent-index lint"
+# observation only as an explicitly optional finding -- proving the
+# deepening capability does not promote that broader concern into a
+# required blocking finding for this PR.
+
+format: benchmark-case/v1
+
+id: specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth
+title: "0012_add_status_v2_index builds a UNIQUE index without CONCURRENTLY on the actively-written orders_order table"
+
+input:
+  patch: |
+    diff --git a/app/orders/migrations/0012_add_status_v2_index.py b/app/orders/migrations/0012_add_status_v2_index.py
+    new file mode 100644
+    index 0000000..7c2e9a1
+    --- /dev/null
+    +++ b/app/orders/migrations/0012_add_status_v2_index.py
+    @@ -0,0 +1,16 @@
+    +from django.db import migrations
+    +
+    +
+    +class Migration(migrations.Migration):
+    +
+    +    dependencies = [
+    +        ("orders", "0011_add_status_v2_column"),
+    +    ]
+    +
+    +    operations = [
+    +        migrations.RunSQL(
+    +            sql="CREATE UNIQUE INDEX orders_order_status_v2_idx "
+    +                "ON orders_order (status_v2);",
+    +            reverse_sql="DROP INDEX orders_order_status_v2_idx;",
+    +        ),
+    +    ]
+  base:
+    app/orders/models.py: |
+      from django.db import models
+
+
+      class Order(models.Model):
+          """orders_order -- ~50M rows, sustained ~200 writes/sec from the
+          checkout and fulfillment services; never safe to lock for more
+          than a few milliseconds."""
+
+          status = models.CharField(max_length=20)
+          status_v2 = models.CharField(max_length=20, null=True, blank=True)
+          created_at = models.DateTimeField(auto_now_add=True)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: create-index-blocks-orders-order
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/orders/migrations/0012_add_status_v2_index.py
+        symbol: Migration
+        anchor: 'CREATE UNIQUE INDEX orders_order_status_v2_idx'
+      claim: >-
+        The migration builds orders_order_status_v2_idx with a plain
+        CREATE UNIQUE INDEX statement, not CREATE UNIQUE INDEX
+        CONCURRENTLY. Order's own docstring documents orders_order as
+        ~50M rows under sustained ~200 writes/sec. A non-concurrent index
+        build takes an ACCESS EXCLUSIVE lock on the table for the full
+        duration of the build, blocking every read and write against
+        orders_order until it finishes, on a table the evidence shows
+        cannot tolerate that.
+      defect_kind: blocking-lock-large-table-online-migration
+    - key: repowide-concurrent-index-lint-observation
+      match: optional
+      severity: P2
+      location:
+        location_intent: repository
+      claim: >-
+        This is the kind of blocking-lock defect a repo-wide lint or
+        migration-review checklist requiring CONCURRENTLY on large tables
+        could catch mechanically before review; adopting one is a
+        legitimate follow-up, not something this migration alone must
+        implement.
+      defect_kind: missing-repowide-concurrent-index-lint
+    - key: missing-migration-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/orders/migrations/0012_add_status_v2_index.py
+      claim: >-
+        No test or migration-plan check verifies this index build runs
+        CONCURRENTLY or is exercised against a table of representative
+        size before merge.
+      defect_kind: missing-migration-test
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins specialist-depth.md's Case G ("depth vs. remediation scope"):
+    database deepening's evidence supports a legitimate broader
+    observation -- a repo-wide lint would prevent this whole defect
+    class -- but per remediation-scope-boundary.md (#258) that broader
+    concern is never promoted into a second required, blocking finding
+    for this PR merely because the deepening capability went further than
+    base reasoning would have. The one required finding stays scoped to
+    the actual migration in this diff; the architectural observation is
+    explicitly `match: optional` at P2, so a review that omits it is
+    neither penalized nor forced to treat it as changes-required, and a
+    review that does raise it is not marking scope creep. Reuses #186's
+    own unsafe-online-blocking-lock fixture as the required finding
+    rather than re-deriving the underlying database-deepening defect.
