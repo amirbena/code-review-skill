@@ -1,0 +1,89 @@
+# Security-deepening corpus case (Issue #271, parent #83, grandparent #82).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# Mirrors security-deepening.md's "Engages — alternate path to a privileged
+# operation" worked example: a new route adds the authorization check base
+# reasoning identifies, but an older route already in the base pre-image
+# reaches the same privileged helper without it. The deepening capability's
+# job is to trace that alternate path and flag the actually-unenforced site
+# rather than the new, already-checked code that prompted the review.
+
+format: benchmark-case/v1
+
+id: security-deepening-alternate-path-missing-check
+title: "New admin route adds the authorization check; an older route reaching the same delete helper still has none"
+
+input:
+  patch: |
+    diff --git a/app/records.py b/app/records.py
+    index 1111111..2222222 100644
+    --- a/app/records.py
+    +++ b/app/records.py
+    @@ -12,2 +12,10 @@ def legacy_delete_record(record_id):
+         _delete_record(record_id)
+         return "", 204
+    +
+    +
+    +@bp.route("/api/v2/records/<record_id>", methods=["DELETE"])
+    +def delete_record(record_id):
+    +    if not request.user.is_admin:
+    +        abort(403)
+    +    _delete_record(record_id)
+    +    return "", 204
+  base:
+    app/records.py: |
+      from flask import Blueprint, request, abort
+
+      bp = Blueprint("records", __name__)
+
+
+      def _delete_record(record_id):
+          db.records.delete(record_id)
+
+
+      @bp.route("/legacy/records/<record_id>", methods=["POST"])
+      def legacy_delete_record(record_id):
+          _delete_record(record_id)
+          return "", 204
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: legacy-delete-route-missing-authorization
+      match: required
+      severity: P0
+      location:
+        location_intent: line
+        path: app/records.py
+        symbol: legacy_delete_record
+        anchor: '_delete_record(record_id)'
+      claim: >-
+        The new /api/v2 DELETE route correctly gates _delete_record behind
+        an is_admin check, but the pre-existing /legacy/records POST route
+        reaches the identical privileged _delete_record helper with no
+        authorization check at all, so any caller can still delete a
+        record through the older, unguarded path regardless of the new
+        route's enforcement.
+      defect_kind: missing-authorization-alternate-path
+    - key: missing-security-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/records.py
+      claim: >-
+        Neither the new authorization check nor the alternate unguarded
+        path it exposes is covered by a regression test.
+      defect_kind: missing-security-test
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Pins security-deepening.md's canonical "alternate path" worked
+    example: base reasoning already identifies and confirms the boundary
+    on the new route, but the deepening capability must trace the
+    privileged helper's other caller and flag the actual defect on the
+    older, unguarded route rather than stopping once the diff's own new
+    check looks correct.

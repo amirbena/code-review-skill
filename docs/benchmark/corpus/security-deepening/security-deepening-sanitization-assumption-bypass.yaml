@@ -1,0 +1,100 @@
+# Security-deepening corpus case (Issue #271, parent #83, grandparent #82).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# Mirrors security-deepening.md's "Validation/sanitization assumptions"
+# concern area: read_upload's callers rely on sanitize_filename() having
+# already made `name` safe to join onto UPLOAD_ROOT. The new
+# preview_upload entry point unquotes the URL-decoded name *after*
+# sanitizing it, so a percent-encoded traversal sequence survives
+# sanitize_filename's literal ".." check and only becomes "../" once
+# decoded afterwards — the assumption code elsewhere relies on does not
+# actually hold on this new path.
+
+format: benchmark-case/v1
+
+id: security-deepening-sanitization-assumption-bypass
+title: "preview_upload unquotes the filename after sanitize_filename, so an encoded traversal sequence bypasses the shared sanitizer"
+
+input:
+  patch: |
+    diff --git a/app/files.py b/app/files.py
+    index 1111111..2222222 100644
+    --- a/app/files.py
+    +++ b/app/files.py
+    @@ -1,4 +1,5 @@
+     import os
+    +import urllib.parse
+
+     UPLOAD_ROOT = "/var/data/uploads"
+
+    @@ -13,3 +14,10 @@ def read_upload(name):
+         path = os.path.join(UPLOAD_ROOT, sanitize_filename(name))
+         with open(path, "rb") as f:
+             return f.read()
+    +
+    +
+    +def preview_upload(request):
+    +    raw_name = request.args.get("name")
+    +    name = sanitize_filename(raw_name)
+    +    name = urllib.parse.unquote(name)
+    +    return read_upload(name)
+  base:
+    app/files.py: |
+      import os
+
+      UPLOAD_ROOT = "/var/data/uploads"
+
+
+      def sanitize_filename(name):
+          return name.replace("..", "").lstrip("/")
+
+
+      def read_upload(name):
+          path = os.path.join(UPLOAD_ROOT, sanitize_filename(name))
+          with open(path, "rb") as f:
+              return f.read()
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: preview-upload-decode-after-sanitize-traversal
+      match: required
+      severity: P0
+      location:
+        location_intent: line
+        path: app/files.py
+        symbol: preview_upload
+        anchor: 'urllib.parse.unquote(name)'
+      claim: >-
+        preview_upload calls sanitize_filename(raw_name) and only then
+        urllib.parse.unquote()s the result before passing it into
+        read_upload, which joins it onto UPLOAD_ROOT under the assumption
+        (relied on by every other caller of sanitize_filename) that the
+        value is already safe. A request name of "%2e%2e%2fetc%2fpasswd"
+        contains no literal ".." so sanitize_filename passes it through
+        unchanged, and only decodes into "../etc/passwd" afterwards,
+        letting preview_upload read arbitrary files outside UPLOAD_ROOT —
+        the sanitize-then-decode ordering on this new path breaks the
+        already-sanitized assumption read_upload's other caller relies on.
+      defect_kind: path-traversal-sanitize-order-bypass
+    - key: missing-security-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/files.py
+      claim: >-
+        No test covers preview_upload against a percent-encoded traversal
+        sequence in the name parameter.
+      defect_kind: missing-security-test
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Pins security-deepening.md's "Validation/sanitization assumptions"
+    concern area: sanitize_filename's guarantee is relied on by code the
+    base pass has not traced (the new preview_upload path), and tracing
+    shows the assumption does not actually hold there because decoding
+    happens after sanitizing rather than before.

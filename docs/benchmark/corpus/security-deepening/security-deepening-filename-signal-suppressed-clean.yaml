@@ -1,0 +1,56 @@
+# Security-deepening corpus case (Issue #271, parent #83, grandparent #82).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# Mirrors security-deepening.md's "Misleading superficial signal" worked
+# example verbatim: a file named auth_helper.py changes only a logging
+# message format, with no security-relevant control or data flow touched.
+# The security-adjacent filename alone must not trigger the deepening
+# capability — a suppressed false positive.
+
+format: benchmark-case/v1
+
+id: security-deepening-filename-signal-suppressed-clean
+title: "auth_helper.py reformats a log message string; the filename alone must not trigger deepening"
+
+input:
+  patch: |
+    diff --git a/services/auth_helper.py b/services/auth_helper.py
+    index 1111111..2222222 100644
+    --- a/services/auth_helper.py
+    +++ b/services/auth_helper.py
+    @@ -7,4 +7,4 @@ def record_login_attempt(username, succeeded):
+         if succeeded:
+    -        logger.info("login ok: %s" % username)
+    +        logger.info("login succeeded for user=%s", username)
+         else:
+    -        logger.info("login failed: %s" % username)
+    +        logger.info("login failed for user=%s", username)
+  base:
+    services/auth_helper.py: |
+      import logging
+
+      logger = logging.getLogger(__name__)
+
+
+      def record_login_attempt(username, succeeded):
+          if succeeded:
+              logger.info("login ok: %s" % username)
+          else:
+              logger.info("login failed: %s" % username)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Pins security-deepening.md's "Misleading superficial signal" worked
+    example: the file's name contains "auth" and would keyword-match a
+    naive trigger, but the diff only reformats a log message's argument
+    style — no control or data flow, no privileged operation, no trust
+    boundary. Per specialist-depth.md, a filename is a signal and never
+    independently sufficient, so this must resolve `clean` with no
+    finding rather than the capability engaging on naming alone.

@@ -1,0 +1,62 @@
+# Security-deepening corpus case (Issue #271, parent #83, grandparent #82).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# An authorization-named module changes, but the change adds an internal
+# metrics counter with no trust-boundary-crossing data/control flow —
+# session validation, credential handling, and enforcement placement are
+# all untouched. Per security-deepening.md's Activation condition 1, the
+# domain is not materially implicated by review-scope.md's base pass in
+# the first place, so the deepening capability never engages.
+
+format: benchmark-case/v1
+
+id: security-deepening-auth-module-no-trust-boundary-clean
+title: "auth/session_store.py adds an internal lookup-count metric; no trust-boundary behavior changes"
+
+input:
+  patch: |
+    diff --git a/app/auth/session_store.py b/app/auth/session_store.py
+    index 1111111..2222222 100644
+    --- a/app/auth/session_store.py
+    +++ b/app/auth/session_store.py
+    @@ -1,7 +1,11 @@
+     import time
+
+    +_lookup_count = 0
+    +
+     _sessions = {}
+
+
+     def get_session(session_id):
+    +    global _lookup_count
+    +    _lookup_count += 1
+         return _sessions.get(session_id)
+  base:
+    app/auth/session_store.py: |
+      import time
+
+      _sessions = {}
+
+
+      def get_session(session_id):
+          return _sessions.get(session_id)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    A change confined to an auth-named module is not by itself a
+    trust-boundary crossing: get_session's existing lookup and return
+    behavior is unchanged, and the added counter is internal
+    instrumentation with no data/control flow across a privilege
+    boundary. Base reasoning does not materially implicate the Security /
+    trust boundaries dimension, so security-deepening.md's Activation
+    condition 1 is never satisfied and the capability does not engage —
+    distinct from the filename-signal case, which pins that a naming
+    coincidence alone must not trigger engagement even when named
+    security-adjacently.

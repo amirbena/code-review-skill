@@ -1,0 +1,59 @@
+# Security-deepening corpus case (Issue #271, parent #83, grandparent #82).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# Mirrors security-deepening.md's "Does not engage — bounded base
+# reasoning already suffices" worked example: a changed permission check
+# gates a single, directly-called function with one caller and no
+# alternate path. Base reasoning confirms the boundary is enforced at the
+# point that matters; the deepening capability has nothing further to
+# trace and contributes no finding.
+
+format: benchmark-case/v1
+
+id: security-deepening-single-caller-check-enforced-clean
+title: "New DELETE route is the only caller of the privileged helper and enforces the check at the point that matters"
+
+input:
+  patch: |
+    diff --git a/app/records.py b/app/records.py
+    index 1111111..2222222 100644
+    --- a/app/records.py
+    +++ b/app/records.py
+    @@ -1,3 +1,15 @@
+     from flask import Blueprint, request, abort
+
+     bp = Blueprint("records", __name__)
+    +
+    +
+    +def _delete_record(record_id):
+    +    db.records.delete(record_id)
+    +
+    +
+    +@bp.route("/api/records/<record_id>", methods=["DELETE"])
+    +def delete_record(record_id):
+    +    if not request.user.has_permission("records:delete"):
+    +        abort(403)
+    +    _delete_record(record_id)
+    +    return "", 204
+  base:
+    app/records.py: |
+      from flask import Blueprint, request, abort
+
+      bp = Blueprint("records", __name__)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Pins security-deepening.md's "bounded base reasoning already
+    suffices" worked example: _delete_record has exactly one caller in
+    the repository, and that caller enforces the permission check before
+    invoking it, so the deepening capability's alternate-path and
+    confused-deputy tracing find nothing further to report — the case
+    proves the capability stays quiet rather than manufacturing a finding
+    once it engages.
