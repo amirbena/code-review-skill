@@ -67,6 +67,18 @@ Options affect presentation only. They never change review scope, evidence,
 finding identity, severity, deduplication, decision derivation, mutation
 authority, approval, HEAD/SHA validation, or publication ordering.
 
+This also settles, explicitly, the reasoning owned by
+[`remediation-scope-boundary.md`](remediation-scope-boundary.md): whether a
+finding requires remediation now, and how much of that remediation the
+current task/PR boundary must absorb versus defer as a `Follow-up`, is
+mandatory base reasoning applied identically regardless of
+`human_review_output` / `senior_mode` or any other option. `senior_mode`
+may add narrative depth to how a finding and its `Follow-up` are worded
+(per [`../templates/finding-rendering.md`](../templates/finding-rendering.md),
+"Senior voice contract" and its human renderings), but it owns none of
+this behavior: on vs. off produces the same finding set, severities, and
+remediation-scope-boundary outcomes — only wording differs.
+
 ## Deterministic normalization
 
 For each allow-listed option, inspect only the caller's current invocation.

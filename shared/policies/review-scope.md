@@ -310,6 +310,24 @@ mechanical decision derivation are unchanged; it only determines whether
 related manifestations are consolidated into one authoritative finding or
 kept separate.
 
+## Remediation-scope boundary pass
+
+For every material finding, after severity is derived, reason
+independently about how much of its remediation the current task/PR
+boundary must absorb versus what belongs to separate follow-up work. The
+three-part reasoning sequence (validity/severity → remediation-required →
+remediation-scope-boundary), the never-widens/never-shrinks-severity rule,
+and the worked examples are owned by
+[`remediation-scope-boundary.md`](remediation-scope-boundary.md) and are
+not restated here.
+
+This is not a second scope model: severity, finding identity, and the
+mechanical decision derivation are unchanged. Review depth — how much a
+reviewer reasons about a finding's broader implications — must never, by
+itself, expand what the current change is required to implement; nor may
+the current change's size discourage reporting or reduce the severity of
+a valid finding whose full remediation is legitimately out of scope.
+
 ## Failure state, retry safety, and recovery
 
 Treat this as one reasoning move, not three separate checklist items. It

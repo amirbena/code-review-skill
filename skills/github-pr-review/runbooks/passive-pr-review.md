@@ -332,7 +332,11 @@ finally: remove the temporary checkout (success, any failure, interruption)
    [`severity.md`](../../../shared/policies/severity.md) with evidence per
    [`evidence.md`](../../../shared/policies/evidence.md), using the shared
    finding shape in
-   [`finding.md`](../../../shared/templates/finding.md).
+   [`finding.md`](../../../shared/templates/finding.md), then apply
+   [`../policies/review-reasoning.md`](../policies/review-reasoning.md),
+   "Remediation-Scope Boundary Review" (canonical home:
+   [`remediation-scope-boundary.md`](../../../shared/policies/remediation-scope-boundary.md)),
+   to each material finding before finalizing.
 8. Finalize the complete set of findings before composing the report —
    do not report findings piecemeal as they are discovered. Render one
    human-readable report using the shared shape in

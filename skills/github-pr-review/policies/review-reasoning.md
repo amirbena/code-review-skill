@@ -81,6 +81,23 @@ A consolidated cross-path finding is placed per
 [`finding-placement.md`](finding-placement.md) — one body finding, not one
 inline comment per affected call path.
 
+## Remediation-Scope Boundary Review
+
+For every material finding, before finalizing, apply
+[`remediation-scope-boundary.md`](../../../shared/policies/remediation-scope-boundary.md)
+(routed from
+[`review-scope.md`](../../../shared/policies/review-scope.md)): reason
+independently about whether remediation is required for the current PR
+and, when it is, how much of it belongs inside the current PR boundary
+versus a separate `Follow-up`. That shared policy owns the three-part
+reasoning sequence, the never-widens/never-shrinks-severity rule, and the
+worked examples; this PR-specific policy does not restate them. It runs
+after severity is derived per [`severity.md`](../../../shared/policies/severity.md)
+and after root-cause consolidation above, and it changes nothing about
+severity, finding identity, or the mechanical decision derivation — a
+blocking P0/P1 still blocks on its bounded `Fix` even when a related
+broader concern exists as a `Follow-up`.
+
 ## Architectural Placement Review
 
 When a PR change plausibly affects a semantic-risk category listed there —

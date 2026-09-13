@@ -48,6 +48,23 @@ detail-visibility decision is true adds one `Details` field after `Fix`:
   explanation supporting the finding — a short paragraph, not an essay>
 ```
 
+When [`../policies/remediation-scope-boundary.md`](../policies/remediation-scope-boundary.md)
+identifies a broader, legitimately separate concern alongside a bounded
+required `Fix`, one `Follow-up` line is added after `Fix` (omitted when no
+such concern was identified, or when the broader work is itself the
+required `Fix`):
+
+```markdown
+### <id> [<severity>] <short, concrete title>
+
+- **Location:** `<path>:<line-or-range>`
+- **Evidence:** <concrete evidence, concise>
+- **Impact:** <concrete engineering consequence, concise>
+- **Fix:** <the smallest correction that restores the current contract>
+- **Follow-up:** <the broader, separately-scoped concern, not required in
+  this change>
+```
+
 When the evidence was observed somewhere other than the resolved
 fix/action location, one `Evidence location` line is added directly after
 `Location` (omitted when the two coincide):
@@ -195,6 +212,13 @@ Fix: <concrete correction direction, when useful>
 
 A justified longer explanation adds a single `Details:` line after `Fix:`, on
 the same visibility terms as the full rendering.
+
+When [`../policies/remediation-scope-boundary.md`](../policies/remediation-scope-boundary.md)
+identifies a broader, separately-scoped concern, name it as a distinct
+closing sentence inside the `Fix:` prose (e.g. "Separately, ... is a valid
+follow-up, not required here") — there is no separate `Follow-up:` line on
+this surface. It must stay clearly distinguishable from the required
+correction, never phrased as if it were also required now.
 
 The inline anchor is the finding's canonical fix/action location, not the
 evidence location and not a line chosen because the platform allows a
@@ -416,7 +440,12 @@ Rules — this is a re-voicing, not a weaker finding:
   canonical fix/action location or into the review body (that is decided
   only by each Skill's placement policy, independent of voice);
 - a **consolidated root-cause finding** still names every affected call
-  path in the prose — the re-voicing never drops a manifestation site.
+  path in the prose — the re-voicing never drops a manifestation site;
+- a **`Follow-up`** identified per
+  [`../policies/remediation-scope-boundary.md`](../policies/remediation-scope-boundary.md)
+  is folded into the closing prose as a clearly separated sentence, never
+  phrased as part of the required fix — the re-voicing changes wording
+  only, never the underlying remediation-scope-boundary outcome.
 
 ## Canonical human full rendering
 

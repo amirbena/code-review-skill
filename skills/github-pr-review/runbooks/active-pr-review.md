@@ -440,7 +440,11 @@ stop
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
    "Instruction precedence"); classify findings per
    [`severity.md`](../../../shared/policies/severity.md) with evidence per
-   [`evidence.md`](../../../shared/policies/evidence.md). When review context
+   [`evidence.md`](../../../shared/policies/evidence.md), then apply
+   [`../policies/review-reasoning.md`](../policies/review-reasoning.md),
+   "Remediation-Scope Boundary Review" (canonical home:
+   [`remediation-scope-boundary.md`](../../../shared/policies/remediation-scope-boundary.md)),
+   to each material finding before finalizing. When review context
    is available, also apply the shared
    [`review-context.md`](../../../shared/policies/review-context.md),
    "Scope-boundary reasoning," to the PR: detect required behavior missing
