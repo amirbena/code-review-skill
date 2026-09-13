@@ -68,7 +68,10 @@ regression report across runs
 ([#53](https://github.com/amirbena/code-review-skill/issues/53),
 [`regression-report.md`](regression-report.md)); CI
 wiring; or container/sandbox orchestration, a hosted service, or result
-persistence beyond writing per-case files (§8).
+persistence beyond writing per-case files (§8). A concrete production
+reviewer adapter that drives a real runtime reading a Skill (as opposed to
+a deterministic test stub) is
+[#250](https://github.com/amirbena/code-review-skill/issues/250) — see §9.
 
 ## 2. Run modes
 
@@ -204,7 +207,8 @@ the per-case result, but the **match relation itself**
 | The expected-vs-produced match relation — deciding when a produced finding satisfies an expected spec, an `alternatives` restatement, or an `any_of` member | [#54](https://github.com/amirbena/code-review-skill/issues/54) — [`match-criteria.md`](match-criteria.md) |
 | FP/FN accounting, precision/recall, retrieval thresholds, aggregate quality metrics built on that relation | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
 | Regression reporting across runs (seeded-regression detection, run-to-run comparison) | [#53](https://github.com/amirbena/code-review-skill/issues/53) — [`regression-report.md`](regression-report.md) |
-| CI wiring / scheduled execution | tracked on [#40](https://github.com/amirbena/code-review-skill/issues/40) |
+| A production reviewer adapter that actually drives a real runtime reading the packaged Skill (as opposed to a deterministic test stub) | [#250](https://github.com/amirbena/code-review-skill/issues/250) — [`../../scripts/benchmark_review_adapter.py`](../../scripts/benchmark_review_adapter.py) (adapter) and [`../../scripts/run_benchmark.py`](../../scripts/run_benchmark.py) (CLI entrypoint) |
+| CI wiring / scheduled execution | not owned by [#40](https://github.com/amirbena/code-review-skill/issues/40) and not owned by [#250](https://github.com/amirbena/code-review-skill/issues/250) — a separate, not-yet-filed issue if/when one exists |
 | Container / sandbox orchestration, a hosted service, database persistence, dashboards | out of scope for the epic; a container is at most a *future* isolation mechanism, not required by this contract |
 | The fixture format and the corpus | [#50](https://github.com/amirbena/code-review-skill/issues/50) / [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | The P0/P1/P2 definitions and the decision derivation | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
@@ -221,6 +225,21 @@ Skill, and a deterministic test adapter that returns recorded findings,
 are both valid; the safety and result guarantees above do not depend on
 which is used. The runner never itself reads Skill instructions and never
 runs target-repository code.
+
+A concrete production adapter now exists:
+[`../../scripts/benchmark_review_adapter.py`](../../scripts/benchmark_review_adapter.py)
+([#250](https://github.com/amirbena/code-review-skill/issues/250)) drives
+the Claude Code CLI non-interactively against a case's isolated workspace
+to actually invoke the packaged `local-code-review` Skill, and normalizes
+its Markdown report back into `ProducedFinding` objects; the CLI
+entrypoint at
+[`../../scripts/run_benchmark.py`](../../scripts/run_benchmark.py) wires it
+to `run_corpus`/`run_selected` and the existing metrics
+([`benchmark_metrics.py`](../../tests/reference/benchmark/benchmark_metrics.py)).
+Per the "Status and canonical home" section below, this is a pluggable
+adapter behind the fixed boundary this contract defines, not a change to
+runner behavior — this pointer is a cross-reference, not new contract
+substance.
 
 ## Status and canonical home
 
