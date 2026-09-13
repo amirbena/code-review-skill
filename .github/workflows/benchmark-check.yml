@@ -37,11 +37,17 @@ jobs:
       contents: read
     steps:
       # Real PR head, not just the base — the benchmark must exercise the
-      # Skill content the PR is actually proposing.
+      # Skill content the PR is actually proposing. fetch-depth: 0 (full
+      # history), mirroring release-worthiness.yml, is required here: a
+      # shallow, single-commit checkout has no reachable merge-base with
+      # the fetched base branch, so the classifier's three-dot
+      # `git diff <base>...HEAD` below would fail with "no merge base" on
+      # essentially every real PR.
       - name: Check out PR head
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Fetch the PR base branch
