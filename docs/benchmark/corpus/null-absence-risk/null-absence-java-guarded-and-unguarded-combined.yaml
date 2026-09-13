@@ -75,7 +75,7 @@ expected:
   decision: changes-required
   findings_completeness: exhaustive
   findings:
-    - key: confirm-dereferences-nullable-finduser-result
+    - key: confirm-dereferences-nullable-findorder-result
       match: required
       severity: P1
       location:
