@@ -33,6 +33,7 @@ class ClassifyPathTests(unittest.TestCase):
             "scripts/package-skills.ps1",
             "scripts/package-manifest.json",
             "scripts/package_manifest.py",
+            "scripts/package_adapt.py",
             "scripts/validate-skill-metadata.py",
         ):
             self.assertEqual(rw.classify_path(path), "packaging", path)
@@ -44,6 +45,17 @@ class ClassifyPathTests(unittest.TestCase):
             "scripts/skill_metadata/expectations.py",
             "scripts/skill_metadata/orchestrator.py",
             "scripts/skill_metadata/github_family.py",
+        ):
+            self.assertEqual(rw.classify_path(path), "packaging", path)
+
+    def test_packaging_domain_package_is_release_worthy(self) -> None:
+        # The shared-link/metadata-path/frontmatter package behind
+        # scripts/package_adapt.py is a package (issue #266); editing any
+        # of its modules stays release-worthy.
+        for path in (
+            "scripts/package_domain/adaptation.py",
+            "scripts/package_domain/validation.py",
+            "scripts/package_domain/cli.py",
         ):
             self.assertEqual(rw.classify_path(path), "packaging", path)
 
