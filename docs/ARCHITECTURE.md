@@ -351,9 +351,9 @@ for every one of them.
   exact-HEAD status/check derived from the same canonical verdict
   ([`review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md)).
 - **Opt-in `human_review_output` (with its derived companion
-  `human_inline_findings`) and `include_fix_prompt`** — presentation
-  and remediation options normalized deterministically from a fixed
-  vocabulary
+  `human_inline_findings`), `include_fix_prompt`, and
+  `include_severity_description`** — presentation and remediation
+  options normalized deterministically from a fixed vocabulary
   ([`invocation-options.md`](../shared/policies/invocation-options.md)).
 - **Stateful delta re-review** — packaged runtime policy in `github-pr-review`
   ([`stateful-delta-rereview.md`](../skills/github-pr-review/policies/stateful-delta-rereview.md),
@@ -673,6 +673,16 @@ unless they are exactly equal.
 - **Detail is presentation-only.** `include_finding_details` defaults to
   `true` locally and `false` on GitHub; it never changes the finding
   data, severity, or decision.
+- **The severity-legend parenthetical is presentation-only.**
+  `include_severity_description` (default `false` for both Skills)
+  controls whether `github-pr-review`'s finding-headline surfaces expand
+  the bare `P0` / `P1` / `P2` code into its reader-visible legend
+  (`P0 (Critical)` / `P1 (Blocking)` / `P2 (Non-Blocking)`); compact is
+  the default. `local-code-review` defines no such legend and is
+  unaffected regardless of the option's value. It never changes severity,
+  the blocking rule, or the decision derivation
+  ([`review-output.md`](../skills/github-pr-review/policies/review-output.md),
+  "Reader-visible severity legend").
 - **The final-summary voice is presentation-only.** `human_review_output`
   (default `false` for both Skills, natural-language-only — there is no
   CLI flag; a closed vocabulary that includes senior-review phrasings

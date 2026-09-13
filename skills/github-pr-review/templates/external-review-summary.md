@@ -65,11 +65,11 @@ addressed; see the inline comments for detail.
 
 ### Findings
 
-- **P1 (Blocking) — Authorization provenance can bypass the trusted boundary**
+- **P1 — Authorization provenance can bypass the trusted boundary**
   `src/review/authz.py:142`
-- **P1 (Blocking) — Stale HEAD can still receive a formal review action**
+- **P1 — Stale HEAD can still receive a formal review action**
   `src/review/output.py:88`
-- **P2 (Non-Blocking) — Validation output hides the failing check name**
+- **P2 — Validation output hides the failing check name**
   `scripts/validate.py:117`
 
 ### Requirement coverage
@@ -115,10 +115,10 @@ finding (see
 ```markdown
 ### Findings
 
-- **P1 (Blocking) — Authorization provenance can bypass the trusted boundary**
+- **P1 — Authorization provenance can bypass the trusted boundary**
   `src/review/authz.py:142`
 
-#### F2 [P2 (Non-Blocking)] Config schema drift spans three unlinked files
+#### F2 [P2] Config schema drift spans three unlinked files
 
 - **Location:** `config/*.yaml` (schema vs. loader vs. docs)
 - **Evidence:** <concrete evidence — no single line to anchor to>
@@ -127,7 +127,7 @@ finding (see
 - **Details:** <only when a finding-level decision or
   `include_finding_details=true` selects materially useful context>
 
-#### F3 [P1 (Blocking)] `sanitize_path` bypass reaches two call paths
+#### F3 [P1] `sanitize_path` bypass reaches two call paths
 
 - **Location:** `app/pathsafe.py:5`
 - **Affected locations:**
@@ -147,10 +147,10 @@ When `human_review_output` is on, each of these body findings uses the
 ```markdown
 ### Findings
 
-- **P1 (Blocking) — Authorization provenance can bypass the trusted boundary**
+- **P1 — Authorization provenance can bypass the trusted boundary**
   `src/review/authz.py:142`
 
-#### F2 P2 (Non-Blocking): Config schema drift spans three unlinked files
+#### F2 P2: Config schema drift spans three unlinked files
 
 `config/*.yaml` (schema vs. loader vs. docs)
 
@@ -162,6 +162,65 @@ This is the same finding, at the same location, with the same severity
 and identity — only its wording changes. See
 [`../policies/review-output.md`](../policies/review-output.md), "Concise
 human-style summary (opt-in)."
+
+## Severity description (opt-in)
+
+When the invocation selects `include_severity_description` (see
+[`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+"`include_severity_description` phrasings" — default `false`), every
+finding heading above substitutes the reader-visible parenthetical from
+[`../policies/review-output.md`](../policies/review-output.md), "Reader-
+visible severity legend" for the bare code, with no other change to
+either surface's shape. The same scenario rendered above ("Review with
+findings" and "Fallback: a finding with no valid inline anchor") instead
+reads:
+
+```markdown
+### Findings
+
+- **P1 (Blocking) — Authorization provenance can bypass the trusted boundary**
+  `src/review/authz.py:142`
+- **P1 (Blocking) — Stale HEAD can still receive a formal review action**
+  `src/review/output.py:88`
+- **P2 (Non-Blocking) — Validation output hides the failing check name**
+  `scripts/validate.py:117`
+
+#### F2 [P2 (Non-Blocking)] Config schema drift spans three unlinked files
+
+- **Location:** `config/*.yaml` (schema vs. loader vs. docs)
+- **Evidence:** <concrete evidence — no single line to anchor to>
+- **Impact:** <concrete engineering consequence, concise>
+- **Fix:** <concrete correction direction, not a patch>
+
+#### F3 [P1 (Blocking)] `sanitize_path` bypass reaches two call paths
+
+- **Location:** `app/pathsafe.py:5`
+- **Affected locations:**
+  - `app/reports.py:read_report` — routes user input through `sanitize_path`
+  - `app/exports.py:read_export` — same shared helper, same bypass
+- **Evidence:** <the shared cause, concise>
+- **Impact:** <combined engineering consequence across the affected sites>
+- **Fix:** <one correction direction at the shared cause / canonical owner>
+```
+
+or, under `human_review_output`:
+
+```markdown
+#### F2 P2 (Non-Blocking): Config schema drift spans three unlinked files
+
+`config/*.yaml` (schema vs. loader vs. docs)
+
+<concrete evidence, impact, and fix direction carried by prose instead of
+labelled fields>
+```
+
+This is the same finding, at the same location, with the same severity
+and identity — only the heading gains the parenthetical description,
+inside the same emphasized unit it already occupies (`**...**` on the
+summary-pointer line, the heading level on the full/fallback and human
+full renderings). It composes independently with `human_review_output`
+and `human_inline_findings`: each mode's own wording rules are otherwise
+unaffected.
 
 A **consolidated root-cause finding** (one shared cause reaching at least
 two sites) always renders in the body, with its required, exhaustive
@@ -422,10 +481,11 @@ are owned by the linked policies and are not restated here.
   identically under `human_review_output`. Canonical:
   [`../policies/review-output.md`](../policies/review-output.md), "Stable
   review-body heading".
-- **Severity legend.** Every finding heading shows the severity code with
-  its compact canonical parenthetical (`P0 (Critical)` / `P1 (Blocking)` /
-  `P2 (Non-Blocking)`), rendered once, never as a repeated explanatory
-  paragraph. Canonical:
+- **Severity legend.** Every finding heading shows the bare severity code
+  by default; when `include_severity_description` is on, it shows the
+  code with its compact canonical parenthetical (`P0 (Critical)` /
+  `P1 (Blocking)` / `P2 (Non-Blocking)`) instead, rendered once, never as
+  a repeated explanatory paragraph. Canonical:
   [`../policies/review-output.md`](../policies/review-output.md), "Reader-
   visible severity legend".
 - **Density and no disclosure.** Both rendering modes follow the

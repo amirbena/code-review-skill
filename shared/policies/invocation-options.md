@@ -62,6 +62,23 @@ language interpretation.
   anchor (`github-pr-review`'s `finding-placement.md` is unchanged and
   remains authoritative for placement), or publication ordering — only the
   wording of an inline finding.
+- `include_severity_description` — default `false` for both Skills;
+  controls whether `github-pr-review`'s reader-visible severity-legend
+  parenthetical (`P0 (Critical)` / `P1 (Blocking)` / `P2 (Non-Blocking)`)
+  renders next to the bare `P0` / `P1` / `P2` code on every
+  finding-headline surface that Skill owns (see that Skill's own
+  `policies/review-output.md`, "Reader-visible severity legend," for the
+  exact surfaces and wiring). `github-pr-review` renders the bare code
+  form by default and substitutes the parenthetical only when this option
+  resolves `true`. `local-code-review` defines no severity legend at all
+  (see [`../templates/finding-rendering.md`](../templates/finding-rendering.md))
+  and is unaffected by this option regardless of its value — it is
+  normalized for cross-Skill parity only, exactly like
+  `human_inline_findings` is for a Skill with no inline surface. It
+  controls **only** whether the parenthetical renders: it never affects
+  whether severity itself is shown, whether the finding headline is
+  emphasized, `severity.md`'s definitions, the blocking rule, or the
+  mechanical decision derivation.
 
 Options affect presentation only. They never change review scope, evidence,
 finding identity, severity, deduplication, decision derivation, mutation
@@ -103,8 +120,9 @@ underscores treated as equivalent inside the option name:
 - an explicit negative request: `do not include a fix prompt`, `no fix
   guidance`, or `hide finding details`.
 
-The finite vocabulary is the four canonical option concepts: `fix prompt`,
-`fix guidance`, `finding details`, and `human review output`. Ordinary
+The finite vocabulary is the five canonical option concepts: `fix prompt`,
+`fix guidance`, `finding details`, `human review output`, and `severity
+description`. Ordinary
 mentions, questions about an option, quoted examples, and vague requests such
 as “make it helpful”, “be detailed”, or “make it nicer” are ambiguous and do
 not set a flag. Do not use sentiment, urgency, severity, prior turns, or a
@@ -171,6 +189,34 @@ ambiguous and does not set it; the derived default then applies. When both
 an affirmative and a negative phrasing appear, the values conflict and the
 option falls through to the derived default, exactly like the other options
 fall through to their Skill default.
+
+### `include_severity_description` phrasings
+
+Because this option is normally requested conversationally rather than by
+name, it additionally recognizes a small, fixed set of explicit phrasings
+(case-insensitively, whitespace-flexible), alongside the canonical
+`include_severity_description=true|false` assignment and the bare option
+name (`include_severity_description`, `include severity description`,
+`include-severity-description`):
+
+- affirmative: `include severity descriptions`, `show severity
+  descriptions`, `show blocking/non-blocking labels`;
+- negative: `keep severity compact`, `do not include severity
+  descriptions`, `don't include severity descriptions`,
+  `show only p0/p1/p2`.
+
+This phrase set is exhaustive: it is the whole vocabulary for this
+option. Anything outside it — a bare mention of "severity", a question
+about the option, "be more detailed" — is ambiguous and does not set the
+flag. When both an affirmative and a negative phrasing appear, the values
+conflict and the option falls through to the Skill default, exactly like
+the other options.
+
+This option is scoped to presentation exactly as the shared "Options
+affect presentation only" rule above requires: it controls only whether
+the severity-legend parenthetical renders; it never changes whether
+severity is shown, whether the headline is emphasized, or any semantics
+owned by `severity.md`.
 
 Resolve each option independently with this precedence:
 
