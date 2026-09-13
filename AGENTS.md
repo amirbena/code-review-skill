@@ -169,6 +169,12 @@ canonical, detailed rule lives in the policy named after it.
   detailed requirements and semantics stay in their canonical Issues, docs,
   policies, or runbooks. Canonical:
   [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md).
+- **Agent-authored PRs use the canonical PR template.** A Pull Request an
+  agent creates, or materially updates, starts from
+  `.github/PULL_REQUEST_TEMPLATE.md`, fills its intended fields/sections,
+  and removes or replaces its placeholder/guidance content — never an
+  independently invented body structure. Canonical:
+  [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md).
 - **CHANGELOG categories express SemVer intent.** Compatible corrections and
   refinements use `Fixed`; intentional backward-compatible behavior or
   capability changes use `Changed` or `Added`. Canonical:

@@ -74,39 +74,45 @@ live in the child Issues, not the parent.
 A PR description is a concise change summary and navigation surface, not a
 second specification. It answers: **what changed and why**, **where the
 canonical detail lives**, **how the change was validated**, and **the review
-state when a review occurred**. A normal shape is:
+state when a review occurred**.
 
-```markdown
-Fixes #123
+### Start from the canonical PR template
 
-## What
-Short explanation of the change and why it exists.
+An agent that **creates** a Pull Request, or **materially updates** one,
+starts from
+[`../.github/PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md)
+— the repository's single canonical source for the PR body's structure —
+fills its intended fields and sections with real content, and removes or
+replaces every placeholder and HTML-comment guidance block. An agent never
+invents an independent PR-body structure instead of the template's. The
+template's own fields, sections, and placeholders are defined and maintained
+there, not restated here.
 
-- Two to five high-value bullets when useful.
-- Links to canonical detail.
+This is a structural contract, not a prose-matching one: the author writes
+their own sentences within each field, but the section/field structure must
+come from the template. Keep the Issue-closing reference and link to the
+smallest canonical source that owns detailed behavior or decisions rather
+than duplicating it into the field.
 
-Release category: Fixed
-Release entry: Short one-line CHANGELOG entry describing the fix.
-
-## Validation
-- Full suite: ...
-- Focused validation: ...
-
-## Review
-`local-code-review`: REVIEW CLEAN on `<sha>`.
-```
-
-`## Review` may be omitted when no review has occurred. The headings guide the
-information architecture; authors may use equivalent concise prose rather than
-copying the template byte for byte. Keep the Issue-closing reference and link
-to the smallest canonical source that owns detailed behavior or decisions.
+This authoring rule is distinct from, and does not depend on, deterministic
+CI validation that a PR body's structure matches the template — that
+mechanical enforcement is tracked separately and, once it lands, checks this
+same contract automatically.
 
 ### Validate release intent before opening or updating a PR
 
 `Release category:` must be one of `Added`, `Changed`, `Deprecated`, `Fixed`,
 `Security`, `Removed`, `Breaking`, or `none` — see
 [`release-changelog-policy.md`](release-changelog-policy.md) for the
-category-to-SemVer contract. Before running `gh pr create` or `gh pr edit`,
+category-to-SemVer contract. The template's `Release category:` /
+`Release entry:` fields, filled in, look like:
+
+```text
+Release category: Fixed
+Release entry: Short one-line CHANGELOG entry describing the fix.
+```
+
+Before running `gh pr create` or `gh pr edit`,
 validate the drafted body locally and offline against the existing,
 deterministic checker — the same one CI runs — rather than waiting for CI to
 catch an invalid or missing category:

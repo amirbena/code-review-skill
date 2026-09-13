@@ -60,6 +60,32 @@ class PolicyLayeringTests(unittest.TestCase):
         )
 
 
+class CanonicalTemplateAuthoringContractTests(unittest.TestCase):
+    """Pins the #278 authoring contract: agent-authored PRs must start from
+    .github/PULL_REQUEST_TEMPLATE.md, not an "equivalent prose" substitute."""
+
+    def test_agents_states_the_canonical_template_invariant(self) -> None:
+        agents = AGENTS.read_text(encoding="utf-8")
+        self.assertIn("Agent-authored PRs use the canonical PR template.", agents)
+        self.assertIn("`.github/PULL_REQUEST_TEMPLATE.md`", agents)
+        self.assertIn("](policies/github-issue-pr-authoring.md)", agents)
+
+    def test_policy_requires_starting_from_the_template(self) -> None:
+        policy = re.sub(r"\s+", " ", POLICY.read_text(encoding="utf-8"))
+        self.assertIn("### Start from the canonical PR template", policy)
+        self.assertIn(
+            "fills its intended fields and sections with real content, and removes or "
+            "replaces every placeholder and HTML-comment guidance block",
+            policy,
+        )
+        self.assertIn("never invents an independent PR-body structure", policy)
+
+    def test_byte_for_byte_loophole_wording_is_gone(self) -> None:
+        policy = POLICY.read_text(encoding="utf-8")
+        self.assertNotIn("byte for byte", policy)
+        self.assertNotIn("equivalent concise prose", policy)
+
+
 class TemplateTests(unittest.TestCase):
     def test_template_is_lean_and_keeps_traceability(self) -> None:
         template = TEMPLATE.read_text(encoding="utf-8")
