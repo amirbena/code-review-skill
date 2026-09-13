@@ -3,8 +3,11 @@
 into both Skills.
 
 Contract: shared/policies/review-scope.md ("Existing behavior ownership",
-"Root-cause and model-completeness pass", "Failure state, retry safety, and
-recovery", "Related changes as one unit").
+"Related changes as one unit", and a thin routing paragraph per extracted
+pass) plus the canonical owner each pass was extracted into:
+root-cause-consolidation.md, affected-test-analysis.md,
+null-absence-risk.md, failure-retry-recovery.md,
+architectural-placement.md, and api-contract-compatibility.md.
 Prose checks only — there is deliberately no second implementation of the
 rules (see policies/skill-development-policy.md, "Runbook Design").
 """
@@ -578,10 +581,11 @@ class CrossSkillConsistencyTests(unittest.TestCase):
 
     def test_no_skill_specific_policy_forks_the_shared_section_text(self) -> None:
         # Every Skill-specific policy file, in either Skill, must not
-        # contain a private copy of either new shared heading — the only
-        # occurrence of each heading in the whole tree is in review-scope.md
-        # itself (checked positively above) and, incidentally, cross-linked
-        # by name (never restated) from local-review.md/README docs.
+        # contain a private copy of any shared heading — each lives in
+        # review-scope.md (as a routing stub, checked positively above) and
+        # its canonical owner file, never in a Skill-specific policy, and is,
+        # incidentally, cross-linked by name (never restated) from
+        # local-review.md/README docs.
         forbidden_headings = (
             "## Existing behavior ownership",
             "## Root-cause and model-completeness pass",
