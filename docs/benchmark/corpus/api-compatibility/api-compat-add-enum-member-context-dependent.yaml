@@ -1,0 +1,72 @@
+# API-compatibility corpus case (Issue #184, parent #175). Format:
+# ../../fixture-format.md. See ./README.md for the cluster.
+#
+# JSON Schema. A new member is added to a closed enum. This is the "add
+# enum member -> context-dependent" case required by Issue #184's scope:
+# whether this breaks a consumer turns on unmodeled consumer behavior (an
+# exhaustive switch/case or strict closed-set validation versus a
+# permissive default branch), which the diff alone cannot establish. Per
+# #175's fail-closed requirement ("Unresolvable consumer/intent context
+# produces a deterministic no-finding outcome"), the case pins a `clean`
+# decision with an *optional* finding surfacing the ambiguity, rather than
+# inventing a breaking claim the diff does not support.
+
+format: benchmark-case/v1
+
+id: api-compat-add-enum-member-context-dependent
+title: "PaymentStatus gains a refunded member; compatibility depends on unmodeled consumer behavior"
+
+input:
+  patch: |
+    diff --git a/schemas/payment_status.schema.json b/schemas/payment_status.schema.json
+    index 1111111..2222222 100644
+    --- a/schemas/payment_status.schema.json
+    +++ b/schemas/payment_status.schema.json
+    @@ -2,5 +2,5 @@
+       "$schema": "http://json-schema.org/draft-07/schema#",
+       "title": "PaymentStatus",
+       "type": "string",
+    -  "enum": ["pending", "completed", "failed"]
+    +  "enum": ["pending", "completed", "failed", "refunded"]
+     }
+  base:
+    schemas/payment_status.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "PaymentStatus",
+        "type": "string",
+        "enum": ["pending", "completed", "failed"]
+      }
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: payment-status-new-enum-member-context-dependent
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: line
+        path: schemas/payment_status.schema.json
+        symbol: PaymentStatus
+        anchor: '"enum": ["pending", "completed", "failed", "refunded"]'
+      claim: >-
+        PaymentStatus gains a new enum member, refunded. This is additive
+        for a consumer that treats unrecognized values permissively, but
+        breaking for one with an exhaustive switch/case over the closed
+        enum or strict closed-set validation that rejects unknown values —
+        the diff alone does not establish which applies, so the outcome is
+        context-dependent on consumer behavior this schema change does not
+        show.
+      defect_kind: enum-member-added-context-dependent
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Anchors the "context-dependent" classification from Issue #175's
+    scope: unlike an added optional field (unconditionally compatible) or
+    a removed enum member (unconditionally breaking), an added enum member
+    can break an exhaustive consumer without breaking a permissive one.
+    The case pins the fail-closed outcome — no invented required breaking
+    finding — while still surfacing the ambiguity as an optional note.

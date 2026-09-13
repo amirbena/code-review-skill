@@ -1,0 +1,73 @@
+# API-compatibility corpus case (Issue #184, parent #175). Format:
+# ../../fixture-format.md. See ./README.md for the cluster.
+#
+# JSON Schema. A field is deleted from both `properties` and `required` on
+# a response schema. This is the "remove field -> breaking" case required
+# by Issue #184's scope: any existing consumer reading the removed
+# property loses it unconditionally, regardless of how it was consumed.
+
+format: benchmark-case/v1
+
+id: api-compat-remove-field-breaking
+title: "OrderResponse drops its currency field, breaking existing consumers"
+
+input:
+  patch: |
+    diff --git a/schemas/order.schema.json b/schemas/order.schema.json
+    index 1111111..2222222 100644
+    --- a/schemas/order.schema.json
+    +++ b/schemas/order.schema.json
+    @@ -4,8 +4,7 @@
+       "type": "object",
+       "properties": {
+         "id": { "type": "string" },
+    -    "total": { "type": "number" },
+    -    "currency": { "type": "string" }
+    +    "total": { "type": "number" }
+       },
+    -  "required": ["id", "total", "currency"]
+    +  "required": ["id", "total"]
+     }
+  base:
+    schemas/order.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "OrderResponse",
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "total": { "type": "number" },
+          "currency": { "type": "string" }
+        },
+        "required": ["id", "total", "currency"]
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: order-response-currency-field-removed
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: schemas/order.schema.json
+        symbol: OrderResponse
+        anchor: '"currency": { "type": "string" }'
+      claim: >-
+        OrderResponse's currency field is deleted from both properties and
+        required. Every existing consumer that reads order.currency (a
+        payment display, a reconciliation job, a stored client-side model)
+        stops receiving it, since removing a field a schema previously
+        published is breaking for any consumer regardless of whether that
+        consumer treated it as required or merely read it when present.
+      defect_kind: breaking-contract-field-removed
+
+metadata:
+  source: crafted
+  tags: [correctness, regression]
+  rationale: >-
+    Field removal is the canonical breaking-change shape from Issue #175's
+    scope: a schema-recognized contract file loses a property consumers may
+    already depend on, with no migration path, so a correct review must
+    flag it as changes-required.
