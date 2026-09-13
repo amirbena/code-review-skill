@@ -96,8 +96,8 @@ deliberately not an eight-dimension checklist run on every diff.
   code assumes holds. Depth owner: "Architectural placement and
   execution-lifecycle fidelity" (concurrency or ordering-guarantee trigger)
   and "Failure state, retry safety, and recovery" below, and, when the
-  evidence gathered there warrants deeper tracing than that bounded pass
-  affords,
+  evidence gathered by either bounded pass above warrants deeper tracing
+  than it affords,
   [`distributed-systems-deepening.md`](distributed-systems-deepening.md)
   per the "Domain-specific deepening pass" below.
 - **Data / persistence** — signal: a schema, migration, stored
