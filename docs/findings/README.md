@@ -35,6 +35,7 @@ issue.
 | [`finding-lifecycle-contract.md`](finding-lifecycle-contract.md) | The `OPEN` / `RESOLVED` state of one identity across reviews and its evidence-gated transitions. | [#62](https://github.com/amirbena/code-review-skill/issues/62) |
 | [`reviewed-sha-state-contract.md`](reviewed-sha-state-contract.md) | The reviewed-SHA state a re-review compares against — the recorded fields, which commit is authoritative, and invalidation. | [#63](https://github.com/amirbena/code-review-skill/issues/63) |
 | [`delta-re-review-contract.md`](delta-re-review-contract.md) | The review delta's semantics — change classes, delta-as-optimization, regression/blast-radius surfacing, settled-assumption reconsideration, and escalation to a broader/full review. | [#64](https://github.com/amirbena/code-review-skill/issues/64) |
+| [`stacked-pr-review-contract.md`](stacked-pr-review-contract.md) | Stacked/dependent PR topology — effective review base selection, owned-vs-inherited delta, the additional persisted SHA(s), partial-vs-full re-review when a lower layer changes, and safe-failure fallback tiers for ambiguous/broken topology. | [#119](https://github.com/amirbena/code-review-skill/issues/119) |
 
 The identity regression suite required by
 [#61](https://github.com/amirbena/code-review-skill/issues/61) lives in

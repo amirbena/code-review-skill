@@ -508,6 +508,18 @@ or runbook implements them today:
   unchanged. There is no packaged finding field carrying
   `influential_relationships` — that representation is left to a later,
   separately-scoped implementation issue once the model is validated.
+- **Stacked-PR / dependent-change review** — the stacked-topology contract
+  (#119, [`findings/stacked-pr-review-contract.md`](findings/stacked-pr-review-contract.md),
+  with a test-only reference model) defines effective-base selection,
+  owned-vs-inherited delta, the additional persisted SHA(s) it layers onto
+  the #63 Reviewed State Record, partial-vs-full re-review when a lower
+  stack layer changes, and safe-failure fallback tiers for ambiguous or
+  broken topology. No code detects stack topology, queries open PRs by
+  base ref, or renders the detected stack in review output yet — a review
+  of a PR whose base is another feature branch is handled today only by
+  the existing base/head fidelity rule in
+  [`repository-checkout.md`](../skills/github-pr-review/policies/repository-checkout.md),
+  without the layer/owned-vs-inherited framing this contract adds.
 
 ## 3. Separation of Concerns
 
