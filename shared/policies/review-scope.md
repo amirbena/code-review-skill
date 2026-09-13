@@ -106,7 +106,10 @@ deliberately not an eight-dimension checklist run on every diff.
   with existing stored data and existing readers/writers of it. Depth
   owner: "Existing behavior ownership" below, and "Findings beyond the
   changed lines" in [`evidence.md`](evidence.md) for readers/writers outside
-  the diff.
+  the diff, and, when the evidence gathered by this dimension's base
+  reasoning warrants deeper tracing than that bounded pass affords,
+  [`database-migration-deepening.md`](database-migration-deepening.md) per
+  the "Domain-specific deepening pass" below.
 - **API / integration contracts** — signal: a request/response shape, an
   event/message schema, a function or interface signature, or any other
   boundary another component already depends on. Base reasoning: does the
