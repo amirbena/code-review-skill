@@ -37,6 +37,7 @@ products evolve.
 | Root-cause / model-completeness reasoning | shared `review-scope.md` pass — incl. consolidating one shared cause that reaches many sites into a single authoritative finding with an affected-locations list, failing open to separate findings when the shared cause is not established | shared, identical |
 | Affected-test / test-impact analysis | shared `review-scope.md` pass — behavioral change traced into existing dependent tests | shared, identical |
 | Semantic change-implication reasoning | shared `review-scope.md` base pass — detects which system-level dimensions (user-facing, concurrency, data/persistence, API contracts, infra/deployment, security, operability, performance/scale) a change materially implicates and performs the minimum bounded reasoning for each | shared, identical |
+| Null-like absence-risk review | shared `review-scope.md` pass — cross-language, evidence-gated detection of credible null/undefined/nil/None absence risk in changed data-flow and control-flow, including interoperability/escape-hatch boundaries; suppressed where a guard, type guarantee, or upstream validation already makes the value safe | shared, identical |
 | Intended use case | pre-PR implementation review | independent review of an existing PR |
 
 **What each mode intentionally does *not* do**
@@ -183,7 +184,10 @@ reading the diff carefully — [`review-scope.md`](../shared/policies/review-sco
 change-implication reasoning" (detecting which system-level dimensions — user-facing,
 concurrency, data/persistence, API contracts, infra/deployment, security, operability,
 performance/scale — a change materially implicates, and performing the minimum bounded reasoning
-for each one it does), "Existing
+for each one it does), "Null-like absence-risk review" (cross-language, evidence-gated detection of
+credible null/undefined/nil/None absence risk in changed data-flow and control-flow, including
+interoperability/escape-hatch boundaries, suppressed where a guard, type guarantee, or upstream
+validation already makes the value safe), "Existing
 behavior ownership" (does this change duplicate an existing canonical implementation of the same
 business/validation/state semantics rather than reusing it), "Failure state, retry safety, and
 recovery" (partial-failure state, retry/idempotency safety, evidenced recovery, and proportional

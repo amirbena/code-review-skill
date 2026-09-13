@@ -400,8 +400,10 @@ stop
    applying the instructions discovered in step 8. First apply
    [`../policies/review-reasoning.md`](../policies/review-reasoning.md),
    "Semantic Implication Review," to detect and reason about the
-   system-level dimensions this invocation's scope materially implicates.
-   When this invocation's
+   system-level dimensions this invocation's scope materially implicates,
+   and the same file's "Null-Like Absence-Risk Review" for any changed
+   data-flow or control-flow the reviewed language's nullability model
+   makes credibly absence-prone. When this invocation's
    scope contains multiple related changes, reason about them per the same
    file's
    "Logical Cohort Review," and inspect the relevant dependency surface

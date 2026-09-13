@@ -1,0 +1,85 @@
+# Null-like absence-risk corpus case (Issue #121). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Kotlin calling into Java. LegacyUserStore.lookupDisplayName is a Java
+# method the javadoc documents as nullable; from Kotlin it is seen as a
+# "platform type" (String!), which the Kotlin compiler does not force a
+# null check on. The new code calls .trim() on the result directly. This
+# is the "at least one null-safe-language / interoperability edge case"
+# case required by Issue #121's acceptance criteria.
+
+format: benchmark-case/v1
+
+id: null-absence-kotlin-java-platform-type
+title: "ProfileLoader.greeting() calls .trim() on a Java platform-type result with no null check"
+
+input:
+  patch: |
+    diff --git a/app/src/main/kotlin/app/legacy/ProfileLoader.kt b/app/src/main/kotlin/app/legacy/ProfileLoader.kt
+    index 1111111..2222222 100644
+    --- a/app/src/main/kotlin/app/legacy/ProfileLoader.kt
+    +++ b/app/src/main/kotlin/app/legacy/ProfileLoader.kt
+    @@ -2,6 +2,7 @@ package app.legacy
+
+     class ProfileLoader(private val store: LegacyUserStore) {
+         fun greeting(userId: String): String {
+    -        return "hello"
+    +        val displayName = store.lookupDisplayName(userId)
+    +        return "hello " + displayName.trim()
+         }
+     }
+  base:
+    app/src/main/kotlin/app/legacy/ProfileLoader.kt: |
+      package app.legacy
+
+      class ProfileLoader(private val store: LegacyUserStore) {
+          fun greeting(userId: String): String {
+              return "hello"
+          }
+      }
+    app/src/main/java/app/legacy/LegacyUserStore.java: |
+      package app.legacy;
+
+      public class LegacyUserStore {
+          /**
+           * Returns null when no profile is cached for this id.
+           */
+          public String lookupDisplayName(String userId) {
+              return null;
+          }
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: greeting-trims-nullable-java-platform-type-result
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/src/main/kotlin/app/legacy/ProfileLoader.kt
+        symbol: greeting
+        anchor: return "hello " + displayName.trim()
+      claim: >-
+        LegacyUserStore.lookupDisplayName is Java code whose own javadoc
+        documents that it returns null when no profile is cached; from
+        Kotlin this is seen as the platform type String! (not String),
+        which the Kotlin compiler does not require a null check on before
+        use. greeting() calls displayName.trim() directly with no null
+        check, an early return, or an Elvis default — any userId with no
+        cached profile throws a NullPointerException at the .trim() call,
+        a case the Kotlin type system's normal null-safety would have
+        caught for a genuinely Kotlin-declared nullable type but does not
+        catch at this Java interop boundary.
+      defect_kind: java-interop-platform-type-null-dereference
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Demonstrates review-scope.md's "Interoperability and escape-hatch
+    boundaries" subsection: a Kotlin platform type originating from Java
+    interop weakens Kotlin's own compile-time null-safety guarantee, so
+    review effort must shift to this boundary rather than relying on "the
+    compiler would have caught it."

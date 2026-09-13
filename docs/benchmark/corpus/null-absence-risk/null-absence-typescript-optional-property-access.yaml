@@ -1,0 +1,73 @@
+# Null-like absence-risk corpus case (Issue #121). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# TypeScript. A new function accesses a property through an explicitly
+# optional field (`address?: Address`) with no guard, optional chaining,
+# or default. This is the "JavaScript/TypeScript undefined or null
+# property or method access is covered" case required by Issue #121's
+# acceptance criteria.
+
+format: benchmark-case/v1
+
+id: null-absence-typescript-optional-property-access
+title: "userCity() accesses .city through an optional address field with no guard"
+
+input:
+  patch: |
+    diff --git a/src/user/address.ts b/src/user/address.ts
+    index 1111111..2222222 100644
+    --- a/src/user/address.ts
+    +++ b/src/user/address.ts
+    @@ -9,3 +9,7 @@ export interface User {
+     export function formatUser(user: User): string {
+       return user.name;
+     }
+    +
+    +export function userCity(user: User): string {
+    +  return user.address.city;
+    +}
+  base:
+    src/user/address.ts: |
+      export interface Address {
+        city: string;
+      }
+
+      export interface User {
+        name: string;
+        address?: Address;
+      }
+
+      export function formatUser(user: User): string {
+        return user.name;
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: user-city-accesses-optional-address-unguarded
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: src/user/address.ts
+        symbol: userCity
+        anchor: return user.address.city;
+      claim: >-
+        User.address is declared optional (`address?: Address`), so it can
+        be undefined for any User that has no address set. userCity reads
+        user.address.city directly with no optional chaining
+        (user.address?.city), no guard, and no default — every call with a
+        User lacking an address throws at runtime ("Cannot read properties
+        of undefined").
+      defect_kind: unguarded-optional-property-access
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Demonstrates the "JavaScript/TypeScript property or method access ...
+    on a value that can be null or undefined" pattern from
+    review-scope.md's "Credible absence paths" list. The field's own type
+    declaration (`address?: Address`) is the evidence that the access is
+    credibly absence-prone, not a keyword or variable-name heuristic.

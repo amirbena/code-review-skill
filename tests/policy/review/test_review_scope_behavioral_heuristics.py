@@ -90,6 +90,7 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
         )
         self.assertIn("## Affected-test / test-impact analysis", text)
         self.assertIn("## Semantic change-implication reasoning", text)
+        self.assertIn("## Null-like absence-risk review", text)
 
     def test_local_skill_always_loads_review_scope_and_evidence(self) -> None:
         text = _text(LOCAL_SKILL_MD)
@@ -104,6 +105,7 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
         self.assertGreater(step10, step9)
         step9_body = self.text[step9:step10]
         self.assertIn("Semantic change-implication reasoning", step9_body)
+        self.assertIn("Null-like absence-risk review", step9_body)
         self.assertIn("Existing behavior ownership", step9_body)
         self.assertIn("Root-cause and model-completeness pass", step9_body)
         self.assertIn("Failure state, retry safety, and recovery", step9_body)
@@ -493,6 +495,7 @@ class EvidenceScalingCrossReferenceTests(unittest.TestCase):
         )
         self.assertIn("Affected-test / test-impact analysis", text)
         self.assertIn("Semantic change-implication reasoning", text)
+        self.assertIn("Null-like absence-risk review", text)
         self.assertIn("repository-wide audit", text)
 
 
@@ -515,6 +518,8 @@ class CrossSkillConsistencyTests(unittest.TestCase):
         self.assertIn("review-scope.md", text)
         self.assertIn("## Semantic Implication Review", text)
         self.assertIn("Semantic change-implication reasoning", text)
+        self.assertIn("## Null-Like Absence-Risk Review", text)
+        self.assertIn("Null-like absence-risk review", text)
         self.assertIn("Root-Cause and Model-Completeness Review", text)
         self.assertIn("Root-cause and model-completeness pass", text)
         self.assertIn("this file does not restate their full text", text)
@@ -542,6 +547,7 @@ class CrossSkillConsistencyTests(unittest.TestCase):
         self.assertNotIn(
             "## Semantic change-implication reasoning", text
         )
+        self.assertNotIn("## Null-like absence-risk review", text)
         self.assertNotIn("### When to expand context", text)
         self.assertNotIn("### Stop conditions", text)
 
@@ -563,6 +569,7 @@ class CrossSkillConsistencyTests(unittest.TestCase):
             "## Architectural placement and execution-lifecycle fidelity",
             "## Affected-test / test-impact analysis",
             "## Semantic change-implication reasoning",
+            "## Null-like absence-risk review",
         )
         skill_policy_dirs = [
             LOCAL_SKILL_DIR / "policies",
@@ -756,6 +763,125 @@ class SemanticImplicationWiredIntoBothSkillsTests(unittest.TestCase):
         )
         self.assertIn("not applied", window)
         self.assertIn("unconditionally to every diff", window)
+
+
+class NullLikeAbsenceRiskSectionTests(unittest.TestCase):
+    """(shared semantics) the null-like absence-risk pass is a
+    cross-language semantic rule — never a regex or keyword match — that
+    surfaces only credible, evidence-backed absence risk and suppresses
+    theoretical nullability already made safe by a guard, the type
+    system, a framework/contract guarantee, or upstream validation. It
+    introduces no new severity or finding category (Issue #121)."""
+
+    def setUp(self) -> None:
+        self.section = _section(
+            _text(REVIEW_SCOPE),
+            "## Null-like absence-risk review",
+            "## Existing behavior ownership",
+        )
+
+    def test_it_is_a_semantic_rule_not_a_keyword_or_regex_match(self) -> None:
+        self.assertIn(
+            "a semantic rule keyed to the reviewed language's nullability "
+            "model, never a regex or keyword match",
+            self.section,
+        )
+        self.assertIn(
+            "not whether a variable is named value or a method is named get",
+            self.section,
+        )
+
+    def test_it_applies_identically_across_representative_languages(self) -> None:
+        for language in ("Java/Kotlin", "JavaScript/TypeScript", "C#", "Python", "Go"):
+            self.assertIn(language, self.section)
+
+    def test_theoretical_nullability_is_not_reported(self) -> None:
+        self.assertIn("purely theoretical nullability", self.section)
+        self.assertIn("is not reported", self.section)
+
+    def test_introduces_no_new_severity_or_finding_category(self) -> None:
+        self.assertIn("adds no new finding category", self.section)
+        self.assertIn("classified under", self.section)
+        self.assertIn("severity.md", self.section)
+        self.assertIn("evidence.md", self.section)
+        self.assertIn(
+            "carries no dedicated severity merely because a nullable "
+            "value is present",
+            self.section,
+        )
+
+    def test_credible_absence_paths_are_illustrative_not_a_keyword_list(self) -> None:
+        self.assertIn("Credible absence paths", self.section)
+        self.assertIn("not an exhaustive keyword list", self.section)
+        for pattern in (
+            "optional or lookup result",
+            "nullable return value",
+            "destructuring",
+            "nullable collection element",
+        ):
+            self.assertIn(pattern, self.section)
+
+    def test_interoperability_and_escape_hatch_boundaries_are_named(self) -> None:
+        self.assertIn("Interoperability and escape-hatch boundaries", self.section)
+        for boundary in (
+            "Kotlin platform type",
+            "non-null assertion",
+            "null-forgiving",
+            "unsafe/cgo/reflection",
+            "Deserialization".lower(),
+        ):
+            self.assertIn(boundary.lower(), self.section.lower())
+
+    def test_suppression_rule_requires_a_reachable_failure_path(self) -> None:
+        self.assertIn("Suppression", self.section)
+        self.assertIn(
+            "whether *this* code path can", self.section
+        )
+        self.assertIn(
+            "not whether the value's declared type permits absence in "
+            "the abstract",
+            self.section,
+        )
+        for safe_source in (
+            "a guard, early return, assertion",
+            "framework or contract guarantee",
+            "demonstrable upstream validation",
+        ):
+            self.assertIn(safe_source, self.section)
+
+
+class NullLikeAbsenceRiskWiredIntoBothSkillsTests(unittest.TestCase):
+    def test_github_review_reasoning_forwards_to_the_shared_section(self) -> None:
+        text = _text(GITHUB_REASONING)
+        self.assertIn("## Null-Like Absence-Risk Review", text)
+        self.assertIn("Null-like absence-risk review", text)
+        self.assertIn("does not restate them", text)
+
+    def test_github_review_index_lists_null_like_absence_risk(self) -> None:
+        text = _text(REPO_ROOT / "skills/github-pr-review/policies/github-review.md")
+        self.assertIn("null-like absence risk", text)
+
+    def test_both_github_runbooks_apply_null_like_absence_risk_review(self) -> None:
+        for runbook in (GITHUB_ACTIVE_RUNBOOK, GITHUB_PASSIVE_RUNBOOK):
+            text = _text(runbook)
+            self.assertIn("Null-Like Absence-Risk Review", text)
+
+    def test_local_runbook_marks_the_section_signal_triggered(self) -> None:
+        text = _text(LOCAL_RUNBOOK)
+        window = _section(
+            text,
+            "Null-like absence-risk review",
+            "Classify findings per",
+        )
+        self.assertIn(
+            "signal-triggered per that policy's own gating conditions", window
+        )
+        self.assertIn("not applied", window)
+        self.assertIn("unconditionally to every diff", window)
+
+    def test_parallel_review_cites_the_shared_section(self) -> None:
+        text = _text(SHARED_DIR / "policies/parallel-review.md")
+        self.assertIn("Null-like absence-risk review", text)
 
 
 class ArchitecturalPlacementSectionTests(unittest.TestCase):
