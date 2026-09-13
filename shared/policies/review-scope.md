@@ -95,7 +95,11 @@ deliberately not an eight-dimension checklist run on every diff.
   concurrent executions interleave in a way that violates an invariant the
   code assumes holds. Depth owner: "Architectural placement and
   execution-lifecycle fidelity" (concurrency or ordering-guarantee trigger)
-  and "Failure state, retry safety, and recovery" below.
+  and "Failure state, retry safety, and recovery" below, and, when the
+  evidence gathered there warrants deeper tracing than that bounded pass
+  affords,
+  [`distributed-systems-deepening.md`](distributed-systems-deepening.md)
+  per the "Domain-specific deepening pass" below.
 - **Data / persistence** — signal: a schema, migration, stored
   representation, or the durable shape of data written or read by the
   change. Base reasoning: does the change preserve read/write compatibility
