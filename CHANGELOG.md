@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.27.0 — 2026-09-13
+
+### Added
+
+- `github-pr-review` now detects stacked/dependent PR topology, scopes review to the current layer's owned delta, and surfaces the detected stack in review output (#119) (#254).
+
 ## v1.26.0 — 2026-09-13
 
 ### Added
