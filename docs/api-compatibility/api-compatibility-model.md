@@ -5,10 +5,11 @@ Not packaged; explanatory. It is the canonical home for the recognized
 contract types and their diff-recognition signals, the per-change-shape
 compatible / breaking / context-dependent classification with a worked
 example, and the smallest useful first implementation. The packaged
-[`shared/policies/review-scope.md`](../../shared/policies/review-scope.md),
-"API / contract compatibility review," defines the operative rule a
-reviewer actually applies and references this document by name; it does
-not restate this document's rationale or worked examples.
+[`shared/policies/api-contract-compatibility.md`](../../shared/policies/api-contract-compatibility.md)
+defines the operative rule a reviewer actually applies and references this
+document by name; it does not restate this document's rationale or worked
+examples. [`review-scope.md`](../../shared/policies/review-scope.md) owns
+base review scope and routes to that packaged policy.
 
 The fixture corpus exercising the six change shapes below is
 [`../benchmark/corpus/api-compatibility/`](../benchmark/corpus/api-compatibility/README.md)
@@ -126,7 +127,9 @@ runs exactly once, over the finalized findings.
 1. **This model** — the recognized contract types (§2), the change-shape
    classification table with its worked example (§3), and the fail-closed
    rule (§4) — consumed as reviewer discipline.
-2. **One packaged section** —
+2. **One packaged policy** —
+   [`shared/policies/api-contract-compatibility.md`](../../shared/policies/api-contract-compatibility.md),
+   routed to from
    [`shared/policies/review-scope.md`](../../shared/policies/review-scope.md),
    "API / contract compatibility review," so the capability is real in
    both Skills' review behavior, not only designed. It is wired as a depth

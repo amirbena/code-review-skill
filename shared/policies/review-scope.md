@@ -238,75 +238,19 @@ and the remediation-scope-boundary pass exactly like any other finding.
 ## Null-like absence-risk review
 
 Inspect changed data-flow and control-flow for credible **null-like
-absence** risk — null-pointer dereference, `undefined` / `null` property
-or method access, `nil` dereference, `None` attribute/index access, an
-unchecked optional-lookup result, or a nullable return value assumed
-present — whenever the reviewed language admits that failure mode at all.
-This is a **semantic rule keyed to the reviewed language's nullability
-model, never a regex or keyword match**: it applies identically whether
-the language is Java/Kotlin, JavaScript/TypeScript, C#, Python, Go, or any
-other language with equivalent null/nil/undefined semantics, and it reads
-what a value's absence would actually do at the point of use, not whether
-a variable is named `value` or a method is named `get`. A credible risk is
-raised only when the diff's own evidence supports it; purely theoretical
-nullability — a value that could in principle be null somewhere in the
-type system but is demonstrably safe at every reachable use the diff
-introduces — is not reported. This section adds no new finding category:
-a surfaced risk is classified under [`severity.md`](severity.md) and
-evidenced per [`evidence.md`](evidence.md) exactly like any other finding,
-and carries no dedicated severity merely because a nullable value is
-present.
+absence** risk whenever the reviewed language admits that failure mode at
+all — a **semantic rule keyed to the reviewed language's nullability
+model, never a regex or keyword match**. The credible-absence-path
+patterns, the interoperability and escape-hatch boundaries that weaken a
+language's normal null-safety guarantees, and the suppression rule for a
+value already made safe by a guard, the type system, a framework/contract
+guarantee, or upstream validation are owned by
+[`null-absence-risk.md`](null-absence-risk.md) and are not restated here.
 
-### Credible absence paths
-
-Representative patterns — illustrative, not an exhaustive keyword list, and
-not something to flag merely because the shape superficially appears:
-
-- dereference, member/method access, invocation, indexing, or
-  destructuring of a value before a null/undefined/nil/None check that the
-  surrounding code elsewhere treats as necessary;
-- an optional or lookup result (map/dictionary `get`, `find`, a query-one
-  call, a configuration or environment lookup) used without handling the
-  absent case;
-- a nullable return value from a changed function assumed present by a
-  caller, or a changed caller that drops a present absence-check on a
-  callee's nullable return;
-- JavaScript/TypeScript property or method access, indexing, or
-  destructuring on a value that can be `null` or `undefined` at that point;
-- a nullable collection element or map value used as though always
-  present;
-- a `nil` / `None` value passed into code that assumes a concrete,
-  non-absent object.
-
-### Interoperability and escape-hatch boundaries
-
-Platform and language boundaries that weaken a language's normal
-null-safety guarantees deserve the same scrutiny as ordinary flow, because
-the type system can no longer be trusted to rule absence out: a Kotlin
-platform type originating from Java interop, TypeScript `any`, an `as`
-cast, or a non-null assertion (`!`) that overrides the compiler's own
-nullability tracking, C#'s null-forgiving `!` operator or
-nullable-oblivious legacy code, `unsafe`/cgo/reflection code that steps
-outside normal compile-time guarantees, and deserialization of external
-data into a typed shape the type system treats as non-null but the source
-payload does not guarantee. At these boundaries, reason about what is
-actually guaranteed by the runtime or the data source, not what the
-declared type alone claims.
-
-### Suppression
-
-Do not report a finding when a guard, early return, assertion, the
-language's own type-system guarantee (a genuinely non-nullable type, not
-merely the absence of a visible check), a framework or contract guarantee,
-or demonstrable upstream validation already makes the value safe at the
-point of use. The review question is always whether *this* code path can
-actually reach the access with an absent value, not whether the value's
-declared type permits absence in the abstract — noisy blanket "this could
-be null" findings with no reachable failure path are exactly what this
-section does not want. A language that encodes nullability strongly in its
-type system (for example, a non-nullable-by-default type system) shifts
-review effort toward the escape hatches and interoperability boundaries
-above rather than ordinary flow already covered by the compiler.
+This section adds no new finding category: a surfaced risk is classified
+under [`severity.md`](severity.md) and evidenced per
+[`evidence.md`](evidence.md) exactly like any other finding, and carries
+no dedicated severity merely because a nullable value is present.
 
 ## Existing behavior ownership
 
@@ -365,94 +309,41 @@ a valid finding whose full remediation is legitimately out of scope.
 
 ## Failure state, retry safety, and recovery
 
-Treat this as one reasoning move, not three separate checklist items. It
-triggers on a concrete signal in the diff: more than one side-effecting
-step (for example, a persisted write followed by another operation), an
-entry point that can plausibly run again for the same logical operation
-(retry, redelivery, resubmission, at-least-once processing, queue/event/
-webhook handling), or an external call combined with a state mutation —
-payment and similarly sensitive workflows are a common case, not the only
-one. Absent such a signal, this section does not apply and requires no
-action.
+Treat this as one reasoning move, not three separate checklist items,
+signal-triggered by a concrete diff shape — more than one side-effecting
+step, an entry point that can plausibly run again for the same logical
+operation, or an external call combined with a state mutation. The trigger
+conditions, the reasoning sequence once triggered (stranded state,
+already-happened side effects, safe re-execution, and evidenced-not-assumed
+recovery/reconciliation), and the applicability-gated observability
+hierarchy (an established metrics/alerts mechanism, then logs, then a
+fail-closed high-impact-undiagnosable-failure bar) are owned by
+[`failure-retry-recovery.md`](failure-retry-recovery.md) and are not
+restated here.
 
-When triggered, reason about: what state is left if the flow fails
-partway; which side effects may already have happened by that point;
-whether the logical operation can safely run again from that state
-without duplicating work or external effects; and, when the code or
-surrounding context claims another process reconciles the stranded state,
-whether that recovery/reconciliation path actually exists in the
-repository and actually covers this new state — never accepted merely
-because "another process will eventually fix it," with no evidence that
-such a process exists or handles this case.
-
-### Observability is applicability-gated, not universal
-
-Where this reasoning surfaces a meaningful, hard-to-detect failure mode,
-weigh whether it would be operationally visible — but only after first
-asking whether the change actually has a production-operational failure
-mode for which detection or diagnosis is materially relevant. Observability
-is not equally important for every kind of change:
-
-- **Commonly relevant**: backend/service runtime behavior, payments or
-  other high-impact business operations, queues/events/webhooks, external
-  integrations, asynchronous processing, persistence combined with side
-  effects, retries/redelivery, background jobs, and production
-  orchestration.
-- **Conditionally relevant for frontend/client changes**: only when the
-  application already has an established client telemetry/error-reporting
-  convention, the change introduces an operationally important runtime
-  failure, and that failure would otherwise be materially difficult to
-  diagnose. Do not turn an ordinary frontend review into a search for
-  backend-style metrics.
-- **Usually secondary or not applicable**: changes primarily to agent
-  instructions, prompts, review Skills, policy Markdown, static docs, or
-  non-runtime configuration — unless the changed system actually has
-  runtime behavior of its own (agent orchestration, tool-invocation
-  failures, persistent execution state, retries, scheduled/background
-  execution, production telemetry), in which case the reasoning below
-  applies to that runtime behavior specifically, not to the surrounding
-  static content.
-
-Concretely: does this diff introduce or modify a production-operational
-failure mode for which detection or diagnosis is materially relevant? Only
-when the answer is yes does the hierarchy below apply, preferring the
-repository's own established mechanism over inventing a new one:
-
-- If the surrounding system already uses metrics, counters,
-  failure-reason classifications, or alerts for comparable flows, check
-  only that the changed or new failure path participates in that existing
-  mechanism consistently — it is not silently bypassed, misclassified, or
-  invisible to an alert that depends on it.
-- If the surrounding code relies primarily on logs, check only whether
-  the existing logging convention still lets an operator distinguish the
-  meaningful cases this change affects — success vs. failure, retryable
-  vs. terminal, partial failure/stranded state, an important state
-  transition, recovery triggered vs. failed, and enough identifying
-  context to trace one instance. This is about fitting the existing
-  convention, never a generic "add more logs" recommendation.
-- Absent any established observability precedent, a missing signal is a
-  finding only when the diff introduces or materially changes a
-  high-impact failure mode that would otherwise be effectively
-  undiagnosable through anything already in the repository — the concern
-  is that the failure is undetectable, not merely that a particular
-  metric is absent.
-
-This does not require enumerating every failure point in every review;
-apply it where the diff's own shape makes it relevant, and scale depth to
-actual risk exactly as [`evidence.md`](evidence.md) already scales
-dependency exploration to blast radius.
+This is not a second scope model: absent a triggering signal this pass
+does not apply and requires no action; findings, evidence, and severity
+are governed by [`evidence.md`](evidence.md) and
+[`severity.md`](severity.md) exactly like any other finding.
 
 ## Architectural placement and execution-lifecycle fidelity
 
 Local functional correctness is often insufficient to determine whether a
 change is correctly *placed*. A changed method or file can be internally
-correct — it computes the right value, guards the right condition, returns
-the right result — while sitting at the wrong point in the surrounding
-execution flow: a decision made after the lifecycle phase that owns it, a
-check duplicated below the layer that already performs it, a mutation done
-before the precondition that should gate it. This section is how a review
-recognizes that "should this run *here*, in *this form*, at *this point in
-the lifecycle*" question and expands context just far enough to answer it.
+correct while sitting at the wrong point in the surrounding execution
+flow: a decision made after the lifecycle phase that owns it, a check
+duplicated below the layer that already performs it, a mutation done
+before the precondition that should gate it. The semantic-risk trigger
+vocabulary (control flow, side effects, retry/error propagation,
+transaction boundaries, authorization, routing/dispatch, idempotency,
+state-mutation ordering, lifecycle bookkeeping, resource ownership,
+concurrency, and caller/callee contracts), the bounded ring-by-ring context
+expansion, the stop conditions — including that **"insufficient evidence"
+is a valid terminal outcome** — the ineligible-versus-must-execute-and-fail
+distinction, the guardrails, and the evidence requirement for a placement
+finding are owned by
+[`architectural-placement.md`](architectural-placement.md) and are not
+restated here.
 
 This is one concrete application of the proportional-scope and
 evidence-labeling rules this repository already defines — "Related changes
@@ -461,151 +352,7 @@ as one unit" and "Existing behavior ownership" above, and
 **not** introduce a second scope model or a second evidence standard:
 blast radius, evidence labeling (confirmed defect / credible engineering
 risk / optional improvement), and the no-repository-wide-audit boundary are
-unchanged. It adds only the trigger vocabulary and stop conditions specific
-to placement problems.
-
-### When to expand context — semantic risk triggers
-
-Expand beyond the changed method/file only when the change plausibly
-affects one of the following **semantic** categories. The list is
-illustrative of the kind of effect that matters, not a keyword or
-method-name list:
-
-- control flow / whether downstream code executes at all;
-- externally visible or otherwise irreversible side effects;
-- retry, exception, fallback, or error-propagation behavior;
-- transaction boundaries or transactional ordering;
-- authorization, permission, or policy enforcement;
-- routing, dispatch, handler/strategy selection, or orchestration;
-- idempotency or duplicate suppression;
-- state-mutation ordering;
-- lifecycle bookkeeping (what is recorded as done, attempted, or skipped);
-- resource ownership or cleanup;
-- concurrency or ordering guarantees;
-- behavior whose correctness depends on a caller or callee contract.
-
-Do **not** expand context merely because a method is large, a file
-changed, an early return exists, or a particular framework, base class, or
-method name appears. Structural shape is never itself the trigger — the
-trigger is a plausible effect on one of the categories above. This is
-**not** a fixed-vocabulary detector: names such as `shouldHandleEvent`,
-`handle`, `supports`, `canHandle`, or `matches` carry no special meaning
-here and may appear only in fixtures or examples. The reasoning is about
-responsibility boundaries and lifecycle evidence found in the repository,
-never about matching a name.
-
-Representative pattern families — illustrative, not individually mandatory
-rules, and not something to flag everywhere the shape superficially
-appears:
-
-- dispatcher / handler eligibility decided inside execution rather than in
-  the eligibility phase that precedes it;
-- router / consumer filtering placed below the routing decision;
-- controller-versus-service/domain validation ownership;
-- retry logic duplicated inside a component that already runs beneath an
-  existing retry or orchestration layer;
-- an authorization check first performed, or redundantly re-performed,
-  below an established authorization boundary;
-- an idempotency or duplicate-suppression check occurring after a side
-  effect rather than before it;
-- transaction-sensitive logic placed outside the intended transaction
-  boundary;
-- strategy or fallback selection implemented inside execution rather than
-  in the selection step;
-- state mutation occurring before a precondition or eligibility decision;
-- error handling that locally looks safe but violates the caller's retry
-  or error contract.
-
-### Bounded context expansion
-
-Investigate minimum-context-first, expanding one ring at a time and only as
-far as needed:
-
-```text
-changed behavior
-→ direct caller / callee
-→ owning abstraction / interface / orchestrator / lifecycle boundary
-→ sibling implementation or repository contract only if still necessary
-```
-
-Stop at the first ring that establishes or disproves the relevant
-architectural contract. Do not default to repository-wide exploration.
-Investigation depth stays proportional to semantic risk, uncertainty,
-blast radius, and available repository evidence — the same scaling
-[`evidence.md`](evidence.md) already applies to any other cross-file
-reasoning.
-
-### Stop conditions
-
-Stop expanding as soon as any of these holds:
-
-1. the relevant responsibility/lifecycle contract is established with
-   enough repository evidence to support a finding;
-2. the surrounding architecture establishes that the changed behavior is
-   correctly placed;
-3. additional context would not materially change the review conclusion;
-4. repository evidence is insufficient or ambiguous — fail closed, do not
-   invent the architecture;
-5. continuing would require unrelated repository-wide exploration
-   disproportionate to the changed behavior.
-
-**"Insufficient evidence" is a valid terminal outcome** — it is not a
-reason to speculate or to keep searching indefinitely.
-
-### Investigation heuristic
-
-1. Start from the changed behavior.
-2. Identify whether its correctness depends on surrounding lifecycle or
-   ownership at all; if not, this section does not apply.
-3. Inspect the minimum relevant architectural context: direct callers and
-   callees, the owning interface or orchestrator, dispatcher/router code,
-   sibling implementations, or a repository-defined contract.
-4. Establish the intended responsibility boundary from repository
-   evidence.
-5. Compare the changed placement/behavior against that boundary.
-6. Emit a finding only with concrete evidence of a meaningful
-   correctness, lifecycle, or maintainability impact — for example that an
-   eligibility decision moved into execution now causes `handle()` to run,
-   a side effect to occur, or an action to be recorded as taken for an
-   input the surrounding design treats as ineligible.
-7. Do **not** emit a finding solely because another location would be
-   cleaner or the reviewer prefers a different design.
-
-### Ineligible versus must-execute-and-fail
-
-A check that filters out an *ineligible* input belongs in the eligibility
-phase; a check whose job is to let an operation *execute and then fail* so
-an exception or retry contract is honored must stay on the execution path.
-The distinction is drawn from repository evidence about what the
-surrounding lifecycle expects — for example, a missing-entity or `null`
-case that must still flow into execution so a `NotFoundException` is raised
-and existing retry semantics are preserved is **not** a misplacement, even
-though it is structurally an early check. Reason about this from the
-lifecycle contract, not from a special-cased rule.
-
-### Guardrails
-
-- Do not turn a review into repository-wide exploration; expansion stays
-  proportional to blast radius and uncertainty.
-- Do not infer an architectural boundary from naming alone — a predicate
-  or boundary-looking symbol with unrelated semantics is not evidence of
-  ownership.
-- Do not flag an alternative design merely because the reviewer prefers
-  it.
-- Preserve intentional execution-time validation, retry/error semantics,
-  transaction semantics, and other required lifecycle behavior.
-- If repository evidence cannot establish ownership or the contract, do
-  not invent it — no finding.
-
-### Evidence
-
-A placement finding requires concrete repository evidence of **both** the
-changed code's actual placement **and** the responsibility boundary it
-allegedly violates — the caller, interface, orchestrator, lifecycle phase,
-or repository contract that owns the decision. Naming similarity alone is
-insufficient. The finding is labeled confirmed defect / credible
-engineering risk / optional improvement per [`evidence.md`](evidence.md)
-like any other finding, and unresolvable ambiguity yields no finding.
+unchanged.
 
 ## Affected-test / test-impact analysis
 
@@ -630,75 +377,25 @@ consumes across a boundary that need not be visible as a call site in the
 diff — an OpenAPI or JSON Schema document, a protobuf/IDL definition, a
 public API request/response model or DTO, an event/message schema, or a
 configuration contract read by another service or job. Recognizing the
-contract type is a diff-level signal (a schema/IDL file changed, a public
-model's field set or type changed, a documented event/message shape
-changed); it is never itself the finding.
-
-Base reasoning: classify each changed contract element as **compatible**,
-**breaking**, or **context-dependent** by its change shape, reasoned from
-existing consumers' actual expectations, never a hypothetical worst case:
-
-- **Additive, optional** (a new optional field/property, a new endpoint or
-  message type) — compatible: no existing consumer's expectations change.
-- **Field or property removed** — breaking: an existing consumer that
-  reads it loses the value outright.
-- **Optional narrowed to required** — breaking: it invalidates inputs an
-  existing consumer already sends without the new requirement.
-- **Property or field renamed** — breaking in both directions: existing
-  readers of the old name stop finding it, and existing senders never
-  learn the new one.
-- **Enum member removed** — breaking: no existing consumer can already
-  tolerate a value it has never seen ceasing to exist.
-- **Enum member added** — **context-dependent**: additive for a consumer
-  that ignores unknown members, breaking for one with an exhaustive
-  switch/case or closed-set validation. The diff alone cannot establish
-  which kind of consumer exists.
-- **Incompatible type change** (a widened or narrowed representation, or
-  changed semantics of an existing value) — breaking when it can produce a
-  value an existing consumer's prior assumptions do not admit.
-
-Fail-closed on unresolvable consumer intent: when the actual consumer
-population, or its tolerance for an additive change like a new enum
-member, cannot be established from the diff and any available context,
-this pass does not invent a required breaking finding for it — inventing a
-breakage claim the diff cannot support is worse than reporting nothing. It
-may still surface the ambiguity as an optional, non-blocking note naming
-the specific unresolved question, which never raises severity or forces
-`CHANGES REQUIRED` on its own. This is the same fail-closed discipline
-"Architectural placement and execution-lifecycle fidelity" and "Semantic
-change-implication reasoning" above already apply to insufficient
-evidence, not a new evidence standard invented for this section alone.
+contract type is a diff-level signal; it is never itself the finding. The
+compatible/breaking/context-dependent classification for each recognized
+change shape, the fail-closed rule for an unresolvable consumer surface,
+and its relationship to the other API/integration-contract depth owners
+are owned by
+[`api-contract-compatibility.md`](api-contract-compatibility.md) and are
+not restated here.
 
 This section adds no new severity, finding category, or probability
 score: a breaking-shape finding is labeled confirmed defect / credible
 engineering risk per [`evidence.md`](evidence.md) like any other finding,
 and classified per [`severity.md`](severity.md) — a consumer-facing
-contract break is typically P1. Per [`evidence.md`](evidence.md),
-"Findings beyond the changed lines," the search for affected consumers
-scales with the change's actual blast radius when the real consumer
-surface is broader or narrower than the change alone shows; that scoping
-decides whether a break is evidenced at all, never the severity once it
-is — blast radius never raises or lowers a finding's severity. The closed
-change-shape table above, the recognized
-contract types and their diff-recognition detail, and the smallest useful
-first implementation are the API/contract compatibility model design
-record (a repository-development document, named here, not linked because
-it is not a packaged resource).
-
-This is not a second scope model, and it duplicates neither a schema
-linter nor a SAST tool: it is one concrete depth owner, for schema/contract
-backward compatibility specifically, of the "API / integration contracts"
-dimension in "Semantic change-implication reasoning" above — alongside,
-not replacing, "Affected-test / test-impact analysis" above (which traces
-the change into dependent tests) and "Architectural placement and
-execution-lifecycle fidelity"'s caller/callee-contract trigger (which
-follows call sites actually present in the diff's blast radius). This
-section instead reasons about consumers that need never appear as a call
-site at all — an external API client, an event subscriber, or a
-configuration reader outside the diff's own repository. It never fetches
-or retrieves another repository's consumer code to resolve that ambiguity;
-an unresolved consumer surface is exactly the fail-closed case above, not
-a reason to expand retrieval.
+contract break is typically P1. It is not a second scope model, and it
+duplicates neither a schema linter nor a SAST tool: it is one concrete
+depth owner, for schema/contract backward compatibility specifically, of
+the "API / integration contracts" dimension in "Semantic
+change-implication reasoning" above — alongside, not replacing,
+"Affected-test / test-impact analysis" above and "Architectural placement
+and execution-lifecycle fidelity"'s caller/callee-contract trigger.
 
 ## Dependency / supply-chain deepening review
 
