@@ -3,11 +3,20 @@ name: Release worthiness
 # Deterministically decides whether a change ships a Skill or its packaged
 # distribution, and — from trusted main — publishes the release.
 #
-# On PRs and pushes the `assess` job is read-only: it classifies the
-# change set and, on a PR, requires a release-worthy change to declare its
-# release intent (CHANGELOG category + one-line entry) in the PR
-# description — contributors never edit CHANGELOG.md. It never mutates
-# the repository.
+# `release-gate` is the required, always-created PR check: read-only, it
+# classifies the change set and, when release-worthy, requires the PR to
+# declare its release intent (CHANGELOG category + one-line entry) in its
+# description — contributors never edit CHANGELOG.md. When the change is
+# not release-relevant it still resolves, with an explicit not-applicable
+# result, so a required-status-check ruleset entry never leaves an
+# unrelated PR blocked. It never mutates the repository and never builds
+# or uploads anything, so its identity and pass/fail never depend on
+# release-worthy-only packaging work.
+#
+# `package` is a separate, non-required job that only runs when
+# `release-gate` reports the change release-worthy: it builds and verifies
+# both Skill archives and uploads them for inspection. A packaging failure
+# there never fails the required gate.
 #
 # On a non-[skip ci] push to main (and, for recovery, workflow_dispatch)
 # the read-only `plan` job generates `## Unreleased` from the merged PRs'
@@ -42,17 +51,27 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  assess:
-    # PR and push checks only. This job can run untrusted contributor content,
-    # so it stays strictly read-only and is never given write credentials.
-    # The [skip ci] guard is belt-and-braces against the release commit
-    # (which GitHub already skips) ever re-entering this workflow.
+  release-gate:
+    # The required PR-level release gate. PR and push checks only. This job
+    # can run untrusted contributor content, so it stays strictly read-only,
+    # is never given write credentials, and never builds or uploads
+    # packaging artifacts — that conditional, release-worthy-only work
+    # lives entirely in the separate `package` job below, so a packaging
+    # failure never fails this required check. The [skip ci] guard is
+    # belt-and-braces against the release commit (which GitHub already
+    # skips) ever re-entering this workflow.
+    #
+    # This job's name is the stable check identity — the same "Release
+    # worthiness / release-gate" context is created and resolved for every
+    # in-scope PR, release-relevant or not (see docs/RELEASE.md).
     if: >-
       ${{ github.event_name != 'workflow_dispatch'
       && !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      release_worthy: ${{ steps.classify.outputs.release_worthy }}
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -112,16 +131,38 @@ jobs:
             --step-summary "$GITHUB_STEP_SUMMARY" \
             "${intent[@]}"
 
+  package:
+    # Conditional, release-worthy-only packaging work. Deliberately not a
+    # required status check: it never gates an unrelated PR, and a failure
+    # here (a flaky build, a packaging regression) never fails the required
+    # `release-gate` check above. Applicability is `release-gate`'s own
+    # classification output — not a second, YAML-level relevance decision.
+    needs: release-gate
+    if: needs.release-gate.outputs.release_worthy == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dev dependencies
+        run: python -m pip install -r requirements-dev.txt
+
       - name: Build and verify Skill package archives
-        if: steps.classify.outputs.release_worthy == 'true'
         run: ./scripts/release/verify-skill-archives.sh --build
 
       - name: Check the packaging runtime boundary
-        if: steps.classify.outputs.release_worthy == 'true'
         run: python -m unittest discover -s tests/integration/packaging -t .
 
       - name: Upload Skill archives
-        if: steps.classify.outputs.release_worthy == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: skill-archives

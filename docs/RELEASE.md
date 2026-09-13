@@ -167,36 +167,117 @@ on the `release` Environment, a maintainer sees them before approving
 
 ## PR / push checks (read-only)
 
-On every pull request (opened, synchronized, reopened, or its description
-edited) and every push to `main`, the `assess` job (`contents: read`,
-`persist-credentials: false`) classifies the change set. On a push it
-classifies everything since the previous `v*` tag. On a pull request it
-classifies only what the PR itself contributes — the diff against the
-**merge-base with the PR's current base branch** — so release-worthy
-history that entered the branch through a sync/merge from `main` is never
-treated as a new obligation for the PR. When the classified set is
-release-worthy the job:
+### `release-gate` — the required, always-created check
 
-1. on a pull request, requires valid release intent in the description
-   (fails closed if it is missing, malformed, or `none`), and fails closed
-   if a hand-edited `## Unreleased` is unclassifiable;
-2. writes a _"release recommended"_ run summary with the proposed bump and
-   the exact CHANGELOG entry the release will generate;
-3. builds both archives with `scripts/package-skills.sh all`;
-4. verifies archive integrity (`unzip -t` plus the packaging
-   runtime-boundary test);
-5. uploads the archives.
+`release-gate` (`contents: read`, `persist-credentials: false`) is the
+**stable, required PR-level check**. It runs on every pull request
+(opened, synchronized, reopened, or its description edited) and every
+push to `main`, and it always reaches a terminal, explicit result:
+
+```text
+PR
+ ↓
+release-gate always evaluates
+ ↓
+is release assessment applicable?
+ ├─ no  → PASS — "Release gate: not applicable" (explicit, not skipped)
+ └─ yes → existing assess --require-release-intent
+             ├─ valid   → PASS
+             └─ invalid → FAIL
+```
+
+On a push it classifies everything since the previous `v*` tag. On a pull
+request it classifies only what the PR itself contributes — the diff
+against the **merge-base with the PR's current base branch** — so
+release-worthy history that entered the branch through a sync/merge from
+`main` is never treated as a new obligation for the PR.
+
+The applicability decision ("is this PR release-relevant?") is not a
+workflow-YAML `paths:` filter or job `if:` condition — it is the same
+`scripts/release_worthiness.py assess` classification the job always
+runs, from `scripts/release_lib/classification.py`. The job:
+
+1. classifies the change set;
+2. when **not** release-worthy, writes an explicit `## Release gate: not
+   applicable` run summary and exits successfully — this is a distinct,
+   intentional outcome, not an absent or skipped check;
+3. when release-worthy and given a pull request, requires valid release
+   intent in the description (fails closed if missing, malformed, or
+   `none`), and fails closed if a hand-edited `## Unreleased` is
+   unclassifiable; on a pass it writes a _"release recommended"_ run
+   summary with the proposed bump and the exact CHANGELOG entry the
+   release will generate.
 
 A push to `main` has no PR description, so release intent is not checked
 there; `plan` is the authoritative gate.
+
+`release-gate` never builds, verifies, or uploads anything — it does not
+depend on packaging succeeding, so a packaging regression can never fail
+this required check. Its identity (the job id, which is the GitHub check
+context "Release worthiness / release-gate") stays constant regardless of
+how packaging is implemented.
 
 The PR description reaches the script only through an environment variable
 (`--pr-body-env PR_BODY`). It is never interpolated into a shell `run:`
 step, never written to `$GITHUB_OUTPUT` or the log, and appears in the run
 summary only inside a code fence. The job needs no token, so it behaves
-identically on a fork pull request. It never mutates the repository, never
-receives the release App credentials, and never creates a tag or a
-Release.
+identically on a fork pull request (see "Fork / first-time-contributor
+workflow approval" below for the one residual gap this does not close).
+It never mutates the repository, never receives the release App
+credentials, and never creates a tag or a Release.
+
+### `package` — conditional, non-required packaging work
+
+`package` (`contents: read`) `needs: release-gate` and runs only when
+`needs.release-gate.outputs.release_worthy == 'true'` — the same
+classification output `release-gate` already computed, not a second
+relevance decision. It is **not** a required status check: it
+
+1. builds both archives with `scripts/package-skills.sh all`;
+2. verifies archive integrity (`unzip -t` plus the packaging
+   runtime-boundary test);
+3. uploads the archives.
+
+Keeping this out of the required gate means a packaging failure (a flaky
+build, a dependency hiccup, a genuine packaging bug) never blocks an
+otherwise-mergeable PR through the required check — it is visible on the
+PR's checks list, but only `release-gate` decides mergeability.
+
+### Fork / first-time-contributor workflow approval
+
+This is a **public** repository that accepts outside contributions. For a
+`pull_request`-triggered workflow, GitHub's own fork-approval policy
+("Require approval for first-time contributors", the default and
+recommended non-public-only setting) holds the *entire* workflow run —
+every job in `release-worthiness.yml`, `release-gate` included — pending a
+maintainer's manual approval in the Actions tab, for a contributor's
+**first** pull request. This is enforced by GitHub Actions itself, at the
+workflow-run level, before any job starts; it cannot be narrowed per-job
+or worked around from workflow YAML or from `scripts/release_lib`.
+
+**This is a real residual risk, not solved by this change:** if
+`release-gate` is a required status check and a first-time contributor's
+run sits unapproved, the check stays "Expected" and the PR cannot merge
+until a maintainer approves the run (Actions tab → the pending workflow
+run → *Approve and run*). After that one approval, every subsequent PR
+from that same contributor runs automatically — the gap is limited to
+each contributor's first PR.
+
+Recommended, documented mitigation (a repository setting, not code):
+
+- Keep **Settings → Actions → General → Fork pull request workflows from
+  outside collaborators** set to *"Require approval for first-time
+  contributors"* — not the stricter *"Require approval for all outside
+  collaborators"*, which would reintroduce the same wait on every fork PR
+  instead of only the first one.
+- Maintainers watch the Actions tab for pull requests from contributors
+  they don't recognize and approve the pending run promptly, the same way
+  they already need to for `Validate repository` and the PR-description
+  check today (identical constraint, not new to this gate).
+- `release-gate` needs no secrets and never runs with elevated
+  permissions, so approving it is always safe to do quickly — there is
+  nothing sensitive a first-time contributor's PR content can reach
+  through this job.
 
 ## Automatic publication from `main`
 
@@ -272,8 +353,16 @@ Rulesets) with:
 - **Restrict deletions**, **Block force pushes**.
 - **Require a pull request before merging** (≥1 approval, dismiss stale
   approvals, require review from Code Owners as today).
-- **Require status checks to pass**: `Validate repository` and the
-  `Release worthiness` `assess` job.
+- **Require status checks to pass**: `Validate repository` and
+  `Release worthiness` / `release-gate`. `release-gate` is safe to
+  require because it always resolves — release-relevant or not (see
+  "`release-gate` — the required, always-created check" above) — modulo
+  the documented fork/first-time-contributor approval gap in "Fork /
+  first-time-contributor workflow approval" above, which is a GitHub-level
+  constraint on the whole workflow run, not something this ruleset entry
+  can close. Do **not** require `package` — it is conditional,
+  release-worthy-only work and would leave every non-release-worthy PR
+  stuck on a job that never runs for it.
 - **Bypass list: the “Skill Release Automation” GitHub App only.** Do
   **not** add `Repository admin`, `Maintain`, `Organization admin`, or
   any team. Humans always go through a pull request; the App is the only
@@ -313,7 +402,8 @@ If the Environment has no rules it simply passes through.
 
 | Trigger | Job | `permissions` | Runs contributor code | Mutates repo |
 | --- | --- | --- | --- | --- |
-| `pull_request`, `push` to `main` | `assess` | `contents: read` | yes | never |
+| `pull_request`, `push` to `main` | `release-gate` (required) | `contents: read` | yes | never |
+| after `release-gate`, when release-worthy | `package` (not required) | `contents: read` | yes | never |
 | `push` to `main` (non-`[skip ci]`), `workflow_dispatch` | `plan` | `contents: read`, `pull-requests: read` | no — checks out `main` | never — generates notes and derives the version in memory |
 | after `plan`, when a release is due | `publish` | `contents: write`, `pull-requests: read` | no — checks out `main` | commits to `main`, tags, publishes a Release, using the App token |
 
