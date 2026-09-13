@@ -127,7 +127,10 @@ deliberately not an eight-dimension checklist run on every diff.
   reasoning: is the boundary still enforced at the point that actually
   matters, for every path that can reach it. Depth owner: "Architectural
   placement and execution-lifecycle fidelity"'s authorization/
-  permission-enforcement trigger.
+  permission-enforcement trigger, and, when the evidence gathered there
+  warrants deeper tracing than that bounded pass affords,
+  [`security-deepening.md`](security-deepening.md) per the "Domain-specific
+  deepening pass" below.
 - **Operability / production-readiness** — signal: the change introduces or
   materially changes a failure mode that a production operator would need
   to detect or diagnose. Base reasoning: would this failure mode be visible

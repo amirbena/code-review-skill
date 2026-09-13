@@ -45,6 +45,7 @@ packaged Skill is installed; they do not depend on this repository.
 | [`remediation-guidance.md`](remediation-guidance.md) | Advisory fix direction on findings; never changes finding identity, severity, dedup, or the derived verdict. |
 | [`remediation-scope-boundary.md`](remediation-scope-boundary.md) | The mandatory three-part reasoning that separates a finding's validity/severity from how much of its remediation the current task/PR boundary must absorb versus defer as a `Follow-up`. Never changes severity, identity, or the decision derivation. |
 | [`specialist-depth.md`](specialist-depth.md) | The composition contract for domain-specific deepening capabilities: evidence-driven activation, 0..N composability, cascading activation bounded by `repository-expansion.md`, and orthogonality to `remediation-scope-boundary.md`. Never decides whether a dimension is considered — that stays with `review-scope.md`'s base pass. |
+| [`security-deepening.md`](security-deepening.md) | A domain-specific deepening capability (per `specialist-depth.md`) for the "Security / trust boundaries" dimension: bounded tracing of authorization placement, alternate paths to a privileged operation, confused-deputy behavior, validation/sanitization assumptions, and privilege propagation, once base reasoning has already identified a materially implicated trust boundary. |
 
 Templates shared by both Skills live in
 [`../templates/`](../templates/) (`finding.md` — the finding-field contract,

@@ -138,6 +138,24 @@ carries a severity:
 - **Fix:** <concrete correction direction, not a patch>
 ```
 
+When a domain-specific deepening capability's reasoning contributed the
+finding, one `Capability` line is added after `Evidence` (and after any
+`Contextual evidence` / `Runtime validation` / `Confidence` lines) — see
+[`finding.md`](finding.md), "Capability provenance". It is a provenance
+record and never carries a severity; absent on a finding base reasoning
+alone already fully supports:
+
+```markdown
+### <id> [<severity>] <short, concrete title>
+
+- **Location:** `<path>:<line-or-range>`
+- **Evidence:** <concrete evidence, concise>
+- **Capability:** security-deepening — <one clause on what the deeper
+  investigation established beyond base reasoning>
+- **Impact:** <concrete engineering consequence, concise>
+- **Fix:** <concrete correction direction, not a patch>
+```
+
 When the fix/action location is unresolved, no `Evidence location` line
 is added; `Location` instead carries the best-known coordinate with the
 trailing unresolved annotation (see "Fix/action location, evidence
@@ -244,6 +262,11 @@ line on this surface (see [`finding.md`](finding.md), "Confidence and
 evidence state"). The `credible` default is not mentioned, nor is a value the
 prose already conveys through an equivalent `runtime-confirmed` /
 `attempted-inconclusive` mention.
+
+When a domain-specific deepening capability contributed the finding, name it
+inside the `Evidence:` prose as well — there is no separate `Capability:`
+line on this surface (see [`finding.md`](finding.md), "Capability
+provenance"). Omitted whenever no capability contributed.
 
 For a **consolidated root-cause finding**, name the affected call paths
 inside the prose — the `Evidence:` block, or a short `Affected call paths:`
@@ -593,6 +616,12 @@ quality-contract rules are in [`finding.md`](finding.md), "Rules".
   `Evidence:` prose, never as its own line; it never lowers the evidence bar
   and never carries a severity (see [`finding.md`](finding.md), "Confidence
   and evidence state");
+- the **Capability** line renders on the full rendering only when a
+  domain-specific deepening capability contributed the finding; on the
+  inline surface it folds into the `Evidence:` prose, never as its own
+  line; it never carries a severity and never changes identity,
+  deduplication, or the decision derivation (see [`finding.md`](finding.md),
+  "Capability provenance");
 - a finding has exactly one authoritative full representation. If it is
   published in full at one location (e.g. inline), every other location
   uses the summary-pointer form instead of repeating the full finding.
