@@ -110,7 +110,7 @@ rendering-only change and affects nothing else in this file's semantics.
 
 Every finding heading (the finding-list / summary-pointer line, the
 fallback full-rendering block, the inline structured `[<severity>]` form,
-and the human inline voice's heading) shows the severity code together
+and the human inline voice's heading) can show the severity code together
 with one short, canonical parenthetical, defined once here and applied
 consistently — this is the per-Skill severity-legend override point
 [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
@@ -124,17 +124,71 @@ P1 (Blocking)
 P2 (Non-Blocking)
 ```
 
+**Default: compact.** Every surface named above renders the bare `P0` /
+`P1` / `P2` code, with no parenthetical, unless the invocation opts in.
+**Opt-in expansion** is controlled by the `include_severity_description`
+invocation option (default `false`), normalized per
+[`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+"`include_severity_description` phrasings" — when it resolves `true`,
+every one of those surfaces substitutes the parenthetical mapping above
+for the plain code, consistently, with no other change to any surface's
+shape.
+
 This wording is aligned with, and never contradicts,
 [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md):
 both `P0` and `P1` remain blocking per that policy's "Blocking rule" —
 `P0`'s parenthetical names its critical/rare tier, `P1`'s names its
 blocking status, and `P2`'s names that it never blocks alone. The
-parenthetical is rendered **once**, in the finding's heading, never as a
-repeated explanatory paragraph elsewhere in the same finding or review;
-it is presentation only and never changes severity, identity,
-deduplication, evidence requirements, or the decision derivation owned by
-`severity.md`. `local-code-review` defines no such legend and continues
-to render the bare `[P0]` / `[P1]` / `[P2]` form.
+parenthetical, when enabled, is rendered **once**, in the finding's
+heading, never as a repeated explanatory paragraph elsewhere in the same
+finding or review; it is presentation only and never changes severity,
+identity, deduplication, evidence requirements, or the decision
+derivation owned by `severity.md` — the option that toggles it
+(`include_severity_description`) is likewise presentation-only and
+controls nothing else: not whether severity is shown, not whether the
+headline is emphasized. `local-code-review` defines no such legend and
+continues to render the bare `[P0]` / `[P1]` / `[P2]` form regardless of
+this option's value — it is normalized for cross-Skill parity only and
+has no effect there.
+
+### Emphasized-headline contract, by surface
+
+Every finding-headline surface this Skill owns renders the **complete
+headline** — severity, the optional description when enabled, and
+title — as **one emphasized unit**; the title is never emphasized
+separately from the severity:
+
+- **Summary-pointer / consolidated external-review-summary findings
+  list**
+  ([`../templates/external-review-summary.md`](../templates/external-review-summary.md)) —
+  explicit Markdown strong emphasis (`**...**`) wraps severity + optional
+  description + title together: `**P1 — Title**` (default) /
+  `**P1 (Blocking) — Title**` (expanded). Never `P1 — **Title**` (title
+  bolded separately from severity).
+- **Full finding heading** (`### <id> [<severity>] <title>`, the
+  fallback/no-anchor body rendering) — emphasis comes from the Markdown
+  heading level, not `**...**`; the entire visible headline sits inside
+  that one heading line, with no part of it demoted outside it:
+  `### <id> [P1] <title>` (default) / `### <id> [P1 (Blocking)] <title>`
+  (expanded).
+- **Structured inline finding**
+  ([`../templates/inline-finding.md`](../templates/inline-finding.md)) —
+  plain text, no heading, no bold, unchanged by this option beyond
+  whether the parenthetical renders, per its existing "GitHub already
+  supplies file/line context" rationale: `[P1] <title>` (default) /
+  `[P1 (Blocking)] <title>` (expanded).
+- **Human-review rendering** (human inline `<severity>: <title>` and
+  human full `### <id> <severity>: <title>`, per
+  [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md))
+  — the option controls only whether the parenthetical is present; each
+  surface's existing emphasis mechanism (a heading for human full, none
+  for human inline) is unchanged: `P1: <title>` (default) /
+  `P1 (Blocking): <title>` (expanded).
+
+Where a surface has a legitimately different container (a Markdown
+heading vs. inline plain text vs. explicit `**...**`), that container is
+preserved unchanged; this option never forces one single emphasis
+mechanism onto every surface, and never moves a finding between surfaces.
 
 ## Stacked-PR context
 

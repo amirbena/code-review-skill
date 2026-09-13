@@ -14,7 +14,7 @@ omitted here (see
 "Canonical inline rendering").
 
 ```text
-[<severity> (<compact meaning>)] <short, concrete title>
+[<severity>] <short, concrete title>
 
 Evidence: <concrete evidence — what the code actually does>
 
@@ -23,13 +23,17 @@ Impact: <concrete engineering consequence — why it matters>
 Fix: <concrete correction direction, when useful>
 ```
 
-`<compact meaning>` is this Skill's severity legend — `P0 (Critical)` /
-`P1 (Blocking)` / `P2 (Non-Blocking)` — per
+`<severity>` renders the bare `P0` / `P1` / `P2` code by default: e.g.
+`[P1] Incomplete pagination can produce a false clean review`. When the
+invocation selects `include_severity_description` (default `false` — see
 [`../policies/review-output.md`](../policies/review-output.md),
-"Reader-visible severity legend": e.g. `[P1 (Blocking)] Incomplete
-pagination can produce a false clean review`. It is rendered once, in
-this heading, never repeated as a separate explanatory sentence in
-`Evidence`, `Impact`, or `Fix`.
+"Reader-visible severity legend"), the heading instead renders
+`[<severity> (<compact meaning>)]`, where `<compact meaning>` is this
+Skill's severity legend — `P0 (Critical)` / `P1 (Blocking)` /
+`P2 (Non-Blocking)` — e.g. `[P1 (Blocking)] Incomplete pagination can
+produce a false clean review` (see "Severity description (opt-in)"
+below). Either way it is rendered once, in this heading, never repeated
+as a separate explanatory sentence in `Evidence`, `Impact`, or `Fix`.
 
 A finding that meets
 [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
@@ -46,9 +50,10 @@ Details: <supporting technical context, concise>
 
 ## Rules
 
-- severity always visible first, in the `[P0 (Critical)]` /
-  `[P1 (Blocking)]` / `[P2 (Non-Blocking)]` form (see
-  [`../policies/review-output.md`](../policies/review-output.md),
+- severity always visible first, in the bare `[P0]` / `[P1]` / `[P2]`
+  form by default, or the `[P0 (Critical)]` / `[P1 (Blocking)]` /
+  `[P2 (Non-Blocking)]` form when `include_severity_description` is on
+  (see [`../policies/review-output.md`](../policies/review-output.md),
   "Reader-visible severity legend");
 - **one authoritative representation, minimum self-contained unit.** This
   inline comment is the finding's one full representation once published:
@@ -112,6 +117,26 @@ Details: <supporting technical context, concise>
 ## Example
 
 ```text
+[P1] Incomplete pagination can produce a false clean review
+
+Evidence: This path retrieves only the first page of changed files and
+does not continue using the returned pagination cursor.
+
+Impact: Files outside the first page may never be reviewed while the
+workflow can still reach REVIEW CLEAN.
+
+Fix: Exhaust pagination and verify scope completeness before permitting
+a clean review decision.
+```
+
+## Severity description (opt-in)
+
+When the invocation selects `include_severity_description` (see
+[`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md),
+"`include_severity_description` phrasings" — default `false`), the same
+example above instead renders:
+
+```text
 [P1 (Blocking)] Incomplete pagination can produce a false clean review
 
 Evidence: This path retrieves only the first page of changed files and
@@ -124,6 +149,14 @@ Fix: Exhaust pagination and verify scope completeness before permitting
 a clean review decision.
 ```
 
+This is the same finding, at the same location, with the same severity
+and identity — only the heading gains the parenthetical description,
+inside the same unemphasized-but-first-position slot it already
+occupies. It composes independently with `human_inline_findings`: an
+expanded human-rendered inline finding reads
+`P1 (Blocking): Paginated file listing stops after page 1` (see
+"Human-rendered inline finding (opt-in)" below).
+
 ## Human-rendered inline finding (opt-in)
 
 When the invocation normalizes `human_inline_findings` (see
@@ -135,14 +168,15 @@ from
 [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
 "Canonical human inline rendering" instead of the
 `[<severity>] / Evidence / Impact / Fix` block above — a short heading
-that keeps the severity, its compact legend meaning, and names the
-finding, then compact prose. The voice itself is owned by the shared
+that keeps the severity (and its optional legend description, when
+`include_severity_description` is on) and names the finding, then
+compact prose. The voice itself is owned by the shared
 [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
 "Senior voice contract" — including no dedicated praise slot and no
 first-person/hedging on a required fix:
 
 ```text
-P1 (Blocking): Paginated file listing stops after page 1
+P1: Paginated file listing stops after page 1
 
 `list_files()` reads only the first page, so a large PR can reach a
 false clean review with files that were never seen. Exhaust the
@@ -150,20 +184,25 @@ pagination before permitting a clean decision.
 ```
 
 ```text
-P2 (Non-Blocking): Sync and async retry paths decide eligibility
-separately
+P2: Sync and async retry paths decide eligibility separately
 
 `should_retry()` in the sync flow and the inline check in
 `AsyncRunner.retry` already disagree on 429 handling. Move eligibility
 into one helper that both paths call.
 ```
 
+When `include_severity_description` is on, the same headings instead
+read `P1 (Blocking): Paginated file listing stops after page 1` and
+`P2 (Non-Blocking): Sync and async retry paths decide eligibility
+separately` — the parenthetical composes with this voice exactly as it
+does with the structured form, with no other change.
+
 This is a re-voicing of the **same finding**, not a different or weaker
 one. Unchanged:
 
-- **severity** — still shown first, in the heading, with the same
-  compact legend meaning as the structured form (`P1 (Blocking): …`,
-  not `[P1] …`);
+- **severity** — still shown first, in the heading, in the same bare or
+  legend-expanded form as the structured form and controlled by the same
+  option (`P1: …` / `P1 (Blocking): …`, never `[P1] …`);
 - the mandatory What / Where / Evidence / Impact / Fix core — evidence,
   the engineering consequence when it is material, and the actionable
   correction direction are still all present, carried by the prose; a

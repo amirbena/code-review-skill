@@ -14,10 +14,20 @@ default. A Skill that defines the optional severity-legend override in
 `policies/review-output.md`) substitutes `[<severity> (<compact
 meaning>)]` — e.g. `[P1 (Blocking)]` — everywhere a severity is shown
 (full rendering, inline rendering, human inline heading, and
-summary-pointer), consistently, with no other change to these shapes.
-This is additive and inert for a Skill that declares no legend
+summary-pointer), consistently, with no other change to these shapes,
+**only when that Skill's own gating invocation option resolves `true`**
+(`github-pr-review`'s is `include_severity_description`, default
+`false` — see
+[`../policies/invocation-options.md`](../policies/invocation-options.md));
+`github-pr-review`'s own default rendering keeps the bare-code form too,
+identical in shape to a Skill that declares no legend at all. This is
+additive and inert for a Skill that declares no legend
 (`local-code-review` does not, and its renderings below stay exactly the
-bare-code form).
+bare-code form regardless of any option's value). Wherever the
+parenthetical is shown, it renders inside the same emphasized unit as
+the severity and title it accompanies — never as a trailing, separately
+emphasized, or unemphasized addition (see each Skill's own
+`policies/review-output.md` for the surface-by-surface contract).
 
 ## Canonical full rendering
 
