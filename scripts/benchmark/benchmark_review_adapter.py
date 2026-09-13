@@ -90,8 +90,8 @@ DEFAULT_TIMEOUT_SECONDS = 300.0
 PROBE_TIMEOUT_SECONDS = 30.0
 
 # This checkout's own repository root (mirrors the same
-# ``Path(__file__).resolve().parents[1]`` pattern already used in
-# ``scripts/run_benchmark.py``). Passed to the review CLI's
+# ``Path(__file__).resolve().parents[2]`` pattern already used in
+# ``scripts/benchmark/run_benchmark.py``). Passed to the review CLI's
 # ``--plugin-dir`` flag (see ``ProductionReviewerAdapter.__call__``) as a
 # **best-effort hint** pointing the CLI at the ``local-code-review`` Skill
 # as it exists in *this* checkout, rather than doing nothing and leaving
@@ -99,7 +99,7 @@ PROBE_TIMEOUT_SECONDS = 30.0
 #
 # This is *not* a verified runtime-to-Skill binding, and must not be
 # described as one: this repository's ``skills/`` layout is a
-# Skill-packaging source tree (see ``scripts/package-manifest.json``), not
+# Skill-packaging source tree (see ``scripts/packaging/package-manifest.json``), not
 # a Claude Code *plugin* directory (no ``.claude-plugin/plugin.json``
 # manifest). ``--plugin-dir`` is the only existing CLI mechanism for
 # pointing a one-off invocation at a local directory, so it is passed as
@@ -113,7 +113,7 @@ PROBE_TIMEOUT_SECONDS = 30.0
 # this manual developer benchmark tool (issue #250) and belongs to the
 # later benchmark CI/gating work
 # (https://github.com/amirbena/code-review-skill/issues/255).
-SKILL_PLUGIN_DIR = Path(__file__).resolve().parents[1]
+SKILL_PLUGIN_DIR = Path(__file__).resolve().parents[2]
 
 
 class RuntimeUnavailableError(RuntimeError):

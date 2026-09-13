@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Coverage for the `scripts/run_benchmark.py` CLI entrypoint (Issue #250).
+"""Coverage for the `scripts/benchmark/run_benchmark.py` CLI entrypoint (Issue #250).
 
 Proves the one behavior the issue calls out explicitly: when the
 configured review runtime is unavailable, the entrypoint exits non-zero
@@ -22,7 +22,7 @@ from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
 
-SCRIPT = REPO_ROOT / "scripts" / "run_benchmark.py"
+SCRIPT = REPO_ROOT / "scripts" / "benchmark" / "run_benchmark.py"
 
 
 class RunBenchmarkCliRuntimeAvailabilityTests(unittest.TestCase):

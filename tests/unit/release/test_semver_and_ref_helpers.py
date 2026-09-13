@@ -1,4 +1,4 @@
-"""Tests for scripts/release_worthiness.py's pure SemVer classification and ref-resolution helpers."""
+"""Tests for scripts/release/release_worthiness.py's pure SemVer classification and ref-resolution helpers."""
 
 from __future__ import annotations
 

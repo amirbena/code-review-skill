@@ -18,9 +18,9 @@ from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
 
-BENCHMARK_CLASSIFIER = REPO_ROOT / "scripts" / "benchmark_ci_classifier.py"
-RELEASE_WORTHINESS = REPO_ROOT / "scripts" / "release_worthiness.py"
-RELEASE_LIB_DIR = REPO_ROOT / "scripts" / "release_lib"
+BENCHMARK_CLASSIFIER = REPO_ROOT / "scripts" / "benchmark" / "benchmark_ci_classifier.py"
+RELEASE_WORTHINESS = REPO_ROOT / "scripts" / "release" / "release_worthiness.py"
+RELEASE_LIB_DIR = REPO_ROOT / "scripts" / "release" / "release_lib"
 BENCHMARK_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "benchmark-check.yml"
 RELEASE_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "release-worthiness.yml"
 

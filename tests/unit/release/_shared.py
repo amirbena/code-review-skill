@@ -10,7 +10,7 @@ import sys
 
 from tests.support.paths import REPO_ROOT
 
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
+sys.path.insert(0, str(REPO_ROOT / "scripts" / "release"))
 
 import release_worthiness as rw  # noqa: E402
 

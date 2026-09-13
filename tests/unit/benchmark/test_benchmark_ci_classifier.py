@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Coverage for the benchmark CI applicability classifier (Issue #255).
 
-Pure-function tests for `scripts/benchmark_ci_classifier.py`: applicable
+Pure-function tests for `scripts/benchmark/benchmark_ci_classifier.py`: applicable
 paths (each of the minimum path categories in
 docs/benchmark/ci-integration.md), not-applicable paths, mixed changesets,
 and the empty changeset. Plus a thin CLI check for `--changed-files-from`
@@ -18,11 +18,11 @@ from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
 
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
+sys.path.insert(0, str(REPO_ROOT / "scripts" / "benchmark"))
 
 import benchmark_ci_classifier as bcc  # noqa: E402
 
-SCRIPT = REPO_ROOT / "scripts" / "benchmark_ci_classifier.py"
+SCRIPT = REPO_ROOT / "scripts" / "benchmark" / "benchmark_ci_classifier.py"
 
 
 class IsApplicablePathTests(unittest.TestCase):
@@ -39,23 +39,23 @@ class IsApplicablePathTests(unittest.TestCase):
         self.assertTrue(bcc.is_applicable_path("tests/reference/benchmark/benchmark_runner.py"))
 
     def test_run_benchmark_script_is_applicable(self) -> None:
-        self.assertTrue(bcc.is_applicable_path("scripts/run_benchmark.py"))
+        self.assertTrue(bcc.is_applicable_path("scripts/benchmark/run_benchmark.py"))
 
     def test_benchmark_review_adapter_script_is_applicable(self) -> None:
-        self.assertTrue(bcc.is_applicable_path("scripts/benchmark_review_adapter.py"))
+        self.assertTrue(bcc.is_applicable_path("scripts/benchmark/benchmark_review_adapter.py"))
 
     def test_unrelated_docs_are_not_applicable(self) -> None:
         self.assertFalse(bcc.is_applicable_path("docs/RELEASE.md"))
 
     def test_unrelated_scripts_are_not_applicable(self) -> None:
-        self.assertFalse(bcc.is_applicable_path("scripts/release_worthiness.py"))
+        self.assertFalse(bcc.is_applicable_path("scripts/release/release_worthiness.py"))
 
     def test_ci_workflow_files_are_not_applicable(self) -> None:
         self.assertFalse(bcc.is_applicable_path(".github/workflows/release-worthiness.yml"))
 
     def test_this_workflow_and_classifier_are_not_applicable(self) -> None:
         self.assertFalse(bcc.is_applicable_path(".github/workflows/benchmark-check.yml"))
-        self.assertFalse(bcc.is_applicable_path("scripts/benchmark_ci_classifier.py"))
+        self.assertFalse(bcc.is_applicable_path("scripts/benchmark/benchmark_ci_classifier.py"))
 
     def test_empty_path_is_not_applicable(self) -> None:
         self.assertFalse(bcc.is_applicable_path(""))

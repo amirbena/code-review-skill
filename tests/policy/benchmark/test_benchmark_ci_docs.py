@@ -18,7 +18,7 @@ DOC = REPO_ROOT / "docs" / "benchmark" / "ci-integration.md"
 README = REPO_ROOT / "docs" / "benchmark" / "README.md"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "benchmark-check.yml"
-CLASSIFIER = REPO_ROOT / "scripts" / "benchmark_ci_classifier.py"
+CLASSIFIER = REPO_ROOT / "scripts" / "benchmark" / "benchmark_ci_classifier.py"
 CLASSIFIER_UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_ci_classifier.py"
 
 
@@ -51,8 +51,8 @@ class BenchmarkCiIntegrationDocTests(unittest.TestCase):
             "`skills/**`",
             "`docs/benchmark/**`",
             "`tests/reference/benchmark/**`",
-            "`scripts/run_benchmark.py` (exact file)",
-            "`scripts/benchmark_review_adapter.py` (exact file)",
+            "`scripts/benchmark/run_benchmark.py` (exact file)",
+            "`scripts/benchmark/benchmark_review_adapter.py` (exact file)",
         ):
             self.assertIn(token, self.raw)
 
@@ -60,7 +60,7 @@ class BenchmarkCiIntegrationDocTests(unittest.TestCase):
         self.assertIn("## 3. Independence from release-worthiness", self.raw)
         self.assertIn(
             "it does not import, call, or route through "
-            "`scripts/release_lib/classification.py` or `scripts/release_worthiness.py`",
+            "`scripts/release/release_lib/classification.py` or `scripts/release/release_worthiness.py`",
             self.text,
         )
         self.assertIn("no `needs:` on, and no job shared with", self.text)
@@ -80,7 +80,7 @@ class BenchmarkCiIntegrationDocTests(unittest.TestCase):
 
     def test_runs_the_same_script_a_developer_runs_manually(self) -> None:
         self.assertIn("## 5. Runs the same script a developer runs manually", self.raw)
-        self.assertIn("python3 scripts/run_benchmark.py", self.raw)
+        self.assertIn("python3 scripts/benchmark/run_benchmark.py", self.raw)
         self.assertIn("BENCHMARK_REVIEW_CLI", self.raw)
         self.assertIn("BENCHMARK_REVIEW_CLI_ARGS", self.raw)
 

@@ -7,7 +7,7 @@ import unittest
 
 import yaml
 
-from scripts.pr_description_length import PR_BODY_HARD_LIMIT
+from scripts.validation.pr_description_length import PR_BODY_HARD_LIMIT
 from tests.support.paths import REPO_ROOT
 
 AGENTS = REPO_ROOT / "AGENTS.md"
@@ -117,13 +117,13 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertEqual(len(checkouts), 2)
         self.assertEqual(checkouts[0]["with"]["ref"], "${{ github.event.pull_request.base.sha }}")
         self.assertEqual(checkouts[1]["with"]["ref"], "${{ github.event.pull_request.head.sha }}")
-        self.assertIn("hashFiles('scripts/pr_description_length.py') == ''", checkouts[1]["if"])
+        self.assertIn("hashFiles('scripts/validation/pr_description_length.py') == ''", checkouts[1]["if"])
         for checkout in checkouts:
             self.assertIs(checkout["with"]["persist-credentials"], False)
 
     def test_delegates_event_payload_to_canonical_validator(self) -> None:
         run = self.workflow["jobs"]["validate"]["steps"][-1]["run"]
-        self.assertIn("scripts/pr_description_length.py", run)
+        self.assertIn("scripts/validation/pr_description_length.py", run)
         self.assertIn("$GITHUB_EVENT_PATH", run)
         self.assertNotIn("github.event.pull_request.body", self.raw)
         self.assertNotRegex(self.raw, r"\b6_?000\b")

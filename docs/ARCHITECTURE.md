@@ -465,7 +465,7 @@ and no packaged Skill resource depends on them.
   without gating it. Every reference metric under `tests/reference/` is
   test-only; nothing benchmark is packaged. A dedicated, informational
   PR-level CI check wiring the existing benchmark execution
-  (`scripts/run_benchmark.py`, #250) into
+  (`scripts/benchmark/run_benchmark.py`, #250) into
   `.github/workflows/benchmark-check.yml`, independent from
   `release-worthiness.yml`, is
   [`benchmark/ci-integration.md`](benchmark/ci-integration.md) (#255).
@@ -627,11 +627,11 @@ skills/<name>/metadata/…            →   metadata/…
 shared/policies/…, shared/templates/…  →  shared/policies/…, shared/templates/…
 ```
 
-[`scripts/package-manifest.json`](../scripts/package-manifest.json) is the
+[`scripts/packaging/package-manifest.json`](../scripts/packaging/package-manifest.json) is the
 single source of truth for archive names, copied resources, their archive
-destinations, and required-entry guards. `scripts/package-skills.sh` /
-`scripts/package-skills.ps1` consume it through the shared containment
-validator in `scripts/package_manifest.py` and stage each Skill's files under
+destinations, and required-entry guards. `scripts/packaging/package-skills.sh` /
+`scripts/packaging/package-skills.ps1` consume it through the shared containment
+validator in `scripts/packaging/package_manifest.py` and stage each Skill's files under
 `dist/.staging/`, drop the `skills/<name>/` prefix so
 `SKILL.md` lands at the archive root, then zip the staged tree's
 *contents* into `dist/*.zip`. Because `SKILL.md` moves from source depth 2

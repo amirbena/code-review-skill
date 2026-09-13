@@ -1,7 +1,7 @@
 """Argument parsing for the packaging-domain CLI.
 
-Invoked identically by ``scripts/package-skills.sh`` and
-``scripts/package-skills.ps1`` (via ``scripts/package_adapt.py``) so both
+Invoked identically by ``scripts/packaging/package-skills.sh`` and
+``scripts/packaging/package-skills.ps1`` (via ``scripts/packaging/package_adapt.py``) so both
 platform orchestration scripts share one implementation of shared-link
 adaptation, metadata-path adaptation, and SKILL.md frontmatter structural
 validation.
@@ -52,5 +52,5 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-if __name__ == "__main__":  # pragma: no cover - exercised via scripts/package_adapt.py
+if __name__ == "__main__":  # pragma: no cover - exercised via scripts/packaging/package_adapt.py
     raise SystemExit(main())

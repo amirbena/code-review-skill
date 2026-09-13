@@ -16,7 +16,7 @@ import yaml
 
 from tests.support.paths import REPO_ROOT
 
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
+sys.path.insert(0, str(REPO_ROOT / "scripts" / "governance"))
 
 import claim_issue as ci  # noqa: E402
 

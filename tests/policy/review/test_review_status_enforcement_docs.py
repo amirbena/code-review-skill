@@ -27,9 +27,9 @@ SKILL = GITHUB / "SKILL.md"
 ACTIVE_RUNBOOK = GITHUB / "runbooks" / "active-pr-review.md"
 PASSIVE_RUNBOOK = GITHUB / "runbooks" / "passive-pr-review.md"
 METADATA = GITHUB / "metadata" / "skill.yaml"
-PKG_SH = REPO_ROOT / "scripts" / "package-skills.sh"
-PKG_PS1 = REPO_ROOT / "scripts" / "package-skills.ps1"
-PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "package-manifest.json"
+PKG_SH = REPO_ROOT / "scripts" / "packaging" / "package-skills.sh"
+PKG_PS1 = REPO_ROOT / "scripts" / "packaging" / "package-skills.ps1"
+PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
 # The Skill-metadata validator's declarative tables (GITHUB_POLICY_ORDER /
 # _MARKERS). Since #194 the validator is a package; the tables live here.
 VALIDATOR = REPO_ROOT / "scripts" / "skill_metadata" / "expectations.py"

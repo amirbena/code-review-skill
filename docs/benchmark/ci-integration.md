@@ -3,12 +3,12 @@
 Repository-development doc: not packaged, and no packaged Skill resource
 depends on it. Contract for wiring the existing benchmark execution
 ([#250](https://github.com/amirbena/code-review-skill/issues/250):
-`scripts/run_benchmark.py` + `scripts/benchmark_review_adapter.py`,
+`scripts/benchmark/run_benchmark.py` + `scripts/benchmark/benchmark_review_adapter.py`,
 consuming `tests/reference/benchmark/*` and `docs/benchmark/corpus/*.yaml`)
 into a dedicated PR-level CI check
 ([#255](https://github.com/amirbena/code-review-skill/issues/255)),
 implemented by `.github/workflows/benchmark-check.yml` and
-`scripts/benchmark_ci_classifier.py`.
+`scripts/benchmark/benchmark_ci_classifier.py`.
 
 ## 1. Scope
 
@@ -17,12 +17,12 @@ change review-quality benchmark results?" — and, when the answer is yes,
 runs the same benchmark a developer already runs manually and publishes
 its result. It reimplements no benchmark logic: no second reviewer, no
 second runner, no second evaluator, and no Claude Code plugin. Everything
-it does is call `scripts/run_benchmark.py` from the PR checkout and report
+it does is call `scripts/benchmark/run_benchmark.py` from the PR checkout and report
 what came back.
 
 ## 2. Applicability classifier
 
-`scripts/benchmark_ci_classifier.py` is a small, deterministic function
+`scripts/benchmark/benchmark_ci_classifier.py` is a small, deterministic function
 over a list of changed repository-relative paths — no fuzzy heuristics, no
 content inspection, no scoring. A PR is **applicable** when at least one
 changed path falls under:
@@ -31,12 +31,12 @@ changed path falls under:
 - `skills/**`
 - `docs/benchmark/**`
 - `tests/reference/benchmark/**`
-- `scripts/run_benchmark.py` (exact file)
-- `scripts/benchmark_review_adapter.py` (exact file)
+- `scripts/benchmark/run_benchmark.py` (exact file)
+- `scripts/benchmark/benchmark_review_adapter.py` (exact file)
 
 Everything else is **not applicable**. This is a new, self-contained
 classifier: it does not import, call, or route through
-`scripts/release_lib/classification.py` or `scripts/release_worthiness.py`,
+`scripts/release/release_lib/classification.py` or `scripts/release/release_worthiness.py`,
 and neither of those imports or calls it — see "Independence from
 release-worthiness" below.
 
@@ -53,7 +53,7 @@ This check is fully independent from `.github/workflows/release-worthiness.yml`:
   and never blocks or gates another job.
 
 Neither check's classifier routes through the other's decision contract.
-Read `scripts/release_lib/classification.py` before touching either
+Read `scripts/release/release_lib/classification.py` before touching either
 classifier: `.github/workflows/**` and repository-maintenance `scripts/**`
 changes are not release-worthy paths there, so adding or changing this
 workflow and classifier does not, on its own, require a CHANGELOG entry.
@@ -61,7 +61,7 @@ workflow and classifier does not, on its own, require a CHANGELOG entry.
 ## 4. Non-blocking / informational status
 
 The benchmark's reviewer adapter needs a real review-CLI runtime
-(`scripts/benchmark_review_adapter.py`'s `check_runtime_available` /
+(`scripts/benchmark/benchmark_review_adapter.py`'s `check_runtime_available` /
 `RuntimeUnavailableError`), which will almost certainly be unavailable on a
 bare GitHub Actions runner with no secrets configured. The job distinguishes
 three outcomes, and keeps them visibly distinct in its summary:
@@ -75,7 +75,7 @@ three outcomes, and keeps them visibly distinct in its summary:
    summary. This is a distinct, informational outcome — it is never
    conflated with "not applicable" and it never fails the job.
 3. **Applicable, runtime available** — the job runs
-   `python3 scripts/run_benchmark.py` and publishes its JSON output (via
+   `python3 scripts/benchmark/run_benchmark.py` and publishes its JSON output (via
    `$GITHUB_STEP_SUMMARY` and an uploaded artifact). A genuine execution
    failure (the script crashing, or exiting non-zero for a reason other
    than a missing/unusable runtime) may still surface as a visibly failed
@@ -88,7 +88,7 @@ three outcomes, and keeps them visibly distinct in its summary:
 
 ## 5. Runs the same script a developer runs manually
 
-The workflow invokes `python3 scripts/run_benchmark.py` exactly as
+The workflow invokes `python3 scripts/benchmark/run_benchmark.py` exactly as
 documented in that script's own docstring, honoring `BENCHMARK_REVIEW_CLI`
 / `BENCHMARK_REVIEW_CLI_ARGS` when a workflow operator sets them. It never
 duplicates the runner, matcher, metrics, or adapter logic those scripts and
@@ -102,5 +102,5 @@ entrypoint.
 - Provisioning a real review-CLI runtime/credentials in CI (a future,
   separate decision).
 - Any second implementation of the benchmark's applicability logic —
-  `scripts/benchmark_ci_classifier.py` is the single source for this
+  `scripts/benchmark/benchmark_ci_classifier.py` is the single source for this
   check's classification.

@@ -364,7 +364,7 @@ class ExtractedHelperWiringTests(unittest.TestCase):
         build = _step(self.jobs["publish"]["steps"], "Build and verify Skill")
         self.assertIn(helper, build["run"])
         self.assertNotIn("unzip -t", self.raw)
-        self.assertNotIn("scripts/package-skills.sh all", self.raw)
+        self.assertNotIn("scripts/packaging/package-skills.sh all", self.raw)
 
 
 if __name__ == "__main__":

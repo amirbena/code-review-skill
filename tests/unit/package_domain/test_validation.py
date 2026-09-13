@@ -1,4 +1,4 @@
-"""Tests for scripts/package_domain/validation.py — the canonical
+"""Tests for scripts/packaging/package_domain/validation.py — the canonical
 SKILL.md frontmatter structural validation shared by both platform
 packaging scripts (issue #266)."""
 

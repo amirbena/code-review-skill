@@ -1,4 +1,4 @@
-"""Tests for scripts/release_worthiness.py Unreleased-section roll and the changelog-section extraction command."""
+"""Tests for scripts/release/release_worthiness.py Unreleased-section roll and the changelog-section extraction command."""
 
 from __future__ import annotations
 

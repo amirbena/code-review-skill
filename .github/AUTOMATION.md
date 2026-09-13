@@ -7,11 +7,11 @@ canonical docs and scripts that own the exact contracts.
 
 **This file is a map, not a policy source of truth.** Where a detailed
 contract lives elsewhere — [`../docs/RELEASE.md`](../docs/RELEASE.md),
-[`../scripts/release_worthiness.py`](../scripts/release_worthiness.py) and
-[`../scripts/release_lib/`](../scripts/release_lib/), the
-[`../scripts/claim_issue.py`](../scripts/claim_issue.py),
-[`../scripts/sync_issue_labels.py`](../scripts/sync_issue_labels.py) and
-[`../scripts/pr_description_length.py`](../scripts/pr_description_length.py)
+[`../scripts/release/release_worthiness.py`](../scripts/release/release_worthiness.py) and
+[`../scripts/release/release_lib/`](../scripts/release/release_lib/), the
+[`../scripts/governance/claim_issue.py`](../scripts/governance/claim_issue.py),
+[`../scripts/governance/sync_issue_labels.py`](../scripts/governance/sync_issue_labels.py) and
+[`../scripts/validation/pr_description_length.py`](../scripts/validation/pr_description_length.py)
 validators, or [`../AGENTS.md`](../AGENTS.md) and
 [`../policies/`](../policies/) for instruction architecture — this file
 links to it rather than restating it. Keep the table below refreshed when
@@ -21,10 +21,10 @@ workflows change.
 
 | Workflow | File | Trigger | Responsibility | GitHub state |
 | --- | --- | --- | --- | --- |
-| Validate repository | [`workflows/validate.yml`](workflows/validate.yml) | `pull_request` | Set up Python 3.13, validate both Skills' metadata (`scripts/validate-skill-metadata.py`), run `python -m unittest discover -s tests` | Read-only (`contents: read`) |
-| Validate PR description length | [`workflows/pr-description-length.yml`](workflows/pr-description-length.yml) | `pull_request` (opened, edited, synchronize) | Check out the trusted validator from the PR base SHA (bootstrapping from head only for the PR that introduces the script), enforce the useful-content limit via `scripts/pr_description_length.py` | Read-only (`contents: read`) |
-| Sync Engineering Task labels | [`workflows/sync-issue-labels.yml`](workflows/sync-issue-labels.yml) | `issues` (opened, edited) | Compute managed-label changes from the issue body (`scripts/sync_issue_labels.py`), then `gh issue edit` to apply the add/remove set; per-issue `concurrency` with cancel-in-progress | Mutates issue labels (`issues: write`) |
-| Claim contribution issue | [`workflows/claim-issue.yml`](workflows/claim-issue.yml) | `issue_comment` (created) | On `/claim` or `/unclaim` on a non-PR issue: check out trusted default-branch automation, read the issue and comment history, plan via `scripts/claim_issue.py` with churn/cooldown thresholds, persist a trusted receipt and a reconciled-state checkpoint comment, then project state onto the `claimed` label; repo-wide serialized `concurrency` queue | Mutates issue comments + the `claimed` label (`issues: write`) |
+| Validate repository | [`workflows/validate.yml`](workflows/validate.yml) | `pull_request` | Set up Python 3.13, validate both Skills' metadata (`scripts/validation/validate-skill-metadata.py`), run `python -m unittest discover -s tests` | Read-only (`contents: read`) |
+| Validate PR description length | [`workflows/pr-description-length.yml`](workflows/pr-description-length.yml) | `pull_request` (opened, edited, synchronize) | Check out the trusted validator from the PR base SHA (bootstrapping from head only for the PR that introduces the script), enforce the useful-content limit via `scripts/validation/pr_description_length.py` | Read-only (`contents: read`) |
+| Sync Engineering Task labels | [`workflows/sync-issue-labels.yml`](workflows/sync-issue-labels.yml) | `issues` (opened, edited) | Compute managed-label changes from the issue body (`scripts/governance/sync_issue_labels.py`), then `gh issue edit` to apply the add/remove set; per-issue `concurrency` with cancel-in-progress | Mutates issue labels (`issues: write`) |
+| Claim contribution issue | [`workflows/claim-issue.yml`](workflows/claim-issue.yml) | `issue_comment` (created) | On `/claim` or `/unclaim` on a non-PR issue: check out trusted default-branch automation, read the issue and comment history, plan via `scripts/governance/claim_issue.py` with churn/cooldown thresholds, persist a trusted receipt and a reconciled-state checkpoint comment, then project state onto the `claimed` label; repo-wide serialized `concurrency` queue | Mutates issue comments + the `claimed` label (`issues: write`) |
 | Release worthiness | [`workflows/release-worthiness.yml`](workflows/release-worthiness.yml) | `pull_request` | PR lifecycle, read-only preview. `release-gate` (required check): classify the change set the PR itself contributes, and — only when release-worthy — enforce release intent (CHANGELOG category + entry in the PR description, passed via env); always resolves, with an explicit not-applicable result when the change isn't release-worthy. `package` (not required, `needs: release-gate` when release-worthy): build/verify the Skill archives as a dry run. Never builds a release; never touches `main`. | `release-gate` / `package` read-only |
 | Release publish | [`workflows/release-publish.yml`](workflows/release-publish.yml) | `push` to `main`, `workflow_dispatch` | Main/release lifecycle, authoritative. Never triggered by `pull_request`, so `plan`/`publish` never exist as PR check runs; recomputes the release assessment itself rather than trusting `release-gate`'s preview. `plan` (read-only, trusted `main` only): the authoritative release-worthiness assessment — classify everything since the latest `v*` tag, generate `## Unreleased` from merged PRs' release intent, and derive the next version. `publish` (only when `plan` reports release-worthy): mint a trusted release GitHub App token, generate and roll the CHANGELOG, build + verify both archives, commit to `main` `[skip ci]`, create an annotated tag, publish the GitHub Release with archives, verify | `plan` read-only; `publish` mutates (`contents: write` via the release GitHub App: commit to `main`, tag, GitHub Release) behind the `release` Environment |
 
@@ -41,7 +41,7 @@ worthiness` `release-gate` job are the required status checks on the
 - **`pr-description-length.yml`** — enforces the PR-description
   useful-content limit, checking out the validator from the trusted PR
   **base** SHA so a PR cannot weaken its own check. Contract:
-  [`../scripts/pr_description_length.py`](../scripts/pr_description_length.py).
+  [`../scripts/validation/pr_description_length.py`](../scripts/validation/pr_description_length.py).
 - **`release-worthiness.yml` → `release-gate` job** — the required,
   always-resolving check: classifies whether the change ships a Skill or
   its packaged distribution, and — only when it does — requires the PR to
@@ -59,12 +59,12 @@ worthiness` `release-gate` job are the required status checks on the
   label set from the issue body and applies the diff. A newer edit
   supersedes an in-flight run (per-issue `concurrency`,
   cancel-in-progress). Contract:
-  [`../scripts/sync_issue_labels.py`](../scripts/sync_issue_labels.py).
+  [`../scripts/governance/sync_issue_labels.py`](../scripts/governance/sync_issue_labels.py).
 - **`claim-issue.yml`** — on a `/claim` or `/unclaim` comment on a
   non-PR issue, reconciles ownership: it checks out trusted
   default-branch automation, reads the issue and repository comment
   history, and plans the action with
-  [`../scripts/claim_issue.py`](../scripts/claim_issue.py) under
+  [`../scripts/governance/claim_issue.py`](../scripts/governance/claim_issue.py) under
   churn/cooldown thresholds (the `CLAIM_*` env values). It persists a
   **trusted command receipt**, then a **reconciled-state checkpoint**
   comment, before projecting the logical state onto the `claimed`

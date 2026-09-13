@@ -23,9 +23,9 @@ SKILL = REPO_ROOT / "skills" / "github-pr-review" / "SKILL.md"
 INDEX = REPO_ROOT / "skills" / "github-pr-review" / "policies" / "github-review.md"
 DELTA_REVIEW = REPO_ROOT / "skills" / "github-pr-review" / "policies" / "reviewer-delta-review.md"
 LOCAL_SKILL = REPO_ROOT / "skills" / "local-code-review" / "SKILL.md"
-PACKAGE_SH = REPO_ROOT / "scripts" / "package-skills.sh"
-PACKAGE_PS1 = REPO_ROOT / "scripts" / "package-skills.ps1"
-PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "package-manifest.json"
+PACKAGE_SH = REPO_ROOT / "scripts" / "packaging" / "package-skills.sh"
+PACKAGE_PS1 = REPO_ROOT / "scripts" / "packaging" / "package-skills.ps1"
+PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
 
 
 class StatefulDeltaRereviewPolicyTests(unittest.TestCase):

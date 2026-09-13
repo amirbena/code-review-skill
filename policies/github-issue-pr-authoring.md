@@ -118,7 +118,7 @@ deterministic checker — the same one CI runs — rather than waiting for CI to
 catch an invalid or missing category:
 
 ```bash
-PR_BODY="$(cat pr-body.md)" python3 scripts/release_worthiness.py assess \
+PR_BODY="$(cat pr-body.md)" python3 scripts/release/release_worthiness.py assess \
   --base-ref <base> --pr-body-env PR_BODY --require-release-intent
 ```
 
@@ -126,7 +126,7 @@ Pass the drafted body through the named environment variable, never as a
 literal CLI argument. Treat this as a pre-mutation gate: if it fails, fix the
 `Release category:` / `Release entry:` lines in the draft and re-run it before
 calling `gh pr create` / `gh pr edit` — do not open or update the PR on a
-failing check. This reuses `scripts/release_worthiness.py`'s existing
+failing check. This reuses `scripts/release/release_worthiness.py`'s existing
 `assess --require-release-intent` contract; do not reimplement category
 validation elsewhere.
 
@@ -141,7 +141,7 @@ wholesale into the PR description. Prefer one sentence or bullet plus a link.
 
 The repository GitHub Actions check measures the actual current
 `pull_request.body` by invoking
-[`../scripts/pr_description_length.py`](../scripts/pr_description_length.py).
+[`../scripts/validation/pr_description_length.py`](../scripts/validation/pr_description_length.py).
 That module's `PR_BODY_HARD_LIMIT` constant is the sole authoritative numeric
 limit; workflow YAML, policy, and tests must reuse it rather than implement
 another counter.

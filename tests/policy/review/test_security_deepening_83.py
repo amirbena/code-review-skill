@@ -45,7 +45,7 @@ EVIDENCE = REPO_ROOT / "shared/policies/evidence.md"
 POLICIES_README = REPO_ROOT / "shared/policies/README.md"
 FINDING_TMPL = REPO_ROOT / "shared/templates/finding.md"
 FINDING_RENDERING = REPO_ROOT / "shared/templates/finding-rendering.md"
-PACKAGE_MANIFEST = REPO_ROOT / "scripts/package-manifest.json"
+PACKAGE_MANIFEST = REPO_ROOT / "scripts/packaging/package-manifest.json"
 
 
 def _norm(path: Path) -> str:

@@ -7,15 +7,15 @@
 # and final zips) stays strictly under dist/.
 #
 # Usage:
-#   scripts/package-skills.sh [local|github|all]
+#   scripts/packaging/package-skills.sh [local|github|all]
 # Defaults to "all" when no argument is given.
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "${script_dir}/.." && pwd)"
+repo_root="$(cd "${script_dir}/../.." && pwd)"
 dist_dir="${repo_root}/dist"
 staging_root="${dist_dir}/.staging"
-metadata_validator="${script_dir}/validate-skill-metadata.py"
+metadata_validator="${repo_root}/scripts/validation/validate-skill-metadata.py"
 package_manifest="${script_dir}/package-manifest.json"
 package_manifest_helper="${script_dir}/package_manifest.py"
 package_adapt="${script_dir}/package_adapt.py"
@@ -46,9 +46,9 @@ require_archive_entry() {
 
 # Shared-link adaptation, metadata-path adaptation, and SKILL.md
 # frontmatter structural validation are packaging-domain rules shared
-# with scripts/package-skills.ps1; both platform scripts delegate to the
-# single canonical Python implementation in scripts/package_domain/ (see
-# scripts/package_adapt.py) instead of restating the rules here.
+# with scripts/packaging/package-skills.ps1; both platform scripts delegate to the
+# single canonical Python implementation in scripts/packaging/package_domain/ (see
+# scripts/packaging/package_adapt.py) instead of restating the rules here.
 validate_skill_frontmatter() {
   local skill_md="$1"
   local expected_name="$2"

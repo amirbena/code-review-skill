@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import unittest
 
-from scripts.benchmark_review_adapter import (
+from scripts.benchmark.benchmark_review_adapter import (
     ProductionReviewerAdapter,
     RuntimeUnavailableError,
     check_runtime_available,

@@ -14,7 +14,7 @@ REVIEW_SCOPE = REPO_ROOT / "shared" / "policies" / "review-scope.md"
 EVIDENCE = REPO_ROOT / "shared" / "policies" / "evidence.md"
 SHARED_README = REPO_ROOT / "shared" / "policies" / "README.md"
 REVIEW_SUMMARY = REPO_ROOT / "shared" / "templates" / "review-summary.md"
-MANIFEST = REPO_ROOT / "scripts" / "package-manifest.json"
+MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
 
 
 def _norm(path: Path) -> str:

@@ -73,7 +73,7 @@ issue` on an Infrastructure-typed Issue (or one in an automation-flavored
 `area:*`, e.g. `area:packaging-portability`) communicates the same thing
 with less taxonomy. The `type:` / `area:` / `priority:` labels are
 derived from the Issue Form and reconciled on every edit by
-[`../scripts/sync_issue_labels.py`](../scripts/sync_issue_labels.py), so
+[`../scripts/governance/sync_issue_labels.py`](../scripts/governance/sync_issue_labels.py), so
 the Infrastructure signal must come from the form's **Type** field — a
 hand-added `type:infrastructure` label on a differently-typed Issue is
 reverted. No ownership semantics are added to Type / Area / Priority.

@@ -6,7 +6,7 @@ name: Release worthiness
 # .github/workflows/release-publish.yml, triggered only by `push` to `main`
 # and `workflow_dispatch` — never by `pull_request` — so GitHub never
 # creates `plan` or `publish` check runs (not even `Skipped` ones) on a PR.
-# Both workflows drive the same scripts/release_lib/ classification and
+# Both workflows drive the same scripts/release/release_lib/ classification and
 # changelog engine; this file never re-implements or second-guesses it.
 #
 # `release-gate` is the required, always-created PR check: read-only, it
@@ -24,7 +24,7 @@ name: Release worthiness
 # both Skill archives and uploads them for inspection. A packaging failure
 # there never fails the required gate.
 #
-# Classification, SemVer, and release checks: scripts/release_worthiness.py.
+# Classification, SemVer, and release checks: scripts/release/release_worthiness.py.
 # Repository configuration (branch ruleset + the trusted release GitHub
 # App that is the sole bypass actor): docs/RELEASE.md.
 
@@ -91,7 +91,7 @@ jobs:
       - name: Determine base ref
         id: base
         run: |
-          python scripts/release_worthiness.py resolve-base-ref \
+          python scripts/release/release_worthiness.py resolve-base-ref \
             --event-name "${{ github.event_name }}" \
             --pr-base-ref "${{ github.event.pull_request.base.ref }}" \
             --pr-base-sha "${{ github.event.pull_request.base.sha }}" \
@@ -117,7 +117,7 @@ jobs:
           if [ "${EVENT_NAME}" = "pull_request" ]; then
             intent=(--require-release-intent --pr-body-env PR_BODY --pr-number "${PR_NUMBER}")
           fi
-          python scripts/release_worthiness.py assess \
+          python scripts/release/release_worthiness.py assess \
             --base-ref "${{ steps.base.outputs.ref }}" \
             --github-output "$GITHUB_OUTPUT" \
             --step-summary "$GITHUB_STEP_SUMMARY" \

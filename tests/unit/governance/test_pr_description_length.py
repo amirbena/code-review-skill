@@ -9,7 +9,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 
-from scripts import pr_description_length as pr_length
+from scripts.validation import pr_description_length as pr_length
 
 
 class UsefulContentTests(unittest.TestCase):

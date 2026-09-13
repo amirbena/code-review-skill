@@ -7,12 +7,17 @@ file only wires ``sys.argv`` to them and re-exports their public names so
 existing importers keep working.
 
 Usage:
-    python3 scripts/validate-skill-metadata.py <skill_root> [--containment-root <root>]
+    python3 scripts/validation/validate-skill-metadata.py <skill_root> [--containment-root <root>]
 """
 
 from __future__ import annotations
 
-from skill_metadata import main, validate
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from skill_metadata import main, validate  # noqa: E402
 
 __all__ = ["main", "validate"]
 

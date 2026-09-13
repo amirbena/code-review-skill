@@ -53,9 +53,9 @@ how the reviewer will be used — packaging both is rarely needed.
 
 | Package | Command (shell · PowerShell) | Output |
 |---|---|---|
-| Local review only | `./scripts/package-skills.sh local` · `./scripts/package-skills.ps1 local` | `dist/local-code-review-skill.zip` |
-| GitHub PR review only | `./scripts/package-skills.sh github` · `./scripts/package-skills.ps1 github` | `dist/github-pr-review-skill.zip` |
-| Both entry points | `./scripts/package-skills.sh all` · `./scripts/package-skills.ps1 all` | both archives above |
+| Local review only | `./scripts/packaging/package-skills.sh local` · `./scripts/packaging/package-skills.ps1 local` | `dist/local-code-review-skill.zip` |
+| GitHub PR review only | `./scripts/packaging/package-skills.sh github` · `./scripts/packaging/package-skills.ps1 github` | `dist/github-pr-review-skill.zip` |
+| Both entry points | `./scripts/packaging/package-skills.sh all` · `./scripts/packaging/package-skills.ps1 all` | both archives above |
 
 ## Quick start
 
@@ -153,16 +153,16 @@ Validation and packaging run from the repository root:
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
-python3 scripts/validate-skill-metadata.py skills/local-code-review --containment-root .
-python3 scripts/validate-skill-metadata.py skills/github-pr-review --containment-root .
-python3 scripts/validate-markdown-links.py
+python3 scripts/validation/validate-skill-metadata.py skills/local-code-review --containment-root .
+python3 scripts/validation/validate-skill-metadata.py skills/github-pr-review --containment-root .
+python3 scripts/validation/validate-markdown-links.py
 python3 -m unittest discover -s tests -t .
-./scripts/package-skills.sh all
+./scripts/packaging/package-skills.sh all
 ```
 
 On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`, use
 `python` in place of `python3`, and package with
-`./scripts/package-skills.ps1 all`. Packaging also needs the `zip` and
+`./scripts/packaging/package-skills.ps1 all`. Packaging also needs the `zip` and
 `unzip` command-line tools on macOS/Linux, or PowerShell on Windows. Generated
 archives stay under the ignored `dist/` directory.
 

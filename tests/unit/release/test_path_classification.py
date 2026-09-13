@@ -1,4 +1,4 @@
-"""Tests for scripts/release_worthiness.py path-classification helpers."""
+"""Tests for scripts/release/release_worthiness.py path-classification helpers."""
 
 from __future__ import annotations
 
@@ -29,17 +29,17 @@ class ClassifyPathTests(unittest.TestCase):
 
     def test_packaging_files_are_release_worthy(self) -> None:
         for path in (
-            "scripts/package-skills.sh",
-            "scripts/package-skills.ps1",
-            "scripts/package-manifest.json",
-            "scripts/package_manifest.py",
-            "scripts/package_adapt.py",
-            "scripts/validate-skill-metadata.py",
+            "scripts/packaging/package-skills.sh",
+            "scripts/packaging/package-skills.ps1",
+            "scripts/packaging/package-manifest.json",
+            "scripts/packaging/package_manifest.py",
+            "scripts/packaging/package_adapt.py",
+            "scripts/validation/validate-skill-metadata.py",
         ):
             self.assertEqual(rw.classify_path(path), "packaging", path)
 
     def test_skill_metadata_validator_package_is_release_worthy(self) -> None:
-        # The validator behind scripts/validate-skill-metadata.py is a
+        # The validator behind scripts/validation/validate-skill-metadata.py is a
         # package; editing any of its modules stays release-worthy.
         for path in (
             "scripts/skill_metadata/expectations.py",
@@ -50,18 +50,18 @@ class ClassifyPathTests(unittest.TestCase):
 
     def test_packaging_domain_package_is_release_worthy(self) -> None:
         # The shared-link/metadata-path/frontmatter package behind
-        # scripts/package_adapt.py is a package (issue #266); editing any
+        # scripts/packaging/package_adapt.py is a package (issue #266); editing any
         # of its modules stays release-worthy.
         for path in (
-            "scripts/package_domain/adaptation.py",
-            "scripts/package_domain/validation.py",
-            "scripts/package_domain/cli.py",
+            "scripts/packaging/package_domain/adaptation.py",
+            "scripts/packaging/package_domain/validation.py",
+            "scripts/packaging/package_domain/cli.py",
         ):
             self.assertEqual(rw.classify_path(path), "packaging", path)
 
     def test_non_packaging_scripts_are_maintenance(self) -> None:
-        self.assertEqual(rw.classify_path("scripts/claim_issue.py"), "repo-maintenance")
-        self.assertEqual(rw.classify_path("scripts/release_worthiness.py"), "repo-maintenance")
+        self.assertEqual(rw.classify_path("scripts/governance/claim_issue.py"), "repo-maintenance")
+        self.assertEqual(rw.classify_path("scripts/release/release_worthiness.py"), "repo-maintenance")
         # CI-only release automation helper — never shipped in an archive.
         self.assertEqual(
             rw.classify_path("scripts/release/verify-skill-archives.sh"), "repo-maintenance"
@@ -104,7 +104,7 @@ class ClassifyPathsTests(unittest.TestCase):
         self.assertEqual([p for p, _ in c.triggering], ["skills/local-code-review/SKILL.md"])
 
     def test_packaging_change_is_release_worthy(self) -> None:
-        c = rw.classify_paths(["scripts/package-skills.ps1"])
+        c = rw.classify_paths(["scripts/packaging/package-skills.ps1"])
         self.assertTrue(c.release_worthy)
 
     def test_docs_only_is_not_release_worthy(self) -> None:
@@ -114,7 +114,7 @@ class ClassifyPathsTests(unittest.TestCase):
 
     def test_tests_and_maintenance_only_is_not_release_worthy(self) -> None:
         c = rw.classify_paths(
-            ["tests/unit/test_x.py", "scripts/claim_issue.py", ".github/workflows/validate.yml"]
+            ["tests/unit/test_x.py", "scripts/governance/claim_issue.py", ".github/workflows/validate.yml"]
         )
         self.assertFalse(c.release_worthy)
 

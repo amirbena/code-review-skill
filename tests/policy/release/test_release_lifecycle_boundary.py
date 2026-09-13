@@ -8,7 +8,7 @@ This is the structural guard the issue asks for: it fails if `plan` or
 `if:` that is always false — GitHub still creates a `Skipped` check run
 for a job that exists), if the main/release workflow ever gains a
 `pull_request` trigger, or if either lifecycle stops sharing
-`scripts/release_lib/` and starts duplicating classification rules in
+`scripts/release/release_lib/` and starts duplicating classification rules in
 YAML.
 
 Individual job contracts (permissions, step ordering, outputs) are covered
@@ -27,8 +27,8 @@ from tests.support.paths import REPO_ROOT
 
 PR_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "release-worthiness.yml"
 MAIN_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "release-publish.yml"
-RELEASE_LIB_DIR = REPO_ROOT / "scripts" / "release_lib"
-RELEASE_SCRIPT = REPO_ROOT / "scripts" / "release_worthiness.py"
+RELEASE_LIB_DIR = REPO_ROOT / "scripts" / "release" / "release_lib"
+RELEASE_SCRIPT = REPO_ROOT / "scripts" / "release" / "release_worthiness.py"
 RELEASE_DOC = REPO_ROOT / "docs" / "RELEASE.md"
 
 
@@ -138,7 +138,7 @@ class RequiredCheckIdentityTests(unittest.TestCase):
 
 
 class SharedEngineTests(unittest.TestCase):
-    """9: both lifecycles drive the same scripts/release_lib/ assessment
+    """9: both lifecycles drive the same scripts/release/release_lib/ assessment
     implementation rather than duplicating classification rules in YAML."""
 
     def test_pr_workflow_invokes_the_shared_cli(self) -> None:

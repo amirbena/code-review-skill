@@ -34,20 +34,21 @@ SHARED_RUNTIME_ROOT = "shared/"
 # contain or whether they build at all.
 PACKAGING_FILES = frozenset(
     {
-        "scripts/package-skills.sh",
-        "scripts/package-skills.ps1",
-        "scripts/package-manifest.json",
-        "scripts/package_manifest.py",
-        "scripts/package_adapt.py",
-        "scripts/validate-skill-metadata.py",
+        "scripts/packaging/package-skills.sh",
+        "scripts/packaging/package-skills.ps1",
+        "scripts/packaging/package-manifest.json",
+        "scripts/packaging/package_manifest.py",
+        "scripts/packaging/package_adapt.py",
+        "scripts/validation/validate-skill-metadata.py",
     }
 )
 
 # Directories whose every file is packaging/distribution machinery (the
-# Skill-metadata validator package behind scripts/validate-skill-metadata.py,
-# and the shared-link/metadata-path/frontmatter packaging-domain package
-# behind scripts/package_adapt.py).
-PACKAGING_PREFIXES = ("scripts/skill_metadata/", "scripts/package_domain/")
+# Skill-metadata validator package behind
+# scripts/validation/validate-skill-metadata.py, and the shared-link/
+# metadata-path/frontmatter packaging-domain package behind
+# scripts/packaging/package_adapt.py).
+PACKAGING_PREFIXES = ("scripts/skill_metadata/", "scripts/packaging/package_domain/")
 
 # Trees that never, on their own, require a release.
 NON_RELEASE_TREES = {

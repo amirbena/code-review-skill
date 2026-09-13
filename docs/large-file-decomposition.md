@@ -32,8 +32,8 @@ reason to split and is never CI-enforced.
   CLI surfaces, workflow triggers/outputs, and Skill discovery metadata
   stay byte-stable.
 - Packaged Skill archive contents and layout stay identical; if a packaged
-  resource set does change, `scripts/package-skills.sh` and
-  `scripts/package-skills.ps1` are updated together and the
+  resource set does change, `scripts/packaging/package-skills.sh` and
+  `scripts/packaging/package-skills.ps1` are updated together and the
   packaging-runtime-boundary tests still pass.
 - `scripts/*.sh` ↔ `scripts/*.ps1` parity is preserved; CI-only Linux
   automation needs no PowerShell counterpart, but that is stated where it
@@ -49,12 +49,12 @@ reason to split and is never CI-enforced.
 
 | File | Lines | Tag | Rationale and target shape |
 | --- | ---: | --- | --- |
-| `scripts/validate-skill-metadata.py` | 725 | split + extract | ~335 lines of module-level expectation tables (per-file required headers/markers mirroring the invocation-options model, OpenAI interface field maps, forbidden-phrase lists) precede the logic, then generic helpers, a ~175-line `validate()`, and `validate_github_policy_family()`. Target: a `scripts/skill_metadata/` package — expectation data in one module, focused checkers (frontmatter, declared-resources, markdown-link containment, github-policy-family), a thin `validate()` orchestrator + `main()`. Mirrors the existing `release_lib/` split. Dev/CI validator only — not shipped; the path is referenced by `package-skills.sh`, so a moved entrypoint updates both package scripts. |
-| `scripts/release_lib/cli.py` | 445 | extract | Already packaged, but now holds eight `_cmd_*` handlers plus `assess()` / `Assessment` and GitHub-output helpers. Target: command handlers in focused modules (e.g. `release_lib/commands/`), the assessment domain type in `release_lib/assessment.py`, `cli.py` reduced to parser wiring + dispatch. |
+| `scripts/validation/validate-skill-metadata.py` | 725 | split + extract | ~335 lines of module-level expectation tables (per-file required headers/markers mirroring the invocation-options model, OpenAI interface field maps, forbidden-phrase lists) precede the logic, then generic helpers, a ~175-line `validate()`, and `validate_github_policy_family()`. Target: a `scripts/skill_metadata/` package — expectation data in one module, focused checkers (frontmatter, declared-resources, markdown-link containment, github-policy-family), a thin `validate()` orchestrator + `main()`. Mirrors the existing `release_lib/` split. Dev/CI validator only — not shipped; the path is referenced by `package-skills.sh`, so a moved entrypoint updates both package scripts. |
+| `scripts/release/release_lib/cli.py` | 445 | extract | Already packaged, but now holds eight `_cmd_*` handlers plus `assess()` / `Assessment` and GitHub-output helpers. Target: command handlers in focused modules (e.g. `release_lib/commands/`), the assessment domain type in `release_lib/assessment.py`, `cli.py` reduced to parser wiring + dispatch. |
 | `.github/workflows/release-worthiness.yml` | 346 | completed | Issue #197 moved the reusable `run: |` logic into tested helpers: base-ref resolution and release-commit identity resolution are `release_worthiness.py` subcommands (`resolve-base-ref`, `resolve-app-identity` in `release_lib/commands/workflow.py`), and the shared "package + `unzip -t` + confirm both zips" sequence is `scripts/release/verify-skill-archives.sh`. The YAML keeps triggers, permissions, `needs`/gating, concurrency, the publish sequence, and step summaries. Release automation is CI-only (Linux); the helper states it has no `.ps1` counterpart. |
-| `scripts/package-skills.ps1` | 354 | completed | Issue #196 moved the shared and per-Skill resource mappings, archive names, and required entries into `scripts/package-manifest.json`; both platform scripts now consume it. |
-| `scripts/package-skills.sh` | 330 | completed | Paired with the PowerShell implementation above. Platform-specific staging, validation, containment, link adaptation, and archive creation remain in each script; archive contents and layout are preserved. |
-| `scripts/claim_issue.py` | 389 | extract (optional) | Single responsibility (reconcile claim state from trusted receipts), but the receipt-parsing/replay primitives (`_receipts`, `_checkpoints`, `_replay_anchor`, `_repository_history`, `_active_restriction`) could move to a `scripts/claim_lib/` module, leaving `reconcile()` + `main()`. Lowest priority in this tier; acceptable to keep if it still reads as one responsibility. |
+| `scripts/packaging/package-skills.ps1` | 354 | completed | Issue #196 moved the shared and per-Skill resource mappings, archive names, and required entries into `scripts/packaging/package-manifest.json`; both platform scripts now consume it. |
+| `scripts/packaging/package-skills.sh` | 330 | completed | Paired with the PowerShell implementation above. Platform-specific staging, validation, containment, link adaptation, and archive creation remain in each script; archive contents and layout are preserved. |
+| `scripts/governance/claim_issue.py` | 389 | extract (optional) | Single responsibility (reconcile claim state from trusted receipts), but the receipt-parsing/replay primitives (`_receipts`, `_checkpoints`, `_replay_anchor`, `_repository_history`, `_active_restriction`) could move to a `scripts/claim_lib/` module, leaving `reconcile()` + `main()`. Lowest priority in this tier; acceptable to keep if it still reads as one responsibility. |
 
 ## Priority 2 — Skill-runtime canonical material
 
@@ -108,11 +108,11 @@ Each numbered item is an independently reviewable, independently closable
 step. Line counts are from `main` at the time of writing and drift; the
 tags above, not the numbers, decide whether a step is still worth doing.
 
-1. `scripts/validate-skill-metadata.py` → `scripts/skill_metadata/` package.
-2. `scripts/release_lib/cli.py` → extract command handlers + `assess()`.
-3. `scripts/package-skills.{sh,ps1}` → shared declarative package manifest.
+1. `scripts/validation/validate-skill-metadata.py` → `scripts/skill_metadata/` package.
+2. `scripts/release/release_lib/cli.py` → extract command handlers + `assess()`.
+3. `scripts/packaging/package-skills.{sh,ps1}` → shared declarative package manifest.
 4. `.github/workflows/release-worthiness.yml` → shell logic into tested helpers.
-5. *(optional)* `scripts/claim_issue.py` → `scripts/claim_lib/` primitives.
+5. *(optional)* `scripts/governance/claim_issue.py` → `scripts/claim_lib/` primitives.
 6. `shared/templates/finding.md` → contract / rendering split. *(done — Issue #198, `finding-rendering.md`.)*
 7. `shared/policies/review-context.md` → extract Jira resolution policy. *(done — Issue #198, `jira-context.md`.)*
 8. `shared/policies/review-scope.md` → extract root-cause-consolidation and affected-test sub-policies. *(done — Issue #198, `root-cause-consolidation.md` + `affected-test-analysis.md`.)*

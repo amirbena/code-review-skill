@@ -1,6 +1,6 @@
 """Focused building blocks for Skill discovery-metadata validation.
 
-Split out of ``scripts/validate-skill-metadata.py`` so each concern can be
+Split out of ``scripts/validation/validate-skill-metadata.py`` so each concern can be
 read on its own; the script is now a thin entrypoint that calls ``main``.
 The "what a packaged Skill may declare / reference" contract lives in
 docs and ``policies/skill-development-policy.md``.

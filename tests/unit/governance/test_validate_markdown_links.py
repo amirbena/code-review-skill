@@ -99,7 +99,7 @@ class ValidateMarkdownLinksTests(unittest.TestCase):
 
     def test_cli_passes_on_repository(self) -> None:
         subprocess.run(
-            [sys.executable, str(REPO_ROOT / "scripts" / "validate-markdown-links.py")],
+            [sys.executable, str(REPO_ROOT / "scripts" / "validation" / "validate-markdown-links.py")],
             cwd=REPO_ROOT,
             check=True,
         )

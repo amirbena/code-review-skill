@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for scripts/sync_issue_labels.py — parsing, mapping, reconciliation.
+"""Tests for scripts/governance/sync_issue_labels.py — parsing, mapping, reconciliation.
 
 GitHub's API is out of scope here; only the pure logic the workflow depends on.
 """
@@ -15,7 +15,7 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
+sys.path.insert(0, str(REPO_ROOT / "scripts" / "governance"))
 
 import sync_issue_labels as sil  # noqa: E402
 

@@ -6,12 +6,12 @@
   ROOT (not nested under skills/<name>/), so a consumer never needs to
   know this repository's source layout. All generated output (staging
   and final zips) stays strictly under dist/. Cross-platform equivalent
-  of scripts/package-skills.sh.
+  of scripts/packaging/package-skills.sh.
 
   Usage:
-    ./scripts/package-skills.ps1 local
-    ./scripts/package-skills.ps1 github
-    ./scripts/package-skills.ps1 all      # default
+    ./scripts/packaging/package-skills.ps1 local
+    ./scripts/packaging/package-skills.ps1 github
+    ./scripts/packaging/package-skills.ps1 all      # default
 #>
 
 param(
@@ -23,10 +23,10 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Resolve-Path (Join-Path $scriptDir "..")
+$repoRoot = Resolve-Path (Join-Path $scriptDir "../..")
 $distDir = Join-Path $repoRoot "dist"
 $stagingRoot = Join-Path $distDir ".staging"
-$metadataValidator = Join-Path $scriptDir "validate-skill-metadata.py"
+$metadataValidator = Join-Path $repoRoot "scripts/validation/validate-skill-metadata.py"
 $packageManifestPath = Join-Path $scriptDir "package-manifest.json"
 $packageManifestHelper = Join-Path $scriptDir "package_manifest.py"
 $packageAdapt = Join-Path $scriptDir "package_adapt.py"
@@ -47,9 +47,9 @@ if ($packageManifest.schema_version -ne 1) {
 
 # Shared-link adaptation, metadata-path adaptation, and SKILL.md
 # frontmatter structural validation are packaging-domain rules shared
-# with scripts/package-skills.sh; both platform scripts delegate to the
-# single canonical Python implementation in scripts/package_domain/ (see
-# scripts/package_adapt.py) instead of restating the rules here.
+# with scripts/packaging/package-skills.sh; both platform scripts delegate to the
+# single canonical Python implementation in scripts/packaging/package_domain/ (see
+# scripts/packaging/package_adapt.py) instead of restating the rules here.
 function Test-SkillFrontmatter {
   param(
     [string]$SkillMdPath,

@@ -28,7 +28,7 @@ from unittest import mock
 
 from tests.support.paths import REPO_ROOT
 
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
+sys.path.insert(0, str(REPO_ROOT / "scripts" / "release"))
 
 import release_worthiness as rw  # noqa: E402
 
@@ -259,7 +259,7 @@ class ForkPullRequestSimulationTests(unittest.TestCase):
         env.update(_GIT_ENV, PR_BODY=body)
         return subprocess.run(
             [
-                sys.executable, str(REPO_ROOT / "scripts" / "release_worthiness.py"),
+                sys.executable, str(REPO_ROOT / "scripts" / "release" / "release_worthiness.py"),
                 "--repo-root", str(self.work),
                 "assess",
                 "--require-release-intent",
