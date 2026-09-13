@@ -22,6 +22,7 @@
     { "source": "shared/policies/parallel-review.md", "destination": "shared/policies/parallel-review.md" },
     { "source": "shared/policies/invocation-options.md", "destination": "shared/policies/invocation-options.md" },
     { "source": "shared/policies/remediation-guidance.md", "destination": "shared/policies/remediation-guidance.md" },
+    { "source": "shared/policies/remediation-scope-boundary.md", "destination": "shared/policies/remediation-scope-boundary.md" },
     { "source": "shared/templates/finding.md", "destination": "shared/templates/finding.md" },
     { "source": "shared/templates/finding-rendering.md", "destination": "shared/templates/finding-rendering.md" },
     { "source": "shared/templates/review-summary.md", "destination": "shared/templates/review-summary.md" },

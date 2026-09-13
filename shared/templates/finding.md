@@ -107,6 +107,16 @@ human-facing review a machine-only format.
   [`../policies/remediation-guidance.md`](../policies/remediation-guidance.md);
   that policy still owns what the guidance may and may not say, and this
   rename to a shorter field label never changes it;
+- **follow-up** — optional: a broader, legitimately separate concern
+  identified alongside this finding whose full remediation is out of the
+  current task/PR boundary, per
+  [`../policies/remediation-scope-boundary.md`](../policies/remediation-scope-boundary.md).
+  Present only when that policy's reasoning lands on "valid concern,
+  broader remediation is separate follow-up"; absent when the bounded
+  `Fix` is sufficient or when the broader work is itself required (in
+  which case it is the `Fix`, not a follow-up). It never carries or
+  changes severity, identity, deduplication, or the decision derivation,
+  and it is never a substitute for a required `Fix`;
 - **runtime validation** — optional: the finding's validation state from a
   targeted runtime check per
   [`../policies/runtime-validation.md`](../policies/runtime-validation.md),
@@ -435,6 +445,14 @@ after it, no `Details:` heading with boilerplate under it.
   rendering"); on a surface that already supplies the anchor (a GitHub
   inline comment) it is folded into `evidence` prose instead. Absent
   when it coincides with `location` or adds nothing;
+- **follow-up** — the broader, separately-scoped remediation recommendation
+  from
+  [`../policies/remediation-scope-boundary.md`](../policies/remediation-scope-boundary.md).
+  Rendered only when that policy identifies such a concern; on the full
+  rendering it is its own line after `Fix`, on the GitHub inline surface it
+  folds into `fix` prose as a clearly separated closing sentence rather
+  than a distinct field. It never reads as part of the required fix and
+  never carries or changes a severity;
 - **details** — the longer explanation permitted by "When a longer
   explanation is justified" above. Visibility follows
   [`../policies/invocation-options.md`](../policies/invocation-options.md),

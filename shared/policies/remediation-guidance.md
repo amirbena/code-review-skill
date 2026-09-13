@@ -14,6 +14,18 @@ cause. This is the content of a finding's **Fix** field in
 does not change what this policy governs. Prefer the canonical owner of an
 invariant over patches at each symptom.
 
+`Fix` states the smallest remediation that restores the current change's
+contract, per [`remediation-scope-boundary.md`](remediation-scope-boundary.md)
+— never a disproportionate rewrite pulled in because the review reasoned
+deeply about a finding's broader implications, and never understated when
+the current contract genuinely cannot be satisfied without a wider
+boundary change. When that policy's reasoning identifies a broader,
+legitimately separate concern alongside a bounded required fix, surface it
+as a distinct, clearly labeled recommended follow-up (never merged into
+`Fix` as if it were required in the current change, and never omitted
+merely because it is out of scope) — see
+[`../templates/finding.md`](../templates/finding.md), "Follow-up" field.
+
 The **Fix** direction targets or describes the finding's canonical
 fix/action location when one is known
 ([`../templates/finding.md`](../templates/finding.md), "Fix/action

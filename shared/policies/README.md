@@ -43,6 +43,7 @@ packaged Skill is installed; they do not depend on this repository.
 | [`parallel-review.md`](parallel-review.md) | The portable contract for splitting one review across independent workers when the runtime exposes a reliable capability; sequential fallback always valid. |
 | [`invocation-options.md`](invocation-options.md) | Deterministic, invocation-scoped normalization of shared presentation options and finding-detail precedence. |
 | [`remediation-guidance.md`](remediation-guidance.md) | Advisory fix direction on findings; never changes finding identity, severity, dedup, or the derived verdict. |
+| [`remediation-scope-boundary.md`](remediation-scope-boundary.md) | The mandatory three-part reasoning that separates a finding's validity/severity from how much of its remediation the current task/PR boundary must absorb versus defer as a `Follow-up`. Never changes severity, identity, or the decision derivation. |
 
 Templates shared by both Skills live in
 [`../templates/`](../templates/) (`finding.md` — the finding-field contract,

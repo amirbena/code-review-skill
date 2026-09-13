@@ -347,7 +347,14 @@ which a value must be resolved before it is used, or what is reported.
     evidence and impact per
     [`evidence.md`](../../../shared/policies/evidence.md), using the
     shared finding shape in
-    [`finding.md`](../../../shared/templates/finding.md). Attribute each
+    [`finding.md`](../../../shared/templates/finding.md). For each material
+    finding, then apply
+    [`remediation-scope-boundary.md`](../../../shared/policies/remediation-scope-boundary.md)
+    (canonical home; routed from
+    [`review-scope.md`](../../../shared/policies/review-scope.md)) to
+    determine whether remediation is required and how much of it belongs
+    inside this delta's boundary versus a separate `Follow-up` — this never
+    changes the severity or decision derivation just assigned. Attribute each
     finding to its source category per
     [`../policies/repository-state.md`](../policies/repository-state.md),
     "Attribution in findings." When step 7 and/or step 8 ran, trace a
