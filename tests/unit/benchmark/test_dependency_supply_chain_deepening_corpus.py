@@ -1,19 +1,6 @@
 #!/usr/bin/env python3
-"""Contract coverage for the Dependency / Supply-Chain deepening benchmark
-sub-corpus (Issue #188, parent #181, grandparent #82).
-
-The sub-corpus is
-``docs/benchmark/corpus/dependency-supply-chain-deepening/*.yaml``: a
-small, focused set of ``benchmark-case/v1`` fixtures pinning representative
-Dependency / Supply-Chain deepening outcomes as follow-up quality
-hardening for the capability #181 already defines -- it validates domain
-correctness after the capability exists and never redesigns it.
-
-Like ``test_database_migration_deepening_corpus.py`` and
-``test_security_deepening_corpus.py``, every fixture decodes and validates
-through the *same* single reference validator
-(``tests/reference/benchmark/benchmark_fixture.py``) used for every other
-corpus -- this module never defines a second one.
+"""Benchmark-case/v1 fixtures for the Dependency / Supply-Chain deepening
+sub-corpus (Issue #188, parent #181).
 """
 
 from __future__ import annotations
