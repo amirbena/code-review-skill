@@ -25,15 +25,15 @@ workflows change.
 | Validate PR description length | [`workflows/pr-description-length.yml`](workflows/pr-description-length.yml) | `pull_request` (opened, edited, synchronize) | Check out the trusted validator from the PR base SHA (bootstrapping from head only for the PR that introduces the script), enforce the useful-content limit via `scripts/pr_description_length.py` | Read-only (`contents: read`) |
 | Sync Engineering Task labels | [`workflows/sync-issue-labels.yml`](workflows/sync-issue-labels.yml) | `issues` (opened, edited) | Compute managed-label changes from the issue body (`scripts/sync_issue_labels.py`), then `gh issue edit` to apply the add/remove set; per-issue `concurrency` with cancel-in-progress | Mutates issue labels (`issues: write`) |
 | Claim contribution issue | [`workflows/claim-issue.yml`](workflows/claim-issue.yml) | `issue_comment` (created) | On `/claim` or `/unclaim` on a non-PR issue: check out trusted default-branch automation, read the issue and comment history, plan via `scripts/claim_issue.py` with churn/cooldown thresholds, persist a trusted receipt and a reconciled-state checkpoint comment, then project state onto the `claimed` label; repo-wide serialized `concurrency` queue | Mutates issue comments + the `claimed` label (`issues: write`) |
-| Release worthiness | [`workflows/release-worthiness.yml`](workflows/release-worthiness.yml) | `pull_request`, `push` to `main`, `workflow_dispatch` | `assess` (read-only): classify the change set vs. the latest `v*` tag, on a PR enforce release intent (CHANGELOG category + entry in the PR description, passed via env), build/verify the Skill archives as a dry run. `plan` (read-only, trusted `main` only): generate `## Unreleased` from merged PRs' release intent and derive the next version. `publish` (only when `plan` reports release-worthy): mint a trusted release GitHub App token, generate and roll the CHANGELOG, build + verify both archives, commit to `main` `[skip ci]`, create an annotated tag, publish the GitHub Release with archives, verify | `assess` / `plan` read-only; `publish` mutates (`contents: write` via the release GitHub App: commit to `main`, tag, GitHub Release) behind the `release` Environment |
+| Release worthiness | [`workflows/release-worthiness.yml`](workflows/release-worthiness.yml) | `pull_request`, `push` to `main`, `workflow_dispatch` | `release-gate` (read-only, required check): classify the change set vs. the latest `v*` tag, and — only when release-worthy — enforce release intent (CHANGELOG category + entry in the PR description, passed via env); always resolves, with an explicit not-applicable result when the change isn't release-worthy. `package` (read-only, not required, `needs: release-gate` when release-worthy): build/verify the Skill archives as a dry run. `plan` (read-only, trusted `main` only): generate `## Unreleased` from merged PRs' release intent and derive the next version. `publish` (only when `plan` reports release-worthy): mint a trusted release GitHub App token, generate and roll the CHANGELOG, build + verify both archives, commit to `main` `[skip ci]`, create an annotated tag, publish the GitHub Release with archives, verify | `release-gate` / `package` / `plan` read-only; `publish` mutates (`contents: write` via the release GitHub App: commit to `main`, tag, GitHub Release) behind the `release` Environment |
 
 ## Automation areas
 
 ### 1. PR quality and validation
 
 Runs on the pull request, read-only. `validate.yml` and the `Release
-worthiness` `assess` job are the required status checks on the `main`
-ruleset ([`../docs/RELEASE.md`](../docs/RELEASE.md)):
+worthiness` `release-gate` job are the required status checks on the
+`main` ruleset ([`../docs/RELEASE.md`](../docs/RELEASE.md)):
 
 - **`validate.yml`** — Skill metadata validation plus the full
   `tests/` suite.
@@ -41,12 +41,15 @@ ruleset ([`../docs/RELEASE.md`](../docs/RELEASE.md)):
   useful-content limit, checking out the validator from the trusted PR
   **base** SHA so a PR cannot weaken its own check. Contract:
   [`../scripts/pr_description_length.py`](../scripts/pr_description_length.py).
-- **`release-worthiness.yml` → `assess` job** — a read-only preview that
-  classifies whether the change ships a Skill or its packaged
-  distribution, requires a release-worthy PR to declare valid release
-  intent (CHANGELOG category + one-line entry) in its description — read
-  through an env var, failing closed — and dry-runs archive build +
-  verification. Contract:
+- **`release-worthiness.yml` → `release-gate` job** — the required,
+  always-resolving check: classifies whether the change ships a Skill or
+  its packaged distribution, and — only when it does — requires the PR to
+  declare valid release intent (CHANGELOG category + one-line entry) in
+  its description, read through an env var, failing closed. A
+  non-release-worthy PR still gets an explicit not-applicable pass, never
+  a skipped or absent check. The conditional archive build/verify dry run
+  lives in the separate, non-required `package` job instead, so a
+  packaging failure never fails this gate. Contract:
   [`../docs/RELEASE.md`](../docs/RELEASE.md) ("PR / push checks").
 
 ### 2. Issue operations
@@ -100,11 +103,16 @@ Conceptual stages from a pull request to a published release:
         │
         ├─ validate.yml ............. Skill metadata + tests
         ├─ pr-description-length.yml . description contract
-        └─ release-worthiness: assess  classify change (READ-ONLY)
-                                       + PR release intent + dry-run packaging
+        └─ release-worthiness: release-gate (READ-ONLY, REQUIRED)
+                                       classify change + PR release intent;
+                                       explicit not-applicable when N/A
+                 │
+                 └─ release-worthiness: package (READ-ONLY, not required)
+                                       dry-run archive build, only if
+                                       release-gate says release-worthy
         │
         ▼
-  merge to main   (assess re-runs read-only on the push)
+  merge to main   (release-gate re-runs read-only on the push)
         │
         ▼
   release-worthiness: plan (READ-ONLY, trusted main)

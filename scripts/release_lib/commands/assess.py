@@ -48,6 +48,18 @@ def _print_human(assessment: Assessment) -> None:
         print(f"  release intent: {assessment.intent_state}")
 
 
+def _not_applicable_summary(assessment: Assessment) -> list[str]:
+    return [
+        "## Release gate: not applicable",
+        "",
+        "This change does not affect a Skill or its packaged distribution, "
+        "so no release intent is required and the gate passes explicitly.",
+        f"- Reason: {assessment.classification.reason}",
+        "",
+        "See `docs/RELEASE.md`.",
+    ]
+
+
 def _summary(assessment: Assessment, pr_number: int | None) -> list[str]:
     lines = [
         "## Release recommended",
@@ -96,8 +108,10 @@ def cmd_assess(args: argparse.Namespace) -> int:
     )
     if assessment.release_worthy:
         write_step_summary(args.step_summary, _summary(assessment, args.pr_number))
-    elif ships:
-        print("::notice::this change is not release-worthy, so its declared release entry will not be generated")
+    else:
+        if ships:
+            print("::notice::this change is not release-worthy, so its declared release entry will not be generated")
+        write_step_summary(args.step_summary, _not_applicable_summary(assessment))
 
     if not assessment.blocked:
         return 0

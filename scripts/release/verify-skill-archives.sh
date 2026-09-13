@@ -2,7 +2,7 @@
 #
 # Build (optionally) and verify the Skill distribution archives.
 #
-# Shared by the `assess` and `publish` jobs of
+# Shared by the `package` and `publish` jobs of
 # .github/workflows/release-worthiness.yml so the "package, unzip -t every
 # archive, confirm both expected zips exist" sequence has one
 # implementation instead of two drifting inline `run: |` copies.
