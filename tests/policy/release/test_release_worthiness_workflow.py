@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
-"""Safety and ordering contract for the Release worthiness automation.
+"""Safety and ordering contract for the PR-lifecycle release-worthiness
+automation (issue #168 lifecycle split).
 
-Non-publish jobs stay read-only and never touch the release App
-credentials. The read-only `plan` job derives the version with
-`auto-release-plan` — there is no workflow version input — and the
-`publish` job runs only when `plan` reports `should_release == 'true'`, so
-a merge that ships nothing releasable never starts a write-capable job or
-the `release` Environment gate. `publish` is the only job with
-contents: write and the only one that mints the trusted release App
-token; the workflow never uses pull_request_target and cannot recurse.
-`publish` runs its steps in the order generate → preflight → changelog →
-build/verify → commit(main) → push(main) → verify-main → tag → push-tag →
-publish-release → verify-release, with the tag and published assets bound
-to the pushed main commit SHA. The PR check takes CHANGELOG coverage from
-the PR description's release intent, which reaches scripts through env
-only — never a `run:` interpolation.
+`release-worthiness.yml` is triggered only by `pull_request` and owns only
+two jobs: `release-gate` (the required, always-created, read-only PR
+check) and the conditional, non-required `package` job. It never mutates
+the repository, never touches the release App credentials, and — most
+importantly — never defines `plan` or `publish`: the authoritative
+main/release lifecycle lives entirely in the separate
+`release-publish.yml` (see `test_release_publish_workflow.py`), so GitHub
+never creates a `plan` or `publish` check run (not even `Skipped`) from a
+pull request.
+
+This preserves the behavior shipped by issue #241 / PR #256: `release-gate`
+always resolves, `package` stays conditional on
+`release-gate.outputs.release_worthy`, and the required check identity
+stays exactly `Release worthiness / release-gate`.
 """
 
 from __future__ import annotations
@@ -56,27 +57,52 @@ class TriggerTests(unittest.TestCase):
         self.data = _load()
         self.raw = WORKFLOW.read_text(encoding="utf-8")
 
-    def test_parses_and_has_expected_triggers(self) -> None:
+    def test_triggered_only_by_pull_request(self) -> None:
         on = _on(self.data)
-        self.assertIn("pull_request", on)
-        self.assertIn("push", on)
-        self.assertIn("workflow_dispatch", on)
+        self.assertEqual(list(on.keys()), ["pull_request"])
+
+    def test_no_push_or_workflow_dispatch_trigger(self) -> None:
+        on = _on(self.data)
+        self.assertNotIn("push", on)
+        self.assertNotIn("workflow_dispatch", on)
 
     def test_no_pull_request_target(self) -> None:
         self.assertNotIn("pull_request_target", _on(self.data))
         self.assertNotIn("pull_request_target:", self.raw)
 
-    def test_workflow_dispatch_takes_no_version_input(self) -> None:
-        dispatch = _on(self.data)["workflow_dispatch"]
-        self.assertIn(dispatch, (None, {}))
-        self.assertNotIn("inputs.version", self.raw)
+    def test_runs_for_every_pull_request_event_type(self) -> None:
+        types = _on(self.data)["pull_request"]["types"]
+        for event in ("opened", "synchronize", "reopened", "edited"):
+            self.assertIn(event, types)
 
-    def test_cannot_recurse_on_tags_or_releases(self) -> None:
-        on = _on(self.data)
-        # No release event, and push is branch-scoped only (no tags:).
-        self.assertNotIn("release", on)
-        self.assertEqual(list(on["push"].keys()), ["branches"])
-        self.assertEqual(on["push"]["branches"], ["main"])
+
+class JobTopologyTests(unittest.TestCase):
+    """The PR workflow owns exactly `release-gate` and `package` — nothing
+    else, and specifically never `plan` or `publish`."""
+
+    def setUp(self) -> None:
+        self.data = _load()
+        self.jobs = self.data["jobs"]
+
+    def test_defines_exactly_release_gate_and_package(self) -> None:
+        self.assertEqual(set(self.jobs.keys()), {"release-gate", "package"})
+
+    def test_does_not_define_plan(self) -> None:
+        self.assertNotIn("plan", self.jobs)
+
+    def test_does_not_define_publish(self) -> None:
+        self.assertNotIn("publish", self.jobs)
+
+    def test_never_mints_the_release_app_token(self) -> None:
+        self.assertNotIn("create-github-app-token", WORKFLOW.read_text(encoding="utf-8"))
+
+    def test_never_checks_out_main_by_ref(self) -> None:
+        # release-gate/package operate on the PR head; only the authoritative
+        # main-lifecycle workflow checks out `main` explicitly.
+        for job in self.jobs.values():
+            for step in job["steps"]:
+                if isinstance(step.get("uses"), str) and step["uses"].startswith("actions/checkout"):
+                    self.assertNotEqual((step.get("with") or {}).get("ref"), "main")
 
 
 class PermissionsTests(unittest.TestCase):
@@ -105,30 +131,12 @@ class PermissionsTests(unittest.TestCase):
         )
         self.assertIs(checkout["with"]["persist-credentials"], False)
 
-    def test_plan_is_read_only_and_no_persisted_creds(self) -> None:
-        plan = self.jobs["plan"]
-        self.assertEqual(plan["permissions"], {"contents": "read", "pull-requests": "read"})
-        checkout = next(
-            s for s in plan["steps"]
-            if isinstance(s.get("uses"), str) and s["uses"].startswith("actions/checkout")
-        )
-        self.assertIs(checkout["with"]["persist-credentials"], False)
-
-    def test_only_publish_job_has_write(self) -> None:
-        writers = [
-            name for name, job in self.jobs.items()
-            if (job.get("permissions") or {}).get("contents") == "write"
-        ]
-        self.assertEqual(writers, ["publish"])
-
-    def test_every_other_grant_is_read_only(self) -> None:
+    def test_no_job_has_write_permissions(self) -> None:
         for name, job in self.jobs.items():
             for scope, level in (job.get("permissions") or {}).items():
-                if (name, scope) == ("publish", "contents"):
-                    continue
                 self.assertEqual(level, "read", f"{name}: {scope}")
 
-    def test_only_publish_job_mints_the_app_token(self) -> None:
+    def test_no_job_mints_the_app_token(self) -> None:
         minters = [
             name for name, job in self.jobs.items()
             if any(
@@ -136,167 +144,17 @@ class PermissionsTests(unittest.TestCase):
                 for s in job["steps"]
             )
         ]
-        self.assertEqual(minters, ["publish"])
+        self.assertEqual(minters, [])
 
-    def test_non_publish_jobs_never_reference_app_secrets_or_token(self) -> None:
-        for name in ("release-gate", "package", "plan"):
+    def test_no_job_references_app_secrets_or_token(self) -> None:
+        for name in ("release-gate", "package"):
             blob = yaml.safe_dump(self.jobs[name])
             self.assertNotIn("RELEASE_APP", blob, name)
             self.assertNotIn("app-token", blob, name)
 
-    def test_only_publish_job_is_behind_the_release_environment(self) -> None:
+    def test_no_job_is_behind_the_release_environment(self) -> None:
         gated = [name for name, job in self.jobs.items() if job.get("environment")]
-        self.assertEqual(gated, ["publish"])
-
-
-class PlanJobTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.plan = _load()["jobs"]["plan"]
-        self.raw = WORKFLOW.read_text(encoding="utf-8")
-
-    def test_runs_only_on_trusted_main_or_manual_dispatch(self) -> None:
-        cond = self.plan["if"]
-        self.assertIn("github.event_name == 'workflow_dispatch'", cond)
-        self.assertIn("github.event_name == 'push'", cond)
-        self.assertIn("github.ref == 'refs/heads/main'", cond)
-        self.assertIn("[skip ci]", cond)
-        self.assertNotIn("pull_request", cond)
-
-    def test_version_is_planned_not_supplied(self) -> None:
-        step = _step(self.plan["steps"], "Plan the release")
-        self.assertEqual(step.get("id"), "plan")
-        self.assertIn("auto-release-plan", step["run"])
-        self.assertNotIn("inputs.version", yaml.safe_dump(self.plan))
-
-    def test_reads_merged_prs_with_the_job_token_and_summarizes_the_notes(self) -> None:
-        step = _step(self.plan["steps"], "Plan the release")
-        self.assertEqual(step["env"]["GH_TOKEN"], "${{ github.token }}")
-        self.assertIn('--step-summary "$GITHUB_STEP_SUMMARY"', step["run"])
-
-    def test_exposes_plan_outputs_for_publish(self) -> None:
-        outputs = self.plan["outputs"]
-        for key in ("should_release", "version", "impact", "baseline"):
-            self.assertIn(key, outputs)
-            self.assertIn("steps.plan.outputs.", outputs[key])
-
-
-class PublishJobGovernanceTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.jobs = _load()["jobs"]
-        self.publish = self.jobs["publish"]
-        self.raw = WORKFLOW.read_text(encoding="utf-8")
-
-    def test_runs_only_after_plan_says_release(self) -> None:
-        self.assertEqual(self.publish["needs"], "plan")
-        self.assertEqual(
-            str(self.publish["if"]).strip(),
-            "needs.plan.outputs.should_release == 'true'",
-        )
-
-    def test_release_gate_excludes_dispatch_and_skip_ci_commits(self) -> None:
-        gate_if = self.jobs["release-gate"]["if"]
-        self.assertIn("github.event_name != 'workflow_dispatch'", gate_if)
-        self.assertIn("[skip ci]", gate_if)
-
-    def test_requires_app_credentials_before_doing_anything(self) -> None:
-        steps = self.publish["steps"]
-        guard = _step_index(steps, "Require trusted release App credentials")
-        mint = _step_index(steps, "create-github-app-token")
-        self.assertLess(guard, mint)
-
-    def test_release_commit_is_skip_ci(self) -> None:
-        self.assertIn(
-            "chore(release): v${{ needs.plan.outputs.version }} [skip ci]", self.raw
-        )
-
-    def test_serialized_by_a_release_publish_concurrency_group(self) -> None:
-        self.assertEqual(self.publish["concurrency"]["group"], "release-publish")
-        self.assertIs(self.publish["concurrency"]["cancel-in-progress"], False)
-
-    def test_protected_mutations_use_the_app_token_not_github_token(self) -> None:
-        steps = self.publish["steps"]
-        checkout = next(s for s in steps if str(s.get("uses", "")).startswith("actions/checkout"))
-        self.assertEqual(checkout["with"]["token"], "${{ steps.app-token.outputs.token }}")
-        for name in ("Publish the GitHub Release", "Verify the live tag"):
-            step = _step(steps, name)
-            self.assertEqual(step["env"]["GH_TOKEN"], "${{ steps.app-token.outputs.token }}")
-        self.assertNotIn("GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}", self.raw)
-
-    def test_release_doc_documents_the_bypass_and_automation_model(self) -> None:
-        doc = RELEASE_DOC.read_text(encoding="utf-8")
-        self.assertIn("ruleset", doc.lower())
-        self.assertIn("GitHub App", doc)
-        self.assertIn("RELEASE_APP_ID", doc)
-        self.assertIn("RELEASE_APP_PRIVATE_KEY", doc)
-        self.assertIn("cannot", doc)  # GITHUB_TOKEN cannot be a bypass actor
-        self.assertIn("auto-release-plan", doc)
-        self.assertIn("migration", doc.lower())
-
-
-class PublishFlowOrderingTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.steps = _load()["jobs"]["publish"]["steps"]
-
-    def test_direct_to_main_then_tag_then_release(self) -> None:
-        order = [
-            "Generate CHANGELOG Unreleased",
-            "Preflight",
-            "Roll CHANGELOG Unreleased",
-            "Build and verify Skill archives",
-            "Commit release preparation to main",
-            "Push to main",
-            "Verify main advanced",
-            "Create annotated tag",
-            "Push the tag",
-            "Publish the GitHub Release",
-            "Verify the live tag",
-        ]
-        indices = [_step_index(self.steps, needle) for needle in order]
-        self.assertEqual(indices, sorted(indices), f"steps out of order: {indices}")
-
-    def test_generation_runs_from_the_planned_baseline_after_checkout(self) -> None:
-        step = _step(self.steps, "Generate CHANGELOG Unreleased")
-        self.assertIn("release_worthiness.py generate-changelog", step["run"])
-        self.assertIn('--base-ref "${{ needs.plan.outputs.baseline }}"', step["run"])
-        self.assertEqual(step["env"]["GH_TOKEN"], "${{ github.token }}")
-        self.assertLess(
-            _step_index(self.steps, "Resolve the authenticated release App bot identity"),
-            _step_index(self.steps, "Generate CHANGELOG Unreleased"),
-        )
-
-    def test_preflight_uses_the_planned_version_and_baseline(self) -> None:
-        preflight = _step(self.steps, "Preflight")
-        self.assertIn("release-preflight", preflight["run"])
-        self.assertIn('--version "${{ needs.plan.outputs.version }}"', preflight["run"])
-        self.assertIn('--base-ref "${{ needs.plan.outputs.baseline }}"', preflight["run"])
-
-    def test_archives_are_built_from_the_tree_that_gets_committed(self) -> None:
-        build = _step_index(self.steps, "Build and verify Skill archives")
-        commit = _step_index(self.steps, "Commit release preparation to main")
-        self.assertLess(build, commit)
-
-    def test_tag_is_created_at_the_captured_release_sha(self) -> None:
-        commit_step = _step(self.steps, "Commit release preparation to main")
-        self.assertEqual(commit_step.get("id"), "commit")
-        self.assertIn('echo "sha=', commit_step["run"])
-        tag_step = _step(self.steps, "Create annotated tag")
-        self.assertIn("git tag -a", tag_step["run"])
-        self.assertIn("${{ steps.commit.outputs.sha }}", tag_step["run"])
-
-    def test_verify_binds_tag_and_assets_to_the_release_sha(self) -> None:
-        verify = _step(self.steps, "Verify the live tag")
-        run = verify["run"]
-        self.assertIn("release-verify", run)
-        self.assertIn("--expected-sha \"${{ steps.commit.outputs.sha }}\"", run)
-        self.assertIn("--asset local-code-review-skill.zip", run)
-        self.assertIn("--asset github-pr-review-skill.zip", run)
-
-    def test_published_release_targets_the_release_sha_with_both_zips(self) -> None:
-        publish = _step(self.steps, "Publish the GitHub Release")
-        run = publish["run"]
-        self.assertIn("--target \"${{ steps.commit.outputs.sha }}\"", run)
-        self.assertIn("dist/local-code-review-skill.zip", run)
-        self.assertIn("dist/github-pr-review-skill.zip", run)
+        self.assertEqual(gated, [])
 
 
 class AssessJobReleaseIntentTests(unittest.TestCase):
@@ -345,78 +203,21 @@ class AssessJobReleaseIntentTests(unittest.TestCase):
         self.assertNotIn("--require-changelog", blob)
 
 
-class ReleaseCommitAttributionTests(unittest.TestCase):
-    """The release commit is attributed to the GitHub App that authenticated
-    the protected push — resolved at run time, never a hard-coded slug.
-
-    The resolution logic itself (``<slug>[bot]`` → GitHub user id → canonical
-    noreply email, failing closed on an unresolved slug or non-numeric id)
-    lives in ``release_lib.commands.workflow`` and is covered by
-    ``tests/unit/test_release_worthiness.py``; here we only pin the workflow
-    wiring."""
-
-    def setUp(self) -> None:
-        self.steps = _load()["jobs"]["publish"]["steps"]
-        self.raw = WORKFLOW.read_text(encoding="utf-8")
-
-    def test_no_hard_coded_release_automation_bot_identity(self) -> None:
-        self.assertNotIn("release-automation[bot]", self.raw)
-        self.assertNotIn("release-automation", self.raw)
-
-    def test_identity_is_resolved_from_the_minted_app_token(self) -> None:
-        step = _step(self.steps, "Resolve the authenticated release App bot identity")
-        self.assertEqual(step.get("id"), "bot-identity")
-        self.assertEqual(step["env"]["GH_TOKEN"], "${{ steps.app-token.outputs.token }}")
-        run = step["run"]
-        # Delegates to the tested helper, keyed by the token's own app-slug,
-        # and writes login/email back for the commit step to consume.
-        self.assertIn("release_worthiness.py resolve-app-identity", run)
-        self.assertIn('--app-slug "${{ steps.app-token.outputs.app-slug }}"', run)
-        self.assertIn('--github-output "$GITHUB_OUTPUT"', run)
-
-    def test_resolution_runs_after_minting_and_before_the_release_commit(self) -> None:
-        mint = _step_index(self.steps, "create-github-app-token")
-        resolve = _step_index(self.steps, "Resolve the authenticated release App bot identity")
-        commit = _step_index(self.steps, "Commit release preparation to main")
-        self.assertLess(mint, resolve)
-        self.assertLess(resolve, commit)
-
-    def test_commit_step_configures_git_from_the_resolved_identity(self) -> None:
-        commit = _step(self.steps, "Commit release preparation to main")
-        run = commit["run"]
-        self.assertIn(
-            'git config user.name "${{ steps.bot-identity.outputs.login }}"', run
-        )
-        self.assertIn(
-            'git config user.email "${{ steps.bot-identity.outputs.email }}"', run
-        )
-
-
 class ExtractedHelperWiringTests(unittest.TestCase):
     """Reusable shell logic lives in tested helpers; the YAML only wires
-    inputs to outputs. The behaviour of each helper is covered by
-    ``tests/unit/test_release_worthiness.py`` (the two subcommands) and by
-    the helper script's own executable contract."""
+    inputs to outputs."""
 
     def setUp(self) -> None:
         self.jobs = _load()["jobs"]
         self.raw = WORKFLOW.read_text(encoding="utf-8")
 
-    def test_subcommand_steps_run_after_checkout_and_python_setup(self) -> None:
-        # Both extracted subcommands invoke `python scripts/release_worthiness.py`,
-        # which only exists once the repo is checked out and Python is on PATH.
-        # A step order that put either before checkout would still satisfy the
-        # mint < resolve < commit ordering test but break the job at run time.
-        for job, needle in (
-            ("release-gate", "Determine base ref"),
-            ("publish", "Resolve the authenticated release App bot identity"),
-        ):
-            steps = self.jobs[job]["steps"]
-            call = _step_index(steps, needle)
-            checkout = _step_index(steps, "actions/checkout")
-            setup_python = _step_index(steps, "actions/setup-python")
-            self.assertLess(checkout, call, job)
-            self.assertLess(setup_python, call, job)
+    def test_subcommand_step_runs_after_checkout_and_python_setup(self) -> None:
+        steps = self.jobs["release-gate"]["steps"]
+        call = _step_index(steps, "Determine base ref")
+        checkout = _step_index(steps, "actions/checkout")
+        setup_python = _step_index(steps, "actions/setup-python")
+        self.assertLess(checkout, call)
+        self.assertLess(setup_python, call)
 
     def test_release_gate_base_ref_comes_from_the_resolve_base_ref_subcommand(self) -> None:
         step = _step(self.jobs["release-gate"]["steps"], "Determine base ref")
@@ -426,7 +227,6 @@ class ExtractedHelperWiringTests(unittest.TestCase):
         self.assertIn('--event-name "${{ github.event_name }}"', run)
         self.assertIn('--pr-base-ref "${{ github.event.pull_request.base.ref }}"', run)
         self.assertIn('--pr-base-sha "${{ github.event.pull_request.base.sha }}"', run)
-        # No inline `git describe` / branching left in the workflow.
         self.assertNotIn("git describe", self.raw)
 
     def test_release_gate_fetches_the_pr_base_branch_before_resolving_the_base_ref(self) -> None:
@@ -443,25 +243,15 @@ class ExtractedHelperWiringTests(unittest.TestCase):
         step = _step(self.jobs["release-gate"]["steps"], "Classify change set and enforce release intent")
         run = step["run"]
         self.assertIn('--base-ref "${{ steps.base.outputs.ref }}"', run)
-        # The old shell arg-accumulation is gone.
         self.assertNotIn('args="', run)
 
-    def test_both_jobs_build_archives_through_the_shared_helper(self) -> None:
+    def test_package_builds_archives_through_the_shared_helper(self) -> None:
         helper = "scripts/release/verify-skill-archives.sh"
         self.assertTrue((REPO_ROOT / helper).is_file())
-        for job in ("package", "publish"):
-            steps = self.jobs[job]["steps"]
-            build = _step(steps, "Build and verify Skill")
-            self.assertIn(helper, build["run"])
-        # No job re-implements the "package then unzip -t every zip" loop.
+        build = _step(self.jobs["package"]["steps"], "Build and verify Skill")
+        self.assertIn(helper, build["run"])
         self.assertNotIn("unzip -t", self.raw)
         self.assertNotIn("scripts/package-skills.sh all", self.raw)
-
-    def test_helper_declares_it_is_ci_only_with_no_powershell_counterpart(self) -> None:
-        text = (REPO_ROOT / "scripts" / "release" / "verify-skill-archives.sh").read_text(encoding="utf-8")
-        self.assertTrue(text.startswith("#!/usr/bin/env bash"))
-        self.assertIn("CI-only", text)
-        self.assertIn("PowerShell", text)
 
 
 class RequiredReleaseGateTests(unittest.TestCase):
@@ -498,18 +288,7 @@ class RequiredReleaseGateTests(unittest.TestCase):
         )
 
     def test_package_job_is_not_named_in_the_required_status_checks_doc_contract(self) -> None:
-        # The applicability decision (needs.release-gate output) lives in the
-        # workflow's wiring of release_worthiness.py's own classification —
-        # there is no separate `paths:`/`if:` relevance re-implementation.
         self.assertNotIn("paths:", WORKFLOW.read_text(encoding="utf-8"))
-
-    def test_release_gate_runs_for_every_pull_request_event_type(self) -> None:
-        types = _on(self.data)["pull_request"]["types"]
-        for event in ("opened", "synchronize", "reopened", "edited"):
-            self.assertIn(event, types)
-        # The job's own `if` only excludes workflow_dispatch and the
-        # release commit — it never narrows by event further.
-        self.assertNotIn("pull_request", str(self.gate["if"]))
 
 
 class SupportingArtifactsTests(unittest.TestCase):

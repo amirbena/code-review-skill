@@ -30,7 +30,7 @@ none of the four top-level kinds (`unit`, `policy`, `reference`,
 | `integration/release/` | Coverage that builds the packaged archives to exercise the release-worthiness PR boundary. |
 | `policy/benchmark/` | Prose / documentation-contract checks for the benchmark docs (`docs/benchmark/**`). |
 | `policy/governance/` | Prose / documentation-contract checks over `AGENTS.md`, `policies/`, entrypoint guards, forbidden terms, and PR-description enforcement. |
-| `policy/release/` | Prose / documentation-contract checks for CHANGELOG/SemVer guidance and the release-worthiness workflow. |
+| `policy/release/` | Prose / documentation-contract checks for CHANGELOG/SemVer guidance and the two release workflows (`release-worthiness.yml` PR lifecycle, `release-publish.yml` main lifecycle) and the boundary between them. |
 | `policy/review/` | Prose / documentation-contract checks over `shared/policies/`, `shared/templates/`, and each Skill's review-related files. |
 | `repository/` | Repository-hygiene checks (e.g. `.gitignore`). Unchanged by the #217 reorganization. |
 

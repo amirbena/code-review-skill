@@ -8,8 +8,21 @@ automatically once the work merges to `main` — contributors maintain
 neither a release checklist, a version number, nor `CHANGELOG.md`. The
 rules are deterministic (no LLM, agent, or paid per-PR execution) and
 enforced by [`../scripts/release_worthiness.py`](../scripts/release_worthiness.py)
-and the `Release worthiness` GitHub Action
-([`../.github/workflows/release-worthiness.yml`](../.github/workflows/release-worthiness.yml)).
+through two GitHub Actions workflows that share that same classification
+and changelog engine:
+
+- **`Release worthiness`**
+  ([`../.github/workflows/release-worthiness.yml`](../.github/workflows/release-worthiness.yml))
+  — the PR lifecycle. Triggered only by `pull_request`. A read-only
+  preview: `release-gate` (the required check) plus the conditional
+  `package` job. It never builds a release and never touches `main`.
+- **`Release publish`**
+  ([`../.github/workflows/release-publish.yml`](../.github/workflows/release-publish.yml))
+  — the main/release lifecycle. Triggered only by `push` to `main` and,
+  for recovery, `workflow_dispatch` — never by `pull_request`, so its
+  `plan` and `publish` jobs never exist as PR check runs. It recomputes
+  the authoritative release assessment itself; it never trusts or
+  consumes a previous PR-time `release-gate` result.
 
 ## What counts as release-worthy
 
@@ -165,14 +178,16 @@ writes the notes it generated to its run summary; with required reviewers
 on the `release` Environment, a maintainer sees them before approving
 `publish`.
 
-## PR / push checks (read-only)
+## PR checks (read-only)
 
 ### `release-gate` — the required, always-created check
 
 `release-gate` (`contents: read`, `persist-credentials: false`) is the
-**stable, required PR-level check**. It runs on every pull request
-(opened, synchronized, reopened, or its description edited) and every
-push to `main`, and it always reaches a terminal, explicit result:
+**stable, required PR-level check**, defined in the PR-triggered
+`release-worthiness.yml`. It runs on every pull request (opened,
+synchronized, reopened, or its description edited) — this workflow is
+never triggered by `push` — and it always reaches a terminal, explicit
+result:
 
 ```text
 PR
@@ -186,11 +201,14 @@ is release assessment applicable?
              └─ invalid → FAIL
 ```
 
-On a push it classifies everything since the previous `v*` tag. On a pull
-request it classifies only what the PR itself contributes — the diff
-against the **merge-base with the PR's current base branch** — so
-release-worthy history that entered the branch through a sync/merge from
-`main` is never treated as a new obligation for the PR.
+It classifies only what the PR itself contributes — the diff against the
+**merge-base with the PR's current base branch** — so release-worthy
+history that entered the branch through a sync/merge from `main` is never
+treated as a new obligation for the PR. This is a read-only preview: the
+authoritative assessment of everything accumulated since the previous
+`v*` tag happens separately, on `main`, in `release-publish.yml`'s `plan`
+job (see "Automatic publication from `main`" below) — `release-gate`'s
+per-PR verdict is never trusted or reused there.
 
 The applicability decision ("is this PR release-relevant?") is not a
 workflow-YAML `paths:` filter or job `if:` condition — it is the same
@@ -207,9 +225,6 @@ runs, from `scripts/release_lib/classification.py`. The job:
    unclassifiable; on a pass it writes a _"release recommended"_ run
    summary with the proposed bump and the exact CHANGELOG entry the
    release will generate.
-
-A push to `main` has no PR description, so release intent is not checked
-there; `plan` is the authoritative gate.
 
 `release-gate` never builds, verifies, or uploads anything — it does not
 depend on packaging succeeding, so a packaging regression can never fail
@@ -282,10 +297,18 @@ Recommended, documented mitigation (a repository setting, not code):
 ## Automatic publication from `main`
 
 Once release-worthy work merges to `main`, the automation publishes it —
-no maintainer runs anything, and no one supplies a version.
+no maintainer runs anything, and no one supplies a version. This is the
+authoritative main/release lifecycle, defined entirely in the separate
+`release-publish.yml` workflow (triggered only by `push` to `main` and
+`workflow_dispatch`, never `pull_request`), and it recomputes everything
+itself rather than consuming any PR-time `release-gate` result.
 
 The read-only **`plan`** job runs on every non-`[skip ci]` push to `main`
-(and on `workflow_dispatch` for recovery). It holds `contents: read` and
+(and on `workflow_dispatch` for recovery). It is both the authoritative
+release-worthiness assessment (classification plus real CHANGELOG
+coverage over everything accumulated since the previous `v*` tag — not
+merely a version calculator) and the version-planning step. It holds
+`contents: read` and
 `pull-requests: read` only and never touches the release App credentials.
 It **plans** the release with `release_worthiness.py auto-release-plan`:
 
@@ -400,12 +423,12 @@ If the Environment has no rules it simply passes through.
 
 ## Permissions model
 
-| Trigger | Job | `permissions` | Runs contributor code | Mutates repo |
-| --- | --- | --- | --- | --- |
-| `pull_request`, `push` to `main` | `release-gate` (required) | `contents: read` | yes | never |
-| after `release-gate`, when release-worthy | `package` (not required) | `contents: read` | yes | never |
-| `push` to `main` (non-`[skip ci]`), `workflow_dispatch` | `plan` | `contents: read`, `pull-requests: read` | no — checks out `main` | never — generates notes and derives the version in memory |
-| after `plan`, when a release is due | `publish` | `contents: write`, `pull-requests: read` | no — checks out `main` | commits to `main`, tags, publishes a Release, using the App token |
+| Workflow | Trigger | Job | `permissions` | Runs contributor code | Mutates repo |
+| --- | --- | --- | --- | --- | --- |
+| `release-worthiness.yml` | `pull_request` | `release-gate` (required) | `contents: read` | yes | never |
+| `release-worthiness.yml` | after `release-gate`, when release-worthy | `package` (not required) | `contents: read` | yes | never |
+| `release-publish.yml` | `push` to `main` (non-`[skip ci]`), `workflow_dispatch` | `plan` | `contents: read`, `pull-requests: read` | no — checks out `main` | never — generates notes and derives the version in memory |
+| `release-publish.yml` | after `plan`, when a release is due | `publish` | `contents: write`, `pull-requests: read` | no — checks out `main` | commits to `main`, tags, publishes a Release, using the App token |
 
 - No `pull_request_target`; the read-only jobs check out with
   `persist-credentials: false`. Neither `plan` nor `publish` runs on
