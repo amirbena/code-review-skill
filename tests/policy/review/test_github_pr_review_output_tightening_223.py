@@ -61,12 +61,14 @@ SEVERITY_LEGEND = {
 # tightening, which this guard exists to catch. LOCAL_REPORT and
 # LOCAL_RUNBOOK were re-captured again after Issue #237 (thin-pointer trim
 # of the family-of-four subordinate-metadata prose in the "Rules" section
-# and steps 8b-8d/10b) — also deliberate and unrelated to #223. The other
-# files in this map are untouched by #89/#237 and keep their original
-# #223-era hashes.
+# and steps 8b-8d/10b) — also deliberate and unrelated to #223.
+# LOCAL_RUNBOOK was re-captured again after Issue #211 (step 9 now names the
+# new "Semantic change-implication reasoning" shared section) — also
+# deliberate and unrelated to #223. The other files in this map are
+# untouched by #89/#237/#211 and keep their original #223-era hashes.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "1abf7c6a28f6d6b73a845aa8c8f9e06e7d062a82",
-    LOCAL_RUNBOOK: "1a48a4e0d21322fcb6a4e4ec71cdf0023640c42b",
+    LOCAL_RUNBOOK: "ec51d7eb8a140cd86f74f4fca81ff2d8aafe722f",
     LOCAL_SKILL: "44b6e6953d2847f6c999d5824d41d235b6fd9435",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "1b5238723eab4308407c137c554fa3a169e8b482",

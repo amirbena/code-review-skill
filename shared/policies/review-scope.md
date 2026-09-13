@@ -50,6 +50,150 @@ reviewer capable of holding related changes in view needs no further
 prescribed procedure, and a small, single-purpose change needs no grouping
 ceremony at all.
 
+## Semantic change-implication reasoning
+
+The sections below each own one recurring failure mode in depth, but nothing
+so far directs a reviewer, for an arbitrary change, to first ask *which
+system-level dimensions this change materially implicates* at all. This
+section is that base pass: for each dimension the change's own evidence
+actually implicates, it performs the minimum bounded reasoning itself — it
+is not solely a router to the deeper sections and profiles below. Those
+sections, and any opt-in specialist profile layered on top of a review, add
+further depth to a dimension this pass already activates; none of them may
+gate, weaken, narrow, or replace this base obligation, and it applies
+identically whether or not a profile is selected.
+
+### Canonical dimensions
+
+The taxonomy below is a routing and reasoning aid, **not** a
+mutually-exclusive classification — one change, or one piece of evidence
+within it, may materially implicate several dimensions at once. A dimension
+with no material activation signal in the change is not analysed and
+produces no output, including no `not-applicable` record; this is
+deliberately not an eight-dimension checklist run on every diff.
+
+- **User-facing / client behavior** — signal: the change alters what a
+  human end user sees, can do, or is told (rendered content, interaction
+  state, client-side validation, accessibility-relevant markup, an
+  error/success message a user reads). Base reasoning: does the new or
+  changed behavior remain correct and safe across the states a real user can
+  reach (loading, error, empty, partial, repeated interaction), and does any
+  user-controlled or externally-sourced value reach rendered output or a
+  client-visible decision without the handling that context requires. Depth
+  owner: no dedicated owner contract exists yet in this repository; this
+  base obligation is currently the full extent of review for this
+  dimension.
+- **Concurrency / distributed-system semantics** — signal: shared mutable
+  state read and later acted on, more than one process or thread able to
+  observe or mutate the same state, or a message/event that can be
+  delivered more than once or out of order. Base reasoning: could two
+  concurrent executions interleave in a way that violates an invariant the
+  code assumes holds. Depth owner: "Architectural placement and
+  execution-lifecycle fidelity" (concurrency or ordering-guarantee trigger)
+  and "Failure state, retry safety, and recovery" below.
+- **Data / persistence** — signal: a schema, migration, stored
+  representation, or the durable shape of data written or read by the
+  change. Base reasoning: does the change preserve read/write compatibility
+  with existing stored data and existing readers/writers of it. Depth
+  owner: "Existing behavior ownership" below, and "Findings beyond the
+  changed lines" in [`evidence.md`](evidence.md) for readers/writers outside
+  the diff.
+- **API / integration contracts** — signal: a request/response shape, an
+  event/message schema, a function or interface signature, or any other
+  boundary another component already depends on. Base reasoning: does the
+  change preserve the contract's meaning for existing callers/consumers, or
+  is the break intentional and actually propagated to them. Depth owner:
+  "Affected-test / test-impact analysis" below, and "Architectural
+  placement and execution-lifecycle fidelity"'s caller/callee-contract
+  trigger.
+- **Infrastructure / deployment** — signal: the change alters how or where
+  code runs, is built, or is deployed (build/deploy configuration,
+  container/orchestration definitions, environment- or platform-specific
+  behavior, a startup/shutdown sequence). Base reasoning: does the change
+  behave correctly across the environments and deployment states it can
+  actually run in, and does it fail safely if a dependency it now assumes
+  is unavailable. Depth owner: no dedicated owner contract exists yet in
+  this repository; this base obligation is currently the full extent of
+  review for this dimension.
+- **Security / trust boundaries** — signal: a value crosses from a less
+  trusted context into a more trusted one, or the change touches
+  authentication, authorization, or a policy-enforcement decision. Base
+  reasoning: is the boundary still enforced at the point that actually
+  matters, for every path that can reach it. Depth owner: "Architectural
+  placement and execution-lifecycle fidelity"'s authorization/
+  permission-enforcement trigger.
+- **Operability / production-readiness** — signal: the change introduces or
+  materially changes a failure mode that a production operator would need
+  to detect or diagnose. Base reasoning: would this failure mode be visible
+  through the repository's own established observability mechanism, or
+  otherwise effectively undiagnosable. Depth owner: "Failure state, retry
+  safety, and recovery" below, "Observability is applicability-gated, not
+  universal."
+- **Performance / scale** — signal: the change alters an algorithmic
+  complexity, a per-request or per-item cost, or a resource (memory,
+  connection, file handle, thread) that is acquired but not obviously
+  bounded or released. Base reasoning: does the change remain correct and
+  bounded at the volume the surrounding code is actually exercised with, not
+  merely at the scale exercised by its own tests. Depth owner:
+  "Change-risk signals and review depth" below and
+  [`repository-expansion.md`](repository-expansion.md) for how far dependent
+  call sites are followed.
+
+### Worked example — one change implicating several dimensions
+
+A change that adds a new webhook endpoint which persists the received
+payload and re-renders a summary of it in an admin dashboard implicates
+**API / integration contracts** (the webhook's request shape is now a
+contract with its sender), **data / persistence** (the payload is now
+stored, so schema and idempotent-write behavior matter),
+**security / trust boundaries** (the payload originates outside the trust
+boundary and later reaches rendered output), and **user-facing / client
+behavior** (what the admin dashboard actually displays). It does not
+implicate concurrency, infrastructure, or performance/scale unless the
+change's own evidence separately supports one of those signals — reasoning
+about the four implicated dimensions above is not extended to the other
+four merely because the taxonomy lists them.
+
+### Evidence is semantic, not structural
+
+File type, framework, path, and language are evidence that a dimension
+*may* be implicated — never solely authoritative on their own, and never a
+substitute for the semantic signal itself. The same structural shape can
+implicate a dimension in one change and not another; reason from what the
+change actually does, not from its extension or directory. Four
+language-neutral worked examples, one per representative evidence shape:
+
+- **Shared-state read→decide→write**: a counter, balance, or availability
+  value is read, compared against a threshold, and then written back,
+  regardless of language or storage technology — implicates concurrency
+  whenever more than one caller can reach the same state.
+- **User-controlled value reaching rendered output**: any value that
+  originates from a request, upload, or external message and is later
+  included in content shown to a user or another system — implicates
+  security/trust boundaries and user-facing behavior regardless of the
+  templating or rendering technology involved.
+- **Schema or persisted-state change**: a change to a stored record's shape,
+  meaning, or default — implicates data/persistence regardless of whether
+  the storage is a relational schema, a document shape, a cache entry, or a
+  serialized file format.
+- **Deployment or configuration change**: a change to how, where, or under
+  what settings code runs — implicates infrastructure/deployment regardless
+  of whether it is expressed as a container manifest, a CI workflow, an
+  environment-variable default, or an application configuration file.
+
+### Bounded expansion and stop conditions
+
+Once a dimension is activated, investigate it using the same
+minimum-context-first, one-ring-at-a-time model and stop conditions already
+defined under "Architectural placement and execution-lifecycle fidelity" —
+including that **"insufficient evidence" is a valid terminal outcome** for
+a dimension, not a reason to speculate about it or to keep expanding
+indefinitely. This section introduces no second scope or evidence model:
+blast radius, the confirmed-defect / credible-engineering-risk /
+optional-improvement evidence labeling, and the no-repository-wide-audit
+boundary in [`evidence.md`](evidence.md) govern here exactly as they do
+everywhere else in this policy.
+
 ## Existing behavior ownership
 
 When a change introduces or reimplements meaningful behavior — a

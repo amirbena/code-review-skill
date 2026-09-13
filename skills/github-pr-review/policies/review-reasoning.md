@@ -17,6 +17,22 @@ Skill's own PR-specific application: where each invariant fits in the PR
 review flow, and light fallback guidance for a reviewing engine with no
 native full-codebase context.
 
+## Semantic Implication Review
+
+Before applying the reasoning passes below, apply
+[`review-scope.md`](../../../shared/policies/review-scope.md), "Semantic
+change-implication reasoning" — the base pass that detects which
+system-level dimensions the PR's own evidence materially implicates and
+performs the minimum bounded reasoning for each. That shared section owns
+the canonical dimension list, each dimension's activation signal and depth
+owner, the not-mutually-exclusive taxonomy, and the bounded-expansion and
+stop-condition reuse; this PR-specific policy does not restate them. It is
+one application of the existing proportional-scope and evidence rules, not
+a second scope model, and its base obligation applies whether or not any
+specialist profile is selected — the reasoning passes below add further
+depth to a dimension it already activates; none of them gates or replaces
+it.
+
 ## Logical Cohort Review
 
 The durable invariant — review related changes together rather than treating

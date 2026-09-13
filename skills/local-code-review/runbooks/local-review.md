@@ -321,14 +321,16 @@ which a value must be resolved before it is used, or what is reported.
    current local delta and never substitute for the evidence this step
    itself gathers from the actual code. This step applies
    [`review-scope.md`](../../../shared/policies/review-scope.md) in full,
-   including "Related changes as one unit," "Existing behavior ownership,"
+   including "Related changes as one unit," "Semantic change-implication
+   reasoning" (the base per-dimension pass the sections below add depth
+   to), "Existing behavior ownership,"
    "Root-cause and model-completeness pass" (canonical home:
    [`root-cause-consolidation.md`](../../../shared/policies/root-cause-consolidation.md)),
    "Failure state, retry safety,
    and recovery," "Architectural placement and execution-lifecycle
    fidelity," and "Affected-test / test-impact analysis" (canonical home:
    [`affected-test-analysis.md`](../../../shared/policies/affected-test-analysis.md))
-   (the last five
+   (the last six
    signal-triggered per that policy's own gating conditions — not applied
    unconditionally to every diff), and
    [`evidence.md`](../../../shared/policies/evidence.md), "Findings beyond

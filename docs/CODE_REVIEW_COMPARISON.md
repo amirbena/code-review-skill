@@ -36,6 +36,7 @@ products evolve.
 | Publication ordering | one returned document; human-facing summary last, trailing machine metadata subordinate | `final review comment == last publication event` — one batched review (inline + body + event); any machine-readable status published before it; nothing review-owned after it; identical whether or not `human_review_output` is on |
 | Root-cause / model-completeness reasoning | shared `review-scope.md` pass — incl. consolidating one shared cause that reaches many sites into a single authoritative finding with an affected-locations list, failing open to separate findings when the shared cause is not established | shared, identical |
 | Affected-test / test-impact analysis | shared `review-scope.md` pass — behavioral change traced into existing dependent tests | shared, identical |
+| Semantic change-implication reasoning | shared `review-scope.md` base pass — detects which system-level dimensions (user-facing, concurrency, data/persistence, API contracts, infra/deployment, security, operability, performance/scale) a change materially implicates and performs the minimum bounded reasoning for each | shared, identical |
 | Intended use case | pre-PR implementation review | independent review of an existing PR |
 
 **What each mode intentionally does *not* do**
@@ -178,7 +179,11 @@ actually affects — establish engine-neutral review-quality expectations, but t
 intentionally kept concise: a capable reviewing engine is expected to satisfy them without a
 detailed, prescribed reasoning procedure. A small number of exceptions target recurring,
 high-value failure modes that are otherwise easy for a capable reviewer to skip past even while
-reading the diff carefully — [`review-scope.md`](../shared/policies/review-scope.md)'s "Existing
+reading the diff carefully — [`review-scope.md`](../shared/policies/review-scope.md)'s "Semantic
+change-implication reasoning" (detecting which system-level dimensions — user-facing,
+concurrency, data/persistence, API contracts, infra/deployment, security, operability,
+performance/scale — a change materially implicates, and performing the minimum bounded reasoning
+for each one it does), "Existing
 behavior ownership" (does this change duplicate an existing canonical implementation of the same
 business/validation/state semantics rather than reusing it), "Failure state, retry safety, and
 recovery" (partial-failure state, retry/idempotency safety, evidenced recovery, and proportional
