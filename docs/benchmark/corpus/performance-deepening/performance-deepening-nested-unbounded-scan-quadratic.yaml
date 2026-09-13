@@ -1,0 +1,96 @@
+# Performance-deepening corpus case (Issue #187, parent #180, grandparent
+# #82). Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# Covers the "Cardinality analysis" concern area's accidental-O(n^2)
+# shape: a set-based membership check (O(1) per lookup) is replaced by a
+# linear `in` scan against a list that itself grows by one element every
+# iteration, turning an O(n) merge into an O(n*m) one. The docstring
+# establishes both operands are unbounded and grow independently, so the
+# quadratic blow-up is evidenced rather than speculative.
+
+format: benchmark-case/v1
+
+id: performance-deepening-nested-unbounded-scan-quadratic
+title: "merge_new_events drops its seen-set and checks membership against the growing merged list instead"
+
+input:
+  patch: |
+    diff --git a/app/sessions/events.py b/app/sessions/events.py
+    index 0cd1db7..54b81b5 100644
+    --- a/app/sessions/events.py
+    +++ b/app/sessions/events.py
+    @@ -6,10 +6,8 @@ def merge_new_events(existing_events, incoming_events):
+         incoming_events batches arrive continuously for as long as the
+         session stays open.
+         """
+    -    seen = set(existing_events)
+         merged = list(existing_events)
+         for event in incoming_events:
+    -        if event not in seen:
+    +        if event not in merged:
+                 merged.append(event)
+    -            seen.add(event)
+         return merged
+  base:
+    app/sessions/events.py: |
+      def merge_new_events(existing_events, incoming_events):
+          """Merge incoming_events into existing_events, dropping duplicates.
+
+          existing_events grows for the lifetime of a long-running session;
+          long-tenured sessions accumulate tens of thousands of events, and
+          incoming_events batches arrive continuously for as long as the
+          session stays open.
+          """
+          seen = set(existing_events)
+          merged = list(existing_events)
+          for event in incoming_events:
+              if event not in seen:
+                  merged.append(event)
+                  seen.add(event)
+          return merged
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: quadratic-membership-scan-on-growing-list
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/sessions/events.py
+        symbol: merge_new_events
+        anchor: "if event not in merged:"
+      claim: >-
+        merge_new_events previously tracked seen events in a set (constant-
+        time membership) alongside the merged list; the change drops the
+        set and checks `event not in merged` against the list itself, which
+        grows by one element per accepted event. The function's own
+        docstring documents existing_events as unbounded (tens of thousands
+        of events per long-tenured session) and incoming_events as an
+        ongoing stream, so each incoming event now does a linear scan over
+        an ever-growing list, turning an O(n) merge into O(n*m) -- a nested
+        scan whose combined cost the evidence shows is quadratic in the
+        sizes the docstring establishes.
+      defect_kind: accidental-quadratic-scan
+    - key: missing-large-session-merge-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/sessions/events.py
+      claim: >-
+        No test exercises merge_new_events with a large existing_events
+        collection to catch a regression back to linear-scan membership
+        checks.
+      defect_kind: missing-performance-regression-test
+
+metadata:
+  source: crafted
+  tags: [correctness, performance]
+  rationale: >-
+    Covers performance-deepening.md's "Cardinality analysis" concern area
+    with a shape distinct from the N+1 case: no remote call is involved at
+    all, only an accidental quadratic blow-up from checking membership
+    against a growing list instead of a set, evidenced by the function's
+    own documented, independently-unbounded input sizes.

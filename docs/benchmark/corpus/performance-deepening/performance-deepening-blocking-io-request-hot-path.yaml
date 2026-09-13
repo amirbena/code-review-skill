@@ -1,0 +1,86 @@
+# Performance-deepening corpus case (Issue #187, parent #180, grandparent
+# #82). Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# Covers the "Hot-path placement" concern area with blocking I/O
+# specifically: a synchronous disk read that previously ran once at
+# process startup and was cached is moved into the per-request handler
+# itself, so every request now pays the blocking read.
+
+format: benchmark-case/v1
+
+id: performance-deepening-blocking-io-request-hot-path
+title: "handle_request re-reads feature flags from disk on every request instead of once at startup"
+
+input:
+  patch: |
+    diff --git a/app/web/handlers.py b/app/web/handlers.py
+    index 8dc53bb..d90f9b7 100644
+    --- a/app/web/handlers.py
+    +++ b/app/web/handlers.py
+    @@ -1,9 +1,6 @@
+     from . import feature_flags
+
+    -# Loaded once at process startup; handle_request is invoked on every
+    -# incoming HTTP request served by this worker process.
+    -_flags = feature_flags.read_flags_from_disk()
+    -
+
+     def handle_request(request):
+    -    return render_response(request, _flags)
+    +    flags = feature_flags.read_flags_from_disk()
+    +    return render_response(request, flags)
+  base:
+    app/web/handlers.py: |
+      from . import feature_flags
+
+      # Loaded once at process startup; handle_request is invoked on every
+      # incoming HTTP request served by this worker process.
+      _flags = feature_flags.read_flags_from_disk()
+
+
+      def handle_request(request):
+          return render_response(request, _flags)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: blocking-disk-read-moved-into-request-hot-path
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/web/handlers.py
+        symbol: handle_request
+        anchor: "flags = feature_flags.read_flags_from_disk()"
+      claim: >-
+        feature_flags.read_flags_from_disk() previously ran once at process
+        startup, with its result cached in the module-level _flags and
+        reused by every call to handle_request. The change moves the same
+        blocking disk read inside handle_request itself, which the removed
+        comment's own evidence documents as invoked on every incoming HTTP
+        request served by the worker process, so the blocking I/O that was
+        amortized across the process's lifetime is now paid on every
+        request instead of once.
+      defect_kind: blocking-io-in-hot-path
+    - key: missing-hot-path-blocking-io-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/web/handlers.py
+      claim: >-
+        No test asserts feature_flags.read_flags_from_disk() is not called
+        once per handle_request invocation.
+      defect_kind: missing-performance-regression-test
+
+metadata:
+  source: crafted
+  tags: [correctness, performance]
+  rationale: >-
+    Covers performance-deepening.md's "Hot-path placement" concern area
+    with a shape distinct from its own "re-parses a configuration file"
+    worked example only in surface detail (feature flags vs. config): work
+    that was done once and cached is moved into a path the diff's own
+    removed comment documents as invoked per-request, so every request now
+    pays a blocking disk read that was previously amortized.

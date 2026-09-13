@@ -1,0 +1,54 @@
+# Performance-deepening corpus case (Issue #187, parent #180, grandparent
+# #82). Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# Covers Issue #187's "change with no call-path/hot-path relevance at all"
+# required case: a constant's value changes in a module the file's own
+# header comment documents as no longer imported anywhere, so there is no
+# call path, loop, or hot path for the change to affect at all. The
+# Performance / scale dimension is never materially implicated -- distinct
+# from the constant-size-loop case, where the dimension is implicated but
+# base reasoning finds the bound safe.
+
+format: benchmark-case/v1
+
+id: performance-deepening-non-executed-config-constant-not-implicated-clean
+title: "LEGACY_MAX_BATCH_SIZE changes in a bulk-export module documented as unreferenced"
+
+input:
+  patch: |
+    diff --git a/app/legacy/bulk_export.py b/app/legacy/bulk_export.py
+    index bd4da90..53ae467 100644
+    --- a/app/legacy/bulk_export.py
+    +++ b/app/legacy/bulk_export.py
+    @@ -2,4 +2,4 @@
+     # This module is no longer imported anywhere in the codebase; it is kept
+     # only as a historical reference pending removal.
+
+    -LEGACY_MAX_BATCH_SIZE = 500
+    +LEGACY_MAX_BATCH_SIZE = 1000
+  base:
+    app/legacy/bulk_export.py: |
+      # Legacy bulk-export tool, superseded by app.exports.streaming_export.
+      # This module is no longer imported anywhere in the codebase; it is kept
+      # only as a historical reference pending removal.
+
+      LEGACY_MAX_BATCH_SIZE = 500
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness, performance]
+  rationale: >-
+    Pins Issue #187's required "no call-path/hot-path relevance at all"
+    negative case: LEGACY_MAX_BATCH_SIZE's value changes, but the module's
+    own header comment documents it as no longer imported anywhere in the
+    codebase, so there is no executed call path, loop, or hot path left for
+    a batch-size change to affect. Base reasoning finds no material
+    Performance / scale signal to reason about at all, so this capability's
+    Activation condition 1 is never satisfied -- the same "domain not
+    implicated" shape as a comment-only edit, expressed instead as a
+    value change with no live reader.

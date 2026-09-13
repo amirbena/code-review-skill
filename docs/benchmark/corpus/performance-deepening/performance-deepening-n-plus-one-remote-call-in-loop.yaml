@@ -1,0 +1,92 @@
+# Performance-deepening corpus case (Issue #187, parent #180, grandparent
+# #82). Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# Mirrors performance-deepening.md's own "Engages -- N+1 call path" worked
+# example almost verbatim: a single batched remote call that fetched
+# inventory for every order in one round trip is replaced by a loop that
+# issues one remote call per order. The docstring establishes the caller's
+# actual invocation volume is unbounded (a customer's full order history),
+# so the cardinality evidence Activation condition 2 needs is present in
+# the diff itself.
+
+format: benchmark-case/v1
+
+id: performance-deepening-n-plus-one-remote-call-in-loop
+title: "get_order_summaries replaces a single batched inventory lookup with one remote call per order"
+
+input:
+  patch: |
+    diff --git a/app/orders/summaries.py b/app/orders/summaries.py
+    index 8078415..31c0e86 100644
+    --- a/app/orders/summaries.py
+    +++ b/app/orders/summaries.py
+    @@ -8,8 +8,7 @@ def get_order_summaries(order_ids):
+         customer's order history query, which can run into the thousands
+         for long-tenured customers.
+         """
+    -    inventory_by_order = inventory_client.get_inventory_batch(order_ids)
+         return [
+    -        {"order_id": oid, "inventory": inventory_by_order[oid]}
+    +        {"order_id": oid, "inventory": inventory_client.get_inventory(oid)}
+             for oid in order_ids
+         ]
+  base:
+    app/orders/summaries.py: |
+      from . import inventory_client
+
+
+      def get_order_summaries(order_ids):
+          """Fetch an inventory summary for each of the given orders.
+
+          order_ids is unbounded: callers pass the full result of a
+          customer's order history query, which can run into the thousands
+          for long-tenured customers.
+          """
+          inventory_by_order = inventory_client.get_inventory_batch(order_ids)
+          return [
+              {"order_id": oid, "inventory": inventory_by_order[oid]}
+              for oid in order_ids
+          ]
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: n-plus-one-inventory-call-per-order
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/orders/summaries.py
+        symbol: get_order_summaries
+        anchor: "inventory_client.get_inventory(oid)"
+      claim: >-
+        get_order_summaries previously fetched inventory for every order in
+        a single inventory_client.get_inventory_batch(order_ids) call; the
+        change replaces it with inventory_client.get_inventory(oid) issued
+        once per element of the order_ids loop. The function's own
+        docstring documents order_ids as unbounded -- a customer's full
+        order history, into the thousands for long-tenured customers -- so
+        this multiplies remote calls with a cardinality the evidence shows
+        is material rather than amortizing them in one batched call.
+      defect_kind: n-plus-one-remote-call
+    - key: missing-n-plus-one-regression-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/orders/summaries.py
+      claim: >-
+        No test asserts get_order_summaries issues a bounded number of
+        inventory calls independent of len(order_ids).
+      defect_kind: missing-performance-regression-test
+
+metadata:
+  source: crafted
+  tags: [correctness, performance]
+  rationale: >-
+    Pins performance-deepening.md's own "Engages -- N+1 call path" worked
+    example: base reasoning identifies the added per-item remote call, and
+    the evidence (the docstring's own unbounded-cardinality statement)
+    tells the capability the multiplication is material rather than
+    speculative, satisfying both Activation conditions.
