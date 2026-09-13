@@ -18,7 +18,7 @@ input:
     index 1111111..2222222 100644
     --- a/services/auth_helper.py
     +++ b/services/auth_helper.py
-    @@ -6,5 +6,5 @@ def record_login_attempt(username, succeeded):
+    @@ -7,4 +7,4 @@ def record_login_attempt(username, succeeded):
          if succeeded:
     -        logger.info("login ok: %s" % username)
     +        logger.info("login succeeded for user=%s", username)

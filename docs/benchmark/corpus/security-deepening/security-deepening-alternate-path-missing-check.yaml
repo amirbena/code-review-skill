@@ -19,7 +19,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/records.py
     +++ b/app/records.py
-    @@ -10,3 +10,10 @@ def legacy_delete_record(record_id):
+    @@ -12,2 +12,10 @@ def legacy_delete_record(record_id):
          _delete_record(record_id)
          return "", 204
     +

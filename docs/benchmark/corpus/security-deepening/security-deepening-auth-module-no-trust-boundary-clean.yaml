@@ -19,7 +19,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/auth/session_store.py
     +++ b/app/auth/session_store.py
-    @@ -1,7 +1,10 @@
+    @@ -1,7 +1,11 @@
      import time
 
     +_lookup_count = 0
