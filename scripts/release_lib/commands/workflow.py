@@ -1,15 +1,16 @@
-"""Handlers that back the Release worthiness workflow's shell steps.
+"""Handlers that back the release workflows' shell steps.
 
-These two subcommands replace multi-line ``run: |`` blocks in
-``.github/workflows/release-worthiness.yml`` so the reusable decisions are
-unit-tested here and the YAML only wires inputs to outputs:
+These two subcommands replace multi-line ``run: |`` blocks so the reusable
+decisions are unit-tested here and the YAML only wires inputs to outputs:
 
-* ``resolve-base-ref`` — the diff base the ``assess`` job classifies
-  against (the merge-base with the PR's current base branch, or the
-  previous ``v*`` tag on a push).
+* ``resolve-base-ref`` — the diff base the ``assess`` job in
+  ``.github/workflows/release-worthiness.yml`` classifies against (the
+  merge-base with the PR's current base branch, or the previous ``v*`` tag
+  on a push).
 * ``resolve-app-identity`` — the Git identity for the release commit,
   resolved from the minted release App's own slug via the GitHub API,
-  failing closed rather than guessing.
+  failing closed rather than guessing; used by the ``publish`` job in
+  ``.github/workflows/release-publish.yml``.
 
 Both are CI-only (Linux GitHub Actions runners); release automation never
 runs on Windows, so there is no PowerShell counterpart.

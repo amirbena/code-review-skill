@@ -22,9 +22,10 @@ drive the deterministic parts of the direct-to-main release flow.
 
 Classification, release-intent parsing, CHANGELOG composition, and the
 release-state comparisons are pure and side-effect-free so they can be
-unit tested; the workflow (.github/workflows/release-worthiness.yml)
-supplies the changed-file list or a base ref, and performs the Git/GitHub
-mutations itself.
+unit tested; the calling workflow supplies the changed-file list or a base
+ref. .github/workflows/release-worthiness.yml (PR-triggered) is read-only;
+.github/workflows/release-publish.yml (push/workflow_dispatch-triggered)
+performs the Git/GitHub mutations.
 
 A pull request declares its CHANGELOG entry in its description; the
 trusted release flow on main generates ``## Unreleased`` from the merged
