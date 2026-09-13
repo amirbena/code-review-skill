@@ -287,6 +287,25 @@ class FindingContractCapabilityFieldTests(unittest.TestCase):
             "there is no separate Capability: line on this surface", t
         )
 
+    def test_capability_listed_in_optional_and_surface_specific_fields(self) -> None:
+        # regression guard: this master enumeration section lists every
+        # other provenance field (contextual evidence, runtime validation,
+        # confidence) individually — `capability` must not be the one
+        # left out when a future edit touches this section again.
+        raw = FINDING_TMPL.read_text(encoding="utf-8")
+        idx = raw.find("## Optional and surface-specific fields")
+        self.assertNotEqual(idx, -1)
+        section = raw[idx : idx + 4000]
+        self.assertIn("**capability**", section)
+
+    def test_capability_listed_in_finding_rules_section(self) -> None:
+        # same regression guard for finding.md's own "## Rules" section.
+        raw = FINDING_TMPL.read_text(encoding="utf-8")
+        idx = raw.rfind("## Rules")
+        self.assertNotEqual(idx, -1)
+        section = raw[idx:]
+        self.assertIn("**capability**", section)
+
     def test_specialist_depth_owns_generic_labeling_rule(self) -> None:
         t = _norm(SPECIALIST_DEPTH)
         self.assertIn(

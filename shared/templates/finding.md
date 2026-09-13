@@ -541,6 +541,14 @@ after it, no `Details:` heading with boilerplate under it.
   rendering**: unlike the other entries in this section it is never
   suppressed, it renders on every surface, and on the GitHub inline surface
   it is folded into the prose rather than shown as its own field;
+- **capability** — the domain-specific deepening capability whose
+  reasoning contributed the finding (see "Capability provenance").
+  Rendered only when a capability actually contributed; on the full
+  rendering it is its own line after `Evidence` (and after any
+  `Contextual evidence` / `Runtime validation` / `Confidence` lines), on
+  the GitHub inline surface it folds into `evidence` prose. It never
+  carries or changes a severity, identity, deduplication, or the
+  decision derivation;
 - **source annotation on `location`** — a Skill may append a short
   parenthetical after the location value when it has its own concept that
   classifies *where the finding's evidence came from* within that Skill's
@@ -629,4 +637,9 @@ rendering-specific rules are in
   `Runtime validation` line, never lowers the evidence bar for reporting, and
   never by itself changes severity, identity, deduplication, or the decision
   derivation (see "Confidence and evidence state");
+- the optional **capability** field names the domain-specific deepening
+  capability whose reasoning contributed a finding; it renders only when
+  a capability actually contributed, and it never carries or changes a
+  severity, identity, deduplication, or decision derivation (see
+  "Capability provenance");
 - `fix` is a direction, never an implemented patch.
