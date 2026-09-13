@@ -240,6 +240,8 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
     ),
     "review-reasoning.md": (
         "applies only after review authority",
+        "## Semantic Implication Review",
+        "Semantic change-implication reasoning",
         "## Logical Cohort Review",
         "review related changes together rather than treating files or hunks "
         "as isolated units",
@@ -350,6 +352,7 @@ GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
         "## HEAD changes reset applicability",
     ),
     "review-reasoning.md": (
+        "## Semantic Implication Review",
         "## Logical Cohort Review",
         "## Architectural Placement Review",
         "## Code Impact / Dependency Analysis",

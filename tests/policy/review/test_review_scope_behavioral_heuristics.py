@@ -89,6 +89,7 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
             "## Architectural placement and execution-lifecycle fidelity", text
         )
         self.assertIn("## Affected-test / test-impact analysis", text)
+        self.assertIn("## Semantic change-implication reasoning", text)
 
     def test_local_skill_always_loads_review_scope_and_evidence(self) -> None:
         text = _text(LOCAL_SKILL_MD)
@@ -102,6 +103,7 @@ class BehavioralHeuristicsReachableThroughReviewStepTests(unittest.TestCase):
         self.assertGreater(step9, -1)
         self.assertGreater(step10, step9)
         step9_body = self.text[step9:step10]
+        self.assertIn("Semantic change-implication reasoning", step9_body)
         self.assertIn("Existing behavior ownership", step9_body)
         self.assertIn("Root-cause and model-completeness pass", step9_body)
         self.assertIn("Failure state, retry safety, and recovery", step9_body)
@@ -490,6 +492,7 @@ class EvidenceScalingCrossReferenceTests(unittest.TestCase):
             "Architectural placement and execution-lifecycle fidelity", text
         )
         self.assertIn("Affected-test / test-impact analysis", text)
+        self.assertIn("Semantic change-implication reasoning", text)
         self.assertIn("repository-wide audit", text)
 
 
@@ -510,6 +513,8 @@ class CrossSkillConsistencyTests(unittest.TestCase):
     ) -> None:
         text = _text(GITHUB_REASONING)
         self.assertIn("review-scope.md", text)
+        self.assertIn("## Semantic Implication Review", text)
+        self.assertIn("Semantic change-implication reasoning", text)
         self.assertIn("Root-Cause and Model-Completeness Review", text)
         self.assertIn("Root-cause and model-completeness pass", text)
         self.assertIn("this file does not restate their full text", text)
@@ -534,6 +539,9 @@ class CrossSkillConsistencyTests(unittest.TestCase):
         self.assertNotIn(
             "## Affected-test / test-impact analysis", text
         )
+        self.assertNotIn(
+            "## Semantic change-implication reasoning", text
+        )
         self.assertNotIn("### When to expand context", text)
         self.assertNotIn("### Stop conditions", text)
 
@@ -554,6 +562,7 @@ class CrossSkillConsistencyTests(unittest.TestCase):
             "## Failure state, retry safety, and recovery",
             "## Architectural placement and execution-lifecycle fidelity",
             "## Affected-test / test-impact analysis",
+            "## Semantic change-implication reasoning",
         )
         skill_policy_dirs = [
             LOCAL_SKILL_DIR / "policies",
@@ -591,6 +600,162 @@ class NoSecondSourceOfTruthTests(unittest.TestCase):
                     continue  # never scanned here, but keep the guard explicit
                 text = py_file.read_text(encoding="utf-8")
                 self.assertNotIn("behavioral_review_signals", text)
+
+
+class SemanticImplicationSectionTests(unittest.TestCase):
+    """(shared semantics) the base semantic change-implication pass detects
+    materially implicated system dimensions and performs the minimum
+    bounded reasoning itself, never a mandatory eight-dimension checklist,
+    and is unconditional with respect to any domain-specific deepening
+    capability — such a capability may add depth but can never gate
+    whether a dimension is considered at all. This is Tier-3-neutral: it
+    does not say how a deeper capability is selected, activated, or
+    composed (that is #82's scope)."""
+
+    def setUp(self) -> None:
+        self.section = _section(
+            _text(REVIEW_SCOPE),
+            "## Semantic change-implication reasoning",
+            "## Existing behavior ownership",
+        )
+
+    def test_it_performs_base_reasoning_itself_not_only_routing(self) -> None:
+        self.assertIn(
+            "it performs the minimum bounded reasoning itself — it", self.section
+        )
+        self.assertIn("is not solely a router", self.section)
+        self.assertIn(
+            "none of them may gate, weaken, narrow, or replace this base obligation",
+            self.section,
+        )
+
+    def test_base_reasoning_is_unconditional_on_deeper_capabilities(self) -> None:
+        self.assertIn(
+            "Base semantic reasoning is unconditional with respect to "
+            "additional domain-specific depth",
+            self.section,
+        )
+        self.assertIn(
+            "it never determines whether that dimension is considered at all",
+            self.section,
+        )
+        self.assertIn(
+            "How a deeper capability is selected, activated, or composed with "
+            "the base review is outside this section's scope",
+            self.section,
+        )
+        for stale in ("opt-in specialist profile", "profile is selected"):
+            self.assertNotIn(stale, self.section)
+
+    def test_taxonomy_is_not_mutually_exclusive(self) -> None:
+        self.assertIn("not a mutually-exclusive classification", self.section)
+        self.assertIn(
+            "may materially implicate several dimensions at once", self.section
+        )
+
+    def test_no_signal_dimension_is_not_analysed_and_emits_no_output(self) -> None:
+        self.assertIn(
+            "is not analysed and produces no output, including no not-applicable "
+            "record",
+            self.section,
+        )
+        self.assertIn("deliberately not an eight-dimension checklist", self.section)
+
+    def test_all_eight_canonical_dimensions_are_present_with_depth_owner(self) -> None:
+        for dimension in (
+            "User-facing / client behavior",
+            "Concurrency / distributed-system semantics",
+            "Data / persistence",
+            "API / integration contracts",
+            "Infrastructure / deployment",
+            "Security / trust boundaries",
+            "Operability / production-readiness",
+            "Performance / scale",
+        ):
+            self.assertIn(dimension, self.section)
+        self.assertEqual(self.section.count("Depth owner:"), 8)
+
+    def test_two_dimensions_have_no_dedicated_owner_yet(self) -> None:
+        self.assertEqual(
+            self.section.count(
+                "no dedicated owner contract exists yet in this repository"
+            ),
+            2,
+        )
+
+    def test_worked_multi_dimension_example_names_four_implicated_dimensions(self) -> None:
+        self.assertIn("Worked example", self.section)
+        self.assertIn("webhook", self.section)
+        self.assertIn(
+            "does not implicate concurrency, infrastructure, or performance/scale "
+            "unless",
+            self.section,
+        )
+
+    def test_evidence_is_semantic_not_structural(self) -> None:
+        self.assertIn(
+            "File type, framework, path, and language are evidence that a dimension",
+            self.section,
+        )
+        self.assertIn("never solely authoritative", self.section)
+        for example in (
+            "Shared-state read→decide→write",
+            "User-controlled value reaching rendered output",
+            "Schema or persisted-state change",
+            "Deployment or configuration change",
+        ):
+            self.assertIn(example, self.section)
+
+    def test_bounded_expansion_reuses_architectural_placement_model(self) -> None:
+        self.assertIn(
+            "the same minimum-context-first, one-ring-at-a-time model and stop "
+            'conditions already defined under "Architectural placement and '
+            'execution-lifecycle fidelity"',
+            self.section,
+        )
+        self.assertIn("insufficient evidence", self.section.lower())
+        self.assertIn("introduces no second scope or evidence model", self.section)
+
+
+class SemanticImplicationWiredIntoBothSkillsTests(unittest.TestCase):
+    def test_github_review_reasoning_forwards_to_the_shared_section(self) -> None:
+        text = _text(GITHUB_REASONING)
+        self.assertIn("## Semantic Implication Review", text)
+        self.assertIn("Semantic change-implication reasoning", text)
+        self.assertIn("does not restate them", text)
+
+    def test_github_review_index_lists_semantic_implication_reasoning(self) -> None:
+        text = _text(REPO_ROOT / "skills/github-pr-review/policies/github-review.md")
+        self.assertIn("semantic implication", text)
+
+    def test_semantic_implication_runs_before_other_reasoning_passes_in_github_reasoning(
+        self,
+    ) -> None:
+        text = _text(GITHUB_REASONING)
+        semantic_idx = text.index("## Semantic Implication Review")
+        cohort_idx = text.index("## Logical Cohort Review")
+        self.assertLess(semantic_idx, cohort_idx)
+
+    def test_both_github_runbooks_apply_semantic_implication_first(self) -> None:
+        for runbook in (GITHUB_ACTIVE_RUNBOOK, GITHUB_PASSIVE_RUNBOOK):
+            text = _text(runbook)
+            self.assertIn("Semantic Implication Review", text)
+            semantic_idx = text.index("Semantic Implication Review")
+            cohort_idx = text.index("Logical Cohort Review")
+            self.assertLess(semantic_idx, cohort_idx)
+
+    def test_local_runbook_marks_the_section_signal_triggered(self) -> None:
+        text = _text(LOCAL_RUNBOOK)
+        window = _section(
+            text,
+            "Semantic change-implication reasoning",
+            "Classify findings per",
+        )
+        self.assertIn(
+            "signal-triggered per that policy's own gating conditions", window
+        )
+        self.assertIn("not applied", window)
+        self.assertIn("unconditionally to every diff", window)
 
 
 class ArchitecturalPlacementSectionTests(unittest.TestCase):

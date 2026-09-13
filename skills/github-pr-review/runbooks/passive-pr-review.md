@@ -269,9 +269,13 @@ finally: remove the temporary checkout (success, any failure, interruption)
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
    [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
-   applying the instructions discovered in step 5. When this invocation's
-   scope contains multiple related changes, reason about them per
+   applying the instructions discovered in step 5. First apply
    [`../policies/review-reasoning.md`](../policies/review-reasoning.md),
+   "Semantic Implication Review," to detect and reason about the
+   system-level dimensions this invocation's scope materially implicates.
+   When this invocation's
+   scope contains multiple related changes, reason about them per the same
+   file's
    "Logical Cohort Review," and inspect the relevant dependency surface
    per "Code Impact / Dependency Analysis" in the same file. When this
    invocation changes observable behavior, also trace it into the existing

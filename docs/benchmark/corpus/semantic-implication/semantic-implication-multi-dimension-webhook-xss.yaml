@@ -1,0 +1,75 @@
+# Semantic-implication corpus case (Issue #211). Format: ../../fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Python, new file. Multiple dimensions implicated by one change: the
+# webhook payload shape is now an API/integration contract with its
+# sender; the payload is persisted in an in-process store; it originates
+# outside the trust boundary and is later rendered to an admin, crossing
+# security/trust boundaries; and what the admin dashboard actually
+# displays is user-facing/client behavior. One root-cause defect (the
+# unescaped interpolation) is the concrete, evidence-backed finding — the
+# point of this case is that several dimensions of base reasoning are
+# materially implicated by one change, not that each dimension must
+# produce its own separate finding.
+
+format: benchmark-case/v1
+
+id: semantic-implication-multi-dimension-webhook-xss
+title: "New webhook handler stores and renders sender-controlled text unescaped into the admin dashboard"
+
+input:
+  patch: |
+    diff --git a/app/webhooks/handler.py b/app/webhooks/handler.py
+    new file mode 100644
+    index 0000000..3a4b5c6
+    --- /dev/null
+    +++ b/app/webhooks/handler.py
+    @@ -0,0 +1,14 @@
+    +import json
+    +
+    +_events = []
+    +
+    +
+    +def receive_webhook(raw_body):
+    +    payload = json.loads(raw_body)
+    +    _events.append(payload)
+    +    return {"status": "ok"}
+    +
+    +
+    +def render_admin_summary():
+    +    rows = "".join(f"<tr><td>{e['sender']}</td></tr>" for e in _events)
+    +    return f"<table>{rows}</table>"
+  base: {}
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: webhook-sender-field-unescaped-into-admin-dashboard
+      match: required
+      severity: P0
+      location:
+        location_intent: line
+        path: app/webhooks/handler.py
+        symbol: render_admin_summary
+        anchor: "rows = \"\".join(f\"<tr><td>{e['sender']}</td></tr>\" for e in _events)"
+      claim: >-
+        render_admin_summary interpolates each stored event's `sender`
+        field directly into HTML with no escaping. `sender` originates
+        from the externally-supplied webhook payload (`receive_webhook`
+        persists `json.loads(raw_body)` verbatim into `_events`), so an
+        attacker-controlled webhook payload can inject arbitrary HTML/JS
+        that executes in the admin's browser when the dashboard is
+        rendered — a stored cross-site-scripting vulnerability.
+      defect_kind: stored-xss
+
+metadata:
+  source: crafted
+  tags: [security, correctness]
+  rationale: >-
+    Demonstrates one change materially implicating several dimensions at
+    once (API/integration contract, data/persistence, security/trust
+    boundaries, user-facing/client behavior) per review-scope.md's worked
+    multi-dimension example, while still surfacing one concrete,
+    evidence-backed defect rather than manufacturing a finding per
+    dimension.
