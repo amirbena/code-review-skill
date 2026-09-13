@@ -34,6 +34,25 @@ below may add further depth to a dimension it already activates when
 materially warranted, but none of them gates, weakens, narrows, or
 replaces it.
 
+## Domain-Specific Deepening Review
+
+For each dimension "Semantic Implication Review" above activates, apply
+[`review-scope.md`](../../../shared/policies/review-scope.md),
+"Domain-specific deepening pass" (canonical home:
+[`specialist-depth.md`](../../../shared/policies/specialist-depth.md)):
+decide from the evidence already gathered whether that dimension's
+bounded base reasoning already suffices or deeper domain-specific
+investigation is warranted, and, when it is, let the relevant
+capabilities compose into this one review. That shared policy owns the
+evidence-driven activation rule, the 0..N composition and cascading-
+activation model (bounded by
+[`repository-expansion.md`](../../../shared/policies/repository-expansion.md)),
+and the orthogonality to
+[`remediation-scope-boundary.md`](../../../shared/policies/remediation-scope-boundary.md);
+this PR-specific policy does not restate them. It never decides whether a
+dimension is considered at all — that stays with the base pass above —
+and it introduces no new finding/severity/evidence schema.
+
 ## Null-Like Absence-Risk Review
 
 Apply [`review-scope.md`](../../../shared/policies/review-scope.md),

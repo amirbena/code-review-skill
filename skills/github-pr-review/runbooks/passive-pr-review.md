@@ -290,7 +290,11 @@ finally: remove the temporary checkout (success, any failure, interruption)
    [`../policies/review-reasoning.md`](../policies/review-reasoning.md),
    "Semantic Implication Review," to detect and reason about the
    system-level dimensions this invocation's scope materially implicates,
-   and the same file's "Null-Like Absence-Risk Review" for any changed
+   then the same file's "Domain-Specific Deepening Review" (canonical
+   home:
+   [`specialist-depth.md`](../../../shared/policies/specialist-depth.md))
+   to decide, per implicated dimension, whether deeper domain-specific
+   reasoning is warranted, and the same file's "Null-Like Absence-Risk Review" for any changed
    data-flow or control-flow the reviewed language's nullability model
    makes credibly absence-prone. When this invocation's
    scope contains multiple related changes, reason about them per the same
