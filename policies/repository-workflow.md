@@ -1,5 +1,10 @@
 # Repository Workflow Policy
 
+**Precondition, checked before anything else in this file applies: no
+implementation or documentation file may be modified until the branch
+validation sequence below (steps 1-6) reaches step 6.** This is the
+canonical source for that gate referenced from `AGENTS.md`'s entry gate.
+
 Canonical rules for **task branches** in development of *this* repository:
 which branch a task runs on, how the base is synchronized, how unrelated
 local work is preserved, and how a task branch is named.
