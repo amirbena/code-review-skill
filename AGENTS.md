@@ -28,6 +28,21 @@ behavior is defined in each Skill's own `SKILL.md`.
 
 ---
 
+## Entry gate: branch validation precondition
+
+**Before anything else** — before routing to a task-specific policy below
+and before any tool call that modifies an implementation or documentation
+file — confirm the work is on an appropriate dedicated task branch per
+[`policies/repository-workflow.md`](policies/repository-workflow.md). That
+policy's required order (inspect state, verify/sync the base, preserve any
+existing work, create the task branch, switch to it) must reach its final
+step before a single implementation or documentation file may be edited.
+This precondition gates every task in this repository; it is not one item
+to weigh alongside the Global invariants below, and no task routing rule
+or policy file relaxes it.
+
+---
+
 ## Core Vocabulary: Agent via Skill
 
 ```text
@@ -78,15 +93,15 @@ canonical, detailed rule lives in the policy named after it.
   APIs, or subagent-orchestration syntax. Runtime adapters may exist
   separately but never fork these rules. Canonical:
   [`policies/skill-development-policy.md`](policies/skill-development-policy.md).
-- **Dedicated task branch.** Before implementing any issue, confirm the
-  work is on an appropriate dedicated feature/fix branch created from the
-  required base branch. Every materially separate task runs on a freshly
-  created task branch off synchronized `main`; never implement directly
-  on `main` or continue on a previous task's branch, and never discard or
-  blend unrelated local work to get there. This is an agent workflow
-  check, not something recorded as evidence in repository history (no
-  empty commits, PR checklist items, or file comments asserting it).
-  Canonical: [`policies/repository-workflow.md`](policies/repository-workflow.md).
+- **Dedicated task branch.** See the **Entry gate** above, which states
+  this as a mandatory precondition rather than one invariant among many:
+  every materially separate task runs on a freshly created task branch off
+  synchronized `main`, never directly on `main` or a previous task's
+  branch, and never by discarding or blending unrelated local work. This
+  is an agent workflow check, not something recorded as evidence in
+  repository history (no empty commits, PR checklist items, or file
+  comments asserting it). Canonical:
+  [`policies/repository-workflow.md`](policies/repository-workflow.md).
 - **Read-only Git safety.** Destructive Git shortcuts (`git reset
   --hard`, `git clean -fd`, force push, ancestry-hiding branch deletion,
   history rewriting for convenience) are prohibited; on unexpected state,
