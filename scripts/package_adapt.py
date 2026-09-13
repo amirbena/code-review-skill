@@ -2,10 +2,10 @@
 """Rewrite shared-links/metadata-paths and validate SKILL.md frontmatter
 for a staged, standalone packaged Skill.
 
-Thin CLI entrypoint. The canonical implementation lives in ``packaging/``
-(see ``packaging/__init__.py`` for the map); this file only wires
-``sys.argv`` to it. Called identically by ``scripts/package-skills.sh``
-and ``scripts/package-skills.ps1``.
+Thin CLI entrypoint. The canonical implementation lives in
+``package_domain/`` (see ``package_domain/__init__.py`` for the map);
+this file only wires ``sys.argv`` to it. Called identically by
+``scripts/package-skills.sh`` and ``scripts/package-skills.ps1``.
 
 Usage:
     python3 scripts/package_adapt.py adapt-shared-links <file>
@@ -15,7 +15,7 @@ Usage:
 
 from __future__ import annotations
 
-from packaging import main
+from package_domain import main
 
 __all__ = ["main"]
 

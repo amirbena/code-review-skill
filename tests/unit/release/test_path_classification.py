@@ -53,9 +53,9 @@ class ClassifyPathTests(unittest.TestCase):
         # scripts/package_adapt.py is a package (issue #266); editing any
         # of its modules stays release-worthy.
         for path in (
-            "scripts/packaging/adaptation.py",
-            "scripts/packaging/validation.py",
-            "scripts/packaging/cli.py",
+            "scripts/package_domain/adaptation.py",
+            "scripts/package_domain/validation.py",
+            "scripts/package_domain/cli.py",
         ):
             self.assertEqual(rw.classify_path(path), "packaging", path)
 

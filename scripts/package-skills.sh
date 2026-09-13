@@ -47,7 +47,7 @@ require_archive_entry() {
 # Shared-link adaptation, metadata-path adaptation, and SKILL.md
 # frontmatter structural validation are packaging-domain rules shared
 # with scripts/package-skills.ps1; both platform scripts delegate to the
-# single canonical Python implementation in scripts/packaging/ (see
+# single canonical Python implementation in scripts/package_domain/ (see
 # scripts/package_adapt.py) instead of restating the rules here.
 validate_skill_frontmatter() {
   local skill_md="$1"

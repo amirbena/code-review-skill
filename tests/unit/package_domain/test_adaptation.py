@@ -1,14 +1,14 @@
-"""Tests for scripts/packaging/adaptation.py — the canonical shared-link
-and metadata-path rewriting rules shared by both platform packaging
-scripts (issue #266)."""
+"""Tests for scripts/package_domain/adaptation.py — the canonical
+shared-link and metadata-path rewriting rules shared by both platform
+packaging scripts (issue #266)."""
 
 from __future__ import annotations
 
 import unittest
 
-import tests.unit.packaging._shared  # noqa: F401 - sys.path wiring
+import tests.unit.package_domain._shared  # noqa: F401 - sys.path wiring
 
-from packaging.adaptation import adapt_metadata_paths, adapt_shared_links
+from package_domain.adaptation import adapt_metadata_paths, adapt_shared_links
 
 
 class AdaptSharedLinksTests(unittest.TestCase):

@@ -1,6 +1,10 @@
 """Canonical packaging-domain logic shared by both platform orchestration
 scripts (``scripts/package-skills.sh`` and ``scripts/package-skills.ps1``).
 
+Named ``package_domain`` rather than ``packaging`` so it never shadows
+the unrelated, widely-used PyPI ``packaging`` distribution when
+``scripts/`` is prepended to ``sys.path``.
+
 Split out so each concern can be read on its own; ``scripts/package_adapt.py``
 is a thin entrypoint that calls ``main``.
 

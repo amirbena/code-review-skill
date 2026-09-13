@@ -20,7 +20,9 @@ where ``metadata/`` sits one level below the standalone package root.
 
 from __future__ import annotations
 
+import os
 import re
+import tempfile
 from pathlib import Path
 
 _METADATA_SHARED_PREFIX = re.compile(r"^([ \t]*- [ \t]*)\.\./\.\./\.\./shared/", re.MULTILINE)
@@ -36,9 +38,22 @@ def adapt_metadata_paths(text: str) -> str:
     return _METADATA_SHARED_PREFIX.sub(r"\1../shared/", text)
 
 
+def _write_atomic(path: Path, content: str) -> None:
+    """Write ``content`` to ``path`` via write-to-temp-then-replace, so a
+    reader never observes a partially written file."""
+    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
+            tmp_file.write(content)
+        os.replace(tmp_name, path)
+    except BaseException:
+        os.unlink(tmp_name)
+        raise
+
+
 def adapt_shared_links_file(path: Path) -> None:
-    path.write_text(adapt_shared_links(path.read_text(encoding="utf-8")), encoding="utf-8")
+    _write_atomic(path, adapt_shared_links(path.read_text(encoding="utf-8")))
 
 
 def adapt_metadata_paths_file(path: Path) -> None:
-    path.write_text(adapt_metadata_paths(path.read_text(encoding="utf-8")), encoding="utf-8")
+    _write_atomic(path, adapt_metadata_paths(path.read_text(encoding="utf-8")))

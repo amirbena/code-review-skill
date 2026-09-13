@@ -1,4 +1,4 @@
-"""Shared sys.path wiring for the scripts/packaging/ unit tests."""
+"""Shared sys.path wiring for the scripts/package_domain/ unit tests."""
 
 from __future__ import annotations
 

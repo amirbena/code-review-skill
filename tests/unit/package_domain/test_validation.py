@@ -1,6 +1,6 @@
-"""Tests for scripts/packaging/validation.py — the canonical SKILL.md
-frontmatter structural validation shared by both platform packaging
-scripts (issue #266)."""
+"""Tests for scripts/package_domain/validation.py — the canonical
+SKILL.md frontmatter structural validation shared by both platform
+packaging scripts (issue #266)."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import tests.unit.packaging._shared  # noqa: F401 - sys.path wiring
+import tests.unit.package_domain._shared  # noqa: F401 - sys.path wiring
 
-from packaging.validation import SkillFrontmatterError, validate_skill_frontmatter
+from package_domain.validation import SkillFrontmatterError, validate_skill_frontmatter
 
 
 class ValidateSkillFrontmatterTests(unittest.TestCase):

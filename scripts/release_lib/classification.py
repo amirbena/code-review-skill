@@ -47,7 +47,7 @@ PACKAGING_FILES = frozenset(
 # Skill-metadata validator package behind scripts/validate-skill-metadata.py,
 # and the shared-link/metadata-path/frontmatter packaging-domain package
 # behind scripts/package_adapt.py).
-PACKAGING_PREFIXES = ("scripts/skill_metadata/", "scripts/packaging/")
+PACKAGING_PREFIXES = ("scripts/skill_metadata/", "scripts/package_domain/")
 
 # Trees that never, on their own, require a release.
 NON_RELEASE_TREES = {
