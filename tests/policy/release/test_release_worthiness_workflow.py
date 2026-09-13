@@ -87,11 +87,20 @@ class PermissionsTests(unittest.TestCase):
     def test_top_level_read_only(self) -> None:
         self.assertEqual(self.data["permissions"], {"contents": "read"})
 
-    def test_assess_is_read_only_and_no_persisted_creds(self) -> None:
-        assess = self.jobs["assess"]
-        self.assertEqual(assess["permissions"], {"contents": "read"})
+    def test_release_gate_is_read_only_and_no_persisted_creds(self) -> None:
+        gate = self.jobs["release-gate"]
+        self.assertEqual(gate["permissions"], {"contents": "read"})
         checkout = next(
-            s for s in assess["steps"]
+            s for s in gate["steps"]
+            if isinstance(s.get("uses"), str) and s["uses"].startswith("actions/checkout")
+        )
+        self.assertIs(checkout["with"]["persist-credentials"], False)
+
+    def test_package_is_read_only_and_no_persisted_creds(self) -> None:
+        package = self.jobs["package"]
+        self.assertEqual(package["permissions"], {"contents": "read"})
+        checkout = next(
+            s for s in package["steps"]
             if isinstance(s.get("uses"), str) and s["uses"].startswith("actions/checkout")
         )
         self.assertIs(checkout["with"]["persist-credentials"], False)
@@ -130,7 +139,7 @@ class PermissionsTests(unittest.TestCase):
         self.assertEqual(minters, ["publish"])
 
     def test_non_publish_jobs_never_reference_app_secrets_or_token(self) -> None:
-        for name in ("assess", "plan"):
+        for name in ("release-gate", "package", "plan"):
             blob = yaml.safe_dump(self.jobs[name])
             self.assertNotIn("RELEASE_APP", blob, name)
             self.assertNotIn("app-token", blob, name)
@@ -184,10 +193,10 @@ class PublishJobGovernanceTests(unittest.TestCase):
             "needs.plan.outputs.should_release == 'true'",
         )
 
-    def test_assess_excludes_dispatch_and_skip_ci_commits(self) -> None:
-        assess_if = self.jobs["assess"]["if"]
-        self.assertIn("github.event_name != 'workflow_dispatch'", assess_if)
-        self.assertIn("[skip ci]", assess_if)
+    def test_release_gate_excludes_dispatch_and_skip_ci_commits(self) -> None:
+        gate_if = self.jobs["release-gate"]["if"]
+        self.assertIn("github.event_name != 'workflow_dispatch'", gate_if)
+        self.assertIn("[skip ci]", gate_if)
 
     def test_requires_app_credentials_before_doing_anything(self) -> None:
         steps = self.publish["steps"]
@@ -291,8 +300,9 @@ class PublishFlowOrderingTests(unittest.TestCase):
 
 
 class AssessJobReleaseIntentTests(unittest.TestCase):
-    """The PR check takes CHANGELOG coverage from the PR description's
-    release intent; contributor text reaches the script through env only."""
+    """The required `release-gate` check takes CHANGELOG coverage from the
+    PR description's release intent; contributor text reaches the script
+    through env only."""
 
     CONTRIBUTOR_TEXT = (
         "github.event.pull_request.body",
@@ -303,7 +313,7 @@ class AssessJobReleaseIntentTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.data = _load()
-        self.steps = self.data["jobs"]["assess"]["steps"]
+        self.steps = self.data["jobs"]["release-gate"]["steps"]
         self.step = _step(self.steps, "Classify change set and enforce release intent")
 
     def test_description_edits_rerun_the_check(self) -> None:
@@ -330,7 +340,7 @@ class AssessJobReleaseIntentTests(unittest.TestCase):
                     self.assertNotIn(expr, run, f"{name}: {step.get('name')}")
 
     def test_coverage_no_longer_comes_from_a_changelog_edit(self) -> None:
-        blob = yaml.safe_dump(self.data["jobs"]["assess"])
+        blob = yaml.safe_dump(self.data["jobs"]["release-gate"])
         self.assertNotIn("classify-semver", blob)
         self.assertNotIn("--require-changelog", blob)
 
@@ -398,7 +408,7 @@ class ExtractedHelperWiringTests(unittest.TestCase):
         # A step order that put either before checkout would still satisfy the
         # mint < resolve < commit ordering test but break the job at run time.
         for job, needle in (
-            ("assess", "Determine base ref"),
+            ("release-gate", "Determine base ref"),
             ("publish", "Resolve the authenticated release App bot identity"),
         ):
             steps = self.jobs[job]["steps"]
@@ -408,8 +418,8 @@ class ExtractedHelperWiringTests(unittest.TestCase):
             self.assertLess(checkout, call, job)
             self.assertLess(setup_python, call, job)
 
-    def test_assess_base_ref_comes_from_the_resolve_base_ref_subcommand(self) -> None:
-        step = _step(self.jobs["assess"]["steps"], "Determine base ref")
+    def test_release_gate_base_ref_comes_from_the_resolve_base_ref_subcommand(self) -> None:
+        step = _step(self.jobs["release-gate"]["steps"], "Determine base ref")
         self.assertEqual(step.get("id"), "base")
         run = step["run"]
         self.assertIn("release_worthiness.py resolve-base-ref", run)
@@ -419,8 +429,8 @@ class ExtractedHelperWiringTests(unittest.TestCase):
         # No inline `git describe` / branching left in the workflow.
         self.assertNotIn("git describe", self.raw)
 
-    def test_assess_fetches_the_pr_base_branch_before_resolving_the_base_ref(self) -> None:
-        steps = self.jobs["assess"]["steps"]
+    def test_release_gate_fetches_the_pr_base_branch_before_resolving_the_base_ref(self) -> None:
+        steps = self.jobs["release-gate"]["steps"]
         fetch = _step(steps, "Fetch the PR base branch")
         self.assertEqual(fetch["if"], "github.event_name == 'pull_request'")
         self.assertIn("git fetch", fetch["run"])
@@ -430,7 +440,7 @@ class ExtractedHelperWiringTests(unittest.TestCase):
         self.assertLess(_step_index(steps, "Fetch the PR base branch"), _step_index(steps, "Determine base ref"))
 
     def test_classify_step_passes_the_resolved_base_ref_unconditionally(self) -> None:
-        step = _step(self.jobs["assess"]["steps"], "Classify change set and enforce release intent")
+        step = _step(self.jobs["release-gate"]["steps"], "Classify change set and enforce release intent")
         run = step["run"]
         self.assertIn('--base-ref "${{ steps.base.outputs.ref }}"', run)
         # The old shell arg-accumulation is gone.
@@ -439,7 +449,7 @@ class ExtractedHelperWiringTests(unittest.TestCase):
     def test_both_jobs_build_archives_through_the_shared_helper(self) -> None:
         helper = "scripts/release/verify-skill-archives.sh"
         self.assertTrue((REPO_ROOT / helper).is_file())
-        for job in ("assess", "publish"):
+        for job in ("package", "publish"):
             steps = self.jobs[job]["steps"]
             build = _step(steps, "Build and verify Skill")
             self.assertIn(helper, build["run"])
@@ -452,6 +462,54 @@ class ExtractedHelperWiringTests(unittest.TestCase):
         self.assertTrue(text.startswith("#!/usr/bin/env bash"))
         self.assertIn("CI-only", text)
         self.assertIn("PowerShell", text)
+
+
+class RequiredReleaseGateTests(unittest.TestCase):
+    """The required, always-created PR check (issue #241): `release-gate`
+    is a stable job identity, decoupled from the conditional `package`
+    (archive build/verify/upload) work, and always resolves — release-worthy
+    or not."""
+
+    def setUp(self) -> None:
+        self.data = _load()
+        self.jobs = self.data["jobs"]
+        self.gate = self.jobs["release-gate"]
+        self.package = self.jobs["package"]
+
+    def test_release_gate_job_exists_with_a_stable_name(self) -> None:
+        self.assertIn("release-gate", self.jobs)
+        self.assertNotIn("name", self.gate)  # job id is the check context
+
+    def test_release_gate_never_builds_or_uploads_packaging_artifacts(self) -> None:
+        blob = yaml.safe_dump(self.gate)
+        self.assertNotIn("verify-skill-archives.sh", blob)
+        self.assertNotIn("upload-artifact", blob)
+        self.assertNotIn("packaging", blob)
+
+    def test_release_gate_exposes_release_worthy_for_downstream_jobs(self) -> None:
+        self.assertEqual(
+            self.gate["outputs"]["release_worthy"], "${{ steps.classify.outputs.release_worthy }}"
+        )
+
+    def test_package_job_only_runs_when_release_gate_says_release_worthy(self) -> None:
+        self.assertEqual(self.package["needs"], "release-gate")
+        self.assertEqual(
+            str(self.package["if"]).strip(), "needs.release-gate.outputs.release_worthy == 'true'"
+        )
+
+    def test_package_job_is_not_named_in_the_required_status_checks_doc_contract(self) -> None:
+        # The applicability decision (needs.release-gate output) lives in the
+        # workflow's wiring of release_worthiness.py's own classification —
+        # there is no separate `paths:`/`if:` relevance re-implementation.
+        self.assertNotIn("paths:", WORKFLOW.read_text(encoding="utf-8"))
+
+    def test_release_gate_runs_for_every_pull_request_event_type(self) -> None:
+        types = _on(self.data)["pull_request"]["types"]
+        for event in ("opened", "synchronize", "reopened", "edited"):
+            self.assertIn(event, types)
+        # The job's own `if` only excludes workflow_dispatch and the
+        # release commit — it never narrows by event further.
+        self.assertNotIn("pull_request", str(self.gate["if"]))
 
 
 class SupportingArtifactsTests(unittest.TestCase):

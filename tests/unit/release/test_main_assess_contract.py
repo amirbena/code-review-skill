@@ -172,7 +172,15 @@ class MainAssessContractTests(unittest.TestCase):
         rc, _, text, summary, _ = self._assess("docs/x.md", body=self.VALID_INTENT, summary=True)
         self.assertEqual(rc, 0)
         self.assertIn("::notice::", text)
-        self.assertEqual(summary, "")
+        self.assertIn("## Release gate: not applicable", summary)
+
+    def test_non_release_worthy_change_gets_an_explicit_not_applicable_summary(self) -> None:
+        rc, outputs, _, summary, _ = self._assess("docs/x.md", body="Just a description.", summary=True)
+        self.assertEqual(rc, 0)
+        self.assertEqual(outputs["release_worthy"], "false")
+        self.assertIn("## Release gate: not applicable", summary)
+        self.assertIn("Reason:", summary)
+        self.assertNotIn("## Release recommended", summary)
 
     def test_packaging_change_is_release_worthy_and_gate_applies(self) -> None:
         rc, outputs, _, _, _ = self._assess("scripts/package-skills.sh", body="")
