@@ -1,0 +1,68 @@
+# API-compatibility corpus case (Issue #184, parent #175). Format:
+# ../../fixture-format.md. See ./README.md for the cluster.
+#
+# JSON Schema. A property already accepted as optional is added to
+# `required`. This is the "optional to required -> breaking" case required
+# by Issue #184's scope: a request body a client previously sent without
+# the field, and which the server previously accepted, is now rejected.
+
+format: benchmark-case/v1
+
+id: api-compat-optional-to-required-breaking
+title: "CreateTicketRequest makes description required, rejecting previously-valid requests"
+
+input:
+  patch: |
+    diff --git a/schemas/create_ticket_request.schema.json b/schemas/create_ticket_request.schema.json
+    index 1111111..2222222 100644
+    --- a/schemas/create_ticket_request.schema.json
+    +++ b/schemas/create_ticket_request.schema.json
+    @@ -6,5 +6,5 @@
+         "title": { "type": "string" },
+         "description": { "type": "string" }
+       },
+    -  "required": ["title"]
+    +  "required": ["title", "description"]
+     }
+  base:
+    schemas/create_ticket_request.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "CreateTicketRequest",
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "required": ["title"]
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: create-ticket-description-now-required
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: schemas/create_ticket_request.schema.json
+        symbol: CreateTicketRequest
+        anchor: '"required": ["title", "description"]'
+      claim: >-
+        CreateTicketRequest.description moves from optional to required by
+        adding it to required. Any existing client that has always omitted
+        description (a previously valid, previously accepted request
+        shape) now has every create-ticket call rejected by request
+        validation, with no server-side default or migration for the
+        newly-mandatory field.
+      defect_kind: breaking-contract-optional-to-required
+
+metadata:
+  source: crafted
+  tags: [correctness, regression]
+  rationale: >-
+    Tightening a request contract from optional to required is a breaking
+    change even though nothing was deleted: it narrows the set of
+    previously-valid inputs. Distinct from field removal (a different
+    change shape in Issue #175's scope) but the same breaking outcome.

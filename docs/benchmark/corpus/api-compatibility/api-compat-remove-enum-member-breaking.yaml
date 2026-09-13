@@ -1,0 +1,66 @@
+# API-compatibility corpus case (Issue #184, parent #175). Format:
+# ../../fixture-format.md. See ./README.md for the cluster.
+#
+# JSON Schema. A member is deleted from a closed enum. This is the
+# "remove enum member -> breaking" case required by Issue #184's scope:
+# unlike adding a member (context-dependent, see the sibling case), a
+# removed member is unconditionally breaking for any consumer that stores,
+# compares, or switches on the removed literal.
+
+format: benchmark-case/v1
+
+id: api-compat-remove-enum-member-breaking
+title: "PaymentStatus drops the failed member, breaking consumers of existing failed payments"
+
+input:
+  patch: |
+    diff --git a/schemas/payment_status.schema.json b/schemas/payment_status.schema.json
+    index 1111111..2222222 100644
+    --- a/schemas/payment_status.schema.json
+    +++ b/schemas/payment_status.schema.json
+    @@ -2,5 +2,5 @@
+       "$schema": "http://json-schema.org/draft-07/schema#",
+       "title": "PaymentStatus",
+       "type": "string",
+    -  "enum": ["pending", "completed", "failed", "refunded"]
+    +  "enum": ["pending", "completed", "refunded"]
+     }
+  base:
+    schemas/payment_status.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "PaymentStatus",
+        "type": "string",
+        "enum": ["pending", "completed", "failed", "refunded"]
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: payment-status-failed-enum-member-removed
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: schemas/payment_status.schema.json
+        symbol: PaymentStatus
+        anchor: '"enum": ["pending", "completed", "failed", "refunded"]'
+      claim: >-
+        PaymentStatus removes the failed member from its closed enum. Any
+        consumer that persists, compares, or switches on the literal value
+        "failed" (a stored payment record, a client-side status check) now
+        fails deserialization or falls through unmatched for every payment
+        already in that state — unlike an added member, removing an enum
+        value is breaking regardless of how permissively it is consumed.
+      defect_kind: breaking-contract-enum-member-removed
+
+metadata:
+  source: crafted
+  tags: [correctness, regression]
+  rationale: >-
+    Pairs with api-compat-add-enum-member-context-dependent to show the
+    asymmetry Issue #175's scope requires: adding an enum member is
+    context-dependent, but removing one is unconditionally breaking,
+    because no existing consumer can already tolerate a value ceasing to
+    exist.

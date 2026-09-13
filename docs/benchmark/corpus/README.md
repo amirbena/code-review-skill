@@ -95,6 +95,14 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   [#121](https://github.com/amirbena/code-review-skill/issues/121)). Same
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/review/test_null_absence_corpus.py`](../../../tests/unit/review/test_null_absence_corpus.py)).
+- [`api-compatibility/`](api-compatibility/README.md) — a focused
+  `benchmark-case/v1` sub-corpus pinning the expected compatible /
+  breaking / context-dependent classification for the API / contract
+  compatibility review capability (Issue
+  [#184](https://github.com/amirbena/code-review-skill/issues/184), parent
+  [#175](https://github.com/amirbena/code-review-skill/issues/175)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/benchmark/test_api_compatibility_corpus.py`](../../../tests/unit/benchmark/test_api_compatibility_corpus.py)).
 
 ## Validation
 

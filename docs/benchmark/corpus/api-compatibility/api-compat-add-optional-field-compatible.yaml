@@ -1,0 +1,56 @@
+# API-compatibility corpus case (Issue #184, parent #175). Format:
+# ../../fixture-format.md. See ./README.md for the cluster.
+#
+# JSON Schema. A new property is added to an object schema's `properties`
+# without adding it to `required`. This is the "add optional field ->
+# compatible" case required by Issue #184's scope: an existing consumer
+# that never reads the new field, and a schema validator that never
+# enforces `additionalProperties: false` against it here, is unaffected.
+
+format: benchmark-case/v1
+
+id: api-compat-add-optional-field-compatible
+title: "User schema gains an optional email property; existing consumers are unaffected"
+
+input:
+  patch: |
+    diff --git a/schemas/user.schema.json b/schemas/user.schema.json
+    index 1111111..2222222 100644
+    --- a/schemas/user.schema.json
+    +++ b/schemas/user.schema.json
+    @@ -4,7 +4,8 @@
+       "type": "object",
+       "properties": {
+         "id": { "type": "string" },
+    -    "name": { "type": "string" }
+    +    "name": { "type": "string" },
+    +    "email": { "type": "string" }
+       },
+       "required": ["id", "name"]
+     }
+  base:
+    schemas/user.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "User",
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" }
+        },
+        "required": ["id", "name"]
+      }
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Additive, optional properties are the baseline compatible change shape
+    from Issue #175's scope. `required` is untouched, so every existing
+    producer and consumer of a `User` document keeps working unmodified;
+    a correct review reports nothing.
