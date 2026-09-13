@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.38.1 — 2026-09-13
+
+### Fixed
+
+- Reorganize scripts/ into subsystem-owned directories (no packaging behavior change) (#295).
+
 ## v1.38.0 — 2026-09-13
 
 ### Added
