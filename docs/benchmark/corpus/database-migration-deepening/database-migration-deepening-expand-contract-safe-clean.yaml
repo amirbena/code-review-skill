@@ -1,0 +1,149 @@
+# Database-migration-deepening corpus case (Issue #186, parent #179,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors database-migration-deepening.md's "Expand/contract sequencing"
+# and "Backfills" concern areas, on the safe side: the change adds the
+# new column nullable (expand) together with its ORM field declaration
+# in the same patch -- so the model's pre-existing dual-write override
+# (a harmless no-op before this patch, since the field didn't exist yet)
+# starts actually persisting on every future save() from this patch
+# onward -- and backfills existing rows with a batched, idempotent,
+# resumable RunPython step guarded by "WHERE email_normalized IS NULL".
+# It removes nothing -- the contract step (dropping the old column) is
+# correctly deferred to a later migration, once this rollout has baked
+# and every reader has moved onto the new column. The domain is
+# implicated and the deepening capability traces the sequencing and
+# backfill; it confirms both are safe, with a missing-test note as the
+# only carried finding, mirroring the precedent's guarded-clean case.
+
+format: benchmark-case/v1
+
+id: database-migration-deepening-expand-contract-safe-clean
+title: "0010/0011 add email_normalized nullable and batch-backfill it idempotently, deferring the old column's removal"
+
+input:
+  patch: |
+    diff --git a/app/accounts/models.py b/app/accounts/models.py
+    index 9f8e7d6..2b3c4d5 100644
+    --- a/app/accounts/models.py
+    +++ b/app/accounts/models.py
+    @@ -7,6 +7,7 @@ class User(models.Model):
+             moved onto email_normalized and the rollout has baked."""
+
+             email = models.EmailField(unique=True)
+    +        email_normalized = models.EmailField(null=True, blank=True)
+
+             def save(self, *args, **kwargs):
+                 # Dual-write: every save already keeps email_normalized in
+    diff --git a/app/accounts/migrations/0010_add_email_normalized.py b/app/accounts/migrations/0010_add_email_normalized.py
+    new file mode 100644
+    index 0000000..1a2b3c4
+    --- /dev/null
+    +++ b/app/accounts/migrations/0010_add_email_normalized.py
+    @@ -0,0 +1,16 @@
+    +from django.db import migrations, models
+    +
+    +
+    +class Migration(migrations.Migration):
+    +
+    +    dependencies = [
+    +        ("accounts", "0009_dual_write_email_normalized"),
+    +    ]
+    +
+    +    operations = [
+    +        migrations.AddField(
+    +            model_name="user",
+    +            name="email_normalized",
+    +            field=models.EmailField(null=True, blank=True),
+    +        ),
+    +    ]
+    diff --git a/app/accounts/migrations/0011_backfill_email_normalized.py b/app/accounts/migrations/0011_backfill_email_normalized.py
+    new file mode 100644
+    index 0000000..5d6e7f8
+    --- /dev/null
+    +++ b/app/accounts/migrations/0011_backfill_email_normalized.py
+    @@ -0,0 +1,27 @@
+    +from django.db import migrations
+    +
+    +
+    +def backfill_email_normalized(apps, schema_editor):
+    +    User = apps.get_model("accounts", "User")
+    +    while True:
+    +        batch = list(
+    +            User.objects.filter(email_normalized__isnull=True)[:500]
+    +        )
+    +        if not batch:
+    +            break
+    +        for user in batch:
+    +            user.email_normalized = user.email.strip().lower()
+    +        User.objects.bulk_update(batch, ["email_normalized"])
+    +
+    +
+    +class Migration(migrations.Migration):
+    +
+    +    dependencies = [
+    +        ("accounts", "0010_add_email_normalized"),
+    +    ]
+    +
+    +    operations = [
+    +        migrations.RunPython(
+    +            backfill_email_normalized, migrations.RunPython.noop
+    +        ),
+    +    ]
+  base:
+    app/accounts/models.py: |
+      from django.db import models
+
+
+      class User(models.Model):
+          """accounts_user. email_normalized is being introduced behind an
+          expand/contract rollout: this change adds and backfills the
+          column; a later migration removes `email` once every reader has
+          moved onto email_normalized and the rollout has baked."""
+
+          email = models.EmailField(unique=True)
+
+          def save(self, *args, **kwargs):
+              # Dual-write, established before this change: sets
+              # email_normalized on every save. Currently a harmless no-op
+              # (the field doesn't exist yet), until this change adds the
+              # backing column and field declaration, at which point every
+              # future save starts actually persisting it.
+              if self.email:
+                  self.email_normalized = self.email.strip().lower()
+              super().save(*args, **kwargs)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: missing-backfill-interruption-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/accounts/migrations/0011_backfill_email_normalized.py
+      claim: >-
+        No test interrupts backfill_email_normalized mid-run and resumes
+        it to confirm the WHERE-email_normalized-IS-NULL batching is
+        actually idempotent across a restart, beyond reading the code.
+      defect_kind: missing-migration-test
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins database-migration-deepening.md's "Expand/contract sequencing"
+    and "Backfills" concern areas on the safe side: the domain is
+    implicated (a rollout-coexistence and backfill concern) and the
+    deepening capability traces it, confirming the new column is added
+    nullable together with its field declaration in the same patch (so
+    the pre-existing dual-write override, a no-op before this patch,
+    starts actually persisting from this patch onward with no coexistence
+    gap for rows saved during the rollout), the backfill is batched,
+    idempotent, and resumable for rows that predate the patch, and the
+    old column's removal is correctly deferred to a later migration
+    rather than done here -- so nothing required needs reporting, distinct
+    from the two other clean cases in this corpus, which stay quiet
+    because the capability never engages at all.

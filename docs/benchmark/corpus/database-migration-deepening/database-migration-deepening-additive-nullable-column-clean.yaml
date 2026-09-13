@@ -1,0 +1,102 @@
+# Database-migration-deepening corpus case (Issue #186, parent #179,
+# grandparent #82). Format: ../../fixture-format.md. See ./README.md for
+# the cluster.
+#
+# Mirrors database-migration-deepening.md's own "Does not engage --
+# bounded base reasoning already suffices" worked example almost
+# verbatim: a new, nullable column with no default is added to a table,
+# with no backfill, no constraint, and a single application version
+# reading it. Base reasoning confirms read/write compatibility holds
+# within its own bounded investigation, so Activation condition 2 is
+# never satisfied and this capability does not engage.
+
+format: benchmark-case/v1
+
+id: database-migration-deepening-additive-nullable-column-clean
+title: "0004_add_preferred_language adds a nullable column with no default and one reader"
+
+input:
+  patch: |
+    diff --git a/app/accounts/models.py b/app/accounts/models.py
+    index 1111111..2222222 100644
+    --- a/app/accounts/models.py
+    +++ b/app/accounts/models.py
+    @@ -4,6 +4,7 @@ class User(models.Model):
+
+         email = models.EmailField(unique=True)
+         created_at = models.DateTimeField(auto_now_add=True)
+    +    preferred_language = models.CharField(max_length=10, null=True, blank=True)
+
+         def display_name(self):
+             return self.email.split("@")[0]
+    diff --git a/app/accounts/views.py b/app/accounts/views.py
+    index 3333333..4444444 100644
+    --- a/app/accounts/views.py
+    +++ b/app/accounts/views.py
+    @@ -10,4 +10,7 @@ def account_settings(request):
+         return render(request, "settings.html", {
+             "user": request.user,
+    +        "preferred_language": request.user.preferred_language or "en",
+         })
+    diff --git a/app/accounts/migrations/0004_add_preferred_language.py b/app/accounts/migrations/0004_add_preferred_language.py
+    new file mode 100644
+    index 0000000..8e9f0a1
+    --- /dev/null
+    +++ b/app/accounts/migrations/0004_add_preferred_language.py
+    @@ -0,0 +1,16 @@
+    +from django.db import migrations, models
+    +
+    +
+    +class Migration(migrations.Migration):
+    +
+    +    dependencies = [
+    +        ("accounts", "0003_add_created_at"),
+    +    ]
+    +
+    +    operations = [
+    +        migrations.AddField(
+    +            model_name="user",
+    +            name="preferred_language",
+    +            field=models.CharField(max_length=10, null=True, blank=True),
+    +        ),
+    +    ]
+  base:
+    app/accounts/models.py: |
+      from django.db import models
+
+
+      class User(models.Model):
+          """accounts_user."""
+
+          email = models.EmailField(unique=True)
+          created_at = models.DateTimeField(auto_now_add=True)
+
+          def display_name(self):
+              return self.email.split("@")[0]
+    app/accounts/views.py: |
+      from django.shortcuts import render
+
+
+      def account_settings(request):
+          return render(request, "settings.html", {
+              "user": request.user,
+          })
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins database-migration-deepening.md's own "Does not engage -- bounded
+    base reasoning already suffices" worked example: preferred_language is
+    added nullable with no default, no constraint, no backfill, and a
+    single application version (account_settings, via `or "en"`) reads it
+    defensively. The Data / persistence dimension is implicated, but the
+    evidence gives base reasoning nothing further to trace, so Activation
+    condition 2 is never satisfied and this capability does not engage --
+    distinct from the comment/formatting-only case, where Activation
+    condition 1 fails because no schema-evolution content exists at all.
