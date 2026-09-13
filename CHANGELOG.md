@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.30.0 — 2026-09-13
+
+### Added
+
+- Add the Security deepening capability for evidence-driven trust-boundary investigation (#83) (#270).
+
 ## v1.29.0 — 2026-09-13
 
 ### Added
