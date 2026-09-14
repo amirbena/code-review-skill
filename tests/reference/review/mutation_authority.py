@@ -291,7 +291,17 @@ class _Snapshot:
 
 
 def _snapshot(root: Path) -> _Snapshot:
-    status = _run_git(root, ("status", "--porcelain=v1", "--untracked-files=all"))
+    # --no-renames pins rename detection *off*, deterministically and
+    # regardless of the ambient status.renames config. apply_patch() uses
+    # plain `git apply` (no --index), so a renamed file is always two raw
+    # working-tree events (an untracked deletion, an untracked addition) —
+    # status can't pair them into one "R" entry for that case regardless of
+    # this flag, but pinning it keeps this snapshot's counting convention
+    # explicit and consistent with commit()'s --no-renames checks below,
+    # rather than left to whatever the environment happens to default to.
+    status = _run_git(
+        root, ("status", "--porcelain=v1", "--untracked-files=all", "--no-renames")
+    )
     refs = _run_git(root, ("for-each-ref",))
     head = _run_git(root, ("rev-parse", "HEAD"), check=False).strip()
     return _Snapshot(status=status, refs=refs, head=head)
@@ -473,7 +483,17 @@ class MutationExecutor:
         # Consumed the moment the first mutating command has run — mirrors
         # apply_patch()'s "any attempt spends the grant" rule.
         self._ledger.consume(authorization)
-        staged = _changed_path_set(_run_git(root, ("diff", "--cached", "--name-only")))
+        # --no-renames is explicit on both checks below so counting is
+        # never left to the executing environment's ambient diff.renames
+        # default, and so it matches apply_patch()'s own raw, unpaired
+        # counting convention (a rename is two path-level events: a
+        # deletion and an addition) rather than a collapsed "R" entry —
+        # without this, `diff --cached` and `diff-tree` can each disagree
+        # with each other, and with `applied_paths` above, on how many
+        # path entries a single rename produces.
+        staged = _changed_path_set(
+            _run_git(root, ("diff", "--cached", "--name-only", "--no-renames"))
+        )
         if staged != result.applied_paths:
             raise ScopeEscapeError(
                 f"staged paths {sorted(staged)} do not match the authorized "
@@ -482,7 +502,10 @@ class MutationExecutor:
         _run_git(root, ("commit", "-m", message))
         commit_sha = _run_git(root, ("rev-parse", "HEAD")).strip()
         committed = _changed_path_set(
-            _run_git(root, ("diff-tree", "--no-commit-id", "--name-only", "-r", commit_sha))
+            _run_git(
+                root,
+                ("diff-tree", "--no-commit-id", "--name-only", "-r", "--no-renames", commit_sha),
+            )
         )
         if committed != result.applied_paths:
             raise ScopeEscapeError(

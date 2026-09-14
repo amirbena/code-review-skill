@@ -74,6 +74,21 @@ class _RepoCase(unittest.TestCase):
         _run(self.root, "checkout", "--", "existing.txt")  # revert; caller applies via the gate only
         return ma.propose_patch(patch_text, ["existing.txt"], self.base_sha)
 
+    def _rename_patch(self) -> ma.PatchProposal:
+        """A patch that renames existing.txt -> renamed.txt with no content
+        change, via -M-formatted diff text.
+
+        apply_patch() uses plain `git apply` (no --index), so applying this
+        produces two raw working-tree events — a deletion of existing.txt
+        and an addition of renamed.txt — not one paired "rename" entry;
+        both paths must be declared in target_paths for that reason.
+        """
+        (self.root / "existing.txt").rename(self.root / "renamed.txt")
+        _run(self.root, "add", "-A")
+        patch_text = _run(self.root, "diff", "--no-color", "--cached", "-M")
+        _run(self.root, "reset", "-q", "--hard", "HEAD")  # revert; caller applies via the gate only
+        return ma.propose_patch(patch_text, ["existing.txt", "renamed.txt"], self.base_sha)
+
     def _authorize(self, capability: ma.MutationCapability, *, binding_value: str,
                     base_sha: str | None = None, channel=None) -> ma.MutationAuthorization:
         return ma.authorize(
@@ -332,6 +347,35 @@ class Auth009And016ScopeEscapeAtApply(_RepoCase):
         status = _run(self.root, "status", "--porcelain")
         self.assertIn("unrelated.txt", status)
         self.assertTrue(status.strip().startswith("??"))
+
+    def test_commit_of_a_rename_does_not_spuriously_fail_scope_verification(self) -> None:
+        proposal = self._rename_patch()
+        apply_auth = self._authorize(ma.MutationCapability.APPLY_PATCH, binding_value=proposal.digest)
+        result = self.executor.apply_patch(proposal, apply_auth, current_base_sha=self.base_sha)
+        # A raw git-apply rename is two path-level events, not one paired
+        # "R" entry — see _rename_patch()'s docstring.
+        self.assertEqual(result.applied_paths, frozenset({"existing.txt", "renamed.txt"}))
+
+        commit_auth = self._authorize(
+            ma.MutationCapability.COMMIT, binding_value=result.patch_digest, base_sha=self.base_sha,
+        )
+        # Must not raise ScopeEscapeError: before --no-renames was made
+        # explicit on the internal diff-tree/diff --cached checks, git's
+        # rename-collapsing default (ambient-config-dependent, and
+        # unconditional for diff-tree) made this comparison spuriously
+        # disagree with applied_paths above, after already creating the
+        # commit.
+        commit_result = self.executor.commit(result, commit_auth, message="rename only")
+
+        committed = sorted(
+            _run(
+                self.root, "diff-tree", "--no-commit-id", "--name-only", "-r", "--no-renames",
+                commit_result.commit_sha,
+            ).splitlines()
+        )
+        self.assertEqual(committed, ["existing.txt", "renamed.txt"])
+        self.assertFalse((self.root / "existing.txt").exists())
+        self.assertTrue((self.root / "renamed.txt").exists())
 
 
 # --------------------------------------------------------------------------
