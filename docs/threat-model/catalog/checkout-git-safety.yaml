@@ -1,0 +1,209 @@
+format: threat-scenario-catalog/v1
+category: GIT
+scenarios:
+- id: GIT-001
+  title: Malicious repository hooks attempt code execution during checkout or Git operations
+  category: GIT
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - '`.git/hooks/*` content reachable via a malicious remote or crafted repository'
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository content, including hook scripts
+  trusted_inputs: []
+  protected_asset: reviewer host execution boundary during Git operations
+  required_capability_state: hooks disabled for every Git invocation against the checkout
+  enforcement_owner: 'existing: tests/reference/review/pr_checkout.py'
+  enforcement_point: '`core.hooksPath=/dev/null` set both via `_SAFE_GIT_FLAGS` on every git call and
+    re-asserted locally immediately after clone'
+  expected_safe_outcome: no hook ever executes against the checkout
+  expected_security_event: DENIED_GIT_UNSAFE_CONFIG
+  benchmark_family: none
+  benchmark_reference: 'existing structural control with dedicated coverage; no #306 sandbox-benchmark
+    case needed for this specific vector today'
+  regression_evidence: tests/reference/review/pr_checkout.py (_SAFE_GIT_FLAGS, _clone_and_fetch); tests/integration/github/test_pr_checkout.py
+  threat_severity: HIGH
+  notes: Covers the github-pr-review checkout path. local-code-review operates on a user-supplied local
+    checkout it does not itself clone, so this specific mitigation does not apply there; that gap is tracked
+    as GIT-001a in notes rather than a separate ID, since local-code-review's own trust model treats the
+    local working tree as user-controlled, not adversarial, per its README.
+- id: GIT-002
+  title: Malicious `.gitattributes` textconv/filter/diff driver attempts code execution
+  category: GIT
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - '`.gitattributes`'
+  - referenced filter/textconv/diff driver configuration
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository content, including attribute-driven filter references
+  trusted_inputs: []
+  protected_asset: reviewer host execution boundary when reading/diffing files
+  required_capability_state: no filter/textconv driver can be defined without corresponding trusted local
+    config
+  enforcement_owner: 'existing: tests/reference/review/pr_checkout.py'
+  enforcement_point: '`GIT_CONFIG_NOSYSTEM=1` / `GIT_ATTR_NOSYSTEM=1` env plus a fresh clone carrying
+    no attacker-supplied local `.git/config` filter definitions'
+  expected_safe_outcome: a `.gitattributes` reference to an undefined filter/textconv driver is inert
+    (Git ignores it without a matching local config entry)
+  expected_security_event: DENIED_GIT_UNSAFE_CONFIG
+  benchmark_family: none
+  benchmark_reference: existing partial structural control; no dedicated regression asserts this specific
+    vector today
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+  notes: Partial mitigation by omission (no attacker-controlled `filter.<name>.*`/`diff.<name>.textconv`
+    config is ever created for the fresh clone), not an explicit adversarial test — regression_evidence
+    is therefore COVERAGE_GAP even though a real structural mitigation exists.
+- id: GIT-003
+  title: Malicious pager configuration attempts code execution or a hang
+  category: GIT
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - '`.git/config` `core.pager`'
+  - environment `GIT_PAGER`/`PAGER` reachable from repository config
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository content, including local config in a crafted repository
+  trusted_inputs: []
+  protected_asset: reviewer host execution / non-interactive-hang boundary
+  required_capability_state: Git commands run with captured, non-interactive I/O
+  enforcement_owner: 'existing: tests/reference/review/pr_checkout.py'
+  enforcement_point: '`subprocess.run(..., capture_output=True, ...)` with no TTY attached, so no pager
+    process is ever launched interactively'
+  expected_safe_outcome: no pager subprocess runs regardless of `core.pager` content
+  expected_security_event: DENIED_GIT_UNSAFE_CONFIG
+  benchmark_family: none
+  benchmark_reference: existing structural control by construction; no dedicated adversarial test today
+  regression_evidence: COVERAGE_GAP
+  threat_severity: MEDIUM
+  notes: Mitigated as a byproduct of non-interactive subprocess execution, not an explicit pager-specific
+    test — regression_evidence is COVERAGE_GAP pending a dedicated assertion.
+- id: GIT-004
+  title: Malicious fsmonitor hook attempts code execution
+  category: GIT
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - '`.git/config` `core.fsmonitor` referencing a hook script'
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository content, including local config in a crafted repository
+  trusted_inputs: []
+  protected_asset: reviewer host execution boundary
+  required_capability_state: fsmonitor disabled for every Git invocation against the checkout
+  enforcement_owner: 'existing: tests/reference/review/pr_checkout.py'
+  enforcement_point: '`core.fsmonitor=false` in `_SAFE_GIT_FLAGS` on every git call'
+  expected_safe_outcome: no fsmonitor hook ever executes
+  expected_security_event: DENIED_GIT_UNSAFE_CONFIG
+  benchmark_family: none
+  benchmark_reference: existing structural control; no dedicated adversarial test today
+  regression_evidence: COVERAGE_GAP
+  threat_severity: MEDIUM
+- id: GIT-005
+  title: Malicious submodule URL attempts to fetch and expose untrusted content
+  category: GIT
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - '`.gitmodules`'
+  - submodule URL/commit references
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository content, including submodule definitions
+  trusted_inputs: []
+  protected_asset: scope of fetched/executed content during checkout
+  required_capability_state: checkout never recurses into submodules
+  enforcement_owner: '#302 / existing checkout lifecycle'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: submodules are never fetched or checked out by the review checkout, so a malicious
+    submodule URL is never dereferenced
+  expected_security_event: DENIED_GIT_UNSAFE_CONFIG
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: MEDIUM
+  notes: Mitigated by omission (the checkout lifecycle in pr_checkout.py never runs `--recurse-submodules`
+    or an equivalent), not an explicit adversarial test; no policy currently states this as a deliberate
+    rule, so it is recorded as COVERAGE_GAP for an explicit, tested guarantee rather than an accidental
+    one.
+- id: GIT-006
+  title: Malicious local repository config attempts to alter checkout trust behavior
+  category: GIT
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - any `.git/config` value reachable from a crafted remote or crafted repository content
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository content
+  trusted_inputs: []
+  protected_asset: trust behavior of every Git invocation against the checkout
+  required_capability_state: explicit safe-config flags applied on every invocation override repository-supplied
+    config
+  enforcement_owner: 'existing: tests/reference/review/pr_checkout.py'
+  enforcement_point: '`_SAFE_GIT_FLAGS` (`core.hooksPath`, `core.fsmonitor`, `advice.detachedHead`) and
+    `_SAFE_GIT_ENV` (`GIT_CONFIG_NOSYSTEM`, `GIT_TERMINAL_PROMPT`, `GIT_ATTR_NOSYSTEM`) applied uniformly'
+  expected_safe_outcome: the explicit safe flags/env take precedence over anything the repository's own
+    config attempts
+  expected_security_event: DENIED_GIT_UNSAFE_CONFIG
+  benchmark_family: none
+  benchmark_reference: existing structural control with partial dedicated coverage
+  regression_evidence: tests/integration/github/test_pr_checkout.py
+  threat_severity: HIGH
+- id: GIT-007
+  title: A crafted symlink or path attempts to escape the checkout root on read
+  category: GIT
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - symlinks committed inside the reviewed repository
+  - crafted relative paths in reviewed content
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository content, including symlinks
+  trusted_inputs: []
+  protected_asset: host filesystem outside the checkout root
+  required_capability_state: every read resolves and is checked against the checkout root
+  enforcement_owner: 'existing: tests/reference/review/pr_checkout.py, tests/reference/review/repository_instructions.py'
+  enforcement_point: '`_require_inside()` in `CheckoutHandle.read_file`; symlink-escape rejection in repository-instruction
+    discovery'
+  expected_safe_outcome: a resolved read outside the checkout root is refused
+  expected_security_event: DENIED_GIT_PATH_ESCAPE
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: tests/unit/review/repository_intelligence/test_repository_instructions.py::test_symlink_escaping_repository_root_is_rejected
+  threat_severity: CRITICAL
+  notes: 'Confirmed real coverage exists for the repository-instruction discovery path and the checkout
+    `read_file` helper. #302''s sandbox runner is the broader generalization of this same guarantee to
+    arbitrary validation-command file access, which is why benchmark_family still references #306 for
+    that broader case.'
+- id: GIT-008
+  title: Cleanup targets a path without the runtime ownership marker or outside the scratch parent
+  category: GIT
+  attacker_model: runtime_misconfiguration
+  attacker_controlled_inputs:
+  - cleanup-target path computed at teardown time
+  assumed_attacker_capabilities:
+  - no attacker control; a defensive check against internal error/misconfiguration
+  trusted_inputs: []
+  protected_asset: any directory outside the checkout that cleanup could otherwise reach
+  required_capability_state: cleanup refuses unless the target is inside the scratch parent, is not the
+    scratch parent itself, and carries the ownership marker
+  enforcement_owner: 'existing: tests/reference/review/pr_checkout.py'
+  enforcement_point: '`_safe_rmtree()` / `_require_inside()` / `_OWNERSHIP_MARKER` check'
+  expected_safe_outcome: cleanup is refused (raises `CheckoutError`) rather than deleting an unverified
+    path
+  expected_security_event: DENIED_GIT_UNSAFE_CONFIG
+  benchmark_family: none
+  benchmark_reference: existing structural control with dedicated coverage
+  regression_evidence: tests/integration/github/test_pr_checkout.py
+  threat_severity: CRITICAL
+- id: GIT-009
+  title: Cleanup attempts an unconstrained recursive delete of the scratch parent itself
+  category: GIT
+  attacker_model: runtime_misconfiguration
+  attacker_controlled_inputs:
+  - cleanup-target path computed at teardown time
+  assumed_attacker_capabilities:
+  - no attacker control; a defensive check against internal error/misconfiguration
+  trusted_inputs: []
+  protected_asset: the scratch parent directory and everything under it
+  required_capability_state: cleanup refuses when the resolved target equals the scratch root
+  enforcement_owner: 'existing: tests/reference/review/pr_checkout.py'
+  enforcement_point: '`_safe_rmtree()` explicit `resolved == scratch_root.resolve()` refusal'
+  expected_safe_outcome: cleanup is refused rather than deleting the scratch parent
+  expected_security_event: DENIED_GIT_UNSAFE_CONFIG
+  benchmark_family: none
+  benchmark_reference: existing structural control with dedicated coverage
+  regression_evidence: tests/integration/github/test_pr_checkout.py
+  threat_severity: CRITICAL

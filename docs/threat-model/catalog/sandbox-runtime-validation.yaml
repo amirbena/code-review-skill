@@ -1,0 +1,270 @@
+format: threat-scenario-catalog/v1
+category: SBOX
+scenarios:
+- id: SBOX-001
+  title: Validation sandbox attempts outbound HTTP access
+  category: SBOX
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: network egress boundary
+  required_capability_state: network denied by default per runtime-validation.md
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: the connection attempt is denied/unreachable from inside the sandbox
+  expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: CRITICAL
+  notes: 'shared/policies/runtime-validation.md, "Trust model and execution boundary", already documents
+    "network denied by default" as the intended contract; #302''s own problem statement states existing
+    reference tests use fake processes and do not prove host isolation, so this is a real gap, not merely
+    an undocumented one.'
+- id: SBOX-002
+  title: Validation sandbox attempts DNS resolution for exfiltration
+  category: SBOX
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: network egress boundary (DNS)
+  required_capability_state: network denied by default, including DNS
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: DNS resolution fails/is denied from inside the sandbox
+  expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+- id: SBOX-003
+  title: Validation sandbox attempts a raw-socket connection
+  category: SBOX
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: network egress boundary (raw sockets)
+  required_capability_state: network denied by default, including raw sockets
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: raw-socket creation/use fails/is denied from inside the sandbox
+  expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+- id: SBOX-004
+  title: Validation sandbox attempts to read host credentials ($HOME, SSH agent, GitHub token, cloud credentials)
+  category: SBOX
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: host credential material
+  required_capability_state: credentials/ambient auth material removed or inaccessible inside the sandbox
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: the read fails or returns nothing usable; no credential material is observable
+    from inside the sandbox
+  expected_security_event: DENIED_SANDBOX_CREDENTIAL_ACCESS
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: CRITICAL
+- id: SBOX-005
+  title: Validation sandbox attempts to read an unrelated repository or host path
+  category: SBOX
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: host filesystem outside the reviewed work copy
+  required_capability_state: filesystem visibility limited to the bounded reviewed work copy plus explicitly
+    required read-only inputs
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: the read fails/is denied; only the bounded work copy is visible
+  expected_security_event: DENIED_SANDBOX_FILESYSTEM_ACCESS
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: CRITICAL
+- id: SBOX-006
+  title: Validation sandbox attempts to write to reviewed source files
+  category: SBOX
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: reviewed source-file integrity
+  required_capability_state: validation writable state is ephemeral and separate from reviewed source
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: the write fails/is denied, or lands only in ephemeral sandbox state never merged
+    back
+  expected_security_event: DENIED_SANDBOX_FILESYSTEM_ACCESS
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: CRITICAL
+- id: SBOX-007
+  title: Validation sandbox attempts to mutate `.git`, hooks, or Git config
+  category: SBOX
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: Git metadata integrity
+  required_capability_state: post-execution verification proves reviewed source/Git state was not mutated
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: the write fails/is denied, or is detected by post-run verification and the run
+    is treated as unsafe
+  expected_security_event: DENIED_SANDBOX_FILESYSTEM_ACCESS
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: CRITICAL
+- id: SBOX-008
+  title: Validation sandbox invokes a GitHub/external write API
+  category: SBOX
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: external write-capable surfaces (GitHub API, other services)
+  required_capability_state: sandbox exposes no host Git/GitHub mutation capability
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: the call fails (no network, no credentials) before it can mutate anything external
+  expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: CRITICAL
+- id: SBOX-009
+  title: Validation sandbox spawns excessive subprocesses, daemons, or a fork bomb
+  category: SBOX
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: host process-table / scheduler resources
+  required_capability_state: hard process-count budget enforced
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: process creation beyond the budget is refused/killed; the sandbox and host remain
+    responsive
+  expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+- id: SBOX-010
+  title: Validation command exceeds wall-clock, CPU, memory, output, or filesystem-growth budget
+  category: SBOX
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: host resource budgets
+  required_capability_state: hard wall-clock/CPU/memory/output/filesystem budgets enforced
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: the run is terminated at the budget boundary; bounded partial evidence is returned,
+    not a hang
+  expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: MEDIUM
+  notes: 'shared/policies/runtime-validation.md, "Targeted validation of a suspected finding", "Budget
+    and fail-safe", already documents a strict wall-clock timeout and bounded resource limits at the policy
+    level; #302 is the real sandboxed enforcement of that same intent.'
+- id: SBOX-011
+  title: A process or generated artifact persists past sandbox teardown
+  category: SBOX
+  attacker_model: runtime_misconfiguration
+  attacker_controlled_inputs:
+  - background process or file the validation command started
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: teardown completeness
+  required_capability_state: teardown kills descendants and removes ephemeral state
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: no child/background process or writable state survives teardown; a subsequent
+    run starts clean
+  expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: MEDIUM
+- id: SBOX-012
+  title: Repository-controlled task invokes package installation, deployment, migration, or publish
+  category: SBOX
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: side-effecting operations outside the review's own scope
+  required_capability_state: only exact commands/reproductions admitted by runtime-validation policy may
+    run
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: the command is not admitted and does not run; no install/deploy/migrate/publish
+    side effect occurs
+  expected_security_event: DENIED_SANDBOX_UNAVAILABLE_PRIMITIVE
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+- id: SBOX-013
+  title: A required sandbox isolation primitive is unavailable on the host platform
+  category: SBOX
+  attacker_model: runtime_misconfiguration
+  attacker_controlled_inputs:
+  - host/platform capability surface at the time validation is requested
+  assumed_attacker_capabilities:
+  - no attacker control; a platform/runtime limitation
+  trusted_inputs: []
+  protected_asset: fail-closed behavior when isolation cannot be guaranteed
+  required_capability_state: isolation primitive missing/unavailable
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: validation is reported as `unavailable`; the runtime never falls back to unrestricted
+    host execution
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+  notes: 'Not itself a denial of an attacker action, so no denied-capability event is expected — the safe
+    outcome is refusal to run at all, which #299 may still choose to log as an operational event distinct
+    from a denied-capability event.'
