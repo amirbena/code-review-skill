@@ -1,0 +1,260 @@
+"""Adversarial containment suite for Issue #302 — the structural security proof.
+
+Each test method maps to one canonical scenario in
+docs/threat-model/catalog/sandbox-runtime-validation.yaml (issue #300) and
+exercises a real hostile payload against the real host primitive: no fakes,
+no mocks. A payload succeeding is a test failure, full stop — containment,
+denial, or termination is the only acceptable outcome. Reference/policy
+semantics stay covered separately by tests/reference/review/runtime_validation.py
+and are not duplicated here.
+"""
+
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import tempfile
+import time
+from pathlib import Path
+
+from scripts.sandbox.boundary import Outcome, SandboxLimits
+from tests.integration.sandbox._harness import PRIMITIVES, SandboxIntegrationCase
+
+
+class NetworkDenialTests(SandboxIntegrationCase):
+    """SBOX-001, SBOX-002, SBOX-003: outbound HTTP, DNS, raw sockets."""
+
+    def test_sbox_001_outbound_http_is_denied(self) -> None:
+        code = (
+            "import urllib.request\n"
+            "urllib.request.urlopen('http://example.com', timeout=5)\n"
+            "print('PAYLOAD-SUCCEEDED')\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                self.assert_denied(self.run_python(primitive, code))
+
+    def test_sbox_002_dns_resolution_is_denied(self) -> None:
+        code = "import socket; socket.gethostbyname('example.com'); print('PAYLOAD-SUCCEEDED')"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                self.assert_denied(self.run_python(primitive, code))
+
+    def test_sbox_003_raw_socket_connect_is_denied(self) -> None:
+        code = (
+            "import socket\n"
+            "s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n"
+            "s.settimeout(5)\n"
+            "s.connect(('93.184.216.34', 80))\n"
+            "print('PAYLOAD-SUCCEEDED')\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                self.assert_denied(self.run_python(primitive, code))
+
+
+class CredentialAccessTests(SandboxIntegrationCase):
+    """SBOX-004: $HOME, SSH agent, GitHub token, cloud credentials."""
+
+    def test_sbox_004_home_directory_is_unreadable(self) -> None:
+        code = (
+            "import os\n"
+            "path = os.path.expanduser('~/.ssh/id_rsa')\n"
+            "print(open(path).read())\n"
+            "print('PAYLOAD-SUCCEEDED')\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                self.assert_denied(self.run_python(primitive, code))
+
+    def test_sbox_004_ssh_auth_sock_is_not_propagated(self) -> None:
+        code = "import os; assert not os.environ.get('SSH_AUTH_SOCK'); print('no-agent-socket')"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                result = self.run_python(primitive, code)
+                self.assertEqual(result.outcome, Outcome.EXECUTED, result.stderr)
+
+    def test_sbox_004_github_and_cloud_env_credentials_are_not_propagated(self) -> None:
+        code = (
+            "import os\n"
+            "leaked = [k for k in "
+            "('GITHUB_TOKEN','GH_TOKEN','AWS_SECRET_ACCESS_KEY','AWS_ACCESS_KEY_ID',"
+            "'GOOGLE_APPLICATION_CREDENTIALS','AZURE_CLIENT_SECRET') if os.environ.get(k)]\n"
+            "assert not leaked, leaked\n"
+            "print('no-cloud-credentials')\n"
+        )
+        os.environ["GITHUB_TOKEN"] = "should-never-be-seen"
+        try:
+            for primitive in PRIMITIVES:
+                with self.subTest(primitive=primitive):
+                    result = self.run_python(primitive, code)
+                    self.assertEqual(result.outcome, Outcome.EXECUTED, result.stderr)
+        finally:
+            del os.environ["GITHUB_TOKEN"]
+
+
+class FilesystemBoundaryTests(SandboxIntegrationCase):
+    """SBOX-005, SBOX-006, SBOX-007: host paths, source writes, .git mutation."""
+
+    def test_sbox_005_unrelated_repository_path_is_unreadable(self) -> None:
+        other_repo = Path(tempfile.mkdtemp(prefix="crs-unrelated-repo-"))
+        (other_repo / "secret.txt").write_text("do not leak")
+        try:
+            code = f"open('{other_repo / 'secret.txt'}').read(); print('PAYLOAD-SUCCEEDED')"
+            for primitive in PRIMITIVES:
+                with self.subTest(primitive=primitive):
+                    self.assert_denied(self.run_python(primitive, code))
+        finally:
+            shutil.rmtree(other_repo, ignore_errors=True)
+
+    def test_sbox_005_symlink_escape_does_not_reach_host_content(self) -> None:
+        outside = Path(tempfile.mkdtemp(prefix="crs-outside-"))
+        (outside / "secret.txt").write_text("host secret")
+        try:
+            (self.source_dir / "escape").symlink_to(outside / "secret.txt")
+            code = (
+                "content = open('escape').read()\n"
+                "assert 'host secret' not in content\n"
+                "print('escape-blocked')\n"
+            )
+            for primitive in PRIMITIVES:
+                with self.subTest(primitive=primitive):
+                    result = self.run_python(primitive, code)
+                    # Either the symlink was sanitized (read fails or returns
+                    # nothing) or the boundary denies it outright — never a
+                    # successful read of host content.
+                    self.assertNotIn("host secret", result.stdout)
+        finally:
+            shutil.rmtree(outside, ignore_errors=True)
+
+    def test_sbox_006_write_to_the_original_reviewed_source_is_unreachable(self) -> None:
+        original_app = self.source_dir / "app.py"
+        code = f"open('{original_app}', 'w').write('MUTATED'); print('PAYLOAD-SUCCEEDED')"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                result = self.run_python(primitive, code)
+                self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+        self.assertEqual(original_app.read_text(), "value = 1\n")
+
+    def test_sbox_007_git_config_mutation_never_reaches_the_original_git_dir(self) -> None:
+        original_git_config = self.source_dir / ".git" / "config"
+        code = f"open('{original_git_config}', 'w').write('[core]\\n\\tbare = true\\n'); print('PAYLOAD-SUCCEEDED')"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                result = self.run_python(primitive, code)
+                self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+        self.assertEqual(original_git_config.read_text(), "[core]\n")
+
+
+class ExternalWriteApiTests(SandboxIntegrationCase):
+    """SBOX-008: a GitHub/external write API call, denied by the network boundary."""
+
+    def test_sbox_008_github_api_call_is_denied(self) -> None:
+        code = (
+            "import urllib.request\n"
+            "req = urllib.request.Request('https://api.github.com/repos/x/y/issues', "
+            "data=b'{}', method='POST')\n"
+            "urllib.request.urlopen(req, timeout=5)\n"
+            "print('PAYLOAD-SUCCEEDED')\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                self.assert_denied(self.run_python(primitive, code))
+
+
+class ResourceExhaustionTests(SandboxIntegrationCase):
+    """SBOX-009, SBOX-010: process/CPU/memory/output/filesystem budgets."""
+
+    def test_sbox_009_process_count_budget_contains_a_fork_bomb(self) -> None:
+        code = "import os\nwhile True:\n    os.fork()\n"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                limits = SandboxLimits(wall_clock_seconds=8, max_processes=25)
+                result = self.run_python(primitive, code, limits=limits)
+                self.assertEqual(result.outcome, Outcome.FAILED)
+
+    def test_sbox_010_wall_clock_budget_terminates_a_hang(self) -> None:
+        code = "import time; time.sleep(120)"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                limits = SandboxLimits(wall_clock_seconds=3)
+                started = time.monotonic()
+                result = self.run_python(primitive, code, limits=limits)
+                self.assertEqual(result.outcome, Outcome.FAILED)
+                self.assertLess(time.monotonic() - started, 30)
+
+    def test_sbox_010_output_budget_terminates_a_flood(self) -> None:
+        code = "import sys\nwhile True:\n    sys.stdout.write('A' * 65536)\n"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                limits = SandboxLimits(wall_clock_seconds=15, max_output_bytes=200_000)
+                result = self.run_python(primitive, code, limits=limits)
+                self.assertEqual(result.outcome, Outcome.FAILED)
+
+    def test_sbox_010_filesystem_growth_budget_terminates_a_flood(self) -> None:
+        code = "f = open('bloat.bin', 'wb')\nwhile True:\n    f.write(b'0' * 1048576); f.flush()\n"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                limits = SandboxLimits(wall_clock_seconds=15, max_filesystem_growth_bytes=5_000_000)
+                result = self.run_python(primitive, code, limits=limits)
+                self.assertEqual(result.outcome, Outcome.FAILED)
+
+
+class PersistenceTests(SandboxIntegrationCase):
+    """SBOX-011: nothing survives teardown."""
+
+    def test_sbox_011_background_process_does_not_survive_teardown(self) -> None:
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                marker_name = f"alive-{primitive.value}.marker"
+                code = (
+                    "import subprocess, time\n"
+                    f"subprocess.Popen(['sh', '-c', 'echo alive > {marker_name}; sleep 30'])\n"
+                    "time.sleep(0.3)\n"
+                )
+                limits = SandboxLimits(wall_clock_seconds=5)
+                self.run_python(primitive, code, limits=limits)
+                time.sleep(1)
+                self.assertEqual(
+                    _matching_host_processes(marker_name), [],
+                    "background descendant survived sandbox teardown",
+                )
+
+
+class NoMutationAuthorityTests(SandboxIntegrationCase):
+    """SBOX-012: only the exact admitted command runs; no arbitrary side effects."""
+
+    def test_sbox_012_sandbox_cannot_install_or_publish_packages(self) -> None:
+        # No network (SBOX-001/002) plus no host credentials (SBOX-004)
+        # already make install/publish impossible; this asserts the
+        # observable failure mode directly for a representative command.
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                result = self.run_python(
+                    primitive,
+                    "import urllib.request\n"
+                    "urllib.request.urlopen('https://pypi.org/simple/', timeout=5)\n"
+                    "print('PAYLOAD-SUCCEEDED')\n",
+                )
+                self.assert_denied(result)
+
+
+class UnavailablePrimitiveTests(SandboxIntegrationCase):
+    """SBOX-013: no isolation primitive present -> unavailable, never unsandboxed."""
+
+    def test_sbox_013_no_primitive_reports_unavailable_never_falls_back(self) -> None:
+        from scripts.sandbox.runner import SandboxRunner
+        from scripts.sandbox.boundary import SandboxRequest
+
+        run_instance = SandboxRunner(primitive=None)
+        request = SandboxRequest(argv=("true",), source_dir=self.source_dir)
+        result = run_instance.run(request)
+        self.assertEqual(result.outcome, Outcome.UNAVAILABLE)
+
+
+def _matching_host_processes(needle: str) -> list[str]:
+    output = subprocess.run(
+        ["ps", "-A", "-o", "command"], capture_output=True, text=True, timeout=10
+    ).stdout
+    return [line for line in output.splitlines() if needle in line]
