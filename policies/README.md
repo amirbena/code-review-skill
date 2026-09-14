@@ -57,6 +57,30 @@ invariant plus a routing link; the routed policy owns the detailed rule.
 Do not create a second normative copy of a rule in `../AGENTS.md`, in
 another policy, in `docs/`, or in a README.
 
+## Prohibited repository-only dependencies
+
+A distributed Skill archive is self-contained: it never links to this
+repository's own development docs or repository-development policies. The
+canonical prohibited set is `REPO_ROOT_ONLY_DOC_BASENAMES` in
+[`scripts/skill_metadata/expectations.py`](../scripts/skill_metadata/expectations.py),
+enforced on every packaging run by `check_no_repo_root_doc_links` in
+[`scripts/skill_metadata/links.py`](../scripts/skill_metadata/links.py).
+Current contents:
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `README.md`
+- `repository-workflow.md`
+- `git-pr-merge-policy.md`
+- `validation-and-clean-exit.md`
+- `documentation-policy.md`
+- `skill-development-policy.md`
+- `review-orchestration-policy.md`
+- `python_scripts_coding_policy.md`
+
+Any change to `REPO_ROOT_ONLY_DOC_BASENAMES` must update this list; a
+governed test keeps the two in sync.
+
 ## Adding or changing a policy
 
 1. If the rule applies to **every** repository task and is short, state it
