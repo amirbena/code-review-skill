@@ -64,6 +64,9 @@ for review-action authority; the canonical policies own the rest.
 - **Severity → verdict is mechanical.** P0/P1 block; P2 never does; the
   verdict is derived once from whether any P0/P1 is present — see
   [`severity.md`](../../shared/policies/severity.md).
+- **Reviewer Brief is private and never published**, structurally
+  excluded from GitHub publication — see
+  [`policies/reviewer-brief.md`](policies/reviewer-brief.md).
 
 ## Review flow (high level)
 
@@ -237,6 +240,10 @@ passive review.
 
 ## 4. Output Contract
 
+- **Every result** additionally includes a private `Reviewer Brief`,
+  composed once findings/severity/coverage/verdict are finalized and
+  structurally excluded from anything published to GitHub — see
+  [`policies/reviewer-brief.md`](policies/reviewer-brief.md).
 - **Passive:** a human-readable report using the shared shape
   ([`review-summary.md`](../../shared/templates/review-summary.md)),
   returned to the caller, not published.

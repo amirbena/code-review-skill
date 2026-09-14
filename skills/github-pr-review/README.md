@@ -72,6 +72,11 @@ A clean review is just the result line and `APPROVE`. The body never
 repeats a finding's detail when it already has an inline comment;
 machine/process state sits in a trailing `<details>` block.
 
+Every result also carries a private, caller-only
+[Reviewer Brief](../../docs/features/reviewer-brief.md) — what changed,
+your stated focus, and 2-4 areas worth a manual look — that is
+structurally excluded from GitHub publication.
+
 ## Boundaries worth knowing
 
 | Rule | Short version |

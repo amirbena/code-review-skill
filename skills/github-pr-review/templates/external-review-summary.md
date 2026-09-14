@@ -10,6 +10,17 @@ human-facing shape in
 findings use the shared shape in
 [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md).
 
+This template is the **complete** GitHub publication payload's body
+content — together with
+[`inline-finding.md`](inline-finding.md) for inline comments, it is the
+exclusive source of what
+[`../policies/review-output.md`](../policies/review-output.md), "Batched
+review construction and submission," submits. The private
+[`reviewer-brief.md`](reviewer-brief.md) is never one of this template's
+inputs and never appears anywhere in the rendering below — see
+[`../policies/reviewer-brief.md`](../policies/reviewer-brief.md), "Never
+published to GitHub."
+
 Write it the way a strong human reviewer leaves a review on a PR: lead
 with the verdict, then a scannable list of the findings that matter, and
 stop. The **inline comments own the technical detail** (evidence, impact,
