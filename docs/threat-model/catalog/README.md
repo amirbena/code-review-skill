@@ -73,11 +73,15 @@ everything else required):
 
 ### Coverage-gap semantics
 
-Because `#301`/`#302`/`#305`/`#306`/`#307`/`#299`/`#308` are unmerged or
-not yet started, most scenarios legitimately have — the exception is
-`#303`, whose 11 `DELEG-###` scenarios now carry real `enforcement_point`
-and `regression_evidence` (`benchmark_reference` stays `COVERAGE_GAP`
-pending `#307`):
+Because `#301`/`#302`/`#305`/`#306`/`#299`/`#308` are unmerged or not yet
+started, most scenarios legitimately have — the exceptions are `#303`,
+whose 11 `DELEG-###` scenarios carry real `enforcement_point` and
+`regression_evidence`, and `#307`, which fills in `benchmark_reference`
+for those same 11 `DELEG-###` scenarios plus the two `resource-abuse.yaml`
+scenarios (`DOS-006`, `DOS-007`) that declare
+`benchmark_family: delegation/#307` — all now pointing at
+`tests/reference/benchmark/delegation_fixtures.py` instead of
+`COVERAGE_GAP`:
 
 ```yaml
 enforcement_owner: COVERAGE_GAP      # or an issue ref, e.g. "#301"
