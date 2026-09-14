@@ -18,9 +18,12 @@ authorization.** When the caller explicitly requests `ACTIVE`, that
 request is, by itself, sufficient to publish the review's own outcome —
 no second activation phrase, approval prompt, or out-of-band
 authorization channel is consulted. This is enforced by construction:
-there is no `MutationAuthorization` / `Provenance` concept left in this
-module for a caller (or a stale test) to withhold in isolation. What
-*does* still gate `ACTIVE` publication, unchanged from before #314:
+`resolve_mutation_outcome` never consults a `Provenance`/authorization
+channel to decide whether an ACTIVE request may publish — there is no
+`MutationAuthorization` concept (the pre-#314 bundling of a provenance
+classification with a publication decision) left in this module for a
+caller (or a stale test) to withhold in isolation. What *does* still gate
+`ACTIVE` publication, unchanged from before #314:
 
 * the **self-review boundary** — absolute; no formal event is ever
   submitted on the reviewer's own work, regardless of mode;
@@ -46,6 +49,19 @@ and one governing switch:
 
 Everything else fails closed: any unknown, ambiguous, or agent-controlled
 input resolves to the safe, non-mutating outcome.
+
+This module still exposes `Provenance` / `classify_provenance` /
+`AGENT_CONTROLLED_CHANNELS` / `INDEPENDENT_TRUSTED_CHANNELS` /
+`AuthorizationScope` as general-purpose channel-trust-classification and
+scope-binding primitives -- they are not specific to review publication
+and #314 does not remove them. shared/policies/agent-delegation.md and
+tests/reference/review/agent_delegation.py reuse them unchanged for the
+confused-deputy / single-use spawn-authorization boundary rather than
+inventing a second identity model. What #314 removes is only their use
+*here* as a second, independently-withholdable gate on publication
+(`MutationAuthorization` / `authorization_covers`): `PublicationMode`
+supersedes that role entirely, and `resolve_mutation_outcome` never takes
+a `Provenance` or `AuthorizationScope` as input.
 """
 
 from __future__ import annotations
@@ -93,6 +109,88 @@ class ReviewerIndependence(Enum):
     SAME_AUTHORITY = "same_authority"  # different identity, same controlling authority
     AMBIGUOUS = "ambiguous"
     INDEPENDENT = "independent"  # authority originates outside the implementing agent
+
+
+class Provenance(Enum):
+    """Where a claimed authorization or identity signal came from.
+
+    General-purpose channel-trust classification -- not specific to
+    review publication (see module docstring). Reused unchanged by
+    shared/policies/agent-delegation.md's confused-deputy check.
+    """
+
+    NONE = "none"  # nothing was supplied
+    AGENT_CONTROLLED = "agent_controlled"  # reachable/forgeable by the review agent
+    AMBIGUOUS = "ambiguous"  # cannot be classified with confidence
+    INDEPENDENT_TRUSTED = "independent_trusted"  # out-of-band, principal-originated
+
+
+# Channels the invoking / orchestrating agent can set, write, relay, or
+# select. None of these can carry trusted authorization or identity
+# (policy, "What can never establish it").
+AGENT_CONTROLLED_CHANNELS: frozenset[str] = frozenset(
+    {
+        "cli_flag",
+        "action_mode_flag",
+        "prompt_text",
+        "generated_instruction",
+        "approve_if_clean_text",
+        "nested_skill_invocation",
+        "nested_agent_instruction",
+        "sub_agent",
+        "spawned_process",
+        "env_var",
+        "config_file",
+        "orchestration_metadata",
+        "alternate_token",
+        "alternate_username",
+        "bot_identity",
+        "service_account",
+        "github_app_identity",
+        "review_verdict",
+        "prior_review_approval",
+        "resolved_review_thread",
+    }
+)
+
+# Channels that, by contract, originate outside the review-performing
+# agent. A runtime that cannot furnish one of these simply never unlocks
+# the capability gated behind INDEPENDENT_TRUSTED.
+INDEPENDENT_TRUSTED_CHANNELS: frozenset[str] = frozenset(
+    {
+        "human_principal_out_of_band",
+        "runtime_verified_principal_authorization",
+    }
+)
+
+
+def classify_provenance(channel: Optional[str]) -> Provenance:
+    """Map an authorization-delivery channel name to its trust class.
+
+    Unknown or missing channels are never trusted -- they fail closed to
+    NONE / AMBIGUOUS, never to INDEPENDENT_TRUSTED.
+    """
+    if not channel:
+        return Provenance.NONE
+    if channel in AGENT_CONTROLLED_CHANNELS:
+        return Provenance.AGENT_CONTROLLED
+    if channel in INDEPENDENT_TRUSTED_CHANNELS:
+        return Provenance.INDEPENDENT_TRUSTED
+    return Provenance.AMBIGUOUS
+
+
+@dataclass(frozen=True)
+class AuthorizationScope:
+    """The narrow binding of a relied-upon authorization (policy,
+    "Authorization scope (no replay)"). General-purpose scope primitive;
+    reused by shared/policies/agent-delegation.md for single-use
+    spawn/delegation authorization rather than review-publication
+    authorization."""
+
+    repo: str
+    pr_number: int
+    head_sha: str
+    action: "GitHubEvent"
 
 
 def classify_reviewer_independence(

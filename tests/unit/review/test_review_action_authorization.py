@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import inspect
 import unittest
+from dataclasses import fields
 
 from tests.reference.review import decision_semantics as ds
 from tests.reference.review import review_action_authorization as raa
@@ -274,13 +275,35 @@ class ActiveRequestIsSufficientAuthorization(unittest.TestCase):
         self.assertNotEqual(out.mode.name, "RECOMMENDATION_ONLY")  # legacy name is gone
         self.assertIsNone(out.withheld_reason)
 
-    def test_model_has_no_authorization_or_provenance_concept_left(self) -> None:
-        # These pre-#314 names must not exist anywhere in the module --
+    def test_model_has_no_pre_314_authorization_bundling_left(self) -> None:
+        # The pre-#314 names that specifically bundled a provenance
+        # classification with a publication decision must not exist --
         # there is nothing left for a caller (or a stale test) to
-        # withhold in isolation.
-        for gone in ("Provenance", "MutationAuthorization", "AuthorizationScope",
-                     "authorization_covers", "ActionMode", "classify_provenance"):
+        # withhold publication with in isolation.
+        for gone in ("MutationAuthorization", "authorization_covers", "ActionMode"):
             self.assertFalse(hasattr(raa, gone), gone)
+
+    def test_publication_gate_never_consults_provenance_or_scope(self) -> None:
+        # Provenance / classify_provenance / AuthorizationScope remain in
+        # this module as general-purpose channel-trust and scope-binding
+        # primitives -- reused unchanged by shared/policies/
+        # agent-delegation.md for an unrelated confused-deputy /
+        # spawn-authorization boundary (see module docstring). #314 only
+        # forbids *this* gate from taking one as input: neither the
+        # resolved-facts input dataclass nor the resolver function may
+        # accept a Provenance or AuthorizationScope, or reference the
+        # removed MutationAuthorization bundling.
+        input_fields = {f.name: f.type for f in fields(raa.ActionAuthorizationInput)}
+        for field_name, field_type in input_fields.items():
+            type_str = str(field_type)
+            self.assertNotIn("Provenance", type_str, field_name)
+            self.assertNotIn("AuthorizationScope", type_str, field_name)
+            self.assertNotIn("MutationAuthorization", type_str, field_name)
+        resolver_params = " ".join(
+            inspect.signature(raa.resolve_mutation_outcome).parameters
+        ).lower()
+        self.assertNotIn("provenance", resolver_params)
+        self.assertNotIn("authorization", resolver_params)
 
 
 # --------------------------------------------------------------------------
