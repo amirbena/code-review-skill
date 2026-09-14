@@ -197,6 +197,29 @@ demonstrating the voice principles owned by
 "Senior voice contract". It measures presentation quality, which the
 #40/#41 corpus and metrics above do not.
 
+## Reviewer Brief benchmark
+
+[`corpus/reviewer-brief/README.md`](corpus/reviewer-brief/README.md)
+(issue [#309](https://github.com/amirbena/code-review-skill/issues/309),
+depends on [#304](https://github.com/amirbena/code-review-skill/issues/304))
+pins the semantic quality and publication isolation of the private,
+caller-facing `Reviewer Brief` every `github-pr-review` result includes.
+Unlike every corpus above, it is not `benchmark-case/v1` fixtures — that
+schema has no field for a private prose artifact or for a second,
+GitHub-bound surface to compare it against — so it follows the
+test-only-reference-model pattern instead:
+[`../../tests/reference/benchmark/reviewer_brief_fixtures.py`](../../tests/reference/benchmark/reviewer_brief_fixtures.py),
+exercised by
+[`../../tests/unit/benchmark/test_reviewer_brief_structural.py`](../../tests/unit/benchmark/test_reviewer_brief_structural.py)
+(deterministic structural properties) and
+[`../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py`](../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py)
+(zero-leakage into the GitHub-bound review body/inline comments, including
+a negative canary proving the check can catch a real leak). The
+semantic-quality properties whose wording is intentionally flexible are a
+documented, non-CI-gated reference set,
+[`reviewer-brief-examples.md`](reviewer-brief-examples.md), exactly like
+the senior voice examples below.
+
 ## CI integration
 
 [`ci-integration.md`](ci-integration.md) (#255) wires the existing #250
