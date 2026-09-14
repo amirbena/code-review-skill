@@ -61,8 +61,14 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # policies/reviewer-brief.md) raised github 375 -> 382. local is
 # unaffected (github-pr-review only, an explicit non-goal for
 # local-code-review) and stays 264.
-LOCAL_MAX_LINES = 264
-GITHUB_MAX_LINES = 382
+# Issue #303 (the agent-spawn / delegation capability boundary: a new
+# safety-boundary bullet plus a section-7 non-transferable-authorization
+# bullet in github, both linking to the new shared
+# shared/policies/agent-delegation.md; a one-line no-spawn_agent
+# statement in local, section 4) raised local 264 -> 268 and github
+# 382 -> 394.
+LOCAL_MAX_LINES = 268
+GITHUB_MAX_LINES = 394
 
 
 def _norm(path) -> str:
