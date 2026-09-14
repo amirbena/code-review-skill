@@ -216,6 +216,15 @@ def classify_reviewer_independence(
 # behavior in ordinary language and never need a keyword or flag. An
 # ACTIVE result is a real, effective request (issue #314's core
 # invariant) -- it is not merely a "candidate" awaiting a second signal.
+#
+# "block it if there are serious issues, but don't approve it" and other
+# block/request-changes phrasing are themselves an ACTIVE request -- the
+# trailing "don't approve" is content-level scoping of *which* event an
+# ACTIVE request publishes (see normalize_approval_declined), never a
+# reason to fall back to PASSIVE. Dropping such a request to PASSIVE
+# would silently withhold REQUEST_CHANGES too, which review-action-
+# authorization.md, "Migration from the pre-#314 model" explicitly
+# promises never happens.
 def normalize_intent(text: Optional[str]) -> PublicationMode:
     if not text:
         return PublicationMode.PASSIVE
@@ -226,7 +235,9 @@ def normalize_intent(text: Optional[str]) -> PublicationMode:
         or "auto-approve" in t
         or "actively review" in t
         or "active review" in t
-        or ("request changes if" in t and "don't approve" not in t and "do not approve" not in t)
+        or "request changes if" in t
+        or "block it" in t
+        or "block if" in t
     )
     asks_semi = (
         "don't touch github" in t
@@ -241,13 +252,24 @@ def normalize_intent(text: Optional[str]) -> PublicationMode:
         return PublicationMode.SEMI
     if asks_active:
         return PublicationMode.ACTIVE
-    # "just review this", "review it", "block it but don't approve it",
-    # anything ambiguous -> safe default. A content-level "don't approve"
-    # scoping request is handled downstream against an ACTIVE
-    # invocation's desired event, not as a distinct authorization mode
-    # (see review-action-authorization.md, "Migration from the pre-#314
-    # model").
+    # "just review this", "review it", anything ambiguous -> safe default.
     return PublicationMode.PASSIVE
+
+
+# Natural-language "don't approve" scoping -> the one content-level
+# option that survives from the old `block-only` phrasing (policy,
+# "Migration from the pre-#314 model"). Independent of normalize_intent:
+# it never introduces a new authorization channel or publication mode --
+# it only ever suppresses the specific APPROVE event of an otherwise-
+# qualifying ACTIVE request, exactly like ActionAuthorizationInput.
+# approval_declined_by_caller documents. A caller combines this with
+# normalize_intent's result the same way any other request detail is
+# combined; on its own it never changes the requested mode.
+def normalize_approval_declined(text: Optional[str]) -> bool:
+    if not text:
+        return False
+    t = text.lower()
+    return "don't approve" in t or "do not approve" in t or "never approve" in t
 
 
 @dataclass(frozen=True)
@@ -271,7 +293,8 @@ class ActionAuthorizationInput:
     don't approve it"): it never introduces a new authorization channel,
     it only suppresses the specific APPROVE event when the caller
     explicitly asked not to see it, exactly the way a caller could ask to
-    skip any other part of a request.
+    skip any other part of a request. See `normalize_approval_declined`
+    for deriving it from natural language.
     """
 
     verdict: Verdict

@@ -463,6 +463,61 @@ class NaturalLanguageIntentMapping(unittest.TestCase):
         for phrase in ("", None, "make it helpful", "do a good job"):
             self.assertEqual(raa.normalize_intent(phrase), raa.PublicationMode.PASSIVE)
 
+    def test_block_it_dont_approve_is_active_not_passive(self) -> None:
+        # The exact phrasing review-action-authorization.md, "Migration
+        # from the pre-#314 model" and skills/github-pr-review/README.md
+        # use as the canonical example of preserved block-only content-
+        # level scoping: it must still be an ACTIVE request (so a
+        # blocking verdict still publishes REQUEST_CHANGES), never a
+        # silent fallback to PASSIVE (which would withhold everything).
+        for phrase in (
+            "review #812; block it if there are serious issues, but don't approve it",
+            "request changes if there are blocking findings, but don't approve it",
+            "block it if there are serious issues, but do not approve it",
+        ):
+            self.assertEqual(raa.normalize_intent(phrase), raa.PublicationMode.ACTIVE, phrase)
+
+    def test_normalize_approval_declined_detects_the_dont_approve_scoping(self) -> None:
+        for phrase in (
+            "block it if there are serious issues, but don't approve it",
+            "request changes if needed, but do not approve it",
+            "please never approve this one",
+        ):
+            self.assertTrue(raa.normalize_approval_declined(phrase), phrase)
+        for phrase in ("approve if clean", "just review it", "", None):
+            self.assertFalse(raa.normalize_approval_declined(phrase), phrase)
+
+    def test_block_dont_approve_end_to_end_still_publishes_request_changes(self) -> None:
+        # Wiring normalize_intent + normalize_approval_declined together
+        # (as a caller would) must reproduce exactly the behavior the
+        # policy promises: REQUEST_CHANGES for a blocking verdict,
+        # APPROVE withheld for a clean one -- never PASSIVE's "nothing at
+        # all".
+        text = "block it if there are serious issues, but don't approve it"
+        mode = raa.normalize_intent(text)
+        declined = raa.normalize_approval_declined(text)
+        self.assertEqual(mode, raa.PublicationMode.ACTIVE)
+        self.assertTrue(declined)
+
+        blocking = raa.resolve_mutation_outcome(_base(
+            verdict=raa.Verdict.BLOCKING, requested_mode=mode,
+            approval_declined_by_caller=declined,
+            reviewer_independence=raa.ReviewerIndependence.INDEPENDENT,
+            permitted_events=frozenset({raa.GitHubEvent.APPROVE, raa.GitHubEvent.REQUEST_CHANGES}),
+        ))
+        self.assertEqual(blocking.event, raa.GitHubEvent.REQUEST_CHANGES)
+        self.assertTrue(blocking.mutated)
+
+        clean = raa.resolve_mutation_outcome(_base(
+            verdict=raa.Verdict.CLEAN, requested_mode=mode,
+            approval_declined_by_caller=declined,
+            reviewer_independence=raa.ReviewerIndependence.INDEPENDENT,
+            permitted_events=frozenset({raa.GitHubEvent.APPROVE, raa.GitHubEvent.REQUEST_CHANGES}),
+        ))
+        self.assertEqual(clean.event, raa.GitHubEvent.NONE)
+        self.assertFalse(clean.mutated)
+        self.assertIn("declined", clean.withheld_reason)
+
     def test_requested_active_mode_is_immediately_effective(self) -> None:
         # #314: unlike the old "candidate" model, an ACTIVE request that
         # clears independence/permission/HEAD mutates immediately.

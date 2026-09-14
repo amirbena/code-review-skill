@@ -31,10 +31,14 @@ Plain language; the phrasing you use also sets how far it may go:
 
 ```text
 review PR https://github.com/acme/app/pull/812
-just review PR #812 and tell me what you find        → report only
-review #812; block it if there are serious issues     → may Request Changes
-review #812 and approve it if it's clean              → Approve only if
-                                                        independently authorized
+just review PR #812 and tell me what you find              → PASSIVE: report only
+review #812; tell me what would happen, don't touch GitHub → SEMI: would-publish preview,
+                                                               no GitHub mutation
+review #812 and approve it if it's clean                   → ACTIVE: publishes Approve or
+                                                               Request Changes
+review #812; block it if there are serious issues,
+but don't approve it                                        → ACTIVE, Approve suppressed:
+                                                               publishes Request Changes only
 ```
 
 Optional add-ons, each with a usage guide under `docs/features/`:
