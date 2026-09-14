@@ -318,6 +318,12 @@ def _refs_mutated(before: _Snapshot, after: _Snapshot) -> bool:
     return before.refs != after.refs or before.head != after.head
 
 
+def _changed_path_set(name_only_output: str) -> frozenset[str]:
+    """Parse a `--name-only`-style git listing (one path per line) into a
+    path set, used by commit()'s staged/committed scope verification."""
+    return frozenset(line for line in name_only_output.splitlines() if line)
+
+
 # --- Mutation results ------------------------------------------------------
 
 
@@ -459,10 +465,30 @@ class MutationExecutor:
             binding_value=result.patch_digest,
         )
         root = self._ctx.worktree_root
-        _run_git(root, ("add", "-A"))
-        _run_git(root, ("commit", "-m", message))
+        # Stage exactly the paths apply_patch() verified and returned — never
+        # `git add -A`, which would silently sweep any other dirty file in
+        # the working tree (pre-existing, or changed since apply_patch()
+        # returned) into this "authorized" commit.
+        _run_git(root, ("add", "--", *sorted(result.applied_paths)))
+        # Consumed the moment the first mutating command has run — mirrors
+        # apply_patch()'s "any attempt spends the grant" rule.
         self._ledger.consume(authorization)
+        staged = _changed_path_set(_run_git(root, ("diff", "--cached", "--name-only")))
+        if staged != result.applied_paths:
+            raise ScopeEscapeError(
+                f"staged paths {sorted(staged)} do not match the authorized "
+                f"applied paths {sorted(result.applied_paths)}"
+            )
+        _run_git(root, ("commit", "-m", message))
         commit_sha = _run_git(root, ("rev-parse", "HEAD")).strip()
+        committed = _changed_path_set(
+            _run_git(root, ("diff-tree", "--no-commit-id", "--name-only", "-r", commit_sha))
+        )
+        if committed != result.applied_paths:
+            raise ScopeEscapeError(
+                f"commit {commit_sha} touched {sorted(committed)}, expected exactly "
+                f"the authorized applied paths {sorted(result.applied_paths)}"
+            )
         return CommitResult(commit_sha=commit_sha, patch_digest=result.patch_digest)
 
     def push(
@@ -480,6 +506,16 @@ class MutationExecutor:
             binding_value=commit.commit_sha,
         )
         root = self._ctx.worktree_root
+        # Re-verify the worktree's current HEAD still is the authorized
+        # commit before pushing — a stale ref (moved by anything between
+        # commit() returning and push() being called) is refused, never
+        # pushed under the guise of this authorization.
+        current_head = _run_git(root, ("rev-parse", "HEAD")).strip()
+        if current_head != commit.commit_sha:
+            raise StaleApprovalError(
+                f"worktree HEAD {current_head} no longer matches the authorized "
+                f"commit {commit.commit_sha}; re-approval required"
+            )
         _run_git(root, ("push", remote, ref))
         self._ledger.consume(authorization)
 

@@ -310,6 +310,29 @@ class Auth009And016ScopeEscapeAtApply(_RepoCase):
         after = ma._snapshot(self.root)
         self.assertTrue(ma._refs_mutated(before, after))
 
+    def test_commit_never_sweeps_up_an_unrelated_dirty_file(self) -> None:
+        proposal = self._one_file_patch()
+        apply_auth = self._authorize(ma.MutationCapability.APPLY_PATCH, binding_value=proposal.digest)
+        result = self.executor.apply_patch(proposal, apply_auth, current_base_sha=self.base_sha)
+
+        # Unrelated dirty state, not part of the authorized change: present
+        # before commit() runs, exactly like a real working tree with other
+        # in-progress work.
+        (self.root / "unrelated.txt").write_text("not part of the approved patch\n", encoding="utf-8")
+
+        commit_auth = self._authorize(
+            ma.MutationCapability.COMMIT, binding_value=result.patch_digest, base_sha=self.base_sha,
+        )
+        commit_result = self.executor.commit(result, commit_auth, message="approved change only")
+
+        committed = _run(
+            self.root, "diff-tree", "--no-commit-id", "--name-only", "-r", commit_result.commit_sha
+        ).splitlines()
+        self.assertEqual(committed, ["existing.txt"])
+        status = _run(self.root, "status", "--porcelain")
+        self.assertIn("unrelated.txt", status)
+        self.assertTrue(status.strip().startswith("??"))
+
 
 # --------------------------------------------------------------------------
 # AUTH-010 / AUTH-011 — capability independence: one grant never implies
@@ -458,6 +481,27 @@ class FullPipelineIndependentGates(_RepoCase):
         commit_result = self.executor.commit(result, commit_auth, message="m")
         push_auth = self._authorize(
             ma.MutationCapability.PUSH, binding_value="0" * 40, base_sha=self.base_sha,
+        )
+        with self.assertRaises(ma.StaleApprovalError):
+            self.executor.push(commit_result, push_auth, remote="origin", ref="main")
+
+    def test_push_refused_when_head_moved_since_the_authorized_commit(self) -> None:
+        proposal = self._one_file_patch()
+        apply_auth = self._authorize(ma.MutationCapability.APPLY_PATCH, binding_value=proposal.digest)
+        result = self.executor.apply_patch(proposal, apply_auth, current_base_sha=self.base_sha)
+        commit_auth = self._authorize(
+            ma.MutationCapability.COMMIT, binding_value=result.patch_digest, base_sha=self.base_sha,
+        )
+        commit_result = self.executor.commit(result, commit_auth, message="m")
+
+        # HEAD advances again after the authorized commit — e.g. a second,
+        # separately authorized commit lands before push() is called.
+        (self.root / "second.txt").write_text("later change\n", encoding="utf-8")
+        _run(self.root, "add", "-A")
+        _run(self.root, "commit", "-q", "-m", "later, separately authorized commit")
+
+        push_auth = self._authorize(
+            ma.MutationCapability.PUSH, binding_value=commit_result.commit_sha, base_sha=self.base_sha,
         )
         with self.assertRaises(ma.StaleApprovalError):
             self.executor.push(commit_result, push_auth, remote="origin", ref="main")
