@@ -67,6 +67,10 @@ for review-action authority; the canonical policies own the rest.
 - **Reviewer Brief is private and never published**, structurally
   excluded from GitHub publication — see
   [`policies/reviewer-brief.md`](policies/reviewer-brief.md).
+- **Agent-spawn capability is absent by default.** `spawn_agent` is only
+  held when parallel review is selected; workers are read-only with hard,
+  tree-wide budgets on agent count/spawn depth — see
+  [`agent-delegation.md`](../../shared/policies/agent-delegation.md).
 
 ## Review flow (high level)
 
@@ -211,7 +215,8 @@ implementation prompt; never affects severity, decision, or mutation
 authority),
 [`review-summary.md`](../../shared/templates/review-summary.md), and —
 with parallel workers —
-[`parallel-review.md`](../../shared/policies/parallel-review.md).
+[`parallel-review.md`](../../shared/policies/parallel-review.md) and
+[`agent-delegation.md`](../../shared/policies/agent-delegation.md).
 
 This Skill's own: the canonical index
 [`policies/github-review.md`](policies/github-review.md), which owns the
@@ -369,6 +374,13 @@ and the gate in
   A new HEAD inherits no green. Making the status a required merge check
   is an explicit, opt-in setup action. Canonical:
   [`review-status-enforcement.md`](policies/review-status-enforcement.md).
+
+- **Agent-spawn capability is absent by default and never transfers
+  formal authority.** A spawned worker holds no publication, mutation, or
+  formal review-action authorization of its own — never inherited,
+  copied, forwarded, or replayed across an agent-spawn boundary, exactly
+  as it is never inherited across an alternate-identity boundary above.
+  Canonical: [`agent-delegation.md`](../../shared/policies/agent-delegation.md).
 
 This Skill must never: edit implementation files, commit, push
 implementation changes, merge, delete branches, or perform cleanup on

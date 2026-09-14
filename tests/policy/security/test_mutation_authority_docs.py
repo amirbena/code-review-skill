@@ -296,7 +296,13 @@ class SpawnDelegationCatalogCrossReference(unittest.TestCase):
         self.assertIn(
             "test_mutation_authority.py", deleg_007["regression_evidence"]
         )
-        self.assertIn("COVERAGE_GAP", deleg_007["regression_evidence"])
+        # #303 landed its own real delegation-runtime enforcement in the
+        # interim (shared/policies/agent-delegation.md), so both halves of
+        # this scenario now have real regression evidence — no gap left.
+        self.assertIn(
+            "test_agent_delegation_authorization.py", deleg_007["regression_evidence"]
+        )
+        self.assertNotIn("COVERAGE_GAP", deleg_007["regression_evidence"])
 
 
 class ThreatModelDesignRecordUpdated(unittest.TestCase):

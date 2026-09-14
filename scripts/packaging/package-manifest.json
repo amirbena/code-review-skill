@@ -25,6 +25,7 @@
     { "source": "shared/policies/jira-context.md", "destination": "shared/policies/jira-context.md" },
     { "source": "shared/policies/review-evidence.md", "destination": "shared/policies/review-evidence.md" },
     { "source": "shared/policies/parallel-review.md", "destination": "shared/policies/parallel-review.md" },
+    { "source": "shared/policies/agent-delegation.md", "destination": "shared/policies/agent-delegation.md" },
     { "source": "shared/policies/invocation-options.md", "destination": "shared/policies/invocation-options.md" },
     { "source": "shared/policies/remediation-guidance.md", "destination": "shared/policies/remediation-guidance.md" },
     { "source": "shared/policies/remediation-scope-boundary.md", "destination": "shared/policies/remediation-scope-boundary.md" },

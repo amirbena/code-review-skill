@@ -74,7 +74,12 @@ fetch Jira/Issue context, rediscover `AGENTS.md`, or choose a snapshot.
 
 Every worker receives one **bounded, normalized** input and returns
 **structured candidate findings only** — it never publishes, never derives
-the final decision, and never sees another worker's output.
+the final decision, and never sees another worker's output. What a worker
+is *allowed to hold and do* — the `spawn_agent` capability, budgets on
+agent count/depth, and the read-only capability set below — is the
+capability boundary owned by
+[`agent-delegation.md`](agent-delegation.md); this section defines the
+worker's task shape, not its authority.
 
 ```text
 Worker input
@@ -169,7 +174,9 @@ Missing coverage is reported as missing, not as absence of findings.
 ## Boundaries
 
 - **No new mutation.** Parallel workers are read-only; publication and any
-  Approve/Request Changes stay the aggregating reviewer's, once.
+  Approve/Request Changes stay the aggregating reviewer's, once — enforced
+  as a capability boundary, not only a behavioral expectation, by
+  [`agent-delegation.md`](agent-delegation.md).
 - **Review target unchanged.** Splitting the review by dimension never widens
   the target or the scope — each worker is bounded to the same PR delta and
   its real blast radius.
