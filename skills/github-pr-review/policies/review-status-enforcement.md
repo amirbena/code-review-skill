@@ -106,21 +106,22 @@ by direction, reusing — never duplicating —
   still requires GitHub write capability for the status/check and a fresh
   reviewed HEAD.
 - **A `success` status is positive / unblocking authority.** It requires
-  exactly what a native `APPROVE` requires: `explicitly-authorized
-  auto-action` mode established by trusted mutation authorization
-  (independent of the review-performing/orchestrating agent, scoped to
-  this repo / PR / reviewed HEAD / action, consumed once) **and**
-  reviewer independence (authority separation, not merely a different
-  GitHub username).
+  exactly what a native `APPROVE` requires under the single canonical
+  publication switch (issue #314): the **`ACTIVE`** publication mode
+  **and** reviewer independence (authority separation, not merely a
+  different GitHub username). `PASSIVE` and `SEMI` never publish a
+  `success` status, exactly as they never submit a native `APPROVE` — an
+  explicit `ACTIVE` request is its own authorization; there is no
+  separate authorization channel to establish beyond it.
 - **A self-review must never publish a `success` status.** This is
-  absolute, exactly like self-approval — no mode, natural-language
-  request, or presented authorization lifts it. On a clean self-review
-  the outcome is `STATUS WITHHELD (self-review: success not published)`;
-  a blocking self-review may still publish the `failure` status.
-- **Ambiguity fails closed.** Any doubt about mode, authorization
-  provenance or scope, reviewer provenance, or whether the verdict is a
-  complete current-HEAD `REVIEW CLEAN` resolves to not publishing
-  `success` (a blocking status, or no publication).
+  absolute, exactly like self-approval — no mode or natural-language
+  request lifts it. On a clean self-review the outcome is `STATUS
+  WITHHELD (self-review: success not published)`; a blocking self-review
+  may still publish the `failure` status.
+- **Ambiguity fails closed.** Any doubt about mode, reviewer provenance,
+  or whether the verdict is a complete current-HEAD `REVIEW CLEAN`
+  resolves to not publishing `success` (a blocking status, or no
+  publication).
 
 ```text
 self-review:            CHANGES REQUIRED → may publish failure
@@ -151,8 +152,9 @@ report `UNKNOWN` rather than guessing when either cannot be read.
 
 Making the status a required check is a **separate, explicitly requested
 setup action**. It never happens during an ordinary review, and it is
-gated by the same trusted authorization required to publish a `success`
-status (it changes repository governance). Procedure:
+gated by the same `ACTIVE` publication mode + reviewer independence
+required to publish a `success` status (it changes repository
+governance). Procedure:
 
 ```text
 read current base-branch configuration (ruleset + classic protection)

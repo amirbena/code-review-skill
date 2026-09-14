@@ -11,7 +11,7 @@ Four concerns are kept separate, exactly as the policy does:
 * whether a status may be **published**, split by direction: a blocking
   (non-success) status is blocking-only enforcement and may be published
   even by a self-review; a `success` status is positive/unblocking and
-  needs the same trusted authorization + reviewer independence as a
+  needs the same ACTIVE publication mode + reviewer independence as a
   native APPROVE, and is never published by a self-review;
 * **enforcement-state detection** — ENFORCED / NOT ENFORCED / UNKNOWN,
   read-only, from rulesets *and* classic branch protection;
@@ -93,11 +93,12 @@ def map_verdict_to_status(reasoning: Reasoning) -> StatusState:
 class StatusPublicationInput:
     """Already-resolved facts for the status-publication gate.
 
-    `reasoning` is the canonical verdict computed upstream. `authorization`
-    / `reviewer_independence` / `requested_mode` / `self_review` /
+    `reasoning` is the canonical verdict computed upstream.
+    `reviewer_independence` / `requested_mode` / `self_review` /
     `same_controlling_authority_as_author` reuse
     review_action_authorization.py exactly — a `success` status is the
-    APPROVE-equivalent positive action.
+    APPROVE-equivalent positive action, so (issue #314) it is gated by the
+    same single canonical switch as APPROVE: `PublicationMode.ACTIVE`.
     """
 
     reasoning: Reasoning
@@ -109,8 +110,7 @@ class StatusPublicationInput:
     is_parallel_worker: bool = False
     self_review: bool = False
     same_controlling_authority_as_author: bool = False
-    requested_mode: raa.ActionMode = raa.ActionMode.RECOMMENDATION_ONLY
-    authorization: Optional[raa.MutationAuthorization] = None
+    requested_mode: raa.PublicationMode = raa.PublicationMode.PASSIVE
     reviewer_independence: raa.ReviewerIndependence = (
         raa.ReviewerIndependence.AMBIGUOUS
     )
@@ -140,22 +140,16 @@ def _head_is_stale(inp: StatusPublicationInput) -> bool:
 
 def _success_authorized(inp: StatusPublicationInput) -> bool:
     """A `success` status is the APPROVE-equivalent positive action: it
-    needs auto-action mode established by trusted, scope-bound
-    authorization AND established reviewer independence. A self-review can
-    never reach here."""
+    needs the ACTIVE publication mode (issue #314's single canonical
+    switch — an explicit ACTIVE request is its own authorization, exactly
+    as for a native APPROVE) AND established reviewer independence. A
+    self-review can never reach here. HEAD staleness is checked
+    separately in `resolve_status_publication`."""
     if _is_self_review(inp):
         return False
     if inp.reviewer_independence is not raa.ReviewerIndependence.INDEPENDENT:
         return False
-    if inp.requested_mode is not raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION:
-        return False
-    return raa.authorization_covers(
-        inp.authorization,
-        repo=inp.repo,
-        pr_number=inp.pr_number,
-        head_sha=inp.current_head_sha,
-        action=raa.GitHubEvent.APPROVE,
-    )
+    return inp.requested_mode is raa.PublicationMode.ACTIVE
 
 
 def resolve_status_publication(inp: StatusPublicationInput) -> StatusPublication:
@@ -211,7 +205,7 @@ def resolve_status_publication(inp: StatusPublicationInput) -> StatusPublication
         return withheld("self-review: success not published", state=StatusState.NONE)
     if not _success_authorized(inp):
         return withheld(
-            "success requires trusted positive authorization and reviewer independence",
+            "success requires ACTIVE publication mode and reviewer independence",
             state=StatusState.NONE,
         )
     return published(StatusState.SUCCESS)
@@ -279,16 +273,14 @@ def plan_required_check_setup(
     *,
     context: str = STATUS_CONTEXT,
     explicit_request: bool,
-    authorization: Optional[raa.MutationAuthorization] = None,
-    repo: str,
-    pr_number: int,
-    head_sha: str,
+    requested_mode: raa.PublicationMode = raa.PublicationMode.PASSIVE,
     reviewer_independence: raa.ReviewerIndependence = raa.ReviewerIndependence.AMBIGUOUS,
 ) -> SetupPlan:
     """Plan the minimal, preserving, idempotent addition of `context` to
     the base branch's required checks. Never performed during an ordinary
-    review; gated by the same trusted authorization as a `success`
-    status."""
+    review; gated by the same bar as a `success` status (issue #314: the
+    single canonical ACTIVE publication mode, plus reviewer
+    independence)."""
 
     unchanged = frozenset(current.required_contexts)
 
@@ -310,16 +302,10 @@ def plan_required_check_setup(
     # Same bar as publishing a success status.
     authorized = (
         reviewer_independence is raa.ReviewerIndependence.INDEPENDENT
-        and raa.authorization_covers(
-            authorization,
-            repo=repo,
-            pr_number=pr_number,
-            head_sha=head_sha,
-            action=raa.GitHubEvent.APPROVE,
-        )
+        and requested_mode is raa.PublicationMode.ACTIVE
     )
     if not authorized:
-        return withheld("setup requires trusted positive authorization and reviewer independence")
+        return withheld("setup requires ACTIVE publication mode and reviewer independence")
 
     if context in current.required_contexts:
         return SetupPlan(

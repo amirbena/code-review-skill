@@ -371,8 +371,8 @@ human-facing review and clearly subordinate, per
 - P1: <n>
 - P2: <n>
 - decision: `approve` | `request_changes` | `comment`
-- action_mode: `recommendation-only` | `block-only` | `explicitly-authorized-auto-action`
-- mutation: `submitted (<event>)` | `withheld (<reason>)` | `not_requested`
+- publication_mode: `passive` | `semi` | `active`
+- mutation: `submitted (<event>)` | `would_publish (<event>)` | `withheld (<reason>)` | `not_requested`
 
 </details>
 ```

@@ -95,10 +95,11 @@ not only what it finds:
 - **Self-review is allowed; self-approval is not** — `github-pr-review`
   analyzes its own PR and produces a real verdict, but never submits a
   formal `APPROVE` / `REQUEST_CHANGES` on the reviewer's own work.
-- **Analysis is separate from GitHub mutation authority** — an active
-  review defaults to non-mutating `recommendation-only`; a formal
-  Approve / Request Changes is submitted only under independently trusted,
-  PR/HEAD-scoped authorization with genuine reviewer independence.
+- **Analysis is separate from GitHub mutation authority** — one canonical
+  publication mode (`PASSIVE` / `SEMI` / `ACTIVE`), defaulting to
+  non-mutating `PASSIVE`; an explicit `ACTIVE` request is itself
+  sufficient authorization to publish, subject to genuine reviewer
+  independence and GitHub permission.
 - **One reviewer owner per scope**, **exact reviewed-HEAD tracking**, and
   **HEAD revalidation before the decision**, so a changed HEAD is never
   approved as the SHA that was actually reviewed.
