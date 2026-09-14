@@ -177,10 +177,14 @@ class PerSkillPosture(unittest.TestCase):
         self.t = _norm(POLICY)
 
     def test_github_pr_review_incapable_in_every_mode(self) -> None:
+        # Post-#314 canonical publication mode names -- not the removed
+        # pre-#314 review-action mode names.
         self.assertIn(
-            "Holds READ_ONLY for source/Git mutation in every review-action mode",
+            "Holds READ_ONLY for source/Git mutation in every publication mode",
             self.t,
         )
+        for stale in ("recommendation-only", "block-only", "explicitly-authorized auto-action"):
+            self.assertNotIn(stale, self.t, stale)
         self.assertIn(
             "structurally incapable of applying, committing, or pushing a "
             "source-code change in every mode it defines",

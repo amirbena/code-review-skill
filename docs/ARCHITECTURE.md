@@ -343,10 +343,11 @@ for every one of them.
 - **Review-action authorization** — review analysis is separate from
   GitHub mutation authority
   ([`review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md)):
-  a non-mutating `recommendation-only` default, `block-only`, and
-  `explicitly-authorized auto-action`; self-review is allowed but
-  self-approval is not; a verdict is not authorization and `APPROVE` is
-  not merge authority.
+  one canonical publication mode — non-mutating `PASSIVE` (default),
+  non-mutating `SEMI` (preview), or `ACTIVE`, where an explicit `ACTIVE`
+  request is itself sufficient authorization to publish; self-review is
+  allowed but self-approval is not; a verdict is not, by itself, a
+  GitHub event, and `APPROVE` is not merge authority.
 - **Optional machine-readable review status** — one stable aggregated,
   exact-HEAD status/check derived from the same canonical verdict
   ([`review-status-enforcement.md`](../skills/github-pr-review/policies/review-status-enforcement.md)).
@@ -717,9 +718,9 @@ unless they are exactly equal.
   separate things.** A clean or blocking result stays valid even when the
   account cannot submit the formal review; authorship never blocks
   analysis but forbids a formal self-review event; and for an external
-  review, submitting `APPROVE` / `REQUEST_CHANGES` requires
-  `explicitly-authorized auto-action` mode under trusted, scoped
-  authorization and genuine reviewer independence
+  review, submitting `APPROVE` / `REQUEST_CHANGES` requires an explicit
+  `ACTIVE` publication-mode request — itself sufficient authorization —
+  plus genuine reviewer independence and GitHub event permission
   ([`review-action-authorization.md`](../skills/github-pr-review/policies/review-action-authorization.md)).
   This gate composes with — never replaces — HEAD revalidation,
   stale-review protection, reviewer ownership, delta re-review, and the

@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.42.0 — 2026-09-14
+
+### Changed
+
+- `github-pr-review` now uses a single PASSIVE/SEMI/ACTIVE publication mode — an explicit ACTIVE request is itself sufficient authorization to publish, with no second activation phrase required (#321).
+
 ## v1.41.0 — 2026-09-14
 
 ### Added

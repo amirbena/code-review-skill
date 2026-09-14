@@ -251,9 +251,9 @@ reason:
 
 ### `github-pr-review`
 
-Holds `READ_ONLY` for source/Git mutation in **every** review-action mode
-(`recommendation-only`, `block-only`, `explicitly-authorized auto-action`
-— see that Skill's own `policies/review-action-authorization.md`).
+Holds `READ_ONLY` for source/Git mutation in **every** publication mode
+(`PASSIVE`, `SEMI`, `ACTIVE` — see that Skill's own
+`policies/review-action-authorization.md`).
 Those modes govern a GitHub review-action mutation only; none of them, and
 no combination of them, grants `PROPOSE_PATCH` beyond advisory `Fix` text,
 or any of `APPLY_PATCH` / `COMMIT` / `PUSH`. This Skill is structurally
