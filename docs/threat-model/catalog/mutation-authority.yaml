@@ -40,7 +40,7 @@ scenarios:
   enforcement_point: propose_patch/apply_patch reject any .git/ target path structurally; APPLY_PATCH
     also fails closed if a git-apply step is found to have mutated refs/HEAD
   expected_safe_outcome: git-mutating command is refused before execution; review continues read-only
-  expected_security_event: DENIED_MUTATION_CAPABILITY_ABSENT
+  expected_security_event: DENIED_MUTATION_SCOPE_ESCAPE
   benchmark_family: mutation/#305
   benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth002GitStateMutation)
