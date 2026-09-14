@@ -220,6 +220,30 @@ documented, non-CI-gated reference set,
 [`reviewer-brief-examples.md`](reviewer-brief-examples.md), exactly like
 the senior voice examples below.
 
+## Agent-spawn / delegation benchmark
+
+[`corpus/delegation-spawn/README.md`](corpus/delegation-spawn/README.md)
+(issue [#307](https://github.com/amirbena/code-review-skill/issues/307),
+depends on [#303](https://github.com/amirbena/code-review-skill/issues/303))
+proves the agent-spawn and delegated-authority capability boundary stays
+bounded: no `spawn_agent` capability, invocation agent-count/spawn-depth
+budgets, the capability-subset delegation rule, non-transferable
+mutation/formal-review-action authorization, sibling-collusion
+resistance, and confused-deputy protection. Like the Reviewer Brief
+benchmark below, it is not `benchmark-case/v1` fixtures — that schema has
+no field for a capability grant, a spawn-depth/agent-count budget, or a
+structural allow/deny result — so it follows the same test-only
+reference-model pattern:
+[`../../tests/reference/benchmark/delegation_fixtures.py`](../../tests/reference/benchmark/delegation_fixtures.py),
+exercised by
+[`../../tests/unit/benchmark/test_delegation_spawn_corpus.py`](../../tests/unit/benchmark/test_delegation_spawn_corpus.py)
+(structural allow/deny assertions against the single reference model,
+corpus-completeness checks against every `DELEG-###`/tagged `DOS-###`
+threat-scenario id, and malformed-fixture rejection). Every comparison is
+a deterministic structural assertion — never an LLM/rubric score — and
+the corpus is disjoint from the finding-precision/recall/severity
+metrics above and from ordinary code-review quality fixtures.
+
 ## CI integration
 
 [`ci-integration.md`](ci-integration.md) (#255) wires the existing #250
