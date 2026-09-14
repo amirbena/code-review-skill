@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.39.0 — 2026-09-14
+
+### Added
+
+- github-pr-review now includes a private Reviewer Brief (what changed, focus areas, open questions) in every result; never published to GitHub (#313).
+
 ## v1.38.1 — 2026-09-13
 
 ### Fixed
