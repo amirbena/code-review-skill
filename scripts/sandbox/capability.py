@@ -52,11 +52,19 @@ def docker_client_env() -> dict[str, str]:
 
 
 def _docker_available() -> bool:
-    if shutil.which("docker") is None:
+    # Resolve the absolute path via the real ambient PATH once, and use
+    # that as argv[0] — docker_client_env()'s PATH is a fixed, minimal
+    # value for the *env* docker runs with, not a lookup path guaranteed
+    # to contain wherever this host's docker actually lives (Homebrew on
+    # Apple Silicon, a Linux snap, a nix profile, ...). Using the bare
+    # string "docker" here would let detection succeed via the real PATH
+    # while the actual invocation below (and docker_runner.py's) fails.
+    docker_bin = shutil.which("docker")
+    if docker_bin is None:
         return False
     try:
         result = subprocess.run(
-            ["docker", "info"],
+            [docker_bin, "info"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             env=docker_client_env(),

@@ -52,6 +52,18 @@ class ProbeFunctionTests(unittest.TestCase):
             with mock.patch("subprocess.run", side_effect=OSError("no daemon")):
                 self.assertFalse(capability._docker_available())
 
+    def test_docker_probe_invokes_the_resolved_absolute_path_not_a_bare_command(self) -> None:
+        # A host where docker only resolves via a PATH entry outside
+        # docker_client_env()'s fixed list (Homebrew on Apple Silicon, a
+        # Linux snap, ...) must still be detected: shutil.which() finds
+        # it via the real ambient PATH, and that resolved path — not the
+        # bare string "docker" — must be what actually gets executed.
+        with mock.patch("shutil.which", return_value="/opt/homebrew/bin/docker"):
+            with mock.patch("subprocess.run") as run:
+                run.return_value = mock.Mock(returncode=0)
+                self.assertTrue(capability._docker_available())
+        self.assertEqual(run.call_args.args[0][0], "/opt/homebrew/bin/docker")
+
     def test_docker_probe_uses_the_same_env_as_docker_client_env(self) -> None:
         # Detection and actual execution (docker_runner.run) must agree on
         # environment, or a host can pass detection and then fail to run.

@@ -20,9 +20,26 @@ from scripts.sandbox.workspace import SandboxWorkspace
 DEFAULT_IMAGE = "python:3.12-slim"
 
 
+def _resolve_docker_bin() -> str:
+    """Resolve docker's absolute path once, via the real ambient PATH.
+
+    Every docker invocation in this module uses this resolved path as
+    argv[0] rather than the bare string "docker" — docker_client_env()'s
+    PATH is a fixed, minimal list for the *env* the docker process itself
+    runs with, and must not double as the lookup path for finding docker
+    in the first place. A host where docker lives outside that fixed list
+    (Homebrew on Apple Silicon, a Linux snap, a nix profile, ...) would
+    otherwise pass detection (shutil.which uses the real ambient PATH) and
+    then fail every actual invocation (bare "docker" resolved only against
+    the fixed list) — including _force_remove, silently leaving a
+    container behind.
+    """
+    return shutil.which("docker") or "docker"
+
+
 def _force_remove(container_name: str) -> None:
     subprocess.run(
-        ["docker", "rm", "-f", container_name],
+        [_resolve_docker_bin(), "rm", "-f", container_name],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         env=docker_client_env(),
@@ -39,7 +56,7 @@ def run(
         mounts += ["-v", f"{Path(extra).resolve()}:/ro/{index}:ro"]
 
     limits = request.limits
-    docker_bin = shutil.which("docker") or "docker"
+    docker_bin = _resolve_docker_bin()
     docker_argv = (
         docker_bin,
         "run",
@@ -79,6 +96,10 @@ def run(
             env=docker_client_env(),
             limits=limits,
             growth_watch_dir=str(workspace.work_copy),
+            # The docker CLI client's own CPU/memory/process needs are
+            # unrelated to the sandbox budget; the container's payload is
+            # already bounded above via --memory/--cpus/--pids-limit.
+            apply_resource_limits=False,
         )
     finally:
         _force_remove(container_name)

@@ -81,14 +81,25 @@ def _dir_size_bytes(path: str) -> int:
     return total
 
 
-def _preexec(limits: SandboxLimits) -> None:
+def _preexec(limits: SandboxLimits, apply_resource_limits: bool) -> None:
     # New session/process group so the whole descendant tree can be killed
-    # as a unit; RLIMIT_NPROC is a delta over the current usage so this
-    # never starves unrelated processes already owned by the same user.
+    # as a unit — needed regardless of apply_resource_limits.
     try:
         os.setsid()
     except OSError:
         pass
+    if not apply_resource_limits:
+        # This spawned process is a client/wrapper (e.g. the `docker` CLI),
+        # not the sandboxed payload itself — its own CPU/memory/process
+        # needs are unrelated to the budget, and the payload's containment
+        # is enforced separately (container --memory/--cpus/--pids-limit).
+        # RLIMIT_NPROC in particular is scoped per real UID on Linux/BSD;
+        # applying it here has capped an unrelated Go-runtime client's own
+        # thread creation on a CI host with a low ambient nproc ceiling.
+        return
+    # RLIMIT_NPROC is a delta over the current *ceiling*, not actual usage
+    # (resource.getrlimit reports the limit, not a live count) — this still
+    # never starves unrelated processes already owned by the same user.
     current_nproc = resource.getrlimit(resource.RLIMIT_NPROC)[0]
     budget = current_nproc + limits.max_processes if current_nproc > 0 else limits.max_processes
     for rlimit, value in (
@@ -141,6 +152,7 @@ def run_bounded(
     env: dict[str, str],
     limits: SandboxLimits,
     growth_watch_dir: str | None = None,
+    apply_resource_limits: bool = True,
 ) -> BoundedRunResult:
     start = time.monotonic()
     process = subprocess.Popen(
@@ -150,7 +162,7 @@ def run_bounded(
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        preexec_fn=lambda: _preexec(limits),
+        preexec_fn=lambda: _preexec(limits, apply_resource_limits),
         start_new_session=True,
     )
     known_descendants = {process.pid}

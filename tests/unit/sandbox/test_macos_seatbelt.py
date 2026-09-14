@@ -47,17 +47,22 @@ class BuildProfileTests(unittest.TestCase):
         self.assertLess(deny_all_writes, allow_workspace_write)
 
     def test_denied_read_roots_are_declared_before_system_read_allows(self) -> None:
+        # "/tmp" is the one _ALWAYS_DENIED_READ_ROOTS entry present on
+        # every Unix host build_profile actually runs on (macOS dev
+        # machines and Linux CI alike) — unlike "/Users", which only
+        # exists on macOS and would make this test host-dependent.
         lines = macos_seatbelt.build_profile(self.workspace_root, ()).splitlines()
-        deny_users = _rule_index(lines, '(deny file-read* (subpath "/Users"))')
+        deny_tmp = _rule_index(lines, '(deny file-read* (subpath "/tmp"))')
         allow_usr = _rule_index(lines, '(allow file-read* (subpath "/usr"))')
-        self.assertLess(deny_users, allow_usr)
+        self.assertLess(deny_tmp, allow_usr)
 
     def test_workspace_read_allow_is_declared_after_the_denied_scratch_roots(self) -> None:
         # The ephemeral workspace commonly lives inside a denied scratch
-        # root (e.g. /private/var/folders); its own read-allow must be the
-        # *last* matching rule so it wins despite that.
+        # root ("/tmp" is one such root, present on every host); its own
+        # read-allow must be the *last* matching rule so it wins despite
+        # that.
         lines = macos_seatbelt.build_profile(self.workspace_root, ()).splitlines()
-        deny_scratch = _rule_index(lines, '(deny file-read* (subpath "/private/var/folders"))')
+        deny_scratch = _rule_index(lines, '(deny file-read* (subpath "/tmp"))')
         allow_workspace_read = lines.index(
             f'(allow file-read* (subpath "{self.workspace_root}"))'
         )

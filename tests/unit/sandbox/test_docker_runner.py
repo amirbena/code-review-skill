@@ -115,3 +115,30 @@ class DockerRunnerArgvTests(unittest.TestCase):
             with mock.patch.object(docker_runner, "_force_remove"):
                 docker_runner.run(request, self.workspace)
         self.assertEqual(run_bounded.call_args.kwargs["env"], docker_runner.docker_client_env())
+
+    def test_run_does_not_apply_client_side_resource_limits(self) -> None:
+        # The docker CLI client's own CPU/memory/process needs are
+        # unrelated to the sandbox budget — the container's payload is
+        # already bounded via --memory/--cpus/--pids-limit above.
+        # Applying RLIMIT_NPROC etc. to the client itself is not just
+        # redundant but can break the client on a host with a low ambient
+        # per-uid process ceiling.
+        request = SandboxRequest(argv=("true",), source_dir=self.source, limits=SandboxLimits())
+        with mock.patch.object(docker_runner, "run_bounded", return_value=_bounded()) as run_bounded:
+            with mock.patch.object(docker_runner, "_force_remove"):
+                docker_runner.run(request, self.workspace)
+        self.assertFalse(run_bounded.call_args.kwargs["apply_resource_limits"])
+
+    def test_docker_binary_is_resolved_to_an_absolute_path_not_a_bare_command(self) -> None:
+        # A host where docker only resolves via a PATH entry outside
+        # docker_client_env()'s fixed list must still work: the resolved
+        # absolute path, not the bare string "docker", must be argv[0]
+        # for both the main run and the force-remove teardown.
+        request = SandboxRequest(argv=("true",), source_dir=self.source, limits=SandboxLimits())
+        with mock.patch("shutil.which", return_value="/opt/homebrew/bin/docker"):
+            with mock.patch.object(docker_runner, "run_bounded", return_value=_bounded()) as run_bounded:
+                with mock.patch("subprocess.run") as force_remove_run:
+                    docker_runner.run(request, self.workspace)
+        self.assertEqual(run_bounded.call_args.args[0][0], "/opt/homebrew/bin/docker")
+        force_remove_run.assert_called_once()
+        self.assertEqual(force_remove_run.call_args.args[0][0], "/opt/homebrew/bin/docker")
