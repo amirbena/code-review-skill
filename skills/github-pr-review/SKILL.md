@@ -385,7 +385,7 @@ and the gate in
 This Skill must never: edit implementation files, commit, push
 implementation changes, merge, delete branches, or perform cleanup on
 behalf of the repository owner. Maximum positive action is **Approve**,
-and only under the authorization above.
+and only under the authorization above — in every mode, structurally incapable of `APPLY_PATCH`/`COMMIT`/`PUSH` (canonical: [`mutation-authority.md`](../../shared/policies/mutation-authority.md)).
 
 ## 8. Configuration
 

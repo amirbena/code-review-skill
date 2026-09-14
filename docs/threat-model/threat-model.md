@@ -270,16 +270,30 @@ exist:
   *instruction itself* — it is not a capability gate on what the
   instruction could trigger. The corresponding `AUTH`/`SBOX`/`DELEG`
   scenario is what actually gates the downstream action.
-- **Everything `#301`/`#302`/`#303` themselves own is a genuine,
-  currently-unimplemented gap.** No runtime capability model for
-  `APPLY_PATCH`/`COMMIT`/`PUSH`, no real sandbox isolation (the existing
+- **`#301`'s source/Git mutation capability model is now real and
+  tested.** `shared/policies/mutation-authority.md` defines the
+  read-only-by-default `READ_ONLY` → `PROPOSE_PATCH` →
+  `USER_APPROVES_EXACT_PATCH` → `APPLY_PATCH` → `VERIFY_MUTATION`
+  pipeline, with `COMMIT` and `PUSH` as separate, independently
+  authorized capabilities, a dedicated mutation executor, and
+  digest/base/invocation-bound, single-use, non-transferable,
+  non-inheritable authorization. `tests/reference/review/mutation_authority.py`
+  is the executable reference model and
+  `tests/unit/security/test_mutation_authority.py` proves each
+  `AUTH-001`..`AUTH-016` (excluding `AUTH-014`) denial structurally, over
+  real Git repositories. `AUTH-013`'s spawn-boundary half and its
+  `DELEG-007` counterpart split ownership: `#301` covers non-inheritance
+  of authorization across a spawn boundary; spawn depth, budget, and
+  process isolation stay `#303`'s genuine gap.
+- **`#302`/`#303` themselves still own a genuine, currently-unimplemented
+  gap.** No real sandbox isolation exists yet (the existing
   `shared/policies/runtime-validation.md` reference tests are explicitly
   described by `#302`'s own problem statement as "fake processes/
   repositories" that "do not prove host isolation"), and no agent-spawn
-  budget/delegation model exist in this repository yet. These scenarios
-  are `enforcement_point: COVERAGE_GAP` and `regression_evidence:
-  COVERAGE_GAP` throughout — not because the catalog is incomplete, but
-  because the runtime genuinely does not enforce them yet.
+  budget/delegation model exists in this repository yet. These scenarios
+  stay `enforcement_point: COVERAGE_GAP` and `regression_evidence:
+  COVERAGE_GAP` — not because the catalog is incomplete, but because the
+  runtime genuinely does not enforce them yet.
 
 This distinction — real existing control vs. genuine `#298`-family gap —
 is itself part of what makes the catalog useful: it prevents `#301`/`#302`/

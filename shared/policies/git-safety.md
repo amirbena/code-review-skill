@@ -12,6 +12,13 @@ reviewing. (`github-pr-review` may publish comments/review decisions to
 GitHub — that is a delivery action, not a Git mutation, and is governed by
 that Skill's own `policies/github-review.md`.)
 
+This is enforced structurally, not only stated here:
+[`mutation-authority.md`](mutation-authority.md) defines the
+read-only-by-default capability pipeline (`READ_ONLY` → `PROPOSE_PATCH` →
+`APPLY_PATCH`/`COMMIT`/`PUSH`, each independently authorized) that backs
+this boundary and makes an unauthorized write structurally absent, not
+merely discouraged.
+
 ## Prohibited shortcuts
 
 Destructive Git shortcuts are prohibited, including:

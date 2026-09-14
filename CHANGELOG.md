@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.41.0 — 2026-09-14
+
+### Added
+
+- Add a structural, read-only-by-default mutation-authority capability model (`PROPOSE_PATCH`/`APPLY_PATCH`/`COMMIT`/`PUSH`, each independently and single-use authorized) backing both Skills' existing read-only guarantee (#319).
+
 ## v1.40.0 — 2026-09-14
 
 ### Added
