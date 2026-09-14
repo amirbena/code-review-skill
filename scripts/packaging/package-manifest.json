@@ -17,6 +17,7 @@
     { "source": "shared/policies/repository-instructions.md", "destination": "shared/policies/repository-instructions.md" },
     { "source": "shared/policies/runtime-validation.md", "destination": "shared/policies/runtime-validation.md" },
     { "source": "shared/policies/git-safety.md", "destination": "shared/policies/git-safety.md" },
+    { "source": "shared/policies/mutation-authority.md", "destination": "shared/policies/mutation-authority.md" },
     { "source": "shared/policies/review-ownership.md", "destination": "shared/policies/review-ownership.md" },
     { "source": "shared/policies/file-reviewability.md", "destination": "shared/policies/file-reviewability.md" },
     { "source": "shared/policies/review-context.md", "destination": "shared/policies/review-context.md" },
