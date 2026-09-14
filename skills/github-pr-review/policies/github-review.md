@@ -107,7 +107,10 @@ the scope [`pr-scope.md`](pr-scope.md) establishes;
 review-authority and reviewer-mode resolution have already run; and
 [`parallel-review.md`](parallel-review.md) is an optional execution
 optimisation whose sequential and parallel forms must reach the same
-findings and decision;
+findings and decision, bounded by the `spawn_agent` capability gate in
+[`agent-delegation.md`](../../../shared/policies/agent-delegation.md)
+(absent by default, hard budgets on agent count/depth, read-only workers
+unless separately delegated);
 [`reviewer-brief.md`](reviewer-brief.md) runs only after
 [`review-output.md`](review-output.md) has finalized findings, severity,
 coverage, and verdict — it reads that finalized result and never
@@ -128,7 +131,9 @@ optional context files live in
 [`review-context.md`](../../../shared/policies/review-context.md) and
 [`review-evidence.md`](../../../shared/policies/review-evidence.md), and the
 portable parallel contract in
-[`parallel-review.md`](../../../shared/policies/parallel-review.md);
+[`parallel-review.md`](../../../shared/policies/parallel-review.md) and
+the agent-spawn capability boundary in
+[`agent-delegation.md`](../../../shared/policies/agent-delegation.md);
 `local-code-review` applies the same shared context model.
 
 ## Authoritative PR HEAD

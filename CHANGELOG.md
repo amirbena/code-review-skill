@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.40.0 — 2026-09-14
+
+### Added
+
+- Add the agent-spawn / delegation capability boundary (spawn budgets, depth limits, non-transferable mutation/review-action authorization, confused-deputy protections) (#318).
+
 ## v1.39.0 — 2026-09-14
 
 ### Added
