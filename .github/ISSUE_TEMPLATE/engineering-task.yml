@@ -42,6 +42,7 @@ body:
         - Risk / Large PR
         - GitHub Integration
         - Packaging / Portability
+        - Security / Runtime Boundaries
         - Documentation
         - Instruction Architecture
         - Research
