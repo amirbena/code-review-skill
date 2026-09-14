@@ -396,12 +396,12 @@ finally: remove the temporary checkout (success, any failure, interruption)
 ## Constraints
 
 - No inline comments, Approve, Request Changes, or PR metadata mutation
-  of any kind. Passive review is inherently **recommendation-only** under
+  of any kind. Passive review is inherently **`PASSIVE`** under
   [`../policies/review-action-authorization.md`](../policies/review-action-authorization.md):
   it produces the full finding set and reasoning result and returns them
-  to the caller, and no review-action mode, flag, prompt, authorization,
-  or reviewer-identity claim can turn a passive invocation into a
-  mutating one.
+  to the caller, and no publication mode, flag, prompt, or
+  reviewer-identity claim can turn a passive invocation into a mutating
+  one.
 - A review verdict is not authorization: a clean passive result is a
   reasoning result only, never a GitHub `APPROVE` and never merge
   authority.

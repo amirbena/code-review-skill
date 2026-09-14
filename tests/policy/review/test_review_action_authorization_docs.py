@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Documentation-contract coverage for Issue #101 and its self-review
-follow-up: separating review *analysis* from GitHub *mutation authority*
-in `github-pr-review`, where authorship gates the formal GitHub review
-event but never the analysis or the verdict.
+"""Documentation-contract coverage for Issue #101's self-review boundary
+and Issue #314's single canonical publication mode (PASSIVE | SEMI |
+ACTIVE), in `github-pr-review`.
 
 Pins the canonical policy (`review-action-authorization.md`) and its
 wire-in points (the policy index, `review-authority.md`,
 `review-output.md`, `SKILL.md`, both runbooks, package metadata, and the
 packaging / validation scripts) so a later edit cannot quietly drop the
-security boundary or re-introduce a same-author analysis prohibition.
+security boundary, re-introduce the pre-#314 two-gate model, or re-add a
+same-author analysis prohibition.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ POLICY = GITHUB / "policies" / "review-action-authorization.md"
 INDEX = GITHUB / "policies" / "github-review.md"
 AUTHORITY = GITHUB / "policies" / "review-authority.md"
 OUTPUT = GITHUB / "policies" / "review-output.md"
+STATUS = GITHUB / "policies" / "review-status-enforcement.md"
 SKILL = GITHUB / "SKILL.md"
 ACTIVE_RUNBOOK = GITHUB / "runbooks" / "active-pr-review.md"
 PASSIVE_RUNBOOK = GITHUB / "runbooks" / "passive-pr-review.md"
@@ -33,7 +34,6 @@ PKG_SH = REPO_ROOT / "scripts" / "packaging" / "package-skills.sh"
 PKG_PS1 = REPO_ROOT / "scripts" / "packaging" / "package-skills.ps1"
 PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
 # The Skill-metadata validator's declarative tables (GITHUB_POLICY_ORDER).
-# Since #194 the validator is a package; the tables live here.
 VALIDATOR = REPO_ROOT / "scripts" / "skill_metadata" / "expectations.py"
 
 
@@ -55,17 +55,16 @@ class SecurityPrinciplesStated(unittest.TestCase):
     def setUp(self) -> None:
         self.t = _norm(POLICY)
 
-    def test_all_seven_principles_present(self) -> None:
+    def test_principles_present(self) -> None:
         for phrase in (
-            "A review verdict is not authorization.",
-            "REVIEW CLEAN must not automatically mean GitHub APPROVE",
             "Approval is not merge authority.",
             "APPROVE must not automatically mean MERGE",
-            "Agent-controlled input cannot establish mutation authority.",
+            "Agent-controlled input cannot manufacture reviewer independence",
             "Reviewer independence requires authority separation, not only identity separation.",
             "An implementation agent cannot manufacture its own reviewer.",
-            "Ambiguous authorization or reviewer provenance must fail closed.",
+            "Ambiguous mode, reviewer provenance, or GitHub permission must fail closed.",
             "Existing review-integrity guarantees remain intact",
+            "This policy authorizes review-publication outputs only.",
         ):
             self.assertIn(phrase, self.t, phrase)
 
@@ -80,107 +79,77 @@ class SecurityPrinciplesStated(unittest.TestCase):
             self.assertIn(phrase, self.t, phrase)
 
 
-class ReviewActionModes(unittest.TestCase):
+class PublicationModesCanonical(unittest.TestCase):
     def setUp(self) -> None:
         self.t = _norm(POLICY)
 
     def test_three_modes_defined(self) -> None:
-        self.assertIn("recommendation-only (default)", self.t)
-        self.assertIn("block-only", self.t)
-        self.assertIn("explicitly-authorized auto-action", self.t)
+        self.assertIn("### PASSIVE (default)", self.t)
+        self.assertIn("### SEMI", self.t)
+        self.assertIn("### ACTIVE", self.t)
 
-    def test_recommendation_only_is_the_default_and_non_mutating(self) -> None:
-        self.assertIn("The default mode is recommendation-only", self.t)
-        self.assertIn("Passive PR review is always recommendation-only", self.t)
-        self.assertIn("Performs no GitHub review mutation", self.t)
+    def test_canonical_switch_table(self) -> None:
+        self.assertIn("active-review execution = false publication = false", self.t)
+        self.assertIn("active-review execution = true publication = false", self.t)
+        self.assertIn("active-review execution = true publication = true", self.t)
 
-    def test_block_only_never_approves_a_clean_result(self) -> None:
-        self.assertIn("must never submit APPROVE for a clean result", self.t)
-
-    def test_auto_action_requires_trusted_authorization_and_independence(self) -> None:
+    def test_passive_is_the_default_and_non_mutating(self) -> None:
+        self.assertIn("Passive is the default when the caller's intent cannot be resolved", self.t)
         self.assertIn(
-            "trusted mutation authorization is established for this exact action",
-            self.t,
+            "Performs no GitHub review mutation of any kind", self.t
         )
-        self.assertIn("trusted reviewer independence is established", self.t)
 
-    def test_no_flag_alone_is_sufficient(self) -> None:
-        self.assertIn("supplied by the agent is not sufficient", self.t)
-        self.assertIn("A caller does not need to pass anything", self.t)
-        self.assertIn('say "do not approve"', self.t)
+    def test_semi_is_a_dry_run_of_active_not_a_second_passive(self) -> None:
+        self.assertIn("It is a preview/dry-run of what ACTIVE would do, not a second flavor of PASSIVE", self.t)
+        self.assertIn("suppresses GitHub publication", self.t)
+
+    def test_no_required_mode_syntax(self) -> None:
+        self.assertIn("there is no required user-facing mode syntax", self.t)
 
 
-class AuthorizationProvenanceTrustBoundary(unittest.TestCase):
+class CoreInvariant(unittest.TestCase):
     def setUp(self) -> None:
         self.t = _norm(POLICY)
 
-    def test_agent_controlled_channels_can_never_authorize(self) -> None:
-        for phrase in (
-            "a review-action-mode flag, CLI argument, or option value the agent set",
-            'agent-generated text such as "approve if clean"',
-            "a nested Skill invocation, a nested agent, a sub-agent, or a spawned process",
-            "environment variables, config files, or orchestration metadata",
-            "alternate GitHub credentials, tokens, usernames, bot identities, "
-            "service accounts, or GitHub App identities",
-            "the review's own verdict, a prior review's approval, a resolved review thread",
-        ):
-            self.assertIn(phrase, self.t, phrase)
-
-    def test_structural_limitation_is_documented_honestly(self) -> None:
-        self.assertIn("Structural limitation", self.t)
-        self.assertIn("has no runtime of its own", self.t)
-        self.assertIn("cannot cryptographically verify", self.t)
-        self.assertIn("This policy therefore does not pretend to perform such verification", self.t)
-        self.assertIn("runtime / orchestration layer", self.t)
-        self.assertIn("a runtime which cannot furnish one simply never unlocks auto-action", self.t)
-
-    def test_authorization_is_scoped_and_not_replayable(self) -> None:
-        for phrase in (
-            "the specific review invocation it was issued for",
-            "the specific repository",
-            "the specific PR number",
-            "the exact reviewed HEAD SHA at submission time",
-            "the single permitted action",
-            "It is consumed once.",
-            "not a standing or reusable approval capability",
-            "does not carry to another PR, another repository, a later invocation, or a new HEAD",
-        ):
-            self.assertIn(phrase, self.t, phrase)
-
-
-class ReviewerIndependenceIsAuthoritySeparation(unittest.TestCase):
-    def setUp(self) -> None:
-        self.t = _norm(POLICY)
-
-    def test_identity_difference_is_necessary_but_not_sufficient(self) -> None:
-        self.assertIn("necessary but not sufficient", self.t)
+    def test_core_invariant_header_and_statement(self) -> None:
         self.assertIn(
-            "A different identity under the same controlling authority is the "
-            "same reviewer",
+            "## Core invariant: an explicit ACTIVE request is its own authorization",
+            self.t,
+        )
+        self.assertIn(
+            "that request is, by itself, sufficient authorization to publish the review's own outcome",
+            self.t,
+        )
+        self.assertIn(
+            "No second activation phrase, approval prompt, out-of-band confirmation",
             self.t,
         )
 
-    def test_manufactured_reviewer_vectors_enumerated(self) -> None:
+    def test_active_clean_and_blocking_examples(self) -> None:
+        self.assertIn("ACTIVE + REVIEW CLEAN", self.t)
+        self.assertIn("APPROVE is submitted.", self.t)
+        self.assertIn("ACTIVE + unresolved blocking findings", self.t)
+        self.assertIn("REQUEST_CHANGES is submitted.", self.t)
+
+    def test_invariant_does_not_bypass_existing_guarantees(self) -> None:
         for phrase in (
-            "switching to another GitHub account the agent controls",
-            "selecting or presenting another token or credential",
-            "using a bot account, a service account, or a CI identity",
-            "using a GitHub App identity the agent can act as",
-            "invoking a nested agent, sub-agent, or \"reviewer\" role the agent spawns",
-            "spawning another process under the same controlling authority",
-            "forwarding the review task, with instructions, to another agent",
+            "the self-review boundary above (absolute",
+            "trusted reviewer independence",
+            "GitHub review/event permission",
+            "HEAD revalidation",
+            "the mechanical severity",
+            "the authority boundary (below): publication authority never expands",
         ):
             self.assertIn(phrase, self.t, phrase)
 
-    def test_self_review_is_a_mutation_boundary_not_an_analysis_block(self) -> None:
+    def test_anti_regression_guard_section(self) -> None:
+        self.assertIn("### Anti-regression guard", self.t)
+        self.assertIn("REVIEW CLEAN decision = APPROVE mutation = WITHHELD because activation missing", self.t)
         self.assertIn(
-            "Failing it means the invocation is a self-review: analysis still "
-            "runs, and the formal event is withheld",
+            "the mutation is SUBMITTED (APPROVE) — never WITHHELD for a missing second activation signal",
             self.t,
         )
-
-    def test_ambiguous_reviewer_provenance_fails_closed(self) -> None:
-        self.assertIn("treat it as not independent and fail closed", self.t)
+        self.assertIn("ActiveRequestIsSufficientAuthorization", self.t)
 
 
 class SelfReviewIsAllowedSelfApprovalIsNot(unittest.TestCase):
@@ -204,9 +173,8 @@ class SelfReviewIsAllowedSelfApprovalIsNot(unittest.TestCase):
         self.assertIn("APPROVE on one's own work is always forbidden", self.t)
         self.assertIn("absolute for a self-review", self.t)
         self.assertIn(
-            "no review-action mode, natural-language request, flag, prompt, or "
-            "trusted external authorization can make a self-review submit a "
-            "formal event",
+            "no publication mode, natural-language request, flag, prompt, or trusted external "
+            "authorization can make a self-review submit a formal event",
             self.t,
         )
 
@@ -217,17 +185,12 @@ class SelfReviewIsAllowedSelfApprovalIsNot(unittest.TestCase):
         )
 
     def test_self_review_outcome_points_at_the_canonical_worked_example(self) -> None:
-        # #239: the full clean/blocking worked example is owned once, by
-        # review-authority.md — this policy points at it instead of
-        # independently restating it.
         self.assertIn("review-authority.md", self.t)
         self.assertIn("Self-review capability", self.t)
         self.assertIn("canonical owner of the worked", self.t)
         self.assertIn("REVIEW CLEAN / CHANGES REQUIRED", self.t)
 
     def test_self_review_may_publish_informational_comment_not_a_decision(self) -> None:
-        # Substance lives in the canonical owner (review-authority.md), not
-        # duplicated here — see test above and WiredIntoReviewAuthority.
         t = _norm(AUTHORITY)
         self.assertIn("publish its result to GitHub as an informational review COMMENT", t)
         self.assertIn("does not submit a formal review decision", t)
@@ -241,31 +204,86 @@ class SelfReviewIsAllowedSelfApprovalIsNot(unittest.TestCase):
         )
 
 
-class NaturalLanguageIntentSection(unittest.TestCase):
+class SafeDefaultAndFailClosed(unittest.TestCase):
+    def setUp(self) -> None:
+        self.t = _norm(POLICY)
+
+    def test_default_is_passive(self) -> None:
+        self.assertIn("The default mode is PASSIVE", self.t)
+        self.assertIn('A caller does not need to pass anything, or say "do not approve"', self.t)
+
+    def test_ambiguity_fails_closed(self) -> None:
+        self.assertIn("Ambiguity fails closed.", self.t)
+
+
+class TrustedReviewerIndependence(unittest.TestCase):
+    def setUp(self) -> None:
+        self.t = _norm(POLICY)
+
+    def test_identity_difference_is_necessary_but_not_sufficient(self) -> None:
+        self.assertIn("necessary but not sufficient", self.t)
+        self.assertIn(
+            "A different identity under the same controlling authority is the same reviewer",
+            self.t,
+        )
+
+    def test_manufactured_reviewer_vectors_enumerated(self) -> None:
+        for phrase in (
+            "switching to another GitHub account the agent controls",
+            "selecting or presenting another token or credential",
+            "using a bot account, a service account, or a CI identity",
+            "using a GitHub App identity the agent can act as",
+            "invoking a nested agent, sub-agent, or \"reviewer\" role the agent spawns",
+            "spawning another process under the same controlling authority",
+            "forwarding the review task, with instructions, to another agent",
+        ):
+            self.assertIn(phrase, self.t, phrase)
+
+    def test_ambiguous_reviewer_provenance_fails_closed(self) -> None:
+        self.assertIn("treat it as not independent and fail closed", self.t)
+
+
+class NaturalLanguagePublicationIntent(unittest.TestCase):
     def setUp(self) -> None:
         self.t = _norm(POLICY)
 
     def test_section_exists(self) -> None:
-        self.assertIn("Natural-language review-action intent", self.t)
+        self.assertIn("Natural-language publication intent", self.t)
 
-    def test_no_required_mode_syntax(self) -> None:
+    def test_active_is_effective_not_a_candidate(self) -> None:
         self.assertIn(
-            "there is no required user-facing mode syntax", _norm(POLICY)
-        )
-        self.assertIn(
-            "The Skill normalizes that intent to an internal mode", self.t
-        )
-        self.assertIn("it never requires the user to name a mode or pass a flag", self.t)
-
-    def test_intent_is_not_authorization(self) -> None:
-        self.assertIn("it is not\ntrusted mutation authorization".replace("\n", " "), self.t)
-        self.assertIn(
-            "does not by itself permit the mutation — the\nprovenance gate".replace(
-                "\n", " "
-            ),
+            "it is not merely a *candidate* awaiting a second",
             self.t,
         )
-        self.assertIn("a self-review submits none regardless", self.t)
+
+
+class AuthorityBoundarySection(unittest.TestCase):
+    def setUp(self) -> None:
+        self.t = _norm(POLICY)
+
+    def test_section_exists_and_scopes_to_publication_outputs(self) -> None:
+        self.assertIn("## Authority boundary", self.t)
+        self.assertIn("review-publication outputs only", self.t)
+
+    def test_enumerates_prohibited_capabilities(self) -> None:
+        for phrase in (
+            "file modification or patch application",
+            "commit` or `push".replace("`", ""),
+            "merge",
+            "repository settings changes",
+            "mutation of an issue, or of a PR other than the one under review",
+            "spawning another agent",
+        ):
+            self.assertIn(phrase, self.t, phrase)
+
+    def test_references_298_301_without_re_deriving(self) -> None:
+        self.assertIn("298", self.t)
+        self.assertIn("301", self.t)
+        self.assertIn("this policy references rather than re-derives", self.t)
+
+    def test_never_advances_past_propose_patch(self) -> None:
+        self.assertIn("never advances past READ_ONLY / PROPOSE_PATCH for source code", self.t)
+        self.assertIn("never applies a patch, commits, or pushes", self.t)
 
 
 class MergeBoundaryUnchanged(unittest.TestCase):
@@ -273,8 +291,7 @@ class MergeBoundaryUnchanged(unittest.TestCase):
         t = _norm(POLICY)
         self.assertIn("This Skill never merges, and this policy adds no merge capability", t)
         self.assertIn(
-            "Merge authority is never inferred from a clean verdict, from "
-            "holding APPROVE authorization, or from having submitted APPROVE",
+            "Merge authority is never inferred from a clean verdict or from having submitted APPROVE",
             t,
         )
 
@@ -288,10 +305,43 @@ class ComposesWithExistingGates(unittest.TestCase):
     def test_reporting_separates_verdict_from_mutation(self) -> None:
         t = _norm(POLICY)
         self.assertIn("Report the review verdict and the mutation outcome", t)
-        self.assertIn("Action mode:", t)
+        self.assertIn("Publication mode:", t)
         self.assertIn("Mutation:", t)
         self.assertIn("WITHHELD", t)
         self.assertIn('It is never rendered as "approved."', t)
+
+
+class MigrationSection(unittest.TestCase):
+    def setUp(self) -> None:
+        self.t = _norm(POLICY)
+
+    def test_section_exists(self) -> None:
+        self.assertIn("## Migration from the pre-#314 model", self.t)
+
+    def test_recommendation_only_mapping(self) -> None:
+        self.assertIn("recommendation-only", self.t)
+        self.assertIn("is now simply PASSIVE", self.t)
+
+    def test_block_only_removed_and_explained(self) -> None:
+        self.assertIn("block-only is removed as a mode", self.t)
+        self.assertIn(
+            "there is no longer a scenario where REQUEST_CHANGES is authorized but APPROVE is not",
+            self.t,
+        )
+
+    def test_trusted_mutation_authorization_removed(self) -> None:
+        self.assertIn(
+            "Trusted mutation authorization",
+            self.t,
+        )
+        self.assertIn("is removed from the normal publication path", self.t)
+
+    def test_auto_action_mapping(self) -> None:
+        self.assertIn("explicitly-authorized auto-action", self.t)
+        self.assertIn("is now simply ACTIVE", self.t)
+
+    def test_semi_is_new(self) -> None:
+        self.assertIn("SEMI is new", self.t)
 
 
 class WiredIntoPolicyIndex(unittest.TestCase):
@@ -309,6 +359,11 @@ class WiredIntoPolicyIndex(unittest.TestCase):
         self.assertIn("its gate is enforced at submission time in", t)
         self.assertIn("Review-action authorization gate", t)
 
+    def test_index_reflects_the_new_model(self) -> None:
+        t = _norm(INDEX)
+        self.assertIn("PASSIVE|SEMI| ACTIVE".replace(" ", ""), t.replace(" ", ""))
+        self.assertIn("its own authorization", t)
+
 
 class WiredIntoReviewAuthority(unittest.TestCase):
     def setUp(self) -> None:
@@ -318,8 +373,7 @@ class WiredIntoReviewAuthority(unittest.TestCase):
     def test_authority_separation_subsection_present(self) -> None:
         self.assertIn("### Authority separation, not just identity separation", self.raw)
         self.assertIn(
-            "does not, on its own, prove the reviewer is independent of the "
-            "change's author",
+            "does not, on its own, prove the reviewer is independent of the change's author",
             self.t,
         )
         self.assertIn("none of these manufacture an independent reviewer", self.t)
@@ -339,7 +393,6 @@ class WiredIntoReviewAuthority(unittest.TestCase):
             "skipped, only the formal GitHub event is",
             self.t,
         )
-        # The old hard-stop output block must be gone.
         self.assertNotIn("Self-review is intentionally not performed.", self.raw)
 
     def test_capability_matrix_self_review_row_allows_analysis(self) -> None:
@@ -363,14 +416,18 @@ class WiredIntoReviewOutput(unittest.TestCase):
         raw = OUTPUT.read_text(encoding="utf-8")
         self.assertIn("### Review-action authorization gate", raw)
         t = _norm(OUTPUT)
-        self.assertIn("The default is recommendation-only", t)
+        self.assertIn("The default is PASSIVE", t)
         self.assertIn(
-            "APPROVE is submitted only in explicitly-authorized auto-action mode",
+            "An explicit ACTIVE request is its own authorization.",
             t,
         )
-        self.assertIn("Ambiguity in mode, authorization provenance", t)
-        self.assertIn("fails closed", t)
-        self.assertIn("Mutation: SUBMITTED (<event>) | WITHHELD (<reason>) | NOT REQUESTED", t)
+        self.assertIn("Ambiguity in mode or reviewer provenance fails closed", t)
+        self.assertIn("Publication mode:", t)
+        self.assertIn("PASSIVE | SEMI | ACTIVE", t)
+        self.assertIn(
+            "Mutation: SUBMITTED (<event>) | WOULD PUBLISH (<event>) | WITHHELD (<reason>) | NOT REQUESTED",
+            t,
+        )
 
     def test_decision_derivation_still_described_as_mechanical_and_unchanged(self) -> None:
         t = _norm(OUTPUT)
@@ -381,8 +438,8 @@ class WiredIntoReviewOutput(unittest.TestCase):
         t = _norm(OUTPUT)
         self.assertIn("Self-review is absolute.", t)
         self.assertIn(
-            "no formal APPROVE / REQUEST_CHANGES event is submitted, regardless "
-            "of mode, natural-language request, or any authorization",
+            "no formal APPROVE / REQUEST_CHANGES event is submitted, regardless of publication mode "
+            "or natural-language request",
             t,
         )
         self.assertIn("REVIEW CLEAN — GitHub review mutation withheld: reviewer is the PR", t)
@@ -406,6 +463,26 @@ class WiredIntoReviewOutput(unittest.TestCase):
             t,
         )
 
+    def test_no_stale_two_gate_language(self) -> None:
+        t = _norm(OUTPUT)
+        for stale in (
+            "recommendation-only",
+            "block-only",
+            "explicitly-authorized auto-action",
+            "trusted mutation authorization",
+        ):
+            self.assertNotIn(stale, t, stale)
+
+
+class WiredIntoReviewStatusEnforcement(unittest.TestCase):
+    def test_success_status_derives_from_active_mode(self) -> None:
+        t = _norm(STATUS)
+        self.assertIn("ACTIVE publication mode", t)
+        self.assertIn("single canonical publication switch", t)
+        for stale in ("explicitly-authorized auto-action", "trusted mutation authorization",
+                      "trusted positive authorization", "trusted authorization"):
+            self.assertNotIn(stale, t, stale)
+
 
 class WiredIntoSkillMd(unittest.TestCase):
     def setUp(self) -> None:
@@ -415,9 +492,8 @@ class WiredIntoSkillMd(unittest.TestCase):
     def test_section_covers_review_action_authority(self) -> None:
         self.assertIn("## 7. Review Action Authority and Mutation Boundary", self.raw)
         self.assertIn("Review analysis is separate from GitHub mutation authority", self.t)
-        self.assertIn("A review verdict is not authorization.", self.t)
-        self.assertIn("The default is non-mutating (recommendation-only).", self.t)
-        self.assertIn("APPROVE is submitted only in explicitly-authorized auto-action mode", self.t)
+        self.assertIn("The default is non-mutating (PASSIVE).", self.t)
+        self.assertIn("An explicit ACTIVE request is its own authorization", self.t)
 
     def test_existing_mutation_boundary_language_preserved(self) -> None:
         self.assertIn("must never: edit implementation files", self.t)
@@ -427,19 +503,15 @@ class WiredIntoSkillMd(unittest.TestCase):
     def test_policy_loading_lists_the_new_policy(self) -> None:
         self.assertIn("review-action-authorization.md", self.raw)
 
-    def test_head_safety_binds_authorization_to_reviewed_head(self) -> None:
-        self.assertIn(
-            "Any trusted mutation authorization is bound to the exact reviewed HEAD",
-            self.t,
-        )
+    def test_authority_boundary_bullet_present(self) -> None:
+        self.assertIn("Authority boundary.", self.t)
+        self.assertIn("review-publication outputs only", self.t)
 
-    def test_description_reflects_the_separation(self) -> None:
-        self.assertIn("Review analysis is separate from GitHub mutation authority", self.t)
-        self.assertIn("the default is a non-mutating recommendation", self.t)
+    def test_description_reflects_the_new_model(self) -> None:
+        self.assertIn("three publication modes", self.t)
+        self.assertIn("no second activation phrase is required", self.t)
 
     def test_skill_is_selectable_for_own_prs(self) -> None:
-        # The old exclusion ("Not applicable, and must not be selected, for
-        # a PR ... the local user or calling Agent authored") is gone.
         self.assertNotIn("must not be selected, for a PR or code the local", self.t)
         self.assertIn("Self-review is allowed", self.t)
         self.assertIn(
@@ -460,16 +532,19 @@ class WiredIntoSkillMd(unittest.TestCase):
         self.assertIn("Natural language, not syntax.", self.t)
         self.assertIn("There is no required mode flag or keyword", self.t)
 
+    def test_no_stale_two_gate_language(self) -> None:
+        for stale in ("recommendation-only", "block-only", "explicitly-authorized auto-action"):
+            self.assertNotIn(stale, self.t, stale)
+
 
 class WiredIntoRunbooks(unittest.TestCase):
     def test_active_runbook_resolves_mode_and_gates_submission(self) -> None:
         raw = ACTIVE_RUNBOOK.read_text(encoding="utf-8")
         t = _norm(ACTIVE_RUNBOOK)
-        self.assertIn("Resolve the review-action mode and mutation authorization", t)
+        self.assertIn("Resolve the publication mode", t)
         self.assertIn("Apply the review-action authorization gate", t)
-        # ordering: capability -> resolve mode -> ... -> gate -> submit
         self.assertLess(
-            raw.index("resolve review-action mode + mutation authorization"),
+            raw.index("resolve publication mode: PASSIVE | SEMI | ACTIVE"),
             raw.index("apply the review-action authorization gate"),
         )
         self.assertLess(
@@ -477,11 +552,10 @@ class WiredIntoRunbooks(unittest.TestCase):
             raw.index("submit permitted Approve/Request Changes"),
         )
 
-    def test_passive_runbook_is_inherently_recommendation_only(self) -> None:
+    def test_passive_runbook_is_inherently_passive(self) -> None:
         t = _norm(PASSIVE_RUNBOOK)
-        self.assertIn("Passive review is inherently recommendation-only", t)
-        self.assertIn("no review-action mode, flag, prompt, authorization", t)
-        self.assertIn("A review verdict is not authorization", t)
+        self.assertIn("Passive review is inherently PASSIVE", t)
+        self.assertIn("no publication mode, flag, prompt", t)
 
     def test_active_runbook_does_not_stop_analysis_for_self_review(self) -> None:
         raw = ACTIVE_RUNBOOK.read_text(encoding="utf-8")
@@ -491,8 +565,6 @@ class WiredIntoRunbooks(unittest.TestCase):
         self.assertIn("this invocation is a self-review", t)
         self.assertIn("formal_review_mutation_allowed = false and continue", t)
         self.assertIn("There is no REVIEW SKIPPED; analysis is not skipped", t)
-        # Step 14 has an explicit self-review branch: no formal decision,
-        # informational COMMENT only.
         self.assertIn("If step 1 resolved this as a self-review", t)
         self.assertIn("the mutation boundary set there stands", t)
         self.assertIn(
@@ -509,18 +581,25 @@ class WiredIntoRunbooks(unittest.TestCase):
         self.assertIn("proceed with the full analysis", t)
         self.assertIn("There is no REVIEW SKIPPED; analysis is not skipped", t)
 
+    def test_no_stale_two_gate_language_in_runbooks(self) -> None:
+        for path in (ACTIVE_RUNBOOK, PASSIVE_RUNBOOK):
+            t = _norm(path)
+            for stale in ("recommendation-only", "block-only", "explicitly-authorized auto-action"):
+                self.assertNotIn(stale, t, f"{path}: {stale}")
+
 
 class WiredIntoMetadataAndTemplate(unittest.TestCase):
     def test_metadata_declares_default_mode_and_capability(self) -> None:
         raw = METADATA.read_text(encoding="utf-8")
-        self.assertIn("default_review_action_mode: recommendation-only", raw)
+        self.assertIn("default_publication_mode: passive", raw)
         self.assertIn("review_action_authorization:", raw)
         self.assertIn("can_merge: false", raw)
         self.assertIn("can_approve: conditional", raw)
+        self.assertIn("- semi-pr", raw)
 
     def test_summary_template_reports_mode_and_mutation_separately(self) -> None:
         raw = SUMMARY_TEMPLATE.read_text(encoding="utf-8")
-        self.assertIn("action_mode:", raw)
+        self.assertIn("publication_mode:", raw)
         self.assertIn("mutation:", raw)
         self.assertIn("Review-action authority.", raw)
 
@@ -545,6 +624,15 @@ class WiredIntoScripts(unittest.TestCase):
             order_block.index('"review-action-authorization.md"'),
             order_block.index('"reviewer-delta-review.md"'),
         )
+
+    def test_validator_markers_reflect_the_new_model(self) -> None:
+        raw = VALIDATOR.read_text(encoding="utf-8")
+        self.assertIn('"### PASSIVE (default)"', raw)
+        self.assertIn('"### SEMI"', raw)
+        self.assertIn('"### ACTIVE"', raw)
+        self.assertNotIn('"### recommendation-only (default)"', raw)
+        self.assertNotIn('"### block-only"', raw)
+        self.assertNotIn('"### explicitly-authorized auto-action"', raw)
 
 
 if __name__ == "__main__":

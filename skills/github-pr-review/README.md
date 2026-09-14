@@ -2,10 +2,13 @@
 
 Review an existing GitHub Pull Request the way a strong senior reviewer
 would: repository-aware reasoning, evidence-backed `P0` / `P1` / `P2`
-findings, and one clear verdict. **Passively** it returns a report;
-**actively**, with authenticated GitHub access, it publishes inline
-comments and one consolidated review, and — only under independently
-trusted authorization — submits Approve / Request Changes.
+findings, and one clear verdict. **Passively** (`PASSIVE`) it returns a
+report; as a non-mutating preview (`SEMI`) it runs the same decision and
+reports what would publish; **actively** (`ACTIVE`), with authenticated
+GitHub access, it publishes inline comments and one consolidated review
+and submits Approve / Request Changes — an explicit `ACTIVE` request is
+itself sufficient authorization, subject to genuine reviewer independence
+and GitHub permission.
 
 For local changes that aren't a PR yet, use the sibling
 [`local-code-review`](../local-code-review/SKILL.md) Skill.
@@ -28,10 +31,13 @@ Plain language; the phrasing you use also sets how far it may go:
 
 ```text
 review PR https://github.com/acme/app/pull/812
-just review PR #812 and tell me what you find        → report only
-review #812; block it if there are serious issues     → may Request Changes
-review #812 and approve it if it's clean              → Approve only if
-                                                        independently authorized
+just review PR #812 and tell me what you find              → PASSIVE: report only
+review #812; tell me what would happen, don't touch GitHub → SEMI: would-publish preview,
+                                                               no GitHub mutation
+review #812 and approve it if it's clean                   → ACTIVE: publishes Approve or
+                                                               Request Changes
+review #812; block it, but don't approve it                → ACTIVE, Approve suppressed:
+                                                               publishes Request Changes only
 ```
 
 Optional add-ons, each with a usage guide under `docs/features/`:
@@ -81,11 +87,11 @@ structurally excluded from GitHub publication.
 
 | Rule | Short version |
 | --- | --- |
-| **Analysis ≠ mutation authority** | The verdict always exists; submitting it to GitHub is a separate, authorized step. Default: `recommendation-only`, no GitHub mutation. |
+| **Analysis ≠ mutation authority** | The verdict always exists; submitting it to GitHub is governed by one publication mode. Default: `PASSIVE`, no GitHub mutation. |
 | **Self-review ≠ self-approval** | Analysis always runs; no formal event on your own work; an informational `COMMENT` instead. A shared controlling authority (alternate account, token, bot, GitHub App, nested agent) counts as self-review. |
 | **Independence is authority, not username** | A different login under the author's controlling authority is the same reviewer. |
-| **Trusted authorization** | `APPROVE` / a `success` status needs a signal from a principal independent of the reviewing agent, scoped to this PR + HEAD + action. A flag, prompt, or "approve if clean" text never counts; ambiguity fails closed. |
-| **HEAD safety** | The reviewed HEAD is revalidated before the decision; a stale HEAD is never approved; authorization is bound to the exact HEAD. |
+| **ACTIVE is its own authorization** | An explicit `ACTIVE` request is, by itself, sufficient to publish `APPROVE` / a `success` status — no second signal needed — but it still requires reviewer independence and GitHub event permission; ambiguity fails closed. |
+| **HEAD safety** | The reviewed HEAD is revalidated before the decision; a stale HEAD is never approved. |
 | **Severity → verdict** | `P0`/`P1` block; `P2` never does; derived mechanically. |
 | **One owner per scope** | Another Code Review Agent already on this PR ⇒ `REVIEW ALREADY OWNED`. |
 | **Never merges** | Maximum positive action is **Approve** / an optional exact-HEAD machine-readable `success` status; branch protection is untouched except one opt-in required-check setup. |

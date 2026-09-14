@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Regression coverage for the exact-HEAD machine-readable review status
-(Issue #34).
+(Issue #34), updated for issue #314's single canonical publication mode.
 
 Mirrors skills/github-pr-review/policies/review-status-enforcement.md.
 
@@ -8,8 +8,9 @@ Core invariants under test:
 
 * a status belongs only to its reviewed SHA — SHA A never satisfies SHA B;
 * no false green — only a complete, current-HEAD `REVIEW CLEAN` can
-  publish `success`, and only with the same trusted authorization +
-  reviewer independence a native APPROVE needs;
+  publish `success`, and only with the same ACTIVE publication mode +
+  reviewer independence a native APPROVE needs (issue #314: one canonical
+  switch, not a separate authorization channel);
 * a self-review may publish a blocking status but never a `success` one;
 * enforcement detection reads rulesets *and* classic branch protection;
 * required-check setup is explicit, minimal, preserving, and idempotent;
@@ -33,22 +34,6 @@ HEAD = "sha_a0000"
 HEAD_B = "sha_b1111"
 
 
-def _auth(
-    provenance: raa.Provenance,
-    *,
-    repo: str = REPO,
-    pr: int = PR,
-    head: str = HEAD,
-    action: raa.GitHubEvent = raa.GitHubEvent.APPROVE,
-) -> raa.MutationAuthorization:
-    return raa.MutationAuthorization(
-        provenance=provenance,
-        scope=raa.AuthorizationScope(
-            repo=repo, pr_number=pr, head_sha=head, action=action
-        ),
-    )
-
-
 def _pub_input(**kw) -> rse.StatusPublicationInput:
     base = dict(
         reasoning=rse.Reasoning.CLEAN,
@@ -63,8 +48,7 @@ def _pub_input(**kw) -> rse.StatusPublicationInput:
 
 def _authorized_independent(**kw) -> rse.StatusPublicationInput:
     return _pub_input(
-        requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-        authorization=_auth(raa.Provenance.INDEPENDENT_TRUSTED),
+        requested_mode=raa.PublicationMode.ACTIVE,
         reviewer_independence=raa.ReviewerIndependence.INDEPENDENT,
         **kw,
     )
@@ -105,41 +89,41 @@ class VerdictMapping(unittest.TestCase):
         self.assertFalse(out.published)
 
 
-class CleanSuccessNeedsPositiveAuthorization(unittest.TestCase):
+class CleanSuccessNeedsActiveModeAndIndependence(unittest.TestCase):
     """Scenario 1."""
 
-    def test_clean_publishes_success_only_with_trusted_auth_and_independence(self) -> None:
+    def test_clean_publishes_success_only_with_active_mode_and_independence(self) -> None:
         out = rse.resolve_status_publication(_authorized_independent())
         self.assertTrue(out.published)
         self.assertEqual(out.published_state, rse.StatusState.SUCCESS)
         self.assertEqual(out.target_sha, HEAD)
 
-    def test_clean_without_authorization_withholds_success(self) -> None:
+    def test_clean_without_active_mode_withholds_success(self) -> None:
         out = rse.resolve_status_publication(_pub_input())
         self.assertFalse(out.published)
         self.assertNotEqual(out.published_state, rse.StatusState.SUCCESS)
 
-    def test_clean_independent_but_not_auto_action_withholds_success(self) -> None:
+    def test_clean_independent_but_not_active_withholds_success(self) -> None:
         out = rse.resolve_status_publication(
             _pub_input(reviewer_independence=raa.ReviewerIndependence.INDEPENDENT)
         )
         self.assertFalse(out.published)
 
-    def test_clean_auto_action_but_ambiguous_independence_fails_closed(self) -> None:
+    def test_clean_active_but_ambiguous_independence_fails_closed(self) -> None:
         out = rse.resolve_status_publication(
             _pub_input(
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(raa.Provenance.INDEPENDENT_TRUSTED),
+                requested_mode=raa.PublicationMode.ACTIVE,
                 reviewer_independence=raa.ReviewerIndependence.AMBIGUOUS,
             )
         )
         self.assertFalse(out.published)
 
-    def test_agent_controlled_authorization_never_publishes_success(self) -> None:
+    def test_semi_mode_never_publishes_success(self) -> None:
+        # SEMI runs the same decision path as ACTIVE but never publishes
+        # anything to GitHub — including the machine-readable status.
         out = rse.resolve_status_publication(
             _pub_input(
-                requested_mode=raa.ActionMode.EXPLICITLY_AUTHORIZED_AUTO_ACTION,
-                authorization=_auth(raa.Provenance.AGENT_CONTROLLED),
+                requested_mode=raa.PublicationMode.SEMI,
                 reviewer_independence=raa.ReviewerIndependence.INDEPENDENT,
             )
         )
@@ -200,28 +184,26 @@ class SelfReview(unittest.TestCase):
             self.assertIn("self-review", out.withheld_reason)
 
     def test_self_review_success_forbidden_across_the_whole_input_space(self) -> None:
-        for rmode in raa.ActionMode:
-            for prov in raa.Provenance:
-                for indep in raa.ReviewerIndependence:
-                    for kw in (
-                        {"self_review": True},
-                        {"same_controlling_authority_as_author": True},
-                    ):
-                        out = rse.resolve_status_publication(
-                            _pub_input(
-                                reasoning=rse.Reasoning.CLEAN,
-                                requested_mode=rmode,
-                                authorization=_auth(prov),
-                                reviewer_independence=indep,
-                                **kw,
-                            )
+        for rmode in raa.PublicationMode:
+            for indep in raa.ReviewerIndependence:
+                for kw in (
+                    {"self_review": True},
+                    {"same_controlling_authority_as_author": True},
+                ):
+                    out = rse.resolve_status_publication(
+                        _pub_input(
+                            reasoning=rse.Reasoning.CLEAN,
+                            requested_mode=rmode,
+                            reviewer_independence=indep,
+                            **kw,
                         )
-                        self.assertNotEqual(
-                            out.published_state, rse.StatusState.SUCCESS
-                        )
-                        self.assertFalse(
-                            out.published and out.published_state is rse.StatusState.SUCCESS
-                        )
+                    )
+                    self.assertNotEqual(
+                        out.published_state, rse.StatusState.SUCCESS
+                    )
+                    self.assertFalse(
+                        out.published and out.published_state is rse.StatusState.SUCCESS
+                    )
 
 
 class IncompleteNeverGreen(unittest.TestCase):
@@ -335,10 +317,7 @@ class RequiredCheckSetup(unittest.TestCase):
     def _plan(self, current, **kw) -> rse.SetupPlan:
         base = dict(
             explicit_request=True,
-            authorization=_auth(raa.Provenance.INDEPENDENT_TRUSTED),
-            repo=REPO,
-            pr_number=PR,
-            head_sha=HEAD,
+            requested_mode=raa.PublicationMode.ACTIVE,
             reviewer_independence=raa.ReviewerIndependence.INDEPENDENT,
         )
         base.update(kw)
@@ -366,9 +345,9 @@ class RequiredCheckSetup(unittest.TestCase):
         self.assertTrue(plan.noop)
         self.assertFalse(plan.apply)
 
-    def test_setup_requires_trusted_authorization(self) -> None:
+    def test_setup_requires_active_publication_mode(self) -> None:
         plan = self._plan(
-            self._current(), authorization=_auth(raa.Provenance.AGENT_CONTROLLED)
+            self._current(), requested_mode=raa.PublicationMode.SEMI
         )
         self.assertFalse(plan.apply)
 

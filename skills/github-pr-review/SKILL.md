@@ -1,17 +1,19 @@
 ---
 name: github-pr-review
 description: >-
-  Reviews an existing GitHub Pull Request — passively as a report, or,
-  with authenticated GitHub access, actively by publishing inline PR
-  review comments and one consolidated final summary. Review analysis is
-  separate from GitHub mutation authority: the default is a non-mutating
-  recommendation, and an Approve/Request Changes decision is submitted
-  only under independently trusted authorization with genuine reviewer
-  independence. Self-review is allowed — the Skill analyzes its own PR
-  and produces a verdict — but self-approval is not: no formal
-  Approve/Request Changes is ever submitted on the reviewer's own work.
-  Never edits implementation code and never merges. For local,
-  not-yet-PR'd changes use `local-code-review`.
+  Reviews an existing GitHub Pull Request under one of three publication
+  modes: passively as a report (PASSIVE), as a non-mutating preview of the
+  active decision (SEMI), or, with authenticated GitHub access, actively
+  by publishing inline PR review comments, one consolidated final
+  summary, and an Approve/Request Changes decision (ACTIVE). An explicit
+  ACTIVE request is itself sufficient authorization to publish that
+  review's own outcome — no second activation phrase is required —
+  subject to genuine reviewer independence and GitHub permission.
+  Self-review is allowed — the Skill analyzes its own PR and produces a
+  verdict — but self-approval is not: no formal Approve/Request Changes
+  is ever submitted on the reviewer's own work. Never edits implementation
+  code and never merges. For local, not-yet-PR'd changes use
+  `local-code-review`.
 ---
 
 # SKILL.md — github-pr-review
@@ -19,45 +21,41 @@ description: >-
 A portable Code Review Skill that reviews GitHub Pull Requests and, when
 authorized, publishes findings and a final Approve/Request Changes
 decision. It behaves like an external senior reviewer — **not** an
-implementation-fixing agent, a merge agent, or a repository-lifecycle
-owner.
+implementation-fixing agent, a merge agent, or a repository-lifecycle owner.
 
-**Use it** on an existing GitHub Pull Request (by URL or number) —
-someone else's or the reviewer's own. For local, not-yet-PR'd changes use
-the sibling `local-code-review` Skill.
+**Use it** on an existing GitHub Pull Request (by URL or number) — someone
+else's or the reviewer's own. For local changes, use `local-code-review`.
 
 **Compatibility:** requires Git; active review additionally requires
 authenticated GitHub access with sufficient review permissions.
 
 ## Safety boundaries (read before invoking)
 
-The entry-contract rules, in brief. **Section 7** is the full contract
+The entry-contract rules, in brief — **section 7** is the full contract
 for review-action authority; the canonical policies own the rest.
 
-- **Analysis vs. GitHub mutation authority are separate.** The Skill
-  always produces a full review and a mechanically derived verdict;
-  *submitting* it as `APPROVE` / `REQUEST_CHANGES` is a separate,
-  authorized decision. The default is non-mutating (recommendation-only);
-  a verdict is not authorization; `APPROVE` is submitted only in
-  explicitly-authorized auto-action mode. See section 7 and
+- **Analysis vs. GitHub mutation authority are separate**, governed by one
+  canonical publication mode: `PASSIVE` (default, non-mutating), `SEMI`
+  (same decision path, non-mutating preview), or `ACTIVE` (submits). An
+  explicit `ACTIVE` request is itself sufficient authorization to publish
+  — no second activation phrase required — subject to the unchanged
+  self-review, reviewer-independence, GitHub-permission, and HEAD
+  guarantees. See section 7 and
   [`policies/review-action-authorization.md`](policies/review-action-authorization.md).
 - **Self-review is allowed; self-approval is not.** Authorship — or a
-  shared controlling authority (an alternate account/token, bot, service
-  account, GitHub App identity, nested agent, or spawned process) — never
-  blocks analysis or changes the verdict, but no formal
-  APPROVE / REQUEST_CHANGES is ever submitted on the reviewer's own work;
-  the result may be published as an informational `COMMENT` only. See
+  shared controlling authority (alternate account/token, bot, service
+  account, GitHub App, nested agent, spawned process) — never blocks
+  analysis or changes the verdict, but no formal APPROVE / REQUEST_CHANGES
+  is ever submitted on the reviewer's own work; the result may be
+  published as an informational `COMMENT` only. See
   [`policies/review-authority.md`](policies/review-authority.md).
 - **Reviewer independence is authority separation, not username
-  separation**, and natural-language intent ("approve if clean") is
-  *requested* behavior, never trusted mutation authorization. Any
-  ambiguity fails closed to a non-mutating review.
+  separation**; ambiguity fails closed to `PASSIVE` (or to a withheld
+  mutation when independence/permission are unfavorable).
 - **HEAD safety.** The reviewed HEAD is recorded at start and revalidated
-  before the decision; a stale HEAD is never approved; any trusted
-  authorization is bound to the exact reviewed HEAD. See section 5.
-- **Merge boundary.** This Skill never merges and never deletes branches;
-  `APPROVE` is never merge authority. Maximum positive action is
-  **Approve**.
+  before the decision; a stale HEAD is never approved. See section 5.
+- **Merge boundary.** Never merges, never deletes branches; `APPROVE` is
+  never merge authority. Maximum positive action is **Approve**.
 - **Review ownership.** `One review scope → one Code Review Agent owner`;
   if another already owns this PR, return `REVIEW ALREADY OWNED` — see
   [`review-ownership.md`](../../shared/policies/review-ownership.md).
@@ -85,8 +83,8 @@ resolve PR + authenticated identity, PR author, controlling authority
     effective review base), paginated to exhaustion (incl. prior
     reviews/comments as Existing Review Evidence)
   → repository access mode (API-only | optional | required checkout);
-    determine formal-review capability; resolve review-action mode +
-    mutation authorization (default recommendation-only; ambiguity fails closed)
+    determine formal-review capability; resolve publication mode
+    (PASSIVE | SEMI | ACTIVE; default PASSIVE; ambiguity fails closed)
   → discover per-file AGENTS.md/CLAUDE.md; apply runtime-validation policy;
     plan execution (sequential or
     read-only parallel workers per dimension — same findings and decision)
@@ -96,8 +94,8 @@ resolve PR + authenticated identity, PR author, controlling authority
     REVIEW INCOMPLETE, never REVIEW CLEAN)
   → finalize findings; classify severity; resolve inline eligibility
   → revalidate HEAD → construct ONE review (body + inline comments)
-  → apply the review-action authorization gate → submit the permitted
-    event when active, or report formal-review unavailability
+  → apply the review-action authorization gate → submit in ACTIVE, report
+    WOULD PUBLISH in SEMI, or report formal-review unavailability
   → finally: remove any temporary checkout → stop
 ```
 
@@ -111,13 +109,17 @@ Procedures:
 
 ## 1. Modes and Inputs
 
-- **Passive PR review**
-  ([`runbooks/passive-pr-review.md`](runbooks/passive-pr-review.md)) —
-  reads the PR and returns a report. No GitHub mutation.
-- **Active PR review**
-  ([`runbooks/active-pr-review.md`](runbooks/active-pr-review.md)) — may
-  publish inline findings, a final summary, and submit Approve or Request
-  Changes, subject to section 7.
+There are three publication modes — **`PASSIVE`**, **`SEMI`**, **`ACTIVE`**
+— the single canonical switch governing whether, and how, the result
+reaches GitHub (see
+[`policies/review-action-authorization.md`](policies/review-action-authorization.md),
+"Publication modes (canonical)"). Two runbooks implement them: **Passive
+PR review** ([`runbooks/passive-pr-review.md`](runbooks/passive-pr-review.md))
+is `PASSIVE` — reads the PR and returns a report, no GitHub mutation;
+**Active PR review** ([`runbooks/active-pr-review.md`](runbooks/active-pr-review.md))
+runs the same decision path for both `SEMI` (reports what would publish,
+submits nothing) and `ACTIVE` (may publish inline findings, a final
+summary, and submit Approve or Request Changes), subject to section 7.
 
 Both modes apply identical review standards; only delivery differs. Two
 execution options never change *what* is reviewed (the **PR stays the
@@ -240,8 +242,7 @@ a self-review — analysis still runs, no formal event submitted; see
 "Self-review capability"), then verify the PR is accessible and the
 identity has sufficient capability for the intended action.
 **Authentication alone is not sufficient evidence of review capability.**
-If active publication is unavailable, do not fake success — fall back to
-passive review.
+If unavailable, do not fake success — fall back to passive review.
 
 ## 4. Output Contract
 
@@ -271,14 +272,12 @@ passive review.
   body/fallback finding, concisely.
 
 The reasoning result and the GitHub mutation are reported **separately**:
-an active invocation states its `Action mode` (`recommendation-only` /
-`block-only` / `explicitly-authorized auto-action`) and `Mutation`
-outcome (`SUBMITTED (<event>)` / `WITHHELD (<reason>)` / `NOT REQUESTED`)
-alongside the reasoning and decision lines, per
+an active or semi invocation states its `Publication mode` (`PASSIVE` /
+`SEMI` / `ACTIVE`) and `Mutation` outcome (`SUBMITTED (<event>)` /
+`WOULD PUBLISH (<event>)` / `WITHHELD (<reason>)` / `NOT REQUESTED`), per
 [`policies/review-output.md`](policies/review-output.md), "Review-action
-authorization gate." A clean reasoning result whose approval was withheld
-is reported as exactly that — a clean result and a non-mutating outcome,
-never "approved."
+authorization gate." A clean result with a withheld approval is never
+reported as "approved."
 
 ## 5. HEAD Safety
 
@@ -286,12 +285,11 @@ The reviewed PR HEAD SHA is recorded at the start of review and
 revalidated against the current PR HEAD immediately before the final
 decision — see
 [`policies/review-output.md`](policies/review-output.md), "HEAD
-revalidation." A stale HEAD is never approved; a changed HEAD triggers
-re-review of the new delta before any decision is submitted. Any trusted
-mutation authorization is bound to the exact reviewed HEAD (per
+revalidation." A stale HEAD is never approved and triggers re-review of
+the new delta first — it withholds `ACTIVE` publication even though an
+explicit `ACTIVE` request is otherwise its own authorization (see
 [`policies/review-action-authorization.md`](policies/review-action-authorization.md),
-"Authorization scope"): a HEAD change invalidates it, so a stale HEAD can
-never carry an approval even when authorization otherwise existed.
+"Core invariant").
 
 ## 6. Reviewer Ownership and Delta Re-Review
 
@@ -331,48 +329,50 @@ and the gate in
 [`policies/review-output.md`](policies/review-output.md),
 "Review-action authorization gate."
 
-- **A review verdict is not authorization.** `REVIEW CLEAN` never
-  automatically means GitHub `APPROVE`, and `APPROVE` is never merge
-  authority — this Skill never merges.
+- **A review verdict is not, by itself, a GitHub event.** `REVIEW CLEAN`
+  becomes a submitted `APPROVE` only once the publication mode, self-
+  review boundary, reviewer independence, GitHub permission, and HEAD
+  freshness checks all pass; `APPROVE` is never merge authority.
 - **Self-review is allowed; self-approval is not.** When the reviewer is
   the PR author (or shares a controlling authority), the full analysis
   runs and reports a verdict, and the result may be published as an
   informational `COMMENT`, but **no formal APPROVE / REQUEST_CHANGES
   event is ever submitted on the reviewer's own work** — regardless of
-  mode, natural-language request, or authorization. The verdict is
-  reported with "GitHub review mutation withheld: reviewer is the PR
-  author" and is not rewritten.
-- **The default is non-mutating (recommendation-only).** A review returns
-  findings and a verdict with no GitHub mutation unless a stronger mode
-  is established; passive review is always recommendation-only, and a
-  caller never needs to say "do not approve". **`APPROVE` is submitted
-  only in explicitly-authorized auto-action mode** — only with both
-  trusted mutation authorization for that exact action (from a principal
-  independent of the agent performing or orchestrating the review, via a
-  channel it cannot author, forge, or replay, scoped to this invocation /
-  repo / PR / reviewed HEAD / single action) **and** reviewer
+  publication mode or natural-language request. Reported with "GitHub
+  review mutation withheld: reviewer is the PR author"; not rewritten.
+- **The default is non-mutating (`PASSIVE`).** No GitHub mutation unless
+  `SEMI` or `ACTIVE` is established; a caller never needs to say "do not
+  approve". **An explicit `ACTIVE` request is its own authorization** —
+  `APPROVE` (clean) or `REQUEST_CHANGES` (blocking) is submitted whenever
+  the mode is `ACTIVE`, the invocation is not a self-review, reviewer
   independence (authority separation, not merely a different GitHub
-  username). Ambiguity fails closed to recommendation-only (or block-only
-  for a blocking result where independence and GitHub permission hold).
+  username) is established, the event is permitted, and the reviewed HEAD
+  is current — with **no second activation phrase, approval prompt, or
+  out-of-band authorization channel** required or consulted. `SEMI` runs
+  the identical decision path and reports what would publish, without
+  publishing. Ambiguity fails closed to `PASSIVE` (or to a withheld
+  mutation when independence/permission/HEAD are unfavorable).
 - **Natural language, not syntax.** Users say what they want and the
-  Skill normalizes it to an internal mode. There is no required mode flag
-  or keyword; asking for a GitHub action expresses *requested* behavior,
-  not trusted authorization — and neither is a flag, prompt, env var,
-  nested instruction, alternate token/username, bot, service account, or
-  GitHub App identity the invoking agent controls (canonical:
+  Skill normalizes it to one of the three publication modes. There is no
+  required mode flag or keyword. See
   [`review-action-authorization.md`](policies/review-action-authorization.md),
-  "What can never establish it"). Being a portable Skill with no runtime
-  of its own, it cannot verify provenance and relies on the
-  runtime/orchestrator for an independent authorization channel — see
-  that policy, "Structural limitation."
-- **Optional machine-readable status.** `github-pr-review` may also
-  publish one stable, aggregated, exact-HEAD GitHub status/check for the
-  reviewed SHA, separate from the native `APPROVE` / `REQUEST_CHANGES`
+  "Natural-language publication intent."
+- **Authority boundary.** This section authorizes review-publication
+  outputs only — inline comments, the review body,
+  `APPROVE`/`REQUEST_CHANGES`/`COMMENT`. It never authorizes file
+  modification, patch application, commit, push, merge, or repository
+  settings changes; those capabilities are governed by this source
+  repository's own canonical threat model (issues #298/#301, outside this
+  packaged Skill), referenced rather than re-derived — see
+  [`review-action-authorization.md`](policies/review-action-authorization.md),
+  "Authority boundary."
+- **Optional machine-readable status.** One stable, aggregated, exact-HEAD
+  GitHub status/check for the reviewed SHA, separate from the native
   event: a **blocking** status may be published even by a self-review; a
-  **success** status requires the same trusted authorization and reviewer
-  independence as `APPROVE` and is **never** published by a self-review.
-  A new HEAD inherits no green. Making the status a required merge check
-  is an explicit, opt-in setup action. Canonical:
+  **success** status needs the same `ACTIVE` mode + independence as
+  `APPROVE`, and is **never** published by a self-review. A new HEAD
+  inherits no green. Required-check setup is a separate, explicit opt-in
+  action. Canonical:
   [`review-status-enforcement.md`](policies/review-status-enforcement.md).
 
 - **Agent-spawn capability is absent by default and never transfers

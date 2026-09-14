@@ -228,7 +228,7 @@ or, when `human_review_output` is on, the human full rendering per the
 shared [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
 "Canonical human full rendering" (see "Concise human-style summary
 (opt-in)" below). Process and machine state (review mode,
-SHAs, counts, action mode, mutation outcome) are subordinate — a short
+SHAs, counts, publication mode, mutation outcome) are subordinate — a short
 trailing block, never the body. A self-review publishes the **same**
 human-facing body as an informational `COMMENT`, differing only by the
 closing disclosure line in
@@ -445,8 +445,8 @@ Immediately before submitting any `APPROVE` / `REQUEST_CHANGES` event
   reviewer under the same controlling authority as the author (see
   [`review-authority.md`](review-authority.md), "Self-review capability"
   and "Authority separation, not just identity separation") — no formal
-  `APPROVE` / `REQUEST_CHANGES` event is submitted, regardless of mode,
-  natural-language request, or any authorization. The full analysis still
+  `APPROVE` / `REQUEST_CHANGES` event is submitted, regardless of
+  publication mode or natural-language request. The full analysis still
   ran; the result **may** be published as an informational review
   `COMMENT` (verdict, reviewed HEAD, findings, and that the formal
   decision was withheld by policy). A `COMMENT` is not approval,
@@ -456,42 +456,46 @@ Immediately before submitting any `APPROVE` / `REQUEST_CHANGES` event
   the PR author` or `CHANGES REQUIRED — GitHub review mutation withheld:
   reviewer is the PR author` (with `Comments: COMMENTS PUBLISHED`). The
   verdict is not rewritten because the event was withheld.
-- Resolve the review-action mode. The default is **recommendation-only**
-  — a full review and reasoning result, with **no** GitHub mutation.
-  Passive review is always recommendation-only.
-- **`APPROVE` is submitted only in explicitly-authorized auto-action
-  mode**, i.e. only when trusted mutation authorization for this exact
-  action is established, reviewer independence (authority separation, not
-  just a different username) is established, and every guarantee in that
-  policy's principle 7 holds at submission time. A clean reasoning result
-  without that authorization stays non-mutating.
-- **`REQUEST_CHANGES`** may be submitted in block-only or auto-action
-  mode when reviewer independence and GitHub event permission hold; it
-  does not additionally require auto-action authorization (it cannot
-  approve or unblock — see that policy, "block-only").
-- Ambiguity in mode, authorization provenance, authorization scope, or
-  reviewer provenance **fails closed** to recommendation-only (or
-  block-only for a blocking result where independence and permission
-  hold). A caller never needs to say "do not approve" to get this.
-- A relied-upon authorization is scoped to this invocation / repository /
-  PR / reviewed HEAD / single action and cannot be replayed elsewhere.
+- Resolve the publication mode: **PASSIVE**, **SEMI**, or **ACTIVE** — see
+  [`review-action-authorization.md`](review-action-authorization.md),
+  "Publication modes (canonical)." The default is **PASSIVE** — a full
+  review and reasoning result, with **no** GitHub mutation. Passive review
+  is always `PASSIVE`.
+- **An explicit `ACTIVE` request is its own authorization.** `APPROVE` is
+  submitted whenever the mode is `ACTIVE`, the invocation is not a
+  self-review, reviewer independence (authority separation, not just a
+  different username) is established, the desired event is permitted for
+  this identity, and the reviewed HEAD is still current — see that
+  policy's "Core invariant: an explicit ACTIVE request is its own
+  authorization." No further, second authorization signal is required or
+  consulted once those hold.
+- **`REQUEST_CHANGES`** is submitted under the identical `ACTIVE` +
+  independence + permission + HEAD conditions — there is exactly one
+  publication-authorization question for both events (see that policy,
+  "Migration from the pre-#314 model").
+- **`SEMI`** runs the same decision path and computes the same desired
+  event, but never submits it — it reports `Mutation: WOULD PUBLISH
+  (<event>)` instead.
+- Ambiguity in mode or reviewer provenance **fails closed** to `PASSIVE`
+  (for an unresolved mode) or to a `WITHHELD` mutation (for an `ACTIVE`
+  request whose independence/permission/HEAD facts are unfavorable or
+  ambiguous). A caller never needs to say "do not approve" to get this.
 
 Report reasoning and mutation separately:
 
 ```text
-Reasoning:   REVIEW CLEAN | CHANGES REQUIRED | REVIEW INCOMPLETE | NO NEW DELTA | JIRA CONTEXT UNRESOLVED
-Action mode: recommendation-only | block-only | explicitly-authorized auto-action
-Comments:    COMMENTS PUBLISHED | COMMENTS NOT PUBLISHED | NOT REQUESTED
-Decision:    REVIEW SUBMITTED | REVIEW NOT SUBMITTED | NOT REQUESTED
-Mutation:    SUBMITTED (<event>) | WITHHELD (<reason>) | NOT REQUESTED
+Reasoning:         REVIEW CLEAN | CHANGES REQUIRED | REVIEW INCOMPLETE | NO NEW DELTA | JIRA CONTEXT UNRESOLVED
+Publication mode:  PASSIVE | SEMI | ACTIVE
+Comments:          COMMENTS PUBLISHED | COMMENTS NOT PUBLISHED | NOT REQUESTED
+Decision:          REVIEW SUBMITTED | REVIEW NOT SUBMITTED | NOT REQUESTED
+Mutation:          SUBMITTED (<event>) | WOULD PUBLISH (<event>) | WITHHELD (<reason>) | NOT REQUESTED
 ```
 
 A `WITHHELD` reason is explicit and names the gate that stopped the
-mutation (for example `WITHHELD (no trusted mutation authorization;
-default recommendation-only)` or `WITHHELD (reviewer independence not
-established)`). A clean reasoning result with a withheld approval is
-reported as a clean result **and** a non-mutating outcome — never as
-"approved."
+mutation (for example `WITHHELD (publication mode is PASSIVE)` or
+`WITHHELD (reviewer independence not established)`). A clean reasoning
+result with a withheld approval is reported as a clean result **and** a
+non-mutating outcome — never as "approved."
 
 `NO NEW DELTA` applies only when the current reviewer is the same
 identity as the immediately preceding completed review and the
