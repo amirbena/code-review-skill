@@ -244,6 +244,37 @@ a deterministic structural assertion — never an LLM/rubric score — and
 the corpus is disjoint from the finding-precision/recall/severity
 metrics above and from ordinary code-review quality fixtures.
 
+## Publication-mode benchmark
+
+[`corpus/publication-mode/README.md`](corpus/publication-mode/README.md)
+(issue [#316](https://github.com/amirbena/code-review-skill/issues/316),
+depends on [#314](https://github.com/amirbena/code-review-skill/issues/314))
+proves the passive/semi/active review-publication boundary #314
+established stays bounded: mode resolution, publication intent,
+formal-action selection, actual GitHub-bound side-effect presence or
+absence, semi/active semantic equivalence before publication, the
+self-review boundary across every mode, the review-publication-only
+authority boundary, and a small bounded set of equivalent invocation
+phrasings — including a stable, named fixture reproducing the PR #297
+regression shape (an explicit `ACTIVE` request with a clean, otherwise-
+publishable review must never resolve to a withheld mutation for a
+missing second activation signal). Like the two benchmarks above, it is
+not `benchmark-case/v1` fixtures — that schema has no field for a
+publication mode, a "would publish" preview, or a GitHub-bound
+publication artifact — so it follows the same test-only reference-model
+pattern:
+[`../../tests/reference/benchmark/publication_mode_fixtures.py`](../../tests/reference/benchmark/publication_mode_fixtures.py),
+exercised by
+[`../../tests/unit/benchmark/test_publication_mode_corpus.py`](../../tests/unit/benchmark/test_publication_mode_corpus.py).
+Uniquely among the corpora above, it constructs and inspects the actual
+GitHub-bound publication artifact (`body` + inline comments + `event`, or
+the narrower self-review informational `COMMENT`) rather than only the
+resolver's `MutationOutcome` — a caller-facing sentence that nothing was
+posted is not, by itself, evidence. Every comparison is a deterministic
+structural assertion, and the corpus is disjoint from the
+finding-precision/recall/severity metrics above and from ordinary
+code-review quality fixtures.
+
 ## Mutation-capability-boundary benchmark
 
 [`corpus/mutation-boundary/README.md`](corpus/mutation-boundary/README.md)
