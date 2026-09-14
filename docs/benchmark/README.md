@@ -319,4 +319,9 @@ failure. It reimplements no runner/matcher/metrics/adapter logic above.
 
 ## Related
 
-The architecture map is [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
+The architecture map is [`../ARCHITECTURE.md`](../ARCHITECTURE.md). The
+cross-component architecture for turning this benchmark into a real
+pre-merge quality gate and nightly drift-detection loop, and how that
+relates to review execution telemetry, analytics, and repository-scoped
+learning, is
+[`../benchmark-measurement-architecture/README.md`](../benchmark-measurement-architecture/README.md).
