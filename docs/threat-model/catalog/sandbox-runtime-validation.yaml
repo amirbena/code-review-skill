@@ -17,7 +17,7 @@ scenarios:
   expected_safe_outcome: the connection attempt is denied/unreachable from inside the sandbox
   expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::NetworkDenialTests::test_sbox_001_outbound_http_is_denied
   threat_severity: CRITICAL
   notes: 'shared/policies/runtime-validation.md, "Trust model and execution boundary", already documents
@@ -40,7 +40,7 @@ scenarios:
   expected_safe_outcome: DNS resolution fails/is denied from inside the sandbox
   expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::NetworkDenialTests::test_sbox_002_dns_resolution_is_denied
   threat_severity: HIGH
 - id: SBOX-003
@@ -59,7 +59,7 @@ scenarios:
   expected_safe_outcome: raw-socket creation/use fails/is denied from inside the sandbox
   expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::NetworkDenialTests::test_sbox_003_raw_socket_connect_is_denied
   threat_severity: HIGH
 - id: SBOX-004
@@ -79,7 +79,7 @@ scenarios:
     from inside the sandbox
   expected_security_event: DENIED_SANDBOX_CREDENTIAL_ACCESS
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::CredentialAccessTests
   threat_severity: CRITICAL
 - id: SBOX-005
@@ -99,7 +99,7 @@ scenarios:
   expected_safe_outcome: the read fails/is denied; only the bounded work copy is visible
   expected_security_event: DENIED_SANDBOX_FILESYSTEM_ACCESS
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::FilesystemBoundaryTests
   threat_severity: CRITICAL
 - id: SBOX-006
@@ -119,7 +119,7 @@ scenarios:
     back
   expected_security_event: DENIED_SANDBOX_FILESYSTEM_ACCESS
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::FilesystemBoundaryTests::test_sbox_006_write_to_the_original_reviewed_source_is_unreachable
   threat_severity: CRITICAL
 - id: SBOX-007
@@ -139,7 +139,7 @@ scenarios:
     is treated as unsafe
   expected_security_event: DENIED_SANDBOX_FILESYSTEM_ACCESS
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::FilesystemBoundaryTests::test_sbox_007_git_config_mutation_never_reaches_the_original_git_dir
   threat_severity: CRITICAL
 - id: SBOX-008
@@ -158,7 +158,7 @@ scenarios:
   expected_safe_outcome: the call fails (no network, no credentials) before it can mutate anything external
   expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::ExternalWriteApiTests::test_sbox_008_github_api_call_is_denied
   threat_severity: CRITICAL
 - id: SBOX-009
@@ -178,7 +178,7 @@ scenarios:
     responsive
   expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::ResourceExhaustionTests::test_sbox_009_process_count_budget_contains_a_fork_bomb
   threat_severity: HIGH
 - id: SBOX-010
@@ -198,7 +198,7 @@ scenarios:
     not a hang
   expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::ResourceExhaustionTests
   threat_severity: MEDIUM
   notes: 'shared/policies/runtime-validation.md, "Targeted validation of a suspected finding", "Budget
@@ -221,7 +221,7 @@ scenarios:
     run starts clean
   expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::PersistenceTests::test_sbox_011_background_process_does_not_survive_teardown
   threat_severity: MEDIUM
   notes: 'The Docker primitive closes this completely (its own PID namespace; docker_runner.py
@@ -249,7 +249,7 @@ scenarios:
     side effect occurs
   expected_security_event: DENIED_SANDBOX_UNAVAILABLE_PRIMITIVE
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::NoMutationAuthorityTests::test_sbox_012_sandbox_cannot_install_or_publish_packages
   threat_severity: HIGH
 - id: SBOX-013
@@ -269,7 +269,7 @@ scenarios:
     host execution
   expected_security_event: NOT_APPLICABLE
   benchmark_family: sandbox/#306
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::UnavailablePrimitiveTests::test_sbox_013_no_primitive_reports_unavailable_never_falls_back
   threat_severity: HIGH
   notes: 'Not itself a denial of an attacker action, so no denied-capability event is expected — the safe
