@@ -155,6 +155,15 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   and Performance (#187) sub-corpora above as integration inputs rather
   than re-deriving their domain correctness.
 
+- [`sandbox-adversarial/`](sandbox-adversarial/README.md) — not a
+  `benchmark-case/v1` corpus (see its README for why): the real-runner
+  adversarial security-boundary benchmark for the runtime-validation
+  sandbox (Issue [#306](https://github.com/amirbena/code-review-skill/issues/306),
+  parent [#302](https://github.com/amirbena/code-review-skill/issues/302)),
+  kept separate from finding precision/recall metrics. Cases execute
+  [`../../../tests/integration/sandbox/test_adversarial_containment.py`](../../../tests/integration/sandbox/test_adversarial_containment.py)
+  against the real sandbox runner.
+
 ## Validation
 
 [`../../../tests/unit/benchmark/test_benchmark_corpus.py`](../../../tests/unit/benchmark/test_benchmark_corpus.py)
