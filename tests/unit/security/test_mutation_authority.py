@@ -52,6 +52,10 @@ class _RepoCase(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory(prefix="mutation-authority-test-")
         self.root = Path(self._tmp.name)
         _run(self.root, "init", "-q", "-b", "main")
+        # Local, repo-scoped identity: CI runners have no global git user
+        # configured, and MutationExecutor.commit() must not depend on one.
+        _run(self.root, "config", "user.name", "t")
+        _run(self.root, "config", "user.email", "t@example.com")
         (self.root / "existing.txt").write_text("line one\n", encoding="utf-8")
         _run(self.root, "add", "-A")
         _run(self.root, "commit", "-q", "-m", "initial")
