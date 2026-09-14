@@ -41,6 +41,7 @@ AREA_LABELS = {
     "Risk / Large PR": "area:risk-large-pr",
     "GitHub Integration": "area:github-integration",
     "Packaging / Portability": "area:packaging-portability",
+    "Security / Runtime Boundaries": "area:security-boundaries",
     "Documentation": "area:documentation",
     "Instruction Architecture": "area:instruction-architecture",
     "Research": "area:research",
