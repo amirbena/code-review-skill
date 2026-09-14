@@ -43,7 +43,7 @@ never touches a finding, a severity, or review prose.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Optional
 
 from tests.reference.review import agent_delegation as ad
