@@ -97,24 +97,25 @@ class CredentialAccessTests(SandboxIntegrationCase):
 
     def test_sbox_004_root_home_directory_is_unreadable(self) -> None:
         # /root itself is denied outright on macOS (_ALWAYS_DENIED_READ_ROOTS
-        # in macos_seatbelt.py). Create a definite, disposable target under
+        # in macos_seatbelt.py); on Linux CI it is a real, root-owned 0700
+        # directory a non-root reviewer can't even stat (PermissionError,
+        # not FileNotFoundError). Create a definite, disposable target under
         # it first — never overwriting a real pre-existing key — so the
         # assertion below can't pass merely because the path never existed;
-        # skip cleanly when this host can't provide one (e.g. a non-root
-        # reviewer on Linux/CI, where /root is not even traversable).
+        # skip cleanly when this host can't provide or even see one.
         target = Path("/root/.ssh/id_rsa")
         created_dir = created_file = False
         try:
             if not target.parent.is_dir():
                 target.parent.mkdir(parents=True)
                 created_dir = True
-            if not target.exists():
+            if not _exists_or_false(target):
                 target.write_text("HOST-ROOT-SECRET")
                 created_file = True
         except OSError:
             pass
         try:
-            if not target.exists():
+            if not _exists_or_false(target):
                 self.skipTest("cannot seed or find /root/.ssh/id_rsa on this host; denial cannot be exercised")
             code = (
                 "print(open('/root/.ssh/id_rsa').read())\n"
@@ -443,6 +444,18 @@ class UnavailablePrimitiveTests(SandboxIntegrationCase):
         request = SandboxRequest(argv=("true",), source_dir=self.source_dir)
         result = run_instance.run(request)
         self.assertEqual(result.outcome, Outcome.UNAVAILABLE)
+
+
+def _exists_or_false(path: Path) -> bool:
+    """``Path.exists()`` that treats *any* OSError (not just a missing
+    path) as "can't tell" rather than propagating — e.g. Python 3.13+
+    raises ``PermissionError`` from ``exists()`` when an intervening
+    directory (a root-owned, 0700 ``/root`` on a non-root CI runner) can't
+    even be stat'd, instead of the historical "just return False"."""
+    try:
+        return path.exists()
+    except OSError:
+        return False
 
 
 def _matching_host_processes(needle: str) -> list[str]:
