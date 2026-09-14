@@ -11,7 +11,11 @@ contract, projected onto a surface that already supplies the file/line
 anchor and the comment's own identity, so `id` and `Location` are
 omitted here (see
 [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
-"Canonical inline rendering").
+"Canonical inline rendering"). Only finding content renders here; the
+private [`reviewer-brief.md`](reviewer-brief.md) is never one of this
+template's inputs and never appears in an inline comment — see
+[`../policies/reviewer-brief.md`](../policies/reviewer-brief.md), "Never
+published to GitHub."
 
 ```text
 [<severity>] <short, concrete title>

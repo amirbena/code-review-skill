@@ -554,6 +554,21 @@ stop
     `human_inline_findings=false` keeps the structured
     `[<severity>] / Evidence / Impact / Fix` inline block. Do not submit
     anything yet.
+13a. **Compose the private Reviewer Brief** per
+    [`../policies/reviewer-brief.md`](../policies/reviewer-brief.md), from
+    the same finalized findings, severity, coverage, and verdict step 13
+    just rendered. This is **not** part of the review constructed in step
+    13: the brief is composed separately, using
+    [`../templates/reviewer-brief.md`](../templates/reviewer-brief.md),
+    and appended to the caller-facing **returned result** only — it is
+    never added to the review body, never added to the inline-comments
+    array, and never passed into steps 15-16 (status publication and
+    submission), which construct and publish only what step 13 built.
+    `human_review_output` (and its companion `human_inline_findings`) may
+    adjust the brief's wording/compactness exactly as it does the review
+    body, per
+    [`../policies/reviewer-brief.md`](../policies/reviewer-brief.md),
+    "Composition with invocation modes" — never its fields or boundaries.
 14. **Apply the review-action authorization gate** per
     [`../policies/review-action-authorization.md`](../policies/review-action-authorization.md)
     and [`../policies/review-output.md`](../policies/review-output.md),

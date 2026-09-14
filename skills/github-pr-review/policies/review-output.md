@@ -368,6 +368,27 @@ passive result the user already saw. See
 [`../runbooks/active-pr-review.md`](../runbooks/active-pr-review.md),
 step 3a, for the procedural placement of this check.
 
+## Private Reviewer Brief (never published)
+
+Every result — passive report or active publication — also includes a
+private, caller-facing `Reviewer Brief`, composed once the findings,
+severity, coverage, and verdict above are finalized. Full semantics,
+required fields, and mode composition:
+[`reviewer-brief.md`](reviewer-brief.md); rendering and worked examples:
+[`../templates/reviewer-brief.md`](../templates/reviewer-brief.md).
+
+It is never submitted as a GitHub review body, inline comment, or
+Approve / Request Changes / COMMENT event. The publication payload this
+"Batched review construction and submission" section builds is
+constructed exclusively from
+[`../templates/external-review-summary.md`](../templates/external-review-summary.md)
+and [`../templates/inline-finding.md`](../templates/inline-finding.md),
+plus the permitted event; `templates/reviewer-brief.md` is never one of
+those inputs. The brief is appended to the caller-facing returned result
+in its own section, distinct from and never merged into the GitHub-shaped
+review body — a structural separation, not a textual filter applied
+after the fact.
+
 ## Remediation guidance
 
 Apply the shared

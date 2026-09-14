@@ -75,11 +75,13 @@
         { "source": "skills/github-pr-review/policies/parallel-review.md", "destination": "policies/parallel-review.md" },
         { "source": "skills/github-pr-review/policies/finding-placement.md", "destination": "policies/finding-placement.md" },
         { "source": "skills/github-pr-review/policies/review-output.md", "destination": "policies/review-output.md" },
+        { "source": "skills/github-pr-review/policies/reviewer-brief.md", "destination": "policies/reviewer-brief.md" },
         { "source": "skills/github-pr-review/policies/review-status-enforcement.md", "destination": "policies/review-status-enforcement.md" },
         { "source": "skills/github-pr-review/runbooks/passive-pr-review.md", "destination": "runbooks/passive-pr-review.md" },
         { "source": "skills/github-pr-review/runbooks/active-pr-review.md", "destination": "runbooks/active-pr-review.md" },
         { "source": "skills/github-pr-review/templates/inline-finding.md", "destination": "templates/inline-finding.md" },
-        { "source": "skills/github-pr-review/templates/external-review-summary.md", "destination": "templates/external-review-summary.md" }
+        { "source": "skills/github-pr-review/templates/external-review-summary.md", "destination": "templates/external-review-summary.md" },
+        { "source": "skills/github-pr-review/templates/reviewer-brief.md", "destination": "templates/reviewer-brief.md" }
       ],
       "required_entries": ["SKILL.md", "LICENSE", "templates/external-review-summary.md"]
     }

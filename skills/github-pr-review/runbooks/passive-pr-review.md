@@ -374,6 +374,16 @@ finally: remove the temporary checkout (success, any failure, interruption)
    its reason(s) in the report's subordinate metadata, per "Labeling —
    incomplete must never present as clean" and "Non-goals and ownership
    boundary" — not restated here.
+8c. **Compose the private Reviewer Brief** per
+   [`../policies/reviewer-brief.md`](../policies/reviewer-brief.md), now
+   that findings, severity, coverage, and verdict are finalized above.
+   Append it as its own section of the returned report, per
+   [`../templates/reviewer-brief.md`](../templates/reviewer-brief.md).
+   Passive review publishes nothing at all, so the brief's
+   never-published guarantee holds trivially here; it still follows every
+   field, synthesis, and mode-composition rule in that policy (clean
+   review, delta re-review, stacked PR, partitioned large PR alike) so
+   passive and active results carry identical brief semantics.
 9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
    step 4, remove it — on this path and on every other: a
    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the

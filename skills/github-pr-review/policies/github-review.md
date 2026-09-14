@@ -58,6 +58,10 @@ finding-placement.md        inline vs. body placement, one representation per fi
         ↓
 review-output.md            analysis/publication boundary, batching, decision
         ↓
+reviewer-brief.md            private caller-facing Reviewer Brief; never
+                            published; composed only from the finalized
+                            analysis result above
+        ↓
 review-status-enforcement.md  optional exact-HEAD machine-readable status;
                             blocking vs. positive authority; enforcement
                             detection; explicit opt-in required-check setup
@@ -102,6 +106,12 @@ review-authority and reviewer-mode resolution have already run; and
 [`parallel-review.md`](parallel-review.md) is an optional execution
 optimisation whose sequential and parallel forms must reach the same
 findings and decision;
+[`reviewer-brief.md`](reviewer-brief.md) runs only after
+[`review-output.md`](review-output.md) has finalized findings, severity,
+coverage, and verdict — it reads that finalized result and never
+influences it, and its output is never one of the inputs
+[`review-output.md`](review-output.md), "Batched review construction and
+submission," uses to construct the published review;
 [`review-status-enforcement.md`](review-status-enforcement.md) is optional
 and runs last — only after the verdict, HEAD revalidation, and the
 review-action authorization gate in

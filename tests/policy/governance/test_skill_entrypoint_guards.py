@@ -55,8 +55,14 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # the expanded senior-phrase vocabulary, and the passive-review
 # publish-format question) raised github 370 -> 375 in section 1 and
 # section 4. local is unaffected (github-pr-review only) and stays 264.
+# Issue #304 (the private, caller-facing Reviewer Brief — a new safety
+# boundary bullet in section "Safety boundaries" plus a new bullet in
+# section 4, "Output Contract", both linking to the new
+# policies/reviewer-brief.md) raised github 375 -> 382. local is
+# unaffected (github-pr-review only, an explicit non-goal for
+# local-code-review) and stays 264.
 LOCAL_MAX_LINES = 264
-GITHUB_MAX_LINES = 375
+GITHUB_MAX_LINES = 382
 
 
 def _norm(path) -> str:
