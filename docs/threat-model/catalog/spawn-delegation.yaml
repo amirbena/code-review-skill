@@ -130,17 +130,28 @@ scenarios:
   protected_asset: non-transferability of mutation/review-action authorization
   required_capability_state: authorization is scoped to the granted identity/invocation, never auto-propagated
     to a child
-  enforcement_owner: '#301 / #303'
-  enforcement_point: shared/policies/agent-delegation.md, 'Mutation and formal review-action authorization are non-transferable' -- spawn_agent() strips NON_TRANSFERABLE_CAPABILITIES unconditionally; AuthorizationLedger.consume() binds a single-use authorization to one acting identity and one use
+  enforcement_owner: 'existing: shared/policies/mutation-authority.md (#301, mutation-authorization
+    non-inheritance half); shared/policies/agent-delegation.md (#303, spawn/delegation-runtime depth,
+    budget, non-transferability, and process isolation half)'
+  enforcement_point: for the mutation-authorization half, MutationExecutor.spawn_child (tests/reference/review/mutation_authority.py)
+    binds a child to a fresh invocation_id and an empty AuthorizationLedger, so a parent's grant fails
+    the child's authorization-binding check; for the delegation-runtime half, shared/policies/agent-delegation.md,
+    'Mutation and formal review-action authorization are non-transferable' -- spawn_agent() strips
+    NON_TRANSFERABLE_CAPABILITIES unconditionally, and AuthorizationLedger.consume() binds a single-use
+    authorization to one acting identity and one use
   expected_safe_outcome: child starts with no inherited authorization; any use of a forwarded token is
     refused
   expected_security_event: DENIED_DELEGATION_REPLAY
   benchmark_family: delegation/#307, mutation/#305
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: tests/unit/review/delegation/test_agent_delegation_authorization.py
+  regression_evidence: 'tests/unit/security/test_mutation_authority.py (Auth013SpawnedChildHasNoInheritedAuthority)
+    covers the mutation-authorization half; tests/unit/review/delegation/test_agent_delegation_authorization.py
+    covers the delegation-runtime half'
   threat_severity: CRITICAL
   notes: 'Same underlying contract as AUTH-013, viewed from the delegation-runtime side; kept as a separate
-    scenario because #303 and #301 are separate enforcement owners and separate benchmark families.'
+    scenario because #303 and #301 are separate enforcement owners and separate benchmark families.
+    shared/policies/mutation-authority.md, "Authorization binding (no replay)," is the #301-owned half
+    of this contract; #303 still owns spawn depth, budget, and process isolation.'
 - id: DELEG-008
   title: Multiple children collude through shared state or orchestration metadata to reconstruct authority
     none holds individually
