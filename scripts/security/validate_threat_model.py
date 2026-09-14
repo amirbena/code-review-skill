@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
 """Validate the canonical threat-scenario catalog (docs/threat-model/catalog/*.yaml).
 
-Issue #300. This is the one structural validator for the `threat-scenario-catalog/v1`
-format described in docs/threat-model/catalog/README.md — #305/#306/#307 (benchmark
-fixtures), #299 (denied-capability event taxonomy), #308 (security-event benchmark),
-and #310 (traceability engine) all consume the same catalog through this contract
-rather than re-deriving their own notion of "valid scenario".
-
-Fail-closed by design: an unrecognized category, attacker model, severity, or
-benchmark family is an error, never silently accepted. A scenario missing
-enforcement/benchmark/regression coverage is not an error — that is the expected
-`COVERAGE_GAP` state while #301/#302/#303/#305/#306/#307/#299/#308 are unmerged —
-but the gap must be the literal, machine-detectable token `COVERAGE_GAP`
-(`NOT_APPLICABLE` for `expected_security_event`), never an empty/omitted field or a
-prose description of absence.
+See docs/threat-model/catalog/README.md for the format contract.
 """
 
 from __future__ import annotations
