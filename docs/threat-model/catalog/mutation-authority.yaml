@@ -18,7 +18,7 @@ scenarios:
   expected_safe_outcome: write attempt is refused before it reaches the filesystem; review continues read-only
   expected_security_event: DENIED_MUTATION_CAPABILITY_ABSENT
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth001DefaultReadOnly,
     Auth005ApplyWithoutAuthorization)
   threat_severity: CRITICAL
@@ -42,7 +42,7 @@ scenarios:
   expected_safe_outcome: git-mutating command is refused before execution; review continues read-only
   expected_security_event: DENIED_MUTATION_CAPABILITY_ABSENT
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth002GitStateMutation)
   threat_severity: CRITICAL
 - id: AUTH-003
@@ -66,7 +66,7 @@ scenarios:
     authorization state is unchanged
   expected_security_event: DENIED_MUTATION_UNAUTHORIZED
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth003RepositoryTextCannotAuthorize)
   threat_severity: CRITICAL
   notes: 'Partial reasoning-level mitigation already existed: shared/policies/repository-instructions.md,
@@ -92,7 +92,7 @@ scenarios:
   expected_safe_outcome: instruction is not followed; no such capability exists to invoke
   expected_security_event: DENIED_MUTATION_CAPABILITY_ABSENT
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth004RepositoryInstructionsCannotGrantAbsentCapabilities)
   threat_severity: HIGH
   notes: Same partial reasoning-level mitigation as AUTH-003 also applies at the policy-prose layer.
@@ -114,7 +114,7 @@ scenarios:
     the trusted channel
   expected_security_event: DENIED_MUTATION_UNAUTHORIZED
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth005ApplyWithoutAuthorization)
   threat_severity: CRITICAL
 - id: AUTH-006
@@ -134,7 +134,7 @@ scenarios:
   expected_safe_outcome: digest mismatch invalidates the authorization; APPLY_PATCH is refused
   expected_security_event: DENIED_MUTATION_STALE_APPROVAL
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth006And008StaleDigest)
   threat_severity: CRITICAL
 - id: AUTH-007
@@ -155,7 +155,7 @@ scenarios:
     is required
   expected_security_event: DENIED_MUTATION_STALE_APPROVAL
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth007StaleBase)
   threat_severity: HIGH
   notes: 'An analogous stale-base guard already existed in a different authority domain — GitHub formal
@@ -179,7 +179,7 @@ scenarios:
   expected_safe_outcome: digest mismatch is detected before mutation; APPLY_PATCH is refused
   expected_security_event: DENIED_MUTATION_STALE_APPROVAL
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth006And008StaleDigest)
   threat_severity: CRITICAL
 - id: AUTH-009
@@ -201,7 +201,7 @@ scenarios:
     (or narrowed and re-confirmed, never silently widened)
   expected_security_event: DENIED_MUTATION_SCOPE_ESCAPE
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (ProposePatchNeverMutates,
     Auth009And016ScopeEscapeAtApply)
   threat_severity: CRITICAL
@@ -223,7 +223,7 @@ scenarios:
     not imply it
   expected_security_event: DENIED_MUTATION_UNAUTHORIZED
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth010ApplyAuthNeverImpliesCommit)
   threat_severity: HIGH
 - id: AUTH-011
@@ -244,7 +244,7 @@ scenarios:
     imply it
   expected_security_event: DENIED_MUTATION_UNAUTHORIZED
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth011CommitAuthNeverImpliesPush)
   threat_severity: HIGH
 - id: AUTH-012
@@ -265,7 +265,7 @@ scenarios:
   expected_safe_outcome: replay in any different context is refused
   expected_security_event: DENIED_MUTATION_AUTHORIZATION_REPLAY
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth012ReplayAcrossInvocations)
   threat_severity: CRITICAL
 - id: AUTH-013
@@ -290,7 +290,7 @@ scenarios:
     authorization is refused
   expected_security_event: DENIED_MUTATION_AUTHORIZATION_REPLAY
   benchmark_family: mutation/#305, delegation/#307
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth013SpawnedChildHasNoInheritedAuthority)
   threat_severity: CRITICAL
 - id: AUTH-014
@@ -339,7 +339,7 @@ scenarios:
   expected_safe_outcome: the operation is unrepresentable; there is no code path that could perform it
   expected_security_event: DENIED_MUTATION_CAPABILITY_ABSENT
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth015NoUnrepresentableCapability)
   threat_severity: HIGH
 - id: AUTH-016
@@ -362,6 +362,6 @@ scenarios:
     investigation, never silently accepted
   expected_security_event: DENIED_MUTATION_SCOPE_ESCAPE
   benchmark_family: mutation/#305
-  benchmark_reference: COVERAGE_GAP
+  benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth009And016ScopeEscapeAtApply)
   threat_severity: CRITICAL

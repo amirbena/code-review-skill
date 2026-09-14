@@ -244,6 +244,36 @@ a deterministic structural assertion — never an LLM/rubric score — and
 the corpus is disjoint from the finding-precision/recall/severity
 metrics above and from ordinary code-review quality fixtures.
 
+## Mutation-capability-boundary benchmark
+
+[`corpus/mutation-boundary/README.md`](corpus/mutation-boundary/README.md)
+(issue [#305](https://github.com/amirbena/code-review-skill/issues/305),
+depends on [#301](https://github.com/amirbena/code-review-skill/issues/301))
+proves code mutation never occurs without the exact required user
+authorization and that authority never widens across the `APPLY_PATCH` /
+`COMMIT` / `PUSH` transitions: repository-controlled instructions cannot
+cause direct mutation, a proposed patch stays advisory, unauthorized
+`APPLY_PATCH` and patch-digest/base-state mismatches are denied,
+out-of-scope mutation is denied while an authorized apply changes only
+its exact scope, apply/commit/push each require their own independent
+authorization, authorization cannot be replayed across invocations or
+inherited by a spawned child, and `github-pr-review` can never apply,
+commit, or push even when prompted to. Like the agent-spawn / delegation
+benchmark above, it is not `benchmark-case/v1` fixtures — that schema has
+no field for a requested capability, an authorization scope/state, or a
+structural allow/deny result with an expected post-action repository/Git
+state — so it follows the same test-only reference-model pattern:
+[`../../tests/reference/benchmark/mutation_fixtures.py`](../../tests/reference/benchmark/mutation_fixtures.py),
+exercised by
+[`../../tests/unit/benchmark/test_mutation_boundary_corpus.py`](../../tests/unit/benchmark/test_mutation_boundary_corpus.py)
+(structural allow/deny assertions against the single reference model, run
+in a real disposable temporary Git repository per case, corpus-
+completeness checks against every `AUTH-###` threat-scenario id excluding
+`AUTH-014`, and malformed-fixture rejection). Every comparison is a
+deterministic structural assertion — never an LLM/rubric score — and the
+corpus is disjoint from the finding-precision/recall/severity metrics
+above and from ordinary code-review quality fixtures.
+
 ## CI integration
 
 [`ci-integration.md`](ci-integration.md) (#255) wires the existing #250
