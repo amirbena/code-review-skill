@@ -18,7 +18,9 @@ import unittest
 from tests.reference.benchmark.reviewer_brief_fixtures import (
     ALL_CASES,
     REQUIRED_COVERAGE_TAGS,
+    ReviewerBriefCase,
     cases_covering,
+    out_of_scope_terms_present,
     pair,
 )
 
@@ -208,23 +210,83 @@ class ScopeDisciplineTests(unittest.TestCase):
         for case in cases_covering("delta-review-effective-delta-only"):
             with self.subTest(case=case.case_id):
                 self.assertTrue(case.forbidden_terms, "delta case must declare out-of-scope markers")
-                haystack = case.full_brief_text()
-                for term in case.forbidden_terms:
-                    self.assertNotIn(term, haystack)
+                self.assertEqual(out_of_scope_terms_present(case), ())
 
     def test_stacked_case_covers_owned_layer_only(self) -> None:
         for case in cases_covering("stacked-pr-effective-layer-only"):
             with self.subTest(case=case.case_id):
-                haystack = case.full_brief_text()
-                for term in case.forbidden_terms:
-                    self.assertNotIn(term, haystack)
+                self.assertTrue(case.forbidden_terms, "stacked case must declare out-of-scope markers")
+                self.assertEqual(out_of_scope_terms_present(case), ())
 
     def test_partitioned_case_has_no_per_partition_notes(self) -> None:
         for case in cases_covering("large-pr-aggregate-not-partition-notes"):
             with self.subTest(case=case.case_id):
-                haystack = case.full_brief_text()
-                for term in case.forbidden_terms:
-                    self.assertNotIn(term, haystack)
+                self.assertTrue(case.forbidden_terms, "partitioned case must declare out-of-scope markers")
+                self.assertEqual(out_of_scope_terms_present(case), ())
+
+
+class ScopeDisciplineCheckerCatchesViolationTests(unittest.TestCase):
+    """A scope-discipline assertion that could never fail is worthless
+    (the same principle
+    test_reviewer_brief_publication_isolation.py's LeakCheckerCatchesARealLeakTests
+    applies to publication leakage). This proves out_of_scope_terms_present()
+    actually detects a delta/stacked-PR scope violation -- the exact
+    regression shape #309's "summarizes the effective reviewed
+    delta/layer, not the full history/stack" requirement exists to catch
+    -- using deliberately broken fixtures, never one of the real corpus
+    cases above. Each canary reuses a real case's own forbidden_terms so
+    the canary is proven to violate the same scope those terms guard."""
+
+    def test_checker_flags_a_delta_brief_that_leaks_prior_round_files(self) -> None:
+        real_case = cases_covering("delta-review-effective-delta-only")[0]
+        leaky = ReviewerBriefCase(
+            case_id="__negative_canary_delta_leaks_full_history__",
+            covers=frozenset(),
+            mode="active",
+            human_review_output=False,
+            decision="clean",
+            user_focus_input=None,
+            what_changed=(
+                "This delta fixes the retry-idempotency gap and also "
+                "restates the full review history, including the earlier "
+                f"changes to `{real_case.forbidden_terms[0]}` and "
+                f"`{real_case.forbidden_terms[1]}`."
+            ),
+            user_provided_focus_field="none provided",
+            manual_review_focus=(
+                "Confirm the regression test exercises the double-submit path.",
+                "Re-skim the idempotency-key check for the prior off-by-one.",
+            ),
+            open_questions=None,
+            independent_focus_present=True,
+            references_finalized_finding=False,
+            forbidden_terms=real_case.forbidden_terms,
+        )
+        self.assertEqual(out_of_scope_terms_present(leaky), real_case.forbidden_terms)
+
+    def test_checker_flags_a_stacked_brief_that_re_analyzes_the_lower_layer(self) -> None:
+        real_case = cases_covering("stacked-pr-effective-layer-only")[0]
+        leaky = ReviewerBriefCase(
+            case_id="__negative_canary_stacked_reanalyzes_lower_layer__",
+            covers=frozenset(),
+            mode="active",
+            human_review_output=False,
+            decision="changes-required",
+            user_focus_input=None,
+            what_changed="Covers both #52's retry wrapper and #41's own diff in full.",
+            user_provided_focus_field="none provided",
+            manual_review_focus=(
+                f"Re-review {real_case.forbidden_terms[0]} from #41's internal implementation.",
+                "Confirm the wrapper's backoff policy.",
+            ),
+            open_questions=None,
+            independent_focus_present=True,
+            references_finalized_finding=False,
+            forbidden_terms=real_case.forbidden_terms,
+        )
+        self.assertEqual(
+            frozenset(out_of_scope_terms_present(leaky)), frozenset(real_case.forbidden_terms)
+        )
 
 
 class HumanReviewOutputSemanticInvarianceTests(unittest.TestCase):

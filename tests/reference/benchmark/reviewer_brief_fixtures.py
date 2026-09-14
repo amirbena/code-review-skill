@@ -261,9 +261,14 @@ DELTA_RE_REVIEW = ReviewerBriefCase(
     open_questions=None,
     independent_focus_present=True,
     references_finalized_finding=False,
+    # Concrete file paths touched only in earlier, out-of-scope review
+    # rounds -- the literal artifacts a naive full-history re-synthesis
+    # would plausibly name, not an arbitrary invented sentence. See
+    # out_of_scope_terms_present() and its negative-canary coverage in
+    # test_reviewer_brief_structural.py.
     forbidden_terms=(
-        "the first review round's auth-module rewrite",
-        "the second review round's schema migration",
+        "auth/middleware.py",
+        "db/schema_migration_003.py",
     ),
     github_review_body="REVIEW CLEAN\n\nNo findings in this delta.",
     github_inline_comments=(),
@@ -292,9 +297,13 @@ STACKED_PR = ReviewerBriefCase(
     open_questions=None,
     independent_focus_present=True,
     references_finalized_finding=False,
+    # Concrete identifiers from #41's own implementation -- the literal
+    # artifacts a naive full-stack re-analysis would plausibly surface,
+    # not an arbitrary invented sentence. See out_of_scope_terms_present()
+    # and its negative-canary coverage in test_reviewer_brief_structural.py.
     forbidden_terms=(
-        "#41's internal implementation",
-        "re-reviewing #41",
+        "RateLimiter.acquire",
+        "#41's own diff",
     ),
     github_review_body=(
         "## Summary\nChanges required.\n\n"
@@ -447,6 +456,17 @@ REQUIRED_COVERAGE_TAGS: frozenset[str] = frozenset(
         "findings-inform-focus-no-duplication",
     }
 )
+
+
+def out_of_scope_terms_present(case: ReviewerBriefCase) -> tuple[str, ...]:
+    """Which of a case's declared `forbidden_terms` actually appear in its
+    brief text. Empty means the case stays within its declared scope
+    (delta / stacked-layer / partition-aggregate). Shared by the real
+    corpus assertions and the negative-canary tests that prove this check
+    has genuine detection power -- mirroring
+    brief_leaked_into_github()'s role for publication isolation."""
+    text = case.full_brief_text()
+    return tuple(term for term in case.forbidden_terms if term in text)
 
 
 def cases_covering(tag: str) -> tuple[ReviewerBriefCase, ...]:
