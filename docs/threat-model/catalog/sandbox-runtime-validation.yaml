@@ -140,7 +140,7 @@ scenarios:
   expected_security_event: DENIED_SANDBOX_FILESYSTEM_ACCESS
   benchmark_family: sandbox/#306
   benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
-  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::FilesystemBoundaryTests::test_sbox_007_git_config_mutation_never_reaches_the_original_git_dir
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::FilesystemBoundaryTests (test_sbox_007_git_config_mutation_never_reaches_the_original_git_dir, test_sbox_007_git_hooks_mutation_never_reaches_the_original_git_dir)
   threat_severity: CRITICAL
 - id: SBOX-008
   title: Validation sandbox invokes a GitHub/external write API
@@ -222,7 +222,7 @@ scenarios:
   expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
   benchmark_family: sandbox/#306
   benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
-  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::PersistenceTests::test_sbox_011_background_process_does_not_survive_teardown
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::PersistenceTests (test_sbox_011_background_process_does_not_survive_teardown, test_sbox_011_generated_artifacts_and_caches_do_not_persist_on_the_host)
   threat_severity: MEDIUM
   notes: 'The Docker primitive closes this completely (its own PID namespace; docker_runner.py
     force-removes the container regardless of client-side state). The native macOS Seatbelt primitive

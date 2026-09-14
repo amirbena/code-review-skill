@@ -19,6 +19,7 @@ import time
 from pathlib import Path
 from unittest import mock
 
+from scripts.sandbox import capability
 from scripts.sandbox.boundary import Outcome, SandboxLimits
 from tests.integration.sandbox._harness import PRIMITIVES, SandboxIntegrationCase
 
@@ -95,18 +96,49 @@ class CredentialAccessTests(SandboxIntegrationCase):
             del os.environ["GITHUB_TOKEN"]
 
     def test_sbox_004_root_home_directory_is_unreadable(self) -> None:
-        code = (
-            "print(open('/root/.ssh/id_rsa').read())\n"
-            "print('PAYLOAD-SUCCEEDED')\n"
-        )
-        for primitive in PRIMITIVES:
-            with self.subTest(primitive=primitive):
-                result = self.run_python(primitive, code)
-                self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+        # /root itself is denied outright on macOS (_ALWAYS_DENIED_READ_ROOTS
+        # in macos_seatbelt.py). Create a definite, disposable target under
+        # it first — never overwriting a real pre-existing key — so the
+        # assertion below can't pass merely because the path never existed;
+        # skip cleanly when this host can't provide one (e.g. a non-root
+        # reviewer on Linux/CI, where /root is not even traversable).
+        target = Path("/root/.ssh/id_rsa")
+        created_dir = created_file = False
+        try:
+            if not target.parent.is_dir():
+                target.parent.mkdir(parents=True)
+                created_dir = True
+            if not target.exists():
+                target.write_text("HOST-ROOT-SECRET")
+                created_file = True
+        except OSError:
+            pass
+        try:
+            if not target.exists():
+                self.skipTest("cannot seed or find /root/.ssh/id_rsa on this host; denial cannot be exercised")
+            code = (
+                "print(open('/root/.ssh/id_rsa').read())\n"
+                "print('PAYLOAD-SUCCEEDED')\n"
+            )
+            for primitive in PRIMITIVES:
+                with self.subTest(primitive=primitive):
+                    result = self.run_python(primitive, code)
+                    self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
+                    if created_file:
+                        self.assertNotIn("HOST-ROOT-SECRET", result.stdout)
+        finally:
+            if created_file:
+                target.unlink(missing_ok=True)
+            if created_dir:
+                shutil.rmtree(target.parent, ignore_errors=True)
 
     def test_sbox_004_browser_and_session_credential_stores_are_unreadable(self) -> None:
         # Real on-host paths a compromised validation command would try
-        # first for cookie jars, saved sessions, and CLI-tool tokens.
+        # first for cookie jars, saved sessions, and CLI-tool tokens. Which
+        # of these actually exist varies by host (a CI runner typically has
+        # none), so this is a best-effort sweep: skip explicitly, rather
+        # than silently pass, when none of them exist to exercise denial
+        # against.
         candidates = (
             "~/.netrc",
             "~/.aws/credentials",
@@ -116,6 +148,9 @@ class CredentialAccessTests(SandboxIntegrationCase):
             "~/Library/Cookies/Cookies.binarycookies",
             "~/.config/google-chrome/Default/Cookies",
         )
+        existing = [c for c in candidates if os.path.exists(os.path.expanduser(c))]
+        if not existing:
+            self.skipTest("no candidate browser/session credential path exists on this host")
         code = (
             "import os\n"
             f"for rel in {candidates!r}:\n"
@@ -222,9 +257,19 @@ class FilesystemBoundaryTests(SandboxIntegrationCase):
         for primitive in PRIMITIVES:
             with self.subTest(primitive=primitive):
                 result = self.run_python(primitive, code)
+                # The absence of the success marker is real signal for
+                # every primitive: Docker's container root is owned by
+                # root while the payload runs as uid 65534, so even a
+                # traversal that reached the *container's own* "/" would
+                # still have to fail this specific assertion.
                 self.assertNotIn("PAYLOAD-SUCCEEDED", result.stdout)
-        # The canary must not have landed anywhere reachable on the real
-        # host filesystem root or the reviewed source tree's parent.
+        # The two checks below are host-filesystem checks and are only
+        # meaningful signal for a primitive that shares the host's real
+        # filesystem (Seatbelt, bwrap) — Docker's own container rootfs is
+        # a separate, already-discarded filesystem, so these can never
+        # observe a Docker-side escape that stayed inside that container;
+        # Docker's containment for this scenario is structural (its own
+        # mount/user namespace), proven above by the marker check instead.
         self.assertFalse((Path("/") / marker_name).exists())
         self.assertFalse((self.source_dir.parent / marker_name).exists())
 
@@ -283,16 +328,28 @@ class ResourceExhaustionTests(SandboxIntegrationCase):
                 self.assertEqual(result.outcome, Outcome.FAILED)
 
     def test_sbox_010_cpu_budget_terminates_a_busy_loop(self) -> None:
-        # A tight, syscall-free busy loop only a CPU-time (not wall-clock)
-        # ceiling can be relied on to bound for the Seatbelt/bwrap
-        # primitives; the generous wall-clock ceiling here is a backstop,
-        # never the mechanism under test.
+        # A tight, syscall-free busy loop. On Seatbelt/bwrap the sandboxed
+        # process itself carries RLIMIT_CPU (process_exec._preexec runs
+        # with apply_resource_limits=True there), so it must die from the
+        # 2s CPU ceiling well before the 25s wall-clock deadline — the
+        # duration assertion below is what actually proves that. Docker
+        # sets no per-process CPU-seconds limit (only a --cpus rate cap on
+        # the container, applied with apply_resource_limits=False on the
+        # docker-client wrapper process) so that primitive is bounded only
+        # by the wall-clock backstop here — real containment either way,
+        # but the CPU-specific ceiling is not what terminates it.
         code = "x = 0\nwhile True:\n    x += 1\n"
         for primitive in PRIMITIVES:
             with self.subTest(primitive=primitive):
                 limits = SandboxLimits(wall_clock_seconds=25, cpu_seconds=2)
+                started = time.monotonic()
                 result = self.run_python(primitive, code, limits=limits)
                 self.assertEqual(result.outcome, Outcome.FAILED)
+                if primitive is not capability.Primitive.DOCKER:
+                    self.assertLess(
+                        time.monotonic() - started, 15,
+                        "expected the RLIMIT_CPU ceiling, not the wall-clock backstop, to end this run",
+                    )
 
     def test_sbox_010_memory_budget_terminates_an_allocation_bomb(self) -> None:
         code = (
