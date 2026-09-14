@@ -243,6 +243,10 @@ as a delegated Agent/Sub-Agent is purely mechanical and never changes who
 owns the decision to invoke it. Loop limits and re-review timing are an
 orchestration concern; for recommended (not enforced) re-review
 discipline see [`runbooks/local-review.md`](runbooks/local-review.md).
+This Skill holds no `spawn_agent` capability of its own — it is a single
+bounded invocation with no worker fan-out; see
+[`agent-delegation.md`](../../shared/policies/agent-delegation.md),
+"`spawn_agent` is an explicit capability" (absent by default).
 
 ## 5. Mutation Boundary
 

@@ -73,8 +73,11 @@ everything else required):
 
 ### Coverage-gap semantics
 
-Because `#301`/`#302`/`#303`/`#305`/`#306`/`#307`/`#299`/`#308` are
-unmerged or not yet started, most scenarios legitimately have:
+Because `#301`/`#302`/`#305`/`#306`/`#307`/`#299`/`#308` are unmerged or
+not yet started, most scenarios legitimately have — the exception is
+`#303`, whose 11 `DELEG-###` scenarios now carry real `enforcement_point`
+and `regression_evidence` (`benchmark_reference` stays `COVERAGE_GAP`
+pending `#307`):
 
 ```yaml
 enforcement_owner: COVERAGE_GAP      # or an issue ref, e.g. "#301"

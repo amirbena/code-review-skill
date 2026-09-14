@@ -75,13 +75,18 @@ SEVERITY_LEGEND = {
 # also deliberate and unrelated to #223. LOCAL_RUNBOOK was re-captured
 # again after Issue #82 (step 9 now also names the new "Domain-specific
 # deepening pass" shared section, canonical home specialist-depth.md) —
-# also deliberate and unrelated to #223. The other files in this map are
-# untouched by #89/#237/#211/#121/#175/#258/#82 and keep their original
-# #223-era hashes.
+# also deliberate and unrelated to #223. LOCAL_SKILL was re-captured again
+# after Issue #303 (the agent-spawn / delegation capability boundary: a
+# one-line statement in section 4 that this Skill holds no `spawn_agent`
+# capability of its own, linking to the new
+# shared/policies/agent-delegation.md) — also deliberate and unrelated to
+# #223. The other files in this map are untouched by
+# #89/#237/#211/#121/#175/#258/#82/#303 and keep their original #223-era
+# hashes.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "1abf7c6a28f6d6b73a845aa8c8f9e06e7d062a82",
     LOCAL_RUNBOOK: "87a6590f8f0d861eeb616d6fe2cf1e93443185df",
-    LOCAL_SKILL: "44b6e6953d2847f6c999d5824d41d235b6fd9435",
+    LOCAL_SKILL: "fd7590a6034aad16583c1a7fb681c4fda6e965ce",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "1b5238723eab4308407c137c554fa3a169e8b482",
     LOCAL_POLICY_DIR / "repository-state.md": "6792d7e3f7ae1ad0214fff2e85db5e28ac6fb108",

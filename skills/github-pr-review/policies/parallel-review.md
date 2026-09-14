@@ -97,3 +97,9 @@ one doc, not this policy.
 - No new mutation; the PR stays the Review Target; decision derivation is
   unchanged (shared [`parallel-review.md`](../../../shared/policies/parallel-review.md),
   "Boundaries").
+- Workers hold no `spawn_agent`, publication, mutation, or formal
+  review-action capability of their own — the capability gate is
+  [`agent-delegation.md`](../../../shared/policies/agent-delegation.md),
+  "Read-only worker capability set." Nested/recursive worker spawning is
+  bounded by that policy's tree-wide `max_agents_per_invocation` and
+  `max_spawn_depth`, not by a per-worker allowance.

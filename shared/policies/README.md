@@ -45,6 +45,7 @@ packaged Skill is installed; they do not depend on this repository.
 | [`git-safety.md`](git-safety.md) | How both Skills inspect a target repository without mutating it. |
 | [`review-ownership.md`](review-ownership.md) | One review scope has one Code Review Agent owner; the access-vs-ownership distinction and parallel-review guards. |
 | [`parallel-review.md`](parallel-review.md) | The portable contract for splitting one review across independent workers when the runtime exposes a reliable capability; sequential fallback always valid. |
+| [`agent-delegation.md`](agent-delegation.md) | The capability boundary for spawning/delegating to additional agents: `spawn_agent` absent by default, hard tree-wide budgets on agent count and spawn depth, the delegation-intersection rule (`child ⊆ parent ∩ explicit_delegation`), non-transferable mutation/review-action authorization, and confused-deputy protections. |
 | [`invocation-options.md`](invocation-options.md) | Deterministic, invocation-scoped normalization of shared presentation options and finding-detail precedence. |
 | [`remediation-guidance.md`](remediation-guidance.md) | Advisory fix direction on findings; never changes finding identity, severity, dedup, or the derived verdict. |
 | [`remediation-scope-boundary.md`](remediation-scope-boundary.md) | The mandatory three-part reasoning that separates a finding's validity/severity from how much of its remediation the current task/PR boundary must absorb versus defer as a `Follow-up`. Never changes severity, identity, or the decision derivation. |
