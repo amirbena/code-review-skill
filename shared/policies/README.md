@@ -43,6 +43,7 @@ packaged Skill is installed; they do not depend on this repository.
 | [`runtime-validation.md`](runtime-validation.md) | Safe, repository-declared validation evidence: narrow command selection, read-only safety gates, four explicit outcomes, and unchanged finding/decision semantics. |
 | [`file-reviewability.md`](file-reviewability.md) | Evidence-based classification of changed files whose direct line-by-line review is low-value or impossible (vendored, generated, minified, binary, snapshots). |
 | [`git-safety.md`](git-safety.md) | How both Skills inspect a target repository without mutating it. |
+| [`mutation-authority.md`](mutation-authority.md) | The structural, read-only-by-default capability pipeline (`READ_ONLY` → `PROPOSE_PATCH` → `APPLY_PATCH`/`COMMIT`/`PUSH`) backing `git-safety.md`, with single-use, non-transferable, digest/base/invocation-bound authorization. |
 | [`review-ownership.md`](review-ownership.md) | One review scope has one Code Review Agent owner; the access-vs-ownership distinction and parallel-review guards. |
 | [`parallel-review.md`](parallel-review.md) | The portable contract for splitting one review across independent workers when the runtime exposes a reliable capability; sequential fallback always valid. |
 | [`invocation-options.md`](invocation-options.md) | Deterministic, invocation-scoped normalization of shared presentation options and finding-detail precedence. |
