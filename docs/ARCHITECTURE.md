@@ -486,6 +486,23 @@ and no packaged Skill resource depends on them.
   are unchanged, and no finding-template field is added — the eventual
   representation of relationship-influence attribution in the packaged
   finding contract is deferred; see "Future work" below.
+- **Benchmark, measurement & analytics architecture** — the canonical
+  cross-component design spanning the benchmark-quality-gate epic (#329:
+  isolated runtime execution #330→#336→#337, the PR-time taxonomy/
+  selection/shadow-validation gate #331/#333/#334/#335, and nightly
+  full-corpus drift detection #332/#338/#339) and the three related
+  measurement capabilities it deliberately does not implement or
+  sequence — execution telemetry (#182), analytics (#131), and
+  repository-scoped learning (#130): the dependency DAG across all
+  fourteen issues, the nine architecture layers and their single owners,
+  the vendor-neutral runtime contract, PR-time and nightly path
+  principles, and the telemetry ≠ benchmark-ground-truth ≠ analytics ≠
+  learning boundary
+  ([`benchmark-measurement-architecture/README.md`](benchmark-measurement-architecture/README.md) →
+  [`benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](benchmark-measurement-architecture/benchmark-measurement-architecture-model.md)).
+  It has **no** packaged touch-point and ships no implementation — each of
+  the fourteen issues retains its own local scope and implements its own
+  slice; this document owns only the order and boundaries between them.
 
 ### Future work (not implemented)
 
