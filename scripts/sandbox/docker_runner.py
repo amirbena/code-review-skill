@@ -13,6 +13,7 @@ import uuid
 from pathlib import Path
 
 from scripts.sandbox.boundary import SandboxRequest
+from scripts.sandbox.capability import docker_client_env
 from scripts.sandbox.process_exec import BoundedRunResult, run_bounded
 from scripts.sandbox.workspace import SandboxWorkspace
 
@@ -24,6 +25,7 @@ def _force_remove(container_name: str) -> None:
         ["docker", "rm", "-f", container_name],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        env=docker_client_env(),
         timeout=15,
     )
 
@@ -70,12 +72,11 @@ def run(
         image,
         *request.argv,
     )
-    client_env = {"PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"}
     try:
         result = run_bounded(
             docker_argv,
             cwd=str(workspace.root),
-            env=client_env,
+            env=docker_client_env(),
             limits=limits,
             growth_watch_dir=str(workspace.work_copy),
         )

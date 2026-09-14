@@ -5,6 +5,7 @@ Never assumes a primitive is present; every check actually probes the host.
 
 from __future__ import annotations
 
+import os
 import platform
 import shutil
 import subprocess
@@ -19,6 +20,37 @@ class Primitive(Enum):
     LINUX_BWRAP = "linux-bwrap"
 
 
+# Passed through from the ambient environment when set, so a host that
+# needs one of these to reach its Docker daemon (a non-default context
+# such as Colima/OrbStack, or a relocated ~/.docker/config.json) behaves
+# identically at detection time and at actual run time — see
+# docker_client_env().
+_DOCKER_ENV_PASSTHROUGH = (
+    "DOCKER_HOST",
+    "DOCKER_CONTEXT",
+    "DOCKER_CONFIG",
+    "DOCKER_TLS_VERIFY",
+    "DOCKER_CERT_PATH",
+)
+
+
+def docker_client_env() -> dict[str, str]:
+    """Minimal env for invoking the `docker` CLI itself.
+
+    Used identically by _docker_available() (detection) and
+    docker_runner.run() (actual execution) so the two never disagree: a
+    host whose Docker CLI needs DOCKER_HOST/DOCKER_CONFIG/etc. to reach
+    its daemon either passes both or neither, never "detected available"
+    then fails to actually run.
+    """
+    env = {"PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"}
+    for name in _DOCKER_ENV_PASSTHROUGH:
+        value = os.environ.get(name)
+        if value:
+            env[name] = value
+    return env
+
+
 def _docker_available() -> bool:
     if shutil.which("docker") is None:
         return False
@@ -27,6 +59,7 @@ def _docker_available() -> bool:
             ["docker", "info"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            env=docker_client_env(),
             timeout=5,
         )
     except (OSError, subprocess.TimeoutExpired):

@@ -52,8 +52,43 @@ class ProbeFunctionTests(unittest.TestCase):
             with mock.patch("subprocess.run", side_effect=OSError("no daemon")):
                 self.assertFalse(capability._docker_available())
 
+    def test_docker_probe_uses_the_same_env_as_docker_client_env(self) -> None:
+        # Detection and actual execution (docker_runner.run) must agree on
+        # environment, or a host can pass detection and then fail to run.
+        with mock.patch("shutil.which", return_value="/usr/local/bin/docker"):
+            with mock.patch("subprocess.run") as run:
+                run.return_value = mock.Mock(returncode=0)
+                capability._docker_available()
+        self.assertEqual(run.call_args.kwargs["env"], capability.docker_client_env())
+
     def test_no_isolation_primitive_never_falls_back_silently(self) -> None:
         """A None result is the fail-closed signal callers must respect."""
         with mock.patch.object(capability, "_PROBES", ()):
             self.assertIsNone(capability.detect_primitive())
             self.assertEqual(capability.available_primitives(), ())
+
+
+class DockerClientEnvTests(unittest.TestCase):
+    def test_docker_host_is_passed_through_when_set(self) -> None:
+        with mock.patch.dict("os.environ", {"DOCKER_HOST": "ssh://example"}, clear=False):
+            self.assertEqual(capability.docker_client_env()["DOCKER_HOST"], "ssh://example")
+
+    def test_docker_config_is_passed_through_when_set(self) -> None:
+        with mock.patch.dict("os.environ", {"DOCKER_CONFIG": "/custom/docker"}, clear=False):
+            self.assertEqual(capability.docker_client_env()["DOCKER_CONFIG"], "/custom/docker")
+
+    def test_unset_passthrough_vars_are_absent_not_empty(self) -> None:
+        with mock.patch.dict("os.environ", {}, clear=True):
+            env = capability.docker_client_env()
+        for name in capability._DOCKER_ENV_PASSTHROUGH:
+            self.assertNotIn(name, env)
+
+    def test_always_carries_a_minimal_path(self) -> None:
+        with mock.patch.dict("os.environ", {}, clear=True):
+            env = capability.docker_client_env()
+        self.assertIn("PATH", env)
+
+    def test_no_other_ambient_variables_leak_through(self) -> None:
+        with mock.patch.dict("os.environ", {"GITHUB_TOKEN": "leak-me"}, clear=False):
+            env = capability.docker_client_env()
+        self.assertNotIn("GITHUB_TOKEN", env)

@@ -105,3 +105,13 @@ class DockerRunnerArgvTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     docker_runner.run(request, self.workspace)
                 force_remove.assert_called_once()
+
+    def test_run_uses_the_same_client_env_as_capability_detection(self) -> None:
+        # Detection (capability._docker_available) and execution must
+        # agree, or a host needing DOCKER_HOST/DOCKER_CONFIG can pass
+        # detection and then fail to actually run.
+        request = SandboxRequest(argv=("true",), source_dir=self.source, limits=SandboxLimits())
+        with mock.patch.object(docker_runner, "run_bounded", return_value=_bounded()) as run_bounded:
+            with mock.patch.object(docker_runner, "_force_remove"):
+                docker_runner.run(request, self.workspace)
+        self.assertEqual(run_bounded.call_args.kwargs["env"], docker_runner.docker_client_env())
