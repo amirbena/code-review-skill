@@ -1,0 +1,135 @@
+format: threat-scenario-catalog/v1
+category: SCOPE
+scenarios:
+- id: SCOPE-001
+  title: Untrusted context attempts to widen the Review Target beyond the PR delta
+  category: SCOPE
+  attacker_model: prompt_injected_context
+  attacker_controlled_inputs:
+  - repository files, comments, or instructions naming out-of-delta paths
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository/PR content reachable through the review scope
+  trusted_inputs: []
+  protected_asset: Review Target boundary
+  required_capability_state: Review Target is fixed by context resolution, not by reviewed text
+  enforcement_owner: 'existing: shared/policies/review-context.md'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: out-of-delta content stays Repository Context only; no finding is raised against
+    it
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: existing review-scope discipline; duplicate of INJECT-004 under the scope-integrity
+    lens
+  regression_evidence: COVERAGE_GAP
+  threat_severity: MEDIUM
+- id: SCOPE-002
+  title: Stale HEAD/base is accepted after the remote advanced
+  category: SCOPE
+  attacker_model: runtime_misconfiguration
+  attacker_controlled_inputs:
+  - timing of remote advancement relative to checkout/fetch
+  assumed_attacker_capabilities:
+  - no attacker control in the common case; a race/staleness condition
+  trusted_inputs: []
+  protected_asset: correctness of the reviewed delta boundary
+  required_capability_state: head SHA is verified to resolve to the expected value after fetch
+  enforcement_owner: 'existing: tests/reference/review/pr_checkout.py'
+  enforcement_point: '`_resolve_head_sha()` requires the fetched head to match the expected `head_sha`;
+    mismatch raises `InvalidShaError`'
+  expected_safe_outcome: an unverifiable/mismatched head is treated as an invalid-head failure, not silently
+    reviewed
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: existing structural control for the checkout path; formal review-action stale-head
+    handling is separately covered
+  regression_evidence: tests/reference/review/pr_checkout.py::_resolve_head_sha; tests/unit/review/test_review_action_authorization.py::test_stale_head_reports_verdict_and_blocks_mutation
+  threat_severity: HIGH
+- id: SCOPE-003
+  title: Prior comments or generated metadata masquerade as trusted, settled evidence
+  category: SCOPE
+  attacker_model: prompt_injected_context
+  attacker_controlled_inputs:
+  - prior review comments
+  - generated finding/verdict metadata
+  - stateful re-review history
+  assumed_attacker_capabilities:
+  - ability to write or influence PR comments and prior review artifacts
+  trusted_inputs: []
+  protected_asset: evidence-integrity boundary between trusted runtime state and reviewed content
+  required_capability_state: COVERAGE_GAP
+  enforcement_owner: COVERAGE_GAP
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: prior/generated metadata is reconciled as evidence to evaluate on its own merits,
+    never accepted as settled fact without independent verification
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: reasoning-discipline scenario; no dedicated regression test located for adversarial
+    metadata specifically
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+- id: SCOPE-004
+  title: A security/validation execution failure is incorrectly converted into REVIEW CLEAN
+  category: SCOPE
+  attacker_model: runtime_misconfiguration
+  attacker_controlled_inputs:
+  - validation/sandbox execution outcome (error, crash, timeout)
+  assumed_attacker_capabilities:
+  - no attacker control in the common case; a failure-handling correctness property
+  trusted_inputs: []
+  protected_asset: decision-derivation integrity
+  required_capability_state: an execution failure is a distinct outcome from a passing/clean result
+  enforcement_owner: COVERAGE_GAP
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: a security-relevant execution failure yields an incomplete/withheld/denied outcome,
+    never a clean decision manufactured from the absence of a result
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: decision-semantics correctness property; no dedicated adversarial regression test
+    located
+  regression_evidence: COVERAGE_GAP
+  threat_severity: CRITICAL
+  notes: 'This is the single highest-leverage scenario in the catalog: every other boundary''s safety
+    depends on a denial or failure never being silently upgraded to a clean verdict. #310 should treat
+    this scenario as a required cross-check for every other category''s `expected_safe_outcome`.'
+- id: SCOPE-005
+  title: Incomplete validation is treated as successful evidence
+  category: SCOPE
+  attacker_model: runtime_misconfiguration
+  attacker_controlled_inputs:
+  - partial/bounded validation output (e.g. truncated, timed-out, or budget-exhausted run)
+  assumed_attacker_capabilities:
+  - no attacker control in the common case; a failure-handling correctness property
+  trusted_inputs: []
+  protected_asset: evidence-completeness integrity
+  required_capability_state: partial evidence is labeled as partial, not silently treated as conclusive
+  enforcement_owner: COVERAGE_GAP
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: an incomplete validation run is surfaced as incomplete evidence, not reported
+    as if it fully confirmed or refuted a finding
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: decision-semantics correctness property; no dedicated adversarial regression test
+    located
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+- id: SCOPE-006
+  title: Reviewed-SHA state drifts without triggering re-review of stale findings
+  category: SCOPE
+  attacker_model: runtime_misconfiguration
+  attacker_controlled_inputs:
+  - repository state changing between a prior review and its reuse
+  assumed_attacker_capabilities:
+  - no attacker control in the common case; a staleness condition
+  trusted_inputs: []
+  protected_asset: correctness of finding reuse across a stateful re-review
+  required_capability_state: existing reviewed-SHA state contract governs when a prior finding may be
+    reused vs. must be re-evaluated
+  enforcement_owner: 'existing: docs/findings/reviewed-sha-state-contract.md'
+  enforcement_point: reviewed-SHA state check before reusing any prior finding
+  expected_safe_outcome: findings tied to superseded state are not silently reused as current
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: 'existing stateful re-review contract; #310 traceability should confirm it stays
+    wired to this scenario rather than drifting independently'
+  regression_evidence: tests/unit/review/stateful_review/test_review_status_enforcement.py
+  threat_severity: MEDIUM
