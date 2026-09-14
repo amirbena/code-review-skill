@@ -308,13 +308,14 @@ def _snapshot(root: Path) -> _Snapshot:
 
 
 def _status_entries(status: str) -> dict[str, str]:
+    # No "R  old -> new" rename-arrow line ever reaches here: _snapshot()'s
+    # only call site always passes --no-renames, so each entry is already a
+    # single, unpaired path.
     entries: dict[str, str] = {}
     for line in status.splitlines():
         if not line:
             continue
         code, path = line[:2], line[3:]
-        if " -> " in path:
-            path = path.split(" -> ", 1)[1]
         entries[path] = code
     return entries
 
