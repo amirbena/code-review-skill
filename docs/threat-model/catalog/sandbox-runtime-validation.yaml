@@ -13,12 +13,12 @@ scenarios:
   protected_asset: network egress boundary
   required_capability_state: network denied by default per runtime-validation.md
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/macos_seatbelt.py (deny network*) and scripts/sandbox/docker_runner.py (--network none)'
   expected_safe_outcome: the connection attempt is denied/unreachable from inside the sandbox
   expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::NetworkDenialTests::test_sbox_001_outbound_http_is_denied
   threat_severity: CRITICAL
   notes: 'shared/policies/runtime-validation.md, "Trust model and execution boundary", already documents
     "network denied by default" as the intended contract; #302''s own problem statement states existing
@@ -36,12 +36,12 @@ scenarios:
   protected_asset: network egress boundary (DNS)
   required_capability_state: network denied by default, including DNS
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/macos_seatbelt.py (deny network*) and scripts/sandbox/docker_runner.py (--network none)'
   expected_safe_outcome: DNS resolution fails/is denied from inside the sandbox
   expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::NetworkDenialTests::test_sbox_002_dns_resolution_is_denied
   threat_severity: HIGH
 - id: SBOX-003
   title: Validation sandbox attempts a raw-socket connection
@@ -55,12 +55,12 @@ scenarios:
   protected_asset: network egress boundary (raw sockets)
   required_capability_state: network denied by default, including raw sockets
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/macos_seatbelt.py (deny network*) and scripts/sandbox/docker_runner.py (--network none)'
   expected_safe_outcome: raw-socket creation/use fails/is denied from inside the sandbox
   expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::NetworkDenialTests::test_sbox_003_raw_socket_connect_is_denied
   threat_severity: HIGH
 - id: SBOX-004
   title: Validation sandbox attempts to read host credentials ($HOME, SSH agent, GitHub token, cloud credentials)
@@ -74,13 +74,13 @@ scenarios:
   protected_asset: host credential material
   required_capability_state: credentials/ambient auth material removed or inaccessible inside the sandbox
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/macos_seatbelt.py (_ALWAYS_DENIED_READ_ROOTS, _scrubbed_env) and scripts/sandbox/docker_runner.py (minimal -e env, no host credential mounts)'
   expected_safe_outcome: the read fails or returns nothing usable; no credential material is observable
     from inside the sandbox
   expected_security_event: DENIED_SANDBOX_CREDENTIAL_ACCESS
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::CredentialAccessTests
   threat_severity: CRITICAL
 - id: SBOX-005
   title: Validation sandbox attempts to read an unrelated repository or host path
@@ -95,12 +95,12 @@ scenarios:
   required_capability_state: filesystem visibility limited to the bounded reviewed work copy plus explicitly
     required read-only inputs
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/macos_seatbelt.py (_ALWAYS_DENIED_READ_ROOTS default-deny of shared/scratch roots) and scripts/sandbox/workspace.py (_copy_symlink_if_contained)'
   expected_safe_outcome: the read fails/is denied; only the bounded work copy is visible
   expected_security_event: DENIED_SANDBOX_FILESYSTEM_ACCESS
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::FilesystemBoundaryTests
   threat_severity: CRITICAL
 - id: SBOX-006
   title: Validation sandbox attempts to write to reviewed source files
@@ -114,13 +114,13 @@ scenarios:
   protected_asset: reviewed source-file integrity
   required_capability_state: validation writable state is ephemeral and separate from reviewed source
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/workspace.py (prepare_workspace copy-out boundary; sandboxed process never opens source_dir) and scripts/sandbox/runner.py (verify_source_unchanged)'
   expected_safe_outcome: the write fails/is denied, or lands only in ephemeral sandbox state never merged
     back
   expected_security_event: DENIED_SANDBOX_FILESYSTEM_ACCESS
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::FilesystemBoundaryTests::test_sbox_006_write_to_the_original_reviewed_source_is_unreachable
   threat_severity: CRITICAL
 - id: SBOX-007
   title: Validation sandbox attempts to mutate `.git`, hooks, or Git config
@@ -134,13 +134,13 @@ scenarios:
   protected_asset: Git metadata integrity
   required_capability_state: post-execution verification proves reviewed source/Git state was not mutated
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/workspace.py (prepare_workspace copy-out boundary) and scripts/sandbox/runner.py (verify_source_unchanged)'
   expected_safe_outcome: the write fails/is denied, or is detected by post-run verification and the run
     is treated as unsafe
   expected_security_event: DENIED_SANDBOX_FILESYSTEM_ACCESS
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::FilesystemBoundaryTests::test_sbox_007_git_config_mutation_never_reaches_the_original_git_dir
   threat_severity: CRITICAL
 - id: SBOX-008
   title: Validation sandbox invokes a GitHub/external write API
@@ -154,12 +154,12 @@ scenarios:
   protected_asset: external write-capable surfaces (GitHub API, other services)
   required_capability_state: sandbox exposes no host Git/GitHub mutation capability
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/macos_seatbelt.py (deny network*) and scripts/sandbox/docker_runner.py (--network none)'
   expected_safe_outcome: the call fails (no network, no credentials) before it can mutate anything external
   expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::ExternalWriteApiTests::test_sbox_008_github_api_call_is_denied
   threat_severity: CRITICAL
 - id: SBOX-009
   title: Validation sandbox spawns excessive subprocesses, daemons, or a fork bomb
@@ -173,13 +173,13 @@ scenarios:
   protected_asset: host process-table / scheduler resources
   required_capability_state: hard process-count budget enforced
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/process_exec.py (_preexec RLIMIT_NPROC budget) and scripts/sandbox/docker_runner.py (--pids-limit)'
   expected_safe_outcome: process creation beyond the budget is refused/killed; the sandbox and host remain
     responsive
   expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::ResourceExhaustionTests::test_sbox_009_process_count_budget_contains_a_fork_bomb
   threat_severity: HIGH
 - id: SBOX-010
   title: Validation command exceeds wall-clock, CPU, memory, output, or filesystem-growth budget
@@ -193,13 +193,13 @@ scenarios:
   protected_asset: host resource budgets
   required_capability_state: hard wall-clock/CPU/memory/output/filesystem budgets enforced
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/process_exec.py (run_bounded wall-clock/output/filesystem-growth budgets; _preexec RLIMIT_CPU/RLIMIT_AS)'
   expected_safe_outcome: the run is terminated at the budget boundary; bounded partial evidence is returned,
     not a hang
   expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::ResourceExhaustionTests
   threat_severity: MEDIUM
   notes: 'shared/policies/runtime-validation.md, "Targeted validation of a suspected finding", "Budget
     and fail-safe", already documents a strict wall-clock timeout and bounded resource limits at the policy
@@ -216,14 +216,21 @@ scenarios:
   protected_asset: teardown completeness
   required_capability_state: teardown kills descendants and removes ephemeral state
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/process_exec.py (_kill_process_group, _expand_descendants best-effort sweep) and scripts/sandbox/docker_runner.py (_force_remove container teardown)'
   expected_safe_outcome: no child/background process or writable state survives teardown; a subsequent
     run starts clean
   expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::PersistenceTests::test_sbox_011_background_process_does_not_survive_teardown
   threat_severity: MEDIUM
+  notes: 'The Docker primitive closes this completely (its own PID namespace; docker_runner.py
+    force-removes the container regardless of client-side state). The native macOS Seatbelt primitive
+    has no PID namespace: scripts/sandbox/process_exec.py mitigates a self-detaching descendant with
+    a best-effort early-window sweep (_expand_descendants), which is not a mathematical guarantee
+    against a payload that calls setsid() before the very first poll. Docker is preferred whenever
+    available (scripts/sandbox/capability.py detection order) so this residual gap is disclosed, not
+    silently accepted as the general contract.'
 - id: SBOX-012
   title: Repository-controlled task invokes package installation, deployment, migration, or publish
   category: SBOX
@@ -237,13 +244,13 @@ scenarios:
   required_capability_state: only exact commands/reproductions admitted by runtime-validation policy may
     run
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'shared/policies/runtime-validation.md (Safety gate: only the exact admitted command runs) and scripts/sandbox/runner.py (SandboxRequest.argv passthrough only, no command discovery)'
   expected_safe_outcome: the command is not admitted and does not run; no install/deploy/migrate/publish
     side effect occurs
   expected_security_event: DENIED_SANDBOX_UNAVAILABLE_PRIMITIVE
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::NoMutationAuthorityTests::test_sbox_012_sandbox_cannot_install_or_publish_packages
   threat_severity: HIGH
 - id: SBOX-013
   title: A required sandbox isolation primitive is unavailable on the host platform
@@ -257,13 +264,13 @@ scenarios:
   protected_asset: fail-closed behavior when isolation cannot be guaranteed
   required_capability_state: isolation primitive missing/unavailable
   enforcement_owner: '#302'
-  enforcement_point: COVERAGE_GAP
+  enforcement_point: 'scripts/sandbox/capability.py (detect_primitive fail-closed None) and scripts/sandbox/runner.py (SandboxRunner.run UNAVAILABLE path, never falls back to unsandboxed execution)'
   expected_safe_outcome: validation is reported as `unavailable`; the runtime never falls back to unrestricted
     host execution
   expected_security_event: NOT_APPLICABLE
   benchmark_family: sandbox/#306
   benchmark_reference: COVERAGE_GAP
-  regression_evidence: COVERAGE_GAP
+  regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::UnavailablePrimitiveTests::test_sbox_013_no_primitive_reports_unavailable_never_falls_back
   threat_severity: HIGH
   notes: 'Not itself a denial of an attacker action, so no denied-capability event is expected — the safe
     outcome is refusal to run at all, which #299 may still choose to log as an operational event distinct
