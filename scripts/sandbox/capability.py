@@ -51,15 +51,24 @@ def docker_client_env() -> dict[str, str]:
     return env
 
 
+def resolve_docker_bin() -> str | None:
+    """Resolve docker's absolute path once, via the real ambient PATH.
+
+    The single source of truth for every docker invocation in this
+    package (_docker_available() here, and docker_runner.py's run() and
+    _force_remove()) — never the bare string "docker" resolved against
+    docker_client_env()'s fixed, minimal PATH, which is an *execution*
+    env, not a lookup path guaranteed to contain wherever this host's
+    docker actually lives (Homebrew on Apple Silicon, a Linux snap, a nix
+    profile, ...). A host where docker lives outside that fixed list
+    would otherwise pass detection (shutil.which uses the real ambient
+    PATH) and then fail every actual invocation.
+    """
+    return shutil.which("docker")
+
+
 def _docker_available() -> bool:
-    # Resolve the absolute path via the real ambient PATH once, and use
-    # that as argv[0] — docker_client_env()'s PATH is a fixed, minimal
-    # value for the *env* docker runs with, not a lookup path guaranteed
-    # to contain wherever this host's docker actually lives (Homebrew on
-    # Apple Silicon, a Linux snap, a nix profile, ...). Using the bare
-    # string "docker" here would let detection succeed via the real PATH
-    # while the actual invocation below (and docker_runner.py's) fails.
-    docker_bin = shutil.which("docker")
+    docker_bin = resolve_docker_bin()
     if docker_bin is None:
         return False
     try:

@@ -80,6 +80,23 @@ class ProbeFunctionTests(unittest.TestCase):
             self.assertEqual(capability.available_primitives(), ())
 
 
+class ResolveDockerBinTests(unittest.TestCase):
+    def test_returns_the_real_ambient_path_resolution(self) -> None:
+        with mock.patch("shutil.which", return_value="/opt/homebrew/bin/docker"):
+            self.assertEqual(capability.resolve_docker_bin(), "/opt/homebrew/bin/docker")
+
+    def test_returns_none_when_docker_is_not_on_the_ambient_path(self) -> None:
+        with mock.patch("shutil.which", return_value=None):
+            self.assertIsNone(capability.resolve_docker_bin())
+
+    def test_is_the_single_source_docker_runner_and_docker_available_both_use(self) -> None:
+        # docker_runner.py imports this exact function rather than
+        # resolving its own path — the consolidation this test locks in.
+        from scripts.sandbox import docker_runner
+
+        self.assertIs(docker_runner.resolve_docker_bin, capability.resolve_docker_bin)
+
+
 class DockerClientEnvTests(unittest.TestCase):
     def test_docker_host_is_passed_through_when_set(self) -> None:
         with mock.patch.dict("os.environ", {"DOCKER_HOST": "ssh://example"}, clear=False):
