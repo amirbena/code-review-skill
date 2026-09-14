@@ -1,0 +1,156 @@
+format: threat-scenario-catalog/v1
+category: DOS
+scenarios:
+- id: DOS-001
+  title: A huge repository (size/file count) exhausts checkout/inspection resources
+  category: DOS
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - repository size, file count, history depth
+  assumed_attacker_capabilities:
+  - authorship of an arbitrarily large repository reachable through the review scope
+  trusted_inputs: []
+  protected_asset: reviewer host resources during checkout/inspection
+  required_capability_state: checkout uses a blobless, shallow-by-ref clone rather than a full mirror
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: resource consumption stays bounded by the blobless/targeted-fetch strategy; a
+    pathological case still degrades to a bounded, reported failure rather than exhausting the host
+  expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: MEDIUM
+  notes: '`--filter=blob:none` in the existing clone step (tests/reference/review/pr_checkout.py) already
+    bounds blob transfer, but no explicit budget/kill-switch exists for an adversarially huge history/file
+    count, so overall containment is still a #302 gap.'
+- id: DOS-002
+  title: A cyclic or pathological repository structure causes unbounded traversal
+  category: DOS
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - symlink cycles
+  - deeply/adversarially nested directory structures
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository content, including symlinks and directory structure
+  trusted_inputs: []
+  protected_asset: reviewer traversal/enumeration resources
+  required_capability_state: traversal is bounded (depth/time/count) rather than unbounded recursion
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: traversal is cut off at a bound and reported as such, never hangs or exhausts
+    memory
+  expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: MEDIUM
+- id: DOS-003
+  title: A pathological diff exhausts review resources
+  category: DOS
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - an intentionally huge single-file diff
+  - a generated/minified file included in the PR delta
+  assumed_attacker_capabilities:
+  - authorship of arbitrary PR content
+  trusted_inputs: []
+  protected_asset: reviewer processing resources
+  required_capability_state: large-PR handling has a defined partitioning/bounding strategy
+  enforcement_owner: 'existing: shared/policies/large-pr-partitioning.md'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: an oversized diff is partitioned or bounded per existing policy rather than processed
+    unboundedly
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: existing review-scope policy for large PRs; not itself a runtime resource-isolation
+    control, so still tracked as a documentation-level (not structurally tested) mitigation
+  regression_evidence: COVERAGE_GAP
+  threat_severity: LOW
+- id: DOS-004
+  title: A decompression/output bomb appears in validation output or a fetched blob
+  category: DOS
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command output
+  - a crafted compressed blob
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: reviewer host memory/disk during output handling
+  required_capability_state: output is bounded (size cap) rather than fully buffered
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: output is truncated/capped at a bound and the truncation is reported; the host
+    does not exhaust memory or disk
+  expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+- id: DOS-005
+  title: A single validation command spawns an unbounded subprocess tree
+  category: DOS
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - repository-controlled test/build/validation command
+  assumed_attacker_capabilities:
+  - execution of an admitted validation command inside the sandbox
+  trusted_inputs: []
+  protected_asset: host process-table / scheduler resources
+  required_capability_state: hard process-count budget enforced, same control as SBOX-009
+  enforcement_owner: '#302'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: process creation beyond the budget is refused/killed
+  expected_security_event: DENIED_SANDBOX_RESOURCE_EXHAUSTION
+  benchmark_family: sandbox/#306
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+  notes: 'Same underlying control as SBOX-009, catalogued separately because the issue lists it under
+    both the sandbox and resource-abuse domains; #310 should treat SBOX-009/DOS-005 as one enforcement
+    point covered by one benchmark case, not two.'
+- id: DOS-006
+  title: A recursive agent tree exhausts orchestration resources
+  category: DOS
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - spawn-request pattern across multiple generations of children
+  assumed_attacker_capabilities:
+  - spawn_agent capability, ability to spawn at more than one tree level
+  trusted_inputs: []
+  protected_asset: orchestration-runtime resources (memory, scheduling, API budget)
+  required_capability_state: aggregate agent-tree size budget enforced, same control as DELEG-004
+  enforcement_owner: '#303'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: the tree-wide budget caps total agents; orchestration resources stay bounded
+  expected_security_event: DENIED_SPAWN_BUDGET_EXCEEDED
+  benchmark_family: delegation/#307
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+  notes: 'Same underlying control as DELEG-004; catalogued separately for the resource-abuse lens per
+    the issue''s own domain list. #310 should treat DELEG-004/DOS-006 as one enforcement point.'
+- id: DOS-007
+  title: Excessive parallel worker fan-out exhausts host resources
+  category: DOS
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - number of parallel review workers requested for one invocation
+  assumed_attacker_capabilities:
+  - ability to request a large parallel-worker fan-out
+  trusted_inputs: []
+  protected_asset: host resources during parallel review
+  required_capability_state: parallel-worker count is bounded
+  enforcement_owner: 'existing: shared/policies/parallel-review.md / #303 for the general spawn-budget
+    case'
+  enforcement_point: COVERAGE_GAP
+  expected_safe_outcome: worker fan-out is capped; a request beyond the cap is bounded rather than exhausting
+    host resources
+  expected_security_event: DENIED_SPAWN_BUDGET_EXCEEDED
+  benchmark_family: delegation/#307
+  benchmark_reference: COVERAGE_GAP
+  regression_evidence: COVERAGE_GAP
+  threat_severity: MEDIUM
+  notes: 'shared/policies/parallel-review.md defines worker/ownership semantics for parallel review but
+    documents no adversarial fan-out budget; the runtime enforcement is still #303''s to build.'
