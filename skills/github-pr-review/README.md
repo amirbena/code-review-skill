@@ -36,8 +36,7 @@ review #812; tell me what would happen, don't touch GitHub → SEMI: would-publi
                                                                no GitHub mutation
 review #812 and approve it if it's clean                   → ACTIVE: publishes Approve or
                                                                Request Changes
-review #812; block it if there are serious issues,
-but don't approve it                                        → ACTIVE, Approve suppressed:
+review #812; block it, but don't approve it                → ACTIVE, Approve suppressed:
                                                                publishes Request Changes only
 ```
 

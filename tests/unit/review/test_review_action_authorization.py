@@ -477,25 +477,25 @@ class NaturalLanguageIntentMapping(unittest.TestCase):
         ):
             self.assertEqual(raa.normalize_intent(phrase), raa.PublicationMode.ACTIVE, phrase)
 
-    def test_normalize_approval_declined_detects_the_dont_approve_scoping(self) -> None:
+    def test_detect_approval_declined_detects_the_dont_approve_scoping(self) -> None:
         for phrase in (
             "block it if there are serious issues, but don't approve it",
             "request changes if needed, but do not approve it",
             "please never approve this one",
         ):
-            self.assertTrue(raa.normalize_approval_declined(phrase), phrase)
+            self.assertTrue(raa.detect_approval_declined(phrase), phrase)
         for phrase in ("approve if clean", "just review it", "", None):
-            self.assertFalse(raa.normalize_approval_declined(phrase), phrase)
+            self.assertFalse(raa.detect_approval_declined(phrase), phrase)
 
     def test_block_dont_approve_end_to_end_still_publishes_request_changes(self) -> None:
-        # Wiring normalize_intent + normalize_approval_declined together
+        # Wiring normalize_intent + detect_approval_declined together
         # (as a caller would) must reproduce exactly the behavior the
         # policy promises: REQUEST_CHANGES for a blocking verdict,
         # APPROVE withheld for a clean one -- never PASSIVE's "nothing at
         # all".
         text = "block it if there are serious issues, but don't approve it"
         mode = raa.normalize_intent(text)
-        declined = raa.normalize_approval_declined(text)
+        declined = raa.detect_approval_declined(text)
         self.assertEqual(mode, raa.PublicationMode.ACTIVE)
         self.assertTrue(declined)
 

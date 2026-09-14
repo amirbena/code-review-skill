@@ -220,7 +220,7 @@ def classify_reviewer_independence(
 # "block it if there are serious issues, but don't approve it" and other
 # block/request-changes phrasing are themselves an ACTIVE request -- the
 # trailing "don't approve" is content-level scoping of *which* event an
-# ACTIVE request publishes (see normalize_approval_declined), never a
+# ACTIVE request publishes (see detect_approval_declined), never a
 # reason to fall back to PASSIVE. Dropping such a request to PASSIVE
 # would silently withhold REQUEST_CHANGES too, which review-action-
 # authorization.md, "Migration from the pre-#314 model" explicitly
@@ -265,7 +265,7 @@ def normalize_intent(text: Optional[str]) -> PublicationMode:
 # approval_declined_by_caller documents. A caller combines this with
 # normalize_intent's result the same way any other request detail is
 # combined; on its own it never changes the requested mode.
-def normalize_approval_declined(text: Optional[str]) -> bool:
+def detect_approval_declined(text: Optional[str]) -> bool:
     if not text:
         return False
     t = text.lower()
@@ -293,7 +293,7 @@ class ActionAuthorizationInput:
     don't approve it"): it never introduces a new authorization channel,
     it only suppresses the specific APPROVE event when the caller
     explicitly asked not to see it, exactly the way a caller could ask to
-    skip any other part of a request. See `normalize_approval_declined`
+    skip any other part of a request. See `detect_approval_declined`
     for deriving it from natural language.
     """
 
