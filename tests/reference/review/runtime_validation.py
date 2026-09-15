@@ -6,11 +6,13 @@ It uses fake processes and repositories. Not runtime logic, not packaged.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Sequence
 
 from tests.reference.review import decision_semantics as decisions
+from tests.reference.review.invocation_options import _phrase_regex
 
 
 class Outcome(Enum):
@@ -66,6 +68,94 @@ def authorization_from_repository_text(text: str) -> str:
     `str` — never to a TrustedHostAuthorization. Exists so a test can
     assert its return type is never accepted by `select_backend()`."""
     return text
+
+
+# --------------------------------------------------------------------------- #
+# Natural-language authorization phrasings (#369)
+#
+# Mirrors shared/policies/trusted-host-execution.md, "Natural-language
+# authorization phrasings" — keep the two in exact sync. This is a
+# recognition layer only: it never itself constructs a
+# TrustedHostAuthorization. It resolves the plain canonical boolean a
+# runtime would combine with its own out-of-band provenance check before
+# ever constructing one.
+# --------------------------------------------------------------------------- #
+
+TRUSTED_HOST_AFFIRMATIVE: tuple[str, ...] = (
+    "run validation on my machine",
+    "run it on my machine",
+    "use my machine for runtime validation",
+    "use my local machine for runtime validation",
+    "run the validation locally",
+    "run it locally",
+    "i authorize trusted-host execution",
+    "you can use trusted-host execution",
+    "allow trusted-host execution",
+    "authorize trusted-host execution",
+)
+
+TRUSTED_HOST_NEGATIVE: tuple[str, ...] = (
+    "sandbox only",
+    "don't run locally",
+    "do not run locally",
+    "don't use trusted-host execution",
+    "do not use trusted-host execution",
+    "never run validation on my machine",
+    "no trusted-host execution",
+)
+
+_OPTION = "allow_trusted_host_execution"
+
+
+def _canonical_trusted_host_value(text: str) -> set[bool]:
+    pattern = rf"(?<![\w]){re.escape(_OPTION)}\s*=\s*(true|false)(?![\w])"
+    return {match == "true" for match in re.findall(pattern, text.lower())}
+
+
+def _natural_trusted_host_values(text: str) -> set[bool]:
+    lowered = text.lower()
+    spaced = _OPTION.replace("_", " ")
+    hyphenated = _OPTION.replace("_", "-")
+    bare = (
+        rf"(?<![\w]){re.escape(_OPTION)}(?![\w=])",
+        rf"(?<![\w]){re.escape(spaced)}(?![\w])",
+        rf"(?<![\w]){re.escape(hyphenated)}(?![\w])",
+    )
+    affirmative = bare + tuple(_phrase_regex(p) for p in TRUSTED_HOST_AFFIRMATIVE)
+    negative = tuple(_phrase_regex(p) for p in TRUSTED_HOST_NEGATIVE)
+    values: set[bool] = set()
+    if any(re.search(p, lowered) for p in negative):
+        values.add(False)
+    if any(re.search(p, lowered) for p in affirmative):
+        values.add(True)
+    return values
+
+
+def resolve_allow_trusted_host_execution(
+    text: str, *, structured: bool | None = None
+) -> bool:
+    """Resolve the one canonical `allow_trusted_host_execution` boolean.
+
+    Precedence (trusted-host-execution.md, "Resolution precedence"):
+    an explicit structured value always wins; absent one, one unambiguous
+    natural-language value (affirmative or negative) resolves it;
+    otherwise the default `false`. Conflicting natural-language phrasing
+    (both an affirmative and a negative phrase present) falls through
+    toward denial, never toward `true` — this option's fall-through and
+    its default both land on `false`, unlike invocation-options.md's other
+    options, whose Skill default may be `true`.
+    """
+    if structured is not None:
+        return structured
+    canonical = _canonical_trusted_host_value(text)
+    if False in canonical:
+        return False
+    if True in canonical:
+        return True
+    natural = _natural_trusted_host_values(text)
+    if len(natural) == 1:
+        return natural.pop()
+    return False
 
 
 def select_backend(

@@ -213,7 +213,15 @@ finally: remove the temporary checkout (success, any failure, interruption)
 
    **Resolve and optionally execute runtime validation** per the shared
    [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
-   policy, including its **targeted per-finding** mode: carry each selected
+   policy, including its **targeted per-finding** mode. Before
+   execution-selection runs, resolve `allow_trusted_host_execution` per
+   [`trusted-host-execution.md`](../../../shared/policies/trusted-host-execution.md)'s
+   "Trusted authorization channel" — a structured runtime-furnished value
+   or, absent one, the current invocation's own text against that
+   policy's "Natural-language authorization phrasings" closed vocabulary —
+   into the one canonical boolean that section's precedence defines; this
+   is the same resolution `local-code-review` performs, never a
+   per-Skill variant. Carry each selected
    command's outcome record (or the explicit no-command result) into the
    shared `Validation` section, and carry each validated finding's state
    (`reasoned` / `runtime-confirmed` / `attempted-inconclusive`) forward with

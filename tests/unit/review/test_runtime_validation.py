@@ -588,5 +588,70 @@ class TrustedHostExecutionBackend(unittest.TestCase):
         self.assertEqual(records[0].provenance, rv.Provenance.TRUSTED_HOST)
 
 
+class NaturalLanguageAuthorizationResolution(unittest.TestCase):
+    """Fixture matrix for trusted-host-execution.md, "Natural-language
+    authorization phrasings" (#369)."""
+
+    def test_default_is_false_with_no_structured_value_and_no_text(self) -> None:
+        self.assertFalse(rv.resolve_allow_trusted_host_execution(""))
+
+    def test_each_affirmative_phrasing_resolves_true(self) -> None:
+        for phrase in rv.TRUSTED_HOST_AFFIRMATIVE:
+            with self.subTest(phrase=phrase):
+                self.assertTrue(
+                    rv.resolve_allow_trusted_host_execution(
+                        f"Sure, {phrase} for this review."
+                    )
+                )
+
+    def test_each_negative_phrasing_resolves_false(self) -> None:
+        for phrase in rv.TRUSTED_HOST_NEGATIVE:
+            with self.subTest(phrase=phrase):
+                self.assertFalse(
+                    rv.resolve_allow_trusted_host_execution(f"No — {phrase}.")
+                )
+
+    def test_canonical_assignment_true(self) -> None:
+        self.assertTrue(
+            rv.resolve_allow_trusted_host_execution("allow_trusted_host_execution=true")
+        )
+
+    def test_canonical_assignment_false(self) -> None:
+        self.assertFalse(
+            rv.resolve_allow_trusted_host_execution("allow_trusted_host_execution=false")
+        )
+
+    def test_structured_value_wins_over_natural_language(self) -> None:
+        """An explicit structured value always wins, in either direction."""
+        self.assertFalse(
+            rv.resolve_allow_trusted_host_execution(
+                "I authorize trusted-host execution for this review",
+                structured=False,
+            )
+        )
+        self.assertTrue(
+            rv.resolve_allow_trusted_host_execution("sandbox only", structured=True)
+        )
+
+    def test_ambiguous_phrasing_resolves_false(self) -> None:
+        for text in (
+            "what does trusted-host execution mean?",
+            "that sandbox thing sounds convenient",
+            "be more helpful with validation",
+        ):
+            with self.subTest(text=text):
+                self.assertFalse(rv.resolve_allow_trusted_host_execution(text))
+
+    def test_conflicting_natural_language_falls_through_to_denial(self) -> None:
+        """Both an affirmative and a negative phrasing in one invocation
+        conflict; the option falls through toward denial, never toward
+        `true`, per "Fail-closed"."""
+        self.assertFalse(
+            rv.resolve_allow_trusted_host_execution(
+                "I authorize trusted-host execution for this review, "
+                "but actually, sandbox only."
+            )
+        )
+
 if __name__ == "__main__":
     unittest.main()
