@@ -78,10 +78,14 @@ on that task.
 association. A branch that is correctly associated with the task but
 whose name does not conform to the convention in
 [`../CONTRIBUTING.md`](../CONTRIBUTING.md) is **not** already-correct: it
-must be renamed in place (e.g. `git branch -m`, then update the
-corresponding upstream/remote tracking ref if one already exists) to a
-conforming name before any implementation or documentation file is
-modified. Renaming in place, not creating a second parallel branch, is
+must be renamed in place (`git branch -m`) to a conforming name before
+any implementation or documentation file is modified. If the
+non-conforming name was already pushed, push the renamed branch under
+its new name and delete the old remote branch (for example, `git push -u
+origin <new-name>` then `git push origin --delete <old-name>`) — do not
+merely repoint the local tracking ref, which would leave the
+non-conforming name live on the remote. Renaming in place, not creating
+a second parallel branch, is
 the required fix — the existing worktree and its association with the
 task are otherwise correct, only the name is wrong. This applies
 uniformly regardless of what created the branch; no single runtime or
