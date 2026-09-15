@@ -1,0 +1,125 @@
+# Analogue-based placement-pattern-inference corpus case (Issue #328,
+# parent #327). Format: docs/benchmark/fixture-format.md. See ./README.md
+# for the cluster.
+#
+# Three existing partner-integration packages (slack, teams, pagerduty)
+# each centralize their delivery-status display labels in one canonical
+# `mapping.py` inside the package and import it from every consumer
+# (`cli.py`). No AGENTS.md/CLAUDE.md instruction states this convention —
+# it is only visible by comparing the three packages.
+#
+# The new `integrations/webhook` package instead redefines the label
+# table inline inside its own `cli.py`, and the inline copy is missing
+# the `failed` key that every canonical mapping carries (delivery status
+# is a repository-wide concept used by every connector's dispatcher).
+# `render_status("failed")` therefore raises `KeyError` the first time a
+# webhook delivery fails — a concrete correctness consequence of skipping
+# the centralization the analogues use, not a mere style deviation.
+#
+# Expected: ONE required finding on the inline duplication, naming the
+# concrete KeyError consequence.
+
+format: benchmark-case/v1
+
+id: analogue-placement-status-label-duplication-missing-key
+title: "New connector inlines the status-label table instead of centralizing it; the inline copy is missing a key and crashes on delivery failure"
+
+input:
+  patch: |
+    diff --git a/integrations/webhook/cli.py b/integrations/webhook/cli.py
+    new file mode 100644
+    index 0000000..1a2b3c4
+    --- /dev/null
+    +++ b/integrations/webhook/cli.py
+    @@ -0,0 +1,10 @@
+    +STATUS_LABELS = {
+    +    "queued": "Queued",
+    +    "sending": "Sending",
+    +    "retrying": "Retrying",
+    +    "delivered": "Delivered",
+    +}
+    +
+    +
+    +def render_status(status):
+    +    return STATUS_LABELS[status]
+  base:
+    integrations/slack/mapping.py: |
+      STATUS_LABELS = {
+          "queued": "Queued",
+          "sending": "Sending",
+          "retrying": "Retrying",
+          "delivered": "Delivered",
+          "failed": "Failed",
+      }
+    integrations/slack/cli.py: |
+      from .mapping import STATUS_LABELS
+
+
+      def render_status(status):
+          return STATUS_LABELS[status]
+    integrations/teams/mapping.py: |
+      STATUS_LABELS = {
+          "queued": "Queued",
+          "sending": "Sending",
+          "retrying": "Retrying",
+          "delivered": "Delivered",
+          "failed": "Failed",
+      }
+    integrations/teams/cli.py: |
+      from .mapping import STATUS_LABELS
+
+
+      def render_status(status):
+          return STATUS_LABELS[status]
+    integrations/pagerduty/mapping.py: |
+      STATUS_LABELS = {
+          "queued": "Queued",
+          "sending": "Sending",
+          "retrying": "Retrying",
+          "delivered": "Delivered",
+          "failed": "Failed",
+      }
+    integrations/pagerduty/cli.py: |
+      from .mapping import STATUS_LABELS
+
+
+      def render_status(status):
+          return STATUS_LABELS[status]
+    integrations/dispatcher.py: |
+      # Every connector's dispatcher can report any of these delivery
+      # statuses for a given attempt, including "failed" after retries are
+      # exhausted.
+      DELIVERY_STATUSES = ("queued", "sending", "retrying", "delivered", "failed")
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: webhook-cli-inline-status-labels-missing-failed
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: integrations/webhook/cli.py
+        symbol: render_status
+        anchor: "STATUS_LABELS = {"
+      claim: >-
+        integrations/webhook/cli.py redefines the delivery-status label
+        table inline instead of centralizing it in a package-local
+        mapping.py the way integrations/slack, integrations/teams, and
+        integrations/pagerduty all do; the inline copy omits the "failed"
+        key that integrations/dispatcher.py's DELIVERY_STATUSES shows
+        every connector must be able to report, so render_status("failed")
+        raises KeyError the first time a webhook delivery fails.
+      defect_kind: analogue-placement-pattern-deviation
+
+metadata:
+  source: crafted
+  tags: [quality, correctness]
+  rationale: >-
+    Positive case for the #327 analogue-based placement-pattern trigger:
+    three sibling packages establish an implicit (undocumented)
+    centralization pattern for a repository-wide concept, and the new
+    package's deviation has a concrete, already-manifest consequence
+    (KeyError on a real delivery status) rather than a bare "does not
+    match convention" complaint.

@@ -1,0 +1,130 @@
+# Analogue-based placement-pattern-inference corpus case (Issue #328,
+# parent #327). Format: docs/benchmark/fixture-format.md. See ./README.md
+# for the cluster.
+#
+# Three existing connector packages each ship ONE combined integration
+# test file (module-level functions, not a class) covering send-success,
+# retry-on-5xx, and the required auth header. The new `webhook` connector
+# instead splits the same coverage across TWO files. This is a genuine
+# structural deviation from the repeated shape, but nothing in the
+# repository ties test-file *count* to any lifecycle, ownership, or
+# integration boundary: there is no meta-test enumerating "exactly one
+# file per connector", no packaging manifest keyed by filename, and the
+# split still exercises the same three properties in full. Per the #327
+# guardrail "repetition is evidence, never authority", this is cosmetic
+# repetition, not an established pattern with a boundary behind it.
+#
+# Expected: no finding caused by the file split.
+
+format: benchmark-case/v1
+
+id: analogue-placement-test-file-split-clean
+title: "New connector splits its integration tests across two files instead of one; no boundary is violated"
+
+input:
+  patch: |
+    diff --git a/tests/integrations/test_webhook_send.py b/tests/integrations/test_webhook_send.py
+    new file mode 100644
+    index 0000000..5d6e7f8
+    --- /dev/null
+    +++ b/tests/integrations/test_webhook_send.py
+    @@ -0,0 +1,12 @@
+    +from integrations.webhook.client import send
+    +
+    +
+    +def test_send_success(mock_transport):
+    +    mock_transport.expect_ok()
+    +    assert send({"event": "ping"}, secret="s") is True
+    +
+    +
+    +def test_send_retries_on_5xx(mock_transport):
+    +    mock_transport.expect_sequence([503, 503, 200])
+    +    assert send({"event": "ping"}, secret="s") is True
+    +    assert mock_transport.call_count == 3
+    diff --git a/tests/integrations/test_webhook_auth.py b/tests/integrations/test_webhook_auth.py
+    new file mode 100644
+    index 0000000..9a0b1c2
+    --- /dev/null
+    +++ b/tests/integrations/test_webhook_auth.py
+    @@ -0,0 +1,7 @@
+    +from integrations.webhook.client import send
+    +
+    +
+    +def test_send_requires_auth_header(mock_transport):
+    +    mock_transport.expect_ok()
+    +    send({"event": "ping"}, secret="s")
+    +    assert "X-Signature" in mock_transport.last_request_headers
+  base:
+    tests/integrations/test_slack.py: |
+      from integrations.slack.client import send
+
+
+      def test_send_success(mock_transport):
+          mock_transport.expect_ok()
+          assert send({"event": "ping"}, secret="s") is True
+
+
+      def test_send_retries_on_5xx(mock_transport):
+          mock_transport.expect_sequence([503, 503, 200])
+          assert send({"event": "ping"}, secret="s") is True
+          assert mock_transport.call_count == 3
+
+
+      def test_send_requires_auth_header(mock_transport):
+          mock_transport.expect_ok()
+          send({"event": "ping"}, secret="s")
+          assert "X-Signature" in mock_transport.last_request_headers
+    tests/integrations/test_teams.py: |
+      from integrations.teams.client import send
+
+
+      def test_send_success(mock_transport):
+          mock_transport.expect_ok()
+          assert send({"event": "ping"}, secret="s") is True
+
+
+      def test_send_retries_on_5xx(mock_transport):
+          mock_transport.expect_sequence([503, 503, 200])
+          assert send({"event": "ping"}, secret="s") is True
+          assert mock_transport.call_count == 3
+
+
+      def test_send_requires_auth_header(mock_transport):
+          mock_transport.expect_ok()
+          send({"event": "ping"}, secret="s")
+          assert "X-Signature" in mock_transport.last_request_headers
+    tests/integrations/test_pagerduty.py: |
+      from integrations.pagerduty.client import send
+
+
+      def test_send_success(mock_transport):
+          mock_transport.expect_ok()
+          assert send({"event": "ping"}, secret="s") is True
+
+
+      def test_send_retries_on_5xx(mock_transport):
+          mock_transport.expect_sequence([503, 503, 200])
+          assert send({"event": "ping"}, secret="s") is True
+          assert mock_transport.call_count == 3
+
+
+      def test_send_requires_auth_header(mock_transport):
+          mock_transport.expect_ok()
+          send({"event": "ping"}, secret="s")
+          assert "X-Signature" in mock_transport.last_request_headers
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Negative/control case for the #327 analogue-based placement-pattern
+    trigger: a repeated structure (one test file per connector) exists,
+    but nothing ties the file count to a meaningful ownership/lifecycle/
+    integration boundary, and the new organization is semantically
+    equivalent. Locks in that repetition alone never manufactures a
+    finding.
