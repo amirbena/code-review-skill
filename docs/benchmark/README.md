@@ -23,6 +23,7 @@ concern lives in the file named for it.
 | [`missed-and-incorrect-findings.md`](missed-and-incorrect-findings.md) | Turning match results into **missed-finding (false-negative)** and **incorrect-finding (false-positive)** counts — the deterministic produced↔expected one-to-one pairing (`MATCH` edges only, fixture document order), the per-case and aggregate counts, how `match: optional` / `any_of` / `findings_completeness` change the accounting, and how the counts render alongside the regression report's deltas without gating it. | [#55](https://github.com/amirbena/code-review-skill/issues/55) |
 | [`severity-accuracy.md`](severity-accuracy.md) | Measuring, over the #55 matched set, how often a matched finding carries a permitted expected severity — the **exact** / **over-severity** / **under-severity** classification on the P0 > P1 > P2 ordinal, the `severity`-list and `any_of` member resolution, the per-case and aggregate counts with a single exact-rational exact-match rate, and how they render alongside the regression report's deltas without gating it. | [#56](https://github.com/amirbena/code-review-skill/issues/56) |
 | [`duplicate-noise.md`](duplicate-noise.md) | Measuring duplicate / same-root-cause noise over a case's **produced findings alone** — the same-root-cause edge (the #54 `MATCH` cell applied to a pair of produced findings, unchanged), connected-component clustering, the redundant-finding count and its exact-rational duplicate rate per case and in aggregate, the highest-noise-cases list, and how they render alongside the regression report's deltas without gating it. | [#57](https://github.com/amirbena/code-review-skill/issues/57) |
+| [`claim-correspondence-adequacy.md`](claim-correspondence-adequacy.md) | Research recommendation (not a contract change): whether `match-criteria.md`'s lexical claim-correspondence check can recognize an independently-phrased-but-correct finding, measured with real harness-fidelity-corrected benchmark reruns. Finds the free-text Jaccard/subset path is, in practice, the *only* path that ever decides the defect axis in production because a produced `defect_kind` is never populated, and recommends evaluating `defect_kind` population first per the deterministic-options-first guardrail. | [#343](https://github.com/amirbena/code-review-skill/issues/343) |
 | [`ci-integration.md`](ci-integration.md) | Wiring the existing benchmark execution (`scripts/benchmark/run_benchmark.py` + `scripts/benchmark/benchmark_review_adapter.py`, #250) into a dedicated, informational/non-blocking PR-level CI check (`.github/workflows/benchmark-check.yml`) — the deterministic applicability classifier (`scripts/benchmark/benchmark_ci_classifier.py`), the not-applicable / runtime-unavailable / ran three-state contract, and its full independence from `release-worthiness.yml`. | [#255](https://github.com/amirbena/code-review-skill/issues/255) |
 
 The first four documents cover the whole epic-[#40](https://github.com/amirbena/code-review-skill/issues/40)
@@ -337,6 +338,26 @@ traceability, and malformed-fixture rejection). Every comparison is a
 deterministic structural assertion — never an LLM/rubric score — and the
 corpus is disjoint from the finding-precision/recall/severity metrics
 above and from ordinary code-review quality fixtures.
+
+## Claim-correspondence matcher adequacy
+
+[`claim-correspondence-adequacy.md`](claim-correspondence-adequacy.md)
+(#343) is a **research record, not a contract change**, answering the
+open question #342 left behind: once the matcher actually receives full
+finding evidence and location signal, can its lexical Jaccard/subset claim
+check recognize an independently-phrased-but-correct finding? Real,
+harness-fidelity-corrected reruns of the three non-trivial corpus cases
+found location correspondence working correctly in every run, but the
+defect axis scoring `NO_MATCH` in all four executed runs — three of them
+manually verified `SEMANTICALLY_EQUIVALENT` findings with rich, correct
+evidence, at Jaccard scores of 0.08–0.13, well under the 0.25 `RELATED`
+floor. It traces the cause to `defect_kind` (`match-criteria.md` §4.1)
+never being populated on the produced side in production — the packaged
+`local-code-review` rendering has no field for it — so the free-text path
+`match-criteria.md` designed as a fallback is, in practice, the only path
+that has ever run. It recommends, without implementing, evaluating
+`defect_kind` population as the next deterministic lever per #343's
+guardrail, ahead of any semantic/LLM judge.
 
 ## CI integration
 
