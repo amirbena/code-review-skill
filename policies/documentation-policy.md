@@ -131,6 +131,16 @@ Rules that bound the check:
   surface is left stale.** The check is part of finishing the change, not
   a follow-up.
 
+**Wiki feature-page consideration.** When a capability change above lands,
+also consider whether the repository Wiki's feature-page pattern (the
+`Feature-Pages` index and its per-feature pages, one layer further out
+than `docs/features/`) needs a new or updated page — a feature earns one
+once it becomes a meaningful user-visible capability with stable
+behavior. This is a *consideration*, not a mandatory checklist item or a
+merge blocker: it never applies to internal refactors or
+implementation-only changes with no user-visible effect, and routine
+capability edits do not require a Wiki update on every PR.
+
 ## Navigational README for user-facing policy/guidance directories
 
 A repository directory that exposes **policies, contracts, instructions,
