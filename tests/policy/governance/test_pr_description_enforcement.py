@@ -7,6 +7,7 @@ import unittest
 
 import yaml
 
+from scripts.validation import pr_description_length as pr_length
 from scripts.validation.pr_description_length import PR_BODY_HARD_LIMIT
 from tests.support.paths import REPO_ROOT
 
@@ -99,6 +100,39 @@ class TemplateTests(unittest.TestCase):
         without_comments = re.sub(r"<!--.*?-->", "", template, flags=re.DOTALL)
         self.assertNotIn("Concisely summarize", without_comments)
         self.assertNotIn("Prefer two to five", without_comments)
+
+
+class TemplateStructureDriftTests(unittest.TestCase):
+    """Pins Issue #135: required structure must stay derived from, and in
+    sync with, the canonical .github/PULL_REQUEST_TEMPLATE.md — not a
+    second, hand-maintained schema."""
+
+    def test_derived_contract_matches_the_live_template_headings(self) -> None:
+        template = TEMPLATE.read_text(encoding="utf-8")
+        headings = re.findall(r"^## (.+)$", template, flags=re.MULTILINE)
+        contract = pr_length.load_template_contract()
+        self.assertEqual(set(contract.required_headings) | set(contract.optional_headings), set(headings))
+
+    def test_review_stays_the_only_template_declared_optional_heading(self) -> None:
+        # If the template's optionality wording moves, this drifts loudly
+        # rather than silently under- or over-enforcing.
+        contract = pr_length.load_template_contract()
+        self.assertEqual(contract.optional_headings, ("Review",))
+
+    def test_release_fields_stay_owned_by_release_intent_not_this_validator(self) -> None:
+        template = TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn("**Release category:** none", template)
+        self.assertIn("**Release entry:**", template)
+        contract = pr_length.load_template_contract()
+        required_labels = {label for _, label in contract.required_blank_fields}
+        self.assertNotIn("Release category", required_labels)
+        self.assertNotIn("Release entry", required_labels)
+
+    def test_compliant_sample_pr_body_passes_derived_structure_validation(self) -> None:
+        from tests.support.pr_body_fixtures import COMPLIANT_BODY
+
+        result = pr_length.validate_structure(COMPLIANT_BODY)
+        self.assertTrue(result.passes, result.issues)
 
 
 class WorkflowContractTests(unittest.TestCase):
