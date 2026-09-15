@@ -16,8 +16,8 @@ scenarios:
   enforcement_point: shared/policies/agent-delegation.md, 'spawn_agent is an explicit capability' -- spawn_agent() refuses when Capability.SPAWN_AGENT not in parent.capabilities
   expected_safe_outcome: spawn request is refused; agent continues without a child
   expected_security_event: DENIED_SPAWN_UNAUTHORIZED
-  benchmark_family: delegation/#307
-  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md)
+  benchmark_family: delegation/#307, security-event/#308
+  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md); docs/benchmark/corpus/security-events/README.md (SEC-EVT-014)
   regression_evidence: tests/unit/review/delegation/test_agent_delegation_authorization.py
   threat_severity: HIGH
 - id: DELEG-002
@@ -35,8 +35,8 @@ scenarios:
   enforcement_point: shared/policies/agent-delegation.md, 'Hard invocation-level budgets' -- spawn_agent() refuses when InvocationBudget.exhausted()
   expected_safe_outcome: spawn requests beyond the budget are refused; existing children are unaffected
   expected_security_event: DENIED_SPAWN_BUDGET_EXCEEDED
-  benchmark_family: delegation/#307
-  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md)
+  benchmark_family: delegation/#307, security-event/#308
+  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md); docs/benchmark/corpus/security-events/README.md (SEC-EVT-015)
   regression_evidence: tests/unit/review/delegation/test_agent_delegation_authorization.py
   threat_severity: MEDIUM
 - id: DELEG-003
@@ -54,8 +54,8 @@ scenarios:
   enforcement_point: shared/policies/agent-delegation.md, 'Hard invocation-level budgets' -- spawn_agent() refuses when child depth exceeds InvocationBudget.max_spawn_depth
   expected_safe_outcome: nested spawn beyond max depth is refused
   expected_security_event: DENIED_SPAWN_DEPTH_EXCEEDED
-  benchmark_family: delegation/#307
-  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md)
+  benchmark_family: delegation/#307, security-event/#308
+  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md); docs/benchmark/corpus/security-events/README.md (SEC-EVT-016)
   regression_evidence: tests/unit/review/delegation/test_agent_delegation_authorization.py
   threat_severity: HIGH
 - id: DELEG-004
@@ -113,8 +113,8 @@ scenarios:
   enforcement_point: shared/policies/agent-delegation.md, 'Delegation rule' -- authorize_action() consults only the child's frozen granted capability set
   expected_safe_outcome: request for an undelegated capability is refused
   expected_security_event: DENIED_DELEGATION_AUTHORITY_ESCALATION
-  benchmark_family: delegation/#307
-  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md)
+  benchmark_family: delegation/#307, security-event/#308
+  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md); docs/benchmark/corpus/security-events/README.md (SEC-EVT-017)
   regression_evidence: tests/unit/review/delegation/test_agent_delegation_authorization.py
   threat_severity: HIGH
 - id: DELEG-007
@@ -142,8 +142,8 @@ scenarios:
   expected_safe_outcome: child starts with no inherited authorization; any use of a forwarded token is
     refused
   expected_security_event: DENIED_DELEGATION_REPLAY
-  benchmark_family: delegation/#307, mutation/#305
-  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md)
+  benchmark_family: delegation/#307, security-event/#308
+  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md); docs/benchmark/corpus/security-events/README.md (SEC-EVT-019)
   regression_evidence: 'tests/unit/security/test_mutation_authority.py (Auth013SpawnedChildHasNoInheritedAuthority)
     covers the mutation-authorization half; tests/unit/review/delegation/test_agent_delegation_authorization.py
     covers the delegation-runtime half'

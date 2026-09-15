@@ -16,8 +16,8 @@ scenarios:
   enforcement_point: 'scripts/sandbox/macos_seatbelt.py (deny network*) and scripts/sandbox/docker_runner.py (--network none)'
   expected_safe_outcome: the connection attempt is denied/unreachable from inside the sandbox
   expected_security_event: DENIED_SANDBOX_NETWORK_ACCESS
-  benchmark_family: sandbox/#306
-  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
+  benchmark_family: sandbox/#306, security-event/#308
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md; docs/benchmark/corpus/security-events/README.md (SEC-EVT-006)
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::NetworkDenialTests::test_sbox_001_outbound_http_is_denied
   threat_severity: CRITICAL
   notes: 'shared/policies/runtime-validation.md, "Trust model and execution boundary", already documents
@@ -78,8 +78,8 @@ scenarios:
   expected_safe_outcome: the read fails or returns nothing usable; no credential material is observable
     from inside the sandbox
   expected_security_event: DENIED_SANDBOX_CREDENTIAL_ACCESS
-  benchmark_family: sandbox/#306
-  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
+  benchmark_family: sandbox/#306, security-event/#308
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md; docs/benchmark/corpus/security-events/README.md (SEC-EVT-007)
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::CredentialAccessTests
   threat_severity: CRITICAL
 - id: SBOX-005
@@ -98,8 +98,8 @@ scenarios:
   enforcement_point: 'scripts/sandbox/macos_seatbelt.py (_ALWAYS_DENIED_READ_ROOTS default-deny of shared/scratch roots) and scripts/sandbox/workspace.py (_copy_symlink_if_contained)'
   expected_safe_outcome: the read fails/is denied; only the bounded work copy is visible
   expected_security_event: DENIED_SANDBOX_FILESYSTEM_ACCESS
-  benchmark_family: sandbox/#306
-  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
+  benchmark_family: sandbox/#306, security-event/#308
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md; docs/benchmark/corpus/security-events/README.md (SEC-EVT-008)
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::FilesystemBoundaryTests
   threat_severity: CRITICAL
 - id: SBOX-006
@@ -248,8 +248,8 @@ scenarios:
   expected_safe_outcome: the command is not admitted and does not run; no install/deploy/migrate/publish
     side effect occurs
   expected_security_event: DENIED_SANDBOX_UNAVAILABLE_PRIMITIVE
-  benchmark_family: sandbox/#306
-  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md
+  benchmark_family: sandbox/#306, security-event/#308
+  benchmark_reference: docs/benchmark/corpus/sandbox-adversarial/README.md; docs/benchmark/corpus/security-events/README.md (SEC-EVT-009)
   regression_evidence: tests/integration/sandbox/test_adversarial_containment.py::NoMutationAuthorityTests::test_sbox_012_sandbox_cannot_install_or_publish_packages
   threat_severity: HIGH
 - id: SBOX-013
