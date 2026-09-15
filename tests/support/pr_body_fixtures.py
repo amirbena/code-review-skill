@@ -22,3 +22,20 @@ Fixes #135
 - [x] Relevant validation was run, or the reason it could not be run is stated.
 - Ran `python -m unittest discover -s tests -t .`.
 """
+
+# A body shaped like a coding-agent runtime's own generic default PR-body
+# example (``## Summary`` / ``## Test plan``) rather than this repository's
+# canonical `.github/PULL_REQUEST_TEMPLATE.md`. Regression fixture for the
+# competing-instruction failure mode: an agent that never re-reads the live
+# template can reach for this shape instead. It must fail structure
+# validation even though it is well-formed Markdown with real content.
+RUNTIME_DEFAULT_SUMMARY_BODY = """\
+## Summary
+
+- Adds a thing.
+- Fixes a bug in the thing.
+
+## Test plan
+
+- [x] Ran the test suite locally.
+"""

@@ -94,10 +94,34 @@ come from the template. Keep the Issue-closing reference and link to the
 smallest canonical source that owns detailed behavior or decisions rather
 than duplicating it into the field.
 
-This authoring rule is distinct from, and does not depend on, deterministic
-CI validation that a PR body's structure matches the template — that
-mechanical enforcement is tracked separately and, once it lands, checks this
-same contract automatically.
+This authoring rule is distinct from, but backed by, deterministic
+validation that a PR body's structure matches the template — see
+"Validate PR-template structure before opening or updating a PR" below.
+
+### Validate PR-template structure before opening or updating a PR
+
+Before running `gh pr create` or `gh pr edit`, validate the drafted body
+locally and offline against the same deterministic structure checker CI
+runs — rather than waiting for CI to catch a missing section, an
+unfilled required field, an unresolved `Fixes #` placeholder, or an
+invented body shape (such as a different tool's default `## Summary` /
+`## Test plan` pattern) that never came from
+`.github/PULL_REQUEST_TEMPLATE.md`:
+
+```bash
+PR_BODY="$(cat pr-body.md)" python3 scripts/validation/pr_description_length.py --pr-body-env PR_BODY
+```
+
+Pass the drafted body through the named environment variable, never as a
+literal CLI argument. This calls the exact same `validate_structure()`
+(and `validate_body()` length check) that
+[`../.github/workflows/pr-description-length.yml`](../.github/workflows/pr-description-length.yml)
+runs from the GitHub event payload — see
+`scripts/validation/pr_description_length.py`'s module docstring. Treat
+this as a pre-mutation gate, the same as the release-intent check below:
+if it fails, fix the draft and re-run it before calling `gh pr create` /
+`gh pr edit` — do not open or update the PR on a failing check, and do
+not reimplement structure validation elsewhere.
 
 ### Validate release intent before opening or updating a PR
 
