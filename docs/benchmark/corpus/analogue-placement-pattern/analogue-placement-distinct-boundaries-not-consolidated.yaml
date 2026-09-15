@@ -1,0 +1,166 @@
+# Analogue-based placement-pattern-inference corpus case (Issue #328,
+# parent #327). Format: docs/benchmark/fixture-format.md. See ./README.md
+# for the cluster.
+#
+# Paired with analogue-placement-status-label-duplication-consolidated.yaml
+# to prove grouping is never automatic. The new `webhook` package again
+# adds two new files that, on the surface, look like the same shape as
+# each other ("a new file in the new package locally redefines something
+# instead of importing it from a shared module"):
+#
+#   * cli.py inlines the delivery-status label table instead of
+#     centralizing it in a package-local mapping.py (same pattern as the
+#     sibling positive/consolidated cases), and the inline copy is again
+#     missing the "failed" key -> KeyError on a real delivery status.
+#   * client.py inlines auth-header construction instead of calling the
+#     shared integrations/common/auth.py::build_auth_headers helper that
+#     every analogue calls, and the inline copy omits the
+#     X-Signature-Rotated-At header the receiving side requires for
+#     signature verification -> outbound requests fail auth.
+#
+# These are two *different* inferred patterns (label centralization vs.
+# auth-header centralization), with different violated boundaries and
+# different consequences (a display/observability KeyError vs. an
+# authentication failure) that merely share the cosmetic shape "new file,
+# locally redefines something". A correct review must not merge them
+# under one vague "this package duplicates things" finding.
+#
+# Expected: TWO separate required findings.
+
+format: benchmark-case/v1
+
+id: analogue-placement-distinct-boundaries-not-consolidated
+title: "Two new webhook files both duplicate a shared analogue pattern but violate different boundaries; expect two separate findings"
+
+input:
+  patch: |
+    diff --git a/integrations/webhook/cli.py b/integrations/webhook/cli.py
+    new file mode 100644
+    index 0000000..1a2b3c4
+    --- /dev/null
+    +++ b/integrations/webhook/cli.py
+    @@ -0,0 +1,10 @@
+    +STATUS_LABELS = {
+    +    "queued": "Queued",
+    +    "sending": "Sending",
+    +    "retrying": "Retrying",
+    +    "delivered": "Delivered",
+    +}
+    +
+    +
+    +def render_status(status):
+    +    return STATUS_LABELS[status]
+    diff --git a/integrations/webhook/client.py b/integrations/webhook/client.py
+    new file mode 100644
+    index 0000000..4d5e6f7
+    --- /dev/null
+    +++ b/integrations/webhook/client.py
+    @@ -0,0 +1,7 @@
+    +def _sign(secret):
+    +    return _hmac_sha256(secret)
+    +
+    +
+    +def send(payload, secret):
+    +    headers = {"X-Signature": _sign(secret)}
+    +    return _post(payload, headers)
+  base:
+    integrations/slack/mapping.py: |
+      STATUS_LABELS = {
+          "queued": "Queued",
+          "sending": "Sending",
+          "retrying": "Retrying",
+          "delivered": "Delivered",
+          "failed": "Failed",
+      }
+    integrations/slack/cli.py: |
+      from .mapping import STATUS_LABELS
+
+
+      def render_status(status):
+          return STATUS_LABELS[status]
+    integrations/slack/client.py: |
+      from integrations.common.auth import build_auth_headers
+
+
+      def send(payload, secret):
+          headers = build_auth_headers(secret)
+          return _post(payload, headers)
+    integrations/teams/mapping.py: |
+      STATUS_LABELS = {
+          "queued": "Queued",
+          "sending": "Sending",
+          "retrying": "Retrying",
+          "delivered": "Delivered",
+          "failed": "Failed",
+      }
+    integrations/teams/client.py: |
+      from integrations.common.auth import build_auth_headers
+
+
+      def send(payload, secret):
+          headers = build_auth_headers(secret)
+          return _post(payload, headers)
+    integrations/common/auth.py: |
+      def build_auth_headers(secret):
+          signature = _sign(secret)
+          return {
+              "X-Signature": signature,
+              "X-Signature-Rotated-At": _now_iso(),
+          }
+    integrations/dispatcher.py: |
+      # Every connector's dispatcher can report any of these delivery
+      # statuses for a given attempt, including "failed" after retries are
+      # exhausted. The receiving side rejects any request missing
+      # X-Signature-Rotated-At, which build_auth_headers always sets.
+      DELIVERY_STATUSES = ("queued", "sending", "retrying", "delivered", "failed")
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: webhook-cli-inline-status-labels-missing-failed
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: integrations/webhook/cli.py
+        symbol: render_status
+        anchor: "STATUS_LABELS = {"
+      claim: >-
+        integrations/webhook/cli.py redefines the delivery-status label
+        table inline instead of centralizing it in a package-local
+        mapping.py the way slack and teams do; the inline copy omits the
+        "failed" key that integrations/dispatcher.py shows every
+        connector must be able to report, so render_status("failed")
+        raises KeyError.
+      defect_kind: analogue-placement-pattern-deviation
+
+    - key: webhook-client-inline-auth-headers-missing-rotation
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: integrations/webhook/client.py
+        symbol: send
+        anchor: 'headers = {"X-Signature": _sign(secret)}'
+      claim: >-
+        integrations/webhook/client.py builds its auth headers inline
+        instead of calling integrations/common/auth.py::build_auth_headers
+        the way slack and teams do; the inline copy omits the
+        X-Signature-Rotated-At header that build_auth_headers always
+        sets and that integrations/dispatcher.py notes the receiving
+        side requires for signature verification, so webhook requests
+        fail authentication.
+      defect_kind: analogue-placement-pattern-deviation
+
+metadata:
+  source: crafted
+  tags: [quality, correctness]
+  rationale: >-
+    Paired with the consolidated-duplication case to prove root-cause
+    consolidation is never automatic for this trigger: two locations
+    share the cosmetic shape "new file locally redefines something
+    instead of importing a shared module", but they violate two
+    different inferred patterns with two different consequences, so a
+    correct review reports two independent findings rather than merging
+    them under one vague duplication finding.
