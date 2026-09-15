@@ -373,3 +373,53 @@ Each prints the run's `produced_findings` and the `metrics` block used in
 §7); re-running may reproduce different exact wording but, per this study,
 is expected to reproduce the same `NO_MATCH` outcome under the current
 matcher until `defect_kind` is populated on the produced side.
+
+## 9. Follow-up: `defect_kind` wired to production (issue #355)
+
+Issue #355 implemented this record's §6 recommendation and closed the §6
+"Open question: slug vocabulary stability":
+
+- `shared/templates/finding.md` ("Defect classification") and
+  `shared/templates/finding-rendering.md` add an optional `defect_kind`
+  finding field — a short, machine-readable, kebab-case defect-class slug
+  — to the canonical finding contract both Skills render, following the
+  same optional-provenance-field pattern as `confidence` (#178),
+  `runtime validation` (#128), and `capability` (#83).
+- `scripts/benchmark/benchmark_review_adapter.py::parse_review_output`
+  captures a rendered `Defect kind:` line into
+  `ProducedFinding.extra["defect_kind"]`, mirroring the existing
+  `Evidence`/`Impact`/`Details` extraction (#342).
+- **Slug vocabulary stability** is resolved as a documented *naming
+  convention*, not an enumerated closed taxonomy: `finding.md`, "Defect
+  classification" instructs the reviewer to prefer the most specific
+  well-established term for a familiar defect class (`race-condition`,
+  not `bad-concurrency-handling`) rather than inventing a novel phrase,
+  so independently authored slugs for the same defect class tend to
+  converge. This matches how the existing fixture corpus's own
+  `defect_kind` vocabulary was already organically freeform (dozens of
+  distinct slugs across `docs/benchmark/corpus/`, no enumerated set) —
+  an enforced closed enum would have required rewriting fixtures, which
+  is out of scope (#355 non-goals).
+- A real, non-hand-replayed rerun of this record's three reproduction
+  cases (§8), against the issue #355 implementation, resolves all three
+  to a clean `MATCH` (0 false negatives, 0 false positives each) via
+  `defect_kind`-equality — not the lexical fallback:
+
+  | Case | Produced `defect_kind` | Expected `defect_kind` | Result |
+  |---|---|---|---|
+  | `security-command-injection` | `command-injection` | `command-injection` | `MATCH` (was `NO_MATCH`) |
+  | `correctness-off-by-one-pagination` | `off-by-one` | `off-by-one` | `MATCH` (was `NO_MATCH`) |
+  | `quality-duplicated-branch-logic` | `duplicated-logic` | `duplicated-logic` | `MATCH` (was `NO_MATCH`) |
+
+  The first attempt at each rerun, before the adapter's review prompt
+  (`scripts/benchmark/benchmark_review_adapter.py::_REVIEW_PROMPT`)
+  explicitly named the `Defect kind` line, reproduced §7's
+  reviewer-verbosity variance in a new form: `finding.md` defines the
+  field, but the CLI did not reliably render it on an unprompted first
+  try (0/3 runs rendered it). The prompt was strengthened to explicitly
+  request `Defect kind` per `finding.md`'s "Defect classification",
+  still populated at authoring time by the reviewer itself, not a
+  post-hoc classifier — after which all three reruns rendered it and
+  resolved to `MATCH` (3/3). This is a benchmark-harness-level prompt
+  detail, not a packaged-Skill change: the field stays optional in
+  `finding.md` for real (non-benchmark) usage.

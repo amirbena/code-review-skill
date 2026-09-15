@@ -89,6 +89,22 @@ fix/action location, one `Evidence location` line is added directly after
 - **Fix:** <concrete correction direction, not a patch>
 ```
 
+When a narrow, well-defined defect class applies to the finding, one
+`Defect kind` line is added after `Evidence` (and before any `Contextual
+evidence` / `Runtime validation` / `Confidence` / `Capability` lines) —
+see [`finding.md`](finding.md), "Defect classification". It is a
+classification, not provenance, and never carries a severity:
+
+```markdown
+### <id> [<severity>] <short, concrete title>
+
+- **Location:** `<path>:<line-or-range>`
+- **Evidence:** <concrete evidence, concise>
+- **Defect kind:** `<kebab-case defect-class slug>`
+- **Impact:** <concrete engineering consequence, concise>
+- **Fix:** <concrete correction direction, not a patch>
+```
+
 When contextual evidence informed the finding and materially explains why
 the behavior is incorrect or risky, one `Contextual evidence` line is added
 after `Evidence` (see [`finding.md`](finding.md), "Contextual evidence and
@@ -254,6 +270,11 @@ comment there (see "Fix/action location, evidence location, publication",
 and each Skill's placement policy). When the evidence was observed
 elsewhere, name that evidence/source location inside the `Evidence:`
 prose — there is no separate `Evidence location:` line on this surface.
+
+When a narrow, well-defined defect class applies to the finding, name it
+inside the `Evidence:` prose as well — there is no separate `Defect kind:`
+line on this surface (see [`finding.md`](finding.md), "Defect
+classification").
 
 When contextual evidence informed the finding, name it inside the
 `Evidence:` prose as well — there is no separate `Contextual evidence:`
@@ -632,6 +653,12 @@ quality-contract rules are in [`finding.md`](finding.md), "Rules".
   line; it never carries a severity and never changes identity,
   deduplication, or the decision derivation (see [`finding.md`](finding.md),
   "Capability provenance");
+- the **Defect kind** line renders on the full rendering only when a
+  narrow, well-defined defect class applies to the finding; on the
+  inline surface it folds into the `Evidence:` prose, never as its own
+  line; it is a classification, never a severity input, and never
+  changes identity, deduplication, or the decision derivation (see
+  [`finding.md`](finding.md), "Defect classification");
 - a finding has exactly one authoritative full representation. If it is
   published in full at one location (e.g. inline), every other location
   uses the summary-pointer form instead of repeating the full finding.

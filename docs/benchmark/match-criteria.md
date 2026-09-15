@@ -139,7 +139,25 @@ Evaluated from the expected `defect_kind` / `claim` against the produced
    **CORRESPONDS**. Different slugs → **UNRELATED** — a distinct defect
    class, even at the same line, is a different finding. A missing
    `defect_kind` on either side is not a wildcard; fall through to the
-   claim comparison.
+   claim comparison. **Production status (issue #355, following up on the
+   [claim-correspondence-adequacy.md](claim-correspondence-adequacy.md)
+   research record):** this branch is now genuinely exercised in
+   production, not only designed-for. `shared/templates/finding.md`
+   ("Defect classification") and `shared/templates/finding-rendering.md`
+   define a `Defect kind` finding field the packaged `local-code-review`
+   rendering can emit, and
+   `scripts/benchmark/benchmark_review_adapter.py::parse_review_output`
+   captures a rendered `Defect kind:` line into
+   `ProducedFinding.extra["defect_kind"]`, mirroring the existing
+   `Evidence`/`Impact`/`Details` extraction (issue #342). A real rerun of
+   the three cases from
+   [claim-correspondence-adequacy.md](claim-correspondence-adequacy.md)
+   §8 (`security-command-injection`, `correctness-off-by-one-pagination`,
+   `quality-duplicated-branch-logic`) now resolves all three to `MATCH`
+   via equal `defect_kind` slugs, not the lexical fallback — see that
+   record's §9. The free-text claim comparison (rule 2) remains the
+   fallback it was always designed to be, for a finding that renders no
+   `defect_kind`.
 2. **`claim` comparison** uses the `behavioral_claim` shape of
    [`../findings/finding-matching-strategy.md`](../findings/finding-matching-strategy.md)
    §2: a cause → faulty-behavior sentence. Each claim is reduced to a
