@@ -228,6 +228,18 @@ class MalformedFixtureRejectionTests(unittest.TestCase):
         with self.assertRaises(sef.SecurityEventFixtureError):
             sef.validate_case(replace(self.base_case, threat_scenario_ids=()))
 
+    def test_accepts_an_existing_policy_citation_in_place_of_a_catalog_id(self) -> None:
+        sef.validate_case(
+            replace(
+                self.base_case,
+                threat_scenario_ids=("existing:shared/policies/runtime-validation.md",),
+            )
+        )  # must not raise -- SEC-EVT-010/012 use exactly this form
+
+    def test_rejects_a_malformed_existing_citation(self) -> None:
+        with self.assertRaises(sef.SecurityEventFixtureError):
+            sef.validate_case(replace(self.base_case, threat_scenario_ids=("existing:",)))
+
     def test_rejects_malformed_threat_scenario_id(self) -> None:
         with self.assertRaises(sef.SecurityEventFixtureError):
             sef.validate_case(replace(self.base_case, threat_scenario_ids=("NOT-A-VALID-ID",)))

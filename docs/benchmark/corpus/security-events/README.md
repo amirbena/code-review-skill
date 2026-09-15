@@ -78,23 +78,26 @@ Every family the issue's "Scope" section names has at least one case
 | Commit/push authorization missing | `SEC-EVT-004` (AUTH-010), `SEC-EVT-005` (AUTH-011) | `DENIED_MUTATION_UNAUTHORIZED` | `boundary_violation_attempt` |
 | Sandbox network/filesystem/credential denial | `SEC-EVT-006` (SBOX-001), `SEC-EVT-007` (SBOX-004), `SEC-EVT-008` (SBOX-005) | `DENIED_SANDBOX_NETWORK_ACCESS` / `DENIED_SANDBOX_CREDENTIAL_ACCESS` / `DENIED_SANDBOX_FILESYSTEM_ACCESS` | `boundary_violation_attempt` |
 | Sandbox unavailable boundary | `SEC-EVT-009` (SBOX-012) | `DENIED_SANDBOX_UNAVAILABLE_PRIMITIVE` | `expected_denial` |
-| GitHub formal-review mutation without capability | `SEC-EVT-010` (AUTH-014), `SEC-EVT-011` (AUTH-014) | `DENIED_REVIEW_ACTION_UNAUTHORIZED` / `DENIED_REVIEW_ACTION_SELF_REVIEW` | `expected_denial` |
-| Stale HEAD / authorization replay / scope mismatch | `SEC-EVT-012` (AUTH-014), `SEC-EVT-013` (AUTH-012) | `DENIED_REVIEW_ACTION_STALE_HEAD` / `DENIED_MUTATION_AUTHORIZATION_REPLAY` | `expected_denial` / `boundary_violation_attempt` |
+| GitHub formal-review mutation without capability | `SEC-EVT-010` (existing: review-action-authorization.md), `SEC-EVT-011` (AUTH-014) | `DENIED_REVIEW_ACTION_UNAUTHORIZED` / `DENIED_REVIEW_ACTION_SELF_REVIEW` | `expected_denial` |
+| Stale HEAD / authorization replay / scope mismatch | `SEC-EVT-012` (existing: review-action-authorization.md), `SEC-EVT-013` (AUTH-012) | `DENIED_REVIEW_ACTION_STALE_HEAD` / `DENIED_MUTATION_AUTHORIZATION_REPLAY` | `expected_denial` / `boundary_violation_attempt` |
 | Spawn capability absent | `SEC-EVT-014` (DELEG-001) | `DENIED_SPAWN_UNAUTHORIZED` | `expected_denial` |
 | Spawn count/depth exceeded | `SEC-EVT-015` (DELEG-002), `SEC-EVT-016` (DELEG-003) | `DENIED_SPAWN_BUDGET_EXCEEDED` / `DENIED_SPAWN_DEPTH_EXCEEDED` | `boundary_violation_attempt` |
 | Delegated capability escalation | `SEC-EVT-017` (DELEG-006) | `DENIED_DELEGATION_AUTHORITY_ESCALATION` | `boundary_violation_attempt` |
 | Inherited/forwarded authorization across agent boundary | `SEC-EVT-018` (AUTH-013), `SEC-EVT-019` (DELEG-007) | `DENIED_MUTATION_AUTHORIZATION_REPLAY` / `DENIED_DELEGATION_REPLAY` | `boundary_violation_attempt` |
 
-Every case's `family`, cited `AUTH-###`/`SBOX-###`/`DELEG-###`
-threat-scenario id(s), and `enforcement_owner` (`#301`/`#302`/`#303`) live
-in its `SecurityEventCase` definition in `security_event_fixtures.py` —
-this table is a map, not a second source of truth. The two GitHub-domain
-cases (`SEC-EVT-010`–`012`) cite `AUTH-014` because that is the only
-catalog scenario in this authority domain today; `DENIED_REVIEW_ACTION_UNAUTHORIZED`
-and `DENIED_REVIEW_ACTION_STALE_HEAD` have no dedicated `AUTH-###` entry
-of their own yet — they are traced directly to
-[`review-action-authorization.md`](../../../../skills/github-pr-review/policies/review-action-authorization.md)
-instead of a fabricated scenario id.
+Every case's `family`, cited `AUTH-###`/`SBOX-###`/`DELEG-###` (or, when no
+catalog scenario exists yet, an `existing:<policy-path>` citation) — and
+`enforcement_owner` (`#301`/`#302`/`#303`, or the literal `existing`) —
+live in its `SecurityEventCase` definition in `security_event_fixtures.py`;
+this table is a map, not a second source of truth. `SEC-EVT-011` cites
+`AUTH-014` because that scenario's sole subject is the self-review
+boundary it exercises. `SEC-EVT-010` and `SEC-EVT-012` cover a different
+condition in the same authority domain (publication mode not `ACTIVE`,
+and a stale reviewed HEAD) that has no dedicated `AUTH-###` entry of its
+own yet, so they cite
+`existing:skills/github-pr-review/policies/review-action-authorization.md`
+directly rather than borrowing `AUTH-014`'s id for a case it does not
+describe.
 
 ## What each case asserts
 

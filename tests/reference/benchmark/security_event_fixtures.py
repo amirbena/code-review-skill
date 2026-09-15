@@ -171,6 +171,17 @@ REQUIRED_FAMILIES: "frozenset[str]" = frozenset(
 
 _THREAT_ID_RE = re.compile(r"^(AUTH|SBOX|DELEG)-\d{3}$")
 
+# A case whose domain has no dedicated catalog scenario yet cites the
+# owning policy directly instead of fabricating or borrowing an
+# unrelated scenario id -- same "existing: <path>" convention
+# scripts/security/validate_threat_model.py already uses for
+# enforcement_owner/benchmark_reference citations.
+_EXISTING_CITATION_RE = re.compile(r"^existing:[\w./-]+$")
+
+
+def _is_valid_threat_reference(value: str) -> bool:
+    return bool(_THREAT_ID_RE.match(value) or _EXISTING_CITATION_RE.match(value))
+
 # Field values a redacted event must never carry -- per #299 section 3,
 # "What an event must never record". This is a defensive pattern check
 # over every string field's *value*, not a schema restriction (the
@@ -335,9 +346,10 @@ def validate_case(case: SecurityEventCase) -> None:
     if not isinstance(case.threat_scenario_ids, tuple) or not case.threat_scenario_ids:
         raise SecurityEventFixtureError(f"{case.case_id}: threat_scenario_ids must be a non-empty tuple")
     for tid in case.threat_scenario_ids:
-        if not isinstance(tid, str) or not _THREAT_ID_RE.match(tid):
+        if not isinstance(tid, str) or not _is_valid_threat_reference(tid):
             raise SecurityEventFixtureError(
-                f"{case.case_id}: threat_scenario_ids entry {tid!r} must match '<AUTH|SBOX|DELEG>-<3 digits>'"
+                f"{case.case_id}: threat_scenario_ids entry {tid!r} must match '<AUTH|SBOX|DELEG>-<3 digits>' "
+                "or 'existing:<policy-path>' when no catalog scenario exists yet"
             )
 
     if case.enforcement_owner != "existing" and not re.match(r"^#\d+$", case.enforcement_owner):
@@ -773,7 +785,10 @@ ALL_CASES: "tuple[SecurityEventCase, ...]" = (
         case_id="SEC-EVT-010",
         family=FAMILY_GITHUB_MUTATION_WITHOUT_CAPABILITY,
         description="formal APPROVE attempted while publication mode is not ACTIVE",
-        threat_scenario_ids=("AUTH-014",),
+        # No dedicated AUTH-### scenario covers this condition (AUTH-014's
+        # only subject is self-review) -- cite the owning policy directly
+        # rather than borrow an unrelated scenario id.
+        threat_scenario_ids=("existing:skills/github-pr-review/policies/review-action-authorization.md",),
         enforcement_owner="existing",
         expected_event_type=DENIED_REVIEW_ACTION_UNAUTHORIZED,
         expected_classification=CLASSIFICATION_EXPECTED_DENIAL,
@@ -795,7 +810,9 @@ ALL_CASES: "tuple[SecurityEventCase, ...]" = (
         case_id="SEC-EVT-012",
         family=FAMILY_STALE_HEAD_REPLAY_SCOPE_MISMATCH,
         description="PR HEAD advanced past the reviewed HEAD before the formal event was submitted",
-        threat_scenario_ids=("AUTH-014",),
+        # Same rationale as SEC-EVT-010: no dedicated AUTH-### scenario
+        # covers a stale-HEAD formal-action denial.
+        threat_scenario_ids=("existing:skills/github-pr-review/policies/review-action-authorization.md",),
         enforcement_owner="existing",
         expected_event_type=DENIED_REVIEW_ACTION_STALE_HEAD,
         expected_classification=CLASSIFICATION_EXPECTED_DENIAL,

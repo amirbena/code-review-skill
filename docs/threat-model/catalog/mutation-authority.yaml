@@ -311,7 +311,8 @@ scenarios:
     no APPROVE or REQUEST_CHANGES is ever submitted on the reviewer's own work
   expected_security_event: DENIED_REVIEW_ACTION_SELF_REVIEW
   benchmark_family: security-event/#308
-  benchmark_reference: docs/benchmark/corpus/security-events/README.md (SEC-EVT-010, SEC-EVT-011, SEC-EVT-012)
+  benchmark_reference: docs/benchmark/corpus/security-events/README.md (SEC-EVT-011; SEC-EVT-010/012 cover
+    a different condition in the same authority domain and cite the policy directly, not this scenario id)
   regression_evidence: tests/unit/review/test_review_action_authorization.py (test_nl_approve_if_clean_does_not_unlock_self_approval,
     test_nl_request_changes_if_blocking_is_withheld_on_own_pr, test_controlled_alternate_identity_runs_analysis_but_never_mutates)
   threat_severity: CRITICAL
@@ -321,9 +322,11 @@ scenarios:
     for this withheld self-review action (see docs/security-events/security-event-model.md); the event
     is classified expected_denial when analysis simply runs and reports without ever attempting a formal
     action, and boundary_violation_attempt if a caller actively tries to force APPROVE/REQUEST_CHANGES
-    despite the boundary. #308 covers this scenario''s DENIED_REVIEW_ACTION_SELF_REVIEW,
-    DENIED_REVIEW_ACTION_UNAUTHORIZED, and DENIED_REVIEW_ACTION_STALE_HEAD event shapes at the
-    security-event layer; benchmark_family changed from "none" accordingly.'
+    despite the boundary. #308 covers this scenario''s own DENIED_REVIEW_ACTION_SELF_REVIEW event shape
+    (SEC-EVT-011) at the security-event layer; benchmark_family changed from "none" accordingly.
+    DENIED_REVIEW_ACTION_UNAUTHORIZED and DENIED_REVIEW_ACTION_STALE_HEAD are also covered by #308
+    (SEC-EVT-010/012), but as a different condition in the same authority domain, not as this scenario --
+    see docs/benchmark/corpus/security-events/README.md.'
 - id: AUTH-015
   title: Reviewer attempts a capability intentionally absent from the runtime (merge, branch deletion,
     deployment)
