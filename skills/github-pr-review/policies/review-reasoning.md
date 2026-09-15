@@ -119,14 +119,18 @@ broader concern exists as a `Follow-up`.
 
 ## Architectural Placement Review
 
-When a PR change plausibly affects a semantic-risk category listed there —
-control flow, side effects, retry/exception behavior, transaction
+When a PR change plausibly affects a semantic-risk category listed
+there — control flow, side effects, retry/exception behavior, transaction
 boundaries, authorization, routing/dispatch, idempotency, state-mutation
-ordering, or another lifecycle contract — apply
+ordering, or another lifecycle contract — **or** introduces, moves, or
+reorganizes a responsibility in a way "Analogue-based responsibility/
+placement pattern inference" there examines, apply
 [`review-scope.md`](../../../shared/policies/review-scope.md),
 "Architectural placement and execution-lifecycle fidelity," before
-finalizing findings. That shared section owns the triggers, the bounded
-caller/callee/owning-boundary expansion ladder, the stop conditions, the
+finalizing findings. That shared section owns the triggers (both the
+lifecycle-semantic vocabulary and the independently gated analogue-based
+structural/organizational trigger), the bounded caller/callee/owning-
+boundary expansion ladder, the stop conditions, the
 ineligible-versus-must-execute-and-fail distinction, and the both-locations
 evidence requirement; this PR-specific policy does not restate them. It is
 one application of the existing proportional-scope and evidence rules, not

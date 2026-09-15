@@ -132,12 +132,177 @@ class ArchitecturalPlacementSectionTests(unittest.TestCase):
         )
 
 
+class AnalogueBasedPlacementPatternInferenceTests(unittest.TestCase):
+    """Issue #327: a second, independently gated trigger class for an
+    undocumented structural/organizational responsibility-placement
+    pattern, distinct from the lifecycle-semantic trigger vocabulary
+    above and never a generic style-consistency checker."""
+
+    def setUp(self) -> None:
+        self.full_text = _text(ARCHITECTURAL_PLACEMENT)
+        self.section = _section(
+            self.full_text,
+            "## Analogue-based responsibility/placement pattern inference",
+        )
+
+    def test_it_is_a_second_trigger_class_not_a_modification_of_the_first(self) -> None:
+        self.assertIn("second, independently gated trigger class", self.section)
+        self.assertIn(
+            "this section adds a second trigger class, it does not modify the first",
+            self.section,
+        )
+        intro = _section(
+            self.full_text,
+            "# Shared Policy",
+            "## Architectural placement and execution-lifecycle fidelity",
+        )
+        self.assertIn("Analogue-based responsibility/", intro)
+
+    def test_it_is_not_a_generic_style_consistency_checker(self) -> None:
+        self.assertIn("not a generic style-consistency checker", self.section)
+        self.assertIn(
+            "does not encode any specific preferred structure", self.section
+        )
+        self.assertIn(
+            "Repeated structure alone is never proof that a new, differently "
+            "organized implementation is wrong",
+            self.section,
+        )
+
+    def test_applicability_requires_no_explicit_instruction_and_no_lifecycle_trigger(
+        self,
+    ) -> None:
+        self.assertIn("### When this trigger applies", self.section)
+        self.assertIn("repository-instructions.md", self.section)
+        self.assertIn(
+            "does not already trip one of the semantic-risk triggers above",
+            self.section,
+        )
+        self.assertIn(
+            "never a second route to the same lifecycle-semantic findings",
+            self.section,
+        )
+
+    def test_reasoning_sequence_matches_the_issue_order(self) -> None:
+        self.assertIn("### Reasoning sequence", self.section)
+        self.assertIn(
+            "Identify the specific responsibility the change introduces, "
+            "moves, or reorganizes",
+            self.section,
+        )
+        self.assertIn("nearest meaningful analogous implementations", self.section)
+        self.assertIn(
+            "minimum-context-first, one-ring-at-a-time investigation model",
+            self.section,
+        )
+        self.assertIn("cosmetic repetition", self.section)
+        self.assertIn(
+            "investigate whether the deviation is intentional or otherwise "
+            "justified",
+            self.section,
+        )
+        self.assertIn(
+            "concrete architectural, ownership, lifecycle, or integration",
+            self.section,
+        )
+
+    def test_repetition_is_evidence_never_authority_guardrail(self) -> None:
+        self.assertIn(
+            "Frequency or repetition of a structural pattern across the "
+            "repository is, at most, evidence that a convention may exist",
+            self.section,
+        )
+        self.assertIn("never authority", self.section)
+        self.assertIn(
+            "never by itself proof that a differently organized "
+            "implementation is defective",
+            self.section,
+        )
+
+    def test_explicit_instructions_outrank_inferred_patterns(self) -> None:
+        self.assertIn(
+            "### Explicit instructions versus inferred patterns", self.section
+        )
+        self.assertIn("remain the authoritative source", self.section)
+        self.assertIn(
+            "never overrides or contradicts an explicit instruction that does",
+            self.section,
+        )
+
+    def test_analogue_inspection_is_bounded_not_unbounded(self) -> None:
+        self.assertIn("### Bounded, not an unbounded search", self.section)
+        self.assertIn(
+            'reuses "Bounded context expansion" and "Stop conditions" above '
+            "without modification",
+            self.section,
+        )
+        self.assertIn("insufficient evidence", self.section)
+        self.assertIn(
+            "never license to enumerate every file in the repository",
+            self.section,
+        )
+
+    def test_interaction_with_root_cause_consolidation_is_documented(self) -> None:
+        self.assertIn("### Interaction with root-cause consolidation", self.section)
+        self.assertIn("root-cause-consolidation.md", self.section)
+        self.assertIn(
+            "this section documents the interaction, it does not redefine "
+            "that policy's clustering model",
+            self.section,
+        )
+        self.assertIn(
+            "never automatically split into one finding per site merely "
+            "because the same deviation surfaced at more than one location",
+            self.section,
+        )
+
+    def test_guardrails_forbid_naming_and_preference_findings(self) -> None:
+        self.assertIn(
+            'Every guardrail in "Guardrails" above applies unchanged '
+            "to this trigger",
+            self.section,
+        )
+        self.assertIn(
+            "coincidental structural resemblance", self.section
+        )
+        self.assertIn(
+            "a concrete consequence is required, never aesthetic or "
+            "stylistic preference",
+            self.section,
+        )
+        self.assertIn(
+            "never itself raises the severity of a resulting finding",
+            self.section,
+        )
+
+    def test_non_goals_forbid_style_enforcement_and_auto_refactor(self) -> None:
+        self.assertIn("### Non-goals", self.section)
+        self.assertIn("Automatically refactoring or moving a deviating", self.section)
+        self.assertIn("detection/finding only", self.section)
+
+
 class ArchitecturalPlacementWiredIntoBothSkillsTests(unittest.TestCase):
     def test_github_review_reasoning_forwards_to_the_shared_section(self) -> None:
         text = _text(GITHUB_REASONING)
         self.assertIn("## Architectural Placement Review", text)
         self.assertIn("Architectural placement and execution-lifecycle fidelity", text)
         self.assertIn("this PR-specific policy does not restate them", text)
+
+    def test_github_review_reasoning_gate_also_covers_the_analogue_trigger(self) -> None:
+        # Issue #327: the entry gate above must not be scoped to the
+        # lifecycle-semantic trigger alone, or github-pr-review would never
+        # reach the second, independently gated analogue-based trigger.
+        section = _section(
+            _text(GITHUB_REASONING),
+            "## Architectural Placement Review",
+            "## Code Impact / Dependency Analysis",
+        )
+        self.assertIn("Analogue-based responsibility/", section)
+        self.assertIn(
+            "both the lifecycle-semantic vocabulary and the independently "
+            "gated analogue-based structural/organizational trigger",
+            section,
+        )
 
     def test_github_review_index_lists_placement_reasoning(self) -> None:
         text = _text(GITHUB_REVIEW_INDEX)
