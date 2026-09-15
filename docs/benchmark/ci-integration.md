@@ -99,8 +99,12 @@ entrypoint.
 ## 6. Out of scope
 
 - Making the result a required or blocking check.
-- Provisioning a real review-CLI runtime/credentials in CI (a future,
-  separate decision).
+- Provisioning a real review-CLI runtime/credentials in CI. The contract
+  any such runtime must satisfy — trust boundary, viability criteria,
+  candidate classes, required metadata — is
+  [`runtime-execution-contract.md`](runtime-execution-contract.md) (#330);
+  selecting a candidate is [#336](https://github.com/amirbena/code-review-skill/issues/336)
+  and provisioning it is [#337](https://github.com/amirbena/code-review-skill/issues/337).
 - Any second implementation of the benchmark's applicability logic —
   `scripts/benchmark/benchmark_ci_classifier.py` is the single source for this
   check's classification.
