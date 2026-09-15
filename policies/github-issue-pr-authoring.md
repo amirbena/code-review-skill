@@ -42,7 +42,35 @@ decisions.
 
 **Avoid:** long narrative; repeated context; restating repository policy;
 a step-by-step execution log or implementation diary; verbose validation
-output; large requirement text copied from another source.
+output; large requirement text copied from another source;
+**historical/predecessor narration** — commit SHAs, a merged PR narrated
+in prose ("shipped via PR #N"), or "this follows the precedent set by
+#X/#Y/#Z" framing — recounting how the repository arrived at a
+constraint, rather than just stating the constraint, unless the exact
+version or precedent itself materially constrains the new work.
+
+## Necessary vs. unnecessary context
+
+This distinction applies equally to implementation and benchmark Issues.
+An agent may read predecessor Issues, PRs, commits, and decision records
+as deeply as the task needs while drafting — but only the resulting
+constraint, not the research trail that produced it, goes into the final
+body. Research is not carried into the artifact by default.
+
+Context an Issue body may reference falls into three buckets:
+
+1. **Required architectural context** — a predecessor's contract whose
+   semantics the new work must preserve (e.g. "must preserve #302's
+   fail-closed sandbox invariant"). State the constraint itself, in
+   present tense, not how or when it was established.
+2. **Concise dependency/reference context** — a bare relation (`Builds on
+   #367`, `Benchmark depends on #369`) that the `Dependencies` field
+   already models well. A reference number plus a few words of relation
+   is enough; do not expand it into prose.
+3. **Unnecessary historical narration** — chronology, PR/commit
+   provenance, or "precedent" framing that doesn't change what an
+   implementer must do or prove. This belongs in the linked Issue, PR, or
+   decision record, not restated here.
 
 ## Engineering Task Issues
 
@@ -56,7 +84,7 @@ usually:
 | Scope | 3–6 bullets |
 | Non-Goals | 0–3 bullets |
 | Acceptance Criteria | 3–6 checkboxes |
-| Dependencies | short references |
+| Dependencies | short references — provenance goes here as a bare reference (`Depends on: #367`), never restated as prose elsewhere in the body |
 | Validation | 2–5 bullets |
 
 When the task genuinely needs more, link a design document, research
@@ -67,7 +95,9 @@ those into the Issue.
 
 Shorter still: a one-paragraph goal, short context, a child-issue
 checklist, and the key dependencies. Detailed implementation requirements
-live in the child Issues, not the parent.
+live in the child Issues, not the parent. As with any Dependencies field,
+a closed predecessor Epic or issue is cited as a bare reference — not
+re-summarized.
 
 ## Pull Requests
 
