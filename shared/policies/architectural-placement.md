@@ -5,7 +5,11 @@ bounded reasoning about whether changed code is correctly *placed* within
 the surrounding execution lifecycle: the semantic-risk trigger vocabulary,
 bounded ring-by-ring context expansion, stop conditions, the
 ineligible-versus-must-execute-and-fail distinction, the guardrails, and
-the evidence requirement for a placement finding.
+the evidence requirement for a placement finding. It also owns a second,
+independently gated trigger class — "Analogue-based responsibility/
+placement pattern inference" below — for undocumented *structural/
+organizational* responsibility placement, reusing the same bounded
+analogue-inspection mechanism rather than defining a new one.
 
 This is a sub-domain of [`review-scope.md`](review-scope.md), which owns
 base review scope and routes here. It introduces no second scope model or
@@ -179,3 +183,170 @@ or repository contract that owns the decision. Naming similarity alone is
 insufficient. The finding is labeled confirmed defect / credible
 engineering risk / optional improvement per [`evidence.md`](evidence.md)
 like any other finding, and unresolvable ambiguity yields no finding.
+
+## Analogue-based responsibility/placement pattern inference
+
+This is a second, independently gated trigger class alongside "When to
+expand context — semantic risk triggers" above. It leaves that trigger
+vocabulary, its bounded ring-by-ring expansion, its stop conditions, its
+ineligible-versus-must-execute-and-fail distinction, and its guardrails
+exactly as defined above — this section adds a second trigger class, it
+does not modify the first. It answers a different, narrower question:
+whether a change's *structural/organizational* placement of a
+responsibility — how many services or classes it is split across, how a
+test file/class is organized, which package or module owns a piece of
+logic, and similar shapes — deviates from a pattern the repository has
+already established for that same responsibility, when the question is
+not already settled by an explicit repository instruction or by the
+lifecycle-semantic trigger vocabulary above.
+
+This is **not** a generic style-consistency checker, and it does not
+encode any specific preferred structure ("prefer one service," "prefer
+one integration-test class," "match the majority structure") as a rule.
+Different repositories can legitimately choose opposite structural
+conventions for the same shape of responsibility. Repeated structure
+alone is never proof that a new, differently organized implementation is
+wrong.
+
+### When this trigger applies
+
+This trigger applies only when **all** of the following hold:
+
+- the change introduces, moves, or reorganizes a responsibility in a way
+  that has a structural/organizational shape — for example, one service
+  versus several, one test file/class versus several, or which
+  package/module owns a piece of logic;
+- no instruction discovered per
+  [`repository-instructions.md`](repository-instructions.md)
+  (`AGENTS.md`/`CLAUDE.md`) already states the convention for that
+  responsibility — see "Explicit instructions versus inferred patterns"
+  below;
+- the change does not already trip one of the semantic-risk triggers
+  above under its own vocabulary — this trigger covers structural
+  placement questions that vocabulary does not reach; it is never a
+  second route to the same lifecycle-semantic findings.
+
+When any of these does not hold, this trigger does not apply and this
+section requires no action — the same "does not apply" posture the
+semantic-risk trigger vocabulary above uses when no category matches.
+
+### Reasoning sequence
+
+When this trigger applies, reason in this order:
+
+1. Identify the specific responsibility the change introduces, moves, or
+   reorganizes.
+2. Inspect the nearest meaningful analogous implementations of that same
+   responsibility elsewhere in the repository, reusing the same
+   minimum-context-first, one-ring-at-a-time investigation model as
+   "Bounded context expansion" above rather than defining a new one — do
+   not default to a repository-wide search for every superficially
+   similar shape.
+3. Distinguish a pattern that reflects a meaningful architectural,
+   ownership, lifecycle, or integration boundary (for example, a split
+   that consistently lines up with a deployment, ownership, or contract
+   boundary) from cosmetic repetition (files that merely happen to be
+   organized the same way with no evidenced boundary behind it). Only the
+   former is evidence of an established pattern; the latter is not.
+4. Compare the change against that evidence.
+5. When the change deviates, investigate whether the deviation is
+   intentional or otherwise justified by evidence in the change or the
+   repository — a stated reason, a different context, a boundary the
+   analogues do not share — before treating it as a candidate finding.
+6. Require a concrete architectural, ownership, lifecycle, or integration
+   consequence of the deviation before emitting any finding. The
+   structural difference or the repetition alone is never sufficient.
+
+### Guardrail: repetition is evidence, never authority
+
+Frequency or repetition of a structural pattern across the repository is,
+at most, evidence that a convention may exist. It is never authority, and
+never by itself proof that a differently organized implementation is
+defective. A pattern repeated many times without an evidenced
+architectural, ownership, lifecycle, or integration boundary behind it
+remains cosmetic repetition per step 3 above, however many times it
+recurs.
+
+### Explicit instructions versus inferred patterns
+
+Explicit repository instructions discovered per
+[`repository-instructions.md`](repository-instructions.md)
+(`AGENTS.md`/`CLAUDE.md`) remain the authoritative source on any question
+they answer. An inferred structural pattern from analogous implementations
+supplies additional architectural evidence only for questions no explicit
+instruction already governs, and never overrides or contradicts an
+explicit instruction that does. When an explicit instruction and an
+inferred pattern would point to different conclusions, the explicit
+instruction governs and this trigger raises no competing finding.
+
+### Bounded, not an unbounded search
+
+Analogue inspection reuses "Bounded context expansion" and "Stop
+conditions" above without modification: investigate the nearest
+meaningful analogues first, expand one ring at a time only as far as
+needed, and stop — including at "insufficient evidence" as a valid
+terminal outcome — under the same conditions that already govern the
+lifecycle-semantic trigger vocabulary. This trigger is never license to
+enumerate every file in the repository with a superficially similar
+shape.
+
+### Interaction with root-cause consolidation
+
+When several changed locations deviate from the same established pattern
+for the same underlying reason, this trigger's reasoning establishes the
+pattern and the deviation; whether those locations are then reported as
+one consolidated finding or as independent findings is governed entirely
+by [`root-cause-consolidation.md`](root-cause-consolidation.md) — this
+section documents the interaction, it does not redefine that policy's
+clustering model. In practice, one inferred pattern violated identically
+at multiple sites for the same underlying reason is the kind of shared
+mechanism "Shared root cause versus independent findings" there already
+asks the reviewer to recognize, subject to that same evidence bar; it is
+never automatically split into one finding per site merely because the
+same deviation surfaced at more than one location, and it is never
+consolidated merely because several sites share a theme without a
+positively established shared cause.
+
+### Guardrails
+
+Every guardrail in "Guardrails" above applies unchanged to this trigger.
+In addition, specific to this trigger:
+
+- Do not treat naming similarity, coincidental structural resemblance, or
+  a shared framework/base class as evidence of an established pattern by
+  itself — the pattern must reflect the architectural, ownership,
+  lifecycle, or integration boundary described in step 3 above.
+- Do not flag a deviation merely because the reviewer prefers the
+  repository's more common shape, or because the new implementation
+  "looks different" — a concrete consequence is required, never
+  aesthetic or stylistic preference.
+- Do not enforce any specific structural shape (one service vs. several,
+  one test file/class vs. several, a particular package placement) as a
+  mandatory convention wherever it superficially appears; this trigger
+  detects and reports a deviation with a concrete consequence, it never
+  prescribes, mandates, or auto-corrects a preferred structure.
+- Never manufacture a finding under this trigger to appear thorough —
+  "insufficient evidence" is a valid terminal outcome, exactly as the
+  lifecycle-semantic trigger vocabulary above.
+- The source of a convention — whether stated explicitly or inferred from
+  analogues — never itself raises the severity of a resulting finding;
+  severity is governed only by [`severity.md`](severity.md), based on the
+  consequence, exactly as for any other finding.
+- Insufficient or ambiguous evidence of either the pattern or the boundary
+  behind it is a valid terminal outcome — fail closed; do not invent an
+  established convention from a handful of coincidentally similar files.
+
+### Non-goals
+
+- A generic style-consistency checker, or any rule that encodes a
+  specific preferred structure as mandatory wherever it superficially
+  appears.
+- Automatically refactoring or moving a deviating implementation — this
+  trigger is detection/finding only.
+- Redefining [`repository-expansion.md`](repository-expansion.md)'s fixed
+  trigger catalog or ring-ceiling table, or
+  [`evidence.md`](evidence.md)'s evidence-labeling and
+  no-repository-wide-audit boundary.
+- Redefining [`root-cause-consolidation.md`](root-cause-consolidation.md)'s
+  clustering criteria — see "Interaction with root-cause consolidation"
+  above.
