@@ -234,6 +234,14 @@ _HEADING_RE = re.compile(r"^#{3,4}\s+(?P<id>\S+)\s+\[(?P<severity>[^\]]+)\]\s+(?
 # backticked value is used.
 _LOCATION_RE = re.compile(r"^-\s*\*\*Location:\*\*\s*`(?P<loc>[^`]+)`")
 
+# `- **Evidence:** ...` / `- **Impact:** ...` / `- **Details:** ...` — the
+# canonical full rendering's defect-claim content
+# (shared/templates/finding-rendering.md, "Canonical full rendering").
+# Deliberately excludes look-alike fields with a different label, such as
+# `Evidence location:` or `Contextual evidence:` (the field name must match
+# exactly, immediately followed by `:**`).
+_CLAIM_FIELD_RE = re.compile(r"^-\s*\*\*(?P<field>Evidence|Impact|Details):\*\*\s*(?P<text>.+?)\s*$")
+
 # Any `**Result: ...**` line marks the output as a well-formed report (clean
 # or not) — used to distinguish a genuinely clean/no-findings report from
 # stdout that isn't a review report at all.
@@ -253,7 +261,29 @@ def _parse_location(raw: str) -> dict:
         return {"path": raw}
     if tail.isdigit():
         return {"path": path, "line": int(tail)}
+    if tail and path:
+        # A non-numeric `<line-or-range>` is the finding's enclosing
+        # symbol/function name (finding.md, "location": "... symbol/function,
+        # or narrow section") rather than a line coordinate — carry it as
+        # `symbol` instead of collapsing the whole `path:tail` string into
+        # `path` (issue #342: this previously discarded the split entirely,
+        # so `location.symbol` could never be populated from real output).
+        return {"path": path, "symbol": tail}
     return {"path": raw}
+
+
+def _build_claim(title: str, fields: Mapping[str, str]) -> str:
+    """The defect claim the matcher's claim-comparison step evaluates
+    (docs/benchmark/match-criteria.md §4): the heading title plus whatever
+    ``Evidence`` / ``Impact`` / ``Details`` content the finding actually
+    rendered — not the title alone (issue #342: the matcher previously only
+    ever saw the short, generic heading)."""
+    parts = [title]
+    for name in ("Evidence", "Impact", "Details"):
+        text = fields.get(name)
+        if text:
+            parts.append(text)
+    return " ".join(parts)
 
 
 def parse_review_output(text: str) -> list[ProducedFinding]:
@@ -265,6 +295,9 @@ def parse_review_output(text: str) -> list[ProducedFinding]:
     - A finding heading with an unrecognized severity token, or with no
       ``Location`` line found before the next heading, is skipped — a
       single anomalous finding never fails the whole parse.
+    - A finding's ``claim`` carries its heading title plus any ``Evidence``
+      / ``Impact`` / ``Details`` content rendered before the next heading —
+      not the title alone (issue #342).
     - Text that is not a review report at all (no ``**Result:**`` line and
       no recognizable finding headings) raises ``ValueError`` — the caller
       (the adapter) lets this propagate so the runner's existing per-case
@@ -283,15 +316,23 @@ def parse_review_output(text: str) -> list[ProducedFinding]:
             severity = heading.group("severity").strip().upper()
             title = heading.group("title").strip()
             location: dict | None = None
+            fields: dict[str, str] = {}
             j = i + 1
             while j < n and not _HEADING_RE.match(lines[j]):
-                loc_match = _LOCATION_RE.match(lines[j].strip())
-                if loc_match:
-                    location = _parse_location(loc_match.group("loc"))
-                    break
+                stripped = lines[j].strip()
+                if location is None:
+                    loc_match = _LOCATION_RE.match(stripped)
+                    if loc_match:
+                        location = _parse_location(loc_match.group("loc"))
+                        j += 1
+                        continue
+                field_match = _CLAIM_FIELD_RE.match(stripped)
+                if field_match:
+                    fields[field_match.group("field")] = field_match.group("text").strip()
                 j += 1
             if severity in _VALID_SEVERITIES and location is not None:
-                findings.append(ProducedFinding(severity=severity, location=location, claim=title))
+                claim = _build_claim(title, fields)
+                findings.append(ProducedFinding(severity=severity, location=location, claim=claim))
             # else: parse anomaly for this one finding — skip it, do not
             # fail the whole parse.
         i += 1

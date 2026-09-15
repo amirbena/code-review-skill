@@ -131,7 +131,14 @@ def main(argv: list[str] | None = None) -> int:
     try:
         cases = _load_cases_for_metrics(corpus_dir, args.case_id)
         if cases:
-            output["metrics"] = bm.compute_run_metrics(cases, run_result).as_dict()
+            # Thread each case's captured post-image (issue #342) through to
+            # the matcher's anchor-proximity check, so it actually runs on
+            # production runs instead of being dead code exercised only by
+            # tests that pass `post_image` manually.
+            post_images = {
+                r.id: r.post_image for r in run_result.case_results if r.post_image is not None
+            }
+            output["metrics"] = bm.compute_run_metrics(cases, run_result, post_images=post_images).as_dict()
     except Exception as exc:  # noqa: BLE001 - metrics are a convenience, never hide the run result
         output["metrics_error"] = str(exc)
 
