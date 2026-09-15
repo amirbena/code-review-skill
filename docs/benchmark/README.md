@@ -25,6 +25,7 @@ concern lives in the file named for it.
 | [`duplicate-noise.md`](duplicate-noise.md) | Measuring duplicate / same-root-cause noise over a case's **produced findings alone** — the same-root-cause edge (the #54 `MATCH` cell applied to a pair of produced findings, unchanged), connected-component clustering, the redundant-finding count and its exact-rational duplicate rate per case and in aggregate, the highest-noise-cases list, and how they render alongside the regression report's deltas without gating it. | [#57](https://github.com/amirbena/code-review-skill/issues/57) |
 | [`claim-correspondence-adequacy.md`](claim-correspondence-adequacy.md) | Research recommendation (not a contract change): whether `match-criteria.md`'s lexical claim-correspondence check can recognize an independently-phrased-but-correct finding, measured with real harness-fidelity-corrected benchmark reruns. Finds the free-text Jaccard/subset path is, in practice, the *only* path that ever decides the defect axis in production because a produced `defect_kind` is never populated, and recommends evaluating `defect_kind` population first per the deterministic-options-first guardrail. | [#343](https://github.com/amirbena/code-review-skill/issues/343) |
 | [`ci-integration.md`](ci-integration.md) | Wiring the existing benchmark execution (`scripts/benchmark/run_benchmark.py` + `scripts/benchmark/benchmark_review_adapter.py`, #250) into a dedicated, informational/non-blocking PR-level CI check (`.github/workflows/benchmark-check.yml`) — the deterministic applicability classifier (`scripts/benchmark/benchmark_ci_classifier.py`), the not-applicable / runtime-unavailable / ran three-state contract, and its full independence from `release-worthiness.yml`. | [#255](https://github.com/amirbena/code-review-skill/issues/255) |
+| [`runtime-execution-contract.md`](runtime-execution-contract.md) | The vendor-neutral runtime execution contract a future benchmark-CI runtime must satisfy — the non-negotiable no-personal-machine trust boundary, the `run_benchmark.py` → `ReviewerAdapter` → agent CLI/runtime → unmodified Skill → model backend execution chain, the runtime viability criteria, the required runtime/model/Skill-SHA metadata, the evaluated (not decided) candidate classes A–D, and the two explicitly rejected candidates. | [#330](https://github.com/amirbena/code-review-skill/issues/330) |
 
 The first four documents cover the whole epic-[#40](https://github.com/amirbena/code-review-skill/issues/40)
 benchmark surface; [`match-criteria.md`](match-criteria.md) ([#54](https://github.com/amirbena/code-review-skill/issues/54))
@@ -370,6 +371,26 @@ developer would, and the result is published without ever becoming a
 required merge gate — an unavailable review-CLI runtime on the bare Actions
 runner is a distinct, non-failing "benchmark not run" outcome, not a
 failure. It reimplements no runner/matcher/metrics/adapter logic above.
+
+## Runtime execution contract
+
+[`runtime-execution-contract.md`](runtime-execution-contract.md) (#330) is
+the foundational, vendor-neutral contract a future runtime that fills
+[`ci-integration.md`](ci-integration.md) §4's "applicable, runtime
+unavailable" gap must satisfy: the non-negotiable rule that benchmark CI
+never runs on the maintainer's personal machine/credentials/session under
+any trigger, the `run_benchmark.py` → `ReviewerAdapter` → agent CLI/runtime
+→ unmodified Skill → model backend execution chain, the runtime viability
+criteria (non-interactive tool execution, isolated CI, reproducibility,
+bounded latency, a purpose-specific revocable credential, never a silent
+green gate), the runtime/model/Skill-SHA metadata every result must carry,
+four candidate classes evaluated but not decided between, and two
+explicitly rejected candidates (a personal-session self-hosted runner; a
+bare completion endpoint standing in for the Skill). It picks no runtime
+and provisions no infrastructure — that is
+[#336](https://github.com/amirbena/code-review-skill/issues/336)'s spike
+and [#337](https://github.com/amirbena/code-review-skill/issues/337)'s
+provisioning work, respectively.
 
 ## Related
 
