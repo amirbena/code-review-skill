@@ -43,10 +43,7 @@ _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 _HEADING_RE = re.compile(r"^##[ \t]+(.+?)[ \t]*$", re.MULTILINE)
 _OPTIONAL_HINT_RE = re.compile(r"\boptional\b", re.IGNORECASE)
 _LABELED_FIELD_RE = re.compile(r"^-\s+\*\*(?P<label>[^*]+?):\*\*[ \t]*(?P<value>.*)$", re.MULTILINE)
-# "Fixes #<digits>" for Issue-linked work, or the explicit literal "Fixes
-# #N/A" for maintainer-led work that intentionally has no Issue — never a
-# bare blank, which is the unresolved-placeholder case below.
-_FIXES_LINE_RE = re.compile(r"^Fixes #(?P<number>\d*|N/A)[ \t]*$", re.MULTILINE | re.IGNORECASE)
+_FIXES_LINE_RE = re.compile(r"^Fixes #(?P<number>\d*)[ \t]*$", re.MULTILINE | re.IGNORECASE)
 _CHECKBOX_RE = re.compile(r"^-\s*\[(?P<mark>[ xX])\]\s*(?P<note>.*)$")
 # Matched only against a whole blank-required field value (fullmatch, never
 # swept across prose): a copied guidance stub reads as a bracketed phrase
@@ -197,13 +194,7 @@ def validate_structure(body: str | None, contract: TemplateContract | None = Non
     if fixes_match is None:
         issues.append(StructureIssue("Fixes", "a 'Fixes #<issue-number>' line is required"))
     elif not fixes_match.group("number"):
-        issues.append(
-            StructureIssue(
-                "Fixes",
-                "'Fixes #' must reference a real Issue number, or explicitly declare "
-                "'Fixes #N/A' for maintainer-led work with no Issue",
-            )
-        )
+        issues.append(StructureIssue("Fixes", "'Fixes #' must reference a real Issue number"))
 
     for heading, label in contract.required_blank_fields:
         section_body = sections_by_heading.get(heading)

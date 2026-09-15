@@ -11,11 +11,7 @@ from pathlib import Path
 from unittest import mock
 
 from scripts.validation import pr_description_length as pr_length
-from tests.support.pr_body_fixtures import (
-    COMPLIANT_BODY,
-    COMPLIANT_BODY_NO_ISSUE,
-    RUNTIME_DEFAULT_SUMMARY_BODY,
-)
+from tests.support.pr_body_fixtures import COMPLIANT_BODY, RUNTIME_DEFAULT_SUMMARY_BODY
 
 
 def _replace(body: str, old: str, new: str) -> str:
@@ -104,23 +100,6 @@ class ValidateStructureTests(unittest.TestCase):
 
     def test_missing_fixes_line_fails(self) -> None:
         body = _replace(COMPLIANT_BODY, "Fixes #135\n\n", "")
-        result = pr_length.validate_structure(body)
-        self.assertFalse(result.passes)
-        self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
-
-    def test_explicit_fixes_na_passes_for_issue_less_maintainer_work(self) -> None:
-        result = pr_length.validate_structure(COMPLIANT_BODY_NO_ISSUE)
-        self.assertTrue(result.passes, result.issues)
-
-    def test_fixes_na_is_case_insensitive(self) -> None:
-        body = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #n/a")
-        result = pr_length.validate_structure(body)
-        self.assertTrue(result.passes, result.issues)
-
-    def test_fixes_na_does_not_relax_the_blank_placeholder_check(self) -> None:
-        # "N/A" is a deliberate, distinct value — not a loophole that makes
-        # any non-empty-looking suffix pass.
-        body = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #not-a-real-issue")
         result = pr_length.validate_structure(body)
         self.assertFalse(result.passes)
         self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))

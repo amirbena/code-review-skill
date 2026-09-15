@@ -1,7 +1,5 @@
 <!-- Concisely summarize for the reviewer. Link to the Issue or canonical
-documentation for detailed requirements, policy, and design. Use
-"Fixes #N/A" only for maintainer-led work with no GitHub Issue — never
-leave this blank. -->
+documentation for detailed requirements, policy, and design. -->
 
 Fixes #
 
