@@ -638,6 +638,9 @@ class NaturalLanguageAuthorizationResolution(unittest.TestCase):
             "what does trusted-host execution mean?",
             "that sandbox thing sounds convenient",
             "be more helpful with validation",
+            "what does allow_trusted_host_execution do?",
+            "is allow-trusted-host-execution safe?",
+            "how does allow trusted host execution work?",
         ):
             with self.subTest(text=text):
                 self.assertFalse(rv.resolve_allow_trusted_host_execution(text))

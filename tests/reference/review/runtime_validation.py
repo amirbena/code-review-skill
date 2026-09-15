@@ -116,6 +116,16 @@ def _natural_trusted_host_values(text: str) -> set[bool]:
     lowered = text.lower()
     spaced = _OPTION.replace("_", " ")
     hyphenated = _OPTION.replace("_", "-")
+    # A question that merely names the option is ambiguous, per
+    # trusted-host-execution.md's "Natural-language authorization
+    # phrasings" ("a question about the option ... is ambiguous and never
+    # sets the flag") — strip it before matching, mirroring
+    # invocation_options.py's `_natural_values` question guard exactly.
+    question = re.compile(
+        rf"\b(?:what|how|why|does|is)\b[^?]*\b(?:{re.escape(_OPTION)}|"
+        rf"{re.escape(spaced)}|{re.escape(hyphenated)})\b[^?]*\?"
+    )
+    lowered = question.sub("", lowered)
     bare = (
         rf"(?<![\w]){re.escape(_OPTION)}(?![\w=])",
         rf"(?<![\w]){re.escape(spaced)}(?![\w])",
