@@ -175,8 +175,16 @@ not an assertion that the reviewed behavior is correct.
 
 Every `executed` or `failed` entry additionally carries one **execution
 provenance** value — `sandbox` or `trusted-host` — and an `unavailable`
-entry caused by a missing execution backend carries provenance
-`unavailable`. This dimension is defined and governed by
+entry caused by a missing execution backend (no sandbox boundary and no
+valid trusted-host authorization) carries provenance `unavailable`. A
+`skipped` entry recorded before any backend was selected, and an
+`unavailable` entry caused by something other than a missing backend
+(for example a missing executable), carry no meaningful provenance and
+render none — except a `skipped` entry produced *after* a selected
+backend already started the command and its result was then discarded
+(for example this section's post-run mutation check), which still
+carries that backend's provenance as evidence of what produced the
+discarded result. This dimension is defined and governed by
 [`trusted-host-execution.md`](trusted-host-execution.md); it never
 changes this section's outcome vocabulary or its evidence requirements,
 only records which backend (if any) ran the command.

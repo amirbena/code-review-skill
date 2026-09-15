@@ -161,17 +161,33 @@ sandboxed run.
 
 ## Provenance and evidence
 
-Every `runtime-validation.md` outcome record (`executed` / `failed` /
-`skipped` / `unavailable`, for both a declared command and a targeted
-per-finding reproduction) additionally carries one **execution
-provenance** value from this closed set:
+An `executed` or `failed` `runtime-validation.md` outcome record (for
+both a declared command and a targeted per-finding reproduction)
+additionally carries one **execution provenance** value from this closed
+set:
 
 - `sandbox` — ran inside the disposable isolation boundary
   `runtime-validation.md` and #302's sandbox runner establish;
 - `trusted-host` — ran directly on the reviewer's host under this
-  policy's explicit authorization, with no sandbox isolation;
-- `unavailable` — did not run; neither a sandbox boundary nor a valid
-  trusted-host authorization was available for this invocation.
+  policy's explicit authorization, with no sandbox isolation.
+
+An `unavailable` outcome caused specifically by backend selection
+failing — no sandbox boundary and no valid trusted-host authorization for
+this invocation — likewise carries provenance `unavailable`, naming that
+neither backend was reachable. A `skipped` outcome recorded **before** a
+backend was ever selected (the command failed the safety gate, or a
+present-but-unverified boundary had no valid trusted-host authorization
+to fall through to), and an `unavailable` outcome caused by something
+else (for example a missing executable), never reached backend
+selection at all: they carry no provenance value, and none is rendered
+for them. The one exception is a `skipped` outcome produced **after** a
+backend already started the command and its result was then discarded —
+for example runtime-validation.md's post-run mutation check catching an
+unexpected change — which still carries the provenance of the backend
+that actually ran it, since that is exactly the evidence a reader needs
+to know which backend produced the discarded result. Provenance is
+additive evidence about *which backend ran the command*; it is
+meaningless only where no backend was ever selected in the first place.
 
 A `trusted-host` entry's rendered evidence states, in the human-facing
 `Validation` section, that the command executed on the reviewer's host

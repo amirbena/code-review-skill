@@ -539,6 +539,54 @@ class TrustedHostExecutionBackend(unittest.TestCase):
             rv.Provenance.UNAVAILABLE,
         )
 
+    def test_pre_selection_skip_carries_no_provenance(self) -> None:
+        """A command skipped by the safety gate, or by an unverified boundary
+        with no authorization to fall through to, never reached backend
+        selection — provenance stays None, distinct from UNAVAILABLE."""
+        repo = rv.FakeRepository()
+        gate_skip = rv.run_validation(
+            [command("pytest", "tests/", requires_network=True)], repo
+        )
+        self.assertEqual(gate_skip[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIsNone(gate_skip[0].provenance)
+
+        boundary_skip = rv.run_validation(
+            [command("pytest", "tests/", boundary=rv.ExecutionBoundary(post_run_verified=False))],
+            repo,
+        )
+        self.assertEqual(boundary_skip[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIsNone(boundary_skip[0].provenance)
+
+    def test_missing_executable_unavailable_carries_no_provenance(self) -> None:
+        """UNAVAILABLE from a missing executable never reached backend
+        selection either — distinct from the backend-caused UNAVAILABLE
+        that always carries Provenance.UNAVAILABLE."""
+        repo = rv.FakeRepository()
+        records = rv.run_validation([command("cargo", "test", available=False)], repo)
+        self.assertEqual(records[0].outcome, rv.Outcome.UNAVAILABLE)
+        self.assertIsNone(records[0].provenance)
+
+    def test_post_run_discard_keeps_the_backend_that_produced_it(self) -> None:
+        """The one skip exception: a backend was selected and actually ran
+        before the result was discarded, so its provenance is retained as
+        evidence of what produced the discarded result."""
+        repo = rv.FakeRepository()
+        auth = rv.TrustedHostAuthorization(principal="user", invocation_id="inv-1")
+
+        def mutating_start(argv: tuple[str, ...]) -> None:
+            repo.process_invocations.append(argv)
+            repo.files["src/unexpected.py"] = "mutated = True\n"
+
+        repo.start_trusted_host = mutating_start  # type: ignore[method-assign]
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=self.unavailable_boundary())],
+            repo,
+            trusted_host=auth,
+            invocation_id="inv-1",
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertEqual(records[0].provenance, rv.Provenance.TRUSTED_HOST)
+
 
 if __name__ == "__main__":
     unittest.main()

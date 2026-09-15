@@ -153,6 +153,19 @@ class CommandDeclaration:
 
 @dataclass(frozen=True)
 class ValidationRecord:
+    """`provenance` is meaningful only once backend selection is actually
+    reached: an `executed`/`failed` record (SANDBOX or TRUSTED_HOST), an
+    `unavailable` record caused specifically by no backend being reachable
+    (UNAVAILABLE), or a `skipped` record produced *after* a selected
+    backend already started the command and its result was then discarded
+    (carries that backend's provenance — see `run_validation`'s
+    post-run mutation-discard branch). Every other record — a `skipped`
+    recorded before backend selection, or an `unavailable` from an
+    unrelated cause such as a missing executable — never reached backend
+    selection, so `provenance` stays `None`: absent, not `UNAVAILABLE`,
+    which is reserved for the backend-caused case (shared/policies/
+    trusted-host-execution.md, "Provenance and evidence")."""
+
     command: str
     source: str
     scope: str
@@ -160,7 +173,7 @@ class ValidationRecord:
     reason: str = ""
     exit_code: int | None = None
     evidence: str = ""
-    provenance: Provenance = Provenance.UNAVAILABLE
+    provenance: Provenance | None = None
 
 
 @dataclass
