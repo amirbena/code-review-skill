@@ -108,7 +108,17 @@ runtime validation's existing command scope — no filesystem, credential,
 or network isolation exists in this mode, and the review evidence says so
 explicitly wherever a `trusted-host` provenance is recorded. Sandbox
 execution is still attempted first and always wins when available.
-Canonical semantics: [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md).
+
+The trusted invoking user may supply this authorization structurally, or
+by saying so directly — for example "run validation on my machine if
+sandbox isn't available" or "I authorize trusted-host execution for this
+review" — against a small, closed phrasing vocabulary; both routes
+resolve to the exact same canonical boolean, ambiguous phrasing never
+authorizes, and explicit denial ("sandbox only", "don't run locally")
+forces `unavailable` even when sandbox is unavailable. Both Skills share
+one resolution definition; there is no per-Skill variant.
+Canonical semantics: [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md),
+"Natural-language authorization phrasings".
 
 ## Limitations & safety boundaries
 

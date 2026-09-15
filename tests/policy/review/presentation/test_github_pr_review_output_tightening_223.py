@@ -80,12 +80,17 @@ SEVERITY_LEGEND = {
 # one-line statement in section 4 that this Skill holds no `spawn_agent`
 # capability of its own, linking to the new
 # shared/policies/agent-delegation.md) — also deliberate and unrelated to
-# #223. The other files in this map are untouched by
-# #89/#237/#211/#121/#175/#258/#82/#303 and keep their original #223-era
-# hashes.
+# #223. LOCAL_RUNBOOK was re-captured again after Issue #369 (step 8a now
+# also resolves `allow_trusted_host_execution`'s natural-language
+# authorization phrasings, per the new shared/policies/
+# trusted-host-execution.md section, before runtime-validation.md's
+# execution-selection runs) — also deliberate and unrelated to #223. The
+# other files in this map are untouched by
+# #89/#237/#211/#121/#175/#258/#82/#303/#369 and keep their original
+# #223-era hashes.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "1abf7c6a28f6d6b73a845aa8c8f9e06e7d062a82",
-    LOCAL_RUNBOOK: "87a6590f8f0d861eeb616d6fe2cf1e93443185df",
+    LOCAL_RUNBOOK: "49fbb5f21cfb6a7e64148018282e17c079bd529d",
     LOCAL_SKILL: "fd7590a6034aad16583c1a7fb681c4fda6e965ce",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "1b5238723eab4308407c137c554fa3a169e8b482",

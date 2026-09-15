@@ -255,8 +255,17 @@ which a value must be resolved before it is used, or what is reported.
    entirely and proceed directly to the review step below.
 8a. **Resolve and optionally execute runtime validation** per the shared
    [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)
-   policy. Use the target repository instruction context and the changed
-   delta's blast radius already resolved above. Carry exactly one outcome
+   policy. Before execution-selection runs, resolve
+   `allow_trusted_host_execution` per
+   [`trusted-host-execution.md`](../../../shared/policies/trusted-host-execution.md)'s
+   "Trusted authorization channel" — a structured runtime-furnished value
+   or, absent one, the current invocation's own text against that
+   policy's "Natural-language authorization phrasings" closed vocabulary —
+   into the one canonical boolean that section's precedence defines; this
+   is the same resolution `github-pr-review` performs, never a
+   per-Skill variant. Use the target repository instruction context and
+   the changed delta's blast radius already resolved above. Carry exactly
+   one outcome
    record per selected command, or the explicit no-command result, into the
    shared `Validation` section. This also covers **targeted per-finding
    validation**: for an eligible suspected finding, run the smallest safe,
