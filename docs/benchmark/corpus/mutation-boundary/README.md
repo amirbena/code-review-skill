@@ -102,22 +102,23 @@ truth.
 
 ## Denial classification / #299 extension point
 
-Each denied case's `expected_security_event` cites one of the *provisional*
+Each denied case's `expected_security_event` cites one of the
 denial-classification strings this module defines
 (`DENIED_MUTATION_CAPABILITY_ABSENT`, `DENIED_MUTATION_UNAUTHORIZED`,
 `DENIED_MUTATION_STALE_APPROVAL`, `DENIED_MUTATION_SCOPE_ESCAPE`,
-`DENIED_MUTATION_AUTHORIZATION_REPLAY`) — the same provisional vocabulary
+`DENIED_MUTATION_AUTHORIZATION_REPLAY`) — the same vocabulary
 `docs/threat-model/catalog/mutation-authority.yaml` and
 `scripts/security/validate_threat_model.py`'s `PROVISIONAL_EVENT_CLASSES`
-already declare for the `mutation/#305` benchmark family. Each string maps
+declare for the `mutation/#305` benchmark family. Each string maps
 1:1 to one of `mutation_authority.py`'s typed `MutationAuthorityError`
 subclasses (`CapabilityAbsentError`, `UnauthorizedMutationError`,
 `StaleApprovalError`, `ScopeEscapeError`, `AuthorizationReplayError`).
 [#299](https://github.com/amirbena/code-review-skill/issues/299) (the
-real, authoritative security-event/telemetry taxonomy) has **not** landed
-as of this corpus. This corpus intentionally does not invent or gate on a
-second telemetry model: once #299 lands, only the provisional string
-constants themselves would need renaming, no fixture restructuring.
+real, authoritative security-event taxonomy,
+`docs/security-events/security-event-model.md`) has now landed and
+confirmed these five names as final without renaming, splitting, or
+merging any of them — this corpus's string constants and fixture
+structure needed no change.
 
 ## Repository/Git-state expectations, and the one documented exception
 

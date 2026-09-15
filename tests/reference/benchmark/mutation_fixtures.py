@@ -49,17 +49,17 @@ benchmark fixtures so it never contaminates their metrics.
 ## #299 / #300 extension points
 
 `expected_security_event` on every denied case draws from the same
-provisional denial-classification strings
+denial-classification strings
 `docs/threat-model/catalog/mutation-authority.yaml` and
 `scripts/security/validate_threat_model.py`'s `PROVISIONAL_EVENT_CLASSES`
-already declare for the `mutation/#305` benchmark family
+declare for the `mutation/#305` benchmark family
 (`DENIED_MUTATION_CAPABILITY_ABSENT`, `DENIED_MUTATION_UNAUTHORIZED`,
 `DENIED_MUTATION_STALE_APPROVAL`, `DENIED_MUTATION_SCOPE_ESCAPE`,
 `DENIED_MUTATION_AUTHORIZATION_REPLAY`). #299 (the authoritative
-security-event/telemetry taxonomy) has **not** landed as of this corpus;
-this module does not invent a second taxonomy or block on it -- once #299
-lands, only the provisional string constants themselves would need
-renaming, no fixture restructuring. Threat-scenario ids cite
+security-event taxonomy, `docs/security-events/security-event-model.md`)
+has now landed and confirmed these five names as final without renaming,
+splitting, or merging any of them, so this module needed no change.
+Threat-scenario ids cite
 `AUTH-001`..`AUTH-016` from `docs/threat-model/catalog/mutation-authority.yaml`
 (issue #300, already merged to main), excluding `AUTH-014` -- a distinct,
 already-covered GitHub formal-review-action authority domain

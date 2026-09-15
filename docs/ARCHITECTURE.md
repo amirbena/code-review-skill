@@ -486,6 +486,25 @@ and no packaged Skill resource depends on them.
   are unchanged, and no finding-template field is added — the eventual
   representation of relationship-influence attribution in the packaged
   finding contract is deferred; see "Future work" below.
+- **Security event model** — the authoritative, closed taxonomy of
+  denied capability-boundary events across the runtime capability
+  boundaries (`shared/policies/mutation-authority.md`,
+  `shared/policies/agent-delegation.md`,
+  `shared/policies/runtime-validation.md`, and `github-pr-review`'s
+  `review-action-authorization.md`): every `DENIED_*` event name, the
+  minimal event field schema, and the deterministic `expected_denial` /
+  `boundary_violation_attempt` classification derived from runtime
+  evidence rather than inferred intent
+  ([`security-events/README.md`](security-events/README.md) →
+  [`security-events/security-event-model.md`](security-events/security-event-model.md),
+  #299). It makes authoritative the `expected_security_event` vocabulary
+  the [`threat-model/`](threat-model/threat-model.md) catalog (#300)
+  already declared provisionally, and confirms `AUTH-014`'s previously
+  undefined self-review event class. Its packaged touch-points are the
+  "Reporting an event" / "Reporting a denied event" sections it adds to
+  the four policies named above; actually emitting, recording, or
+  benchmarking that an event fires is deferred to #301/#302/#303/#308 —
+  see "Future work" below.
 - **Benchmark, measurement & analytics architecture** — the canonical
   cross-component design spanning the benchmark-quality-gate epic (#329:
   isolated runtime execution #330→#336→#337, the PR-time taxonomy/
@@ -559,6 +578,14 @@ or runbook implements them today:
   unchanged. There is no packaged finding field carrying
   `influential_relationships` — that representation is left to a later,
   separately-scoped implementation issue once the model is validated.
+- **Denied capability-boundary event emission** — #299 (see
+  "Repository-development instrumentation" above) defines the event
+  taxonomy, field schema, and classification; no code in this repository
+  constructs, transports, stores, or queries an instance of that schema
+  today. Real emission at each enforcement point, a sink/query surface,
+  and benchmarking that the mapped event actually fires for every
+  applicable threat-model scenario are #301/#302/#303's and #308's,
+  respectively.
 
 ## 3. Separation of Concerns
 

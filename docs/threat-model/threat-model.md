@@ -300,23 +300,30 @@ is itself part of what makes the catalog useful: it prevents `#301`/`#302`/
 `#303` from re-implementing something that already works, and prevents
 anyone from assuming a documented policy is a proven boundary.
 
-## 8. Provisional denied-capability event taxonomy
+## 8. Denied-capability event taxonomy (`#299`, landed)
 
-`#299` owns the real, authoritative security-event taxonomy. Until it
-lands, every scenario whose `expected_safe_outcome` is a runtime denial
-names one of a small, fixed set of **provisional** event-class names (for
-example, `DENIED_MUTATION_UNAUTHORIZED`, `DENIED_SANDBOX_NETWORK_ACCESS`,
-`DENIED_SPAWN_BUDGET_EXCEEDED`) — see
+`#299` (`docs/security-events/security-event-model.md`) is the real,
+authoritative security-event taxonomy. Every scenario whose
+`expected_safe_outcome` is a runtime denial names one of a small, fixed
+set of event-class names (for example, `DENIED_MUTATION_UNAUTHORIZED`,
+`DENIED_SANDBOX_NETWORK_ACCESS`, `DENIED_SPAWN_BUDGET_EXCEEDED`) — see
 [`scripts/security/validate_threat_model.py`](../../scripts/security/validate_threat_model.py),
 `PROVISIONAL_EVENT_CLASSES`, for the exact closed set the validator
-enforces. A scenario whose outcome is not itself a capability denial (a
-reasoning-discipline scenario, a decision-semantics correctness property,
-or a genuine platform-unavailability outcome) uses `NOT_APPLICABLE`
-instead — the outcome the catalog considers safe simply is not "a
-capability was denied." `#299` is expected to consume this vocabulary as
-a starting point, not to be bound by it: a name here is a placeholder for
-"some stable event class in this family," not a commitment to the final
-spelling.
+enforces (the constant keeps its pre-#299 name; #299 chose not to rename
+it — see the catalog README's "Event taxonomy" section). A scenario whose
+outcome is not itself a capability denial (a reasoning-discipline
+scenario, a decision-semantics correctness property, or a genuine
+platform-unavailability outcome) uses `NOT_APPLICABLE` instead — the
+outcome the catalog considers safe simply is not "a capability was
+denied." `#299` did not need to rename, split, or merge any pre-existing
+entry from this catalog's own domains (`AUTH`/`SBOX`/`DELEG`); it added
+three new names (`DENIED_REVIEW_ACTION_SELF_REVIEW`,
+`DENIED_REVIEW_ACTION_UNAUTHORIZED`, `DENIED_REVIEW_ACTION_STALE_HEAD`)
+for the GitHub review-action-mutation domain, which this catalog does not
+itself model (`AUTH-014` is the one exception — see its updated
+`expected_security_event`), plus a deterministic
+`expected_denial` / `boundary_violation_attempt` classification that this
+catalog does not carry per-scenario.
 
 ## 9. Threat-scenario severity is not review-finding severity
 
@@ -340,9 +347,9 @@ docs/threat-model/catalog/*.yaml   (this issue, #300 — canonical)
         ├─▶ #305 / #306 / #307   select the same scenarios as required
         │                        benchmark cases (`benchmark_family`)
         │
-        ├─▶ #299                 maps each scenario's provisional
-        │                        `expected_security_event` to a real,
-        │                        stable event class
+        ├─▶ #299                 confirms each scenario's
+        │                        `expected_security_event` as a real,
+        │                        stable, final event class
         │
         ├─▶ #308                 benchmarks that the mapped event actually
         │                        fires for every applicable scenario

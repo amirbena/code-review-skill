@@ -51,10 +51,16 @@ BENCHMARK_FAMILIES: frozenset[str] = frozenset(
     {"mutation/#305", "sandbox/#306", "delegation/#307", "security-event/#308", "none"}
 )
 
-# Provisional denied-capability event-class vocabulary. #299 owns the real,
-# authoritative taxonomy; every name here is explicitly provisional and this
-# validator only checks that scenarios draw from one stable, spelled-out set
-# rather than inventing a fresh string per scenario.
+# Denied-capability event-class vocabulary. #299 (docs/security-events/
+# security-event-model.md) is the authoritative taxonomy this set mirrors;
+# this validator only checks that scenarios draw from one stable,
+# spelled-out set rather than inventing a fresh string per scenario. The
+# name PROVISIONAL_EVENT_CLASSES is kept (not renamed to EVENT_CLASSES) to
+# avoid an unforced, wide, purely-cosmetic rename across the reference
+# fixtures and catalog docs that already cite it by this name; #299 chose
+# not to rename, split, or merge any of the pre-existing entries, and only
+# added the three DENIED_REVIEW_ACTION_* entries for a domain (GitHub
+# review-action mutation) that previously had none.
 PROVISIONAL_EVENT_CLASSES: frozenset[str] = frozenset(
     {
         "DENIED_MUTATION_UNAUTHORIZED",
@@ -74,6 +80,9 @@ PROVISIONAL_EVENT_CLASSES: frozenset[str] = frozenset(
         "DENIED_SANDBOX_UNAVAILABLE_PRIMITIVE",
         "DENIED_GIT_UNSAFE_CONFIG",
         "DENIED_GIT_PATH_ESCAPE",
+        "DENIED_REVIEW_ACTION_SELF_REVIEW",
+        "DENIED_REVIEW_ACTION_UNAUTHORIZED",
+        "DENIED_REVIEW_ACTION_STALE_HEAD",
         NOT_APPLICABLE,
     }
 )
@@ -226,8 +235,8 @@ def parse_scenario(raw: dict, *, source_file: str = "") -> ThreatScenario:
     expected_security_event = _require_str(raw, "expected_security_event")
     if expected_security_event not in PROVISIONAL_EVENT_CLASSES:
         raise ThreatModelFormatError(
-            f"{scenario_id}: expected_security_event {expected_security_event!r} not in the provisional "
-            f"event-class vocabulary {sorted(PROVISIONAL_EVENT_CLASSES)}"
+            f"{scenario_id}: expected_security_event {expected_security_event!r} not in the "
+            f"denied-capability event-class vocabulary {sorted(PROVISIONAL_EVENT_CLASSES)}"
         )
 
     benchmark_family_raw = _require_str(raw, "benchmark_family")

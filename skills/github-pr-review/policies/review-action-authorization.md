@@ -466,6 +466,48 @@ A clean verdict with a withheld approval is reported as exactly that: a
 clean reasoning result **and** a non-mutating outcome. It is never
 rendered as "approved."
 
+### Reporting a denied event
+
+Each `WITHHELD` mutation above is also a denied-capability event, not
+just human-facing text. The event-class vocabulary (repository-
+development design record, named here rather than linked because it is
+not a packaged resource: `docs/security-events/security-event-model.md`,
+Issue #299) maps each `WITHHELD` reason to one of three names — this
+authority domain is separate from source/Git mutation
+(`shared/policies/mutation-authority.md`), so its event names never reuse
+that policy's `DENIED_MUTATION_*` prefix:
+
+- `WITHHELD (self-review: ...)` → `DENIED_REVIEW_ACTION_SELF_REVIEW` —
+  absolute; no publication mode, request, or authorization ever makes
+  this authorizable ("Self-review is allowed; self-approval is not"
+  above).
+- `WITHHELD (reviewer independence not established)` /
+  `WITHHELD (GitHub event permission not held by this identity)` /
+  `WITHHELD (publication mode is PASSIVE)` →
+  `DENIED_REVIEW_ACTION_UNAUTHORIZED` — the desired event was computed
+  but no valid authorization/mode/permission covers submitting it.
+- `WITHHELD (reviewed HEAD is stale; re-reviewing the new delta)` →
+  `DENIED_REVIEW_ACTION_STALE_HEAD` — the current PR HEAD advanced past
+  the reviewed HEAD before or during submission (see
+  [`review-output.md`](review-output.md), "HEAD revalidation" and
+  "Submission ordering").
+
+Every event additionally carries the closed-set `classification` #299
+defines. `DENIED_REVIEW_ACTION_SELF_REVIEW` from an ordinary self-review
+invocation that never attempted a formal event is `expected_denial`; the
+same event class is `boundary_violation_attempt` if a caller actively
+tries to force `APPROVE` / `REQUEST_CHANGES` on a self-review despite
+this boundary. `PASSIVE`-mode withholding (no `ACTIVE`/`SEMI` request
+ever made) is `expected_denial`; an `ACTIVE` request whose independence,
+permission, or HEAD facts were unfavorable is
+`boundary_violation_attempt` only when the request itself constituted an
+actual submission attempt the gate had to intercept, and `expected_denial`
+when the gate's own precondition (independence, permission, current HEAD)
+was simply never satisfiable before any submission was possible.
+Recording this event never changes the reported verdict, never changes
+`Mutation:`, and is never itself treated as authorization for a later
+attempt.
+
 ## Migration from the pre-#314 model
 
 The pre-#314 model used two independent switches: the passive/active

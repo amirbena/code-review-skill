@@ -47,9 +47,10 @@ security architecture* issues instead
   [#301](https://github.com/amirbena/code-review-skill/issues/301),
   [#302](https://github.com/amirbena/code-review-skill/issues/302),
   [#303](https://github.com/amirbena/code-review-skill/issues/303).
-- The denied-capability security-event taxonomy this catalog's
-  `expected_security_event` field is a provisional placeholder for:
-  [#299](https://github.com/amirbena/code-review-skill/issues/299).
+- The denied-capability security-event taxonomy that makes this catalog's
+  `expected_security_event` field authoritative:
+  [#299](https://github.com/amirbena/code-review-skill/issues/299)
+  ([`../security-events/security-event-model.md`](../security-events/security-event-model.md)).
 - The three benchmark-fixture issues that select their category's
   scenarios from this catalog:
   [#305](https://github.com/amirbena/code-review-skill/issues/305)
@@ -71,7 +72,8 @@ security architecture* issues instead
 
 - Implementing runtime enforcement — owned by #301/#302/#303, never
   absorbed here.
-- Implementing security-event recording — owned by #299.
+- Implementing security-event recording or emission — #299 defines the
+  taxonomy only; actual emission is owned by #301/#302/#303/#308.
 - Implementing benchmark fixtures — owned by #305/#306/#307/#308.
 - Implementing the traceability engine — owned by #310.
 - Implementing local-remediation semantics — owned by
