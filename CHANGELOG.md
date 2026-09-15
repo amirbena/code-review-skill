@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.44.0 — 2026-09-15
+
+### Added
+
+- Add analogue-based responsibility/placement pattern inference to the architectural-placement policy, recognizing an undocumented structural convention deviation as a second, bounded trigger alongside the existing lifecycle-semantic triggers (#346).
+
 ## v1.43.0 — 2026-09-15
 
 ### Added
