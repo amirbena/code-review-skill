@@ -81,10 +81,18 @@ adapter, no matcher call constructed manually.
 - Review CLI: `claude` (Claude Code) version `2.1.272`
 - Run date: 2026-09-15 (UTC)
 - Corpus dir: `docs/benchmark/corpus` (unmodified)
-- `correctness-off-by-one-pagination` was run **twice** to observe run-to-run
+- `correctness-off-by-one-pagination` was run **twice** through the full
+  production path (Runs A and B below) to observe run-to-run
   reviewer-verbosity variance (the CLI is not deterministic); the other two
-  cases were run once each. Four executed cases total, zero adapter/runtime
-  errors.
+  cases were run once each. Four production-path runs total (§2's table),
+  zero adapter/runtime errors. A fifth, off-pipeline invocation of the same
+  `correctness-off-by-one-pagination` input — the adapter's own prompt and
+  CLI invocation, run directly and its raw stdout captured without going
+  through the matcher/metrics — was used only to confirm that Run A's thin
+  claim (§3) reflects genuine CLI output variance and not a parsing defect;
+  it produced its own, differently-worded rich `Evidence` block (distinct
+  from Run B's), consistent with §7's observation below. It is not counted
+  among, or scored against, the four production-path runs.
 
 ## 2. Raw results
 
@@ -139,10 +147,16 @@ missing causal detail.
 - Manual judgment: **`SEMANTICALLY_EQUIVALENT`, but minimal** — correct
   defect, correct consequence, but the reviewer's own rendered output that
   run genuinely carried no `Evidence`/`Impact` content for `_build_claim` to
-  append (verified against the raw CLI transcript for a same-case rerun,
-  §4). This is reviewer-output variance across runs, not a #342 harness
-  regression and not evidence about the matcher's adequacy on well-evidenced
-  claims — bucketed separately from Runs B–D below.
+  append. This is not a parsing gap: the off-pipeline raw-stdout probe
+  described in §1 — the same case, same input, same adapter prompt and
+  CLI invocation, captured before parsing — confirms `parse_review_output`
+  correctly carries an `Evidence` bullet through to the claim when the CLI
+  renders one (it did, richly, on that probe invocation); Run A's CLI
+  output that particular run just did not render one. The CLI itself
+  renders `Evidence` inconsistently run to run, per §7. This is
+  reviewer-output variance across runs, not a #342 harness regression and
+  not evidence about the matcher's adequacy on well-evidenced claims —
+  bucketed separately from Runs B–D below.
 
 ### Run B — lexical matcher false negative
 
