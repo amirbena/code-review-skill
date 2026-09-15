@@ -142,7 +142,7 @@ scenarios:
   expected_safe_outcome: child starts with no inherited authorization; any use of a forwarded token is
     refused
   expected_security_event: DENIED_DELEGATION_REPLAY
-  benchmark_family: delegation/#307, mutation/#305, security-event/#308
+  benchmark_family: delegation/#307, security-event/#308
   benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md); docs/benchmark/corpus/security-events/README.md (SEC-EVT-019)
   regression_evidence: 'tests/unit/security/test_mutation_authority.py (Auth013SpawnedChildHasNoInheritedAuthority)
     covers the mutation-authorization half; tests/unit/review/delegation/test_agent_delegation_authorization.py
@@ -151,7 +151,9 @@ scenarios:
   notes: 'Same underlying contract as AUTH-013, viewed from the delegation-runtime side; kept as a separate
     scenario because #303 and #301 are separate enforcement owners and separate benchmark families.
     shared/policies/mutation-authority.md, "Authorization binding (no replay)," is the #301-owned half
-    of this contract; #303 still owns spawn depth, budget, and process isolation.'
+    of this contract; #303 still owns spawn depth, budget, and process isolation. This scenario does not
+    also claim mutation/#305 coverage for itself -- that is AUTH-013''s corpus; #310 traceability
+    validation checks the two do not cross-claim each other''s corpus.'
 - id: DELEG-008
   title: Multiple children collude through shared state or orchestration metadata to reconstruct authority
     none holds individually

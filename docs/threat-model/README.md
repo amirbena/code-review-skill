@@ -37,6 +37,7 @@ security architecture* issues instead
 | [`threat-model.md`](threat-model.md) | Trust domains, the six adversary/failure models, security assumptions, capability-boundary architecture, and how the canonical catalog is used by dependent issues. | [#300](https://github.com/amirbena/code-review-skill/issues/300) |
 | [`catalog/README.md`](catalog/README.md) | The `threat-scenario-catalog/v1` schema, the one-file-per-category catalog layout, and the `COVERAGE_GAP` / `NOT_APPLICABLE` machine-detectable gap convention. | [#300](https://github.com/amirbena/code-review-skill/issues/300) |
 | [`catalog/*.yaml`](catalog/) | The 68 canonical threat scenarios themselves, one file per threat domain (`AUTH`, `SBOX`, `DELEG`, `INJECT`, `GIT`, `SCOPE`, `DOS`). | [#300](https://github.com/amirbena/code-review-skill/issues/300) |
+| [`../../scripts/security/validate_threat_model_traceability.py`](../../scripts/security/validate_threat_model_traceability.py) | Cross-references the catalog against the `#305`/`#306`/`#307`/`#308` benchmark corpora, derives a per-scenario `covered`/`partial`/`not-applicable-to-benchmark`/`gap` rollup, and detects drift (stale scenario ids, claimed-but-missing benchmark cases, unrationalized high-severity gaps). | [#310](https://github.com/amirbena/code-review-skill/issues/310) |
 
 ## Related
 
@@ -61,7 +62,8 @@ security architecture* issues instead
   scenarios: [#308](https://github.com/amirbena/code-review-skill/issues/308).
 - The end-to-end traceability engine this catalog is designed to be
   mechanically queryable by:
-  [#310](https://github.com/amirbena/code-review-skill/issues/310).
+  [#310](https://github.com/amirbena/code-review-skill/issues/310)
+  ([`../../scripts/security/validate_threat_model_traceability.py`](../../scripts/security/validate_threat_model_traceability.py)).
 - The structural validator every scenario record is checked against:
   [`../../scripts/security/validate_threat_model.py`](../../scripts/security/validate_threat_model.py).
 - Review-finding severity, which threat-scenario severity is a
@@ -75,7 +77,9 @@ security architecture* issues instead
 - Implementing security-event recording or emission — #299 defines the
   taxonomy only; actual emission is owned by #301/#302/#303/#308.
 - Implementing benchmark fixtures — owned by #305/#306/#307/#308.
-- Implementing the traceability engine — owned by #310.
+- Redefining any scenario's fields or any benchmark corpus's own case
+  data — #310's traceability validator only cross-references and derives
+  a rollup from what #300/#305/#306/#307/#308 already declare.
 - Implementing local-remediation semantics — owned by
   [#132](https://github.com/amirbena/code-review-skill/issues/132).
 - Speculative AGI / existential-risk analysis, or generic
