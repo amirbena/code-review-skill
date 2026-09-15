@@ -151,6 +151,18 @@ class ValidateStructureTests(unittest.TestCase):
         result = pr_length.validate_structure(body)
         self.assertTrue(result.passes, result.issues)
 
+    def test_html_markup_mentioned_in_prose_is_not_flagged_as_placeholder(self) -> None:
+        # A bracketed phrase with internal whitespace (an HTML/JSX tag with
+        # an attribute) is not swept as a guidance stub merely because it
+        # appears somewhere in a filled-in field's prose.
+        body = _replace(
+            COMPLIANT_BODY,
+            "**Behavior / contracts:** Adds a thing.",
+            '**Behavior / contracts:** Renders a new `<input type="text">` element for the search box.',
+        )
+        result = pr_length.validate_structure(body)
+        self.assertTrue(result.passes, result.issues)
+
     def test_issue_messages_name_the_offending_section(self) -> None:
         body = COMPLIANT_BODY.split("## Validation")[0]
         result = pr_length.validate_structure(body)

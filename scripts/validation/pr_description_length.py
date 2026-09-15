@@ -37,8 +37,10 @@ _OPTIONAL_HINT_RE = re.compile(r"\boptional\b", re.IGNORECASE)
 _LABELED_FIELD_RE = re.compile(r"^-\s+\*\*(?P<label>[^*]+?):\*\*[ \t]*(?P<value>.*)$", re.MULTILINE)
 _FIXES_LINE_RE = re.compile(r"^Fixes #(?P<number>\d*)[ \t]*$", re.MULTILINE | re.IGNORECASE)
 _CHECKBOX_RE = re.compile(r"^-\s*\[(?P<mark>[ xX])\]\s*(?P<note>.*)$")
-# A guidance stub reads as a phrase ("<short reason>"), unlike a type name
-# or HTML tag ("<Item>", "<br>") which has no internal whitespace.
+# Matched only against a whole blank-required field value (fullmatch, never
+# swept across prose): a copied guidance stub reads as a bracketed phrase
+# ("<short reason>"), unlike a type name or HTML tag ("<Item>", "<br>")
+# which has no internal whitespace.
 _PLACEHOLDER_TOKEN_RE = re.compile(r"<[A-Za-z][^<>\n]*\s[^<>\n]*>")
 
 
@@ -165,9 +167,9 @@ def validate_structure(body: str | None, contract: TemplateContract | None = Non
 
     Checks required headings are present, required-but-optional headings
     (like "Review") are never falsely demanded, labeled fields the template
-    leaves blank are actually filled in, "Fixes #" references a real Issue,
-    the "Validation" section carries real content, and no bracketed
-    placeholder/guidance stub survives outside an HTML comment.
+    leaves blank are actually filled in (and not left as a copied
+    placeholder stub), "Fixes #" references a real Issue, and the
+    "Validation" section carries real content.
     """
     contract = contract or load_template_contract()
     visible = useful_content(body)
@@ -201,10 +203,6 @@ def validate_structure(body: str | None, contract: TemplateContract | None = Non
             issues.append(
                 StructureIssue("Validation", "must summarize evidence, or state why validation could not run")
             )
-
-    for heading, body_text in sections:
-        for match in _PLACEHOLDER_TOKEN_RE.finditer(body_text):
-            issues.append(StructureIssue(heading, f"unresolved placeholder left in place: {match.group(0)!r}"))
 
     return StructureResult(issues=tuple(issues))
 
