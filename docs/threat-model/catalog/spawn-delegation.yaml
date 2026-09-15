@@ -142,7 +142,7 @@ scenarios:
   expected_safe_outcome: child starts with no inherited authorization; any use of a forwarded token is
     refused
   expected_security_event: DENIED_DELEGATION_REPLAY
-  benchmark_family: delegation/#307, security-event/#308
+  benchmark_family: delegation/#307, mutation/#305, security-event/#308
   benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md); docs/benchmark/corpus/security-events/README.md (SEC-EVT-019)
   regression_evidence: 'tests/unit/security/test_mutation_authority.py (Auth013SpawnedChildHasNoInheritedAuthority)
     covers the mutation-authorization half; tests/unit/review/delegation/test_agent_delegation_authorization.py
