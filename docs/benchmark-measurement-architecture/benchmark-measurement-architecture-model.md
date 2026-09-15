@@ -32,14 +32,15 @@ silently reinterpreting the issue.
 **Stage 4 addendum.** This document was later extended, additively, to
 also fix the cross-component boundaries for a second, separate set of
 reliability-boundary issues raised by a review-reliability audit of two
-failure modes (unsupported finding provenance; verdict drift):
-[#TBD-A1](https://github.com/amirbena/code-review-skill/issues), the
+failure modes (unsupported finding provenance; verdict drift): the
+citation-grounding verification model
+[#348](https://github.com/amirbena/code-review-skill/issues/348), the
 benchmark citation-fidelity signal
-[#TBD-A2](https://github.com/amirbena/code-review-skill/issues), the
+[#349](https://github.com/amirbena/code-review-skill/issues/349), the
 verdict-integrity benchmark proof
-[#TBD-B1](https://github.com/amirbena/code-review-skill/issues), and the
+[#350](https://github.com/amirbena/code-review-skill/issues/350), and the
 verdict-consistency-boundary research
-[#TBD-B2](https://github.com/amirbena/code-review-skill/issues) — see
+[#351](https://github.com/amirbena/code-review-skill/issues/351) — see
 §12. §12 is self-contained: it consumes and cross-references §1–§11
 unchanged, and does not alter the fourteen-issue scope, the DAG in §2, or
 the layer ownership in §3.
@@ -579,13 +580,14 @@ bounded caller/callee ladder ("Bounded context expansion", "Evidence").
 decision-affecting; this subsection extends that same boundary to its
 first proposed consumer rather than opening a new one:
 
-- **Citation-grounding verification model** — design work only: defines
-  what "this finding's citation is grounded in #182's recorded
-  inspection" means, as a specification consuming #182's telemetry schema
-  as given. It does not modify #182's scope or its observational
-  boundary, and it explicitly does not decide whether grounding should
-  ever gate anything — that question is deferred (below) until real
-  signal exists to evaluate it against.
+- **Citation-grounding verification model**
+  ([#348](https://github.com/amirbena/code-review-skill/issues/348)) —
+  design work only: defines what "this finding's citation is grounded in
+  #182's recorded inspection" means, as a specification consuming #182's
+  telemetry schema as given. It does not modify #182's scope or its
+  observational boundary, and it explicitly does not decide whether
+  grounding should ever gate anything — that question is deferred (below)
+  until real signal exists to evaluate it against.
 - **Citation-grounding cross-check** (named here, **not yet tracked as an
   issue** — see §12.5) — the actual consumer that would cross-reference a
   finding's citation against #182's recorded inspected-files/symbols set.
@@ -608,10 +610,12 @@ actually exists at the reviewed SHA — independent of whether it was
 this is benchmark evidence: it runs against the corpus/harness, never
 against a live review, and it does not require #182's telemetry to exist.
 
-It does require the benchmark harness to actually carry a produced
-finding's real location/claim content through to any check that inspects
-it — the same fidelity gap #342 (open, P1) already tracks for the
-*matcher*. This signal is a second, independent consumer of that same
+The tracking issue for this signal is
+[#349](https://github.com/amirbena/code-review-skill/issues/349). It does
+require the benchmark harness to actually carry a produced finding's real
+location/claim content through to any check that inspects it — the same
+fidelity gap #342 (open, P1) already tracks for the *matcher*. This
+signal is a second, independent consumer of that same
 fix, not a restatement of #342's scope: #342 repairs
 `benchmark_review_adapter.py`'s claim/location extraction so the matcher
 can correctly pair a produced finding against an expected fixture entry;
@@ -634,14 +638,17 @@ GitHub review event it submits — before publication. Two clearly
 separated tracks close this gap, per §12.1's benchmark-evidence /
 runtime-enforcement boundary:
 
-- **Benchmark proof** — an end-to-end corpus fixture with an unambiguous
-  blocking defect, run through the real packaged Skill, asserting the
-  rendered outcome is never the clean/approved value. This is
-  benchmark-only: it demonstrates the mechanical rule holds today against
-  real output. It builds no enforcement mechanism and changes nothing in
-  a live review.
-- **Consistency-boundary research** — the deliberately separate question
-  of whether a deterministic runtime step should exist that reconciles
+- **Benchmark proof**
+  ([#350](https://github.com/amirbena/code-review-skill/issues/350)) —
+  an end-to-end corpus fixture with an unambiguous blocking defect, run
+  through the real packaged Skill, asserting the rendered outcome is
+  never the clean/approved value. This is benchmark-only: it demonstrates
+  the mechanical rule holds today against real output. It builds no
+  enforcement mechanism and changes nothing in a live review.
+- **Consistency-boundary research**
+  ([#351](https://github.com/amirbena/code-review-skill/issues/351)) —
+  the deliberately separate question of whether a deterministic runtime
+  step should exist that reconciles
   the three rendered surfaces before or at publication, and if so, where
   it should live, what it consumes (the existing markdown templates today
   versus a future machine-readable schema — see #67/#71, both open), and
@@ -663,10 +670,15 @@ Consistent with §9's non-implementation stance and §10's staged-rollout
 pattern:
 
 - **Tracked as issues by this update**: the citation-grounding
-  verification model (§12.2, first bullet); the benchmark citation-fidelity
-  signal (§12.3); the verdict-integrity benchmark proof (§12.4, first
-  bullet); the verdict-consistency-boundary research (§12.4, second
-  bullet).
+  verification model
+  ([#348](https://github.com/amirbena/code-review-skill/issues/348),
+  §12.2 first bullet); the benchmark citation-fidelity signal
+  ([#349](https://github.com/amirbena/code-review-skill/issues/349),
+  §12.3); the verdict-integrity benchmark proof
+  ([#350](https://github.com/amirbena/code-review-skill/issues/350),
+  §12.4 first bullet); the verdict-consistency-boundary research
+  ([#351](https://github.com/amirbena/code-review-skill/issues/351),
+  §12.4 second bullet).
 - **Named but deliberately not yet filed**: the citation-grounding
   cross-check (§12.2, second bullet) — hard-blocked on #182's telemetry
   landing and on the grounding model above concluding first; filing it
