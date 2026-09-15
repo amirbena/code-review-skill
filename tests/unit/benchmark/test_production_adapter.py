@@ -74,7 +74,12 @@ class ParseReviewOutputTests(unittest.TestCase):
         self.assertIsInstance(f, ProducedFinding)
         self.assertEqual(f.severity, "P1")
         self.assertEqual(f.location, {"path": "app/retry.py", "line": 42})
-        self.assertEqual(f.claim, "Retry can duplicate processing")
+        # The claim carries the Evidence/Impact content too (issue #342),
+        # not only the heading title — this is what lets the matcher's
+        # claim-comparison step evaluate the actual defect claim.
+        self.assertIn("Retry can duplicate processing", f.claim)
+        self.assertIn("retry loop re-runs the side effect", f.claim)
+        self.assertIn("process the same job twice", f.claim)
 
     def test_single_finding_with_line_range(self) -> None:
         report = textwrap.dedent(
@@ -180,6 +185,46 @@ class ParseReviewOutputTests(unittest.TestCase):
         findings = parse_review_output(report)
         self.assertEqual(len(findings), 1)
         self.assertEqual(findings[0].severity, "P2")
+
+    def test_non_numeric_location_tail_is_parsed_as_symbol(self) -> None:
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            #### F1 [P1] Off-by-one page end index duplicates a row
+
+            - **Location:** `app/pagination.py:page`
+            - **Evidence:** the page end index adds one to offset + page_size.
+            - **Impact:** each page returns one extra item that also appears
+              as the first item of the next page.
+            """
+        )
+        findings = parse_review_output(report)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(
+            findings[0].location, {"path": "app/pagination.py", "symbol": "page"}
+        )
+
+    def test_claim_excludes_fix_content(self) -> None:
+        """Only Evidence/Impact/Details describe the defect claim itself;
+        Fix is remediation guidance, not part of what the matcher should
+        compare the expected claim against."""
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            #### F1 [P1] A real finding
+
+            - **Location:** `app/y.py:2`
+            - **Evidence:** concrete evidence text.
+            - **Impact:** concrete impact text.
+            - **Fix:** do this specific unrelated-to-claim correction.
+            """
+        )
+        findings = parse_review_output(report)
+        self.assertNotIn("unrelated-to-claim correction", findings[0].claim)
+        self.assertIn("concrete evidence text", findings[0].claim)
+        self.assertIn("concrete impact text", findings[0].claim)
 
 
 class ConfigurationTests(unittest.TestCase):
