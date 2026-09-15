@@ -44,6 +44,8 @@ from scripts.benchmark.benchmark_review_adapter import (
     resolve_cli_executable,
     resolve_cli_extra_args,
 )
+import tests.reference.benchmark.benchmark_fixture as bf
+import tests.reference.benchmark.benchmark_match as bm
 from tests.reference.benchmark.benchmark_runner import ProducedFinding
 
 
@@ -225,6 +227,150 @@ class ParseReviewOutputTests(unittest.TestCase):
         self.assertNotIn("unrelated-to-claim correction", findings[0].claim)
         self.assertIn("concrete evidence text", findings[0].claim)
         self.assertIn("concrete impact text", findings[0].claim)
+
+    def test_defect_kind_captured_into_extra(self) -> None:
+        """A rendered `Defect kind:` line (finding.md, "Defect
+        classification") reaches `ProducedFinding.extra["defect_kind"]",
+        mirroring the existing Evidence/Impact/Details extraction (issue
+        #355) so the matcher's `defect_kind`-equality path
+        (match-criteria.md §4.1) is actually exercised."""
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            #### F1 [P0] Command injection via unsanitized shell argument
+
+            - **Location:** `app/exec.py:10`
+            - **Evidence:** user input is interpolated into a shell string.
+            - **Defect kind:** `command-injection`
+            - **Impact:** arbitrary command execution.
+            - **Fix:** use an argument list, never shell=True with interpolated input.
+            """
+        )
+        findings = parse_review_output(report)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].extra.get("defect_kind"), "command-injection")
+        # It is a distinct, backticked field, never folded into the free-text
+        # claim the lexical fallback path compares.
+        self.assertNotIn("command-injection", findings[0].claim)
+
+    def test_defect_kind_absent_when_not_rendered(self) -> None:
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            #### F1 [P1] A real finding
+
+            - **Location:** `app/y.py:2`
+            - **Evidence:** concrete evidence text.
+            - **Impact:** concrete impact text.
+            - **Fix:** concrete fix text.
+            """
+        )
+        findings = parse_review_output(report)
+        self.assertEqual(len(findings), 1)
+        self.assertNotIn("defect_kind", findings[0].extra)
+
+    def test_defect_kind_does_not_leak_across_findings(self) -> None:
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            #### F1 [P0] Path traversal via unsanitized export filename
+
+            - **Location:** `app/export.py:20`
+            - **Evidence:** user input reaches the filesystem path unsanitized.
+            - **Defect kind:** `path-traversal`
+            - **Impact:** arbitrary file read.
+            - **Fix:** sanitize/validate the export path.
+
+            #### F2 [P2] Missing regression test for pagination boundary
+
+            - **Location:** `app/pagination.py`
+            - **Evidence:** no test pins page boundaries.
+            - **Impact:** a future change could silently duplicate rows again.
+            - **Fix:** add a test asserting no overlap between consecutive pages.
+            """
+        )
+        findings = parse_review_output(report)
+        self.assertEqual(len(findings), 2)
+        self.assertEqual(findings[0].extra.get("defect_kind"), "path-traversal")
+        self.assertNotIn("defect_kind", findings[1].extra)
+
+
+class DefectKindMatcherIntegrationTests(unittest.TestCase):
+    """Issue #355 acceptance criteria: a matcher test that equal produced/
+    expected `defect_kind` slugs reach `CORRESPONDS` through the *real*
+    parse path — `parse_review_output` on rendered Markdown, not a
+    hand-constructed `Descriptor`/`ProducedFinding` fixture."""
+
+    def test_equal_defect_kind_reaches_corresponds_via_real_parse(self) -> None:
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            #### F1 [P0] Shell command built from unsanitized user name
+
+            - **Location:** `auth/login.py:41`
+            - **Evidence:** the display name is interpolated into a shell
+              string passed to subprocess with shell=True.
+            - **Defect kind:** `command-injection`
+            - **Impact:** an attacker-controlled name can run arbitrary
+              commands.
+            - **Fix:** pass an argument list; never shell=True with
+              interpolated input.
+            """
+        )
+        produced = parse_review_output(report)
+        self.assertEqual(len(produced), 1)
+
+        expected = bf.ExpectedFinding(
+            key="security-command-injection",
+            severities=("P0",),
+            required=True,
+            location={"path": "auth/login.py", "lines": {"start": 40, "end": 40}, "symbol": "authenticate"},
+            claim="unsanitized name reaches a shell true command injection",
+            defect_kind="command-injection",
+        )
+
+        outcome = bm.match_pair(expected, produced[0])
+        # Equal defect_kind slugs decide the defect axis outright
+        # (match-criteria.md §4.1) — never the free-text claim fallback,
+        # even though the produced claim shares almost no tokens with the
+        # expected claim.
+        self.assertEqual(outcome.defect, bm.DefectMatch.CORRESPONDS)
+        self.assertEqual(outcome.result, bm.MatchResult.MATCH)
+
+    def test_conflicting_defect_kind_reaches_unrelated_via_real_parse(self) -> None:
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            #### F1 [P1] Export path argument is not validated
+
+            - **Location:** `report/export.py:88`
+            - **Evidence:** the export path argument is used as-is with no
+              validation before being passed to the filesystem.
+            - **Defect kind:** `missing-input-validation`
+            - **Impact:** a caller can supply a malformed path.
+            - **Fix:** validate the argument before use.
+            """
+        )
+        produced = parse_review_output(report)
+        self.assertEqual(len(produced), 1)
+
+        expected = bf.ExpectedFinding(
+            key="security-path-traversal",
+            severities=("P1",),
+            required=True,
+            location={"path": "report/export.py", "lines": {"start": 88, "end": 88}},
+            claim="user controlled export path escapes the export directory path traversal",
+            defect_kind="path-traversal",
+        )
+
+        outcome = bm.match_pair(expected, produced[0])
+        self.assertEqual(outcome.defect, bm.DefectMatch.UNRELATED)
+        self.assertEqual(outcome.result, bm.MatchResult.NO_MATCH)
 
 
 class ConfigurationTests(unittest.TestCase):
