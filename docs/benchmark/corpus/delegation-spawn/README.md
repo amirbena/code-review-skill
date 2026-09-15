@@ -88,22 +88,20 @@ map, not a second source of truth.
 ## Denial classification / #299 extension point
 
 Each denied case's `expected_security_event` cites one of the
-*provisional* denial-classification strings the single reference model
-already defines (`ad.DENIED_SPAWN_UNAUTHORIZED`,
-`ad.DENIED_SPAWN_BUDGET_EXCEEDED`, `ad.DENIED_SPAWN_DEPTH_EXCEEDED`,
+denial-classification strings the single reference model already defines
+(`ad.DENIED_SPAWN_UNAUTHORIZED`, `ad.DENIED_SPAWN_BUDGET_EXCEEDED`,
+`ad.DENIED_SPAWN_DEPTH_EXCEEDED`,
 `ad.DENIED_DELEGATION_AUTHORITY_ESCALATION`,
-`ad.DENIED_DELEGATION_REPLAY`) — the same provisional vocabulary
+`ad.DENIED_DELEGATION_REPLAY`) — the same vocabulary
 `docs/threat-model/catalog/spawn-delegation.yaml` and
 `scripts/security/validate_threat_model.py`'s
-`PROVISIONAL_EVENT_CLASSES` already declare.
+`PROVISIONAL_EVENT_CLASSES` declare.
 [#299](https://github.com/amirbena/code-review-skill/issues/299) (the
-real, authoritative security-event/telemetry taxonomy) has **not**
-landed. This corpus intentionally does not invent or gate on a second
-telemetry model: every denied `CaseOutcome.security_event` is populated
-from the same closed, provisional set, so once #299 lands the field is
-already the right shape to populate the authoritative classification —
-no fixture restructuring will be required, only (at most) a rename of the
-provisional string constants themselves.
+real, authoritative security-event taxonomy,
+`docs/security-events/security-event-model.md`) has now landed and
+confirmed these five names as final: every denied `CaseOutcome.security_event`
+was already populated from this closed set, so no fixture restructuring
+or string rename was required.
 
 ## Threat-scenario traceability
 

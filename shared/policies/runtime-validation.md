@@ -163,6 +163,27 @@ not represent any non-execution outcome as passing. If no command is
 declared, the report must say so explicitly. Validation output is evidence,
 not an assertion that the reviewed behavior is correct.
 
+### Reporting a denied event
+
+An `unavailable` outcome caused by the required execution boundary above
+failing to be established at all is reported as a denied-capability event,
+not swallowed: `DENIED_SANDBOX_UNAVAILABLE_PRIMITIVE` (repository-
+development design record, named here rather than linked because it is
+not a packaged resource: `docs/security-events/security-event-model.md`,
+Issue #299). This is `classification: expected_denial` — no execution
+boundary was ever established, so no invocation was ever attempted
+against it. A denial the boundary observes *during* an established,
+running execution — an outbound network attempt, a host-credential read,
+a filesystem escape, or a resource-ceiling breach — is instead
+`DENIED_SANDBOX_NETWORK_ACCESS`, `DENIED_SANDBOX_CREDENTIAL_ACCESS`,
+`DENIED_SANDBOX_FILESYSTEM_ACCESS`, or
+`DENIED_SANDBOX_RESOURCE_EXHAUSTION` respectively, and is
+`classification: boundary_violation_attempt` — the isolated payload
+actually attempted the denied operation. Recording any of these events
+never changes the `executed` / `failed` / `skipped` / `unavailable`
+outcome it accompanies, and never becomes evidence for or against a
+finding by itself.
+
 ## Findings and decision semantics
 
 A successful validation run adds evidence only; it never removes, suppresses,

@@ -64,7 +64,7 @@ everything else required):
 | `enforcement_owner` | `COVERAGE_GAP`, an issue reference (`#301`), or an `existing: <path>` citation | Who is responsible for the runtime check. Must agree with `enforcement_point` (§ "Coverage-gap semantics"). |
 | `enforcement_point` | `COVERAGE_GAP` or a description | Where in the runtime the check happens. |
 | `expected_safe_outcome` | string | The observable, capability-level outcome when the attack is attempted. |
-| `expected_security_event` | one of the provisional event classes, or `NOT_APPLICABLE` | See "Provisional event taxonomy" below. |
+| `expected_security_event` | one of the event classes, or `NOT_APPLICABLE` | See "Event taxonomy (`#299`, landed)" below. |
 | `benchmark_family` | comma-separated list from `mutation/#305`, `sandbox/#306`, `delegation/#307`, `security-event/#308`, `none` | Which benchmark issue(s) this scenario belongs to. `none` requires a justification in `benchmark_reference`, never a bare gap. |
 | `benchmark_reference` | `COVERAGE_GAP`, a real path/issue reference, or (when `benchmark_family: none`) a justification sentence | The actual benchmark case, when one exists. |
 | `regression_evidence` | `COVERAGE_GAP` or a real path/issue reference | The actual regression test proving this scenario, when one exists. Never a prose description of absence — use `COVERAGE_GAP` and put explanation in `notes`. |
@@ -115,18 +115,24 @@ issue reference (`#NNN`) — **well-formed, not necessarily resolvable
 yet**, per #300's own constraint never to invent a fake file/line
 reference for unlanded `#301`/`#302`/`#303` work.
 
-### Provisional event taxonomy
+### Event taxonomy (`#299`, landed)
 
 `expected_security_event` draws from a small, fixed vocabulary defined in
 [`../../../scripts/security/validate_threat_model.py`](../../../scripts/security/validate_threat_model.py)
 (`PROVISIONAL_EVENT_CLASSES`) — for example
 `DENIED_MUTATION_UNAUTHORIZED`, `DENIED_SANDBOX_NETWORK_ACCESS`,
-`DENIED_SPAWN_BUDGET_EXCEEDED`. These are **provisional**: `#299` owns the
-real, authoritative event taxonomy and may rename, split, or merge these
-classes when it lands. `NOT_APPLICABLE` is used when the scenario's safe
-outcome is not itself a capability denial (a reasoning-discipline
-scenario, a decision-semantics correctness property, or a genuine
-platform-unavailability outcome).
+`DENIED_SPAWN_BUDGET_EXCEEDED`. `#299` is the real, authoritative source
+of this vocabulary — see
+[`../../security-events/security-event-model.md`](../../security-events/security-event-model.md)
+for the full taxonomy, the event field schema, and the deterministic
+`expected_denial` / `boundary_violation_attempt` classification. The
+Python constant's name is kept as-is (not renamed) since `#299` chose not
+to rename, split, or merge any pre-existing entry and only added the
+three `DENIED_REVIEW_ACTION_*` names for the previously-uncovered GitHub
+review-action-mutation domain — see that document's §5 and §7.
+`NOT_APPLICABLE` is used when the scenario's safe outcome is not itself a
+capability denial (a reasoning-discipline scenario, a decision-semantics
+correctness property, or a genuine platform-unavailability outcome).
 
 ## Traceability
 
@@ -139,7 +145,7 @@ For any scenario id, the schema alone answers:
 - **Which benchmark case exercises it** — `benchmark_family` /
   `benchmark_reference` (or `COVERAGE_GAP`).
 - **Which denied-capability event should fire** —
-  `expected_security_event` (provisional pending `#299`).
+  `expected_security_event`, authoritative per `#299`.
 - **Whether any layer is missing** — any of the four reference fields
   equal to `COVERAGE_GAP`.
 
@@ -156,7 +162,10 @@ list.
 - A second parser/validator competing with
   `scripts/security/validate_threat_model.py`.
 - Benchmark fixtures themselves (owned by `#305`/`#306`/`#307`).
-- Security-event recording or emission (owned by `#299`/`#308`).
+- Security-event recording or emission — `#299` defines the taxonomy
+  (`docs/security-events/security-event-model.md`); actually emitting,
+  recording, or benchmarking that an event fires is owned by
+  `#301`/`#302`/`#303`/`#308`.
 - Any enforcement implementation (owned by `#301`/`#302`/`#303`).
 - Redefining review-finding severity, verdict, or mutation semantics
   already owned by `shared/policies/`.

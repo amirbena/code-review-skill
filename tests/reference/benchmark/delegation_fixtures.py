@@ -77,12 +77,12 @@ VALID_CATEGORIES: frozenset[str] = frozenset(
     }
 )
 
-# Every provisional denial classification a "denied" case may cite --
-# reused verbatim from the single reference model, never a second
-# taxonomy. #299 owns the authoritative event vocabulary; until it lands,
-# these are the same provisional strings docs/threat-model/catalog/
-# spawn-delegation.yaml already declares (see #307's "Explicitly out of
-# scope").
+# Every denial classification a "denied" case may cite -- reused verbatim
+# from the single reference model, never a second taxonomy. #299 (the
+# authoritative event vocabulary, docs/security-events/security-event-model.md)
+# has landed and confirmed these as the same final strings
+# docs/threat-model/catalog/spawn-delegation.yaml already declares (see
+# #307's "Explicitly out of scope").
 VALID_DENIAL_CLASSIFICATIONS: frozenset[str] = frozenset(
     {
         ad.DENIED_SPAWN_UNAUTHORIZED,

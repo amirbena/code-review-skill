@@ -217,6 +217,38 @@ An out-of-grant action attempted by a worker is refused; the worker's
 in-grant analysis output is still collected normally — a denied action on
 one capability does not discard the worker's otherwise-valid findings.
 
+## Reporting an event
+
+A refused spawn or delegation attempt is reported, not swallowed. The
+event-class vocabulary (repository-development design record, named here
+rather than linked because it is not a packaged resource:
+`docs/security-events/security-event-model.md`, Issue #299) names the
+reason:
+
+- `DENIED_SPAWN_UNAUTHORIZED` — `spawn_agent` is absent for this
+  invocation or for the acting agent (the default; a default-topology
+  worker never holds it — "Read-only worker capability set" above).
+- `DENIED_SPAWN_BUDGET_EXCEEDED` — `max_agents_per_invocation` was
+  reached.
+- `DENIED_SPAWN_DEPTH_EXCEEDED` — `max_spawn_depth` was reached.
+- `DENIED_DELEGATION_AUTHORITY_ESCALATION` — a child requested a
+  capability or delegation set outside
+  `parent_capabilities ∩ explicitly_delegated_capabilities`.
+- `DENIED_DELEGATION_REPLAY` — a child attempted to invoke a capability
+  using its parent's or a sibling's authorization, or an inherited/
+  forwarded mutation or formal review-action authorization was presented
+  across the spawn boundary ("Mutation and formal review-action
+  authorization are non-transferable" above).
+
+Every event additionally carries the closed-set `classification` #299
+defines — `expected_denial` (no spawn or delegation was ever attempted;
+execution simply stayed within its granted set) or
+`boundary_violation_attempt` (a concrete spawn or capability invocation
+was actually attempted against a set that could never have satisfied it)
+— derived from runtime evidence, never from inferred intent. Recording
+this event never widens, narrows, or substitutes for the capability
+boundary above.
+
 ## Composition with existing guarantees
 
 This policy is additive. It never relaxes

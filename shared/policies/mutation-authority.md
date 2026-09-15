@@ -232,20 +232,36 @@ treated as equivalent to an unrelated, unaffected mutation succeeding.
 
 ## Reporting an event
 
-A refused mutation attempt is reported, not swallowed. The provisional
-event-class vocabulary (`docs/threat-model/catalog/README.md`) names the
+A refused mutation attempt is reported, not swallowed. The event-class
+vocabulary (repository-development design record, named here rather than
+linked because it is not a packaged resource:
+`docs/security-events/security-event-model.md`, Issue #299) names the
 reason:
 
 - `DENIED_MUTATION_CAPABILITY_ABSENT` — the capability was never granted
-  (default `READ_ONLY`, or a capability outside the closed set above).
+  (default `READ_ONLY`, or a capability outside the closed set above,
+  including `COMMIT` or `PUSH` requested with no authorization ever
+  sought).
 - `DENIED_MUTATION_UNAUTHORIZED` — the capability exists but no valid
-  trusted authorization covers this attempt.
+  trusted authorization covers this attempt, including an `APPLY_PATCH`
+  authorization presented for `COMMIT` or `PUSH` (`AUTH-010`, `AUTH-011`
+  — one capability's authorization is never accepted as another's).
 - `DENIED_MUTATION_STALE_APPROVAL` — a prior authorization no longer
   matches the current patch digest or base state.
 - `DENIED_MUTATION_SCOPE_ESCAPE` — the operation, or its verified result,
   exceeds the authorized path/file scope.
 - `DENIED_MUTATION_AUTHORIZATION_REPLAY` — a consumed, foreign-invocation,
   or non-inherited authorization was presented again.
+
+Every event additionally carries the closed-set `classification` #299
+defines — `expected_denial` (execution simply never advanced past this
+gate) or `boundary_violation_attempt` (a concrete `APPLY_PATCH` /
+`COMMIT` / `PUSH` invocation was actually constructed and submitted
+against a capability set that could never have satisfied it) — derived
+from runtime evidence, never from inferred intent. Recording this event
+is strictly additive: it never changes whether the mutation is refused,
+and it is never itself treated as authorization, partial authorization,
+or grounds for denying a later, unrelated attempt.
 
 ## Per-Skill posture
 
