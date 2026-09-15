@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.46.0 — 2026-09-15
+
+### Added
+
+- Let a user explicitly authorize bounded trusted-host runtime-validation execution when sandbox isolation is unavailable, with full evidence provenance and no change to the sandboxed default (#368).
+
 ## v1.45.0 — 2026-09-15
 
 ### Added
