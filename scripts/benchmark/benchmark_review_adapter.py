@@ -214,7 +214,13 @@ _REVIEW_PROMPT = (
     "rendering for every finding — a `#### <id> [<severity>] <title>` "
     "heading immediately followed by a `- **Location:** "
     "`<path>:<line-or-range>`` line — and must end with the report's "
-    "`**Result: ...**` verdict line."
+    "`**Result: ...**` verdict line. Per "
+    "shared/templates/finding.md's 'Defect classification', also render a "
+    "`- **Defect kind:** `<kebab-case-slug>`` line right after `Evidence` "
+    "for every finding whose narrow defect class/mechanism is identifiable "
+    "(the normal case) — a short, machine-readable slug naming the defect "
+    "class (e.g. `sql-injection`, `off-by-one`, `race-condition`), never a "
+    "restatement of the title."
 )
 
 
@@ -241,6 +247,13 @@ _LOCATION_RE = re.compile(r"^-\s*\*\*Location:\*\*\s*`(?P<loc>[^`]+)`")
 # `Evidence location:` or `Contextual evidence:` (the field name must match
 # exactly, immediately followed by `:**`).
 _CLAIM_FIELD_RE = re.compile(r"^-\s*\*\*(?P<field>Evidence|Impact|Details):\*\*\s*(?P<text>.+?)\s*$")
+
+# `- **Defect kind:** \`sql-injection\`` (shared/templates/finding.md,
+# "Defect classification"; shared/templates/finding-rendering.md,
+# "Canonical full rendering") — the finding's narrow, machine-readable
+# defect-class slug, backticked like `Location`. Optional: absent when the
+# finding did not render one.
+_DEFECT_KIND_RE = re.compile(r"^-\s*\*\*Defect kind:\*\*\s*`(?P<slug>[^`]+)`")
 
 # Any `**Result: ...**` line marks the output as a well-formed report (clean
 # or not) — used to distinguish a genuinely clean/no-findings report from
@@ -298,6 +311,10 @@ def parse_review_output(text: str) -> list[ProducedFinding]:
     - A finding's ``claim`` carries its heading title plus any ``Evidence``
       / ``Impact`` / ``Details`` content rendered before the next heading —
       not the title alone (issue #342).
+    - A rendered ``Defect kind:`` line (shared/templates/finding.md, "Defect
+      classification") is captured into ``ProducedFinding.extra["defect_kind"]``,
+      mirroring the existing ``Evidence``/``Impact``/``Details`` extraction
+      (issue #355). Absent when the finding did not render one.
     - Text that is not a review report at all (no ``**Result:**`` line and
       no recognizable finding headings) raises ``ValueError`` — the caller
       (the adapter) lets this propagate so the runner's existing per-case
@@ -316,6 +333,7 @@ def parse_review_output(text: str) -> list[ProducedFinding]:
             severity = heading.group("severity").strip().upper()
             title = heading.group("title").strip()
             location: dict | None = None
+            defect_kind: str | None = None
             fields: dict[str, str] = {}
             j = i + 1
             while j < n and not _HEADING_RE.match(lines[j]):
@@ -326,13 +344,22 @@ def parse_review_output(text: str) -> list[ProducedFinding]:
                         location = _parse_location(loc_match.group("loc"))
                         j += 1
                         continue
+                if defect_kind is None:
+                    defect_kind_match = _DEFECT_KIND_RE.match(stripped)
+                    if defect_kind_match:
+                        defect_kind = defect_kind_match.group("slug").strip()
+                        j += 1
+                        continue
                 field_match = _CLAIM_FIELD_RE.match(stripped)
                 if field_match:
                     fields[field_match.group("field")] = field_match.group("text").strip()
                 j += 1
             if severity in _VALID_SEVERITIES and location is not None:
                 claim = _build_claim(title, fields)
-                findings.append(ProducedFinding(severity=severity, location=location, claim=claim))
+                extra = {"defect_kind": defect_kind} if defect_kind else {}
+                findings.append(
+                    ProducedFinding(severity=severity, location=location, claim=claim, extra=extra)
+                )
             # else: parse anomaly for this one finding — skip it, do not
             # fail the whole parse.
         i += 1

@@ -173,6 +173,18 @@ human-facing review a machine-only format.
   or the decision derivation (see "Capability provenance"). Absent on a
   finding base per-dimension reasoning alone already fully supports, and
   absent when no domain-specific deepening capability engaged.
+- **defect_kind** — optional: a short, machine-readable, kebab-case slug
+  naming the finding's narrow defect class/mechanism (e.g.
+  `sql-injection`, `off-by-one`, `race-condition`,
+  `missing-input-validation`, `null-dereference`, `duplicated-logic`) —
+  not the title restated, not the file/module, and not the fix
+  direction. It is a classification annotation, never a severity input:
+  it never calculates or changes severity, identity, deduplication, or
+  the decision derivation (see "Defect classification"). Present
+  whenever a narrow, well-defined defect class applies to the finding
+  (the normal case); absent only when the finding genuinely does not
+  reduce to one established or nameable defect class without forcing a
+  fit.
 
 ## Fix/action location, evidence location, publication
 
@@ -425,6 +437,53 @@ is (that stays `confidence`'s job) and not what informed it (that stays
   folds into `evidence` prose — there is no separate `Capability:` line
   on that surface. See [`finding-rendering.md`](finding-rendering.md).
 
+## Defect classification
+
+A finding may additionally carry a **defect_kind**: a short,
+machine-readable slug naming the narrow defect class/mechanism the
+finding represents — for example `sql-injection`, `off-by-one`,
+`race-condition`, `missing-input-validation`, `null-dereference`, or
+`duplicated-logic`. It is a classification, not a fourth kind of
+provenance: unlike `contextual evidence`, `runtime validation`, and
+`capability`, it does not record *what informed* or *validated* the
+finding — it names *what kind of defect* the finding is, on top of the
+free-text `title` / `evidence` / `impact` that already describe it.
+
+- **A slug, not a sentence.** Lowercase kebab-case, naming the defect's
+  mechanism/category — never the file or symbol, never a restatement of
+  `title`, and never the fix direction. Prefer the most specific
+  well-established term for the defect's class over inventing a novel
+  phrase for a familiar defect class (a `race-condition` stays
+  `race-condition`, not `bad-concurrency-handling`), so independently
+  authored slugs for the same defect class tend to agree; a genuinely
+  novel or repository-specific defect class still gets a concise slug of
+  its own rather than being forced into an unrelated established term.
+  This is a naming convention, not an enumerated closed vocabulary — a
+  repository-development consumer of this classification (a benchmark
+  harness's defect-class-equality matching, a repository-development
+  document, not a packaged resource) documents worked examples of the
+  convention but does not restrict the slug set.
+- **Not a severity or identity input.** It never calculates, raises,
+  lowers, or overrides severity, and never changes the finding's
+  identity, its deduplication, or the mechanical decision derivation —
+  exactly like `contextual evidence`, `runtime validation`,
+  `confidence`, and `capability`.
+- **Present whenever it cleanly applies.** Unlike the provenance fields
+  above (present only when something actually informed, validated, or
+  deepened the finding), a `defect_kind` slug applies to almost every
+  finding — a narrow defect class is normally identifiable from the
+  finding's own evidence. Absent only when the finding genuinely does
+  not reduce to one established or nameable defect class without
+  forcing a fit (for example, several unrelated style nits grouped only
+  by file).
+- **Surface rendering.** Rendered when present (the same rule every
+  other optional field follows). On the full rendering it is its own
+  line after `Evidence` and before any `Contextual evidence` / `Runtime
+  validation` / `Confidence` / `Capability` lines; on the GitHub inline
+  surface it folds into `evidence` prose — there is no separate `Defect
+  kind:` line on that surface. See
+  [`finding-rendering.md`](finding-rendering.md).
+
 ## Finding quality contract
 
 Every finding must independently answer: **What? Where? Evidence?
@@ -554,6 +613,13 @@ after it, no `Details:` heading with boilerplate under it.
   the GitHub inline surface it folds into `evidence` prose. It never
   carries or changes a severity, identity, deduplication, or the
   decision derivation;
+- **defect_kind** — the narrow defect-class slug from "Defect
+  classification". Rendered whenever a narrow, well-defined defect class
+  applies to the finding; on the full rendering it is its own line after
+  `Evidence` and before any `Contextual evidence` / `Runtime validation`
+  / `Confidence` / `Capability` line, on the GitHub inline surface it
+  folds into `evidence` prose. It never carries or changes a severity,
+  identity, deduplication, or the decision derivation;
 - **source annotation on `location`** — a Skill may append a short
   parenthetical after the location value when it has its own concept that
   classifies *where the finding's evidence came from* within that Skill's
@@ -647,4 +713,8 @@ rendering-specific rules are in
   a capability actually contributed, and it never carries or changes a
   severity, identity, deduplication, or decision derivation (see
   "Capability provenance");
+- the optional **defect_kind** field names the finding's narrow
+  defect-class slug (see "Defect classification"); it renders whenever a
+  well-defined defect class applies to the finding, and it never carries
+  or changes a severity, identity, deduplication, or decision derivation;
 - `fix` is a direction, never an implemented patch.
