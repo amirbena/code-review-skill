@@ -8,9 +8,10 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from unittest import mock
 
 from scripts.validation import pr_description_length as pr_length
-from tests.support.pr_body_fixtures import COMPLIANT_BODY
+from tests.support.pr_body_fixtures import COMPLIANT_BODY, RUNTIME_DEFAULT_SUMMARY_BODY
 
 
 def _replace(body: str, old: str, new: str) -> str:
@@ -197,6 +198,88 @@ class CliStructureIntegrationTests(unittest.TestCase):
         with redirect_stdout(StringIO()):
             self.assertEqual(pr_length.main(["--event-path", str(self._event(broken))]), 1)
             self.assertEqual(pr_length.main(["--event-path", str(self._event(fixed))]), 0)
+
+
+class LocalPreflightTests(unittest.TestCase):
+    """Regression coverage for the local `--pr-body-env` preflight (Issue #135
+    follow-up): an agent must be able to validate a drafted PR body before
+    `gh pr create` / `gh pr edit`, using the exact same logic CI runs."""
+
+    def test_body_from_env_reads_the_named_variable(self) -> None:
+        with mock.patch.dict("os.environ", {"PR_BODY": COMPLIANT_BODY}, clear=False):
+            self.assertEqual(pr_length.body_from_env("PR_BODY"), COMPLIANT_BODY)
+
+    def test_body_from_env_missing_variable_raises(self) -> None:
+        with mock.patch.dict("os.environ", {}, clear=True):
+            with self.assertRaises(ValueError):
+                pr_length.body_from_env("PR_BODY")
+
+    def test_compliant_body_passes_the_local_preflight(self) -> None:
+        with mock.patch.dict("os.environ", {"PR_BODY": COMPLIANT_BODY}, clear=False):
+            with redirect_stdout(StringIO()):
+                self.assertEqual(pr_length.main(["--pr-body-env", "PR_BODY"]), 0)
+
+    def test_runtime_default_summary_test_plan_body_fails_the_local_preflight(self) -> None:
+        # Regression for the competing-instruction failure mode: a body
+        # shaped like a generic coding-agent default, never read from the
+        # live .github/PULL_REQUEST_TEMPLATE.md, must not pass.
+        with mock.patch.dict("os.environ", {"PR_BODY": RUNTIME_DEFAULT_SUMMARY_BODY}, clear=False):
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(pr_length.main(["--pr-body-env", "PR_BODY"]), 1)
+            self.assertIn("does not match the PR template", output.getvalue())
+
+    def test_runtime_default_body_fails_direct_structure_validation_too(self) -> None:
+        result = pr_length.validate_structure(RUNTIME_DEFAULT_SUMMARY_BODY)
+        self.assertFalse(result.passes)
+        sections = {issue.section for issue in result.issues}
+        self.assertIn("What", sections)
+        self.assertIn("Fixes", sections)
+
+    def test_missing_required_section_fails_the_local_preflight(self) -> None:
+        broken = COMPLIANT_BODY.split("## Validation")[0]
+        with mock.patch.dict("os.environ", {"PR_BODY": broken}, clear=False):
+            with redirect_stdout(StringIO()):
+                self.assertEqual(pr_length.main(["--pr-body-env", "PR_BODY"]), 1)
+
+    def test_unresolved_placeholder_fails_the_local_preflight(self) -> None:
+        broken = _replace(
+            COMPLIANT_BODY,
+            "**Behavior / contracts:** Adds a thing.",
+            "**Behavior / contracts:** <explain the behavior change>",
+        )
+        with mock.patch.dict("os.environ", {"PR_BODY": broken}, clear=False):
+            with redirect_stdout(StringIO()):
+                self.assertEqual(pr_length.main(["--pr-body-env", "PR_BODY"]), 1)
+
+    def test_event_path_and_pr_body_env_are_mutually_exclusive(self) -> None:
+        with self.assertRaises(SystemExit):
+            with redirect_stdout(StringIO()), mock.patch("sys.stderr", StringIO()):
+                pr_length.main(["--event-path", "x", "--pr-body-env", "PR_BODY"])
+
+    def test_one_source_is_required(self) -> None:
+        with self.assertRaises(SystemExit):
+            with redirect_stdout(StringIO()), mock.patch("sys.stderr", StringIO()):
+                pr_length.main([])
+
+    def test_local_preflight_and_ci_entrypoint_share_the_same_validation_logic(self) -> None:
+        """CI (`--event-path`) and the local preflight (`--pr-body-env`) must
+        reach identical verdicts for the same body — they call the same
+        `_report`/`validate_structure`/`validate_body` functions, never a
+        second parallel implementation."""
+        for body in (COMPLIANT_BODY, RUNTIME_DEFAULT_SUMMARY_BODY):
+            directory = tempfile.TemporaryDirectory()
+            self.addCleanup(directory.cleanup)
+            event_path = Path(directory.name) / "event.json"
+            event_path.write_text(json.dumps({"pull_request": {"body": body}}), encoding="utf-8")
+
+            with redirect_stdout(StringIO()):
+                ci_result = pr_length.main(["--event-path", str(event_path)])
+            with mock.patch.dict("os.environ", {"PR_BODY": body}, clear=False):
+                with redirect_stdout(StringIO()):
+                    local_result = pr_length.main(["--pr-body-env", "PR_BODY"])
+
+            self.assertEqual(ci_result, local_result)
 
 
 if __name__ == "__main__":

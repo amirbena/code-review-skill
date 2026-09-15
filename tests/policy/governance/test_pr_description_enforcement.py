@@ -13,6 +13,7 @@ from tests.support.paths import REPO_ROOT
 
 AGENTS = REPO_ROOT / "AGENTS.md"
 POLICY = REPO_ROOT / "policies" / "github-issue-pr-authoring.md"
+MERGE_POLICY = REPO_ROOT / "policies" / "git-pr-merge-policy.md"
 TEMPLATE = REPO_ROOT / ".github" / "PULL_REQUEST_TEMPLATE.md"
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "pr-description-length.yml"
 
@@ -85,6 +86,56 @@ class CanonicalTemplateAuthoringContractTests(unittest.TestCase):
         policy = POLICY.read_text(encoding="utf-8")
         self.assertNotIn("byte for byte", policy)
         self.assertNotIn("equivalent concise prose", policy)
+
+
+class ExecutionPointPreconditionTests(unittest.TestCase):
+    """Pins the fix for agents drafting a PR body from memory or from a
+    runtime's own generic default instead of the live template: the
+    precondition lives at the actual pre-`gh pr create` execution step in
+    git-pr-merge-policy.md, not only in the content-guidance policy."""
+
+    def test_merge_policy_states_the_read_live_template_precondition(self) -> None:
+        policy = re.sub(r"\s+", " ", MERGE_POLICY.read_text(encoding="utf-8"))
+        self.assertIn("Precondition: draft the body from the live template", policy)
+        self.assertIn("`../.github/PULL_REQUEST_TEMPLATE.md`", policy)
+        self.assertIn("Run the local preflight below", policy)
+
+    def test_merge_policy_links_to_authoring_policy_instead_of_duplicating_it(self) -> None:
+        policy = MERGE_POLICY.read_text(encoding="utf-8")
+        self.assertIn("](github-issue-pr-authoring.md)", policy)
+        # The precondition must not restate the template's field/section
+        # contract — that stays owned solely by github-issue-pr-authoring.md.
+        self.assertNotIn("Behavior / contracts", policy)
+        self.assertNotIn("Release category", policy)
+
+
+class LocalStructurePreflightPolicyTests(unittest.TestCase):
+    """The template-structure preflight must be documented immediately next
+    to the existing release-intent preflight, and must reuse the exact
+    `--pr-body-env` / validate_structure() contract — no second schema."""
+
+    def test_policy_documents_the_structure_preflight_next_to_release_intent(self) -> None:
+        policy = POLICY.read_text(encoding="utf-8")
+        structure_heading = "### Validate PR-template structure before opening or updating a PR"
+        release_heading = "### Validate release intent before opening or updating a PR"
+        structure_index = policy.index(structure_heading)
+        release_index = policy.index(release_heading)
+        self.assertLess(structure_index, release_index)
+        # No other Markdown heading sits between the two sections.
+        between = policy[structure_index + len(structure_heading) : release_index]
+        self.assertIsNone(re.search(r"^#{1,6}\s", between, flags=re.MULTILINE))
+
+    def test_policy_documents_the_exact_preflight_command(self) -> None:
+        policy = POLICY.read_text(encoding="utf-8")
+        self.assertIn(
+            "PR_BODY=\"$(cat pr-body.md)\" python3 scripts/validation/pr_description_length.py --pr-body-env PR_BODY",
+            policy,
+        )
+
+    def test_policy_frames_it_as_a_pre_mutation_gate(self) -> None:
+        policy = re.sub(r"\s+", " ", POLICY.read_text(encoding="utf-8"))
+        self.assertIn("do not open or update the PR on a failing check", policy)
+        self.assertIn("do not reimplement structure validation elsewhere", policy)
 
 
 class TemplateTests(unittest.TestCase):

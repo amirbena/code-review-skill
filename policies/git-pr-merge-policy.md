@@ -26,6 +26,20 @@ Before opening a PR for this repository:
 - verify expected HEAD
 - push the dedicated task branch
 
+### Precondition: draft the body from the live template
+
+Immediately before drafting or materially updating a PR body — not only
+once, earlier in the task — read the live
+[`../.github/PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md)
+and start the draft from it. Never draft a PR body from memory, from a
+different tool's own default PR-body shape, or from a previous PR as a
+stand-in for the template. Run the local preflight below before calling
+`gh pr create` / `gh pr edit`. Field-content rules (how much detail per
+field, what to link instead of duplicate) are owned by
+[`github-issue-pr-authoring.md`](github-issue-pr-authoring.md), "Start
+from the canonical PR template" — this precondition only fixes *when* the
+template must be read.
+
 When opening a PR:
 
 - resolve the authenticated GitHub identity

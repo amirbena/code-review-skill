@@ -11,12 +11,20 @@ from the derived blank-field check: their conditional contract (an entry is
 only required when the category is not ``none``) is already owned by
 ``scripts/release/release_lib/release_intent.py`` (docs/RELEASE.md) and is not
 duplicated here.
+
+CLI usage: ``--event-path`` (the CI entrypoint, driven from a GitHub event
+payload) and ``--pr-body-env`` (a local preflight against a drafted body,
+run before ``gh pr create`` / ``gh pr edit``; see
+``policies/github-issue-pr-authoring.md``) both call the same
+``validate_body`` / ``validate_structure`` functions, so the two never
+drift onto separate logic.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -218,25 +226,26 @@ def body_from_event(path: Path) -> str | None:
     return body
 
 
-def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Enforce the PR body useful-content hard limit and the canonical "
-            "PR-template structure from a GitHub event payload."
-        )
-    )
-    parser.add_argument("--event-path", type=Path, required=True)
-    return parser
+def body_from_env(name: str) -> str | None:
+    """Read a drafted PR body from an environment variable, by name.
+
+    Local preflight counterpart to ``body_from_event``: lets an agent or
+    contributor validate a drafted body with the same checks CI runs,
+    before ``gh pr create`` / ``gh pr edit``, without writing a body that
+    may contain secrets to a CLI argument or shell history.
+    """
+    if name not in os.environ:
+        raise ValueError(f"environment variable {name!r} is not set")
+    return os.environ[name]
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    args = _parser().parse_args(argv)
-    try:
-        body = body_from_event(args.event_path)
-    except (OSError, json.JSONDecodeError, ValueError) as error:
-        print(f"::error title=Cannot validate PR description::{error}")
-        return 2
+def _report(body: str | None) -> bool:
+    """Run both checks against `body`, print CI-style annotations, return pass/fail.
 
+    Shared by the CI entrypoint (`--event-path`) and the local preflight
+    entrypoint (`--pr-body-env`) so the two can never drift onto separate
+    validation logic.
+    """
     ok = True
 
     length_result = validate_body(body)
@@ -263,7 +272,37 @@ def main(argv: Sequence[str] | None = None) -> int:
         for issue in structure_result.issues:
             print(f"::error title=PR description does not match the PR template::{issue}")
 
-    return 0 if ok else 1
+    return ok
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Enforce the PR body useful-content hard limit and the canonical "
+            "PR-template structure. Use --event-path for the CI GitHub-event "
+            "payload, or --pr-body-env for a local preflight against a drafted "
+            "body before running `gh pr create` / `gh pr edit`."
+        )
+    )
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--event-path", type=Path, help="GitHub event JSON path (CI)")
+    source.add_argument(
+        "--pr-body-env",
+        metavar="NAME",
+        help="environment variable holding the drafted PR body (local preflight; never pass the body itself)",
+    )
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    try:
+        body = body_from_event(args.event_path) if args.event_path is not None else body_from_env(args.pr_body_env)
+    except (OSError, json.JSONDecodeError, ValueError) as error:
+        print(f"::error title=Cannot validate PR description::{error}")
+        return 2
+
+    return 0 if _report(body) else 1
 
 
 if __name__ == "__main__":
