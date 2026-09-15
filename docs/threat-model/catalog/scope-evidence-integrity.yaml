@@ -67,6 +67,9 @@ scenarios:
     metadata specifically
   regression_evidence: COVERAGE_GAP
   threat_severity: HIGH
+  notes: 'Gap: mirrors INJECT-006''s underlying contract; no structural check distinguishes trusted
+    runtime state from repository/PR-influenced prior comments yet, so this stays an open gap rather
+    than a silent "covered by design" claim.'
 - id: SCOPE-004
   title: A security/validation execution failure is incorrectly converted into REVIEW CLEAN
   category: SCOPE
@@ -112,6 +115,9 @@ scenarios:
     located
   regression_evidence: COVERAGE_GAP
   threat_severity: HIGH
+  notes: 'Gap: no test forces a truncated/timed-out/budget-exhausted validation run and asserts the
+    result is surfaced as incomplete rather than conclusive; a genuine coverage gap, not merely
+    unbenchmarked.'
 - id: SCOPE-006
   title: Reviewed-SHA state drifts without triggering re-review of stale findings
   category: SCOPE

@@ -150,8 +150,24 @@ For any scenario id, the schema alone answers:
   equal to `COVERAGE_GAP`.
 
 This is the structural contract
-[#310](https://github.com/amirbena/code-review-skill/issues/310) is
-designed to query mechanically, and the one
+[#310](https://github.com/amirbena/code-review-skill/issues/310)'s
+[`../../../scripts/security/validate_threat_model_traceability.py`](../../../scripts/security/validate_threat_model_traceability.py)
+queries mechanically: it cross-references every scenario's
+`benchmark_family`/`benchmark_reference` claim against the real corpus
+that family's benchmark issue owns
+(`tests/reference/benchmark/mutation_fixtures.py` for `mutation/#305`,
+`tests/reference/benchmark/delegation_fixtures.py` for `delegation/#307`,
+`tests/reference/benchmark/security_event_fixtures.py` for
+`security-event/#308`, and the `## Coverage` table in
+`docs/benchmark/corpus/sandbox-adversarial/README.md` for `sandbox/#306`,
+since #306 has no data-driven fixture module), derives a per-scenario
+`covered` / `partial` / `not-applicable-to-benchmark` / `gap` rollup from
+the fields above, and fails when a corpus cites a scenario id absent from
+the catalog, a scenario's non-`COVERAGE_GAP` `benchmark_reference` has no
+corpus case actually referencing it back, or a `CRITICAL`/`HIGH`
+scenario sits at `gap`/`partial` with no `notes` rationale. It never
+redefines a scenario or a benchmark case — only cross-references and
+derives. This is also the one
 [#305](https://github.com/amirbena/code-review-skill/issues/305)/[#306](https://github.com/amirbena/code-review-skill/issues/306)/[#307](https://github.com/amirbena/code-review-skill/issues/307)
 select their category's required scenarios from by filtering
 `category`/`benchmark_family`, never by re-deriving their own scenario

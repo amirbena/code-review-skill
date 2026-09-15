@@ -19,6 +19,7 @@ MODEL_DOC = THREAT_MODEL_DIR / "threat-model.md"
 CATALOG_DIR = THREAT_MODEL_DIR / "catalog"
 CATALOG_README = CATALOG_DIR / "README.md"
 VALIDATOR = REPO_ROOT / "scripts" / "security" / "validate_threat_model.py"
+TRACEABILITY_VALIDATOR = REPO_ROOT / "scripts" / "security" / "validate_threat_model_traceability.py"
 
 REQUIRED_CATEGORIES = ("AUTH", "SBOX", "DELEG", "INJECT", "GIT", "SCOPE", "DOS")
 REQUIRED_ATTACKER_MODELS = (
@@ -33,7 +34,7 @@ REQUIRED_ATTACKER_MODELS = (
 
 class DocumentPresenceTests(unittest.TestCase):
     def test_all_expected_documents_exist(self) -> None:
-        for path in (README, MODEL_DOC, CATALOG_README, VALIDATOR):
+        for path in (README, MODEL_DOC, CATALOG_README, VALIDATOR, TRACEABILITY_VALIDATOR):
             self.assertTrue(path.is_file(), f"missing {path}")
 
     def test_every_category_yaml_file_exists(self) -> None:
@@ -162,6 +163,15 @@ class CatalogReadmeSchemaContractTests(unittest.TestCase):
     def test_documents_the_traceability_contract(self) -> None:
         self.assertIn("Traceability", self.text)
         self.assertIn("#310", self.text)
+
+    def test_links_the_traceability_validator(self) -> None:
+        self.assertIn("scripts/security/validate_threat_model_traceability.py", self.text)
+
+
+class TraceabilityValidatorLinkedFromReadmeTests(unittest.TestCase):
+    def test_readme_links_the_traceability_validator(self) -> None:
+        text = README.read_text(encoding="utf-8")
+        self.assertIn("scripts/security/validate_threat_model_traceability.py", text)
 
 
 if __name__ == "__main__":

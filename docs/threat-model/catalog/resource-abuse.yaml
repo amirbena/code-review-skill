@@ -88,6 +88,11 @@ scenarios:
   benchmark_reference: COVERAGE_GAP
   regression_evidence: COVERAGE_GAP
   threat_severity: HIGH
+  notes: 'Partial: #302 owns output/resource budgets generally (ResourceExhaustionTests in
+    tests/integration/sandbox/test_adversarial_containment.py covers wall-clock/CPU/memory/output/
+    filesystem-growth budgets via SBOX-010), but no dedicated decompression/output-bomb case exists
+    yet in the sandbox-adversarial corpus (docs/benchmark/corpus/sandbox-adversarial/README.md); a
+    specific adversarial case and regression test are still missing.'
 - id: DOS-005
   title: A single validation command spawns an unbounded subprocess tree
   category: DOS

@@ -51,6 +51,10 @@ scenarios:
   benchmark_reference: reasoning-discipline scenario; downstream capability attempts are covered by AUTH/SBOX/DELEG
   regression_evidence: COVERAGE_GAP
   threat_severity: HIGH
+  notes: 'Gap: a reasoning-discipline property (whether reviewed content is ever treated as an
+    instruction) has no structural runtime check equivalent to a capability gate, so it cannot be
+    proven the way AUTH/SBOX/DELEG scenarios are; #310 traceability tracks this as an open gap
+    rather than a silent "covered by design" claim.'
 - id: INJECT-003
   title: PR description or issue text attempts to manufacture authorization or trigger mutation
   category: INJECT
@@ -146,3 +150,7 @@ scenarios:
     lens
   regression_evidence: COVERAGE_GAP
   threat_severity: HIGH
+  notes: 'Gap: shares its underlying contract with SCOPE-003 (no dedicated regression test located for
+    adversarial prior-metadata masquerading as settled evidence); tracked separately here under the
+    injection-vector lens per the catalog''s per-domain cataloguing convention, not as double-counted
+    coverage.'

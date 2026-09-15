@@ -289,10 +289,13 @@ scenarios:
   expected_safe_outcome: child starts with no mutation authority; any child attempt to use the parent's
     authorization is refused
   expected_security_event: DENIED_MUTATION_AUTHORIZATION_REPLAY
-  benchmark_family: mutation/#305, delegation/#307, security-event/#308
+  benchmark_family: mutation/#305, security-event/#308
   benchmark_reference: tests/reference/benchmark/mutation_fixtures.py (see docs/benchmark/corpus/mutation-boundary/README.md); docs/benchmark/corpus/security-events/README.md (SEC-EVT-018)
   regression_evidence: tests/unit/security/test_mutation_authority.py (Auth013SpawnedChildHasNoInheritedAuthority)
   threat_severity: CRITICAL
+  notes: 'The delegation-runtime half of this same contract is tracked separately as DELEG-007
+    (benchmark_family delegation/#307) -- this scenario does not also claim delegation/#307 coverage
+    for itself; #310 traceability validation checks the two do not cross-claim each other''s corpus.'
 - id: AUTH-014
   title: Self-review attempts a formal APPROVE / REQUEST_CHANGES action on its own PR
   category: AUTH
