@@ -39,3 +39,7 @@ RUNTIME_DEFAULT_SUMMARY_BODY = """\
 
 - [x] Ran the test suite locally.
 """
+
+# A compliant body for genuinely issue-less maintainer-led work: declares
+# "Fixes #N/A" explicitly instead of leaving "Fixes #" blank.
+COMPLIANT_BODY_NO_ISSUE = COMPLIANT_BODY.replace("Fixes #135", "Fixes #N/A", 1)

@@ -94,6 +94,14 @@ come from the template. Keep the Issue-closing reference and link to the
 smallest canonical source that owns detailed behavior or decisions rather
 than duplicating it into the field.
 
+Most PRs reference a real Issue: `Fixes #<issue-number>`. For genuinely
+issue-less maintainer-led work — no separate Issue exists and creating one
+would only restate this PR — declare that explicitly with `Fixes #N/A`
+instead of leaving the field blank. A blank `Fixes #` is always an
+unresolved placeholder and fails validation; `Fixes #N/A` is a deliberate,
+validated statement that no Issue exists, not an escape hatch for
+Issue-linked work that simply omitted the number.
+
 This authoring rule is distinct from, but backed by, deterministic
 validation that a PR body's structure matches the template — see
 "Validate PR-template structure before opening or updating a PR" below.

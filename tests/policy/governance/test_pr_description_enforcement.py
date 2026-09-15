@@ -138,6 +138,28 @@ class LocalStructurePreflightPolicyTests(unittest.TestCase):
         self.assertIn("do not reimplement structure validation elsewhere", policy)
 
 
+class IssuelessMaintainerWorkTests(unittest.TestCase):
+    """A blank 'Fixes #' must keep failing as an unresolved placeholder, but
+    genuinely issue-less maintainer-led work needs a validated way to say so
+    explicitly instead of being forced to fabricate or create an Issue."""
+
+    def test_template_documents_the_na_declaration(self) -> None:
+        template = TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn("Fixes #N/A", template)
+        self.assertIn("maintainer-led work", template)
+
+    def test_policy_documents_when_na_is_appropriate(self) -> None:
+        policy = re.sub(r"\s+", " ", POLICY.read_text(encoding="utf-8"))
+        self.assertIn("Fixes #N/A", policy)
+        self.assertIn("A blank `Fixes #` is always an unresolved placeholder", policy)
+
+    def test_na_passes_structure_validation(self) -> None:
+        from tests.support.pr_body_fixtures import COMPLIANT_BODY_NO_ISSUE
+
+        result = pr_length.validate_structure(COMPLIANT_BODY_NO_ISSUE)
+        self.assertTrue(result.passes, result.issues)
+
+
 class TemplateTests(unittest.TestCase):
     def test_template_is_lean_and_keeps_traceability(self) -> None:
         template = TEMPLATE.read_text(encoding="utf-8")
