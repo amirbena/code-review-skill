@@ -305,6 +305,39 @@ deterministic structural assertion — never an LLM/rubric score — and the
 corpus is disjoint from the finding-precision/recall/severity metrics
 above and from ordinary code-review quality fixtures.
 
+## Denied-capability security-event benchmark
+
+[`corpus/security-events/README.md`](corpus/security-events/README.md)
+(issue [#308](https://github.com/amirbena/code-review-skill/issues/308),
+depends on [#299](https://github.com/amirbena/code-review-skill/issues/299)
+and the relevant enforced denial from
+[#301](https://github.com/amirbena/code-review-skill/issues/301) /
+[#302](https://github.com/amirbena/code-review-skill/issues/302) /
+[#303](https://github.com/amirbena/code-review-skill/issues/303)) proves
+the **emitted #299 security event**, not the allow/deny decision the
+mutation-boundary, sandbox-adversarial, and agent-spawn/delegation
+benchmarks above already prove: given a real enforced denial, its
+`SecurityEvent` carries a deterministic `event_type` from the closed
+taxonomy, the correct `expected_denial` /
+`boundary_violation_attempt` classification, invocation and
+parent/child correlation where relevant, the target/scope identifiers
+the domain calls for, and none of the content #299 forbids (a secret,
+token, credential value, raw prompt, or full patch body). Like the two
+benchmarks above, it is not `benchmark-case/v1` fixtures — that schema
+has no field for an event schema, a classification, or a redaction
+assertion — so it follows the same test-only reference-model pattern:
+[`../../tests/reference/benchmark/security_event_fixtures.py`](../../tests/reference/benchmark/security_event_fixtures.py),
+exercised by
+[`../../tests/unit/benchmark/test_security_event_corpus.py`](../../tests/unit/benchmark/test_security_event_corpus.py)
+(per-family coverage, closed-vocabulary drift checks against
+`scripts/security/validate_threat_model.py`, determinism, redaction, the
+observational-only invariant proving recording never perturbs
+findings/severity/verdict, threat-scenario/enforcement-owner
+traceability, and malformed-fixture rejection). Every comparison is a
+deterministic structural assertion — never an LLM/rubric score — and the
+corpus is disjoint from the finding-precision/recall/severity metrics
+above and from ordinary code-review quality fixtures.
+
 ## CI integration
 
 [`ci-integration.md`](ci-integration.md) (#255) wires the existing #250

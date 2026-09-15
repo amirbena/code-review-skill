@@ -502,9 +502,16 @@ and no packaged Skill resource depends on them.
   already declared provisionally, and confirms `AUTH-014`'s previously
   undefined self-review event class. Its packaged touch-points are the
   "Reporting an event" / "Reporting a denied event" sections it adds to
-  the four policies named above; actually emitting, recording, or
-  benchmarking that an event fires is deferred to #301/#302/#303/#308 —
-  see "Future work" below.
+  the four policies named above; actually emitting or recording a real
+  event at each enforcement point is still deferred — see "Future work"
+  below. Benchmarking what a real denial's event *would* look like —
+  deterministic `event_type`, correlation, redaction, and the
+  observational-only guarantee, over one representative case per
+  enforcement family — is
+  [`benchmark/corpus/security-events/README.md`](benchmark/corpus/security-events/README.md)
+  (#308, a test-only reference model exactly like the mutation-boundary
+  and delegation-spawn corpora under "Code-review quality benchmark"
+  above).
 - **Benchmark, measurement & analytics architecture** — the canonical
   cross-component design spanning the benchmark-quality-gate epic (#329:
   isolated runtime execution #330→#336→#337, the PR-time taxonomy/
@@ -582,10 +589,16 @@ or runbook implements them today:
   "Repository-development instrumentation" above) defines the event
   taxonomy, field schema, and classification; no code in this repository
   constructs, transports, stores, or queries an instance of that schema
-  today. Real emission at each enforcement point, a sink/query surface,
-  and benchmarking that the mapped event actually fires for every
-  applicable threat-model scenario are #301/#302/#303's and #308's,
-  respectively.
+  at a real enforcement point today. #308 benchmarks what the emitted
+  event *would* look like for one representative case per enforcement
+  family (deterministic type/classification, correlation, redaction,
+  observational-only), but wires no real emitter into
+  `mutation-authority.md`'s, `agent-delegation.md`'s,
+  `runtime-validation.md`'s, or `review-action-authorization.md`'s own
+  enforcement points, and does not cover every applicable threat-model
+  scenario. Real emission at each enforcement point, a sink/query
+  surface, and extending the benchmark to every applicable scenario
+  remain unbuilt.
 
 ## 3. Separation of Concerns
 
