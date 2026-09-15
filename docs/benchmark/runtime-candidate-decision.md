@@ -8,7 +8,16 @@ requires before a runtime is selected. It records the actual candidates
 run, the evidence gathered, and the resulting recommendation for
 [#337](https://github.com/amirbena/code-review-skill/issues/337)
 (provisioning) — it does not re-derive #330's contract or viability
-criteria, only applies them.
+criteria, only applies them, plus one added dimension #330 did not weigh
+explicitly: this project's own economic sustainability (§6).
+
+This project is an open-source side project with uncertain long-term
+maintenance. A runtime candidate is not viable here merely because it
+clears fidelity and latency — it must also be affordable indefinitely,
+including by a maintainer who may stop actively maintaining the project.
+§6 makes that constraint explicit and reframes §7's decision accordingly;
+§4's empirical results and §5's fidelity/latency scoring are unchanged
+from the original spike run and are not reopened by this addition.
 
 Like the rest of [`./`](README.md), this is a **repository-development
 doc: not packaged into either Skill archive**, and no packaged Skill
@@ -111,7 +120,7 @@ attempted after this point.
 | Invoke the Skill's actual semantics with minimal-to-no translation | Met | Failed — no evidence the Skill content was ever read |
 | Run non-interactively in isolated CI | Met | Launches non-interactively, but did not finish |
 | Normalize output through a thin `ReviewerAdapter` | Met | N/A — no output to normalize |
-| Prefer free/near-zero cost without sacrificing fidelity | Small, bounded Anthropic cost | $0 backend, but the contract is explicit that a cheaper candidate that cannot invoke the Skill's real semantics is not viable regardless of cost |
+| Prefer free/near-zero cost without sacrificing fidelity | Metered Anthropic usage; per-case cost was small in this 2-case spike, but §6 covers whether it stays bounded at realistic repository-scale usage | $0 backend, but the contract is explicit that a cheaper candidate that cannot invoke the Skill's real semantics is not viable regardless of cost |
 | Reproducible, version-pinned | Met (`claude` 2.1.272) | Met in the sense that the failure itself was reproducible across both cases and the retry |
 | Bounded PR-check latency | Met (26–35s/case) | Failed (>11 min for one case, retry killed) |
 | CI-dedicated infra / no personal-machine dependency | Applies to #337's provisioning, not this local spike | Same |
@@ -123,30 +132,95 @@ actual multi-step, tool-using semantics, and it did not fit a bounded
 PR-check latency budget, in either its default or explicit-agent
 configuration tested here.
 
-## 6. Decision
+## 6. Economic sustainability constraint (added to #336's scope)
 
-**Recommendation: provision class A (the Claude Code CLI against the
-Anthropic backend, on a dedicated CI credential) for #337.**
+#330 §4 already says a runtime should "prefer free / near-zero cost
+without sacrificing fidelity," but does not put a number on it or say
+what "cost" must actually be measured against. Because this is an
+open-source side project with uncertain long-term maintenance, #336 was
+amended to make that concrete rather than leaving "cost" a soft
+preference a fidelity win could silently override:
 
-- Candidate A cleared every #330 §4 criterion this spike could test
-  empirically, at a small, bounded per-case cost and latency, using the
-  existing, already-packaged `ProductionReviewerAdapter` unchanged.
-- Candidate B (the one currently-real class-B/C candidate available in
-  this environment — `opencode` + a local Ollama coding model) did not
-  clear fidelity or latency in either configuration tested, and is
-  recorded as **not viable in its current configuration** rather than
-  worked around further, per #336's time-box.
+- **$0 recurring cost is strongly preferred.** A metered backend is
+  acceptable only if normal and burst usage can be bounded by a credible
+  monthly ceiling — not merely "small in this 2-case spike."
+- **The maintainer's absolute tolerance is approximately $40–50/month
+  maximum**, but lower — ideally zero — recurring cost is preferred
+  precisely because the project may not be actively maintained
+  indefinitely: nobody may be watching a bill that quietly grows.
+- **Any candidate with plausible triple-digit monthly spend under normal
+  repository activity is not viable**, regardless of fidelity.
+- A cost evaluation must account for the realistic drivers of spend, not
+  just one PR-check invocation:
+  - PR-time selected benchmark cases (whatever subset #331 selects, not
+    just this spike's 2 cases);
+  - reruns and push churn on the same PR;
+  - concurrent PR activity across the repository;
+  - the future nightly/full-corpus run #332 will add;
+  - provider/API charges;
+  - runner/VM/GPU infrastructure charges where a candidate needs
+    dedicated compute rather than a bare GitHub-hosted runner.
+- **A free tier that cannot sustain expected usage is not automatically
+  viable** — hitting its ceiling under normal activity and failing over
+  to a paid tier (or failing closed) has to be evaluated like any other
+  cost driver, not waved through because the label says "free."
+- **Operational exit cost matters.** A viable runtime must be easy to
+  disable — deleting a workflow/credential/config, not unwinding paid
+  infrastructure left running or a dependency on the maintainer's
+  personal machine/session left behind.
+
+This spike did not re-run any candidate to measure §330 §5-style
+per-invocation cost/latency at realistic PR-time/nightly scale — that
+measurement is unresourced by a 2-case spike and does not change this
+constraint's force. What it changes is how §7's recommendation is framed:
+a fidelity win alone no longer settles the decision.
+
+## 7. Decision
+
+Class A (the `claude` CLI against the Anthropic backend) is this spike's
+**fidelity baseline and current technical fallback** — not an
+unconditional production recommendation. It is the only candidate that
+demonstrated it can actually invoke the Skill's real semantics within a
+bounded PR-check latency (§4–§5); candidate B did not, and is recorded as
+**not viable in its current configuration**, independent of §6.
+
+Whether class A can also satisfy §6's economic sustainability constraint
+at realistic repository scale (PR-time cases, reruns, concurrent PRs, and
+the future nightly/full-corpus run) was **not measured by this spike** —
+that requires modeling or measuring cost at a scale a 2-case comparison
+does not exercise. This decision record therefore does not clear class A
+for unconditional provisioning:
+
+- **#337 may provision class A only if it can produce a credible,
+  bounded-cost design** — concrete per-PR/nightly cost bounds, hard
+  ceilings (timeouts, case-count/concurrency limits, provider-side spend
+  limits or a documented equivalent), and fail-closed behavior on
+  timeout/quota/rate-limit/budget exhaustion — that plausibly stays
+  within §6's constraints (strongly prefer $0 recurring; ~$40–50/month
+  absolute ceiling; no plausible triple-digit-monthly-spend path under
+  normal activity) and that can be disabled without leaving paid
+  infrastructure or personal-machine dependencies behind.
+- **If no such bounded-cost design is credible, the recommendation is not
+  "provision class A anyway"** — it is to open further, separately
+  time-boxed research into another class-B/C candidate (a different agent
+  CLI, a different local/hosted open-weight model, or explicit
+  agent-routing configuration a real spike could resolve) rather than
+  silently accepting unbounded recurring spend on an unmaintained side
+  project. Class A remains the safe fallback (per #330 §6) if that
+  research does not clear fidelity either — but "safe fallback on
+  fidelity" and "affordable to run indefinitely" are two different
+  questions, and only #337's own cost design can answer the second one.
 - No class-C candidate was available to test empirically in this
-  environment; class C is recorded as **not evaluated**, not rejected. A
-  future spike may reopen class B/C with a different CLI, a different
-  local/hosted model, or explicit agent-routing configuration — that is
-  new work, not a re-run of this spike, and does not block #337.
+  environment; class C is recorded as **not evaluated**, not rejected,
+  and remains a candidate for that further research if class A's cost
+  design does not clear §6.
 
-This matches #330 §6's own assessment of class A as "the safe fallback if
-no other class clears fidelity" — that is the outcome this spike's
-evidence actually produced.
+This spike does not implement any provisioning, does not reopen the
+OpenCode/Ollama comparison, and does not change §4/§5's empirical
+results — it only sets the bar #337's actual provisioning proposal must
+clear before class A can be considered decided rather than provisional.
 
-## 7. Known gap surfaced by this spike
+## 8. Known gap surfaced by this spike
 
 Neither `ProductionReviewerAdapter` nor `run_benchmark.py` currently
 records the model/backend identifier its `claude` CLI invocation actually
@@ -158,12 +232,17 @@ work for #337, which already owns wiring the full §5 metadata rule in
 (per [`runtime-execution-contract.md`](runtime-execution-contract.md) §5);
 this is not a new requirement, just a concrete gap #337 should close.
 
-## 8. Out of scope
+## 9. Out of scope
 
 - Re-running the full corpus (#336 non-goal; a small, fixed subset is
   sufficient).
 - Building a production-quality adapter for candidate B, or any further
-  OpenCode/Ollama tuning (#336 non-goal and explicit time-box).
+  OpenCode/Ollama tuning (#336 non-goal and explicit time-box) — §6 does
+  not reopen this either.
+- Measuring actual per-invocation cost at PR-time/nightly scale, or
+  designing the bounded-cost mechanism itself (provider spend limits,
+  timeouts, concurrency caps) — that is #337's provisioning work, guided
+  by §6's constraint, not this spike's.
 - Provisioning any real, persistent CI infrastructure, credential, or
   workflow (#337's scope).
 - Deciding #331's Top-K selection logic or #332's nightly scheduling.
@@ -176,4 +255,5 @@ this is not a new requirement, just a concrete gap #337 should close.
   — the existing metrics used to score candidate A's fidelity; no new
   metric was introduced.
 - [#337](https://github.com/amirbena/code-review-skill/issues/337) —
-  provisioning, which implements this decision record's recommendation.
+  provisioning, which must satisfy §6's bounded-cost constraint before
+  class A is provisioned, or else open further class-B/C research per §7.

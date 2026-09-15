@@ -26,7 +26,7 @@ concern lives in the file named for it.
 | [`claim-correspondence-adequacy.md`](claim-correspondence-adequacy.md) | Research recommendation (not a contract change): whether `match-criteria.md`'s lexical claim-correspondence check can recognize an independently-phrased-but-correct finding, measured with real harness-fidelity-corrected benchmark reruns. Finds the free-text Jaccard/subset path is, in practice, the *only* path that ever decides the defect axis in production because a produced `defect_kind` is never populated, and recommends evaluating `defect_kind` population first per the deterministic-options-first guardrail. | [#343](https://github.com/amirbena/code-review-skill/issues/343) |
 | [`ci-integration.md`](ci-integration.md) | Wiring the existing benchmark execution (`scripts/benchmark/run_benchmark.py` + `scripts/benchmark/benchmark_review_adapter.py`, #250) into a dedicated, informational/non-blocking PR-level CI check (`.github/workflows/benchmark-check.yml`) — the deterministic applicability classifier (`scripts/benchmark/benchmark_ci_classifier.py`), the not-applicable / runtime-unavailable / ran three-state contract, and its full independence from `release-worthiness.yml`. | [#255](https://github.com/amirbena/code-review-skill/issues/255) |
 | [`runtime-execution-contract.md`](runtime-execution-contract.md) | The vendor-neutral runtime execution contract a future benchmark-CI runtime must satisfy — the non-negotiable no-personal-machine trust boundary, the `run_benchmark.py` → `ReviewerAdapter` → agent CLI/runtime → unmodified Skill → model backend execution chain, the runtime viability criteria, the required runtime/model/Skill-SHA metadata, the evaluated (not decided) candidate classes A–D, and the two explicitly rejected candidates. | [#330](https://github.com/amirbena/code-review-skill/issues/330) |
-| [`runtime-candidate-decision.md`](runtime-candidate-decision.md) | The empirical spike's decision record — the real candidates actually run against a small corpus subset, their results scored against `runtime-execution-contract.md`'s viability criteria, and the recommended execution path for #337. | [#336](https://github.com/amirbena/code-review-skill/issues/336) |
+| [`runtime-candidate-decision.md`](runtime-candidate-decision.md) | The empirical spike's decision record — the real candidates actually run against a small corpus subset, their results scored against `runtime-execution-contract.md`'s viability criteria and an added economic-sustainability constraint, and the resulting (conditional) execution path for #337. | [#336](https://github.com/amirbena/code-review-skill/issues/336) |
 
 The first four documents cover the whole epic-[#40](https://github.com/amirbena/code-review-skill/issues/40)
 benchmark surface; [`match-criteria.md`](match-criteria.md) ([#54](https://github.com/amirbena/code-review-skill/issues/54))
@@ -400,10 +400,17 @@ the bounded empirical spike `runtime-execution-contract.md` (#330)
 required before a runtime is selected: it actually ran class A (the
 `claude` CLI against the Anthropic backend) and one currently-real class-B
 candidate (`opencode` against a local Ollama coding model) through the
-same two corpus cases via thin, throwaway adapters, scored both against
-§4's viability criteria, and recommends provisioning class A for #337 —
-the class-B candidate did not invoke the Skill's actual semantics or fit a
-bounded PR-check latency budget in this spike, and no class-C candidate
+same two corpus cases via thin, throwaway adapters, and scored both
+against §4's viability criteria plus an added economic-sustainability
+constraint (this project's uncertain long-term maintenance means $0
+recurring cost is strongly preferred, ~$40–50/month is the maintainer's
+absolute ceiling, and no plausible triple-digit-monthly-spend path is
+viable). Class B did not invoke the Skill's actual semantics or fit a
+bounded PR-check latency budget, and is not viable in this spike's
+configuration; class A is the fidelity baseline and current technical
+fallback, but is cleared for #337 to provision **only if** it can produce
+a credible bounded-cost design — otherwise the record recommends further,
+separately time-boxed class-B/C research instead. No class-C candidate
 was available to test empirically in this environment.
 
 ## Related
