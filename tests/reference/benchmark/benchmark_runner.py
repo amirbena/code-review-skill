@@ -117,6 +117,14 @@ class CaseResult:
     status: str  # "executed" | "error"
     produced_findings: tuple[ProducedFinding, ...] = ()
     error: str | None = None
+    # Best-effort post-image text captured from the materialized workspace
+    # (issue #342), for the matcher's anchor-proximity check
+    # (docs/benchmark/match-criteria.md §8.3). Not part of the stable
+    # machine-readable shape (runner-contract.md §6) — deliberately absent
+    # from ``as_dict()`` — since it is consumed only by
+    # ``scripts/benchmark/run_benchmark.py``'s metrics call, not by anything
+    # that inspects a case's execution result.
+    post_image: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -278,6 +286,32 @@ def _materialize_repo_ref(
         raise _WorkspaceSetupFailed(f"cannot checkout {commit!r}")
 
 
+def _capture_post_image(case: bf.BenchmarkCase, workspace: Path) -> str | None:
+    """Best-effort post-image text for the matcher's anchor-proximity check
+    (docs/benchmark/match-criteria.md §8.3, ``anchor``) — issue #342.
+
+    The content, after ``input.patch`` is applied, of the single file
+    declared in ``input.base``. ``None`` for ``repo_ref`` cases, which
+    carry no ``base`` to key off; for a ``patch`` case with no ``base``
+    files at all; and for a ``patch`` case whose ``base`` declares more
+    than one file — never fabricated, and deliberately not concatenated:
+    ``produced.lines`` is a line number in one specific source file, and
+    joining multiple files' text would silently misalign anchor-proximity
+    line indices against whichever file isn't first once the concatenation
+    passes its boundary.
+    """
+    if case.input_kind != "patch":
+        return None
+    base = case.input.get("base", {}) or {}
+    if len(base) != 1:
+        return None
+    (rel,) = base
+    try:
+        return (workspace / rel).read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+
 def run_case(
     case: bf.BenchmarkCase,
     reviewer: ReviewerAdapter,
@@ -308,12 +342,14 @@ def run_case(
         except Exception:  # noqa: BLE001 - any setup failure is a per-case error
             return CaseResult(case.id, kind, _ERROR, error="workspace-setup-failed")
 
+        post_image = _capture_post_image(case, workspace)
+
         try:
             produced = tuple(reviewer(workspace))
         except Exception:  # noqa: BLE001 - adapter failure is a per-case error, not a crash
             return CaseResult(case.id, kind, _ERROR, error="reviewer-adapter-raised")
 
-        result = CaseResult(case.id, kind, _EXECUTED, produced_findings=produced)
+        result = CaseResult(case.id, kind, _EXECUTED, produced_findings=produced, post_image=post_image)
         return result
     finally:
         try:
