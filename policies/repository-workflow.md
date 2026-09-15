@@ -29,7 +29,16 @@ previous task.
 before step 6 completes:**
 
 1. inspect repository state (current branch, working-tree status, local
-   HEAD)
+   HEAD). This inspection validates **two** things about the current
+   branch, not one: (a) task association — is it appropriate for the task
+   at hand — and (b) name compliance — does its name conform to the
+   canonical convention in [`../CONTRIBUTING.md`](../CONTRIBUTING.md).
+   Either check can fail independently of the other: a branch can be
+   correctly associated with the task yet still carry a non-conforming
+   name, regardless of what created it (this repository's own
+   agent-driven branch creation, a different coding-agent runtime, an IDE
+   agent integration, or human-run tooling/automation, present or
+   future).
 2. verify/synchronize the intended base branch (identify the default/
    base branch, fetch/prune if remote access exists, compare against
    `origin/main`)
@@ -58,10 +67,31 @@ is already synchronized with the base.
 
 The converse also holds: if the current branch is already clearly
 associated with the task/context at hand (for example, an Agent resuming
-its own in-progress task branch), step 4 is **not** re-triggered —
-continue on that branch rather than creating an unnecessary nested or
-replacement branch. "Dedicated task branch" means one branch per task,
-not one branch per work session on that task.
+its own in-progress task branch, or a branch a runtime/harness/IDE
+integration pre-provisioned for the task before this policy was ever
+read), step 4 is **not** re-triggered — continue on that branch rather
+than creating an unnecessary nested or replacement branch. "Dedicated
+task branch" means one branch per task, not one branch per work session
+on that task.
+
+"Already-correct" requires both checks from step 1 to pass, not just task
+association. A branch that is correctly associated with the task but
+whose name does not conform to the convention in
+[`../CONTRIBUTING.md`](../CONTRIBUTING.md) is **not** already-correct: it
+must be renamed in place (`git branch -m`) to a conforming name before
+any implementation or documentation file is modified. If the
+non-conforming name was already pushed, push the renamed branch under
+its new name and delete the old remote branch (for example, `git push -u
+origin <new-name>` then `git push origin --delete <old-name>`) — do not
+merely repoint the local tracking ref, which would leave the
+non-conforming name live on the remote. Renaming in place, not creating
+a second parallel branch, is
+the required fix — the existing worktree and its association with the
+task are otherwise correct, only the name is wrong. This applies
+uniformly regardless of what created the branch; no single runtime or
+vendor naming scheme is treated as a special case, and the check is
+simply whether the name conforms to `CONTRIBUTING.md`, not whether it
+matches or avoids any particular prefix.
 
 ### Preserving local changes when switching (stash discipline)
 
