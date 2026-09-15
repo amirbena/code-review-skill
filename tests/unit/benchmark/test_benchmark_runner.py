@@ -216,6 +216,55 @@ class IsolationTests(unittest.TestCase):
             self.assertIn("offset + page_size + 1", record["content"])
         self.assertFalse(ws.exists(), "workspace must be cleaned up after the case")
 
+    def test_case_result_captures_post_image_of_the_patched_file(self) -> None:
+        """Issue #342: the runner captures the post-patch content of the
+        single file declared in ``input.base`` onto ``CaseResult.post_image``,
+        so ``run_benchmark.py`` can thread it into the matcher's
+        anchor-proximity check instead of that check being dead code on
+        every real run."""
+        with tempfile.TemporaryDirectory() as tmp:
+            run = br.run_selected(
+                CORPUS_DIR, "correctness-off-by-one-pagination", clean_reviewer,
+                workspace_parent=Path(tmp),
+            )
+        self.assertTrue(run.ok)
+        (result,) = run.case_results
+        self.assertEqual(result.status, "executed")
+        self.assertIsNotNone(result.post_image)
+        self.assertIn("offset + page_size + 1", result.post_image)
+        # Not part of the stable machine-readable per-case shape.
+        self.assertNotIn("post_image", result.as_dict())
+
+    def test_multi_file_base_captures_no_post_image(self) -> None:
+        """A ``base`` declaring more than one file captures no post-image at
+        all, rather than concatenating them: ``produced.lines`` is a line
+        number in one specific file, and joining multiple files' text would
+        silently misalign the matcher's anchor-proximity line indices
+        against whichever file isn't first (issue #342 follow-up)."""
+        case = _case(
+            {
+                "format": "benchmark-case/v1",
+                "id": "multi-file-base-case",
+                "title": "Two files in base",
+                "input": {
+                    "patch": (
+                        "diff --git a/a.py b/a.py\n"
+                        "--- a/a.py\n"
+                        "+++ b/a.py\n"
+                        "@@ -1 +1 @@\n"
+                        "-x = 1\n"
+                        "+x = 2\n"
+                    ),
+                    "base": {"a.py": "x = 1\n", "b.py": "y = 1\n"},
+                },
+                "expected": {"findings": []},
+            }
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            result = br.run_case(case, clean_reviewer, workspace_parent=Path(tmp))
+        self.assertEqual(result.status, "executed")
+        self.assertIsNone(result.post_image)
+
     def test_workspace_is_cleaned_up_on_the_success_path(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             parent = Path(tmp)
