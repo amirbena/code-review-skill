@@ -64,7 +64,17 @@ reviewer's runtime has no existing abstraction that can establish and verify
 this boundary, record the command as `unavailable` with the missing boundary
 capability. If the boundary is present but cannot be established for this
 command, record `skipped` with the concrete safety reason. Never fall back to
-direct or unsandboxed host execution.
+direct or unsandboxed host execution **by default**.
+
+The one narrow, explicit exception is
+[`trusted-host-execution.md`](trusted-host-execution.md): when this
+sandbox boundary is unavailable, a user may out-of-band and per-invocation
+authorize a bounded trusted-host execution backend that still enforces
+every rule in this document. That policy owns the authorization channel,
+the execution-provenance evidence contract, and the guarantees
+trusted-host mode does not provide; it never relaxes anything stated here,
+and its absence leaves this section's fail-closed `unavailable` default
+completely unchanged.
 
 ## Declaring and discovering commands
 
@@ -162,6 +172,14 @@ Do not collapse `skipped`, `failed`, or `unavailable` into “not run,” and do
 not represent any non-execution outcome as passing. If no command is
 declared, the report must say so explicitly. Validation output is evidence,
 not an assertion that the reviewed behavior is correct.
+
+Every `executed` or `failed` entry additionally carries one **execution
+provenance** value — `sandbox` or `trusted-host` — and an `unavailable`
+entry caused by a missing execution backend carries provenance
+`unavailable`. This dimension is defined and governed by
+[`trusted-host-execution.md`](trusted-host-execution.md); it never
+changes this section's outcome vocabulary or its evidence requirements,
+only records which backend (if any) ran the command.
 
 ### Reporting a denied event
 
