@@ -20,7 +20,6 @@ from tests.support.paths import REPO_ROOT
 SECURITY_EVENTS_DIR = REPO_ROOT / "docs" / "security-events"
 README = SECURITY_EVENTS_DIR / "README.md"
 MODEL_DOC = SECURITY_EVENTS_DIR / "security-event-model.md"
-VALIDATOR = REPO_ROOT / "scripts" / "security" / "validate_threat_model.py"
 
 MUTATION_AUTHORITY = REPO_ROOT / "shared" / "policies" / "mutation-authority.md"
 AGENT_DELEGATION = REPO_ROOT / "shared" / "policies" / "agent-delegation.md"
