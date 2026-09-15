@@ -10,6 +10,7 @@ from io import StringIO
 from pathlib import Path
 
 from scripts.validation import pr_description_length as pr_length
+from tests.support.pr_body_fixtures import COMPLIANT_BODY
 
 
 class UsefulContentTests(unittest.TestCase):
@@ -75,8 +76,10 @@ class EventPayloadTests(unittest.TestCase):
             pr_length.body_from_event(path)
 
     def test_body_only_correction_changes_failure_to_success(self) -> None:
+        # The overlong body is also structurally empty; either defect alone
+        # fails main(), so only a body fixing both turns the check green.
         overlong = self._event("x" * (pr_length.PR_BODY_HARD_LIMIT + 1))
-        concise = self._event("short summary")
+        concise = self._event(COMPLIANT_BODY)
         with redirect_stdout(StringIO()):
             self.assertEqual(pr_length.main(["--event-path", str(overlong)]), 1)
             self.assertEqual(pr_length.main(["--event-path", str(concise)]), 0)
