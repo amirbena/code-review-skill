@@ -104,6 +104,26 @@ class ValidateStructureTests(unittest.TestCase):
         self.assertFalse(result.passes)
         self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
 
+    def test_fixes_na_fails(self) -> None:
+        # Every agent-authored PR is tracked by a real GitHub Issue — no
+        # issue-less escape hatch. "N/A" is not a valid Issue reference.
+        body = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #N/A")
+        result = pr_length.validate_structure(body)
+        self.assertFalse(result.passes)
+        self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
+
+    def test_fixes_copied_placeholder_token_fails(self) -> None:
+        body = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #<issue-number>")
+        result = pr_length.validate_structure(body)
+        self.assertFalse(result.passes)
+        self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
+
+    def test_fixes_non_numeric_value_fails(self) -> None:
+        body = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #not-a-real-issue")
+        result = pr_length.validate_structure(body)
+        self.assertFalse(result.passes)
+        self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
+
     def test_empty_validation_section_fails(self) -> None:
         body = _replace(
             COMPLIANT_BODY,
@@ -241,6 +261,14 @@ class LocalPreflightTests(unittest.TestCase):
         with mock.patch.dict("os.environ", {"PR_BODY": broken}, clear=False):
             with redirect_stdout(StringIO()):
                 self.assertEqual(pr_length.main(["--pr-body-env", "PR_BODY"]), 1)
+
+    def test_fixes_na_fails_the_local_preflight(self) -> None:
+        broken = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #N/A")
+        with mock.patch.dict("os.environ", {"PR_BODY": broken}, clear=False):
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(pr_length.main(["--pr-body-env", "PR_BODY"]), 1)
+            self.assertIn("Fixes", output.getvalue())
 
     def test_unresolved_placeholder_fails_the_local_preflight(self) -> None:
         broken = _replace(
