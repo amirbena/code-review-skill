@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.43.0 — 2026-09-15
+
+### Added
+
+- Add the denied-capability security-event taxonomy and wire event reporting into the mutation-authority, agent-delegation, runtime-validation, and GitHub review-action-authorization policies (#299) (#341).
+
 ## v1.42.0 — 2026-09-14
 
 ### Changed
