@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.47.0 — 2026-09-15
+
+### Added
+
+- Let a trusted invoking user authorize (or explicitly deny) trusted-host runtime validation with natural language, resolving to the same canonical state as the structured flag (#373).
+
 ## v1.46.0 — 2026-09-15
 
 ### Added
