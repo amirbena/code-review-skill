@@ -29,6 +29,21 @@ contradiction between an issue's local scope and this document is resolved
 by updating this document through a reviewed repository change, not by
 silently reinterpreting the issue.
 
+**Stage 4 addendum.** This document was later extended, additively, to
+also fix the cross-component boundaries for a second, separate set of
+reliability-boundary issues raised by a review-reliability audit of two
+failure modes (unsupported finding provenance; verdict drift):
+[#TBD-A1](https://github.com/amirbena/code-review-skill/issues), the
+benchmark citation-fidelity signal
+[#TBD-A2](https://github.com/amirbena/code-review-skill/issues), the
+verdict-integrity benchmark proof
+[#TBD-B1](https://github.com/amirbena/code-review-skill/issues), and the
+verdict-consistency-boundary research
+[#TBD-B2](https://github.com/amirbena/code-review-skill/issues) — see
+§12. §12 is self-contained: it consumes and cross-references §1–§11
+unchanged, and does not alter the fourteen-issue scope, the DAG in §2, or
+the layer ownership in §3.
+
 ## 1. Problem and motivation
 
 Four things are true about this repository's review-quality feedback loop
@@ -507,3 +522,164 @@ implemented:
 - [`../ARCHITECTURE.md`](../ARCHITECTURE.md) is the repository-wide
   system map; this document is referenced from its "Repository-development
   instrumentation" section rather than duplicating that map's content.
+- `shared/policies/severity.md` owns the mechanical severity → decision
+  derivation; §12.4's verdict-integrity work checks a live review's
+  rendered output against that derivation and never redefines it.
+- `shared/policies/architectural-placement.md` and
+  `shared/templates/finding.md` own, respectively, the caller/callee
+  evidence requirement for a placement finding and the finding `location`
+  / `evidence location` field semantics; §12.2's citation-grounding work
+  verifies against both but never redefines either.
+
+## 12. Stage 4 — Reliability boundaries: provenance, citation fidelity, and verdict integrity
+
+Repository-development addendum for two reliability gaps identified by a
+review-reliability audit of this repository's own Skills, spanning both
+`local-code-review` and `github-pr-review`:
+
+- **(A) Unsupported finding provenance** — a reviewer reporting a finding
+  about code it did not actually inspect (a claimed missing check that
+  actually exists in a caller/helper it skipped; a finding reasoned from
+  structural shape without following the relevant execution path; a
+  plausible finding without enough concrete evidence to prove the cited
+  code was ever read).
+- **(B) Verdict drift** — a review body containing blocking (P0/P1)
+  findings while the rendered top-level outcome still reads as clean.
+
+Neither failure mode requires redesigning anything §1–§11 already
+establish. Both are new *consumers of*, or *deterministic checks over*,
+existing layers this document already governs: the telemetry layer (§7,
+#182), the benchmark tree (§2/§5/§6, `docs/benchmark/`), and the
+mechanical severity → decision contract (`shared/policies/severity.md`,
+unchanged, §11). This section exists so that the same conflation §7
+already warns against for the original four capabilities — telemetry
+read as ground truth, ground truth read as live analytics, analytics read
+as learning — is not repeated one layer up for provenance and verdict
+integrity.
+
+### 12.1 Three kinds of assurance, not one
+
+Work in this space spans three categories that must stay as
+distinguishable from each other as §7's four capabilities are:
+
+| Kind | Answers | Can it gate a live review? |
+| --- | --- | --- |
+| **Observational telemetry** | What did the reviewer's own execution actually touch (files, symbols, expansions, validations)? | Never. This restates, and does not re-derive, §7's existing rule for #182 — every consumer named below, including citation-grounding, inherits it unchanged. |
+| **Benchmark evidence** | Does a produced finding's citation correspond to real, checkable facts — an existing location, a correct fixture match, a genuinely non-clean verdict — when run against the versioned corpus? | Indirectly, only through the existing gate mechanism §5/§7 already define (promotion to a required merge check). Benchmark evidence about citation fidelity or verdict integrity follows the exact same rule as every other benchmark signal in §7: it measures correctness against known cases, and it never edits a live review's findings or decision. |
+| **Runtime enforcement** | Should a live review's own output (findings, rendered verdict, published GitHub event) be mechanically checked or corrected before or at publication? | Only if a future, separately-scoped issue explicitly says so and is built. Nothing named in this section is runtime-enforcing by default. Each subsection below states plainly whether it is observational, benchmark-only, or a research question about enforcement, and none may upgrade itself into the next category by implication. |
+
+### 12.2 Provenance / citation-grounding verification (extends §7's telemetry boundary)
+
+A finding's cited `location` / `evidence location`
+(`shared/templates/finding.md`) existing and being accurately quoted is a
+different claim from that citation having been produced by actually
+inspecting the code, per `shared/policies/architectural-placement.md`'s
+bounded caller/callee ladder ("Bounded context expansion", "Evidence").
+§7 already fixes that #182 is purely observational and can never become
+decision-affecting; this subsection extends that same boundary to its
+first proposed consumer rather than opening a new one:
+
+- **Citation-grounding verification model** — design work only: defines
+  what "this finding's citation is grounded in #182's recorded
+  inspection" means, as a specification consuming #182's telemetry schema
+  as given. It does not modify #182's scope or its observational
+  boundary, and it explicitly does not decide whether grounding should
+  ever gate anything — that question is deferred (below) until real
+  signal exists to evaluate it against.
+- **Citation-grounding cross-check** (named here, **not yet tracked as an
+  issue** — see §12.5) — the actual consumer that would cross-reference a
+  finding's citation against #182's recorded inspected-files/symbols set.
+  Per §12.1's table this is **observational only** for as long as it
+  exists without a separate, explicitly-scoped enforcement issue: it may
+  report a citation as outside recorded inspection, but per §7's
+  unchanged rule it may not suppress, downgrade, escalate, or otherwise
+  influence that finding's severity, confidence, or the decision.
+  Whether it should ever be allowed to do so is an intentionally separate
+  future research question, itself deferred until this cross-check has
+  produced real data — never decided by implication inside the
+  cross-check's own implementation.
+
+### 12.3 Benchmark citation-fidelity signal (extends the benchmark tree, §2/§5/§6)
+
+A mechanical check that a produced finding's cited file/line/snippet
+actually exists at the reviewed SHA — independent of whether it was
+*inspected* (§12.2) or *matches a fixture*
+(`docs/benchmark/match-criteria.md`, unchanged). Per §12.1's middle row
+this is benchmark evidence: it runs against the corpus/harness, never
+against a live review, and it does not require #182's telemetry to exist.
+
+It does require the benchmark harness to actually carry a produced
+finding's real location/claim content through to any check that inspects
+it — the same fidelity gap #342 (open, P1) already tracks for the
+*matcher*. This signal is a second, independent consumer of that same
+fix, not a restatement of #342's scope: #342 repairs
+`benchmark_review_adapter.py`'s claim/location extraction so the matcher
+can correctly pair a produced finding against an expected fixture entry;
+this signal is a new, additional check built on top of that repaired
+extraction, asking a different question ("does the citation exist at
+all, against the real repository at the reviewed SHA") than the
+matcher's own question ("does the citation correspond to the expected
+fixture entry").
+
+### 12.4 Verdict integrity: benchmark proof and the consistency-boundary research
+
+Restated from `shared/policies/severity.md`, "Decision derivation
+(mechanical)" (unchanged by this document, and not redefined by anything
+named in this section): the severity → decision derivation is already
+specified as mechanical, single-pass, and applying identically wherever
+the decision is rendered. The reliability gap is that nothing *executes*
+that specification against a live review's own rendered surfaces — its
+findings list, its Result/Decision line, and, for `github-pr-review`, the
+GitHub review event it submits — before publication. Two clearly
+separated tracks close this gap, per §12.1's benchmark-evidence /
+runtime-enforcement boundary:
+
+- **Benchmark proof** — an end-to-end corpus fixture with an unambiguous
+  blocking defect, run through the real packaged Skill, asserting the
+  rendered outcome is never the clean/approved value. This is
+  benchmark-only: it demonstrates the mechanical rule holds today against
+  real output. It builds no enforcement mechanism and changes nothing in
+  a live review.
+- **Consistency-boundary research** — the deliberately separate question
+  of whether a deterministic runtime step should exist that reconciles
+  the three rendered surfaces before or at publication, and if so, where
+  it should live, what it consumes (the existing markdown templates today
+  versus a future machine-readable schema — see #67/#71, both open), and
+  what it does on a detected mismatch. This research does **not** redesign
+  `severity.md`'s derivation: the boundary it is scoped to design only
+  ever *checks* that derivation's output against what was actually
+  rendered and published, and never recomputes severity or the decision
+  by a second, independent path — the same governance rule
+  `tests/reference/review/decision_semantics.py`'s
+  `PROHIBITED_OVERRIDE_PARAM_FRAGMENTS` / `PROHIBITED_CORRECTION_FRAGMENTS`
+  already encode for the reference module applies to any future
+  implementation this research recommends. Any actual implementation is
+  out of this research issue's own scope and deferred until the research
+  concludes.
+
+### 12.5 What this section tracks now versus defers
+
+Consistent with §9's non-implementation stance and §10's staged-rollout
+pattern:
+
+- **Tracked as issues by this update**: the citation-grounding
+  verification model (§12.2, first bullet); the benchmark citation-fidelity
+  signal (§12.3); the verdict-integrity benchmark proof (§12.4, first
+  bullet); the verdict-consistency-boundary research (§12.4, second
+  bullet).
+- **Named but deliberately not yet filed**: the citation-grounding
+  cross-check (§12.2, second bullet) — hard-blocked on #182's telemetry
+  landing and on the grounding model above concluding first; filing it
+  earlier would create an issue with no schema to design against. Also
+  not yet filed: any decision about whether grounding should gate
+  confidence or severity (evaluated only after the cross-check has run
+  and produced data), and any implementation of the consistency boundary
+  (evaluated only after the research above concludes). Naming them here,
+  unfiled, keeps this document's map complete without opening issues that
+  cannot yet make progress.
+- **Explicitly not redefined by this section**: #182's observational
+  boundary (§7, unchanged); the benchmark match/fixture/runner contracts
+  (`docs/benchmark/`, unchanged); and `shared/policies/severity.md`'s
+  mechanical derivation (unchanged). Every item above is a consumer of,
+  or a check over, these existing contracts — never a replacement for one
+  of them.
