@@ -411,7 +411,14 @@ configuration; class A is the fidelity baseline and current technical
 fallback, but is cleared for #337 to provision **only if** it can produce
 a credible bounded-cost design — otherwise the record recommends further,
 separately time-boxed class-B/C research instead. No class-C candidate
-was available to test empirically in this environment.
+was available to test empirically in this environment. A bounded
+follow-up screen of five more candidates (Gemini CLI, Groq, OpenRouter
+free models, Cloudflare Workers AI, GitHub Copilot CLI, Amazon Q
+Developer CLI) found only Gemini CLI clears the screen; its empirical
+corpus run is scoped into
+[#366](https://github.com/amirbena/code-review-skill/issues/366),
+Parent #336, pending a `GEMINI_API_KEY` rather than run without
+evidence.
 
 ## Related
 

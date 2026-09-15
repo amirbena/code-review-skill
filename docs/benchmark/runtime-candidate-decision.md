@@ -220,7 +220,61 @@ OpenCode/Ollama comparison, and does not change §4/§5's empirical
 results — it only sets the bar #337's actual provisioning proposal must
 clear before class A can be considered decided rather than provisional.
 
-## 8. Known gap surfaced by this spike
+## 8. Bounded continuation: additional Class B/C candidates screened for §6
+
+§6 was added after §7's original decision, so this section continues
+#336 under that constraint rather than reopening §4/§5's empirical
+results. Per #336's scope, this stayed a bounded screen — pricing/quota
+research against current provider documentation, not new tuning of any
+already-rejected candidate (§4's OpenCode/Ollama comparison, in
+particular, was not reopened).
+
+### 8.1 Screening results
+
+| Candidate | Agent-capable | Skill fidelity path | CI/non-interactive | Quota vs. plausible usage | Personal-machine dependency | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Gemini CLI** (`google-gemini/gemini-cli`) + Gemini API | Yes — official open-source agentic CLI with file/shell tools | Untested; same throwaway-adapter approach as #336's other candidates would apply | Yes — documented headless/`--non-interactive` mode built for CI/CD, `GEMINI_API_KEY`-based auth isolable from any personal Google login | Free tier ≈1,500 requests/day, 15 RPM, 1M TPM per Flash model, no card, no expiration (Google AI Studio, as of this research) | None — API-key auth, not session-based | **Screens favorably; kept for empirical follow-up (issue #366)** |
+| Groq API (paired with an agent CLI, e.g. `opencode`, via its OpenAI-compatible endpoint) | Yes (via a real agent CLI) | Untested | Yes | Free tier ≈6,000–12,000 TPM depending on model, ≈1,000–14,400 RPD. This repository's own Skill resources (`SKILL.md` + `policies/` + `shared/`) already total ≈555 KB / roughly 140K tokens if read broadly; even a partial read of the referenced sections plausibly exceeds a single free-tier TPM window in one turn | None | **Rejected at screen** — TPM ceiling implausibly small against this Skill's real resource footprint; not run |
+| OpenRouter free (`:free`-suffixed models, paired with an agent CLI) | Yes (via a real agent CLI) | Untested | Yes | 50 requests/day with no purchase (1,000/day only after a one-time ≥$10 credit purchase); provider explicitly documents no uptime guarantee on free models | None | **Rejected at screen** — one agentic review plausibly consumes more than 50 requests by itself (each tool call is a request); no credible headroom for PR-time + rerun + concurrent-PR + nightly usage, and no CI reliability guarantee |
+| Cloudflare Workers AI | Uncertain — raw inference API, no proven first-party agent/tool-use CLI in this survey | Would require pairing with a third-party agent CLI, and tool-calling maturity for available models was not established | Yes (Cloudflare-hosted) | 10,000 Neurons/day free; Neurons are a cross-model-type unit, and capable coding models are documented to consume the allocation "far faster than small ones" — effective headroom for a capable model is unclear | None | **Rejected at screen** — unproven agent/tool-use maturity plus unclear effective quota for a capable model; not a currently-real candidate by #330 §3's bar without more groundwork than this bounded screen allows |
+| GitHub Copilot CLI | Yes | Untested | Yes (GitHub-native) | Free plan is 50 chat requests **per month**; Copilot CLI itself draws from the same paid-plan credit pool and is documented as unavailable on the free tier | None (GitHub-native credential) | **Rejected at screen** — not actually available free; monthly quota (even if it were) is far below one agentic review's request count |
+| Amazon Q Developer CLI | Yes | Untested | Yes | Free tier is 50 agentic requests **per month** total across chat/transformation/scanning; additionally, AWS has announced Q Developer's Pro tier is closed to new signups and the product is headed to end-of-support by 2027 | None | **Rejected at screen** — quota far below one agentic review's request count, and the product's own announced sunset is an unacceptable maintenance-burden risk for an already-uncertain-maintenance project |
+
+Sources for the pricing/quota claims above are current (September 2026)
+provider documentation and pricing pages, not vendor marketing claims
+about capability; see issue #366 for links, since they are expected to
+go stale and should be re-verified at empirical-run time rather than
+trusted from this table indefinitely.
+
+### 8.2 Why no additional empirical run happened here
+
+Gemini CLI is the only candidate from §8.1 that clears the screen — it
+is the sole survivor from a deliberately narrow additional search (5
+candidates screened beyond the original #336 comparison), consistent
+with #336's "prefer quality over quantity" bound. Actually running it
+against the same two corpus cases requires a `GEMINI_API_KEY`, which is
+not available in this environment; fabricating a fidelity/latency result
+without running it would violate #336's own evidence-backed-decision
+requirement. Rather than leave this open-ended inside #336, or block
+#336's completion on obtaining a key, the empirical run is scoped into
+[#366](https://github.com/amirbena/code-review-skill/issues/366) (Parent:
+#336), a narrowly-bounded follow-up using the exact same corpus subset
+and throwaway-adapter methodology this document already established.
+
+### 8.3 Effect on §7's decision
+
+§7's decision is unchanged by this section: class A remains the fidelity
+baseline and current technical fallback, and no candidate has
+empirically cleared §6's sustainability bar yet, so #337 still may
+provision class A only with a credible bounded-cost design, or else wait
+on further candidate research. Gemini CLI is now that further research's
+concrete, scoped target (#366) rather than an open-ended "look for
+something cheaper" instruction — if #366 empirically clears fidelity and
+latency, its result should be folded back into this document's §7 as a
+new recommendation for #337; if it does not, §7's class-A-fallback
+framing stands as-is with one more ruled-out option recorded.
+
+## 9. Known gap surfaced by this spike
 
 Neither `ProductionReviewerAdapter` nor `run_benchmark.py` currently
 records the model/backend identifier its `claude` CLI invocation actually
@@ -232,17 +286,20 @@ work for #337, which already owns wiring the full §5 metadata rule in
 (per [`runtime-execution-contract.md`](runtime-execution-contract.md) §5);
 this is not a new requirement, just a concrete gap #337 should close.
 
-## 9. Out of scope
+## 10. Out of scope
 
 - Re-running the full corpus (#336 non-goal; a small, fixed subset is
   sufficient).
 - Building a production-quality adapter for candidate B, or any further
-  OpenCode/Ollama tuning (#336 non-goal and explicit time-box) — §6 does
+  OpenCode/Ollama tuning (#336 non-goal and explicit time-box) — §6/§8 do
   not reopen this either.
 - Measuring actual per-invocation cost at PR-time/nightly scale, or
   designing the bounded-cost mechanism itself (provider spend limits,
   timeouts, concurrency caps) — that is #337's provisioning work, guided
   by §6's constraint, not this spike's.
+- Running Gemini CLI (or any other §8.1 candidate) empirically — scoped
+  into #366, not done inline here.
+- An open-ended vendor survey beyond §8.1's bounded shortlist.
 - Provisioning any real, persistent CI infrastructure, credential, or
   workflow (#337's scope).
 - Deciding #331's Top-K selection logic or #332's nightly scheduling.
@@ -257,3 +314,7 @@ this is not a new requirement, just a concrete gap #337 should close.
 - [#337](https://github.com/amirbena/code-review-skill/issues/337) —
   provisioning, which must satisfy §6's bounded-cost constraint before
   class A is provisioned, or else open further class-B/C research per §7.
+- [#366](https://github.com/amirbena/code-review-skill/issues/366) —
+  the narrowly-scoped follow-up (Parent: #336) that empirically runs
+  Gemini CLI, the one candidate §8 found worth testing, once a
+  `GEMINI_API_KEY` is available.
