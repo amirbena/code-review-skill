@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.45.0 — 2026-09-15
+
+### Added
+
+- Findings may now carry an optional, machine-readable `defect_kind` classification slug (#358).
+
 ## v1.44.0 — 2026-09-15
 
 ### Added
