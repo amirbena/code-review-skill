@@ -247,6 +247,39 @@ a deterministic structural assertion — never an LLM/rubric score — and
 the corpus is disjoint from the finding-precision/recall/severity
 metrics above and from ordinary code-review quality fixtures.
 
+## Trusted-host natural-language authorization benchmark
+
+[`corpus/trusted-host-nl-authorization/README.md`](corpus/trusted-host-nl-authorization/README.md)
+(issue [#370](https://github.com/amirbena/code-review-skill/issues/370),
+depends on [#369](https://github.com/amirbena/code-review-skill/issues/369))
+proves natural-language `allow_trusted_host_execution` authorization
+resolves by **semantic intent, not literal phrase-matching**: canonical
+structured authorization, direct and several differently-worded
+affirmative requests, the full explicit-denial vocabulary, ambiguous
+phrasing and descriptive/policy-quoting mentions that must never be
+mistaken for a grant, repository-controlled and malicious-instruction-file
+attempts, PR-content escalation and delegated-agent report-back attempts,
+authorization non-persistence across invocations, conflicting positive/
+negative instructions resolving toward denial, and sandbox-preferred
+selection holding regardless of authorization presence. Like the
+Agent-spawn / delegation benchmark above, it is not `benchmark-case/v1`
+fixtures — that schema has no field for a resolved authorization boolean
+or an execution-backend provenance value — so it follows the same
+test-only reference-model pattern:
+[`../../tests/reference/benchmark/trusted_host_nl_fixtures.py`](../../tests/reference/benchmark/trusted_host_nl_fixtures.py),
+exercised by
+[`../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py`](../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py)
+(structural resolved/provenance assertions against the single reference
+model in `tests/reference/review/runtime_validation.py`, required-category
+and required-coverage-tag completeness, a canary proving the
+repository/malicious-file rejection has genuine detection power, and
+malformed-fixture rejection). Every comparison is a deterministic
+structural assertion — never an LLM/rubric score — and the corpus is
+disjoint from the finding-precision/recall/severity metrics above and
+from ordinary code-review quality fixtures. It does not re-test #367's
+structured-flag-only behavior or #302's sandbox isolation guarantees,
+which already have their own coverage.
+
 ## Publication-mode benchmark
 
 [`corpus/publication-mode/README.md`](corpus/publication-mode/README.md)
