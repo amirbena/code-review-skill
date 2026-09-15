@@ -76,17 +76,39 @@ verify filesystem isolation, no host-secret access, denied network, no
 Git/GitHub mutation capability, bounded non-interactive limits,
 disposable state, and post-run verification that the tree was not
 mutated. If the runtime has no such boundary, the command is recorded
-`unavailable` — never run unsandboxed. The metadata capability value
-`conditional` does not imply any current runtime supports live
-execution.
+`unavailable` — never run unsandboxed by default. The metadata
+capability value `conditional` does not imply any current runtime
+supports live execution.
+
+An explicit, per-invocation, out-of-band authorization can select a
+bounded **trusted-host** execution backend for that one invocation when
+sandbox isolation is unavailable — see "Trusted-host execution" below.
+This is a narrow, explicit exception to the sandbox default, never a
+relaxation of it.
 
 ## How to invoke it
 
-There is no flag. The reviewer applies the policy automatically as part
-of the normal flow; when isolation is available and the repository
-declares a suitable command, the review's `Validation` section reports
-the outcome. You do not enable it per invocation — you make it possible
-by having a declared command and a runtime sandbox.
+There is no flag for the sandboxed default. The reviewer applies the
+policy automatically as part of the normal flow; when isolation is
+available and the repository declares a suitable command, the review's
+`Validation` section reports the outcome. You do not enable it per
+invocation — you make it possible by having a declared command and a
+runtime sandbox.
+
+## Trusted-host execution
+
+Some environments running either Skill cannot create or reach a
+sandbox at all. There, an out-of-band, principal-originated invocation
+option — canonical name `allow_trusted_host_execution` (boolean, default
+`false`) — lets a user explicitly authorize the same admitted command to
+run directly on the reviewer's own host for that one invocation, instead
+of staying `unavailable`. It is never inferred from repository content,
+never persisted across invocations, and it grants no capability beyond
+runtime validation's existing command scope — no filesystem, credential,
+or network isolation exists in this mode, and the review evidence says so
+explicitly wherever a `trusted-host` provenance is recorded. Sandbox
+execution is still attempted first and always wins when available.
+Canonical semantics: [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md).
 
 ## Limitations & safety boundaries
 
@@ -111,4 +133,6 @@ by having a declared command and a runtime sandbox.
 ## Canonical semantics
 
 [`shared/policies/runtime-validation.md`](../../shared/policies/runtime-validation.md)
+· trusted-host authorization and provenance:
+[`shared/policies/trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md)
 · pipeline placement in [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §2.

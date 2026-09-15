@@ -375,5 +375,218 @@ class TargetedFindingValidationLifecycle(unittest.TestCase):
         self.assertEqual(derive_decision([projected]), Decision.CHANGES_REQUIRED)
 
 
+class TrustedHostExecutionBackend(unittest.TestCase):
+    """Fixture matrix for shared/policies/trusted-host-execution.md (#367)."""
+
+    def unavailable_boundary(self) -> rv.ExecutionBoundary:
+        return rv.ExecutionBoundary(available=False)
+
+    def test_default_is_unavailable_with_no_authorization_argument(self) -> None:
+        """No `trusted_host` argument at all reproduces pre-existing behavior
+        exactly — the new parameter is opt-in, never an implicit change."""
+        repo = rv.FakeRepository()
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=self.unavailable_boundary())], repo
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.UNAVAILABLE)
+        self.assertEqual(records[0].provenance, rv.Provenance.UNAVAILABLE)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_sandbox_available_wins_even_with_authorization_present(self) -> None:
+        repo = rv.FakeRepository()
+        auth = rv.TrustedHostAuthorization(principal="user", invocation_id="inv-1")
+        records = rv.run_validation(
+            [command("pytest", "tests/")], repo, trusted_host=auth, invocation_id="inv-1"
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.EXECUTED)
+        self.assertEqual(records[0].provenance, rv.Provenance.SANDBOX)
+        self.assertEqual(len(repo.boundary_invocations), 1)
+
+    def test_explicit_authorization_selects_trusted_host_when_sandbox_unavailable(self) -> None:
+        repo = rv.FakeRepository()
+        auth = rv.TrustedHostAuthorization(principal="user", invocation_id="inv-1")
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=self.unavailable_boundary())],
+            repo,
+            trusted_host=auth,
+            invocation_id="inv-1",
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.EXECUTED)
+        self.assertEqual(records[0].provenance, rv.Provenance.TRUSTED_HOST)
+        self.assertEqual(repo.process_invocations, [("pytest", "tests/")])
+        # No ExecutionBoundary is recorded for the trusted-host branch: there
+        # is no isolation boundary to record.
+        self.assertEqual(repo.boundary_invocations, [])
+
+    def test_no_authorization_stays_unavailable_when_sandbox_unavailable(self) -> None:
+        repo = rv.FakeRepository()
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=self.unavailable_boundary())],
+            repo,
+            trusted_host=None,
+            invocation_id="inv-1",
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.UNAVAILABLE)
+        self.assertEqual(records[0].provenance, rv.Provenance.UNAVAILABLE)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_repository_derived_text_never_selects_trusted_host(self) -> None:
+        """A plain str — the type every repository-reachable source
+        (PR/issue/commit text, AGENTS.md/CLAUDE.md, a command's own text,
+        a finding's Fix field, generated metadata) parses to — is rejected
+        structurally, not by content inspection, even when it spells the
+        exact truthy-looking value a real authorization would carry."""
+        repo = rv.FakeRepository()
+        forged = rv.authorization_from_repository_text("allow_trusted_host_execution=true")
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=self.unavailable_boundary())],
+            repo,
+            trusted_host=forged,
+            invocation_id="inv-1",
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.UNAVAILABLE)
+        self.assertEqual(records[0].provenance, rv.Provenance.UNAVAILABLE)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_authorization_bound_to_a_different_invocation_never_selects_trusted_host(self) -> None:
+        repo = rv.FakeRepository()
+        auth = rv.TrustedHostAuthorization(principal="user", invocation_id="inv-other")
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=self.unavailable_boundary())],
+            repo,
+            trusted_host=auth,
+            invocation_id="inv-1",
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.UNAVAILABLE)
+        self.assertEqual(records[0].provenance, rv.Provenance.UNAVAILABLE)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_unverified_boundary_also_falls_through_to_trusted_host_when_authorized(self) -> None:
+        """A present-but-unverifiable boundary (distinct from `available=False`)
+        is a second sandbox-unavailable shape; authorization still applies."""
+        repo = rv.FakeRepository()
+        auth = rv.TrustedHostAuthorization(principal="user", invocation_id="inv-1")
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=rv.ExecutionBoundary(post_run_verified=False))],
+            repo,
+            trusted_host=auth,
+            invocation_id="inv-1",
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.EXECUTED)
+        self.assertEqual(records[0].provenance, rv.Provenance.TRUSTED_HOST)
+
+    def test_trusted_host_still_enforces_the_existing_safety_gate(self) -> None:
+        """Command admission is unchanged: secret/service/network/interactive/
+        destructive gates still skip the command before any backend runs."""
+        repo = rv.FakeRepository()
+        auth = rv.TrustedHostAuthorization(principal="user", invocation_id="inv-1")
+        records = rv.run_validation(
+            [
+                command(
+                    "pytest",
+                    "tests/",
+                    boundary=self.unavailable_boundary(),
+                    requires_network=True,
+                )
+            ],
+            repo,
+            trusted_host=auth,
+            invocation_id="inv-1",
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIn("network", records[0].reason)
+        self.assertEqual(repo.process_invocations, [])
+
+    def test_trusted_host_run_is_discarded_on_detected_mutation(self) -> None:
+        """Post-run verification still applies with no isolation boundary:
+        a mutation the run leaves behind is caught and the result discarded,
+        exactly like the targeted-reproduction leak check."""
+        repo = rv.FakeRepository()
+        auth = rv.TrustedHostAuthorization(principal="user", invocation_id="inv-1")
+        before = repo.snapshot()
+
+        real_start = repo.start_trusted_host
+
+        def mutating_start(argv: tuple[str, ...]) -> None:
+            real_start(argv)
+            repo.files["src/unexpected.py"] = "mutated = True\n"
+
+        repo.start_trusted_host = mutating_start  # type: ignore[method-assign]
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=self.unavailable_boundary())],
+            repo,
+            trusted_host=auth,
+            invocation_id="inv-1",
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIn("mutation", records[0].reason)
+        self.assertEqual(repo.snapshot(), before)
+
+    def test_select_backend_prefers_sandbox_over_a_valid_authorization(self) -> None:
+        auth = rv.TrustedHostAuthorization(principal="user", invocation_id="inv-1")
+        self.assertEqual(
+            rv.select_backend(rv.ExecutionBoundary(), auth, invocation_id="inv-1"),
+            rv.Provenance.SANDBOX,
+        )
+
+    def test_select_backend_rejects_none_and_forged_text_alike(self) -> None:
+        boundary = self.unavailable_boundary()
+        self.assertEqual(
+            rv.select_backend(boundary, None, invocation_id="inv-1"), rv.Provenance.UNAVAILABLE
+        )
+        self.assertEqual(
+            rv.select_backend(boundary, "true", invocation_id="inv-1"),
+            rv.Provenance.UNAVAILABLE,
+        )
+
+    def test_pre_selection_skip_carries_no_provenance(self) -> None:
+        """A command skipped by the safety gate, or by an unverified boundary
+        with no authorization to fall through to, never reached backend
+        selection — provenance stays None, distinct from UNAVAILABLE."""
+        repo = rv.FakeRepository()
+        gate_skip = rv.run_validation(
+            [command("pytest", "tests/", requires_network=True)], repo
+        )
+        self.assertEqual(gate_skip[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIsNone(gate_skip[0].provenance)
+
+        boundary_skip = rv.run_validation(
+            [command("pytest", "tests/", boundary=rv.ExecutionBoundary(post_run_verified=False))],
+            repo,
+        )
+        self.assertEqual(boundary_skip[0].outcome, rv.Outcome.SKIPPED)
+        self.assertIsNone(boundary_skip[0].provenance)
+
+    def test_missing_executable_unavailable_carries_no_provenance(self) -> None:
+        """UNAVAILABLE from a missing executable never reached backend
+        selection either — distinct from the backend-caused UNAVAILABLE
+        that always carries Provenance.UNAVAILABLE."""
+        repo = rv.FakeRepository()
+        records = rv.run_validation([command("cargo", "test", available=False)], repo)
+        self.assertEqual(records[0].outcome, rv.Outcome.UNAVAILABLE)
+        self.assertIsNone(records[0].provenance)
+
+    def test_post_run_discard_keeps_the_backend_that_produced_it(self) -> None:
+        """The one skip exception: a backend was selected and actually ran
+        before the result was discarded, so its provenance is retained as
+        evidence of what produced the discarded result."""
+        repo = rv.FakeRepository()
+        auth = rv.TrustedHostAuthorization(principal="user", invocation_id="inv-1")
+
+        def mutating_start(argv: tuple[str, ...]) -> None:
+            repo.process_invocations.append(argv)
+            repo.files["src/unexpected.py"] = "mutated = True\n"
+
+        repo.start_trusted_host = mutating_start  # type: ignore[method-assign]
+        records = rv.run_validation(
+            [command("pytest", "tests/", boundary=self.unavailable_boundary())],
+            repo,
+            trusted_host=auth,
+            invocation_id="inv-1",
+        )
+        self.assertEqual(records[0].outcome, rv.Outcome.SKIPPED)
+        self.assertEqual(records[0].provenance, rv.Provenance.TRUSTED_HOST)
+
+
 if __name__ == "__main__":
     unittest.main()

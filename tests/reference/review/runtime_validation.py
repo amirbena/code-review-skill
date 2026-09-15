@@ -20,6 +20,79 @@ class Outcome(Enum):
     UNAVAILABLE = "unavailable"
 
 
+class Provenance(Enum):
+    """Which execution backend (if any) ran the command.
+
+    Mirrors shared/policies/trusted-host-execution.md. SANDBOX is the
+    disposable isolation boundary; TRUSTED_HOST is the explicit,
+    per-invocation, out-of-band-authorized fallback with no isolation
+    guarantees; UNAVAILABLE means neither backend ran the command.
+    """
+
+    SANDBOX = "sandbox"
+    TRUSTED_HOST = "trusted-host"
+    UNAVAILABLE = "unavailable"
+
+
+class TrustedHostAuthorization:
+    """Marker type for the only value `select_backend` accepts as an
+    explicit trusted-host grant.
+
+    Only runtime/orchestration code may construct one. There is
+    deliberately no constructor that derives it from a string,
+    repository content, or model output — repository-derived text stays
+    plain `str` (see `authorization_from_repository_text` below), never
+    this type, so passing it where a TrustedHostAuthorization is
+    required is a type error, not a runtime judgment call. Mirrors
+    `TrustedChannel` in tests/reference/review/mutation_authority.py for
+    the analogous, but structurally distinct, mutation-authority domain.
+    """
+
+    __slots__ = ("principal", "invocation_id")
+
+    def __init__(self, principal: str, invocation_id: str) -> None:
+        if not principal or not invocation_id:
+            raise ValueError(
+                "a TrustedHostAuthorization must name a principal and invocation"
+            )
+        self.principal = principal
+        self.invocation_id = invocation_id
+
+
+def authorization_from_repository_text(text: str) -> str:
+    """Illustrative only: PR/issue/commit text, AGENTS.md/CLAUDE.md/
+    CONTRIBUTING.md content, a declared command's own text, a finding's
+    Fix field, generated metadata, and model output all parse to plain
+    `str` — never to a TrustedHostAuthorization. Exists so a test can
+    assert its return type is never accepted by `select_backend()`."""
+    return text
+
+
+def select_backend(
+    boundary: "ExecutionBoundary",
+    trusted_host: "TrustedHostAuthorization | str | None",
+    *,
+    invocation_id: str,
+) -> Provenance:
+    """Selection semantics from trusted-host-execution.md.
+
+    Sandbox availability is checked first and, when established, always
+    wins. Trusted-host is consulted only once sandbox is confirmed
+    unavailable, and only a genuine TrustedHostAuthorization bound to
+    *this* invocation can select it — a plain string (repository-derived
+    text) or an authorization bound to a different invocation never
+    selects trusted-host, regardless of its content.
+    """
+    if boundary.available and boundary.established:
+        return Provenance.SANDBOX
+    if (
+        isinstance(trusted_host, TrustedHostAuthorization)
+        and trusted_host.invocation_id == invocation_id
+    ):
+        return Provenance.TRUSTED_HOST
+    return Provenance.UNAVAILABLE
+
+
 @dataclass(frozen=True)
 class ExecutionBoundary:
     """Minimum disposable boundary required before untrusted payload runs."""
@@ -80,6 +153,19 @@ class CommandDeclaration:
 
 @dataclass(frozen=True)
 class ValidationRecord:
+    """`provenance` is meaningful only once backend selection is actually
+    reached: an `executed`/`failed` record (SANDBOX or TRUSTED_HOST), an
+    `unavailable` record caused specifically by no backend being reachable
+    (UNAVAILABLE), or a `skipped` record produced *after* a selected
+    backend already started the command and its result was then discarded
+    (carries that backend's provenance — see `run_validation`'s
+    post-run mutation-discard branch). Every other record — a `skipped`
+    recorded before backend selection, or an `unavailable` from an
+    unrelated cause such as a missing executable — never reached backend
+    selection, so `provenance` stays `None`: absent, not `UNAVAILABLE`,
+    which is reserved for the backend-caused case (shared/policies/
+    trusted-host-execution.md, "Provenance and evidence")."""
+
     command: str
     source: str
     scope: str
@@ -87,6 +173,7 @@ class ValidationRecord:
     reason: str = ""
     exit_code: int | None = None
     evidence: str = ""
+    provenance: Provenance | None = None
 
 
 @dataclass
@@ -110,6 +197,18 @@ class FakeRepository:
             raise AssertionError("fake runner must not start outside the boundary")
         self.process_invocations.append(argv)
         self.boundary_invocations.append(boundary)
+
+    def start_trusted_host(self, argv: tuple[str, ...]) -> None:
+        """Record a trusted-host fake process start.
+
+        No ExecutionBoundary is asserted here — trusted-host mode has no
+        isolation boundary by construction (shared/policies/
+        trusted-host-execution.md, "What trusted-host execution does not
+        provide"). Only the caller's post-run mutation check (see
+        `run_validation`) stands in for the sandbox's `post_run_verified`
+        guarantee.
+        """
+        self.process_invocations.append(argv)
 
     def run_reproduction(
         self, reproduction: TargetedReproduction, boundary: ExecutionBoundary
@@ -146,9 +245,18 @@ def _record_skip(command: CommandDeclaration, reason: str) -> ValidationRecord:
 
 
 def run_validation(
-    declarations: Sequence[CommandDeclaration], repository: FakeRepository
+    declarations: Sequence[CommandDeclaration],
+    repository: FakeRepository,
+    *,
+    trusted_host: "TrustedHostAuthorization | str | None" = None,
+    invocation_id: str = "",
 ) -> tuple[ValidationRecord, ...]:
-    """Select one narrowest command and produce one explicit outcome record."""
+    """Select one narrowest command and produce one explicit outcome record.
+
+    `trusted_host` defaults to `None`: with no argument, behavior is
+    byte-for-byte identical to before this backend existed — sandbox
+    unavailable still means `unavailable`, never an implicit fallback.
+    """
     if not declarations:
         return (
             ValidationRecord(
@@ -190,26 +298,45 @@ def run_validation(
                 reason="required executable or local capability is unavailable",
             ),
         )
-    if not command.boundary.available:
-        return (
-            ValidationRecord(
-                command.rendered,
-                command.source,
-                command.scope,
-                Outcome.UNAVAILABLE,
-                reason="safe execution boundary is unavailable",
-            ),
-        )
-    if not command.boundary.established:
+
+    backend = select_backend(command.boundary, trusted_host, invocation_id=invocation_id)
+
+    if backend is Provenance.UNAVAILABLE:
+        if not command.boundary.available:
+            return (
+                ValidationRecord(
+                    command.rendered, command.source, command.scope, Outcome.UNAVAILABLE,
+                    reason="safe execution boundary is unavailable",
+                    provenance=Provenance.UNAVAILABLE,
+                ),
+            )
+        # Boundary is present but unverified, and no valid trusted-host
+        # authorization was supplied for this invocation: unchanged
+        # pre-existing behavior — SKIPPED, never an implicit host fallback.
         return (_record_skip(command, "required execution boundary cannot be verified"),)
 
-    repository.start(command.argv, command.boundary)
+    if backend is Provenance.SANDBOX:
+        repository.start(command.argv, command.boundary)
+    else:
+        before = repository.snapshot()
+        repository.start_trusted_host(command.argv)
+        if repository.snapshot() != before:
+            repository.restore(before)
+            return (
+                ValidationRecord(
+                    command.rendered, command.source, command.scope, Outcome.SKIPPED,
+                    reason="post-run verification found an unexpected mutation; result discarded",
+                    provenance=Provenance.TRUSTED_HOST,
+                ),
+            )
+
     outcome = Outcome.EXECUTED if command.exit_code == 0 else Outcome.FAILED
     return (
         ValidationRecord(
             command.rendered, command.source, command.scope, outcome,
             exit_code=command.exit_code,
             evidence=command.stdout if outcome is Outcome.EXECUTED else command.stderr,
+            provenance=backend,
         ),
     )
 
