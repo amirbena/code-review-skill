@@ -1,0 +1,141 @@
+# Analogue-based placement-pattern-inference corpus case (Issue #328,
+# parent #327). Format: docs/benchmark/fixture-format.md. See ./README.md
+# for the cluster.
+#
+# Same established pattern as
+# analogue-placement-status-label-duplication-missing-key.yaml: slack,
+# teams, and pagerduty each centralize their delivery-status labels in a
+# package-local mapping.py and import it everywhere they need the label.
+#
+# The new `webhook` package skips creating its own mapping.py and instead
+# redefines the label table independently in THREE places for the one
+# reason (no centralization was ever created): cli.py, metrics.py, and
+# alerts.py. All three manifestations share the same root cause, the same
+# violated pattern, and the same remediation (extract one webhook
+# mapping.py and import it from all three). Concrete consequence: the
+# three independent copies already disagree — cli.py and alerts.py show
+# different text for "queued" ("Queued" vs "Pending"), and metrics.py
+# emits a different tag family for "retrying" ("retry" vs the "retrying"
+# every other surface uses) — so operators cross-referencing the CLI, the
+# Slack alert, and the metrics dashboard for the same delivery see
+# inconsistent status text.
+#
+# Expected: ONE consolidated required finding naming all three affected
+# locations, per #177's root-cause consolidation model — not three
+# separate near-duplicate findings for the same underlying cause.
+
+format: benchmark-case/v1
+
+id: analogue-placement-status-label-duplication-consolidated
+title: "New connector duplicates the status-label table at three call sites for one reason; expect one consolidated finding"
+
+input:
+  patch: |
+    diff --git a/integrations/webhook/cli.py b/integrations/webhook/cli.py
+    new file mode 100644
+    index 0000000..1a2b3c4
+    --- /dev/null
+    +++ b/integrations/webhook/cli.py
+    @@ -0,0 +1,8 @@
+    +STATUS_LABELS = {
+    +    "queued": "Queued",
+    +    "sending": "Sending",
+    +    "retrying": "Retrying",
+    +    "delivered": "Delivered",
+    +    "failed": "Failed",
+    +}
+    +
+    diff --git a/integrations/webhook/metrics.py b/integrations/webhook/metrics.py
+    new file mode 100644
+    index 0000000..2b3c4d5
+    --- /dev/null
+    +++ b/integrations/webhook/metrics.py
+    @@ -0,0 +1,9 @@
+    +STATUS_TAGS = {
+    +    "queued": "queued",
+    +    "sending": "sending",
+    +    "retrying": "retry",
+    +    "delivered": "delivered",
+    +    "failed": "failed",
+    +}
+    +
+    +
+    diff --git a/integrations/webhook/alerts.py b/integrations/webhook/alerts.py
+    new file mode 100644
+    index 0000000..3c4d5e6
+    --- /dev/null
+    +++ b/integrations/webhook/alerts.py
+    @@ -0,0 +1,8 @@
+    +STATUS_LABELS = {
+    +    "queued": "Pending",
+    +    "sending": "Sending",
+    +    "retrying": "Retrying",
+    +    "delivered": "Delivered",
+    +    "failed": "Failed",
+    +}
+    +
+  base:
+    integrations/slack/mapping.py: |
+      STATUS_LABELS = {
+          "queued": "Queued",
+          "sending": "Sending",
+          "retrying": "Retrying",
+          "delivered": "Delivered",
+          "failed": "Failed",
+      }
+    integrations/slack/cli.py: |
+      from .mapping import STATUS_LABELS
+
+
+      def render_status(status):
+          return STATUS_LABELS[status]
+    integrations/teams/mapping.py: |
+      STATUS_LABELS = {
+          "queued": "Queued",
+          "sending": "Sending",
+          "retrying": "Retrying",
+          "delivered": "Delivered",
+          "failed": "Failed",
+      }
+    integrations/pagerduty/mapping.py: |
+      STATUS_LABELS = {
+          "queued": "Queued",
+          "sending": "Sending",
+          "retrying": "Retrying",
+          "delivered": "Delivered",
+          "failed": "Failed",
+      }
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: webhook-status-labels-duplicated-at-three-sites
+      match: required
+      severity: P1
+      location:
+        location_intent: cross-file
+        path: integrations/webhook/cli.py
+        anchor: "STATUS_LABELS = {"
+      claim: >-
+        integrations/webhook never centralizes its delivery-status label
+        table in a package-local mapping.py the way slack, teams, and
+        pagerduty all do; cli.py, metrics.py, and alerts.py each
+        redefine it independently for the same reason (no mapping.py was
+        ever created), and the three copies already disagree — cli.py
+        and alerts.py show different text for "queued", and metrics.py
+        uses a different tag family for "retrying" — so the CLI, the
+        Slack alert, and the metrics dashboard report inconsistent
+        status text for the same delivery.
+      defect_kind: analogue-placement-pattern-deviation
+
+metadata:
+  source: crafted
+  tags: [quality, correctness]
+  rationale: >-
+    Root-cause/duplicate case for the #327 trigger's interaction with
+    #177 consolidation: three changed locations violate the same
+    inferred placement pattern for the identical reason and share one
+    remediation direction, so a correct review reports one canonical
+    finding with the sites named as affected locations rather than one
+    near-duplicate finding per file.

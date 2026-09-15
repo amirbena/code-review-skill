@@ -142,6 +142,15 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/benchmark/test_dependency_supply_chain_deepening_corpus.py`](../../../tests/unit/benchmark/test_dependency_supply_chain_deepening_corpus.py)).
 
+- [`analogue-placement-pattern/`](analogue-placement-pattern/README.md) —
+  a focused `benchmark-case/v1` sub-corpus proving recall and
+  false-positive resistance for the analogue-based responsibility/
+  placement pattern inference capability (Issue
+  [#328](https://github.com/amirbena/code-review-skill/issues/328), parent
+  [#327](https://github.com/amirbena/code-review-skill/issues/327)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/benchmark/test_analogue_placement_pattern_corpus.py`](../../../tests/unit/benchmark/test_analogue_placement_pattern_corpus.py)).
+
 - [`specialist-depth-composition/`](specialist-depth-composition/README.md) —
   a focused `benchmark-case/v1` sub-corpus pinning the architecture-level
   activation/composition/boundedness contract
