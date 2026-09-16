@@ -1,0 +1,71 @@
+# Candidate-finding validation corpus case (Issue #383, parent #382/#381).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# `inventory/reservations.py::force_release_reservation` looks, in
+# isolation, like a severe missing-authorization defect: it mutates state
+# (releases a customer's stock reservation) with no permission check in
+# its own body. It is only ever called from
+# `admin_console.py::force_release`, which already calls `require_admin`
+# on the acting user immediately before invoking it.
+#
+# `candidate-finding-validation-model.md` §8 ("Disconfirmation pass"),
+# worked example 5: tracing the caller is authoritative contradicting
+# evidence that the candidate is simply wrong about there being no
+# authorization on the path. Outcome: DROPPED, claim_valid = false, not
+# reported.
+
+format: benchmark-case/v1
+
+id: cfv-disconfirmed-severe-candidate-dropped
+title: "force_release_reservation has no in-function auth check, but the only caller already enforces it: disconfirmed, not reported"
+
+input:
+  patch: |
+    diff --git a/inventory/reservations.py b/inventory/reservations.py
+    index 5a6b7c8..9d0e1f2 100644
+    --- a/inventory/reservations.py
+    +++ b/inventory/reservations.py
+    @@ -10,3 +10,10 @@ def reserve_stock(sku, qty, customer_id):
+         reservation = save_reservation(sku=sku, qty=qty, customer_id=customer_id)
+         return reservation
+    +
+    +
+    +def force_release_reservation(reservation_id):
+    +    """Release a reservation immediately, bypassing normal expiry.
+    +
+    +    Only ever invoked from admin_console.force_release, which already
+    +    checks the acting user is an admin before calling this.
+    +    """
+    +    return release_reservation_now(reservation_id)
+  base:
+    inventory/reservations.py: |
+      from inventory.storage import save_reservation
+
+
+      def reserve_stock(sku, qty, customer_id):
+          reservation = save_reservation(sku=sku, qty=qty, customer_id=customer_id)
+          return reservation
+    admin_console.py: |
+      from auth import require_admin
+      from inventory.reservations import force_release_reservation
+
+
+      def force_release(user, reservation_id):
+          require_admin(user)
+          return force_release_reservation(reservation_id)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Pins candidate-finding-validation-model.md §8's DROPPED outcome
+    (worked example 5): an apparently severe missing-authorization
+    candidate, read in isolation, is disconfirmed by authoritative
+    evidence from its only caller and must not be reported. A reviewer
+    that flags the function body without tracing the caller fails this
+    case.

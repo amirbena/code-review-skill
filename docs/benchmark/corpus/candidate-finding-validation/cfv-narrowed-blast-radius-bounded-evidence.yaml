@@ -1,0 +1,107 @@
+# Candidate-finding validation corpus case (Issue #383, parent #382/#381).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# `shared/currency.py::normalize_currency` changes its rounding mode from
+# round-half-to-even to always-round-up. A repository-wide grep turns up
+# three callers (`base`, unchanged): `payments/gateway_ingest.py` passes
+# raw, externally-supplied payment amounts straight through — genuinely
+# affected, real financial-consequence candidate. The other two callers
+# already round or truncate their inputs to whole currency units before
+# calling normalize_currency (`payments/subscription_renewal.py`,
+# `payments/refund_processor.py`) — for a value already at whole-unit
+# granularity, round-half-to-even and always-round-up produce the same
+# result, so the rounding-mode change has no effect on them.
+#
+# `candidate-finding-validation-model.md` §10 (bounded blast-radius reuse)
+# + §6 (causal chain): the initial "normalize_currency is used in three
+# payment-flow callers" observation looks broad, but the bounded,
+# already-available evidence (each caller's own pre-rounding) narrows the
+# actually-affected causal chain to exactly one caller. Reporting three
+# findings, or one finding scoped to the shared helper without naming the
+# narrowing, both fail to reflect what the evidence establishes.
+#
+# Expected: one required finding, scoped to the one caller the evidence
+# shows is actually affected, not a blanket finding against all three.
+
+format: benchmark-case/v1
+
+id: cfv-narrowed-blast-radius-bounded-evidence
+title: "normalize_currency rounding-mode change looks broad across three callers; bounded evidence narrows real impact to one"
+
+input:
+  patch: |
+    diff --git a/shared/currency.py b/shared/currency.py
+    index 3b4c5d6..7e8f9a0 100644
+    --- a/shared/currency.py
+    +++ b/shared/currency.py
+    @@ -1,7 +1,7 @@
+    -from decimal import ROUND_HALF_EVEN, Decimal
+    +from decimal import ROUND_UP, Decimal
+
+
+     def normalize_currency(amount):
+         """Round to the nearest cent for storage and downstream math."""
+    -    return Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_EVEN)
+    +    return Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_UP)
+  base:
+    shared/currency.py: |
+      from decimal import ROUND_HALF_EVEN, Decimal
+
+
+      def normalize_currency(amount):
+          """Round to the nearest cent for storage and downstream math."""
+          return Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_EVEN)
+    payments/gateway_ingest.py: |
+      from shared.currency import normalize_currency
+
+
+      def ingest_payment(raw_amount_from_processor):
+          """raw_amount_from_processor is the sub-cent value the external
+          payment processor sends; not pre-rounded anywhere upstream."""
+          return normalize_currency(raw_amount_from_processor)
+    payments/subscription_renewal.py: |
+      from shared.currency import normalize_currency
+
+
+      def renew(subscription):
+          whole_cents = round(subscription.monthly_price_cents) / 100
+          return normalize_currency(whole_cents)
+    payments/refund_processor.py: |
+      from shared.currency import normalize_currency
+
+
+      def process_refund(refund):
+          whole_cents = int(refund.amount_cents) / 100
+          return normalize_currency(whole_cents)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: normalize-currency-round-up-affects-gateway-ingest-only
+      match: required
+      severity: P1
+      location:
+        location_intent: cross-file
+        path: shared/currency.py
+        symbol: normalize_currency
+        anchor: "rounding=ROUND_UP"
+      claim: >-
+        normalize_currency's rounding mode changed from round-half-to-even
+        to always-round-up; gateway_ingest.py passes raw, un-pre-rounded
+        processor amounts straight through and is the only one of the
+        three callers whose input is not already at whole-cent
+        granularity, so it is the only one whose stored/charged amount
+        actually changes.
+      defect_kind: rounding-mode-change
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins candidate-finding-validation-model.md §10's blast-radius reuse:
+    an observation that initially spans every caller of a changed shared
+    helper narrows, once the bounded evidence at each call site is
+    checked, to the one caller the change actually affects. Locks in
+    scope/severity that reflects the narrower, evidenced reality rather
+    than a blanket finding against every caller found by grep.

@@ -173,6 +173,18 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   [`../../../tests/integration/sandbox/test_adversarial_containment.py`](../../../tests/integration/sandbox/test_adversarial_containment.py)
   against the real sandbox runner.
 
+- [`candidate-finding-validation/`](candidate-finding-validation/README.md) —
+  a focused `benchmark-case/v1` sub-corpus pinning the precision of the
+  candidate-finding-validation reasoning contract
+  [`candidate-finding-validation-model.md`](../../candidate-finding-validation/candidate-finding-validation-model.md)
+  defines (Issue [#383](https://github.com/amirbena/code-review-skill/issues/383),
+  parent [#382](https://github.com/amirbena/code-review-skill/issues/382)).
+  Same format and reference validator; its own README, cases, and unit
+  test
+  ([`../../../tests/unit/review/root_cause/test_candidate_finding_validation_corpus.py`](../../../tests/unit/review/root_cause/test_candidate_finding_validation_corpus.py)).
+  Includes a real-world-derived scenario sourced from PR
+  [#390](https://github.com/amirbena/code-review-skill/pull/390).
+
 ## Validation
 
 [`../../../tests/unit/benchmark/test_benchmark_corpus.py`](../../../tests/unit/benchmark/test_benchmark_corpus.py)

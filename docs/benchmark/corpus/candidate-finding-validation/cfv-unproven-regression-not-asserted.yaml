@@ -1,0 +1,68 @@
+# Candidate-finding validation corpus case (Issue #383, parent #382/#381).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# `config/flags.py` is a brand-new module introducing
+# `SEND_WELCOME_EMAIL_ASYNC = True`. A reviewer could suspect this "used to
+# be" synchronous and that flipping it silently changes existing behavior
+# for existing callers. Nothing in this change (or the fixture's base tree)
+# establishes a prior value: the module, and the flag, do not exist before
+# this diff.
+#
+# `candidate-finding-validation-model.md` §7 ("Regression-proof
+# discipline"): a regression claim needs all four of prior-behavior
+# evidence, the change, the failure scenario, and the causal link. Here
+# link 1 (prior behavior) cannot be supplied — the flag is new — so this is
+# never presented as a proven regression. Nothing else in the diff
+# establishes an independent technical-invariant violation either (the
+# email send already goes through the existing idempotent, retried queue
+# consumer), so the candidate does not survive under any other
+# classification either.
+#
+# Expected: no finding.
+
+format: benchmark-case/v1
+
+id: cfv-unproven-regression-not-asserted
+title: "New async-email flag looks like a flipped default but has no prior-behavior evidence: not a proven regression"
+
+input:
+  patch: |
+    diff --git a/config/flags.py b/config/flags.py
+    new file mode 100644
+    index 0000000..7d8e9f0
+    --- /dev/null
+    +++ b/config/flags.py
+    @@ -0,0 +1,6 @@
+    +# Feature flags for the notifications module.
+    +
+    +# When true, welcome emails are enqueued on the existing idempotent,
+    +# at-least-once retried notification queue instead of sent inline
+    +# during request handling.
+    +SEND_WELCOME_EMAIL_ASYNC = True
+  base:
+    notifications/queue_consumer.py: |
+      from notifications.email import send_welcome_email
+      from notifications.dedupe import already_sent
+
+
+      def handle_welcome_email_job(job):
+          """Idempotent, at-least-once consumer: safe to retry or redeliver."""
+          if already_sent(job.customer_id):
+              return
+          send_welcome_email(job.customer_id)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [regression]
+  rationale: >-
+    Pins candidate-finding-validation-model.md §7: a suspected "this used
+    to be different" claim with no prior-behavior evidence — the flag and
+    its module are introduced by this same diff — is never presented as a
+    proven regression, and the change carries no independent technical-
+    invariant violation to fall back on. Locks in the fail-closed default
+    for unproven regression claims.

@@ -1,0 +1,83 @@
+# Candidate-finding validation corpus case (Issue #383, parent #382/#381).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# `sku` is validated strictly against the catalog in
+# `inventory/reservations.py::reserve_stock` — this is the external trust
+# boundary where an untrusted caller-supplied SKU is first accepted. The
+# new `inventory/reporting.py::daily_sku_counts` reads `sku` from
+# already-persisted reservation rows (already validated at write time) to
+# bucket an internal daily count report. The same field name, handled
+# differently, in two places.
+#
+# `candidate-finding-validation-model.md` §4 ("Semantic-role validation"):
+# before treating a difference between two usages of the same field as a
+# defect candidate, establish they serve the same responsibility. Here they
+# do not — one is input validation at a trust boundary, the other reads
+# trusted, already-validated stored data for reporting. The difference in
+# handling is explained by the difference in responsibility, so it is
+# never promoted to a candidate claim on that basis alone.
+#
+# Expected: no finding caused by the missing validation in the reporting
+# path.
+
+format: benchmark-case/v1
+
+id: cfv-semantic-role-no-inference
+title: "sku validated at reservation intake, read unvalidated in internal reporting: different responsibilities, no defect inferred"
+
+input:
+  patch: |
+    diff --git a/inventory/reporting.py b/inventory/reporting.py
+    new file mode 100644
+    index 0000000..1a2b3c4
+    --- /dev/null
+    +++ b/inventory/reporting.py
+    @@ -0,0 +1,15 @@
+    +from collections import Counter
+    +from inventory.storage import list_reservations
+    +
+    +
+    +def daily_sku_counts(day):
+    +    """Count reservations per SKU for the given day, for the ops dashboard.
+    +
+    +    Reservation rows are already-persisted, already-validated state
+    +    (validated once, at intake, by reserve_stock) — this is a read-only
+    +    reporting rollup, not a second validation boundary.
+    +    """
+    +    counts = Counter()
+    +    for reservation in list_reservations(day):
+    +        counts[reservation.sku] += 1
+    +    return dict(counts)
+  base:
+    inventory/reservations.py: |
+      from inventory.storage import save_reservation
+      from inventory.catalog import CATALOG_SKUS
+
+
+      def reserve_stock(sku, qty, customer_id):
+          """Reserve stock for a customer-supplied SKU.
+
+          `sku` arrives from the public order API and is the external trust
+          boundary: it must be validated here before anything downstream
+          treats it as trustworthy.
+          """
+          if sku not in CATALOG_SKUS:
+              raise ValueError(f"unknown sku: {sku}")
+          reservation = save_reservation(sku=sku, qty=qty, customer_id=customer_id)
+          return reservation
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins candidate-finding-validation-model.md §4: the same field name
+    handled differently in two places is evidence of a difference, not
+    evidence of a defect, once the two usages are shown to serve different
+    responsibilities (external-input validation versus reporting over
+    already-validated stored state). Locks in that a reviewer must not
+    infer a missing-validation defect from the difference alone.
