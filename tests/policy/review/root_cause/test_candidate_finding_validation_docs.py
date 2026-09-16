@@ -87,6 +87,28 @@ class DesignRecordExistsAndCoversScopeTests(unittest.TestCase):
         self.assertIn("No source in the hierarchy requires a tracker ticket", t)
         self.assertIn("Jira is sufficient, never necessary", t)
 
+    def test_semantic_role_validation_is_conditional_not_universal(self) -> None:
+        # #382 follow-up: semantic-role validation gates a candidate only
+        # when its own reasoning depends on comparing usages -- it must not
+        # read as a universal prerequisite for every candidate.
+        t = _norm(MODEL)
+        self.assertIn("This gate applies only when", t)
+        self.assertIn(
+            "depends on comparing two or more usages, paths, or implementations", t
+        )
+        self.assertIn(
+            "does not apply, and is not a prerequisite, for a candidate with", t
+        )
+        self.assertIn(
+            "not a universal prerequisite every candidate must clear", t
+        )
+
+    def test_worked_example_1_is_explicitly_not_gated_by_semantic_role(self) -> None:
+        t = _norm(MODEL)
+        self.assertIn(
+            "Semantic-role validation: not applicable", t
+        )
+
     def test_causal_validation_chain_four_links_named(self) -> None:
         t = _norm(MODEL)
         for link in (
@@ -160,6 +182,19 @@ class SharedPolicyReferencesAreLinkLevelTests(unittest.TestCase):
         # no grounding hierarchy or disconfirmation table copied in
         self.assertNotIn("RECLASSIFIED", t)
         self.assertNotIn("Reviewer inference alone", t)
+
+    def test_review_scope_does_not_state_a_universal_comparison_requirement(self) -> None:
+        # #382 follow-up: the packaged wording must not read as though every
+        # candidate must compare two usages before it can become valid.
+        t = _norm(REVIEW_SCOPE)
+        self.assertNotIn(
+            "requires establishing that two compared usages serve the same semantic",
+            t,
+        )
+        self.assertIn(
+            "When the candidate's own reasoning depends on comparing two", t
+        )
+        self.assertIn("no such comparison", t)
 
     def test_evidence_names_the_model_without_duplicating_it(self) -> None:
         t = _norm(EVIDENCE)

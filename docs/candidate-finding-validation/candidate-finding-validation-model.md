@@ -50,11 +50,16 @@ observation → candidate claim → validated finding → severity
   noticed. An observation is not yet a finding and carries no severity.
 - **Candidate claim** — an observation the reviewer proposes to promote:
   "this is a defect because …". A candidate claim requires the validation
-  steps in §3–§7 before it may become a finding.
-- **Validated finding** — a candidate claim that has cleared semantic-role
-  validation (§3), evidence/contract grounding (§4), causal validation (§5),
-  regression-proof discipline where applicable (§6), and the disconfirmation
-  pass (§7), and has been classified (§8). It is labeled confirmed defect /
+  steps in §3–§8 before it may become a finding.
+- **Validated finding** — a candidate claim that has cleared the
+  observation-first gate (§3), semantic-role validation where applicable
+  (§4), evidence/contract grounding (§5), causal validation (§6),
+  regression-proof discipline where applicable (§7), and the
+  disconfirmation pass (§8), and has been classified (§9). Semantic-role
+  validation (§4) applies only to a candidate whose reasoning depends on
+  comparing two or more usages — see §4's "Applicability"; a standalone
+  candidate with no such comparison clears every other gate on its own
+  evidence. It is labeled confirmed defect /
   credible engineering risk / optional improvement exactly as
   [`evidence.md`](../../shared/policies/evidence.md) already requires — this
   model gates *reaching* that label, it does not add a second one.
@@ -64,8 +69,8 @@ observation → candidate claim → validated finding → severity
 
 Each arrow is a gate, not a formality: a claim that does not clear the gate
 stays at the stage it actually earned — most often reported as a lower
-classification (§8) rather than discarded outright, per the fail-open
-default in §7.
+classification (§9) rather than discarded outright, per the fail-open
+default in §8.
 
 ## 3. Observation-first gate
 
@@ -83,12 +88,24 @@ of this pipeline rather than left implicit.
 
 ## 4. Semantic-role validation
 
-Before comparing two usages of the same field, function, path, or symbol,
-establish that they serve the **same semantic responsibility**. The same
-primitive handled differently in two places is not itself evidence of a
-defect — it is evidence of a difference, and the difference is a candidate
-only once the reviewer has concrete evidence the two usages are meant to
-behave alike.
+**Applicability.** This gate applies only when the candidate's own
+reasoning depends on comparing two or more usages, paths, or
+implementations — for example, "usage A handles this differently from
+usage B, so B is a defect." It does not apply, and is not a prerequisite,
+for a candidate with no such comparison: a standalone technical-invariant
+violation (a TOCTOU race, a broken atomicity guarantee, a deterministic
+null dereference, a security-boundary bypass, a lifecycle/state-transition
+failure) is evaluated entirely on its own evidence per §5–§9 and is not
+gated on this section at all. This section is one specific validation
+requirement that fires on a specific candidate shape, not a universal
+prerequisite every candidate must clear.
+
+When it applies: before comparing two usages of the same field, function,
+path, or symbol, establish that they serve the **same semantic
+responsibility**. The same primitive handled differently in two places is
+not itself evidence of a defect — it is evidence of a difference, and the
+difference is a candidate only once the reviewer has concrete evidence the
+two usages are meant to behave alike.
 
 Concretely: identify the responsibility each usage actually serves (from
 its caller, its surrounding contract, or its documented purpose — not from
@@ -300,8 +317,10 @@ policies already establish.
 Observation: a balance-check-then-debit sequence reads a value, then writes
   a decremented value in a separate step, with no lock or optimistic
   concurrency check between them.
-Semantic-role validation: both operations act on the same account balance;
-  no mismatch.
+Semantic-role validation: not applicable — this candidate does not compare
+  two usages, paths, or implementations; it is a standalone technical-
+  invariant violation in a single sequence, so §4 does not gate it (§4,
+  "Applicability").
 Grounding: level 4, technical invariant — a TOCTOU race is a concurrency
   guarantee violation independent of any stated requirement.
 Causal chain: reviewed change (the split read/write) → changed assumption

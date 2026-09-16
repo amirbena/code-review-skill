@@ -33,11 +33,16 @@ concrete evidence …" or the equivalent — presupposes that the candidate
 reaching that point has already been validated, not merely observed. An
 unusual code shape, a branch difference, or a structural inconsistency is
 an **observation** first; promoting it to a **candidate claim** requires
-establishing that two compared usages serve the same semantic
-responsibility, naming the contract/invariant/expected-behavior it
-violates, showing the causal chain from the reviewed change to a concrete,
-observable incorrect result, and — for a claimed regression — the specific
-four-part regression evidence set. Before a blocking candidate is accepted,
+naming the contract/invariant/expected-behavior it violates, showing the
+causal chain from the reviewed change to a concrete, observable incorrect
+result, and — for a claimed regression — the specific four-part regression
+evidence set. When the candidate's own reasoning depends on comparing two
+or more usages, paths, or implementations, it additionally requires
+establishing that the compared usages serve the same semantic
+responsibility before the comparison can support the claim — this
+condition does not apply, and is not a prerequisite, for a candidate with
+no such comparison (a standalone technical-invariant violation, for
+example, needs no compared usage at all). Before a blocking candidate is accepted,
 actively try to invalidate it against the available review context
 (disconfirmation). None of this requires a tracker ticket: a
 technically-grounded blocking finding (a race, a broken invariant, a

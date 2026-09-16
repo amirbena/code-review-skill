@@ -3,11 +3,14 @@
 
 Contract:
 docs/candidate-finding-validation/candidate-finding-validation-model.md.
-Regression focus: semantic-role mismatch never becomes a candidate;
-reviewer inference alone never establishes a blocking premise while every
-other grounding source (including technical invariant, with no ticket)
-does; the causal chain and regression-proof checks require every link/
-evidence piece, not merely some; disconfirmation can survive, drop,
+Regression focus: semantic-role validation gates a candidate only when its
+own reasoning depends on comparing two or more usages -- a comparison-
+dependent mismatch never becomes a candidate, while a standalone candidate
+(no comparison at all, e.g. a technical-invariant violation) is never
+gated by it; reviewer inference alone never establishes a blocking premise
+while every other grounding source (including technical invariant, with no
+ticket) does; the causal chain and regression-proof checks require every
+link/evidence piece, not merely some; disconfirmation can survive, drop,
 downgrade, or reclassify a candidate; only a proven correctness defect is
 normally blocking; and claim_valid / blocking_justification_valid stay
 independent -- a kept finding is never silently suppressed for failing the
@@ -85,6 +88,44 @@ class SemanticRoleValidationTests(unittest.TestCase):
                 same_underlying_primitive=True, same_responsibility=True
             )
         )
+
+    def test_same_primitive_different_responsibility_cannot_support_a_defect(self) -> None:
+        # Required case 1: a comparison-dependent candidate whose two usages
+        # share a primitive but serve different responsibilities is dropped
+        # entirely -- the comparison itself cannot support the claim.
+        self.assertFalse(
+            cfv.semantic_roles_comparable(
+                same_underlying_primitive=True, same_responsibility=False
+            )
+        )
+        outcome = cfv.evaluate_candidate(
+            involves_comparison=True,
+            semantic_roles_ok=cfv.semantic_roles_comparable(
+                same_underlying_primitive=True, same_responsibility=False
+            ),
+            grounding_sources=[G.TECHNICAL_INVARIANT],
+            causal_chain=_complete_chain(),
+        )
+        self.assertFalse(outcome.claim_valid)
+        self.assertFalse(outcome.blocking_justification_valid)
+        self.assertIsNone(outcome.classification)
+
+    def test_standalone_technical_invariant_defect_needs_no_comparison(self) -> None:
+        # Required case 2: a candidate that never compares usages at all
+        # (design record Section 4, "Applicability") is fully eligible for
+        # validation/blocking -- semantic_roles_ok is never even assessed,
+        # and passing it as False changes nothing when involves_comparison
+        # is False.
+        outcome = cfv.evaluate_candidate(
+            involves_comparison=False,
+            semantic_roles_ok=False,
+            grounding_sources=[G.TECHNICAL_INVARIANT],
+            causal_chain=_complete_chain(),
+            disconfirmation=D.SURVIVES,
+        )
+        self.assertTrue(outcome.claim_valid)
+        self.assertTrue(outcome.blocking_justification_valid)
+        self.assertEqual(outcome.classification, C.PROVEN_CORRECTNESS_DEFECT)
 
 
 class CausalChainTests(unittest.TestCase):
@@ -187,7 +228,7 @@ class WorkedExampleCorpusTests(unittest.TestCase):
 
     def test_example_1_technical_invariant_no_jira_blocking(self) -> None:
         outcome = cfv.evaluate_candidate(
-            semantic_roles_ok=True,
+            involves_comparison=False,
             grounding_sources=[G.TECHNICAL_INVARIANT],
             causal_chain=_complete_chain(),
             disconfirmation=D.SURVIVES,
@@ -198,6 +239,7 @@ class WorkedExampleCorpusTests(unittest.TestCase):
 
     def test_example_2_semantic_role_mismatch_is_never_a_candidate(self) -> None:
         outcome = cfv.evaluate_candidate(
+            involves_comparison=True,
             semantic_roles_ok=False,
             grounding_sources=[G.TECHNICAL_INVARIANT],
             causal_chain=_complete_chain(),

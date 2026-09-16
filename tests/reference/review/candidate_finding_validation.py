@@ -4,10 +4,12 @@ Not runtime logic, not packaged -- the packaged Skills are Markdown/YAML only.
 
 Mirrors docs/candidate-finding-validation/candidate-finding-validation-model.md:
 the observation -> candidate claim -> validated finding -> severity pipeline,
-semantic-role validation, the evidence/contract grounding hierarchy (with a
-non-Jira technically-grounded blocking finding explicitly representable), the
-causal validation chain, regression-proof discipline, the disconfirmation
-pass, classification before severity, and the claim_valid /
+semantic-role validation (applicable only to a candidate whose own reasoning
+depends on comparing two or more usages -- a standalone candidate is never
+gated by it), the evidence/contract grounding hierarchy (with a non-Jira
+technically-grounded blocking finding explicitly representable), the causal
+validation chain, regression-proof discipline, the disconfirmation pass,
+classification before severity, and the claim_valid /
 blocking_justification_valid separation.
 
 This module does not redefine evidence.md's confirmed-defect / credible-risk
@@ -90,7 +92,12 @@ def semantic_roles_comparable(
 ) -> bool:
     """A difference between two usages of the same field/function/path is a
     candidate only once both usages are established to serve the same
-    responsibility. Sharing the same primitive is not, by itself, enough."""
+    responsibility. Sharing the same primitive is not, by itself, enough.
+
+    Only meaningful when the candidate's own reasoning depends on comparing
+    two or more usages/paths/implementations (design record Section 4,
+    "Applicability") -- a standalone candidate with no such comparison never
+    calls this at all."""
     return bool(same_underlying_primitive and same_responsibility)
 
 
@@ -205,7 +212,8 @@ class CandidateOutcome:
 
 def evaluate_candidate(
     *,
-    semantic_roles_ok: bool,
+    involves_comparison: bool = False,
+    semantic_roles_ok: bool = True,
     grounding_sources: Sequence[GroundingSource],
     causal_chain: CausalChain,
     is_regression_claim: bool = False,
@@ -215,9 +223,17 @@ def evaluate_candidate(
 ) -> CandidateOutcome:
     """Run a candidate claim through the full pipeline (design record
     Section 2) and return its outcome. Deterministic given the same inputs.
+
+    `involves_comparison` states whether this candidate's own reasoning
+    depends on comparing two or more usages/paths/implementations (design
+    record Section 4, "Applicability"). Only then does `semantic_roles_ok`
+    gate the candidate at all -- a standalone candidate (a technical
+    invariant violation with no compared usage, for example) is not gated
+    by semantic-role validation regardless of `semantic_roles_ok`'s value.
     """
-    # Section 4: not comparable -> never becomes a candidate at all.
-    if not semantic_roles_ok:
+    # Section 4: only a comparison-dependent candidate is gated here, and
+    # only such a candidate can fail to be comparable in the first place.
+    if involves_comparison and not semantic_roles_ok:
         return CandidateOutcome(
             claim_valid=False, blocking_justification_valid=False, classification=None
         )
