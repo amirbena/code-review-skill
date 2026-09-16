@@ -514,7 +514,11 @@ and no packaged Skill resource depends on them.
   above).
 - **Benchmark, measurement & analytics architecture** — the canonical
   cross-component design spanning the benchmark-quality-gate epic (#329:
-  isolated runtime execution #330→#336→#337, the PR-time taxonomy/
+  runtime execution contract #330, revised by #391 into two execution
+  classes — automatic/repository-triggered (historical evidence #336,
+  superseded provisioning #337) and maintainer-controlled (optional
+  quality observability via Claude Cloud Routines, never a
+  contributor/merge prerequisite) — the PR-time taxonomy/
   selection/shadow-validation gate #331/#333/#334/#335, and nightly
   full-corpus drift detection #332/#338/#339) and the three related
   measurement capabilities it deliberately does not implement or

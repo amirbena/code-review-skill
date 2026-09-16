@@ -82,9 +82,13 @@ three outcomes, and keeps them visibly distinct in its summary:
    step, for diagnostic value — but the job is never made a required merge
    gate: it holds default read-only `GITHUB_TOKEN` permissions, is not
    `needs:`-blocking for any other job, and is not added to any
-   branch-protection ruleset. Keeping the model/runtime-dependent result
-   informational is intentional and initial; making it a required,
-   blocking gate is future work, not part of this contract.
+   branch-protection ruleset. **This non-blocking, informational status is
+   the permanent, intended state of the contributor path**
+   ([#391](https://github.com/amirbena/code-review-skill/issues/391)):
+   model-backed benchmark execution is optional maintainer quality
+   observability, never a contributor or merge prerequisite. A normal
+   contributor PR/merge never requires a provider credential or paid
+   inference.
 
 ## 5. Runs the same script a developer runs manually
 
@@ -98,13 +102,23 @@ entrypoint.
 
 ## 6. Out of scope
 
-- Making the result a required or blocking check.
-- Provisioning a real review-CLI runtime/credentials in CI. The contract
-  any such runtime must satisfy — trust boundary, viability criteria,
-  candidate classes, required metadata — is
-  [`runtime-execution-contract.md`](runtime-execution-contract.md) (#330);
-  selecting a candidate is [#336](https://github.com/amirbena/code-review-skill/issues/336)
-  and provisioning it is [#337](https://github.com/amirbena/code-review-skill/issues/337).
+- Making the result a required or blocking check for a normal contributor
+  PR/merge — permanently, not just today
+  ([#391](https://github.com/amirbena/code-review-skill/issues/391)).
+- Provisioning a real review-CLI runtime/credentials for automatic,
+  repository-triggered execution ("Class 1"). The contract any such
+  runtime must satisfy — trust boundary, viability criteria, candidate
+  classes, required metadata — is
+  [`runtime-execution-contract.md`](runtime-execution-contract.md) (#330,
+  revised by #391); #336/#366 already evaluated candidates and none
+  cleared the bar, and further pursuit of this class is not planned (see
+  #391).
+- The maintainer-controlled ("Class 2") on-demand/scheduled execution
+  path — optional quality observability, never wired into this
+  contributor-facing check. Owned by
+  [`runtime-execution-contract.md`](runtime-execution-contract.md) §2.2/§4
+  and a future, separately-scoped Class 2 implementation issue, not this
+  document.
 - Any second implementation of the benchmark's applicability logic —
   `scripts/benchmark/benchmark_ci_classifier.py` is the single source for this
   check's classification.

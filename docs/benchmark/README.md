@@ -25,8 +25,8 @@ concern lives in the file named for it.
 | [`duplicate-noise.md`](duplicate-noise.md) | Measuring duplicate / same-root-cause noise over a case's **produced findings alone** — the same-root-cause edge (the #54 `MATCH` cell applied to a pair of produced findings, unchanged), connected-component clustering, the redundant-finding count and its exact-rational duplicate rate per case and in aggregate, the highest-noise-cases list, and how they render alongside the regression report's deltas without gating it. | [#57](https://github.com/amirbena/code-review-skill/issues/57) |
 | [`claim-correspondence-adequacy.md`](claim-correspondence-adequacy.md) | Research recommendation (not a contract change): whether `match-criteria.md`'s lexical claim-correspondence check can recognize an independently-phrased-but-correct finding, measured with real harness-fidelity-corrected benchmark reruns. Finds the free-text Jaccard/subset path is, in practice, the *only* path that ever decides the defect axis in production because a produced `defect_kind` is never populated, and recommends evaluating `defect_kind` population first per the deterministic-options-first guardrail. | [#343](https://github.com/amirbena/code-review-skill/issues/343) |
 | [`ci-integration.md`](ci-integration.md) | Wiring the existing benchmark execution (`scripts/benchmark/run_benchmark.py` + `scripts/benchmark/benchmark_review_adapter.py`, #250) into a dedicated, informational/non-blocking PR-level CI check (`.github/workflows/benchmark-check.yml`) — the deterministic applicability classifier (`scripts/benchmark/benchmark_ci_classifier.py`), the not-applicable / runtime-unavailable / ran three-state contract, and its full independence from `release-worthiness.yml`. | [#255](https://github.com/amirbena/code-review-skill/issues/255) |
-| [`runtime-execution-contract.md`](runtime-execution-contract.md) | The vendor-neutral runtime execution contract a future benchmark-CI runtime must satisfy — the non-negotiable no-personal-machine trust boundary, the `run_benchmark.py` → `ReviewerAdapter` → agent CLI/runtime → unmodified Skill → model backend execution chain, the runtime viability criteria, the required runtime/model/Skill-SHA metadata, the evaluated (not decided) candidate classes A–D, and the two explicitly rejected candidates. | [#330](https://github.com/amirbena/code-review-skill/issues/330) |
-| [`runtime-candidate-decision.md`](runtime-candidate-decision.md) | The empirical spike's decision record — the real candidates actually run against a small corpus subset, their results scored against `runtime-execution-contract.md`'s viability criteria and an added economic-sustainability constraint, and the resulting (conditional) execution path for #337. | [#336](https://github.com/amirbena/code-review-skill/issues/336) |
+| [`runtime-execution-contract.md`](runtime-execution-contract.md) | The vendor-neutral runtime execution contract any benchmark runtime must satisfy — split into Class 1 (automatic/repository-triggered, untrusted-input, the original non-personal-machine trust boundary; currently unprovisioned, not further pursued) and Class 2 (maintainer-controlled, optional quality observability, never a contributor/merge prerequisite, Claude Cloud Routines as the sole selected scheduled-integration target); the shared `run_benchmark.py` → `ReviewerAdapter` → agent CLI/runtime → unmodified Skill → model backend execution chain; the runtime viability criteria per class; the required runtime/model/Skill-SHA metadata; the historical Class 1 candidate classes A–D; and the rejected approaches for both classes. | [#330](https://github.com/amirbena/code-review-skill/issues/330), revised by [#391](https://github.com/amirbena/code-review-skill/issues/391) |
+| [`runtime-candidate-decision.md`](runtime-candidate-decision.md) | The empirical spike's decision record — the real candidates actually run against a small corpus subset, their results scored against `runtime-execution-contract.md`'s viability criteria and an added economic-sustainability constraint. Historical record: its conditional execution path for #337 is superseded by #391. | [#336](https://github.com/amirbena/code-review-skill/issues/336) |
 
 The first four documents cover the whole epic-[#40](https://github.com/amirbena/code-review-skill/issues/40)
 benchmark surface; [`match-criteria.md`](match-criteria.md) ([#54](https://github.com/amirbena/code-review-skill/issues/54))
@@ -449,29 +449,33 @@ failure. It reimplements no runner/matcher/metrics/adapter logic above.
 
 ## Runtime execution contract
 
-[`runtime-execution-contract.md`](runtime-execution-contract.md) (#330) is
-the foundational, vendor-neutral contract a future runtime that fills
-[`ci-integration.md`](ci-integration.md) §4's "applicable, runtime
-unavailable" gap must satisfy: the non-negotiable rule that benchmark CI
-never runs on the maintainer's personal machine/credentials/session under
-any trigger, the `run_benchmark.py` → `ReviewerAdapter` → agent CLI/runtime
-→ unmodified Skill → model backend execution chain, the runtime viability
-criteria (non-interactive tool execution, isolated CI, reproducibility,
-bounded latency, a purpose-specific revocable credential, never a silent
-green gate), the runtime/model/Skill-SHA metadata every result must carry,
-four candidate classes evaluated but not decided between, and two
-explicitly rejected candidates (a personal-session self-hosted runner; a
-bare completion endpoint standing in for the Skill). It picks no runtime
-and provisions no infrastructure — that is
-[#336](https://github.com/amirbena/code-review-skill/issues/336)'s spike
-and [#337](https://github.com/amirbena/code-review-skill/issues/337)'s
-provisioning work, respectively.
+[`runtime-execution-contract.md`](runtime-execution-contract.md) (#330,
+revised by [#391](https://github.com/amirbena/code-review-skill/issues/391))
+is the foundational, vendor-neutral contract any benchmark-execution
+runtime must satisfy — now split into two execution classes: **Class 1**
+(automatic/repository-triggered, untrusted input — the original
+non-negotiable rule that this class never runs on the maintainer's
+personal machine/credentials/session under any trigger; currently
+unprovisioned and not being further pursued, see
+[`runtime-candidate-decision.md`](runtime-candidate-decision.md)) and
+**Class 2** (maintainer-controlled, optional quality observability —
+never a contributor/merge prerequisite, with Claude Cloud Routines as the
+selected, and only, scheduled-integration target). Both classes share the
+`run_benchmark.py` → `ReviewerAdapter` → agent CLI/runtime → unmodified
+Skill → model backend execution chain, the runtime/model/Skill-SHA
+metadata every result must carry, and most of the runtime viability
+criteria. It picks no Class 1 runtime and implements no Class 2
+integration — Class 1 candidate evaluation is #336/#366's closed
+historical spike (superseding #337's provisioning), and the Class 2 Cloud
+Routine integration is scoped to a future, separately-opened
+implementation issue.
 
 ## Runtime candidate decision
 
 [`runtime-candidate-decision.md`](runtime-candidate-decision.md) (#336) is
 the bounded empirical spike `runtime-execution-contract.md` (#330)
-required before a runtime is selected: it actually ran class A (the
+required before a Class 1 runtime could be selected: it actually ran
+class A (the
 `claude` CLI against the Anthropic backend) and one currently-real class-B
 candidate (`opencode` against a local Ollama coding model) through the
 same two corpus cases via thin, throwaway adapters, and scored both
@@ -481,18 +485,23 @@ recurring cost is strongly preferred, ~$40–50/month is the maintainer's
 absolute ceiling, and no plausible triple-digit-monthly-spend path is
 viable). Class B did not invoke the Skill's actual semantics or fit a
 bounded PR-check latency budget, and is not viable in this spike's
-configuration; class A is the fidelity baseline and current technical
-fallback, but is cleared for #337 to provision **only if** it can produce
-a credible bounded-cost design — otherwise the record recommends further,
-separately time-boxed class-B/C research instead. No class-C candidate
-was available to test empirically in this environment. A bounded
-follow-up screen of five more candidates (Gemini CLI, Groq, OpenRouter
-free models, Cloudflare Workers AI, GitHub Copilot CLI, Amazon Q
-Developer CLI) found only Gemini CLI clears the screen; its empirical
-corpus run is scoped into
-[#366](https://github.com/amirbena/code-review-skill/issues/366),
-Parent #336, pending a `GEMINI_API_KEY` rather than run without
-evidence.
+configuration; class A is the fidelity baseline the spike recorded, but
+this document's original §7 conditional recommendation to provision it
+via #337 is superseded — see
+[#391](https://github.com/amirbena/code-review-skill/issues/391). No
+class-C candidate was available to test empirically in this environment.
+A bounded follow-up screen of five more candidates (Gemini CLI, Groq,
+OpenRouter free models, Cloudflare Workers AI, GitHub Copilot CLI, Amazon
+Q Developer CLI) found only Gemini CLI clears the screen; its empirical
+corpus run was scoped into
+[#366](https://github.com/amirbena/code-review-skill/issues/366) (Parent
+#336) and actually run — both cases hit provider daily-quota exhaustion
+before producing a review (§8.4 of the decision record's PR, closed
+without merging as
+[PR #389](https://github.com/amirbena/code-review-skill/pull/389); #366
+itself is closed). This evidence, and the rest of this spike, is kept as
+historical record and was not reopened by #391 — see #391 for the
+resulting architecture change.
 
 ## Related
 

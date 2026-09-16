@@ -1,16 +1,13 @@
-# Benchmark CI Runtime Execution Contract
+# Benchmark Runtime Execution Contract
 
 Repository-development contract for GitHub Issue
-[#330](https://github.com/amirbena/code-review-skill/issues/330). It
+[#330](https://github.com/amirbena/code-review-skill/issues/330), revised
+by [#391](https://github.com/amirbena/code-review-skill/issues/391). It
 establishes the **vendor-neutral runtime execution contract, viability
-criteria, and required-metadata rule** that any future benchmark-execution
-CI runtime must satisfy, without picking a winner. It is the foundational,
+criteria, and required-metadata rule** that any benchmark-execution
+runtime must satisfy, without picking a winner. It is the foundational,
 sequential root of the benchmark/measurement architecture (parent
-[#329](https://github.com/amirbena/code-review-skill/issues/329)):
-[`ci-integration.md`](ci-integration.md) §4 already documents that
-`scripts/benchmark/run_benchmark.py` / `benchmark_review_adapter.py` have
-no working runtime on a bare Actions runner today — this document is the
-contract a runtime proposal that fills that gap must be checked against.
+[#329](https://github.com/amirbena/code-review-skill/issues/329)).
 
 Like the rest of [`./`](README.md), this is a **repository-development
 doc: not packaged into either Skill archive**, and no packaged Skill
@@ -21,35 +18,152 @@ architectural treatment in
 a conflict between the two is resolved by updating that canonical design
 document, not this one.
 
+**Revision note (#391).** #330's original text specified a single
+execution class: a dedicated, provisioned CI runtime, gated on
+[#336](https://github.com/amirbena/code-review-skill/issues/336)'s
+empirical candidate spike and
+[#337](https://github.com/amirbena/code-review-skill/issues/337)'s
+provisioning. #336's spike (and its own #366 follow-up, closed without
+merging — see
+[`runtime-candidate-decision.md`](runtime-candidate-decision.md)) showed
+every screened provider-backed CI candidate is either fidelity-poor,
+quota-constrained, or cost-risky enough that none has cleared this
+contract's own viability bar. #391 does not reopen that empirical
+evidence (kept as historical record, §6/§8 below) — it responds to it
+architecturally, by splitting execution into two classes (§2) instead of
+one, so the fourteen-issue tree downstream is no longer load-bearing on a
+provisioned CI runtime that has not materialized and is not being further
+pursued. #337 is superseded by this split, not deleted from the record —
+see §6 and §8.
+
 ## 1. Scope
 
-This document owns three things: the non-negotiable trust boundary, the
-execution contract and runtime viability criteria a candidate runtime must
-meet, and the metadata that must be recorded with every benchmark result
-so a result change is attributable to a Skill change versus a
-runtime/model change. It does **not** pick the final runtime or provider
-(that is [#336](https://github.com/amirbena/code-review-skill/issues/336)'s
-empirical spike), and it does not provision any actual infrastructure,
-credential, or workflow (that is
-[#337](https://github.com/amirbena/code-review-skill/issues/337), which
-depends on #336's decision record).
+This document owns four things: the two execution classes and the
+trust boundary each carries (§2), the execution contract and runtime
+viability criteria a candidate runtime must meet (§3–§4), and the
+metadata that must be recorded with every benchmark result so a result
+change is attributable to a Skill change versus a runtime/model change
+(§5). It does **not** implement any actual scheduled integration, evidence
+persistence, drift confirmation, or GitHub issue publication for the
+maintainer-controlled class — that is scoped to a future implementation
+issue against §2.2's fixed pipeline, not this contract itself (see §8,
+§9).
 
-## 2. Non-negotiable trust boundary
+## 2. Two execution classes
 
-Benchmark CI must **never** execute on the maintainer's personal
-workstation, credentials, filesystem, shell, SSH state, or browser/session
-state — under any trigger, including a fork PR the maintainer did not
-author. This is a trust-boundary requirement, not an availability
-optimization, and it is not weighed against cost or fidelity: a candidate
-that cannot satisfy it is disqualified regardless of how well it otherwise
-scores.
+Every prior version of this contract addressed one implicit class:
+execution automatically triggered by repository activity (a PR, including
+one from a fork), where the input reaching the runtime cannot be trusted.
+That class still exists and keeps its original rule unchanged (§2.1). This
+revision adds a second, architecturally distinct class: execution the
+maintainer themselves initiates or schedules, where there is no untrusted
+input in the path at all (§2.2). The two classes are not degrees of the
+same trust boundary — they answer different questions, and a runtime
+proposal must state which class it targets before being checked against
+the rest of this document.
 
-Execution must run on infrastructure dedicated to CI, never a device
-that doubles as anything else, using a purpose-specific, minimally scoped,
-independently revocable credential, with fork-PR/untrusted input kept
-separated from any secret-bearing execution path.
+### 2.1 Class 1 — Automatic / repository-triggered execution (untrusted input)
+
+Applies to any execution a repository-controlled workflow triggers
+automatically — on a PR, a push, or any other repository event —
+including a fork PR the maintainer did not author.
+
+Benchmark execution in this class must **never** run on the maintainer's
+personal workstation, credentials, filesystem, shell, SSH state, or
+browser/session state — under any trigger, including a fork PR. This is a
+trust-boundary requirement, not an availability optimization, and it is
+not weighed against cost or fidelity: a candidate that cannot satisfy it
+is disqualified regardless of how well it otherwise scores.
+
+Execution in this class must run on infrastructure dedicated to CI, never
+a device that doubles as anything else, using a purpose-specific,
+minimally scoped, independently revocable credential, with fork-PR/
+untrusted input kept separated from any secret-bearing execution path.
+
+**Current status:** no candidate has cleared this class's viability bar
+(§6, §8) at an acceptable cost (see
+[`runtime-candidate-decision.md`](runtime-candidate-decision.md) §6-§8.4).
+Provisioning work for this class (#337) is superseded — see §8. This
+class's rule itself is unchanged and stays the reference for any future
+proposal that does try to satisfy it; the fourteen-issue tree downstream
+no longer depends on one existing (§2.3 of
+[`../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md)).
+
+### 2.2 Class 2 — Maintainer-controlled execution (optional quality observability)
+
+Applies only to execution the maintainer themselves initiates — an
+on-demand run, or a schedule the maintainer configured — never triggered
+by contributor PR automation, a fork PR, or any other repository event.
+There is no untrusted input in this class's execution path: the maintainer
+already trusts their own already-authorized credentials and identity for
+every other kind of repository work they do, and this class does not
+create a new attacker-reachable surface the way Class 1's automatic
+triggers would.
+
+This class is **optional maintainer quality observability, never a
+contributor or merge prerequisite.** Concretely:
+
+- It must never become reachable from contributor PR automation, and must
+  never become a required check for a normal contributor PR or merge —
+  [`ci-integration.md`](ci-integration.md)'s existing non-blocking,
+  runtime-unavailable-tolerant contributor path is the permanent,
+  intended state for every contributor, not a temporary bootstrapping gap
+  pending this class landing.
+- A maintainer who never configures any Class 2 execution still has a
+  fully functional repository and contribution workflow — nothing in this
+  class is load-bearing for ordinary repository use.
+- Execution runs with the maintainer's own already-authorized
+  credentials/session (Claude account, GitHub identity) — not a
+  separately provisioned, repository-level, independently-revocable
+  credential the way Class 1 requires. That is a deliberate consequence
+  of there being no untrusted input in the path, not an oversight.
+
+**Selected scheduled-integration target: Claude Cloud Routines, and only
+Claude Cloud Routines.** Claude Desktop scheduled tasks are explicitly
+excluded: they require the maintainer's own machine to be on and the
+desktop application open to fire, which is structurally the same
+personal-machine/personal-session dependency §2.1 forbids for Class 1,
+even though Class 2's threat model is different (no untrusted input, so
+it does not violate §2.1's *rule* — but it reintroduces the *availability*
+failure mode this project's benchmark architecture has otherwise avoided,
+and is asymmetric with Class 2's own goal of *reliable* periodic
+observability). Cloud Routines run independent of any specific machine
+being on or awake, which is why they are the selected target.
+
+A future implementation issue (scoped separately, not by this contract)
+owns the concrete Routine integration, fixed to this pipeline:
+
+```text
+benchmark measurement core (scheduler-independent, unchanged — §3):
+  corpus → runner → ReviewerAdapter → matcher/scoring → evidence/regression
+
+scheduled benchmark integration (Cloud Routine-specific, not yet built):
+  Claude Cloud Routine
+    → fresh repository checkout
+    → explicitly pin/record evaluated SHA
+    → invoke canonical benchmark pipeline (the core above, unmodified)
+    → positively verify benchmark completion
+    → persist durable evidence
+    → evaluate confirmed drift
+    → bounded GitHub issue lifecycle
+```
+
+That implementation issue must additionally satisfy, at minimum: never
+trust a Routine's "green" run status as proof the benchmark succeeded (a
+green run only means the session exited without an infrastructure error);
+positively verify the benchmark produced the runner's stable per-case
+result shape before treating a run as evidence; record repository SHA and
+runtime/model metadata (§5) with every persisted result, since neither is
+automatic; never rely on the Routine's own transcript/run-history as the
+durable benchmark store; empirically verify GitHub authentication and
+issue-creation permissions before relying on them unattended; and account
+for the maintainer's Claude subscription usage and the account's Routine
+run limits when sizing any scheduled run.
 
 ## 3. Execution contract
+
+Shared by both classes (§2) — vendor-neutral, and the same regardless of
+who or what triggers execution:
 
 ```text
 run_benchmark.py
@@ -70,29 +184,46 @@ reimplements the Skill's semantics.
 
 ## 4. Runtime viability criteria
 
-A candidate runtime must reliably:
+### 4.1 Core criteria (both classes)
+
+A candidate runtime, in either class, must reliably:
 
 - inspect the repository like a real developer checkout;
 - execute the Skill's required tools non-interactively;
 - invoke the Skill's actual semantics with minimal-to-no translation;
-- run non-interactively in isolated CI;
+- run non-interactively;
 - normalize its output through a thin `ReviewerAdapter`;
 - prefer free / near-zero cost **without** sacrificing fidelity — a
   cheaper candidate that cannot actually invoke the Skill's real
   multi-step, tool-using semantics is not viable regardless of cost;
 - stay reproducible: runtime/model version pinned and recorded (§5);
-- fit a bounded PR-check latency budget;
-- run on CI-dedicated infrastructure never used for anything else;
-- carry no dependency on the maintainer's personal machine (§2);
-- keep fork-PR/untrusted input separated from any secret-bearing path;
-- use a purpose-specific, independently revocable credential;
 - never render a `runtime-unavailable` outcome as a silent green gate —
   it must stay a distinct, visible, non-passing state (as
   [`ci-integration.md`](ci-integration.md) §4 already does for today's
-  no-runtime-configured case);
+  no-runtime-configured case, and as §2.2's future Routine integration
+  must for the maintainer-controlled class);
 - stay swappable behind the `ReviewerAdapter` boundary, so changing
   providers later never requires touching the runner, matcher, metrics,
   selector, or nightly pipeline.
+
+### 4.2 Additional criteria — Class 1 (automatic / repository-triggered)
+
+- fit a bounded PR-check latency budget;
+- run on CI-dedicated infrastructure never used for anything else;
+- carry no dependency on the maintainer's personal machine (§2.1);
+- keep fork-PR/untrusted input separated from any secret-bearing path;
+- use a purpose-specific, independently revocable credential.
+
+### 4.3 Additional criteria — Class 2 (maintainer-controlled)
+
+- never reachable from contributor PR automation, and never a required
+  check for a normal contributor PR or merge (§2.2);
+- for the scheduled-integration case specifically: Claude Cloud Routines
+  only — never Claude Desktop scheduled tasks (§2.2);
+- positively verify benchmark completion rather than trusting a
+  scheduler's own run status as proof of success (§2.2);
+- persist evidence durably outside the scheduler's own transcript/run
+  history (§2.2).
 
 ## 5. Runtime metadata required with every result
 
@@ -105,13 +236,23 @@ Every benchmark result must carry, at minimum:
 This lets every consumer of a benchmark result attribute a result change
 to a Skill change versus a runtime/model change, rather than having the
 two silently confounded. Wiring this into `run_benchmark.py`'s output is
-implementation work for whichever issue provisions the selected runtime
-(#337), not a contract this document implements itself.
+implementation work for whichever issue provisions a runtime in either
+class — a future Class 1 proposal, or the Class 2 Routine-integration
+issue (§2.2) — not a contract this document implements itself.
 
-## 6. Candidate classes
+## 6. Candidate classes (Class 1, historical)
 
-Evaluated against §4 above; this is **not a decision** — #336's empirical
-spike decides among them.
+Evaluated against §4.1/§4.2; scoped to Class 1 (automatic/repository-
+triggered execution) only — Class 2's runtime is simply the maintainer's
+own already-authorized Claude session or Cloud Routine (§2.2), which does
+not need a separate candidate evaluation the way a shared, repository-
+level CI credential did. This table is **historical record, not an open
+decision**: #336's empirical spike (and its #366 follow-up) already ran
+class A and a class-B candidate, and neither cleared this contract's bar
+at an acceptable cost — see
+[`runtime-candidate-decision.md`](runtime-candidate-decision.md). No
+further Class 1 candidate evaluation is being pursued (§8); this table is
+kept so a future revisit of Class 1 is not forced to re-derive it.
 
 | Class | Description | Verdict |
 | --- | --- | --- |
@@ -120,47 +261,79 @@ spike decides among them.
 | C — another free/near-zero-cost hosted agent-capable runtime | A hosted, tool-use-capable surface, not a bare completion endpoint (disqualified — see §7). | Evaluate case-by-case in the spike; no specific provider named here. |
 | D — dedicated isolated remote/self-hosted runner | Infrastructure layer hosting any of A/B/C; only viable if genuinely dedicated, never doubling as a personal device. | Use only if the selected runtime doesn't fit a plain GitHub-hosted runner. |
 
-## 7. Rejected candidates
+## 7. Rejected approaches
 
-Documented so neither is silently re-proposed. Both are rejected on
-architectural grounds, not vendor identity:
+Documented so none is silently re-proposed. All are rejected on
+architectural grounds, not vendor identity.
+
+**Class 1 (automatic/repository-triggered):**
 
 - **A self-hosted runner reusing the maintainer's personal authenticated
   session.** This creates exactly the forbidden personal-machine path
-  (§2), regardless of which vendor's CLI or model it would run.
+  (§2.1), regardless of which vendor's CLI or model it would run.
 - **A bare single-shot completion endpoint standing in for the Skill.**
   It cannot run the Skill's real multi-step, tool-using loop without a
   second, unofficial reviewer implementation — the same disqualification
   as §3's re-described-Skill rule.
 
-## 8. Follow-up
+**Class 2 (maintainer-controlled):**
 
-[#336](https://github.com/amirbena/code-review-skill/issues/336) is the
-bounded empirical spike this contract requires before a runtime is
-selected: run the same benchmark case(s) through the strongest viable
-candidates from §6 and compare fidelity, latency, and operational
-complexity, ending in a decision record rather than open-ended
-exploration.
-[#337](https://github.com/amirbena/code-review-skill/issues/337)
-provisions whatever #336 selects, including wiring the §5 metadata into
-`run_benchmark.py`'s output.
+- **Claude Desktop scheduled tasks as the scheduled-integration
+  mechanism.** Rejected specifically because reliable periodic benchmark
+  monitoring must not depend on the maintainer's workstation being awake
+  or the desktop application remaining open (§2.2) — not because Class
+  2's trust boundary forbids the maintainer's own session (it doesn't;
+  that is the whole point of Class 2), but because this mechanism
+  reintroduces an availability dependency the architecture otherwise
+  avoids.
+
+## 8. Follow-up and current status
+
+[#336](https://github.com/amirbena/code-review-skill/issues/336)'s
+empirical spike (and its #366 follow-up) already ran the bounded
+comparison §6 called for; neither Class 1 candidate cleared this
+contract's bar at an acceptable cost — see
+[`runtime-candidate-decision.md`](runtime-candidate-decision.md). No
+further Class 1 candidate evaluation is being pursued.
+[#337](https://github.com/amirbena/code-review-skill/issues/337), Class
+1's provisioning issue, is **superseded** by this revision: it is no
+longer load-bearing for any downstream benchmark-architecture work (see
+[`../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md)
+§2), and should be closed pointing back to
+[#391](https://github.com/amirbena/code-review-skill/issues/391).
+
+For Class 2, this document fixes the contract (§2.2, §4.3) but does not
+implement it: the concrete Claude Cloud Routine integration — profiles,
+Routine execution, drift confirmation, evidence persistence, GitHub issue
+publication — is scoped to a future implementation issue against §2.2's
+pipeline, not opened by this revision.
 
 ## 9. Out of scope
 
-- Picking the final runtime/provider (#336).
-- Standing up any actual infrastructure, credential, or workflow (#337).
+- Picking a Class 1 runtime/provider, or re-evaluating #336/#366's
+  already-run candidates.
+- Standing up any actual infrastructure, credential, or workflow for
+  either class — including the Class 2 Routine integration itself
+  (profiles, Routine execution, drift confirmation, evidence persistence,
+  GitHub issue publication). Scoped to a future implementation issue
+  against §2.2, not this contract.
 - Any change to the corpus, runner, matcher, or metrics
-  ([#52](https://github.com/amirbena/code-review-skill/issues/52)/[#53](https://github.com/amirbena/code-review-skill/issues/53)/[#54](https://github.com/amirbena/code-review-skill/issues/54)/[#55](https://github.com/amirbena/code-review-skill/issues/55)/[#56](https://github.com/amirbena/code-review-skill/issues/56)/[#57](https://github.com/amirbena/code-review-skill/issues/57)),
-  the applicability classifier or Top-K selection
-  ([#331](https://github.com/amirbena/code-review-skill/issues/331)), or
+  ([#52](https://github.com/amirbena/code-review-skill/issues/52)/[#53](https://github.com/amirbena/code-review-skill/issues/53)/[#54](https://github.com/amirbena/code-review-skill/issues/54)/[#55](https://github.com/amirbena/code-review-skill/issues/55)/[#56](https://github.com/amirbena/code-review-skill/issues/56)/[#57](https://github.com/amirbena/code-review-skill/issues/57)) —
+  confirmed already environment-agnostic, untouched by this revision.
+- Broadly rewriting the applicability classifier or Top-K selection
+  ([#331](https://github.com/amirbena/code-review-skill/issues/331)) or
   nightly scheduling
-  ([#332](https://github.com/amirbena/code-review-skill/issues/332)).
+  ([#332](https://github.com/amirbena/code-review-skill/issues/332)) —
+  see the canonical design doc's follow-up-corrections note for the
+  bounded wording corrections those issues (and #335/#338/#339) will need
+  in separate, later changes.
 
 ## Related
 
 [`ci-integration.md`](ci-integration.md) (#255) is the existing PR-level
-CI check that this contract's eventual runtime fills the
-"applicable, runtime unavailable" gap for. The fuller cross-component
+CI check whose contributor-facing, non-blocking behavior is now the
+**permanent** state (§2.2), not a gap this contract's Class 1 runtime was
+meant to eventually fill. The fuller cross-component
 architecture — the canonical dependency DAG, the nine architecture layers,
 and how this contract's §3–§5 fits the PR and nightly benchmark paths — is
 [`../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md)
