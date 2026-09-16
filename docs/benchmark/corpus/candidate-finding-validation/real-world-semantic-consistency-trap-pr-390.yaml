@@ -1,0 +1,162 @@
+# Candidate-finding validation corpus case (Issue #383, parent #382/#381).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# Provenance (fixture context only, not a runtime dependency): a local
+# review of amirbena/code-review-skill PR #390 ("Canonicalize
+# pre-publication candidate-finding validation", reviewed at commit
+# 3d08fcb), run with the older review behavior that predates the #382
+# candidate-finding-validation discipline this corpus protects, returned
+# `REVIEW CLEAN`. The old reviewer verified strong internal consistency —
+# design record matched the reference model, tests matched the design
+# record, policy cross-links resolved, focused tests passed — but missed
+# that the reference model itself conflated finding classification with
+# blocking justification: exactly the anti-pattern
+# candidate-finding-validation-model.md §9 ("Classification and blocking
+# justification are orthogonal dimensions") exists to prevent. This
+# fixture is a self-contained fictional analogue of that failure mode; it
+# does not depend on GitHub/network access at run time and does not
+# reproduce PR #390's actual code.
+#
+# `review_engine/candidate_validation.py::classify` is refactored to take
+# a `material_impact` argument and short-circuits to
+# `REQUIREMENT_AMBIGUITY` whenever `material_impact` is false — even when
+# the evidence (`grounded` and `causal_chain_complete`) fully establishes a
+# proven correctness defect. `docs/reasoning-model.md` (unchanged,
+# pre-existing, in `base`) already explicitly states that classification
+# must be derived from evidence alone and must never be changed by
+# material impact. The existing tests (unchanged, in `base`) only exercise
+# combinations where classification and material impact happen to agree
+# (grounded+causal-complete+material-impact-true, and
+# ungrounded+material-impact-irrelevant), so they pass unchanged against
+# the new code — internal consistency (docs describe the invariant, the
+# module claims to implement it, tests are green) masks that the
+# implementation now violates the invariant the docs state.
+#
+# Expected reviewer behavior: detect that `classify` derives
+# classification from `material_impact`, contradicting the explicit,
+# already-documented separation, even though nothing here is
+# syntactically broken, no test fails, and the diff looks like a
+# reasonable simplification. "Docs match tests, tests pass, implementation
+# is internally consistent" must not be read as REVIEW CLEAN — the
+# reviewer must independently check the implementation against the
+# semantic invariant the docs state, not merely check the artifacts
+# against each other.
+
+format: benchmark-case/v1
+
+id: real-world-semantic-consistency-trap-pr-390
+title: "classify() collapses classification into blocking justification by branching on material_impact; docs/tests consistency masks the semantic defect"
+
+input:
+  patch: |
+    diff --git a/review_engine/candidate_validation.py b/review_engine/candidate_validation.py
+    index 9a1b2c3..4d5e6f7 100644
+    --- a/review_engine/candidate_validation.py
+    +++ b/review_engine/candidate_validation.py
+    @@ -1,15 +1,18 @@
+     from review_engine.model import Classification
+
+
+    -def classify(evidence):
+    -    """Classification, from evidence alone. See docs/reasoning-model.md:
+    -    classification must never consult material impact."""
+    +def classify(evidence, material_impact):
+    +    """Classification. See docs/reasoning-model.md."""
+         if not evidence.grounded:
+             return Classification.REQUIREMENT_AMBIGUITY
+         if not evidence.causal_chain_complete:
+             return Classification.TEST_COVERAGE_GAP
+    +    if not material_impact:
+    +        # Simplification: fold the "doesn't matter enough" case into
+    +        # requirement ambiguity instead of a separate blocking check.
+    +        return Classification.REQUIREMENT_AMBIGUITY
+         return Classification.PROVEN_CORRECTNESS_DEFECT
+
+
+    -def blocking_justification_valid(classification, material_impact):
+    -    return classification == Classification.PROVEN_CORRECTNESS_DEFECT and material_impact
+    +def blocking_justification_valid(classification):
+    +    return classification == Classification.PROVEN_CORRECTNESS_DEFECT
+  base:
+    review_engine/candidate_validation.py: |
+      from review_engine.model import Classification
+
+
+      def classify(evidence):
+          """Classification, from evidence alone. See docs/reasoning-model.md:
+          classification must never consult material impact."""
+          if not evidence.grounded:
+              return Classification.REQUIREMENT_AMBIGUITY
+          if not evidence.causal_chain_complete:
+              return Classification.TEST_COVERAGE_GAP
+          return Classification.PROVEN_CORRECTNESS_DEFECT
+
+
+      def blocking_justification_valid(classification, material_impact):
+          return classification == Classification.PROVEN_CORRECTNESS_DEFECT and material_impact
+    docs/reasoning-model.md: |
+      # Reasoning Model
+
+      Classification and blocking justification are orthogonal dimensions,
+      derived in this order, and the second must never change the first.
+
+      - Classification answers *what the finding is*, from evidence alone
+        (grounding + causal chain). It never consults material impact.
+      - Blocking justification answers *whether the finding's demonstrated
+        impact clears the blocking bar*, derived strictly after
+        classification, as a function of classification plus material
+        impact.
+
+      A proven correctness defect whose impact does not clear the blocking
+      bar stays classified as a proven correctness defect — it is never
+      demoted to requirement ambiguity merely because its impact is
+      insufficient to block.
+    tests/test_candidate_validation.py: |
+      from review_engine.candidate_validation import classify
+      from review_engine.model import Classification, Evidence
+
+
+      def test_grounded_complete_material_impact_is_proven_defect():
+          evidence = Evidence(grounded=True, causal_chain_complete=True)
+          assert classify(evidence, material_impact=True) == Classification.PROVEN_CORRECTNESS_DEFECT
+
+
+      def test_ungrounded_is_requirement_ambiguity():
+          evidence = Evidence(grounded=False, causal_chain_complete=False)
+          assert classify(evidence, material_impact=True) == Classification.REQUIREMENT_AMBIGUITY
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: classify-conflates-classification-with-blocking-justification
+      match: required
+      severity: P1
+      location:
+        location_intent: symbol
+        path: review_engine/candidate_validation.py
+        symbol: classify
+        anchor: "if not material_impact:"
+      claim: >-
+        classify now takes material_impact and returns REQUIREMENT_AMBIGUITY
+        whenever it is false, even when evidence.grounded and
+        evidence.causal_chain_complete both hold, so a fully grounded,
+        causally complete proven correctness defect with low material
+        impact is misclassified as requirement ambiguity instead of
+        remaining a proven correctness defect with
+        blocking_justification_valid=false, contradicting the explicit
+        separation docs/reasoning-model.md already states.
+      defect_kind: classification-blocking-conflation
+
+metadata:
+  source: "https://github.com/amirbena/code-review-skill/pull/390 (reviewed at 3d08fcb); issue #382"
+  tags: [correctness, quality]
+  rationale: >-
+    Real-world-derived scenario proving the corpus catches the specific
+    failure class an older reviewer missed on PR #390: internally
+    consistent docs/implementation/tests (green tests, matching docs) are
+    not sufficient for REVIEW CLEAN when the implementation's semantic
+    invariant — classification independent of blocking justification — is
+    actually violated. The reviewer must challenge the implementation
+    against the higher-level invariant it claims to implement, not merely
+    check that docs, tests, and code agree with each other.

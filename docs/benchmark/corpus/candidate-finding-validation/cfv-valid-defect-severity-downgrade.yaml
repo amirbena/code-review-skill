@@ -1,0 +1,81 @@
+# Candidate-finding validation corpus case (Issue #383, parent #382/#381).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# `inventory/exports.py::export_low_stock_csv` builds CSV rows by string
+# formatting, with no escaping of leading `=`/`+`/`-`/`@` characters — a
+# real CSV-formula-injection sink (technical invariant, §5 level 4) if the
+# `notes` field is ever opened in spreadsheet software. At first glance
+# this looks P0 (classic CSV injection). Disconfirmation (§8) narrows it
+# without discarding it: `notes` is not externally attacker-controlled —
+# it is free text only ever authored by internal warehouse admins who
+# already hold write access to the underlying inventory data (an
+# authoritative, bounded exposure fact drawn from the surrounding code),
+# and the export is opened only by the same admin team. The defect is
+# real and still worth fixing, but the disconfirmation pass narrows its
+# severity rather than dropping it.
+#
+# Expected: one required finding that SURVIVES disconfirmation but at a
+# downgraded P2, not the P0 a naive read would assign.
+
+format: benchmark-case/v1
+
+id: cfv-valid-defect-severity-downgrade
+title: "CSV export lacks formula-injection escaping; bounded to admin-authored, admin-consumed data narrows P0 to P2"
+
+input:
+  patch: |
+    diff --git a/inventory/exports.py b/inventory/exports.py
+    new file mode 100644
+    index 0000000..3c4d5e6
+    --- /dev/null
+    +++ b/inventory/exports.py
+    @@ -0,0 +1,13 @@
+    +from inventory.storage import list_low_stock_rows
+    +
+    +
+    +def export_low_stock_csv():
+    +    """Build a CSV export for the internal warehouse-admin dashboard.
+    +
+    +    `notes` is free text authored only by warehouse admins who already
+    +    have write access to inventory rows; the export is downloaded only
+    +    by the same admin team.
+    +    """
+    +    lines = ["sku,qty,notes"]
+    +    for row in list_low_stock_rows():
+    +        lines.append(f"{row.sku},{row.qty},{row.notes}")
+    +    return "\n".join(lines)
+  base:
+    inventory/storage.py: |
+      def list_low_stock_rows():
+          """Rows are inventory data owned and edited only by warehouse
+          admins (write access already required to reach `notes`)."""
+          raise NotImplementedError
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: export-csv-formula-injection
+      match: required
+      severity: P2
+      location:
+        location_intent: line
+        path: inventory/exports.py
+        symbol: export_low_stock_csv
+        anchor: "lines.append(f\"{row.sku},{row.qty},{row.notes}\")"
+      claim: >-
+        notes is written into a CSV row with no escaping of leading
+        formula-trigger characters, so a row can execute as a formula when
+        opened in spreadsheet software.
+      defect_kind: csv-formula-injection
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Pins candidate-finding-validation-model.md §8's DOWNGRADED outcome: a
+    genuine technical-invariant violation survives disconfirmation (it is
+    real, so it is not DROPPED) but the bounded, already-established
+    exposure (admin-authored, admin-consumed) narrows its severity from a
+    naive P0 read to P2. Locks in that disconfirmation narrows evidence
+    without discarding a real finding.

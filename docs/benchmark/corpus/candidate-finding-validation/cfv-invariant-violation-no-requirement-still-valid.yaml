@@ -1,0 +1,88 @@
+# Candidate-finding validation corpus case (Issue #383, parent #382/#381).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# `admin_console.py::bump_dashboard_view_counter` has the same TOCTOU
+# shape as worked example 1 / cfv-no-jira-toctou-still-blocking.yaml: reads
+# a counter, then writes a decremented value in a separate step, no lock.
+# Nothing states a requirement for this counter's exactness. Unlike the
+# checkout-path sibling case, this counter is a display-only figure on an
+# internal ops dashboard, refreshed by a single-threaded cron job that
+# invokes it at most once a minute — no concurrent caller exists anywhere
+# in the codebase, and no downstream logic reads the counter's value.
+#
+# `candidate-finding-validation-model.md` §9's "Classification and
+# blocking justification are orthogonal dimensions" (worked example 6):
+# classification does not consult impact — this clears grounding (§5
+# level 4, technical invariant) and the causal chain (§6) exactly as the
+# blocking sibling case does, so it is STILL classified a proven
+# correctness defect. Only blocking justification differs: material
+# impact is not established (single-threaded caller, display-only value),
+# so it stays proven_correctness_defect at typically-P2, and must NOT be
+# demoted to requirement ambiguity, test-coverage gap, or maintainability
+# concern merely because no requirement names this counter.
+#
+# Expected: one required finding, correctness-tagged, at P2 — present
+# despite no explicit product requirement, and not reclassified away from
+# a correctness defect.
+
+format: benchmark-case/v1
+
+id: cfv-invariant-violation-no-requirement-still-valid
+title: "Single-threaded dashboard counter has the same TOCTOU shape as the checkout path: still a correctness defect, just non-blocking"
+
+input:
+  patch: |
+    diff --git a/admin_console.py b/admin_console.py
+    index a437dc0..79faa15 100644
+    --- a/admin_console.py
+    +++ b/admin_console.py
+    @@ -3,3 +3,10 @@ from inventory.storage import get_counter, set_counter
+     
+     def refresh_dashboard(user):
+         require_admin(user)
+    +
+    +
+    +def bump_dashboard_view_counter():
+    +    """Invoked once a minute by the single-threaded ops-dashboard cron
+    +    job; no other caller exists anywhere in the codebase."""
+    +    value = get_counter("dashboard_views")
+    +    set_counter("dashboard_views", value - 1)
+  base:
+    admin_console.py: |
+      from inventory.storage import get_counter, set_counter
+
+
+      def refresh_dashboard(user):
+          require_admin(user)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: dashboard-counter-toctou
+      match: required
+      severity: P2
+      location:
+        location_intent: symbol
+        path: admin_console.py
+        symbol: bump_dashboard_view_counter
+        anchor: "set_counter(\"dashboard_views\", value - 1)"
+      claim: >-
+        bump_dashboard_view_counter reads the counter then writes a
+        decremented value in a separate step with no lock, the same
+        technical-invariant violation as a proven checkout-path TOCTOU
+        defect, but only a single-threaded caller exists and the value is
+        display-only, so no material impact is established.
+      defect_kind: toctou-race
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins candidate-finding-validation-model.md §9 worked example 6: a
+    concrete technical-invariant violation with no requirement behind it,
+    and with insufficient impact to clear the blocking bar, still stays
+    classified a proven correctness defect at P2 — it must not be
+    demoted to requirement ambiguity, test-coverage gap, or
+    maintainability concern, and must not be dropped for lack of an
+    explicit requirement.

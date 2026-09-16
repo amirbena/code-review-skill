@@ -1,0 +1,82 @@
+# Candidate-finding validation corpus case (Issue #383, parent #382/#381).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# `inventory/reservations.py::reserve_stock` gains a `partial_ok` flag. When
+# `partial_ok` is true and requested `qty` exceeds available stock, the new
+# code reserves whatever is available instead of raising. Nothing in the
+# repository — no requirement, ticket, test, or established behavior —
+# says what should happen when the caller passes `partial_ok=True` and
+# available stock is exactly `0`: the new code silently creates a
+# zero-quantity reservation.
+#
+# `candidate-finding-validation-model.md` §5/§9: the grounding source for
+# "a zero-qty reservation must be rejected" is only reviewer inference
+# (level 7) — nothing corroborates a specific expected behavior for this
+# edge case. This must be reported as requirement ambiguity, not invented
+# as a P0/P1 correctness defect the evidence does not actually support.
+#
+# Expected: one required P2 finding classified as requirement ambiguity;
+# no P0/P1.
+
+format: benchmark-case/v1
+
+id: cfv-requirement-ambiguity-not-invented
+title: "partial_ok reservation is silent on the zero-available-stock edge case: requirement ambiguity, not an invented P0/P1"
+
+input:
+  patch: |
+    diff --git a/inventory/reservations.py b/inventory/reservations.py
+    index 82b9669..935a902 100644
+    --- a/inventory/reservations.py
+    +++ b/inventory/reservations.py
+    @@ -1,8 +1,10 @@
+     from inventory.storage import get_stock, save_reservation
+     
+     
+    -def reserve_stock(sku, qty, customer_id):
+    +def reserve_stock(sku, qty, customer_id, partial_ok=False):
+         stock = get_stock(sku)
+         if stock < qty:
+    -        raise ValueError("insufficient stock")
+    +        if not partial_ok:
+    +            raise ValueError("insufficient stock")
+    +        qty = stock
+         return save_reservation(sku=sku, qty=qty, customer_id=customer_id)
+  base:
+    inventory/reservations.py: |
+      from inventory.storage import get_stock, save_reservation
+
+
+      def reserve_stock(sku, qty, customer_id):
+          stock = get_stock(sku)
+          if stock < qty:
+              raise ValueError("insufficient stock")
+          return save_reservation(sku=sku, qty=qty, customer_id=customer_id)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: partial-ok-zero-stock-unspecified
+      match: required
+      severity: P2
+      location:
+        location_intent: symbol
+        path: inventory/reservations.py
+        symbol: reserve_stock
+        anchor: "qty = stock"
+      claim: >-
+        when partial_ok is true and available stock is 0, reserve_stock
+        silently creates a zero-quantity reservation with no stated
+        expectation anywhere for this edge case.
+      defect_kind: requirement-ambiguity
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Pins candidate-finding-validation-model.md §5/§9: an edge case grounded
+    only in reviewer inference (no requirement, test, or established
+    behavior corroborates the expected outcome) is reported as requirement
+    ambiguity at P2, never invented as a P0/P1 correctness defect the
+    evidence does not actually establish.

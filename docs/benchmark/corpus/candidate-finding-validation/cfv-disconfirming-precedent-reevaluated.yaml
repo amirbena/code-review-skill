@@ -1,0 +1,111 @@
+# Candidate-finding validation corpus case (Issue #383, parent #382/#381).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# `inventory/reservations.py::release_reservation` now catches
+# LockTimeoutError and swallows it. Read in isolation this looks like a
+# correctness defect: "an error is now silently lost." Nearby precedent
+# (`billing/refunds.py::reconcile_pending_refund`, unchanged, in `base`)
+# establishes that this exact responsibility — best-effort cleanup on a
+# path already retried by a background reconciliation job — is
+# legitimately allowed to swallow a timeout and let the retry job catch
+# it later; that is the established pattern for this responsibility, not
+# a defect.
+#
+# `candidate-finding-validation-model.md` §8's RECLASSIFIED outcome: the
+# precedent shows the candidate is real but is a *different* kind of issue
+# than first proposed. The diff also deletes the existing debug-level log
+# line that recorded the timeout for later triage — the precedent function
+# keeps its own log line for the same responsibility. That is a genuine,
+# smaller observability regression, not the originally suspected silent
+# data-loss correctness defect.
+#
+# Expected: one required P2 finding reclassified as a maintainability /
+# observability concern — not the P1 "errors are silently lost"
+# correctness claim a reviewer might first reach for.
+
+format: benchmark-case/v1
+
+id: cfv-disconfirming-precedent-reevaluated
+title: "Swallowed LockTimeoutError looks like a lost-error defect, but precedent shows the pattern is established; reclassified as a log-context regression"
+
+input:
+  patch: |
+    diff --git a/inventory/reservations.py b/inventory/reservations.py
+    index 79a8a63..621f4a6 100644
+    --- a/inventory/reservations.py
+    +++ b/inventory/reservations.py
+    @@ -1,7 +1,4 @@
+     from inventory.locking import LockTimeoutError, release_lock
+    -from logging import getLogger
+    -
+    -log = getLogger(__name__)
+     
+     
+     def release_reservation(reservation_id):
+    @@ -9,5 +6,4 @@ def release_reservation(reservation_id):
+         try:
+             release_lock(reservation_id)
+         except LockTimeoutError:
+    -        log.debug("release_reservation timed out for %s", reservation_id)
+             pass
+  base:
+    inventory/reservations.py: |
+      from inventory.locking import LockTimeoutError, release_lock
+      from logging import getLogger
+
+      log = getLogger(__name__)
+
+
+      def release_reservation(reservation_id):
+          """Best-effort cleanup; the reconciliation job retries any that fail."""
+          try:
+              release_lock(reservation_id)
+          except LockTimeoutError:
+              log.debug("release_reservation timed out for %s", reservation_id)
+              pass
+    billing/refunds.py: |
+      from logging import getLogger
+      from billing.locking import LockTimeoutError, release_lock
+
+      log = getLogger(__name__)
+
+
+      def reconcile_pending_refund(refund_id):
+          """Best-effort cleanup; the reconciliation job retries any that fail."""
+          try:
+              release_lock(refund_id)
+          except LockTimeoutError:
+              log.debug("reconcile_pending_refund timed out for %s", refund_id)
+              pass
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: release-reservation-timeout-log-dropped
+      match: required
+      severity: P2
+      location:
+        location_intent: line
+        path: inventory/reservations.py
+        symbol: release_reservation
+        anchor: "except LockTimeoutError:"
+      claim: >-
+        the debug log line recording the swallowed LockTimeoutError was
+        removed, so a timeout on this best-effort path is no longer
+        traceable, unlike the established pattern for this same
+        responsibility (billing/refunds.py::reconcile_pending_refund).
+      defect_kind: missing-diagnostic-log
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Pins candidate-finding-validation-model.md §8's RECLASSIFIED outcome:
+    disconfirming, authoritative nearby precedent shows the swallowed
+    exception itself is the established pattern for this responsibility,
+    not a lost-error correctness defect — but the candidate is real once
+    re-evaluated under that precedent, just as a smaller, non-blocking
+    observability regression. A reviewer that either confirms the
+    original P1 "errors are silently lost" claim or drops the candidate
+    entirely fails this case.

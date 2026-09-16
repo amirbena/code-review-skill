@@ -1,0 +1,83 @@
+# Candidate-finding validation corpus case (Issue #383, parent #382/#381).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# The new `DiscountRule` class in `inventory/pricing.py` mirrors the
+# existing `TaxRule` class in the same file (`base`), but with its fields
+# in a different order and a differently named boolean
+# (`is_active` versus `TaxRule`'s `enabled`). Both classes are simple,
+# independently-constructed data holders — nothing consumes them
+# positionally, no serialization format depends on field order, and no
+# shared base class or protocol requires matching field names. The
+# inconsistency is real but has no behavioral consequence anywhere in the
+# diff or its base.
+#
+# `candidate-finding-validation-model.md` §9: this clears grounding only
+# at "real but does not rise to a correctness, security, or reliability
+# defect" — a maintainability concern, not a blocking finding.
+#
+# Expected: one required P2 finding classified as a maintainability
+# concern; decision stays clean (no P0/P1 anywhere in the case).
+
+format: benchmark-case/v1
+
+id: cfv-structural-inconsistency-non-blocking
+title: "DiscountRule's field order and naming diverge from the established TaxRule shape with no behavioral consequence: non-blocking"
+
+input:
+  patch: |
+    diff --git a/inventory/pricing.py b/inventory/pricing.py
+    index 2a3b4c5..6d7e8f9 100644
+    --- a/inventory/pricing.py
+    +++ b/inventory/pricing.py
+    @@ -8,3 +8,11 @@ class TaxRule:
+         region: str
+         rate: float
+         enabled: bool
+    +
+    +
+    +@dataclass
+    +class DiscountRule:
+    +    """Independently constructed; no positional consumer, no shared
+    +    protocol with TaxRule, no serialization format depends on order."""
+    +
+    +    rate: float
+    +    region: str
+    +    is_active: bool
+  base:
+    inventory/pricing.py: |
+      from dataclasses import dataclass
+
+
+      @dataclass
+      class TaxRule:
+          region: str
+          rate: float
+          enabled: bool
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: discount-rule-shape-inconsistent-with-tax-rule
+      match: required
+      severity: P2
+      location:
+        location_intent: symbol
+        path: inventory/pricing.py
+        symbol: DiscountRule
+        anchor: "is_active: bool"
+      claim: >-
+        DiscountRule reorders its fields and renames the enabled flag to
+        is_active relative to the established TaxRule shape in the same
+        module, with no functional consequence, for reviewer
+        consistency/readability rather than correctness.
+      defect_kind: naming-inconsistency
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Pins candidate-finding-validation-model.md §9's maintainability-
+    concern classification: a real structural inconsistency with no
+    demonstrated behavioral consequence is reported non-blocking at P2,
+    never escalated to a correctness/reliability defect it does not earn.

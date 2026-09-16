@@ -1,0 +1,79 @@
+# Candidate-finding validation corpus case (Issue #383, parent #382/#381).
+# Format: docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# `inventory/reservations.py::decrement_stock` reads the current stock
+# level, then writes a decremented value in a separate step, with no lock
+# or optimistic-concurrency check between the two. This is the checkout
+# hot path, called concurrently by many simultaneous requests. No Jira
+# reference, requirement, or test names this behavior — the finding stands
+# on `candidate-finding-validation-model.md` §5 level 4 (technical
+# invariant: a TOCTOU race is a concurrency guarantee violation
+# independent of any stated requirement) exactly as worked example 1.
+#
+# Expected: one required P1 finding, blocking despite carrying no ticket
+# reference — locking in that Jira is sufficient, never necessary, for a
+# technically-grounded blocking finding.
+
+format: benchmark-case/v1
+
+id: cfv-no-jira-toctou-still-blocking
+title: "Checkout-path stock decrement reads then writes without a lock: TOCTOU race, blocking with no ticket reference"
+
+input:
+  patch: |
+    diff --git a/inventory/reservations.py b/inventory/reservations.py
+    index 2d04fb5..d757424 100644
+    --- a/inventory/reservations.py
+    +++ b/inventory/reservations.py
+    @@ -6,3 +6,11 @@ def reserve_stock(sku, qty, customer_id):
+         if stock < qty:
+             raise ValueError("insufficient stock")
+         return _create_reservation(sku, qty, customer_id)
+    +
+    +
+    +def decrement_stock(sku, qty):
+    +    """Called from the checkout hot path for every confirmed order."""
+    +    stock = get_stock(sku)
+    +    if stock < qty:
+    +        raise ValueError("insufficient stock")
+    +    set_stock(sku, stock - qty)
+  base:
+    inventory/reservations.py: |
+      from inventory.storage import get_stock, set_stock
+
+
+      def reserve_stock(sku, qty, customer_id):
+          stock = get_stock(sku)
+          if stock < qty:
+              raise ValueError("insufficient stock")
+          return _create_reservation(sku, qty, customer_id)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: decrement-stock-toctou
+      match: required
+      severity: P1
+      location:
+        location_intent: symbol
+        path: inventory/reservations.py
+        symbol: decrement_stock
+        anchor: "set_stock(sku, stock - qty)"
+      claim: >-
+        decrement_stock reads stock then writes a decremented value in a
+        separate step with no lock or optimistic-concurrency check, so
+        concurrent checkout requests for the same sku can interleave and
+        oversell stock or lose a decrement.
+      defect_kind: toctou-race
+
+metadata:
+  source: crafted
+  tags: [correctness, concurrency]
+  rationale: >-
+    Pins candidate-finding-validation-model.md §5 level 4 and worked
+    example 1: a concrete TOCTOU race on a hot concurrent path is a
+    blocking P1 on technical-invariant grounding alone, with no Jira
+    reference required or supplied. A reviewer that treats missing-ticket
+    as missing-grounding, or downgrades this to non-blocking, fails this
+    case.
