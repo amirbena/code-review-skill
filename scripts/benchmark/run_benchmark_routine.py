@@ -36,6 +36,7 @@ import argparse
 import json
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -141,11 +142,19 @@ def _post_evidence(issue: int | None, marker: str, title: str, body: str) -> int
     invocations rather than creating a fresh tracking Issue every run).
     """
     full_body = f"{marker}\n\n{body}"
-    if issue is None:
-        url = _gh("issue", "create", "--title", title, "--body", full_body)
-        return int(url.rstrip("/").rsplit("/", 1)[-1])
-    _gh("issue", "comment", str(issue), "--body", full_body)
-    return issue
+    # --body-file, not --body: a full-corpus evidence payload can exceed the
+    # OS argv-size limit if passed as a literal command-line argument.
+    with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as handle:
+        handle.write(full_body)
+        body_path = handle.name
+    try:
+        if issue is None:
+            url = _gh("issue", "create", "--title", title, "--body-file", body_path)
+            return int(url.rstrip("/").rsplit("/", 1)[-1])
+        _gh("issue", "comment", str(issue), "--body-file", body_path)
+        return issue
+    finally:
+        Path(body_path).unlink(missing_ok=True)
 
 
 def run_auth_check(args: argparse.Namespace) -> int:
@@ -170,7 +179,6 @@ def run_benchmark_mode(args: argparse.Namespace) -> int:
         timestamp=datetime.now(timezone.utc).isoformat(),
     )
 
-    stdout_chunks: list[str] = []
     run_argv = ["--corpus-dir", args.corpus_dir, "--cli", executable, "--timeout", str(args.timeout)]
     case_ids = args.case_id if args.mode != "full" else [None]
 
@@ -185,7 +193,6 @@ def run_benchmark_mode(args: argparse.Namespace) -> int:
             capture_output=True,
             text=True,
         )
-        stdout_chunks.append(proc.stdout)
         verification = verify_benchmark_output(proc.stdout, proc.returncode)
         verifications.append(verification.as_dict())
         if not verification.passed:

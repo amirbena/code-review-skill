@@ -11,6 +11,7 @@ independently of any benchmark run.
 from __future__ import annotations
 
 import json
+import os
 import unittest
 from unittest import mock
 
@@ -89,6 +90,27 @@ class RunBenchmarkRoutineTest(unittest.TestCase):
     def test_selected_mode_requires_case_id(self) -> None:
         exit_code = routine.main(["--mode", "selected"])
         self.assertEqual(exit_code, 1)
+
+    def test_post_evidence_uses_body_file_not_body_argument(self) -> None:
+        # A large evidence payload passed as a literal --body argument can
+        # exceed the OS argv-size limit; it must go through a temp file.
+        captured_paths: list[str] = []
+
+        def fake_gh(*args: str) -> str:
+            self.assertNotIn("--body", args)
+            self.assertIn("--body-file", args)
+            path = args[args.index("--body-file") + 1]
+            captured_paths.append(path)
+            with open(path, encoding="utf-8") as handle:
+                content = handle.read()
+            self.assertIn("hello evidence", content)
+            return "https://github.com/o/r/issues/99"
+
+        with mock.patch.object(routine, "_gh", side_effect=fake_gh):
+            issue = routine._post_evidence(None, "<!-- marker -->", "title", "hello evidence")
+
+        self.assertEqual(issue, 99)
+        self.assertFalse(os.path.exists(captured_paths[0]), "temp body file must be cleaned up")
 
 
 if __name__ == "__main__":
