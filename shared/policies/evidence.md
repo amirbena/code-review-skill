@@ -52,7 +52,13 @@ the evidence/detection location from the canonical fix/action location per
 evidence location, publication." A Skill that anchors findings to a review
 surface prefers the resolved fix/action location; when that location
 cannot be confidently determined, the finding states so explicitly rather
-than treating the evidence location as the fix.
+than treating the evidence location as the fix. Visiting a caller,
+callee, sibling, test, utility, or precedent location while gathering
+this evidence never by itself relocates the finding — how the fix/action
+location is derived from causal/contract ownership once evidence spans
+more than one place is owned by
+[`../templates/finding.md`](../templates/finding.md), "Deriving the
+fix/action location."
 
 Scale this to the change: a small, clearly isolated change needs little or
 no dependency exploration beyond confirming it doesn't affect anything else;

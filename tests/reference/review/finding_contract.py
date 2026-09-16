@@ -62,6 +62,30 @@ LONG_FORM_CATEGORIES: frozenset[str] = frozenset(
     }
 )
 
+# Issue #386: the fixed ranking finding.md, "Location ambiguity" uses to pick
+# a fix/action location when more than one candidate remains plausible after
+# causal/contract reasoning. Highest-ranked plausible candidate wins; when
+# none is available the finding falls back to the existing "fix/action
+# location unresolved" state (`fix_location_resolved=False` above) rather
+# than inventing certainty.
+LOCATION_AMBIGUITY_RANKING: tuple[str, ...] = (
+    "causal_ownership",
+    "contract_ownership",
+    "actionable_repair_site",
+    "precise_but_honest_changed_location",
+)
+
+
+def select_location_rank(available: Sequence[str]) -> Optional[str]:
+    """The highest-ranked candidate present in `available`, per
+    LOCATION_AMBIGUITY_RANKING, or None when no candidate is available
+    (finding.md's "fix/action location unresolved" state applies instead
+    of inventing a location)."""
+    for candidate in LOCATION_AMBIGUITY_RANKING:
+        if candidate in available:
+            return candidate
+    return None
+
 
 @dataclass(frozen=True)
 class Finding:

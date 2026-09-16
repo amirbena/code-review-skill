@@ -52,7 +52,14 @@ the fix/action location. The three concepts — evidence/detection
 location, canonical fix/action location, and publication anchor — are
 defined in
 [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md),
-"Fix/action location, evidence location, publication."
+"Fix/action location, evidence location, publication." How that
+fix/action location is itself *derived* from an already-accepted
+finding's claim — causal versus contract ownership, locality preservation
+during context expansion, precision, multi-location primary selection,
+test-versus-production placement, and the ambiguity ranking — is owned by
+that same file's "Deriving the fix/action location"; this policy consumes
+an already-resolved location as the input to the anchor-selection order
+below and never re-derives it.
 
 ### Anchor selection order
 

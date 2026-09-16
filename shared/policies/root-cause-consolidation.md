@@ -89,7 +89,13 @@ Worked contrast:
 ### The authoritative consolidated finding
 
 Consolidation applies only when the shared cause reaches **at least two**
-manifestation sites. When it does, emit one finding with a single identity,
+manifestation sites. This is the same bar
+[`../templates/finding.md`](../templates/finding.md), "Deriving the
+fix/action location" reuses, and only reuses, for selecting a finding's
+primary location among several touched sites; a finding that touches
+multiple files without meeting this bar still gets one primary
+causal/contract-owning location, never a second consolidation path. When
+it does, emit one finding with a single identity,
 one severity (the highest justified across the manifestations, per
 [`severity.md`](severity.md)), one evidence block establishing the shared
 cause, and one remediation direction aimed at that cause or its canonical

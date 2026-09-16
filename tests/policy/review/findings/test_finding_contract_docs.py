@@ -14,6 +14,7 @@ from __future__ import annotations
 import re
 import unittest
 
+from tests.reference.review import finding_contract as fc
 from tests.support.paths import REPO_ROOT
 
 SHARED_FINDING = REPO_ROOT / "shared/templates/finding.md"
@@ -25,6 +26,11 @@ SHARED_SUMMARY = REPO_ROOT / "shared/templates/review-summary.md"
 LOCAL_REPORT = REPO_ROOT / "skills/local-code-review/templates/local-review-report.md"
 GITHUB_BODY = REPO_ROOT / "skills/github-pr-review/templates/external-review-summary.md"
 GITHUB_INLINE = REPO_ROOT / "skills/github-pr-review/templates/inline-finding.md"
+ARCHITECTURAL_PLACEMENT = REPO_ROOT / "shared/policies/architectural-placement.md"
+ROOT_CAUSE_CONSOLIDATION = REPO_ROOT / "shared/policies/root-cause-consolidation.md"
+SHARED_EVIDENCE = REPO_ROOT / "shared/policies/evidence.md"
+REPOSITORY_EXPANSION = REPO_ROOT / "shared/policies/repository-expansion.md"
+FINDING_PLACEMENT = REPO_ROOT / "skills/github-pr-review/policies/finding-placement.md"
 
 COMPACT_FULL_LABELS = ("**Location:**", "**Evidence:**", "**Impact:**", "**Fix:**")
 OLD_BLOCK_HEADERS = ("\n**Evidence**\n", "\n**Impact**\n", "\n**Recommended direction**\n")
@@ -461,6 +467,197 @@ class ReviewSummaryAlignmentTests(unittest.TestCase):
 
     def test_clean_review_omits_findings_section(self) -> None:
         self.assertIn("Omit the section completely on a clean review", self.norm)
+
+
+class LocationDerivationSectionTests(unittest.TestCase):
+    """Documentation-contract checks for fix/action-location derivation
+    (Issue #386): the reasoning that picks *which* location a finding
+    anchors at when evidence, causal reasoning, or bounded context
+    expansion touch more than one place. This is upstream of, and
+    distinct from, the anchor-selection/publication mechanics in
+    `finding-placement.md` (Issue #164)."""
+
+    def setUp(self) -> None:
+        self.text = SHARED_FINDING.read_text(encoding="utf-8")
+        self.norm = _norm(self.text)
+        section = re.search(
+            r"## Deriving the fix/action location\n(.*?)\n## Affected locations",
+            self.text,
+            re.S,
+        )
+        self.assertIsNotNone(section, "finding.md missing the derivation section")
+        self.section = _norm(section.group(1))
+
+    def test_section_exists_between_publication_and_affected_locations(self) -> None:
+        self.assertIn("## Deriving the fix/action location", self.text)
+        # sits right after the evidence/fix/publication distinction and
+        # before the consolidated-finding affected-locations section
+        pub = self.text.index("## Fix/action location, evidence location, publication")
+        derive = self.text.index("## Deriving the fix/action location")
+        affected = self.text.index("## Affected locations on a consolidated finding")
+        self.assertLess(pub, derive)
+        self.assertLess(derive, affected)
+
+    def test_feeds_but_never_redefines_finding_placement_anchoring(self) -> None:
+        self.assertIn("never re-anchors, and that policy never re-derives", self.section)
+        self.assertIn("architectural-placement.md", self.section)
+        self.assertIn("root-cause-consolidation.md", self.section)
+
+    def test_causal_center_worked_contrast(self) -> None:
+        self.assertIn("Causal center", self.section)
+        self.assertIn("location follows the claim", self.section)
+        self.assertIn(
+            "Prefer the causal/contract-owning site over a downstream manifestation",
+            self.section,
+        )
+        # the worked cause-vs-symptom contrast (compute_discount example)
+        self.assertIn("compute_discount", self.section)
+        self.assertIn("negative discount", self.section)
+        self.assertIn(
+            "the claim, not the code's position in the call chain, decides",
+            self.section,
+        )
+
+    def test_caller_callee_and_extended_contract_boundaries(self) -> None:
+        self.assertIn("no mechanical caller/callee preference", self.section)
+        self.assertIn("precondition violation", self.section)
+        self.assertIn("contract violation", self.section)
+        self.assertIn("pre-existing callee bug merely exposed", self.section)
+        for boundary in (
+            "validation/guard site",
+            "state-transition/mutation site",
+            "lifecycle boundary",
+            "authorization decision point",
+            "encoding/decoding boundary",
+            "synchronization/state-assumption boundary",
+        ):
+            self.assertIn(boundary, self.section)
+
+    def test_locality_preservation_during_context_expansion(self) -> None:
+        self.assertIn("Locality preservation during context expansion", self.section)
+        self.assertIn(
+            "never by itself relocates the finding", self.section
+        )
+        self.assertIn("cache-key builder", self.section)
+
+    def test_precision_versus_semantic_honesty(self) -> None:
+        self.assertIn("Precision versus semantic honesty", self.section)
+        self.assertIn("narrowest location that is still semantically honest", self.section)
+        self.assertIn("never force false precision", self.section)
+
+    def test_multi_location_reuses_root_cause_bar_only_when_met(self) -> None:
+        self.assertIn("Multi-line / multi-file primary selection", self.section)
+        self.assertIn("select one primary causal/contract-owning location", self.section)
+        self.assertIn("not a second consolidation mechanism", self.section)
+        self.assertIn("shared-cause bar is actually met", self.section)
+
+    def test_test_versus_production_placement(self) -> None:
+        self.assertIn("Test versus production placement", self.section)
+        self.assertIn(
+            "never automatically makes the test the fix/action location", self.section
+        )
+        self.assertIn("anchors at the production code the test exposes", self.section)
+        self.assertIn("anchors at the test, because the test is the thing that must", self.section)
+        self.assertIn(
+            "is never itself the anchor, because it is not the thing that must change",
+            self.section,
+        )
+
+    def test_location_ambiguity_ranking_and_unresolved_fallback(self) -> None:
+        self.assertIn("Location ambiguity", self.section)
+        ambiguity = self.section[self.section.index("Location ambiguity") :]
+        order_markers = [
+            "causal ownership",
+            "contract ownership",
+            "actionable repair site",
+            "precise-but-still-honest changed location",
+        ]
+        positions = [ambiguity.index(m) for m in order_markers]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn("do not invent certainty", ambiguity)
+        self.assertIn(
+            "evidence location; fix/action location unresolved", ambiguity
+        )
+
+
+class LocationDerivationWiringTests(unittest.TestCase):
+    """Cross-links the derivation section reuses rather than restates."""
+
+    def test_finding_placement_points_at_derivation_not_redefine(self) -> None:
+        norm = _norm(FINDING_PLACEMENT.read_text(encoding="utf-8"))
+        self.assertIn("Deriving the fix/action location", norm)
+        self.assertIn(
+            "consumes an already-resolved location as the input to the "
+            "anchor-selection order",
+            norm,
+        )
+        self.assertIn("never re-derives it", norm)
+
+    def test_architectural_placement_is_reused_not_redefined(self) -> None:
+        norm = _norm(ARCHITECTURAL_PLACEMENT.read_text(encoding="utf-8"))
+        self.assertIn("reused, not redefined", norm)
+        self.assertIn("Deriving the fix/action location", norm)
+        self.assertIn(
+            "does not change whether a placement finding is raised in the first place",
+            norm,
+        )
+
+    def test_root_cause_consolidation_bar_is_reused_only_when_met(self) -> None:
+        norm = _norm(ROOT_CAUSE_CONSOLIDATION.read_text(encoding="utf-8"))
+        self.assertIn("Deriving the fix/action location", norm)
+        self.assertIn("never a second consolidation path", norm)
+
+    def test_evidence_policy_notes_expansion_never_relocates(self) -> None:
+        norm = _norm(SHARED_EVIDENCE.read_text(encoding="utf-8"))
+        self.assertIn("never by itself relocates the finding", norm)
+        self.assertIn("Deriving the fix/action location", norm)
+
+    def test_repository_expansion_notes_rings_never_relocate(self) -> None:
+        norm = _norm(REPOSITORY_EXPANSION.read_text(encoding="utf-8"))
+        self.assertIn("never by itself relocates a finding", norm)
+        self.assertIn("Deriving the fix/action location", norm)
+
+
+class LocationAmbiguityRankingReferenceModelTests(unittest.TestCase):
+    """Reference-model behavior backing "Location ambiguity" (Issue #386):
+    a deterministic ranking, never an arbitrary or invented pick."""
+
+    def test_ranking_matches_the_documented_fixed_order(self) -> None:
+        self.assertEqual(
+            fc.LOCATION_AMBIGUITY_RANKING,
+            (
+                "causal_ownership",
+                "contract_ownership",
+                "actionable_repair_site",
+                "precise_but_honest_changed_location",
+            ),
+        )
+
+    def test_highest_ranked_available_candidate_wins(self) -> None:
+        self.assertEqual(
+            fc.select_location_rank(
+                ["actionable_repair_site", "contract_ownership"]
+            ),
+            "contract_ownership",
+        )
+        self.assertEqual(
+            fc.select_location_rank(["precise_but_honest_changed_location"]),
+            "precise_but_honest_changed_location",
+        )
+        self.assertEqual(
+            fc.select_location_rank(
+                [
+                    "causal_ownership",
+                    "contract_ownership",
+                    "actionable_repair_site",
+                    "precise_but_honest_changed_location",
+                ]
+            ),
+            "causal_ownership",
+        )
+
+    def test_no_plausible_candidate_falls_back_to_unresolved_not_invented(self) -> None:
+        self.assertIsNone(fc.select_location_rank([]))
 
 
 if __name__ == "__main__":
