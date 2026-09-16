@@ -443,8 +443,11 @@ def _run_silent_drift_prerender_passes_prepublish_catches_it() -> Observed:
 
 
 def _run_incomplete_coverage_but_rendered_clean_mismatch() -> Observed:
+    # The carve-out applies identically at every pre-render reconciliation
+    # point (1-3); ACTIVE pre-render is the representative point used here
+    # -- this is a reconciliation *point*, not the case's own category.
     return render_or_withhold(
-        CATEGORY_INCOMPLETE_COVERAGE_MISMATCH, _CLEAN_DECISION, True, vc.RenderedSignal.REVIEW_CLEAN
+        CATEGORY_ACTIVE_PRE_RENDER, _CLEAN_DECISION, True, vc.RenderedSignal.REVIEW_CLEAN
     )
 
 
@@ -453,8 +456,10 @@ def _run_incomplete_coverage_but_approve_event_submitted_mismatch() -> Observed:
 
 
 def _run_incomplete_coverage_review_incomplete_signal_is_consistent_control() -> Observed:
+    # Same representative reconciliation point as the mismatch case above
+    # -- this is a reconciliation *point*, not the case's own category.
     return render_or_withhold(
-        CATEGORY_CONTROL_CONSISTENT, _CLEAN_DECISION, True, vc.RenderedSignal.REVIEW_INCOMPLETE
+        CATEGORY_ACTIVE_PRE_RENDER, _CLEAN_DECISION, True, vc.RenderedSignal.REVIEW_INCOMPLETE
     )
 
 
