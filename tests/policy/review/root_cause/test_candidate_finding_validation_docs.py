@@ -150,8 +150,39 @@ class DesignRecordExistsAndCoversScopeTests(unittest.TestCase):
 
     def test_worked_examples_present(self) -> None:
         t = _norm(MODEL)
-        for n in range(1, 6):
+        for n in range(1, 7):
             self.assertIn(f"Worked example {n}", t)
+
+    def test_classification_and_blocking_are_orthogonal_dimensions(self) -> None:
+        # #382 follow-up 2: a proven correctness defect with insufficient
+        # material impact must stay classified as a proven correctness
+        # defect -- the design record must say this unmistakably, and must
+        # not imply that non-blocking means ambiguity/coverage/
+        # maintainability, nor that only blocking defects are "proven".
+        t = _norm(MODEL)
+        self.assertIn("Classification and blocking justification are orthogonal dimensions", t)
+        self.assertIn("the second is never allowed to change the answer to the first", t)
+        self.assertIn(
+            "stays classified as a proven correctness defect", t
+        )
+        self.assertIn(
+            "It never consults material impact", t
+        )
+        self.assertIn(
+            "including proven correctness defect itself, when every gate cleared except material impact",
+            t,
+        )
+
+    def test_worked_example_6_shows_proven_defect_non_blocking_impact(self) -> None:
+        t = _norm(MODEL)
+        self.assertIn(
+            "Worked example 6 — proven defect, impact does not clear the blocking bar", t
+        )
+        self.assertIn("blocking_justification_valid = false", t)
+        self.assertIn(
+            "Only the blocking eligibility differs from worked example 1; the classification does not",
+            t,
+        )
 
     def test_non_goals_cover_chain_of_thought_and_no_new_enum(self) -> None:
         t = _norm(MODEL)

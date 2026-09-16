@@ -12,9 +12,13 @@ while every other grounding source (including technical invariant, with no
 ticket) does; the causal chain and regression-proof checks require every
 link/evidence piece, not merely some; disconfirmation can survive, drop,
 downgrade, or reclassify a candidate; only a proven correctness defect is
-normally blocking; and claim_valid / blocking_justification_valid stay
-independent -- a kept finding is never silently suppressed for failing the
-blocking bar alone.
+normally blocking; and classification / blocking_justification_valid stay
+orthogonal dimensions -- classification answers "what is this?" from
+evidence alone, is never derived from material_impact, and a proven
+correctness defect with insufficient material impact is still classified
+as a proven correctness defect, only ineligible to block; claim_valid and
+blocking_justification_valid likewise stay independent -- a kept finding
+is never silently suppressed for failing the blocking bar alone.
 """
 
 from __future__ import annotations
@@ -315,6 +319,112 @@ class FindingValidityVsBlockingJustificationTests(unittest.TestCase):
         )
         self.assertTrue(outcome.claim_valid)
         self.assertFalse(outcome.blocking_justification_valid)
+        # Classification answers "what is this?" from evidence alone -- low
+        # impact never demotes a proven defect to another classification.
+        self.assertEqual(outcome.classification, C.PROVEN_CORRECTNESS_DEFECT)
+
+    def test_case_a_proven_defect_non_blocking_impact_stays_a_defect(self) -> None:
+        # #382 follow-up 2, Case A: a fully proven correctness defect whose
+        # impact does not clear the P0/P1 bar remains classified as exactly
+        # that defect -- it must not fall through to REQUIREMENT_AMBIGUITY,
+        # TEST_COVERAGE_GAP, or MAINTAINABILITY_CONCERN merely because
+        # material_impact is False.
+        outcome = cfv.evaluate_candidate(
+            grounding_sources=[G.TECHNICAL_INVARIANT],
+            causal_chain=_complete_chain(),
+            disconfirmation=D.SURVIVES,
+            material_impact=False,
+        )
+        self.assertTrue(outcome.claim_valid)
+        self.assertEqual(outcome.classification, C.PROVEN_CORRECTNESS_DEFECT)
+        self.assertFalse(outcome.blocking_justification_valid)
+
+    def test_case_b_same_proven_defect_with_blocking_impact(self) -> None:
+        # #382 follow-up 2, Case B: the positive counterpart of Case A --
+        # identical evidence, but material impact is now established, so
+        # the same classification also clears the blocking bar.
+        outcome = cfv.evaluate_candidate(
+            grounding_sources=[G.TECHNICAL_INVARIANT],
+            causal_chain=_complete_chain(),
+            disconfirmation=D.SURVIVES,
+            material_impact=True,
+        )
+        self.assertTrue(outcome.claim_valid)
+        self.assertEqual(outcome.classification, C.PROVEN_CORRECTNESS_DEFECT)
+        self.assertTrue(outcome.blocking_justification_valid)
+
+    def test_downgraded_disconfirmation_classifies_as_requirement_ambiguity(self) -> None:
+        # A DOWNGRADED disconfirmation outcome means contradicting evidence
+        # weakened the premise itself (Section 8's table) -- distinct from
+        # low material impact, and independent of it: even with material
+        # impact still true, a weakened premise cannot classify as a proven
+        # defect.
+        outcome = cfv.evaluate_candidate(
+            grounding_sources=[G.TECHNICAL_INVARIANT],
+            causal_chain=_complete_chain(),
+            disconfirmation=D.DOWNGRADED,
+            material_impact=True,
+        )
+        self.assertTrue(outcome.claim_valid)
+        self.assertEqual(outcome.classification, C.REQUIREMENT_AMBIGUITY)
+        self.assertFalse(outcome.blocking_justification_valid)
+
+
+class ClassificationIsEvidenceDrivenNotImpactDrivenTests(unittest.TestCase):
+    """Every fallback branch classifies on what the evidence establishes,
+    never mechanically on whether the candidate cleared the blocking bar."""
+
+    def test_reclassified_disconfirmation_classifies_independent_of_impact(self) -> None:
+        for material_impact in (True, False):
+            outcome = cfv.evaluate_candidate(
+                grounding_sources=[G.TECHNICAL_INVARIANT],
+                causal_chain=_complete_chain(),
+                disconfirmation=D.RECLASSIFIED,
+                material_impact=material_impact,
+            )
+            self.assertTrue(outcome.claim_valid)
+            self.assertEqual(outcome.classification, C.TEST_COVERAGE_GAP, material_impact)
+            self.assertFalse(outcome.blocking_justification_valid)
+
+    def test_unproven_regression_classifies_independent_of_impact(self) -> None:
+        for material_impact in (True, False):
+            outcome = cfv.evaluate_candidate(
+                grounding_sources=[G.ESTABLISHED_PRODUCTION_BEHAVIOR],
+                causal_chain=_complete_chain(),
+                is_regression_claim=True,
+                regression_claim=cfv.RegressionClaim(change_evidence="the diff"),
+                material_impact=material_impact,
+            )
+            self.assertTrue(outcome.claim_valid)
+            self.assertEqual(outcome.classification, C.TEST_COVERAGE_GAP, material_impact)
+            self.assertFalse(outcome.blocking_justification_valid)
+
+    def test_reviewer_inference_alone_classifies_independent_of_impact(self) -> None:
+        for material_impact in (True, False):
+            outcome = cfv.evaluate_candidate(
+                grounding_sources=[G.REVIEWER_INFERENCE_ALONE],
+                causal_chain=_complete_chain(),
+                material_impact=material_impact,
+            )
+            self.assertTrue(outcome.claim_valid)
+            self.assertEqual(
+                outcome.classification, C.MAINTAINABILITY_CONCERN, material_impact
+            )
+            self.assertFalse(outcome.blocking_justification_valid)
+
+    def test_incomplete_causal_chain_classifies_independent_of_impact(self) -> None:
+        for material_impact in (True, False):
+            outcome = cfv.evaluate_candidate(
+                grounding_sources=[G.TECHNICAL_INVARIANT],
+                causal_chain=cfv.CausalChain(
+                    reviewed_change="path diverges",
+                    changed_assumption="handling changed",
+                ),
+                material_impact=material_impact,
+            )
+            self.assertTrue(outcome.claim_valid)
+            self.assertEqual(outcome.classification, C.TEST_COVERAGE_GAP, material_impact)
+            self.assertFalse(outcome.blocking_justification_valid)
 
 
 class GovernanceTests(unittest.TestCase):

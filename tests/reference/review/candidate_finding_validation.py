@@ -230,6 +230,18 @@ def evaluate_candidate(
     gate the candidate at all -- a standalone candidate (a technical
     invariant violation with no compared usage, for example) is not gated
     by semantic-role validation regardless of `semantic_roles_ok`'s value.
+
+    Classification and blocking justification are independent dimensions
+    (design record Section 9, "Finding validity is separate from
+    blocking-justification validity"): classification answers *what the
+    finding is*, derived from evidence alone (grounding, the causal chain,
+    regression proof where applicable, and disconfirmation) and never from
+    `material_impact`; blocking justification answers *whether its
+    demonstrated impact clears the P0/P1 bar*, and is derived afterward,
+    strictly as a function of that classification plus `material_impact`.
+    A proven correctness defect with insufficient material impact stays
+    classified as a proven correctness defect -- only its blocking
+    eligibility changes.
     """
     # Section 4: only a comparison-dependent candidate is gated here, and
     # only such a candidate can fail to be comparable in the first place.
@@ -256,26 +268,43 @@ def evaluate_candidate(
         else True
     )
 
-    blocking_justification_valid = bool(
-        grounded
-        and causally_complete
-        and regression_proven
-        and material_impact
-        and disconfirmation in (DisconfirmationOutcome.SURVIVES,)
-    )
-
-    if blocking_justification_valid:
-        classification = Classification.PROVEN_CORRECTNESS_DEFECT
-    elif disconfirmation is DisconfirmationOutcome.RECLASSIFIED:
+    # --- Step 1: classification -- "what is this?" -- evidence only, never
+    # material_impact. Each branch reflects what the gathered evidence
+    # itself establishes, not how severe its consequence is.
+    if disconfirmation is DisconfirmationOutcome.RECLASSIFIED:
+        # Contradicting evidence shows this is a real but different kind of
+        # issue than first proposed (design record Section 8's table).
         classification = Classification.TEST_COVERAGE_GAP
     elif is_regression_claim and not regression_proven:
+        # A claimed regression missing its four-part evidence set is not
+        # presented as proven; report what the (incomplete) evidence shows.
         classification = Classification.TEST_COVERAGE_GAP
     elif not grounded:
+        # Grounded in reviewer inference alone (Section 5, level 7) -- valid
+        # for discovery, never alone a defect classification.
         classification = Classification.MAINTAINABILITY_CONCERN
     elif not causally_complete:
+        # The causal chain (Section 6) is missing a link -- the concrete
+        # failure condition or observable result was never demonstrated.
         classification = Classification.TEST_COVERAGE_GAP
-    else:
+    elif disconfirmation is DisconfirmationOutcome.DOWNGRADED:
+        # Contradicting evidence weakened the grounding or causal chain
+        # without fully disproving it (Section 8's table) -- the premise
+        # itself is now in question, independent of impact.
         classification = Classification.REQUIREMENT_AMBIGUITY
+    else:
+        # Grounded, causally complete, regression proven where applicable,
+        # and disconfirmation survived: the evidence establishes a genuine
+        # correctness defect regardless of whether its impact is material.
+        classification = Classification.PROVEN_CORRECTNESS_DEFECT
+
+    # --- Step 2: blocking justification -- "does the proven impact clear
+    # the P0/P1 bar?" -- derived from the classification just reached, never
+    # the other way around. Only a proven correctness defect can block, and
+    # even then only when its impact is material.
+    blocking_justification_valid = bool(
+        classification is Classification.PROVEN_CORRECTNESS_DEFECT and material_impact
+    )
 
     return CandidateOutcome(
         claim_valid=True,

@@ -263,6 +263,33 @@ labeling — classification here decides *which* of those labels the finding
 earns before [`severity.md`](../../shared/policies/severity.md) runs; it
 does not add a fourth label or a parallel severity scheme.
 
+### Classification and blocking justification are orthogonal dimensions
+
+Classification (above) and `blocking_justification_valid` answer two
+different questions, derived in that order, and **the second is never
+allowed to change the answer to the first**:
+
+- **Classification** answers *what the finding is*, from evidence alone —
+  grounding (§5), the causal chain (§6), regression proof where applicable
+  (§7), and the disconfirmation pass (§8). It never consults material
+  impact.
+- **Blocking justification** answers *whether the finding's demonstrated
+  impact clears the P0/P1 bar*, derived strictly *after* classification,
+  as a function of that classification plus material impact. Only a
+  **proven correctness defect** can clear it, and even then only when its
+  impact is material.
+
+A proven correctness defect whose impact does not clear that bar **stays
+classified as a proven correctness defect** — it is not demoted to
+requirement ambiguity, test-coverage gap, or maintainability concern
+merely because its impact is insufficient to block. Those three
+classifications are reached only when the *evidence itself* — not the
+impact — falls short: a vague or missing grounding source, an incomplete
+causal chain or unproven regression, or a disconfirmation outcome that
+weakens or reclassifies the premise. Insufficient impact and insufficient
+evidence are different failures, and only the latter changes
+classification.
+
 ### Finding validity is separate from blocking-justification validity
 
 `claim_valid` (the observation is real and the finding should be kept) and
@@ -274,15 +301,16 @@ pass/fail:
   correctness defect with a complete causal chain and material impact:
   proceeds to severity normally.
 - `claim_valid = true, blocking_justification_valid = false` — **the
-  finding is kept**, reported at its actually-supported classification
-  (requirement ambiguity / test-coverage gap / maintainability concern),
-  and receives whatever severity
-  [`severity.md`](../../shared/policies/severity.md) derives for that
-  classification — typically P2. The finding is never suppressed merely
-  because it does not clear the blocking bar; only its severity is
-  affected, and severity is still derived exactly as
-  [`severity.md`](../../shared/policies/severity.md) already defines, never
-  by this model directly.
+  finding is kept**, reported at whatever classification the evidence
+  actually supports — including **proven correctness defect** itself, when
+  every gate cleared except material impact — and receives whatever
+  severity [`severity.md`](../../shared/policies/severity.md) derives for
+  that classification — typically P2. The finding is never suppressed
+  merely because it does not clear the blocking bar, and its
+  classification is never rewritten to imply the evidence was weaker than
+  it was; only its severity is affected, and severity is still derived
+  exactly as [`severity.md`](../../shared/policies/severity.md) already
+  defines, never by this model directly.
 - `claim_valid = false` — the candidate did not survive §3–§8 (dropped by
   the disconfirmation pass, or never cleared the observation-first gate);
   nothing is reported.
@@ -290,9 +318,14 @@ pass/fail:
 P0/P1 requires a violated contract/invariant (§5) **plus** a concrete
 failure condition **plus** a causal connection (§6) **plus** material
 impact — never "the reviewer expected different behavior" on its own. That
-expectation, without the rest, is exactly the `claim_valid = true,
-blocking_justification_valid = false` case above: worth keeping as a
-finding, not worth blocking on.
+expectation, without the rest, never reaches **proven correctness defect**
+in the first place (the grounding or causal-chain gate was not cleared) —
+it is exactly the requirement-ambiguity / test-coverage-gap /
+maintainability-concern case above: worth keeping as a finding, not worth
+blocking on. A candidate whose evidence *does* fully establish a proven
+correctness defect but whose impact alone falls short is the distinct
+`claim_valid = true, blocking_justification_valid = false` case introduced
+above, under the classification the evidence actually earned.
 
 ## 10. Bounded blast-radius reuse
 
@@ -385,6 +418,38 @@ Disconfirmation pass: tracing the caller shows the new path is only
   check one layer up (ring 1 of the reused blast-radius model, §10) —
   authoritative evidence the check is not actually bypassed.
 Outcome: DROPPED. claim_valid = false. Not reported.
+```
+
+### Worked example 6 — proven defect, impact does not clear the blocking bar
+
+```text
+Observation: a rarely-invoked internal debug endpoint reads a value, then
+  writes a decremented value in a separate step, with no lock between them
+  — the same TOCTOU shape as worked example 1, but this endpoint is only
+  reachable from an operator tool used at most once a day, single-threaded,
+  and the decremented value is a display counter with no downstream
+  consequence if it is briefly wrong.
+Semantic-role validation: not applicable (§4, "Applicability") — no
+  compared usages.
+Grounding: level 4, technical invariant — a TOCTOU race, exactly as in
+  worked example 1.
+Causal chain: reviewed change (the split read/write) → changed assumption
+  (single-writer assumed, not enforced) → concrete failure condition (two
+  concurrent invocations interleave) → observable incorrect result (the
+  display counter can be transiently wrong).
+Disconfirmation: no lock or serialization found → SURVIVES.
+Classification: proven correctness defect — every evidence gate (§4–§8)
+  cleared exactly as in worked example 1. Classification does not consult
+  impact and is identical to worked example 1's.
+Blocking justification: material impact is not established — the counter
+  is display-only, the caller is effectively single-threaded in practice,
+  and no downstream consequence follows from a transiently wrong value.
+  claim_valid = true, blocking_justification_valid = false.
+Outcome: reported as a proven correctness defect (not downgraded to
+  requirement ambiguity, test-coverage gap, or maintainability concern —
+  the evidence fully proves the defect), typically at P2 per
+  [`severity.md`](../../shared/policies/severity.md). Only the blocking
+  eligibility differs from worked example 1; the classification does not.
 ```
 
 ## 12. Non-goals
