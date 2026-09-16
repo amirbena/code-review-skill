@@ -350,3 +350,8 @@ In addition, specific to this trigger:
 - Redefining [`root-cause-consolidation.md`](root-cause-consolidation.md)'s
   clustering criteria — see "Interaction with root-cause consolidation"
   above.
+- Redefining the bounded context-expansion model this file owns — the
+  candidate-finding validation model (a repository-development document,
+  not a packaged resource, so it is named here, not linked) reuses it
+  directly for a candidate's blast-radius investigation, rather than
+  defining a second one.

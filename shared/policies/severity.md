@@ -113,3 +113,16 @@ convention.
 
 This is the single canonical severity model. Neither Skill defines its
 own copy — both reference this file.
+
+## Relationship to candidate-finding validation
+
+Whether a candidate claim clears the P0/P1 bar above (a violated
+contract/invariant plus a concrete failure condition plus a causal
+connection plus material impact) versus keeps its finding but downgrades —
+`claim_valid = true, blocking_justification_valid = false` — is upstream
+reasoning owned by the candidate-finding validation model (a
+repository-development document, not a packaged resource, so it is named
+here, not linked). That model never overrides this file's P0/P1/P2
+definitions or the mechanical decision derivation above; it only decides
+which classification a candidate has earned before this file's derivation
+runs.

@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.49.0 — 2026-09-16
+
+### Added
+
+- Add a canonical observation-to-severity validation contract governing how candidate findings are promoted before publication (#390).
+
 ## v1.48.0 — 2026-09-16
 
 ### Added

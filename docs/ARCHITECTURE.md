@@ -436,6 +436,25 @@ and no packaged Skill resource depends on them.
   [`../shared/templates/finding.md`](../shared/templates/finding.md); the #67
   machine-readable output schema wiring is deferred — see "Future work"
   below.
+- **Candidate-finding validation model** — the `observation → candidate
+  claim → validated finding → severity` reasoning contract: the
+  observation-first gate, semantic-role validation, the evidence/contract
+  grounding hierarchy (explicitly preserving a non-Jira,
+  technically-grounded blocking finding), the causal validation chain,
+  regression-proof discipline, the disconfirmation pass, classification
+  before severity, and the `claim_valid`/`blocking_justification_valid`
+  separation — all reusing, never redefining,
+  [`evidence.md`](../shared/policies/evidence.md),
+  [`severity.md`](../shared/policies/severity.md), and the ring-based
+  blast-radius model in
+  [`repository-expansion.md`](../shared/policies/repository-expansion.md) /
+  [`architectural-placement.md`](../shared/policies/architectural-placement.md)
+  ([`candidate-finding-validation/README.md`](candidate-finding-validation/README.md) →
+  [`candidate-finding-validation/candidate-finding-validation-model.md`](candidate-finding-validation/candidate-finding-validation-model.md),
+  #382, with a test-only reference model). It adds no packaged finding
+  field — its cross-links into
+  [`shared/policies/review-scope.md`](../shared/policies/review-scope.md),
+  `evidence.md`, and `severity.md` are its only packaged touch-points.
 - **Cross-review finding-identity contracts** — the requirements
   ([`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md),
   #58), the precision-first matching strategy
