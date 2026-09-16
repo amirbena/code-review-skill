@@ -5,6 +5,13 @@ evidence: changed lines, surrounding code, tests, repository
 instructions, contracts, schemas, configuration, architecture
 documentation, or CI behavior.
 
+What a candidate must prove *before* it reaches the labeling below —
+semantic-role validation, evidence/contract grounding, a causal validation
+chain, regression-proof discipline, and a disconfirmation pass — is owned
+by the candidate-finding validation model (a repository-development
+document, not a packaged resource, so it is named here, not linked) and is
+not restated here; this file's labeling is unchanged by it.
+
 ## Required distinctions
 
 Every finding must be labeled, implicitly or explicitly, as one of:
