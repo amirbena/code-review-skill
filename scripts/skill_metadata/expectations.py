@@ -36,6 +36,7 @@ REPO_ROOT_ONLY_DOC_BASENAMES = {
 SHARED_FINDING_MARKERS = (
     "**impact**",
     "## Finding quality contract",
+    "## Deriving the fix/action location",
     "## Affected locations on a consolidated finding",
     "## Contextual evidence and provenance",
     "## Confidence and evidence state",

@@ -218,6 +218,207 @@ merely because nothing better was found. The rendered finding always
 makes clear what is known, what is unresolved, and what evidence supports
 it.
 
+## Deriving the fix/action location
+
+"Fix/action location, evidence location, publication" above distinguishes
+the three concepts and how a resolved fix/action location is *published*.
+It does not say how that location is *derived* when review evidence,
+causal reasoning, or bounded context expansion touch more than one place.
+This section owns that derivation — reusing, not redefining, the bounded
+caller/callee model in
+[`../policies/architectural-placement.md`](../policies/architectural-placement.md)
+and the shared-cause model in
+[`../policies/root-cause-consolidation.md`](../policies/root-cause-consolidation.md).
+It feeds the `location` field above with an already-determined coordinate;
+`skills/github-pr-review/policies/finding-placement.md`'s anchor-selection
+order then decides where that resolved location is *published* (inline vs.
+body, GitHub-commentability, deterministic tie-break) — this section never
+re-anchors, and that policy never re-derives.
+
+### Causal center — location follows the claim
+
+An already-accepted finding's claim determines which site owns it, not
+proximity, readability, or where the diff happens to be easiest to
+annotate:
+
+- when the claim is **about cause** — the site that introduces the
+  incorrect state, value, or behavior — anchor there, even when the
+  failure is only observed downstream;
+- when the claim is **about unsafe handling of an otherwise-valid
+  upstream state** — a caller that fails to guard, validate, or recover
+  from a condition it is responsible for handling — anchor at that
+  downstream handling site, not at the upstream code that produced the
+  (valid) state it mishandled.
+
+Prefer the causal/contract-owning site over a downstream manifestation
+whenever the claim is about cause; a downstream symptom is evidence of the
+defect, not itself the defect's location, unless the claim is specifically
+that the downstream site's own handling is unsafe.
+
+**Worked contrast.** A pricing function returns a negative discount for a
+malformed coupon (`compute_discount` never clamps a decoded percentage
+below `0`), and a caller three frames away renders that negative discount
+straight into an invoice total. If the finding's claim is "a malformed
+coupon can produce a negative discount," the claim is about *cause* —
+`compute_discount` introduces the incorrect value — so the fix/action
+location is `compute_discount`, and the invoice-rendering call site is
+evidence (how the bad value becomes visible), not the anchor. If instead
+the finding's claim is "the invoice renderer trusts an unvalidated
+discount and can display a negative total even when the upstream contract
+is later hardened," the claim is about *unsafe handling* at the renderer,
+so the fix/action location is the renderer itself, and `compute_discount`
+is context, not the anchor. The same two pieces of code support two
+different, equally valid claims with two different fix/action locations —
+the claim, not the code's position in the call chain, decides.
+
+### Caller/callee and contract ownership
+
+There is no mechanical caller/callee preference — a fix/action location is
+never assigned merely because a site is "the caller" or "the callee."
+Reuse `architectural-placement.md`'s bounded reasoning directly: determine
+which side owns the violated responsibility by asking whether the failure
+is a **precondition violation** (the caller failed to establish a state
+the callee is entitled to assume — anchor at the caller), a **contract
+violation** (the callee failed to honor a documented or evidenced
+contract regardless of a conforming caller — anchor at the callee), or a
+**pre-existing callee bug merely exposed** by a changed caller (the callee
+was already broken for that input; the changed caller only reaches it —
+anchor at the callee, and treat the caller change as the trigger that
+surfaced the evidence, not the cause).
+
+The same reasoning — which side positively owns the violated contract,
+established from repository evidence, never from position or naming
+alone — extends to every other contract-owning boundary this repository's
+shared policies already recognize as a responsibility boundary, per
+`architectural-placement.md`'s semantic-risk trigger vocabulary:
+
+- **validation/guard site** — a check that should reject or normalize an
+  input before it propagates owns a validation failure, not every site
+  that later trips over the un-validated value;
+- **state-transition/mutation site** — the code that performs an illegal
+  or out-of-order mutation owns a state-consistency defect, not a reader
+  that later observes the inconsistent state;
+- **lifecycle boundary** — the phase that owns a piece of lifecycle
+  bookkeeping (what is recorded as done, attempted, or skipped) owns a
+  defect in that bookkeeping, not a downstream phase that trusts it;
+- **authorization decision point** — the site that owns the authorization
+  decision owns a missing or incorrect check, not a handler that executes
+  after an already-wrong decision;
+- **encoding/decoding boundary** — the site that owns serialization,
+  deserialization, or format translation owns a corruption or
+  mismatch introduced there, not every consumer of the resulting value;
+- **synchronization/state-assumption boundary** — the site that owns an
+  ordering, locking, or shared-state assumption owns a violation of that
+  assumption, not every reader that racily observes its effect.
+
+Each of these is resolved the same way `architectural-placement.md`
+resolves caller/callee: identify the responsibility boundary from
+concrete repository evidence (documented contract, existing enforcement
+elsewhere, established lifecycle ordering), then determine which side's
+code actually violates it. Naming similarity or structural position is
+never itself evidence of ownership, exactly as `architectural-placement.md`
+already requires.
+
+### Locality preservation during context expansion
+
+Investigating callers, callees, sibling implementations, tests, shared
+utilities, precedent code, or downstream consumers for evidence — per
+[`../policies/evidence.md`](../policies/evidence.md),
+[`../policies/repository-expansion.md`](../policies/repository-expansion.md),
+and `architectural-placement.md`'s own bounded ring-by-ring expansion —
+never by itself relocates the finding. Visiting a location for evidence
+and anchoring a finding there are different acts: a location becomes the
+fix/action anchor only when the causal/contract reasoning above
+affirmatively establishes that it owns the claim, not merely because
+the review's expansion happened to reach it.
+
+**Worked example.** A review investigates a caching defect and, following
+the bounded ring-by-ring model, reads the cache-key builder, two callers,
+and an existing test that exercises the stale-key path. The defect turns
+out to be in the cache-key builder omitting a tenant identifier. The
+caller code and the test were both visited and both contributed evidence
+(one caller shows the collision in practice; the test shows the existing
+coverage gap), but neither becomes the fix/action location merely from
+having been read — the finding still anchors at the cache-key builder,
+because that is the site the causal reasoning establishes as the owner.
+
+### Precision versus semantic honesty
+
+Choose the narrowest location that is still semantically honest about
+where the defect lives — an exact line, a branch/block, a symbol or
+function, or, when the defect is not reducible further, a broader summary
+placement (a file, a module boundary, or a described mechanism spanning
+several lines). Precision is a quality goal, not a license to
+misrepresent: never force false precision at a nearby, easily-commentable
+line merely because it is convenient to anchor there or because a review
+surface can attach a comment to it. A defect that is genuinely a property
+of a function's overall control flow (for example, a missing
+state-machine transition that no single line represents) is anchored at
+the function or the described mechanism, not arbitrarily pinned to one of
+its lines to manufacture a precise-looking anchor.
+
+### Multi-line / multi-file primary selection
+
+When a finding's evidence spans multiple lines or files, select **one**
+primary causal/contract-owning location using the reasoning above, and
+treat every other touched location as supporting evidence, not as an
+additional anchor. This is a single-finding selection rule, not a second
+consolidation mechanism: reuse
+[`../policies/root-cause-consolidation.md`](../policies/root-cause-consolidation.md)'s
+affected-locations model only when that policy's shared-cause bar is
+actually met (one defect-bearing element whose single incorrectness
+reaches at least two manifestation sites) — and when it is met, this
+section's primary-location reasoning is exactly what selects which of
+those sites is the shared cause that becomes `location`, while the rest
+populate `affected locations`. A finding that merely touches several
+files without a positively established shared cause still gets one
+primary location chosen by causal/contract ownership; it does not become
+a consolidated finding, and it does not get several competing anchors.
+
+### Test versus production placement
+
+Evidence appearing in a test file never automatically makes the test the
+fix/action location:
+
+- a **test that reveals a genuine production defect** anchors at the
+  production code the test exposes — the test is evidence (it is how the
+  defect became visible), not the anchor;
+- a **defective test itself** — one asserting an incorrect expectation,
+  missing coverage for a case it should exercise, or resting on a broken
+  fixture — anchors at the test, because the test is the thing that must
+  change;
+- a **sibling or precedent implementation that merely demonstrates
+  correct behavior** (used, for example, to show how an analogous case is
+  handled correctly elsewhere) is evidence supporting the finding's claim
+  about the defective location; it is never itself the anchor, because it
+  is not the thing that must change.
+
+### Location ambiguity
+
+When more than one location remains plausible after the reasoning above,
+rank candidates in this fixed order and select the highest-ranked
+plausible one:
+
+1. **causal ownership** — the site establishing the causal reasoning above
+   confirms actually introduces the incorrect state or behavior;
+2. **contract ownership** — the site the caller/callee-and-contract-
+   ownership reasoning above confirms owns the violated responsibility,
+   when causal ownership alone does not resolve it;
+3. **actionable repair site** — the narrowest location where a concrete,
+   scoped correction can actually be made, when neither of the above
+   fully resolves the ambiguity;
+4. **precise-but-still-honest changed location** — the most specific
+   changed location that remains semantically honest per "Precision
+   versus semantic honesty" above, as a last-resort tie-break among
+   otherwise-equal candidates.
+
+When ambiguity remains even after this ranking — the evidence does not
+let any candidate clear the bar above — do not invent certainty. Use
+"Fix/action location, evidence location, publication"'s existing
+unresolved state: `location` carries the best-known evidence coordinate
+with the trailing `_(evidence location; fix/action location unresolved)_`
+annotation, exactly as for any other unresolved fix/action location.
+
 ## Affected locations on a consolidated finding
 
 A **consolidated root-cause finding** represents one shared defect-bearing
