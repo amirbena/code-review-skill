@@ -285,6 +285,75 @@ latency, its result should be folded back into this document's §7 as a
 new recommendation for #337; if it does not, §7's class-A-fallback
 framing stands as-is with one more ruled-out option recorded.
 
+### 8.4 #366's empirical run: Gemini CLI
+
+A `GEMINI_API_KEY` became available and #366's empirical follow-up ran.
+Runtime/model/Skill-SHA metadata (#330 §5): `gemini` CLI `0.60.0`, Skill/repo
+SHA `dec624d` (`main`), spike run date 2026-09-16.
+
+**Method.** The same materialization and prompt approach §3 used for
+candidate B (`opencode`) was reused: for each of the same two corpus
+cases (`correctness-off-by-one-pagination`,
+`no-op-comment-and-rename`), a throwaway workspace was materialized from
+the case's `base` + `patch`, `skills/`, `policies/`, and `shared/` were
+copied verbatim into it (the `gemini` CLI has no verified equivalent of
+`--plugin-dir` for this checkout's non-plugin `skills/` layout, matching
+candidate B's constraint), and `gemini` was invoked non-interactively
+(`-p`, `--output-format text`, `--approval-mode yolo`, `--skip-trust`)
+with the same canonical-rendering prompt candidate A/B used, pointed at
+the copied `SKILL.md`. Neither adapter/workspace is committed to the
+repository, per #336's scope.
+
+**Result — both cases: quota-exhausted, no review produced.**
+
+| Case | Result | Latency |
+| --- | --- | --- |
+| `correctness-off-by-one-pagination` | No review report. First attempt (default model) failed after repeated `429`/`503` retries with `TerminalQuotaError: You have exhausted your daily quota on this model` against `generativelanguage.googleapis.com/generate_content_free_tier_requests`, `model: gemini-3.5-flash`. A second attempt explicitly passing `-m gemini-2.5-flash` **still exhausted the same `gemini-3.5-flash` quota bucket** — the CLI's automatic model routing for agentic/tool-using turns did not honor the explicit `-m` override observed to work for a non-tool-use probe prompt (see below). | 3m21s (default model, first attempt); 3m31s (`-m gemini-2.5-flash`, second attempt) |
+| `no-op-comment-and-rename` | Same `TerminalQuotaError`, now failing immediately (daily quota already exhausted by the two prior attempts) rather than after retries. | 11.2s |
+
+**Supporting observation.** A separate, non-agentic probe (`gemini -m
+gemini-2.5-flash -p "reply with the single word: ok"`, no file/tool use)
+against the same key succeeded in a few seconds. This isolates the
+failure to agentic/tool-using turns specifically hitting a shared,
+already-low daily quota bucket (observed limits in the error payloads:
+5 requests/minute and 20 requests/day for `generate_content_free_tier_requests`,
+and 250,000 for `generate_content_free_tier_input_token_count`) — not to
+CLI installation, authentication, or basic connectivity, all of which
+worked. This 20-requests/day figure is far below the ≈1,500
+requests/day the issue's problem statement and §8.1's table cited as a
+**third-party estimate** for "a Flash model" — that estimate did not
+hold for the actual default-routed model (`gemini-3.5-flash`) or key
+tier exercised here; §8.1's own caveat that third-party figures need
+re-verification against a live account is exactly what this run surfaced.
+
+**Scored against #330 §4's viability criteria.** Every criterion that
+depends on a completed review (inspecting the repo, executing the
+Skill's tools, invoking the Skill's real semantics, bounded PR-check
+latency, reproducibility of a *result*) is **not demonstrated** — not
+because the CLI failed to launch or reach the workspace (both attempts
+did start, load tools, and begin agentic turns per the `err` logs before
+the quota error), but because no case ever received a completed model
+response to review against. This is a different failure mode than
+candidate B's (which never reached the Skill content at all): Gemini CLI
+did engage the workspace and begin an agentic turn, it simply could not
+complete one before the account's daily quota — as actually provisioned
+for this key — was exhausted.
+
+**Effect on §7's decision: unchanged.** This run does not clear Gemini
+CLI's fidelity/latency bar (no case produced a parseable review), and it
+does not reject it either in the sense §4 rejected candidate B (no
+evidence the Skill's semantics can't be invoked — only that this key's
+free-tier quota couldn't sustain even two small cases run sequentially
+in one sitting). Per the Acceptance Criteria this issue set for itself:
+class A remains the sole empirically-cleared fallback, and §7's decision
+stands unchanged. Whether a different Google Cloud project/billing tier,
+a paid Gemini API tier, or quota-reset timing would let Gemini CLI clear
+fidelity was **not tested** — that is further research, not something
+this bounded, time-boxed spike re-runs today (per #336's explicit
+time-box and this issue's Non-Goals, which exclude "re-evaluating any
+candidate #336 already rejected" but do not obligate an unbounded number
+of retries against an exhausted quota either).
+
 ## 9. Known gap surfaced by this spike
 
 Neither `ProductionReviewerAdapter` nor `run_benchmark.py` currently
@@ -308,8 +377,10 @@ this is not a new requirement, just a concrete gap #337 should close.
   designing the bounded-cost mechanism itself (provider spend limits,
   timeouts, concurrency caps) — that is #337's provisioning work, guided
   by §6's constraint, not this spike's.
-- Running Gemini CLI (or any other §8.1 candidate) empirically — scoped
-  into #366, not done inline here.
+- Re-running Gemini CLI against a different key, billing tier, or after
+  quota reset to chase a completed fidelity result (§8.4) — out of
+  #366's time-box; a candidate follow-up issue, not this spike.
+- Running any other §8.1 candidate empirically beyond Gemini CLI.
 - An open-ended vendor survey beyond §8.1's bounded shortlist.
 - Provisioning any real, persistent CI infrastructure, credential, or
   workflow (#337's scope).
@@ -326,6 +397,6 @@ this is not a new requirement, just a concrete gap #337 should close.
   provisioning, which must satisfy §6's bounded-cost constraint before
   class A is provisioned, or else open further class-B/C research per §7.
 - [#366](https://github.com/amirbena/code-review-skill/issues/366) —
-  the narrowly-scoped follow-up (Parent: #336) that empirically runs
-  Gemini CLI, the one candidate §8 found worth testing, once a
-  `GEMINI_API_KEY` is available.
+  the narrowly-scoped follow-up (Parent: #336) that empirically ran
+  Gemini CLI, the one candidate §8 found worth testing; see §8.4 for the
+  result (quota-exhausted on both cases, §7's decision unchanged).
