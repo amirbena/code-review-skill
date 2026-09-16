@@ -15,6 +15,7 @@ Applies shared policies:
 [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
 [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
 [`severity.md`](../../../shared/policies/severity.md),
+[`verdict-consistency.md`](../../../shared/policies/verdict-consistency.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
@@ -108,6 +109,10 @@ coverage complete? → yes → derive decision mechanically from blocking
                               severities (P0/P1)
                     → no  → render the incomplete/ungraded outcome instead,
                               never a clean/approved result
+    ↓
+check verdict consistency: derived decision vs. the REVIEW CLEAN/
+CHANGES REQUIRED/REVIEW INCOMPLETE signal about to be rendered —
+mismatch → withhold and report, never render the report
     ↓
 return P0/P1/P2 findings, each attributed to its source category
     ↓
@@ -407,6 +412,14 @@ which a value must be resolved before it is used, or what is reported.
     derivation (mechanical)," from the finalized findings. This is the
     only path to the decision — no independent, subjective judgment on
     top of it.
+11b. **Check verdict consistency** per
+    [`verdict-consistency.md`](../../../shared/policies/verdict-consistency.md)
+    before composing the report: confirm the Decision just derived in
+    step 11 agrees with the `REVIEW CLEAN` / `CHANGES REQUIRED` /
+    `REVIEW INCOMPLETE` signal about to be rendered next. On a detected
+    mismatch, do not compose or render the report body — report an
+    internal-consistency failure per that policy's "On a detected
+    mismatch: withhold-and-report" instead, and stop here.
 12. Compose the human-facing body per
     [`review-summary.md`](../../../shared/templates/review-summary.md),
     including the terse optional "Context" / "PR Context" notes and the
