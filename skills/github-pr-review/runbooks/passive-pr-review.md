@@ -387,18 +387,6 @@ finally: remove the temporary checkout (success, any failure, interruption)
    its reason(s) in the report's subordinate metadata, per "Labeling —
    incomplete must never present as clean" and "Non-goals and ownership
    boundary" — not restated here.
-8b-i. **Check verdict consistency** per
-   [`../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md)
-   before returning the report composed in step 8: confirm the decision
-   derived from the finalized findings (as overridden, or not, by step
-   8b's coverage result) agrees with the `Approve` / `Request Changes` /
-   `REVIEW INCOMPLETE` wording, and any `WOULD PUBLISH (<event>)` line,
-   the composed report is about to carry. Passive and self-review flows
-   have no formal GitHub event to check here — only the rendered report
-   signal, per that policy's "No formal event exists" carve-out. On a
-   detected mismatch, do not return the composed report — report an
-   internal-consistency failure instead, per that policy's "On a
-   detected mismatch: withhold-and-report," and stop here.
 8c. **Compose the private Reviewer Brief** per
    [`../policies/reviewer-brief.md`](../policies/reviewer-brief.md), now
    that findings, severity, coverage, and verdict are finalized above.
@@ -409,6 +397,18 @@ finally: remove the temporary checkout (success, any failure, interruption)
    field, synthesis, and mode-composition rule in that policy (clean
    review, delta re-review, stacked PR, partitioned large PR alike) so
    passive and active results carry identical brief semantics.
+8d. **Check verdict consistency** per
+   [`../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md)
+   before returning the report composed above: confirm the decision
+   derived from the finalized findings (as overridden, or not, by step
+   8b's coverage result) agrees with the `Approve` / `Request Changes` /
+   `REVIEW INCOMPLETE` wording, and any `WOULD PUBLISH (<event>)` line,
+   the composed report carries. Passive and self-review flows have no
+   formal GitHub event to check here — only the rendered report signal,
+   per that policy's "No formal event exists" carve-out. On a detected
+   mismatch, do not return the composed report — report an
+   internal-consistency failure instead, per that policy's "On a
+   detected mismatch: withhold-and-report," and stop here.
 9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
    step 4, remove it — on this path and on every other: a
    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the
