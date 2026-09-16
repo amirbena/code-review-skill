@@ -374,6 +374,47 @@ deterministic structural assertion — never an LLM/rubric score — and the
 corpus is disjoint from the finding-precision/recall/severity metrics
 above and from ordinary code-review quality fixtures.
 
+## Verdict-consistency benchmark
+
+[`corpus/verdict-consistency/README.md`](corpus/verdict-consistency/README.md)
+(issue [#378](https://github.com/amirbena/code-review-skill/issues/378),
+depends on [#377](https://github.com/amirbena/code-review-skill/issues/377))
+proves the shared verdict-consistency comparator #377 built from #351's
+design record actually withholds a mismatched rendered or submitted
+decision signal before it can be returned or published — a deliberately
+adversarial corpus, distinct from
+[#350](https://github.com/amirbena/code-review-skill/issues/350)'s
+normal-path proof that a real blocking finding correctly *derives* a
+blocking verdict. Coverage spans all four reconciliation points
+`shared/policies/verdict-consistency.md` names: `local-code-review`
+pre-render, `github-pr-review` PASSIVE/SEMI pre-render, `github-pr-review`
+ACTIVE pre-render, and `github-pr-review` ACTIVE pre-publish against the
+literal GitHub review API `event` — including the required highest-risk
+blocking-findings → clean/`Approve` mismatch at each point, a case
+proving the pre-publish point independently catches a silent drift
+introduced after the pre-render point already passed, the `REVIEW
+INCOMPLETE` carve-out under adversarial drift (a mismatch that happens to
+involve the carve-out is still caught, never misclassified as it), and
+control cases proving a genuinely consistent signal is never withheld.
+Like the benchmarks above, it is not `benchmark-case/v1` fixtures — that
+schema has no field for an already-finalized decision, a drifted
+rendered/submitted signal, or a withheld-artifact outcome — so it follows
+the same test-only reference-model pattern:
+[`../../tests/reference/benchmark/verdict_consistency_fixtures.py`](../../tests/reference/benchmark/verdict_consistency_fixtures.py),
+exercised by
+[`../../tests/unit/benchmark/test_verdict_consistency_corpus.py`](../../tests/unit/benchmark/test_verdict_consistency_corpus.py)
+(structural withhold/emit assertions against the single real comparator
+in `tests/reference/review/verdict_consistency.py`, an `Observed`-shape
+invariant rejecting both a self-corrected two-artifact outcome and a
+silently-skipped zero-artifact outcome, reconciliation-point completeness
+checks, and malformed-fixture rejection). Every comparison is a
+deterministic structural assertion — never an LLM/rubric score — and the
+corpus is disjoint from the finding-precision/recall/severity metrics
+above and from ordinary code-review quality fixtures. It does not
+re-test #377's own comparator unit suite, which already proves the raw
+functions mechanically in isolation, and it does not redesign or
+re-derive `severity.md`'s decision semantics.
+
 ## Claim-correspondence matcher adequacy
 
 [`claim-correspondence-adequacy.md`](claim-correspondence-adequacy.md)
