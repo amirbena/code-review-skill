@@ -477,7 +477,7 @@ Outcome: reported as a proven correctness defect (not downgraded to
 
 ## 13. Smallest useful first implementation
 
-1. **This model** — the pipeline (§2), the five validation gates (§3–§8),
+1. **This model** — the pipeline (§2), the six validation gates (§3–§8),
    classification (§9), the blast-radius reuse statement (§10) — consumed
    as reviewer discipline.
 2. **Reference-level cross-links only** — from

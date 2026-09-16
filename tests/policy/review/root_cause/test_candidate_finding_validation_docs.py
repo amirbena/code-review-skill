@@ -69,6 +69,29 @@ class DesignRecordExistsAndCoversScopeTests(unittest.TestCase):
             "observation → candidate claim → validated finding → severity", t
         )
 
+    def test_gate_count_matches_the_actual_number_of_headed_gate_sections(self) -> None:
+        # Regression: §13 and the packaged review-scope.md cross-link both
+        # once miscounted the §3-§8 gate range as "five" when it actually
+        # spans six headed sections (observation-first, semantic-role,
+        # evidence grounding, causal validation, regression-proof,
+        # disconfirmation). Pin the correct count in both places so this
+        # can't silently drift again.
+        gate_headers = (
+            "## 3. Observation-first gate",
+            "## 4. Semantic-role validation",
+            "## 5. Evidence/contract grounding hierarchy",
+            "## 6. Causal validation chain",
+            "## 7. Regression-proof discipline",
+            "## 8. Disconfirmation pass",
+        )
+        raw = MODEL.read_text(encoding="utf-8")
+        for header in gate_headers:
+            self.assertIn(header, raw)
+        self.assertIn("the six validation gates (§3–§8)", _norm(MODEL))
+        self.assertNotIn("the five validation gates", _norm(MODEL))
+        self.assertIn("its six validation gates", _norm(REVIEW_SCOPE))
+        self.assertNotIn("its five validation gates", _norm(REVIEW_SCOPE))
+
     def test_every_grounding_source_appears_in_order(self) -> None:
         t = MODEL.read_text(encoding="utf-8")
         positions = [t.find(name) for name in GROUNDING_SOURCES]

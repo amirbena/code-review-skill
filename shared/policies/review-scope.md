@@ -47,7 +47,7 @@ actively try to invalidate it against the available review context
 (disconfirmation). None of this requires a tracker ticket: a
 technically-grounded blocking finding (a race, a broken invariant, a
 security-boundary bypass, a deterministic failure, a data-loss path) is
-fully supported with no Jira reference at all. The full pipeline, its five
+fully supported with no Jira reference at all. The full pipeline, its six
 validation gates, the evidence/contract grounding hierarchy, and the
 separation of a finding's validity from whether it independently clears
 the P0/P1 blocking bar are owned by the candidate-finding validation model
