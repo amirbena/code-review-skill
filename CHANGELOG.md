@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.50.0 — 2026-09-16
+
+### Added
+
+- Canonicalize how a finding's fix/action location is derived from causal/contract ownership when evidence spans multiple sites (#386) (#393).
+
 ## v1.49.0 — 2026-09-16
 
 ### Added
