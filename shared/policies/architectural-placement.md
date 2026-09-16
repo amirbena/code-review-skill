@@ -184,6 +184,17 @@ insufficient. The finding is labeled confirmed defect / credible
 engineering risk / optional improvement per [`evidence.md`](evidence.md)
 like any other finding, and unresolvable ambiguity yields no finding.
 
+This bounded caller/callee/owning-boundary reasoning is itself reused,
+not redefined, by
+[`../templates/finding.md`](../templates/finding.md), "Deriving the
+fix/action location," to decide *which* of the sites a placement (or any
+other) finding touches is its canonical fix/action location — precondition
+violation versus contract violation versus a pre-existing callee bug
+merely exposed, extended there to validation, state-transition, lifecycle,
+authorization, encoding, and synchronization boundaries alongside
+caller/callee. That section governs location selection; it does not
+change whether a placement finding is raised in the first place.
+
 ## Analogue-based responsibility/placement pattern inference
 
 This is a second, independently gated trigger class alongside "When to

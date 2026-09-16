@@ -177,3 +177,9 @@ severity, and the mechanical decision — is unchanged by this policy. It
 only makes the "how far do I look beyond the diff" decision inspectable
 and reproducible; it never lowers the evidence bar a finding must clear
 and never substitutes for the evidence a finding must carry.
+
+Following a trigger's ring into a caller, callee, sibling, test, utility,
+or downstream consumer for evidence never by itself relocates a finding:
+where the resulting finding's fix/action location is anchored is governed
+by [`../templates/finding.md`](../templates/finding.md), "Deriving the
+fix/action location," not by which ring the investigation reached.

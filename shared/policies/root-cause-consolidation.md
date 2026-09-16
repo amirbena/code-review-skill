@@ -109,6 +109,13 @@ evidence bar, and the mechanical decision derivation are unchanged — this is
 the blast-radius enumeration this pass already requires, given one stable
 place to record it.
 
+The at-least-two-manifestation-sites bar above is the same bar that
+[`../templates/finding.md`](../templates/finding.md), "Deriving the
+fix/action location," reuses — and only reuses — for selecting a finding's
+primary location among several touched sites: a finding that touches
+multiple files without meeting this bar still gets one primary
+causal/contract-owning location, never a second consolidation path.
+
 ### Fail open toward separate findings
 
 Consolidation requires the shared cause to be positively established to the
