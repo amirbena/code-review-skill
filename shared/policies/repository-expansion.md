@@ -162,6 +162,14 @@ re-deriving or loosening this policy's ring ceiling.
   canonical procedures for their own specific questions; this policy is
   the general-purpose default for the fixed trigger catalog above.
 
+## Reused, not redefined, by candidate-finding validation
+
+The candidate-finding validation model (a repository-development document,
+not a packaged resource, so it is named here, not linked) scopes a
+candidate's blast-radius investigation by reusing this policy's fixed
+trigger catalog and ring ceiling directly — it defines no second expansion
+procedure.
+
 ## Not a second scope or evidence model
 
 Everything a finding needs — blast-radius scope, evidence, labels,

@@ -26,6 +26,43 @@ infrastructure behavior, CI/CD behavior, test adequacy, missing regression
 tests, operational risk, maintainability, repository conventions, and
 documentation correctness.
 
+## Candidate-finding validation
+
+Every section below that ends in a finding — "Emit a finding only with
+concrete evidence …" or the equivalent — presupposes that the candidate
+reaching that point has already been validated, not merely observed. An
+unusual code shape, a branch difference, or a structural inconsistency is
+an **observation** first; promoting it to a **candidate claim** requires
+naming the contract/invariant/expected-behavior it violates, showing the
+causal chain from the reviewed change to a concrete, observable incorrect
+result, and — for a claimed regression — the specific four-part regression
+evidence set. When the candidate's own reasoning depends on comparing two
+or more usages, paths, or implementations, it additionally requires
+establishing that the compared usages serve the same semantic
+responsibility before the comparison can support the claim — this
+condition does not apply, and is not a prerequisite, for a candidate with
+no such comparison (a standalone technical-invariant violation, for
+example, needs no compared usage at all). Before a blocking candidate is accepted,
+actively try to invalidate it against the available review context
+(disconfirmation). None of this requires a tracker ticket: a
+technically-grounded blocking finding (a race, a broken invariant, a
+security-boundary bypass, a deterministic failure, a data-loss path) is
+fully supported with no Jira reference at all. The full pipeline, its six
+validation gates, the evidence/contract grounding hierarchy, and the
+separation of a finding's validity from whether it independently clears
+the P0/P1 blocking bar are owned by the candidate-finding validation model
+(a repository-development document, not a packaged resource, so it is
+named here, not linked) and are not restated here.
+
+This is not a second scope, evidence, or severity model: the
+confirmed-defect / credible-engineering-risk / optional-improvement
+labeling in [`evidence.md`](evidence.md) and the P0/P1/P2 definitions and
+mechanical decision derivation in [`severity.md`](severity.md) are
+unchanged. This section only gates *what a candidate must prove* before it
+reaches that labeling; blast-radius scoping for a candidate that clears it
+reuses [`repository-expansion.md`](repository-expansion.md) and
+[`architectural-placement.md`](architectural-placement.md) unchanged.
+
 ## Related changes as one unit
 
 Review semantically related changes together rather than treating individual
