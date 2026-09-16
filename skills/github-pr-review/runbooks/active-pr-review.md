@@ -8,6 +8,7 @@ decision. Applies shared policies:
 [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
 [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
 [`severity.md`](../../../shared/policies/severity.md),
+[`verdict-consistency.md`](../../../shared/policies/verdict-consistency.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
@@ -109,6 +110,10 @@ incomplete → REVIEW INCOMPLETE, never REVIEW CLEAN / Approve
     ↓
 re-check HEAD
     ↓
+check verdict consistency (pre-render): derived decision vs. the
+Approve/Request Changes/REVIEW INCOMPLETE signal about to be rendered —
+mismatch → withhold and report, never construct the review
+    ↓
 construct one review: body + inline comments
     ↓
 apply the review-action authorization gate (ACTIVE + independence +
@@ -123,6 +128,10 @@ optional: publish the one exact-HEAD machine-readable status for the
 reviewed SHA (blocking status allowed even for a self-review; success
 status only in ACTIVE mode with reviewer independence)
 — published before the final summary comment
+    ↓
+check verdict consistency (pre-publish): derived decision vs. the
+literal APPROVE/REQUEST_CHANGES event about to be submitted — mismatch →
+withhold the formal event and report why, never submit it
     ↓
 submit permitted Approve/Request Changes (or informational COMMENT)
 or report why formal submission is unavailable
@@ -521,6 +530,18 @@ stop
     changed, do not construct or submit a review for the stale SHA —
     review the new delta first (re-evaluating escalation per step 9 if
     this was a delta re-review) and re-finalize findings against it.
+12a. **Check verdict consistency** per
+    [`../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md),
+    identical placement and check to
+    [`passive-pr-review.md`](passive-pr-review.md)'s pre-render check:
+    confirm the decision derived from the finalized findings (as
+    overridden, or not, by step 11b's coverage result) agrees with the
+    `Approve` / `Request Changes` / `REVIEW INCOMPLETE` signal about to
+    be rendered into the review constructed next — including a `SEMI`
+    `WOULD PUBLISH (<event>)` line. On a detected mismatch, do not
+    construct the review — report an internal-consistency failure
+    instead, per that policy's "On a detected mismatch:
+    withhold-and-report," and stop here.
 13. Construct **one** review from the finalized findings: the body using
     [`../templates/external-review-summary.md`](../templates/external-review-summary.md)
     (full findings for non-inline ones, summary-pointers for inline ones —
@@ -628,9 +649,24 @@ stop
     publishes it; parallel workers never do. Never merge. Adding the
     context to the base branch's required checks is a separate, explicitly
     requested setup action per that policy, never performed here.
+15a. **Re-check verdict consistency against the literal event about to be
+    submitted**, per
+    [`../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md) —
+    the pre-publish reconciliation point, re-checking the same
+    mechanically-derived decision checked at step 12a against step 14's
+    resolved `APPROVE` / `REQUEST_CHANGES` event object (an informational
+    self-review `COMMENT` carries no decision claim and is never checked
+    here). This catches a second, silent rendering introduced between
+    step 12a and this submission. On a detected mismatch, withhold the
+    formal event and do not proceed to step 16 — report why no final
+    formal review was submitted, per that policy's "On a detected
+    mismatch: withhold-and-report," reusing step 16's own "GitHub
+    otherwise disallows the formal event" reporting path.
 16. **Submit the one review** — only when step 15's HEAD re-confirmation
-    still holds (a HEAD advance detected there aborts this step and sends
-    the flow back through re-review). Submit the body (concise per step 13
+    and step 15a's verdict-consistency check still hold (either aborts
+    this step and sends the flow back through re-review, or withholds
+    the formal event and reports why, respectively). Submit the body
+    (concise per step 13
     when `human_review_output` is on), the inline comments (senior-voiced
     per step 13 when `human_inline_findings` is on), and the permitted
     event from step 14 — as a single batched submission per

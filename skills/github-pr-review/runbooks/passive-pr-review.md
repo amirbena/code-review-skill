@@ -8,6 +8,7 @@ Applies shared policies:
 [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
 [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
 [`severity.md`](../../../shared/policies/severity.md),
+[`verdict-consistency.md`](../../../shared/policies/verdict-consistency.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
 [`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
@@ -85,6 +86,10 @@ derive conditional requirement coverage (all renderings preserve it)
 evaluate review coverage (complete / incomplete) per
 review-stopping-criteria.md, scaled by the depth (and partitions) above;
 incomplete → REVIEW INCOMPLETE, never REVIEW CLEAN
+    ↓
+check verdict consistency: derived decision vs. the Approve/Request
+Changes/REVIEW INCOMPLETE signal about to be rendered — mismatch →
+withhold and report, never return the report
     ↓
 return human-readable report
     ↓
@@ -392,6 +397,18 @@ finally: remove the temporary checkout (success, any failure, interruption)
    field, synthesis, and mode-composition rule in that policy (clean
    review, delta re-review, stacked PR, partitioned large PR alike) so
    passive and active results carry identical brief semantics.
+8d. **Check verdict consistency** per
+   [`../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md)
+   before returning the report composed above: confirm the decision
+   derived from the finalized findings (as overridden, or not, by step
+   8b's coverage result) agrees with the `Approve` / `Request Changes` /
+   `REVIEW INCOMPLETE` wording, and any `WOULD PUBLISH (<event>)` line,
+   the composed report carries. Passive and self-review flows have no
+   formal GitHub event to check here — only the rendered report signal,
+   per that policy's "No formal event exists" carve-out. On a detected
+   mismatch, do not return the composed report — report an
+   internal-consistency failure instead, per that policy's "On a
+   detected mismatch: withhold-and-report," and stop here.
 9. **Guaranteed cleanup.** If a repository-backed checkout was prepared in
    step 4, remove it — on this path and on every other: a
    `NO NEW DELTA` / `REVIEW INCOMPLETE` return, any failure after the

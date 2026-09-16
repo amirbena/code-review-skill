@@ -13,6 +13,7 @@
     { "source": "shared/policies/architectural-placement.md", "destination": "shared/policies/architectural-placement.md" },
     { "source": "shared/policies/api-contract-compatibility.md", "destination": "shared/policies/api-contract-compatibility.md" },
     { "source": "shared/policies/severity.md", "destination": "shared/policies/severity.md" },
+    { "source": "shared/policies/verdict-consistency.md", "destination": "shared/policies/verdict-consistency.md" },
     { "source": "shared/policies/evidence.md", "destination": "shared/policies/evidence.md" },
     { "source": "shared/policies/repository-instructions.md", "destination": "shared/policies/repository-instructions.md" },
     { "source": "shared/policies/runtime-validation.md", "destination": "shared/policies/runtime-validation.md" },
