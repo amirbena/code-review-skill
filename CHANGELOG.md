@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.48.0 — 2026-09-16
+
+### Added
+
+- A shared verdict-consistency check now withholds and reports (rather than rendering or publishing) whenever a review's rendered or submitted decision signal disagrees with its finalized severity-derived decision (#379).
+
 ## v1.47.0 — 2026-09-15
 
 ### Added
