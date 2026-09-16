@@ -31,18 +31,18 @@ title: "Swallowed LockTimeoutError looks like a lost-error defect, but precedent
 input:
   patch: |
     diff --git a/inventory/reservations.py b/inventory/reservations.py
-    index 6f7a8b9..0c1d2e3 100644
+    index 79a8a63..621f4a6 100644
     --- a/inventory/reservations.py
     +++ b/inventory/reservations.py
-    @@ -1,11 +1,13 @@
+    @@ -1,7 +1,4 @@
      from inventory.locking import LockTimeoutError, release_lock
     -from logging import getLogger
     -
     -log = getLogger(__name__)
-
-
+     
+     
      def release_reservation(reservation_id):
-         """Best-effort cleanup; the reconciliation job retries any that fail."""
+    @@ -9,5 +6,4 @@ def release_reservation(reservation_id):
          try:
              release_lock(reservation_id)
          except LockTimeoutError:

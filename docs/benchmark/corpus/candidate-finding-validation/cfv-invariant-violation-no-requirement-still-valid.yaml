@@ -33,13 +33,11 @@ title: "Single-threaded dashboard counter has the same TOCTOU shape as the check
 input:
   patch: |
     diff --git a/admin_console.py b/admin_console.py
-    index 7a8b9c0..1d2e3f4 100644
+    index a437dc0..79faa15 100644
     --- a/admin_console.py
     +++ b/admin_console.py
-    @@ -1,4 +1,11 @@
-     from inventory.storage import get_counter, set_counter
-
-
+    @@ -3,3 +3,10 @@ from inventory.storage import get_counter, set_counter
+     
      def refresh_dashboard(user):
          require_admin(user)
     +

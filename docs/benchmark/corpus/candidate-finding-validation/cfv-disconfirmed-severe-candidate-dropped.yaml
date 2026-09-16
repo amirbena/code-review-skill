@@ -22,10 +22,11 @@ title: "force_release_reservation has no in-function auth check, but the only ca
 input:
   patch: |
     diff --git a/inventory/reservations.py b/inventory/reservations.py
-    index 5a6b7c8..9d0e1f2 100644
+    index 1656adb..f39854f 100644
     --- a/inventory/reservations.py
     +++ b/inventory/reservations.py
-    @@ -10,3 +10,10 @@ def reserve_stock(sku, qty, customer_id):
+    @@ -4,3 +4,12 @@ from inventory.storage import save_reservation
+     def reserve_stock(sku, qty, customer_id):
          reservation = save_reservation(sku=sku, qty=qty, customer_id=customer_id)
          return reservation
     +

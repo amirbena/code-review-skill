@@ -37,7 +37,11 @@ runner are out of scope (Issues #41 / #52 / #54).
 
 from __future__ import annotations
 
+import shutil
+import subprocess
+import tempfile
 import unittest
+from pathlib import Path
 
 import yaml
 
@@ -177,6 +181,45 @@ class SubCorpusCaseTests(unittest.TestCase):
                     case.decision, "cases state `decision` as a cross-check"
                 )
                 self.assertEqual(case.decision, case.derived_decision)
+
+    def test_patch_case_is_a_well_formed_git_apply_compatible_diff(self) -> None:
+        """fixture-format.md §6.1: `patch` must be a self-contained unified
+        diff, ``git apply``-compatible. A hunk header whose line counts
+        don't match its own context/added/removed lines is a corrupt diff
+        that ``git apply`` rejects even though it still parses as a plain
+        string — this check catches that class of defect, which schema
+        validation alone cannot."""
+        if shutil.which("git") is None:
+            self.skipTest("git not available")
+        for path in self.files:
+            case = bf.parse_case(_load(path))
+            if case.input_kind != "patch":
+                continue
+            with self.subTest(case=path.name):
+                tmp = Path(tempfile.mkdtemp())
+                try:
+                    for rel, content in case.input.get("base", {}).items():
+                        dest = tmp / rel
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        dest.write_text(content, encoding="utf-8")
+                    subprocess.run(["git", "init", "-q"], cwd=tmp, check=True)
+                    subprocess.run(["git", "add", "-A"], cwd=tmp, check=True)
+                    patch_file = tmp / "___case.patch"
+                    patch_file.write_text(case.input["patch"], encoding="utf-8")
+                    result = subprocess.run(
+                        ["git", "apply", "--check", patch_file.name],
+                        cwd=tmp,
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(
+                        result.returncode,
+                        0,
+                        f"{path.name}: patch does not apply cleanly onto its "
+                        f"own base ({result.stderr.strip()})",
+                    )
+                finally:
+                    shutil.rmtree(tmp, ignore_errors=True)
 
     def test_patch_case_anchors_occur_in_the_diff_under_review(self) -> None:
         for path in self.files:

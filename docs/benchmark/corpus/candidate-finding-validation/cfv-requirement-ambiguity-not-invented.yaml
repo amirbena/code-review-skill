@@ -26,23 +26,22 @@ title: "partial_ok reservation is silent on the zero-available-stock edge case: 
 input:
   patch: |
     diff --git a/inventory/reservations.py b/inventory/reservations.py
-    index 4e5f6a7..8b9c0d1 100644
+    index 82b9669..935a902 100644
     --- a/inventory/reservations.py
     +++ b/inventory/reservations.py
-    @@ -1,8 +1,13 @@
+    @@ -1,8 +1,10 @@
      from inventory.storage import get_stock, save_reservation
-
-
+     
+     
     -def reserve_stock(sku, qty, customer_id):
     +def reserve_stock(sku, qty, customer_id, partial_ok=False):
          stock = get_stock(sku)
          if stock < qty:
     -        raise ValueError("insufficient stock")
-    -    return save_reservation(sku=sku, qty=qty, customer_id=customer_id)
     +        if not partial_ok:
     +            raise ValueError("insufficient stock")
     +        qty = stock
-    +    return save_reservation(sku=sku, qty=qty, customer_id=customer_id)
+         return save_reservation(sku=sku, qty=qty, customer_id=customer_id)
   base:
     inventory/reservations.py: |
       from inventory.storage import get_stock, save_reservation

@@ -31,14 +31,14 @@ title: "normalize_currency rounding-mode change looks broad across three callers
 input:
   patch: |
     diff --git a/shared/currency.py b/shared/currency.py
-    index 3b4c5d6..7e8f9a0 100644
+    index 5d99b8b..e9c6a7e 100644
     --- a/shared/currency.py
     +++ b/shared/currency.py
-    @@ -1,7 +1,7 @@
+    @@ -1,6 +1,6 @@
     -from decimal import ROUND_HALF_EVEN, Decimal
     +from decimal import ROUND_UP, Decimal
-
-
+     
+     
      def normalize_currency(amount):
          """Round to the nearest cent for storage and downstream math."""
     -    return Decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_EVEN)
