@@ -552,6 +552,21 @@ and no packaged Skill resource depends on them.
   It has **no** packaged touch-point and ships no implementation — each of
   the fourteen issues retains its own local scope and implements its own
   slice; this document owns only the order and boundaries between them.
+- **Capability architecture** — a research recommendation for decomposing
+  both Skills into independently loadable capabilities behind declared
+  activation predicates: the current-state diagnosis (the always-loaded
+  instruction surface, the single 35-node link cycle in `shared/`, and the
+  three divergent declarations of each Skill's dependency set), the
+  proposed capability map and load tiers, the fail-closed loading
+  constraint the threat model imposes, the local/GitHub adapter
+  relationship, an evaluation of monorepo vs. multi-repo topologies,
+  per-capability contracts, benchmark ownership, and an incremental
+  migration sequence
+  ([`capability-architecture/README.md`](capability-architecture/README.md) →
+  [`capability-architecture/capability-architecture-model.md`](capability-architecture/capability-architecture-model.md)).
+  It is a **proposal only** and has no packaged touch-point: nothing has
+  moved, no canonical ownership has changed, and every rule it maps still
+  lives exactly where the sections above say it lives.
 
 ### Future work (not implemented)
 
