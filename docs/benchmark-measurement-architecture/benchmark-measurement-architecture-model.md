@@ -662,7 +662,13 @@ runtime-enforcement boundary:
   already encode for the reference module applies to any future
   implementation this research recommends. Any actual implementation is
   out of this research issue's own scope and deferred until the research
-  concludes.
+  concludes. The concluded research record is
+  [`verdict-consistency-boundary-research.md`](verdict-consistency-boundary-research.md):
+  build an MVP now against the existing fixed-vocabulary decision/severity
+  markers (never wait on #67/#71), reconcile pre-publish at four call
+  sites across both Skills' runbooks (never post-publish), and
+  withhold-and-report on a detected mismatch (never self-correct). A
+  follow-on implementation issue is outlined there, not yet filed.
 
 ### 12.5 What this section tracks now versus defers
 
