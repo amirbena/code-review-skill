@@ -12,9 +12,9 @@ redefining it.
 The test-only reference model is
 [`../../tests/reference/review/candidate_finding_validation.py`](../../tests/reference/review/candidate_finding_validation.py);
 its regression corpus and the worked examples below are exercised by
-[`../../tests/unit/review/test_candidate_finding_validation.py`](../../tests/unit/review/test_candidate_finding_validation.py)
+[`../../tests/unit/review/root_cause/test_candidate_finding_validation.py`](../../tests/unit/review/root_cause/test_candidate_finding_validation.py)
 and the documentation contract by
-[`../../tests/policy/review/test_candidate_finding_validation_docs.py`](../../tests/policy/review/test_candidate_finding_validation_docs.py).
+[`../../tests/policy/review/root_cause/test_candidate_finding_validation_docs.py`](../../tests/policy/review/root_cause/test_candidate_finding_validation_docs.py).
 
 ## 1. Problem and goal
 
