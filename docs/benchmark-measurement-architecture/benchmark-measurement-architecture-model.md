@@ -45,6 +45,28 @@ verdict-consistency-boundary research
 unchanged, and does not alter the fourteen-issue scope, the DAG in §2, or
 the layer ownership in §3.
 
+**Execution-model revision
+([#391](https://github.com/amirbena/code-review-skill/issues/391)).**
+Unlike the Stage 4 addendum above, this revision **does** change §2's DAG
+and part of §4's runtime contract, directly — it is a structural
+correction, not an additive extension. #330's original contract, and this
+document's §2/§4/§6, assumed a single execution class: a dedicated,
+provisioned CI runtime (#337) that #336's empirical spike would select a
+candidate for. That spike (and its #366 follow-up, closed without
+merging) found no candidate clears the contract's own viability bar at an
+acceptable cost —
+[`../benchmark/runtime-candidate-decision.md`](../benchmark/runtime-candidate-decision.md)
+records the evidence, kept as historical record and **not reopened** by
+this revision. #391 responds architecturally: the runtime contract splits
+into two execution classes (§4), #337 is superseded and no longer
+load-bearing anywhere in §2's DAG, and the maintainer-controlled class's
+selected scheduled-integration target is Claude Cloud Routines. §2 and §4
+are revised below; §2.3 records the exact, bounded wording corrections
+this revision's downstream issues (#331/#332/#335/#338/#339) still need,
+deferred to separate, later changes rather than applied here. §3, §5, §7,
+§8 (except one restated bullet), §9 (except one bullet), §10, §11, and
+§12 are otherwise unaffected.
+
 ## 1. Problem and motivation
 
 Four things are true about this repository's review-quality feedback loop
@@ -88,7 +110,9 @@ This document is that one place.
 ## 2. Canonical dependency DAG
 
 ```text
-#330 → #336 → #337 → (#333 → #334 || #338 → #339 → #332) → #335 → #331 → #329 → (#182 + #329) → #131 → #130
+#330(+#391) → (#333 → #334 || #338 → #339 → #332) → #335 → #331 → #329 → (#182 + #329) → #131 → #130
+
+#336 → #337 : historical evidence only (§2.3) — superseded, not load-bearing above
 ```
 
 This is a **practical build/trust order**, not a literal redraw of every
@@ -98,16 +122,27 @@ and are not changed by this document. The DAG above states the order in
 which the work actually becomes *usable*, which is stricter than the
 native edges in one place worth calling out explicitly (§2.2).
 
+**Revised by #391.** The runtime foundation this DAG threads everything
+else through is no longer `#330 → #336 → #337`. #330 (as revised by #391)
+now defines two execution classes — see §4 — and #337, Class 1's
+provisioning issue, is superseded: no candidate cleared Class 1's
+viability bar at an acceptable cost (#336's spike, #366's follow-up), and
+further Class 1 pursuit is not planned. #336 and #337 are kept in the DAG
+above only as historical evidence, drawn separately and explicitly marked
+non-load-bearing, rather than deleted from the record.
+
 Read left to right:
 
-- **#330 → #336 → #337** — the runtime foundation is sequential and
-  single-threaded: #330 fixes the vendor-neutral execution *contract*
-  (what any runtime must satisfy), #336 is the empirical spike that scores
-  real candidates against that contract, and #337 provisions the runtime
-  #336's decision record names. Nothing downstream has a real runtime to
-  execute against until #337 lands.
+- **#330(+#391)** — the runtime foundation is now the revised contract
+  itself, not a provisioned credential: #330 fixes the vendor-neutral
+  execution contract (what any runtime in either class must satisfy), and
+  #391 adds the two-class split (§4) plus the selected Class 2
+  scheduled-integration target (Claude Cloud Routines). Nothing downstream
+  needs #337 to land — it needs *some* qualifying runtime, which today
+  means a maintainer's own on-demand invocation, and eventually a Cloud
+  Routine once a separate implementation issue builds it (§4).
 - **`(#333 → #334 || #338 → #339 → #332)`** — two independent branches
-  fan out from the provisioned runtime and run in parallel:
+  fan out from the runtime foundation and run in parallel:
   - the **PR-time branch**, #333 (canonical taxonomy + inverted index)
     then #334 (deterministic Top-K selector + coverage policy) — see §5;
   - the **nightly branch**, #338 (scheduled full-corpus execution +
@@ -115,17 +150,22 @@ Read left to right:
     which together constitute #332 — see §6.
 
   These two branches share no code and no scheduling dependency on each
-  other; they are drawn in parallel (`||`) because both only need #337's
-  runtime to exist, not each other's output. #339 additionally depends on
-  #338's persisted history (an in-branch dependency), and #332 is the
-  tracking parent that both children complete.
+  other; they are drawn in parallel (`||`) because both only need a
+  qualifying runtime to exist (§4), not #337 specifically and not each
+  other's output. #339 additionally depends on #338's persisted history
+  (an in-branch dependency), and #332 is the tracking parent that both
+  children complete. §2.3 records the exact wording each of #331's and
+  #332's own children still needs corrected to match this — not yet
+  applied.
 - **→ #335** — shadow-validation is the join point: it needs #334's
   informational selector *and* #332's nightly history (i.e., #339's
   completed drift-detection loop) as its evidence source, so it cannot
-  start meaningfully until both branches have produced real output.
-- **→ #331 → #329** — #335's evidence-backed required-gate transition is
-  the last of #331's three children, so #331 (the Top-K-gate tracking
-  parent) completes; #331 completing alongside #330 and #332 completing is
+  start meaningfully until both branches have produced real output. #335's
+  own scope (promoting the selector to a *required* merge check) needs a
+  bounded correction per §2.3 — a required, contributor-blocking gate is
+  no longer this architecture's direction (§4).
+- **→ #331 → #329** — #331 (the Top-K-gate tracking parent) completes once
+  its children do; #331 completing alongside #330 and #332 completing is
   what closes #329 (the whole epic's tracking parent).
 - **→ (#182 + #329) → #131 → #130** — #131 (analytics) is deliberately
   gated on **both** #182 (telemetry exists to report workflow-observation
@@ -139,9 +179,10 @@ Read left to right:
 | Issue | Parent | Depends on | Blocks / children |
 | --- | --- | --- | --- |
 | #329 | — | — | children: #330, #331, #332 |
-| #330 | #329 | — | blocks #331, #332; children: #336, #337 |
-| #336 | #330 | #330 | blocks #337 |
-| #337 | #330 | #330, #336 | — |
+| #330 | #329 | — | blocks #331, #332; children: #336, #337, #391 |
+| #391 | #330 | #330 | revises #330's runtime contract; supersedes #337 |
+| #336 | #330 | #330 | blocks #337 (historical — see §2.3) |
+| #337 | #330 | #330, #336 | superseded by #391 — no longer load-bearing |
 | #331 | #329 | #330 | children: #333, #334, #335 |
 | #333 | #331 | #330 | blocks #334 |
 | #334 | #331 | #333, #330 | blocks #335 |
@@ -160,13 +201,68 @@ The native edges alone would let #333/#334 (PR-time branch) and #338
 contract, since that is the literal `Depends on: #330` recorded on each.
 In practice, both branches need a runtime that actually
 `check_runtime_available()`-succeeds to produce anything but
-`runtime-unavailable`/`insufficient-coverage` placeholder outcomes — which
-is #337's deliverable, not #330's. The DAG in §2 threads the build order
-through #337 explicitly for this reason. This is a sequencing
-clarification, not a change to any issue's recorded dependency — #333,
-#334, and #338 are free to *start* (design, tests against synthetic data)
-before #337 lands; they cannot produce a real, evidence-backed result
-before it does.
+`runtime-unavailable`/`insufficient-coverage` placeholder outcomes.
+**Revised by #391:** that no longer means #337's deliverable specifically
+— #337 is superseded (§2.3) — it means *any* runtime satisfying §4's
+contract, which today is a maintainer's own manual/on-demand invocation
+of the existing `ReviewerAdapter`, and will eventually include the Class
+2 Cloud Routine integration once a separate implementation issue builds
+it. This is a sequencing clarification, not a change to any issue's
+recorded dependency — #333, #334, and #338 are free to *start* (design,
+tests against synthetic data) at any time; they cannot produce a real,
+evidence-backed result until a qualifying runtime actually exists to run
+against, whichever class it comes from.
+
+### 2.3 Follow-up corrections required in #331/#332/#335/#338/#339 (not applied by #391)
+
+#391's own scope is the canonical architecture rewrite (this document and
+`docs/benchmark/runtime-execution-contract.md`) — it deliberately does not
+rewrite #331/#332/#335/#338/#339's own issue text. Their current wording
+now conflicts with the revised architecture in the specific, bounded ways
+below; each is a candidate for its own small, separately-scoped issue
+correction once #391 lands, not something to fix by reinterpretation:
+
+- **#331** — its own "Architecture (high level)" diagram currently reads
+  "execute those real benchmarks through #330's runtime" and "eventually
+  become a required pre-merge gate, after validation." The runtime
+  reference needs updating to the revised §4 (no longer implying a single
+  provisioned runtime); the "required pre-merge gate" language needs
+  reconciling with §4.3's rule that Class 2 execution must never become a
+  contributor/merge prerequisite — #331 should state explicitly that any
+  future required-gate promotion would have to be backed by a Class 1
+  runtime that does not currently exist and is not being pursued, not
+  treated as an expected eventual outcome of the current architecture.
+- **#332** — its "Problem" section reads "No workflow runs on a
+  `schedule:` trigger" (implying GitHub Actions specifically); its
+  children (#338/#339) should be re-pointed at Class 2's Cloud Routine
+  target rather than an Actions `schedule:` workflow. Its own "Dependency
+  order: #330 → #338 → #339" line stays correct in spirit but should note
+  #338 now targets a Cloud Routine, not a provisioned CI credential.
+- **#335** — its "Responsibility" and "Scope" sections currently target
+  "the actual transition to a required, fail-closed merge gate." This
+  needs the same correction as #331: promotion to a contributor-blocking
+  gate is not this architecture's direction under §4.3, so #335's scope
+  should be reframed to either (a) never promote under the current
+  Class 2-only model, or (b) stay explicitly conditional on a future,
+  separately-decided Class 1 runtime materializing — not an assumed
+  eventual step.
+- **#338** — its "Scope" section currently specifies "New
+  `.github/workflows/benchmark-nightly.yml`: `schedule:` ... using the
+  isolated CI runtime from #330." This is the most directly conflicting
+  wording in the tree: #338 needs to be re-pointed at a Claude Cloud
+  Routine (per #391's `docs/benchmark/runtime-execution-contract.md` §2.2)
+  instead of a new GitHub Actions workflow file, and "the isolated CI
+  runtime from #330" needs updating to reference the Class 2 contract
+  instead.
+- **#339** — its current text does not reference #330's runtime directly
+  (it consumes #338's persisted history, not the runtime itself), so no
+  conflicting wording was found; it should still be reviewed once #338 is
+  corrected, since its "Inputs / dependencies" section depends on #338's
+  output shape, which may change when #338 is re-pointed at a Routine.
+
+None of these corrections are applied by this revision — they are
+recorded here so they can be made as bounded, individually-reviewable
+issue corrections after #391 lands, per #391's own scope boundary.
 
 Similarly, #131's dependency on #329 is not a native tracker edge (#329
 does not list #131 as a blocker, and #131's own `Dependencies` section
@@ -188,10 +284,10 @@ through their existing contracts.
 
 | Layer | Responsibility | Owner | Consumes |
 | --- | --- | --- | --- |
-| **Runtime execution** | Actually invoking the packaged `local-code-review` Skill's real, unmodified semantics inside an isolated, non-personal CI environment. | #330 (contract) → #336 (candidate evidence) → #337 (provisioning) | Nothing below it — this is the foundation. |
-| **Benchmark candidate taxonomy/indexing** | A small, closed, alias-free classification vocabulary for both corpus cases and PR diffs, and a precomputed inverted index for cheap candidate lookup. | #333 | Runtime execution (its one bounded model call — PR-diff classification — runs through #330/#337's runtime/credential path). |
+| **Runtime execution** | Actually invoking the packaged `local-code-review` Skill's real, unmodified semantics — either automatically/repository-triggered (Class 1, untrusted-input, currently unprovisioned) or maintainer-controlled (Class 2: on-demand today, Cloud Routine once a separate implementation issue builds it). | #330+#391 (contract, both classes) — #336/#337 kept as historical Class 1 evidence, no longer load-bearing (§2.3) | Nothing below it — this is the foundation. |
+| **Benchmark candidate taxonomy/indexing** | A small, closed, alias-free classification vocabulary for both corpus cases and PR diffs, and a precomputed inverted index for cheap candidate lookup. | #333 | Runtime execution (its one bounded model call — PR-diff classification — runs through §4's runtime contract, either class). |
 | **Bounded PR-time benchmark selection** | Turning a narrowed candidate pool into a deterministic, explainable, coverage-bounded Top-K set of cases to actually execute for a given PR. | #334 | Taxonomy/indexing (candidate pool, PR classification); runtime execution (to run the selected cases). |
-| **Pre-merge behavioral gating** | Deciding whether/when the PR-time selection becomes a required, fail-closed branch-protection check, and the evidence bar that justifies that promotion. | #335 | PR-time selection (the thing being validated); nightly history (the broader-evidence comparison source). |
+| **Pre-merge behavioral gating** | Deciding whether/when the PR-time selection becomes a required, fail-closed branch-protection check, and the evidence bar that justifies that promotion — constrained by §4's Class 2 rule that maintainer-controlled execution must never become a contributor/merge prerequisite; any such promotion would require a Class 1 runtime that does not currently exist (§2.3). | #335 | PR-time selection (the thing being validated); nightly history (the broader-evidence comparison source). |
 | **Nightly full-corpus execution/history** | Running the entire corpus on a schedule and persisting comparable, interpretable results over time. | #338 | Runtime execution. |
 | **Drift detection / regression issue lifecycle** | Comparing persisted nightly runs, deciding what counts as meaningful drift, and managing one deduplicated GitHub issue per regression. | #339 | Nightly history (#338); the existing `regression-report.md`/#55/#56/#57 metrics (reused, not reimplemented). |
 | **Review execution telemetry** | Observational record of what a review actually inspected/executed (files, symbols, expansions, runtime validations, partitions, stages) — never decision-affecting. | #182 | Nothing above — it observes the ordinary review process, independent of the benchmark tree. |
@@ -213,11 +309,14 @@ or telemetry layers directly.
 
 ## 4. Runtime contract
 
-The stable architectural rules that #330 establishes, #336 evaluates
-against, and #337 provisions — restated here at the level a consumer of
-the runtime (#333's PR-diff classification call, #334's selected-case
-execution, #338's nightly full-corpus execution) needs, without
-re-litigating #330's full candidate evaluation.
+The stable architectural rules that #330, as revised by #391, establishes
+— restated here at the level a consumer of the runtime (#333's PR-diff
+classification call, #334's selected-case execution, #338's nightly
+full-corpus execution) needs, without re-litigating
+[`../benchmark/runtime-execution-contract.md`](../benchmark/runtime-execution-contract.md)'s
+full text. **Revised by #391**: this section now states two execution
+classes instead of one, and #337 (Class 1's provisioning) no longer
+appears as an active dependency anywhere in this document.
 
 ```text
 benchmark runner (run_benchmark.py, unchanged)
@@ -227,7 +326,48 @@ benchmark runner (run_benchmark.py, unchanged)
         → model backend  (candidate-specific, swappable)
 ```
 
-Rules that hold regardless of which runtime is ultimately selected:
+This chain is shared by both classes below — nothing about it assumes
+who or what triggers execution.
+
+### 4.1 Two execution classes
+
+- **Class 1 — automatic / repository-triggered (untrusted input).**
+  Execution a repository-controlled workflow triggers automatically — a
+  PR, a push, or any other repository event, including a fork PR the
+  maintainer did not author. **No maintainer personal machine, session,
+  or credentials**: no code path in this class may reach the maintainer's
+  personal workstation, filesystem, shell, SSH state, browser/session
+  state, or personally-authenticated CLI session, under any trigger. Runs
+  on infrastructure dedicated to CI, never a device also used for
+  anything else; credentials are purpose-specific, minimally scoped, and
+  independently revocable; fork PRs and other untrusted input stay
+  separated from any secret-bearing execution path. **Current status: no
+  candidate has cleared this class's viability bar at an acceptable cost**
+  (#336's spike, #366's follow-up — kept as historical evidence, not
+  reopened); #337 (this class's provisioning issue) is superseded, and
+  further pursuit of this class is not planned. The rule itself is
+  unchanged and remains the reference for any future proposal that does
+  try to satisfy it.
+- **Class 2 — maintainer-controlled (optional quality observability).**
+  Execution the maintainer themselves initiates or schedules — never
+  triggered by contributor PR automation or any other repository event.
+  No untrusted input reaches this class's execution path, so it does not
+  need Class 1's dedicated-infrastructure/independently-revocable-
+  credential machinery — it runs with the maintainer's own
+  already-authorized credentials and identity. It **must never become
+  reachable from contributor PR automation, and must never become a
+  required check for a normal contributor PR or merge** — this is
+  optional maintainer quality observability, not a prerequisite for
+  installing, using, contributing to, or normally merging changes to the
+  Skill. The selected scheduled-integration target is **Claude Cloud
+  Routines only** — Claude Desktop scheduled tasks are explicitly
+  excluded, because reliable periodic benchmark monitoring must not
+  depend on the maintainer's workstation being awake or the desktop
+  application remaining open. Full detail:
+  [`../benchmark/runtime-execution-contract.md`](../benchmark/runtime-execution-contract.md)
+  §2.2/§4.3.
+
+### 4.2 Rules that hold regardless of class or which runtime is selected
 
 - **Vendor-neutral.** What is under evaluation is the Skill's actual
   behavior — its review-scope passes, its finding contract, its
@@ -241,17 +381,6 @@ Rules that hold regardless of which runtime is ultimately selected:
   `ReviewerAdapter` boundary stays a thin adapter around an unmodified
   `SKILL.md`/`policies/`/`shared/`, never a translation layer that
   reimplements the Skill.
-- **No maintainer personal machine, session, or credentials.** This is a
-  trust-boundary requirement, not an availability optimization. No
-  repository-controlled workflow — including one triggered by a PR the
-  maintainer did not author — may have a code path reaching the
-  maintainer's personal workstation, filesystem, shell, SSH state,
-  browser/session state, or personally-authenticated CLI session, under
-  any trigger, including fork PRs.
-- **Isolated CI execution.** Runs in an environment dedicated to CI, never
-  a device also used for anything else; credentials are purpose-specific,
-  minimally scoped, and independently revocable; fork PRs and other
-  untrusted input stay separated from any secret-bearing execution path.
 - **Replaceable runtime/provider.** The `ReviewerAdapter` boundary is what
   keeps the runtime swappable — changing providers later must not require
   touching the runner, matcher, metrics, selector (#334), or nightly
@@ -262,22 +391,30 @@ Rules that hold regardless of which runtime is ultimately selected:
   against. Every consumer of a benchmark result (#334's PR-time run,
   #338's nightly run, #131's benchmark-derived exports) can therefore
   attribute a result change to a Skill change versus a runtime/model
-  change, rather than having the two silently confounded.
+  change, rather than having the two silently confounded. For Class 2,
+  neither the SHA nor the model identity is recorded automatically — the
+  Routine integration (not yet built) must do so explicitly.
 - **Free/near-zero cost is preferred, not sacrificed-for-fidelity
   blindly.** A cheaper candidate that cannot actually invoke the Skill's
   real multi-step, tool-using semantics is not viable regardless of cost;
   among candidates that clear fidelity, cost, latency, reproducibility,
-  and operational complexity are all legitimate comparison axes.
+  and operational complexity are all legitimate comparison axes. For
+  Class 2, this includes accounting for the maintainer's Claude
+  subscription usage and Routine run limits, not just provider metering.
 
-**This document does not hard-code the final runtime choice.** #336 owns
-the empirical evaluation of concrete candidates, and #337 owns
-provisioning whatever #336's decision record names. Nothing above commits
-to Claude Code, Anthropic's backend, or any other specific vendor as an
-architectural requirement — the contract is satisfied by any runtime that
-meets these rules, and the *rejected* classes (a self-hosted runner
-reusing the maintainer's personal session; a bare single-shot completion
-endpoint standing in for the Skill's actual tool-use loop) are rejected on
-these architectural grounds, not on vendor identity.
+**This document does not hard-code the final Class 1 runtime choice, and
+does not itself implement Class 2.** Nothing above commits to Claude
+Code, Anthropic's backend, or any other specific vendor as an
+architectural requirement for Class 1 — the contract is satisfied by any
+runtime that meets these rules, and the *rejected* approaches (Class 1: a
+self-hosted runner reusing the maintainer's personal session, a bare
+single-shot completion endpoint standing in for the Skill's actual
+tool-use loop; Class 2: Claude Desktop scheduled tasks as the
+scheduled-integration mechanism) are rejected on these architectural
+grounds, not on vendor identity. Class 2's concrete Cloud Routine
+integration — profiles, Routine execution, drift confirmation, evidence
+persistence, GitHub issue publication — is scoped to a future
+implementation issue, not opened by #391.
 
 ## 5. PR benchmark path
 
@@ -292,9 +429,11 @@ PR diff
   → inverted-index candidate narrowing            (#333)
   → deterministic relevance/coverage selection    (#334)
   → bounded Top-K                                 (#334)
-  → real benchmark execution                      (#330/#337's runtime)
+  → real benchmark execution                      (§4's runtime contract — a
+                                                     qualifying runtime, not
+                                                     specifically #337)
   → informational first                           (#334)
-  → required gate only after evidence             (#335)
+  → required gate only after evidence             (#335 — see note below)
 ```
 
 Principles that hold regardless of the exact numbers chosen:
@@ -318,13 +457,21 @@ Principles that hold regardless of the exact numbers chosen:
 - **`insufficient-coverage` and runtime-unavailable are explicit
   outcomes.** Neither may render as a silently passing/green result; both
   are distinct, visible states the workflow reports.
-- **Promotion to a required gate happens only after shadow validation.**
-  #334's selector ships and runs informationally first. #335 owns the
-  entire promotion decision — measuring miss rate and over-selection
-  against #332's nightly results over a burn-in window, and only then
-  moving `benchmark-check.yml` into required branch-protection status,
-  with an explicit, auditable (never silent, never standing) override for
-  a maintainer to unblock a specific failing outcome.
+- **Promotion to a required gate happens only after shadow validation —
+  and is now additionally constrained by §4.1's Class 2 rule.** #334's
+  selector ships and runs informationally first. #335 owns the promotion
+  mechanism as described (measuring miss rate and over-selection against
+  #332's nightly results over a burn-in window, moving
+  `benchmark-check.yml` into required branch-protection status with an
+  explicit, auditable override), but §4.1 now states that Class 2
+  (maintainer-controlled) execution must never become a required
+  contributor/merge check. Under the current architecture (Class 1
+  unprovisioned, not being pursued), that means #335's promotion step has
+  no runtime it is currently permitted to promote against — it stays
+  informational unless and until a future, separately-decided Class 1
+  runtime exists. #335's own issue text needs a bounded correction to
+  state this explicitly (§2.3); this document does not silently reinterpret
+  #335's existing wording.
 
 ## 6. Nightly path
 
@@ -333,7 +480,9 @@ and exact drift/noise thresholds are #338's and #339's implementation
 detail, not recorded here.
 
 ```text
-nightly trusted execution        (#338, scheduled + workflow_dispatch, main only)
+nightly trusted execution        (#338, via a Claude Cloud Routine per §4.1's
+                                   Class 2 target, or maintainer-triggered;
+                                   main only)
   → full corpus                  (#338, run_benchmark.py with no case filter)
   → persisted comparable history (#338, keyed by date + commit SHA + runtime metadata)
   → baseline/reference comparison(#338's chosen baseline policy)
@@ -341,11 +490,18 @@ nightly trusted execution        (#338, scheduled + workflow_dispatch, main only
   → deduplicated issue lifecycle (#339)
 ```
 
+**Revised by #391:** #338's own text still describes this as a new
+`.github/workflows/benchmark-nightly.yml` GitHub Actions `schedule:`
+workflow using "the isolated CI runtime from #330" — that wording
+conflicts with the Class 2 Cloud Routine target above and needs a bounded
+correction (§2.3), not applied by this document.
+
 Principles that hold regardless of the exact storage/threshold choices:
 
-- **Never blocks PR or main.** The nightly workflow runs on a `schedule:`
-  trigger against `main` (or a maintainer-chosen ref) and never gates a
-  merge or deployment, under any outcome.
+- **Never blocks PR or main.** Nightly execution runs on a schedule (a
+  Claude Cloud Routine, per §4.1's Class 2 target) against `main` (or a
+  maintainer-chosen ref) and never gates a merge or deployment, under any
+  outcome.
 - **Baseline policy must avoid silent drift ratcheting.** A naive
   "always compare to yesterday's run" policy lets a small degradation
   become tomorrow's accepted baseline, silently eroding the known-good
@@ -426,10 +582,18 @@ implemented:
   boundary, matcher, and metrics (#54/#55/#56/#57) through their existing
   contracts. No issue in this tree builds a second reviewer, a second
   runner, or a second evaluator.
-- **No personal-machine CI path.** Restated from §4: no code path in any
-  workflow this document's tree adds may ever reach the maintainer's
-  personal machine, credentials, filesystem, shell, SSH state, or
-  browser/session state, under any trigger including fork PRs.
+- **No personal-machine automatic-execution path.** Restated from §4.1:
+  no code path Class 1 (automatic/repository-triggered execution) adds
+  may ever reach the maintainer's personal machine, credentials,
+  filesystem, shell, SSH state, or browser/session state, under any
+  trigger including fork PRs. This does not extend to Class 2
+  (maintainer-controlled execution, §4.1), which runs with the
+  maintainer's own already-authorized credentials by design — Class 2 is
+  restricted instead by never being reachable from contributor PR
+  automation and never becoming a contributor/merge prerequisite, and by
+  its selected scheduled-integration target excluding Claude Desktop
+  scheduled tasks specifically for their own, separate reason (machine-
+  availability dependency, not trust boundary — §4.1).
 - **Bounded PR-time cost/runtime.** The PR-time path (§5) always executes
   a small, fixed-ceiling number of cases (#334's Top-K bound), never an
   open-ended or corpus-sized job.
@@ -466,9 +630,15 @@ implemented:
   baseline-refresh cadence, and storage formats are implementation
   decisions that live in #333/#334/#335/#338/#339, not architectural
   commitments recorded here.
-- **No runtime/vendor selection.** §4 fixes the contract every candidate
-  must satisfy; #336 evaluates candidates against it and #337 provisions
-  the winner. This document names no winner.
+- **No runtime/vendor selection, and no Class 2 implementation.** §4
+  fixes the contract every candidate must satisfy in either class. For
+  Class 1, #336/#366 already evaluated concrete candidates (historical
+  evidence, §2.3) and no winner cleared the bar; #337 (provisioning) is
+  superseded and not being pursued further. For Class 2, §4.1 names
+  Claude Cloud Routines as the selected scheduled-integration *target*,
+  but this document does not implement that integration — profiles,
+  Routine execution, drift confirmation, evidence persistence, and
+  GitHub issue publication are scoped to a future implementation issue.
 - **No reassignment of tracker metadata.** This document changes no
   issue's assignee, label, native parent/sub-issue relationship,
   dependency edge, or state. §7's #131-depends-on-#329/#182 judgment is
