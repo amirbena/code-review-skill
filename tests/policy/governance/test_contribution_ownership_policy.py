@@ -50,6 +50,77 @@ class CanonicalPolicyTests(unittest.TestCase):
             self.assertIn(needle.lower(), self.norm.lower(), needle)
 
 
+class SharedContractExceptionTests(unittest.TestCase):
+    """The narrow exception: bounded implementation of an already-canonical
+    shared/cross-Skill contract may be Contributor-owned, while defining or
+    altering shared semantics — and any unresolved semantic, compatibility,
+    security, or governance decision — always stays Maintainer-led.
+    """
+
+    def setUp(self) -> None:
+        self.raw = POLICY.read_text(encoding="utf-8")
+        self.norm = _norm(self.raw)
+
+    def test_default_rule_is_preserved(self) -> None:
+        self.assertIn(
+            "defining or altering shared/cross-skill semantics is always maintainer-led",
+            self.norm.lower(),
+        )
+
+    def test_exception_is_named_and_narrow(self) -> None:
+        self.assertIn("touching a shared/cross-skill contract without redefining it", self.norm.lower())
+        self.assertIn("merely touching", self.norm.lower())
+
+    def test_exception_requires_all_five_criteria(self) -> None:
+        for needle in (
+            "canonical semantic owner",
+            "does not grant authority to redefine",
+            "ordinary engineering choices",
+            "deterministic conformance",
+            "maintainer / codeowners review remains required",
+        ):
+            self.assertIn(needle.lower(), self.norm.lower(), needle)
+
+    def test_unresolved_semantic_or_governance_decisions_stay_maintainer_led(self) -> None:
+        self.assertIn(
+            "if any semantic, compatibility, security, or governance decision",
+            self.norm.lower(),
+        )
+        self.assertIn("stays maintainer-led no", self.norm.lower())
+
+    def test_maintainer_review_stays_required_regardless_of_classification(self) -> None:
+        # Criterion 5 plus the explicit "not delegation of architectural
+        # ownership" framing: contributor execution never removes the
+        # maintainer/CODEOWNERS review step.
+        self.assertIn("maintainer/codeowners review", self.norm.lower())
+        self.assertIn("not delegation of architectural ownership", self.norm.lower())
+
+    def test_no_new_ownership_label_is_introduced(self) -> None:
+        for forbidden in ("maintainer-decision", "contributor-execution", "maintainer-review-required"):
+            self.assertNotIn(forbidden, self.norm.lower())
+        # Still only the pre-existing four labels are used anywhere in the policy.
+        for label in ("maintainer-led", "good first issue", "contributor-owned"):
+            self.assertIn(label, self.norm)
+
+    def test_good_first_issue_is_a_separate_suitability_judgment(self) -> None:
+        # `good first issue` is composed independently (e.g. via Type:
+        # Infrastructure) and is never implied merely by Contributor-owned
+        # or by the shared-contract exception.
+        self.assertIn("not another name for `good first issue`".replace("`", ""), self.norm.lower())
+
+    def test_ambiguous_shared_contract_case_defaults_conservative(self) -> None:
+        self.assertIn("unclear whether all five shared-contract exception criteria hold", self.norm.lower())
+        self.assertIn(
+            "the exception requires every criterion",
+            self.norm.lower(),
+        )
+
+    def test_epic_decomposition_diagram_covers_a_single_bounded_child_issue(self) -> None:
+        self.assertIn("maintainer-owned canonical contract", self.norm.lower())
+        self.assertIn("bounded issue that cannot redefine it", self.norm.lower())
+        self.assertIn("contributor-owned implementation", self.norm.lower())
+
+
 class AgentsRoutingTests(unittest.TestCase):
     def setUp(self) -> None:
         self.raw = AGENTS.read_text(encoding="utf-8")

@@ -91,7 +91,59 @@ contracts.
 Maintainer-led does **not** mean contributors cannot participate. A
 maintainer-led Epic may expose safe child Issues (fixtures, corpora,
 tooling, bounded components) that contributors implement while the parent
-semantic contract stays maintainer-owned.
+semantic contract stays maintainer-owned. The same principle applies to
+an individual bounded child Issue, not only to an Epic as a whole — see
+the exception immediately below.
+
+#### Touching a shared/cross-Skill contract without redefining it
+
+**Defining or altering shared/cross-Skill semantics is always
+Maintainer-led** and has no exception. But *merely touching* a
+shared/cross-Skill contract — without authority to redefine its semantics
+— does not by itself require Maintainer-led implementation. A narrow
+exception lets such an Issue classify as **Contributor-owned** instead,
+when it is explicitly bounded to *implementing, exposing, adapting,
+wiring, or validating* semantics that are already canonical, and **all**
+of the following hold:
+
+1. The canonical semantic owner — the existing source of truth the Issue
+   implements against — is explicitly identifiable.
+2. The Issue does not grant authority to redefine that semantic contract.
+3. The remaining implementation choices are ordinary engineering choices,
+   not product or architecture decisions.
+4. The Issue's acceptance criteria give deterministic conformance
+   evidence against the canonical contract.
+5. Maintainer / CODEOWNERS review remains required before merge.
+
+If any semantic, compatibility, security, or governance decision the
+Issue depends on is still unresolved, the Issue stays Maintainer-led no
+matter how bounded the remaining implementation looks — implementation
+that would itself have to settle an undecided contract is never eligible
+for this exception. This keeps compatibility/evolution policy,
+similarity/normativity or other undecided semantic thresholds, and
+architectural or governance-mechanism research Maintainer-led until a
+maintainer records the missing decision.
+
+This exception never creates a new class or label, and it never moves
+merge or review authority: it only changes which of the two existing
+classes (`Maintainer-led` vs `Contributor-owned`) an Issue that touches a
+shared/cross-Skill contract receives.
+
+```text
+maintainer-owned canonical contract
+        ↓
+bounded Issue that cannot redefine it
+        ↓
+contributor-owned implementation
+        ↓
+maintainer/CODEOWNERS review
+```
+
+This is not delegation of architectural ownership — the maintainer
+retains semantic ownership of the contract and merge/review authority
+either way. Once a maintainer records a previously-missing semantic
+decision, a remaining bounded implementation Issue may become eligible
+under this exception if it independently satisfies criteria 1–5.
 
 ### B. Good First Issue
 
@@ -134,6 +186,14 @@ step. Examples: a specialist review profile, dependency/supply-chain
 analysis, bounded observational telemetry, other isolated review
 extensions.
 
+A bounded implementation of an already-canonical shared/cross-Skill
+contract (the exception under "Touching a shared/cross-Skill contract
+without redefining it" above) is also Contributor-owned even though it
+leaves little open design: the contributor owns driving the
+implementation, tests, and documentation through review, while the
+*semantic* authority stays with the maintainer who owns the canonical
+contract.
+
 ## Epic decomposition
 
 Parent and child Issues need not share a class. The preferred pattern:
@@ -161,7 +221,13 @@ architecture. Do **not** manufacture tiny child Issues solely to produce
    decision, re-review state, publication/anchors, GitHub enforcement,
    autofix authorization, privileged release, shared cross-Skill
    contracts), classify **Maintainer-led** — even when the change looks
-   small. Assign `amirbena` when ownership is active.
+   small. Assign `amirbena` when ownership is active. Exception: if the
+   *only* maintainer-led surface touched is a shared/cross-Skill
+   contract, and the Issue satisfies all five criteria under "Touching a
+   shared/cross-Skill contract without redefining it" above, classify
+   **Contributor-owned** instead. Every other maintainer-led surface
+   listed here has no such exception and always classifies
+   Maintainer-led.
 3. Otherwise, if it is bounded, deterministically verifiable, and cannot
    silently move review outcomes, classify **Good First Issue**. For
    automation / tooling work, set the Issue's **Type** to Infrastructure
@@ -182,6 +248,10 @@ architecture. Do **not** manufacture tiny child Issues solely to produce
 - **Unsure between Maintainer-led and Good First Issue** → Maintainer-led.
   A wrong beginner label on sensitive behavior is more costly than a
   conservative one.
+- **An Issue touches a shared/cross-Skill contract and it is unclear
+  whether all five shared-contract exception criteria hold** →
+  Maintainer-led. The exception requires every criterion; an Issue that
+  meets some but leaves one genuinely unresolved is not eligible.
 - **Unsure between Good First Issue and Contributor-owned** → if the
   expected behavior is already well defined and the contributor mainly
   implements an established contract, it is a Good First Issue; if the
