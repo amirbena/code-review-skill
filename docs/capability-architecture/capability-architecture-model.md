@@ -177,11 +177,18 @@ not reliably *not* loaded (an agent that follows canonical-owner links
 opens all of it). Load behavior is undefined, which means both recall and
 token cost are undefined.
 
-`jira-context.md` is the sharpest instance: both `SKILL.md` files invoke
-it *by section name* — "`review-context.md`'s 'Jira context resolution'"
-— rather than by filename, even though issue #198 moved that procedure
-into its own file. The instruction points at a section that no longer
-exists where it says it does.
+`jira-context.md` is a clean instance of the pattern: both `SKILL.md`
+files invoke it *by section name* — "`review-context.md`'s 'Jira context
+resolution'" — rather than by filename, even though issue #198 moved the
+full procedure into its own file. That reference still resolves —
+`review-context.md` keeps a short "## Jira context resolution" section
+that correctly points onward to `jira-context.md`'s "full procedure" — so
+this is a deliberate thin-pointer layer, not a broken link. What it shows
+is narrower but still real: the file a reader actually needs
+(`jira-context.md`, 955 words) is never named directly by either
+`SKILL.md`, so a load strategy keyed on `SKILL.md`'s literal filenames
+misses it entirely, even though the section-name reference correctly
+resolves for a human reader following links by hand.
 
 ### A.5 Evidence 4 — policies are carrying orchestration
 
@@ -463,12 +470,16 @@ benchmark suite.**
 Four current placements do not survive the analysis:
 
 1. **`github-pr-review/policies/review-reasoning.md` is not a policy.**
-   All ten of its sections are pointers into `shared/`, and the sentence
-   *"That shared section owns … ; this PR-specific policy does not restate
-   them"* recurs nine times verbatim. `local-code-review`'s runbook
-   invokes the same passes by naming the shared sections directly, with no
-   intermediary — proving the intermediary is unnecessary. It becomes part
-   of `review-router`'s capability manifest, not a file.
+   All eleven of its sections delegate their durable invariant to
+   `shared/`; the disclaiming sentence *"this PR-specific policy does not
+   restate them"* (or an "owned by …" equivalent) recurs in nine of them.
+   The two exceptions add only an execution-capability fallback for a
+   reviewing engine with no native codebase-search tool — a
+   how-to-execute detail, not new review semantics. `local-code-review`'s
+   runbook invokes the same passes by naming the shared sections
+   directly, with no intermediary — proving the intermediary is
+   unnecessary. It becomes part of `review-router`'s capability manifest,
+   not a file.
 
 2. **`local-code-review/policies/invocation-approval.md` is skill-specific
    but not environment-specific.** It constrains the *caller*, and the
@@ -683,10 +694,12 @@ Three measurements settle it:
    about `local-code-review`. Three documents each claiming to match the
    other two is a contract expressed in the wrong place.
 3. **`github-pr-review/policies/review-reasoning.md` has essentially no
-   content of its own.** All ten sections are pointers into `shared/`, and
-   *"That shared section owns … ; this PR-specific policy does not restate
-   them"* appears nine times verbatim. `local-code-review`'s runbook
-   invokes the same passes by naming the shared sections directly, with no
+   content of its own.** All eleven sections delegate their durable
+   invariant to `shared/`, nine of them with the explicit disclaimer
+   *"this PR-specific policy does not restate them"*; the other two add
+   only an execution-capability fallback, not new review semantics.
+   `local-code-review`'s runbook invokes the same passes by naming the
+   shared sections directly, with no
    intermediary — proving the intermediary is unnecessary.
 
 ### D.2 What is genuinely shared
