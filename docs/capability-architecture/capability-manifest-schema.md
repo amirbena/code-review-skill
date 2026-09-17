@@ -79,17 +79,19 @@ loading: fail-closed" sections, and that section's shape differs slightly
 between the two, unlike `specialist-depth`'s single, uniformly resident
 predicate: `large-pr-partitioning.md`'s diff-size-threshold predicate is
 fully resident (decidable from `review-scope.md`'s own evidence without
-investigation), but `repository-expansion.md`'s trigger-firing predicate
-is only partly so — recognizing which trigger *type* a change plausibly
-implicates is resident, while confirming a trigger actually *fires*
-(an evidenced consumer, per that file's own "evidence-based, not
-name-based" rule) can require the file's own ring-1 investigation to
-resolve. An inconclusive or not-yet-investigated firing determination is
+investigation), and so is `repository-expansion.md`'s predicate for three
+of its four triggers (interface/contract, migration/schema,
+config-consumer — each fires on a fact the diff itself already shows).
+Only the call-site trigger is different: confirming it fires requires an
+evidenced consumer, per that file's own "evidence-based, not name-based"
+rule, which can require the file's own ring-1 investigation to resolve.
+An inconclusive or not-yet-investigated call-site firing determination is
 itself the ambiguous case, and fails closed to performing that
 investigation, never to silently treating the trigger as unfired.
 `repository-expansion.md`'s pre-existing "always active" framing is
 reconciled, not contradicted: it describes the trigger-*type*-recognition
-predicate, which stays always active, not whether that file is opened —
+predicate (and, for three of the four triggers, the firing predicate
+too), which stays always active, not whether that file is opened —
 only the file's deeper ring-expansion investigation is `on-activation`.
 `capability.yaml`'s `activation` and `never` lists record the same
 fail-closed clause. This is scoped to `scale` alone, per #447's

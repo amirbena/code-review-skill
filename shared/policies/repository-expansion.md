@@ -32,11 +32,15 @@ There is no caller option to disable it.
 
 "Always active" describes the trigger-evaluation predicate above, not
 whether this file itself is opened. Recognizing which trigger *type* a
-change plausibly implicates is decidable from the diff alone, against the
-fixed trigger catalog `review-scope.md`'s "Repository expansion" already
-restates as resident summary; confirming a trigger actually fires can
-require this file's own ring-1 investigation — see "Conditional loading:
-fail-closed" below for how that distinction governs
+change plausibly implicates, and — for the interface/contract,
+migration/schema, and config-consumer triggers — whether it fires, are
+both decidable from the diff alone, against the fixed trigger catalog
+`review-scope.md`'s "Repository expansion" already restates as resident
+summary: each of those three fires on a fact the diff itself already
+shows. Only the call-site trigger's firing can require this file's own
+ring-1 investigation to confirm, per "Signal detection is evidence-based,
+not name-based" below — see "Conditional loading: fail-closed" below for
+how that one exception governs
 `capabilities/scale/capability.yaml`'s `on-activation` loading.
 
 ## Expansion triggers (fixed catalog)
@@ -143,21 +147,27 @@ implicates, since that recognition is decidable from the diff alone,
 against the fixed trigger catalog `review-scope.md`'s "Repository
 expansion" already restates as resident summary.
 
-Confirming a recognized trigger actually *fires*, per "Expansion triggers
-(fixed catalog)" above's evidence-based requirement (an evidenced
-consumer, not merely a name or path that looks public), can require this
-file's own ring-1 investigation to resolve — it is not always decidable
+Confirming a recognized trigger actually *fires* is, for three of the
+four triggers, equally resident: the interface/contract, migration/schema,
+and config-consumer triggers each fire on a fact the diff itself already
+shows (a changed interface/schema, migration/DDL file, or config key),
+with no further investigation needed to know they fired. Only the
+call-site trigger is different, per "Signal detection is evidence-based,
+not name-based" above's requirement (an evidenced consumer, not merely a
+name or path that looks public) — confirming *it* fired can require this
+file's own ring-1 investigation to resolve, and is not always decidable
 from the diff and its immediately adjacent context alone. That is not a
-gap in this contract: an inconclusive or not-yet-investigated firing
-determination is itself the ambiguous case below, and fails closed to
-performing that investigation (loading this file), never to silently
-treating the trigger as unfired for lack of a visible consumer in the
-diff.
+gap in this contract: an inconclusive or not-yet-investigated call-site
+firing determination is itself the ambiguous case below, and fails closed
+to performing that investigation (loading this file), never to silently
+treating the call-site trigger as unfired for lack of a visible consumer
+in the diff.
 
 Loading is fail-closed: if evaluating whether a trigger fired is unclear,
-incomplete, or fails for any reason — including because the
-evidenced-consumer determination has not yet been investigated — this
-capability loads anyway. Ambiguity resolves to load, never to skip — the
+incomplete, or fails for any reason — including because a call-site
+trigger's evidenced-consumer determination has not yet been investigated
+— this capability loads anyway. Ambiguity resolves to load, never to skip
+— the
 same convention [`specialist-depth.md`](specialist-depth.md)'s
 "Conditional loading: fail-closed" already establishes. A capability
 boundary that a failed or ambiguous predicate evaluation could silently

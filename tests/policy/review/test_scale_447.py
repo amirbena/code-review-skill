@@ -26,9 +26,14 @@ file mentions the word "fail-closed":
 1. both `repository-expansion.md` and `large-pr-partitioning.md` state
    that their own text loads only once their own predicate has already
    been decided — never as a precondition to deciding it;
-2. each predicate is decidable entirely from `review-scope.md`'s own
-   resident base-pass evidence, so evaluating it never requires opening
-   either file;
+2. `large-pr-partitioning.md`'s predicate, and three of
+   `repository-expansion.md`'s four trigger predicates (interface/
+   contract, migration/schema, config-consumer), are decidable entirely
+   from `review-scope.md`'s own resident base-pass evidence, so
+   evaluating them never requires opening either file; only
+   `repository-expansion.md`'s call-site trigger can require its own
+   ring-1 investigation to confirm firing, which is exactly the
+   ambiguous case fail-closed loading exists to cover;
 3. ambiguous or failed predicate evaluation loads the capability rather
    than skipping it (fail-closed), consistent with the repository's
    existing fail-closed convention (`specialist-depth.md`, #410);
@@ -95,21 +100,29 @@ class RepositoryExpansionConditionalLoadingTests(unittest.TestCase):
             self.text,
         )
 
-    def test_confirming_firing_may_require_ring_1_investigation(self) -> None:
-        # The soundness fix: unlike a resident predicate, confirming a
-        # recognized trigger actually fires (an evidenced consumer, per
-        # "Expansion triggers (fixed catalog)") can require this file's
-        # own ring-1 investigation -- it is not always resident-decidable
-        # the way specialist-depth's or large-pr-partitioning's predicate
-        # is, and an inconclusive determination must never be read as "no
-        # consumer visible => unfired".
+    def test_three_of_four_triggers_firing_is_resident_too(self) -> None:
+        # The second soundness fix: only the call-site trigger's firing
+        # hinges on an evidenced consumer (per "Signal detection is
+        # evidence-based, not name-based"); the other three fire on a
+        # fact the diff itself already shows, so confirming them is just
+        # as resident as recognizing their type -- unlike the first
+        # (overcorrected) fix, this no longer implies all four triggers
+        # need investigation to confirm firing.
         self.assertIn(
-            "can require this file's own ring-1 investigation to resolve",
+            "interface/contract, migration/schema, and config-consumer "
+            "triggers each fire on a fact the diff itself already shows",
+            self.text,
+        )
+
+    def test_call_site_firing_may_require_ring_1_investigation(self) -> None:
+        self.assertIn(
+            "fired can require this file's own ring-1 investigation to "
+            "resolve",
             self.text,
         )
         self.assertIn(
-            "never to silently treating the trigger as unfired for lack "
-            "of a visible consumer in the diff",
+            "never to silently treating the call-site trigger as unfired "
+            "for lack of a visible consumer in the diff",
             self.text,
         )
 
@@ -121,8 +134,8 @@ class RepositoryExpansionConditionalLoadingTests(unittest.TestCase):
 
     def test_fail_closed_covers_not_yet_investigated_determination(self) -> None:
         self.assertIn(
-            "including because the evidenced-consumer determination has "
-            "not yet been investigated",
+            "including because a call-site trigger's evidenced-consumer "
+            "determination has not yet been investigated",
             self.text,
         )
 
@@ -181,22 +194,25 @@ class ReviewScopeReferencesFailClosedTests(unittest.TestCase):
 
     def test_repository_expansion_predicate_decidable_from_resident_evidence(self) -> None:
         self.assertIn(
-            "Recognizing which trigger type a change plausibly implicates "
-            "is decidable entirely from this base pass's own resident "
-            "trigger catalog above",
+            "Recognizing which trigger type a change plausibly implicates",
             self.text,
         )
         self.assertIn(
-            "confirming a trigger actually fires can require "
-            "repository-expansion.md's own ring-1 investigation",
+            "are all decidable entirely from this base pass's own "
+            "resident trigger catalog above",
+            self.text,
+        )
+        self.assertIn(
+            "only confirming whether the call-site trigger fires can "
+            "require repository-expansion.md's own ring-1 investigation",
             self.text,
         )
 
     def test_repository_expansion_fails_closed_reference(self) -> None:
         self.assertIn(
-            "not-yet-investigated firing determination fails closed: it "
-            "loads the capability rather than skipping it, per "
-            "repository-expansion.md's",
+            "not-yet-investigated call-site firing determination fails "
+            "closed: it loads the capability rather than skipping it, "
+            "per repository-expansion.md's",
             self.text,
         )
 
