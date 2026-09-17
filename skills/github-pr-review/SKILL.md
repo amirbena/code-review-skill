@@ -215,6 +215,12 @@ supplied),
 (a concise recommended direction, never the local Skill's full
 implementation prompt; never affects severity, decision, or mutation
 authority),
+[`finding.md`](../../shared/templates/finding.md) (the finding schema and
+quality/conciseness contract every finding must satisfy),
+[`finding-rendering.md`](../../shared/templates/finding-rendering.md)
+(the canonical full and inline renderings — see
+[`policies/finding-placement.md`](policies/finding-placement.md) for
+this Skill's own inline-vs-body placement rule),
 [`review-summary.md`](../../shared/templates/review-summary.md), and —
 with parallel workers —
 [`parallel-review.md`](../../shared/policies/parallel-review.md) and

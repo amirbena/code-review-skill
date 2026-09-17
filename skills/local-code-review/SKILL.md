@@ -176,6 +176,11 @@ supplied),
 (every changed-file category, including generated/opaque content),
 [`invocation-options.md`](../../shared/policies/invocation-options.md),
 [`remediation-guidance.md`](../../shared/policies/remediation-guidance.md),
+[`finding.md`](../../shared/templates/finding.md) (the finding schema and
+quality/conciseness contract every finding in the report must satisfy),
+[`finding-rendering.md`](../../shared/templates/finding-rendering.md)
+(the canonical full rendering used for every finding in this Skill's
+report),
 and [`review-summary.md`](../../shared/templates/review-summary.md). In
 orchestrated/ multi-Agent contexts, also
 [`review-ownership.md`](../../shared/policies/review-ownership.md).

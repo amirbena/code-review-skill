@@ -66,20 +66,37 @@ shared:
     - ../../../shared/policies/repository-expansion.md
     - ../../../shared/policies/large-pr-partitioning.md
     - ../../../shared/policies/review-stopping-criteria.md
+    - ../../../shared/policies/root-cause-consolidation.md
+    - ../../../shared/policies/affected-test-analysis.md
+    - ../../../shared/policies/null-absence-risk.md
+    - ../../../shared/policies/failure-retry-recovery.md
+    - ../../../shared/policies/architectural-placement.md
+    - ../../../shared/policies/api-contract-compatibility.md
     - ../../../shared/policies/severity.md
+    - ../../../shared/policies/verdict-consistency.md
     - ../../../shared/policies/evidence.md
     - ../../../shared/policies/repository-instructions.md
     - ../../../shared/policies/runtime-validation.md
     - ../../../shared/policies/trusted-host-execution.md
     - ../../../shared/policies/git-safety.md
+    - ../../../shared/policies/mutation-authority.md
     - ../../../shared/policies/review-ownership.md
     - ../../../shared/policies/file-reviewability.md
     - ../../../shared/policies/review-context.md
     - ../../../shared/policies/requirement-coverage.md
+    - ../../../shared/policies/jira-context.md
     - ../../../shared/policies/review-evidence.md
     - ../../../shared/policies/parallel-review.md
+    - ../../../shared/policies/agent-delegation.md
     - ../../../shared/policies/invocation-options.md
     - ../../../shared/policies/remediation-guidance.md
+    - ../../../shared/policies/remediation-scope-boundary.md
+    - ../../../shared/policies/specialist-depth.md
+    - ../../../shared/policies/security-deepening.md
+    - ../../../shared/policies/distributed-systems-deepening.md
+    - ../../../shared/policies/database-migration-deepening.md
+    - ../../../shared/policies/performance-deepening.md
   templates:
     - ../../../shared/templates/finding.md
+    - ../../../shared/templates/finding-rendering.md
     - ../../../shared/templates/review-summary.md

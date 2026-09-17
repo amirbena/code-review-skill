@@ -7,16 +7,27 @@ Status: Step 1 of the migration in
 records only. **No review-time consumer reads them yet** — nothing here
 changes what either Skill loads or how a review is conducted.
 
-One consumer does exist now (issue #405):
+Two consumers exist now. Issue #405:
 [`scripts/packaging/generate_package_manifest.py`](../../scripts/packaging/generate_package_manifest.py)
 generates `scripts/packaging/package-manifest.json`'s `shared_files` and
 `skills.*.files` entries that are owned by an on-activation capability
 from that capability's `files:` list, and
 [`tests/integration/packaging/test_generated_package_manifest.py`](../../tests/integration/packaging/test_generated_package_manifest.py)
 fails CI the moment the committed manifest and the generated one
-diverge. `metadata/skill.yaml` and `SKILL.md` §2 remain hand-maintained
-until a later step (§J.2 Step 1's second half, L3) makes them generated
-projections too.
+diverge. Issue #406 (L3):
+[`scripts/packaging/generate_skill_metadata.py`](../../scripts/packaging/generate_skill_metadata.py)
+generates each Skill's `metadata/skill.yaml` `shared: policies:` /
+`shared: templates:` lists from that same `package-manifest.json`
+`shared_files` set, guarded by
+[`tests/integration/packaging/test_generated_skill_metadata.py`](../../tests/integration/packaging/test_generated_skill_metadata.py);
+`SKILL.md` §2 keeps its authored prose (shared policies stay dispatched
+through `review-scope.md`'s own routing, per §C.3), but
+[`tests/policy/governance/test_skill_md_shared_template_declarations.py`](../../tests/policy/governance/test_skill_md_shared_template_declarations.py)
+fails CI if a shared *template* declared in `metadata/skill.yaml` is not
+named in `SKILL.md` §2. Together these closed the two concrete
+divergences §A.9 named — the 17 undeclared shared policies in
+`local-code-review`'s own metadata, and `shared/templates/finding-rendering.md`
+declared nowhere.
 
 ## Purpose
 
@@ -90,11 +101,12 @@ existing non-goals, not a new source of truth.
 
 ## What this step does not do
 
-Per issue #404's non-goals and §J.2 Step 1 (issue #405 lifted the first
-bullet below — see the Status note above):
+Per issue #404's non-goals and §J.2 Step 1 (issues #405 and #406 lifted
+the first bullet below — see the Status note above):
 
-- It does not change what either Skill archive packages, or what either
-  `SKILL.md`/`metadata/skill.yaml` declares (that is L3, a later child).
+- It does not change what either Skill archive packages (unaffected by
+  #405/#406 — both remain additive/declarative), or which per-adapter
+  subset each Skill ships (that is the *next* child, not this one).
 - It does not change any runtime loading behavior — nothing reads these
   manifests at review time.
 
@@ -130,6 +142,15 @@ or `metadata/skill.yaml` — that is a separate, narrower check.
 that `scripts/packaging/package-manifest.json` is byte-identical to what
 `scripts/packaging/generate_package_manifest.py` generates from these
 `capability.yaml` files (plus the files no capability manifest owns yet).
-It still does not reconcile `metadata/skill.yaml` or `SKILL.md` §2 — that
-remains out of scope for this issue (§J.2 Step 1's second half, tracked
-as L3, a later child of #403).
+
+`tests/integration/packaging/test_generated_skill_metadata.py` (issue
+#406, L3) asserts that each Skill's `metadata/skill.yaml` `shared:` block
+is byte-identical to what
+`scripts/packaging/generate_skill_metadata.py` generates from
+`package-manifest.json`'s `shared_files`.
+`tests/policy/governance/test_skill_md_shared_template_declarations.py`
+asserts every shared template in that generated list is named in the
+Skill's own `SKILL.md` §2. Neither test reconciles shared *policies*
+against `SKILL.md` §2 — those stay dispatched through
+`shared/policies/review-scope.md`'s own routing rather than re-listed
+flatly, per §C.3's "router becomes the next monolith" risk.
