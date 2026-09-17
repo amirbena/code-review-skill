@@ -22,7 +22,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/pricing/discount.py
     +++ b/app/pricing/discount.py
-    @@ -8,7 +8,10 @@ DISCOUNT_CATEGORIES = {"clearance", "seasonal"}
+    @@ -8,9 +8,10 @@ DISCOUNT_CATEGORIES = {"clearance", "seasonal"}
 
 
      def apply_discount(order, discount_percent):

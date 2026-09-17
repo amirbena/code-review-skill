@@ -23,6 +23,7 @@ say it lives.
 | --- | --- |
 | [`capability-architecture-model.md`](capability-architecture-model.md) | The current-state diagnosis with measured evidence, the proposed capability map and load tiers, the progressive-loading design, the local/GitHub adapter relationship, the evaluation of the three repository models and the recommended topology, current and target dependency graphs, per-capability contracts, benchmark ownership, the performance-measurement plan, the migration sequence and its first extraction, risks and rollback, and the follow-up issue breakdown. |
 | [`capability-loading-baseline.md`](capability-loading-baseline.md) | The pre-`specialist-depth`-extraction baseline (§I.2): today's packaged instruction-surface word/token counts attributed by capability, and the current values of the existing quality-metric contracts (#55/#56/#57), recorded so a later loading change is diffable against a fixed reference. |
+| [`specialist-depth-progressive-loading-proof.md`](specialist-depth-progressive-loading-proof.md) | Benchmark-backed behavioral proof (#411) that `specialist-depth`'s conditional, fail-closed loading (#410) is safe and stable relative to the baseline above: the surface a "not needed" review no longer has to apply, and a live-run confirmation that findings/verdicts on the reused regression and activation cases are unchanged. |
 
 ## Why this record exists
 
