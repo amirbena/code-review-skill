@@ -138,6 +138,16 @@ class LoadRawCasesTest(unittest.TestCase):
         with self.assertRaises(history.HistoryError):
             history.load_raw_cases(path)
 
+    def test_rejects_a_non_executed_case(self) -> None:
+        # A corrupted/partial file must never silently become a baseline,
+        # even though the vehicle's own fail-closed gate should already
+        # prevent this file from existing (defense in depth).
+        path = self._write(
+            [{"case_id": "c1", "run": {"ok": False, "cases": [{"id": "c1", "status": "error", "error": "x"}]}}]
+        )
+        with self.assertRaises(history.HistoryError):
+            history.load_raw_cases(path)
+
 
 class ShowBaselineCliTest(unittest.TestCase):
     def test_reports_no_baseline_before_bootstrap(self) -> None:

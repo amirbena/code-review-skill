@@ -154,6 +154,15 @@ reinterprets a result, only stores it (§4.3 of the architecture model's
 runtime contract: "actual Skill semantics, not a second reviewer
 implementation" applies equally to the storage layer).
 
+`record` re-validates that every case's `status` is `executed` before
+persisting anything, even though the vehicle's own fail-closed
+verification (`cloud-routine-integration.md` §3) should already guarantee
+that on the normal path — `record` is a general CLI that can be pointed
+at any file, and a corrupted or partial run must never silently become a
+persisted history entry or, worse, the bootstrap baseline (§4). This
+mirrors `regression-report.md` §2's `BaselineArtifact.from_run`, which
+applies the same guard before allowing a promotion.
+
 ### 3.3 Retention / rotation
 
 Keep the newest **90** raw history entries (`--retention`, overridable);

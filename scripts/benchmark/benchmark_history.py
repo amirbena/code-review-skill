@@ -76,7 +76,15 @@ def _utc_today() -> str:
 
 def load_raw_cases(results_file: Path) -> list[dict]:
     """Flatten `run_benchmark_routine.py --results-out`'s payload into the
-    runner's per-case result list (`runner-contract.md` §6)."""
+    runner's per-case result list (`runner-contract.md` §6).
+
+    Re-validates every case's ``status`` here rather than trusting the
+    file's provenance: the vehicle only ever writes this file after
+    `benchmark_routine_verify.py` passes, but `record` is a general CLI
+    that can be pointed at any file, and a corrupted/partial run must
+    never silently become a persisted baseline (regression-report.md §2's
+    `BaselineArtifact.from_run` applies the same `run.ok` guard).
+    """
     data = json.loads(results_file.read_text(encoding="utf-8"))
     if not isinstance(data, list) or not data:
         raise HistoryError(f"malformed or empty results file: {results_file}")
@@ -88,6 +96,9 @@ def load_raw_cases(results_file: Path) -> list[dict]:
         cases.extend(run["cases"])
     if not cases:
         raise HistoryError("results file carries no cases — refusing to persist an empty run")
+    for case in cases:
+        if not isinstance(case, dict) or case.get("status") != "executed":
+            raise HistoryError(f"refusing to persist a non-executed case: {case!r}")
     return cases
 
 
