@@ -8,6 +8,8 @@ activation:
   - a review dimension is already materially implicated by base reasoning
   - that dimension's own evidence shows depth is warranted
   - (additively) explicit user focus in this domain
+  - (fail-closed) ambiguous or failed evaluation of the above loads this
+    capability rather than skipping it
 adapters: [local, github]
 files:
   - shared/policies/specialist-depth.md
@@ -21,4 +23,6 @@ never:
   - activating from file type or path alone
   - widening remediation scope by virtue of depth
   - contributing a finding merely to prove it ran
+  - treating ambiguous or failed predicate evaluation as a reason to skip
+    activation
 benchmark: docs/benchmark/corpus/security-deepening, docs/benchmark/corpus/performance-deepening, docs/benchmark/corpus/database-migration-deepening, docs/benchmark/corpus/distributed-systems-deepening
