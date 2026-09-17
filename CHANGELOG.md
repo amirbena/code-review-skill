@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.52.1 — 2026-09-17
+
+### Fixed
+
+- Fix a P2-only review incorrectly rendering `CHANGES REQUIRED`/`Request Changes` instead of the mechanically required clean decision (#452).
+
 ## v1.52.0 — 2026-09-17
 
 ### Changed
