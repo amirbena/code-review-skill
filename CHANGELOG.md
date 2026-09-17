@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.50.2 — 2026-09-17
+
+### Fixed
+
+- Reconciled `SKILL.md` §2 and `metadata/skill.yaml` against the capability manifest, closing undeclared/missing shared-resource declarations (no runtime behavior change) (#437).
+
 ## v1.50.1 — 2026-09-17
 
 ### Fixed
