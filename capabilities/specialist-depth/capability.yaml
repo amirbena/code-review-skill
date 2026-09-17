@@ -21,4 +21,4 @@ never:
   - activating from file type or path alone
   - widening remediation scope by virtue of depth
   - contributing a finding merely to prove it ran
-benchmark: docs/benchmark/corpus/security-deepening, docs/benchmark/corpus/performance-deepening, docs/benchmark/corpus/database-migration-deepening, docs/benchmark/corpus/distributed-systems-deepening
+benchmark: docs/benchmark/corpus/security-deepening, docs/benchmark/corpus/performance-deepening, docs/benchmark/corpus/database-migration-deepening, docs/benchmark/corpus/distributed-systems-deepening, docs/benchmark/corpus/specialist-depth-composition

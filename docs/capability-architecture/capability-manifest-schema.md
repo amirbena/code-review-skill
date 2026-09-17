@@ -46,6 +46,15 @@ github]` — a future capability that ships a single-adapter `shared/*`
 file will need per-adapter shared packaging (not yet built) before it can
 narrow that declaration.
 
+Issue #409: `capabilities/specialist-depth/capability.yaml`'s `benchmark`
+field now names all five corpora §B.4 attributes to `specialist-depth`
+(the four domain corpora plus `docs/benchmark/corpus/specialist-depth-composition`,
+which also benchmarks `review-router`'s routing decision — a corpus can
+exercise more than one capability's contract). This only completes the
+manifest's own declaration; it does not move any file, add an activation
+predicate, or change what either Skill loads (that is §J.2 Step 3,
+issue #410).
+
 ## Purpose
 
 `capability-architecture-model.md` §A.9 identifies three declarations of
