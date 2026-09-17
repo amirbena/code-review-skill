@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.51.0 — 2026-09-17
+
+### Changed
+
+- Published SKILL.md frontmatter now declares a required `version` field (strict `x.y.z`) and a single-line `description` (#440).
+
 ## v1.50.2 — 2026-09-17
 
 ### Fixed
