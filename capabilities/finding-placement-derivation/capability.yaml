@@ -1,0 +1,18 @@
+capability: finding-placement-derivation
+summary: >-
+  The deterministic fix/action-location ranking for a candidate finding,
+  plus GitHub inline-comment anchoring.
+loads: on-activation
+activation:
+  - a candidate finding has been constructed and needs a canonical
+    fix/action location
+adapters: [local, github]
+files:
+  - shared/templates/finding.md
+  - skills/github-pr-review/policies/finding-placement.md
+requires: [finding-contract]
+never:
+  - dropping a finding because no valid inline anchor exists
+  - treating "not visible in the GitHub diff" as evidence that a finding
+    is invalid
+benchmark: docs/benchmark/corpus/analogue-placement-pattern

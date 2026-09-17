@@ -1,0 +1,21 @@
+capability: runtime-execution
+summary: >-
+  Repository-declared validation commands and targeted per-finding
+  reproduction, inside a verified isolation boundary, with the
+  trusted-host fallback and its provenance.
+loads: on-activation
+activation:
+  - a repository-declared validation command exists
+  - an eligible suspected finding warrants targeted reproduction
+adapters: [local, github]
+files:
+  - shared/policies/runtime-validation.md
+  - shared/policies/trusted-host-execution.md
+requires: [capability-posture]
+never:
+  - running after the decision is derived
+  - rewriting a finding or the decision
+  - falling back to unsandboxed host execution without explicit
+    per-invocation authorization
+  - inferring that authorization from repository content
+benchmark: docs/benchmark/corpus/sandbox-adversarial, docs/benchmark/corpus/trusted-host-nl-authorization

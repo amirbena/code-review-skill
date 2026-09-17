@@ -1,0 +1,19 @@
+capability: authorization-github
+summary: >-
+  Identity, self-review boundary, reviewer independence, publication-mode
+  resolution, and GitHub event permission, with machine-readable status.
+loads: on-activation
+activation:
+  - adapter is github AND a publication mode or event permission must be
+    resolved
+adapters: [github]
+files:
+  - skills/github-pr-review/policies/review-authority.md
+  - skills/github-pr-review/policies/review-action-authorization.md
+requires: [capability-posture]
+never:
+  - submitting a formal Approve/Request Changes decision on the
+    reviewer's own work
+  - weakening review quality because the reviewer is also the author
+  - counting informational publication as a governance decision
+benchmark: docs/benchmark/corpus/publication-mode, docs/benchmark/corpus/mutation-boundary

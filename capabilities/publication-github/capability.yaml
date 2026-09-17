@@ -1,0 +1,21 @@
+capability: publication-github
+summary: >-
+  Analysis/publication separation, batched review construction,
+  submission ordering, and inline-vs-body placement for the final
+  GitHub review.
+loads: on-activation
+activation:
+  - adapter is github AND publication mode is SEMI or ACTIVE
+adapters: [github]
+files:
+  - skills/github-pr-review/policies/review-output.md
+  - skills/github-pr-review/policies/review-status-enforcement.md
+  - skills/github-pr-review/templates/external-review-summary.md
+  - skills/github-pr-review/templates/inline-finding.md
+requires: [review-kernel, capability-posture, authorization-github]
+never:
+  - changing a finding, severity, or the verdict
+  - publishing finding-by-finding
+  - publishing anything review-owned after the final summary
+  - publishing the Reviewer Brief
+benchmark: docs/benchmark/corpus/publication-mode, docs/benchmark/corpus/verdict-consistency

@@ -1,0 +1,20 @@
+capability: parallel-execution
+summary: >-
+  The execution-policy decision, worker input/output shape, spawn
+  budgets, and centralized aggregation for independent review dimensions.
+loads: on-activation
+activation:
+  - the capability-posture probe confirms spawn is available
+  - two or more review dimensions are independent enough to run as
+    separate workers
+adapters: [local, github]
+files:
+  - shared/policies/parallel-review.md
+  - shared/policies/agent-delegation.md
+requires: [capability-posture, review-router]
+never:
+  - implementing mutation execution itself (owned by capability-posture /
+    runtime sandboxing)
+  - changing review reasoning because parallel execution is available
+  - skipping the sequential fallback when the spawn probe is unavailable
+benchmark: docs/benchmark/corpus/delegation-spawn

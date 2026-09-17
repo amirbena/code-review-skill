@@ -1,0 +1,21 @@
+capability: stateful-review
+summary: >-
+  Delta re-review eligibility, prior finding/lifecycle reconciliation,
+  and stack topology and effective base.
+loads: on-activation
+activation:
+  - a prior reviewed SHA and prior findings exist for this PR
+  - the PR is part of a stack whose effective base must be resolved
+adapters: [github]
+files:
+  - skills/github-pr-review/policies/stateful-delta-rereview.md
+  - skills/github-pr-review/policies/reviewer-delta-review.md
+  - skills/github-pr-review/policies/stacked-pr-review.md
+requires: [review-router, finding-contract]
+never:
+  - redefining finding-identity or finding-matching semantics (owned
+    elsewhere)
+  - depending on commit history for anything but traceability
+  - adding a fourth reconciliation outcome or a confidence score beyond
+    the defined set
+benchmark: tests/reference/review/delta_re_review.py, tests/reference/review/stacked_pr_topology.py
