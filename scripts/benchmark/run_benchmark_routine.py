@@ -124,6 +124,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Explicit model/backend identifier. Not auto-detectable in a Cloud Routine — "
         "the Routine prompt should always set this explicitly (contract §5).",
     )
+    parser.add_argument(
+        "--results-out",
+        default=None,
+        type=Path,
+        help="Issue #338: write the concatenated raw per-invocation run_benchmark.py output "
+        "here, for nightly-history persistence. Only written on a verified run, mirroring "
+        "the fail-closed evidence-posting rule below.",
+    )
     return parser
 
 
@@ -184,6 +192,7 @@ def run_benchmark_mode(args: argparse.Namespace) -> int:
 
     overall_ok = True
     verifications: list[dict] = []
+    raw_invocations: list[dict] = []
     for case_id in case_ids:
         argv = list(run_argv)
         if case_id is not None:
@@ -197,6 +206,11 @@ def run_benchmark_mode(args: argparse.Namespace) -> int:
         verifications.append(verification.as_dict())
         if not verification.passed:
             overall_ok = False
+            continue
+        try:
+            raw_invocations.append({"case_id": case_id, "run": json.loads(proc.stdout)["run"]})
+        except (json.JSONDecodeError, KeyError, TypeError):
+            overall_ok = False
 
     result = {
         "metadata": metadata.as_dict(),
@@ -209,6 +223,10 @@ def run_benchmark_mode(args: argparse.Namespace) -> int:
         raise RoutineExecutionError(
             "fail-closed: at least one run did not pass positive completion verification"
         )
+
+    if args.results_out is not None:
+        args.results_out.parent.mkdir(parents=True, exist_ok=True)
+        args.results_out.write_text(json.dumps(raw_invocations, indent=2), encoding="utf-8")
 
     body = "```json\n" + json.dumps(result, indent=2) + "\n```"
     title = f"Benchmark evidence — {metadata.mode} — {metadata.repo_sha[:12]}"
