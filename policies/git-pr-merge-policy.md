@@ -19,7 +19,9 @@ routing.
 
 Before opening a PR for this repository:
 
-- validate the work
+- validate the work — the targeted local checks relevant to the change
+  (see [`../README.md`](../README.md#local-validation-before-opening-a-pr));
+  the full test suite is CI's responsibility, not a local precondition
 - fetch remote state
 - inspect branch/base divergence
 - synchronize safely if necessary
