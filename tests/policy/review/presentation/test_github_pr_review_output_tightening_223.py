@@ -95,14 +95,16 @@ SEVERITY_LEGEND = {
 # named in neither SKILL.md) — also deliberate and unrelated to #223.
 # LOCAL_SKILL was re-captured again after Issue #439 (published Skill
 # frontmatter cleanup: a single `version: 1.50.2` line added to the
-# frontmatter block) — also deliberate and unrelated to #223. The
+# frontmatter block), and again by #439's follow-up (the frontmatter
+# `description` collapsed from a multi-line folded scalar to a single
+# physical YAML line) — also deliberate and unrelated to #223. The
 # other files in this map are untouched by
 # #89/#237/#211/#121/#175/#258/#82/#303/#369/#377/#406/#439 and keep their
 # original #223-era hashes.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "1abf7c6a28f6d6b73a845aa8c8f9e06e7d062a82",
     LOCAL_RUNBOOK: "eb10b5a7054f811d5d4803619f712a8d8f5e6d97",
-    LOCAL_SKILL: "c337dc327d4bcd2f580dce9d83b30f7b39c363b3",
+    LOCAL_SKILL: "b1be987496a9971b3e875da4ce2bbf2e78fdf290",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "1b5238723eab4308407c137c554fa3a169e8b482",
     LOCAL_POLICY_DIR / "repository-state.md": "6792d7e3f7ae1ad0214fff2e85db5e28ac6fb108",

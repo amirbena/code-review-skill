@@ -76,6 +76,33 @@ def load_frontmatter(skill_md: Path) -> dict:
     return data
 
 
+def require_single_line_scalar(skill_md: Path, field: str) -> None:
+    """Assert `field:` in `skill_md`'s frontmatter is a plain scalar written
+    on exactly one physical YAML line — no block/folded scalar (`>`/`|`
+    indicator) and no continuation line.
+    """
+    lines = skill_md.read_text(encoding="utf-8").splitlines()
+    closing = lines.index("---", 1)
+    body_lines = lines[1:closing]
+    field_idx = next(
+        (i for i, line in enumerate(body_lines) if line.startswith(f"{field}:")),
+        None,
+    )
+    if field_idx is None:
+        raise SystemExit(f"error: {skill_md} frontmatter missing {field!r}")
+    value = body_lines[field_idx][len(field) + 1 :].strip()
+    if not value or value[0] in ("|", ">"):
+        raise SystemExit(
+            f"error: {skill_md} {field!r} must be a plain scalar on one "
+            "physical YAML line, not a block/folded scalar"
+        )
+    if field_idx != len(body_lines) - 1:
+        raise SystemExit(
+            f"error: {skill_md} {field!r} must be a single physical line "
+            "with no continuation line"
+        )
+
+
 def iter_paths(value: object, field: str):
     if isinstance(value, str):
         yield field, value

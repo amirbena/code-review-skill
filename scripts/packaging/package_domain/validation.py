@@ -4,8 +4,10 @@ Guards against a regression stripping/corrupting the Agent Skills YAML
 frontmatter of a packaged root ``SKILL.md``. This is a narrow structural
 check (line 1 is the opening delimiter, a closing delimiter exists, and
 the required ``name``/``version``/``description`` fields are present,
-with the expected ``name`` and a strict ``x.y.z`` ``version``) — not a
-full YAML validator, and it does not replace
+with the expected ``name``, a strict ``x.y.z`` ``version``, and a
+``description`` written as a plain scalar on one physical line rather
+than a YAML block/folded scalar) — not a full YAML validator, and it
+does not replace
 ``scripts/validation/validate-skill-metadata.py`` / ``scripts/skill_metadata/``,
 which own Skill metadata semantics broadly.
 
@@ -55,6 +57,15 @@ def validate_skill_frontmatter(skill_md_path: Path, expected_name: str) -> None:
 
     body_lines = lines[1 : closing_offset + 1]
     fm_body = "\n".join(body_lines)
+
+    description_line_match = re.search(r"^description:[ \t]*(.*)$", fm_body, re.MULTILINE)
+    if description_line_match:
+        inline_value = description_line_match.group(1).strip()
+        if not inline_value or inline_value[0] in ("|", ">"):
+            raise SkillFrontmatterError(
+                f"{skill_md_path} 'description' must be a plain scalar on one "
+                "physical YAML line, not a block/folded scalar"
+            )
 
     if yaml is not None:
         data = yaml.safe_load(fm_body) or {}

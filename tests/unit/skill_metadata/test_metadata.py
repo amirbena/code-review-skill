@@ -117,6 +117,38 @@ class CheckSkillMetadataFrontmatterTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             check_skill_metadata(self.skill_root, self.skill_root)
 
+    def test_block_scalar_description_is_rejected(self) -> None:
+        self._write_metadata_yaml(description="Line one. Line two.")
+        self._write_skill_md(
+            [
+                "name: example-skill",
+                "version: 1.50.2",
+                "description: >-",
+                "  Line one. Line two.",
+            ]
+        )
+        with self.assertRaises(SystemExit):
+            check_skill_metadata(self.skill_root, self.skill_root)
+
+    def test_literal_block_scalar_description_is_rejected(self) -> None:
+        self._write_metadata_yaml(description="Line one.")
+        self._write_skill_md(
+            [
+                "name: example-skill",
+                "version: 1.50.2",
+                "description: |",
+                "  Line one.",
+            ]
+        )
+        with self.assertRaises(SystemExit):
+            check_skill_metadata(self.skill_root, self.skill_root)
+
+    def test_single_line_description_passes(self) -> None:
+        self._write_skill_md(
+            ["name: example-skill", "version: 1.50.2", "description: Example."]
+        )
+        check_skill_metadata(self.skill_root, self.skill_root)
+
 
 class RealSkillFrontmatterVersionTests(unittest.TestCase):
     """Both published Skills currently carry the same normalized version."""
@@ -130,6 +162,26 @@ class RealSkillFrontmatterVersionTests(unittest.TestCase):
             frontmatter = load_frontmatter(skill_md)
             self.assertEqual(list(frontmatter), ["name", "version", "description"])
             self.assertEqual(frontmatter["version"], "1.50.2")
+
+    def test_both_skills_have_single_line_description(self) -> None:
+        from tests.support.paths import REPO_ROOT
+
+        expected = {
+            "local-code-review": (
+                "Review local Git changes and return evidence-backed "
+                "P0/P1/P2 code-review findings."
+            ),
+            "github-pr-review": (
+                "Review an existing GitHub pull request and return or "
+                "publish evidence-backed P0/P1/P2 findings."
+            ),
+        }
+        for skill_name, expected_description in expected.items():
+            skill_md = REPO_ROOT / "skills" / skill_name / "SKILL.md"
+            lines = skill_md.read_text(encoding="utf-8").splitlines()
+            closing = lines.index("---", 1)
+            body_lines = lines[1:closing]
+            self.assertEqual(body_lines[-1], f"description: {expected_description}")
 
 
 if __name__ == "__main__":

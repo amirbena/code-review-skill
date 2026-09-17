@@ -8,7 +8,13 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ._support import iter_paths, load_frontmatter, load_yaml, require_inside
+from ._support import (
+    iter_paths,
+    load_frontmatter,
+    load_yaml,
+    require_inside,
+    require_single_line_scalar,
+)
 from .expectations import (
     OPENAI_INTERFACE_FIELDS,
     PORTABLE_FRONTMATTER_FIELDS,
@@ -58,6 +64,11 @@ def check_skill_metadata(skill_root: Path, containment_root: Path) -> dict:
             raise SystemExit(
                 f"error: {metadata_path} {field} does not exactly match SKILL.md frontmatter"
             )
+
+    # `description` must be a plain YAML scalar on one physical line — no
+    # block/folded scalar (`>-`/`|`) and no continuation line (issue #439
+    # follow-up).
+    require_single_line_scalar(skill_md, "description")
 
     # `version` is required and must be strict x.y.z, but is intentionally
     # NOT compared against metadata/skill.yaml's own (independent) version.

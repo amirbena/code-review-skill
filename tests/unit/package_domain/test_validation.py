@@ -82,6 +82,22 @@ class ValidateSkillFrontmatterTests(unittest.TestCase):
         with self.assertRaises(SkillFrontmatterError):
             validate_skill_frontmatter(self.skill_md, "local-code-review")
 
+    def test_folded_block_scalar_description_is_rejected(self) -> None:
+        self._write(
+            "---\nname: local-code-review\nversion: 1.50.2\n"
+            "description: >-\n  Line one. Line two.\n---\nBody.\n"
+        )
+        with self.assertRaises(SkillFrontmatterError):
+            validate_skill_frontmatter(self.skill_md, "local-code-review")
+
+    def test_literal_block_scalar_description_is_rejected(self) -> None:
+        self._write(
+            "---\nname: local-code-review\nversion: 1.50.2\n"
+            "description: |\n  Line one.\n---\nBody.\n"
+        )
+        with self.assertRaises(SkillFrontmatterError):
+            validate_skill_frontmatter(self.skill_md, "local-code-review")
+
 
 if __name__ == "__main__":
     unittest.main()

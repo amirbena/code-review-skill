@@ -1,16 +1,7 @@
 ---
 name: local-code-review
 version: 1.50.2
-description: >-
-  Reviews local, not-yet-PR'd Git changes (committed delta, staged,
-  unstaged, and untracked) and returns evidence-backed P0/P1/P2 findings.
-  Read-only and opt-in only: never edits, commits, pushes, or touches
-  GitHub, and every review or re-review requires explicit user selection.
-  Optionally accepts free-form context such as requirements, Jira/HLD/ADR,
-  acceptance criteria, or implementation plans to focus the review, plus
-  an associated GitHub PR reference for reconciling prior findings and
-  architectural decisions. The local delta always remains the review
-  scope. For reviewing an existing PR itself, use github-pr-review.
+description: Review local Git changes and return evidence-backed P0/P1/P2 code-review findings.
 ---
 
 # SKILL.md — local-code-review
