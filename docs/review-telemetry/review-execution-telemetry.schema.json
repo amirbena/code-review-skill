@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://code-review-skill/docs/review-telemetry/review-execution-telemetry.schema.json",
+  "title": "Review execution telemetry record (Issue #182)",
+  "description": "Observational, never-decision-affecting record of what one review inspected and executed. Canonical prose: review-execution-telemetry-model.md. This schema is the single source of truth for the record's shape; do not restate its fields elsewhere.",
+  "type": "object",
+  "required": ["schema_version", "review_id", "generated_at", "stages_completed"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "review_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque identifier for the review run this record describes. Carries no PII, no repository name/URL, no author identity."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp the record was assembled at."
+    },
+    "stages_completed": {
+      "type": "array",
+      "description": "Every review pass that reached its own defined stop condition during this run, in the fixed catalog below. Absence of a stage name means that stage did not run/complete for this review -- never inferred from other fields.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "scope_normalization",
+          "change_risk_classification",
+          "repository_expansion",
+          "large_pr_partitioning",
+          "runtime_validation",
+          "stopping_criteria"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "files_inspected": {
+      "description": "Every file path actually read/inspected during the review. null when this stage/signal was not tracked for the run (unavailable state); an empty array means the stage ran and inspected zero files.",
+      "type": ["array", "null"],
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "symbols_expanded_count": {
+      "description": "Count of bounded-context symbol expansions (review-scope.md's caller/callee ladder). null when not tracked for the run.",
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "repository_intelligence_expansions": {
+      "description": "Per-trigger expansion counts from repository-expansion.md's fixed trigger catalog. null when repository-expansion did not run for this review (its stage is absent from stages_completed). When present, an individual trigger count is null only if that trigger never fires as a concept for the run's language/ecosystem -- 0 means the trigger was evaluated and did not fire.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "call_site": { "type": ["integer", "null"], "minimum": 0 },
+        "interface_contract": { "type": ["integer", "null"], "minimum": 0 },
+        "migration_schema": { "type": ["integer", "null"], "minimum": 0 },
+        "config_consumer": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "runtime_validations": {
+      "description": "Every runtime-validation.md execution attempted during the review. null when runtime validation was never applicable/attempted for this review (its stage is absent from stages_completed); an empty array means the stage ran and attempted zero executions.",
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "required": ["outcome"],
+        "additionalProperties": false,
+        "properties": {
+          "outcome": { "type": "string", "enum": ["executed", "failed", "skipped", "unavailable"] },
+          "provenance": { "type": ["string", "null"], "enum": ["sandbox", "trusted_host", null] }
+        }
+      }
+    },
+    "partitions": {
+      "description": "large-pr-partitioning.md usage. null when partitioning did not activate for this review (a diff under its size threshold, or its stage absent from stages_completed).",
+      "type": ["object", "null"],
+      "required": ["partition_count", "partition_ids"],
+      "additionalProperties": false,
+      "properties": {
+        "partition_count": { "type": "integer", "minimum": 1 },
+        "partition_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        }
+      }
+    },
+    "stage_timing_ms": {
+      "description": "Deterministic per-stage duration in milliseconds, where the runtime can measure it. null at the record level when no stage timing was captured at all. A present object may still map an individual stage name to null when that specific stage's timing could not be measured, distinct from the stage being entirely absent from stages_completed.",
+      "type": ["object", "null"],
+      "additionalProperties": { "type": ["number", "null"], "minimum": 0 }
+    }
+  }
+}

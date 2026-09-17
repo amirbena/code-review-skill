@@ -5,7 +5,7 @@ Issues #86-#89 each pin their own reference model in isolation
 (``tests/unit/review/test_change_risk_signals.py``,
 ``tests/unit/review/repository_intelligence/test_repository_expansion.py``,
 ``tests/unit/review/test_large_pr_partitioning.py``,
-``tests/unit/review/test_review_stopping_criteria.py``). This module does not
+``tests/unit/review/observability/test_review_stopping_criteria.py``). This module does not
 repeat that per-model coverage; it exercises them **chained together**,
 the way a real review actually uses them: change-risk depth first, then
 repository-expansion capped by that depth, then large-PR partitioning
