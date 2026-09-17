@@ -58,6 +58,18 @@ manifested (§B.3's routing layer is out of this issue's scope). This step
 changes no file, activation predicate, or load behavior (that is §J.2
 Step 3, issue #410).
 
+Issue #410: `specialist-depth`'s activation predicate is now enforced,
+not merely declared. `shared/policies/specialist-depth.md`'s "Conditional
+loading: fail-closed" section states that this capability, and the four
+`*-deepening.md` policies it composes, loads only once
+`review-scope.md`'s base pass has already decided the predicate from its
+own resident evidence — never as a precondition to deciding it — and
+that ambiguous or failed predicate evaluation loads the capability rather
+than skipping it. `capability.yaml`'s `activation` and `never` lists
+record the same fail-closed clause. This is scoped to `specialist-depth`
+alone, per #410's Non-Goals; it does not extract `review-router` or
+change any other capability's loading behavior.
+
 ## Purpose
 
 `capability-architecture-model.md` §A.9 identifies three declarations of

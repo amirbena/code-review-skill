@@ -86,6 +86,43 @@ Worked contrast:
   schema changes. Semantic evidence of a persisted-state implication
   triggers the same deepening decision regardless of file type.
 
+## Conditional loading: fail-closed
+
+This capability — this file and the four domain deepening policies it
+composes — loads only once the activation predicate above has already
+been decided; it is never opened as a precondition to deciding it. The
+predicate is decidable entirely from material
+[`review-scope.md`](review-scope.md)'s base pass already produces while
+resident — a dimension "Semantic change-implication reasoning" has
+materially implicated, plus that dimension's own base-pass evidence
+indicating deeper reasoning is warranted, per that dimension's stated
+depth-owner trigger — so evaluating it never requires opening this file
+or any of the four deepening policies.
+
+Loading is fail-closed: if evaluating the predicate is unclear,
+incomplete, or fails for any reason, this capability (and the applicable
+deepening policy) loads anyway. Ambiguity resolves to load, never to
+skip — the same convention already governing
+`review-action-authorization.md` ("Ambiguity fails closed to
+`PASSIVE`") and [`runtime-validation.md`](runtime-validation.md) (no
+verified isolation ⇒ `unavailable`). A capability boundary that a failed
+or ambiguous
+predicate evaluation could silently bypass is the one
+catastrophic-if-wrong outcome this contract exists to prevent; this
+file's activation predicate must never be able to produce that outcome.
+
+Not loading this capability never gates, narrows, or substitutes for the
+base per-dimension obligation
+["Semantic change-implication reasoning"](review-scope.md#semantic-change-implication-reasoning)
+performs unconditionally — that pass always runs regardless of whether
+this file is ever opened. Conditional loading changes only when this
+file and its composed deepening policies are consulted, never whether a
+dimension is considered.
+
+This conditional-loading contract is scoped to this capability alone; it
+does not define, and must not be read as defining, a general
+loading/routing mechanism for any other capability in this repository.
+
 ## Composition: 0..N capabilities, one review
 
 A review may require zero, one, or several domain-specific deepening

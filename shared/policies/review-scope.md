@@ -264,6 +264,11 @@ expansion/stop-condition contract), the orthogonality to
 remediation-required reasoning, and the additive-only rule for explicit
 user focus are owned by
 [`specialist-depth.md`](specialist-depth.md) and are not restated here.
+That activation predicate is decidable entirely from this base pass's
+own resident evidence above — evaluating it never requires opening
+`specialist-depth.md` — and fails closed: ambiguity or evaluation
+failure loads the capability rather than skipping it, per
+`specialist-depth.md`'s "Conditional loading: fail-closed."
 
 This is not a second scope model: a domain-specific deepening capability
 never decides whether a dimension is considered at all — that obligation
