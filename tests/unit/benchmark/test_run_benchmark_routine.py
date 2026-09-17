@@ -145,6 +145,59 @@ class RunBenchmarkRoutineTest(unittest.TestCase):
         exit_code = routine.main(["--mode", "selected"])
         self.assertEqual(exit_code, 1)
 
+    def test_full_mode_is_a_deprecated_alias_for_sentinel(self) -> None:
+        # Issue #431: `full`'s ambiguity is resolved by making it a fixed,
+        # deprecated synonym for `sentinel` — the persisted metadata mode
+        # is always the canonical name, never the legacy one, and a
+        # deprecation notice is emitted.
+        good_output = json.dumps(
+            {"run": {"ok": True, "cases": [{"id": "c", "input_kind": "diff", "status": "executed", "produced_findings": []}]}}
+        )
+        with mock.patch("subprocess.run", return_value=_completed(good_output)), mock.patch.object(
+            routine, "_post_evidence", return_value=1
+        ):
+            exit_code = routine.main(["--mode", "full", "--evidence-issue", "1"])
+        self.assertEqual(exit_code, 0)
+
+    def test_sentinel_mode_runs_one_invocation_against_corpus_dir(self) -> None:
+        good_output = json.dumps(
+            {"run": {"ok": True, "cases": [{"id": "c", "input_kind": "diff", "status": "executed", "produced_findings": []}]}}
+        )
+        with mock.patch("subprocess.run", return_value=_completed(good_output)) as run, mock.patch.object(
+            routine, "_post_evidence", return_value=1
+        ) as post:
+            exit_code = routine.main(["--mode", "sentinel", "--evidence-issue", "1"])
+        self.assertEqual(exit_code, 0)
+        run.assert_called_once()
+        self.assertNotIn("--case-id", run.call_args.args[0])
+        _, _, title, _ = post.call_args.args
+        self.assertIn("sentinel", title)
+
+    def test_comprehensive_mode_derives_membership_and_runs_one_invocation_per_case(self) -> None:
+        good_output = json.dumps(
+            {"run": {"ok": True, "cases": [{"id": "x", "input_kind": "diff", "status": "executed", "produced_findings": []}]}}
+        )
+        fixtures = [
+            mock.Mock(case_id="a", corpus_dir=Path("/corpus/sub1")),
+            mock.Mock(case_id="b", corpus_dir=Path("/corpus/sub2")),
+        ]
+        with mock.patch("subprocess.run", return_value=_completed(good_output)) as run, mock.patch.object(
+            routine, "_post_evidence", return_value=1
+        ), mock.patch.object(routine, "discover_comprehensive_fixtures", return_value=fixtures) as discover:
+            exit_code = routine.main(["--mode", "comprehensive", "--evidence-issue", "1"])
+        self.assertEqual(exit_code, 0)
+        discover.assert_called_once()
+        self.assertEqual(run.call_count, 2)
+        called_case_ids = [
+            call.args[0][call.args[0].index("--case-id") + 1] for call in run.call_args_list
+        ]
+        self.assertEqual(sorted(called_case_ids), ["a", "b"])
+
+    def test_comprehensive_mode_fails_closed_on_empty_membership(self) -> None:
+        with mock.patch.object(routine, "discover_comprehensive_fixtures", return_value=[]):
+            exit_code = routine.main(["--mode", "comprehensive", "--evidence-issue", "1"])
+        self.assertEqual(exit_code, 1)
+
     def test_post_evidence_uses_body_file_not_body_argument(self) -> None:
         # A large evidence payload passed as a literal --body argument can
         # exceed the OS argv-size limit; it must go through a temp file.

@@ -132,8 +132,21 @@ and is asymmetric with Class 2's own goal of *reliable* periodic
 observability). Cloud Routines run independent of any specific machine
 being on or awake, which is why they are the selected target.
 
-A future implementation issue (scoped separately, not by this contract)
-owns the concrete Routine integration, fixed to this pipeline:
+**Two scheduled lanes (#431).** The concrete Routine integration below
+(#338/#415, later refined into two lanes by #431 —
+[`cloud-routine-integration.md`](cloud-routine-integration.md) §2.1,
+[`nightly-history-and-baseline.md`](nightly-history-and-baseline.md) §2)
+runs as **two** maintainer-configured Cloud Routine schedules, not one: a
+**sentinel** lane (the 4 permanent canonical cases, every 3 days) and a
+**comprehensive** lane (every `benchmark-case/v2` fixture in the corpus
+tree, weekly). Both stay within this section's Class 2 boundary — optional
+maintainer quality observability, never a contributor/PR/merge/deployment
+requirement, targeting a 01:00 Israel-local start / 04:00 maximum-
+completion window that Cloud Routine scheduling configuration owns (never
+repository runtime logic — nothing in `scripts/benchmark/` computes or
+depends on a timezone). A future implementation issue (scoped separately,
+not by this contract) owns the concrete Routine integration, fixed to this
+pipeline:
 
 ```text
 benchmark measurement core (scheduler-independent, unchanged — §3):
