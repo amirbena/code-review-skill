@@ -99,7 +99,7 @@ the same `ProductionReviewerAdapter` + `benchmark_metrics.compute_run_metrics`
 | --- | ---: | ---: | --- |
 | `correctness-off-by-one-pagination` | 0 | 0 | matches |
 | `no-op-comment-and-rename` | 0 | 0 | matches |
-| `quality-duplicated-branch-logic` | 0 | 0 | matches (one duplicate produced finding, absorbed — not a miss or a false positive) |
+| `quality-duplicated-branch-logic` | 0 | 0 | matches |
 | `security-command-injection` | 0 | 0 | matches |
 | **Aggregate** | **0** | **0** | **identical to #408's recorded 0 FN / 0 FP** |
 
@@ -130,16 +130,21 @@ review):
   (`tests/reference/benchmark/benchmark_match.py`). The live reviewer
   described the same, correctly-identified defect with a different
   freeform slug than the one pinned in each fixture (Case A: produced
-  `boolean-operator-logic-error` vs. pinned
+  `logic-operator-swap` vs. pinned
   `validation-guard-boolean-operator-inverted`; Case B: produced
   `confused-deputy` vs. pinned `confused-deputy-unchecked-delegation`),
   which the matcher treats as `UNRELATED` regardless of the otherwise
-  exact location/claim match.
-- **Case B also raised two additional, legitimate findings** (missing
-  input validation on the transfer amount, missing idempotency
-  protection on retry) that the fixture's `findings_completeness:
-  exhaustive` does not list, scored as false positives although each is
-  a real, defensible observation about the same code.
+  exact location/claim match. This wording varies run to run (an earlier
+  run of this same fixture produced `boolean-operator-logic-error`
+  instead) — freeform, not a fixed vocabulary the reviewer is constrained
+  to.
+- **Case B also raised one additional, legitimate finding** (missing
+  idempotency protection on retry) that the fixture's
+  `findings_completeness: exhaustive` does not list, scored as a false
+  positive although it is a real, defensible observation about the same
+  code. (An earlier run additionally raised a missing-input-validation
+  finding not reused here; which extra findings appear is itself
+  non-deterministic.)
 
 These are properties of the two *reused*, already-pinned fixtures'
 matching strictness, not a regression #410's conditional loading
@@ -203,13 +208,15 @@ python3 scripts/capability_architecture/specialist_depth_progressive_loading_pro
 
 `all` runs both halves. `behavioral` requires the `claude` CLI on `PATH`
 (or `BENCHMARK_REVIEW_CLI` set), per `run_benchmark.py`'s own
-runtime-availability check, and its exit code is fail-closed: non-zero on
-any missed required finding or false positive on the regression set or
-the three required activation cases (§3 gates on the regression set;
-§4/§5's known, documented, pre-existing matcher fragility on the two
-*reused* fixtures is the one case where a maintainer re-running this
-script should expect a non-zero exit without it indicating a new
-regression — see §4).
+runtime-availability check, and its exit code is fail-closed on exactly
+the two cases this issue owns outright: the regression set (§3) and this
+issue's own net-new ambiguous-fail-closed fixture (§5). A mismatch on
+either fails the run. A mismatch on the two *reused*
+`specialist-depth-composition` fixtures (Case A/B, §4's known,
+documented, pre-existing defect-kind-wording matcher fragility) is
+reported (to stderr and in the JSON output) but never fails the run —
+that fixture-matching strictness is #409's to fix, not #411's to
+silently launder into a green exit code.
 
 ## Status and canonical home
 

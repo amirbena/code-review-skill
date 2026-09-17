@@ -117,7 +117,8 @@
       "specialist-depth-composition-case-d-superficial-signal-suppressed-clean",
       "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type",
       "specialist-depth-composition-case-f-cascading-activation-bounded",
-      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth"
+      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth",
+      "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load"
     ]
   },
   "policy_contract": {
@@ -205,7 +206,8 @@
       "specialist-depth-composition-case-d-superficial-signal-suppressed-clean",
       "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type",
       "specialist-depth-composition-case-f-cascading-activation-bounded",
-      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth"
+      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth",
+      "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load"
     ],
     "unclassified": [
       "analogue-placement-distinct-boundaries-not-consolidated",
@@ -321,7 +323,8 @@
       "performance-deepening-nested-unbounded-scan-quadratic",
       "performance-deepening-non-executed-config-constant-not-implicated-clean",
       "specialist-depth-composition-case-c-multiple-capabilities-database-and-performance",
-      "specialist-depth-composition-case-f-cascading-activation-bounded"
+      "specialist-depth-composition-case-f-cascading-activation-bounded",
+      "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load"
     ],
     "quality": [
       "analogue-placement-distinct-boundaries-not-consolidated",
@@ -453,7 +456,8 @@
       "specialist-depth-composition-case-d-superficial-signal-suppressed-clean",
       "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type",
       "specialist-depth-composition-case-f-cascading-activation-bounded",
-      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth"
+      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth",
+      "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load"
     ]
   }
 }

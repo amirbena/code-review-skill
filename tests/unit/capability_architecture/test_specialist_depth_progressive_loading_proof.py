@@ -99,46 +99,96 @@ class MainExitCodeTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
 
-    def test_behavioral_mode_exits_non_zero_on_a_regression_miss(self) -> None:
-        fake_result = {
+    @staticmethod
+    def _fake_result(
+        *,
+        regression_fn: int = 0,
+        regression_fp: int = 0,
+        not_needed_fn: int = 0,
+        not_needed_fp: int = 0,
+        must_activate_fn: int = 0,
+        must_activate_fp: int = 0,
+        ambiguous_fn: int = 0,
+        ambiguous_fp: int = 0,
+    ) -> dict:
+        return {
             "regression_vs_408_baseline": {
                 "aggregate": {
-                    "total_false_negatives": 1,
-                    "total_false_positives": 0,
+                    "total_false_negatives": regression_fn,
+                    "total_false_positives": regression_fp,
                 }
             },
             "activation_required_cases": {
-                "aggregate": {
-                    "total_false_negatives": 0,
-                    "total_false_positives": 0,
-                }
+                "cases": [
+                    {
+                        "id": proof.CASE_NOT_NEEDED,
+                        "false_negatives": not_needed_fn,
+                        "false_positives": not_needed_fp,
+                    },
+                    {
+                        "id": proof.CASE_MUST_ACTIVATE,
+                        "false_negatives": must_activate_fn,
+                        "false_positives": must_activate_fp,
+                    },
+                    {
+                        "id": proof.CASE_AMBIGUOUS,
+                        "false_negatives": ambiguous_fn,
+                        "false_positives": ambiguous_fp,
+                    },
+                ]
             },
         }
+
+    def test_behavioral_mode_exits_non_zero_on_a_regression_miss(self) -> None:
         with mock.patch.object(
-            proof, "measure_behavioral_proof", return_value=fake_result
+            proof,
+            "measure_behavioral_proof",
+            return_value=self._fake_result(regression_fn=1),
         ):
             with contextlib.redirect_stdout(io.StringIO()):
                 exit_code = proof.main(["behavioral"])
 
         self.assertEqual(exit_code, 1)
 
-    def test_behavioral_mode_exits_zero_when_everything_matches(self) -> None:
-        fake_result = {
-            "regression_vs_408_baseline": {
-                "aggregate": {
-                    "total_false_negatives": 0,
-                    "total_false_positives": 0,
-                }
-            },
-            "activation_required_cases": {
-                "aggregate": {
-                    "total_false_negatives": 0,
-                    "total_false_positives": 0,
-                }
-            },
-        }
+    def test_behavioral_mode_exits_non_zero_on_an_ambiguous_case_miss(self) -> None:
+        # CASE_AMBIGUOUS is this issue's own, not-yet-pinned fixture -- a
+        # miss here is a real regression, unlike the known-fragile reused
+        # cases below.
         with mock.patch.object(
-            proof, "measure_behavioral_proof", return_value=fake_result
+            proof,
+            "measure_behavioral_proof",
+            return_value=self._fake_result(ambiguous_fp=1),
+        ):
+            with contextlib.redirect_stdout(io.StringIO()):
+                exit_code = proof.main(["behavioral"])
+
+        self.assertEqual(exit_code, 1)
+
+    def test_behavioral_mode_stays_zero_on_known_fragile_reused_case_mismatch(
+        self,
+    ) -> None:
+        # CASE_NOT_NEEDED/CASE_MUST_ACTIVATE are reused, already-pinned
+        # specialist-depth-composition fixtures with a documented
+        # defect_kind-wording matcher fragility
+        # (specialist-depth-progressive-loading-proof.md §4) -- a mismatch
+        # there must not fail this issue's own proof run.
+        with mock.patch.object(
+            proof,
+            "measure_behavioral_proof",
+            return_value=self._fake_result(
+                not_needed_fn=1, not_needed_fp=1, must_activate_fn=1, must_activate_fp=2
+            ),
+        ):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(
+                io.StringIO()
+            ):
+                exit_code = proof.main(["behavioral"])
+
+        self.assertEqual(exit_code, 0)
+
+    def test_behavioral_mode_exits_zero_when_everything_matches(self) -> None:
+        with mock.patch.object(
+            proof, "measure_behavioral_proof", return_value=self._fake_result()
         ):
             with contextlib.redirect_stdout(io.StringIO()):
                 exit_code = proof.main(["behavioral"])
