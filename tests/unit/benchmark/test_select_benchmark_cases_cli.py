@@ -10,8 +10,9 @@ staying in sync, e.g. ``tests/policy/benchmark/test_benchmark_index_sync.py``).
 Proves: the emitted JSON matches
 ``benchmark_selection.build_explainability``'s shape exactly (no second,
 CLI-local computation), the step-summary file is appended to (never
-overwritten), and a missing taxonomy dimension in the input file is
-rejected rather than silently defaulting.
+overwritten), and a missing/malformed taxonomy dimension in the input
+file is rejected (fail-closed, via ``benchmark_taxonomy.validate_taxonomy``)
+rather than silently coerced or defaulted.
 """
 
 from __future__ import annotations
@@ -57,6 +58,43 @@ class LoadPrClassificationTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 cli.load_pr_classification(path)
 
+    def test_rejects_a_bare_string_value_instead_of_a_list(self) -> None:
+        # A hand-edited file with `"capability": "core"` (a string, not a
+        # list) must be rejected, never silently coerced into
+        # `tuple("core")` == ('c', 'o', 'r', 'e').
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "classification.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "capability": "core",
+                        "policy_contract": ["unclassified"],
+                        "risk_mode": ["unclassified"],
+                        "affected_surface": ["unclassified"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError):
+                cli.load_pr_classification(path)
+
+    def test_rejects_an_unknown_taxonomy_value(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "classification.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "capability": ["not-a-real-capability"],
+                        "policy_contract": ["unclassified"],
+                        "risk_mode": ["unclassified"],
+                        "affected_surface": ["unclassified"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError):
+                cli.load_pr_classification(path)
+
 
 class MainCliTests(unittest.TestCase):
     def _write_index(self, tmp: Path) -> Path:
@@ -79,9 +117,9 @@ class MainCliTests(unittest.TestCase):
                 json.dumps(
                     {
                         "capability": ["security-boundary"],
-                        "policy_contract": [],
-                        "risk_mode": [],
-                        "affected_surface": [],
+                        "policy_contract": ["unclassified"],
+                        "risk_mode": ["unclassified"],
+                        "affected_surface": ["unclassified"],
                     }
                 ),
                 encoding="utf-8",
@@ -117,9 +155,9 @@ class MainCliTests(unittest.TestCase):
                 json.dumps(
                     {
                         "capability": ["security-boundary"],
-                        "policy_contract": [],
-                        "risk_mode": [],
-                        "affected_surface": [],
+                        "policy_contract": ["unclassified"],
+                        "risk_mode": ["unclassified"],
+                        "affected_surface": ["unclassified"],
                     }
                 ),
                 encoding="utf-8",

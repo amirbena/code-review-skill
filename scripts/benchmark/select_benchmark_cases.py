@@ -51,13 +51,15 @@ DEFAULT_INDEX_PATH = _REPO_ROOT / "docs" / "benchmark" / "corpus-index.json"
 
 
 def load_pr_classification(path: Path) -> dict[str, tuple[str, ...]]:
+    """Fail-closed: reuses ``tax.validate_taxonomy`` so a malformed value
+    (a bare string instead of a list, an unknown dimension/value, a
+    missing dimension) is rejected outright rather than silently coerced
+    (e.g. ``tuple("core")`` -> ``('c', 'o', 'r', 'e')``)."""
     raw = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(raw, dict):
-        raise ValueError(f"{path}: PR classification must be a JSON object")
-    missing = sorted(tax.DIMENSION_NAMES - set(raw))
-    if missing:
-        raise ValueError(f"{path}: missing taxonomy dimension(s) {missing}")
-    return {dim: tuple(raw[dim]) for dim in tax.DIMENSION_NAMES}
+    try:
+        return tax.validate_taxonomy(raw)
+    except tax.TaxonomyError as exc:
+        raise ValueError(f"{path}: {exc}") from exc
 
 
 def render_step_summary(explainability: dict[str, Any]) -> str:
