@@ -1,5 +1,6 @@
 ---
 name: local-code-review
+version: 1.50.2
 description: >-
   Reviews local, not-yet-PR'd Git changes (committed delta, staged,
   unstaged, and untracked) and returns evidence-backed P0/P1/P2 findings.

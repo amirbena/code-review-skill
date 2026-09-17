@@ -3,8 +3,9 @@
 Guards against a regression stripping/corrupting the Agent Skills YAML
 frontmatter of a packaged root ``SKILL.md``. This is a narrow structural
 check (line 1 is the opening delimiter, a closing delimiter exists, and
-the required ``name``/``description`` fields are present with the
-expected ``name``) — not a full YAML validator, and it does not replace
+the required ``name``/``version``/``description`` fields are present,
+with the expected ``name`` and a strict ``x.y.z`` ``version``) — not a
+full YAML validator, and it does not replace
 ``scripts/validation/validate-skill-metadata.py`` / ``scripts/skill_metadata/``,
 which own Skill metadata semantics broadly.
 
@@ -23,6 +24,13 @@ try:
     import yaml
 except ImportError:  # pragma: no cover - exercised only without PyYAML installed
     yaml = None  # type: ignore[assignment]
+
+# Strict x.y.z: three dot-separated non-negative integers, no `v` prefix,
+# no leading zeros beyond a bare "0" component. Kept in sync with
+# scripts/skill_metadata/metadata.py's _VERSION_RE (issue #439); this
+# module intentionally does not import from scripts/skill_metadata/ to
+# stay a narrow, dependency-free regression guard (see module docstring).
+_VERSION_RE = re.compile(r"^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$")
 
 
 class SkillFrontmatterError(ValueError):
@@ -51,9 +59,17 @@ def validate_skill_frontmatter(skill_md_path: Path, expected_name: str) -> None:
     if yaml is not None:
         data = yaml.safe_load(fm_body) or {}
         name = data.get("name")
+        version = data.get("version")
         description = data.get("description")
         if not name:
             raise SkillFrontmatterError(f"{skill_md_path} frontmatter missing required 'name'")
+        if not version:
+            raise SkillFrontmatterError(f"{skill_md_path} frontmatter missing required 'version'")
+        if not isinstance(version, str) or not _VERSION_RE.match(version):
+            raise SkillFrontmatterError(
+                f"{skill_md_path} frontmatter 'version' must be strict x.y.z "
+                f"(no 'v' prefix, no leading zeros): got {version!r}"
+            )
         if not description:
             raise SkillFrontmatterError(
                 f"{skill_md_path} frontmatter missing required 'description'"
@@ -67,6 +83,10 @@ def validate_skill_frontmatter(skill_md_path: Path, expected_name: str) -> None:
 
     if not re.search(rf"^name:[ \t]*{re.escape(expected_name)}[ \t]*$", fm_body, re.MULTILINE):
         raise SkillFrontmatterError(f"{skill_md_path} frontmatter missing 'name: {expected_name}'")
+    if not re.search(r"^version:[ \t]*\S+[ \t]*$", fm_body, re.MULTILINE):
+        raise SkillFrontmatterError(
+            f"{skill_md_path} frontmatter missing required 'version'"
+        )
     if not re.search(r"^description:", fm_body, re.MULTILINE):
         raise SkillFrontmatterError(
             f"{skill_md_path} frontmatter missing required 'description'"

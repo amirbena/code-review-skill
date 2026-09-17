@@ -1,5 +1,6 @@
 ---
 name: github-pr-review
+version: 1.50.2
 description: >-
   Reviews an existing GitHub Pull Request under one of three publication
   modes: passively as a report (PASSIVE), as a non-mutating preview of the
