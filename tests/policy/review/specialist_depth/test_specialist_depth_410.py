@@ -174,11 +174,20 @@ class ManifestFailClosedTests(unittest.TestCase):
 
 
 class ScopeBoundaryTests(unittest.TestCase):
-    """No other capability's manifest changes as part of this issue."""
+    """No other capability's manifest changes as part of this issue.
+
+    `scale` is excluded from this "no other manifest" check: issue #447
+    gave it its own, independently-declared fail-closed clause as the
+    second capability to prove the pattern (see
+    `tests/policy/review/scale/test_scale_447.py`), not a change to
+    `specialist-depth`'s own scope.
+    """
+
+    KNOWN_FAIL_CLOSED_CAPABILITIES = {"specialist-depth", "scale"}
 
     def test_only_specialist_depth_manifest_mentions_fail_closed(self) -> None:
         for path in sorted(CAPABILITIES_DIR.glob("*/capability.yaml")):
-            if path.parent.name == "specialist-depth":
+            if path.parent.name in self.KNOWN_FAIL_CLOSED_CAPABILITIES:
                 continue
             raw = path.read_text(encoding="utf-8")
             self.assertNotIn(

@@ -70,6 +70,24 @@ record the same fail-closed clause. This is scoped to `specialist-depth`
 alone, per #410's Non-Goals; it does not extract `review-router` or
 change any other capability's loading behavior.
 
+Issue #447: `scale`'s activation predicate is now enforced the same way,
+as the second capability to prove the pattern generalizes (per
+`specialist-depth-continuation-checkpoint.md`, #412). Both
+`shared/policies/repository-expansion.md` and
+`shared/policies/large-pr-partitioning.md` gained their own "Conditional
+loading: fail-closed" sections stating that each file loads only once its
+own predicate (trigger evaluation, or diff-size measurement) has already
+been decided from `review-scope.md`'s resident evidence, and that
+ambiguous or failed evaluation loads the capability rather than skipping
+it. `repository-expansion.md`'s pre-existing "always active" framing is
+reconciled, not contradicted: it describes the trigger-evaluation
+predicate itself, which stays always active, not whether that file is
+opened — only the file's deeper ring-expansion procedure is
+`on-activation`. `capability.yaml`'s `activation` and `never` lists
+record the same fail-closed clause. This is scoped to `scale` alone, per
+#447's Non-Goals; it does not change `specialist-depth`'s `requires: [...
+scale]` dependency or any other capability's loading behavior.
+
 ## Purpose
 
 `capability-architecture-model.md` §A.9 identifies three declarations of

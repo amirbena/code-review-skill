@@ -552,7 +552,12 @@ triggers fired, how far each was followed, and the concrete locations
 inspected are emitted with the review. The fixed trigger catalog, the
 ring procedure, the depth-scaled ceiling, and the reporting requirement
 are owned by [`repository-expansion.md`](repository-expansion.md) and
-are not restated here.
+are not restated here. That trigger-evaluation predicate is decidable
+entirely from this base pass's own resident trigger catalog above —
+evaluating it never requires opening `repository-expansion.md` — and
+fails closed: ambiguity or evaluation failure loads the capability rather
+than skipping it, per `repository-expansion.md`'s "Conditional loading:
+fail-closed."
 
 This is not a second scope model either: it governs only *how far* an
 investigation looks beyond the diff to gather evidence, never what counts
@@ -574,7 +579,11 @@ into the one final review. A change under the threshold is reviewed as a
 single unit exactly as before. The threshold, the partition-construction
 procedure, per-partition review, and cross-partition aggregation are owned
 by [`large-pr-partitioning.md`](large-pr-partitioning.md) and are not
-restated here.
+restated here. That threshold measurement is decidable entirely from this
+base pass's own resident diff-size count above — evaluating it never
+requires opening `large-pr-partitioning.md` — and fails closed: ambiguity
+or evaluation failure loads the capability rather than skipping it, per
+`large-pr-partitioning.md`'s "Conditional loading: fail-closed."
 
 This is not a second scope model: every partition is scoped, evidenced,
 and labeled exactly as an unpartitioned review would be; partitioning only

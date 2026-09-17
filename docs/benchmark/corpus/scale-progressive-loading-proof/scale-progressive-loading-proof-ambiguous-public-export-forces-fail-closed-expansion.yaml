@@ -1,0 +1,119 @@
+# Scale progressive-loading-proof corpus case (Issue #447, parent #403).
+# Format: ../../fixture-format.md. See ./README.md for the cluster.
+#
+# The one case this sub-corpus adds rather than reuses (README "Selection
+# principle"): the reused repository-intelligence cases (#129) cover a
+# confidently-resolved call-site trigger (positive cases), a confidently
+# ambiguous *relationship* that stays unresolved
+# (repo-intel-python-dynamic-dispatch-safe-failure), and a confidently
+# resolved, compatible caller (the control case). None of those exercises
+# #447's own fail-closed clause: whether the call-site trigger *fires at
+# all* is itself unclear from the diff and its immediately adjacent
+# evidence.
+#
+# apply_discount is re-exported through app/pricing/__init__.py's
+# __all__, marking it as this package's public surface -- but that is
+# publication, not proof of an external consumer, so whether it "has
+# consumers elsewhere in the repository" (repository-expansion.md's
+# call-site trigger) cannot be confidently resolved from the diff alone.
+# #447's fail-closed clause requires this ambiguity to resolve to
+# expanding the ring (loading `scale`) rather than skipping expansion,
+# and repository-expansion.md's "never" list already forbids treating the
+# resulting uncertainty as a reason to skip investigating a plausible
+# public-surface change. Ring-1 expansion (supplied via `input.base`)
+# resolves a real caller, app/checkout/cart.py, whose rounding assumption
+# the changed rounding direction now breaks.
+
+format: benchmark-case/v2
+
+id: scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion
+title: "apply_discount's rounding direction flips; whether it has an external caller is not resolvable from the diff alone"
+
+input:
+  patch: |
+    diff --git a/app/pricing/discount.py b/app/pricing/discount.py
+    index 1111111..2222222 100644
+    --- a/app/pricing/discount.py
+    +++ b/app/pricing/discount.py
+    @@ -1,7 +1,7 @@
+     import math
+
+
+     def apply_discount(amount_cents, pct):
+         """Applies a percentage discount, rounded to whole cents."""
+         discounted = amount_cents * (1 - pct / 100)
+    -    return math.ceil(discounted)
+    +    return math.floor(discounted)
+  base:
+    app/pricing/discount.py: |
+      import math
+
+
+      def apply_discount(amount_cents, pct):
+          """Applies a percentage discount, rounded to whole cents."""
+          discounted = amount_cents * (1 - pct / 100)
+          return math.ceil(discounted)
+    app/pricing/__init__.py: |
+      from app.pricing.discount import apply_discount
+
+      __all__ = ["apply_discount"]
+    app/checkout/cart.py: |
+      from app.pricing import apply_discount
+
+
+      def total_after_discount(amount_cents, pct):
+          discounted = apply_discount(amount_cents, pct)
+          # Rounding up on the discount keeps the charged total from
+          # dipping below the minimum payment-processor charge of 50
+          # cents on small carts.
+          assert discounted >= 50 or amount_cents < 50
+          return discounted
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: apply-discount-round-direction-breaks-minimum-charge-floor
+      match: required
+      severity: [P1, P2]
+      location:
+        location_intent: line
+        path: app/pricing/discount.py
+        symbol: apply_discount
+        anchor: return math.floor(discounted)
+      claim: >-
+        apply_discount switched from rounding the discounted amount up
+        (math.ceil) to rounding it down (math.floor). Its caller in
+        app/checkout/cart.py, total_after_discount, relies on the
+        rounded-up result staying at or above the payment processor's
+        50-cent minimum charge for small carts; rounding down can now
+        produce a discounted total below that floor for a cart amount
+        that previously cleared it, which total_after_discount's own
+        assertion depends on not happening.
+      defect_kind: incorrect-rounding-behavior
+      alternatives:
+        - defect_kind: broken-invariant
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Exercises #447's fail-closed clause directly: apply_discount is
+    published through app/pricing/__init__.py's __all__, a plausible but
+    not confirmed signal of an external consumer, so whether the
+    call-site trigger fires cannot be confidently resolved from the diff
+    and its immediately adjacent evidence alone -- unlike #129's reused
+    positive fixtures (an evidenced caller already visible) or its
+    safe-failure fixture (a trigger that fires but whose concrete target
+    cannot be resolved). Ambiguous trigger-firing must still resolve to
+    expanding the ring (loading `scale`) rather than skipping expansion;
+    the permitted severity range (P1 or P2) lets genuine reviewer
+    judgment about how confidently to escalate an ambiguity-driven finding
+    vary, while pinning what must not vary -- a finding is produced at
+    all, proving fail-closed loading is behaviorally observable rather
+    than `scale` silently skipping ring expansion under uncertainty.
+  taxonomy:
+    capability: [repository-intelligence]
+    policy_contract: [repository-expansion]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

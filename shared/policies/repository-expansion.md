@@ -30,6 +30,13 @@ present stays scoped to the diff and its immediately adjacent evidence per
 [`evidence.md`](evidence.md), and that is a normal, complete outcome.
 There is no caller option to disable it.
 
+"Always active" describes the trigger-evaluation predicate above, not
+whether this file itself is opened. That predicate is evaluated from the
+fixed trigger catalog `review-scope.md`'s "Repository expansion" already
+restates as resident summary, never from this file. See "Conditional
+loading: fail-closed" below for what that distinction means for
+`capabilities/scale/capability.yaml`'s `on-activation` loading.
+
 ## Expansion triggers (fixed catalog)
 
 Each trigger names the concrete diff fact that activates it and what it
@@ -117,6 +124,41 @@ subordinate metadata (see
 body, never as a finding, and never in a way that implies a verdict. A
 review with no fired trigger still emits the classification, as "none";
 it is not silently dropped.
+
+## Conditional loading: fail-closed
+
+`capabilities/scale/capability.yaml` declares this file `on-activation`,
+alongside [`large-pr-partitioning.md`](large-pr-partitioning.md). That
+governs when this file's deeper ring-expansion procedure, bound table,
+and machine-readable model below are consulted — never whether the
+trigger-evaluation predicate in "Activation" above runs, which stays
+always active exactly as stated there. This file loads only once a
+trigger has already been decided to have fired; it is never opened as a
+precondition to deciding whether one fired. The predicate is decidable
+entirely from the fixed trigger catalog `review-scope.md`'s "Repository
+expansion" already restates as resident summary — a changed call-site,
+interface/contract, migration/schema, or config-consumer fact — so
+evaluating it never requires opening this file.
+
+Loading is fail-closed: if evaluating whether a trigger fired is unclear,
+incomplete, or fails for any reason, this capability loads anyway.
+Ambiguity resolves to load, never to skip — the same convention
+[`specialist-depth.md`](specialist-depth.md)'s "Conditional loading:
+fail-closed" already establishes. A capability boundary that a failed or
+ambiguous predicate evaluation could silently bypass is the one
+catastrophic-if-wrong outcome this contract exists to prevent; this
+file's activation predicate must never be able to produce that outcome.
+
+Not loading this capability never narrows or substitutes for the
+always-active trigger-evaluation predicate itself — that predicate always
+runs regardless of whether this file is ever opened. Conditional loading
+changes only when the ring-expansion procedure and reporting model below
+are consulted, never whether a trigger is evaluated.
+
+This conditional-loading contract is scoped to `scale` alone (this file
+and [`large-pr-partitioning.md`](large-pr-partitioning.md)); it does not
+define, and must not be read as defining, a general loading/routing
+mechanism for any other capability in this repository.
 
 ## Machine-readable model
 
