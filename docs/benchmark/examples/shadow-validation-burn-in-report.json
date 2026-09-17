@@ -1,0 +1,112 @@
+{
+  "window_description": "Reconstructed worked example, 8 synthetic PR samples over the existing corpus (not live production evidence)",
+  "sample_count": 8,
+  "total_regressions": 8,
+  "total_missed": 2,
+  "miss_rate": {
+    "numerator": 1,
+    "denominator": 4,
+    "float": 0.25
+  },
+  "distinct_selected_case_ids": [
+    "analogue-placement-test-file-split-clean",
+    "api-compat-optional-to-required-breaking",
+    "api-compat-remove-field-breaking",
+    "api-compat-rename-response-property-breaking",
+    "cfv-unproven-regression-not-asserted"
+  ],
+  "cases_never_caught_a_regression": [
+    "analogue-placement-test-file-split-clean"
+  ],
+  "redundancy_rate": {
+    "numerator": 1,
+    "denominator": 5,
+    "float": 0.2
+  },
+  "per_sample": [
+    {
+      "sample_id": "reconstructed-pr-101",
+      "missed_case_ids": [],
+      "caught_case_ids": [
+        "cfv-unproven-regression-not-asserted"
+      ],
+      "unexercised_selected_case_ids": [
+        "analogue-placement-test-file-split-clean",
+        "api-compat-remove-field-breaking"
+      ]
+    },
+    {
+      "sample_id": "reconstructed-pr-102",
+      "missed_case_ids": [],
+      "caught_case_ids": [
+        "api-compat-rename-response-property-breaking"
+      ],
+      "unexercised_selected_case_ids": [
+        "analogue-placement-test-file-split-clean"
+      ]
+    },
+    {
+      "sample_id": "reconstructed-pr-103",
+      "missed_case_ids": [
+        "cfv-disconfirmed-severe-candidate-dropped"
+      ],
+      "caught_case_ids": [],
+      "unexercised_selected_case_ids": [
+        "analogue-placement-test-file-split-clean",
+        "cfv-unproven-regression-not-asserted"
+      ]
+    },
+    {
+      "sample_id": "reconstructed-pr-104",
+      "missed_case_ids": [],
+      "caught_case_ids": [
+        "api-compat-remove-field-breaking"
+      ],
+      "unexercised_selected_case_ids": [
+        "cfv-unproven-regression-not-asserted"
+      ]
+    },
+    {
+      "sample_id": "reconstructed-pr-105",
+      "missed_case_ids": [],
+      "caught_case_ids": [],
+      "unexercised_selected_case_ids": [
+        "analogue-placement-test-file-split-clean",
+        "api-compat-remove-field-breaking"
+      ]
+    },
+    {
+      "sample_id": "reconstructed-pr-106",
+      "missed_case_ids": [
+        "cfv-unproven-regression-not-asserted"
+      ],
+      "caught_case_ids": [
+        "api-compat-optional-to-required-breaking"
+      ],
+      "unexercised_selected_case_ids": [
+        "analogue-placement-test-file-split-clean"
+      ]
+    },
+    {
+      "sample_id": "reconstructed-pr-107",
+      "missed_case_ids": [],
+      "caught_case_ids": [
+        "api-compat-rename-response-property-breaking"
+      ],
+      "unexercised_selected_case_ids": [
+        "analogue-placement-test-file-split-clean"
+      ]
+    },
+    {
+      "sample_id": "reconstructed-pr-108",
+      "missed_case_ids": [],
+      "caught_case_ids": [
+        "api-compat-remove-field-breaking"
+      ],
+      "unexercised_selected_case_ids": [
+        "analogue-placement-test-file-split-clean",
+        "cfv-unproven-regression-not-asserted"
+      ]
+    }
+  ]
+}
