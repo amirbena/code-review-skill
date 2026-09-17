@@ -8,9 +8,12 @@ content is the attribution arithmetic itself.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from scripts.capability_architecture import capability_loading_baseline as clb
 
@@ -82,6 +85,25 @@ class MeasureStaticSurfaceTests(unittest.TestCase):
         for section in surface.values():
             for capability in section["by_capability_words"]:
                 self.assertIn(capability, capability_files)
+
+
+class MainExitCodeTests(unittest.TestCase):
+    def test_quality_mode_exits_non_zero_when_the_run_never_executed(self) -> None:
+        with mock.patch.object(
+            clb, "measure_quality_metrics", side_effect=RuntimeError("claude CLI not found")
+        ):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(
+                io.StringIO()
+            ):
+                exit_code = clb.main(["quality"])
+
+        self.assertEqual(exit_code, 1)
+
+    def test_static_mode_still_exits_zero_on_success(self) -> None:
+        with contextlib.redirect_stdout(io.StringIO()):
+            exit_code = clb.main(["static"])
+
+        self.assertEqual(exit_code, 0)
 
 
 if __name__ == "__main__":

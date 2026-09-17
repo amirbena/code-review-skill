@@ -189,7 +189,10 @@ def main(argv: list[str] | None = None) -> int:
     print(text)
     if args.out:
         Path(args.out).write_text(text + "\n", encoding="utf-8")
-    return 0
+    # Fail closed like run_benchmark.py's own exit-code contract: a
+    # requested quality-metrics run that never executed is not success,
+    # even though the static half (if requested) still printed/wrote fine.
+    return 1 if "quality_metrics_error" in output else 0
 
 
 if __name__ == "__main__":
