@@ -231,7 +231,55 @@ introduced. `sync_regressions` (the lifecycle orchestrator, §4) takes a
 [`../../tests/unit/benchmark/test_benchmark_drift.py`](../../tests/unit/benchmark/test_benchmark_drift.py)
 runs against an in-memory fake client and makes zero network calls.
 
-## 7. Status and canonical home
+## 7. Two-lane operation (#431) — verified, not redesigned
+
+#431 split scheduled execution into a sentinel lane (every 3 days) and a
+comprehensive lane (weekly) with independently keyed baselines
+(`nightly-history-and-baseline.md` §4). This section records the
+verification #431's acceptance criteria require — that this document's
+existing lifecycle produces correct, non-cross-comparing signals for both
+lanes — and the two bounded consequences of that verification. Nothing in
+§1–§6 above changed.
+
+- **No cross-lane comparison is possible.** `classify_drift` (§1–§2) is
+  handed a `baseline`/`candidate` metrics+severity pair already extracted
+  from one lane's history/baseline files; whichever script prepares those
+  files for a given Cloud Routine run reads that lane's own baseline
+  (`benchmark_history.py show-baseline --lane sentinel` or `--lane
+  comprehensive`), never the other lane's. `benchmark_drift.py` itself
+  performs no `corpus_id` check — that guard lives in `compare()`
+  (`benchmark_report.py`, `nightly-history-and-baseline.md` §3.2) one
+  layer down, and is unaffected by this document. Run the sentinel lane's
+  comparison and the comprehensive lane's comparison as two separate
+  `detect`/`sync` invocations, one per lane, each fed only that lane's own
+  baseline/candidate pair.
+- **A shared fingerprint across lanes is intentional, not a defect.** §3's
+  fingerprint is `{case_id, drift_type, expected_finding_key}` — it does
+  not include a lane identifier. Because the comprehensive lane's
+  membership is a strict superset of the sentinel lane's (it includes the
+  same 4 canonical cases, `nightly-history-and-baseline.md` §3.2), the
+  *same* `case_id` regressing under both lanes independently produces the
+  *same* fingerprint by design: it is the same underlying case behaving
+  the same way, observed by two schedules, and correctly dedupes to one
+  GitHub issue rather than two duplicate ones. §5's metadata block already
+  distinguishes which run detected each recurrence via `baseline`/
+  `candidate` `date`/`repo_sha`, so no signal is lost by sharing the
+  issue. Adding a lane discriminator to the fingerprint was considered and
+  rejected: it would turn one genuine regression signal into two
+  separately-tracked issues for the same case, working against §4.2's own
+  cheap-dedup goal, and is exactly the kind of drift-policy redesign #431
+  and this issue's own Non-goals both forbid.
+- **The tracking-issue thread and the regression-issue label are
+  different concepts, both already per-run/per-fingerprint.** The Cloud
+  Routine's own evidence tracking Issue (`--evidence-issue`,
+  `cloud-routine-integration.md` §4) is one thread per lane (a maintainer
+  configures a separate `--evidence-issue` for the sentinel schedule and
+  the comprehensive schedule); the `benchmark-regression`-labeled issues
+  this document opens (§4) are keyed by fingerprint, not by lane or by
+  evidence-issue thread, for the reason above. No consumer or doc change
+  beyond this section was required.
+
+## 8. Status and canonical home
 
 This document is the authoritative contract for drift detection and the
 regression-issue lifecycle. `scripts/benchmark/benchmark_drift.py`

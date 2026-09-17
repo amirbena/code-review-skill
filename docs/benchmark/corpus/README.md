@@ -19,6 +19,33 @@ regression report
 [`../regression-report.md`](../regression-report.md)); neither is packaged
 and no Skill launches either.
 
+## Two scheduled execution lanes (#431)
+
+The **4 cases in this directory** (below) are the permanent **sentinel**
+corpus — never rotated, sampled, or Top-K'd — scheduled every 3 days. The
+files in this directory **plus every `benchmark-case/v2` fixture in every
+sub-corpus directory listed under "Related sub-corpora"** (excluding a
+handful of test-only/reference-model suites that hold no `benchmark-
+case/v2` fixtures at all — see below) together form the **comprehensive**
+corpus, scheduled weekly, and discovered *programmatically* by
+`scripts/benchmark/benchmark_corpus_membership.py` — never a hard-coded
+count. Both lanes execute through the same `run_benchmark_routine.py`
+Class 2 Cloud Routine vehicle, with independently keyed history and
+baselines. Full scheduling/baseline contract:
+[`../nightly-history-and-baseline.md`](../nightly-history-and-baseline.md)
+§2/§4; mode contract:
+[`../cloud-routine-integration.md`](../cloud-routine-integration.md) §2.1.
+
+A sub-corpus directory that holds only a `README.md` and no `benchmark-
+case/v2` fixture YAML (e.g. `mutation-boundary/`, `reviewer-brief/`,
+`delegation-spawn/`, `sandbox-adversarial/`,
+`trusted-host-nl-authorization/`, `security-events/`,
+`publication-mode/`, `verdict-consistency/`) is a specialized test-only or
+real-runner suite consumed directly by `tests/` rather than through
+`ProductionReviewerAdapter` — it is excluded from the comprehensive lane
+by construction (the membership scan finds no fixture to include), never
+by a maintained denylist.
+
 ## Selection principle
 
 - **One case per review category** the roadmap cares about — correctness,
@@ -197,3 +224,9 @@ loads every `*.yaml` here through the single reference validator
 small, that filenames match case `id`s, that every case records a
 rationale, and that the four categories above are all present. Peer review
 of the expected findings themselves happens on the pull request.
+
+[`../../../tests/unit/benchmark/test_benchmark_corpus_membership.py`](../../../tests/unit/benchmark/test_benchmark_corpus_membership.py)
+covers the comprehensive-lane membership scan itself (#431): every
+sub-corpus directory's `benchmark-case/v2` fixtures are included, a
+`README.md`-only test-suite directory contributes nothing, and a duplicate
+case `id` across two fixtures is a hard error.

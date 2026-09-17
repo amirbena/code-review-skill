@@ -503,54 +503,89 @@ Principles that hold regardless of the exact numbers chosen:
   explicitly (§2.3); this document does not silently reinterpret #335's
   existing wording.
 
-## 6. Nightly path
+## 6. Scheduled path (sentinel + comprehensive lanes)
 
-Stable principles drawn from #332/#338/#339. Exact storage implementation
-and exact drift/noise thresholds are #338's and #339's implementation
-detail, not recorded here.
+Stable principles drawn from #332/#338/#339, refined into **two**
+independently-scheduled, independently-baselined lanes by #431 — see
+[`../benchmark/corpus/README.md`](../benchmark/corpus/README.md) and
+[`../benchmark/nightly-history-and-baseline.md`](../benchmark/nightly-history-and-baseline.md)
+§2 for the operational contract. "Nightly" in the rest of this document
+and in #338/#339 is the historical name for this scheduled path; it is not
+a claim that execution happens every night — the sentinel lane runs every
+3 days and the comprehensive lane runs weekly (§2 below), neither daily.
+Exact storage implementation and exact drift/noise thresholds remain
+#338's and #339's implementation detail, not recorded here.
 
 ```text
-nightly trusted execution        (#338, via a Claude Cloud Routine per §4.1's
-                                   Class 2 target, or maintainer-triggered;
-                                   main only)
-  → full corpus                  (#338, run_benchmark.py with no case filter)
-  → persisted comparable history (#338, keyed by date + commit SHA + runtime metadata)
-  → baseline/reference comparison(#338's chosen baseline policy)
-  → meaningful drift detection   (#339, reusing regression-report.md/#55/#56/#57 unchanged)
-  → deduplicated issue lifecycle (#339)
+scheduled trusted execution       (#338/#431, via a Claude Cloud Routine per
+                                    §4.1's Class 2 target, or maintainer-
+                                    triggered; main only)
+  → sentinel lane                 (#431: the 4 fixed canonical cases,
+                                    docs/benchmark/corpus/*.yaml, every 3 days)
+  → comprehensive lane             (#431: every benchmark-case/v2 fixture in
+                                    the corpus tree, derived programmatically,
+                                    weekly)
+  → persisted comparable history, (#338/#431, keyed by date + commit SHA +
+    independently keyed per lane   runtime metadata + lane)
+  → baseline/reference comparison, (#338/#431's chosen baseline policy,
+    independently keyed per lane   applied per lane — never cross-lane)
+  → meaningful drift detection    (#339, reusing regression-report.md/#55/#56/#57
+                                    unchanged, run once per lane)
+  → deduplicated issue lifecycle  (#339, per lane)
 ```
 
-**Revised by #391:** #338's own text still describes this as a new
-`.github/workflows/benchmark-nightly.yml` GitHub Actions `schedule:`
+**Revised by #391, then #431.** #338's own text still describes this as a
+new `.github/workflows/benchmark-nightly.yml` GitHub Actions `schedule:`
 workflow using "the isolated CI runtime from #330" — that wording
 conflicts with the Class 2 Cloud Routine target above and needs a bounded
-correction (§2.3), not applied by this document.
+correction (§2.3), not applied by this document. #431 additionally split
+the single scheduled lane into the sentinel/comprehensive pair above and
+gave each its own keyed baseline (`benchmark_history.py`); it did not
+reopen or redesign #338's storage mechanics or #339's drift-vs-noise
+policy, only parameterized both by lane.
 
 Principles that hold regardless of the exact storage/threshold choices:
 
-- **Never blocks PR or main.** Nightly execution runs on a schedule (a
-  Claude Cloud Routine, per §4.1's Class 2 target) against `main` (or a
-  maintainer-chosen ref) and never gates a merge or deployment, under any
-  outcome.
-- **Baseline policy must avoid silent drift ratcheting.** A naive
-  "always compare to yesterday's run" policy lets a small degradation
-  become tomorrow's accepted baseline, silently eroding the known-good
-  reference over time. #338 evaluates and documents an explicit baseline
-  policy (last-known-good, a deliberately-refreshed pinned reference, a
-  noise-dampening rolling baseline, or a justified combination) rather
-  than defaulting to the ratcheting shape.
-- **History is benchmark ground truth.** The persisted nightly history is
-  kept structurally separate from #131's workflow-observation export and
-  #182's execution telemetry — never mixed into packaged Skill resources
-  or an existing `docs/` analytics surface. It is the authoritative
-  benchmark-quality record §7's "benchmark ground truth" layer refers to.
+- **Never blocks PR or main.** Scheduled execution (either lane) runs on a
+  schedule (a Claude Cloud Routine, per §4.1's Class 2 target) against
+  `main` (or a maintainer-chosen ref) and never gates a merge or
+  deployment, under any outcome. Nothing in this section is reachable from
+  GitHub Actions cron.
+- **Two lanes, never rotated or merged into one.** The sentinel lane's 4
+  cases are permanent and never sampled, rotated, or Top-K'd; the
+  comprehensive lane's membership is derived programmatically from the
+  corpus tree's `benchmark-case/v2` fixtures, never a hard-coded count.
+  The two lanes are not degrees of one schedule — a maintainer configures
+  them as two separate Cloud Routine schedules, and when both land on the
+  same night (sentinel's 3-day cadence and comprehensive's weekly Friday
+  cadence can coincide), both runs are valid and independently baselined;
+  this document does not dedupe or merge them.
+- **Baseline policy must avoid silent drift ratcheting, per lane.** A
+  naive "always compare to yesterday's run" policy lets a small
+  degradation become tomorrow's accepted baseline, silently eroding the
+  known-good reference over time. #338/#431 evaluate and document an
+  explicit, per-lane baseline policy (a deliberately-refreshed pinned
+  reference, keyed so sentinel and comprehensive each pin and compare
+  against their own baseline) rather than defaulting to the ratcheting
+  shape or letting one lane's baseline stand in for the other's.
+- **History is benchmark ground truth.** The persisted scheduled-execution
+  history is kept structurally separate from #131's workflow-observation
+  export and #182's execution telemetry — never mixed into packaged Skill
+  resources or an existing `docs/` analytics surface. It is the
+  authoritative benchmark-quality record §7's "benchmark ground truth"
+  layer refers to, for both lanes.
 - **Drift issues are fingerprinted, deduplicated, updateable, and
-  resolvable.** #339 reuses the existing `regression-report.md` contract
-  and #55/#56/#57 metrics unchanged; it adds the policy for what counts as
-  *meaningful* drift versus noise, a stable fingerprint from already-stable
-  identifiers, and full issue lifecycle (open once, comment on recurrence,
-  auto-close on resolution, never auto-close over an explicit maintainer
-  `keep-open` override).
+  resolvable — per lane.** #339 reuses the existing `regression-report.md`
+  contract and #55/#56/#57 metrics unchanged; it adds the policy for what
+  counts as *meaningful* drift versus noise, a stable fingerprint from
+  already-stable identifiers, and full issue lifecycle (open once, comment
+  on recurrence, auto-close on resolution, never auto-close over an
+  explicit maintainer `keep-open` override). A sentinel-lane candidate is
+  only ever compared against the sentinel baseline, and a comprehensive-
+  lane candidate only against the comprehensive baseline — #338/#431's
+  `corpus_id` identity (distinct by construction between the two lanes)
+  backs `compare()`'s existing fail-closed guard against a cross-lane
+  comparison, so no new guard code was needed for this.
 
 ## 7. Measurement / analytics / learning boundaries
 

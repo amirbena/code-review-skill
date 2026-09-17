@@ -10,20 +10,50 @@ runtime/model/SHA metadata (neither is automatic in a Cloud Routine), and
 durable evidence persistence as a comment on a tracking GitHub Issue
 (outside the Routine's own transcript/run history).
 
-Modes (docs/benchmark/cloud-routine-integration.md §2):
+Modes (docs/benchmark/cloud-routine-integration.md §2, two-tier scheduled
+execution contract: docs/benchmark/corpus/README.md, Issue #431):
 
 - ``smoke``    — one or a few fixed case ids, to sanity-check the Routine.
 - ``selected`` — whatever case ids are handed to it (e.g. a future Top-K
   output); this script computes no selection itself.
-- ``full``     — the whole corpus, for the nightly use case.
+- ``sentinel`` — the fixed, permanent 4-case canonical corpus
+  (``--corpus-dir``'s own top-level, non-recursive ``*.yaml`` glob) —
+  never rotated, sampled, or Top-K'd. Scheduled every 3 days.
+- ``comprehensive`` — every ``benchmark-case/v2`` fixture in the corpus
+  tree under ``--corpus-dir``, discovered recursively and programmatically
+  (``benchmark_corpus_membership.discover_comprehensive_fixtures`` —
+  never a hard-coded count or list). Scheduled weekly (Friday).
+- ``full``     — **deprecated fixed synonym for ``sentinel``** (Issue
+  #431): before this issue, ``full`` ambiguously meant "the whole
+  --corpus-dir glob", which in practice only ever resolved to the 4
+  top-level canonical cases because that glob is non-recursive. It is
+  kept, unchanged in behavior, for backward compatibility with existing
+  Cloud Routine prompt configurations, and emits a deprecation notice to
+  stderr; new configuration should use ``--mode sentinel`` explicitly.
+  ``full`` is never made to mean "comprehensive".
 - ``auth-check`` — no benchmark run; only proves GitHub issue
   create/comment permissions work from inside the Routine's own
   execution context.
+
+Both scheduled lanes (``sentinel``, ``comprehensive``) are maintainer-
+controlled Cloud Routine invocations, configured for a 01:00 Israel-local
+start / 04:00 maximum-completion window
+(``docs/benchmark/cloud-routine-integration.md`` §9,
+``docs/benchmark/nightly-history-and-baseline.md`` §2) — timezone/DST
+handling is a Cloud Routine scheduling-configuration responsibility, never
+repository runtime logic; nothing in this module reads or computes a
+timezone.
 
 Usage::
 
     python3 scripts/benchmark/run_benchmark_routine.py --mode smoke \\
         --case-id correctness-off-by-one-pagination \\
+        --evidence-issue 420 --model-id claude-opus-5
+
+    python3 scripts/benchmark/run_benchmark_routine.py --mode sentinel \\
+        --evidence-issue 420 --model-id claude-opus-5
+
+    python3 scripts/benchmark/run_benchmark_routine.py --mode comprehensive \\
         --evidence-issue 420 --model-id claude-opus-5
 
     python3 scripts/benchmark/run_benchmark_routine.py --mode auth-check \\
@@ -46,6 +76,12 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.benchmark import run_benchmark as rb  # noqa: E402
+from scripts.benchmark.benchmark_corpus_membership import (  # noqa: E402
+    COMPREHENSIVE_LANE,
+    SENTINEL_LANE,
+    canonical_lane,
+    discover_comprehensive_fixtures,
+)
 from scripts.benchmark.benchmark_review_adapter import resolve_cli_executable  # noqa: E402
 from scripts.benchmark.benchmark_routine_verify import verify_benchmark_output  # noqa: E402
 
@@ -95,12 +131,17 @@ def _runtime_version(executable: str) -> str:
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", required=True, choices=["smoke", "selected", "full", "auth-check"])
+    parser.add_argument(
+        "--mode",
+        required=True,
+        choices=["smoke", "selected", "sentinel", "comprehensive", "full", "auth-check"],
+    )
     parser.add_argument(
         "--case-id",
         action="append",
         default=[],
-        help="Case id to run (repeatable). Required for smoke/selected; ignored for full/auth-check.",
+        help="Case id to run (repeatable). Required for smoke/selected; ignored for "
+        "sentinel/comprehensive/full/auth-check.",
     )
     parser.add_argument("--corpus-dir", default=str(rb.DEFAULT_CORPUS_DIR))
     parser.add_argument("--cli", default=None, help="Override the review CLI executable.")
@@ -173,13 +214,48 @@ def run_auth_check(args: argparse.Namespace) -> int:
     return 0
 
 
+def _resolve_invocations(args: argparse.Namespace) -> tuple[str, list[tuple[str | None, str]]]:
+    """Resolve `--mode` to (effective_mode, [(case_id, corpus_dir), ...]).
+
+    `full` is a deprecated, fixed synonym for `sentinel` (Issue #431,
+    `benchmark_corpus_membership.py`): the returned effective mode is
+    always the canonical lane name, so persisted metadata never carries
+    the ambiguous legacy value.
+    """
+    if args.mode in ("smoke", "selected"):
+        if not args.case_id:
+            raise RoutineExecutionError(f"--mode {args.mode} requires at least one --case-id")
+        return args.mode, [(cid, args.corpus_dir) for cid in args.case_id]
+
+    if args.mode == "full":
+        print(
+            "warning: --mode full is a deprecated fixed synonym for --mode sentinel "
+            "(Issue #431); pass --mode sentinel explicitly in new configuration.",
+            file=sys.stderr,
+        )
+
+    effective_mode = canonical_lane(args.mode)
+
+    if effective_mode == SENTINEL_LANE:
+        return effective_mode, [(None, args.corpus_dir)]
+
+    if effective_mode == COMPREHENSIVE_LANE:
+        fixtures = discover_comprehensive_fixtures(Path(args.corpus_dir))
+        if not fixtures:
+            raise RoutineExecutionError(
+                f"--mode comprehensive found no benchmark-case/v2 fixtures under {args.corpus_dir}"
+            )
+        return effective_mode, [(fx.case_id, str(fx.corpus_dir)) for fx in fixtures]
+
+    raise RoutineExecutionError(f"unhandled --mode {args.mode!r}")  # pragma: no cover - argparse guards choices
+
+
 def run_benchmark_mode(args: argparse.Namespace) -> int:
-    if args.mode in ("smoke", "selected") and not args.case_id:
-        raise RoutineExecutionError(f"--mode {args.mode} requires at least one --case-id")
+    effective_mode, invocations = _resolve_invocations(args)
 
     executable = args.cli or resolve_cli_executable()
     metadata = RunMetadata(
-        mode=args.mode,
+        mode=effective_mode,
         repo_sha=_git_sha(REPO_ROOT),
         runtime_name=args.runtime_name or executable,
         runtime_version=args.runtime_version or _runtime_version(executable),
@@ -187,14 +263,11 @@ def run_benchmark_mode(args: argparse.Namespace) -> int:
         timestamp=datetime.now(timezone.utc).isoformat(),
     )
 
-    run_argv = ["--corpus-dir", args.corpus_dir, "--cli", executable, "--timeout", str(args.timeout)]
-    case_ids = args.case_id if args.mode != "full" else [None]
-
     overall_ok = True
     verifications: list[dict] = []
     raw_invocations: list[dict] = []
-    for case_id in case_ids:
-        argv = list(run_argv)
+    for case_id, corpus_dir in invocations:
+        argv = ["--corpus-dir", corpus_dir, "--cli", executable, "--timeout", str(args.timeout)]
         if case_id is not None:
             argv += ["--case-id", case_id]
         proc = subprocess.run(

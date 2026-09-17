@@ -56,27 +56,45 @@ lifecycle (Non-goals, below).
 
 ## 2. Scheduling policy
 
-A maintainer configures **one Claude Cloud Routine**
-(`cloud-routine-integration.md` §9) to run the vehicle in `full` mode —
-no `--case-id` filter — on a maintainer-chosen recurring schedule (e.g.
-once daily), plus supports the same Routine's manual/on-demand trigger
-for an off-schedule run. This document does not fix a specific cron
-expression: `cloud-routine-integration.md` §7 already assigns sizing
-run frequency against Claude subscription usage and Routine run limits to
-the maintainer, and a full-corpus run is the most expensive of the
-vehicle's four modes.
+**Two-tier scheduling (#431).** A maintainer configures **two** Claude
+Cloud Routines (`cloud-routine-integration.md` §9.1), not one:
+
+| Lane | `--mode` | Recurrence | Corpus |
+| --- | --- | --- | --- |
+| Sentinel | `sentinel` (deprecated alias: `full`) | every 3 days | the 4 permanent canonical cases (`--corpus-dir`'s own top-level, non-recursive glob) |
+| Comprehensive | `comprehensive` | weekly, Friday night | every `benchmark-case/v2` fixture in the corpus tree, discovered programmatically |
+
+Both target a **01:00 Israel-local start / 04:00 maximum-completion**
+window; each also supports the same Routine's manual/on-demand trigger for
+an off-schedule run. Timezone/DST handling for that window is a **Cloud
+Routine scheduling-configuration responsibility, never repository runtime
+logic** — the schedule itself is set in Israel local time (or UTC with the
+correct seasonal offset) in the Routine's own product surface;
+`scripts/benchmark/` computes no timezone. This document does not fix a
+specific cron expression beyond that recurrence/window: `cloud-routine-
+integration.md` §7 already assigns sizing run frequency against Claude
+subscription usage and Routine run limits to the maintainer, and the
+comprehensive lane (~89 fixtures) is far more expensive per run than
+sentinel's 4 cases — which is why it runs weekly rather than every 3 days.
+
+**Collision is expected and independently baselined, not deduplicated.**
+Every 3 days and weekly periodically coincide; when they do, both Routine
+runs execute, verify, and persist independently, each against its own
+keyed history/baseline (§3–§4). Deduplicating a same-night collision is
+out of scope for this document.
 
 The Routine prompt template (`cloud-routine-integration.md` §9) is
-extended with one additional step for the nightly case, after the
+extended with one additional step for each lane, after that lane's
 existing verified evidence-issue post:
 
 ```text
-3. Run:
+3. Run (sentinel lane shown; comprehensive lane is identical except
+   --mode comprehensive and its own --evidence-issue thread):
    python3 scripts/benchmark/run_benchmark_routine.py \
-     --mode full \
-     --evidence-issue <tracking issue number> \
+     --mode sentinel \
+     --evidence-issue <sentinel tracking issue number> \
      --model-id <the model backend this Routine session is running as> \
-     --results-out /tmp/benchmark-nightly-results.json
+     --results-out /tmp/benchmark-sentinel-results.json
 4. If step 3 exited non-zero, stop (per cloud-routine-integration.md §9
    step 4) — do not run step 5.
 5. Only on a step-3 success, persist history:
@@ -85,20 +103,24 @@ existing verified evidence-issue post:
       first time it does not exist).
    b. python3 scripts/benchmark/benchmark_history.py record \
         --history-root <that directory> \
-        --results-file /tmp/benchmark-nightly-results.json \
+        --results-file /tmp/benchmark-sentinel-results.json \
         --routine-metadata-file <the JSON `run_benchmark_routine.py` printed
           to stdout in step 3 — its top-level `metadata` block>
+      (`--lane` defaults to the run's own `mode`, canonicalized — no
+      separate flag is normally needed; see §3.2/§4.)
    c. Commit and push the `benchmark-history` branch. Never open a PR for
       this — it is Class 2 evidence storage, not reviewable Skill source.
 ```
 
-`run_benchmark_routine.py --results-out PATH` (added by this issue,
-additive and backward compatible — every existing call site that omits it
-is unaffected) writes the concatenated raw per-invocation
-`run_benchmark.py` output only when the run passed positive completion
-verification, mirroring the vehicle's existing fail-closed rule for
-evidence-issue posting: an unverified run persists nothing, in either
-place.
+`run_benchmark_routine.py --results-out PATH` (added by #338, additive and
+backward compatible — every existing call site that omits it is
+unaffected) writes the concatenated raw per-invocation `run_benchmark.py`
+output only when the run passed positive completion verification,
+mirroring the vehicle's existing fail-closed rule for evidence-issue
+posting: an unverified run persists nothing, in either place. For
+`--mode comprehensive`, this is the concatenation of one
+`run_benchmark.py` invocation per discovered fixture (`cloud-routine-
+integration.md` §2.1) — unchanged shape, just more invocations.
 
 **Never blocks PR or `main`.** Nothing above is invoked by
 `.github/workflows/**` or any other repository-triggered automation —
@@ -122,11 +144,15 @@ artifact, was chosen because it is inspectable with ordinary `git`/GitHub
 tooling, needs no separate retention configuration, and keeps evidence
 inside the same repository #339 already has push/issue access to.
 
-Layout on that branch:
+Layout on that branch (default/sentinel lane paths unchanged since before
+#431; a non-default lane gets its own sibling directory/file — §3.2, §4):
 
 ```text
-history/<date>-<repo_sha[:12]>.json   # one entry per persisted run (append-only)
-baseline.json                          # the current pinned baseline (§4)
+history/<date>-<repo_sha[:12]>.json              # sentinel lane (default; unchanged path)
+baseline.json                                     # sentinel lane's pinned baseline (§4)
+
+history-comprehensive/<date>-<repo_sha[:12]>.json # comprehensive lane (#431)
+baseline-comprehensive.json                       # comprehensive lane's pinned baseline (§4)
 ```
 
 ### 3.2 History entry shape
@@ -137,13 +163,34 @@ baseline.json                          # the current pinned baseline (§4)
 {
   "date": "2026-09-17",
   "repo_sha": "<full checked-out SHA>",
-  "corpus_id": "<sha256 digest of every corpus fixture id + content>",
+  "corpus_id": "<sha256 digest of every corpus fixture id + content, lane-specific — see below>",
   "adapter_id": "<reviewer/Skill revision identifier; defaults to repo_sha>",
   "recorded_at": "<UTC ISO-8601, when this script wrote the entry>",
-  "routine_metadata": { "mode": "full", "repo_sha": "...", "runtime_name": "...", "runtime_version": "...", "model_id": "...", "timestamp": "..." },
-  "results": [ /* runner-contract.md §6 per-case result, verbatim, one per corpus case */ ]
+  "routine_metadata": { "mode": "sentinel", "repo_sha": "...", "runtime_name": "...", "runtime_version": "...", "model_id": "...", "timestamp": "..." },
+  "results": [ /* runner-contract.md §6 per-case result, verbatim, one per corpus case */ ],
+  "lane": "sentinel"
 }
 ```
+
+**Keyed/named baseline identity (#431).** `lane` (`"sentinel"` or
+`"comprehensive"`) is the smallest addition that lets each scheduled lane
+maintain and compare against its own baseline: it is derived from — not a
+replacement for — `routine_metadata.mode`, canonicalized so the deprecated
+`full` alias always records `"sentinel"`
+(`benchmark_corpus_membership.canonical_lane`). No new identity concept
+was introduced beyond this one field; `corpus_id`, `repo_sha`, and
+`adapter_id` keep their pre-#431 meaning and shape. `corpus_id` itself is
+lane-specific: the sentinel lane keeps the pre-#431 digest (every
+top-level `*.yaml` id + content, non-recursive); the comprehensive lane
+digests the recursively-discovered `benchmark-case/v2` membership instead
+(`benchmark_history.py::comprehensive_corpus_digest`). Because
+comprehensive's membership is a strict superset of sentinel's (the 4
+top-level cases plus every sub-corpus fixture), the two `corpus_id`
+values are never equal for the same corpus tree — which is exactly what
+lets `regression-report.md`'s existing `compare()` fail-closed guard
+(`tests/reference/benchmark/benchmark_report.py::compare`) reject a
+sentinel-vs-comprehensive cross-comparison automatically, with no new
+guard code required.
 
 `corpus_id` mirrors `regression-report.md` §2's definition exactly (a
 digest that changes when a fixture changes, so a stale comparison is
@@ -168,35 +215,48 @@ applies the same guard before allowing a promotion.
 
 ### 3.3 Retention / rotation
 
-Keep the newest **90** raw history entries (`--retention`, overridable);
-older entries are pruned automatically as part of `record`. The history
-entry backing the **current pinned baseline is never pruned**, regardless
-of age, so a promoted baseline can never disappear out from under #339's
-comparisons. At one JSON file per day holding a small corpus's per-case
-results, 90 days plus one pinned baseline is a near-zero, bounded storage
-cost on a public repository — the retention window is a maintainer-tunable
-knob, not a hard architectural limit.
+Keep the newest **90** raw history entries **per lane** (`--retention`,
+overridable); older entries are pruned automatically as part of `record`,
+scoped to that entry's own lane directory (§3.1) — a comprehensive record
+never prunes a sentinel entry, or counts against sentinel's retention
+budget, and vice versa. Each lane's history entry backing its own current
+pinned baseline is never pruned, regardless of age, so a promoted baseline
+can never disappear out from under #339's comparisons. At one JSON file
+per run holding a corpus's per-case results, 90 entries plus one pinned
+baseline per lane is a near-zero, bounded storage cost on a public
+repository — the retention window is a maintainer-tunable knob, not a hard
+architectural limit.
 
 ## 4. Baseline policy
 
-**Chosen policy: a pinned reference baseline, refreshed only by an
-explicit maintainer action — never automatically on every nightly run.**
+**Chosen policy: a pinned reference baseline per lane, refreshed only by
+an explicit maintainer action — never automatically on every scheduled
+run.** Sentinel and comprehensive each maintain their own baseline
+artifact, independently; nothing here lets one lane's baseline stand in
+for the other's.
 
-- `baseline.json` holds one baseline artifact at a time, in
+- `baseline.json` (sentinel; unchanged path) and `baseline-comprehensive.json`
+  (comprehensive, #431) each hold one baseline artifact at a time, in
   `regression-report.md` §2's shape (`results`, `corpus_id`, `adapter_id`,
-  `created_at`), plus a `source_entry` pointer back to the history file it
-  was promoted from.
-- **Bootstrap.** The very first `record` call, when no `baseline.json`
-  exists yet, promotes that run to the baseline automatically — this is a
-  one-time initialization, not a recurring auto-advance, and is exactly
-  the "this run becomes the baseline, no comparison performed" state
-  #338's acceptance criteria requires. Every `record` call after that
-  leaves `baseline.json` untouched.
-- **Promotion.** `benchmark_history.py promote-baseline` is the only other
-  way `baseline.json` changes — an explicit, maintainer-run command (by
-  default promoting the most recent history entry, or a `--entry` given
-  explicitly), never invoked automatically by `record` or by any Routine
-  step.
+  `created_at`), plus a `source_entry` pointer back to that lane's history
+  file it was promoted from.
+- **Bootstrap, per lane.** The first `record` call *for a given lane*,
+  when that lane's baseline file does not exist yet, promotes that run to
+  the baseline automatically — this is a one-time initialization per lane,
+  not a recurring auto-advance, and is exactly the "this run becomes the
+  baseline, no comparison performed" state #338's acceptance criteria
+  requires, applied independently to sentinel and to comprehensive (the
+  comprehensive lane bootstraps its own baseline on its own first
+  successful run, unaffected by whether sentinel has already bootstrapped
+  or been promoted). Every `record` call after a lane's bootstrap leaves
+  that lane's baseline file untouched.
+- **Promotion, per lane.** `benchmark_history.py promote-baseline --lane
+  <sentinel|comprehensive>` is the only other way a lane's baseline file
+  changes — an explicit, maintainer-run command (by default promoting that
+  lane's most recent history entry, or a `--entry` given explicitly),
+  never invoked automatically by `record` or by any Routine step, and
+  scoped to the `--lane` given (default `sentinel`, matching the pre-#431
+  single-lane behavior).
 
 ### Why not last-known-good or a rolling baseline
 
@@ -235,16 +295,30 @@ path.
 
 ## 5. Interfaces for #339
 
-- `benchmark_history.py show-baseline --history-root <dir>` prints the
-  current baseline artifact (or `{"baseline_exists": false}` before the
-  first run), in exactly the shape `regression-report.md`'s `compare()`
-  expects as its baseline input.
-- Each `history/<date>-<sha>.json` file is a complete, self-contained
-  candidate run: #339 reads the newest one and diffs it against
-  `baseline.json` using the existing regression-report contract, unchanged.
+- `benchmark_history.py show-baseline --history-root <dir> --lane
+  <sentinel|comprehensive>` prints that lane's current baseline artifact
+  (or `{"baseline_exists": false, "lane": "..."}` before that lane's first
+  run), in exactly the shape `regression-report.md`'s `compare()` expects
+  as its baseline input. `--lane` defaults to `sentinel`, matching the
+  pre-#431 single-lane call shape.
+- Each lane's `history[-<lane>]/<date>-<sha>.json` file is a complete,
+  self-contained candidate run for that lane: #339 reads that lane's
+  newest entry and diffs it against that same lane's baseline file using
+  the existing regression-report contract, unchanged. #339's own
+  `scripts/benchmark/benchmark_drift.py` CLI takes already-extracted
+  baseline/candidate metrics files directly (`detect`/`sync --baseline-
+  file`/`--candidate-file`) rather than a history root, so no #339 code
+  change was required by #431 — only that whoever prepares those input
+  files for a given lane's Routine run reads that lane's own baseline
+  (`--lane sentinel` or `--lane comprehensive`), never the other lane's.
+  Verified: `benchmark_drift.py` performs no `corpus_id` check itself, so
+  the fail-closed cross-lane guard for a genuinely raw baseline-vs-
+  candidate pairing still lives one layer down, in `compare()` (§3.2
+  above) — this is unchanged by #431 and was true before it.
 - Nothing here computes `has_regressions`, dedupes findings across
-  nights, or opens/updates/closes a GitHub issue — that is entirely
-  #339's job, reusing #55/#56/#57 unchanged (architecture model §6).
+  runs, or opens/updates/closes a GitHub issue — that is entirely
+  #339's job, reusing #55/#56/#57 unchanged (architecture model §6),
+  applied once per lane with that lane's own tracking issue(s).
 
 ## Status and canonical home
 

@@ -17,7 +17,9 @@ from pathlib import Path
 from scripts.benchmark import benchmark_history as history
 
 
-def _entry(*, date: str, repo_sha: str, corpus_id: str = "corpus-abc") -> history.HistoryEntry:
+def _entry(
+    *, date: str, repo_sha: str, corpus_id: str = "corpus-abc", lane: str = "sentinel"
+) -> history.HistoryEntry:
     return history.HistoryEntry(
         date=date,
         repo_sha=repo_sha,
@@ -26,6 +28,7 @@ def _entry(*, date: str, repo_sha: str, corpus_id: str = "corpus-abc") -> histor
         recorded_at=f"{date}T00:00:00+00:00",
         routine_metadata={"mode": "full", "repo_sha": repo_sha},
         results=({"id": "case-1", "input_kind": "patch", "status": "executed", "produced_findings": []},),
+        lane=lane,
     )
 
 
@@ -147,6 +150,102 @@ class LoadRawCasesTest(unittest.TestCase):
         )
         with self.assertRaises(history.HistoryError):
             history.load_raw_cases(path)
+
+
+class KeyedBaselineLaneTest(unittest.TestCase):
+    """Issue #431: sentinel and comprehensive each get their own history
+    directory and baseline artifact, independently keyed and pruned, with
+    the default (sentinel) lane's on-disk paths unchanged from before this
+    issue for backward compatibility."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+
+    def test_default_lane_uses_pre_431_paths(self) -> None:
+        outcome = history.record_run(self.root, _entry(date="2026-09-01", repo_sha="a" * 40, lane="sentinel"))
+        self.assertTrue((self.root / "baseline.json").exists())
+        self.assertEqual(outcome.entry_path.parent, self.root / "history")
+
+    def test_comprehensive_lane_gets_its_own_history_dir_and_baseline_file(self) -> None:
+        history.record_run(
+            self.root, _entry(date="2026-09-01", repo_sha="a" * 40, corpus_id="corpus-sentinel", lane="sentinel")
+        )
+        outcome = history.record_run(
+            self.root,
+            _entry(date="2026-09-01", repo_sha="a" * 40, corpus_id="corpus-comprehensive", lane="comprehensive"),
+        )
+        self.assertTrue((self.root / "baseline-comprehensive.json").exists())
+        self.assertEqual(outcome.entry_path.parent, self.root / "history-comprehensive")
+        # Both bootstrap independently — a comprehensive record never
+        # touches the sentinel baseline, and vice versa.
+        sentinel_baseline = history.load_baseline(self.root, lane="sentinel")
+        comprehensive_baseline = history.load_baseline(self.root, lane="comprehensive")
+        self.assertEqual(sentinel_baseline["corpus_id"], "corpus-sentinel")
+        self.assertEqual(comprehensive_baseline["corpus_id"], "corpus-comprehensive")
+
+    def test_lanes_cannot_cross_compare_by_construction(self) -> None:
+        # Each lane's baseline carries its own corpus_id; a caller that
+        # accidentally diffs one lane's candidate against the other lane's
+        # baseline is caught downstream by benchmark_report.compare()'s
+        # existing corpus_id fail-closed guard — this test only proves the
+        # two corpus_ids are never equal to begin with (issue #431's
+        # comprehensive membership is a strict superset of sentinel's).
+        from scripts.benchmark import benchmark_history as bh
+
+        corpus_dir = self.root / "corpus"
+        corpus_dir.mkdir()
+        for name, content in [
+            ("s1.yaml", "format: benchmark-case/v2\nid: s1\n"),
+            ("sub/s2.yaml", "format: benchmark-case/v2\nid: s2\n"),
+        ]:
+            path = corpus_dir / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+
+        sentinel_id = bh.corpus_digest_for_lane("sentinel", corpus_dir)
+        comprehensive_id = bh.corpus_digest_for_lane("comprehensive", corpus_dir)
+        self.assertNotEqual(sentinel_id, comprehensive_id)
+
+    def test_pruning_one_lane_never_touches_the_other(self) -> None:
+        for day, sha in [("2026-01-01", "a"), ("2026-01-02", "b"), ("2026-01-03", "c")]:
+            history.record_run(
+                self.root, _entry(date=day, repo_sha=sha * 40, lane="sentinel"), retention=1
+            )
+        history.record_run(
+            self.root, _entry(date="2026-01-01", repo_sha="d" * 40, lane="comprehensive"), retention=90
+        )
+
+        sentinel_entries = sorted(p.name for p in (self.root / "history").glob("*.json"))
+        comprehensive_entries = sorted(p.name for p in (self.root / "history-comprehensive").glob("*.json"))
+        # Sentinel's retention=1 pruned everything except the newest entry
+        # and the (bootstrap) baseline source (2026-01-01).
+        self.assertEqual(len(sentinel_entries), 2)
+        # Comprehensive's single entry survives untouched, regardless of
+        # sentinel's own retention/pruning activity.
+        self.assertEqual(len(comprehensive_entries), 1)
+
+    def test_promote_baseline_is_lane_scoped(self) -> None:
+        history.record_run(
+            self.root, _entry(date="2026-09-01", repo_sha="a" * 40, corpus_id="corpus-sentinel-1", lane="sentinel")
+        )
+        history.record_run(
+            self.root,
+            _entry(date="2026-09-01", repo_sha="a" * 40, corpus_id="corpus-comprehensive-1", lane="comprehensive"),
+        )
+        history.record_run(
+            self.root, _entry(date="2026-09-02", repo_sha="b" * 40, corpus_id="corpus-sentinel-2", lane="sentinel")
+        )
+
+        artifact = history.promote_baseline(self.root, lane="sentinel")
+
+        self.assertEqual(artifact["corpus_id"], "corpus-sentinel-2")
+        self.assertEqual(history.load_baseline(self.root, lane="sentinel")["corpus_id"], "corpus-sentinel-2")
+        # The comprehensive baseline is untouched by a sentinel promotion.
+        self.assertEqual(
+            history.load_baseline(self.root, lane="comprehensive")["corpus_id"], "corpus-comprehensive-1"
+        )
 
 
 class ShowBaselineCliTest(unittest.TestCase):

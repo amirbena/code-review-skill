@@ -53,14 +53,25 @@ inspects its stdout.
 
 Built on `run_benchmark.py`'s existing `--case-id` surface (§9 of
 `runtime-execution-contract.md`'s parent contract; no new selection logic
-is added here):
+is added here) plus, for `comprehensive`, programmatic corpus-membership
+discovery added by #431
+(`scripts/benchmark/benchmark_corpus_membership.py`):
 
 | Mode | Case ids | Use |
 | --- | --- | --- |
 | `smoke` | one or a few explicit `--case-id` values | sanity-check the Routine itself |
 | `selected` | whatever `--case-id` list is handed to it (e.g. a future #334 Top-K output) | PR-time-adjacent observability, never a merge gate |
-| `full` | none — runs the whole corpus | nightly full-corpus use (#338) |
+| `sentinel` | none — runs the whole `--corpus-dir` (non-recursive: the 4 permanent canonical cases) | scheduled sentinel lane, every 3 days (#431) |
+| `comprehensive` | none — runs every `benchmark-case/v2` fixture discovered recursively under `--corpus-dir` | scheduled comprehensive lane, weekly/Friday (#431) |
+| `full` | none — **deprecated fixed synonym for `sentinel`** (#431) | kept, unchanged in behavior, only for backward compatibility with existing Routine prompt configuration; emits a stderr deprecation notice; new configuration must use `sentinel` explicitly. Never means `comprehensive`. |
 | `auth-check` | none — no benchmark run | GitHub auth/issue-permission smoke test (§5) |
+
+`sentinel` and `comprehensive` are the two-tier scheduled execution lanes
+`docs/benchmark/corpus/README.md` and
+`docs/benchmark/nightly-history-and-baseline.md` §2 define; `full`'s
+pre-#431 ambiguity (it happened to only ever resolve to the 4 top-level
+cases, because `--corpus-dir`'s glob is non-recursive) is resolved by this
+table, not left as a second live meaning.
 
 ## 3. Positive completion verification
 
@@ -191,7 +202,7 @@ that executes automatically):
 2. Install dev dependencies (pip install -r requirements-dev.txt).
 3. Run:
    python3 scripts/benchmark/run_benchmark_routine.py \
-     --mode <smoke|selected|full> \
+     --mode <smoke|selected|sentinel|comprehensive|auth-check> \
      [--case-id <id> ...] \
      --evidence-issue <tracking issue number> \
      --model-id <the model backend this Routine session is running as>
@@ -201,6 +212,31 @@ that executes automatically):
 5. If it exits zero, the evidence comment has already been posted by the
    script itself. Nothing further to do.
 ```
+
+### 9.1 Two lanes, two Cloud Routine schedules (#431)
+
+The sentinel and comprehensive lanes (§2.1) are **two separate Cloud
+Routine schedule configurations**, each pasting the template above with
+its own `--mode` and its own recurrence, both targeting a **01:00
+Israel-local start / 04:00 maximum-completion** window
+(`docs/benchmark/nightly-history-and-baseline.md` §2). Timezone/DST
+handling for that window is entirely a Cloud Routine scheduling-
+configuration responsibility — set the schedule in Israel local time (or
+in UTC with the correct seasonal offset) in the Routine's own product
+surface; nothing in `scripts/benchmark/` computes, stores, or adjusts for
+a timezone.
+
+| Lane | `--mode` | Recurrence |
+| --- | --- | --- |
+| Sentinel | `sentinel` | every 3 days |
+| Comprehensive | `comprehensive` | weekly, Friday night |
+
+**Collision is expected and never deduplicated.** Every 3 days and weekly
+will periodically land on the same night; when they do, both Routine runs
+execute, verify, and post evidence independently — each against its own
+`--evidence-issue` thread and its own keyed baseline
+(`nightly-history-and-baseline.md` §4). This issue does not merge, skip,
+or otherwise deduplicate a same-night collision.
 
 ## 10. Non-goals (restated from the parent Issue)
 
