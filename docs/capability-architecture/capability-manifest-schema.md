@@ -91,6 +91,17 @@ Per issue #404's non-goals and §J.2 Step 1:
 - It does not change any runtime loading behavior — nothing reads these
   manifests at review time.
 
+`files:` is whole-file granularity — it cannot express that a single file
+is split in substance between two capabilities. One case exists today:
+`shared/templates/finding.md` is claimed by
+`capabilities/finding-placement-derivation/capability.yaml`, but per
+§B.2/§B.4 most of that file's words (the finding's fields and quality bar)
+belong to `finding-contract`, an always-resident capability not yet
+manifested because it is out of scope for this issue. Do not read
+`finding-placement-derivation`'s `files:` entry as exclusive ownership of
+`finding.md` until `finding-contract`'s own manifest is authored and the
+two are reconciled.
+
 ## Validation
 
 `tests/policy/governance/test_capability_manifest_schema.py` asserts,
