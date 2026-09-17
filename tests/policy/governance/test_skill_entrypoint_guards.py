@@ -67,8 +67,13 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # shared/policies/agent-delegation.md; a one-line no-spawn_agent
 # statement in local, section 4) raised local 264 -> 268 and github
 # 382 -> 394.
-LOCAL_MAX_LINES = 268
-GITHUB_MAX_LINES = 394
+# Issue #406 (reconciling SKILL.md section 2 / metadata/skill.yaml against
+# the capability manifest) added explicit section-2 links to the shared
+# `finding.md`/`finding-rendering.md` templates on both Skills — previously
+# packaged but named in neither file — raising local 268 -> 273 and
+# github 394 -> 400.
+LOCAL_MAX_LINES = 273
+GITHUB_MAX_LINES = 400
 
 
 def _norm(path) -> str:
