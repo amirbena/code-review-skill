@@ -75,18 +75,26 @@ as the second capability to prove the pattern generalizes (per
 `specialist-depth-continuation-checkpoint.md`, #412). Both
 `shared/policies/repository-expansion.md` and
 `shared/policies/large-pr-partitioning.md` gained their own "Conditional
-loading: fail-closed" sections stating that each file loads only once its
-own predicate (trigger evaluation, or diff-size measurement) has already
-been decided from `review-scope.md`'s resident evidence, and that
-ambiguous or failed evaluation loads the capability rather than skipping
-it. `repository-expansion.md`'s pre-existing "always active" framing is
-reconciled, not contradicted: it describes the trigger-evaluation
-predicate itself, which stays always active, not whether that file is
-opened — only the file's deeper ring-expansion procedure is
-`on-activation`. `capability.yaml`'s `activation` and `never` lists
-record the same fail-closed clause. This is scoped to `scale` alone, per
-#447's Non-Goals; it does not change `specialist-depth`'s `requires: [...
-scale]` dependency or any other capability's loading behavior.
+loading: fail-closed" sections, and that section's shape differs slightly
+between the two, unlike `specialist-depth`'s single, uniformly resident
+predicate: `large-pr-partitioning.md`'s diff-size-threshold predicate is
+fully resident (decidable from `review-scope.md`'s own evidence without
+investigation), but `repository-expansion.md`'s trigger-firing predicate
+is only partly so — recognizing which trigger *type* a change plausibly
+implicates is resident, while confirming a trigger actually *fires*
+(an evidenced consumer, per that file's own "evidence-based, not
+name-based" rule) can require the file's own ring-1 investigation to
+resolve. An inconclusive or not-yet-investigated firing determination is
+itself the ambiguous case, and fails closed to performing that
+investigation, never to silently treating the trigger as unfired.
+`repository-expansion.md`'s pre-existing "always active" framing is
+reconciled, not contradicted: it describes the trigger-*type*-recognition
+predicate, which stays always active, not whether that file is opened —
+only the file's deeper ring-expansion investigation is `on-activation`.
+`capability.yaml`'s `activation` and `never` lists record the same
+fail-closed clause. This is scoped to `scale` alone, per #447's
+Non-Goals; it does not change `specialist-depth`'s `requires: [... scale]`
+dependency or any other capability's loading behavior.
 
 ## Purpose
 

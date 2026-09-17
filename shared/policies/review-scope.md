@@ -552,12 +552,13 @@ triggers fired, how far each was followed, and the concrete locations
 inspected are emitted with the review. The fixed trigger catalog, the
 ring procedure, the depth-scaled ceiling, and the reporting requirement
 are owned by [`repository-expansion.md`](repository-expansion.md) and
-are not restated here. That trigger-evaluation predicate is decidable
-entirely from this base pass's own resident trigger catalog above —
-evaluating it never requires opening `repository-expansion.md` — and
-fails closed: ambiguity or evaluation failure loads the capability rather
-than skipping it, per `repository-expansion.md`'s "Conditional loading:
-fail-closed."
+are not restated here. Recognizing which trigger type a change plausibly
+implicates is decidable entirely from this base pass's own resident
+trigger catalog above; confirming a trigger actually fires can require
+`repository-expansion.md`'s own ring-1 investigation, and an inconclusive
+or not-yet-investigated firing determination fails closed: it loads the
+capability rather than skipping it, per `repository-expansion.md`'s
+"Conditional loading: fail-closed."
 
 This is not a second scope model either: it governs only *how far* an
 investigation looks beyond the diff to gather evidence, never what counts

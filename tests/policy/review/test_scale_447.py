@@ -84,20 +84,45 @@ class RepositoryExpansionConditionalLoadingTests(unittest.TestCase):
     def test_loads_only_once_predicate_decided(self) -> None:
         self.assertIn(
             "This file loads only once a trigger has already been "
-            "decided to have fired; it is never opened as a "
-            "precondition to deciding whether one fired",
+            "decided to have fired, or its firing cannot yet be "
+            "confidently ruled out",
             self.text,
         )
 
-    def test_predicate_decidable_without_opening_this_file(self) -> None:
+    def test_trigger_type_recognition_decidable_without_opening_this_file(self) -> None:
         self.assertIn(
-            "so evaluating it never requires opening this file",
+            "since that recognition is decidable from the diff alone",
+            self.text,
+        )
+
+    def test_confirming_firing_may_require_ring_1_investigation(self) -> None:
+        # The soundness fix: unlike a resident predicate, confirming a
+        # recognized trigger actually fires (an evidenced consumer, per
+        # "Expansion triggers (fixed catalog)") can require this file's
+        # own ring-1 investigation -- it is not always resident-decidable
+        # the way specialist-depth's or large-pr-partitioning's predicate
+        # is, and an inconclusive determination must never be read as "no
+        # consumer visible => unfired".
+        self.assertIn(
+            "can require this file's own ring-1 investigation to resolve",
+            self.text,
+        )
+        self.assertIn(
+            "never to silently treating the trigger as unfired for lack "
+            "of a visible consumer in the diff",
             self.text,
         )
 
     def test_fail_closed_ambiguity_loads_never_skips(self) -> None:
         self.assertIn(
             "Ambiguity resolves to load, never to skip",
+            self.text,
+        )
+
+    def test_fail_closed_covers_not_yet_investigated_determination(self) -> None:
+        self.assertIn(
+            "including because the evidenced-consumer determination has "
+            "not yet been investigated",
             self.text,
         )
 
@@ -156,19 +181,22 @@ class ReviewScopeReferencesFailClosedTests(unittest.TestCase):
 
     def test_repository_expansion_predicate_decidable_from_resident_evidence(self) -> None:
         self.assertIn(
-            "That trigger-evaluation predicate is decidable entirely "
-            "from this base pass's own resident trigger catalog above",
+            "Recognizing which trigger type a change plausibly implicates "
+            "is decidable entirely from this base pass's own resident "
+            "trigger catalog above",
             self.text,
         )
         self.assertIn(
-            "evaluating it never requires opening repository-expansion.md",
+            "confirming a trigger actually fires can require "
+            "repository-expansion.md's own ring-1 investigation",
             self.text,
         )
 
     def test_repository_expansion_fails_closed_reference(self) -> None:
         self.assertIn(
-            "fails closed: ambiguity or evaluation failure loads the "
-            "capability rather than skipping it",
+            "not-yet-investigated firing determination fails closed: it "
+            "loads the capability rather than skipping it, per "
+            "repository-expansion.md's",
             self.text,
         )
 
@@ -186,7 +214,8 @@ class ReviewScopeReferencesFailClosedTests(unittest.TestCase):
     def test_large_pr_partitioning_fails_closed_reference(self) -> None:
         self.assertIn(
             "fails closed: ambiguity or evaluation failure loads the "
-            "capability rather than skipping it",
+            "capability rather than skipping it, per "
+            "large-pr-partitioning.md's",
             self.text,
         )
 
