@@ -1,0 +1,10 @@
+[
+  {"sample_id": "reconstructed-pr-101", "selected_case_ids": ["analogue-placement-test-file-split-clean", "cfv-unproven-regression-not-asserted", "api-compat-remove-field-breaking"], "regressed_case_ids": ["cfv-unproven-regression-not-asserted"]},
+  {"sample_id": "reconstructed-pr-102", "selected_case_ids": ["analogue-placement-test-file-split-clean", "api-compat-rename-response-property-breaking"], "regressed_case_ids": ["api-compat-rename-response-property-breaking"]},
+  {"sample_id": "reconstructed-pr-103", "selected_case_ids": ["analogue-placement-test-file-split-clean", "cfv-unproven-regression-not-asserted"], "regressed_case_ids": ["cfv-disconfirmed-severe-candidate-dropped"]},
+  {"sample_id": "reconstructed-pr-104", "selected_case_ids": ["cfv-unproven-regression-not-asserted", "api-compat-remove-field-breaking"], "regressed_case_ids": ["api-compat-remove-field-breaking"]},
+  {"sample_id": "reconstructed-pr-105", "selected_case_ids": ["analogue-placement-test-file-split-clean", "api-compat-remove-field-breaking"], "regressed_case_ids": []},
+  {"sample_id": "reconstructed-pr-106", "selected_case_ids": ["analogue-placement-test-file-split-clean", "api-compat-optional-to-required-breaking"], "regressed_case_ids": ["api-compat-optional-to-required-breaking", "cfv-unproven-regression-not-asserted"]},
+  {"sample_id": "reconstructed-pr-107", "selected_case_ids": ["analogue-placement-test-file-split-clean", "api-compat-rename-response-property-breaking"], "regressed_case_ids": ["api-compat-rename-response-property-breaking"]},
+  {"sample_id": "reconstructed-pr-108", "selected_case_ids": ["analogue-placement-test-file-split-clean", "cfv-unproven-regression-not-asserted", "api-compat-remove-field-breaking"], "regressed_case_ids": ["api-compat-remove-field-breaking"]}
+]
