@@ -116,7 +116,11 @@ body:
     id: dependencies
     attributes:
       label: Dependencies
-      description: Supports parent/sub-issue structure. Use GitHub native sub-issues when available.
+      description: >-
+        Also create the matching native GitHub parent/sub-issue or
+        blocked-by/blocking relationship — see
+        policies/github-issue-pr-authoring.md, "Native GitHub
+        relationships".
       value: |
         Depends on: none
         Blocks: none

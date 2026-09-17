@@ -198,6 +198,16 @@ canonical, detailed rule lives in the policy named after it.
   contributor child Issues from larger Epics, and preserves maintainer
   ownership of semantic and architectural contracts. Canonical:
   [`policies/contribution-ownership-policy.md`](policies/contribution-ownership-policy.md).
+- **Native GitHub relationships for declared Issue dependencies.** An
+  agent that creates or materially restructures an Issue's declared
+  `Parent:`/`Children:`/`Depends on:`/`Blocks:` fields also creates the
+  matching native GitHub parent/sub-issue or dependency relationship in
+  the same operation, verifies it by re-fetching afterward, never
+  represents a dependency as a parent/sub-issue relationship (or vice
+  versa), and leaves a generic `Related:` reference or an ambiguous/
+  cyclic/missing-Issue relationship as prose only. Canonical:
+  [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md),
+  "Native GitHub relationships".
 
 ---
 
@@ -251,7 +261,7 @@ normative).
 | Commit, push, PR creation and assignment, merge strategy, merge safety, squash cleanup, destructive-Git prohibitions | [`policies/git-pr-merge-policy.md`](policies/git-pr-merge-policy.md) |
 | Clean task end state, Python cache/bytecode cleanup, shell/PowerShell script parity, running repository validation & packaging | [`policies/validation-and-clean-exit.md`](policies/validation-and-clean-exit.md) |
 | Repository documentation (`README.md`, `docs/`, Skill `README.md`) — structure and reading experience | [`policies/documentation-policy.md`](policies/documentation-policy.md) |
-| Content of agent-authored GitHub Issues and Pull Requests — how much detail belongs in the body, per-field size guidance, PR summary shape, summarized validation, linking canonical docs instead of duplicating them, the local release-intent pre-flight check before `gh pr create` / `gh pr edit` | [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md) |
+| Content of agent-authored GitHub Issues and Pull Requests — how much detail belongs in the body, per-field size guidance, PR summary shape, summarized validation, linking canonical docs instead of duplicating them, the local release-intent pre-flight check before `gh pr create` / `gh pr edit`, creating and verifying native GitHub parent/sub-issue and dependency relationships for declared `Parent`/`Children`/`Depends on`/`Blocks` fields | [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md) |
 | Ownership and contributor-suitability classification of GitHub Issues — contribution classes, classification criteria (blast radius, not patch size), assignment behavior, Epic decomposition, sensitive areas excluded from first issues, handling ambiguous cases | [`policies/contribution-ownership-policy.md`](policies/contribution-ownership-policy.md) |
 | CHANGELOG category selection and its deterministic SemVer intent | [`policies/release-changelog-policy.md`](policies/release-changelog-policy.md) |
 | Skill behavior, Skill packaging, runbook / policy / template ownership, runtime adapters, portability of packaged resources | [`policies/skill-development-policy.md`](policies/skill-development-policy.md) |
