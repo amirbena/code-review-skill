@@ -483,12 +483,16 @@ and no packaged Skill resource depends on them.
   regression comparison in
   [`benchmark/regression-report.md`](benchmark/regression-report.md)
   without gating it. Every reference metric under `tests/reference/` is
-  test-only; nothing benchmark is packaged. A dedicated, informational
-  PR-level CI check wiring the existing benchmark execution
-  (`scripts/benchmark/run_benchmark.py`, #250) into
-  `.github/workflows/benchmark-check.yml`, independent from
-  `release-worthiness.yml`, is
-  [`benchmark/ci-integration.md`](benchmark/ci-integration.md) (#255).
+  test-only; nothing benchmark is packaged. PR-time benchmark relevance is
+  determined deterministically by the canonical taxonomy/inverted index
+  ([`benchmark/taxonomy.md`](benchmark/taxonomy.md), #333) and the Top-K
+  selector ([`benchmark/selection.md`](benchmark/selection.md), #334);
+  the earlier dedicated PR-level CI check
+  (`.github/workflows/benchmark-check.yml`, #255) that separately wired
+  `scripts/benchmark/run_benchmark.py` (#250) into a GitHub Actions check
+  has been retired (#420) — there is no independent GitHub Actions
+  benchmark execution path outside the maintainer-controlled Class 2
+  Cloud Routine (`benchmark/cloud-routine-integration.md`, #415).
   Repository-development docs live in the
   [`benchmark/`](benchmark/README.md) directory.
 - **Repository-intelligence model** — the candidate-architecture

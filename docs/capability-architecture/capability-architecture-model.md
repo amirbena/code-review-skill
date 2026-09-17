@@ -261,12 +261,18 @@ it has three structural facts that any decomposition must respect:
   its own approval to satisfy `local-code-review`'s invocation-approval
   policy. Any rendering change silently breaks parsing.
 
-Separately, `scripts/benchmark/benchmark_ci_classifier.py` hardcodes an
-applicability allowlist (`shared/`, `skills/`, `docs/benchmark/`,
-`tests/reference/benchmark/`) that is pinned by prose in
-`docs/benchmark/ci-integration.md` and asserted by a policy test. **Any
-path move in a capability refactor silently changes CI applicability
-unless the classifier is updated in the same change.**
+Separately, `docs/benchmark/taxonomy.md`'s `affected_surface` dimension
+(`tests/reference/benchmark/benchmark_taxonomy.py`) hardcodes a path
+prefix allowlist (`shared/`, `skills/`, `docs/benchmark/`,
+`tests/reference/benchmark/`, plus the runtime-adapter exact files) that
+is pinned by prose in that doc. (This section originally described
+`scripts/benchmark/benchmark_ci_classifier.py`'s equivalent allowlist,
+pinned by `docs/benchmark/ci-integration.md`; that CI workflow and
+classifier were retired by
+[#420](https://github.com/amirbena/code-review-skill/issues/420), and
+the taxonomy's own allowlist is the analogous hardcoded surface today.)
+**Any path move in a capability refactor silently changes PR-time
+classification unless the taxonomy is updated in the same change.**
 
 ### A.8 What is *not* wrong
 
@@ -812,7 +818,7 @@ Assessed against the measured coupling, not against general principle.
 | Cross-repo changes | None. The dominant change shape today (policy + registration + test + docs in one commit) needs no coordination. |
 | Versioning | One version, as today. `scripts/release/` and its SemVer intent policy keep working unmodified. |
 | Releases | Unchanged: two archives from one manifest. Capability granularity becomes a manifest concern, not a release concern. |
-| CI complexity | Lowest. `validate.yml` and `benchmark-check.yml` keep working. The benchmark CI classifier's hardcoded prefix list needs one coordinated update per path move — see §K. |
+| CI complexity | Lowest. `validate.yml` keeps working. (`benchmark-check.yml`, referenced here when this record was written, was retired by #420; today's PR-time taxonomy's hardcoded prefix list needs one coordinated update per path move — see §K.) |
 | Contributor workflow | Preserved, including the `(#issue) (#pr)` traceability convention and the contributor-owned issue classes. Capability boundaries make *more* work contributor-ownable, because a capability is a bounded blast radius. |
 | Governance | `AGENTS.md` precedence and CODEOWNERS keep working; per-capability ownership becomes expressible. |
 | Dependency management | No package manager needed — dependencies are markdown links plus a manifest. |
@@ -1459,11 +1465,15 @@ which established this discipline for the file-size pass:
 - One step per pull request, with the existing validation gate
   (`python3 -m unittest discover -s tests -t .`, both metadata validators,
   both `package-skills` scripts, `git diff --check`).
-- **`benchmark_ci_classifier.py`'s path allowlist is updated in the same
-  commit as any path move**, because it is pinned by prose in
-  `docs/benchmark/ci-integration.md` and asserted by
-  `tests/policy/benchmark/test_benchmark_ci_docs.py`. A path move without
-  it silently changes CI applicability.
+- **The taxonomy's hand-maintained path prefixes
+  (`docs/benchmark/taxonomy.md` §2.2/§2.4,
+  `tests/reference/benchmark/benchmark_taxonomy.py`) are updated in the
+  same commit as any path move.** (This section originally named the
+  #255 `benchmark_ci_classifier.py` allowlist as the thing a path move
+  could silently invalidate; that workflow and classifier were retired by
+  #420 — the taxonomy's own prefix lists are the analogous hardcoded
+  surface today.) A path move without updating them silently changes
+  PR-time classification/selection.
 
 ### J.2 The best first extraction — and why it is not a capability
 
@@ -1516,7 +1526,9 @@ Step 3 — Extract specialist-depth as the first lazy capability
     capabilities/specialist-depth/, with their five corpora and tests.
   · Replace review-scope.md's hand-written hand-offs to them with a
     generated router entry.
-  · Update benchmark_ci_classifier.py's allowlist in the same commit.
+  · Update taxonomy.md's/benchmark_taxonomy.py's path prefixes in the same
+    commit (the #255 CI classifier this step originally named was
+    retired by #420).
   Risk: moderate — first real move. Rollback: git revert; the corpora and
     tests move as one unit, so a revert is complete.
   Proves: the loading architecture, on the least-entangled material.
@@ -1583,7 +1595,7 @@ Step N — Adapter thinning (last, deliberately)
 | **Router becomes the new monolith** | **High — already happened once** with `review-scope.md` after #288 | §C.3's four mechanisms: word budget with a test, predicates-not-procedures, generated registration, no links to capability bodies | If the budget test fails twice in a row, stop and re-split rather than raising the budget |
 | **Duplicated policies during migration** | Medium | Never copy — move. A capability's canonical rule has exactly one home throughout, per the existing `AGENTS.md` invariant. Issue #80 ("Detect canonical-rule duplication risks") is the mechanical check | Single-commit revert |
 | **Safety boundary becomes bypassable** | **Low but catastrophic** | §C.4's grant/deny split. `corpus/mutation-boundary/` (28 cases) and `corpus/delegation-spawn/` (23) must pass unchanged at every step; the deny half is never lazy | Any failure here blocks the step outright — this is the one non-negotiable gate |
-| **CI applicability silently changes** | **High — the mechanism is hardcoded** | `benchmark_ci_classifier.py`'s allowlist updated in the same commit as every path move, per §J.1 | Its doc-conformance test fails loudly if prose and code diverge |
+| **PR-time classification/selection silently changes** | **High — the mechanism is hardcoded** | Taxonomy path prefixes (`docs/benchmark/taxonomy.md`, `benchmark_taxonomy.py`) updated in the same commit as every path move, per §J.1 (the #255 `benchmark_ci_classifier.py` this risk originally named was retired by #420) | Its unit tests fail loudly if prose and code diverge |
 | **Packaging drift** | Medium | Step 1's byte-identical assertion is the guard, and it stays as a regression test afterward | Checked-in manifest remains valid without the generator |
 | **Version skew** | **Not applicable** | Model A keeps one version. This risk is a reason Models B and C were rejected, not a risk of the recommendation | — |
 | **Cross-repo overhead** | **Not applicable** | Same as above | — |

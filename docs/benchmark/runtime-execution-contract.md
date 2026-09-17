@@ -105,10 +105,12 @@ contributor or merge prerequisite.** Concretely:
 
 - It must never become reachable from contributor PR automation, and must
   never become a required check for a normal contributor PR or merge —
-  [`ci-integration.md`](ci-integration.md)'s existing non-blocking,
-  runtime-unavailable-tolerant contributor path is the permanent,
-  intended state for every contributor, not a temporary bootstrapping gap
-  pending this class landing.
+  [`selection.md`](selection.md)'s informational-only, non-blocking
+  PR-time Top-K selection (#334) is the permanent, intended state for
+  every contributor, not a temporary bootstrapping gap pending this class
+  landing. There is no independent GitHub Actions benchmark execution
+  path from the retired #255 workflow for this class to eventually
+  replace.
 - A maintainer who never configures any Class 2 execution still has a
   fully functional repository and contribution workflow — nothing in this
   class is load-bearing for ordinary repository use.
@@ -199,9 +201,10 @@ A candidate runtime, in either class, must reliably:
 - stay reproducible: runtime/model version pinned and recorded (§5);
 - never render a `runtime-unavailable` outcome as a silent green gate —
   it must stay a distinct, visible, non-passing state (as
-  [`ci-integration.md`](ci-integration.md) §4 already does for today's
-  no-runtime-configured case, and as §2.2's future Routine integration
-  must for the maintainer-controlled class);
+  [`selection.md`](selection.md)'s explicit `insufficient-coverage` and
+  runtime-unavailable outcomes already do for today's PR-time path, and as
+  §2.2's future Routine integration must for the maintainer-controlled
+  class);
 - stay swappable behind the `ReviewerAdapter` boundary, so changing
   providers later never requires touching the runner, matcher, metrics,
   selector, or nightly pipeline.
@@ -330,8 +333,13 @@ pipeline, not opened by this revision.
 
 ## Related
 
-[`ci-integration.md`](ci-integration.md) (#255) is the existing PR-level
-CI check whose contributor-facing, non-blocking behavior is now the
+The PR-level CI check #255 introduced
+(`.github/workflows/benchmark-check.yml`,
+`scripts/benchmark/benchmark_ci_classifier.py`) has been retired
+([#420](https://github.com/amirbena/code-review-skill/issues/420)):
+[`selection.md`](selection.md) (#334, over #333's taxonomy/index) is now
+the contributor-facing, non-blocking PR-time path, and its
+informational-only, never-a-merge-prerequisite behavior is the
 **permanent** state (§2.2), not a gap this contract's Class 1 runtime was
 meant to eventually fill. The fuller cross-component
 architecture — the canonical dependency DAG, the nine architecture layers,
