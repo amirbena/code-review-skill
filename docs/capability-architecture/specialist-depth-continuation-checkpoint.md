@@ -115,12 +115,12 @@ hand-authored predicate section and one manifest file.
 `capability-architecture-model.md` §J.2 chose `specialist-depth` first
 *because* it is the easiest case, not because it is typical:
 
-> "**`specialist-depth`** | **Never named by either `SKILL.md`; zero
-> co-change among members; identical link signature; explicit pre-existing
+> `specialist-depth`: **never named by either `SKILL.md`; zero co-change
+> among members; identical link signature; explicit pre-existing
 > activation/composition contract; five dedicated corpora; a dedicated
 > composition corpus (A–G) that tests the routing decision itself.** If
 > this one cannot be extracted cleanly, the architecture is wrong — which
-> is exactly what a first step should be able to tell you."
+> is exactly what a first step should be able to tell you.
 
 The same table names concrete reasons the other candidates are harder,
 not merely different: `publication-github` touches the mutation/
