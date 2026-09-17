@@ -213,11 +213,21 @@ class GhCliIssueClient:
             Path(path).unlink(missing_ok=True)
 
     def list_labeled_issues(self, label: str, *, state: str = "open") -> list[IssueRecord]:
-        raw = self._gh(
-            "issue", "list", "--label", label, "--state", state,
-            "--json", "number,body,labels", "--limit", "200",
-        )
-        items = json.loads(raw) if raw else []
+        # `gh issue list --limit N` fetches up to N results total (paginating
+        # internally as needed), not N per page — so a fixed limit silently
+        # truncates once more than N matching issues exist. Re-fetch with a
+        # doubling limit until a response returns fewer than requested,
+        # which proves nothing was left out.
+        limit = 200
+        while True:
+            raw = self._gh(
+                "issue", "list", "--label", label, "--state", state,
+                "--json", "number,body,labels", "--limit", str(limit),
+            )
+            items = json.loads(raw) if raw else []
+            if len(items) < limit:
+                break
+            limit *= 2
         return [
             IssueRecord(
                 number=item["number"],
