@@ -1320,12 +1320,13 @@ credited with removing it.**
 ### H.5 Inherited boundaries this record does not reopen
 
 `docs/benchmark-measurement-architecture/` is authoritative and unchanged:
-the nine layers and their single owners, the execution-class split
-(automatic/repository-triggered vs. maintainer-controlled), the DAG across
-#329–#339 and #182/#131/#130, the four boundary statements
-(telemetry ≠ benchmark ground truth ≠ analytics ≠ learning), and the
-cross-cutting invariant **"no duplicate reviewer/runner/evaluator
-implementations."** That last one is a direct constraint on this record:
+the nine layers and their single owners (two of which — analytics #131
+and learning #130 — are closed `not planned` as product-layer
+capabilities), the execution-class split (automatic/repository-triggered
+vs. maintainer-controlled), the DAG across #329–#339 and #182, the
+telemetry ≠ benchmark ground truth boundary, and the cross-cutting
+invariant **"no duplicate reviewer/runner/evaluator implementations."**
+That last one is a direct constraint on this record:
 per-capability corpora must **not** grow per-capability runners, matchers,
 or metrics. One harness, many corpora.
 

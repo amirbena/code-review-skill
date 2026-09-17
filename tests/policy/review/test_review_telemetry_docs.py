@@ -119,19 +119,21 @@ class Boundary131Tests(unittest.TestCase):
     def test_boundary_section_exists(self) -> None:
         t = _norm(MODEL)
         self.assertIn("Boundary with #131", t)
-        self.assertIn("not implemented by this issue", t)
+        self.assertIn("closed not planned", t)
 
     def test_direction_of_dependency_is_stated(self) -> None:
         t = _norm(MODEL)
         self.assertIn(
-            "#131 depends on #182 existing first", t
+            "#131 would have depended on #182 existing first", t
         )
         self.assertIn("never the other way around", t)
 
     def test_182_is_raw_signal_131_is_aggregation(self) -> None:
         t = _norm(MODEL)
         self.assertIn("#182 (this document) is the observational raw signal", t)
-        self.assertIn("#131 (future) is the aggregation/analytics consumer", t)
+        self.assertIn(
+            "#131 would have been the aggregation/analytics consumer", t
+        )
 
 
 class PartialRunTests(unittest.TestCase):

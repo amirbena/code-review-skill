@@ -24,7 +24,9 @@ exceed authority. This is a **security-event model**, not:
 - [#182](https://github.com/amirbena/code-review-skill/issues/182)'s
   execution telemetry — what a review inspected and executed;
 - [#131](https://github.com/amirbena/code-review-skill/issues/131)'s
-  analytics — review outcomes and quality metrics.
+  analytics — review outcomes and quality metrics; #131 is closed `not
+  planned` as a product-layer capability, kept here only as a named
+  boundary this model is distinct from.
 
 A denied-capability event is emitted only when a capability boundary
 actually refuses something. It is forensic and observational only.

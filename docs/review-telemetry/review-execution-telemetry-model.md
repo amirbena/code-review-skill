@@ -6,11 +6,14 @@ packaged; explanatory. It is the canonical home for the observational
 review-execution telemetry record: the metric catalog and its rationale,
 the explicit "not collected" list, the never-decision-affecting guarantee,
 the per-metric unavailable-state rules, the JSON Schema, and the boundary
-with [#131](https://github.com/amirbena/code-review-skill/issues/131).
+with [#131](https://github.com/amirbena/code-review-skill/issues/131)
+(closed `not planned` — a product-layer capability, not future Skill
+work; see §5).
 
 Cross-component architecture — the dependency DAG, the nine layers, and
-why telemetry (#182) is deliberately upstream of and separate from
-analytics (#131) and the benchmark tree (#329) — is owned by
+why telemetry (#182) is deliberately upstream of and separate from the
+benchmark tree (#329), plus the product-layer boundary decision that
+closes analytics (#131) as `not planned` — is owned by
 [`../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md),
 §3 ("Review execution telemetry" layer row) and §7 (the four boundary
 bullets). This document does not restate that architecture; it only
@@ -135,35 +138,42 @@ into a different, already-owned concern:
   would repeat exactly the "telemetry ≠ benchmark ground truth" conflation
   §7 of the architecture doc warns against.
 - **Aggregated/historical trend data across multiple reviews.** One
-  telemetry record describes exactly one review run. Aggregation across
-  runs is #131's (analytics) job, once it exists — see §5.
+  telemetry record describes exactly one review run. Cross-review
+  aggregation is exactly the product-layer capability #131 would have
+  owned — see §5. It is not built here, and per §5 it is not planned to
+  be built anywhere in this Skill.
 
-## 5. Boundary with #131 (outcome analytics — not implemented here)
+## 5. Boundary with #131 (outcome analytics — closed `not planned`)
 
-[#131](https://github.com/amirbena/code-review-skill/issues/131) is open
-and **not implemented by this issue**. The boundary, restated from the
-architecture doc's §3/§7 so this document is self-contained:
+[#131](https://github.com/amirbena/code-review-skill/issues/131) is
+closed `not planned`: it is a product-layer capability outside this
+Skill's invocation-scoped boundary, not deferred future work. The
+boundary, restated from the architecture doc's §3/§7 (see its
+"Product-layer boundary decision" addendum) so this document is
+self-contained:
 
 - **#182 (this document) is the observational raw signal**: one record per
   review run, produced as a byproduct of that run, describing only what
   happened during it. It has no notion of "across reviews," "over time,"
-  or "quality."
-- **#131 (future) is the aggregation/analytics consumer**: it would read
-  many #182 records (plus, separately, benchmark-derived ground truth from
-  #329's tree once trustworthy) and report a consolidated,
-  denominator-defined view of workflow-observation metrics over time. #131
-  does not exist yet in this repository — no aggregation, export, storage,
-  or dashboard for telemetry records is built by this change, and this
-  document does not specify #131's shape.
-- **The direction of dependency is fixed**: #131 depends on #182 existing
-  first (the architecture doc's DAG, §2), never the other way around.
-  Nothing in this document or its reference model imports, calls, or
-  assumes anything from a future #131 implementation.
+  or "quality," and this remains true regardless of #131's status.
+- **#131 would have been the aggregation/analytics consumer**: it would
+  have read many #182 records (plus, separately, benchmark-derived ground
+  truth from #329's tree once trustworthy) and reported a consolidated,
+  denominator-defined view of workflow-observation metrics over time.
+  #131 does not exist in this repository and will not be built here — no
+  aggregation, export, storage, or dashboard for telemetry records is
+  built by this change or planned by any future Skill change; a
+  cross-invocation aggregation/analytics capability, if ever built,
+  belongs to a future product layer, not to this Skill.
+- **The direction of dependency, had #131 existed, was fixed**: #131
+  would have depended on #182 existing first (the architecture doc's
+  DAG, §2), never the other way around. Nothing in this document or its
+  reference model imports, calls, or assumes anything from #131.
 - **Neither may read as the other.** A single telemetry record is not an
-  analytics report, and an analytics report (once #131 exists) must not
-  claim to be raw per-review telemetry — the same non-substitution rule
-  §7 of the architecture doc states for telemetry versus benchmark ground
-  truth applies here between telemetry and its own future aggregation.
+  analytics report. This non-substitution rule mirrors §7 of the
+  architecture doc for telemetry versus benchmark ground truth; it
+  remains the binding constraint on any future product-layer analytics
+  capability, even though #131 itself is not being implemented.
 
 ## 6. Partial runs produce valid output
 
@@ -249,7 +259,8 @@ runtime.**
 1. **This model** — the metric catalog with rationale (§3), the
    not-collected list (§4), the never-decision-affecting guarantee backed
    by a test (§2), the availability/unavailable-state rules (§3, §6), the
-   #131 boundary (§5), and worked examples (§7) — plus the JSON Schema
+   #131 boundary (§5, now recording #131's `not planned` closure), and
+   worked examples (§7) — plus the JSON Schema
    ([`review-execution-telemetry.schema.json`](review-execution-telemetry.schema.json)).
 2. **A test-only reference model**
    (`tests/reference/review/review_telemetry.py`) implementing the record
@@ -264,10 +275,13 @@ runtime.**
    telemetry record from a live review run (reading `stages_completed`
    off the review's own pass results, counting inspected files as they
    happen, etc.) is deferred to a future, separately-scoped runtime-wiring
-   change, once a concrete need to consume it (e.g. #131, or the
+   change, once a concrete in-Skill need to consume it (e.g. the
    citation-grounding cross-check named in the architecture doc's §12.2)
-   makes the wiring point concrete rather than speculative.
+   makes the wiring point concrete rather than speculative. #131's
+   analytics consumption is not such a need — it is closed `not planned`.
 
-**Deferred** (named here so scope stays fixed): any #131 aggregation,
-export, or dashboard; any runtime code path that actually populates a
-telemetry record during a live review; any packaged Skill/policy change.
+**Deferred** (named here so scope stays fixed): any runtime code path
+that actually populates a telemetry record during a live review; any
+packaged Skill/policy change. Not deferred, but explicitly out of scope:
+any #131 aggregation, export, or dashboard — #131 is closed `not planned`
+as a product-layer capability (§5), not postponed future work.

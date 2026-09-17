@@ -15,13 +15,14 @@ see the model doc's §8 "Smallest useful first implementation" for why.
 
 | Document | Owns | Issue |
 | --- | --- | --- |
-| [`review-execution-telemetry-model.md`](review-execution-telemetry-model.md) | The metric catalog and rationale, the explicit "not collected" list, the never-decision-affecting guarantee (backed by a test), per-metric unavailable-state rules, worked examples, and the boundary with #131. | [#182](https://github.com/amirbena/code-review-skill/issues/182) |
+| [`review-execution-telemetry-model.md`](review-execution-telemetry-model.md) | The metric catalog and rationale, the explicit "not collected" list, the never-decision-affecting guarantee (backed by a test), per-metric unavailable-state rules, worked examples, and the boundary with #131 (closed `not planned`, a product-layer capability). | [#182](https://github.com/amirbena/code-review-skill/issues/182) |
 | [`review-execution-telemetry.schema.json`](review-execution-telemetry.schema.json) | The single source of truth for the record's exact machine-readable shape (JSON Schema draft-07). | [#182](https://github.com/amirbena/code-review-skill/issues/182) |
 
 ## Related
 
-- Cross-component architecture (the dependency DAG, the nine layers, and
-  the #182/#131/#329 boundary this document's §5 restates):
+- Cross-component architecture (the dependency DAG, the nine layers, the
+  #182/#329 boundary this document's §5 restates, and the product-layer
+  boundary decision that closes #131 as `not planned`):
   [`../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md).
 - The *decision-affecting* coverage concept this design is deliberately
   distinct from:
