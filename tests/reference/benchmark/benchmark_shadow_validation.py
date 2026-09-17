@@ -1,40 +1,8 @@
 #!/usr/bin/env python3
-"""Shadow-validation methodology for the Top-K benchmark selector
-(Issue #335). Contract: docs/benchmark/shadow-validation.md.
+"""Shadow-validation methodology for the Top-K benchmark selector.
 
-Test-only reference, like ``benchmark_selection.py`` and
-``benchmark_taxonomy.py`` alongside it: not runtime logic, not packaged —
-the packaged Skills stay Markdown/YAML only. Consumed by
-``tests/unit/benchmark/test_benchmark_shadow_validation.py`` and the real
-(non-packaged) tooling entrypoint ``scripts/benchmark/shadow_validate.py``.
-
-This module owns exactly the comparison this issue is responsible for: how
-trustworthy is #334's Top-K selection when measured against #339's
-already-classified full-corpus drift? It never re-derives a selection
-(#334's job) or re-derives drift classification (#339's job) — it consumes
-a pre-joined ``BurnInSample`` (one PR's Top-K selected case ids, paired
-with the distinct case ids a nightly comparison found real regressions in
-over that PR's burn-in window) and computes two figures over one or more
-samples:
-
-- **Miss rate** — of the regressions the full corpus caught, how many
-  would the PR's Top-K selection, had it been the only signal, have
-  missed?
-- **Redundancy** — of the cases the selector ever picked across the
-  window, how many never once corresponded to a real caught regression?
-
-Both are case-level, not finding-level: the selector (docs/benchmark/
-selection.md) picks whole cases, so "would this selection have caught the
-regression" is answered at the same granularity it operates at.
-
-Redundancy is deliberately *not* defined as "zero marginal coverage gain
-at pick time" — selection.md §4's stopping rule guarantees every picked
-case has a strictly positive marginal gain when it is picked, so that
-signal can never fire by construction. Redundancy here instead measures
-whether the selector's taxonomy-coverage proxy for "this case matters"
-ever cashes out as an actually-observed regression over real burn-in
-evidence — a case can look required by coverage and still never once be
-the case a nightly comparison caught something in.
+Test-only reference, like ``benchmark_selection.py`` alongside it.
+Contract: docs/benchmark/shadow-validation.md (Issue #335).
 """
 
 from __future__ import annotations

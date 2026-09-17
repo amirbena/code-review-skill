@@ -1,20 +1,9 @@
 #!/usr/bin/env python3
-"""Shadow-validation burn-in report CLI (Issue #335). Contract:
-docs/benchmark/shadow-validation.md.
+"""Shadow-validation burn-in report CLI (Issue #335).
 
-Turns a pre-joined burn-in window — one JSON file listing, per PR sample,
-the #334 Top-K selection's case ids and the #339-classified nightly
-regression case ids that PR's burn-in window overlapped — into the one
-machine-readable report object the contract describes. Reimplements no
-comparison logic locally: every computation is
+Contract: docs/benchmark/shadow-validation.md. Reimplements no comparison
+logic locally: every computation is
 ``tests/reference/benchmark/benchmark_shadow_validation.py``.
-
-This script never runs a selection, never classifies drift, and never
-opens or mutates anything on GitHub — it is a pure, offline aggregation
-over already-computed evidence, consistent with the contract's Non-goals.
-It also never fails the process: like ``select_benchmark_cases.py``, this
-is informational tooling with no exit-status gate of its own (docs/
-benchmark/shadow-validation.md §6 — no promotion mechanism exists here).
 
 Usage::
 
@@ -45,6 +34,17 @@ if str(_REPO_ROOT) not in sys.path:
 from tests.reference.benchmark import benchmark_shadow_validation as sv  # noqa: E402
 
 
+def _case_id_list(entry: dict[str, Any], key: str, path: Path, index: int) -> tuple[str, ...]:
+    # Fail-closed like load_pr_classification in select_benchmark_cases.py:
+    # tuple() on a bare string would silently split it into characters.
+    if key not in entry:
+        raise ValueError(f"{path}[{index}]: missing required key '{key}'")
+    value = entry[key]
+    if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+        raise ValueError(f"{path}[{index}].{key}: expected a list of strings, got {value!r}")
+    return tuple(value)
+
+
 def load_samples(path: Path) -> list[sv.BurnInSample]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, list):
@@ -53,16 +53,15 @@ def load_samples(path: Path) -> list[sv.BurnInSample]:
     for i, entry in enumerate(raw):
         if not isinstance(entry, dict):
             raise ValueError(f"{path}[{i}]: expected an object")
-        try:
-            samples.append(
-                sv.BurnInSample(
-                    sample_id=entry["sample_id"],
-                    selected_case_ids=tuple(entry["selected_case_ids"]),
-                    regressed_case_ids=tuple(entry["regressed_case_ids"]),
-                )
+        if "sample_id" not in entry:
+            raise ValueError(f"{path}[{i}]: missing required key 'sample_id'")
+        samples.append(
+            sv.BurnInSample(
+                sample_id=entry["sample_id"],
+                selected_case_ids=_case_id_list(entry, "selected_case_ids", path, i),
+                regressed_case_ids=_case_id_list(entry, "regressed_case_ids", path, i),
             )
-        except KeyError as exc:
-            raise ValueError(f"{path}[{i}]: missing required key {exc}") from exc
+        )
     return samples
 
 

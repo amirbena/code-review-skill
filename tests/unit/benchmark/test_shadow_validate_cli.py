@@ -49,6 +49,31 @@ class LoadSamplesTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 cli.load_samples(path)
 
+    def test_rejects_a_bare_string_instead_of_a_list(self) -> None:
+        # A hand-edited file with `"selected_case_ids": "case-a"` (a string,
+        # not a list) must be rejected, never silently coerced into
+        # `tuple("case-a")` == ('c', 'a', 's', 'e', '-', 'a').
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "samples.json"
+            path.write_text(
+                json.dumps(
+                    [{"sample_id": "pr-1", "selected_case_ids": "case-a", "regressed_case_ids": ["case-a"]}]
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError):
+                cli.load_samples(path)
+
+    def test_rejects_a_list_with_a_non_string_element(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "samples.json"
+            path.write_text(
+                json.dumps([{"sample_id": "pr-1", "selected_case_ids": [1], "regressed_case_ids": []}]),
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError):
+                cli.load_samples(path)
+
 
 class MainCliTests(unittest.TestCase):
     def test_emits_report_json_matching_the_reference_shape(self) -> None:
