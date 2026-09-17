@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.50.1 — 2026-09-17
+
+### Fixed
+
+- Clarify in `review-stopping-criteria.md` that its decision-affecting coverage concept is distinct from issue #182's observational review-execution telemetry (#430).
+
 ## v1.50.0 — 2026-09-16
 
 ### Added
