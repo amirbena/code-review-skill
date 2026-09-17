@@ -94,4 +94,6 @@ governed test keeps the two in sync.
    directory and reference it from that Skill's `SKILL.md`/runbook —
    never here.
 4. Keep cross-references as relative Markdown links and run link
-   validation (`python3 -m unittest discover -s tests -t .`).
+   validation with `python3 scripts/validation/validate-markdown-links.py`
+   — the full suite is not required for a docs-only policy change (see
+   [`../README.md`](../README.md#local-validation-before-opening-a-pr)).
