@@ -29,6 +29,23 @@ divergences §A.9 named — the 17 undeclared shared policies in
 `local-code-review`'s own metadata, and `shared/templates/finding-rendering.md`
 declared nowhere.
 
+Issue #407:
+[`generate_package_manifest.derive_adapter_subsets()`](../../scripts/packaging/generate_package_manifest.py)
+derives, per adapter, the capability-owned files that adapter's `adapters:`
+declarations make it responsible for — a `shared/*` file for every adapter
+in its owning capability's `adapters:` list, a `skills/local-code-review/*`
+or `skills/github-pr-review/*` file for the one adapter its directory
+already implies (raising if that capability's `adapters:` omits it).
+[`tests/integration/packaging/test_adapter_capability_subsets.py`](../../tests/integration/packaging/test_adapter_capability_subsets.py)
+fails CI the moment a derived subset diverges from what
+`package-manifest.json` actually ships that adapter. This does not change
+either archive's contents: both still ship every `shared/*` file to both
+adapters (no per-adapter packaging yet), so today the check additionally
+holds every shared-owning capability to declaring `adapters: [local,
+github]` — a future capability that ships a single-adapter `shared/*`
+file will need per-adapter shared packaging (not yet built) before it can
+narrow that declaration.
+
 ## Purpose
 
 `capability-architecture-model.md` §A.9 identifies three declarations of
@@ -101,12 +118,16 @@ existing non-goals, not a new source of truth.
 
 ## What this step does not do
 
-Per issue #404's non-goals and §J.2 Step 1 (issues #405 and #406 lifted
-the first bullet below — see the Status note above):
+Per issue #404's non-goals and §J.2 Step 1 (issues #405, #406, and #407
+lifted the first two bullets below — see the Status note above):
 
-- It does not change what either Skill archive packages (unaffected by
-  #405/#406 — both remain additive/declarative), or which per-adapter
-  subset each Skill ships (that is the *next* child, not this one).
+- It does not change what either Skill archive packages, and does not
+  ship a smaller archive for either adapter — #407 only asserts that the
+  already-declared `adapters:` field matches what each archive already
+  ships; both remain additive/declarative.
+- It does not add any lazy-loading behavior — establishing the
+  capability/adapter boundary lazy loading will later rely on is as far
+  as #407 goes (see its issue's Non-Goals).
 - It does not change any runtime loading behavior — nothing reads these
   manifests at review time.
 
@@ -142,6 +163,13 @@ or `metadata/skill.yaml` — that is a separate, narrower check.
 that `scripts/packaging/package-manifest.json` is byte-identical to what
 `scripts/packaging/generate_package_manifest.py` generates from these
 `capability.yaml` files (plus the files no capability manifest owns yet).
+
+`tests/integration/packaging/test_adapter_capability_subsets.py` asserts
+that `derive_adapter_subsets()`'s per-adapter file sets, computed from
+`adapters:`, match what `package-manifest.json` actually ships each
+adapter — and that every capability owning a `shared/*` file currently
+declares both adapters, since neither archive special-cases `shared/*`
+files by adapter yet.
 
 `tests/integration/packaging/test_generated_skill_metadata.py` (issue
 #406, L3) asserts that each Skill's `metadata/skill.yaml` `shared:` block

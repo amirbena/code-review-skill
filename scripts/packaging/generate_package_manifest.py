@@ -167,12 +167,63 @@ _GITHUB_ORDER: tuple[Entry, ...] = (
 )
 
 
-def _load_capability_files() -> dict[str, list[str]]:
-    capability_files: dict[str, list[str]] = {}
+def _load_capability_manifests() -> dict[str, dict]:
+    manifests: dict[str, dict] = {}
     for manifest_path in sorted(CAPABILITIES_DIR.glob("*/capability.yaml")):
         manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-        capability_files[manifest["capability"]] = list(manifest["files"])
-    return capability_files
+        manifests[manifest["capability"]] = manifest
+    return manifests
+
+
+def _load_capability_files() -> dict[str, list[str]]:
+    return {
+        capability: list(manifest["files"])
+        for capability, manifest in _load_capability_manifests().items()
+    }
+
+
+def derive_adapter_subsets(
+    capability_manifests: dict[str, dict] | None = None,
+) -> dict[str, set[str]]:
+    """Derive, per adapter, the capability-owned files (issue #407) that
+    adapter's declared `capability.yaml` `adapters:` lists make it
+    responsible for.
+
+    A `skills/local-code-review/*` or `skills/github-pr-review/*` file is
+    already adapter-scoped by its directory — deriving its adapter here
+    (rather than trusting the directory) is what lets this raise the
+    moment a capability's `adapters:` list omits the adapter its own
+    files actually require. A `shared/*` file is attributed to every
+    adapter listed in its owning capability's `adapters:`.
+    """
+    if capability_manifests is None:
+        capability_manifests = _load_capability_manifests()
+    subsets: dict[str, set[str]] = {"local": set(), "github": set()}
+    for capability, manifest in capability_manifests.items():
+        adapters = manifest["adapters"]
+        for source in manifest["files"]:
+            if source.startswith("skills/local-code-review/"):
+                if "local" not in adapters:
+                    raise ValueError(
+                        f"capabilities/{capability}/capability.yaml owns "
+                        f"{source!r} under skills/local-code-review/ but its "
+                        f"adapters list {adapters!r} omits 'local'"
+                    )
+                subsets["local"].add(source)
+            elif source.startswith("skills/github-pr-review/"):
+                if "github" not in adapters:
+                    raise ValueError(
+                        f"capabilities/{capability}/capability.yaml owns "
+                        f"{source!r} under skills/github-pr-review/ but its "
+                        f"adapters list {adapters!r} omits 'github'"
+                    )
+                subsets["github"].add(source)
+            elif source.startswith("shared/"):
+                for adapter in adapters:
+                    subsets[adapter].add(source)
+            else:
+                raise ValueError(f"unexpected capability file root: {source!r}")
+    return subsets
 
 
 def _resolve_section(
