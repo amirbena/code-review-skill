@@ -30,6 +30,19 @@ present stays scoped to the diff and its immediately adjacent evidence per
 [`evidence.md`](evidence.md), and that is a normal, complete outcome.
 There is no caller option to disable it.
 
+"Always active" describes the trigger-evaluation predicate above, not
+whether this file itself is opened. Recognizing which trigger *type* a
+change plausibly implicates, and — for the interface/contract,
+migration/schema, and config-consumer triggers — whether they fire, are
+both decidable from the diff alone, against the fixed trigger catalog
+`review-scope.md`'s "Repository expansion" already restates as resident
+summary: each of those three fires on a fact the diff itself already
+shows. Only the call-site trigger's firing can require this file's own
+ring-1 investigation to confirm, per "Signal detection is evidence-based,
+not name-based" below — see "Conditional loading: fail-closed" below for
+how that one exception governs
+`capabilities/scale/capability.yaml`'s `on-activation` loading.
+
 ## Expansion triggers (fixed catalog)
 
 Each trigger names the concrete diff fact that activates it and what it
@@ -117,6 +130,61 @@ subordinate metadata (see
 body, never as a finding, and never in a way that implies a verdict. A
 review with no fired trigger still emits the classification, as "none";
 it is not silently dropped.
+
+## Conditional loading: fail-closed
+
+`capabilities/scale/capability.yaml` declares this file `on-activation`,
+alongside [`large-pr-partitioning.md`](large-pr-partitioning.md). That
+governs when this file's deeper ring-expansion procedure, bound table,
+and machine-readable model below are consulted — never whether the
+trigger-evaluation predicate in "Activation" above runs, which stays
+always active exactly as stated there. This file loads only once a
+trigger has already been decided to have fired, or its firing cannot yet
+be confidently ruled out; it is never opened as a precondition to first
+recognizing which trigger *type* — a changed call-site, interface/
+contract, migration/schema, or config-consumer fact — a change plausibly
+implicates, since that recognition is decidable from the diff alone,
+against the fixed trigger catalog `review-scope.md`'s "Repository
+expansion" already restates as resident summary.
+
+Confirming a recognized trigger actually *fires* is, for three of the
+four triggers, equally resident: the interface/contract, migration/schema,
+and config-consumer triggers each fire on a fact the diff itself already
+shows (a changed interface/schema, migration/DDL file, or config key),
+with no further investigation needed to know they fired. Only the
+call-site trigger is different, per "Signal detection is evidence-based,
+not name-based" above's requirement (an evidenced consumer, not merely a
+name or path that looks public) — confirming *it* fired can require this
+file's own ring-1 investigation to resolve, and is not always decidable
+from the diff and its immediately adjacent context alone. That is not a
+gap in this contract: an inconclusive or not-yet-investigated call-site
+firing determination is itself the ambiguous case below, and fails closed
+to performing that investigation (loading this file), never to silently
+treating the call-site trigger as unfired for lack of a visible consumer
+in the diff.
+
+Loading is fail-closed: if evaluating whether a trigger fired is unclear,
+incomplete, or fails for any reason — including because a call-site
+trigger's evidenced-consumer determination has not yet been investigated
+— this capability loads anyway. Ambiguity resolves to load, never to skip
+— the
+same convention [`specialist-depth.md`](specialist-depth.md)'s
+"Conditional loading: fail-closed" already establishes. A capability
+boundary that a failed or ambiguous predicate evaluation could silently
+bypass is the one catastrophic-if-wrong outcome this contract exists to
+prevent; this file's activation predicate must never be able to produce
+that outcome.
+
+Not loading this capability never narrows or substitutes for the
+always-active trigger-evaluation predicate itself — that predicate always
+runs regardless of whether this file is ever opened. Conditional loading
+changes only when the ring-expansion procedure and reporting model below
+are consulted, never whether a trigger is evaluated.
+
+This conditional-loading contract is scoped to `scale` alone (this file
+and [`large-pr-partitioning.md`](large-pr-partitioning.md)); it does not
+define, and must not be read as defining, a general loading/routing
+mechanism for any other capability in this repository.
 
 ## Machine-readable model
 

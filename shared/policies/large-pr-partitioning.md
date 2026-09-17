@@ -47,6 +47,38 @@ that stays under the threshold is reviewed as a single unit exactly as it
 always has been — that is the normal, complete outcome, and this policy
 contributes nothing further to it.
 
+## Conditional loading: fail-closed
+
+`capabilities/scale/capability.yaml` declares this file `on-activation`,
+alongside [`repository-expansion.md`](repository-expansion.md). This file
+loads only once the diff-size measurement below has already been decided
+to reach the partitioning threshold; it is never opened as a precondition
+to deciding that. The measurement is decidable entirely from the same
+diff-size count `change-risk-signals.md`'s "Diff-size thresholds" already
+computes and `review-scope.md`'s "Large-change partitioning" restates as
+resident summary, so evaluating it never requires opening this file.
+
+Loading is fail-closed: if the diff-size measurement is unclear,
+incomplete, or fails for any reason, this capability loads anyway.
+Ambiguity resolves to load, never to skip — the same convention
+[`specialist-depth.md`](specialist-depth.md)'s "Conditional loading:
+fail-closed" already establishes. A capability boundary that a failed or
+ambiguous measurement could silently bypass is the one
+catastrophic-if-wrong outcome this contract exists to prevent; this
+file's activation predicate must never be able to produce that outcome.
+
+Not loading this capability never narrows or substitutes for
+`change-risk-signals.md`'s diff-size measurement itself, which always
+runs regardless of whether this file is ever opened. Conditional loading
+changes only when the partition-construction, per-partition-review, and
+aggregation procedures below are consulted, never whether the
+measurement is taken.
+
+This conditional-loading contract is scoped to `scale` alone (this file
+and [`repository-expansion.md`](repository-expansion.md)); it does not
+define, and must not be read as defining, a general loading/routing
+mechanism for any other capability in this repository.
+
 ## Partitioning threshold
 
 Authoritative, policy-level, and **not** left to per-review judgement.

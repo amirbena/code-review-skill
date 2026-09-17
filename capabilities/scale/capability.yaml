@@ -7,6 +7,8 @@ activation:
   - a change carries an evidenced consumer beyond the changed file that
     the fixed expansion list points toward
   - the diff size crosses the large-change partitioning threshold
+  - (fail-closed) ambiguous or failed evaluation of the above loads this
+    capability rather than skipping it
 adapters: [local, github]
 files:
   - shared/policies/repository-expansion.md
@@ -17,4 +19,6 @@ never:
     evidenced consumer
   - degrading review depth as a side effect of partitioning
   - letting directory distance alone block a merge the evidence supports
-benchmark: docs/benchmark/corpus/risk-depth, docs/benchmark/corpus/repository-intelligence
+  - treating ambiguous or failed predicate evaluation as a reason to skip
+    activation
+benchmark: docs/benchmark/corpus/risk-depth, docs/benchmark/corpus/repository-intelligence, docs/benchmark/corpus/scale-progressive-loading-proof

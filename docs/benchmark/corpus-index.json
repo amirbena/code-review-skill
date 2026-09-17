@@ -87,7 +87,8 @@
       "repo-intel-python-config-consumer-stale-import",
       "repo-intel-python-control-compatible-caller-no-finding",
       "repo-intel-python-dynamic-dispatch-safe-failure",
-      "repo-intel-typescript-interface-contract-implementer-break"
+      "repo-intel-typescript-interface-contract-implementer-break",
+      "scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion"
     ],
     "risk-depth": [
       "risk-depth-auth-signal-deep",
@@ -183,7 +184,8 @@
       "repo-intel-python-config-consumer-stale-import",
       "repo-intel-python-control-compatible-caller-no-finding",
       "repo-intel-python-dynamic-dispatch-safe-failure",
-      "repo-intel-typescript-interface-contract-implementer-break"
+      "repo-intel-typescript-interface-contract-implementer-break",
+      "scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion"
     ],
     "review-scope": [
       "semantic-implication-insufficient-evidence-stop",
@@ -300,6 +302,7 @@
       "risk-depth-concurrency-signal-deep",
       "risk-depth-diffsize-elevated-refactor",
       "risk-depth-large-multiarea-partitioning",
+      "scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion",
       "semantic-implication-insufficient-evidence-stop",
       "semantic-implication-multi-dimension-webhook-xss",
       "semantic-implication-single-dimension-persistence",
@@ -439,6 +442,7 @@
       "risk-depth-diffsize-elevated-refactor",
       "risk-depth-elevated-escalation-deep",
       "risk-depth-large-multiarea-partitioning",
+      "scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion",
       "security-command-injection",
       "security-deepening-alternate-path-missing-check",
       "security-deepening-auth-module-no-trust-boundary-clean",
