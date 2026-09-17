@@ -72,8 +72,11 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # `finding.md`/`finding-rendering.md` templates on both Skills — previously
 # packaged but named in neither file — raising local 268 -> 273 and
 # github 394 -> 400.
-LOCAL_MAX_LINES = 273
-GITHUB_MAX_LINES = 400
+# Issue #439 (published Skill frontmatter cleanup) added a single
+# `version: 1.50.2` line to both SKILL.md frontmatter blocks, raising
+# local 273 -> 274 and github 400 -> 401.
+LOCAL_MAX_LINES = 274
+GITHUB_MAX_LINES = 401
 
 
 def _norm(path) -> str:

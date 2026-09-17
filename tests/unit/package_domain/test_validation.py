@@ -24,32 +24,87 @@ class ValidateSkillFrontmatterTests(unittest.TestCase):
 
     def test_valid_frontmatter_passes(self) -> None:
         self._write(
-            "---\nname: local-code-review\ndescription: Reviews local changes.\n---\nBody.\n"
+            "---\nname: local-code-review\nversion: 1.50.2\n"
+            "description: Reviews local changes.\n---\nBody.\n"
         )
         validate_skill_frontmatter(self.skill_md, "local-code-review")
 
     def test_missing_opening_delimiter_is_rejected(self) -> None:
-        self._write("name: local-code-review\ndescription: x\n---\nBody.\n")
+        self._write("name: local-code-review\nversion: 1.50.2\ndescription: x\n---\nBody.\n")
         with self.assertRaises(SkillFrontmatterError):
             validate_skill_frontmatter(self.skill_md, "local-code-review")
 
     def test_missing_closing_delimiter_is_rejected(self) -> None:
-        self._write("---\nname: local-code-review\ndescription: x\nBody.\n")
+        self._write("---\nname: local-code-review\nversion: 1.50.2\ndescription: x\nBody.\n")
         with self.assertRaises(SkillFrontmatterError):
             validate_skill_frontmatter(self.skill_md, "local-code-review")
 
     def test_missing_name_is_rejected(self) -> None:
-        self._write("---\ndescription: x\n---\nBody.\n")
+        self._write("---\nversion: 1.50.2\ndescription: x\n---\nBody.\n")
+        with self.assertRaises(SkillFrontmatterError):
+            validate_skill_frontmatter(self.skill_md, "local-code-review")
+
+    def test_missing_version_is_rejected(self) -> None:
+        self._write("---\nname: local-code-review\ndescription: x\n---\nBody.\n")
+        with self.assertRaises(SkillFrontmatterError):
+            validate_skill_frontmatter(self.skill_md, "local-code-review")
+
+    def test_version_with_v_prefix_is_rejected(self) -> None:
+        self._write(
+            "---\nname: local-code-review\nversion: v1.50.2\ndescription: x\n---\nBody.\n"
+        )
+        with self.assertRaises(SkillFrontmatterError):
+            validate_skill_frontmatter(self.skill_md, "local-code-review")
+
+    def test_version_with_leading_zero_is_rejected(self) -> None:
+        self._write(
+            "---\nname: local-code-review\nversion: 1.05.2\ndescription: x\n---\nBody.\n"
+        )
+        with self.assertRaises(SkillFrontmatterError):
+            validate_skill_frontmatter(self.skill_md, "local-code-review")
+
+    def test_version_with_non_numeric_segment_is_rejected(self) -> None:
+        self._write(
+            "---\nname: local-code-review\nversion: 1.50.x\ndescription: x\n---\nBody.\n"
+        )
         with self.assertRaises(SkillFrontmatterError):
             validate_skill_frontmatter(self.skill_md, "local-code-review")
 
     def test_missing_description_is_rejected(self) -> None:
-        self._write("---\nname: local-code-review\n---\nBody.\n")
+        self._write("---\nname: local-code-review\nversion: 1.50.2\n---\nBody.\n")
         with self.assertRaises(SkillFrontmatterError):
             validate_skill_frontmatter(self.skill_md, "local-code-review")
 
     def test_name_mismatch_is_rejected(self) -> None:
-        self._write("---\nname: github-pr-review\ndescription: x\n---\nBody.\n")
+        self._write(
+            "---\nname: github-pr-review\nversion: 1.50.2\ndescription: x\n---\nBody.\n"
+        )
+        with self.assertRaises(SkillFrontmatterError):
+            validate_skill_frontmatter(self.skill_md, "local-code-review")
+
+    def test_folded_block_scalar_description_is_rejected(self) -> None:
+        self._write(
+            "---\nname: local-code-review\nversion: 1.50.2\n"
+            "description: >-\n  Line one. Line two.\n---\nBody.\n"
+        )
+        with self.assertRaises(SkillFrontmatterError):
+            validate_skill_frontmatter(self.skill_md, "local-code-review")
+
+    def test_literal_block_scalar_description_is_rejected(self) -> None:
+        self._write(
+            "---\nname: local-code-review\nversion: 1.50.2\n"
+            "description: |\n  Line one.\n---\nBody.\n"
+        )
+        with self.assertRaises(SkillFrontmatterError):
+            validate_skill_frontmatter(self.skill_md, "local-code-review")
+
+    def test_plain_multiline_continuation_description_is_rejected(self) -> None:
+        # No `|`/`>` block-scalar indicator, but YAML still treats this as
+        # one folded value spanning two physical lines — must still fail.
+        self._write(
+            "---\nname: local-code-review\nversion: 1.50.2\n"
+            "description: This is line one\n  and this continues.\n---\nBody.\n"
+        )
         with self.assertRaises(SkillFrontmatterError):
             validate_skill_frontmatter(self.skill_md, "local-code-review")
 

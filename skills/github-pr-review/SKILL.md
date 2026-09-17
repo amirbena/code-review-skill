@@ -1,19 +1,7 @@
 ---
 name: github-pr-review
-description: >-
-  Reviews an existing GitHub Pull Request under one of three publication
-  modes: passively as a report (PASSIVE), as a non-mutating preview of the
-  active decision (SEMI), or, with authenticated GitHub access, actively
-  by publishing inline PR review comments, one consolidated final
-  summary, and an Approve/Request Changes decision (ACTIVE). An explicit
-  ACTIVE request is itself sufficient authorization to publish that
-  review's own outcome — no second activation phrase is required —
-  subject to genuine reviewer independence and GitHub permission.
-  Self-review is allowed — the Skill analyzes its own PR and produces a
-  verdict — but self-approval is not: no formal Approve/Request Changes
-  is ever submitted on the reviewer's own work. Never edits implementation
-  code and never merges. For local, not-yet-PR'd changes use
-  `local-code-review`.
+version: 1.50.2
+description: Review an existing GitHub pull request and return or publish evidence-backed P0/P1/P2 findings.
 ---
 
 # SKILL.md — github-pr-review

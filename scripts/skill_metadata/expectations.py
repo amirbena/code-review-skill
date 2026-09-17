@@ -8,7 +8,7 @@ editing a table below, not by branching in a checker.
 from __future__ import annotations
 
 RESOURCE_FIELDS = ("shared", "resources", "config")
-PORTABLE_FRONTMATTER_FIELDS = {"name", "description"}
+PORTABLE_FRONTMATTER_FIELDS = {"name", "version", "description"}
 OPENAI_INTERFACE_FIELDS = {
     "display_name",
     "short_description",

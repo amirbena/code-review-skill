@@ -509,13 +509,13 @@ class WiredIntoSkillMd(unittest.TestCase):
 
     def test_description_reflects_the_new_model(self) -> None:
         self.assertIn("three publication modes", self.t)
-        self.assertIn("no second activation phrase is required", self.t)
+        self.assertIn("no second activation phrase required", self.t)
 
     def test_skill_is_selectable_for_own_prs(self) -> None:
         self.assertNotIn("must not be selected, for a PR or code the local", self.t)
         self.assertIn("Self-review is allowed", self.t)
         self.assertIn(
-            "no formal Approve/Request Changes is ever submitted on the "
+            "no formal APPROVE / REQUEST_CHANGES event is ever submitted on the "
             "reviewer's own work",
             self.t,
         )
