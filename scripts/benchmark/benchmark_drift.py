@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
 """Drift detection and regression issue lifecycle (Issue #339).
 
-Consumes #338's persisted, comparable nightly history and the unmodified
-#53/#54/#55/#56/#57 comparison/metrics projections to decide what counts as
-*meaningful* drift versus noise, computes a stable fingerprint per
-regression, and manages exactly one deduplicated GitHub issue per
-fingerprint. Full contract: `docs/benchmark/drift-detection-and-regression-lifecycle.md`.
-
-This module never runs the reviewer, never re-derives match/metrics logic
-(#54/#55/#56/#57 are consumed as-is), and never persists history or a
-baseline (#338 owns that). The GitHub-mutation boundary (`GhCliIssueClient`)
-is separate from the pure classification/fingerprinting logic so tests never
-make a network call.
+Full contract: `docs/benchmark/drift-detection-and-regression-lifecycle.md`.
 """
 
 from __future__ import annotations
@@ -152,6 +142,7 @@ def classify_drift(
 
 REGRESSION_LABEL = "benchmark-regression"
 KEEP_OPEN_LABEL = "keep-open"
+MAX_ISSUE_LIST_LIMIT = 6400  # safety ceiling on list_labeled_issues's doubling retry
 
 _MARKER_PREFIX = "<!-- benchmark-regression:"
 _MARKER_SUFFIX = " -->"
@@ -213,11 +204,8 @@ class GhCliIssueClient:
             Path(path).unlink(missing_ok=True)
 
     def list_labeled_issues(self, label: str, *, state: str = "open") -> list[IssueRecord]:
-        # `gh issue list --limit N` fetches up to N results total (paginating
-        # internally as needed), not N per page — so a fixed limit silently
-        # truncates once more than N matching issues exist. Re-fetch with a
-        # doubling limit until a response returns fewer than requested,
-        # which proves nothing was left out.
+        # `--limit N` caps total results, not per page, so retry with a
+        # doubling limit until a response is smaller than requested.
         limit = 200
         while True:
             raw = self._gh(
@@ -228,6 +216,11 @@ class GhCliIssueClient:
             if len(items) < limit:
                 break
             limit *= 2
+            if limit > MAX_ISSUE_LIST_LIMIT:
+                raise RuntimeError(
+                    f"gh issue list --label {label} still returned a full page "
+                    f"past --limit {MAX_ISSUE_LIST_LIMIT}; refusing to keep doubling."
+                )
         return [
             IssueRecord(
                 number=item["number"],

@@ -64,6 +64,21 @@ class GhCliIssueClientPaginationTests(unittest.TestCase):
         self.assertEqual(result, [])
         self.assertEqual(run.call_count, 1)
 
+    def test_pathological_always_full_response_raises_past_the_safety_ceiling(self) -> None:
+        # A response that keeps returning exactly `limit` items would double
+        # forever; the ceiling must fail loudly instead of looping forever.
+        with mock.patch("subprocess.run") as run:
+            run.side_effect = lambda args, **_: _completed(
+                [_issue(i) for i in range(int(args[args.index("--limit") + 1]))]
+            )
+            with self.assertRaises(RuntimeError):
+                bd.GhCliIssueClient().list_labeled_issues("benchmark-regression")
+
+        limits_requested = [
+            int(call.args[0][call.args[0].index("--limit") + 1]) for call in run.call_args_list
+        ]
+        self.assertEqual(limits_requested[-1], bd.MAX_ISSUE_LIST_LIMIT)
+
 
 if __name__ == "__main__":
     unittest.main()

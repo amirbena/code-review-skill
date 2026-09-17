@@ -157,6 +157,16 @@ each one's marker (§4.1), and builds a `fingerprint → issue` map. The
 label narrows the candidate set to a small, cheap listing; the marker,
 not the label or any text in the listing, is what decides a match.
 
+`gh issue list --limit N` caps *total* results, not results per page, so a
+fixed limit would silently truncate this listing once more than `N`
+labeled issues are open — breaking §4.3's one-issue-per-fingerprint
+guarantee without any error. `list_labeled_issues`
+(`scripts/benchmark/benchmark_drift.py::GhCliIssueClient.list_labeled_issues`)
+retries with a doubling `--limit` until a response is smaller than
+requested — proof nothing was left out — up to a fixed safety ceiling
+(`MAX_ISSUE_LIST_LIMIT`) past which it raises rather than looping forever
+against a pathological response.
+
 ### 4.3 Transitions
 
 For the drift records classified from the current comparison (§2) and the
