@@ -4,11 +4,19 @@ Status: Step 1 of the migration in
 [`capability-architecture-model.md`](capability-architecture-model.md)
 (§J.2, §M.4, §M.5) — issue #404. Purely additive: this document and the
 `capabilities/<name>/capability.yaml` files it describes are declarative
-records only. **No consumer reads them yet.** They introduce no packaging,
-loading, or behavior change; `scripts/packaging/package-manifest.json`,
-`metadata/skill.yaml`, and `SKILL.md` §2 remain the authoritative
-declarations until a later step (§J.2 Step 1's second half) makes them
-generated projections of this manifest.
+records only. **No review-time consumer reads them yet** — nothing here
+changes what either Skill loads or how a review is conducted.
+
+One consumer does exist now (issue #405):
+[`scripts/packaging/generate_package_manifest.py`](../../scripts/packaging/generate_package_manifest.py)
+generates `scripts/packaging/package-manifest.json`'s `shared_files` and
+`skills.*.files` entries that are owned by an on-activation capability
+from that capability's `files:` list, and
+[`tests/integration/packaging/test_generated_package_manifest.py`](../../tests/integration/packaging/test_generated_package_manifest.py)
+fails CI the moment the committed manifest and the generated one
+diverge. `metadata/skill.yaml` and `SKILL.md` §2 remain hand-maintained
+until a later step (§J.2 Step 1's second half, L3) makes them generated
+projections too.
 
 ## Purpose
 
@@ -82,12 +90,11 @@ existing non-goals, not a new source of truth.
 
 ## What this step does not do
 
-Per issue #404's non-goals and §J.2 Step 1:
+Per issue #404's non-goals and §J.2 Step 1 (issue #405 lifted the first
+bullet below — see the Status note above):
 
-- It does not generate or validate `package-manifest.json` from these
-  files (the next child issue).
 - It does not change what either Skill archive packages, or what either
-  `SKILL.md`/`metadata/skill.yaml` declares.
+  `SKILL.md`/`metadata/skill.yaml` declares (that is L3, a later child).
 - It does not change any runtime loading behavior — nothing reads these
   manifests at review time.
 
@@ -117,6 +124,12 @@ for every `capabilities/*/capability.yaml`:
 - every path in `files` exists in the repository tree.
 
 It does not assert cross-file consistency against `package-manifest.json`
-or `metadata/skill.yaml` — reconciling those is explicitly out of scope
-for this issue (§J.2 Step 1's second half, tracked as a later child of
-#403).
+or `metadata/skill.yaml` — that is a separate, narrower check.
+
+`tests/integration/packaging/test_generated_package_manifest.py` asserts
+that `scripts/packaging/package-manifest.json` is byte-identical to what
+`scripts/packaging/generate_package_manifest.py` generates from these
+`capability.yaml` files (plus the files no capability manifest owns yet).
+It still does not reconcile `metadata/skill.yaml` or `SKILL.md` §2 — that
+remains out of scope for this issue (§J.2 Step 1's second half, tracked
+as L3, a later child of #403).
