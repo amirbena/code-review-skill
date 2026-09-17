@@ -193,3 +193,22 @@ Coverage changes only the review's stated completeness and, when
 incomplete, its top-level outcome label. It never changes what counts as
 a finding, a finding's evidence label, its severity, or the mechanical
 decision derivation `severity.md` performs once coverage is `complete`.
+
+## Relationship to review execution telemetry (Issue #182)
+
+This policy's `coverage` field is **decision-affecting**: `incomplete`
+overrides a review's top-level outcome to `REVIEW INCOMPLETE` (see
+"Labeling"). A separate, deliberately different concept — an
+observational, machine-readable record of what a review actually
+inspected and executed (files, symbols, repository-intelligence
+expansions, runtime validations, partitions, per-stage timing where
+available) — exists as repository-development design work under a
+different name and is **purely observational**: it can never influence a
+finding, a finding's severity or confidence, suppression, or this
+policy's own coverage/decision derivation, in either direction. A review
+can have full telemetry coverage of that other record and still be
+behaviorally wrong, and this policy's `coverage` value is computed
+exactly as described above whether or not that record exists for the
+run. Do not copy, extend, or reference this policy's coverage model from
+that other record, and do not read that record's completeness as a
+substitute for this policy's own `coverage` computation.

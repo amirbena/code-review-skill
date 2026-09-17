@@ -421,6 +421,25 @@ and no packaged Skill resource depends on them.
   [#176](https://github.com/amirbena/code-review-skill/issues/176) and
   [#178](https://github.com/amirbena/code-review-skill/issues/178) build on
   it without redefining it.
+- **Review execution telemetry model** — an observational, machine-readable
+  record of what one review actually inspected and executed (files
+  inspected, symbols expanded, repository-intelligence expansions, runtime
+  validations, partitions, stage completion, deterministic stage timing
+  where available): the metric catalog and its rationale, an explicit "not
+  collected" list, per-metric unavailable-state rules so a partial run
+  still produces valid output, a JSON Schema, and a never-decision-affecting
+  guarantee backed by a test — deliberately distinct from the
+  *decision-affecting* coverage model in
+  [`../shared/policies/review-stopping-criteria.md`](../shared/policies/review-stopping-criteria.md)
+  ([`review-telemetry/README.md`](review-telemetry/README.md) →
+  [`review-telemetry/review-execution-telemetry-model.md`](review-telemetry/review-execution-telemetry-model.md),
+  #182, with a test-only reference model). No packaged Skill resource is
+  changed by this design; its boundary with
+  [#131](https://github.com/amirbena/code-review-skill/issues/131)
+  (outcome analytics, not yet implemented) is documented in the model
+  itself and in
+  [`benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](benchmark-measurement-architecture/benchmark-measurement-architecture-model.md),
+  §3/§7.
 - **Finding-confidence model** — the one machine-readable evidence-state
   value a finding carries: the closed set `confirmed` / `credible` /
   `runtime-validation-unavailable` / `external-contract-unvalidated` /
