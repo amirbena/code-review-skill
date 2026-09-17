@@ -1,0 +1,20 @@
+capability: scale
+summary: >-
+  Bounded ring expansion and large-change partitioning: how far a trigger
+  is followed and how an oversized diff becomes coherent review units.
+loads: on-activation
+activation:
+  - a change carries an evidenced consumer beyond the changed file that
+    the fixed expansion list points toward
+  - the diff size crosses the large-change partitioning threshold
+adapters: [local, github]
+files:
+  - shared/policies/repository-expansion.md
+  - shared/policies/large-pr-partitioning.md
+requires: [review-router]
+never:
+  - expanding the ring on a symbol's name or path alone, without an
+    evidenced consumer
+  - degrading review depth as a side effect of partitioning
+  - letting directory distance alone block a merge the evidence supports
+benchmark: docs/benchmark/corpus/risk-depth, docs/benchmark/corpus/repository-intelligence

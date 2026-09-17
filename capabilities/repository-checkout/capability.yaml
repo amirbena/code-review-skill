@@ -1,0 +1,18 @@
+capability: repository-checkout
+summary: >-
+  Isolated, read-only, detached checkout of a PR's head commit, with
+  guaranteed guarded cleanup.
+loads: on-activation
+activation:
+  - adapter is github AND repository-backed context is requested
+adapters: [github]
+files:
+  - skills/github-pr-review/policies/repository-checkout.md
+requires: [capability-posture]
+never:
+  - silently falling back to API-only mode without emitting the
+    `REPOSITORY CONTEXT UNAVAILABLE` signal
+  - creating a new graded decision value out of degraded checkout state
+  - changing the review standard, the severity model, or a finding's
+    evidence bar because repository-backed mode was or was not available
+benchmark: tests/reference/review/pr_checkout.py

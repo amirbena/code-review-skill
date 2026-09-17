@@ -1,0 +1,27 @@
+capability: conditional-passes
+summary: >-
+  The signal-triggered passes: null-like absence risk, API/contract
+  compatibility, failure/retry/recovery, affected-test analysis,
+  architectural placement, and root-cause consolidation.
+loads: on-activation
+activation:
+  - the change trips a pass's own signal (a nullable/optional value newly
+    reaches an unguarded consumer, a public API or contract shape changes,
+    a failure/retry/recovery path is touched, a change lacks corresponding
+    test coverage, a symbol's placement is architecturally significant, or
+    two or more findings share unproven structural ancestry)
+adapters: [local, github]
+files:
+  - shared/policies/root-cause-consolidation.md
+  - shared/policies/affected-test-analysis.md
+  - shared/policies/null-absence-risk.md
+  - shared/policies/failure-retry-recovery.md
+  - shared/policies/architectural-placement.md
+  - shared/policies/api-contract-compatibility.md
+requires: [review-kernel, finding-contract]
+never:
+  - merging findings into one root cause the evidence does not prove
+  - degrading review depth to avoid running a triggered pass
+  - treating consolidation as a substitute for a separately evidenced fix
+    when the same root cause still requires two fixes
+benchmark: docs/benchmark/corpus/null-absence-risk, docs/benchmark/corpus/api-compatibility, docs/benchmark/corpus/analogue-placement-pattern, docs/benchmark/corpus/consolidation

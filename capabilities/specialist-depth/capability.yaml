@@ -1,0 +1,24 @@
+capability: specialist-depth
+summary: >-
+  Domain deepening for an already-implicated dimension (security,
+  performance, database/migration, distributed systems), under one
+  composition contract.
+loads: on-activation
+activation:
+  - a review dimension is already materially implicated by base reasoning
+  - that dimension's own evidence shows depth is warranted
+  - (additively) explicit user focus in this domain
+adapters: [local, github]
+files:
+  - shared/policies/specialist-depth.md
+  - shared/policies/security-deepening.md
+  - shared/policies/performance-deepening.md
+  - shared/policies/database-migration-deepening.md
+  - shared/policies/distributed-systems-deepening.md
+requires: [review-kernel, finding-contract, scale]
+never:
+  - producing an independent verdict or severity scale
+  - activating from file type or path alone
+  - widening remediation scope by virtue of depth
+  - contributing a finding merely to prove it ran
+benchmark: docs/benchmark/corpus/security-deepening, docs/benchmark/corpus/performance-deepening, docs/benchmark/corpus/database-migration-deepening, docs/benchmark/corpus/distributed-systems-deepening

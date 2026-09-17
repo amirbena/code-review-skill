@@ -1,0 +1,24 @@
+capability: context-resolution
+summary: >-
+  Turning references into normalized context: Jira/issue resolution,
+  requirement coverage, and prior-review-evidence reconciliation.
+loads: on-activation
+activation:
+  - a Jira or issue reference is supplied
+  - a requirements document is supplied
+  - prior review evidence exists to reconcile
+adapters: [local, github]
+files:
+  - shared/policies/jira-context.md
+  - shared/policies/requirement-coverage.md
+  - shared/policies/review-evidence.md
+requires: [review-context-core]
+never:
+  - treating a ticket reference (key, URL, branch name) as sufficient
+    context without reading its contents
+  - expanding review scope beyond what the resolved ticket or requirement
+    states
+  - promoting informational material into a task contract
+  - dropping a requirement for conflict or non-applicability instead of
+    marking it as an explicit state
+benchmark: tests/reference/review/jira_context.py, tests/reference/review/requirement_coverage.py, tests/reference/review/pr_review_evidence.py

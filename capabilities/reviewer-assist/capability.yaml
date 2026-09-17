@@ -1,0 +1,17 @@
+capability: reviewer-assist
+summary: >-
+  The private Reviewer Brief: what changed, stated focus, manual-review
+  focus, and open questions, composed from the finalized result only.
+loads: on-activation
+activation:
+  - always, once findings, severity, coverage, and the verdict are final
+adapters: [github]
+files:
+  - skills/github-pr-review/policies/reviewer-brief.md
+  - skills/github-pr-review/templates/reviewer-brief.md
+requires: [review-kernel]
+never:
+  - influencing findings, severity, coverage, or the verdict
+  - reaching any publication surface
+  - asserting a severity without a finalized finding
+benchmark: docs/benchmark/corpus/reviewer-brief

@@ -1,0 +1,17 @@
+capability: remediation
+summary: >-
+  Advisory fix direction for a finalized finding and the three-part
+  remediation-scope-boundary reasoning that bounds it.
+loads: on-activation
+activation:
+  - a finding is finalized and warrants fix direction
+adapters: [local, github]
+files:
+  - shared/policies/remediation-guidance.md
+  - shared/policies/remediation-scope-boundary.md
+requires: [review-kernel]
+never:
+  - widening remediation scope beyond the current change's required fix
+  - letting remediation reasoning override severity's mechanical blocking
+    rule
+benchmark: tests/reference/review/remediation_guidance.py
