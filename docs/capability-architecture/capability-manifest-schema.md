@@ -46,14 +46,17 @@ github]` — a future capability that ships a single-adapter `shared/*`
 file will need per-adapter shared packaging (not yet built) before it can
 narrow that declaration.
 
-Issue #409: `capabilities/specialist-depth/capability.yaml`'s `benchmark`
-field now names all five corpora §B.4 attributes to `specialist-depth`
-(the four domain corpora plus `docs/benchmark/corpus/specialist-depth-composition`,
-which also benchmarks `review-router`'s routing decision — a corpus can
-exercise more than one capability's contract). This only completes the
-manifest's own declaration; it does not move any file, add an activation
-predicate, or change what either Skill loads (that is §J.2 Step 3,
-issue #410).
+Issue #409: `capabilities/specialist-depth/capability.yaml` is confirmed
+against `capability-architecture-model.md` §H.3 ("Assignment of every
+corpus asset"), the model's single-owner table for corpus ownership. Its
+`benchmark` field names exactly the four domain corpora §H.3 assigns to
+`specialist-depth` (`security-deepening`, `performance-deepening`,
+`database-migration-deepening`, `distributed-systems-deepening`).
+`docs/benchmark/corpus/specialist-depth-composition` is deliberately not
+claimed here: §H.3 assigns it solely to `review-router`, not yet
+manifested (§B.3's routing layer is out of this issue's scope). This step
+changes no file, activation predicate, or load behavior (that is §J.2
+Step 3, issue #410).
 
 ## Purpose
 
