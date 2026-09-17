@@ -1,0 +1,158 @@
+name: Engineering Bug
+description: >-
+  A defect a maintainer has already identified — contract/invariant
+  mismatch, incorrect semantics, security-boundary violation, etc. —
+  captured as actionable implementation work.
+title: "[Engineering Bug]: "
+labels: ["bug", "maintainer-led"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a defect you (a maintainer) have already diagnosed and want to
+        turn into implementation work — not a mechanism for reporting or
+        triaging a new finding. For a general problem report, use
+        [Bug Report](?template=bug-report.yml) instead.
+
+        Follow the engineering shape, not a support-ticket one:
+
+        ```text
+        Contract / invariant
+                ↓
+        Observed behavior
+                ↓
+        Mismatch
+                ↓
+        Engineering consequence
+                ↓
+        Repair
+                ↓
+        Proof
+        ```
+
+        Keep each field short — this is a ticket, not a design document.
+        Only Summary, Contract, Observed behavior, Engineering impact,
+        Evidence, Affected Skill, and Acceptance Criteria are required.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is broken, in one or two sentences.
+    validations:
+      required: true
+
+  - type: textarea
+    id: contract
+    attributes:
+      label: Contract / Expected behavior
+      description: >-
+        The invariant, documented behavior, or engineering expectation that
+        should hold. Cite its source (policy, spec, prior Issue/PR, code
+        comment) where one exists.
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: What the implementation actually does, concretely.
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Engineering impact
+      description: >-
+        Why the mismatch matters — the concrete consequence (wrong
+        findings, silent state corruption, security exposure,
+        nondeterminism, etc.), not user-facing wording.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence / reproduction
+      description: >-
+        Paths, symbols, commands, logs/results, a minimal reproduction, or
+        documentation/contract references.
+      placeholder: |
+        - Path/symbol: ...
+        - Command / steps: ...
+        - Result seen: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: root-cause
+    attributes:
+      label: Root-cause hypothesis
+      description: >-
+        Optional. State the suspected mechanism if known — as a
+        hypothesis, not as a verified fact.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Skill
+      description: Which capability/subsystem is affected?
+      options:
+        - local-code-review
+        - github-pr-review
+        - Both
+        - Repository tooling
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / repair direction
+      description: >-
+        The boundary of the expected repair. Describe the direction, not a
+        full implementation plan.
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Observable conditions proving the defect is fixed.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation / regression coverage
+      description: Tests or evidence that should prevent recurrence.
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / related work
+      description: >-
+        Also create the matching native GitHub parent/sub-issue or
+        blocked-by/blocking relationship — see
+        policies/github-issue-pr-authoring.md, "Native GitHub
+        relationships". Prose here never replaces that native
+        relationship.
+      value: |
+        Depends on: none
+        Blocks: none
+        Parent: none
+        Related: none
+    validations:
+      required: false

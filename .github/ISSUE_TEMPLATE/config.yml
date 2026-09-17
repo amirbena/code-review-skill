@@ -3,7 +3,8 @@
 # directory, GitHub's "New issue" button opens the chooser first, and the
 # corresponding Issue Form opens only after a template is selected:
 #
-#   New issue -> choose: Bug Report | Feature Request | Engineering Task
+#   New issue -> choose: Bug Report | Engineering Bug | Feature Request |
+#                        Engineering Task
 #
 # blank_issues_enabled: false removes the "Open a blank issue" escape
 # hatch from that chooser, so a reporter always lands on a structured
