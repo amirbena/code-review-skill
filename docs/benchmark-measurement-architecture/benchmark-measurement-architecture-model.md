@@ -85,6 +85,10 @@ part of either — but it does correct §5's promotion-mechanism bullet
 (previously naming `benchmark-check.yml` as the eventual required-gate
 target) and §11's `ci-integration.md` cross-reference. There is no
 independent GitHub Actions benchmark execution path left over from #255.
+#420 was tracked as a fourth child of #331 alongside #333/#334/#335 (§2.1),
+since retiring the redundant legacy path is part of confirming the
+Top-K-gate tracking parent's children collectively cover the PR-time
+benchmark path with no gap or duplicated ownership.
 
 ## 1. Problem and motivation
 
@@ -206,10 +210,11 @@ Read left to right:
 | #391 | #330 | #330 | revises #330's runtime contract; supersedes #337 |
 | #336 | #330 | #330 | blocks #337 (historical — see §2.3) |
 | #337 | #330 | #330, #336 | superseded by #391 — no longer load-bearing |
-| #331 | #329 | #330 | children: #333, #334, #335 |
+| #331 | #329 | #330 | children: #333, #334, #335, #420 |
 | #333 | #331 | #330 | blocks #334 |
 | #334 | #331 | #333, #330 | blocks #335 |
 | #335 | #331 | #334, #332 | — |
+| #420 | #331 | #333, #334 | — |
 | #332 | #329 | #330 | children: #338, #339 |
 | #338 | #332 | #330 | blocks #339 |
 | #339 | #332 | #338 | — |
