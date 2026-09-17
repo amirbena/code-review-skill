@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.51.1 — 2026-09-17
+
+### Fixed
+
+- Make specialist-depth's activation predicate loading fail-closed: ambiguous or failed evaluation now loads the capability instead of risking a silent skip (#444).
+
 ## v1.51.0 — 2026-09-17
 
 ### Changed
