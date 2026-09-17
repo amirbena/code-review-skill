@@ -33,7 +33,7 @@ There is no caller option to disable it.
 "Always active" describes the trigger-evaluation predicate above, not
 whether this file itself is opened. Recognizing which trigger *type* a
 change plausibly implicates, and — for the interface/contract,
-migration/schema, and config-consumer triggers — whether it fires, are
+migration/schema, and config-consumer triggers — whether they fire, are
 both decidable from the diff alone, against the fixed trigger catalog
 `review-scope.md`'s "Repository expansion" already restates as resident
 summary: each of those three fires on a fact the diff itself already
