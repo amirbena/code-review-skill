@@ -26,7 +26,6 @@ concern lives in the file named for it.
 | [`severity-accuracy.md`](severity-accuracy.md) | Measuring, over the #55 matched set, how often a matched finding carries a permitted expected severity — the **exact** / **over-severity** / **under-severity** classification on the P0 > P1 > P2 ordinal, the `severity`-list and `any_of` member resolution, the per-case and aggregate counts with a single exact-rational exact-match rate, and how they render alongside the regression report's deltas without gating it. | [#56](https://github.com/amirbena/code-review-skill/issues/56) |
 | [`duplicate-noise.md`](duplicate-noise.md) | Measuring duplicate / same-root-cause noise over a case's **produced findings alone** — the same-root-cause edge (the #54 `MATCH` cell applied to a pair of produced findings, unchanged), connected-component clustering, the redundant-finding count and its exact-rational duplicate rate per case and in aggregate, the highest-noise-cases list, and how they render alongside the regression report's deltas without gating it. | [#57](https://github.com/amirbena/code-review-skill/issues/57) |
 | [`claim-correspondence-adequacy.md`](claim-correspondence-adequacy.md) | Research recommendation (not a contract change): whether `match-criteria.md`'s lexical claim-correspondence check can recognize an independently-phrased-but-correct finding, measured with real harness-fidelity-corrected benchmark reruns. Finds the free-text Jaccard/subset path is, in practice, the *only* path that ever decides the defect axis in production because a produced `defect_kind` is never populated, and recommends evaluating `defect_kind` population first per the deterministic-options-first guardrail. | [#343](https://github.com/amirbena/code-review-skill/issues/343) |
-| [`ci-integration.md`](ci-integration.md) | Wiring the existing benchmark execution (`scripts/benchmark/run_benchmark.py` + `scripts/benchmark/benchmark_review_adapter.py`, #250) into a dedicated, informational/non-blocking PR-level CI check (`.github/workflows/benchmark-check.yml`) — the deterministic applicability classifier (`scripts/benchmark/benchmark_ci_classifier.py`), the not-applicable / runtime-unavailable / ran three-state contract, and its full independence from `release-worthiness.yml`. | [#255](https://github.com/amirbena/code-review-skill/issues/255) |
 | [`runtime-execution-contract.md`](runtime-execution-contract.md) | The vendor-neutral runtime execution contract any benchmark runtime must satisfy — split into Class 1 (automatic/repository-triggered, untrusted-input, the original non-personal-machine trust boundary; currently unprovisioned, not further pursued) and Class 2 (maintainer-controlled, optional quality observability, never a contributor/merge prerequisite, Claude Cloud Routines as the sole selected scheduled-integration target); the shared `run_benchmark.py` → `ReviewerAdapter` → agent CLI/runtime → unmodified Skill → model backend execution chain; the runtime viability criteria per class; the required runtime/model/Skill-SHA metadata; the historical Class 1 candidate classes A–D; and the rejected approaches for both classes. | [#330](https://github.com/amirbena/code-review-skill/issues/330), revised by [#391](https://github.com/amirbena/code-review-skill/issues/391) |
 | [`runtime-candidate-decision.md`](runtime-candidate-decision.md) | The empirical spike's decision record — the real candidates actually run against a small corpus subset, their results scored against `runtime-execution-contract.md`'s viability criteria and an added economic-sustainability constraint. Historical record: its conditional execution path for #337 is superseded by #391. | [#336](https://github.com/amirbena/code-review-skill/issues/336) |
 | [`cloud-routine-integration.md`](cloud-routine-integration.md) | The concrete Class 2 (maintainer-controlled) Claude Cloud Routine vehicle `runtime-execution-contract.md` §2.2/§8 scopes but does not implement: the `run_benchmark_routine.py` entrypoint and its smoke/selected/full/auth-check modes, positive completion verification that never trusts a Routine's own "green" status, explicit runtime/model/SHA metadata, evidence persisted as tracking-Issue comments instead of the Routine's own transcript, the GitHub auth/issue-permission smoke test, and why nothing in this vehicle is reachable from contributor PR automation. | [#415](https://github.com/amirbena/code-review-skill/issues/415) |
@@ -440,17 +439,20 @@ that has ever run. It recommends, without implementing, evaluating
 `defect_kind` population as the next deterministic lever per #343's
 guardrail, ahead of any semantic/LLM judge.
 
-## CI integration
+## Retired: PR-level benchmark CI check
 
-[`ci-integration.md`](ci-integration.md) (#255) wires the existing #250
-benchmark execution into a **dedicated, informational** PR-level CI check,
-independent from `release-worthiness.yml`: a small deterministic path
-classifier decides applicability, an applicable PR runs
-`python3 scripts/benchmark/run_benchmark.py` from its own checkout exactly as a
-developer would, and the result is published without ever becoming a
-required merge gate — an unavailable review-CLI runtime on the bare Actions
-runner is a distinct, non-failing "benchmark not run" outcome, not a
-failure. It reimplements no runner/matcher/metrics/adapter logic above.
+The dedicated, informational PR-level CI check that once wired the #250
+benchmark execution into `.github/workflows/benchmark-check.yml` via a
+standalone applicability classifier (`scripts/benchmark/benchmark_ci_classifier.py`,
+#255) has been retired
+([#420](https://github.com/amirbena/code-review-skill/issues/420)): its
+PR-time responsibility — deciding what a PR's changes mean for benchmark
+coverage — is now owned by the canonical taxonomy/index (`taxonomy.md`,
+#333) and the deterministic Top-K selector (`selection.md`, #334), which
+did not exist when #255 shipped. Neither of those is a GitHub Actions
+workflow, and there is no remaining independent GitHub Actions benchmark
+execution path from #255. Scheduled full-corpus execution and its history
+are owned by the Class 2 Cloud Routine vehicle below.
 
 ## Runtime execution contract
 

@@ -182,8 +182,7 @@ One machine-readable JSON object per run, built by
 [`../../scripts/benchmark/select_benchmark_cases.py`](../../scripts/benchmark/select_benchmark_cases.py),
 published to the GitHub Actions step summary via that script's
 `--step-summary` option (the same convention
-[`ci-integration.md`](ci-integration.md)'s existing benchmark check and
-`scripts/release/release_lib/cli.py` already use). Fields:
+`scripts/release/release_lib/cli.py` already uses). Fields:
 
 - `resolved_taxonomy_classification` — the PR's resolved taxonomy
   classification (all four dimensions).

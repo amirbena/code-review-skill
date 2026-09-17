@@ -67,6 +67,25 @@ deferred to separate, later changes rather than applied here. §3, §5, §7,
 §8 (except one restated bullet), §9 (except one bullet), §10, §11, and
 §12 are otherwise unaffected.
 
+**Legacy CI retirement
+([#420](https://github.com/amirbena/code-review-skill/issues/420)).** By
+the time §5's PR-time path below was fully implemented (#333's taxonomy
+and inverted index, PR #418; #334's deterministic Top-K selector, PR
+#419), the original #255 PR-level GitHub Actions check
+(`.github/workflows/benchmark-check.yml` and
+`scripts/benchmark/benchmark_ci_classifier.py`) had become a redundant
+third execution path: its own PR-diff applicability decision duplicated,
+less precisely, what #333/#334 now compute deterministically, and #391
+had already made its non-blocking contributor-path status permanent
+rather than a stepping stone to a provisioned Class 1 runtime. #420
+removed that workflow and classifier, and the doc that specified them
+(`docs/benchmark/ci-integration.md`), completely. This does not change
+§2's DAG or §4's two-class split — it removes a workflow that was never
+part of either — but it does correct §5's promotion-mechanism bullet
+(previously naming `benchmark-check.yml` as the eventual required-gate
+target) and §11's `ci-integration.md` cross-reference. There is no
+independent GitHub Actions benchmark execution path left over from #255.
+
 ## 1. Problem and motivation
 
 Four things are true about this repository's review-quality feedback loop
@@ -84,11 +103,15 @@ today, and they are easy to conflate:
    known-correct expectations — if a real reviewer ever ran them.
 3. **Real behavioral execution in CI is not yet dependable.** Nothing in
    `.github/workflows/*.yml` provisions a runtime capable of actually
-   invoking the packaged `local-code-review` Skill's semantics.
-   `docs/benchmark/ci-integration.md` §4 already documents that such a
-   runtime is "almost certainly" unavailable on a bare GitHub-hosted
-   runner, so the existing benchmark check can classify a PR as applicable
-   and still never execute anything.
+   invoking the packaged `local-code-review` Skill's semantics. The
+   original PR-level benchmark check this problem statement was written
+   against (`docs/benchmark/ci-integration.md` §4, retired by
+   [#420](https://github.com/amirbena/code-review-skill/issues/420))
+   already documented that such a runtime is "almost certainly"
+   unavailable on a bare GitHub-hosted runner, so that check could
+   classify a PR as applicable and still never execute anything —
+   historical motivation, kept for record; today's PR-time path is #333's
+   classification and #334's Top-K selection instead.
 4. **Workflow telemetry, benchmark ground truth, analytics, and
    repository-scoped learning are separate concerns that need clear
    boundaries.** Four different issues (#182, #329's benchmark tree, #131,
@@ -461,17 +484,19 @@ Principles that hold regardless of the exact numbers chosen:
   and is now additionally constrained by §4.1's Class 2 rule.** #334's
   selector ships and runs informationally first. #335 owns the promotion
   mechanism as described (measuring miss rate and over-selection against
-  #332's nightly results over a burn-in window, moving
-  `benchmark-check.yml` into required branch-protection status with an
-  explicit, auditable override), but §4.1 now states that Class 2
-  (maintainer-controlled) execution must never become a required
-  contributor/merge check. Under the current architecture (Class 1
-  unprovisioned, not being pursued), that means #335's promotion step has
-  no runtime it is currently permitted to promote against — it stays
-  informational unless and until a future, separately-decided Class 1
-  runtime exists. #335's own issue text needs a bounded correction to
-  state this explicitly (§2.3); this document does not silently reinterpret
-  #335's existing wording.
+  #332's nightly results over a burn-in window), but §4.1 states that
+  Class 2 (maintainer-controlled) execution must never become a required
+  contributor/merge check. The retired #255 PR-level workflow
+  (`benchmark-check.yml`, formerly the candidate for that eventual
+  required-branch-protection promotion) no longer exists
+  ([#420](https://github.com/amirbena/code-review-skill/issues/420)), and
+  under the current architecture (Class 1 unprovisioned, not being
+  pursued) there is no other GitHub Actions runtime #335's promotion step
+  is currently permitted to promote against — it stays informational
+  unless and until a future, separately-decided Class 1 runtime exists.
+  #335's own issue text needs a bounded correction to state this
+  explicitly (§2.3); this document does not silently reinterpret #335's
+  existing wording.
 
 ## 6. Nightly path
 
@@ -676,10 +701,12 @@ implemented:
 
 - [`../benchmark/README.md`](../benchmark/README.md) owns the benchmark
   contracts this architecture sits above: fixture format, corpus, runner
-  contract, match criteria, the three quality metrics, and the existing
-  informational CI wiring (`ci-integration.md`, #255). This document adds
-  the runtime/selection/nightly/measurement architecture on top; it does
-  not redefine any of those contracts.
+  contract, match criteria, the three quality metrics, and the
+  informational PR-time taxonomy/selection wiring (`taxonomy.md` #333,
+  `selection.md` #334 — the earlier standalone CI wiring, `ci-integration.md`
+  #255, was retired by #420). This document adds the
+  runtime/selection/nightly/measurement architecture on top; it does not
+  redefine any of those contracts.
 - [`../finding-confidence/README.md`](../finding-confidence/finding-confidence-model.md)
   owns the finding `confidence` field that runtime-validated and
   benchmark-derived evidence roll into; unrelated to this document's

@@ -99,11 +99,11 @@ than re-drifting from actual directories on day one.
 ### 2.2 `policy_contract`
 
 A maintained closed list of `shared/policies/*.md` stems, extended
-deliberately — mirroring `APPLICABLE_PREFIXES` in
-`scripts/benchmark/benchmark_ci_classifier.py`, which is also a
-hand-maintained list rather than a filesystem scan. A corpus case (or PR
-diff) declares the policy contract(s) its expected review behavior is
-grounded in.
+deliberately — the same hand-maintained-list-rather-than-filesystem-scan
+style as `APPLICABLE_PREFIXES` in the now-retired #255
+`benchmark_ci_classifier.py` ([#420](https://github.com/amirbena/code-review-skill/issues/420)).
+A corpus case (or PR diff) declares the policy contract(s) its expected
+review behavior is grounded in.
 
 ### 2.3 `risk_mode`
 
@@ -120,8 +120,8 @@ they can never silently drift apart.
 
 The four named surfaces a change to **this repository** (not the
 repository under review by a Skill) can land on, refined from the boolean
-applicability check in `scripts/benchmark/benchmark_ci_classifier.py`
-(#255):
+applicability check that used to live in the now-retired #255
+`benchmark_ci_classifier.py` ([#420](https://github.com/amirbena/code-review-skill/issues/420)):
 
 | Value | Path basis |
 |---|---|
@@ -132,13 +132,15 @@ applicability check in `scripts/benchmark/benchmark_ci_classifier.py`
 
 Unlike `capability`/`policy_contract`/`risk_mode`, `affected_surface` is
 **fully deterministic** — `classify_affected_surfaces()` in
-`benchmark_taxonomy.py` derives it directly from a PR's changed paths,
-the same way `benchmark_ci_classifier.py` derives applicability. It is
-never part of the one model call (§4): a path-prefix lookup needs no
-judgment. `benchmark_taxonomy.py` deliberately does not import
-`benchmark_ci_classifier.py` (and is not imported by it), mirroring that
-module's own documented independence from other classifiers — the two
-must never couple, even though their prefix sets overlap.
+`benchmark_taxonomy.py` derives it directly from a PR's changed paths, the
+same way the retired `benchmark_ci_classifier.py` used to derive
+applicability. It is never part of the one model call (§4): a path-prefix
+lookup needs no judgment. `benchmark_taxonomy.py` never imported
+`benchmark_ci_classifier.py` (and was never imported by it) — that
+classifier's own documented independence from other classifiers meant the
+two never coupled even though their prefix sets overlapped, and
+`benchmark_taxonomy.py` needed no change when the classifier was retired
+([#420](https://github.com/amirbena/code-review-skill/issues/420)).
 
 For an existing corpus case, `affected_surface` describes what a review of
 *this repository's own future changes* in that capability area would

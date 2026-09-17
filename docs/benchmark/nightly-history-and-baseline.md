@@ -101,9 +101,12 @@ evidence-issue posting: an unverified run persists nothing, in either
 place.
 
 **Never blocks PR or `main`.** Nothing above is invoked by
-`.github/workflows/**`, `scripts/benchmark/benchmark_ci_classifier.py`, or
-any other repository-triggered automation — the same non-reachability
-guarantee `cloud-routine-integration.md` §8 states for the vehicle itself.
+`.github/workflows/**` or any other repository-triggered automation —
+there is no independent GitHub Actions benchmark execution path left over
+from the retired #255 workflow
+([#420](https://github.com/amirbena/code-review-skill/issues/420)) for it
+to couple to — the same non-reachability guarantee
+`cloud-routine-integration.md` §8 states for the vehicle itself.
 No contributor needs benchmark credentials, a Routine, or `benchmark-history`
 branch push access for a normal PR or merge.
 
