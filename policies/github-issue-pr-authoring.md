@@ -99,6 +99,48 @@ live in the child Issues, not the parent. As with any Dependencies field,
 a closed predecessor Epic or issue is cited as a bare reference — not
 re-summarized.
 
+## Native GitHub relationships
+
+The `Dependencies` field's bare references (`Parent: #N`, `Children:
+#N`, `Depends on: #N`, `Blocks: #N`) describe the intended relationship
+graph, but the prose alone is not the completed state. An agent that
+**creates** an Issue with one of these declared, or **materially
+restructures** an existing Issue's declared relationships, creates the
+matching native GitHub relationship in the same operation — not as a
+separate follow-up:
+
+- `Parent: #N` / `Children: #N` → a native parent/sub-issue relationship
+  (`gh issue` sub-issue support, or the equivalent GraphQL
+  `addSubIssue`).
+- `Depends on: #N` / `Blocks: #N` → a native issue-dependency
+  relationship (`blocked by` / `blocking`, via the equivalent GraphQL
+  `addBlockedBy`) in the correct direction — "depends on" makes *this*
+  Issue the blocked one; "blocks" makes the *referenced* Issue the
+  blocked one.
+- `Related: #N` (or any other non-directional, generic cross-reference)
+  stays prose only. It never becomes a parent/sub-issue or dependency
+  relationship — those primitives assert a structural or ordering claim
+  that "related" does not make.
+
+**Never conflate the two native primitives.** A dependency is never
+represented as a parent/sub-issue relationship, and a parent/child
+relationship is never represented as a dependency, even when it would be
+mechanically easy to do so (e.g. a child naming its own parent as a
+`Depends on:` — that is the parent relationship restated, not a second,
+independent edge; only genuine sibling/cross-Issue ordering gets its own
+dependency edge).
+
+**Verify after mutating.** After creating native relationships, re-fetch
+the affected Issues and confirm: parent/child consistency (no
+contradictory or multiple parents), dependency direction matches the
+declared prose, no cycle was introduced, and no Issue outside the
+intended set was touched. Treat the Issue creation/restructuring as
+incomplete until this verification passes.
+
+**When a relationship is ambiguous, contradictory, cyclic, or references
+an Issue that does not exist,** leave it as prose only, do not guess, and
+surface it (in the PR/task summary, not by inventing a resolution).
+
 ## Pull Requests
 
 A PR description is a concise change summary and navigation surface, not a
