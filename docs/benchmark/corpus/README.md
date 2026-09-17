@@ -194,6 +194,19 @@ see [`../taxonomy.md`](../taxonomy.md) and
   and Performance (#187) sub-corpora above as integration inputs rather
   than re-deriving their domain correctness.
 
+- [`specialist-depth-progressive-loading-proof/`](specialist-depth-progressive-loading-proof/README.md) —
+  a focused `benchmark-case/v2` sub-corpus (one net-new case) proving
+  `specialist-depth`'s conditional, fail-closed loading (Issue
+  [#411](https://github.com/amirbena/code-review-skill/issues/411),
+  parent [#403](https://github.com/amirbena/code-review-skill/issues/403))
+  behaviorally, not just at the text/manifest level #410 already pins.
+  Same format and reference validator; its own README, one case, and unit
+  test
+  ([`../../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py`](../../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py)).
+  Reuses `specialist-depth-composition/`'s Case A and Case B by id for
+  the "not needed" / "must activate" required cases rather than
+  re-declaring them.
+
 - [`sandbox-adversarial/`](sandbox-adversarial/README.md) — not a
   `benchmark-case/v2` corpus (see its README for why): the real-runner
   adversarial security-boundary benchmark for the runtime-validation
