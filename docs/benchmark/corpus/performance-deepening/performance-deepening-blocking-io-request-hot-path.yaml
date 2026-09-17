@@ -6,7 +6,7 @@
 # process startup and was cached is moved into the per-request handler
 # itself, so every request now pays the blocking read.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: performance-deepening-blocking-io-request-hot-path
 title: "handle_request re-reads feature flags from disk on every request instead of once at startup"

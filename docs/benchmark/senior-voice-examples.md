@@ -11,7 +11,7 @@ senior/human voice from
 
 This is a **documented reference set, not a CI gate** — unlike
 [`corpus/`](corpus/README.md) (the #40/#41 benchmark machinery, driven by
-`benchmark-case/v1` fixtures and scored by a runner), nothing here is
+`benchmark-case/v2` fixtures and scored by a runner), nothing here is
 consumed by a test or a runner. It exists so a reviewer of a future voice
 change has worked examples to compare against, and so the rubric in #229
 ("Quality eval") has a concrete corpus to point at. Like the rest of

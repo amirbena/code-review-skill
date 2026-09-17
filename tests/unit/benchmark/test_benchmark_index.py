@@ -37,7 +37,7 @@ def _write_case(
     (directory / f"{case_id}.yaml").write_text(
         textwrap.dedent(
             f"""\
-            format: benchmark-case/v1
+            format: benchmark-case/v2
             id: {case_id}
             title: "synthetic case {case_id}"
             input:
@@ -92,7 +92,7 @@ class BuildIndexShapeTests(unittest.TestCase):
         (directory / "multi.yaml").write_text(
             textwrap.dedent(
                 """\
-                format: benchmark-case/v1
+                format: benchmark-case/v2
                 id: multi-capability-case
                 title: "multi"
                 input:
@@ -132,7 +132,7 @@ class BuildIndexShapeTests(unittest.TestCase):
         (directory / "bad.yaml").write_text(
             textwrap.dedent(
                 """\
-                format: benchmark-case/v1
+                format: benchmark-case/v2
                 id: bad-case
                 title: "bad"
                 input:

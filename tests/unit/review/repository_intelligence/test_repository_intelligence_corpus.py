@@ -4,7 +4,7 @@
 
 The sub-corpus is
 ``docs/benchmark/corpus/repository-intelligence/*.yaml``: a small, focused
-set of ``benchmark-case/v1`` fixtures demonstrating relationship-aware
+set of ``benchmark-case/v2`` fixtures demonstrating relationship-aware
 review catching defects a diff-only read of the same patch cannot show, a
 safe-failure (ambiguity) case, and a negative/control case proving
 retrieval breadth alone is not a finding.
@@ -118,7 +118,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v1")
+                self.assertEqual(case.format, "benchmark-case/v2")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

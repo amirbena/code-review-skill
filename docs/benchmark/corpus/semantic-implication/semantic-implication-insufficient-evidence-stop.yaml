@@ -13,7 +13,7 @@
 # for corroborating evidence, finds none available, and stops without
 # manufacturing a race-condition finding it cannot support.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: semantic-implication-insufficient-evidence-stop
 title: "Report cache gains a stale-entry sweep; no evidence of concurrent access exists to support a race finding"

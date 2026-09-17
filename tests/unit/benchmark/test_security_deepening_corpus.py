@@ -3,7 +3,7 @@
 (Issue #271, parent #83, grandparent #82).
 
 The sub-corpus is ``docs/benchmark/corpus/security-deepening/*.yaml``: a
-small, focused set of ``benchmark-case/v1`` fixtures pinning representative
+small, focused set of ``benchmark-case/v2`` fixtures pinning representative
 Security deepening outcomes as follow-up quality hardening for the
 capability #83 already defines — it validates domain correctness after the
 capability exists and never redesigns it.
@@ -76,7 +76,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v1")
+                self.assertEqual(case.format, "benchmark-case/v2")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

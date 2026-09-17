@@ -329,5 +329,5 @@ examples' underlying field values satisfy live in
 and
 [`../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py`](../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py).
 The corpus-level rationale for why this is a reference set rather than
-`benchmark-case/v1` fixtures is
+`benchmark-case/v2` fixtures is
 [`corpus/reviewer-brief/README.md`](corpus/reviewer-brief/README.md).

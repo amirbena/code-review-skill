@@ -17,7 +17,7 @@
 # Expected: one required finding that SURVIVES disconfirmation but at a
 # downgraded P2, not the P0 a naive read would assign.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: cfv-valid-defect-severity-downgrade
 title: "CSV export lacks formula-injection escaping; bounded to admin-authored, admin-consumed data narrows P0 to P2"

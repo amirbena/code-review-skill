@@ -9,7 +9,7 @@ epic), which defines
 the `observation → candidate claim → validated finding → severity`
 reasoning contract: what a candidate must prove before it is promoted to a
 severity-bearing finding. This is a **focused sub-corpus** of
-[`benchmark-case/v1`](../../fixture-format.md) fixtures that pin the
+[`benchmark-case/v2`](../../fixture-format.md) fixtures that pin the
 expected outcomes for that contract and keep its false-escalation
 protections (unproven regression, unestablished semantic equivalence, an
 invented P0/P1 with no supporting evidence) and its non-suppression

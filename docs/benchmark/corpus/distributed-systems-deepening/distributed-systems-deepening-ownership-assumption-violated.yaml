@@ -12,7 +12,7 @@
 # concurrently, contradicting the coordination assumption the rest of
 # the class depends on.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: distributed-systems-deepening-ownership-assumption-violated
 title: "force_run_job writes shared last_run state without the leader check every other writer relies on"

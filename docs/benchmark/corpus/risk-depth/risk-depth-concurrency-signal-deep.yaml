@@ -10,7 +10,7 @@
 # stock. Nothing about the diff itself looks alarming without the
 # concurrency signal pushing depth to `deep`.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: risk-depth-concurrency-signal-deep
 title: "Availability check moved outside the lock reintroduces a stock-reservation race"

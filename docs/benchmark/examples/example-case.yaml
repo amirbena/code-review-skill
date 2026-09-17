@@ -15,7 +15,7 @@
 # It is NOT part of the benchmark corpus (Issue #51 owns that); it exists
 # only so the format has a realistic, validated reference.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: example-sqli-and-unsafe-path
 title: "SQL injection and user-controlled export path in the users module"

@@ -8,7 +8,7 @@
 # change the `auth` signal exists to force into `deep` review depth
 # regardless of how small the diff looks.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: risk-depth-auth-signal-deep
 title: "Admin-report auth check replaced by a spoofable client header"

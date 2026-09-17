@@ -6,7 +6,7 @@
 # or quality angle, so this case isolates "did the reviewer catch a plain
 # logic bug introduced by a change".
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: correctness-off-by-one-pagination
 title: "Off-by-one page end index duplicates a row across pages"

@@ -6,7 +6,7 @@
 # by Issue #184's scope: any existing consumer reading the removed
 # property loses it unconditionally, regardless of how it was consumed.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: api-compat-remove-field-breaking
 title: "OrderResponse drops its currency field, breaking existing consumers"

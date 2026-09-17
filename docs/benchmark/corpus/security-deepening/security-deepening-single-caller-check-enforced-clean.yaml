@@ -8,7 +8,7 @@
 # point that matters; the deepening capability has nothing further to
 # trace and contributes no finding.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: security-deepening-single-caller-check-enforced-clean
 title: "New DELETE route is the only caller of the privileged helper and enforces the check at the point that matters"

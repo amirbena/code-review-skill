@@ -4,7 +4,7 @@ skills/github-pr-review/policies/reviewer-brief.md and
 skills/github-pr-review/templates/reviewer-brief.md).
 
 Unlike the domain corpora under docs/benchmark/corpus/, the Reviewer
-Brief has no representation in the `benchmark-case/v1` schema
+Brief has no representation in the `benchmark-case/v2` schema
 (docs/benchmark/fixture-format.md): that schema's `expected` block is
 findings/decision-shaped and has no field for a private prose artifact or
 for a second, GitHub-bound output surface to compare it against. Rather

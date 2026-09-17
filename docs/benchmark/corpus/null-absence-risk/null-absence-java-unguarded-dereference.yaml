@@ -7,7 +7,7 @@
 # null check anywhere on the path. This is the "real dereference risk is
 # surfaced" case required by Issue #121's acceptance criteria.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: null-absence-java-unguarded-dereference
 title: "UserNotifier.notify() dereferences a User that UserRepository documents as nullable"

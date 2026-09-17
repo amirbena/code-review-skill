@@ -10,7 +10,7 @@
 # line the rename touches carries nothing a careful reviewer could flag —
 # the case must stay a genuine no-op.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: no-op-comment-and-rename
 title: "Docstring added and a local variable renamed, no behaviour change"

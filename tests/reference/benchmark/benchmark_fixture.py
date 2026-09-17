@@ -3,7 +3,7 @@
 
 Test-only: not runtime logic, not packaged — the packaged Skills are
 Markdown/YAML only. This module mirrors
-``docs/benchmark/fixture-format.md``: the ``benchmark-case/v1`` schema for a
+``docs/benchmark/fixture-format.md``: the ``benchmark-case/v2`` schema for a
 single benchmark case, its required/optional fields, the four typed variance
 constructs, and the fail-closed validation rules. It is a *parser and
 validator*, not a matcher and not a runner — Issue #52 owns the real parser,
@@ -28,7 +28,13 @@ from tests.reference.benchmark import benchmark_taxonomy as tax
 # one (fail-closed, docs/benchmark/fixture-format.md §3).
 # --------------------------------------------------------------------------
 
-SUPPORTED_FORMATS: frozenset[str] = frozenset({"benchmark-case/v1"})
+# v2 (Issue #333): metadata.taxonomy became a required field, a breaking
+# requiredness change per fixture-format.md §3 — the major version bumped
+# accordingly. v1 (no mandatory taxonomy) is superseded, not dual-read:
+# every corpus fixture was migrated to v2 in the same change that
+# introduced the requirement, so there is no live v1 fixture left to
+# support, and this reference validator implements v2 only.
+SUPPORTED_FORMATS: frozenset[str] = frozenset({"benchmark-case/v2"})
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 

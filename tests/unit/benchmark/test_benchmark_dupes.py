@@ -56,7 +56,7 @@ def _pf(
 
 def _case(*, case_id: str = "c1") -> bf.BenchmarkCase:
     return bf.BenchmarkCase(
-        format="benchmark-case/v1",
+        format="benchmark-case/v2",
         id=case_id,
         title="t",
         input={"patch": "--- a\n+++ b\n"},

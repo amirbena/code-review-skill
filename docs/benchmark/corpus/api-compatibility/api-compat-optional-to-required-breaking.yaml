@@ -6,7 +6,7 @@
 # by Issue #184's scope: a request body a client previously sent without
 # the field, and which the server previously accepted, is now rejected.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: api-compat-optional-to-required-breaking
 title: "CreateTicketRequest makes description required, rejecting previously-valid requests"

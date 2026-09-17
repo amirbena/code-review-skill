@@ -95,10 +95,11 @@ worked example need.
 Every fixture carries an explicit format identifier:
 
 ```yaml
-format: benchmark-case/v1
+format: benchmark-case/v2
 ```
 
-- `format` is `benchmark-case/v<major>`. This document defines `v1`.
+- `format` is `benchmark-case/v<major>`. This document currently defines
+  `v2` (see "Version history" below for `v1`).
 - A reader implements a **fixed set** of major versions. Encountering any
   other value — absent, malformed, or a version it does not implement — is
   a hard rejection (§11). A reader MUST NOT parse an unrecognized version
@@ -107,10 +108,24 @@ format: benchmark-case/v1
 - `format` is validated **before any other field is read**, so an old case
   is never reinterpreted under new rules.
 - A breaking change to the meaning or requiredness of any field increments
-  `<major>` and leaves existing `benchmark-case/v1` cases readable only by
-  a `v1` reader. Additive, backward-compatible clarifications may be made
-  within `v1` only if every previously valid `v1` fixture stays valid and
-  its meaning is unchanged.
+  `<major>` and leaves existing cases of the prior version readable only by
+  a reader that still implements that prior version. Additive,
+  backward-compatible clarifications may be made within a version only if
+  every previously valid fixture of that version stays valid and its
+  meaning is unchanged.
+
+### Version history
+
+| Version | Status | What changed |
+|---|---|---|
+| `v1` | Superseded | The original schema (#50). `metadata` was optional; no taxonomy classification existed. |
+| `v2` | Current | [#333](https://github.com/amirbena/code-review-skill/issues/333): `metadata` became **required**, and `metadata.taxonomy` became a **required** field within it (§10.1) — a breaking change to a field's requiredness under the rule above, hence the major-version increment. Every corpus fixture and the worked example were migrated to `v2` in the same change that introduced the requirement, so no `v1` fixture was left behind. |
+
+The reference validator
+([`../../tests/reference/benchmark/benchmark_fixture.py`](../../tests/reference/benchmark/benchmark_fixture.py))
+implements `v2` only — per "Fail closed" above, a `v1` fixture is rejected
+under §11 rule 1, never reinterpreted under `v2`'s rules. `v1` is recorded
+here as history, not as a version a current reader accepts.
 
 ## 4. Top-level fields
 
@@ -169,8 +184,8 @@ A mapping with:
   used everywhere else in this contract.
 
 `repo_ref` names *what* to review. Whether a runner supports patch inputs,
-reference inputs, or both first is #52's decision; `v1` fixes the shape of
-both so the corpus is not blocked on that choice.
+reference inputs, or both first is #52's decision; this contract fixes the
+shape of both so the corpus is not blocked on that choice.
 
 ### 6.3 Review context (`input.context`)
 
@@ -215,7 +230,7 @@ Additional fields:
 |---|---|---|
 | `severity` | yes | `P0`/`P1`/`P2`, **or** a list of ≥ 2 distinct such values to permit severity variance (§9). |
 | `location` | yes | Structured expected location (§8.3). |
-| `claim` | yes | A short normalized cause → faulty-behavior sentence (the `behavioral_claim` shape of [`../findings/finding-matching-strategy.md`](../findings/finding-matching-strategy.md) §2). Documentation and a future-matcher target; **not** string-equality matched in `v1`. |
+| `claim` | yes | A short normalized cause → faulty-behavior sentence (the `behavioral_claim` shape of [`../findings/finding-matching-strategy.md`](../findings/finding-matching-strategy.md) §2). Documentation and a future-matcher target; **not** string-equality matched. |
 | `defect_kind` | no | Narrow defect-class slug (e.g. `sql-injection`). Concrete purpose: category-level slicing for #41 / profile fixtures #47. |
 | `alternatives` | no | Non-empty list of acceptable **restatements of this same defect** (§8.2). |
 
@@ -397,13 +412,14 @@ authoritative; this list is not exhaustive.
 11. `decision` is present and contradicts the decision mechanically
     derived from the required findings' severities (§7).
 
-A validator that implements `v1` and is handed a `v2` fixture rejects it
-under rule 1 — it never falls back to `v1` parsing.
+A validator that implements `v2` and is handed a `v1` fixture rejects it
+under rule 1 — it never falls back to `v1` parsing (see "Version history"
+in §3).
 
 ## 12. Worked example
 
 [`examples/example-case.yaml`](examples/example-case.yaml) is a complete,
-validated `benchmark-case/v1` fixture. It is a crafted single-file Python
+validated `benchmark-case/v2` fixture. It is a crafted single-file Python
 patch that introduces a SQL-injection sink and a user-controlled
 filesystem path and adds no tests. It exercises every §9 construct:
 

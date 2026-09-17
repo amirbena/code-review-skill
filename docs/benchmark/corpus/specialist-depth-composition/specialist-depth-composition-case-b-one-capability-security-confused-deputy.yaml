@@ -9,7 +9,7 @@
 # correctness; #85 proves that exactly the one warranted capability
 # engages and its output stays inside the shared finding model.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: specialist-depth-composition-case-b-one-capability-security-confused-deputy
 title: "Background worker uses its own service credential to transfer funds requested by an unvalidated job payload"

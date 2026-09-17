@@ -3,7 +3,7 @@
 sub-corpus (Issue #184, parent #175).
 
 The sub-corpus is ``docs/benchmark/corpus/api-compatibility/*.yaml``: a
-small, focused set of ``benchmark-case/v1`` fixtures pinning the expected
+small, focused set of ``benchmark-case/v2`` fixtures pinning the expected
 compatible / breaking / context-dependent classification for the change
 shapes #175's scope lists — add optional field, remove field, optional to
 required, add enum member, remove enum member, rename response property —
@@ -77,7 +77,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v1")
+                self.assertEqual(case.format, "benchmark-case/v2")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

@@ -3,7 +3,7 @@
 Repository-development artifact for GitHub Issue
 [#85](https://github.com/amirbena/code-review-skill/issues/85), child of
 epic [#47](https://github.com/amirbena/code-review-skill/issues/47). This
-is a **focused sub-corpus** of [`benchmark-case/v1`](../../fixture-format.md)
+is a **focused sub-corpus** of [`benchmark-case/v2`](../../fixture-format.md)
 fixtures pinning the **architecture-level** activation/composition
 contract [`specialist-depth.md`](../../../../shared/policies/specialist-depth.md)
 (#82) already defines — not the correctness of any single domain
@@ -48,11 +48,11 @@ the single reference validator
 - **Intentionally small.** One case per required outcome shape (Cases
   A–G), not a combinatorial sweep across all five deepening capabilities.
 
-## Fixture-level scope: what a `benchmark-case/v1` fixture cannot pin
+## Fixture-level scope: what a `benchmark-case/v2` fixture cannot pin
 
 Exactly as [`../risk-depth/README.md`](../risk-depth/README.md) and
 [`../repository-intelligence/README.md`](../repository-intelligence/README.md)
-already establish for their own mechanisms: `benchmark-case/v1`'s schema
+already establish for their own mechanisms: `benchmark-case/v2`'s schema
 is closed (see [`../../fixture-format.md`](../../fixture-format.md) §2)
 and has no field for "which capabilities engaged" — only
 `expected.findings` and `expected.decision`. Unlike risk-based review

@@ -18,7 +18,7 @@ correlation fields, and nothing it must never carry -- deterministically,
 and without perturbing findings/severity/verdict.
 
 Like `delegation_fixtures.py`, this has no representation in the
-`benchmark-case/v1` schema (docs/benchmark/fixture-format.md): that
+`benchmark-case/v2` schema (docs/benchmark/fixture-format.md): that
 schema's `expected` block is findings/decision-shaped and has no field
 for an event schema, a classification, or a redaction assertion. This
 module follows the same test-only, hand-authored, data-driven fixture

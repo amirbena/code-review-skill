@@ -7,7 +7,7 @@
 # removed member is unconditionally breaking for any consumer that stores,
 # compares, or switches on the removed literal.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: api-compat-remove-enum-member-breaking
 title: "PaymentStatus drops the failed member, breaking consumers of existing failed payments"

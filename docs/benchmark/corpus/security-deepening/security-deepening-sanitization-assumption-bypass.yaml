@@ -10,7 +10,7 @@
 # decoded afterwards — the assumption code elsewhere relies on does not
 # actually hold on this new path.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: security-deepening-sanitization-assumption-bypass
 title: "preview_upload unquotes the filename after sanitize_filename, so an encoded traversal sequence bypasses the shared sanitizer"

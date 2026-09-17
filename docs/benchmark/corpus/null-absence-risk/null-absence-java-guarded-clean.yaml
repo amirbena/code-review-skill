@@ -8,7 +8,7 @@
 # is not reported" case required by Issue #121's acceptance criteria —
 # demonstrating the suppression rule, not a second unrelated scenario.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: null-absence-java-guarded-clean
 title: "UserNotifier.notify() guards the nullable findUser result with an early return"

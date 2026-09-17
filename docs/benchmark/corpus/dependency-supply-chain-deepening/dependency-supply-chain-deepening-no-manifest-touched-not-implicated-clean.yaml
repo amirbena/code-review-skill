@@ -9,7 +9,7 @@
 # distinct from the safe-patch-bump case where a qualifying file changes
 # but is not flagged.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: dependency-supply-chain-deepening-no-manifest-touched-not-implicated-clean
 title: "reports.js renames a local loop variable for clarity; no manifest, lockfile, Dockerfile, or Actions file changes"

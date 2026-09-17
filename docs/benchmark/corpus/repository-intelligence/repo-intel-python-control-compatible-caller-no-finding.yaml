@@ -17,7 +17,7 @@
 # the relationship itself was legitimately retrieved with provenance --
 # retrieving more context must never, by itself, create a finding.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: repo-intel-python-control-compatible-caller-no-finding
 title: "Call-site trigger resolves a compatible caller: no finding from retrieval breadth alone"

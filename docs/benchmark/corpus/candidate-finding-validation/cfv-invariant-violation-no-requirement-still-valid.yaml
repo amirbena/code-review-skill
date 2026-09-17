@@ -25,7 +25,7 @@
 # despite no explicit product requirement, and not reclassified away from
 # a correctness defect.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: cfv-invariant-violation-no-requirement-still-valid
 title: "Single-threaded dashboard counter has the same TOCTOU shape as the checkout path: still a correctness defect, just non-blocking"

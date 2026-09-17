@@ -9,7 +9,7 @@
 # module (UserSerializer) still reads the column being dropped. The loss
 # is neither reversible nor shown to be accounted for.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: database-migration-deepening-destructive-drop-column
 title: "0007_remove_legacy_email drops accounts_user.legacy_email while UserSerializer still reads it"

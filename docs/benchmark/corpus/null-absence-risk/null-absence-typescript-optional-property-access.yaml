@@ -7,7 +7,7 @@
 # property or method access is covered" case required by Issue #121's
 # acceptance criteria.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: null-absence-typescript-optional-property-access
 title: "userCity() accesses .city through an optional address field with no guard"

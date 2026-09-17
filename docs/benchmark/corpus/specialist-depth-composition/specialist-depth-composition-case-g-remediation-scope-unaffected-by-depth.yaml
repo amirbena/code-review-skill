@@ -13,7 +13,7 @@
 # deepening capability does not promote that broader concern into a
 # required blocking finding for this PR.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth
 title: "0012_add_status_v2_index builds a UNIQUE index without CONCURRENTLY on the actively-written orders_order table"

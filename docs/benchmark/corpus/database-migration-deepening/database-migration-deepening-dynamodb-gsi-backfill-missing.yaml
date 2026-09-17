@@ -10,7 +10,7 @@
 # added -- so those items silently never appear in the new access
 # pattern's results.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: database-migration-deepening-dynamodb-gsi-backfill-missing
 title: "list_orders_by_status queries a new DynamoDB GSI with no backfill for orders written before the index existed"

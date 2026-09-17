@@ -10,7 +10,7 @@
 # concern) -- #85 owns a minimal integration-only fixture of its own for
 # this shape, per the issue's Scope.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type
 title: "session_cache.remember narrows the cached profile shape without a compatibility path for entries written under the old shape"

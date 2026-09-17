@@ -11,7 +11,7 @@
 # catch -- proving base reasoning stays complete even when zero
 # specialist-depth capabilities engage.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: specialist-depth-composition-case-a-zero-capabilities-base-reasoning-complete
 title: "apply_discount adds a bounded per-item filter and breaks its own negative-discount guard"

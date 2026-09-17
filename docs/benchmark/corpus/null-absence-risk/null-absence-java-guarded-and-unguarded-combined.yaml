@@ -9,7 +9,7 @@
 # confirmSafely(), and never two findings for the "same" nullable source
 # merely because it appears twice.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: null-absence-java-guarded-and-unguarded-combined
 title: "OrderNotifier adds an unguarded confirm() and a guarded confirmSafely() against the same nullable lookup"

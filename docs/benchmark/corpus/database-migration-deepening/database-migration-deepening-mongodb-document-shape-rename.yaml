@@ -12,7 +12,7 @@
 # name -- written either before this deploy or by a still-running
 # previous application version during a rolling deploy.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: database-migration-deepening-mongodb-document-shape-rename
 title: "get_shipping_address reads only shippingAddress after renaming customers.mailingAddress with no coexistence handling for the old field"

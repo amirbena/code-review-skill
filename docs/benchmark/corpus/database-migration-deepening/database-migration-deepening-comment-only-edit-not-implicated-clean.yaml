@@ -8,7 +8,7 @@
 # the schema operation, data movement, or transactional behavior it
 # performs. File location alone does not activate this capability.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: database-migration-deepening-comment-only-edit-not-implicated-clean
 title: "0008_add_shipping_note.py gains an explanatory comment and a clearer migration name; the operation is unchanged"

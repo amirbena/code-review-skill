@@ -6,7 +6,7 @@
 # maintainability issue, so the mechanical decision stays `clean`. Anchors
 # the "quality-only, non-blocking" slice of the corpus.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: quality-duplicated-branch-logic
 title: "New sms branch duplicates the format_message call from the email branch"

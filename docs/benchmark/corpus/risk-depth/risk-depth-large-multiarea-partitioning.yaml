@@ -15,7 +15,7 @@
 # large-pr-partitioning.md's reference model in
 # ../../../../tests/unit/test_risk_based_review_scenarios.py.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: risk-depth-large-multiarea-partitioning
 title: "Multi-area change: unauthenticated internal endpoint, unbounded worker retry loop, and an open security-group egress rule"

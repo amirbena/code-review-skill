@@ -7,7 +7,7 @@
 # property and adding an unrelated new one, so it breaks both readers of
 # the old name and, once required, senders that never knew the new one.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: api-compat-rename-response-property-breaking
 title: "Profile renames full_name to fullName, breaking both directions for existing clients"

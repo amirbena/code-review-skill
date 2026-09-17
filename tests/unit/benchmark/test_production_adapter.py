@@ -564,7 +564,7 @@ class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
 
         case = bf.parse_case(
             {
-                "format": "benchmark-case/v1",
+                "format": "benchmark-case/v2",
                 "id": "stub-failure-case",
                 "title": "stub",
                 "input": {

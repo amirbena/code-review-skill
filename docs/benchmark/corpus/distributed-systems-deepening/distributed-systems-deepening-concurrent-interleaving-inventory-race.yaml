@@ -9,7 +9,7 @@
 # can reach the same shared dict concurrently and no lock/transaction
 # protects the read-decide-write sequence.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: distributed-systems-deepening-concurrent-interleaving-inventory-race
 title: "reserve_item reads, decides, and writes _inventory with no lock while the server runs threaded"

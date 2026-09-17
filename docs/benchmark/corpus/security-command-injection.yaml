@@ -7,7 +7,7 @@
 # `alternatives` construct). Deliberately a different sink from the worked
 # example's SQL injection so the corpus covers a second injection class.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: security-command-injection
 title: "Command injection via shell=True on an interpolated archive name"

@@ -3,7 +3,7 @@
 sub-corpus (Issue #383, parent #382/#381).
 
 The sub-corpus is ``docs/benchmark/corpus/candidate-finding-validation/*.yaml``:
-a small, focused set of ``benchmark-case/v1`` fixtures that pin the
+a small, focused set of ``benchmark-case/v2`` fixtures that pin the
 outcomes ``docs/candidate-finding-validation/candidate-finding-validation-model.md``
 names — semantic-role no-inference (§4), unproven-regression
 non-assertion (§7), a disconfirmed candidate dropped (§8 ``DROPPED``), a
@@ -135,7 +135,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v1")
+                self.assertEqual(case.format, "benchmark-case/v2")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

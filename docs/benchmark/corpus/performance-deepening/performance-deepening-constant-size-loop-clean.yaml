@@ -7,7 +7,7 @@
 # compile-time-bounded list, so base reasoning confirms the bound within
 # its own pass and Activation condition 2 is never satisfied.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: performance-deepening-constant-size-loop-clean
 title: "build_locale_menu adds one call per entry over a fixed four-element locale list"

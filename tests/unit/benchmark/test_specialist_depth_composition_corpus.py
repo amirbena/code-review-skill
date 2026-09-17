@@ -99,7 +99,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v1")
+                self.assertEqual(case.format, "benchmark-case/v2")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

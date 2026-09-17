@@ -36,7 +36,7 @@ drift introduced after the pre-render point (3) already passed.
 
 Like `delegation_fixtures.py`, `publication_mode_fixtures.py`, and
 `trusted_host_nl_fixtures.py`, this boundary has no representation in the
-`benchmark-case/v1` schema (`docs/benchmark/fixture-format.md`): that
+`benchmark-case/v2` schema (`docs/benchmark/fixture-format.md`): that
 schema's `expected` block is a patch plus expected review findings, with
 no field for a finalized decision, a rendered/submitted signal, or a
 withheld-artifact outcome. Rather than stretch that closed schema, this

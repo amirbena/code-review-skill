@@ -8,7 +8,7 @@
 # but the batching is genuinely correct, so no finding results -- the
 # domain is engaged and confirmed safe, not merely uninvolved.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: performance-deepening-batched-fix-bounded-clean
 title: "get_invoice_totals replaces a per-invoice ledger call with a single batched lookup"

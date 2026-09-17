@@ -9,11 +9,11 @@ workbench fixture set pinning the **semantic quality** and **publication
 isolation** of the private, caller-facing `Reviewer Brief` every
 `github-pr-review` result includes.
 
-## Why this corpus is not `benchmark-case/v1` fixtures
+## Why this corpus is not `benchmark-case/v2` fixtures
 
 Unlike every sibling directory here (`security-deepening/`,
 `api-compatibility/`, `specialist-depth-composition/`, …), this corpus
-does **not** ship `benchmark-case/v1` YAML fixtures. That format
+does **not** ship `benchmark-case/v2` YAML fixtures. That format
 ([`../../fixture-format.md`](../../fixture-format.md)) is closed and
 findings/decision-shaped: `expected.findings` and `expected.decision` are
 the only outcome it can pin. The Reviewer Brief is a different kind of
@@ -125,5 +125,5 @@ python3 -m pytest tests/unit/benchmark/test_reviewer_brief_structural.py \
 ```
 
 Both modules load the single reference fixture module above (never a
-second one) and are independent of the `benchmark-case/v1` runner/matcher/
+second one) and are independent of the `benchmark-case/v2` runner/matcher/
 metrics stack, which this corpus does not touch.

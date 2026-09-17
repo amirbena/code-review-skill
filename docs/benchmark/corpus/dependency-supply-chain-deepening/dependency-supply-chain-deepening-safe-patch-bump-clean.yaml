@@ -8,7 +8,7 @@
 # implicated concern" worked example -- touching a manifest/lockfile is
 # never by itself sufficient to engage this pass.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: dependency-supply-chain-deepening-safe-patch-bump-clean
 title: "package.json bumps express ^4.18.1 -> ^4.18.2, a patch-level version with matching lockfile churn only"

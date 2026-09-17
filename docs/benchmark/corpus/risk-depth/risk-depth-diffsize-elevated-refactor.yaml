@@ -12,7 +12,7 @@
 # new (currency, amount) signature -- so the size-driven elevated depth is
 # what catches a real bug a lighter pass could plausibly skip past.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: risk-depth-diffsize-elevated-refactor
 title: "format_currency() parameter reorder leaves one call site passing args in the old order"

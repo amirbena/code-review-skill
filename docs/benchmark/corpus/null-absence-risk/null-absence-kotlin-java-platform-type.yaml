@@ -8,7 +8,7 @@
 # is the "at least one null-safe-language / interoperability edge case"
 # case required by Issue #121's acceptance criteria.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: null-absence-kotlin-java-platform-type
 title: "ProfileLoader.greeting() calls .trim() on a Java platform-type result with no null check"

@@ -27,7 +27,7 @@
 #
 # Expected: TWO separate required findings.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: analogue-placement-distinct-boundaries-not-consolidated
 title: "Two new webhook files both duplicate a shared analogue pattern but violate different boundaries; expect two separate findings"

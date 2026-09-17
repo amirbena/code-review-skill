@@ -8,7 +8,7 @@
 # documents support for Python 3.8-3.10 -- the change silently narrows
 # the versions the repository claims to support.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: dependency-supply-chain-deepening-runtime-minimum-raised
 title: "pyproject.toml raises requires-python to >=3.11 while README.md still documents 3.8+ support"

@@ -8,7 +8,7 @@
 # establishes both operands are unbounded and grow independently, so the
 # quadratic blow-up is evidenced rather than speculative.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: performance-deepening-nested-unbounded-scan-quadratic
 title: "merge_new_events drops its seen-set and checks membership against the growing merged list instead"

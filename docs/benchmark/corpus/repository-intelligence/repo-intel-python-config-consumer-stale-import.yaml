@@ -12,7 +12,7 @@
 # app/uploads.py, supplied here via `input.base`, which still imports the
 # removed name.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: repo-intel-python-config-consumer-stale-import
 title: "Config-consumer trigger catches a stale import after a config key is renamed and removed"

@@ -163,6 +163,35 @@ an unknown value, or a duplicate value — via
 a warning: a corpus case with missing or invalid taxonomy metadata fails
 corpus validation.
 
+### 3.1 Provenance of the initial backfill (bulk, not per-case)
+
+The taxonomy metadata on every pre-existing corpus case (everything
+authored before #333) was populated by a one-off bulk migration, not a
+per-case audit:
+
+- `capability` — derived mechanically from the case's corpus directory via
+  `CAPABILITY_BY_CORPUS_DIRECTORY` (§2.1) — reliable, since it is a direct
+  structural fact.
+- `risk_mode` — copied directly from the case's existing `metadata.tags`
+  (§2.3) — reliable, since it reuses an already-authored, already-reviewed
+  field unchanged.
+- `policy_contract` — assigned by a **hand-written domain-to-policy
+  lookup table** (one guess per corpus directory, applied to every case in
+  it), not evaluated per case. Several directories had no clear
+  single-policy match and were left `unclassified` rather than forced to
+  an inexact value; directories that did get a mapped value were not
+  individually verified against each case's actual content.
+- `affected_surface` — defaulted to `unclassified` for every pre-existing
+  case (§2.4's own stated rationale: most corpus cases test review quality
+  over an arbitrary *external* diff, not a change to this repository, so
+  `unclassified` is usually the honest answer, not a placeholder).
+
+Consumers of the inverted index (#334 and beyond) should treat
+`policy_contract` on a pre-#333 case as a **best-effort default**, not a
+reviewed classification, until that case is revisited. A case authored
+*after* #333 is expected to have its taxonomy hand-chosen at authoring
+time per §3 above, not bulk-defaulted.
+
 ## 4. PR-diff classification
 
 The **one** bounded, schema-constrained model call in this whole design

@@ -9,7 +9,7 @@
 # schema operation is byte-for-byte unchanged, so neither base
 # persistence reasoning nor database deepening has anything to flag.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: specialist-depth-composition-case-d-superficial-signal-suppressed-clean
 title: "0008_add_shipping_note.py gains an explanatory comment and a clearer migration name; the operation is unchanged"

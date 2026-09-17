@@ -8,7 +8,7 @@
 # #121's acceptance criteria, and covers the Go side of the explicit
 # C#/Python/Go requirement.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: null-absence-go-unchecked-map-lookup
 title: "SessionUserID dereferences a map lookup's nil zero-value without the ok check"

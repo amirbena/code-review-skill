@@ -12,7 +12,7 @@
 # With `findings_completeness: exhaustive`, a second finding for another call
 # site is an unexpected finding.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: consolidation-shared-validator-many-call-paths
 title: "One loosened email validator breaks four call paths; expect one authoritative finding"

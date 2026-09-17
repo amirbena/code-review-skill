@@ -9,7 +9,7 @@
 # does not require and package.json does not otherwise reference -- an
 # expansion the manifest change does not explain.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: dependency-supply-chain-deepening-transitive-dependency-expansion
 title: "package.json adds one direct dependency (csv-stringify) but package-lock.json adds five unrelated webpack/enzyme packages"

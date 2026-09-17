@@ -12,7 +12,7 @@
 # materially implicated by one change, not that each dimension must
 # produce its own separate finding.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: semantic-implication-multi-dimension-webhook-xss
 title: "New webhook handler stores and renders sender-controlled text unescaped into the admin dashboard"

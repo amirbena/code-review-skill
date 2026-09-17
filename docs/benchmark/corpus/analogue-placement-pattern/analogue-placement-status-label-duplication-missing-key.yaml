@@ -19,7 +19,7 @@
 # Expected: ONE required finding on the inline duplication, naming the
 # concrete KeyError consequence.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: analogue-placement-status-label-duplication-missing-key
 title: "New connector inlines the status-label table instead of centralizing it; the inline copy is missing a key and crashes on delivery failure"

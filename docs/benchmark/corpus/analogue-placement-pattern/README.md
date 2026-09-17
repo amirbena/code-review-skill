@@ -9,7 +9,7 @@ which extends
 can infer an established but undocumented local responsibility/placement
 pattern from analogous implementations and flag a materially consequential
 deviation from it. This is a **focused sub-corpus** of
-[`benchmark-case/v1`](../../fixture-format.md) fixtures that pin the
+[`benchmark-case/v2`](../../fixture-format.md) fixtures that pin the
 expected outcomes for that capability and keep it from regressing into a
 disguised style-consistency checker.
 

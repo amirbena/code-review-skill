@@ -3,7 +3,7 @@
 (Issue #185, parent #177).
 
 The sub-corpus is ``docs/benchmark/corpus/consolidation/*.yaml``: a small,
-focused set of ``benchmark-case/v1`` fixtures that pin the consolidation
+focused set of ``benchmark-case/v2`` fixtures that pin the consolidation
 outcomes #177 names — shared cause consolidates to one authoritative
 finding; look-alike but independent defects stay separate; a shared cause
 held at low confidence falls back to separate findings; a re-review
@@ -94,7 +94,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v1")
+                self.assertEqual(case.format, "benchmark-case/v2")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

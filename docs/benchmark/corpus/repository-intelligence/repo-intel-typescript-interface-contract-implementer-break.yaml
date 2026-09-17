@@ -15,7 +15,7 @@
 # still returns string | null on a cache miss -- now inconsistent with the
 # updated contract.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: repo-intel-typescript-interface-contract-implementer-break
 title: "Interface/contract trigger catches a sibling implementer left inconsistent with a narrowed Cache.get() contract"

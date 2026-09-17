@@ -23,7 +23,7 @@
 # observability concern — not the P1 "errors are silently lost"
 # correctness claim a reviewer might first reach for.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: cfv-disconfirming-precedent-reevaluated
 title: "Swallowed LockTimeoutError looks like a lost-error defect, but precedent shows the pattern is established; reclassified as a log-context regression"

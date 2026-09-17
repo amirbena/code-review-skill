@@ -9,7 +9,7 @@
 # from the constant-size-loop case, where the dimension is implicated but
 # base reasoning finds the bound safe.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: performance-deepening-non-executed-config-constant-not-implicated-clean
 title: "LEGACY_MAX_BATCH_SIZE changes in a bulk-export module documented as unreferenced"

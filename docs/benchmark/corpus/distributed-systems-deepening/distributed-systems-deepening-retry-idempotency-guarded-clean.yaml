@@ -13,7 +13,7 @@
 # as an optional finding rather than treated as required or as out of
 # scope.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: distributed-systems-deepening-retry-idempotency-guarded-clean
 title: "New at-least-once consumer calls capture_payment, which already guards the charge with a dedup check"
