@@ -171,11 +171,11 @@ on every PR, which remains the authoritative regression gate before merge
 
 | Change | Run |
 | --- | --- |
-| Docs-only (`docs/`, root `*.md`, `policies/*.md`) | `python3 scripts/validation/validate-markdown-links.py` |
+| Docs-only (`docs/`, root `*.md`, `policies/*.md`) | `python3 scripts/validation/validate-markdown-links.py`, plus `python3 -m unittest discover -s tests/policy/governance` for a `policies/*.md` or `AGENTS.md` change |
 | Benchmark-related (`docs/benchmark/`, benchmark tooling/tests) | the benchmark test package, e.g. `python3 -m unittest discover -s tests/policy/benchmark` and/or `tests/unit/benchmark` |
-| Skill metadata (`skills/<name>/SKILL.md`, `metadata/skill.yaml`, `package-manifest.json`) | `python3 scripts/validation/validate-skill-metadata.py skills/<name> --containment-root .` for the affected Skill |
+| Skill metadata (`skills/<name>/SKILL.md`, `metadata/skill.yaml`, `package-manifest.json`) | `python3 scripts/validation/validate-skill-metadata.py skills/<name> --containment-root .` for the affected Skill, plus `python3 -m unittest tests.policy.governance.test_skill_entrypoint_guards` for a `SKILL.md` change |
 | Packaging (`scripts/packaging/**`) | `./scripts/packaging/package-skills.sh <local\|github\|all>` for the affected target, plus `python3 -m unittest discover -s tests/integration/packaging` |
-| Focused code/test change (`shared/**`, `scripts/**`, `tests/**`) | the directly affected module(s), e.g. `python3 -m unittest tests.unit.test_reviewer_ownership` |
+| Focused code/test change (`shared/**`, `scripts/**`, `tests/**`) | the directly affected module(s), e.g. `python3 -m unittest tests.unit.review.test_reviewer_ownership` |
 
 If a change doesn't map cleanly to one of these, run a broader targeted
 subset instead — for example every test module under the top-level
