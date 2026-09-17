@@ -46,6 +46,18 @@ github]` — a future capability that ships a single-adapter `shared/*`
 file will need per-adapter shared packaging (not yet built) before it can
 narrow that declaration.
 
+Issue #409: `capabilities/specialist-depth/capability.yaml` is confirmed
+against `capability-architecture-model.md` §H.3 ("Assignment of every
+corpus asset"), the model's single-owner table for corpus ownership. Its
+`benchmark` field names exactly the four domain corpora §H.3 assigns to
+`specialist-depth` (`security-deepening`, `performance-deepening`,
+`database-migration-deepening`, `distributed-systems-deepening`).
+`docs/benchmark/corpus/specialist-depth-composition` is deliberately not
+claimed here: §H.3 assigns it solely to `review-router`, not yet
+manifested (§B.3's routing layer is out of this issue's scope). This step
+changes no file, activation predicate, or load behavior (that is §J.2
+Step 3, issue #410).
+
 ## Purpose
 
 `capability-architecture-model.md` §A.9 identifies three declarations of
