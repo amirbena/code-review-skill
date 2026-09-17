@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from scripts.benchmark import run_benchmark_routine as routine
@@ -77,6 +79,58 @@ class RunBenchmarkRoutineTest(unittest.TestCase):
             _, _, title, body = post.call_args.args
             self.assertIn("smoke", title)
             self.assertIn("claude-opus-5", body)
+
+    def test_results_out_written_only_on_verified_run(self) -> None:
+        good_output = json.dumps(
+            {
+                "run": {
+                    "ok": True,
+                    "cases": [
+                        {"id": "c", "input_kind": "diff", "status": "executed", "produced_findings": []}
+                    ],
+                }
+            }
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            results_out = Path(tmp) / "results.json"
+            with mock.patch("subprocess.run", return_value=_completed(good_output)), mock.patch.object(
+                routine, "_post_evidence", return_value=42
+            ):
+                exit_code = routine.main(
+                    [
+                        "--mode",
+                        "smoke",
+                        "--case-id",
+                        "c",
+                        "--evidence-issue",
+                        "1",
+                        "--results-out",
+                        str(results_out),
+                    ]
+                )
+            self.assertEqual(exit_code, 0)
+            payload = json.loads(results_out.read_text(encoding="utf-8"))
+            self.assertEqual(payload, [{"case_id": "c", "run": json.loads(good_output)["run"]}])
+
+    def test_results_out_not_written_on_unverified_run(self) -> None:
+        bad_output = json.dumps({"run": {"ok": False, "cases": [{"id": "c", "status": "error", "error": "x"}]}})
+        with tempfile.TemporaryDirectory() as tmp:
+            results_out = Path(tmp) / "results.json"
+            with mock.patch("subprocess.run", return_value=_completed(bad_output, returncode=1)):
+                exit_code = routine.main(
+                    [
+                        "--mode",
+                        "smoke",
+                        "--case-id",
+                        "c",
+                        "--evidence-issue",
+                        "1",
+                        "--results-out",
+                        str(results_out),
+                    ]
+                )
+            self.assertEqual(exit_code, 1)
+            self.assertFalse(results_out.exists())
 
     def test_auth_check_mode_posts_independently_of_benchmark_run(self) -> None:
         with mock.patch("subprocess.run") as run, mock.patch.object(
