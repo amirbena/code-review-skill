@@ -408,9 +408,14 @@ or active/passive mutation boundaries.
 - **Review reasoning result** is computed independently: either clean, or
   blocking findings (unresolved P0/P1). This mechanical derivation is
   owned by
-  [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md)
-  and is unchanged by anything in this section — the reasoning result
-  always exists and is always reported.
+  [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
+  "Decision derivation (mechanical)" — including that section's explicit
+  P0/P1 tally requirement, which this Skill follows exactly rather than
+  restating: the finalized findings are enumerated by severity and the
+  resulting P0/P1 count, never an impression of the finding set or its
+  wording, is what the result below is computed from — and is unchanged
+  by anything in this section; the reasoning result always exists and is
+  always reported.
 - **Approve** (reasoned) — the reasoning result is clean: no unresolved
   P0, no unresolved blocking P1, and the current PR HEAD equals the
   reviewed HEAD. P2 findings may remain.

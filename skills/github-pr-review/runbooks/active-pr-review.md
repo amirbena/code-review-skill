@@ -530,12 +530,27 @@ stop
     changed, do not construct or submit a review for the stale SHA —
     review the new delta first (re-evaluating escalation per step 9 if
     this was a delta re-review) and re-finalize findings against it.
-12a. **Check verdict consistency** per
+12a. **Derive the decision.** When step 11b's coverage is `incomplete`,
+    the decision is the incomplete/ungraded outcome already set at that
+    step, per
+    [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
+    "Labeling" — never `Approve`, regardless of what the finding set
+    alone would otherwise produce. Otherwise, derive the decision
+    mechanically per
+    [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
+    "Decision derivation (mechanical)," from the finalized findings
+    re-confirmed against the current HEAD in step 12 — stating the
+    explicit P0/P1 tally that section requires as the basis for the
+    decision, not an impression of the finding set. This is the only
+    path to the decision;
+    [`../policies/review-output.md`](../policies/review-output.md),
+    "Final decision," names the resulting `Approve` / `Request Changes`
+    wording but does not re-derive it.
+12b. **Check verdict consistency** per
     [`../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md),
     identical placement and check to
     [`passive-pr-review.md`](passive-pr-review.md)'s pre-render check:
-    confirm the decision derived from the finalized findings (as
-    overridden, or not, by step 11b's coverage result) agrees with the
+    confirm the decision derived in step 12a agrees with the
     `Approve` / `Request Changes` / `REVIEW INCOMPLETE` signal about to
     be rendered into the review constructed next — including a `SEMI`
     `WOULD PUBLISH (<event>)` line. On a detected mismatch, do not
@@ -653,11 +668,11 @@ stop
     submitted**, per
     [`../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md) —
     the pre-publish reconciliation point, re-checking the same
-    mechanically-derived decision checked at step 12a against step 14's
+    mechanically-derived decision checked at step 12b against step 14's
     resolved `APPROVE` / `REQUEST_CHANGES` event object (an informational
     self-review `COMMENT` carries no decision claim and is never checked
     here). This catches a second, silent rendering introduced between
-    step 12a and this submission. On a detected mismatch, withhold the
+    step 12b and this submission. On a detected mismatch, withhold the
     formal event and do not proceed to step 16 — report why no final
     formal review was submitted, per that policy's "On a detected
     mismatch: withhold-and-report," reusing step 16's own "GitHub

@@ -387,21 +387,34 @@ finally: remove the temporary checkout (success, any failure, interruption)
    its reason(s) in the report's subordinate metadata, per "Labeling —
    incomplete must never present as clean" and "Non-goals and ownership
    boundary" — not restated here.
-8c. **Compose the private Reviewer Brief** per
+8c. **Derive the decision.** When step 8b's coverage is `incomplete`, the
+   decision is the incomplete/ungraded outcome per
+   [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
+   "Labeling" — never `Approve`, regardless of what the finding set alone
+   would otherwise produce. Otherwise, derive the decision mechanically
+   per [`severity.md`](../../../shared/policies/severity.md), "Decision
+   derivation (mechanical)," from the finalized findings — stating the
+   explicit P0/P1 tally that section requires as the basis for the
+   decision, not an impression of the finding set. This is the only path
+   to the decision;
+   [`../policies/review-output.md`](../policies/review-output.md), "Final
+   decision," names the resulting `Approve` / `Request Changes` wording
+   but does not re-derive it.
+8d. **Compose the private Reviewer Brief** per
    [`../policies/reviewer-brief.md`](../policies/reviewer-brief.md), now
-   that findings, severity, coverage, and verdict are finalized above.
-   Append it as its own section of the returned report, per
+   that findings, severity, coverage, and the decision derived in step 8c
+   are finalized above. Append it as its own section of the returned
+   report, per
    [`../templates/reviewer-brief.md`](../templates/reviewer-brief.md).
    Passive review publishes nothing at all, so the brief's
    never-published guarantee holds trivially here; it still follows every
    field, synthesis, and mode-composition rule in that policy (clean
    review, delta re-review, stacked PR, partitioned large PR alike) so
    passive and active results carry identical brief semantics.
-8d. **Check verdict consistency** per
+8e. **Check verdict consistency** per
    [`../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md)
    before returning the report composed above: confirm the decision
-   derived from the finalized findings (as overridden, or not, by step
-   8b's coverage result) agrees with the `Approve` / `Request Changes` /
+   derived in step 8c agrees with the `Approve` / `Request Changes` /
    `REVIEW INCOMPLETE` wording, and any `WOULD PUBLISH (<event>)` line,
    the composed report carries. Passive and self-review flows have no
    formal GitHub event to check here — only the rendered report signal,

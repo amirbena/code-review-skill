@@ -105,8 +105,9 @@ derive conditional requirement coverage (all renderings preserve it)
 evaluate review coverage (complete / incomplete) per
 review-stopping-criteria.md, scaled by the depth (and partitions) above
     ↓
-coverage complete? → yes → derive decision mechanically from blocking
-                              severities (P0/P1)
+coverage complete? → yes → derive decision mechanically by tallying
+                              blocking severities (P0/P1); a P2-only or
+                              empty finding set tallies to a clean decision
                     → no  → render the incomplete/ungraded outcome instead,
                               never a clean/approved result
     ↓
@@ -409,9 +410,12 @@ which a value must be resolved before it is used, or what is reported.
     finding set alone would otherwise produce. Otherwise, derive the
     Decision mechanically per
     [`severity.md`](../../../shared/policies/severity.md), "Decision
-    derivation (mechanical)," from the finalized findings. This is the
+    derivation (mechanical)," from the finalized findings — stating the
+    explicit P0/P1 tally that section requires as the basis for the
+    Decision, not an impression of the finding set. This is the
     only path to the decision — no independent, subjective judgment on
-    top of it.
+    top of it, and no shortcut that skips the tally because the finding
+    set already "looks" clean or blocking.
 11b. **Check verdict consistency** per
     [`verdict-consistency.md`](../../../shared/policies/verdict-consistency.md)
     before composing the report: confirm the Decision just derived in

@@ -57,6 +57,19 @@ blocking_findings is non-empty  → blocking decision
                                      `Request Changes` GitHub)
 ```
 
+Deriving this is an explicit tally, not an impression. Before rendering
+any decision, enumerate the finalized finding set by severity and state
+the resulting count — for example "P0: 0, P1: 0" or "P0: 0, P1: 1" — as
+the concrete basis for `blocking_findings` above. Only the P0 count and
+the P1 count feed this tally; the P2 count and the total number of
+findings are never inputs to it, no matter how large either is.
+Inferring the decision instead from how the finding set reads overall,
+how strongly a finding is worded, or how many findings exist in total —
+without performing this tally — is exactly the failure mode this
+derivation forbids, even in a case where the reviewer believes the
+tally would land on the same result anyway: the tally is the derivation,
+not a check on top of it.
+
 There is no reviewer discretion in this step. A P2 finding — no matter
 how strongly it is recommended, how many P2 findings exist, or where it
 originated (a repository convention, reconciled PR context, supplied
