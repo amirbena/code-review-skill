@@ -51,7 +51,7 @@ EXPANSION_TRIGGERS: Tuple[str, ...] = (
     "config_consumer",
 )
 
-RUNTIME_VALIDATION_OUTCOMES: Tuple[str, ...] = ("executed", "failed", "skipped")
+RUNTIME_VALIDATION_OUTCOMES: Tuple[str, ...] = ("executed", "failed", "skipped", "unavailable")
 RUNTIME_VALIDATION_PROVENANCES: Tuple[str, ...] = ("sandbox", "trusted_host")
 
 
