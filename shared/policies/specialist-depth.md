@@ -106,8 +106,7 @@ skip — the same convention already governing
 `review-action-authorization.md` ("Ambiguity fails closed to
 `PASSIVE`") and [`runtime-validation.md`](runtime-validation.md) (no
 verified isolation ⇒ `unavailable`). A capability boundary that a failed
-or ambiguous
-predicate evaluation could silently bypass is the one
+or ambiguous predicate evaluation could silently bypass is the one
 catastrophic-if-wrong outcome this contract exists to prevent; this
 file's activation predicate must never be able to produce that outcome.
 
