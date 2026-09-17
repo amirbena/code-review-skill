@@ -98,6 +98,16 @@ class ValidateSkillFrontmatterTests(unittest.TestCase):
         with self.assertRaises(SkillFrontmatterError):
             validate_skill_frontmatter(self.skill_md, "local-code-review")
 
+    def test_plain_multiline_continuation_description_is_rejected(self) -> None:
+        # No `|`/`>` block-scalar indicator, but YAML still treats this as
+        # one folded value spanning two physical lines — must still fail.
+        self._write(
+            "---\nname: local-code-review\nversion: 1.50.2\n"
+            "description: This is line one\n  and this continues.\n---\nBody.\n"
+        )
+        with self.assertRaises(SkillFrontmatterError):
+            validate_skill_frontmatter(self.skill_md, "local-code-review")
+
 
 if __name__ == "__main__":
     unittest.main()

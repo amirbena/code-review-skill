@@ -58,13 +58,21 @@ def validate_skill_frontmatter(skill_md_path: Path, expected_name: str) -> None:
     body_lines = lines[1 : closing_offset + 1]
     fm_body = "\n".join(body_lines)
 
-    description_line_match = re.search(r"^description:[ \t]*(.*)$", fm_body, re.MULTILINE)
-    if description_line_match:
-        inline_value = description_line_match.group(1).strip()
+    description_idx = next(
+        (i for i, line in enumerate(body_lines) if line.startswith("description:")),
+        None,
+    )
+    if description_idx is not None:
+        inline_value = body_lines[description_idx][len("description:") :].strip()
         if not inline_value or inline_value[0] in ("|", ">"):
             raise SkillFrontmatterError(
                 f"{skill_md_path} 'description' must be a plain scalar on one "
                 "physical YAML line, not a block/folded scalar"
+            )
+        if description_idx != len(body_lines) - 1:
+            raise SkillFrontmatterError(
+                f"{skill_md_path} 'description' must be a single physical line "
+                "with no continuation line"
             )
 
     if yaml is not None:
