@@ -210,3 +210,14 @@ full-corpus baseline/history storage schema, no nightly scheduling
 re-opening of Class 1 provisioning. All owned elsewhere per
 `runtime-execution-contract.md` and the parent Issue's own Non-Goals
 section.
+
+## 11. Addendum: `--results-out` for nightly history (#338)
+
+[#338](https://github.com/amirbena/code-review-skill/issues/338) added an
+optional `--results-out PATH` flag to `run_benchmark_routine.py`: on a
+verified run only, it writes the concatenated raw per-invocation
+`run_benchmark.py` output to that path, for
+[`nightly-history-and-baseline.md`](nightly-history-and-baseline.md) to
+persist. Omitting it (every call site that existed before #338) is
+unaffected — this is additive, not a change to the modes, verification,
+or evidence-issue behavior above.
