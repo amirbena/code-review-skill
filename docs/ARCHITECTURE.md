@@ -436,7 +436,8 @@ and no packaged Skill resource depends on them.
   #182, with a test-only reference model). No packaged Skill resource is
   changed by this design; its boundary with
   [#131](https://github.com/amirbena/code-review-skill/issues/131)
-  (outcome analytics, not yet implemented) is documented in the model
+  (outcome analytics — closed `not planned` as a product-layer
+  capability, never implemented in the Skill) is documented in the model
   itself and in
   [`benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](benchmark-measurement-architecture/benchmark-measurement-architecture-model.md),
   §3/§7.
@@ -562,19 +563,22 @@ and no packaged Skill resource depends on them.
   quality observability via Claude Cloud Routines, never a
   contributor/merge prerequisite) — the PR-time taxonomy/
   selection/shadow-validation gate #331/#333/#334/#335, and nightly
-  full-corpus drift detection #332/#338/#339) and the three related
-  measurement capabilities it deliberately does not implement or
-  sequence — execution telemetry (#182), analytics (#131), and
-  repository-scoped learning (#130): the dependency DAG across all
-  fourteen issues, the nine architecture layers and their single owners,
-  the vendor-neutral runtime contract, PR-time and nightly path
-  principles, and the telemetry ≠ benchmark-ground-truth ≠ analytics ≠
-  learning boundary
+  full-corpus drift detection #332/#338/#339) and execution telemetry
+  (#182): the dependency DAG ending at `(#182 + #329) → Tier 4 complete`
+  across twelve actively-implemented issues, the nine architecture layers
+  and their single owners, the vendor-neutral runtime contract, PR-time
+  and nightly path principles, and the telemetry ≠ benchmark-ground-truth
+  boundary. The same document also designed, then closed as `not
+  planned`, two further product-layer measurement capabilities —
+  analytics (#131) and repository-scoped learning (#130) — as outside
+  this Skill's invocation-scoped boundary; see its "Product-layer
+  boundary decision" addendum
   ([`benchmark-measurement-architecture/README.md`](benchmark-measurement-architecture/README.md) →
   [`benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](benchmark-measurement-architecture/benchmark-measurement-architecture-model.md)).
   It has **no** packaged touch-point and ships no implementation — each of
-  the fourteen issues retains its own local scope and implements its own
-  slice; this document owns only the order and boundaries between them.
+  the twelve active issues retains its own local scope and implements its
+  own slice; this document owns only the order and boundaries between
+  them, including the boundary that keeps #131/#130 out of scope.
 - **Capability architecture** — a research recommendation for decomposing
   both Skills into independently loadable capabilities behind declared
   activation predicates: the current-state diagnosis (the always-loaded

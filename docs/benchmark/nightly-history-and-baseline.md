@@ -30,10 +30,11 @@ lifecycle (Non-goals, below).
 - Persisted, comparable history keyed by date and commit SHA, plus the
   runtime/model/Skill metadata needed to interpret a result later (§3).
 - Storage location and retention policy, structurally separate from
-  [#131](https://github.com/amirbena/code-review-skill/issues/131)'s
-  workflow-observation export and
   [#182](https://github.com/amirbena/code-review-skill/issues/182)'s
-  execution telemetry (§3, §5).
+  execution telemetry (§3, §5). (It would also have been kept separate
+  from [#131](https://github.com/amirbena/code-review-skill/issues/131)'s
+  workflow-observation export, had #131 been implemented rather than
+  closed `not planned` as a product-layer capability.)
 - First-run/bootstrap behavior (§4).
 - The baseline policy, and how it avoids silently ratcheting a
   degradation into tomorrow's accepted reference (§4).
@@ -138,8 +139,9 @@ branch push access for a normal PR or merge.
 
 A dedicated **`benchmark-history`** branch — not `main`, not packaged
 Skill resources, not an existing `docs/` analytics surface, and distinct
-from #131's workflow-observation export and #182's execution telemetry
-(§6 of the cross-component architecture model). A branch, not a release
+from #182's execution telemetry (#131's workflow-observation export does
+not exist — #131 is closed `not planned` as a product-layer capability;
+§6 of the cross-component architecture model). A branch, not a release
 artifact, was chosen because it is inspectable with ordinary `git`/GitHub
 tooling, needs no separate retention configuration, and keeps evidence
 inside the same repository #339 already has push/issue access to.

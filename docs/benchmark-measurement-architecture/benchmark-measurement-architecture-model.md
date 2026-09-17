@@ -15,19 +15,22 @@ tree: [#330](https://github.com/amirbena/code-review-skill/issues/330),
 [#339](https://github.com/amirbena/code-review-skill/issues/339)) and the
 three related measurement capabilities
 ([#182](https://github.com/amirbena/code-review-skill/issues/182) — review
-execution telemetry,
+execution telemetry, implemented in-repo;
 [#131](https://github.com/amirbena/code-review-skill/issues/131) — review
-analytics,
+analytics; and
 [#130](https://github.com/amirbena/code-review-skill/issues/130) —
-repository-scoped learning). Not packaged; explanatory. **This document is
-the canonical home for cross-component architecture only** — the dependency
-order between these fourteen issues, the boundaries between their
-responsibilities, and the invariants none of them may violate. Each issue
-still owns its own local problem statement, scope, acceptance criteria, and
-non-goals; this document does not redefine or duplicate those, and a
-contradiction between an issue's local scope and this document is resolved
-by updating this document through a reviewed repository change, not by
-silently reinterpreting the issue.
+repository-scoped learning). **#131 and #130 are closed `not planned`** as
+product-layer capabilities outside this Skill's scope — see the
+Product-layer boundary decision addendum below. Not packaged; explanatory.
+**This document is the canonical home for cross-component architecture
+only** — the dependency order between the **twelve actively-implemented
+issues** (#131 and #130 excluded, per the addendum below), the boundaries
+between their responsibilities, and the invariants none of them may
+violate. Each issue still owns its own local problem statement, scope,
+acceptance criteria, and non-goals; this document does not redefine or
+duplicate those, and a contradiction between an issue's local scope and
+this document is resolved by updating this document through a reviewed
+repository change, not by silently reinterpreting the issue.
 
 **Stage 4 addendum.** This document was later extended, additively, to
 also fix the cross-component boundaries for a second, separate set of
@@ -90,6 +93,44 @@ since retiring the redundant legacy path is part of confirming the
 Top-K-gate tracking parent's children collectively cover the PR-time
 benchmark path with no gap or duplicated ownership.
 
+**Product-layer boundary decision (#130/#131 — closed `not planned`).**
+#131 (review analytics) and #130 (repository-scoped learning) — the last
+two links in §2's original DAG tail (`... → #131 → #130`) — are closed as
+`not planned` for implementation inside this Skill. Both require
+persisted, cross-invocation state: #131's historical aggregation
+(accepted/rejected rates, recurrence, resolution latency, retention,
+cross-review aggregation) and #130's learned behavior from stored
+reviewer feedback. `code-review-skill` is intentionally an
+action-oriented, invocation-scoped Skill: its responsibility is to
+perform a code review for the current invocation and emit the
+evidence/output that invocation requires. It does not own
+cross-invocation persistence, historical data collection, retention,
+longitudinal analytics, repository memory, learned feedback,
+RAG/LLM-Wiki-style knowledge storage, user/contributor profiling, or
+behavior adaptation from stored review history. Those concerns may make
+sense in a future **product** built around the Skill, where storage,
+consent, retention, deletion, access control, privacy, and other
+product/legal responsibilities can be designed explicitly — but they are
+intentionally not implemented in the Skill itself, and this decision does
+not replace them with another Skill-level learning or persistence
+mechanism. This is intentional scope control, not abandonment of a
+useful idea: a Skill performs a bounded action; a product may collect and
+retain information across actions; historical analytics and learning
+introduce persistence, privacy, retention, deletion, ownership, and
+legal/compliance responsibilities the Skill should not own.
+
+This decision does not reduce any *invocation-local* scope already owned
+by the Skill, the benchmark system, or #182's telemetry — structured
+output or metrics produced and consumed within a single invocation are
+unaffected. What is out of scope is the Skill owning historical
+collection, storage, or aggregation *across* invocations. It closes §2's
+DAG at `(#182 + #329) → Tier 4 complete`, with #131/#130 named only as
+out-of-scope product-layer capabilities, never as blocking or
+load-bearing work anywhere in §2's DAG, §3's layer set, or §10's rollout
+sequence. §2, §2.1, §3, §7, §9, and §10 below are updated to remove
+#131/#130 from the active DAG/layer set and to record this boundary; §1,
+§4, §5, §6, §8, §11, and §12 are otherwise unaffected.
+
 ## 1. Problem and motivation
 
 Four things are true about this repository's review-quality feedback loop
@@ -116,18 +157,25 @@ today, and they are easy to conflate:
    classify a PR as applicable and still never execute anything —
    historical motivation, kept for record; today's PR-time path is #333's
    classification and #334's Top-K selection instead.
-4. **Workflow telemetry, benchmark ground truth, analytics, and
-   repository-scoped learning are separate concerns that need clear
-   boundaries.** Four different issues (#182, #329's benchmark tree, #131,
-   #130) each produce or consume review-related signal, and without an
-   explicit boundary between them it is easy to conflate "what the
-   reviewer inspected" with "whether the reviewer was correct," or to let
-   a learned preference quietly acquire the authority of canonical policy.
+4. **Workflow telemetry and benchmark ground truth are separate concerns
+   that need a clear boundary, and analytics/learning are a related
+   concern that is explicitly out of the Skill's scope.** #182 and #329's
+   benchmark tree each produce review-related signal inside the Skill's
+   invocation-scoped boundary, and without an explicit boundary between
+   them it is easy to conflate "what the reviewer inspected" with
+   "whether the reviewer was correct." #131 (analytics) and #130
+   (learning) would have introduced a third and fourth concern — but both
+   are closed `not planned` as product-layer capabilities (see the
+   addendum above): they require persisted, cross-invocation history that
+   crosses the boundary from an invocation-scoped review Skill into a
+   stateful product/knowledge layer, so this document does not carry them
+   forward as active concerns needing a boundary within the Skill.
 
 The gap this document closes is not a missing feature — it is a missing
 **map**. #329's three children (#330/#331/#332) already fan out into eight
-further issues, each with its own detailed scope, and #182/#131/#130 each
-reference the others informally ("relates to", "distinct from"). Without
+further issues, each with its own detailed scope, and #182 (still active)
+and #131/#130 (closed `not planned`, kept here for historical reference)
+each reference the others informally ("relates to", "distinct from"). Without
 one place that fixes the dependency order and the layer boundaries, that
 informal cross-referencing drifts: a later issue could re-derive (and
 subtly diverge from) an architectural decision another issue already made,
@@ -137,9 +185,12 @@ This document is that one place.
 ## 2. Canonical dependency DAG
 
 ```text
-#330(+#391) → (#333 → #334 || #338 → #339 → #332) → #335 → #331 → #329 → (#182 + #329) → #131 → #130
+#330(+#391) → (#333 → #334 || #338 → #339 → #332) → #335 → #331 → #329 → (#182 + #329) → Tier 4 complete
 
 #336 → #337 : historical evidence only (§2.3) — superseded, not load-bearing above
+#131, #130  : product-layer capabilities, closed `not planned` — see the
+              Product-layer boundary decision addendum above; no longer
+              part of this DAG
 ```
 
 This is a **practical build/trust order**, not a literal redraw of every
@@ -194,12 +245,14 @@ Read left to right:
 - **→ #331 → #329** — #331 (the Top-K-gate tracking parent) completes once
   its children do; #331 completing alongside #330 and #332 completing is
   what closes #329 (the whole epic's tracking parent).
-- **→ (#182 + #329) → #131 → #130** — #131 (analytics) is deliberately
-  gated on **both** #182 (telemetry exists to report workflow-observation
-  metrics from) and #329 (a trustworthy benchmark-quality signal exists to
-  report ground-truth metrics from) — see §7. #130 (learning) in turn
-  needs #131's measurement foundation in place before repository-scoped
-  feedback can be reused safely.
+- **→ (#182 + #329) → Tier 4 complete** — once #182 (telemetry) and #329
+  (a trustworthy benchmark-quality signal) both exist, this DAG's active
+  implementation scope is complete. #131 (analytics) and #130 (learning)
+  are no longer downstream implementation steps of this DAG: both are
+  closed `not planned` as product-layer capabilities — see the
+  Product-layer boundary decision addendum above and §7 for the
+  rationale that would have gated #131 on #182+#329 and #130 on #131, had
+  either been implemented.
 
 ### 2.1 Native tracker edges (as recorded on each issue)
 
@@ -219,8 +272,12 @@ Read left to right:
 | #338 | #332 | #330 | blocks #339 |
 | #339 | #332 | #338 | — |
 | #182 | — | relates #131 | — |
-| #131 | — | #44 (open, not in this doc's scope) | — |
-| #130 | — | #42, #43 (both delivered) | — |
+| #131 *(closed `not planned` — product layer)* | — | #44 (open, not in this doc's scope) | — |
+| #130 *(closed `not planned` — product layer)* | — | #42, #43 (both delivered) | — |
+
+#131 and #130 are kept in this table for historical reference only — see
+the Product-layer boundary decision addendum above. Neither is part of
+this document's active DAG or layer set.
 
 ### 2.2 Where the practical order is stricter than the native edges
 
@@ -292,17 +349,16 @@ None of these corrections are applied by this revision — they are
 recorded here so they can be made as bounded, individually-reviewable
 issue corrections after #391 lands, per #391's own scope boundary.
 
-Similarly, #131's dependency on #329 is not a native tracker edge (#329
-does not list #131 as a blocker, and #131's own `Dependencies` section
-only names #44). It is this document's architectural judgment, recorded
-here rather than invented silently in #131's implementation: reporting
-"benchmark-derived quality metrics" (part of #131's stated scope) requires
-a trustworthy benchmark signal to exist, which is exactly what #329
-delivers. §7 states this boundary normatively. If a future contributor
-finds this judgment wrong (e.g. #131 should ship with benchmark metrics
-simply marked `unavailable` until #329 lands, rather than waiting), that
-is a genuine architectural question to resolve by updating this document,
-not by quietly starting #131 early.
+Historical record: #131's dependency on #329 was never a native tracker
+edge (#329 does not list #131 as a blocker, and #131's own `Dependencies`
+section only names #44). It had been this document's architectural
+judgment — reporting "benchmark-derived quality metrics" (part of #131's
+formerly-stated scope) would have required a trustworthy benchmark signal
+to exist, which is exactly what #329 delivers — but #131 is now closed
+`not planned` (see the Product-layer boundary decision addendum above),
+so this judgment no longer gates any active implementation work. It is
+kept here only so a future reader understands why #131 previously
+appeared downstream of #329 in earlier versions of this document.
 
 ## 3. Architecture layers
 
@@ -319,8 +375,8 @@ through their existing contracts.
 | **Nightly full-corpus execution/history** | Running the entire corpus on a schedule and persisting comparable, interpretable results over time. | #338 | Runtime execution. |
 | **Drift detection / regression issue lifecycle** | Comparing persisted nightly runs, deciding what counts as meaningful drift, and managing one deduplicated GitHub issue per regression. | #339 | Nightly history (#338); the existing `regression-report.md`/#55/#56/#57 metrics (reused, not reimplemented). |
 | **Review execution telemetry** | Observational record of what a review actually inspected/executed (files, symbols, expansions, runtime validations, partitions, stages) — never decision-affecting. | #182 | Nothing above — it observes the ordinary review process, independent of the benchmark tree. |
-| **Analytics / quality exports** | A consolidated, denominator-defined view of workflow-observation metrics (from telemetry) and benchmark-derived quality metrics (from the benchmark tree), kept explicitly separate. | #131 | Review execution telemetry (#182); benchmark-derived ground truth (#329's tree, once trustworthy). |
-| **Repository-scoped learning** | Using eligible, explicit accepted/rejected/resolved finding feedback to improve future precision within one repository, with policy always authoritative. | #130 | Analytics/measurement foundation (#131); the existing finding-identity/lifecycle model (#42/#43). |
+| **Analytics / quality exports** *(product layer — not implemented in the Skill)* | Would have been a consolidated, denominator-defined view of workflow-observation metrics (from telemetry) and benchmark-derived quality metrics (from the benchmark tree), kept explicitly separate. | #131 — closed `not planned` | Review execution telemetry (#182); benchmark-derived ground truth (#329's tree, once trustworthy). |
+| **Repository-scoped learning** *(product layer — not implemented in the Skill)* | Would have used eligible, explicit accepted/rejected/resolved finding feedback to improve future precision within one repository, with policy always authoritative. | #130 — closed `not planned` | Analytics/measurement foundation (#131); the existing finding-identity/lifecycle model (#42/#43). |
 
 Layers are listed top-to-bottom in dependency order, but note two
 independent sub-graphs: **runtime execution → taxonomy/indexing → PR-time
@@ -329,11 +385,15 @@ nightly execution/history → drift detection** is a second, parallel chain
 that only rejoins the first at the pre-merge-gating layer (which needs
 nightly history as validation evidence, per §2). **Telemetry** is an
 independent ninth layer with no dependency on the benchmark tree at all —
-it observes live workflow behavior, not benchmark ground truth. **Analytics**
-is the first layer to deliberately draw from two otherwise-unrelated
-sources (telemetry and benchmark ground truth), and **learning** is the
-only layer built on top of analytics rather than on top of the benchmark
-or telemetry layers directly.
+it observes live workflow behavior, not benchmark ground truth. The last
+two rows, **analytics** and **learning**, are kept in this table only for
+architectural completeness — they record where cross-invocation
+measurement/learning would have sat in this map had either been
+implemented — but neither is: #131 and #130 are closed `not planned` as
+product-layer capabilities (see the Product-layer boundary decision
+addendum above). This document's seven *active* layers therefore end at
+telemetry (#182) and the benchmark tree (#329's children); analytics and
+learning are not part of the active dependency chain in §2.
 
 ## 4. Runtime contract
 
@@ -569,9 +629,11 @@ Principles that hold regardless of the exact storage/threshold choices:
   against their own baseline) rather than defaulting to the ratcheting
   shape or letting one lane's baseline stand in for the other's.
 - **History is benchmark ground truth.** The persisted scheduled-execution
-  history is kept structurally separate from #131's workflow-observation
-  export and #182's execution telemetry — never mixed into packaged Skill
-  resources or an existing `docs/` analytics surface. It is the
+  history is kept structurally separate from #182's execution telemetry
+  (and would have been kept separate from #131's workflow-observation
+  export, had #131 been implemented rather than closed `not planned`) —
+  never mixed into packaged Skill resources or an existing `docs/`
+  analytics surface. It is the
   authoritative benchmark-quality record §7's "benchmark ground truth"
   layer refers to, for both lanes.
 - **Drift issues are fingerprinted, deduplicated, updateable, and
@@ -589,53 +651,59 @@ Principles that hold regardless of the exact storage/threshold choices:
 
 ## 7. Measurement / analytics / learning boundaries
 
-Four capabilities produce or consume review-related signal. Each answers a
-different question, and none may be substituted for another.
+Two capabilities are actively implemented and produce or consume
+review-related signal inside the Skill's invocation-scoped boundary; two
+more (#131, #130) were designed here but are closed `not planned` as
+product-layer capabilities (see the Product-layer boundary decision
+addendum above) — kept in the table below only so the boundary rationale
+that would have governed them, had they been built, stays on record.
 
 | Capability | Question it answers | Decision-affecting? |
 | --- | --- | --- |
 | **#182 — execution telemetry** | What did the reviewer actually inspect and execute (files, symbols, repository-intelligence expansions, runtime validations, partitions, stage completion)? | **Never.** Purely observational; cannot influence findings, severity, suppression, or the decision. This is a deliberately different model from the *decision-affecting* coverage concept in `shared/policies/review-stopping-criteria.md` — #182 does not copy or extend that model. |
 | **#329's benchmark tree — ground-truth behavioral evaluation** | Did the reviewer behave *correctly* against known cases with known-correct expected findings? | Indirectly, through the gate: once #335 promotes it, an `insufficient-coverage` or `runtime-unavailable` outcome can fail a required merge check. The benchmark *result itself* never edits a live review's findings — it gates merges of Skill changes, a different mechanism from telemetry. |
-| **#131 — analytics** | Consolidated, denominator-defined view of observed workflow behavior over time (from #182) and benchmark-derived quality metrics (from #329's tree), kept explicitly separate. | No. Analytics reports on past behavior; it does not feed back into any live review. |
-| **#130 — learning** | May accepted/rejected/resolved reviewer feedback, once eligible and repository-scoped, improve future review precision? | Only within the bounds #130 defines: canonical policy always wins a conflict, a single rejection never suppresses a later legitimate defect, and any material learned influence is auditable and reversible. |
+| **#131 — analytics** *(closed `not planned` — product layer)* | Would have been a consolidated, denominator-defined view of observed workflow behavior over time (from #182) and benchmark-derived quality metrics (from #329's tree), kept explicitly separate. | N/A — not implemented. Analytics would have reported on past behavior without feeding back into any live review; it is recorded here only as the boundary #131 would have had to respect if built as a product-layer capability. |
+| **#130 — learning** *(closed `not planned` — product layer)* | Would have asked whether accepted/rejected/resolved reviewer feedback, once eligible and repository-scoped, could improve future review precision. | N/A — not implemented. Had it been built, it would have been bounded so that canonical policy always wins a conflict, a single rejection never suppresses a later legitimate defect, and any material learned influence is auditable and reversible — recorded here as the boundary a future product-layer implementation would need, not as active Skill behavior. |
 
-The four boundary statements this document fixes, so a future contributor
+The boundary statements this document fixes, so a future contributor
 cannot casually conflate them:
 
 - **Telemetry ≠ benchmark ground truth.** #182 records what happened
   during a review; #329's tree records whether the reviewer was *right*
   against known-correct cases. A review can have full telemetry coverage
   and still be behaviorally wrong, and a benchmark case can be evaluated
-  with no telemetry involved at all. Neither substitutes for the other,
-  and #131 must not report one as if it were the other.
+  with no telemetry involved at all. Neither substitutes for the other.
+  This is the boundary that stays active and in-Skill regardless of
+  #131's `not planned` status.
 - **Benchmark ground truth ≠ live workflow analytics.** #329's tree only
   ever runs against the fixed, versioned corpus under
   `docs/benchmark/corpus/`, in CI, never against a real user's PR.
   `docs/benchmark/regression-report.md` already disclaims live-workflow
-  analytics for exactly this reason; #131 keeps that disclaimer intact by
-  never conflating the two datasets, reporting ground-truth-dependent
-  metrics as unavailable rather than estimated wherever no ground truth
-  exists for a given population.
-- **Analytics ≠ learning.** #131 reports on past behavior in aggregate;
-  it does not change how any future review runs. #130 is the only layer
-  in this document that is allowed to feed a signal back into future
-  reviewer behavior, and only through its own eligibility, decay, and
-  audit machinery — never implicitly through #131's exports being read as
-  training signal.
-- **Learned knowledge ≠ canonical policy.** Whatever #130 learns from
-  repository-scoped feedback never gains the authority of
-  `shared/policies/` or a Skill's own `policies/`. A learned preference
-  can inform a future review's phrasing or prioritization; it can never
-  override, suppress, or weaken a canonical policy rule, and #130's own
-  acceptance criteria require fixtures proving policy wins that conflict.
+  analytics for exactly this reason.
+- **Analytics ≠ learning (historical rationale, product layer).** Had
+  #131 and #130 been implemented, analytics would have reported on past
+  behavior in aggregate without changing how any future review runs, and
+  learning would have been the only layer allowed to feed a signal back
+  into future reviewer behavior — never implicitly through analytics
+  exports being read as training signal. Both are closed `not planned`;
+  this bullet is kept only so a future product-layer design starts from
+  the same boundary rather than re-deriving it.
+- **Learned knowledge ≠ canonical policy (historical rationale, product
+  layer).** Had #130 been implemented, whatever it learned from
+  repository-scoped feedback would never have gained the authority of
+  `shared/policies/` or a Skill's own `policies/` — a learned preference
+  could inform a future review's phrasing or prioritization but never
+  override, suppress, or weaken a canonical policy rule. This remains the
+  binding constraint on any future product-layer learning capability, even
+  though #130 itself is not being implemented in the Skill.
 
-#329 (the benchmark epic) does not implement or formally sequence
-#182/#131/#130 — it only establishes a reliable benchmark-quality signal
-that #131 may later consume. The dependency §2 draws from #329 (and #182)
-into #131 is this document's architectural judgment about *when it is
-meaningful* to report ground-truth metrics (once they exist and are
-trustworthy) and observational metrics (once telemetry exists to source
-them from) — not a claim that #329 defines #131's scope.
+#329 (the benchmark epic) does not implement or formally sequence #182 —
+it only establishes a reliable benchmark-quality signal. #131 and #130 are
+closed `not planned` (see the Product-layer boundary decision addendum
+above), so the dependency §2 previously drew from #329 (and #182) into
+#131 is no longer active implementation guidance; it is kept above only as
+the architectural judgment a future product-layer analytics capability
+would need to reconstruct.
 
 ## 8. Cross-cutting invariants
 
@@ -668,28 +736,35 @@ implemented:
 - **Nightly is non-blocking.** Restated from §6: the nightly workflow
   never gates a PR merge or a deployment to `main`, under any outcome.
 - **Benchmark history separated from ordinary workflow telemetry.**
-  #338's persisted nightly history, #182's execution telemetry, and #131's
-  analytics export are three structurally distinct artifacts/storage
-  locations — never merged into one, never cross-written by another
-  layer's code path.
-- **Canonical policy remains authoritative over learned behavior.**
-  Restated from §7: #130's learning layer can never acquire the authority
-  of a canonical policy file.
+  #338's persisted nightly history and #182's execution telemetry are two
+  structurally distinct artifacts/storage locations — never merged into
+  one, never cross-written by another layer's code path. (This invariant
+  would also have applied to #131's analytics export, had #131 been
+  implemented; it is closed `not planned` instead.)
+- **Canonical policy remains authoritative over learned behavior
+  (historical, product layer).** Restated from §7: had #130's learning
+  layer been implemented, it could never have acquired the authority of a
+  canonical policy file — the same constraint that binds any future
+  product-layer learning capability, even though #130 itself is not being
+  implemented in the Skill.
 - **Issues own execution slices; this design doc owns cross-component
-  architecture.** Each of the fourteen issues in scope retains its own
-  local problem statement, implementation scope, acceptance criteria, and
-  non-goals. This document never redefines those locally-owned details; it
-  only fixes the order, the boundaries, and the invariants between them.
-  If implementation reveals a genuine architectural contradiction or a
-  missing invariant, the fix is a reviewed change to this document, not a
-  local reinterpretation inside a single issue.
+  architecture.** Each of the twelve actively-implemented issues in scope
+  retains its own local problem statement, implementation scope,
+  acceptance criteria, and non-goals. This document never redefines those
+  locally-owned details; it only fixes the order, the boundaries, and the
+  invariants between them. If implementation reveals a genuine
+  architectural contradiction or a missing invariant, the fix is a
+  reviewed change to this document, not a local reinterpretation inside a
+  single issue.
 
 ## 9. Non-goals
 
-- **No implementation.** This document ships no runtime, selector,
-  nightly workflow, analytics export, or learning behavior. It is
-  architecture and documentation normalization only; every concrete
-  behavior is implemented and validated by its owning issue.
+- **No implementation.** This document ships no runtime, selector, or
+  nightly workflow. It is architecture and documentation normalization
+  only; every concrete behavior is implemented and validated by its
+  owning issue. (No analytics export or learning behavior is planned at
+  all — #131 and #130 are closed `not planned` as product-layer
+  capabilities.)
 - **No scoring constants, thresholds, or storage schemas.** Exact
   relevance weights, coverage percentages, Top-K bounds, drift tolerances,
   baseline-refresh cadence, and storage formats are implementation
@@ -706,19 +781,26 @@ implemented:
   GitHub issue publication are scoped to a future implementation issue.
 - **No reassignment of tracker metadata.** This document changes no
   issue's assignee, label, native parent/sub-issue relationship,
-  dependency edge, or state. §7's #131-depends-on-#329/#182 judgment is
-  recorded as architectural guidance for how #131 should be scoped and
-  sequenced in practice; it is not a native tracker edge this document
-  adds on #131's or #329's behalf (see §2.2).
+  dependency edge, or state. §7's historical #131-depends-on-#329/#182
+  judgment is recorded as architectural context for why #131 previously
+  appeared downstream of #329/#182 in this document's DAG; it is not a
+  native tracker edge and is no longer active guidance now that #131 is
+  closed `not planned` (see §2.2). The `not planned` closure of #130 and
+  #131 themselves is recorded directly on each issue via a GitHub `not
+  planned` close, not by this document reassigning tracker metadata on
+  their behalf.
 
 ## 10. Smallest useful first implementation
 
 1. **This model** — the dependency DAG (§2), the nine architecture layers
-   and their single owners (§3), the vendor-neutral runtime contract (§4),
-   the PR-time and nightly path principles (§5, §6), and the
-   telemetry/benchmark/analytics/learning boundary (§7) — consumed as the
-   canonical reference every one of the fourteen issues points back to.
-2. **A compact "Canonical design" section on each of the fourteen
+   and their single owners (§3, two of which — analytics and learning —
+   are closed `not planned` product-layer capabilities kept only for
+   completeness), the vendor-neutral runtime contract (§4), the PR-time
+   and nightly path principles (§5, §6), and the telemetry/benchmark
+   boundary (§7) — consumed as the canonical reference every one of the
+   **twelve actively-implemented issues** points back to (#131 and #130
+   are excluded; see the Product-layer boundary decision addendum above).
+2. **A compact "Canonical design" section on each of the twelve active
    issues**, naming this document and the issue's own local
    responsibility and relevant sections, so implementation work starts
    from this shared map rather than re-deriving it per issue.
@@ -729,10 +811,12 @@ implemented:
 
 **Deferred** (named here so scope stays fixed):
 
-- any actual runtime, selector, workflow, taxonomy, index, storage,
-  drift-detection, telemetry, analytics, or learning implementation —
-  all of #330–#339, #182, #131, #130's own scope, unchanged by this
-  document;
+- any actual runtime, selector, workflow, taxonomy, index, storage, or
+  drift-detection implementation — all of #330–#339 and #182's own scope,
+  unchanged by this document. Analytics and learning (#131, #130) are
+  **not** deferred — they are closed `not planned` as product-layer
+  capabilities (see the addendum above) and are excluded from this list
+  entirely, not merely postponed;
 - picking a winning runtime candidate (#336's empirical spike);
 - setting concrete scoring/coverage/drift thresholds (each owning issue's
   own decision, informed by its own burn-in/validation data).
@@ -756,7 +840,8 @@ implemented:
   explicitly distinct from (§7).
 - `docs/benchmark/regression-report.md` owns the run-to-run comparison
   contract #339 reuses unchanged (§6), and already disclaims
-  live-workflow analytics — the disclaimer §7 keeps intact for #131.
+  live-workflow analytics — a disclaimer #131 would have had to keep
+  intact had it been implemented; #131 is closed `not planned` instead.
 - [`../ARCHITECTURE.md`](../ARCHITECTURE.md) is the repository-wide
   system map; this document is referenced from its "Repository-development
   instrumentation" section rather than duplicating that map's content.
