@@ -11,8 +11,9 @@ for four closed dimensions:
   stems.
 - ``risk_mode`` — reuses ``benchmark_fixture.METADATA_TAGS`` unchanged.
 - ``affected_surface`` — the four named surfaces this repository's own
-  changes can land on, refined from the boolean applicability check in
-  ``scripts/benchmark/benchmark_ci_classifier.py`` (Issue #255).
+  changes can land on, refined from the boolean applicability check that
+  used to live in the retired Issue #255 ``benchmark_ci_classifier.py``
+  (Issue #420).
 
 Every dimension carries an explicit ``unclassified`` value as a first-class
 member, never an error state. This module owns two distinct validation
@@ -110,10 +111,10 @@ CAPABILITY_BY_CORPUS_DIRECTORY: dict[str, str] = {
 
 # --------------------------------------------------------------------------
 # policy_contract — a maintained closed list of shared/policies/*.md stems.
-# Extended deliberately when a new policy file is added; mirrors
-# APPLICABLE_PREFIXES in benchmark_ci_classifier.py in spirit (a hand-
-# maintained list, not derived by scanning the filesystem at import time,
-# so an accidental new file never silently widens the taxonomy).
+# Extended deliberately when a new policy file is added; the same
+# hand-maintained-list-not-a-filesystem-scan style as the retired
+# benchmark_ci_classifier.py's APPLICABLE_PREFIXES (Issue #420), so an
+# accidental new file never silently widens the taxonomy.
 # --------------------------------------------------------------------------
 POLICY_CONTRACT_VALUES: frozenset[str] = frozenset(
     {
@@ -178,12 +179,14 @@ RISK_MODE_VALUES: frozenset[str] = frozenset(
 
 # --------------------------------------------------------------------------
 # affected_surface — derived from #255's classifier
-# (scripts/benchmark/benchmark_ci_classifier.py). That classifier is a flat
-# applicable/not-applicable boolean over path prefixes; this taxonomy
-# refines the same prefix set into four named surfaces. Deliberately not
-# imported from benchmark_ci_classifier.py, mirroring that module's own
-# documented independence from other classifiers (it must not become a
-# second place a change to one module ripples into the other's behavior).
+# (scripts/benchmark/benchmark_ci_classifier.py, retired by #420). That
+# classifier was a flat applicable/not-applicable boolean over path
+# prefixes; this taxonomy refines the same prefix set into four named
+# surfaces. Deliberately never imported from benchmark_ci_classifier.py,
+# mirroring that module's own documented independence from other
+# classifiers (it must not become a second place a change to one module
+# ripples into the other's behavior) — this module needed no change when
+# the classifier was retired.
 # --------------------------------------------------------------------------
 AFFECTED_SURFACE_VALUES: frozenset[str] = frozenset(
     {

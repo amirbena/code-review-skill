@@ -169,14 +169,15 @@ specific schedule, only the vehicle a schedule invokes.
 
 ## 8. Non-reachability from contributor automation
 
-Nothing in this document's pipeline is invoked by
-`.github/workflows/**`, `scripts/benchmark/benchmark_ci_classifier.py`, or
-any other repository-triggered automation. `run_benchmark_routine.py` is
-dead code from the contributor-PR path's perspective — it is only ever
-invoked by a maintainer-configured Cloud Routine prompt (§9) or by a
-maintainer running it locally by hand. `docs/benchmark/ci-integration.md`'s
-existing non-blocking, runtime-unavailable-tolerant contributor path is
-unchanged by this document.
+Nothing in this document's pipeline is invoked by `.github/workflows/**`
+or any other repository-triggered automation — there is no independent
+GitHub Actions benchmark execution path left over from the retired #255
+workflow (#420) for it to couple to. `run_benchmark_routine.py` is dead
+code from the contributor-PR path's perspective — it is only ever invoked
+by a maintainer-configured Cloud Routine prompt (§9) or by a maintainer
+running it locally by hand. `docs/benchmark/selection.md`'s existing
+non-blocking, informational-only contributor path (#334) is unchanged by
+this document.
 
 ## 9. Routine prompt template
 
