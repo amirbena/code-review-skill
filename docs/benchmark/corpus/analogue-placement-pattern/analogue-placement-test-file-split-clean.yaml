@@ -16,7 +16,7 @@
 #
 # Expected: no finding caused by the file split.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: analogue-placement-test-file-split-clean
 title: "New connector splits its integration tests across two files instead of one; no boundary is violated"
@@ -128,3 +128,8 @@ metadata:
     integration boundary, and the new organization is semantically
     equivalent. Locks in that repetition alone never manufactures a
     finding.
+  taxonomy:
+    capability: [analogue-placement-pattern]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

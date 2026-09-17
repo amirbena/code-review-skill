@@ -7,7 +7,7 @@
 # property or method access is covered" case required by Issue #121's
 # acceptance criteria.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: null-absence-typescript-optional-property-access
 title: "userCity() accesses .city through an optional address field with no guard"
@@ -71,3 +71,8 @@ metadata:
     review-scope.md's "Credible absence paths" list. The field's own type
     declaration (`address?: Address`) is the evidence that the access is
     credibly absence-prone, not a keyword or variable-name heuristic.
+  taxonomy:
+    capability: [null-absence-risk]
+    policy_contract: [null-absence-risk]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

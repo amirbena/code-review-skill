@@ -131,7 +131,16 @@ def _repo_ref_origin(parent: Path) -> tuple[Path, str]:
     return origin, sha
 
 
+_DEFAULT_TAXONOMY = {
+    "capability": ["unclassified"],
+    "policy_contract": ["unclassified"],
+    "risk_mode": ["unclassified"],
+    "affected_surface": ["unclassified"],
+}
+
+
 def _case(data: dict) -> bf.BenchmarkCase:
+    data.setdefault("metadata", {}).setdefault("taxonomy", _DEFAULT_TAXONOMY)
     return bf.parse_case(data)
 
 
@@ -243,7 +252,7 @@ class IsolationTests(unittest.TestCase):
         against whichever file isn't first (issue #342 follow-up)."""
         case = _case(
             {
-                "format": "benchmark-case/v1",
+                "format": "benchmark-case/v2",
                 "id": "multi-file-base-case",
                 "title": "Two files in base",
                 "input": {
@@ -275,7 +284,7 @@ class IsolationTests(unittest.TestCase):
     def test_patch_that_does_not_apply_is_a_per_case_error_and_is_cleaned_up(self) -> None:
         bad = _case(
             {
-                "format": "benchmark-case/v1",
+                "format": "benchmark-case/v2",
                 "id": "synthetic-bad-patch",
                 "title": "patch will not apply",
                 "input": {
@@ -319,7 +328,7 @@ class IsolationTests(unittest.TestCase):
             origin, sha = _repo_ref_origin(parent)
             case = _case(
                 {
-                    "format": "benchmark-case/v1",
+                    "format": "benchmark-case/v2",
                     "id": "synthetic-repo-ref",
                     "title": "repo_ref isolation",
                     "input": {"repo_ref": {"repo": "local/x", "commit": sha}},
@@ -351,7 +360,7 @@ class IsolationTests(unittest.TestCase):
             before = br.capture_repo_state(src)
             case = _case(
                 {
-                    "format": "benchmark-case/v1",
+                    "format": "benchmark-case/v2",
                     "id": "synthetic-pr-ref",
                     "title": "pr ref is not materializable here",
                     "input": {"repo_ref": {"repo": "local/x", "pr": 7}},
@@ -395,7 +404,7 @@ class SourceRepositorySafetyTests(unittest.TestCase):
     def test_dirty_source_repo_is_unchanged_through_induced_failures(self) -> None:
         bad_patch = _case(
             {
-                "format": "benchmark-case/v1",
+                "format": "benchmark-case/v2",
                 "id": "synthetic-bad-patch",
                 "title": "will not apply",
                 "input": {

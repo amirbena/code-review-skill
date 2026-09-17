@@ -12,7 +12,7 @@
 # app/uploads.py, supplied here via `input.base`, which still imports the
 # removed name.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: repo-intel-python-config-consumer-stale-import
 title: "Config-consumer trigger catches a stale import after a config key is renamed and removed"
@@ -66,3 +66,8 @@ metadata:
     config-consumer trigger into the untouched consumer file reveals the
     break. Demonstrates the config-consumer trigger's relationship-aware
     gain when the consumer file never appears in the diff at all.
+  taxonomy:
+    capability: [repository-intelligence]
+    policy_contract: [repository-expansion]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

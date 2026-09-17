@@ -7,7 +7,7 @@
 # compile-time-bounded list, so base reasoning confirms the bound within
 # its own pass and Activation condition 2 is never satisfied.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: performance-deepening-constant-size-loop-clean
 title: "build_locale_menu adds one call per entry over a fixed four-element locale list"
@@ -56,3 +56,8 @@ metadata:
     its own bounded investigation, so no further tracing is warranted and
     this capability does not engage, distinct from the N+1 case where the
     loop's bound is evidence-shown to be unbounded.
+  taxonomy:
+    capability: [performance]
+    policy_contract: [performance-deepening]
+    risk_mode: [correctness, performance]
+    affected_surface: [unclassified]

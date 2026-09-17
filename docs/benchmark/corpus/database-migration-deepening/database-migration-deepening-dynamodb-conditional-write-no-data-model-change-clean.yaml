@@ -13,7 +13,7 @@
 # this capability does not engage; it stays with base reasoning under
 # review-scope.md.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: database-migration-deepening-dynamodb-conditional-write-no-data-model-change-clean
 title: "reserve_stock adds the missing ConditionExpression optimistic-lock check, no attribute/index/shape change"
@@ -75,3 +75,8 @@ metadata:
     the capability correctly does not engage merely because a NoSQL
     store (DynamoDB) is involved -- part of Issue #279's non-relational
     corpus extension.
+  taxonomy:
+    capability: [database-migration]
+    policy_contract: [database-migration-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

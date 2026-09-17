@@ -23,7 +23,7 @@
 # Expected: one required finding, scoped to the one caller the evidence
 # shows is actually affected, not a blanket finding against all three.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: cfv-narrowed-blast-radius-bounded-evidence
 title: "normalize_currency rounding-mode change looks broad across three callers; bounded evidence narrows real impact to one"
@@ -105,3 +105,8 @@ metadata:
     checked, to the one caller the change actually affects. Locks in
     scope/severity that reflects the narrower, evidenced reality rather
     than a blanket finding against every caller found by grep.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

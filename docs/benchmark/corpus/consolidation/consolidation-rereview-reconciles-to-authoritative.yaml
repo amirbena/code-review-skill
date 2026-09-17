@@ -18,14 +18,14 @@
 # affected-locations list. With `findings_completeness: exhaustive`,
 # re-emitting the per-call-site pair is an unexpected finding.
 #
-# NOTE: `benchmark-case/v1` has no dedicated prior-review field; the prior
+# NOTE: `benchmark-case/v2` has no dedicated prior-review field; the prior
 # findings are supplied through `input.context` (§6.3). A first-class
 # re-review input is left to a later fixture-format revision (see #177), not
 # this corpus. The lifecycle disposition itself (CONSOLIDATED: OPEN, folded,
 # resolves nothing) is defined in docs/findings/finding-lifecycle-contract.md
 # §4 and skills/github-pr-review/policies/stateful-delta-rereview.md §3.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: consolidation-rereview-reconciles-to-authoritative
 title: "Re-review consolidates two prior per-call-site findings into one authoritative finding"
@@ -140,3 +140,8 @@ metadata:
     being carried forward as duplicates or joined by a third finding.
     Ordinary ambiguous many-to-one matching, with no such positive evidence,
     stays UNCERTAIN and is out of scope for this case.
+  taxonomy:
+    capability: [consolidation]
+    policy_contract: [unclassified]
+    risk_mode: [security]
+    affected_surface: [unclassified]

@@ -95,10 +95,11 @@ worked example need.
 Every fixture carries an explicit format identifier:
 
 ```yaml
-format: benchmark-case/v1
+format: benchmark-case/v2
 ```
 
-- `format` is `benchmark-case/v<major>`. This document defines `v1`.
+- `format` is `benchmark-case/v<major>`. This document currently defines
+  `v2` (see "Version history" below for `v1`).
 - A reader implements a **fixed set** of major versions. Encountering any
   other value — absent, malformed, or a version it does not implement — is
   a hard rejection (§11). A reader MUST NOT parse an unrecognized version
@@ -107,10 +108,24 @@ format: benchmark-case/v1
 - `format` is validated **before any other field is read**, so an old case
   is never reinterpreted under new rules.
 - A breaking change to the meaning or requiredness of any field increments
-  `<major>` and leaves existing `benchmark-case/v1` cases readable only by
-  a `v1` reader. Additive, backward-compatible clarifications may be made
-  within `v1` only if every previously valid `v1` fixture stays valid and
-  its meaning is unchanged.
+  `<major>` and leaves existing cases of the prior version readable only by
+  a reader that still implements that prior version. Additive,
+  backward-compatible clarifications may be made within a version only if
+  every previously valid fixture of that version stays valid and its
+  meaning is unchanged.
+
+### Version history
+
+| Version | Status | What changed |
+|---|---|---|
+| `v1` | Superseded | The original schema (#50). `metadata` was optional; no taxonomy classification existed. |
+| `v2` | Current | [#333](https://github.com/amirbena/code-review-skill/issues/333): `metadata` became **required**, and `metadata.taxonomy` became a **required** field within it (§10.1) — a breaking change to a field's requiredness under the rule above, hence the major-version increment. Every corpus fixture and the worked example were migrated to `v2` in the same change that introduced the requirement, so no `v1` fixture was left behind. |
+
+The reference validator
+([`../../tests/reference/benchmark/benchmark_fixture.py`](../../tests/reference/benchmark/benchmark_fixture.py))
+implements `v2` only — per "Fail closed" above, a `v1` fixture is rejected
+under §11 rule 1, never reinterpreted under `v2`'s rules. `v1` is recorded
+here as history, not as a version a current reader accepts.
 
 ## 4. Top-level fields
 
@@ -121,7 +136,7 @@ format: benchmark-case/v1
 | `title` | yes | string | One-line human summary of the case. |
 | `input` | yes | mapping | The benchmark input under review (§6). |
 | `expected` | yes | mapping | The expected review outcome (§7–§9). |
-| `metadata` | no | mapping | Optional, closed-key annotations (§10). |
+| `metadata` | yes | mapping | Closed-key annotations, including the mandatory taxonomy (§10). |
 
 No other top-level key is permitted.
 
@@ -169,8 +184,8 @@ A mapping with:
   used everywhere else in this contract.
 
 `repo_ref` names *what* to review. Whether a runner supports patch inputs,
-reference inputs, or both first is #52's decision; `v1` fixes the shape of
-both so the corpus is not blocked on that choice.
+reference inputs, or both first is #52's decision; this contract fixes the
+shape of both so the corpus is not blocked on that choice.
 
 ### 6.3 Review context (`input.context`)
 
@@ -215,7 +230,7 @@ Additional fields:
 |---|---|---|
 | `severity` | yes | `P0`/`P1`/`P2`, **or** a list of ≥ 2 distinct such values to permit severity variance (§9). |
 | `location` | yes | Structured expected location (§8.3). |
-| `claim` | yes | A short normalized cause → faulty-behavior sentence (the `behavioral_claim` shape of [`../findings/finding-matching-strategy.md`](../findings/finding-matching-strategy.md) §2). Documentation and a future-matcher target; **not** string-equality matched in `v1`. |
+| `claim` | yes | A short normalized cause → faulty-behavior sentence (the `behavioral_claim` shape of [`../findings/finding-matching-strategy.md`](../findings/finding-matching-strategy.md) §2). Documentation and a future-matcher target; **not** string-equality matched. |
 | `defect_kind` | no | Narrow defect-class slug (e.g. `sql-injection`). Concrete purpose: category-level slicing for #41 / profile fixtures #47. |
 | `alternatives` | no | Non-empty list of acceptable **restatements of this same defect** (§8.2). |
 
@@ -303,20 +318,54 @@ Classifying a reviewer finding as matching a given spec, and turning
 "unexpected finding" / "missed required finding" into a score, are the
 runner's and #41's job — not the fixture's.
 
-## 10. Optional metadata (`metadata`)
+## 10. Metadata (`metadata`)
 
-`metadata` is a **closed** mapping; every key has a concrete downstream
-purpose. Unknown keys are rejected (§11).
+`metadata` is a **required**, **closed** mapping; every key has a concrete
+downstream purpose. Unknown keys are rejected (§11).
 
-| Key | Type | Concrete purpose |
-|---|---|---|
-| `source` | string | Provenance — `crafted`, or a URL to the real PR/commit a case was derived from. Corpus auditing (#51). |
-| `tags` | list | Subset of `correctness` / `security` / `quality` / `no-op` / `regression` / `concurrency` / `performance`, no duplicates. Category slices for #41 and profile/risky fixtures (#47/#48). |
-| `rationale` | string | 1–3 sentences on why this case earns a corpus slot. Feeds #51's case-selection rationale record. |
+| Key | Required | Type | Concrete purpose |
+|---|---|---|---|
+| `source` | no | string | Provenance — `crafted`, or a URL to the real PR/commit a case was derived from. Corpus auditing (#51). |
+| `tags` | no | list | Subset of `correctness` / `security` / `quality` / `no-op` / `regression` / `concurrency` / `performance`, no duplicates. Category slices for #41 and profile/risky fixtures (#47/#48). |
+| `rationale` | no | string | 1–3 sentences on why this case earns a corpus slot. Feeds #51's case-selection rationale record. |
+| `taxonomy` | **yes** | mapping | Canonical candidate-taxonomy classification (§10.1). Issue #333. |
 
 No field for scoring weights, pass/fail thresholds, retrieval cutoffs,
 runner configuration, timing, or model identity — those are out of scope
 (§13) and MUST NOT be added to `metadata` to smuggle them in.
+
+### 10.1 `metadata.taxonomy` — canonical candidate taxonomy
+
+Contract:
+[`taxonomy.md`](taxonomy.md) (Issue #333). `taxonomy` is a **closed**,
+**required** mapping with **exactly four keys** — `capability`,
+`policy_contract`, `risk_mode`, `affected_surface` — each a **non-empty
+list** of one or more values drawn from that dimension's own closed,
+alias-free enum (duplicates rejected). Every dimension carries an
+explicit `unclassified` value as a first-class member of its enum, never
+an error state: a case (or a PR diff, per `taxonomy.md`) that does not
+cleanly fit a dimension's other values declares `unclassified` for it
+rather than omitting the dimension or forcing an inexact value.
+
+```yaml
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    ...
+  taxonomy:
+    capability: [security-boundary]
+    policy_contract: [security-deepening]
+    risk_mode: [security]
+    affected_surface: [unclassified]
+```
+
+`risk_mode` reuses the `tags` enum unchanged (§10) plus `unclassified`; it
+does not introduce a parallel vocabulary for the same concept. The four
+dimensions, their canonical values, and the deterministic inverted index
+built from them are specified in full in
+[`taxonomy.md`](taxonomy.md) — this document only pins the metadata shape
+and its fail-closed validation (§11 rule 10).
 
 ## 11. Fail-closed validation
 
@@ -355,18 +404,22 @@ authoritative; this list is not exhaustive.
    `clean` nor `changes-required`.
 9. An `any_of` group has fewer than 2 members, nests another group, or
    carries its own `severity` / `location` / `claim`.
-10. `metadata` carries an unknown key, an unknown or duplicated `tags`
-    value, or an empty `tags` list.
+10. `metadata` is missing, carries an unknown key, an unknown or
+    duplicated `tags` value, or an empty `tags` list; or `metadata.taxonomy`
+    is missing, is not a mapping, carries an unknown or missing dimension
+    key, or any dimension's value list is empty, non-list, carries an
+    unknown value, or carries a duplicate value (§10.1).
 11. `decision` is present and contradicts the decision mechanically
     derived from the required findings' severities (§7).
 
-A validator that implements `v1` and is handed a `v2` fixture rejects it
-under rule 1 — it never falls back to `v1` parsing.
+A validator that implements `v2` and is handed a `v1` fixture rejects it
+under rule 1 — it never falls back to `v1` parsing (see "Version history"
+in §3).
 
 ## 12. Worked example
 
 [`examples/example-case.yaml`](examples/example-case.yaml) is a complete,
-validated `benchmark-case/v1` fixture. It is a crafted single-file Python
+validated `benchmark-case/v2` fixture. It is a crafted single-file Python
 patch that introduces a SQL-injection sink and a user-controlled
 filesystem path and adds no tests. It exercises every §9 construct:
 
@@ -400,6 +453,8 @@ exercising the test-only reference validator
 | The expected-vs-produced **match relation** itself — deciding when a produced finding satisfies an expected spec, an `alternatives` restatement, or an `any_of` member | [#54](https://github.com/amirbena/code-review-skill/issues/54) — [`match-criteria.md`](match-criteria.md) |
 | False-positive / false-negative accounting, precision/recall, retrieval thresholds, and aggregate quality metrics built on that relation | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
 | Profile-specific and risky-change fixture selection | [#47](https://github.com/amirbena/code-review-skill/issues/47) / [#48](https://github.com/amirbena/code-review-skill/issues/48) |
+| The canonical taxonomy's dimensions/values, PR-diff classification, and the inverted index built from `metadata.taxonomy` | [#333](https://github.com/amirbena/code-review-skill/issues/333) — [`taxonomy.md`](taxonomy.md) |
+| Case relevance scoring, weighting, and Top-K/coverage selection over the taxonomy/index | [#334](https://github.com/amirbena/code-review-skill/issues/334) |
 | The P0/P1/P2 definitions and the decision derivation | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
 | The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
 

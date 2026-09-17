@@ -10,7 +10,7 @@
 # non-concurrent index build, blocking all reads and writes on the table
 # until it completes.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: database-migration-deepening-unsafe-online-blocking-lock
 title: "0012_add_status_v2_index builds a UNIQUE index without CONCURRENTLY on the actively-written orders_order table"
@@ -98,3 +98,8 @@ metadata:
     write volume make the non-concurrent build's blocking behavior
     material, the actual unsafe-online-migration defect rather than a
     hypothetical one.
+  taxonomy:
+    capability: [database-migration]
+    policy_contract: [database-migration-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

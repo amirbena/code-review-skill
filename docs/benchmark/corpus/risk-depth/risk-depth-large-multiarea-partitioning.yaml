@@ -15,7 +15,7 @@
 # large-pr-partitioning.md's reference model in
 # ../../../../tests/unit/test_risk_based_review_scenarios.py.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: risk-depth-large-multiarea-partitioning
 title: "Multi-area change: unauthenticated internal endpoint, unbounded worker retry loop, and an open security-group egress rule"
@@ -159,3 +159,8 @@ metadata:
     partition handling must surface all three -- partitioning by directory
     must not cause any one area's defect to be dropped or attributed to
     the wrong partition.
+  taxonomy:
+    capability: [risk-depth]
+    policy_contract: [change-risk-signals]
+    risk_mode: [security, correctness]
+    affected_surface: [unclassified]

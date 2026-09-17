@@ -16,7 +16,7 @@
 # affected. `findings: []` pins that no finding is manufactured for
 # thoroughness.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: repo-intel-python-dynamic-dispatch-safe-failure
 title: "Dynamic string-keyed dispatch resolves as ambiguous, not an invented relationship"
@@ -69,3 +69,8 @@ metadata:
     registry.py's string-keyed dispatch cannot be resolved statically from
     external request data. The corpus asserts this stays an unresolved
     diagnostic, never an invented relationship or a manufactured finding.
+  taxonomy:
+    capability: [repository-intelligence]
+    policy_contract: [repository-expansion]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

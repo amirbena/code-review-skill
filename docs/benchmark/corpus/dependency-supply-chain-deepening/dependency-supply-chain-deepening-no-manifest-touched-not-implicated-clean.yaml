@@ -9,7 +9,7 @@
 # distinct from the safe-patch-bump case where a qualifying file changes
 # but is not flagged.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: dependency-supply-chain-deepening-no-manifest-touched-not-implicated-clean
 title: "reports.js renames a local loop variable for clarity; no manifest, lockfile, Dockerfile, or Actions file changes"
@@ -55,3 +55,8 @@ metadata:
     section 2 to reason from at all, so this pass performs no deepening,
     distinct from the safe-patch-bump case where a qualifying file changes
     but the change itself is not flagged.
+  taxonomy:
+    capability: [dependency-supply-chain]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

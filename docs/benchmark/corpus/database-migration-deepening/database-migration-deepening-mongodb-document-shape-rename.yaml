@@ -12,7 +12,7 @@
 # name -- written either before this deploy or by a still-running
 # previous application version during a rolling deploy.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: database-migration-deepening-mongodb-document-shape-rename
 title: "get_shipping_address reads only shippingAddress after renaming customers.mailingAddress with no coexistence handling for the old field"
@@ -101,3 +101,8 @@ metadata:
     under the old field name are handled -- the actual missing
     expand/contract staging rather than a hypothetical one -- part of
     Issue #279's non-relational corpus extension.
+  taxonomy:
+    capability: [database-migration]
+    policy_contract: [database-migration-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

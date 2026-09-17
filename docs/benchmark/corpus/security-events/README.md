@@ -33,7 +33,7 @@ deterministic structural assertion — event-type/classification equality,
 correlation-field presence, and a redaction pattern check — never an
 LLM/rubric score, exactly like the three corpora above.
 
-## Why this isn't a `benchmark-case/v1` corpus
+## Why this isn't a `benchmark-case/v2` corpus
 
 Like the three corpora above, this domain has no representation in
 [`../../fixture-format.md`](../../fixture-format.md): that schema's

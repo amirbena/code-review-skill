@@ -9,7 +9,7 @@
 # can reach the same shared dict concurrently and no lock/transaction
 # protects the read-decide-write sequence.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: distributed-systems-deepening-concurrent-interleaving-inventory-race
 title: "reserve_item reads, decides, and writes _inventory with no lock while the server runs threaded"
@@ -112,3 +112,8 @@ metadata:
     must trace that the threaded server allows more than one handler to
     reach _inventory concurrently with no lock protecting the sequence,
     the actual TOCTOU defect rather than a hypothetical one.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

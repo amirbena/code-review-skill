@@ -24,7 +24,7 @@
 # locations, per #177's root-cause consolidation model — not three
 # separate near-duplicate findings for the same underlying cause.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: analogue-placement-status-label-duplication-consolidated
 title: "New connector duplicates the status-label table at three call sites for one reason; expect one consolidated finding"
@@ -139,3 +139,8 @@ metadata:
     remediation direction, so a correct review reports one canonical
     finding with the sites named as affected locations rather than one
     near-duplicate finding per file.
+  taxonomy:
+    capability: [analogue-placement-pattern]
+    policy_contract: [unclassified]
+    risk_mode: [quality, correctness]
+    affected_surface: [unclassified]

@@ -11,7 +11,7 @@
 # decision with an *optional* finding surfacing the ambiguity, rather than
 # inventing a breaking claim the diff does not support.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: api-compat-add-enum-member-context-dependent
 title: "PaymentStatus gains a refunded member; compatibility depends on unmodeled consumer behavior"
@@ -70,3 +70,8 @@ metadata:
     can break an exhaustive consumer without breaking a permissive one.
     The case pins the fail-closed outcome — no invented required breaking
     finding — while still surfacing the ambiguity as an optional note.
+  taxonomy:
+    capability: [api-compatibility]
+    policy_contract: [api-contract-compatibility]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

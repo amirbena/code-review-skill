@@ -10,7 +10,7 @@
 # added -- so those items silently never appear in the new access
 # pattern's results.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: database-migration-deepening-dynamodb-gsi-backfill-missing
 title: "list_orders_by_status queries a new DynamoDB GSI with no backfill for orders written before the index existed"
@@ -128,3 +128,8 @@ metadata:
     regardless of DynamoDB's automatic index backfill, with no step to
     populate status on those items and no dual-read fallback in the diff
     -- part of Issue #279's non-relational corpus extension.
+  taxonomy:
+    capability: [database-migration]
+    policy_contract: [database-migration-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

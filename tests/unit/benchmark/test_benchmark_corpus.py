@@ -2,7 +2,7 @@
 """Contract coverage for the initial benchmark corpus (Issue #51).
 
 The corpus is ``docs/benchmark/corpus/*.yaml``: a small, deliberately
-minimal set of ``benchmark-case/v1`` fixtures, one per review category, with
+minimal set of ``benchmark-case/v2`` fixtures, one per review category, with
 a case-selection rationale recorded in each fixture's ``metadata`` block and
 in ``docs/benchmark/corpus/README.md``.
 
@@ -81,7 +81,7 @@ class CorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v1")
+                self.assertEqual(case.format, "benchmark-case/v2")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

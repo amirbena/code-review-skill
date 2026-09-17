@@ -15,8 +15,9 @@ concern lives in the file named for it.
 
 | Document | Owns | Issue |
 | --- | --- | --- |
-| [`fixture-format.md`](fixture-format.md) | The canonical machine-readable format for a single benchmark case — case identity, input (inline patch or repository reference), expected findings, expected severity, expected location detail, the four typed variance constructs (same-defect alternatives, alternative findings, optional findings, permitted severity variance), optional metadata, schema/versioning, and fail-closed validation. | [#50](https://github.com/amirbena/code-review-skill/issues/50) |
-| [`corpus/README.md`](corpus/README.md) | The initial benchmark corpus — a small set of `benchmark-case/v1` fixtures, one per review category (correctness, security, quality, no-op), with the case-selection rationale recorded per case and in the directory README. | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
+| [`fixture-format.md`](fixture-format.md) | The canonical machine-readable format for a single benchmark case — case identity, input (inline patch or repository reference), expected findings, expected severity, expected location detail, the four typed variance constructs (same-defect alternatives, alternative findings, optional findings, permitted severity variance), required metadata including its mandatory canonical taxonomy classification, schema/versioning, and fail-closed validation. | [#50](https://github.com/amirbena/code-review-skill/issues/50) |
+| [`taxonomy.md`](taxonomy.md) | The canonical, closed, alias-free benchmark candidate taxonomy — four dimensions (`capability`, `policy_contract`, `risk_mode`, `affected_surface`) each with an explicit `unclassified` member, corpus case classification metadata and its fail-closed validation, the one bounded schema-constrained PR-diff classification model call, and the deterministic non-LLM inverted index (`corpus-index.json`) that lets PR-time candidate selection narrow the corpus by lookup instead of a full scan. | [#333](https://github.com/amirbena/code-review-skill/issues/333) |
+| [`corpus/README.md`](corpus/README.md) | The initial benchmark corpus — a small set of `benchmark-case/v2` fixtures, one per review category (correctness, security, quality, no-op), with the case-selection rationale recorded per case and in the directory README. | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | [`runner-contract.md`](runner-contract.md) | How a benchmark run executes the reviewer over the corpus — per-case isolation into a disposable workspace, the repository-safety invariants for every protected source checkout, cleanup on success and failure, the machine-readable per-case result shape, single-case vs. whole-corpus runs, and the exit-status rule. | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
 | [`regression-report.md`](regression-report.md) | How a candidate run is compared against a stored baseline — the baseline result artifact, the corpus-identity guard, the per-case and aggregate deltas, the metric-free rule that separates a regression from an improvement, deterministic output, and the deliberate baseline-refresh step. | [#53](https://github.com/amirbena/code-review-skill/issues/53) |
 | [`match-criteria.md`](match-criteria.md) | When a produced review finding matches an expected benchmark finding — the two match axes (location, defect), the three-valued `MATCH` / `NEAR_MISS` / `NO_MATCH` result, the fixed tolerances, and how `alternatives` / `any_of` / `match: optional` resolve. The pairing relation the [#41](https://github.com/amirbena/code-review-skill/issues/41) quality metrics are built on. | [#54](https://github.com/amirbena/code-review-skill/issues/54) |
@@ -54,7 +55,7 @@ report ([#53](https://github.com/amirbena/code-review-skill/issues/53)) is
 ## Worked example
 
 [`examples/example-case.yaml`](examples/example-case.yaml) is one complete,
-validated `benchmark-case/v1` fixture referenced by `fixture-format.md`
+validated `benchmark-case/v2` fixture referenced by `fixture-format.md`
 §12. It is an illustrative reference for the format, **not** a corpus case
 (the corpus is #51). Its automated validation and the negative tests for
 the format's rejection rules live in
@@ -63,7 +64,7 @@ the format's rejection rules live in
 ## Corpus
 
 [`corpus/`](corpus/README.md) holds the initial benchmark corpus (#51):
-one crafted `benchmark-case/v1` fixture per review category, each a
+one crafted `benchmark-case/v2` fixture per review category, each a
 self-contained inline patch with its pre-image and expected findings. The
 corpus is validated by
 [`../../tests/unit/benchmark/test_benchmark_corpus.py`](../../tests/unit/benchmark/test_benchmark_corpus.py)
@@ -209,7 +210,7 @@ demonstrating the voice principles owned by
 depends on [#304](https://github.com/amirbena/code-review-skill/issues/304))
 pins the semantic quality and publication isolation of the private,
 caller-facing `Reviewer Brief` every `github-pr-review` result includes.
-Unlike every corpus above, it is not `benchmark-case/v1` fixtures — that
+Unlike every corpus above, it is not `benchmark-case/v2` fixtures — that
 schema has no field for a private prose artifact or for a second,
 GitHub-bound surface to compare it against — so it follows the
 test-only-reference-model pattern instead:
@@ -235,7 +236,7 @@ bounded: no `spawn_agent` capability, invocation agent-count/spawn-depth
 budgets, the capability-subset delegation rule, non-transferable
 mutation/formal-review-action authorization, sibling-collusion
 resistance, and confused-deputy protection. Like the Reviewer Brief
-benchmark below, it is not `benchmark-case/v1` fixtures — that schema has
+benchmark below, it is not `benchmark-case/v2` fixtures — that schema has
 no field for a capability grant, a spawn-depth/agent-count budget, or a
 structural allow/deny result — so it follows the same test-only
 reference-model pattern:
@@ -264,7 +265,7 @@ attempts, PR-content escalation and delegated-agent report-back attempts,
 authorization non-persistence across invocations, conflicting positive/
 negative instructions resolving toward denial, and sandbox-preferred
 selection holding regardless of authorization presence. Like the
-Agent-spawn / delegation benchmark above, it is not `benchmark-case/v1`
+Agent-spawn / delegation benchmark above, it is not `benchmark-case/v2`
 fixtures — that schema has no field for a resolved authorization boolean
 or an execution-backend provenance value — so it follows the same
 test-only reference-model pattern:
@@ -297,7 +298,7 @@ phrasings — including a stable, named fixture reproducing the PR #297
 regression shape (an explicit `ACTIVE` request with a clean, otherwise-
 publishable review must never resolve to a withheld mutation for a
 missing second activation signal). Like the two benchmarks above, it is
-not `benchmark-case/v1` fixtures — that schema has no field for a
+not `benchmark-case/v2` fixtures — that schema has no field for a
 publication mode, a "would publish" preview, or a GitHub-bound
 publication artifact — so it follows the same test-only reference-model
 pattern:
@@ -328,7 +329,7 @@ its exact scope, apply/commit/push each require their own independent
 authorization, authorization cannot be replayed across invocations or
 inherited by a spawned child, and `github-pr-review` can never apply,
 commit, or push even when prompted to. Like the agent-spawn / delegation
-benchmark above, it is not `benchmark-case/v1` fixtures — that schema has
+benchmark above, it is not `benchmark-case/v2` fixtures — that schema has
 no field for a requested capability, an authorization scope/state, or a
 structural allow/deny result with an expected post-action repository/Git
 state — so it follows the same test-only reference-model pattern:
@@ -361,7 +362,7 @@ taxonomy, the correct `expected_denial` /
 parent/child correlation where relevant, the target/scope identifiers
 the domain calls for, and none of the content #299 forbids (a secret,
 token, credential value, raw prompt, or full patch body). Like the two
-benchmarks above, it is not `benchmark-case/v1` fixtures — that schema
+benchmarks above, it is not `benchmark-case/v2` fixtures — that schema
 has no field for an event schema, a classification, or a redaction
 assertion — so it follows the same test-only reference-model pattern:
 [`../../tests/reference/benchmark/security_event_fixtures.py`](../../tests/reference/benchmark/security_event_fixtures.py),
@@ -398,7 +399,7 @@ introduced after the pre-render point already passed, the `REVIEW
 INCOMPLETE` carve-out under adversarial drift (a mismatch that happens to
 involve the carve-out is still caught, never misclassified as it), and
 control cases proving a genuinely consistent signal is never withheld.
-Like the benchmarks above, it is not `benchmark-case/v1` fixtures — that
+Like the benchmarks above, it is not `benchmark-case/v2` fixtures — that
 schema has no field for an already-finalized decision, a drifted
 rendered/submitted signal, or a withheld-artifact outcome — so it follows
 the same test-only reference-model pattern:

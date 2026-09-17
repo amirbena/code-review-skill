@@ -10,7 +10,7 @@
 # one PR that touches both an unbacked schema tightening and an
 # unrelated per-item remote-call loop.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: specialist-depth-composition-case-c-multiple-capabilities-database-and-performance
 title: "0005_require_subscription_tier drops backfill safety while get_order_summaries loses its batched inventory lookup"
@@ -166,3 +166,8 @@ metadata:
     one unified review with neither gating or suppressing the other, and
     neither may be demoted to optional or dropped because the other
     capability also engaged.
+  taxonomy:
+    capability: [specialist-depth-composition]
+    policy_contract: [specialist-depth]
+    risk_mode: [correctness, performance]
+    affected_surface: [unclassified]

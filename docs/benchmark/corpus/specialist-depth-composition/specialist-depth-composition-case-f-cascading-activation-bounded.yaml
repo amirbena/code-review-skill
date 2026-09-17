@@ -12,7 +12,7 @@
 # would not exist as an activation candidate without first following the
 # database finding's own evidence one hop.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: specialist-depth-composition-case-f-cascading-activation-bounded
 title: "0012_drop_customer_id_index removes the only index the unbounded customer order-history lookup relies on"
@@ -116,3 +116,8 @@ metadata:
     n-plus-one hunk is. Both findings remain ordinary findings in one
     unified review, and neither the cascade nor the composition invents a
     new expansion ceiling beyond #87's existing one.
+  taxonomy:
+    capability: [specialist-depth-composition]
+    policy_contract: [specialist-depth]
+    risk_mode: [correctness, performance]
+    affected_surface: [unclassified]

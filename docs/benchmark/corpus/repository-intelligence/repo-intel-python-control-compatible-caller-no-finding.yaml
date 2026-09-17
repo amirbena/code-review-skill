@@ -17,7 +17,7 @@
 # the relationship itself was legitimately retrieved with provenance --
 # retrieving more context must never, by itself, create a finding.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: repo-intel-python-control-compatible-caller-no-finding
 title: "Call-site trigger resolves a compatible caller: no finding from retrieval breadth alone"
@@ -59,3 +59,8 @@ metadata:
     successfully retrieved relationship is not itself grounds for a
     finding, and that influential_relationships stays empty when no
     retrieved relationship materially changes the conclusion.
+  taxonomy:
+    capability: [repository-intelligence]
+    policy_contract: [repository-expansion]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

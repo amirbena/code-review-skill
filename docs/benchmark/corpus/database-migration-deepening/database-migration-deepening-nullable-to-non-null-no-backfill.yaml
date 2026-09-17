@@ -9,7 +9,7 @@
 # step and no default, while the model's own docstring documents that
 # rows predating the column was introduced were never populated.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: database-migration-deepening-nullable-to-non-null-no-backfill
 title: "0005_require_subscription_tier tightens subscription_tier to NOT NULL with no backfill for legacy NULL rows"
@@ -108,3 +108,8 @@ metadata:
     history shows existing rows will not satisfy the new constraint and no
     backfill step exists in the diff, the actual missing-backfill defect
     rather than a hypothetical one.
+  taxonomy:
+    capability: [database-migration]
+    policy_contract: [database-migration-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

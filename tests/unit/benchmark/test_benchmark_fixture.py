@@ -39,7 +39,7 @@ class WorkedExampleTests(unittest.TestCase):
 
     def test_example_decodes_to_a_mapping(self) -> None:
         self.assertIsInstance(self.data, dict)
-        self.assertEqual(self.data["format"], "benchmark-case/v1")
+        self.assertEqual(self.data["format"], "benchmark-case/v2")
 
     def test_example_parses_and_validates(self) -> None:
         case = bf.parse_case(self.data)
@@ -107,7 +107,19 @@ class SchemaIdentityRejectionTests(unittest.TestCase):
             bf.parse_case(self.data)
 
     def test_unsupported_future_version_is_rejected_not_coerced(self) -> None:
-        self.data["format"] = "benchmark-case/v2"
+        self.data["format"] = "benchmark-case/v3"
+        with self.assertRaisesRegex(bf.FixtureFormatError, "unsupported or missing 'format'"):
+            bf.parse_case(self.data)
+
+    def test_superseded_v1_is_rejected_not_reinterpreted(self) -> None:
+        # fixture-format.md §3 "Version history": v1 is superseded by v2
+        # (Issue #333). The v2-only reference validator rejects a v1
+        # fixture under rule 1 rather than reading it under v2's rules —
+        # even though this v1 payload predates the now-mandatory
+        # metadata.taxonomy field and would also fail rule 10 if the
+        # version gate were somehow bypassed.
+        del self.data["metadata"]["taxonomy"]
+        self.data["format"] = "benchmark-case/v1"
         with self.assertRaisesRegex(bf.FixtureFormatError, "unsupported or missing 'format'"):
             bf.parse_case(self.data)
 
@@ -476,10 +488,45 @@ class MetadataTests(unittest.TestCase):
         with self.assertRaises(bf.FixtureFormatError):
             bf.parse_case(self.data)
 
-    def test_metadata_is_optional(self) -> None:
+    def test_metadata_is_required(self) -> None:
         del self.data["metadata"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "metadata"):
+            bf.parse_case(self.data)
+
+    def test_taxonomy_is_required_within_metadata(self) -> None:
+        del self.data["metadata"]["taxonomy"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_unknown_taxonomy_dimension_is_rejected(self) -> None:
+        self.data["metadata"]["taxonomy"]["authz"] = ["unclassified"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_missing_taxonomy_dimension_is_rejected(self) -> None:
+        del self.data["metadata"]["taxonomy"]["risk_mode"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_unknown_taxonomy_value_is_rejected(self) -> None:
+        self.data["metadata"]["taxonomy"]["capability"] = ["not-a-real-capability"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_duplicate_taxonomy_value_is_rejected(self) -> None:
+        self.data["metadata"]["taxonomy"]["risk_mode"] = ["security", "security"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_empty_taxonomy_dimension_value_list_is_rejected(self) -> None:
+        self.data["metadata"]["taxonomy"]["risk_mode"] = []
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_unclassified_is_a_legal_taxonomy_value(self) -> None:
+        self.data["metadata"]["taxonomy"]["affected_surface"] = ["unclassified"]
         case = bf.parse_case(self.data)
-        self.assertEqual(case.metadata, {})
+        self.assertEqual(case.metadata["taxonomy"]["affected_surface"], ["unclassified"])
 
 
 class InducedRegressionTests(unittest.TestCase):
@@ -523,7 +570,7 @@ class InducedRegressionTests(unittest.TestCase):
         original = bf.SUPPORTED_FORMATS
         try:
             bf.SUPPORTED_FORMATS = frozenset(
-                {"benchmark-case/v1", "benchmark-case/v9"}
+                {"benchmark-case/v2", "benchmark-case/v9"}
             )
             # With the version gate widened, the bad-version fixture is
             # wrongly accepted — exactly what SchemaIdentityRejectionTests

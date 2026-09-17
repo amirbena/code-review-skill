@@ -17,7 +17,7 @@
 # backfill; it confirms both are safe, with a missing-test note as the
 # only carried finding, mirroring the precedent's guarded-clean case.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: database-migration-deepening-expand-contract-safe-clean
 title: "0010/0011 add email_normalized nullable and batch-backfill it idempotently, deferring the old column's removal"
@@ -147,3 +147,8 @@ metadata:
     rather than done here -- so nothing required needs reporting, distinct
     from the two other clean cases in this corpus, which stay quiet
     because the capability never engages at all.
+  taxonomy:
+    capability: [database-migration]
+    policy_contract: [database-migration-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

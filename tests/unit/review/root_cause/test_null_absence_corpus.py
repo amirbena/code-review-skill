@@ -3,7 +3,7 @@
 (Issue #121).
 
 The sub-corpus is ``docs/benchmark/corpus/null-absence-risk/*.yaml``: a
-small, focused set of ``benchmark-case/v1`` fixtures demonstrating
+small, focused set of ``benchmark-case/v2`` fixtures demonstrating
 shared/policies/review-scope.md's "Null-like absence-risk review"
 requirement — a real null/undefined/nil dereference risk surfaced, its
 directly guarded counterpart correctly not reported, an optional/lookup-
@@ -78,7 +78,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v1")
+                self.assertEqual(case.format, "benchmark-case/v2")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

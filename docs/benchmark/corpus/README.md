@@ -3,7 +3,7 @@
 Repository-development artifact for GitHub Issue
 [#51](https://github.com/amirbena/code-review-skill/issues/51). This
 directory is the **initial benchmark corpus**: a small, deliberately
-minimal set of `benchmark-case/v1` fixtures — one per review category —
+minimal set of `benchmark-case/v2` fixtures — one per review category —
 plus the case-selection rationale for each. Parent capability:
 [#40](https://github.com/amirbena/code-review-skill/issues/40).
 
@@ -56,12 +56,15 @@ and no Skill launches either.
 | [`no-op-comment-and-rename.yaml`](no-op-comment-and-rename.yaml) | no-op | a docstring is added and a local variable renamed; behaviour is identical (the pre-image already uses `math.pi`, so the touched line has nothing flag-worthy) | report **nothing** (`findings: []`, `findings_completeness: exhaustive`) | `clean` |
 
 Per-case provenance and a one-paragraph rationale also live in each
-fixture's `metadata` block (`source`, `tags`, `rationale`).
+fixture's `metadata` block (`source`, `tags`, `rationale`), alongside its
+mandatory canonical taxonomy classification (`metadata.taxonomy`) —
+see [`../taxonomy.md`](../taxonomy.md) and
+[`../fixture-format.md`](../fixture-format.md) §10.1.
 
 ## Related sub-corpora
 
 - [`consolidation/`](consolidation/README.md) — a focused
-  `benchmark-case/v1` sub-corpus for root-cause / duplicate finding
+  `benchmark-case/v2` sub-corpus for root-cause / duplicate finding
   consolidation (Issue
   [#185](https://github.com/amirbena/code-review-skill/issues/185), parent
   [#177](https://github.com/amirbena/code-review-skill/issues/177)). Same
@@ -69,12 +72,12 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   ([`../../../tests/unit/review/root_cause/test_consolidation_corpus.py`](../../../tests/unit/review/root_cause/test_consolidation_corpus.py)).
   The four category cases above are unaffected by it.
 - [`repository-intelligence/`](repository-intelligence/README.md) — a
-  focused `benchmark-case/v1` sub-corpus demonstrating
+  focused `benchmark-case/v2` sub-corpus demonstrating
   `repository-expansion.md`'s (#87) triggers (Issue
   [#129](https://github.com/amirbena/code-review-skill/issues/129)). Same
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py`](../../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py)).
-- [`risk-depth/`](risk-depth/README.md) — a focused `benchmark-case/v1`
+- [`risk-depth/`](risk-depth/README.md) — a focused `benchmark-case/v2`
   sub-corpus for risk-based review depth and large-PR handling (Issue
   [#90](https://github.com/amirbena/code-review-skill/issues/90), parent
   [#48](https://github.com/amirbena/code-review-skill/issues/48)). Same
@@ -84,19 +87,19 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   the reference models directly in
   [`../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py`](../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py).
 - [`semantic-implication/`](semantic-implication/README.md) — a focused
-  `benchmark-case/v1` sub-corpus for the base semantic change-implication
+  `benchmark-case/v2` sub-corpus for the base semantic change-implication
   reasoning pass (Issue
   [#211](https://github.com/amirbena/code-review-skill/issues/211)). Same
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py`](../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py)).
 - [`null-absence-risk/`](null-absence-risk/README.md) — a focused
-  `benchmark-case/v1` sub-corpus for the cross-language null-like
+  `benchmark-case/v2` sub-corpus for the cross-language null-like
   absence-risk review requirement (Issue
   [#121](https://github.com/amirbena/code-review-skill/issues/121)). Same
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/review/root_cause/test_null_absence_corpus.py`](../../../tests/unit/review/root_cause/test_null_absence_corpus.py)).
 - [`api-compatibility/`](api-compatibility/README.md) — a focused
-  `benchmark-case/v1` sub-corpus pinning the expected compatible /
+  `benchmark-case/v2` sub-corpus pinning the expected compatible /
   breaking / context-dependent classification for the API / contract
   compatibility review capability (Issue
   [#184](https://github.com/amirbena/code-review-skill/issues/184), parent
@@ -104,14 +107,14 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/benchmark/test_api_compatibility_corpus.py`](../../../tests/unit/benchmark/test_api_compatibility_corpus.py)).
 - [`security-deepening/`](security-deepening/README.md) — a focused
-  `benchmark-case/v1` sub-corpus pinning representative outcomes for the
+  `benchmark-case/v2` sub-corpus pinning representative outcomes for the
   Security deepening specialist-depth capability (Issue
   [#271](https://github.com/amirbena/code-review-skill/issues/271), parent
   [#83](https://github.com/amirbena/code-review-skill/issues/83)). Same
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/benchmark/test_security_deepening_corpus.py`](../../../tests/unit/benchmark/test_security_deepening_corpus.py)).
 - [`distributed-systems-deepening/`](distributed-systems-deepening/README.md) —
-  a focused `benchmark-case/v1` sub-corpus pinning representative
+  a focused `benchmark-case/v2` sub-corpus pinning representative
   outcomes for the Distributed Systems deepening specialist-depth
   capability (Issue
   [#272](https://github.com/amirbena/code-review-skill/issues/272), parent
@@ -119,7 +122,7 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/benchmark/test_distributed_systems_deepening_corpus.py`](../../../tests/unit/benchmark/test_distributed_systems_deepening_corpus.py)).
 - [`database-migration-deepening/`](database-migration-deepening/README.md) —
-  a focused `benchmark-case/v1` sub-corpus pinning representative
+  a focused `benchmark-case/v2` sub-corpus pinning representative
   outcomes for the Database / Migration deepening specialist-depth
   capability (Issue
   [#186](https://github.com/amirbena/code-review-skill/issues/186), parent
@@ -127,14 +130,14 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/benchmark/test_database_migration_deepening_corpus.py`](../../../tests/unit/benchmark/test_database_migration_deepening_corpus.py)).
 - [`performance-deepening/`](performance-deepening/README.md) — a focused
-  `benchmark-case/v1` sub-corpus pinning representative outcomes for the
+  `benchmark-case/v2` sub-corpus pinning representative outcomes for the
   Performance deepening specialist-depth capability (Issue
   [#187](https://github.com/amirbena/code-review-skill/issues/187), parent
   [#180](https://github.com/amirbena/code-review-skill/issues/180)). Same
   format and reference validator; its own README, cases, and unit test
   ([`../../../tests/unit/benchmark/test_performance_deepening_corpus.py`](../../../tests/unit/benchmark/test_performance_deepening_corpus.py)).
 - [`dependency-supply-chain-deepening/`](dependency-supply-chain-deepening/README.md) —
-  a focused `benchmark-case/v1` sub-corpus pinning representative
+  a focused `benchmark-case/v2` sub-corpus pinning representative
   outcomes for the Dependency / Supply-Chain deepening specialist-depth
   capability (Issue
   [#188](https://github.com/amirbena/code-review-skill/issues/188), parent
@@ -143,7 +146,7 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   ([`../../../tests/unit/benchmark/test_dependency_supply_chain_deepening_corpus.py`](../../../tests/unit/benchmark/test_dependency_supply_chain_deepening_corpus.py)).
 
 - [`analogue-placement-pattern/`](analogue-placement-pattern/README.md) —
-  a focused `benchmark-case/v1` sub-corpus proving recall and
+  a focused `benchmark-case/v2` sub-corpus proving recall and
   false-positive resistance for the analogue-based responsibility/
   placement pattern inference capability (Issue
   [#328](https://github.com/amirbena/code-review-skill/issues/328), parent
@@ -152,7 +155,7 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   ([`../../../tests/unit/benchmark/test_analogue_placement_pattern_corpus.py`](../../../tests/unit/benchmark/test_analogue_placement_pattern_corpus.py)).
 
 - [`specialist-depth-composition/`](specialist-depth-composition/README.md) —
-  a focused `benchmark-case/v1` sub-corpus pinning the architecture-level
+  a focused `benchmark-case/v2` sub-corpus pinning the architecture-level
   activation/composition/boundedness contract
   [`specialist-depth.md`](../../../shared/policies/specialist-depth.md)
   (#82) defines across 0..N domain-specific deepening capabilities (Issue
@@ -165,7 +168,7 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   than re-deriving their domain correctness.
 
 - [`sandbox-adversarial/`](sandbox-adversarial/README.md) — not a
-  `benchmark-case/v1` corpus (see its README for why): the real-runner
+  `benchmark-case/v2` corpus (see its README for why): the real-runner
   adversarial security-boundary benchmark for the runtime-validation
   sandbox (Issue [#306](https://github.com/amirbena/code-review-skill/issues/306),
   parent [#302](https://github.com/amirbena/code-review-skill/issues/302)),
@@ -174,7 +177,7 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
   against the real sandbox runner.
 
 - [`candidate-finding-validation/`](candidate-finding-validation/README.md) —
-  a focused `benchmark-case/v1` sub-corpus pinning the precision of the
+  a focused `benchmark-case/v2` sub-corpus pinning the precision of the
   candidate-finding-validation reasoning contract
   [`candidate-finding-validation-model.md`](../../candidate-finding-validation/candidate-finding-validation-model.md)
   defines (Issue [#383](https://github.com/amirbena/code-review-skill/issues/383),

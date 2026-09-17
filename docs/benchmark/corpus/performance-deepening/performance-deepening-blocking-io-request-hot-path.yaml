@@ -6,7 +6,7 @@
 # process startup and was cached is moved into the per-request handler
 # itself, so every request now pays the blocking read.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: performance-deepening-blocking-io-request-hot-path
 title: "handle_request re-reads feature flags from disk on every request instead of once at startup"
@@ -84,3 +84,8 @@ metadata:
     that was done once and cached is moved into a path the diff's own
     removed comment documents as invoked per-request, so every request now
     pays a blocking disk read that was previously amortized.
+  taxonomy:
+    capability: [performance]
+    policy_contract: [performance-deepening]
+    risk_mode: [correctness, performance]
+    affected_surface: [unclassified]

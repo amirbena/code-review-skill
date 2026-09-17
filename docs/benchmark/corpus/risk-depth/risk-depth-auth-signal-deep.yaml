@@ -8,7 +8,7 @@
 # change the `auth` signal exists to force into `deep` review depth
 # regardless of how small the diff looks.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: risk-depth-auth-signal-deep
 title: "Admin-report auth check replaced by a spoofable client header"
@@ -73,3 +73,8 @@ metadata:
     (change-risk-signals.md): the diff is two lines, small enough that a
     diff-size-only heuristic would miss it, but the signal forces deep
     scrutiny on the specific file it touches.
+  taxonomy:
+    capability: [risk-depth]
+    policy_contract: [change-risk-signals]
+    risk_mode: [security]
+    affected_surface: [unclassified]

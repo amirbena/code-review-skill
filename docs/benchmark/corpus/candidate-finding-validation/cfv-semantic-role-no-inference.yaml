@@ -20,7 +20,7 @@
 # Expected: no finding caused by the missing validation in the reporting
 # path.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: cfv-semantic-role-no-inference
 title: "sku validated at reservation intake, read unvalidated in internal reporting: different responsibilities, no defect inferred"
@@ -81,3 +81,8 @@ metadata:
     responsibilities (external-input validation versus reporting over
     already-validated stored state). Locks in that a reviewer must not
     infer a missing-validation defect from the difference alone.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

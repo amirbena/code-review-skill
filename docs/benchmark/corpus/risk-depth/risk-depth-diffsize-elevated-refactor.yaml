@@ -12,7 +12,7 @@
 # new (currency, amount) signature -- so the size-driven elevated depth is
 # what catches a real bug a lighter pass could plausibly skip past.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: risk-depth-diffsize-elevated-refactor
 title: "format_currency() parameter reorder leaves one call site passing args in the old order"
@@ -156,3 +156,8 @@ metadata:
     infra_config) firing on any touched file. The one call site left in
     the old argument order is a real regression a shallow pass over 10
     near-identical hunks could plausibly rubber-stamp.
+  taxonomy:
+    capability: [risk-depth]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

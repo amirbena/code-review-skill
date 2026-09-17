@@ -25,7 +25,7 @@
 # despite no explicit product requirement, and not reclassified away from
 # a correctness defect.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: cfv-invariant-violation-no-requirement-still-valid
 title: "Single-threaded dashboard counter has the same TOCTOU shape as the checkout path: still a correctness defect, just non-blocking"
@@ -86,3 +86,8 @@ metadata:
     demoted to requirement ambiguity, test-coverage gap, or
     maintainability concern, and must not be dropped for lack of an
     explicit requirement.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

@@ -20,7 +20,7 @@
 # (#177: "when a shared cause is not confident, emit separate findings
 # rather than over-merging").
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: consolidation-shared-cause-low-confidence-fallback
 title: "Plausibly shared timezone cause with low confidence falls back to separate findings"
@@ -105,3 +105,8 @@ metadata:
     layers, two fixes, no shared code. The corpus pins the fail-open path:
     low-confidence shared cause yields separate findings, not an
     over-merged authoritative one.
+  taxonomy:
+    capability: [consolidation]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

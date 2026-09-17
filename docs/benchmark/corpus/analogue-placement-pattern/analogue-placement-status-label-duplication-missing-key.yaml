@@ -19,7 +19,7 @@
 # Expected: ONE required finding on the inline duplication, naming the
 # concrete KeyError consequence.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: analogue-placement-status-label-duplication-missing-key
 title: "New connector inlines the status-label table instead of centralizing it; the inline copy is missing a key and crashes on delivery failure"
@@ -123,3 +123,8 @@ metadata:
     package's deviation has a concrete, already-manifest consequence
     (KeyError on a real delivery status) rather than a bare "does not
     match convention" complaint.
+  taxonomy:
+    capability: [analogue-placement-pattern]
+    policy_contract: [unclassified]
+    risk_mode: [quality, correctness]
+    affected_surface: [unclassified]

@@ -5,7 +5,7 @@ sub-corpus (Issue #186, extended by Issue #279, parent #179, grandparent
 
 The sub-corpus is
 ``docs/benchmark/corpus/database-migration-deepening/*.yaml``: a small,
-focused set of ``benchmark-case/v1`` fixtures pinning representative
+focused set of ``benchmark-case/v2`` fixtures pinning representative
 Database / Migration deepening outcomes as follow-up quality hardening for
 the capability #179 already defines — it validates domain correctness
 after the capability exists and never redesigns it. Issue #279 extended
@@ -121,7 +121,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v1")
+                self.assertEqual(case.format, "benchmark-case/v2")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

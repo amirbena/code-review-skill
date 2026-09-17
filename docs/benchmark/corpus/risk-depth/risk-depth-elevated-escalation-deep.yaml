@@ -10,7 +10,7 @@
 # `deep`. The actual defect lives only in the workflow file: it echoes a
 # secret into the (publicly-readable) job log.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: risk-depth-elevated-escalation-deep
 title: "Deploy workflow echoes DEPLOY_TOKEN into the CI log"
@@ -76,3 +76,8 @@ metadata:
     neither file alone would exceed `elevated`. Also exercises the
     per-fact dedup boundary -- these are two distinct facts, not one
     double-labeled fact.
+  taxonomy:
+    capability: [risk-depth]
+    policy_contract: [change-risk-signals]
+    risk_mode: [security]
+    affected_surface: [unclassified]

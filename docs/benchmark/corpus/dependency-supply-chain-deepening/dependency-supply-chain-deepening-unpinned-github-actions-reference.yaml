@@ -9,7 +9,7 @@
 # other action to an immutable commit SHA -- an inconsistency with the
 # repository's own established convention.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: dependency-supply-chain-deepening-unpinned-github-actions-reference
 title: "ci.yml adds a deploy step pinned to a floating tag while every existing step is pinned to a commit SHA"
@@ -77,3 +77,8 @@ metadata:
     evidence -- every sibling step in the same workflow already pinned to
     a commit SHA -- shows this new reference is less verifiable than what
     the repository already relies on elsewhere.
+  taxonomy:
+    capability: [dependency-supply-chain]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

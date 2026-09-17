@@ -12,7 +12,7 @@
 # With `findings_completeness: exhaustive`, a second finding for another call
 # site is an unexpected finding.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: consolidation-shared-validator-many-call-paths
 title: "One loosened email validator breaks four call paths; expect one authoritative finding"
@@ -121,3 +121,8 @@ metadata:
     manifestations must yield one authoritative finding that lists the
     affected call paths, not one finding per caller. The exhaustive
     completeness makes any per-call-site duplicate an unexpected finding.
+  taxonomy:
+    capability: [consolidation]
+    policy_contract: [unclassified]
+    risk_mode: [correctness, security]
+    affected_surface: [unclassified]

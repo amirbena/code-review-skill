@@ -7,7 +7,7 @@
 # The security-adjacent filename alone must not trigger the deepening
 # capability — a suppressed false positive.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: security-deepening-filename-signal-suppressed-clean
 title: "auth_helper.py reformats a log message string; the filename alone must not trigger deepening"
@@ -54,3 +54,8 @@ metadata:
     boundary. Per specialist-depth.md, a filename is a signal and never
     independently sufficient, so this must resolve `clean` with no
     finding rather than the capability engaging on naming alone.
+  taxonomy:
+    capability: [security-boundary]
+    policy_contract: [security-deepening]
+    risk_mode: [security]
+    affected_surface: [unclassified]

@@ -18,7 +18,7 @@
 # Expected: one required P2 finding classified as a maintainability
 # concern; decision stays clean (no P0/P1 anywhere in the case).
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: cfv-structural-inconsistency-non-blocking
 title: "DiscountRule's field order and naming diverge from the established TaxRule shape with no behavioral consequence: non-blocking"
@@ -81,3 +81,8 @@ metadata:
     concern classification: a real structural inconsistency with no
     demonstrated behavioral consequence is reported non-blocking at P2,
     never escalated to a correctness/reliability defect it does not earn.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

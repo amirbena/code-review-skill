@@ -15,7 +15,7 @@ This corpus does **not** redesign #314's publication semantics — see that
 policy's own "Migration from the pre-#314 model" section for the product
 decision this benchmark only *proves*, never re-derives.
 
-## Why this is not a `benchmark-case/v1` corpus
+## Why this is not a `benchmark-case/v2` corpus
 
 Unlike the corpora under [`../`](../README.md) (each a self-contained
 inline patch plus expected review findings), this boundary's inputs and

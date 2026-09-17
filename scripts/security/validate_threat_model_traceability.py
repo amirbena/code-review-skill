@@ -92,8 +92,8 @@ class TraceabilityError(ValueError):
 def sandbox_readme_scenario_ids(readme_path: Path = _DEFAULT_SANDBOX_README) -> frozenset[str]:
     """`SBOX-###` ids the #306 real-runner suite's own `## Coverage` table claims.
 
-    #306 has no `benchmark-case/v1`-shaped fixture module (see that README's "Why
-    this isn't a benchmark-case/v1 corpus"): the maintained coverage table is the
+    #306 has no `benchmark-case/v2`-shaped fixture module (see that README's "Why
+    this isn't a benchmark-case/v2 corpus"): the maintained coverage table is the
     only structured pointer from `SBOX-###` ids to real test methods. Only the
     `## Coverage` table is scanned, not the whole document, so an incidental
     `SBOX-###` mention in prose elsewhere in the file can't manufacture coverage.

@@ -14,7 +14,7 @@
 # authorization on the path. Outcome: DROPPED, claim_valid = false, not
 # reported.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: cfv-disconfirmed-severe-candidate-dropped
 title: "force_release_reservation has no in-function auth check, but the only caller already enforces it: disconfirmed, not reported"
@@ -70,3 +70,8 @@ metadata:
     evidence from its only caller and must not be reported. A reviewer
     that flags the function body without tracing the caller fails this
     case.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [security]
+    affected_surface: [unclassified]

@@ -9,7 +9,7 @@
 # evidence -- the still-present call site -- shows the bump requires an
 # adaptation this change does not make.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: dependency-supply-chain-deepening-major-version-breaking-api-change
 title: "package.json bumps lodash ^3.10.1 -> ^4.17.21 while reports.js still calls the removed _.pluck"
@@ -115,3 +115,8 @@ metadata:
     bump alone is not a finding, but this diff's own evidence -- a call
     site still using an API the new major version removed -- shows the
     adaptation the bump requires was never made.
+  taxonomy:
+    capability: [dependency-supply-chain]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

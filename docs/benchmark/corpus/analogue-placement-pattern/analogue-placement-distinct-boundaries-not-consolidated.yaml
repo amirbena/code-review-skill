@@ -27,7 +27,7 @@
 #
 # Expected: TWO separate required findings.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: analogue-placement-distinct-boundaries-not-consolidated
 title: "Two new webhook files both duplicate a shared analogue pattern but violate different boundaries; expect two separate findings"
@@ -164,3 +164,8 @@ metadata:
     different inferred patterns with two different consequences, so a
     correct review reports two independent findings rather than merging
     them under one vague duplication finding.
+  taxonomy:
+    capability: [analogue-placement-pattern]
+    policy_contract: [unclassified]
+    risk_mode: [quality, correctness]
+    affected_surface: [unclassified]

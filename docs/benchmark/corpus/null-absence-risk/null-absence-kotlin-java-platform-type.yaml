@@ -8,7 +8,7 @@
 # is the "at least one null-safe-language / interoperability edge case"
 # case required by Issue #121's acceptance criteria.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: null-absence-kotlin-java-platform-type
 title: "ProfileLoader.greeting() calls .trim() on a Java platform-type result with no null check"
@@ -83,3 +83,8 @@ metadata:
     interop weakens Kotlin's own compile-time null-safety guarantee, so
     review effort must shift to this boundary rather than relying on "the
     compiler would have caught it."
+  taxonomy:
+    capability: [null-absence-risk]
+    policy_contract: [null-absence-risk]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

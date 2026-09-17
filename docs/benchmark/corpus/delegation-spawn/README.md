@@ -10,7 +10,7 @@ authorization inheritance/replay, sibling collusion, and confused-deputy
 routing must all stay denied across normal, nested, and adversarial
 execution paths.
 
-## Why this is not a `benchmark-case/v1` corpus
+## Why this is not a `benchmark-case/v2` corpus
 
 Unlike the corpora under [`../`](../README.md) (each a self-contained
 inline patch plus expected findings), this boundary's inputs and

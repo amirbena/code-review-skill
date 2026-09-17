@@ -15,7 +15,7 @@
 # It is NOT part of the benchmark corpus (Issue #51 owns that); it exists
 # only so the format has a realistic, validated reference.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: example-sqli-and-unsafe-path
 title: "SQL injection and user-controlled export path in the users module"
@@ -148,3 +148,8 @@ metadata:
     Covers two distinct high-severity sink types (injection and path
     handling) in one small diff, and exercises every variance construct so
     the format itself stays tested.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [security, correctness]
+    affected_surface: [unclassified]

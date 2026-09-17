@@ -3,7 +3,7 @@
 (Issue #211).
 
 The sub-corpus is ``docs/benchmark/corpus/semantic-implication/*.yaml``: a
-small, focused set of ``benchmark-case/v1`` fixtures demonstrating
+small, focused set of ``benchmark-case/v2`` fixtures demonstrating
 shared/policies/review-scope.md's "Semantic change-implication reasoning"
 base pass — a single dimension activating alone, one change materially
 implicating several dimensions at once, a change with no material signal
@@ -78,7 +78,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v1")
+                self.assertEqual(case.format, "benchmark-case/v2")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

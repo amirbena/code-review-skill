@@ -6,7 +6,7 @@
 # by Issue #184's scope: any existing consumer reading the removed
 # property loses it unconditionally, regardless of how it was consumed.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: api-compat-remove-field-breaking
 title: "OrderResponse drops its currency field, breaking existing consumers"
@@ -71,3 +71,8 @@ metadata:
     scope: a schema-recognized contract file loses a property consumers may
     already depend on, with no migration path, so a correct review must
     flag it as changes-required.
+  taxonomy:
+    capability: [api-compatibility]
+    policy_contract: [api-contract-compatibility]
+    risk_mode: [correctness, regression]
+    affected_surface: [unclassified]

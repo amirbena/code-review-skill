@@ -8,7 +8,7 @@
 # #121's acceptance criteria, and covers the Go side of the explicit
 # C#/Python/Go requirement.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: null-absence-go-unchecked-map-lookup
 title: "SessionUserID dereferences a map lookup's nil zero-value without the ok check"
@@ -69,3 +69,8 @@ metadata:
     paths" list: Go's map-lookup zero-value idiom is a language-specific
     shape of the same cross-language absence risk, not a special case
     requiring its own rule.
+  taxonomy:
+    capability: [null-absence-risk]
+    policy_contract: [null-absence-risk]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

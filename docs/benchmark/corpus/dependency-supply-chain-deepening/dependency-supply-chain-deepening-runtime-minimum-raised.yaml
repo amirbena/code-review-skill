@@ -8,7 +8,7 @@
 # documents support for Python 3.8-3.10 -- the change silently narrows
 # the versions the repository claims to support.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: dependency-supply-chain-deepening-runtime-minimum-raised
 title: "pyproject.toml raises requires-python to >=3.11 while README.md still documents 3.8+ support"
@@ -75,3 +75,8 @@ metadata:
     version is not itself a finding, but this diff's own evidence -- an
     unrevised supported-versions claim the bump now contradicts -- shows
     the change silently narrows what the repository claims to support.
+  taxonomy:
+    capability: [dependency-supply-chain]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

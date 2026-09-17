@@ -9,7 +9,7 @@
 # so the cardinality evidence Activation condition 2 needs is present in
 # the diff itself.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: performance-deepening-n-plus-one-remote-call-in-loop
 title: "get_order_summaries replaces a single batched inventory lookup with one remote call per order"
@@ -90,3 +90,8 @@ metadata:
     the evidence (the docstring's own unbounded-cardinality statement)
     tells the capability the multiplication is material rather than
     speculative, satisfying both Activation conditions.
+  taxonomy:
+    capability: [performance]
+    policy_contract: [performance-deepening]
+    risk_mode: [correctness, performance]
+    affected_surface: [unclassified]

@@ -7,7 +7,7 @@ implemented by Issue
 [#180](https://github.com/amirbena/code-review-skill/issues/180) and its
 own parent, the adaptive specialist-depth composition contract
 [#82](https://github.com/amirbena/code-review-skill/issues/82). This is a
-**focused sub-corpus** of [`benchmark-case/v1`](../../fixture-format.md)
+**focused sub-corpus** of [`benchmark-case/v2`](../../fixture-format.md)
 fixtures pinning representative Performance deepening outcomes as
 follow-up quality hardening — it validates domain correctness after the
 capability exists and does not define, gate, or redesign it. The

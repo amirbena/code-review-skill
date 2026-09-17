@@ -54,7 +54,7 @@ class FixtureFormatContractTests(unittest.TestCase):
 
     def test_schema_versioning_is_fail_closed(self) -> None:
         self.assertIn("## 3. Schema identity and versioning", self.raw)
-        self.assertIn("benchmark-case/v1", self.raw)
+        self.assertIn("benchmark-case/v2", self.raw)
         self.assertIn("Fail closed", self.text)
         self.assertIn("before any other field is read", self.text)
         self.assertIn("MUST NOT parse an unrecognized version", self.text)
@@ -140,11 +140,17 @@ class FixtureFormatContractTests(unittest.TestCase):
         self.assertIn("never downgrades a `required` entry to optional", self.text)
 
     def test_metadata_is_closed_with_concrete_purposes_only(self) -> None:
-        self.assertIn("## 10. Optional metadata", self.raw)
+        self.assertIn("## 10. Metadata", self.raw)
         self.assertIn("closed** mapping", self.text)
-        for key in ("`source`", "`tags`", "`rationale`"):
+        for key in ("`source`", "`tags`", "`rationale`", "`taxonomy`"):
             self.assertIn(key, self.raw)
         self.assertIn("No field for scoring weights", self.text)
+
+    def test_taxonomy_is_a_required_closed_four_dimension_mapping(self) -> None:
+        self.assertIn("### 10.1", self.raw)
+        for dim in ("capability", "policy_contract", "risk_mode", "affected_surface"):
+            self.assertIn(f"`{dim}`", self.raw)
+        self.assertIn("unclassified", self.text)
 
     def test_fail_closed_validation_rules_are_representative_not_exhaustive(self) -> None:
         # F2: §11 must not claim to be the complete rejection list.
@@ -205,9 +211,9 @@ class DirectoryNavigationTests(unittest.TestCase):
 
 
 class WorkedExampleFileTests(unittest.TestCase):
-    def test_example_declares_the_v1_format_and_is_not_a_corpus_case(self) -> None:
+    def test_example_declares_the_v2_format_and_is_not_a_corpus_case(self) -> None:
         raw = EXAMPLE.read_text(encoding="utf-8")
-        self.assertIn("format: benchmark-case/v1", raw)
+        self.assertIn("format: benchmark-case/v2", raw)
         self.assertIn("NOT part of the benchmark corpus", raw)
 
 
@@ -222,15 +228,15 @@ class CorpusDirectoryTests(unittest.TestCase):
         cls.readme_raw = CORPUS_README.read_text(encoding="utf-8")
         cls.readme_text = " ".join(cls.readme_raw.split())
 
-    def test_corpus_has_a_small_set_of_v1_fixtures(self) -> None:
+    def test_corpus_has_a_small_set_of_v2_fixtures(self) -> None:
         self.assertTrue(CORPUS_DIR.is_dir())
         self.assertGreaterEqual(len(self.fixtures), 4)
         self.assertLessEqual(len(self.fixtures), 12)
         for path in self.fixtures:
             self.assertIn(
-                "format: benchmark-case/v1",
+                "format: benchmark-case/v2",
                 path.read_text(encoding="utf-8"),
-                f"{path.name} does not declare the v1 format",
+                f"{path.name} does not declare the v2 format",
             )
 
     def test_readme_records_the_selection_rationale_and_non_goals(self) -> None:

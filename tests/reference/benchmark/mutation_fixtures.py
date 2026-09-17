@@ -4,7 +4,7 @@ benchmark corpus (Issue #305, depends on #301:
 shared/policies/mutation-authority.md).
 
 Like `delegation_fixtures.py` (issue #307), this boundary has no
-representation in the `benchmark-case/v1` schema
+representation in the `benchmark-case/v2` schema
 (docs/benchmark/fixture-format.md): that schema's `expected` block is
 findings/decision-shaped (a patch, a set of expected review findings) and
 has no field for a requested capability, an authorization scope/state, a

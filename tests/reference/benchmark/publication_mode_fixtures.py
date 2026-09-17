@@ -21,7 +21,7 @@ evidence (#316's "Publication-artifact verification" requirement); this
 corpus inspects the artifact's own structure instead.
 
 Like `delegation_fixtures.py` and `reviewer_brief_fixtures.py`, this
-boundary has no representation in the `benchmark-case/v1` schema
+boundary has no representation in the `benchmark-case/v2` schema
 (`docs/benchmark/fixture-format.md`): that schema's `expected` block is a
 patch plus expected review findings, with no field for a publication mode,
 a "would publish" preview, or a GitHub-bound artifact's shape. Rather than

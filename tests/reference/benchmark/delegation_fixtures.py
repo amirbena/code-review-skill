@@ -4,7 +4,7 @@ benchmark corpus (Issue #307, depends on #303:
 shared/policies/agent-delegation.md).
 
 Unlike the domain corpora under docs/benchmark/corpus/, this boundary has
-no representation in the `benchmark-case/v1` schema
+no representation in the `benchmark-case/v2` schema
 (docs/benchmark/fixture-format.md): that schema's `expected` block is
 findings/decision-shaped (a patch, a set of expected review findings) and
 has no field for a capability grant, a spawn-depth budget, or an

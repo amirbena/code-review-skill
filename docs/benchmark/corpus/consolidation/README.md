@@ -4,7 +4,7 @@ Repository-development artifact for GitHub Issue
 [#185](https://github.com/amirbena/code-review-skill/issues/185). Parent
 capability: [#177](https://github.com/amirbena/code-review-skill/issues/177)
 (root-cause finding consolidation). This is a **focused sub-corpus** of
-[`benchmark-case/v1`](../../fixture-format.md) fixtures that pin the
+[`benchmark-case/v2`](../../fixture-format.md) fixtures that pin the
 expected consolidation classifications for the #177 reviewer behavior —
 now defined in
 [`../../../../shared/policies/review-scope.md`](../../../../shared/policies/review-scope.md)
@@ -59,7 +59,7 @@ header comment.
 
 ### On the re-review case
 
-`benchmark-case/v1` has no first-class prior-review input, so
+`benchmark-case/v2` has no first-class prior-review input, so
 [`consolidation-rereview-reconciles-to-authoritative.yaml`](consolidation-rereview-reconciles-to-authoritative.yaml)
 supplies the earlier review's two findings through `input.context`
 ([`../../fixture-format.md`](../../fixture-format.md) §6.3), treated as

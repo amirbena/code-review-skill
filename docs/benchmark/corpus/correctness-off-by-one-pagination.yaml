@@ -6,7 +6,7 @@
 # or quality angle, so this case isolates "did the reviewer catch a plain
 # logic bug introduced by a change".
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: correctness-off-by-one-pagination
 title: "Off-by-one page end index duplicates a row across pages"
@@ -71,3 +71,8 @@ metadata:
     the review must notice that a change presented as a harmless refactor
     silently alters output. Anchors the "plain correctness" slice of the
     corpus.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

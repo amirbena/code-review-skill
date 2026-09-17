@@ -2,7 +2,7 @@
 """Contract coverage for the risk-depth benchmark sub-corpus (Issue #90).
 
 The sub-corpus is ``docs/benchmark/corpus/risk-depth/*.yaml``: a small,
-focused set of ``benchmark-case/v1`` fixtures demonstrating that
+focused set of ``benchmark-case/v2`` fixtures demonstrating that
 change-risk-signals.md's catalog signals and diff-size boundary drive
 review depth in realistic changes, and that a large multi-area change
 retains one finding per area.
@@ -119,7 +119,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v1")
+                self.assertEqual(case.format, "benchmark-case/v2")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

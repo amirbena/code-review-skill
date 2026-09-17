@@ -10,7 +10,7 @@
 # stock. Nothing about the diff itself looks alarming without the
 # concurrency signal pushing depth to `deep`.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: risk-depth-concurrency-signal-deep
 title: "Availability check moved outside the lock reintroduces a stock-reservation race"
@@ -77,3 +77,8 @@ metadata:
     Demonstrates the `concurrency` catalog signal alone selecting `deep`
     depth. The refactor reads as a harmless narrowing of the critical
     section; only concurrency-aware review surfaces the reintroduced race.
+  taxonomy:
+    capability: [risk-depth]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness, concurrency]
+    affected_surface: [unclassified]

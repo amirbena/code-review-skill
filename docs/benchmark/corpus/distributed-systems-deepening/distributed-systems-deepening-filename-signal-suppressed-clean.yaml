@@ -9,7 +9,7 @@
 # alone must not trigger the deepening capability — a suppressed false
 # positive.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: distributed-systems-deepening-filename-signal-suppressed-clean
 title: "queue_consumer.py reformats log message argument style; the filename alone must not trigger deepening"
@@ -59,3 +59,8 @@ metadata:
     specialist-depth.md, a filename is a signal and never independently
     sufficient, so this must resolve clean with no finding rather than
     the capability engaging on naming alone.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

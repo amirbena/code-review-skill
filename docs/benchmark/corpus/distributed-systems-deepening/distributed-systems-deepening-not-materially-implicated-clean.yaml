@@ -10,7 +10,7 @@
 # implicated by review-scope.md's base pass in the first place, so the
 # deepening capability never engages.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: distributed-systems-deepening-not-materially-implicated-clean
 title: "get_setting_or_default adds a read-only accessor over settings already loaded once at startup"
@@ -70,3 +70,8 @@ metadata:
     filename-signal case, which pins that a message-queue-adjacent name
     alone must not trigger engagement even when the file looks
     concurrency-relevant.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

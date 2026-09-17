@@ -20,7 +20,7 @@
 #
 # Expected: no finding.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: cfv-unproven-regression-not-asserted
 title: "New async-email flag looks like a flipped default but has no prior-behavior evidence: not a proven regression"
@@ -66,3 +66,8 @@ metadata:
     proven regression, and the change carries no independent technical-
     invariant violation to fall back on. Locks in the fail-closed default
     for unproven regression claims.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [regression]
+    affected_surface: [unclassified]

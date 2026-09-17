@@ -42,7 +42,7 @@
 # semantic invariant the docs state, not merely check the artifacts
 # against each other.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: real-world-semantic-consistency-trap-pr-390
 title: "classify() collapses classification into blocking justification by branching on material_impact; docs/tests consistency masks the semantic defect"
@@ -160,3 +160,8 @@ metadata:
     actually violated. The reviewer must challenge the implementation
     against the higher-level invariant it claims to implement, not merely
     check that docs, tests, and code agree with each other.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [correctness, quality]
+    affected_surface: [unclassified]

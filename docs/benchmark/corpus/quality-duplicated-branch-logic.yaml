@@ -6,7 +6,7 @@
 # maintainability issue, so the mechanical decision stays `clean`. Anchors
 # the "quality-only, non-blocking" slice of the corpus.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: quality-duplicated-branch-logic
 title: "New sms branch duplicates the format_message call from the email branch"
@@ -60,3 +60,8 @@ metadata:
     A safe, correct change whose only issue is maintainability, so a correct
     review reports one P2 and still returns `clean`. Keeps the corpus from
     conflating "has a finding" with "blocks the change".
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

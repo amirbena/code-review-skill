@@ -16,7 +16,7 @@
 # over-merging distinct defects that merely rhyme (#177 non-goal:
 # "Suppressing distinct defects that merely look similar").
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: consolidation-similar-but-independent-defects
 title: "Two look-alike off-by-one bugs in unrelated modules stay separate findings"
@@ -87,3 +87,8 @@ metadata:
     Two defects of the same class in modules that share no code. A correct
     review reports them as two independent findings; merging them under a
     single "off-by-one root cause" would be over-consolidation.
+  taxonomy:
+    capability: [consolidation]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

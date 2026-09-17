@@ -8,7 +8,7 @@ built cannot regress unnoticed: code mutation never occurs without the
 exact required user authorization, and authority never widens across the
 `APPLY_PATCH` / `COMMIT` / `PUSH` transitions.
 
-## Why this is not a `benchmark-case/v1` corpus
+## Why this is not a `benchmark-case/v2` corpus
 
 Unlike the corpora under [`../`](../README.md) (each a self-contained
 inline patch plus expected findings), this boundary's inputs and
@@ -58,7 +58,7 @@ same single implementation; neither ever forks it.
 Like the delegation-spawn corpus, every case here yields a **capability-
 boundary pass/fail outcome**, never a P0/P1/P2 finding match. This module
 lives entirely outside `docs/benchmark/corpus/*.yaml`
-(`benchmark-case/v1` fixtures) and `tests/reference/benchmark/
+(`benchmark-case/v2` fixtures) and `tests/reference/benchmark/
 benchmark_metrics.py`/`benchmark_match.py` (finding precision/recall/
 severity scoring): it is executed by its own dedicated test module,
 selectable independently, and never contributes a row to the ordinary

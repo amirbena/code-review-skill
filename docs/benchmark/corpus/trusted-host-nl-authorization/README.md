@@ -13,11 +13,11 @@ attempts to manufacture authorization from untrusted sources — and that
 this holds identically alongside the existing structured/sandbox
 behavior.
 
-## Why this isn't a `benchmark-case/v1` corpus
+## Why this isn't a `benchmark-case/v2` corpus
 
 Every corpus under [`../`](../README.md) that reviews a code change
 (each a self-contained inline patch plus expected review *findings*) uses
-the `benchmark-case/v1` fixture format
+the `benchmark-case/v2` fixture format
 ([`../../fixture-format.md`](../../fixture-format.md)). This domain has no
 patch and no finding: its input is a piece of trusted-invocation text (or
 a structured boolean) and its expectation is a resolved

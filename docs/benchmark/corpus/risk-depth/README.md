@@ -4,7 +4,7 @@ Repository-development artifact for GitHub Issue
 [#90](https://github.com/amirbena/code-review-skill/issues/90), the last
 child of epic [#48](https://github.com/amirbena/code-review-skill/issues/48)
 "risk-based review depth + large-PR strategy". This is a **focused
-sub-corpus** of [`benchmark-case/v1`](../../fixture-format.md) fixtures
+sub-corpus** of [`benchmark-case/v2`](../../fixture-format.md) fixtures
 exercising the vocabulary
 [`#86`](https://github.com/amirbena/code-review-skill/issues/86)-[`#89`](https://github.com/amirbena/code-review-skill/issues/89)
 already established:
@@ -44,9 +44,9 @@ the single reference validator
 - **Intentionally small.** Representative, not exhaustive, coverage of
   the catalog — not every signal/depth combination gets its own case.
 
-## Fixture-level scope: what a `benchmark-case/v1` fixture cannot pin
+## Fixture-level scope: what a `benchmark-case/v2` fixture cannot pin
 
-`benchmark-case/v1`'s schema is closed (see
+`benchmark-case/v2`'s schema is closed (see
 [`../../fixture-format.md`](../../fixture-format.md) §2, "an unknown key
 anywhere is a rejection") and has no field for an expected `depth`,
 expansion `ring`, partition assignment, or `coverage` label — only

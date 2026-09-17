@@ -10,7 +10,7 @@
 # within its own bounded investigation, so Activation condition 2 is
 # never satisfied and this capability does not engage.
 
-format: benchmark-case/v1
+format: benchmark-case/v2
 
 id: database-migration-deepening-additive-nullable-column-clean
 title: "0004_add_preferred_language adds a nullable column with no default and one reader"
@@ -100,3 +100,8 @@ metadata:
     condition 2 is never satisfied and this capability does not engage --
     distinct from the comment/formatting-only case, where Activation
     condition 1 fails because no schema-evolution content exists at all.
+  taxonomy:
+    capability: [database-migration]
+    policy_contract: [database-migration-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]
