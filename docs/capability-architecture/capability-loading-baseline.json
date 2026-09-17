@@ -1,0 +1,279 @@
+{
+    "static_surface": {
+        "local": {
+            "total_words": 82850,
+            "total_tokens_est": 110059,
+            "core_unattributed_words": 42775,
+            "by_capability_words": {
+                "conditional-passes": 7213,
+                "context-resolution": 3696,
+                "finding-placement-derivation": 7394,
+                "parallel-execution": 2892,
+                "remediation": 1499,
+                "runtime-execution": 4915,
+                "scale": 3350,
+                "specialist-depth": 9116
+            }
+        },
+        "github": {
+            "total_words": 112038,
+            "total_tokens_est": 148833,
+            "core_unattributed_words": 45593,
+            "by_capability_words": {
+                "authorization-github": 5063,
+                "conditional-passes": 7213,
+                "context-resolution": 3696,
+                "finding-placement-derivation": 8671,
+                "parallel-execution": 2892,
+                "publication-github": 10030,
+                "remediation": 1499,
+                "repository-checkout": 1331,
+                "reviewer-assist": 2078,
+                "runtime-execution": 4915,
+                "scale": 3350,
+                "specialist-depth": 9116,
+                "stateful-review": 6591
+            }
+        }
+    },
+    "quality_metrics": {
+        "run": {
+            "ok": true,
+            "cases": [
+                {
+                    "id": "correctness-off-by-one-pagination",
+                    "input_kind": "patch",
+                    "status": "executed",
+                    "produced_findings": [
+                        {
+                            "severity": "P1",
+                            "location": {
+                                "path": "app/pagination.py",
+                                "lines": {
+                                    "start": 3,
+                                    "end": 4
+                                }
+                            },
+                            "claim": "`page()` returns one extra item per page, duplicating the boundary item across pages `end = offset + page_size + 1` widens the slice by one beyond `page_size`; for `page(items, 1, 2)` on `[a,b,c,d]`, `offset=0`, `end=3`, returning `[a,b,c]` (3 items for a page size of 2), and `page(items, 2, 2)` returns `items[2:5]` = `[c,d]`, so `c` appears on both page 1 and page 2. Every page returned by this function contains `page_size + 1` items instead of `page_size`, and the last item of page N is duplicated as the first item of page N+1. Any caller relying on `page_size` as a hard cap (UI page rendering, API pagination contracts, batch-processing chunk sizes) will over-return data and reprocess/redisplay duplicate records.",
+                            "extra": {
+                                "defect_kind": "off-by-one"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "no-op-comment-and-rename",
+                    "input_kind": "patch",
+                    "status": "executed",
+                    "produced_findings": []
+                },
+                {
+                    "id": "quality-duplicated-branch-logic",
+                    "input_kind": "patch",
+                    "status": "executed",
+                    "produced_findings": [
+                        {
+                            "severity": "P2",
+                            "location": {
+                                "path": "app/notify.py",
+                                "lines": {
+                                    "start": 2,
+                                    "end": 7
+                                }
+                            },
+                            "claim": "`format_message(user)` call duplicated across the email and sms branches `msg = format_message(user)` appears identically on line 3 (inside the `email` branch) and line 6 (inside the new `sms` branch) of `notify()`; the branches differ only in which `send_*` function is called. The message-construction step has no branch-specific behavior, so duplicating it only creates two places that must be kept in sync if `format_message` ever needs to vary by channel or gains new arguments \u2014 a future edit to one branch can silently drift from the other.",
+                            "extra": {
+                                "defect_kind": "duplicated-logic"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "security-command-injection",
+                    "input_kind": "patch",
+                    "status": "executed",
+                    "produced_findings": [
+                        {
+                            "severity": "P0",
+                            "location": {
+                                "path": "app/backup.py",
+                                "lines": {
+                                    "start": 5,
+                                    "end": 6
+                                }
+                            },
+                            "claim": "`make_archive` builds a shell command from unsanitized `name` with `shell=True` `cmd = f\"tar -czf {name}.tar.gz data/\"` interpolates the caller-supplied `name` directly into a shell command string, then executes it via `subprocess.run(cmd, shell=True, check=True)`. Any shell metacharacter in `name` (e.g. `` `; rm -rf /` ``, `$(...)`, backticks, `&&`, `|`) is interpreted by the shell rather than treated as a literal filename fragment. The prior implementation passed `[\"tar\", \"-czf\", name + \".tar.gz\", \"data/\"]` as an argument list with `shell=False` (the default), which does not invoke a shell and treats `name` as an opaque argument. If `name` is ever influenced by an external actor (a filename, request parameter, config value, or any caller-controlled string reaching this function), an attacker can execute arbitrary shell commands with the privileges of the process running the backup \u2014 full remote code execution, not merely a malformed archive name.",
+                            "extra": {
+                                "defect_kind": "command-injection"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "missed_and_incorrect": {
+            "cases": [
+                {
+                    "id": "correctness-off-by-one-pagination",
+                    "status": "executed",
+                    "findings_completeness": "exhaustive",
+                    "false_negatives": 0,
+                    "false_positives": 0,
+                    "missed_keys": [],
+                    "incorrect_indices": [],
+                    "near_misses": 0,
+                    "absorbed_extra_match": 0,
+                    "tolerated_unexpected": 0
+                },
+                {
+                    "id": "no-op-comment-and-rename",
+                    "status": "executed",
+                    "findings_completeness": "exhaustive",
+                    "false_negatives": 0,
+                    "false_positives": 0,
+                    "missed_keys": [],
+                    "incorrect_indices": [],
+                    "near_misses": 0,
+                    "absorbed_extra_match": 0,
+                    "tolerated_unexpected": 0
+                },
+                {
+                    "id": "quality-duplicated-branch-logic",
+                    "status": "executed",
+                    "findings_completeness": "exhaustive",
+                    "false_negatives": 0,
+                    "false_positives": 0,
+                    "missed_keys": [],
+                    "incorrect_indices": [],
+                    "near_misses": 0,
+                    "absorbed_extra_match": 0,
+                    "tolerated_unexpected": 0
+                },
+                {
+                    "id": "security-command-injection",
+                    "status": "executed",
+                    "findings_completeness": "exhaustive",
+                    "false_negatives": 0,
+                    "false_positives": 0,
+                    "missed_keys": [],
+                    "incorrect_indices": [],
+                    "near_misses": 0,
+                    "absorbed_extra_match": 0,
+                    "tolerated_unexpected": 0
+                }
+            ],
+            "aggregate": {
+                "total_false_negatives": 0,
+                "total_false_positives": 0,
+                "cases_with_false_negatives": 0,
+                "cases_with_false_positives": 0,
+                "total_near_misses": 0,
+                "errored_cases": 0
+            }
+        },
+        "severity_accuracy": {
+            "cases": [
+                {
+                    "id": "correctness-off-by-one-pagination",
+                    "status": "executed",
+                    "matched": 1,
+                    "severity_exact": 1,
+                    "over_severity": 0,
+                    "under_severity": 0,
+                    "exact_rate": "1",
+                    "mismatches": []
+                },
+                {
+                    "id": "no-op-comment-and-rename",
+                    "status": "executed",
+                    "matched": 0,
+                    "severity_exact": 0,
+                    "over_severity": 0,
+                    "under_severity": 0,
+                    "exact_rate": null,
+                    "mismatches": []
+                },
+                {
+                    "id": "quality-duplicated-branch-logic",
+                    "status": "executed",
+                    "matched": 1,
+                    "severity_exact": 1,
+                    "over_severity": 0,
+                    "under_severity": 0,
+                    "exact_rate": "1",
+                    "mismatches": []
+                },
+                {
+                    "id": "security-command-injection",
+                    "status": "executed",
+                    "matched": 1,
+                    "severity_exact": 1,
+                    "over_severity": 0,
+                    "under_severity": 0,
+                    "exact_rate": "1",
+                    "mismatches": []
+                }
+            ],
+            "aggregate": {
+                "total_matched": 3,
+                "total_severity_exact": 3,
+                "total_over_severity": 0,
+                "total_under_severity": 0,
+                "exact_rate": "1",
+                "cases_with_severity_mismatch": 0
+            }
+        },
+        "duplicate_noise": {
+            "cases": [
+                {
+                    "id": "correctness-off-by-one-pagination",
+                    "status": "executed",
+                    "produced": 1,
+                    "clusters": 1,
+                    "duplicate_clusters": 0,
+                    "redundant_findings": 0,
+                    "duplicate_rate": "0",
+                    "cluster_members": []
+                },
+                {
+                    "id": "no-op-comment-and-rename",
+                    "status": "executed",
+                    "produced": 0,
+                    "clusters": 0,
+                    "duplicate_clusters": 0,
+                    "redundant_findings": 0,
+                    "duplicate_rate": null,
+                    "cluster_members": []
+                },
+                {
+                    "id": "quality-duplicated-branch-logic",
+                    "status": "executed",
+                    "produced": 1,
+                    "clusters": 1,
+                    "duplicate_clusters": 0,
+                    "redundant_findings": 0,
+                    "duplicate_rate": "0",
+                    "cluster_members": []
+                },
+                {
+                    "id": "security-command-injection",
+                    "status": "executed",
+                    "produced": 1,
+                    "clusters": 1,
+                    "duplicate_clusters": 0,
+                    "redundant_findings": 0,
+                    "duplicate_rate": "0",
+                    "cluster_members": []
+                }
+            ],
+            "aggregate": {
+                "total_produced": 3,
+                "total_redundant_findings": 0,
+                "total_duplicate_clusters": 0,
+                "duplicate_rate": "0",
+                "cases_with_duplication": 0
+            },
+            "highest_noise_cases": []
+        }
+    }
+}
