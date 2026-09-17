@@ -74,6 +74,33 @@ class GeneratedSkillMetadataTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             generate_skill_metadata.generate_metadata_text("name: example\n", [])
 
+    def test_generator_tolerates_a_blank_line_inside_the_shared_block(self) -> None:
+        # A wholly blank separator line (no leading whitespace) between
+        # `policies:` and `templates:` must not break the trailing
+        # `shared:` block match — the same visual-separator style already
+        # used between other top-level sections in these files.
+        original = (
+            "name: example\n"
+            "description: >-\n"
+            "  Example.\n"
+            "\n"
+            "shared:\n"
+            "  policies:\n"
+            "    - ../../../shared/policies/old.md\n"
+            "\n"
+            "  templates:\n"
+            "    - ../../../shared/templates/old.md\n"
+        )
+        shared_files = [
+            {"source": "shared/policies/new.md", "destination": "shared/policies/new.md"},
+            {"source": "shared/templates/new.md", "destination": "shared/templates/new.md"},
+        ]
+        regenerated = generate_skill_metadata.generate_metadata_text(original, shared_files)
+        self.assertIn("name: example\n", regenerated)
+        self.assertIn("../../../shared/policies/new.md", regenerated)
+        self.assertIn("../../../shared/templates/new.md", regenerated)
+        self.assertNotIn("old.md", regenerated)
+
 
 if __name__ == "__main__":
     unittest.main()

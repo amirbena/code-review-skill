@@ -42,9 +42,9 @@ _SKILL_METADATA_PATHS = {
     "github": REPO_ROOT / "skills" / "github-pr-review" / "metadata" / "skill.yaml",
 }
 
-# Matches the trailing `shared:` block (the key and every indented line
-# under it) through end of file.
-_SHARED_BLOCK_RE = re.compile(r"\nshared:\n(?:[ \t].*\n?)*\Z")
+# Matches the trailing `shared:` block (the key, every indented line under
+# it, and any wholly blank separator line within it) through end of file.
+_SHARED_BLOCK_RE = re.compile(r"\nshared:\n(?:(?:[ \t].*)?\n)*\Z")
 
 
 def _shared_block(shared_files: list[dict[str, str]]) -> str:
