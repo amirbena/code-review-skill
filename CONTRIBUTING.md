@@ -77,7 +77,10 @@ bot replies. Maintainers can tune the three named `CLAIM_*` values in
 1. Fork the repository.
 2. Create a focused branch in your fork using the convention below.
 3. Implement the issue without adding unrelated changes.
-4. Run the relevant validation listed in the root [README](README.md#contributing-to-this-repository).
+4. Run the checks relevant to your change from
+   [README § Local validation before opening a PR](README.md#local-validation-before-opening-a-pr).
+   The full test suite is not required locally before every push or PR — it
+   runs on every PR in CI, which is the authoritative regression gate.
 5. Open a pull request against this repository and use `Fixes #<issue>` when
    the pull request should close the issue.
 

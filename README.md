@@ -148,12 +148,50 @@ Opening a PR here applies
 automatically — its compact What / Validation / Review shape keeps Issue,
 contract, governance, packaging, changelog, and review traceability scannable.
 
-Validation and packaging run from the repository root:
+All validation and packaging commands run from the repository root, after
+one-time setup:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+```
+
+(On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1` and use
+`python` in place of `python3` throughout this section.)
+
+### Local validation before opening a PR
+
+Local validation is **targeted**, not a fixed sequence: run only the checks
+relevant to what you changed, for fast feedback before pushing. The full
+suite below is **not** required locally before every push or PR — it runs
+automatically in [`.github/workflows/validate.yml`](.github/workflows/validate.yml)
+on every PR, which remains the authoritative regression gate before merge
+(see [`policies/git-pr-merge-policy.md`](policies/git-pr-merge-policy.md)).
+
+| Change | Run |
+| --- | --- |
+| Docs-only (`docs/`, root `*.md`, `policies/*.md`) | `python3 scripts/validation/validate-markdown-links.py`, plus `python3 -m unittest discover -s tests/policy/governance` for a `policies/*.md` or `AGENTS.md` change |
+| Benchmark-related (`docs/benchmark/`, benchmark tooling/tests) | the benchmark test package, e.g. `python3 -m unittest discover -s tests/policy/benchmark` and/or `tests/unit/benchmark` |
+| Skill metadata (`skills/<name>/SKILL.md`, `metadata/skill.yaml`, `package-manifest.json`) | `python3 scripts/validation/validate-skill-metadata.py skills/<name> --containment-root .` for the affected Skill, plus `python3 -m unittest tests.policy.governance.test_skill_entrypoint_guards` for a `SKILL.md` change |
+| Packaging (`scripts/packaging/**`) | `./scripts/packaging/package-skills.sh <local\|github\|all>` for the affected target, plus `python3 -m unittest discover -s tests/integration/packaging` |
+| Focused code/test change (`shared/**`, `scripts/**`, `tests/**`) | the directly affected module(s), e.g. `python3 -m unittest tests.unit.review.test_reviewer_ownership` |
+
+If a change doesn't map cleanly to one of these, run a broader targeted
+subset instead — for example every test module under the top-level
+directory you touched — rather than defaulting to the full suite below.
+
+### Full local validation (optional)
+
+Running the complete sequence locally is always safe and is worth doing
+when a change genuinely spans multiple areas, touches a shared
+cross-cutting contract, or you want CI-equivalent confidence before
+pushing. It is never a precondition for opening a PR.
+[Issue #183](https://github.com/amirbena/code-review-skill/issues/183)
+tracks a `scripts/preflight.sh` / `scripts/preflight.ps1` to automate this;
+until it exists, run the steps by hand:
+
+```bash
 python3 scripts/validation/validate-skill-metadata.py skills/local-code-review --containment-root .
 python3 scripts/validation/validate-skill-metadata.py skills/github-pr-review --containment-root .
 python3 scripts/validation/validate-markdown-links.py
@@ -161,14 +199,10 @@ python3 -m unittest discover -s tests -t .
 ./scripts/packaging/package-skills.sh all
 ```
 
-On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`, use
-`python` in place of `python3`, and package with
+On Windows PowerShell, package with
 `./scripts/packaging/package-skills.ps1 all`. Packaging also needs the `zip` and
 `unzip` command-line tools on macOS/Linux, or PowerShell on Windows. Generated
 archives stay under the ignored `dist/` directory.
-
-Run one test module with, e.g.,
-`python3 -m unittest tests.unit.test_reviewer_ownership`.
 
 Packaging internals — how the source layout under `skills/<name>/` and
 `shared/` becomes the flat archive layout, and how package-relative links

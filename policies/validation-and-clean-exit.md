@@ -63,10 +63,27 @@ Never sacrifice unmerged work merely to reach a visually clean status.
 ## Running repository validation and packaging
 
 Repository validation, metadata validation, the test suite, and packaging
-run from the repository root. The authoritative command list is in
+run from the repository root. The full command set is documented in
 [`../README.md`](../README.md) ("Contributing to this repository") and
 [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) §7 (packaging
-internals). Repository-owned Python that any of these steps touch follows
+internals) — that command set is authoritative over *what commands exist
+and how to invoke them*, not a mandate to run all of them locally before
+every push or PR.
+
+Locally, before opening a PR, run only the subset of that command set
+relevant to the change — see
+[`../README.md`](../README.md#local-validation-before-opening-a-pr) for the
+targeted mapping from change type to command. The full suite
+(`python3 -m unittest discover -s tests -t .` plus both metadata
+validations, link validation, and packaging) is not a local precondition;
+it runs on every PR in `.github/workflows/validate.yml`, which is the
+authoritative regression gate before merge
+([`git-pr-merge-policy.md`](git-pr-merge-policy.md)). Running the full
+sequence locally beforehand is optional, never required, and appropriate
+when a change genuinely spans multiple areas or a shared cross-cutting
+contract.
+
+Repository-owned Python that any of these steps touch follows
 [`python_scripts_coding_policy.md`](python_scripts_coding_policy.md).
 
 ## Shell / PowerShell Script Parity
