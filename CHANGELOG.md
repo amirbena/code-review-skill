@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.52.0 — 2026-09-17
+
+### Changed
+
+- `scale`'s conditional, fail-closed loading is now enforced (mirroring `specialist-depth`, #410) — no user-visible output difference, only when each capability's instructions are consulted (#448).
+
 ## v1.51.1 — 2026-09-17
 
 ### Fixed
