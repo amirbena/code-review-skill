@@ -115,3 +115,8 @@ metadata:
     bump alone is not a finding, but this diff's own evidence -- a call
     site still using an API the new major version removed -- shows the
     adaptation the bump requires was never made.
+  taxonomy:
+    capability: [dependency-supply-chain]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

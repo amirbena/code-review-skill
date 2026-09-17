@@ -87,3 +87,8 @@ metadata:
     privileged helper's other caller and flag the actual defect on the
     older, unguarded route rather than stopping once the diff's own new
     check looks correct.
+  taxonomy:
+    capability: [security-boundary]
+    policy_contract: [security-deepening]
+    risk_mode: [security]
+    affected_surface: [unclassified]

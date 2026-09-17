@@ -156,3 +156,8 @@ metadata:
     infra_config) firing on any touched file. The one call site left in
     the old argument order is a real regression a shallow pass over 10
     near-identical hunks could plausibly rubber-stamp.
+  taxonomy:
+    capability: [risk-depth]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

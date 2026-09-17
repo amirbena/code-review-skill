@@ -84,3 +84,8 @@ metadata:
     with an absent value. A correct review reports no finding — the
     reachable-failure-path question, not the value's declared type, is
     what decides the outcome.
+  taxonomy:
+    capability: [null-absence-risk]
+    policy_contract: [null-absence-risk]
+    risk_mode: [correctness, no-op]
+    affected_surface: [unclassified]

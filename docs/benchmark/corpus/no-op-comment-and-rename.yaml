@@ -54,3 +54,8 @@ metadata:
     benign diffs, and is the corpus's only empty-expectation case. The
     pre-image already uses math.pi so the touched line has nothing
     flag-worthy on it.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [no-op]
+    affected_surface: [unclassified]

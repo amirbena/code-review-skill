@@ -84,3 +84,8 @@ metadata:
     that was done once and cached is moved into a path the diff's own
     removed comment documents as invoked per-request, so every request now
     pays a blocking disk read that was previously amortized.
+  taxonomy:
+    capability: [performance]
+    policy_contract: [performance-deepening]
+    risk_mode: [correctness, performance]
+    affected_surface: [unclassified]

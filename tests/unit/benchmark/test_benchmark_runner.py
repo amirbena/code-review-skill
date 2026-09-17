@@ -131,7 +131,16 @@ def _repo_ref_origin(parent: Path) -> tuple[Path, str]:
     return origin, sha
 
 
+_DEFAULT_TAXONOMY = {
+    "capability": ["unclassified"],
+    "policy_contract": ["unclassified"],
+    "risk_mode": ["unclassified"],
+    "affected_surface": ["unclassified"],
+}
+
+
 def _case(data: dict) -> bf.BenchmarkCase:
+    data.setdefault("metadata", {}).setdefault("taxonomy", _DEFAULT_TAXONOMY)
     return bf.parse_case(data)
 
 

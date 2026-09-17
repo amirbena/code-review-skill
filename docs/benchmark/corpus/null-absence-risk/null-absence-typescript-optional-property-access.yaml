@@ -71,3 +71,8 @@ metadata:
     review-scope.md's "Credible absence paths" list. The field's own type
     declaration (`address?: Address`) is the evidence that the access is
     credibly absence-prone, not a keyword or variable-name heuristic.
+  taxonomy:
+    capability: [null-absence-risk]
+    policy_contract: [null-absence-risk]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

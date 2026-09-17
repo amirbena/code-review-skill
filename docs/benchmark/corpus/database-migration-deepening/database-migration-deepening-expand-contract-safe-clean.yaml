@@ -147,3 +147,8 @@ metadata:
     rather than done here -- so nothing required needs reporting, distinct
     from the two other clean cases in this corpus, which stay quiet
     because the capability never engages at all.
+  taxonomy:
+    capability: [database-migration]
+    policy_contract: [database-migration-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

@@ -159,3 +159,8 @@ metadata:
     partition handling must surface all three -- partitioning by directory
     must not cause any one area's defect to be dropped or attributed to
     the wrong partition.
+  taxonomy:
+    capability: [risk-depth]
+    policy_contract: [change-risk-signals]
+    risk_mode: [security, correctness]
+    affected_surface: [unclassified]

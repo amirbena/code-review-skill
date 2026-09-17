@@ -73,3 +73,8 @@ metadata:
     multi-dimension example, while still surfacing one concrete,
     evidence-backed defect rather than manufacturing a finding per
     dimension.
+  taxonomy:
+    capability: [semantic-implication]
+    policy_contract: [review-scope]
+    risk_mode: [security, correctness]
+    affected_surface: [unclassified]

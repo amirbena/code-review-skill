@@ -109,3 +109,8 @@ metadata:
     the untouched sibling implementer reveals the break. Demonstrates the
     interface/contract trigger's relationship-aware gain in a second
     language shape.
+  taxonomy:
+    capability: [repository-intelligence]
+    policy_contract: [repository-expansion]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

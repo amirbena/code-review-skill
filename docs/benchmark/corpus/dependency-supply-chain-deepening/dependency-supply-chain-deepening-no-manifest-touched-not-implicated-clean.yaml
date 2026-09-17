@@ -55,3 +55,8 @@ metadata:
     section 2 to reason from at all, so this pass performs no deepening,
     distinct from the safe-patch-bump case where a qualifying file changes
     but the change itself is not flagged.
+  taxonomy:
+    capability: [dependency-supply-chain]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

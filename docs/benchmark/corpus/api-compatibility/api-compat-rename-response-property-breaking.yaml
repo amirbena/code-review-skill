@@ -70,3 +70,8 @@ metadata:
     scope lists it separately) precisely because it is easy to mistake for
     a harmless cosmetic edit; the case pins that it is breaking exactly
     like removal, not compatible.
+  taxonomy:
+    capability: [api-compatibility]
+    policy_contract: [api-contract-compatibility]
+    risk_mode: [correctness, regression]
+    affected_surface: [unclassified]

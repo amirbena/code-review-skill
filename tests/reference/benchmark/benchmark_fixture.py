@@ -20,6 +20,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from tests.reference.benchmark import benchmark_taxonomy as tax
+
 # --------------------------------------------------------------------------
 # Schema identity. A validator implements a fixed set of major versions and
 # refuses everything else — it never coerces an unknown version into a known
@@ -45,7 +47,7 @@ COMPLETENESS: frozenset[str] = frozenset({"exhaustive", "at-least"})
 MATCH_KINDS: frozenset[str] = frozenset({"required", "optional"})
 
 # `metadata` is a closed map: every key has a concrete downstream purpose.
-METADATA_KEYS: frozenset[str] = frozenset({"source", "tags", "rationale"})
+METADATA_KEYS: frozenset[str] = frozenset({"source", "tags", "rationale", "taxonomy"})
 METADATA_TAGS: frozenset[str] = frozenset(
     {
         "correctness",
@@ -57,6 +59,14 @@ METADATA_TAGS: frozenset[str] = frozenset(
         "performance",
     }
 )
+# risk_mode "reuses metadata.tags' existing enum unchanged" (Issue #333) —
+# pinned equal by tests/unit/benchmark/test_benchmark_taxonomy.py so the two
+# enums can never silently drift apart.
+if METADATA_TAGS | {tax.UNCLASSIFIED} != tax.RISK_MODE_VALUES:
+    raise RuntimeError(
+        "benchmark_fixture.METADATA_TAGS and benchmark_taxonomy.RISK_MODE_VALUES "
+        "have drifted apart — risk_mode must reuse metadata.tags unchanged"
+    )
 
 _TOP_LEVEL_KEYS: frozenset[str] = frozenset(
     {"format", "id", "title", "input", "expected", "metadata"}
@@ -370,6 +380,15 @@ def _parse_input(raw: Any) -> dict[str, Any]:
 def _parse_metadata(raw: Any) -> dict[str, Any]:
     _require(isinstance(raw, dict), "metadata: must be a mapping")
     _no_unknown_keys(raw, METADATA_KEYS, "metadata")
+    _require(
+        "taxonomy" in raw,
+        "metadata.taxonomy: is required (Issue #333 — every case declares "
+        "canonical taxonomy metadata)",
+    )
+    try:
+        tax.validate_taxonomy(raw["taxonomy"])
+    except tax.TaxonomyError as exc:
+        raise FixtureFormatError(f"metadata.{exc}") from exc
     if "source" in raw:
         _require(
             isinstance(raw["source"], str) and raw["source"].strip() != "",
@@ -463,7 +482,12 @@ def parse_case(data: Any) -> BenchmarkCase:
             f"expected.decision: must be one of {sorted(DECISIONS)} when present",
         )
 
-    metadata = _parse_metadata(data["metadata"]) if "metadata" in data else {}
+    _require(
+        "metadata" in data,
+        "fixture: 'metadata' is required (Issue #333 — every case carries "
+        "taxonomy metadata)",
+    )
+    metadata = _parse_metadata(data["metadata"])
 
     case = BenchmarkCase(
         format=fmt,

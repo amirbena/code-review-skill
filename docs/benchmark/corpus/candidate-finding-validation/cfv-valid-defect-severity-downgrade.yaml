@@ -79,3 +79,8 @@ metadata:
     exposure (admin-authored, admin-consumed) narrows its severity from a
     naive P0 read to P2. Locks in that disconfirmation narrows evidence
     without discarding a real finding.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [security]
+    affected_surface: [unclassified]

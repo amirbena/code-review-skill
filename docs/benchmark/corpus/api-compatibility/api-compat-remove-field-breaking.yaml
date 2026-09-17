@@ -71,3 +71,8 @@ metadata:
     scope: a schema-recognized contract file loses a property consumers may
     already depend on, with no migration path, so a correct review must
     flag it as changes-required.
+  taxonomy:
+    capability: [api-compatibility]
+    policy_contract: [api-contract-compatibility]
+    risk_mode: [correctness, regression]
+    affected_surface: [unclassified]

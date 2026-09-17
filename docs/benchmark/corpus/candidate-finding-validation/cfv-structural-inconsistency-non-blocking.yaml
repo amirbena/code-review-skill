@@ -81,3 +81,8 @@ metadata:
     concern classification: a real structural inconsistency with no
     demonstrated behavioral consequence is reported non-blocking at P2,
     never escalated to a correctness/reliability defect it does not earn.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

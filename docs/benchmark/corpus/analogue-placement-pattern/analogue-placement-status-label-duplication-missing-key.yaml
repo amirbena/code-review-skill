@@ -123,3 +123,8 @@ metadata:
     package's deviation has a concrete, already-manifest consequence
     (KeyError on a real delivery status) rather than a bare "does not
     match convention" complaint.
+  taxonomy:
+    capability: [analogue-placement-pattern]
+    policy_contract: [unclassified]
+    risk_mode: [quality, correctness]
+    affected_surface: [unclassified]

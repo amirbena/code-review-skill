@@ -109,3 +109,8 @@ metadata:
     observability regression. A reviewer that either confirms the
     original P1 "errors are silently lost" claim or drops the candidate
     entirely fails this case.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

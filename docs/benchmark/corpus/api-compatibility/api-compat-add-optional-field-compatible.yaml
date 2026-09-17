@@ -54,3 +54,8 @@ metadata:
     from Issue #175's scope. `required` is untouched, so every existing
     producer and consumer of a `User` document keeps working unmodified;
     a correct review reports nothing.
+  taxonomy:
+    capability: [api-compatibility]
+    policy_contract: [api-contract-compatibility]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

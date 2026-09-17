@@ -90,3 +90,8 @@ metadata:
     the evidence (the docstring's own unbounded-cardinality statement)
     tells the capability the multiplication is material rather than
     speculative, satisfying both Activation conditions.
+  taxonomy:
+    capability: [performance]
+    policy_contract: [performance-deepening]
+    risk_mode: [correctness, performance]
+    affected_surface: [unclassified]

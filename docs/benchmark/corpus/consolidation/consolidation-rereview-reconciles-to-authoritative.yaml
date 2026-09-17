@@ -140,3 +140,8 @@ metadata:
     being carried forward as duplicates or joined by a third finding.
     Ordinary ambiguous many-to-one matching, with no such positive evidence,
     stays UNCERTAIN and is out of scope for this case.
+  taxonomy:
+    capability: [consolidation]
+    policy_contract: [unclassified]
+    risk_mode: [security]
+    affected_surface: [unclassified]

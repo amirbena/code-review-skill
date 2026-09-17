@@ -476,10 +476,45 @@ class MetadataTests(unittest.TestCase):
         with self.assertRaises(bf.FixtureFormatError):
             bf.parse_case(self.data)
 
-    def test_metadata_is_optional(self) -> None:
+    def test_metadata_is_required(self) -> None:
         del self.data["metadata"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "metadata"):
+            bf.parse_case(self.data)
+
+    def test_taxonomy_is_required_within_metadata(self) -> None:
+        del self.data["metadata"]["taxonomy"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_unknown_taxonomy_dimension_is_rejected(self) -> None:
+        self.data["metadata"]["taxonomy"]["authz"] = ["unclassified"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_missing_taxonomy_dimension_is_rejected(self) -> None:
+        del self.data["metadata"]["taxonomy"]["risk_mode"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_unknown_taxonomy_value_is_rejected(self) -> None:
+        self.data["metadata"]["taxonomy"]["capability"] = ["not-a-real-capability"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_duplicate_taxonomy_value_is_rejected(self) -> None:
+        self.data["metadata"]["taxonomy"]["risk_mode"] = ["security", "security"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_empty_taxonomy_dimension_value_list_is_rejected(self) -> None:
+        self.data["metadata"]["taxonomy"]["risk_mode"] = []
+        with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
+            bf.parse_case(self.data)
+
+    def test_unclassified_is_a_legal_taxonomy_value(self) -> None:
+        self.data["metadata"]["taxonomy"]["affected_surface"] = ["unclassified"]
         case = bf.parse_case(self.data)
-        self.assertEqual(case.metadata, {})
+        self.assertEqual(case.metadata["taxonomy"]["affected_surface"], ["unclassified"])
 
 
 class InducedRegressionTests(unittest.TestCase):

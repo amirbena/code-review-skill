@@ -148,3 +148,8 @@ metadata:
     Covers two distinct high-severity sink types (injection and path
     handling) in one small diff, and exercises every variance construct so
     the format itself stays tested.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [security, correctness]
+    affected_surface: [unclassified]

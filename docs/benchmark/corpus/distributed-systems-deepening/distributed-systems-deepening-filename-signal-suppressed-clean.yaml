@@ -59,3 +59,8 @@ metadata:
     specialist-depth.md, a filename is a signal and never independently
     sufficient, so this must resolve clean with no finding rather than
     the capability engaging on naming alone.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

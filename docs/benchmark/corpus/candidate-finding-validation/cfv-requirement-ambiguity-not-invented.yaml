@@ -80,3 +80,8 @@ metadata:
     behavior corroborates the expected outcome) is reported as requirement
     ambiguity at P2, never invented as a P0/P1 correctness defect the
     evidence does not actually establish.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

@@ -77,3 +77,8 @@ metadata:
     reference required or supplied. A reviewer that treats missing-ticket
     as missing-grounding, or downgrades this to non-blocking, fails this
     case.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [correctness, concurrency]
+    affected_surface: [unclassified]

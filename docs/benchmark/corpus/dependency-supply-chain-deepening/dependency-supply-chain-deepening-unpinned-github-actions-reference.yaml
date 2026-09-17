@@ -77,3 +77,8 @@ metadata:
     evidence -- every sibling step in the same workflow already pinned to
     a commit SHA -- shows this new reference is less verifiable than what
     the repository already relies on elsewhere.
+  taxonomy:
+    capability: [dependency-supply-chain]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

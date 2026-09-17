@@ -102,3 +102,8 @@ metadata:
     correct review must emit exactly one finding — on the unguarded
     confirm() only, never on confirmSafely(), and never two findings for
     what is really one nullable source appearing at two call sites.
+  taxonomy:
+    capability: [null-absence-risk]
+    policy_contract: [null-absence-risk]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

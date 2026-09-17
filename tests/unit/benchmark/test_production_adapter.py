@@ -572,6 +572,14 @@ class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
                     "base": {"x": "a\n"},
                 },
                 "expected": {"findings": []},
+                "metadata": {
+                    "taxonomy": {
+                        "capability": ["unclassified"],
+                        "policy_contract": ["unclassified"],
+                        "risk_mode": ["unclassified"],
+                        "affected_surface": ["unclassified"],
+                    }
+                },
             }
         )
         result = br.run_case(case, adapter, workspace_parent=workspace_parent)

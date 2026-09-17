@@ -112,3 +112,8 @@ metadata:
     must trace that the threaded server allows more than one handler to
     reach _inventory concurrently with no lock protecting the sequence,
     the actual TOCTOU defect rather than a hypothetical one.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

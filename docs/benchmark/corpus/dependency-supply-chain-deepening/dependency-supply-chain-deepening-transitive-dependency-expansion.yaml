@@ -117,3 +117,8 @@ metadata:
     materially more transitive dependencies than the direct manifest
     change would explain is flagged, distinct from the routine
     patch-bump case where lockfile churn is proportionate and explained.
+  taxonomy:
+    capability: [dependency-supply-chain]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

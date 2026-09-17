@@ -119,3 +119,8 @@ metadata:
     review that does raise it is not marking scope creep. Reuses #186's
     own unsafe-online-blocking-lock fixture as the required finding
     rather than re-deriving the underlying database-deepening defect.
+  taxonomy:
+    capability: [specialist-depth-composition]
+    policy_contract: [specialist-depth]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

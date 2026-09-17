@@ -56,7 +56,10 @@ and no Skill launches either.
 | [`no-op-comment-and-rename.yaml`](no-op-comment-and-rename.yaml) | no-op | a docstring is added and a local variable renamed; behaviour is identical (the pre-image already uses `math.pi`, so the touched line has nothing flag-worthy) | report **nothing** (`findings: []`, `findings_completeness: exhaustive`) | `clean` |
 
 Per-case provenance and a one-paragraph rationale also live in each
-fixture's `metadata` block (`source`, `tags`, `rationale`).
+fixture's `metadata` block (`source`, `tags`, `rationale`), alongside its
+mandatory canonical taxonomy classification (`metadata.taxonomy`) —
+see [`../taxonomy.md`](../taxonomy.md) and
+[`../fixture-format.md`](../fixture-format.md) §10.1.
 
 ## Related sub-corpora
 

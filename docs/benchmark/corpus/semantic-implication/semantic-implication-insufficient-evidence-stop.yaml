@@ -74,3 +74,8 @@ metadata:
     anywhere in the diff or base. The correct outcome is the documented
     "insufficient evidence is a valid terminal outcome," not a speculative
     race-condition finding.
+  taxonomy:
+    capability: [semantic-implication]
+    policy_contract: [review-scope]
+    risk_mode: [correctness, quality]
+    affected_surface: [unclassified]

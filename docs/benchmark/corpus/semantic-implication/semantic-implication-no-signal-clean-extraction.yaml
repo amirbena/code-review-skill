@@ -47,3 +47,8 @@ metadata:
     reasoning" — a purely local, pure-function extraction with identical
     behavior. The correct outcome is no per-dimension analysis and no
     output for this pass, never a manufactured finding to appear thorough.
+  taxonomy:
+    capability: [semantic-implication]
+    policy_contract: [review-scope]
+    risk_mode: [quality, no-op]
+    affected_surface: [unclassified]

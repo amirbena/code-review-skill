@@ -139,3 +139,8 @@ metadata:
     remediation direction, so a correct review reports one canonical
     finding with the sites named as affected locations rather than one
     near-duplicate finding per file.
+  taxonomy:
+    capability: [analogue-placement-pattern]
+    policy_contract: [unclassified]
+    risk_mode: [quality, correctness]
+    affected_surface: [unclassified]

@@ -166,3 +166,8 @@ metadata:
     one unified review with neither gating or suppressing the other, and
     neither may be demoted to optional or dropped because the other
     capability also engaged.
+  taxonomy:
+    capability: [specialist-depth-composition]
+    policy_contract: [specialist-depth]
+    risk_mode: [correctness, performance]
+    affected_surface: [unclassified]

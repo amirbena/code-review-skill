@@ -140,11 +140,17 @@ class FixtureFormatContractTests(unittest.TestCase):
         self.assertIn("never downgrades a `required` entry to optional", self.text)
 
     def test_metadata_is_closed_with_concrete_purposes_only(self) -> None:
-        self.assertIn("## 10. Optional metadata", self.raw)
+        self.assertIn("## 10. Metadata", self.raw)
         self.assertIn("closed** mapping", self.text)
-        for key in ("`source`", "`tags`", "`rationale`"):
+        for key in ("`source`", "`tags`", "`rationale`", "`taxonomy`"):
             self.assertIn(key, self.raw)
         self.assertIn("No field for scoring weights", self.text)
+
+    def test_taxonomy_is_a_required_closed_four_dimension_mapping(self) -> None:
+        self.assertIn("### 10.1", self.raw)
+        for dim in ("capability", "policy_contract", "risk_mode", "affected_surface"):
+            self.assertIn(f"`{dim}`", self.raw)
+        self.assertIn("unclassified", self.text)
 
     def test_fail_closed_validation_rules_are_representative_not_exhaustive(self) -> None:
         # F2: §11 must not claim to be the complete rejection list.

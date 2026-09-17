@@ -98,3 +98,8 @@ metadata:
     write volume make the non-concurrent build's blocking behavior
     material, the actual unsafe-online-migration defect rather than a
     hypothetical one.
+  taxonomy:
+    capability: [database-migration]
+    policy_contract: [database-migration-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

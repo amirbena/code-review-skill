@@ -75,3 +75,8 @@ metadata:
     version is not itself a finding, but this diff's own evidence -- an
     unrevised supported-versions claim the bump now contradicts -- shows
     the change silently narrows what the repository claims to support.
+  taxonomy:
+    capability: [dependency-supply-chain]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

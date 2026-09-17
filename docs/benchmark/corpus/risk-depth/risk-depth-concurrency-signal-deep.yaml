@@ -77,3 +77,8 @@ metadata:
     Demonstrates the `concurrency` catalog signal alone selecting `deep`
     depth. The refactor reads as a harmless narrowing of the critical
     section; only concurrency-aware review surfaces the reintroduced race.
+  taxonomy:
+    capability: [risk-depth]
+    policy_contract: [change-risk-signals]
+    risk_mode: [correctness, concurrency]
+    affected_surface: [unclassified]

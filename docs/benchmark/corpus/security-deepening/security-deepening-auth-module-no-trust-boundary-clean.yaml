@@ -60,3 +60,8 @@ metadata:
     distinct from the filename-signal case, which pins that a naming
     coincidence alone must not trigger engagement even when named
     security-adjacently.
+  taxonomy:
+    capability: [security-boundary]
+    policy_contract: [security-deepening]
+    risk_mode: [security]
+    affected_surface: [unclassified]

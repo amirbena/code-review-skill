@@ -94,3 +94,8 @@ metadata:
     all, only an accidental quadratic blow-up from checking membership
     against a growing list instead of a set, evidenced by the function's
     own documented, independently-unbounded input sizes.
+  taxonomy:
+    capability: [performance]
+    policy_contract: [performance-deepening]
+    risk_mode: [correctness, performance]
+    affected_surface: [unclassified]

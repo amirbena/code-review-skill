@@ -101,3 +101,8 @@ metadata:
     under the old field name are handled -- the actual missing
     expand/contract staging rather than a hypothetical one -- part of
     Issue #279's non-relational corpus extension.
+  taxonomy:
+    capability: [database-migration]
+    policy_contract: [database-migration-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

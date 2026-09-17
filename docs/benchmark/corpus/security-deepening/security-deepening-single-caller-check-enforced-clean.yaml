@@ -57,3 +57,8 @@ metadata:
     confused-deputy tracing find nothing further to report — the case
     proves the capability stays quiet rather than manufacturing a finding
     once it engages.
+  taxonomy:
+    capability: [security-boundary]
+    policy_contract: [security-deepening]
+    risk_mode: [security]
+    affected_surface: [unclassified]

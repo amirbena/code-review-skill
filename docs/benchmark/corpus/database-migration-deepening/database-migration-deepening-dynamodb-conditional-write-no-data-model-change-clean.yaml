@@ -75,3 +75,8 @@ metadata:
     the capability correctly does not engage merely because a NoSQL
     store (DynamoDB) is involved -- part of Issue #279's non-relational
     corpus extension.
+  taxonomy:
+    capability: [database-migration]
+    policy_contract: [database-migration-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

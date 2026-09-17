@@ -78,3 +78,8 @@ metadata:
     comment-only-edit-not-implicated-clean fixture, which owns this as a
     single-domain negative case; #85 reuses it to prove the same
     non-activation holds at the composition level.
+  taxonomy:
+    capability: [specialist-depth-composition]
+    policy_contract: [specialist-depth]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

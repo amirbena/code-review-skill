@@ -52,3 +52,8 @@ metadata:
     Activation condition 1 is never satisfied -- the same "domain not
     implicated" shape as a comment-only edit, expressed instead as a
     value change with no live reader.
+  taxonomy:
+    capability: [performance]
+    policy_contract: [performance-deepening]
+    risk_mode: [correctness, performance]
+    affected_surface: [unclassified]

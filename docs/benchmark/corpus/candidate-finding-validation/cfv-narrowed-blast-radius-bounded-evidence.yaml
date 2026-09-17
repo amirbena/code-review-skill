@@ -105,3 +105,8 @@ metadata:
     checked, to the one caller the change actually affects. Locks in
     scope/severity that reflects the narrower, evidenced reality rather
     than a blanket finding against every caller found by grep.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

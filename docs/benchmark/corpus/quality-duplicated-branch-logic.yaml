@@ -60,3 +60,8 @@ metadata:
     A safe, correct change whose only issue is maintainability, so a correct
     review reports one P2 and still returns `clean`. Keeps the corpus from
     conflating "has a finding" with "blocks the change".
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

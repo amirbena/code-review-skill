@@ -116,3 +116,8 @@ metadata:
     semantic: the docstring's own statement that entries routinely
     outlive a single deploy, so a shape change with no coexistence path is
     a real defect regardless of which file happens to hold it.
+  taxonomy:
+    capability: [specialist-depth-composition]
+    policy_contract: [specialist-depth]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

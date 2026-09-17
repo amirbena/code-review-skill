@@ -92,3 +92,8 @@ metadata:
     optional finding acknowledges the guard's in-memory durability as a
     defensible secondary observation, so a reviewer that raises it is not
     scored as producing an unexpected finding.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

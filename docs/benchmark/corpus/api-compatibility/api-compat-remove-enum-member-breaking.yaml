@@ -64,3 +64,8 @@ metadata:
     context-dependent, but removing one is unconditionally breaking,
     because no existing consumer can already tolerate a value ceasing to
     exist.
+  taxonomy:
+    capability: [api-compatibility]
+    policy_contract: [api-contract-compatibility]
+    risk_mode: [correctness, regression]
+    affected_surface: [unclassified]

@@ -73,3 +73,8 @@ metadata:
     capability traces the call path, and confirms the replacement is a
     single batched call rather than a multiplied one -- distinct from the
     strictly-clean cases below, where the domain is never engaged at all.
+  taxonomy:
+    capability: [performance]
+    policy_contract: [performance-deepening]
+    risk_mode: [correctness, performance]
+    affected_surface: [unclassified]

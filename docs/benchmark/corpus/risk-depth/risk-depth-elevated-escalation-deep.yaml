@@ -76,3 +76,8 @@ metadata:
     neither file alone would exceed `elevated`. Also exercises the
     per-fact dedup boundary -- these are two distinct facts, not one
     double-labeled fact.
+  taxonomy:
+    capability: [risk-depth]
+    policy_contract: [change-risk-signals]
+    risk_mode: [security]
+    affected_surface: [unclassified]

@@ -54,3 +54,8 @@ metadata:
     boundary. Per specialist-depth.md, a filename is a signal and never
     independently sufficient, so this must resolve `clean` with no
     finding rather than the capability engaging on naming alone.
+  taxonomy:
+    capability: [security-boundary]
+    policy_contract: [security-deepening]
+    risk_mode: [security]
+    affected_surface: [unclassified]

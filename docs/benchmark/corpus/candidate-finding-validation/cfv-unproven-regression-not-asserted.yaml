@@ -66,3 +66,8 @@ metadata:
     proven regression, and the change carries no independent technical-
     invariant violation to fall back on. Locks in the fail-closed default
     for unproven regression claims.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [regression]
+    affected_surface: [unclassified]

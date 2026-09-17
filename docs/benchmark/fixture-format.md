@@ -121,7 +121,7 @@ format: benchmark-case/v1
 | `title` | yes | string | One-line human summary of the case. |
 | `input` | yes | mapping | The benchmark input under review (§6). |
 | `expected` | yes | mapping | The expected review outcome (§7–§9). |
-| `metadata` | no | mapping | Optional, closed-key annotations (§10). |
+| `metadata` | yes | mapping | Closed-key annotations, including the mandatory taxonomy (§10). |
 
 No other top-level key is permitted.
 
@@ -303,20 +303,54 @@ Classifying a reviewer finding as matching a given spec, and turning
 "unexpected finding" / "missed required finding" into a score, are the
 runner's and #41's job — not the fixture's.
 
-## 10. Optional metadata (`metadata`)
+## 10. Metadata (`metadata`)
 
-`metadata` is a **closed** mapping; every key has a concrete downstream
-purpose. Unknown keys are rejected (§11).
+`metadata` is a **required**, **closed** mapping; every key has a concrete
+downstream purpose. Unknown keys are rejected (§11).
 
-| Key | Type | Concrete purpose |
-|---|---|---|
-| `source` | string | Provenance — `crafted`, or a URL to the real PR/commit a case was derived from. Corpus auditing (#51). |
-| `tags` | list | Subset of `correctness` / `security` / `quality` / `no-op` / `regression` / `concurrency` / `performance`, no duplicates. Category slices for #41 and profile/risky fixtures (#47/#48). |
-| `rationale` | string | 1–3 sentences on why this case earns a corpus slot. Feeds #51's case-selection rationale record. |
+| Key | Required | Type | Concrete purpose |
+|---|---|---|---|
+| `source` | no | string | Provenance — `crafted`, or a URL to the real PR/commit a case was derived from. Corpus auditing (#51). |
+| `tags` | no | list | Subset of `correctness` / `security` / `quality` / `no-op` / `regression` / `concurrency` / `performance`, no duplicates. Category slices for #41 and profile/risky fixtures (#47/#48). |
+| `rationale` | no | string | 1–3 sentences on why this case earns a corpus slot. Feeds #51's case-selection rationale record. |
+| `taxonomy` | **yes** | mapping | Canonical candidate-taxonomy classification (§10.1). Issue #333. |
 
 No field for scoring weights, pass/fail thresholds, retrieval cutoffs,
 runner configuration, timing, or model identity — those are out of scope
 (§13) and MUST NOT be added to `metadata` to smuggle them in.
+
+### 10.1 `metadata.taxonomy` — canonical candidate taxonomy
+
+Contract:
+[`taxonomy.md`](taxonomy.md) (Issue #333). `taxonomy` is a **closed**,
+**required** mapping with **exactly four keys** — `capability`,
+`policy_contract`, `risk_mode`, `affected_surface` — each a **non-empty
+list** of one or more values drawn from that dimension's own closed,
+alias-free enum (duplicates rejected). Every dimension carries an
+explicit `unclassified` value as a first-class member of its enum, never
+an error state: a case (or a PR diff, per `taxonomy.md`) that does not
+cleanly fit a dimension's other values declares `unclassified` for it
+rather than omitting the dimension or forcing an inexact value.
+
+```yaml
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    ...
+  taxonomy:
+    capability: [security-boundary]
+    policy_contract: [security-deepening]
+    risk_mode: [security]
+    affected_surface: [unclassified]
+```
+
+`risk_mode` reuses the `tags` enum unchanged (§10) plus `unclassified`; it
+does not introduce a parallel vocabulary for the same concept. The four
+dimensions, their canonical values, and the deterministic inverted index
+built from them are specified in full in
+[`taxonomy.md`](taxonomy.md) — this document only pins the metadata shape
+and its fail-closed validation (§11 rule 10).
 
 ## 11. Fail-closed validation
 
@@ -355,8 +389,11 @@ authoritative; this list is not exhaustive.
    `clean` nor `changes-required`.
 9. An `any_of` group has fewer than 2 members, nests another group, or
    carries its own `severity` / `location` / `claim`.
-10. `metadata` carries an unknown key, an unknown or duplicated `tags`
-    value, or an empty `tags` list.
+10. `metadata` is missing, carries an unknown key, an unknown or
+    duplicated `tags` value, or an empty `tags` list; or `metadata.taxonomy`
+    is missing, is not a mapping, carries an unknown or missing dimension
+    key, or any dimension's value list is empty, non-list, carries an
+    unknown value, or carries a duplicate value (§10.1).
 11. `decision` is present and contradicts the decision mechanically
     derived from the required findings' severities (§7).
 
@@ -400,6 +437,8 @@ exercising the test-only reference validator
 | The expected-vs-produced **match relation** itself — deciding when a produced finding satisfies an expected spec, an `alternatives` restatement, or an `any_of` member | [#54](https://github.com/amirbena/code-review-skill/issues/54) — [`match-criteria.md`](match-criteria.md) |
 | False-positive / false-negative accounting, precision/recall, retrieval thresholds, and aggregate quality metrics built on that relation | [#41](https://github.com/amirbena/code-review-skill/issues/41) |
 | Profile-specific and risky-change fixture selection | [#47](https://github.com/amirbena/code-review-skill/issues/47) / [#48](https://github.com/amirbena/code-review-skill/issues/48) |
+| The canonical taxonomy's dimensions/values, PR-diff classification, and the inverted index built from `metadata.taxonomy` | [#333](https://github.com/amirbena/code-review-skill/issues/333) — [`taxonomy.md`](taxonomy.md) |
+| Case relevance scoring, weighting, and Top-K/coverage selection over the taxonomy/index | [#334](https://github.com/amirbena/code-review-skill/issues/334) |
 | The P0/P1/P2 definitions and the decision derivation | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
 | The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
 

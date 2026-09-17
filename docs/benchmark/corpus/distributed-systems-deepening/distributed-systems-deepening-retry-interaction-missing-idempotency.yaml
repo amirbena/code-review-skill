@@ -89,3 +89,8 @@ metadata:
     deepening capability must trace that capture_payment's side-effecting
     charge call has nothing guarding it against a redelivered message —
     the actual double-charge defect, not merely "a retry exists."
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

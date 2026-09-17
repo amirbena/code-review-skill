@@ -128,3 +128,8 @@ metadata:
     integration boundary, and the new organization is semantically
     equivalent. Locks in that repetition alone never manufactures a
     finding.
+  taxonomy:
+    capability: [analogue-placement-pattern]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

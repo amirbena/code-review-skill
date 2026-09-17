@@ -78,3 +78,8 @@ metadata:
     schema/persisted-shape change signal, one existing reader broken, no
     concurrency, security, API-contract, user-facing, or infra signal
     present anywhere in the diff or base.
+  taxonomy:
+    capability: [semantic-implication]
+    policy_contract: [review-scope]
+    risk_mode: [correctness, quality]
+    affected_surface: [unclassified]

@@ -87,3 +87,8 @@ metadata:
     Two defects of the same class in modules that share no code. A correct
     review reports them as two independent findings; merging them under a
     single "off-by-one root cause" would be over-consolidation.
+  taxonomy:
+    capability: [consolidation]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

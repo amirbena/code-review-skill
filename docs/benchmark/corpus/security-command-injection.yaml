@@ -85,3 +85,8 @@ metadata:
     Covers a second high-severity injection class beyond the worked
     example's SQL injection, and exercises `alternatives` on a required
     finding where the same defect is fairly reported at two sites.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [security]
+    affected_surface: [unclassified]

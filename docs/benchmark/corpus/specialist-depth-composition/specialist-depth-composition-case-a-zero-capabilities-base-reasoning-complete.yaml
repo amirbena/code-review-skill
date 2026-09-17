@@ -100,3 +100,8 @@ metadata:
     base-reasoning correctness defect with no domain-specific angle at
     all; base semantic reasoning must still catch it standing alone, per
     #82's unconditional base per-dimension obligation.
+  taxonomy:
+    capability: [specialist-depth-composition]
+    policy_contract: [specialist-depth]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

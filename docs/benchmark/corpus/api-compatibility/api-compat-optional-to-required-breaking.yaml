@@ -66,3 +66,8 @@ metadata:
     change even though nothing was deleted: it narrows the set of
     previously-valid inputs. Distinct from field removal (a different
     change shape in Issue #175's scope) but the same breaking outcome.
+  taxonomy:
+    capability: [api-compatibility]
+    policy_contract: [api-contract-compatibility]
+    risk_mode: [correctness, regression]
+    affected_surface: [unclassified]

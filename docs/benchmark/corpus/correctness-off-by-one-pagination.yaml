@@ -71,3 +71,8 @@ metadata:
     the review must notice that a change presented as a harmless refactor
     silently alters output. Anchors the "plain correctness" slice of the
     corpus.
+  taxonomy:
+    capability: [core]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

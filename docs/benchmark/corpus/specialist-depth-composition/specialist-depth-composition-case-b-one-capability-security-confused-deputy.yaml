@@ -94,3 +94,8 @@ metadata:
     and its finding remains an ordinary P0 in the shared finding model,
     reusing #271's own domain-correctness fixture rather than re-deriving
     a new confused-deputy scenario.
+  taxonomy:
+    capability: [specialist-depth-composition]
+    policy_contract: [specialist-depth]
+    risk_mode: [security]
+    affected_surface: [unclassified]

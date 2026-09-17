@@ -102,3 +102,8 @@ metadata:
     the deepening capability must trace that the new method bypasses the
     same check, giving concrete evidence of multiple concurrent owners
     rather than a hypothetical one.
+  taxonomy:
+    capability: [distributed-systems]
+    policy_contract: [distributed-systems-deepening]
+    risk_mode: [concurrency]
+    affected_surface: [unclassified]

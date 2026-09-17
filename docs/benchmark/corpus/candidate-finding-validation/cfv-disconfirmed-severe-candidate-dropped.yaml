@@ -70,3 +70,8 @@ metadata:
     evidence from its only caller and must not be reported. A reviewer
     that flags the function body without tracing the caller fails this
     case.
+  taxonomy:
+    capability: [candidate-finding-validation]
+    policy_contract: [unclassified]
+    risk_mode: [security]
+    affected_surface: [unclassified]

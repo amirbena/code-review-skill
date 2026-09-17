@@ -164,3 +164,8 @@ metadata:
     different inferred patterns with two different consequences, so a
     correct review reports two independent findings rather than merging
     them under one vague duplication finding.
+  taxonomy:
+    capability: [analogue-placement-pattern]
+    policy_contract: [unclassified]
+    risk_mode: [quality, correctness]
+    affected_surface: [unclassified]
