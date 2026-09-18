@@ -975,9 +975,9 @@ repository's own package is no longer named `platform`.
 
 This decision is scoped to the top-level directory name only; it does not
 change §E.2's topology, ownership boundaries, or contents otherwise.
-Downstream references to the old `platform/` name —
-`benchmark-ownership-boundary-checkpoint.md` §7 item 2 and issue #457 —
-are updated to `runtime_platform/` accordingly.
+Downstream references to the old `platform/` name — every occurrence in
+`benchmark-ownership-boundary-checkpoint.md` (§3, §4, §7 item 2, §8) and
+in issue #457 — are updated to `runtime_platform/` accordingly.
 
 ---
 
