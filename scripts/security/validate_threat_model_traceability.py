@@ -4,9 +4,9 @@
 Cross-references the canonical `#300` threat-scenario catalog
 (`docs/threat-model/catalog/*.yaml`, parsed by `validate_threat_model.py`)
 against the benchmark corpora that claim to exercise it —
-`tests/reference/benchmark/mutation_fixtures.py` (#305),
-`tests/reference/benchmark/delegation_fixtures.py` (#307),
-`tests/reference/benchmark/security_event_fixtures.py` (#308), and the
+`runtime_platform/benchmark/reference/mutation_fixtures.py` (#305),
+`runtime_platform/benchmark/reference/delegation_fixtures.py` (#307),
+`runtime_platform/benchmark/reference/security_event_fixtures.py` (#308), and the
 `## Coverage` table in
 `docs/benchmark/corpus/sandbox-adversarial/README.md` (#306, a real-runner
 suite with no data-driven fixture module) — and reports a compact
@@ -62,9 +62,9 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.security import validate_threat_model as vtm  # noqa: E402
-from tests.reference.benchmark import delegation_fixtures as deleg_fixtures  # noqa: E402
-from tests.reference.benchmark import mutation_fixtures as mut_fixtures  # noqa: E402
-from tests.reference.benchmark import security_event_fixtures as sec_fixtures  # noqa: E402
+from runtime_platform.benchmark.reference import delegation_fixtures as deleg_fixtures  # noqa: E402
+from runtime_platform.benchmark.reference import mutation_fixtures as mut_fixtures  # noqa: E402
+from runtime_platform.benchmark.reference import security_event_fixtures as sec_fixtures  # noqa: E402
 
 GAP = vtm.GAP
 

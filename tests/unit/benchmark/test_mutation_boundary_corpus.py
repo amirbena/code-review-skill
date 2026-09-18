@@ -2,7 +2,7 @@
 """Contract coverage for the mutation-capability-boundary benchmark corpus
 (Issue #305, depends on #301).
 
-The corpus is `tests/reference/benchmark/mutation_fixtures.py`: a focused,
+The corpus is `runtime_platform/benchmark/reference/mutation_fixtures.py`: a focused,
 data-driven set of `MutationCase` fixtures pinning every allowed/denied
 outcome shape #305's scope requires, executed against the *single*
 reference model `tests/reference/review/mutation_authority.py` (never a
@@ -16,7 +16,7 @@ executed and its *actual* outcome is compared against that same declared
 expectation -- every comparison here is a deterministic structural
 assertion (allowed/denied, denial classification, repository/Git state
 preserved or not, the exact paths an allowed apply touched), never an
-LLM/rubric score, matching docs/benchmark/README.md's convention and
+LLM/rubric score, matching runtime_platform/benchmark/README.md's convention and
 #307's precedent for this kind of capability-boundary corpus.
 
 This is the "focused benchmark selection" surface for #305: run this
@@ -32,7 +32,7 @@ from __future__ import annotations
 import unittest
 from dataclasses import replace
 
-from tests.reference.benchmark import mutation_fixtures as mf
+from runtime_platform.benchmark.reference import mutation_fixtures as mf
 
 MIN_CASES = 20
 MAX_CASES = 50

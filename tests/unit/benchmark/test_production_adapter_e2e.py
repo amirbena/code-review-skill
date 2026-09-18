@@ -22,13 +22,13 @@ from __future__ import annotations
 
 import unittest
 
-from scripts.benchmark.benchmark_review_adapter import (
+from runtime_platform.benchmark.scripts.benchmark_review_adapter import (
     ProductionReviewerAdapter,
     RuntimeUnavailableError,
     check_runtime_available,
 )
-from tests.reference.benchmark import benchmark_metrics as bm
-from tests.reference.benchmark import benchmark_runner as br
+from runtime_platform.benchmark.reference import benchmark_metrics as bm
+from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
@@ -67,7 +67,7 @@ class ProductionAdapterEndToEndTests(unittest.TestCase):
         for finding in case_result.produced_findings:
             self.assertIsInstance(finding, br.ProducedFinding)
 
-        from tests.reference.benchmark import benchmark_fixture as bf
+        from runtime_platform.benchmark.reference import benchmark_fixture as bf
         import yaml
 
         case = bf.parse_case(

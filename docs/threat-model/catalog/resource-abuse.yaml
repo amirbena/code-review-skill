@@ -131,7 +131,7 @@ scenarios:
   expected_safe_outcome: the tree-wide budget caps total agents; orchestration resources stay bounded
   expected_security_event: DENIED_SPAWN_BUDGET_EXCEEDED
   benchmark_family: delegation/#307
-  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md)
+  benchmark_reference: runtime_platform/benchmark/reference/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md)
   regression_evidence: COVERAGE_GAP
   threat_severity: HIGH
   notes: 'Same underlying control as DELEG-004; catalogued separately for the resource-abuse lens per
@@ -154,7 +154,7 @@ scenarios:
     host resources
   expected_security_event: DENIED_SPAWN_BUDGET_EXCEEDED
   benchmark_family: delegation/#307
-  benchmark_reference: tests/reference/benchmark/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md)
+  benchmark_reference: runtime_platform/benchmark/reference/delegation_fixtures.py (see docs/benchmark/corpus/delegation-spawn/README.md)
   regression_evidence: COVERAGE_GAP
   threat_severity: MEDIUM
   notes: 'shared/policies/parallel-review.md defines worker/ownership semantics for parallel review but

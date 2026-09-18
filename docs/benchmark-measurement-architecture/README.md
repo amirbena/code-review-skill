@@ -17,7 +17,7 @@ invocation-scoped review Skill into a stateful product/knowledge layer.
 See the model document's "Product-layer boundary decision" addendum for
 the full rationale.
 
-Like [`../benchmark/README.md`](../benchmark/README.md),
+Like [`../../runtime_platform/benchmark/README.md`](../../runtime_platform/benchmark/README.md),
 [`../finding-confidence/README.md`](../finding-confidence/README.md), and
 [`../review-context/README.md`](../review-context/README.md), this is a
 repository-development doc: **not** packaged into either Skill archive, and
@@ -38,7 +38,7 @@ document owns only the boundaries and the dependency order between them.
 
 - The benchmark contracts this architecture sits above (corpus, runner,
   match criteria, quality metrics, existing CI wiring):
-  [`../benchmark/README.md`](../benchmark/README.md).
+  [`../../runtime_platform/benchmark/README.md`](../../runtime_platform/benchmark/README.md).
 - The finding `confidence` field that benchmark-derived and runtime-validated
   evidence roll up into: [`../finding-confidence/README.md`](../finding-confidence/README.md).
 - The architecture map: [`../ARCHITECTURE.md`](../ARCHITECTURE.md).

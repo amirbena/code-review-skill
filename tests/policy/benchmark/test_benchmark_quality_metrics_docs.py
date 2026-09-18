@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Structural contract checks for the benchmark missed/incorrect metrics (#55).
 
-Pins docs/benchmark/missed-and-incorrect-findings.md so the canonical
+Pins runtime_platform/benchmark/missed-and-incorrect-findings.md so the canonical
 invariant, the produced↔expected pairing rule, the false-negative and
 false-positive accounting, the `match` / `any_of` / `findings_completeness`
 interactions, the anti-double-count near-miss rule, the aggregate shape,
@@ -15,10 +15,10 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "docs" / "benchmark" / "missed-and-incorrect-findings.md"
-README = REPO_ROOT / "docs" / "benchmark" / "README.md"
+DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "missed-and-incorrect-findings.md"
+README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
-REFERENCE = REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_metrics.py"
+REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_metrics.py"
 UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_metrics.py"
 
 
@@ -131,7 +131,7 @@ class QualityMetricsContractTests(unittest.TestCase):
         tail = " ".join(self.raw.split("## Status and canonical home", 1)[1].split())
         self.assertIn("becomes the design record", tail)
         self.assertIn("MUST NOT keep evolving the accounting independently", tail)
-        self.assertIn("](../../tests/reference/benchmark/benchmark_metrics.py)", self.raw)
+        self.assertIn("](reference/benchmark_metrics.py)", self.raw)
         self.assertIn("](../../tests/unit/benchmark/test_benchmark_metrics.py)", self.raw)
 
 
@@ -153,7 +153,7 @@ class DirectoryNavigationTests(unittest.TestCase):
 
     def test_unit_test_consumes_the_single_reference_matcher(self) -> None:
         raw = " ".join(UNIT_TEST.read_text(encoding="utf-8").split())
-        self.assertIn("from tests.reference.benchmark import benchmark_metrics as bmet", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_metrics as bmet", raw)
         self.assertIn("never defines a second match relation", raw)
 
 

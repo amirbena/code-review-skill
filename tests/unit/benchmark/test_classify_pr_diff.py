@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Behavioral coverage for PR-diff taxonomy classification (Issue #333).
-Contract: docs/benchmark/taxonomy.md §4.
+Contract: runtime_platform/benchmark/taxonomy.md §4.
 
 What is proven here:
 
@@ -22,8 +22,8 @@ from __future__ import annotations
 import json
 import unittest
 
-from scripts.benchmark import classify_pr_diff as clf
-from tests.reference.benchmark import benchmark_taxonomy as tax
+from runtime_platform.benchmark.scripts import classify_pr_diff as clf
+from runtime_platform.benchmark.reference import benchmark_taxonomy as tax
 
 
 class BuildClassificationPromptTests(unittest.TestCase):
@@ -117,7 +117,7 @@ class ClassifyPrDiffTests(unittest.TestCase):
         def adversarial_invoke(_prompt: str) -> str:
             return json.dumps({"capability": ["rm -rf /"]})
 
-        result = clf.classify_pr_diff(["docs/benchmark/taxonomy.md"], invoke=adversarial_invoke)
+        result = clf.classify_pr_diff(["runtime_platform/benchmark/taxonomy.md"], invoke=adversarial_invoke)
         self.assertEqual(result["capability"], (tax.UNCLASSIFIED,))
 
 

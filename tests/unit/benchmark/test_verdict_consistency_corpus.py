@@ -2,7 +2,7 @@
 """Contract coverage for the verdict-consistency benchmark corpus (Issue
 #378, depends on #377).
 
-The corpus is `tests/reference/benchmark/verdict_consistency_fixtures.py`:
+The corpus is `runtime_platform/benchmark/reference/verdict_consistency_fixtures.py`:
 a focused, data-driven set of `VerdictConsistencyCase` fixtures that
 deliberately drift the about-to-be-rendered/submitted decision signal away
 from an already-finalized mechanical decision
@@ -33,7 +33,7 @@ from __future__ import annotations
 import inspect
 import unittest
 
-from tests.reference.benchmark import verdict_consistency_fixtures as vcf
+from runtime_platform.benchmark.reference import verdict_consistency_fixtures as vcf
 from tests.reference.review import verdict_consistency as vc
 
 MIN_CASES = 10

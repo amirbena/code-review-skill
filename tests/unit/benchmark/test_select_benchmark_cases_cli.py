@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Behavioral coverage for the selector CLI entrypoint (Issue #334).
-Contract: docs/benchmark/selection.md §5.
+Contract: runtime_platform/benchmark/selection.md §5.
 
-Exercises ``scripts/benchmark/select_benchmark_cases.py`` end to end
+Exercises ``runtime_platform/benchmark/scripts/select_benchmark_cases.py`` end to end
 against a small synthetic index and PR classification file — never
 against the live corpus index (that is exercised implicitly by every
 other benchmark test that already depends on ``corpus-index.json``
@@ -22,8 +22,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.benchmark import select_benchmark_cases as cli
-from tests.reference.benchmark import benchmark_selection as sel
+from runtime_platform.benchmark.scripts import select_benchmark_cases as cli
+from runtime_platform.benchmark.reference import benchmark_selection as sel
 
 
 class LoadPrClassificationTests(unittest.TestCase):

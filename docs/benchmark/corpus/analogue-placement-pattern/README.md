@@ -9,18 +9,18 @@ which extends
 can infer an established but undocumented local responsibility/placement
 pattern from analogous implementations and flag a materially consequential
 deviation from it. This is a **focused sub-corpus** of
-[`benchmark-case/v2`](../../fixture-format.md) fixtures that pin the
+[`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md) fixtures that pin the
 expected outcomes for that capability and keep it from regressing into a
 disguised style-consistency checker.
 
-Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
-[`../`](../README.md) and [`../../`](../../README.md) this is **not**
+[`../`](../README.md) and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py).
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py).
 
 ## What this corpus does *not* assert
 
@@ -87,7 +87,7 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
 
 [`../../../../tests/unit/benchmark/test_analogue_placement_pattern_corpus.py`](../../../../tests/unit/benchmark/test_analogue_placement_pattern_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and every other corpus — never a second one —
 and asserts: the sub-corpus stays small and documented; every
 required outcome shape is present; every case pins an explicit `decision`

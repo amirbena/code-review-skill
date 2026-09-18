@@ -18,7 +18,7 @@ behavior.
 Every corpus under [`../`](../README.md) that reviews a code change
 (each a self-contained inline patch plus expected review *findings*) uses
 the `benchmark-case/v2` fixture format
-([`../../fixture-format.md`](../../fixture-format.md)). This domain has no
+([`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)). This domain has no
 patch and no finding: its input is a piece of trusted-invocation text (or
 a structured boolean) and its expectation is a resolved
 `allow_trusted_host_execution` boolean plus an execution-backend
@@ -29,7 +29,7 @@ test-only, data-driven reference-fixture pattern
 established for the structurally analogous agent-spawn/delegated-
 authority domain:
 
-- [`../../../../tests/reference/benchmark/trusted_host_nl_fixtures.py`](../../../../tests/reference/benchmark/trusted_host_nl_fixtures.py) —
+- [`../../../../runtime_platform/benchmark/reference/trusted_host_nl_fixtures.py`](../../../../runtime_platform/benchmark/reference/trusted_host_nl_fixtures.py) —
   one `TrustedHostNLCase` per required outcome shape, each a
   zero-argument `run()` closure that exercises the *single* reference
   model,
@@ -167,5 +167,5 @@ data schema, matching #370's own benchmark-layer scope.
   [`../sandbox-adversarial/README.md`](../sandbox-adversarial/README.md)
   respectively).
 - Any change to the review-quality metrics under
-  [`../../match-criteria.md`](../../match-criteria.md) and its siblings —
+  [`../../match-criteria.md`](../../../../runtime_platform/benchmark/match-criteria.md) and its siblings —
   this is a security-semantics benchmark, not a finding-quality one.

@@ -2,7 +2,7 @@
 """Structural contract checks for the benchmark fixture format (#50) and
 the initial benchmark corpus (#51).
 
-Pins docs/benchmark/fixture-format.md and its directory README so the
+Pins runtime_platform/benchmark/fixture-format.md and its directory README so the
 canonical invariant, the schema/versioning fail-closed rule, the four typed
 variance constructs, the reused shared vocabulary, and the deferred-scope
 boundaries cannot drift silently. Also pins docs/benchmark/corpus/README.md
@@ -14,11 +14,11 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "docs" / "benchmark" / "fixture-format.md"
-README = REPO_ROOT / "docs" / "benchmark" / "README.md"
+DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "fixture-format.md"
+README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
 EXAMPLE = REPO_ROOT / "docs" / "benchmark" / "examples" / "example-case.yaml"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
-REFERENCE = REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_fixture.py"
+REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_fixture.py"
 UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_fixture.py"
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
 CORPUS_README = CORPUS_DIR / "README.md"
@@ -165,9 +165,9 @@ class FixtureFormatContractTests(unittest.TestCase):
 
     def test_worked_example_is_linked_and_described(self) -> None:
         self.assertIn("## 12. Worked example", self.raw)
-        self.assertIn("](examples/example-case.yaml)", self.raw)
+        self.assertIn("](../../docs/benchmark/examples/example-case.yaml)", self.raw)
         self.assertIn("](../../tests/unit/benchmark/test_benchmark_fixture.py)", self.raw)
-        self.assertIn("](../../tests/reference/benchmark/benchmark_fixture.py)", self.raw)
+        self.assertIn("](reference/benchmark_fixture.py)", self.raw)
 
     def test_scope_boundaries_defer_runner_corpus_and_metrics(self) -> None:
         self.assertIn("## 13. Scope boundaries", self.raw)
@@ -187,16 +187,16 @@ class DirectoryNavigationTests(unittest.TestCase):
     def test_readme_is_navigational_and_maps_the_contract(self) -> None:
         raw = README.read_text(encoding="utf-8")
         self.assertIn("](fixture-format.md)", raw)
-        self.assertIn("](examples/example-case.yaml)", raw)
-        self.assertIn("](corpus/README.md)", raw)
+        self.assertIn("](../../docs/benchmark/examples/example-case.yaml)", raw)
+        self.assertIn("](../../docs/benchmark/corpus/README.md)", raw)
         self.assertIn("not** packaged", raw)
         self.assertIn("#50", raw)
         self.assertIn("#51", raw)
 
     def test_architecture_links_to_the_benchmark_directory(self) -> None:
         raw = ARCHITECTURE.read_text(encoding="utf-8")
-        self.assertIn("benchmark/fixture-format.md", raw)
-        self.assertIn("](benchmark/README.md)", raw)
+        self.assertIn("runtime_platform/benchmark/fixture-format.md", raw)
+        self.assertIn("](../runtime_platform/benchmark/README.md)", raw)
         self.assertIn("nothing benchmark", " ".join(raw.split()))
 
     def test_reference_model_is_declared_test_only(self) -> None:
@@ -206,7 +206,7 @@ class DirectoryNavigationTests(unittest.TestCase):
 
     def test_unit_test_consumes_the_single_reference_validator(self) -> None:
         raw = UNIT_TEST.read_text(encoding="utf-8")
-        self.assertIn("from tests.reference.benchmark import benchmark_fixture as bf", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_fixture as bf", raw)
         self.assertIn("never defines a second one", raw)
 
 
@@ -250,10 +250,10 @@ class CorpusDirectoryTests(unittest.TestCase):
     def test_readme_links_every_fixture_and_the_validator(self) -> None:
         for path in self.fixtures:
             self.assertIn(f"]({path.name})", self.readme_raw, f"README omits {path.name}")
-        self.assertIn("](../fixture-format.md)", self.readme_raw)
+        self.assertIn("](../../../runtime_platform/benchmark/fixture-format.md)", self.readme_raw)
         self.assertIn("](../../../tests/unit/benchmark/test_benchmark_corpus.py)", self.readme_raw)
         self.assertIn(
-            "](../../../tests/reference/benchmark/benchmark_fixture.py)", self.readme_raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.readme_raw
         )
 
     def test_corpus_covers_the_four_named_categories(self) -> None:
@@ -271,7 +271,7 @@ class CorpusDirectoryTests(unittest.TestCase):
 
     def test_corpus_unit_test_uses_the_single_reference_validator(self) -> None:
         raw = CORPUS_UNIT_TEST.read_text(encoding="utf-8")
-        self.assertIn("from tests.reference.benchmark import benchmark_fixture as bf", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_fixture as bf", raw)
         self.assertIn("never defines a second one", raw)
 
 

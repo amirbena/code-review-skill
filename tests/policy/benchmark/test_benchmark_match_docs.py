@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Structural contract checks for the benchmark finding match criteria (#54).
 
-Pins docs/benchmark/match-criteria.md so the canonical invariant, the
+Pins runtime_platform/benchmark/match-criteria.md so the canonical invariant, the
 two-axis model, the fixed tolerances, the §5 combination table, the
 allowed-alternative resolution, the determinism rules, the worked-example
 conformance bar, and the deferred-scope boundaries cannot drift silently.
@@ -13,10 +13,10 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "docs" / "benchmark" / "match-criteria.md"
-README = REPO_ROOT / "docs" / "benchmark" / "README.md"
+DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "match-criteria.md"
+README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
-REFERENCE = REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_match.py"
+REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_match.py"
 UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_match.py"
 
 
@@ -109,7 +109,7 @@ class MatchCriteriaContractTests(unittest.TestCase):
         tail = " ".join(self.raw.split("## Status and canonical home", 1)[1].split())
         self.assertIn("becomes the design record", tail)
         self.assertIn("MUST NOT keep evolving the criteria independently", tail)
-        self.assertIn("](../../tests/reference/benchmark/benchmark_match.py)", self.raw)
+        self.assertIn("](reference/benchmark_match.py)", self.raw)
         self.assertIn("](../../tests/unit/benchmark/test_benchmark_match.py)", self.raw)
 
 
@@ -131,7 +131,7 @@ class DirectoryNavigationTests(unittest.TestCase):
 
     def test_unit_test_consumes_the_single_reference_matcher(self) -> None:
         raw = UNIT_TEST.read_text(encoding="utf-8")
-        self.assertIn("from tests.reference.benchmark import benchmark_match as bm", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_match as bm", raw)
         self.assertIn("never defines a second one", raw)
 
 

@@ -4,7 +4,7 @@ corpus (Issue #308, depends on #299 and the relevant enforced denial from
 #301/#302/#303).
 
 The corpus is
-`tests/reference/benchmark/security_event_fixtures.py`: a focused,
+`runtime_platform/benchmark/reference/security_event_fixtures.py`: a focused,
 data-driven set of `SecurityEventCase` fixtures, one per representative
 enforced denial across the mutation, sandbox, agent-spawn/delegation, and
 GitHub review-action-mutation families, each constructing the
@@ -25,7 +25,7 @@ from __future__ import annotations
 import unittest
 from dataclasses import replace
 
-from tests.reference.benchmark import security_event_fixtures as sef
+from runtime_platform.benchmark.reference import security_event_fixtures as sef
 
 MIN_CASES = 15
 MAX_CASES = 40

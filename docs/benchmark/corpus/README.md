@@ -8,15 +8,15 @@ plus the case-selection rationale for each. Parent capability:
 [#40](https://github.com/amirbena/code-review-skill/issues/40).
 
 Every case conforms to
-[`../fixture-format.md`](../fixture-format.md). Like the rest of
-[`../`](../README.md) this is **not** packaged into either Skill archive
+[`../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md). Like the rest of
+[`../`](../../../runtime_platform/benchmark/README.md) this is **not** packaged into either Skill archive
 and no packaged Skill resource depends on it. The corpus is consumed only
 by the repository's own test suite today, through the runner contract
 ([#52](https://github.com/amirbena/code-review-skill/issues/52),
-[`../runner-contract.md`](../runner-contract.md)) and the run-to-run
+[`../runner-contract.md`](../../../runtime_platform/benchmark/runner-contract.md)) and the run-to-run
 regression report
 ([#53](https://github.com/amirbena/code-review-skill/issues/53),
-[`../regression-report.md`](../regression-report.md)); neither is packaged
+[`../regression-report.md`](../../../runtime_platform/benchmark/regression-report.md)); neither is packaged
 and no Skill launches either.
 
 ## Two scheduled execution lanes (#431)
@@ -28,11 +28,11 @@ sub-corpus directory listed under "Related sub-corpora"** (excluding a
 handful of test-only/reference-model suites that hold no `benchmark-
 case/v2` fixtures at all — see below) together form the **comprehensive**
 corpus, scheduled weekly, and discovered *programmatically* by
-`scripts/benchmark/benchmark_corpus_membership.py` — never a hard-coded
+`runtime_platform/benchmark/scripts/benchmark_corpus_membership.py` — never a hard-coded
 count. Both lanes execute through the same `run_benchmark_routine.py`
 Class 2 Cloud Routine vehicle, with independently keyed history and
 baselines. Full scheduling/baseline contract:
-[`../nightly-history-and-baseline.md`](../nightly-history-and-baseline.md)
+[`../nightly-history-and-baseline.md`](../../../runtime_platform/benchmark/nightly-history-and-baseline.md)
 §2/§4; mode contract:
 [`../cloud-routine-integration.md`](../cloud-routine-integration.md) §2.1.
 
@@ -85,8 +85,8 @@ by a maintained denylist.
 Per-case provenance and a one-paragraph rationale also live in each
 fixture's `metadata` block (`source`, `tags`, `rationale`), alongside its
 mandatory canonical taxonomy classification (`metadata.taxonomy`) —
-see [`../taxonomy.md`](../taxonomy.md) and
-[`../fixture-format.md`](../fixture-format.md) §10.1.
+see [`../taxonomy.md`](../../../runtime_platform/benchmark/taxonomy.md) and
+[`../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §10.1.
 
 ## Related sub-corpora
 
@@ -262,7 +262,7 @@ see [`../taxonomy.md`](../taxonomy.md) and
 
 [`../../../tests/unit/benchmark/test_benchmark_corpus.py`](../../../tests/unit/benchmark/test_benchmark_corpus.py)
 loads every `*.yaml` here through the single reference validator
-[`../../../tests/reference/benchmark/benchmark_fixture.py`](../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (the same one that checks the worked example), and asserts the corpus stays
 small, that filenames match case `id`s, that every case records a
 rationale, and that the four categories above are all present. Peer review

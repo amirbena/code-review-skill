@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Behavioural coverage for the benchmark regression report (Issue #53).
 
-Contract: docs/benchmark/regression-report.md. Driven through the single
-test-only reference report (tests/reference/benchmark/benchmark_report.py); this
+Contract: runtime_platform/benchmark/regression-report.md. Driven through the single
+test-only reference report (runtime_platform/benchmark/reference/benchmark_report.py); this
 module never defines a second one. It consumes runner results built with
-the reference runner (tests/reference/benchmark/benchmark_runner.py, Issue #52).
+the reference runner (runtime_platform/benchmark/reference/benchmark_runner.py, Issue #52).
 
 What is proven here:
 
@@ -32,8 +32,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tests.reference.benchmark import benchmark_report as brp
-from tests.reference.benchmark import benchmark_runner as br
+from runtime_platform.benchmark.reference import benchmark_report as brp
+from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
@@ -313,17 +313,17 @@ class EndToEndWithReferenceRunnerTests(unittest.TestCase):
 
 class ReferenceModuleTests(unittest.TestCase):
     def test_module_is_declared_test_only(self) -> None:
-        head = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_report.py").read_text(
+        head = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_report.py").read_text(
             encoding="utf-8"
         )[:600]
         self.assertIn("Test-only", head)
         self.assertIn("not runtime logic, not packaged", head.lower())
 
     def test_report_consumes_the_single_reference_runner(self) -> None:
-        raw = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_report.py").read_text(
+        raw = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_report.py").read_text(
             encoding="utf-8"
         )
-        self.assertIn("from tests.reference.benchmark import benchmark_runner as br", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_runner as br", raw)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 """Contract coverage for the passive/semi/active publication-mode benchmark
 corpus (Issue #316, depends on #314).
 
-The corpus is `tests/reference/benchmark/publication_mode_fixtures.py`: a
+The corpus is `runtime_platform/benchmark/reference/publication_mode_fixtures.py`: a
 focused, data-driven set of `PublicationModeCase` fixtures pinning every
 outcome shape #316's scope requires, executed against the *single*
 reference model `tests/reference/review/review_action_authorization.py`
@@ -32,7 +32,7 @@ from __future__ import annotations
 import inspect
 import unittest
 
-from tests.reference.benchmark import publication_mode_fixtures as pmf
+from runtime_platform.benchmark.reference import publication_mode_fixtures as pmf
 from tests.reference.review import review_action_authorization as raa
 
 MIN_CASES = 15

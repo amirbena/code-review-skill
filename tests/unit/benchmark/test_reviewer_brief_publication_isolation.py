@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import unittest
 
-from tests.reference.benchmark.reviewer_brief_fixtures import (
+from runtime_platform.benchmark.reference.reviewer_brief_fixtures import (
     ALL_CASES,
     ReviewerBriefCase,
 )

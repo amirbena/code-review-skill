@@ -10,7 +10,7 @@ implementation contract:
 canonical reasoning for **how a finding's fix/action location is derived**
 from its already-accepted claim, when review evidence, causal reasoning, or
 bounded context expansion touch more than one place. This is a **focused
-sub-corpus** of [`benchmark-case/v2`](../../fixture-format.md) fixtures that
+sub-corpus** of [`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md) fixtures that
 pin correct primary-location selection for that reasoning.
 
 ## What this corpus does *not* assert
@@ -30,14 +30,14 @@ domain. The fictional pricing/orders/inventory/notifications/config domains
 below exist only to carry each scenario; the corpus never asserts one of
 those domains' implementation choices is itself canonically correct.
 
-Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
-[`../`](../README.md) and [`../../`](../../README.md) this is **not**
+[`../`](../README.md) and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py).
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py).
 
 ## Selection principle
 
@@ -107,14 +107,14 @@ in any one is unambiguous:
 Per-case provenance and a one- or two-sentence rationale also live in each
 fixture's `metadata` block (`source`, `tags`, `rationale`), alongside its
 mandatory canonical taxonomy classification (`metadata.taxonomy`) — see
-[`../../taxonomy.md`](../../taxonomy.md) and
-[`../../fixture-format.md`](../../fixture-format.md) §10.1.
+[`../../taxonomy.md`](../../../../runtime_platform/benchmark/taxonomy.md) and
+[`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §10.1.
 
 ## Validation
 
 [`../../../../tests/unit/benchmark/test_finding_placement_corpus.py`](../../../../tests/unit/benchmark/test_finding_placement_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and every other corpus — never a second one —
 and asserts: the sub-corpus stays small and documented; every required
 outcome shape above is present; every case pins an explicit `decision`

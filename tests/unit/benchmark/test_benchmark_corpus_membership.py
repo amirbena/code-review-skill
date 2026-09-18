@@ -14,7 +14,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.benchmark import benchmark_corpus_membership as membership
+from runtime_platform.benchmark.scripts import benchmark_corpus_membership as membership
 
 
 def _write(root: Path, relative: str, *, case_id: str | None, fmt: str | None = "benchmark-case/v2") -> Path:

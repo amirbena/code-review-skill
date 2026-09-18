@@ -5,21 +5,21 @@ Repository-development artifact for GitHub Issue
 signal-triggered pass in
 [`shared/policies/review-scope.md`](../../../../shared/policies/review-scope.md),
 "Semantic change-implication reasoning." This is a **focused sub-corpus**
-of [`benchmark-case/v2`](../../fixture-format.md) fixtures exercising that
+of [`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md) fixtures exercising that
 section's vocabulary: the eight canonical dimensions, their semantic
 (never structural) activation signals, the not-mutually-exclusive
 taxonomy, the no-signal non-analysis rule, and the bounded-expansion /
 insufficient-evidence-stop model reused from "Architectural placement and
 execution-lifecycle fidelity" (#153).
 
-Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
-[`../`](../README.md) and [`../../`](../../README.md) this is **not**
+[`../`](../README.md) and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle
@@ -66,7 +66,7 @@ hand-maintained implementation of the dimension taxonomy.
 
 [`../../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py`](../../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second
 one), and asserts: the sub-corpus stays small and documented; every
 required case is present; every case pins an explicit `decision`

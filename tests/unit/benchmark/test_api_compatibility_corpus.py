@@ -11,7 +11,7 @@ before the reviewer capability itself exists.
 
 Like ``test_null_absence_corpus.py``, every fixture decodes and validates
 through the *same* single reference validator
-(``tests/reference/benchmark/benchmark_fixture.py``) used for every other
+(``runtime_platform/benchmark/reference/benchmark_fixture.py``) used for every other
 corpus — this module never defines a second one.
 """
 
@@ -21,7 +21,7 @@ import unittest
 
 import yaml
 
-from tests.reference.benchmark import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "api-compatibility"
@@ -228,7 +228,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../tests/reference/benchmark/benchmark_fixture.py)", self.raw
+            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never a second one", self.raw)
 

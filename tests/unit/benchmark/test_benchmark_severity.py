@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Behavioural coverage for the benchmark severity-accuracy metric (Issue #56).
 
-Contract: docs/benchmark/severity-accuracy.md. Driven through the reference
-classifier (tests/reference/benchmark/benchmark_severity.py), which takes the #55
-pairing verbatim (tests/reference/benchmark/benchmark_metrics.py) and, through it,
-the single reference matcher (tests/reference/benchmark/benchmark_match.py, #54) —
+Contract: runtime_platform/benchmark/severity-accuracy.md. Driven through the reference
+classifier (runtime_platform/benchmark/reference/benchmark_severity.py), which takes the #55
+pairing verbatim (runtime_platform/benchmark/reference/benchmark_metrics.py) and, through it,
+the single reference matcher (runtime_platform/benchmark/reference/benchmark_match.py, #54) —
 this module never defines a second pairing or match relation.
 
 What is proven here:
@@ -27,9 +27,9 @@ from __future__ import annotations
 import unittest
 from fractions import Fraction
 
-from tests.reference.benchmark import benchmark_fixture as bf
-from tests.reference.benchmark import benchmark_runner as br
-from tests.reference.benchmark import benchmark_severity as bsev
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_runner as br
+from runtime_platform.benchmark.reference import benchmark_severity as bsev
 from tests.support.paths import REPO_ROOT
 
 
@@ -289,14 +289,14 @@ class AggregateAndSectionTests(unittest.TestCase):
 
 class ReferenceModuleTests(unittest.TestCase):
     def test_module_is_declared_test_only(self) -> None:
-        head = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_severity.py").read_text(encoding="utf-8")[:700]
+        head = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_severity.py").read_text(encoding="utf-8")[:700]
         self.assertIn("Test-only", head)
         self.assertIn("not runtime logic, not packaged", head.lower())
 
     def test_classifier_consumes_the_single_pairing_and_matcher(self) -> None:
-        raw = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_severity.py").read_text(encoding="utf-8")
-        self.assertIn("from tests.reference.benchmark import benchmark_metrics as bmet", raw)
-        self.assertIn("from tests.reference.benchmark import benchmark_match as bm", raw)
+        raw = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_severity.py").read_text(encoding="utf-8")
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_metrics as bmet", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_match as bm", raw)
         self.assertIn("defines no second pairing or match relation", raw)
 
     def test_pairing_is_taken_verbatim_not_recomputed(self) -> None:

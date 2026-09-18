@@ -58,7 +58,7 @@ provisioned CI runtime (#337) that #336's empirical spike would select a
 candidate for. That spike (and its #366 follow-up, closed without
 merging) found no candidate clears the contract's own viability bar at an
 acceptable cost —
-[`../benchmark/runtime-candidate-decision.md`](../benchmark/runtime-candidate-decision.md)
+[`../../runtime_platform/benchmark/runtime-candidate-decision.md`](../../runtime_platform/benchmark/runtime-candidate-decision.md)
 records the evidence, kept as historical record and **not reopened** by
 this revision. #391 responds architecturally: the runtime contract splits
 into two execution classes (§4), #337 is superseded and no longer
@@ -76,7 +76,7 @@ the time §5's PR-time path below was fully implemented (#333's taxonomy
 and inverted index, PR #418; #334's deterministic Top-K selector, PR
 #419), the original #255 PR-level GitHub Actions check
 (`.github/workflows/benchmark-check.yml` and
-`scripts/benchmark/benchmark_ci_classifier.py`) had become a redundant
+`runtime_platform/benchmark/scripts/benchmark_ci_classifier.py`) had become a redundant
 third execution path: its own PR-diff applicability decision duplicated,
 less precisely, what #333/#334 now compute deterministically, and #391
 had already made its non-blocking contributor-path status permanent
@@ -141,7 +141,7 @@ today, and they are easy to conflate:
    Skills' *deterministic* logic (matching, scoring, fixture validation,
    identity derivation) behaves correctly. They do not exercise the
    Skills' actual multi-step, tool-using review *behavior*.
-2. **A benchmark corpus exists.** `docs/benchmark/` ([`../benchmark/README.md`](../benchmark/README.md))
+2. **A benchmark corpus exists.** `docs/benchmark/` ([`../../runtime_platform/benchmark/README.md`](../../runtime_platform/benchmark/README.md))
    already defines a fixture format, a growing corpus, match criteria, and
    three quality metrics (missed/incorrect findings, severity accuracy,
    duplicate noise) that *would* measure real reviewer behavior against
@@ -301,7 +301,7 @@ against, whichever class it comes from.
 ### 2.3 Follow-up corrections required in #331/#332/#335/#338/#339 (not applied by #391)
 
 #391's own scope is the canonical architecture rewrite (this document and
-`docs/benchmark/runtime-execution-contract.md`) — it deliberately does not
+`runtime_platform/benchmark/runtime-execution-contract.md`) — it deliberately does not
 rewrite #331/#332/#335/#338/#339's own issue text. Their current wording
 now conflicts with the revised architecture in the specific, bounded ways
 below; each is a candidate for its own small, separately-scoped issue
@@ -335,7 +335,7 @@ correction once #391 lands, not something to fix by reinterpretation:
   `.github/workflows/benchmark-nightly.yml`: `schedule:` ... using the
   isolated CI runtime from #330." This is the most directly conflicting
   wording in the tree: #338 needs to be re-pointed at a Claude Cloud
-  Routine (per #391's `docs/benchmark/runtime-execution-contract.md` §2.2)
+  Routine (per #391's `runtime_platform/benchmark/runtime-execution-contract.md` §2.2)
   instead of a new GitHub Actions workflow file, and "the isolated CI
   runtime from #330" needs updating to reference the Class 2 contract
   instead.
@@ -401,7 +401,7 @@ The stable architectural rules that #330, as revised by #391, establishes
 — restated here at the level a consumer of the runtime (#333's PR-diff
 classification call, #334's selected-case execution, #338's nightly
 full-corpus execution) needs, without re-litigating
-[`../benchmark/runtime-execution-contract.md`](../benchmark/runtime-execution-contract.md)'s
+[`../../runtime_platform/benchmark/runtime-execution-contract.md`](../../runtime_platform/benchmark/runtime-execution-contract.md)'s
 full text. **Revised by #391**: this section now states two execution
 classes instead of one, and #337 (Class 1's provisioning) no longer
 appears as an active dependency anywhere in this document.
@@ -452,7 +452,7 @@ who or what triggers execution.
   excluded, because reliable periodic benchmark monitoring must not
   depend on the maintainer's workstation being awake or the desktop
   application remaining open. Full detail:
-  [`../benchmark/runtime-execution-contract.md`](../benchmark/runtime-execution-contract.md)
+  [`../../runtime_platform/benchmark/runtime-execution-contract.md`](../../runtime_platform/benchmark/runtime-execution-contract.md)
   §2.2/§4.3.
 
 ### 4.2 Rules that hold regardless of class or which runtime is selected
@@ -568,7 +568,7 @@ Principles that hold regardless of the exact numbers chosen:
 Stable principles drawn from #332/#338/#339, refined into **two**
 independently-scheduled, independently-baselined lanes by #431 — see
 [`../benchmark/corpus/README.md`](../benchmark/corpus/README.md) and
-[`../benchmark/nightly-history-and-baseline.md`](../benchmark/nightly-history-and-baseline.md)
+[`../../runtime_platform/benchmark/nightly-history-and-baseline.md`](../../runtime_platform/benchmark/nightly-history-and-baseline.md)
 §2 for the operational contract. "Nightly" in the rest of this document
 and in #338/#339 is the historical name for this scheduled path; it is not
 a claim that execution happens every night — the sentinel lane runs every
@@ -678,7 +678,7 @@ cannot casually conflate them:
 - **Benchmark ground truth ≠ live workflow analytics.** #329's tree only
   ever runs against the fixed, versioned corpus under
   `docs/benchmark/corpus/`, in CI, never against a real user's PR.
-  `docs/benchmark/regression-report.md` already disclaims live-workflow
+  `runtime_platform/benchmark/regression-report.md` already disclaims live-workflow
   analytics for exactly this reason.
 - **Analytics ≠ learning (historical rationale, product layer).** Had
   #131 and #130 been implemented, analytics would have reported on past
@@ -823,7 +823,7 @@ implemented:
 
 ## 11. Relationship to existing canonical policies and docs
 
-- [`../benchmark/README.md`](../benchmark/README.md) owns the benchmark
+- [`../../runtime_platform/benchmark/README.md`](../../runtime_platform/benchmark/README.md) owns the benchmark
   contracts this architecture sits above: fixture format, corpus, runner
   contract, match criteria, the three quality metrics, and the
   informational PR-time taxonomy/selection wiring (`taxonomy.md` #333,
@@ -838,7 +838,7 @@ implemented:
 - `shared/policies/review-stopping-criteria.md` owns the
   *decision-affecting* coverage concept that #182's telemetry is
   explicitly distinct from (§7).
-- `docs/benchmark/regression-report.md` owns the run-to-run comparison
+- `runtime_platform/benchmark/regression-report.md` owns the run-to-run comparison
   contract #339 reuses unchanged (§6), and already disclaims
   live-workflow analytics — a disclaimer #131 would have had to keep
   intact had it been implemented; #131 is closed `not planned` instead.
@@ -928,7 +928,7 @@ first proposed consumer rather than opening a new one:
 A mechanical check that a produced finding's cited file/line/snippet
 actually exists at the reviewed SHA — independent of whether it was
 *inspected* (§12.2) or *matches a fixture*
-(`docs/benchmark/match-criteria.md`, unchanged). Per §12.1's middle row
+(`runtime_platform/benchmark/match-criteria.md`, unchanged). Per §12.1's middle row
 this is benchmark evidence: it runs against the corpus/harness, never
 against a live review, and it does not require #182's telemetry to exist.
 

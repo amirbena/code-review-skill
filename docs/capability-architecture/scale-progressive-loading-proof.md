@@ -126,7 +126,7 @@ a hang: the full 7-case run (4-case regression set + the two reused
 fixture) completed in both an initial and a re-run pass in a few
 minutes, well inside the adapter's existing per-case timeout
 (`DEFAULT_TIMEOUT_SECONDS = 300.0`,
-[`benchmark_review_adapter.py`](../../scripts/benchmark/benchmark_review_adapter.py)).
+[`benchmark_review_adapter.py`](../../runtime_platform/benchmark/scripts/benchmark_review_adapter.py)).
 A short probe invocation of the `claude` CLI with this session's own
 `CLAUDECODE=1`/`CLAUDE_CODE_*` environment inherited unchanged (exactly
 as `ProductionReviewerAdapter` does — see `self.env = dict(os.environ)`)
@@ -175,7 +175,7 @@ at the caller (`app/billing/charge.py`, symbol `charge_user`, anchor
 located its finding at the root cause (`app/users/lookup.py:4-5`, the
 changed function itself) with a claim that explicitly names and quotes
 `app/billing/charge.py`'s crash site in its text. `location_match`
-(`tests/reference/benchmark/benchmark_match.py`) has no tolerance for
+(`runtime_platform/benchmark/reference/benchmark_match.py`) has no tolerance for
 "correct claim, different location convention" — it scores this as
 `UNRELATED` even though `defect_match` on the same pair is
 `CORRESPONDS`. This is a property of this *reused*, already-pinned

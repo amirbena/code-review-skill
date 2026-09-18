@@ -4,7 +4,7 @@ Repository-development artifact for GitHub Issue
 [#185](https://github.com/amirbena/code-review-skill/issues/185). Parent
 capability: [#177](https://github.com/amirbena/code-review-skill/issues/177)
 (root-cause finding consolidation). This is a **focused sub-corpus** of
-[`benchmark-case/v2`](../../fixture-format.md) fixtures that pin the
+[`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md) fixtures that pin the
 expected consolidation classifications for the #177 reviewer behavior —
 now defined in
 [`../../../../shared/policies/review-scope.md`](../../../../shared/policies/review-scope.md)
@@ -14,14 +14,14 @@ consolidated finding", "Fail open toward separate findings") and
 ("Affected locations on a consolidated finding") — and keep it from
 regressing.
 
-Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
-[`../`](../README.md) and [`../../`](../../README.md) this is **not**
+[`../`](../README.md) and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py).
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py).
 
 ## Selection principle
 
@@ -62,7 +62,7 @@ header comment.
 `benchmark-case/v2` has no first-class prior-review input, so
 [`consolidation-rereview-reconciles-to-authoritative.yaml`](consolidation-rereview-reconciles-to-authoritative.yaml)
 supplies the earlier review's two findings through `input.context`
-([`../../fixture-format.md`](../../fixture-format.md) §6.3), treated as
+([`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §6.3), treated as
 prior review evidence per
 [`../../../../shared/policies/review-evidence.md`](../../../../shared/policies/review-evidence.md).
 The lifecycle disposition the case pins — `CONSOLIDATED`: the prior
@@ -79,7 +79,7 @@ revision under #177, not this corpus.
 
 [`../../../../tests/unit/review/root_cause/test_consolidation_corpus.py`](../../../../tests/unit/review/root_cause/test_consolidation_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second
 one), and asserts the sub-corpus stays small, that filenames match case
 `id`s, that every case records a rationale and a consistent explicit

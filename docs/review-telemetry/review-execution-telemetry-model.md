@@ -133,7 +133,7 @@ into a different, already-owned concern:
   inventory of which repositories use these Skills, a different (and
   unowned) concern.
 - **Benchmark match/fidelity outcomes (whether a finding was "correct").**
-  Owned entirely by `docs/benchmark/match-criteria.md` and the benchmark
+  Owned entirely by `runtime_platform/benchmark/match-criteria.md` and the benchmark
   tree (§7's "benchmark ground truth" row) — mixing it into telemetry
   would repeat exactly the "telemetry ≠ benchmark ground truth" conflation
   §7 of the architecture doc warns against.

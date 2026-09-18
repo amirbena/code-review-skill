@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Structural contract checks for the Top-K benchmark selector (#334).
 
-Pins docs/benchmark/selection.md so the canonical invariant, the Case
+Pins runtime_platform/benchmark/selection.md so the canonical invariant, the Case
 Relevance Score weights/bands, the Selection Coverage formula and golden
 threshold, the `insufficient-coverage` outcome, the Top-K bound
 constants, and the explainability field list cannot drift silently.
@@ -13,11 +13,11 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "docs" / "benchmark" / "selection.md"
-README = REPO_ROOT / "docs" / "benchmark" / "README.md"
-REFERENCE = REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_selection.py"
+DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "selection.md"
+README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
+REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_selection.py"
 UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_selection.py"
-CLI_SCRIPT = REPO_ROOT / "scripts" / "benchmark" / "select_benchmark_cases.py"
+CLI_SCRIPT = REPO_ROOT / "runtime_platform" / "benchmark" / "scripts" / "select_benchmark_cases.py"
 
 
 class SelectionContractTests(unittest.TestCase):
@@ -109,7 +109,7 @@ class SelectionContractTests(unittest.TestCase):
         self.assertIn("informational-only", tail)
         self.assertIn("never become a required contributor/merge check", tail)
         self.assertIn(
-            "](../../tests/reference/benchmark/benchmark_selection.py)", self.raw
+            "](reference/benchmark_selection.py)", self.raw
         )
 
 
@@ -126,11 +126,11 @@ class DirectoryNavigationTests(unittest.TestCase):
 
     def test_unit_test_consumes_the_single_reference_selector(self) -> None:
         raw = UNIT_TEST.read_text(encoding="utf-8")
-        self.assertIn("from tests.reference.benchmark import benchmark_selection as sel", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_selection as sel", raw)
 
     def test_cli_script_reimplements_no_scoring_logic(self) -> None:
         raw = CLI_SCRIPT.read_text(encoding="utf-8")
-        self.assertIn("from tests.reference.benchmark import benchmark_selection as sel", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_selection as sel", raw)
         self.assertIn("Reimplements no scoring", raw)
 
 

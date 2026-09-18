@@ -29,7 +29,7 @@ duplicate #377's own unit suite (see "Why this isn't a
 Every corpus under [`../`](../README.md) that reviews a code change (each
 a self-contained inline patch plus expected review *findings*) uses the
 `benchmark-case/v2` fixture format
-([`../../fixture-format.md`](../../fixture-format.md)). This domain has no
+([`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)). This domain has no
 patch and no finding: its input is an already-finalized mechanical
 decision plus a deliberately drifted rendered/submitted signal, and its
 expectation is a withhold-and-report outcome (or, for the control cases, a
@@ -39,7 +39,7 @@ the same test-only, data-driven reference-fixture pattern
 [`../publication-mode/README.md`](../publication-mode/README.md) already
 established for the structurally analogous publication-boundary domain:
 
-- [`../../../../tests/reference/benchmark/verdict_consistency_fixtures.py`](../../../../tests/reference/benchmark/verdict_consistency_fixtures.py) —
+- [`../../../../runtime_platform/benchmark/reference/verdict_consistency_fixtures.py`](../../../../runtime_platform/benchmark/reference/verdict_consistency_fixtures.py) —
   one `VerdictConsistencyCase` per required outcome shape, each a
   zero-argument `run()` closure that exercises the *single* real
   comparator,

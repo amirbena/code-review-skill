@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Behavioral coverage for the canonical benchmark candidate taxonomy
-(Issue #333). Contract: docs/benchmark/taxonomy.md.
+(Issue #333). Contract: runtime_platform/benchmark/taxonomy.md.
 
 Three things are proven here, against synthetic fixture metadata — never
 the live corpus (tests/unit/benchmark/test_benchmark_corpus.py and the
@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import unittest
 
-from tests.reference.benchmark import benchmark_taxonomy as tax
+from runtime_platform.benchmark.reference import benchmark_taxonomy as tax
 
 
 def _valid_taxonomy() -> dict:
@@ -176,21 +176,21 @@ class ClassifyAffectedSurfaceTests(unittest.TestCase):
 
     def test_runtime_adapter_exact_file(self) -> None:
         self.assertEqual(
-            tax.classify_affected_surface("scripts/benchmark/run_benchmark.py"),
+            tax.classify_affected_surface("runtime_platform/benchmark/scripts/run_benchmark.py"),
             "runtime-adapter",
         )
         self.assertEqual(
-            tax.classify_affected_surface("scripts/benchmark/benchmark_review_adapter.py"),
+            tax.classify_affected_surface("runtime_platform/benchmark/scripts/benchmark_review_adapter.py"),
             "runtime-adapter",
         )
 
     def test_benchmark_tooling_path_that_is_not_the_runtime_adapter(self) -> None:
         self.assertEqual(
-            tax.classify_affected_surface("scripts/benchmark/build_benchmark_index.py"),
+            tax.classify_affected_surface("runtime_platform/benchmark/scripts/build_benchmark_index.py"),
             "benchmark-corpus-or-tooling",
         )
         self.assertEqual(
-            tax.classify_affected_surface("docs/benchmark/taxonomy.md"),
+            tax.classify_affected_surface("runtime_platform/benchmark/taxonomy.md"),
             "benchmark-corpus-or-tooling",
         )
 
@@ -221,7 +221,7 @@ class RiskModeReusesMetadataTagsTests(unittest.TestCase):
     """risk_mode 'reuses metadata.tags' existing enum unchanged' (#333)."""
 
     def test_risk_mode_values_equal_metadata_tags_plus_unclassified(self) -> None:
-        from tests.reference.benchmark import benchmark_fixture as bf
+        from runtime_platform.benchmark.reference import benchmark_fixture as bf
 
         self.assertEqual(
             tax.RISK_MODE_VALUES, bf.METADATA_TAGS | {tax.UNCLASSIFIED}

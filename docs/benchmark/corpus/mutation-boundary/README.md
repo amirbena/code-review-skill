@@ -15,7 +15,7 @@ inline patch plus expected findings), this boundary's inputs and
 expectations are not a diff and a set of review findings — they are a
 requested capability, an authorization scope/state, a structural
 allow/deny result, and an expected repository/Git state after the action.
-[`fixture-format.md`](../../fixture-format.md)'s `expected` block has no
+[`fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)'s `expected` block has no
 field for any of that. This corpus follows the same test-only,
 data-driven reference-fixture pattern
 [`../delegation-spawn/README.md`](../delegation-spawn/README.md)
@@ -23,7 +23,7 @@ data-driven reference-fixture pattern
 and [`../reviewer-brief/README.md`](../reviewer-brief/README.md) already
 established for domains the schema does not fit:
 
-- [`../../../../tests/reference/benchmark/mutation_fixtures.py`](../../../../tests/reference/benchmark/mutation_fixtures.py) —
+- [`../../../../runtime_platform/benchmark/reference/mutation_fixtures.py`](../../../../runtime_platform/benchmark/reference/mutation_fixtures.py) —
   one `MutationCase` per required outcome shape, each a zero-argument
   `run()` closure that exercises the *single* reference model,
   [`../../../../tests/reference/review/mutation_authority.py`](../../../../tests/reference/review/mutation_authority.py),
@@ -58,7 +58,7 @@ same single implementation; neither ever forks it.
 Like the delegation-spawn corpus, every case here yields a **capability-
 boundary pass/fail outcome**, never a P0/P1/P2 finding match. This module
 lives entirely outside `docs/benchmark/corpus/*.yaml`
-(`benchmark-case/v2` fixtures) and `tests/reference/benchmark/
+(`benchmark-case/v2` fixtures) and `runtime_platform/benchmark/reference/
 benchmark_metrics.py`/`benchmark_match.py` (finding precision/recall/
 severity scoring): it is executed by its own dedicated test module,
 selectable independently, and never contributes a row to the ordinary

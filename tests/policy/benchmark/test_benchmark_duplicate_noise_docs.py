@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Structural contract checks for the benchmark duplicate-noise metric (#57).
 
-Pins docs/benchmark/duplicate-noise.md so the canonical invariant, the
+Pins runtime_platform/benchmark/duplicate-noise.md so the canonical invariant, the
 "same-root-cause edge is the #54 MATCH cell, unchanged" rule, the
 connected-component clustering and its transitivity, the redundant-finding
 accounting, the aggregate shape with a single exact-rational rate, the
@@ -16,10 +16,10 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "docs" / "benchmark" / "duplicate-noise.md"
-README = REPO_ROOT / "docs" / "benchmark" / "README.md"
+DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "duplicate-noise.md"
+README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
-REFERENCE = REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_dupes.py"
+REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_dupes.py"
 UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_dupes.py"
 
 
@@ -120,7 +120,7 @@ class DuplicateNoiseContractTests(unittest.TestCase):
         tail = " ".join(self.raw.split("## Status and canonical home", 1)[1].split())
         self.assertIn("becomes the design record", tail)
         self.assertIn("MUST NOT keep evolving the accounting independently", tail)
-        self.assertIn("](../../tests/reference/benchmark/benchmark_dupes.py)", self.raw)
+        self.assertIn("](reference/benchmark_dupes.py)", self.raw)
         self.assertIn("](../../tests/unit/benchmark/test_benchmark_dupes.py)", self.raw)
 
 
@@ -142,7 +142,7 @@ class DirectoryNavigationTests(unittest.TestCase):
 
     def test_unit_test_consumes_the_single_reference_matcher(self) -> None:
         raw = " ".join(UNIT_TEST.read_text(encoding="utf-8").split())
-        self.assertIn("from tests.reference.benchmark import benchmark_dupes as bdup", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_dupes as bdup", raw)
         self.assertIn("never defines a second match relation or pairing", raw)
 
 
