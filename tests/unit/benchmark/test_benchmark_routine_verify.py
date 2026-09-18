@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import unittest
 
-from scripts.benchmark.benchmark_routine_verify import verify_benchmark_output
+from runtime_platform.benchmark.scripts.benchmark_routine_verify import verify_benchmark_output
 
 
 def _run_json(cases: list[dict], ok: bool = True) -> str:

@@ -5,7 +5,7 @@ Repository-development artifact for GitHub Issue
 deterministic fixture corpus for the API / contract compatibility review
 capability tracked by parent Issue
 [#175](https://github.com/amirbena/code-review-skill/issues/175). This is
-a **focused sub-corpus** of [`benchmark-case/v2`](../../fixture-format.md)
+a **focused sub-corpus** of [`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md)
 fixtures pinning the expected `compatible` / `breaking` /
 `context-dependent` classification for the common change shapes #175's
 scope lists. It landed before the reviewer capability itself did; the
@@ -15,14 +15,14 @@ and [`../../../../shared/policies/review-scope.md`](../../../../shared/policies/
 "API / contract compatibility review," which this corpus's expectations
 must stay consistent with.
 
-Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of [`../`](../README.md)
-and [`../../`](../../README.md) this is **not** packaged into either Skill
+and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not** packaged into either Skill
 archive and no packaged Skill resource depends on it — it is consumed only
 by this repository's own test suite, through the single reference
 validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle
@@ -41,7 +41,7 @@ shape from the others so a regression in any one is unambiguous:
   closed-set validation. The fixture format has no separate
   "context-dependent" `decision` token (only `clean` /
   `changes-required`, mechanically derived — see
-  [`../../fixture-format.md`](../../fixture-format.md) §7), so this case
+  [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §7), so this case
   pins the fail-closed reading required by #175's Goal ("Unresolvable
   consumer/intent context produces a deterministic no-finding outcome"):
   `decision: clean` with an **optional** finding that surfaces the
@@ -89,7 +89,7 @@ header comment.
 
 [`../../../../tests/unit/benchmark/test_api_compatibility_corpus.py`](../../../../tests/unit/benchmark/test_api_compatibility_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and every other corpus. It never defines a
 second one, and asserts: the sub-corpus stays small and documented; every
 required change shape is present; every case pins an explicit `decision`

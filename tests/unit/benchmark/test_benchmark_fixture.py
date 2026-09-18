@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Behavioral coverage for the benchmark fixture format (Issue #50).
 
-Contract: docs/benchmark/fixture-format.md. Two things are proven here:
+Contract: runtime_platform/benchmark/fixture-format.md. Two things are proven here:
 
 1. the worked example (docs/benchmark/examples/example-case.yaml) decodes,
    parses, and validates, and its structure carries every §9 variance
@@ -10,7 +10,7 @@ Contract: docs/benchmark/fixture-format.md. Two things are proven here:
    required field or an out-of-contract structure raises
    ``FixtureFormatError`` rather than being silently accepted or coerced.
 
-The reference validator (tests/reference/benchmark/benchmark_fixture.py) is consumed
+The reference validator (runtime_platform/benchmark/reference/benchmark_fixture.py) is consumed
 as the single format checker; this module never defines a second one. It is
 test-only and not packaged. Matching a reviewer finding to an expected
 spec, scoring, and the runner are out of scope (Issues #59/#41/#52).
@@ -23,7 +23,7 @@ import unittest
 
 import yaml
 
-from tests.reference.benchmark import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
 EXAMPLE_PATH = REPO_ROOT / "docs" / "benchmark" / "examples" / "example-case.yaml"

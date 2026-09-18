@@ -12,7 +12,7 @@ event before or at publication — and if so, what it consumes, where it
 lives, and what it does on a detected mismatch.
 
 This document is a research record, like
-[`../benchmark/claim-correspondence-adequacy.md`](../benchmark/claim-correspondence-adequacy.md)
+[`../../runtime_platform/benchmark/claim-correspondence-adequacy.md`](../../runtime_platform/benchmark/claim-correspondence-adequacy.md)
 (#343). It recommends, **without implementing**, the smallest deterministic
 check that would close the gap §12.4 identifies. It does not redesign
 [`shared/policies/severity.md`](../../shared/policies/severity.md)'s

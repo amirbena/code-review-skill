@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Integration coverage for the GitHub regression-issue lifecycle (Issue #339).
 
-Contract: docs/benchmark/drift-detection-and-regression-lifecycle.md §4.
+Contract: runtime_platform/benchmark/drift-detection-and-regression-lifecycle.md §4.
 Uses a fixed baseline+candidate metrics pair (never a live corpus run) and
 an in-memory fake `GitHubIssueClient`, so no test here makes a network call.
 
@@ -20,8 +20,8 @@ from __future__ import annotations
 
 import unittest
 
-from scripts.benchmark import benchmark_drift as bd
-from tests.reference.benchmark import benchmark_metrics as bmet
+from runtime_platform.benchmark.scripts import benchmark_drift as bd
+from runtime_platform.benchmark.reference import benchmark_metrics as bmet
 
 _BASELINE = bd.RunIdentity(date="2026-09-15", repo_sha="aaa111")
 _CANDIDATE = bd.RunIdentity(date="2026-09-16", repo_sha="bbb222")

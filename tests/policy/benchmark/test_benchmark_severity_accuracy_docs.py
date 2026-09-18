@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Structural contract checks for the benchmark severity-accuracy metric (#56).
 
-Pins docs/benchmark/severity-accuracy.md so the canonical invariant, the
+Pins runtime_platform/benchmark/severity-accuracy.md so the canonical invariant, the
 "matched set is the #55 pairing taken verbatim" rule, the exact /
 over-severity / under-severity classification and its partition, the
 `severity` list and `any_of` member resolution, the aggregate shape with a
@@ -16,10 +16,10 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "docs" / "benchmark" / "severity-accuracy.md"
-README = REPO_ROOT / "docs" / "benchmark" / "README.md"
+DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "severity-accuracy.md"
+README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
-REFERENCE = REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_severity.py"
+REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_severity.py"
 UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_severity.py"
 
 
@@ -123,7 +123,7 @@ class SeverityAccuracyContractTests(unittest.TestCase):
         tail = " ".join(self.raw.split("## Status and canonical home", 1)[1].split())
         self.assertIn("becomes the design record", tail)
         self.assertIn("MUST NOT keep evolving the accounting independently", tail)
-        self.assertIn("](../../tests/reference/benchmark/benchmark_severity.py)", self.raw)
+        self.assertIn("](reference/benchmark_severity.py)", self.raw)
         self.assertIn("](../../tests/unit/benchmark/test_benchmark_severity.py)", self.raw)
 
 
@@ -145,7 +145,7 @@ class DirectoryNavigationTests(unittest.TestCase):
 
     def test_unit_test_consumes_the_single_pairing_reference(self) -> None:
         raw = " ".join(UNIT_TEST.read_text(encoding="utf-8").split())
-        self.assertIn("from tests.reference.benchmark import benchmark_severity as bsev", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_severity as bsev", raw)
         self.assertIn("never defines a second pairing or match relation", raw)
 
 

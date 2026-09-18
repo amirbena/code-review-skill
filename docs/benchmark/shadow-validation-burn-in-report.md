@@ -1,14 +1,14 @@
 # Worked Example: A Reconstructed Shadow-Validation Burn-In Report
 
-Companion to [`shadow-validation.md`](shadow-validation.md) (#335). This
+Companion to [`shadow-validation.md`](../../runtime_platform/benchmark/shadow-validation.md) (#335). This
 is a **worked example demonstrating the methodology**, not a live
 production evidence bar: no real burn-in window exists yet, because the
 Class 2 nightly Routine target
 ([`cloud-routine-integration.md`](cloud-routine-integration.md),
-[`nightly-history-and-baseline.md`](nightly-history-and-baseline.md)) is
+[`nightly-history-and-baseline.md`](../../runtime_platform/benchmark/nightly-history-and-baseline.md)) is
 maintainer-triggered and has not yet accumulated a real schedule of paired
 PR-selection / nightly-comparison evidence. Per
-[`shadow-validation.md`](shadow-validation.md)'s own issue text, the
+[`shadow-validation.md`](../../runtime_platform/benchmark/shadow-validation.md)'s own issue text, the
 Validation section explicitly permits "real or reconstructed PRs" for
 this deliverable — this report uses **reconstructed** samples.
 
@@ -17,7 +17,7 @@ this deliverable — this report uses **reconstructed** samples.
 The eight samples below are hand-authored scenarios, not real PRs or real
 nightly runs. What is *not* hand-authored is the arithmetic: every figure
 in this document was produced by actually running
-[`scripts/benchmark/shadow_validate.py`](../../scripts/benchmark/shadow_validate.py)
+[`runtime_platform/benchmark/scripts/shadow_validate.py`](../../runtime_platform/benchmark/scripts/shadow_validate.py)
 against
 [`examples/shadow-validation-burn-in-samples.json`](examples/shadow-validation-burn-in-samples.json),
 and the committed output is
@@ -25,7 +25,7 @@ and the committed output is
 regenerate it with:
 
 ```bash
-python3 scripts/benchmark/shadow_validate.py \
+python3 runtime_platform/benchmark/scripts/shadow_validate.py \
     --samples docs/benchmark/examples/shadow-validation-burn-in-samples.json \
     --window-description "Reconstructed worked example, 8 synthetic PR samples over the existing corpus (not live production evidence)" \
     --output docs/benchmark/examples/shadow-validation-burn-in-report.json
@@ -46,7 +46,7 @@ real run.
 Eight reconstructed PRs, each pairing a synthetic Top-K selection with a
 synthetic set of case ids a nightly comparison "found a regression in,"
 designed to exercise every path §2/§3 of
-[`shadow-validation.md`](shadow-validation.md) describe: a clean catch, a
+[`shadow-validation.md`](../../runtime_platform/benchmark/shadow-validation.md) describe: a clean catch, a
 selector-side miss (the regressed case was never in the candidate pool
 selected), a case selected repeatedly that never once corresponds to a
 caught regression, and a vacuous no-regression night.
@@ -78,7 +78,7 @@ From [`examples/shadow-validation-burn-in-report.json`](examples/shadow-validati
 
 ## Applying §4's methodology to this example
 
-This is exactly the size of window [`shadow-validation.md`](shadow-validation.md)
+This is exactly the size of window [`shadow-validation.md`](../../runtime_platform/benchmark/shadow-validation.md)
 §4.1 warns against drawing a bar from: eight samples is enough to
 demonstrate the report shape and prove the arithmetic, not enough to
 distinguish a genuine 25% miss rate from sampling noise on a four-
@@ -90,5 +90,5 @@ per-sample breakdown, not just the aggregate; check whether a case like
 `analogue-placement-test-file-split-clean` above stays redundant across a
 much larger window before treating that as a real over-selection finding
 rather than this example's small-sample artifact; and record the
-resulting bar as an update to [`shadow-validation.md`](shadow-validation.md)
+resulting bar as an update to [`shadow-validation.md`](../../runtime_platform/benchmark/shadow-validation.md)
 §4, citing the report it came from.

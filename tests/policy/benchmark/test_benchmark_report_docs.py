@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Structural contract checks for the benchmark regression report (#53).
 
-Pins docs/benchmark/regression-report.md so the canonical invariant, the
+Pins runtime_platform/benchmark/regression-report.md so the canonical invariant, the
 baseline result artifact, the identity guard, the per-case / aggregate
 delta model, the regression-vs-improvement separation, deterministic
 output, the deliberate baseline-refresh rule, the report-health-vs-
@@ -14,10 +14,10 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "docs" / "benchmark" / "regression-report.md"
-README = REPO_ROOT / "docs" / "benchmark" / "README.md"
+DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "regression-report.md"
+README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
-REFERENCE = REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_report.py"
+REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_report.py"
 UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_report.py"
 
 
@@ -129,7 +129,7 @@ class RegressionReportContractTests(unittest.TestCase):
         tail = " ".join(self.raw.split("## Status and canonical home", 1)[1].split())
         self.assertIn("becomes the design record", tail)
         self.assertIn("MUST NOT keep evolving the reporting behavior independently", tail)
-        self.assertIn("](../../tests/reference/benchmark/benchmark_report.py)", self.raw)
+        self.assertIn("](reference/benchmark_report.py)", self.raw)
         self.assertIn("](../../tests/unit/benchmark/test_benchmark_report.py)", self.raw)
 
 
@@ -153,7 +153,7 @@ class DirectoryNavigationTests(unittest.TestCase):
 
     def test_unit_test_consumes_the_single_reference_report(self) -> None:
         raw = UNIT_TEST.read_text(encoding="utf-8")
-        self.assertIn("from tests.reference.benchmark import benchmark_report as brp", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_report as brp", raw)
         self.assertIn("never defines a second one", raw)
 
 

@@ -13,9 +13,9 @@ Defines no new evaluator: word counts are `wc -w` over the files
 `package-manifest.json` already ships, matching
 `capability-architecture-model.md`'s own stated methodology ("word
 counts are `wc -w` over the named files"); quality metrics are computed
-by calling `tests/reference/benchmark/benchmark_metrics.py`,
+by calling `runtime_platform/benchmark/reference/benchmark_metrics.py`,
 `benchmark_severity.py`, and `benchmark_dupes.py` verbatim over a real
-`scripts/benchmark/run_benchmark.py`-equivalent run.
+`runtime_platform/benchmark/scripts/run_benchmark.py`-equivalent run.
 
 Usage::
 
@@ -109,18 +109,18 @@ def measure_quality_metrics(
     """Current values of the existing quality-metric contracts (#55, #56,
     #57), run against today's corpus (the known non-recursive-glob gap —
     ~4 of ~180 cases — is #408's stated non-goal to fix)."""
-    from scripts.benchmark.benchmark_review_adapter import (
+    from runtime_platform.benchmark.scripts.benchmark_review_adapter import (
         ProductionReviewerAdapter,
         RuntimeUnavailableError,
         check_runtime_available,
         resolve_cli_executable,
         resolve_cli_extra_args,
     )
-    from tests.reference.benchmark import benchmark_dupes as bd
-    from tests.reference.benchmark import benchmark_fixture as bf
-    from tests.reference.benchmark import benchmark_metrics as bm
-    from tests.reference.benchmark import benchmark_runner as br
-    from tests.reference.benchmark import benchmark_severity as bs
+    from runtime_platform.benchmark.reference import benchmark_dupes as bd
+    from runtime_platform.benchmark.reference import benchmark_fixture as bf
+    from runtime_platform.benchmark.reference import benchmark_metrics as bm
+    from runtime_platform.benchmark.reference import benchmark_runner as br
+    from runtime_platform.benchmark.reference import benchmark_severity as bs
 
     import yaml
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Behavioural coverage for the benchmark duplicate-noise metric (Issue #57).
 
-Contract: docs/benchmark/duplicate-noise.md. Driven through the reference
-clusterer (tests/reference/benchmark/benchmark_dupes.py), whose same-root-cause edge
-is the single reference matcher (tests/reference/benchmark/benchmark_match.py, #54)
+Contract: runtime_platform/benchmark/duplicate-noise.md. Driven through the reference
+clusterer (runtime_platform/benchmark/reference/benchmark_dupes.py), whose same-root-cause edge
+is the single reference matcher (runtime_platform/benchmark/reference/benchmark_match.py, #54)
 applied to a pair of produced findings — this module never defines a
 second match relation or pairing.
 
@@ -29,9 +29,9 @@ from __future__ import annotations
 import unittest
 from fractions import Fraction
 
-from tests.reference.benchmark import benchmark_dupes as bdup
-from tests.reference.benchmark import benchmark_fixture as bf
-from tests.reference.benchmark import benchmark_runner as br
+from runtime_platform.benchmark.reference import benchmark_dupes as bdup
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.support.paths import REPO_ROOT
 
 
@@ -333,13 +333,13 @@ class AggregateAndSectionTests(unittest.TestCase):
 
 class ReferenceModuleTests(unittest.TestCase):
     def test_module_is_declared_test_only(self) -> None:
-        head = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_dupes.py").read_text(encoding="utf-8")[:700]
+        head = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_dupes.py").read_text(encoding="utf-8")[:700]
         self.assertIn("Test-only", head)
         self.assertIn("not runtime logic, not packaged", head.lower())
 
     def test_clusterer_consumes_the_single_matcher(self) -> None:
-        raw = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_dupes.py").read_text(encoding="utf-8")
-        self.assertIn("from tests.reference.benchmark import benchmark_match as bm", raw)
+        raw = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_dupes.py").read_text(encoding="utf-8")
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_match as bm", raw)
         self.assertIn("defines no second match relation", raw)
 
 

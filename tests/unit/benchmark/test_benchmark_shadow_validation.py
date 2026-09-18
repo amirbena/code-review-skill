@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Behavioral coverage for the shadow-validation methodology (Issue #335).
-Contract: docs/benchmark/shadow-validation.md.
+Contract: runtime_platform/benchmark/shadow-validation.md.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 import unittest
 from fractions import Fraction
 
-from tests.reference.benchmark import benchmark_shadow_validation as sv
+from runtime_platform.benchmark.reference import benchmark_shadow_validation as sv
 
 
 class BurnInSampleTests(unittest.TestCase):

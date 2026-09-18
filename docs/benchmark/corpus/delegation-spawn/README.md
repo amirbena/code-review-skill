@@ -16,14 +16,14 @@ Unlike the corpora under [`../`](../README.md) (each a self-contained
 inline patch plus expected findings), this boundary's inputs and
 expectations are not a diff and a set of review findings — they are a
 capability grant, a spawn-depth/agent-count budget, and a structural
-allow/deny result. [`fixture-format.md`](../../fixture-format.md)'s
+allow/deny result. [`fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)'s
 `expected` block has no field for any of that. Rather than stretch that
 closed schema, this corpus follows the same test-only, data-driven
 reference-fixture pattern
 [`../reviewer-brief/README.md`](../reviewer-brief/README.md) already
 established for a domain the schema does not fit:
 
-- [`../../../../tests/reference/benchmark/delegation_fixtures.py`](../../../../tests/reference/benchmark/delegation_fixtures.py) —
+- [`../../../../runtime_platform/benchmark/reference/delegation_fixtures.py`](../../../../runtime_platform/benchmark/reference/delegation_fixtures.py) —
   one `DelegationCase` per required outcome shape, each a zero-argument
   `run()` closure that exercises the *single* reference model,
   [`../../../../tests/reference/review/agent_delegation.py`](../../../../tests/reference/review/agent_delegation.py)

@@ -17,7 +17,7 @@ The fixture corpus exercising the six change shapes below is
 validated by
 [`../../tests/unit/benchmark/test_api_compatibility_corpus.py`](../../tests/unit/benchmark/test_api_compatibility_corpus.py)
 through the single reference validator
-[`../../tests/reference/benchmark/benchmark_fixture.py`](../../tests/reference/benchmark/benchmark_fixture.py).
+[`../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../runtime_platform/benchmark/reference/benchmark_fixture.py).
 The prose-contract coverage for the packaged section itself is
 [`../../tests/policy/review/specialist_depth/test_api_contract_compatibility.py`](../../tests/policy/review/specialist_depth/test_api_contract_compatibility.py).
 
@@ -161,7 +161,7 @@ runs exactly once, over the finalized findings.
   would have required a fixture-format change ahead of, and independent
   of, this capability, duplicating a decision the mechanical severity
   model already expresses through the optional-finding / no-finding
-  distinction — see [`fixture-format.md`](../benchmark/fixture-format.md)
+  distinction — see [`fixture-format.md`](../../runtime_platform/benchmark/fixture-format.md)
   §7 and the #184 corpus README's own note on this exact question.
 - **A standalone schema-diff script or tool** (invoked as a build/CI step
   to mechanically compute compatible/breaking) instead of reviewer

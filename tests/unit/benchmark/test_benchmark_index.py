@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Behavioral coverage for the deterministic inverted-index build (Issue
-#333). Contract: docs/benchmark/taxonomy.md §5.
+#333). Contract: runtime_platform/benchmark/taxonomy.md §5.
 
 Exercised against a small synthetic corpus (a temp directory of hand-built
 fixtures), never the live corpus — the live corpus's own sync is pinned by
@@ -21,7 +21,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from scripts.benchmark import build_benchmark_index as idx
+from runtime_platform.benchmark.scripts import build_benchmark_index as idx
 
 
 def _write_case(

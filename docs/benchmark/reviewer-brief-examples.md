@@ -29,7 +29,7 @@ where the scenario is an active review, the **GitHub-bound payload**
 so the isolation between them is visible, not just asserted in a test.
 The underlying field values for every example are the same ones encoded
 in
-[`../../tests/reference/benchmark/reviewer_brief_fixtures.py`](../../tests/reference/benchmark/reviewer_brief_fixtures.py) —
+[`../../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py`](../../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py) —
 this document is the human-readable rendering of that reference model,
 not an independent source of truth.
 

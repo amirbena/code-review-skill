@@ -58,7 +58,7 @@ class RequiredCaseIdentityTests(unittest.TestCase):
     def _case_ids(self, corpus_dir) -> set[str]:
         import yaml
 
-        from tests.reference.benchmark import benchmark_fixture as bf
+        from runtime_platform.benchmark.reference import benchmark_fixture as bf
 
         return {
             bf.parse_case(yaml.safe_load(p.read_text(encoding="utf-8"))).id

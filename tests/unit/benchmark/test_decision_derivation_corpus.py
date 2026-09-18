@@ -13,7 +13,7 @@ forward-direction proof; this sub-corpus never duplicates it.
 Like ``test_database_migration_deepening_corpus.py`` and
 ``test_distributed_systems_deepening_corpus.py``, every fixture decodes
 and validates through the *same* single reference validator
-(``tests/reference/benchmark/benchmark_fixture.py``) used for every other
+(``runtime_platform/benchmark/reference/benchmark_fixture.py``) used for every other
 corpus — this module never defines a second one.
 
 This module additionally drives every fixture through the real packaged
@@ -29,8 +29,8 @@ import unittest
 
 import yaml
 
-from tests.reference.benchmark import benchmark_fixture as bf
-from tests.reference.benchmark import benchmark_runner as br
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.reference.review import decision_semantics as ds
 from tests.support.paths import REPO_ROOT
 
@@ -215,7 +215,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../tests/reference/benchmark/benchmark_fixture.py)", self.raw
+            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
 
 
@@ -227,7 +227,7 @@ def _probe_runtime() -> str | None:
     so this sub-corpus exercises the identical binding/probe path rather
     than a second, hand-rolled one."""
     try:
-        from scripts.benchmark.benchmark_review_adapter import check_runtime_available
+        from runtime_platform.benchmark.scripts.benchmark_review_adapter import check_runtime_available
 
         check_runtime_available()
     except Exception as exc:  # noqa: BLE001 - re-raised as a skip reason, never swallowed
@@ -250,7 +250,7 @@ class SubCorpusEndToEndTests(unittest.TestCase):
     consistent (that is ``SubCorpusCaseTests`` above)."""
 
     def test_real_run_derives_clean_for_every_case(self) -> None:
-        from scripts.benchmark.benchmark_review_adapter import ProductionReviewerAdapter
+        from runtime_platform.benchmark.scripts.benchmark_review_adapter import ProductionReviewerAdapter
 
         cases = [bf.parse_case(_load(p)) for p in _corpus_files()]
         adapter = ProductionReviewerAdapter(timeout=600.0)

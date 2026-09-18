@@ -17,7 +17,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from scripts.benchmark import run_benchmark_routine as routine
+from runtime_platform.benchmark.scripts import run_benchmark_routine as routine
 
 
 def _completed(stdout: str, returncode: int = 0) -> mock.Mock:

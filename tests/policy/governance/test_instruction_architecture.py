@@ -28,6 +28,7 @@ USER_FACING_GUIDANCE_DIRS = (
     REPO_ROOT / "tests",
     REPO_ROOT / "docs" / "features",
     REPO_ROOT / "docs" / "benchmark",
+    REPO_ROOT / "runtime_platform" / "benchmark",
 )
 PACKAGE_SCRIPTS = (
     REPO_ROOT / "scripts" / "packaging" / "package-skills.sh",

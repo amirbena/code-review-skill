@@ -487,34 +487,34 @@ and no packaged Skill resource depends on them.
 - **Code-review quality benchmark** — a repeatable check of whether a
   Skill change improved or regressed review quality against a fixed
   corpus. The single-case machine-readable format is
-  [`benchmark/fixture-format.md`](benchmark/fixture-format.md); the initial
+  [`runtime_platform/benchmark/fixture-format.md`](../runtime_platform/benchmark/fixture-format.md); the initial
   crafted corpus is [`benchmark/corpus/`](benchmark/corpus/README.md); a
   run's per-case isolation, repository-safety invariants, and result shape
-  are [`benchmark/runner-contract.md`](benchmark/runner-contract.md);
+  are [`runtime_platform/benchmark/runner-contract.md`](../runtime_platform/benchmark/runner-contract.md);
   produced↔expected pairing is
-  [`benchmark/match-criteria.md`](benchmark/match-criteria.md), the
+  [`runtime_platform/benchmark/match-criteria.md`](../runtime_platform/benchmark/match-criteria.md), the
   relation the quality metrics build on —
-  [`benchmark/missed-and-incorrect-findings.md`](benchmark/missed-and-incorrect-findings.md)
+  [`runtime_platform/benchmark/missed-and-incorrect-findings.md`](../runtime_platform/benchmark/missed-and-incorrect-findings.md)
   (false-negative / false-positive counts),
-  [`benchmark/severity-accuracy.md`](benchmark/severity-accuracy.md)
+  [`runtime_platform/benchmark/severity-accuracy.md`](../runtime_platform/benchmark/severity-accuracy.md)
   (over-/under-severity), and
-  [`benchmark/duplicate-noise.md`](benchmark/duplicate-noise.md)
+  [`runtime_platform/benchmark/duplicate-noise.md`](../runtime_platform/benchmark/duplicate-noise.md)
   (same-root-cause redundancy) — each rendered alongside the
   regression comparison in
-  [`benchmark/regression-report.md`](benchmark/regression-report.md)
+  [`runtime_platform/benchmark/regression-report.md`](../runtime_platform/benchmark/regression-report.md)
   without gating it. Every reference metric under `tests/reference/` is
   test-only; nothing benchmark is packaged. PR-time benchmark relevance is
   determined deterministically by the canonical taxonomy/inverted index
-  ([`benchmark/taxonomy.md`](benchmark/taxonomy.md), #333) and the Top-K
-  selector ([`benchmark/selection.md`](benchmark/selection.md), #334);
+  ([`runtime_platform/benchmark/taxonomy.md`](../runtime_platform/benchmark/taxonomy.md), #333) and the Top-K
+  selector ([`runtime_platform/benchmark/selection.md`](../runtime_platform/benchmark/selection.md), #334);
   the earlier dedicated PR-level CI check
   (`.github/workflows/benchmark-check.yml`, #255) that separately wired
-  `scripts/benchmark/run_benchmark.py` (#250) into a GitHub Actions check
+  `runtime_platform/benchmark/scripts/run_benchmark.py` (#250) into a GitHub Actions check
   has been retired (#420) — there is no independent GitHub Actions
   benchmark execution path outside the maintainer-controlled Class 2
   Cloud Routine (`benchmark/cloud-routine-integration.md`, #415).
   Repository-development docs live in the
-  [`benchmark/`](benchmark/README.md) directory.
+  [`runtime_platform/benchmark/`](../runtime_platform/benchmark/README.md) directory.
 - **Repository-intelligence model** — the candidate-architecture
   comparison and recommended minimal model for what a fired
   [`repository-expansion.md`](../shared/policies/repository-expansion.md)

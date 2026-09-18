@@ -17,7 +17,7 @@ like "Architectural placement and execution-lifecycle fidelity" (#153)
 before it, which also ships with no reference-model scenarios file. What
 is proven here is structural: every fixture decodes and validates through
 the *same* single reference validator
-(``tests/reference/benchmark/benchmark_fixture.py``) used for the worked
+(``runtime_platform/benchmark/reference/benchmark_fixture.py``) used for the worked
 example and every other corpus — this module never defines a second one.
 """
 
@@ -27,7 +27,7 @@ import unittest
 
 import yaml
 
-from tests.reference.benchmark import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "semantic-implication"
@@ -183,7 +183,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../tests/reference/benchmark/benchmark_fixture.py)", self.raw
+            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never defines a second", self.raw)
 

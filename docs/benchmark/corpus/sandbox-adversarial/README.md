@@ -11,7 +11,7 @@ depends on [#302](https://github.com/amirbena/code-review-skill/issues/302)
 
 Every other sub-corpus under [`../`](../README.md) uses the
 `benchmark-case/v2` fixture format
-([`../../fixture-format.md`](../../fixture-format.md)): a code patch plus
+([`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)): a code patch plus
 an expected set of review *findings*, scored for finding
 precision/recall. That schema has no field for a capability boundary, a
 resource ceiling, or a contained/denied/unavailable outcome, and — more

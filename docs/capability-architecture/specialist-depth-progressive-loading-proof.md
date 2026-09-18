@@ -127,7 +127,7 @@ review):
 
 - **Defect-kind wording variance.** `benchmark_match.defect_match`
   requires an exact string match when both sides carry a `defect_kind`
-  (`tests/reference/benchmark/benchmark_match.py`). The live reviewer
+  (`runtime_platform/benchmark/reference/benchmark_match.py`). The live reviewer
   described the same, correctly-identified defect with a different
   freeform slug than the one pinned in each fixture (Case A: produced
   `logic-operator-swap` vs. pinned

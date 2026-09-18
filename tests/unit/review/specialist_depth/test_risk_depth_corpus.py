@@ -10,7 +10,7 @@ retains one finding per area.
 What is proven here:
 
 1. every fixture decodes and validates through the *same* single reference
-   validator (``tests/reference/benchmark/benchmark_fixture.py``) used for the
+   validator (``runtime_platform/benchmark/reference/benchmark_fixture.py``) used for the
    worked example and the #51 corpus — this module never defines a second
    one;
 2. the sub-corpus stays small and documented, and every required case is
@@ -40,7 +40,7 @@ import unittest
 
 import yaml
 
-from tests.reference.benchmark import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.reference.review import change_risk_signals as crs
 from tests.reference.review.change_risk_signals import Depth
 from tests.support.paths import REPO_ROOT
@@ -228,7 +228,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../tests/reference/benchmark/benchmark_fixture.py)", self.raw
+            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never defines a second", self.raw)
 

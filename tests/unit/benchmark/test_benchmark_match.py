@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Behavioural coverage for the benchmark finding match criteria (Issue #54).
 
-Contract: docs/benchmark/match-criteria.md. Driven through the single
-test-only reference matcher (tests/reference/benchmark/benchmark_match.py); this
+Contract: runtime_platform/benchmark/match-criteria.md. Driven through the single
+test-only reference matcher (runtime_platform/benchmark/reference/benchmark_match.py); this
 module never defines a second one. Expected findings are built with the
 bf.ExpectedFinding shape (#50); produced findings with br.ProducedFinding
 (#52).
@@ -24,9 +24,9 @@ from __future__ import annotations
 
 import unittest
 
-from tests.reference.benchmark import benchmark_fixture as bf
-from tests.reference.benchmark import benchmark_match as bm
-from tests.reference.benchmark import benchmark_runner as br
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_match as bm
+from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.support.paths import REPO_ROOT
 
 
@@ -348,14 +348,14 @@ class EntryResolutionTests(unittest.TestCase):
 
 class ReferenceModuleTests(unittest.TestCase):
     def test_module_is_declared_test_only(self) -> None:
-        head = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_match.py").read_text(encoding="utf-8")[:600]
+        head = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_match.py").read_text(encoding="utf-8")[:600]
         self.assertIn("Test-only", head)
         self.assertIn("not runtime logic, not packaged", head.lower())
 
     def test_matcher_consumes_the_shared_reference_models(self) -> None:
-        raw = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_match.py").read_text(encoding="utf-8")
-        self.assertIn("from tests.reference.benchmark import benchmark_fixture as bf", raw)
-        self.assertIn("from tests.reference.benchmark import benchmark_runner as br", raw)
+        raw = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_match.py").read_text(encoding="utf-8")
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_fixture as bf", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_runner as br", raw)
 
 
 if __name__ == "__main__":

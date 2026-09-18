@@ -14,9 +14,11 @@ PACKAGE_SCRIPT = REPO_ROOT / "scripts" / "packaging" / "package-skills.sh"
 PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
 PACKAGE_MANIFEST_HELPER = REPO_ROOT / "scripts" / "packaging" / "package_manifest.py"
 
-# The test-only reference modules live in tests/reference/; the PR
-# simulation harness lives in tests/support/.
+# The test-only reference modules live in tests/reference/, except the
+# benchmark ones, relocated to runtime_platform/benchmark/reference/ by
+# #457; the PR simulation harness lives in tests/support/.
 REFERENCE_DIR = REPO_ROOT / "tests" / "reference"
+BENCHMARK_REFERENCE_DIR = REPO_ROOT / "runtime_platform" / "benchmark" / "reference"
 SUPPORT_DIR = REPO_ROOT / "tests" / "support"
 
 
@@ -25,7 +27,7 @@ def _reference_module_path(name: str) -> Path:
         return SUPPORT_DIR / name
     # tests/reference/*.py now lives under capability sub-packages
     # (issue #217): find the one file matching this bare filename.
-    matches = list(REFERENCE_DIR.rglob(name))
+    matches = list(REFERENCE_DIR.rglob(name)) + list(BENCHMARK_REFERENCE_DIR.rglob(name))
     assert len(matches) == 1, f"expected exactly one match for {name}, found {matches}"
     return matches[0]
 

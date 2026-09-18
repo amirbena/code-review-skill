@@ -2,7 +2,7 @@
 """Behavioural coverage for the production reviewer adapter (Issue #250).
 
 Driven through the single production adapter module
-(``scripts/benchmark/benchmark_review_adapter.py``); this module never defines a
+(``runtime_platform/benchmark/scripts/benchmark_review_adapter.py``); this module never defines a
 second normalizer or a second subprocess-invocation boundary. What is
 proven here:
 
@@ -35,7 +35,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from scripts.benchmark.benchmark_review_adapter import (
+from runtime_platform.benchmark.scripts.benchmark_review_adapter import (
     SKILL_PLUGIN_DIR,
     ProductionReviewerAdapter,
     RuntimeUnavailableError,
@@ -44,9 +44,9 @@ from scripts.benchmark.benchmark_review_adapter import (
     resolve_cli_executable,
     resolve_cli_extra_args,
 )
-import tests.reference.benchmark.benchmark_fixture as bf
-import tests.reference.benchmark.benchmark_match as bm
-from tests.reference.benchmark.benchmark_runner import ProducedFinding
+import runtime_platform.benchmark.reference.benchmark_fixture as bf
+import runtime_platform.benchmark.reference.benchmark_match as bm
+from runtime_platform.benchmark.reference.benchmark_runner import ProducedFinding
 
 
 class ParseReviewOutputTests(unittest.TestCase):
@@ -554,8 +554,8 @@ class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
         ``reviewer-adapter-raised`` error rather than crashing the whole
         run — the correct place for a single case's review to fail, as
         opposed to the runtime-unavailable preflight check."""
-        from tests.reference.benchmark import benchmark_fixture as bf
-        from tests.reference.benchmark import benchmark_runner as br
+        from runtime_platform.benchmark.reference import benchmark_fixture as bf
+        from runtime_platform.benchmark.reference import benchmark_runner as br
 
         workspace_parent = self.tmp_path / "workspaces"
         workspace_parent.mkdir()

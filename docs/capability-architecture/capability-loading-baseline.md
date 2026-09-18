@@ -27,7 +27,7 @@ Per #408:
 - Records current values of the three existing quality-metric contracts
   (`missed-and-incorrect-findings.md` #55, `severity-accuracy.md` #56,
   `duplicate-noise.md` #57) as the stability baseline, reusing
-  `scripts/benchmark/`'s existing evaluators unchanged — no new evaluator.
+  `runtime_platform/benchmark/scripts/`'s existing evaluators unchanged — no new evaluator.
 - Does **not** fix the benchmark runner's non-recursive corpus glob
   (`run_benchmark.py`'s default `corpus_dir.glob("*.yaml")` reaches only
   the 4 top-level cases of ~180 total fixtures) — a separate, pre-existing
@@ -119,10 +119,10 @@ python3 scripts/capability_architecture/capability_loading_baseline.py quality
 
 This runs `docs/benchmark/corpus`'s reachable cases (today's 4 top-level
 fixtures — §1's stated non-goal) through
-`scripts/benchmark/benchmark_review_adapter.ProductionReviewerAdapter`
+`runtime_platform/benchmark/scripts/benchmark_review_adapter.ProductionReviewerAdapter`
 against a real `claude` CLI reading the packaged `local-code-review`
 Skill unchanged, then computes each existing metric verbatim from that one
-run: `tests/reference/benchmark/benchmark_metrics.compute_run_metrics`
+run: `runtime_platform/benchmark/reference/benchmark_metrics.compute_run_metrics`
 (#55), `benchmark_severity.compute_run_severity_accuracy` (#56), and
 `benchmark_dupes.compute_run_duplicate_noise` (#57) — the same reference
 implementations `run_benchmark.py` and the nightly history vehicle

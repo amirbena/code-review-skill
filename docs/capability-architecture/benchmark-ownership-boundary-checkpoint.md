@@ -45,7 +45,7 @@ per §8 below, its child implementation issue may also now be opened.**
 ## 2. What #425 is actually inventorying
 
 Everything under `docs/benchmark/` today (per
-[`docs/benchmark/README.md`](../benchmark/README.md)'s own document map),
+[`docs/benchmark/README.md`](../../runtime_platform/benchmark/README.md) (now relocated to `runtime_platform/benchmark/README.md` by #457; this section otherwise describes the pre-#457 state it inventoried)'s own document map),
 plus its `scripts/benchmark/` and `tests/reference/benchmark/` counterparts:
 
 | Class | Assets |
@@ -271,8 +271,8 @@ maintainer review step that precedes it.
 - [`specialist-depth-continuation-checkpoint.md`](specialist-depth-continuation-checkpoint.md)
   (#412) — the sibling checkpoint whose "one capability at a time"
   reasoning §7 above extends to the corpus-relocation sequencing.
-- [`../benchmark/README.md`](../benchmark/README.md) — the document map
-  this record inventories in §2 without modifying.
+- [`../../runtime_platform/benchmark/README.md`](../../runtime_platform/benchmark/README.md) — the document map
+  this record inventories in §2 without modifying (relocated by #457, after this record was written).
 - [`../benchmark-measurement-architecture/README.md`](../benchmark-measurement-architecture/README.md)
   — the authoritative, unchanged measurement-architecture layer this
   record's boundary sits underneath (§H.5).

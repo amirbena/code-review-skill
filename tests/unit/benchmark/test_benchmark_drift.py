@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Unit coverage for drift fingerprinting and drift-vs-noise classification
-(Issue #339). Contract: docs/benchmark/drift-detection-and-regression-lifecycle.md.
+(Issue #339). Contract: runtime_platform/benchmark/drift-detection-and-regression-lifecycle.md.
 
 Proves:
 
@@ -16,9 +16,9 @@ import json
 import unittest
 from fractions import Fraction
 
-from scripts.benchmark import benchmark_drift as bd
-from tests.reference.benchmark import benchmark_metrics as bmet
-from tests.reference.benchmark import benchmark_severity as bsev
+from runtime_platform.benchmark.scripts import benchmark_drift as bd
+from runtime_platform.benchmark.reference import benchmark_metrics as bmet
+from runtime_platform.benchmark.reference import benchmark_severity as bsev
 
 
 def _metrics(case_id: str, *, missed: tuple[str, ...] = (), false_positives: int = 0) -> bmet.CaseMetrics:

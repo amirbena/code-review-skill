@@ -244,7 +244,7 @@ The benchmark subsystem is strategically important and largely sound, but
 it has three structural facts that any decomposition must respect:
 
 - **The production path exercises 4 of ~180 cases.**
-  `scripts/benchmark/run_benchmark.py` and the reference runner both use a
+  `runtime_platform/benchmark/scripts/run_benchmark.py` and the reference runner both use a
   **non-recursive** `corpus_dir.glob("*.yaml")`, so only the four
   root-level corpus cases ever run. The 22 sub-corpora are validated
   statically (schema, ids, anchors, README links) but never reviewed.
@@ -255,19 +255,19 @@ it has three structural facts that any decomposition must respect:
   the checkout's.
 - **The adapter spans the most boundaries of any asset in the
   repository.** It imports the test tree from production code
-  (`from tests.reference.benchmark.benchmark_runner import ProducedFinding`),
+  (`from runtime_platform.benchmark.reference.benchmark_runner import ProducedFinding`),
   hardcodes the P0/P1/P2 vocabulary, encodes `finding-rendering.md`'s
   exact heading/location/result shapes as regexes, and its prompt asserts
   its own approval to satisfy `local-code-review`'s invocation-approval
   policy. Any rendering change silently breaks parsing.
 
-Separately, `docs/benchmark/taxonomy.md`'s `affected_surface` dimension
-(`tests/reference/benchmark/benchmark_taxonomy.py`) hardcodes a path
+Separately, `runtime_platform/benchmark/taxonomy.md`'s `affected_surface` dimension
+(`runtime_platform/benchmark/reference/benchmark_taxonomy.py`) hardcodes a path
 prefix allowlist (`shared/`, `skills/`, `docs/benchmark/`,
-`tests/reference/benchmark/`, plus the runtime-adapter exact files) that
+`runtime_platform/benchmark/reference/`, plus the runtime-adapter exact files) that
 is pinned by prose in that doc. (This section originally described
-`scripts/benchmark/benchmark_ci_classifier.py`'s equivalent allowlist,
-pinned by `docs/benchmark/ci-integration.md`; that CI workflow and
+`scripts/benchmark/benchmark_ci_classifier.py`'s equivalent allowlist (at
+that file's pre-#457 location), pinned by `docs/benchmark/ci-integration.md`; that CI workflow and
 classifier were retired by
 [#420](https://github.com/amirbena/code-review-skill/issues/420), and
 the taxonomy's own allowlist is the analogous hardcoded surface today.)
@@ -836,7 +836,7 @@ Assessed against the measured coupling, not against general principle.
 | Cross-repo changes | Every capability addition today edits its policy, `review-scope.md`, `package-manifest.json`, and a test. In Model B that is a 3-repo choreography for a routine change. |
 | Versioning | Introduces skew between a policy and the manifest that registers it — a class of bug that cannot exist today. |
 | CI complexity | Multiplies. The benchmark CI classifier's path allowlist would have to reason across repositories. |
-| Benchmark ownership | **Actively harmful.** A separate `review-benchmarks` repo would formalize the one boundary the measurement architecture explicitly warns about, and would strand `tests/reference/benchmark/*_fixtures.py` — corpus data for eight sub-corpora that lives in the test tree — on the wrong side of a repo line. |
+| Benchmark ownership | **Actively harmful.** A separate `review-benchmarks` repo would formalize the one boundary the measurement architecture explicitly warns about, and would strand `runtime_platform/benchmark/reference/*_fixtures.py` — corpus data for eight sub-corpora that lives in the test tree — on the wrong side of a repo line. |
 | Agent comprehension | No better than Model A: an agent still needs the capability + its contract + its corpus, and now must fetch them from two places. |
 | Token efficiency / latency | **No effect.** Load scope is set by the manifest, not by which repository a file sits in. |
 
@@ -947,7 +947,7 @@ The topology above originally named this directory `platform/`. That
 literal name collides with Python's standard-library `platform` module:
 a package directory named `platform/` on the repository root (already on
 `sys.path` for this repo's absolute imports, e.g.
-`tests.reference.benchmark.*`) shadows the stdlib module for every
+`runtime_platform.benchmark.reference.*`) shadows the stdlib module for every
 `import platform` executed afterward in the same interpreter — including
 `scripts/sandbox/capability.py`'s use of `platform.system()` for sandbox
 capability detection, a security-relevant subsystem
@@ -1348,7 +1348,7 @@ location and result shapes as regexes, and its prompt asserts its own
 approval to satisfy `local-code-review`'s invocation-approval policy. A
 rendering change silently breaks parsing. This is exactly the
 "benchmark dependencies on implementation details" the task asks about, and
-`docs/benchmark/claim-correspondence-adequacy.md` already diagnosed its
+`runtime_platform/benchmark/claim-correspondence-adequacy.md` already diagnosed its
 downstream effect: `defect_kind` is never emitted, so claim matching falls
 through to token overlap. The structural fix is the #67 machine-readable
 output schema — the adapter should parse a declared contract, not scrape a
@@ -1506,8 +1506,8 @@ which established this discipline for the file-size pass:
   (`python3 -m unittest discover -s tests -t .`, both metadata validators,
   both `package-skills` scripts, `git diff --check`).
 - **The taxonomy's hand-maintained path prefixes
-  (`docs/benchmark/taxonomy.md` §2.2/§2.4,
-  `tests/reference/benchmark/benchmark_taxonomy.py`) are updated in the
+  (`runtime_platform/benchmark/taxonomy.md` §2.2/§2.4,
+  `runtime_platform/benchmark/reference/benchmark_taxonomy.py`) are updated in the
   same commit as any path move.** (This section originally named the
   #255 `benchmark_ci_classifier.py` allowlist as the thing a path move
   could silently invalidate; that workflow and classifier were retired by
@@ -1635,7 +1635,7 @@ Step N — Adapter thinning (last, deliberately)
 | **Router becomes the new monolith** | **High — already happened once** with `review-scope.md` after #288 | §C.3's four mechanisms: word budget with a test, predicates-not-procedures, generated registration, no links to capability bodies | If the budget test fails twice in a row, stop and re-split rather than raising the budget |
 | **Duplicated policies during migration** | Medium | Never copy — move. A capability's canonical rule has exactly one home throughout, per the existing `AGENTS.md` invariant. Issue #80 ("Detect canonical-rule duplication risks") is the mechanical check | Single-commit revert |
 | **Safety boundary becomes bypassable** | **Low but catastrophic** | §C.4's grant/deny split. `corpus/mutation-boundary/` (28 cases) and `corpus/delegation-spawn/` (23) must pass unchanged at every step; the deny half is never lazy | Any failure here blocks the step outright — this is the one non-negotiable gate |
-| **PR-time classification/selection silently changes** | **High — the mechanism is hardcoded** | Taxonomy path prefixes (`docs/benchmark/taxonomy.md`, `benchmark_taxonomy.py`) updated in the same commit as every path move, per §J.1 (the #255 `benchmark_ci_classifier.py` this risk originally named was retired by #420) | Its unit tests fail loudly if prose and code diverge |
+| **PR-time classification/selection silently changes** | **High — the mechanism is hardcoded** | Taxonomy path prefixes (`runtime_platform/benchmark/taxonomy.md`, `benchmark_taxonomy.py`) updated in the same commit as every path move, per §J.1 (the #255 `benchmark_ci_classifier.py` this risk originally named was retired by #420) | Its unit tests fail loudly if prose and code diverge |
 | **Packaging drift** | Medium | Step 1's byte-identical assertion is the guard, and it stays as a regression test afterward | Checked-in manifest remains valid without the generator |
 | **Version skew** | **Not applicable** | Model A keeps one version. This risk is a reason Models B and C were rejected, not a risk of the recommendation | — |
 | **Cross-repo overhead** | **Not applicable** | Same as above | — |

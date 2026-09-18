@@ -9,7 +9,7 @@ in ``docs/benchmark/corpus/README.md``.
 What is proven here:
 
 1. every corpus file decodes and validates through the single reference
-   validator (``tests/reference/benchmark/benchmark_fixture.py``) — the same checker
+   validator (``runtime_platform/benchmark/reference/benchmark_fixture.py``) — the same checker
    used for the worked example; this module never defines a second one;
 2. the corpus stays *small* and *documented* — bounded size, filename ==
    case ``id``, a non-empty rationale and tag set per case, and no clash
@@ -28,7 +28,7 @@ import unittest
 
 import yaml
 
-from tests.reference.benchmark import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"

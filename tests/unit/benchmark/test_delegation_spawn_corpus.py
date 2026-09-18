@@ -2,7 +2,7 @@
 """Contract coverage for the agent-spawn / delegated-authority benchmark
 corpus (Issue #307, depends on #303).
 
-The corpus is `tests/reference/benchmark/delegation_fixtures.py`: a
+The corpus is `runtime_platform/benchmark/reference/delegation_fixtures.py`: a
 focused, data-driven set of `DelegationCase` fixtures pinning every
 allowed/denied outcome shape #307's scope requires, executed against the
 *single* reference model `tests/reference/review/agent_delegation.py`
@@ -15,7 +15,7 @@ classification) is validated structurally by `validate_case`/
 *actual* outcome is compared against that same declared expectation --
 every comparison here is a deterministic structural assertion (allowed/
 denied, effective granted capabilities, security-event classification),
-never an LLM/rubric score, matching docs/benchmark/README.md's convention
+never an LLM/rubric score, matching runtime_platform/benchmark/README.md's convention
 and this domain's own "Evaluation style" requirement.
 
 This is the "focused benchmark selection" surface for #307: run this
@@ -31,7 +31,7 @@ from __future__ import annotations
 import unittest
 from dataclasses import replace
 
-from tests.reference.benchmark import delegation_fixtures as df
+from runtime_platform.benchmark.reference import delegation_fixtures as df
 from tests.reference.review import agent_delegation as ad
 
 MIN_CASES = 20

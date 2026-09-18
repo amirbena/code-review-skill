@@ -7,7 +7,7 @@ implemented by Issue
 [#180](https://github.com/amirbena/code-review-skill/issues/180) and its
 own parent, the adaptive specialist-depth composition contract
 [#82](https://github.com/amirbena/code-review-skill/issues/82). This is a
-**focused sub-corpus** of [`benchmark-case/v2`](../../fixture-format.md)
+**focused sub-corpus** of [`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md)
 fixtures pinning representative Performance deepening outcomes as
 follow-up quality hardening — it validates domain correctness after the
 capability exists and does not define, gate, or redesign it. The
@@ -15,14 +15,14 @@ capability itself is designed and packaged in
 [`../../../../shared/policies/performance-deepening.md`](../../../../shared/policies/performance-deepening.md),
 which this corpus's expectations must stay consistent with.
 
-Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of [`../`](../README.md)
-and [`../../`](../../README.md) this is **not** packaged into either Skill
+and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not** packaged into either Skill
 archive and no packaged Skill resource depends on it — it is consumed only
 by this repository's own test suite, through the single reference
 validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one). Every case is a crafted, generic Python snippet
 rather than a framework- or vendor-specific one, per Issue #187's
 preference for semantic/risk-shape coverage over framework/library/vendor
@@ -101,7 +101,7 @@ header comment.
 
 [`../../../../tests/unit/benchmark/test_performance_deepening_corpus.py`](../../../../tests/unit/benchmark/test_performance_deepening_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and every other corpus. It never defines a
 second one, and asserts: the sub-corpus stays small and documented; every
 required outcome shape is present; every case pins an explicit `decision`
