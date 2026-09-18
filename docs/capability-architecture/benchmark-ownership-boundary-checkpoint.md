@@ -103,7 +103,7 @@ committing to its full directory restructure (§4 below explains why):
 | Research / historical records | Benchmark/evaluation infrastructure, but of the *design-record* kind already established elsewhere in this repository (this document's own family) | `claim-correspondence-adequacy.md` and `runtime-candidate-decision.md` already self-identify as "research record, not a contract change" — they belong with other capability/benchmark design records, not with generic docs |
 | Reference example sets | Benchmark/evaluation infrastructure (non-CI-gated corpus, per `docs/benchmark/README.md`'s own framing) | Same corpus-adjacent lifecycle as fixtures; only their non-gating status differs |
 | Navigation (`README.md`) | Moves with the subsystem it indexes | A document map has no independent purpose once its subject relocates |
-| Harness code (`scripts/benchmark/`) | Already infrastructure, never `docs/`-classified — unaffected in kind, only in location | Matches §E.2's `platform/benchmark/` |
+| Harness code (`scripts/benchmark/`) | Already infrastructure, never `docs/`-classified — unaffected in kind, only in location | Matches §E.2's `runtime_platform/benchmark/` |
 | Reference models (`tests/reference/benchmark/`) | Already `tests/`-classified — unaffected in kind or location by this record | §H.1's "welded to tests" finding; H.5's "no duplicate reviewer/runner/evaluator implementations" invariant governs this tier, not this record |
 
 **Net boundary statement:** `docs/` ownership should be limited to
@@ -118,7 +118,7 @@ the misclassification. This record does not, however, mean every file in
 ## 4. Why this boundary decision does not yet commit to a directory move
 
 `capability-architecture-model.md`'s own README states its target
-topology, including §E.2's `platform/benchmark/` and
+topology, including §E.2's `runtime_platform/benchmark/` and
 `capabilities/<name>/corpus/`, is "a research recommendation, not a
 contract change... no file has moved, no repository has been created, no
 policy's canonical ownership has changed." As of this record:
@@ -127,13 +127,14 @@ policy's canonical ownership has changed." As of this record:
   capabilities (build-time declarations only, per §E.2's "unchanged
   either way" note on `capability.yaml`), each already carrying a
   `benchmark:` field — see §5.
-- `platform/` and `adapters/` — the two other top-level directories §E.2's
-  topology requires — **do not exist yet.** Only the manifest layer of the
-  broader capability-architecture migration has landed; the router/kernel
-  separation (§C, rated highest-risk in §J.2 Step 5) and the
-  adapter-thinning step (§E.2's `adapters/`) have not been attempted.
+- `runtime_platform/` and `adapters/` — the two other top-level
+  directories §E.2's topology requires — **do not exist yet.** Only the
+  manifest layer of the broader capability-architecture migration has
+  landed; the router/kernel separation (§C, rated highest-risk in §J.2
+  Step 5) and the adapter-thinning step (§E.2's `adapters/`) have not
+  been attempted.
 
-Relocating `docs/benchmark/` into a `platform/benchmark/` that does not
+Relocating `docs/benchmark/` into a `runtime_platform/benchmark/` that does not
 exist, and a per-capability `corpus/` structure whose sibling
 `capabilities/<name>/` directories today hold only a manifest file each,
 would build the target topology's benchmark half before its structural
@@ -197,9 +198,13 @@ separate follow-up.
 (§2) is infrastructure, not generic documentation, and none of it should
 be reclassified as staying under `docs/` on the merits of its content.**
 Relocation should follow `capability-architecture-model.md` §E.2's target
-shape (`platform/benchmark/` for harness/contracts, `capabilities/<name>/
-corpus/` for per-capability corpus) rather than any new topology, per
-#425's own Scope constraint.
+shape (`runtime_platform/benchmark/` for harness/contracts,
+`capabilities/<name>/corpus/` for per-capability corpus) rather than any
+new topology, per #425's own Scope constraint. (§E.2's top-level
+directory was `platform/` at the time this record was written; #458
+renamed it to `runtime_platform/` — see §E.2.1 — to avoid shadowing
+Python's stdlib `platform` module. This item is updated to the resolved
+name.)
 
 **Scheduling: both prerequisites are closed (§1), so #425's own
 precondition for opening a child implementation issue is met — but that
@@ -217,7 +222,7 @@ should:
    created to avoid at the capability-extraction layer.
 2. Move the contract documents and harness code
    (`scripts/benchmark/`, `tests/reference/benchmark/`) to a
-   `platform/benchmark/` location independently of the per-capability
+   `runtime_platform/benchmark/` location independently of the per-capability
    corpus split, since §E.2 places them together but they have no
    structural dependency on `capabilities/<name>/` existing first — this
    piece could proceed without waiting on further capability-body
@@ -248,7 +253,7 @@ maintainer review step that precedes it.
   #67 schema), not this boundary decision.
 - Re-litigating #412's specialist-depth-pattern-continuation decision or
   #329's benchmark-quality-loop closure — both are cited, not re-run.
-- Designing `platform/`'s or `adapters/`'s full directory contents beyond
+- Designing `runtime_platform/`'s or `adapters/`'s full directory contents beyond
   the benchmark subsystem — this record scopes only the benchmark/
   evaluation boundary #425 asked for.
 
