@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Behavioural coverage for the benchmark missed/incorrect finding metrics (Issue #55).
 
-Contract: docs/benchmark/missed-and-incorrect-findings.md. Driven through
-the single reference counter (tests/reference/benchmark/benchmark_metrics.py), which
+Contract: runtime_platform/benchmark/missed-and-incorrect-findings.md. Driven through
+the single reference counter (runtime_platform/benchmark/reference/benchmark_metrics.py), which
 delegates every pairwise decision to the single reference matcher
-(tests/reference/benchmark/benchmark_match.py, #54) — this module never defines a
+(runtime_platform/benchmark/reference/benchmark_match.py, #54) — this module never defines a
 second match relation. Expected findings use the bf.ExpectedFinding shape
 (#50); produced findings and per-case results use br.ProducedFinding /
 br.CaseResult (#52).
@@ -28,10 +28,10 @@ from __future__ import annotations
 
 import unittest
 
-from tests.reference.benchmark import benchmark_fixture as bf
-from tests.reference.benchmark import benchmark_match as bm
-from tests.reference.benchmark import benchmark_metrics as bmet
-from tests.reference.benchmark import benchmark_runner as br
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_match as bm
+from runtime_platform.benchmark.reference import benchmark_metrics as bmet
+from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.support.paths import REPO_ROOT
 
 
@@ -410,13 +410,13 @@ class AggregateAndSectionTests(unittest.TestCase):
 
 class ReferenceModuleTests(unittest.TestCase):
     def test_module_is_declared_test_only(self) -> None:
-        head = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_metrics.py").read_text(encoding="utf-8")[:700]
+        head = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_metrics.py").read_text(encoding="utf-8")[:700]
         self.assertIn("Test-only", head)
         self.assertIn("not runtime logic, not packaged", head.lower())
 
     def test_counter_consumes_the_single_reference_matcher(self) -> None:
-        raw = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_metrics.py").read_text(encoding="utf-8")
-        self.assertIn("from tests.reference.benchmark import benchmark_match as bm", raw)
+        raw = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_metrics.py").read_text(encoding="utf-8")
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_match as bm", raw)
         self.assertIn("never defines a second", raw)
 
     def test_only_match_edges_pair(self) -> None:

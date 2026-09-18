@@ -15,7 +15,7 @@ This is a **documented reference set, not a CI gate** — unlike
 consumed by a test or a runner. It exists so a reviewer of a future voice
 change has worked examples to compare against, and so the rubric in #229
 ("Quality eval") has a concrete corpus to point at. Like the rest of
-[`docs/benchmark/`](README.md), it is a repository-development document:
+[`docs/benchmark/`](../../runtime_platform/benchmark/README.md), it is a repository-development document:
 not packaged into either Skill archive, and no packaged Skill resource
 depends on it.
 

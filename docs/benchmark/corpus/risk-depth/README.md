@@ -4,7 +4,7 @@ Repository-development artifact for GitHub Issue
 [#90](https://github.com/amirbena/code-review-skill/issues/90), the last
 child of epic [#48](https://github.com/amirbena/code-review-skill/issues/48)
 "risk-based review depth + large-PR strategy". This is a **focused
-sub-corpus** of [`benchmark-case/v2`](../../fixture-format.md) fixtures
+sub-corpus** of [`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md) fixtures
 exercising the vocabulary
 [`#86`](https://github.com/amirbena/code-review-skill/issues/86)-[`#89`](https://github.com/amirbena/code-review-skill/issues/89)
 already established:
@@ -14,14 +14,14 @@ already established:
 and
 [`large-pr-partitioning.md`](../../../../shared/policies/large-pr-partitioning.md).
 
-Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
-[`../`](../README.md) and [`../../`](../../README.md) this is **not**
+[`../`](../README.md) and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle
@@ -47,7 +47,7 @@ the single reference validator
 ## Fixture-level scope: what a `benchmark-case/v2` fixture cannot pin
 
 `benchmark-case/v2`'s schema is closed (see
-[`../../fixture-format.md`](../../fixture-format.md) §2, "an unknown key
+[`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §2, "an unknown key
 anywhere is a rejection") and has no field for an expected `depth`,
 expansion `ring`, partition assignment, or `coverage` label — only
 `expected.findings` and `expected.decision`. So, exactly as
@@ -103,7 +103,7 @@ corpus is scoped to `change-risk-signals.md`'s depth vocabulary and
 
 [`../../../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py`](../../../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second
 one), and asserts: the sub-corpus stays small and documented; every
 required case is present; every case pins an explicit `decision`

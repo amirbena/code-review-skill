@@ -5,20 +5,20 @@ Repository-development artifact for GitHub Issue
 cross-language review requirement in
 [`shared/policies/review-scope.md`](../../../../shared/policies/review-scope.md),
 "Null-like absence-risk review." This is a **focused sub-corpus** of
-[`benchmark-case/v2`](../../fixture-format.md) fixtures exercising that
+[`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md) fixtures exercising that
 section's vocabulary: the cross-language semantic rule (never a regex or
 keyword match), the credible-absence-path patterns, the interoperability /
 escape-hatch boundaries, and the suppression rule for guarded,
 type-guaranteed, or upstream-validated values.
 
-Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
-[`../`](../README.md) and [`../../`](../../README.md) this is **not**
+[`../`](../README.md) and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle
@@ -61,7 +61,7 @@ header comment.
 
 [`../../../../tests/unit/review/root_cause/test_null_absence_corpus.py`](../../../../tests/unit/review/root_cause/test_null_absence_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and every other corpus. It never defines a second
 one, and asserts: the sub-corpus stays small and documented; every
 required case is present; every case pins an explicit `decision`

@@ -2,7 +2,7 @@
 """Contract coverage for the natural-language trusted-host-execution
 authorization benchmark corpus (Issue #370, depends on #369).
 
-The corpus is `tests/reference/benchmark/trusted_host_nl_fixtures.py`: a
+The corpus is `runtime_platform/benchmark/reference/trusted_host_nl_fixtures.py`: a
 focused, data-driven set of `TrustedHostNLCase` fixtures pinning every
 resolved-authorization/provenance outcome shape #370's scope requires,
 executed against the *single* reference model
@@ -14,7 +14,7 @@ provenance) is validated structurally by `validate_case`/`validate_corpus`,
 then the fixture's own `run()` is executed and its *actual* outcome is
 compared against that same declared expectation -- every comparison here
 is a deterministic structural assertion, never an LLM/rubric score,
-matching docs/benchmark/README.md's convention.
+matching runtime_platform/benchmark/README.md's convention.
 
 Run this module alone to exercise the whole corpus independently of the
 rest of the benchmark suite:
@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import unittest
 
-from tests.reference.benchmark import trusted_host_nl_fixtures as tf
+from runtime_platform.benchmark.reference import trusted_host_nl_fixtures as tf
 from tests.reference.review import runtime_validation as rv
 
 MIN_CASES = 35

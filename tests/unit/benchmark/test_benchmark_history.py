@@ -14,7 +14,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.benchmark import benchmark_history as history
+from runtime_platform.benchmark.scripts import benchmark_history as history
 
 
 def _entry(
@@ -192,7 +192,7 @@ class KeyedBaselineLaneTest(unittest.TestCase):
         # existing corpus_id fail-closed guard — this test only proves the
         # two corpus_ids are never equal to begin with (issue #431's
         # comprehensive membership is a strict superset of sentinel's).
-        from scripts.benchmark import benchmark_history as bh
+        from runtime_platform.benchmark.scripts import benchmark_history as bh
 
         corpus_dir = self.root / "corpus"
         corpus_dir.mkdir()

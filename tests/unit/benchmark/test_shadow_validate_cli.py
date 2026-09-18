@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Behavioral coverage for the shadow-validation report CLI entrypoint
-(Issue #335). Contract: docs/benchmark/shadow-validation.md §5.
+(Issue #335). Contract: runtime_platform/benchmark/shadow-validation.md §5.
 
-Exercises ``scripts/benchmark/shadow_validate.py`` end to end against a
+Exercises ``runtime_platform/benchmark/scripts/shadow_validate.py`` end to end against a
 small synthetic burn-in window file. Proves: the emitted JSON matches
 ``benchmark_shadow_validation.build_burn_in_report``'s shape exactly (no
 second, CLI-local computation), the step-summary file is appended to
@@ -17,8 +17,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.benchmark import shadow_validate as cli
-from tests.reference.benchmark import benchmark_shadow_validation as sv
+from runtime_platform.benchmark.scripts import shadow_validate as cli
+from runtime_platform.benchmark.reference import benchmark_shadow_validation as sv
 
 SAMPLES = [
     {"sample_id": "pr-1", "selected_case_ids": ["case-a", "case-b"], "regressed_case_ids": ["case-b"]},

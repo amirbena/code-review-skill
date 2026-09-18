@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Structural contract checks for the benchmark runner contract (#52).
 
-Pins docs/benchmark/runner-contract.md so the canonical invariant, the
+Pins runtime_platform/benchmark/runner-contract.md so the canonical invariant, the
 per-case isolation model, the repository-safety invariants (no mutation,
 exact dirty-state preservation, integrity verification, cleanup on both
 paths), the machine-readable per-case result shape, run modes, the
@@ -14,10 +14,10 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "docs" / "benchmark" / "runner-contract.md"
-README = REPO_ROOT / "docs" / "benchmark" / "README.md"
+DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "runner-contract.md"
+README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
-REFERENCE = REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_runner.py"
+REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_runner.py"
 UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_runner.py"
 
 
@@ -109,7 +109,7 @@ class RunnerContractTests(unittest.TestCase):
         tail = " ".join(self.raw.split("## Status and canonical home", 1)[1].split())
         self.assertIn("becomes the design record", tail)
         self.assertIn("MUST NOT keep evolving the runner behavior independently", tail)
-        self.assertIn("](../../tests/reference/benchmark/benchmark_runner.py)", self.raw)
+        self.assertIn("](reference/benchmark_runner.py)", self.raw)
         self.assertIn("](../../tests/unit/benchmark/test_benchmark_runner.py)", self.raw)
 
 
@@ -131,7 +131,7 @@ class DirectoryNavigationTests(unittest.TestCase):
 
     def test_unit_test_consumes_the_single_reference_runner(self) -> None:
         raw = UNIT_TEST.read_text(encoding="utf-8")
-        self.assertIn("from tests.reference.benchmark import benchmark_runner as br", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_runner as br", raw)
         self.assertIn("never defines a second one", raw)
 
 

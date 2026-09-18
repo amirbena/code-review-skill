@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """Behavioral coverage for the deterministic Top-K benchmark selector
-(Issue #334). Contract: docs/benchmark/selection.md.
+(Issue #334). Contract: runtime_platform/benchmark/selection.md.
 
 Exercised against small, synthetic inverted indexes (the same shape
 ``build_benchmark_index.py`` produces), never the live corpus — this
 module never defines a second scoring/selection implementation and always
-consumes ``tests.reference.benchmark.benchmark_selection``.
+consumes ``runtime_platform.benchmark.reference.benchmark_selection``.
 """
 
 from __future__ import annotations
 
 import unittest
 
-from tests.reference.benchmark import benchmark_selection as sel
+from runtime_platform.benchmark.reference import benchmark_selection as sel
 
 
 def _index(**dims: dict[str, list[str]]) -> dict[str, dict[str, list[str]]]:

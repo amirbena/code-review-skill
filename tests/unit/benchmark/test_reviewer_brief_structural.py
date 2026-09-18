@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 import unittest
 
-from tests.reference.benchmark.reviewer_brief_fixtures import (
+from runtime_platform.benchmark.reference.reviewer_brief_fixtures import (
     ALL_CASES,
     REQUIRED_COVERAGE_TAGS,
     ReviewerBriefCase,

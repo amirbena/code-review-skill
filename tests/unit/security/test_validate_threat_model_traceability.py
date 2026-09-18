@@ -45,7 +45,7 @@ def _scenario(**overrides) -> vtm.ThreatScenario:
         expected_safe_outcome="the write is refused",
         expected_security_event="DENIED_MUTATION_CAPABILITY_ABSENT",
         benchmark_family=("mutation/#305",),
-        benchmark_reference="tests/reference/benchmark/mutation_fixtures.py",
+        benchmark_reference="runtime_platform/benchmark/reference/mutation_fixtures.py",
         regression_evidence="tests/unit/security/test_mutation_authority.py",
         threat_severity="CRITICAL",
         notes="",
@@ -122,7 +122,7 @@ class DriftDetectionTests(unittest.TestCase):
     def test_claimed_benchmark_reference_with_no_backing_case_is_flagged(self) -> None:
         # benchmark_reference is a real (non-GAP) claim, but the family's corpus
         # never actually references this scenario id back.
-        scenarios = [_scenario(benchmark_reference="tests/reference/benchmark/mutation_fixtures.py")]
+        scenarios = [_scenario(benchmark_reference="runtime_platform/benchmark/reference/mutation_fixtures.py")]
         family_ids = {"mutation/#305": frozenset()}
         _, drift = vtt.build_traceability(scenarios, family_corpus_ids=family_ids)
         self.assertTrue(any("AUTH-001" in d and "no case" in d for d in drift))

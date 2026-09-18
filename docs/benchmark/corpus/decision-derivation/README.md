@@ -2,7 +2,7 @@
 
 Repository-development artifact for GitHub Issue
 [#450](https://github.com/amirbena/code-review-skill/issues/450). This is
-a focused [`benchmark-case/v2`](../../fixture-format.md) sub-corpus that
+a focused [`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md) sub-corpus that
 proves the **reverse direction** of the mechanical severity → decision
 path defined in
 [`../../../../shared/policies/severity.md`](../../../../shared/policies/severity.md),
@@ -52,7 +52,7 @@ change* end-to-end through the packaged Skill produce the right findings
 and the right mechanically-derived decision? That is exactly what
 `benchmark-case/v2` (self-contained inline patch + expected findings +
 expected decision) is for, per
-[`../../fixture-format.md`](../../fixture-format.md) — the same format
+[`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) — the same format
 [`../candidate-finding-validation/`](../candidate-finding-validation/README.md)
 and the root corpus use.
 
@@ -69,7 +69,7 @@ and the root corpus use.
 - **Each case still expects `decision: clean`.** The point of this corpus
   is that severity, not wording or finding count, is the only thing that
   can move the decision — see
-  [`../../fixture-format.md`](../../fixture-format.md) §7's mechanical
+  [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §7's mechanical
   derivation and §11 rule 11's fail-closed check that a fixture's own
   `decision` is consistent with it.
 - **Deliberately reuses one small fictional domain** (a `reports/` export
@@ -117,7 +117,7 @@ block (`source`, `tags`, `rationale`).
 ## Running just this benchmark
 
 ```sh
-python3 scripts/benchmark/run_benchmark.py --corpus-dir docs/benchmark/corpus/decision-derivation
+python3 runtime_platform/benchmark/scripts/run_benchmark.py --corpus-dir docs/benchmark/corpus/decision-derivation
 python3 -m unittest tests.unit.benchmark.test_decision_derivation_corpus
 ```
 
@@ -125,7 +125,7 @@ python3 -m unittest tests.unit.benchmark.test_decision_derivation_corpus
 
 `benchmark-case/v2`'s `expected.decision` vocabulary is deliberately
 Skill-neutral (`clean` / `changes-required` — see
-[`../../fixture-format.md`](../../fixture-format.md) §1): `clean` is
+[`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §1): `clean` is
 `local-code-review`'s `REVIEW CLEAN` **and** `github-pr-review`'s
 `Approve` event, per
 [`../../../../shared/policies/severity.md`](../../../../shared/policies/severity.md),
@@ -135,7 +135,7 @@ states the same expectation for both Skills by construction.
 
 The real end-to-end run this corpus's unit test drives
 (`tests/unit/benchmark/test_decision_derivation_corpus.py`, via
-`scripts/benchmark/benchmark_review_adapter.ProductionReviewerAdapter`)
+`runtime_platform/benchmark/scripts/benchmark_review_adapter.ProductionReviewerAdapter`)
 exercises `local-code-review` only — that adapter is, today, the only
 production reviewer adapter this repository's benchmark tooling has for
 any corpus (see its own module docstring), and no equivalent
@@ -152,7 +152,7 @@ second runtime adapter).
 
 [`../../../../tests/unit/benchmark/test_decision_derivation_corpus.py`](../../../../tests/unit/benchmark/test_decision_derivation_corpus.py)
 loads every fixture here through the single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 — it never defines a second one — and asserts: the three named outcome
 shapes are present; every fixture's required findings are `P2` only (no
 `P0`/`P1` anywhere in this corpus, since that is the opposite-polarity

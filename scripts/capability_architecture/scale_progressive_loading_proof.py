@@ -31,7 +31,7 @@ existing corpus and evaluator rather than introducing a new one:
   trigger-evaluation that must still load (fail-closed) rather than skip.
 
 Defines no new evaluator or matcher: every metric below is computed by
-calling ``tests/reference/benchmark/benchmark_metrics.py`` verbatim,
+calling ``runtime_platform/benchmark/reference/benchmark_metrics.py`` verbatim,
 exactly as ``capability_loading_baseline.py`` already does.
 
 Usage::
@@ -108,15 +108,15 @@ def measure_behavioral_proof(
     through the real reviewer runtime and reports each case's missed/
     incorrect-findings outcome (#55), computed via the existing reference
     metrics -- never a bespoke pass/fail check."""
-    from scripts.benchmark.benchmark_review_adapter import (
+    from runtime_platform.benchmark.scripts.benchmark_review_adapter import (
         ProductionReviewerAdapter,
         check_runtime_available,
         resolve_cli_executable,
         resolve_cli_extra_args,
     )
-    from tests.reference.benchmark import benchmark_fixture as bf
-    from tests.reference.benchmark import benchmark_metrics as bm
-    from tests.reference.benchmark import benchmark_runner as br
+    from runtime_platform.benchmark.reference import benchmark_fixture as bf
+    from runtime_platform.benchmark.reference import benchmark_metrics as bm
+    from runtime_platform.benchmark.reference import benchmark_runner as br
 
     import yaml
 

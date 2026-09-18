@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Behavioural coverage for the benchmark runner (Issue #52).
 
-Contract: docs/benchmark/runner-contract.md. Driven through the single
-test-only reference runner (tests/reference/benchmark/benchmark_runner.py); this
+Contract: runtime_platform/benchmark/runner-contract.md. Driven through the single
+test-only reference runner (runtime_platform/benchmark/reference/benchmark_runner.py); this
 module never defines a second one. What is proven here:
 
 1. a run executes the whole on-disk corpus and a single selected case, and
@@ -30,8 +30,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tests.reference.benchmark import benchmark_fixture as bf
-from tests.reference.benchmark import benchmark_runner as br
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
@@ -506,17 +506,17 @@ class SourceRepositorySafetyTests(unittest.TestCase):
 
 class ReferenceModuleTests(unittest.TestCase):
     def test_module_is_declared_test_only(self) -> None:
-        head = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_runner.py").read_text(
+        head = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_runner.py").read_text(
             encoding="utf-8"
         )[:600]
         self.assertIn("Test-only", head)
         self.assertIn("not runtime logic, not packaged", head.lower())
 
     def test_runner_consumes_the_single_fixture_validator(self) -> None:
-        raw = (REPO_ROOT / "tests" / "reference" / "benchmark" / "benchmark_runner.py").read_text(
+        raw = (REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_runner.py").read_text(
             encoding="utf-8"
         )
-        self.assertIn("from tests.reference.benchmark import benchmark_fixture as bf", raw)
+        self.assertIn("from runtime_platform.benchmark.reference import benchmark_fixture as bf", raw)
 
 
 if __name__ == "__main__":

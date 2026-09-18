@@ -12,7 +12,7 @@ Like [`../`](../README.md), this is **not** packaged into either Skill
 archive and no packaged Skill resource depends on it — it is consumed
 only by this repository's own test/proof tooling, through the single
 reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py).
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py).
 
 ## Selection principle
 
@@ -38,14 +38,14 @@ fixture" scope #411 used.
 
 This is a single, hand-crafted, illustrative case, not a measured
 hit-rate or precision/recall figure — see
-[`../../fixture-format.md`](../../fixture-format.md) §13 and
+[`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §13 and
 [#41](https://github.com/amirbena/code-review-skill/issues/41).
 
 ## Validation
 
 Loaded through the same single reference validator used everywhere else
 in this directory tree
-([`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py))
+([`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py))
 by
 [`scripts/capability_architecture/scale_progressive_loading_proof.py`](../../../../scripts/capability_architecture/scale_progressive_loading_proof.py),
 mirroring

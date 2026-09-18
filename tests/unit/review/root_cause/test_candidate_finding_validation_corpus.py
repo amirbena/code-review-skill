@@ -21,7 +21,7 @@ docs/tests/implementation can mask (PR #390).
 What is proven here:
 
 1. every fixture decodes and validates through the *same* single
-   reference validator (``tests/reference/benchmark/benchmark_fixture.py``)
+   reference validator (``runtime_platform/benchmark/reference/benchmark_fixture.py``)
    used for the worked example and every other corpus — this module
    never defines a second one;
 2. the sub-corpus stays small and documented — bounded size, filename ==
@@ -45,7 +45,7 @@ from pathlib import Path
 
 import yaml
 
-from tests.reference.benchmark import benchmark_fixture as bf
+from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "candidate-finding-validation"
@@ -319,7 +319,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../tests/reference/benchmark/benchmark_fixture.py)", self.raw
+            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         text = " ".join(self.raw.split())
         self.assertIn("never defines a second", text)

@@ -13,14 +13,14 @@ This corpus supplies the one thing that proof does not: a
 [`specialist-depth-composition/`](../specialist-depth-composition/README.md)
 does not cover.
 
-Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of [`../`](../README.md)
-and [`../../`](../../README.md) this is **not** packaged into either Skill
+and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not** packaged into either Skill
 archive and no packaged Skill resource depends on it — it is consumed
 only by this repository's own test suite, through the single reference
 validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle: one net-new case, everything else reused

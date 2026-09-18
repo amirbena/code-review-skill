@@ -14,7 +14,7 @@ isolation** of the private, caller-facing `Reviewer Brief` every
 Unlike every sibling directory here (`security-deepening/`,
 `api-compatibility/`, `specialist-depth-composition/`, …), this corpus
 does **not** ship `benchmark-case/v2` YAML fixtures. That format
-([`../../fixture-format.md`](../../fixture-format.md)) is closed and
+([`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)) is closed and
 findings/decision-shaped: `expected.findings` and `expected.decision` are
 the only outcome it can pin. The Reviewer Brief is a different kind of
 artifact entirely — private prose, synthesized *after* findings/decision
@@ -32,9 +32,9 @@ than creating a parallel fixture framework").
 
 Instead, this corpus follows the same **test-only reference model**
 pattern the rest of `docs/benchmark/` already uses for machinery that has
-no packaged production twin (`tests/reference/benchmark/benchmark_fixture.py`,
+no packaged production twin (`runtime_platform/benchmark/reference/benchmark_fixture.py`,
 `benchmark_match.py`, `benchmark_runner.py`, …):
-[`../../../../tests/reference/benchmark/reviewer_brief_fixtures.py`](../../../../tests/reference/benchmark/reviewer_brief_fixtures.py)
+[`../../../../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py`](../../../../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py)
 defines one `ReviewerBriefCase` per required scenario, carrying **both**
 the private brief's field values **and** the GitHub-bound review
 body/inline comments the same invocation would publish, so isolation is
@@ -95,7 +95,7 @@ claim:
 
 Issue #309 asks to run the focused fixture set through the real reviewer
 adapter "where available."
-[`../../../../scripts/benchmark/benchmark_review_adapter.py`](../../../../scripts/benchmark/benchmark_review_adapter.py)
+[`../../../../runtime_platform/benchmark/scripts/benchmark_review_adapter.py`](../../../../runtime_platform/benchmark/scripts/benchmark_review_adapter.py)
 (`ProductionReviewerAdapter`, #250) only drives `local-code-review` — its
 fixed CLI prompt invokes that Skill by name, and its output parser
 recognizes only that Skill's single-surface Markdown finding format.

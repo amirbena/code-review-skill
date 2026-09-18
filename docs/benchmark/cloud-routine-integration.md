@@ -3,8 +3,8 @@
 Repository-development doc for GitHub Issue
 [#415](https://github.com/amirbena/code-review-skill/issues/415), the
 implementation issue
-[`runtime-execution-contract.md`](runtime-execution-contract.md) §2.2/§8
-scopes but does not itself implement. Like the rest of [`./`](README.md),
+[`runtime-execution-contract.md`](../../runtime_platform/benchmark/runtime-execution-contract.md) §2.2/§8
+scopes but does not itself implement. Like the rest of [`./`](../../runtime_platform/benchmark/README.md),
 this is **not packaged into either Skill archive**, and no packaged Skill
 resource depends on it.
 
@@ -33,7 +33,7 @@ own that; this vehicle only accepts a case-id list.
 Claude Cloud Routine (maintainer-configured; on-demand or scheduled)
   → fresh checkout of the target ref (default: main)
   → record the checked-out SHA (git rev-parse HEAD)
-  → python3 scripts/benchmark/run_benchmark_routine.py --mode <mode> ...
+  → python3 runtime_platform/benchmark/scripts/run_benchmark_routine.py --mode <mode> ...
       → run_benchmark.py (unmodified §3 execution contract, once per case)
       → benchmark_routine_verify.verify_benchmark_output (positive
         completion check — never trusts the Routine's own "green" status)
@@ -43,7 +43,7 @@ Claude Cloud Routine (maintainer-configured; on-demand or scheduled)
         transcript/run history
 ```
 
-`run_benchmark_routine.py` (`scripts/benchmark/run_benchmark_routine.py`)
+`run_benchmark_routine.py` (`runtime_platform/benchmark/scripts/run_benchmark_routine.py`)
 is the only new execution-path code. It never re-implements
 `run_benchmark.py`, the runner, the matcher, or the adapter — it shells
 out to the existing `run_benchmark.py` CLI once per requested case id and
@@ -55,7 +55,7 @@ Built on `run_benchmark.py`'s existing `--case-id` surface (§9 of
 `runtime-execution-contract.md`'s parent contract; no new selection logic
 is added here) plus, for `comprehensive`, programmatic corpus-membership
 discovery added by #431
-(`scripts/benchmark/benchmark_corpus_membership.py`):
+(`runtime_platform/benchmark/scripts/benchmark_corpus_membership.py`):
 
 | Mode | Case ids | Use |
 | --- | --- | --- |
@@ -68,17 +68,17 @@ discovery added by #431
 
 `sentinel` and `comprehensive` are the two-tier scheduled execution lanes
 `docs/benchmark/corpus/README.md` and
-`docs/benchmark/nightly-history-and-baseline.md` §2 define; `full`'s
+`runtime_platform/benchmark/nightly-history-and-baseline.md` §2 define; `full`'s
 pre-#431 ambiguity (it happened to only ever resolve to the 4 top-level
 cases, because `--corpus-dir`'s glob is non-recursive) is resolved by this
 table, not left as a second live meaning.
 
 ## 3. Positive completion verification
 
-`scripts/benchmark/benchmark_routine_verify.py::verify_benchmark_output`
+`runtime_platform/benchmark/scripts/benchmark_routine_verify.py::verify_benchmark_output`
 is the fail-closed check. It never treats a non-zero exit, unparseable
 stdout, a missing/malformed per-case result shape
-(`docs/benchmark/runner-contract.md` §6), or any case whose `status` is
+(`runtime_platform/benchmark/runner-contract.md` §6), or any case whose `status` is
 not `"executed"` as passing evidence — including the
 `check_runtime_available` preflight-failure path, which exits non-zero
 with no stdout JSON at all. Unit-tested fail-closed in
@@ -186,7 +186,7 @@ GitHub Actions benchmark execution path left over from the retired #255
 workflow (#420) for it to couple to. `run_benchmark_routine.py` is dead
 code from the contributor-PR path's perspective — it is only ever invoked
 by a maintainer-configured Cloud Routine prompt (§9) or by a maintainer
-running it locally by hand. `docs/benchmark/selection.md`'s existing
+running it locally by hand. `runtime_platform/benchmark/selection.md`'s existing
 non-blocking, informational-only contributor path (#334) is unchanged by
 this document.
 
@@ -201,7 +201,7 @@ that executes automatically):
 1. Check out a fresh copy of amirbena/code-review-skill at <ref, default main>.
 2. Install dev dependencies (pip install -r requirements-dev.txt).
 3. Run:
-   python3 scripts/benchmark/run_benchmark_routine.py \
+   python3 runtime_platform/benchmark/scripts/run_benchmark_routine.py \
      --mode <smoke|selected|sentinel|comprehensive|auth-check> \
      [--case-id <id> ...] \
      --evidence-issue <tracking issue number> \
@@ -219,11 +219,11 @@ The sentinel and comprehensive lanes (§2.1) are **two separate Cloud
 Routine schedule configurations**, each pasting the template above with
 its own `--mode` and its own recurrence, both targeting a **01:00
 Israel-local start / 04:00 maximum-completion** window
-(`docs/benchmark/nightly-history-and-baseline.md` §2). Timezone/DST
+(`runtime_platform/benchmark/nightly-history-and-baseline.md` §2). Timezone/DST
 handling for that window is entirely a Cloud Routine scheduling-
 configuration responsibility — set the schedule in Israel local time (or
 in UTC with the correct seasonal offset) in the Routine's own product
-surface; nothing in `scripts/benchmark/` computes, stores, or adjusts for
+surface; nothing in `runtime_platform/benchmark/scripts/` computes, stores, or adjusts for
 a timezone.
 
 | Lane | `--mode` | Recurrence |
@@ -254,7 +254,7 @@ section.
 optional `--results-out PATH` flag to `run_benchmark_routine.py`: on a
 verified run only, it writes the concatenated raw per-invocation
 `run_benchmark.py` output to that path, for
-[`nightly-history-and-baseline.md`](nightly-history-and-baseline.md) to
+[`nightly-history-and-baseline.md`](../../runtime_platform/benchmark/nightly-history-and-baseline.md) to
 persist. Omitting it (every call site that existed before #338) is
 unaffected — this is additive, not a change to the modes, verification,
 or evidence-issue behavior above.

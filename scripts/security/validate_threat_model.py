@@ -118,7 +118,7 @@ _ALL_KEYS: frozenset[str] = _REQUIRED_KEYS | _OPTIONAL_KEYS
 # scripts/) or an issue reference (#123). This is deliberately syntactic —
 # "well-formed, not necessarily resolvable yet" per #300's own constraint — so it
 # catches an invented-looking string without requiring the target to exist.
-_REAL_PATH_PREFIXES = ("tests/", "docs/", "shared/", "skills/", "scripts/")
+_REAL_PATH_PREFIXES = ("tests/", "docs/", "shared/", "skills/", "scripts/", "runtime_platform/")
 _ISSUE_REF_RE = re.compile(r"#\d+")
 
 
@@ -188,7 +188,7 @@ def _check_reference(scenario_id: str, field_name: str, value: str) -> None:
         return
     raise ThreatModelFormatError(
         f"{scenario_id}: {field_name}={value!r} is neither {GAP!r}, a repository path "
-        "(tests/docs/shared/skills/scripts...), an 'existing: ...' citation, nor an issue reference (#NNN)"
+        "(tests/docs/shared/skills/scripts/runtime_platform...), an 'existing: ...' citation, nor an issue reference (#NNN)"
     )
 
 

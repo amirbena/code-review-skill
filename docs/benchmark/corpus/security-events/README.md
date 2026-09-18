@@ -36,12 +36,12 @@ LLM/rubric score, exactly like the three corpora above.
 ## Why this isn't a `benchmark-case/v2` corpus
 
 Like the three corpora above, this domain has no representation in
-[`../../fixture-format.md`](../../fixture-format.md): that schema's
+[`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md): that schema's
 `expected` block is findings/decision-shaped and has no field for an
 event schema, a classification, or a redaction assertion. This corpus
 follows the same test-only, data-driven reference-fixture pattern:
 
-- [`../../../../tests/reference/benchmark/security_event_fixtures.py`](../../../../tests/reference/benchmark/security_event_fixtures.py) —
+- [`../../../../runtime_platform/benchmark/reference/security_event_fixtures.py`](../../../../runtime_platform/benchmark/reference/security_event_fixtures.py) —
   the `SecurityEvent` dataclass (mirroring
   [security-event-model.md](../../../security-events/security-event-model.md)
   §3's field schema field-for-field — a field is simply absent, never

@@ -2,7 +2,7 @@
 
 Repository-development artifact for GitHub Issue
 [#129](https://github.com/amirbena/code-review-skill/issues/129). This is a
-**focused sub-corpus** of [`benchmark-case/v2`](../../fixture-format.md)
+**focused sub-corpus** of [`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md)
 fixtures demonstrating the acceptance criterion "benchmark fixtures
 demonstrate measurable gains over diff-only review without unacceptable
 false-positive growth" for the
@@ -13,14 +13,14 @@ sits inside the ring
 [`../../../../shared/policies/repository-expansion.md`](../../../../shared/policies/repository-expansion.md)
 (#87) already authorizes.
 
-Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
-[`../`](../README.md) and [`../../`](../../README.md) this is **not**
+[`../`](../README.md) and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle
@@ -56,7 +56,7 @@ relationship-aware mechanism holding on representative cases; it is **not**
 a measured hit-rate, precision/recall figure, or any other statistical
 claim about review quality at scale. Turning matches and misses into
 aggregate quality metrics is out of scope here — see
-[`../../fixture-format.md`](../../fixture-format.md) §13 and
+[`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §13 and
 [#41](https://github.com/amirbena/code-review-skill/issues/41).
 
 ## Cases
@@ -78,7 +78,7 @@ header comment.
 `benchmark-case/v2` has no field for `influential_relationships` or a
 snapshot-identity/staleness state — the format's schema is closed and this
 corpus does not extend it (see
-[`../../fixture-format.md`](../../fixture-format.md) §2, "an unknown key
+[`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §2, "an unknown key
 anywhere is a rejection"). Those concerns are proven at the reference-model
 level instead: each case above has a matching case in
 [`../../../../tests/unit/review/repository_intelligence/test_repository_intelligence.py`](../../../../tests/unit/review/repository_intelligence/test_repository_intelligence.py)
@@ -98,7 +98,7 @@ values).
 
 [`../../../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py`](../../../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second
 one), and asserts: the sub-corpus stays small; per positive fixture, the
 relationship-dependent defect is absent from what a diff-only read of the

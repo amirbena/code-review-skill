@@ -9,7 +9,7 @@ epic), which defines
 the `observation → candidate claim → validated finding → severity`
 reasoning contract: what a candidate must prove before it is promoted to a
 severity-bearing finding. This is a **focused sub-corpus** of
-[`benchmark-case/v2`](../../fixture-format.md) fixtures that pin the
+[`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md) fixtures that pin the
 expected outcomes for that contract and keep its false-escalation
 protections (unproven regression, unestablished semantic equivalence, an
 invented P0/P1 with no supporting evidence) and its non-suppression
@@ -17,14 +17,14 @@ protections (a technically-grounded blocking finding with no Jira, a
 proven defect that is not demoted merely because its impact is
 non-blocking) from regressing.
 
-Every case conforms to [`../../fixture-format.md`](../../fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
-[`../`](../README.md) and [`../../`](../../README.md) this is **not**
+[`../`](../README.md) and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py).
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py).
 
 This corpus **consumes** the canonical contract in
 `candidate-finding-validation-model.md`; it does not redefine it. Every
@@ -122,7 +122,7 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
 
 [`../../../../tests/unit/review/root_cause/test_candidate_finding_validation_corpus.py`](../../../../tests/unit/review/root_cause/test_candidate_finding_validation_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../tests/reference/benchmark/benchmark_fixture.py`](../../../../tests/reference/benchmark/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and every other corpus — it never defines a
 second one — and asserts: the sub-corpus stays small and documented; every
 required outcome shape (including the real-world scenario) is present;

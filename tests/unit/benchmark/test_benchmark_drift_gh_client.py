@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Coverage for `GhCliIssueClient.list_labeled_issues`'s pagination loop
-(Issue #339). Contract: docs/benchmark/drift-detection-and-regression-lifecycle.md
+(Issue #339). Contract: runtime_platform/benchmark/drift-detection-and-regression-lifecycle.md
 §4.2.
 
 `gh issue list --limit N` fetches up to N results *total*, not N per page,
@@ -17,7 +17,7 @@ import json
 import unittest
 from unittest import mock
 
-from scripts.benchmark import benchmark_drift as bd
+from runtime_platform.benchmark.scripts import benchmark_drift as bd
 
 
 def _issue(number: int) -> dict:
