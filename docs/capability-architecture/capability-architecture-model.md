@@ -921,7 +921,7 @@ code-review-skill/                       (unchanged repository, restructured int
 │         pr-scope.md · repository-checkout.md · review-evidence.md
 │         runbooks/ (adapter phases only) · templates/
 │
-├── platform/                            ← measurement + tooling
+├── runtime_platform/                    ← measurement + tooling
 │   ├── benchmark/   harness contracts, reference models, runner, adapter
 │   ├── packaging/   manifest GENERATED from capability.yaml files
 │   ├── release/ · governance/ · sandbox/ · skill_metadata/
@@ -932,13 +932,52 @@ code-review-skill/                       (unchanged repository, restructured int
 ```
 
 Dependencies: `adapters/* → capabilities/* → capabilities/_kernel`.
-`platform/*` depends on capability manifests, never on capability bodies.
-No capability depends on an adapter. No capability depends on `docs/` or
-`policies/`, preserving the existing packaged-independence invariant.
+`runtime_platform/*` depends on capability manifests, never on capability
+bodies. No capability depends on an adapter. No capability depends on
+`docs/` or `policies/`, preserving the existing packaged-independence
+invariant.
 
 **This is a directory restructure, not a repository change.** It can be
 approached one capability at a time, and at every intermediate point both
 archives still build and are byte-comparable.
+
+### E.2.1 Naming: `runtime_platform/`, not `platform/` (#458)
+
+The topology above originally named this directory `platform/`. That
+literal name collides with Python's standard-library `platform` module:
+a package directory named `platform/` on the repository root (already on
+`sys.path` for this repo's absolute imports, e.g.
+`tests.reference.benchmark.*`) shadows the stdlib module for every
+`import platform` executed afterward in the same interpreter — including
+`scripts/sandbox/capability.py`'s use of `platform.system()` for sandbox
+capability detection, a security-relevant subsystem
+(`area:security-boundaries`). Once anything imports this repository's
+`platform` package in a process (a near-certainty across a full `pytest`
+run), `sys.modules` caching makes the collision apply regardless of
+import order.
+
+**Decision: rename the directory to `runtime_platform/`.** This removes
+the hazard at the source rather than defending individual call sites
+against it — a per-call-site guard (e.g. hardening
+`scripts/sandbox/capability.py`'s import) only protects the one known
+usage today and gives a future `import platform` anywhere else in the
+repository no mechanical way to fail loudly. `runtime_platform` keeps the
+directory's "measurement + tooling" meaning from §E.2, stays a valid
+Python identifier (unlike hyphenated alternatives such as
+`runtime-platform`, which cannot be imported as `runtime_platform.<sub>`
+without extra machinery), and does not read as a private/internal name
+the way a leading-underscore `_platform` would for a top-level,
+publicly-relevant directory.
+
+No code change is required in `scripts/sandbox/capability.py`: its plain
+`import platform` continues to resolve to the stdlib module once this
+repository's own package is no longer named `platform`.
+
+This decision is scoped to the top-level directory name only; it does not
+change §E.2's topology, ownership boundaries, or contents otherwise.
+Downstream references to the old `platform/` name —
+`benchmark-ownership-boundary-checkpoint.md` §7 item 2 and issue #457 —
+are updated to `runtime_platform/` accordingly.
 
 ---
 
@@ -1062,7 +1101,7 @@ archives still build and are byte-comparable.
                     │  verdict-consistency       │
                     └────────────────────────────┘
 
-                    platform/packaging/
+                    runtime_platform/packaging/
                       reads capability.yaml → GENERATES the manifest
                       (never read by a capability)
 
@@ -1718,9 +1757,11 @@ This is close to the hypothesis in the task, with two derived corrections:
 
 ### M.2 Preferred repository topology
 
-**One repository.** `capabilities/` + `adapters/` + `platform/`, as laid
-out in §E.2. No split now; the manifest is what would make a later split
-cheap if a genuine independent consumer ever appears.
+**One repository.** `capabilities/` + `adapters/` + `runtime_platform/`,
+as laid out in §E.2 (renamed from `platform/` per §E.2.1 to avoid the
+stdlib `platform` module collision). No split now; the manifest is what
+would make a later split cheap if a genuine independent consumer ever
+appears.
 
 ### M.3 What remains shared
 
