@@ -33,15 +33,16 @@ stacked-pr-review.md       stack topology detection; effective review base;
                             owned vs. inherited delta; safe-failure fallback;
                             #119 lower-layer re-review trigger
         ↓
-review-base-policy.md       (shared) repository-relative review-base policy
-                            compliance; one blocking P0 before implementation
-                            findings when the resolved root reliably violates
-                            repository policy; fail-closed otherwise; #134
-        ↓
 pr-scope.md                 complete PR scope, pagination, prior-review awareness
         ↓
 repository-checkout.md      optional isolated temporary checkout for richer
                             Repository Context; read-only; guaranteed cleanup
+        ↓
+review-base-policy.md       (shared) repository-relative review-base policy
+                            compliance, once repository-instruction discovery
+                            has run; one blocking P0 before implementation
+                            findings when the resolved root reliably violates
+                            repository policy; fail-closed otherwise; #134
         ↓
 review-context.md           optional supplied context (Jira / Issue / HLD / ADR /
                             plan / PR description); scope-boundary reasoning
@@ -101,15 +102,17 @@ derives the effective review base that [`pr-scope.md`](pr-scope.md) and
 [`repository-checkout.md`](repository-checkout.md) use in place of the
 root for scope retrieval and base/head fidelity, never widening the
 Review Target;
-[`review-base-policy.md`](../../../shared/policies/review-base-policy.md)
-runs next, once `stacked-pr-review.md` has resolved topology, and checks
-the resolved root (never an intermediate stack layer's parent-PR base)
-against the repository-resolved review base — a shared, cross-Skill
-policy this file references, not redefines; it never runs when that root
-cannot be reliably resolved;
 [`repository-checkout.md`](repository-checkout.md) is optional, runs after
 [`pr-scope.md`](pr-scope.md) has established the PR's base/head, and never
 changes the Review Target — the PR delta;
+[`review-base-policy.md`](../../../shared/policies/review-base-policy.md)
+runs once `stacked-pr-review.md` has resolved topology **and**
+repository-instruction discovery has run (the source for that shared
+policy's explicit-statement resolution signal), and checks the resolved
+root (never an intermediate stack layer's parent-PR base) against the
+repository-resolved review base — a shared, cross-Skill policy this file
+references, not redefines; it never runs when that root cannot be
+reliably resolved;
 [`review-context.md`](review-context.md) and
 [`review-evidence.md`](review-evidence.md) are optional and run after
 review-authority and reviewer-mode resolution, informing but never widening

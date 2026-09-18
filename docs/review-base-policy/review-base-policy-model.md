@@ -99,13 +99,15 @@ silence, not a fabricated comparison.
 ## 6. Ordering: before implementation findings
 
 The finding this model defines, when it fires, is recorded before the
-review's implementation-focused reasoning begins — a dedicated early
-runbook step in both Skills (see each runbook's own step numbering),
-right after the base/topology resolution each Skill already performs and
-before repository-instruction discovery and the actual review. This
-governs finding-set *ordering*, not [`severity.md`](../../shared/policies/severity.md)'s
-mechanical decision derivation, which still runs exactly once over the
-complete finalized finding set.
+review's implementation-focused reasoning begins — a dedicated runbook
+step in both Skills (see each runbook's own step numbering), placed after
+both the base/topology resolution and the repository-instruction
+discovery each Skill already performs (discovery is this model's own
+explicit-statement resolution signal, §3 — the check cannot run before
+it) and before the actual review. This governs finding-set *ordering*,
+not [`severity.md`](../../shared/policies/severity.md)'s mechanical
+decision derivation, which still runs exactly once over the complete
+finalized finding set.
 
 ## 7. Smallest useful first implementation
 

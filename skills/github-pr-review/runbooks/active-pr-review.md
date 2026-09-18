@@ -94,6 +94,11 @@ diff size reaches the partitioning threshold? → yes → partition into
                                                    aggregated below)
                                                  → no  → review as one unit
     ↓
+check review-base policy compliance per review-base-policy.md; resolved
+root violates repository policy? → yes → record one blocking P0 now
+                                          (before implementation findings)
+                                        → no/unresolvable → nothing recorded
+    ↓
 review (incl. scope-boundary reasoning against supplied context)
     ↓
 aggregate worker findings (normalize → dedupe → reconcile); required
@@ -294,23 +299,6 @@ stop
    On failure, clean up. Optional mode records a visible API-only degradation;
    required mode returns `REVIEW INCOMPLETE` / `REPOSITORY CONTEXT
    UNAVAILABLE` and starts no workers. See step 18 for mandatory cleanup.
-5a. **Check review-base policy compliance** per
-   [`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
-   using the stack topology resolved in step 5. This check applies to the
-   resolved **root** (the repository's default/target branch the stack
-   chain terminates at, or the PR's own declared base for a non-stacked
-   PR) — never to an intermediate layer's parent-PR base, which
-   [`stacked-pr-review.md`](../policies/stacked-pr-review.md) already
-   treats as legitimate. Resolve the repository-resolved review base from
-   that policy's ranked signals and, when both it and the resolved root
-   are reliably known and they differ, record the single blocking P0
-   finding that policy defines now, so it is already part of the finding
-   set before step 9's implementation-focused review begins. When the
-   repository-resolved review base cannot be established reliably, or
-   step 5's topology resolution itself fell back to a Tier 1/Tier 2 safe
-   failure, this step records nothing, per that policy's "Fail-closed on
-   an unresolved base" — an unresolved stack is not, by itself, evidence
-   of a policy violation.
 6. Determine event-specific capability, including draft, fork,
    comment-only, and permission-limited states, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
@@ -429,6 +417,26 @@ stop
    the partitions built for the subordinate metadata block (step 13); an
    unpartitioned review records nothing for this field, per "Reporting" and
    "Non-goals and ownership boundary" — not restated here.
+8d. **Check review-base policy compliance** per
+   [`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
+   using the stack topology resolved in step 5 and the repository
+   instructions already discovered in step 8 (the source for that
+   policy's explicit-statement resolution signal — this step performs no
+   second discovery pass). This check applies to the resolved **root**
+   (the repository's default/target branch the stack chain terminates at,
+   or the PR's own declared base for a non-stacked PR) — never to an
+   intermediate layer's parent-PR base, which
+   [`stacked-pr-review.md`](../policies/stacked-pr-review.md) already
+   treats as legitimate. Resolve the repository-resolved review base from
+   that policy's ranked signals and, when both it and the resolved root
+   are reliably known and they differ, record the single blocking P0
+   finding that policy defines now, so it is already part of the finding
+   set before step 9's implementation-focused review begins. When the
+   repository-resolved review base cannot be established reliably, or
+   step 5's topology resolution itself fell back to a Tier 1/Tier 2 safe
+   failure, this step records nothing, per that policy's "Fail-closed on
+   an unresolved base" — an unresolved stack is not, by itself, evidence
+   of a policy violation.
 9. Review per
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

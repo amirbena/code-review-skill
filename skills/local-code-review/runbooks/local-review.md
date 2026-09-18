@@ -94,6 +94,11 @@ diff size reaches the partitioning threshold? → yes → partition into
                                                    aggregated below)
                                                  → no  → review as one unit
     ↓
+check review-base policy compliance per review-base-policy.md; resolved
+base violates repository policy? → yes → record one blocking P0 now
+                                          (before implementation findings)
+                                        → no/unresolvable → nothing recorded
+    ↓
 inspect relevant surrounding code
     ↓
 review against code + repository conventions, focused per any supplied
@@ -176,17 +181,6 @@ which a value must be resolved before it is used, or what is reported.
    branch unless the target repository's own rules explicitly permit it.
    **Do not create a branch** — validate what already exists; branch
    creation belongs to the implementing workflow.
-2a. **Check review-base policy compliance** per
-   [`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
-   using the base resolved in step 2. Resolve the repository-resolved
-   review base from that policy's ranked signals and, when both it and the
-   base under review are reliably known and they differ, record the single
-   blocking P0 finding that policy defines now, so it is already part of
-   the finding set before step 9's implementation-focused review begins.
-   When the repository-resolved review base cannot be established
-   reliably, this step records nothing, per that policy's "Fail-closed on
-   an unresolved base" — never a guessed branch name, and never `HEAD`
-   substituted for it.
 3. Determine the **complete** local delta — do not assume local `HEAD`
    contains the whole task, and do not blend categories into one
    undifferentiated set. Detect each category with its own command per
@@ -334,6 +328,20 @@ which a value must be resolved before it is used, or what is reported.
    (step 13); an unpartitioned review records nothing for this field, per
    that policy's "Reporting" and "Non-goals and ownership boundary" — not
    restated here.
+8e. **Check review-base policy compliance** per
+   [`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
+   using the base resolved in step 2 and the repository instructions
+   already discovered in step 6 (the source for that policy's
+   explicit-statement resolution signal — this step performs no second
+   discovery pass). Resolve the repository-resolved review base from that
+   policy's ranked signals and, when both it and the base under review are
+   reliably known and they differ, record the single blocking P0 finding
+   that policy defines now, so it is already part of the finding set
+   before step 9's implementation-focused review begins. When the
+   repository-resolved review base cannot be established reliably, this
+   step records nothing, per that policy's "Fail-closed on an unresolved
+   base" — never a guessed branch name, and never `HEAD` substituted for
+   it.
 9. Review the complete delta against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

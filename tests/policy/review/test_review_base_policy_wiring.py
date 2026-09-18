@@ -105,41 +105,57 @@ class BothSkillsLoadTheSharedPolicyTests(unittest.TestCase):
             GITHUB_SKILL_YAML.read_text(encoding="utf-8"),
         )
 
-    def test_local_runbook_checks_it_right_after_base_resolution(self) -> None:
+    def test_local_runbook_checks_it_after_base_and_instruction_discovery(self) -> None:
+        # The check must run after both step 2 (base resolution) and step 6
+        # (repository-instruction discovery) — its explicit-statement signal
+        # depends on discovery having already run — and before step 9 (the
+        # implementation-focused review).
         text = _text(LOCAL_RUNBOOK)
         base_step = text.find("2. Resolve the base branch and base SHA")
-        base_policy_step = text.find("2a. Check review-base policy compliance")
-        delta_step = text.find("3. Determine the")
+        discovery_step = text.find("6. Discover applicable repository-local instructions")
+        base_policy_step = text.find("8e. Check review-base policy compliance")
+        review_step = text.find("9. Review the complete delta against")
         self.assertGreater(base_step, -1)
-        self.assertGreater(base_policy_step, base_step)
-        self.assertGreater(delta_step, base_policy_step)
+        self.assertGreater(discovery_step, base_step)
+        self.assertGreater(base_policy_step, discovery_step)
+        self.assertGreater(review_step, base_policy_step)
 
-    def test_github_active_runbook_checks_it_right_after_topology_resolution(self) -> None:
+    def test_github_active_runbook_checks_it_after_topology_and_instruction_discovery(
+        self,
+    ) -> None:
         text = _text(GITHUB_ACTIVE_RUNBOOK)
         topology_step = text.find("resolve stack topology")
-        base_policy_step = text.find("5a. Check review-base policy compliance")
-        capability_step = text.find("Determine event-specific capability")
+        discovery_step = text.find("8. Discover applicable repository-local instructions")
+        base_policy_step = text.find("8d. Check review-base policy compliance")
+        review_step = text.find("9. Review per")
         self.assertGreater(topology_step, -1)
-        self.assertGreater(base_policy_step, topology_step)
-        self.assertGreater(capability_step, base_policy_step)
+        self.assertGreater(discovery_step, topology_step)
+        self.assertGreater(base_policy_step, discovery_step)
+        self.assertGreater(review_step, base_policy_step)
 
-    def test_github_passive_runbook_checks_it_right_after_topology_resolution(self) -> None:
+    def test_github_passive_runbook_checks_it_after_topology_and_instruction_discovery(
+        self,
+    ) -> None:
         text = _text(GITHUB_PASSIVE_RUNBOOK)
         topology_step = text.find("resolve stack topology")
-        base_policy_step = text.find("4a. Check review-base policy compliance")
-        instructions_step = text.find("Discover applicable repository-local instructions")
+        discovery_step = text.find("5. Discover applicable repository-local instructions")
+        base_policy_step = text.find("5d. Check review-base policy compliance")
+        review_step = text.find("6. Review the diff against")
         self.assertGreater(topology_step, -1)
-        self.assertGreater(base_policy_step, topology_step)
-        self.assertGreater(instructions_step, base_policy_step)
+        self.assertGreater(discovery_step, topology_step)
+        self.assertGreater(base_policy_step, discovery_step)
+        self.assertGreater(review_step, base_policy_step)
 
-    def test_github_review_index_orders_it_after_stacked_pr_review(self) -> None:
+    def test_github_review_index_orders_it_after_repository_checkout(self) -> None:
         text = _text(GITHUB_REVIEW_INDEX)
         stacked_step = text.find("stacked-pr-review.md")
+        checkout_step = text.find("repository-checkout.md")
         base_policy_step = text.find("review-base-policy.md")
-        scope_step = text.find("pr-scope.md")
+        context_step = text.find("review-context.md")
         self.assertGreater(stacked_step, -1)
-        self.assertGreater(base_policy_step, stacked_step)
-        self.assertGreater(scope_step, base_policy_step)
+        self.assertGreater(checkout_step, stacked_step)
+        self.assertGreater(base_policy_step, checkout_step)
+        self.assertGreater(context_step, base_policy_step)
 
 
 class NoForkedCopyTests(unittest.TestCase):
