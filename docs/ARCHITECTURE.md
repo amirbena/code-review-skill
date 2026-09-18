@@ -502,8 +502,9 @@ and no packaged Skill resource depends on them.
   (same-root-cause redundancy) — each rendered alongside the
   regression comparison in
   [`runtime_platform/benchmark/regression-report.md`](../runtime_platform/benchmark/regression-report.md)
-  without gating it. Every reference metric under `tests/reference/` is
-  test-only; nothing benchmark is packaged. PR-time benchmark relevance is
+  without gating it. Every benchmark reference metric under
+  `runtime_platform/benchmark/reference/` is test-only; nothing benchmark is
+  packaged. PR-time benchmark relevance is
   determined deterministically by the canonical taxonomy/inverted index
   ([`runtime_platform/benchmark/taxonomy.md`](../runtime_platform/benchmark/taxonomy.md), #333) and the Top-K
   selector ([`runtime_platform/benchmark/selection.md`](../runtime_platform/benchmark/selection.md), #334);

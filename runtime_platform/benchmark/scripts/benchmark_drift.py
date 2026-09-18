@@ -23,7 +23,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-# Reused, not reinvented (see the contract doc §1): `tests/reference/benchmark`
+# Reused, not reinvented (see the contract doc §1): `runtime_platform/benchmark/reference`
 # is the only executable projection of #53/#54/#55/#56/#57 today.
 from runtime_platform.benchmark.reference import benchmark_metrics as bmet  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_severity as bsev  # noqa: E402
