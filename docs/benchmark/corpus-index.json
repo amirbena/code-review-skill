@@ -50,6 +50,11 @@
       "database-migration-deepening-nullable-to-non-null-no-backfill",
       "database-migration-deepening-unsafe-online-blocking-lock"
     ],
+    "decision-derivation": [
+      "dd-p2-only-mild-wording",
+      "dd-p2-only-urgent-wording",
+      "dd-zero-findings-clean"
+    ],
     "dependency-supply-chain": [
       "dependency-supply-chain-deepening-major-version-breaking-api-change",
       "dependency-supply-chain-deepening-no-manifest-touched-not-implicated-clean",
@@ -201,6 +206,11 @@
       "security-deepening-sanitization-assumption-bypass",
       "security-deepening-single-caller-check-enforced-clean"
     ],
+    "severity": [
+      "dd-p2-only-mild-wording",
+      "dd-p2-only-urgent-wording",
+      "dd-zero-findings-clean"
+    ],
     "specialist-depth": [
       "specialist-depth-composition-case-a-zero-capabilities-base-reasoning-complete",
       "specialist-depth-composition-case-b-one-capability-security-confused-deputy",
@@ -314,6 +324,7 @@
       "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth"
     ],
     "no-op": [
+      "dd-zero-findings-clean",
       "no-op-comment-and-rename",
       "null-absence-java-guarded-clean",
       "semantic-implication-no-signal-clean-extraction"
@@ -337,6 +348,8 @@
       "cfv-disconfirming-precedent-reevaluated",
       "cfv-requirement-ambiguity-not-invented",
       "cfv-structural-inconsistency-non-blocking",
+      "dd-p2-only-mild-wording",
+      "dd-p2-only-urgent-wording",
       "quality-duplicated-branch-logic",
       "real-world-semantic-consistency-trap-pr-390",
       "semantic-implication-insufficient-evidence-stop",
@@ -405,6 +418,9 @@
       "database-migration-deepening-mongodb-document-shape-rename",
       "database-migration-deepening-nullable-to-non-null-no-backfill",
       "database-migration-deepening-unsafe-online-blocking-lock",
+      "dd-p2-only-mild-wording",
+      "dd-p2-only-urgent-wording",
+      "dd-zero-findings-clean",
       "dependency-supply-chain-deepening-major-version-breaking-api-change",
       "dependency-supply-chain-deepening-no-manifest-touched-not-implicated-clean",
       "dependency-supply-chain-deepening-runtime-minimum-raised",

@@ -1,0 +1,46 @@
+# Decision-derivation corpus case (Issue #450). Format:
+# docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# The empty-finding-set edge of the reverse-direction proof: a correct,
+# safe change with nothing to flag at all must render REVIEW CLEAN. Zero
+# required findings trivially satisfies severity.md's mechanical
+# derivation (no P0/P1 tally to make), but this case exists in its own
+# right per #450's acceptance criteria rather than only inferring the
+# empty-set behavior from the two P2-only cases alongside it.
+
+format: benchmark-case/v2
+
+id: dd-zero-findings-clean
+title: "New format_percentage helper is correct, safe, and has nothing to flag"
+
+input:
+  patch: |
+    diff --git a/reports/format_utils.py b/reports/format_utils.py
+    new file mode 100644
+    index 0000000..4c8d1a2
+    --- /dev/null
+    +++ b/reports/format_utils.py
+    @@ -0,0 +1,3 @@
+    +def format_percentage(value):
+    +    """Return value formatted as a percentage string, e.g. '42%'."""
+    +    return f"{value}%"
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    Pins the zero-finding edge of #450's reverse-direction proof
+    independently of the two P2-only cases alongside it: an empty
+    findings set must render REVIEW CLEAN, never CHANGES REQUIRED, and a
+    reviewer that manufactures a finding on a genuinely clean change is
+    itself the defect this case guards against.
+  taxonomy:
+    capability: [decision-derivation]
+    policy_contract: [severity]
+    risk_mode: [no-op]
+    affected_surface: [unclassified]

@@ -1,0 +1,82 @@
+# Decision-derivation corpus case (Issue #450). Format:
+# docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# This is the corpus's key regression-proof case. #449 (closed, fixed by
+# PR #452) was a real production instance of a P2-only review rendering
+# CHANGES REQUIRED — the finding's own strongly-worded recommendation
+# independently pushed the rendered outcome past the mechanical P0/P1
+# tally severity.md requires. This fixture reproduces that shape
+# deliberately: the single expected finding is still `severity: P2`, but
+# its `claim` text carries exactly the kind of urgent, blocking-sounding
+# language ("CRITICAL", "must be fixed before merge", "blocking
+# violation") that caused the #449 regression. `expected.decision` is
+# still `clean` — wording must never independently produce a blocking
+# decision; only a required P0/P1 finding does that (severity.md,
+# "Decision derivation (mechanical)").
+
+format: benchmark-case/v2
+
+id: dd-p2-only-urgent-wording
+title: "render_summary logs via print() instead of the module logger, described in urgent/blocking language"
+
+input:
+  patch: |
+    diff --git a/admin/dashboard.py b/admin/dashboard.py
+    new file mode 100644
+    index 0000000..9b4e5f6
+    --- /dev/null
+    +++ b/admin/dashboard.py
+    @@ -0,0 +1,4 @@
+    +def render_summary(counts):
+    +    """Print a one-line summary of the admin dashboard counts."""
+    +    print(f"dashboard summary: {counts}")
+    +    return counts
+  base:
+    admin/telemetry.py: |
+      import logging
+
+      logger = logging.getLogger(__name__)
+
+
+      def record_event(name):
+          logger.info("event: %s", name)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: render-summary-prints-instead-of-logging
+      match: required
+      severity: P2
+      location:
+        location_intent: symbol
+        path: admin/dashboard.py
+        symbol: render_summary
+        anchor: 'print(f"dashboard summary: {counts}")'
+      claim: >-
+        CRITICAL — this must be fixed before merge: render_summary writes
+        directly to stdout with print() instead of using the module's
+        existing logger (admin.telemetry.logger), which is a blocking
+        violation that will silently break log aggregation in production.
+      defect_kind: print-instead-of-logger
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    The corpus's key regression-proof case for #449/#450: a maintainability
+    finding whose claim text is deliberately written with alarming,
+    blocking-sounding wording ("CRITICAL", "must be fixed before merge",
+    "blocking violation") while its severity stays P2. A correct review
+    still mechanically derives `clean`, proving wording cannot
+    independently produce a blocking decision — only a required P0/P1
+    finding can (severity.md, "Decision derivation (mechanical)"). Distinct
+    from dd-p2-only-mild-wording.yaml, which pins the same mechanical rule
+    under ordinary review language, so a regression that is specifically
+    wording-triggered (like #449) surfaces here even if the plain-wording
+    case still passes.
+  taxonomy:
+    capability: [decision-derivation]
+    policy_contract: [severity]
+    risk_mode: [quality]
+    affected_surface: [unclassified]
