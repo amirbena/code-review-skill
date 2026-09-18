@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.53.0 — 2026-09-18
+
+### Added
+
+- Both Code Review Skills now flag, as a blocking P0 before implementation findings, a change targeting a review base that violates the target repository's own review-base policy — repository-relative, fail-closed when unresolvable (#461).
+
 ## v1.52.1 — 2026-09-17
 
 ### Fixed
