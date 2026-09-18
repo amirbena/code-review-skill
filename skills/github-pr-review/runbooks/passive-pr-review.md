@@ -11,6 +11,7 @@ Applies shared policies:
 [`verdict-consistency.md`](../../../shared/policies/verdict-consistency.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
+[`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
 [`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
 [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
@@ -71,6 +72,11 @@ diff size reaches the partitioning threshold? → yes → partition into
                                                    (each unit reviewed and
                                                    aggregated below)
                                                  → no  → review as one unit
+    ↓
+check review-base policy compliance per review-base-policy.md; resolved
+root violates repository policy? → yes → record one blocking P0 now
+                                          (before implementation findings)
+                                        → no/unresolvable → nothing recorded
     ↓
 inspect diff and surrounding code (incl. scope-boundary reasoning)
     ↓
@@ -279,6 +285,22 @@ finally: remove the temporary checkout (success, any failure, interruption)
    the partitions built for the subordinate metadata block (step 8); an
    unpartitioned review records nothing for this field, per "Reporting" and
    "Non-goals and ownership boundary" — not restated here.
+5d. **Check review-base policy compliance** per
+   [`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
+   using the stack topology resolved in step 4 and the repository
+   instructions already discovered in step 5 (the source for that
+   policy's explicit-statement resolution signal — this step performs no
+   second discovery pass). This check applies to the resolved **root** —
+   never to an intermediate layer's parent-PR base, which
+   [`stacked-pr-review.md`](../policies/stacked-pr-review.md) already
+   treats as legitimate. When both the repository-resolved review base and
+   the resolved root are reliably known and they differ, record the single
+   blocking P0 finding that policy defines now, so it is already part of
+   the finding set before step 6's implementation-focused review begins.
+   When the repository-resolved review base cannot be established
+   reliably, or step 4's topology resolution itself fell back to a
+   safe-failure tier, this step records nothing, per that policy's
+   "Fail-closed on an unresolved base."
 6. Review the diff against
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in

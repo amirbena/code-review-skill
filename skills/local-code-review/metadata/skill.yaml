@@ -49,6 +49,7 @@ shared:
     - ../../../shared/policies/verdict-consistency.md
     - ../../../shared/policies/evidence.md
     - ../../../shared/policies/repository-instructions.md
+    - ../../../shared/policies/review-base-policy.md
     - ../../../shared/policies/runtime-validation.md
     - ../../../shared/policies/trusted-host-execution.md
     - ../../../shared/policies/git-safety.md
