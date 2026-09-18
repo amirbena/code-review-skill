@@ -1,0 +1,80 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# The diff adds math/stats.py's median() with a genuine bug (it returns
+# the upper-middle element for an even-length input instead of
+# averaging the two middle elements) and adds a correct test for it.
+# The new test correctly encodes the standard median definition and
+# fails only because median() is broken -- it is evidence that
+# production is broken, not itself the defect. The fix/action location
+# is median(), not the test, which needs no change.
+#
+# Expected: ONE required finding anchored in math/stats.py;
+# tests/test_stats.py never becomes an anchor.
+
+format: benchmark-case/v2
+
+id: finding-placement-test-reveals-production-defect
+title: "A correct new test reveals median()'s even-length bug; the fix belongs in production, not the test"
+
+input:
+  patch: |
+    diff --git a/math/stats.py b/math/stats.py
+    new file mode 100644
+    index 0000000..9c0d1e2
+    --- /dev/null
+    +++ b/math/stats.py
+    @@ -0,0 +1,6 @@
+    +def median(values):
+    +    ordered = sorted(values)
+    +    mid = len(ordered) // 2
+    +    if len(ordered) % 2 == 0:
+    +        return ordered[mid]
+    +    return ordered[mid]
+    diff --git a/tests/test_stats.py b/tests/test_stats.py
+    new file mode 100644
+    index 0000000..0d1e2f3
+    --- /dev/null
+    +++ b/tests/test_stats.py
+    @@ -0,0 +1,5 @@
+    +from math.stats import median
+    +
+    +
+    +def test_median_even_length_averages_middle_two():
+    +    assert median([1, 2, 3, 4]) == 2.5
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: median-wrong-for-even-length-input
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: math/stats.py
+        symbol: median
+        anchor: "if len(ordered) % 2 == 0:"
+      claim: >-
+        math/stats.py's median returns the upper-middle element for an
+        even-length input instead of averaging the two middle elements,
+        so median([1, 2, 3, 4]) returns 3 instead of 2.5.
+        tests/test_stats.py's new test_median_even_length_averages_middle_two
+        correctly encodes the standard median definition and fails only
+        because median() is broken -- it is evidence that median() is
+        broken, not itself defective, and requires no change.
+      defect_kind: incorrect-even-length-median
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Positive case for #386's "Test versus production placement" rule: a
+    test that correctly reveals a genuine production defect anchors at
+    the production code it exposes, never at the test itself.
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

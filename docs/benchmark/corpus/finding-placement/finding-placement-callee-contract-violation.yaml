@@ -1,0 +1,77 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# billing/checkout.py (base, unchanged) calls pricing/tax.py's apply_tax
+# correctly and with a valid subtotal. The new pricing/tax.py
+# implementation breaks its own documented contract (always return a
+# value rounded to 2 decimal places) regardless of what a conforming
+# caller passes -- a contract violation, not a caller failure. The
+# fix/action location is the callee.
+#
+# Expected: ONE required finding anchored in pricing/tax.py;
+# billing/checkout.py never becomes an anchor.
+
+format: benchmark-case/v2
+
+id: finding-placement-callee-contract-violation
+title: "apply_tax breaks its own documented rounding contract regardless of a conforming caller"
+
+input:
+  patch: |
+    diff --git a/pricing/tax.py b/pricing/tax.py
+    new file mode 100644
+    index 0000000..4d5e6f7
+    --- /dev/null
+    +++ b/pricing/tax.py
+    @@ -0,0 +1,6 @@
+    +def apply_tax(amount: float) -> float:
+    +    """Applies the standard 8% tax rate. Contract: always returns a
+    +    value rounded to 2 decimal places, since callers render it
+    +    directly as currency without further rounding.
+    +    """
+    +    return amount * 1.08
+  base:
+    billing/checkout.py: |
+      from pricing.tax import apply_tax
+
+
+      def checkout_total(subtotal: float) -> float:
+          return apply_tax(subtotal)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: apply-tax-breaks-rounding-contract
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: pricing/tax.py
+        symbol: apply_tax
+        anchor: "return amount * 1.08"
+      claim: >-
+        pricing/tax.py's apply_tax documents that it always returns a
+        value rounded to 2 decimal places because callers render it
+        directly as currency, but the implementation never rounds; a
+        subtotal like 19.999 produces an unrounded result. This is a
+        contract violation by the callee regardless of the caller --
+        billing/checkout.py's checkout_total calls apply_tax correctly
+        and is not defective.
+      defect_kind: missing-documented-rounding
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Positive case for #386's "no mechanical caller/callee preference"
+    rule in its contract-violation direction: the callee fails to honor
+    its own documented contract regardless of a conforming caller, so
+    the fix/action location is the callee, not "the caller because it is
+    upstream" or vice versa.
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [architectural-placement]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]
