@@ -93,6 +93,7 @@ expected:
       defect_kind: incorrect-rounding-behavior
       alternatives:
         - defect_kind: broken-invariant
+        - defect_kind: incorrect-rounding-direction
 
 metadata:
   source: crafted
