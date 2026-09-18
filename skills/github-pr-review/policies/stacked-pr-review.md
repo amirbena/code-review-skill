@@ -317,6 +317,7 @@ be read as redefining:
 | One review scope → one owner | [`review-ownership.md`](../../../shared/policies/review-ownership.md) |
 | Building, reordering, or merging a stack; replacing GitHub's own branch management | Explicitly a non-goal — not built by this policy |
 | Reviewing an entire stack as one combined PR by default | Explicitly a non-goal — not built by this policy |
+| Whether the resolved root itself complies with the repository's own review-base policy | [`review-base-policy.md`](../../../shared/policies/review-base-policy.md) (shared, cross-Skill) |
 
 `local-code-review` does not load this policy: stack topology is a
 GitHub-PR-specific concept (declared base refs between open PRs) with no

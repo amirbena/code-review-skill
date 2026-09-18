@@ -188,6 +188,9 @@ Shared, always (as one batched operation):
 [`severity.md`](../../shared/policies/severity.md),
 [`evidence.md`](../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),
+[`review-base-policy.md`](../../shared/policies/review-base-policy.md)
+(repository-relative review-base compliance; fail-closed when the
+required base cannot be reliably resolved),
 [`review-context.md`](../../shared/policies/review-context.md)
 (requirement-context sections bind only when context is supplied),
 [`requirement-coverage.md`](../../shared/policies/requirement-coverage.md)

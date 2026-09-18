@@ -38,6 +38,12 @@ pr-scope.md                 complete PR scope, pagination, prior-review awarenes
 repository-checkout.md      optional isolated temporary checkout for richer
                             Repository Context; read-only; guaranteed cleanup
         ↓
+review-base-policy.md       (shared) repository-relative review-base policy
+                            compliance, once repository-instruction discovery
+                            has run; one blocking P0 before implementation
+                            findings when the resolved root reliably violates
+                            repository policy; fail-closed otherwise; #134
+        ↓
 review-context.md           optional supplied context (Jira / Issue / HLD / ADR /
                             plan / PR description); scope-boundary reasoning
         ↓
@@ -99,6 +105,14 @@ Review Target;
 [`repository-checkout.md`](repository-checkout.md) is optional, runs after
 [`pr-scope.md`](pr-scope.md) has established the PR's base/head, and never
 changes the Review Target — the PR delta;
+[`review-base-policy.md`](../../../shared/policies/review-base-policy.md)
+runs once `stacked-pr-review.md` has resolved topology **and**
+repository-instruction discovery has run (the source for that shared
+policy's explicit-statement resolution signal), and checks the resolved
+root (never an intermediate stack layer's parent-PR base) against the
+repository-resolved review base — a shared, cross-Skill policy this file
+references, not redefines; it never runs when that root cannot be
+reliably resolved;
 [`review-context.md`](review-context.md) and
 [`review-evidence.md`](review-evidence.md) are optional and run after
 review-authority and reviewer-mode resolution, informing but never widening
