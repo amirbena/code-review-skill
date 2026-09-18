@@ -1,0 +1,101 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# orders/state.py's transition() gains a PAID -> REFUND_REQUESTED
+# branch, but review context states REFUND_REQUESTED must be supported
+# from both PAID and SHIPPED. No SHIPPED -> REFUND_REQUESTED branch is
+# added, so a SHIPPED order handling that event still falls through to
+# the pre-existing `else: raise InvalidTransition`. The nearest changed
+# line -- the new PAID elif -- is itself correct code; pinning the
+# finding there would misrepresent "wrong code on this line" when the
+# real defect is the function's incomplete event coverage, a property
+# no single line represents.
+#
+# Expected: ONE required finding at the function/mechanism level (no
+# single misleadingly precise line), not pinned to the newly added elif.
+
+format: benchmark-case/v2
+
+id: finding-placement-false-precision-nearest-line
+title: "transition() is missing a SHIPPED branch; the finding must not be pinned to the newly added PAID elif"
+
+input:
+  context: >-
+    Requirement: REFUND_REQUESTED must be supported for orders in both
+    PAID and SHIPPED status (an order remains refundable until it is
+    fully returned or cancelled).
+  patch: |
+    diff --git a/orders/state.py b/orders/state.py
+    index 1111111..2222222 100644
+    --- a/orders/state.py
+    +++ b/orders/state.py
+    @@ -6,10 +6,12 @@ def transition(order, event):
+         state = order["status"]
+         if state == "PENDING" and event == "PAY":
+             order["status"] = "PAID"
+         elif state == "PAID" and event == "SHIP":
+             order["status"] = "SHIPPED"
+    +    elif state == "PAID" and event == "REFUND_REQUESTED":
+    +        order["status"] = "REFUNDED"
+         elif state == "PENDING" and event == "CANCEL":
+             order["status"] = "CANCELLED"
+         else:
+             raise InvalidTransition(f"cannot apply {event} from {state}")
+         return order
+  base:
+    orders/state.py: |
+      class InvalidTransition(Exception):
+          pass
+
+
+      def transition(order, event):
+          state = order["status"]
+          if state == "PENDING" and event == "PAY":
+              order["status"] = "PAID"
+          elif state == "PAID" and event == "SHIP":
+              order["status"] = "SHIPPED"
+          elif state == "PENDING" and event == "CANCEL":
+              order["status"] = "CANCELLED"
+          else:
+              raise InvalidTransition(f"cannot apply {event} from {state}")
+          return order
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: transition-missing-shipped-refund-branch
+      match: required
+      severity: P1
+      location:
+        location_intent: symbol
+        path: orders/state.py
+        symbol: transition
+        anchor: "def transition(order, event):"
+      claim: >-
+        orders/state.py's transition adds a PAID -> REFUND_REQUESTED
+        branch but never adds a SHIPPED -> REFUND_REQUESTED branch, even
+        though the review context requires REFUND_REQUESTED to be
+        supported from both statuses; a SHIPPED order handling that
+        event still falls through to the existing `else` and raises
+        InvalidTransition. The newly added PAID elif is itself correct
+        code -- the defect is the function's incomplete event coverage,
+        a property of the whole function, not a single changed line.
+      defect_kind: missing-state-transition-branch
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Positive case for #386's "Precision versus semantic honesty" rule:
+    the nearest changed line is a false-precision trap when the actual
+    defect is an absence spanning the function's overall control flow.
+    A correct review chooses the broader, truthful function-level
+    placement over pinning to the newly added, individually-correct
+    line merely because it is the easiest one to anchor.
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

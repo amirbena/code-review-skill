@@ -66,6 +66,20 @@
       "distributed-systems-deepening-retry-idempotency-guarded-clean",
       "distributed-systems-deepening-retry-interaction-missing-idempotency"
     ],
+    "finding-placement": [
+      "finding-placement-callee-contract-violation",
+      "finding-placement-caller-precondition-violation",
+      "finding-placement-causal-site-not-symptom",
+      "finding-placement-context-expansion-drift",
+      "finding-placement-defective-test-not-production",
+      "finding-placement-downstream-unsafe-handling",
+      "finding-placement-fallback-reuses-unresolved-location-state",
+      "finding-placement-false-precision-nearest-line",
+      "finding-placement-multi-file-primary-selection",
+      "finding-placement-precedent-trap",
+      "finding-placement-preexisting-callee-bug-exposed",
+      "finding-placement-test-reveals-production-defect"
+    ],
     "null-absence-risk": [
       "null-absence-go-unchecked-map-lookup",
       "null-absence-java-guarded-and-unguarded-combined",
@@ -131,6 +145,11 @@
       "api-compat-remove-field-breaking",
       "api-compat-rename-response-property-breaking"
     ],
+    "architectural-placement": [
+      "finding-placement-callee-contract-violation",
+      "finding-placement-caller-precondition-violation",
+      "finding-placement-preexisting-callee-bug-exposed"
+    ],
     "change-risk-signals": [
       "dependency-supply-chain-deepening-major-version-breaking-api-change",
       "dependency-supply-chain-deepening-no-manifest-touched-not-implicated-clean",
@@ -163,6 +182,9 @@
       "distributed-systems-deepening-retry-idempotency-guarded-clean",
       "distributed-systems-deepening-retry-interaction-missing-idempotency"
     ],
+    "evidence": [
+      "finding-placement-context-expansion-drift"
+    ],
     "null-absence-risk": [
       "null-absence-go-unchecked-map-lookup",
       "null-absence-java-guarded-and-unguarded-combined",
@@ -180,6 +202,7 @@
       "performance-deepening-non-executed-config-constant-not-implicated-clean"
     ],
     "repository-expansion": [
+      "finding-placement-context-expansion-drift",
       "repo-intel-python-call-site-caller-null-deref",
       "repo-intel-python-config-consumer-stale-import",
       "repo-intel-python-control-compatible-caller-no-finding",
@@ -192,6 +215,9 @@
       "semantic-implication-multi-dimension-webhook-xss",
       "semantic-implication-no-signal-clean-extraction",
       "semantic-implication-single-dimension-persistence"
+    ],
+    "root-cause-consolidation": [
+      "finding-placement-multi-file-primary-selection"
     ],
     "security-deepening": [
       "security-deepening-alternate-path-missing-check",
@@ -231,6 +257,13 @@
       "consolidation-shared-validator-many-call-paths",
       "consolidation-similar-but-independent-defects",
       "correctness-off-by-one-pagination",
+      "finding-placement-causal-site-not-symptom",
+      "finding-placement-defective-test-not-production",
+      "finding-placement-downstream-unsafe-handling",
+      "finding-placement-fallback-reuses-unresolved-location-state",
+      "finding-placement-false-precision-nearest-line",
+      "finding-placement-precedent-trap",
+      "finding-placement-test-reveals-production-defect",
       "no-op-comment-and-rename",
       "quality-duplicated-branch-logic",
       "real-world-semantic-consistency-trap-pr-390",
@@ -281,6 +314,17 @@
       "dependency-supply-chain-deepening-safe-patch-bump-clean",
       "dependency-supply-chain-deepening-transitive-dependency-expansion",
       "dependency-supply-chain-deepening-unpinned-github-actions-reference",
+      "finding-placement-callee-contract-violation",
+      "finding-placement-caller-precondition-violation",
+      "finding-placement-causal-site-not-symptom",
+      "finding-placement-context-expansion-drift",
+      "finding-placement-downstream-unsafe-handling",
+      "finding-placement-fallback-reuses-unresolved-location-state",
+      "finding-placement-false-precision-nearest-line",
+      "finding-placement-multi-file-primary-selection",
+      "finding-placement-precedent-trap",
+      "finding-placement-preexisting-callee-bug-exposed",
+      "finding-placement-test-reveals-production-defect",
       "null-absence-go-unchecked-map-lookup",
       "null-absence-java-guarded-and-unguarded-combined",
       "null-absence-java-guarded-clean",
@@ -337,6 +381,7 @@
       "cfv-disconfirming-precedent-reevaluated",
       "cfv-requirement-ambiguity-not-invented",
       "cfv-structural-inconsistency-non-blocking",
+      "finding-placement-defective-test-not-production",
       "quality-duplicated-branch-logic",
       "real-world-semantic-consistency-trap-pr-390",
       "semantic-implication-insufficient-evidence-stop",
@@ -417,6 +462,18 @@
       "distributed-systems-deepening-ownership-assumption-violated",
       "distributed-systems-deepening-retry-idempotency-guarded-clean",
       "distributed-systems-deepening-retry-interaction-missing-idempotency",
+      "finding-placement-callee-contract-violation",
+      "finding-placement-caller-precondition-violation",
+      "finding-placement-causal-site-not-symptom",
+      "finding-placement-context-expansion-drift",
+      "finding-placement-defective-test-not-production",
+      "finding-placement-downstream-unsafe-handling",
+      "finding-placement-fallback-reuses-unresolved-location-state",
+      "finding-placement-false-precision-nearest-line",
+      "finding-placement-multi-file-primary-selection",
+      "finding-placement-precedent-trap",
+      "finding-placement-preexisting-callee-bug-exposed",
+      "finding-placement-test-reveals-production-defect",
       "no-op-comment-and-rename",
       "null-absence-go-unchecked-map-lookup",
       "null-absence-java-guarded-and-unguarded-combined",

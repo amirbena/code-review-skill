@@ -1,0 +1,85 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# integrations/slack/client.py (base, unchanged) correctly backs off
+# between 429 retries. The new integrations/webhook/client.py copies its
+# retry-loop shape but omits the backoff, busy-looping immediate retries
+# against a rate-limited endpoint -- a real, already-manifest
+# consequence. A review would plausibly read slack/client.py as evidence
+# of the correct precedent, but the finding must stay on the defective
+# webhook/client.py; the correct sibling is evidence, never itself the
+# anchor, because it is not the thing that must change.
+#
+# Expected: ONE required finding anchored in
+# integrations/webhook/client.py; integrations/slack/client.py never
+# becomes an anchor.
+
+format: benchmark-case/v2
+
+id: finding-placement-precedent-trap
+title: "The new webhook client omits slack client's backoff; the correct precedent must not become the anchor"
+
+input:
+  patch: |
+    diff --git a/integrations/webhook/client.py b/integrations/webhook/client.py
+    new file mode 100644
+    index 0000000..7a8b9c0
+    --- /dev/null
+    +++ b/integrations/webhook/client.py
+    @@ -0,0 +1,6 @@
+    +def send_with_retry(send_fn, max_attempts=3):
+    +    for attempt in range(max_attempts):
+    +        response = send_fn()
+    +        if response.status_code != 429:
+    +            return response
+    +    return response
+  base:
+    integrations/slack/client.py: |
+      import time
+
+
+      def send_with_retry(send_fn, max_attempts=3):
+          for attempt in range(max_attempts):
+              response = send_fn()
+              if response.status_code != 429:
+                  return response
+              time.sleep(2 ** attempt)
+          return response
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: webhook-client-retries-without-backoff
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: integrations/webhook/client.py
+        symbol: send_with_retry
+        anchor: "if response.status_code != 429:"
+      claim: >-
+        integrations/webhook/client.py's send_with_retry retries
+        immediately on a 429 with no backoff, unlike
+        integrations/slack/client.py's send_with_retry, which sleeps
+        `2 ** attempt` seconds between attempts; the webhook client
+        busy-loops against a rate-limited endpoint within the same rate
+        window. slack/client.py is the correct precedent used only as
+        evidence of the expected backoff shape -- it is not itself
+        defective and is not the anchor.
+      defect_kind: missing-backoff-on-retry
+
+metadata:
+  source: crafted
+  tags: [correctness, quality]
+  rationale: >-
+    Positive case for #386's "Test versus production placement" rule
+    extended to a precedent trap: a correct sibling implementation used
+    only as evidence must never become the anchor in place of the
+    defective implementation it was read to compare against.
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

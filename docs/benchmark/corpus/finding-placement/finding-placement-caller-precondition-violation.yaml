@@ -1,0 +1,84 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# orders/repository.py's save_order (base, unchanged) documents a
+# precondition: callers must ensure order["total"] >= 0 before calling;
+# it trusts that precondition and does not re-validate it. The new
+# orders/api.py handler passes a user-controlled total straight through
+# without validating it -- a precondition violation reusing
+# architectural-placement.md's bounded caller/callee model. The
+# fix/action location is the caller, not the callee, which is behaving
+# exactly per its documented contract.
+#
+# Expected: ONE required finding anchored in orders/api.py;
+# orders/repository.py never becomes an anchor.
+
+format: benchmark-case/v2
+
+id: finding-placement-caller-precondition-violation
+title: "orders/api.py passes an unvalidated total to save_order, violating its documented precondition"
+
+input:
+  patch: |
+    diff --git a/orders/api.py b/orders/api.py
+    new file mode 100644
+    index 0000000..3c4d5e6
+    --- /dev/null
+    +++ b/orders/api.py
+    @@ -0,0 +1,7 @@
+    +from orders.repository import save_order
+    +
+    +
+    +def create_order(payload: dict) -> dict:
+    +    order = {"total": payload["total"], "customer": payload["customer"]}
+    +    save_order(order)
+    +    return order
+  base:
+    orders/repository.py: |
+      def save_order(order: dict) -> None:
+          """Persists an order. Precondition: callers must ensure
+          order["total"] >= 0 before calling; this function trusts that
+          precondition and does not re-validate it.
+          """
+          _write_row(order)
+
+
+      def _write_row(order: dict) -> None:
+          raise NotImplementedError
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: create-order-skips-total-validation
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: orders/api.py
+        symbol: create_order
+        anchor: "save_order(order)"
+      claim: >-
+        orders/api.py's create_order builds an order from
+        payload["total"] without validating it is non-negative before
+        calling save_order, which documents a precondition that callers
+        must ensure order["total"] >= 0; a negative total from user
+        input is persisted unchecked. save_order itself trusts its
+        documented precondition and is not defective.
+      defect_kind: missing-precondition-check
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Positive case for #386's "no mechanical caller/callee preference"
+    rule in its precondition-violation direction: reusing
+    architectural-placement.md's bounded reasoning, the caller failed to
+    establish a state the callee is documented to be entitled to assume,
+    so the fix/action location is the caller.
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [architectural-placement]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

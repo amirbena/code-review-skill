@@ -1,0 +1,106 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# shared/validators.py (base, unchanged) documents that is_valid_email
+# must reject consecutive dots in the local part, but its regex does
+# not. The new signup/api.py is the first caller to reach that gap and
+# persist a malformed address; signup/api.py itself calls
+# is_valid_email correctly and is not defective. The true fix/action
+# location, is_valid_email, is entirely outside this diff -- not
+# inline-commentable in it -- so per
+# skills/github-pr-review/policies/finding-placement.md's "Fix/action
+# location resolved but not inline-commentable" fallback, the finding
+# must stay a full body finding with its explicit path, not be
+# misattributed to signup/api.py's convenient, in-diff, commentable
+# is_valid_email(address) call line merely because that line is easy to
+# anchor.
+#
+# This proves the *primary-location selection itself* resolves to the
+# out-of-diff site in the first place -- distinct from #164's existing
+# fixtures, which test the anchor-selection/inline-vs-body transport
+# mechanics given an already-known, already-resolved location. No #164
+# fixture is duplicated here; this corpus consumes that fallback, it
+# does not re-test it.
+#
+# Expected: ONE required finding whose location is shared/validators.py
+# (outside the diff); signup/api.py's in-diff call line never becomes
+# the anchor merely because it is commentable.
+
+format: benchmark-case/v2
+
+id: finding-placement-fallback-reuses-unresolved-location-state
+title: "The real defect is in an unchanged file outside the diff; the in-diff call site must not be used as a convenient stand-in anchor"
+
+input:
+  patch: |
+    diff --git a/signup/api.py b/signup/api.py
+    new file mode 100644
+    index 0000000..8b9c0d1
+    --- /dev/null
+    +++ b/signup/api.py
+    @@ -0,0 +1,6 @@
+    +from shared.validators import is_valid_email
+    +
+    +
+    +def signup(address: str) -> dict:
+    +    if not is_valid_email(address):
+    +        raise ValueError("invalid email address")
+    +    return {"email": address, "status": "registered"}
+  base:
+    shared/validators.py: |
+      import re
+
+      _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+      def is_valid_email(address: str) -> bool:
+          """Returns True when `address` looks like a valid email
+          address. Contract: rejects malformed local parts, including
+          consecutive dots (e.g. "a..b@x.com" is invalid per RFC 5321
+          §4.1.2), because downstream delivery systems reject such
+          addresses outright.
+          """
+          return bool(_EMAIL_RE.match(address))
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: is-valid-email-accepts-consecutive-dots
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: shared/validators.py
+        symbol: is_valid_email
+        anchor: "return bool(_EMAIL_RE.match(address))"
+      claim: >-
+        shared/validators.py's is_valid_email does not reject
+        consecutive dots in the local part even though its own docstring
+        documents that requirement; signup/api.py's new signup handler
+        is the first caller to reach that gap and persist a malformed
+        address, but signup/api.py correctly calls is_valid_email and
+        correctly rejects a False result -- it is not defective. The
+        fix/action location, is_valid_email, is unchanged by this diff
+        and therefore not inline-commentable in it.
+      defect_kind: regex-contract-violation
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Positive case proving the primary-location selection itself resolves
+    to a site entirely outside the diff, so the resulting finding must
+    take finding-placement.md's existing "resolved but not
+    inline-commentable" fallback rather than being pinned to the
+    in-diff, easily-commentable call line. Distinct from #164's existing
+    fixtures, which test that fallback's transport mechanics given an
+    already-resolved location; this case is about deriving that the
+    out-of-diff location is correct in the first place, so no #164
+    fixture is duplicated.
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

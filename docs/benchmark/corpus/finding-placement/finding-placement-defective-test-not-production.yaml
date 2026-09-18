@@ -1,0 +1,81 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# The diff only touches tests/test_stats.py, adding a new test that
+# asserts total([]) == 1. math/stats.py's total (base, unchanged) is
+# correct: sum([]) == 0. The new test itself encodes an incorrect
+# expectation -- production is not defective, so the fix/action location
+# is the test's own assertion, not math/stats.py.
+#
+# Expected: ONE required finding anchored in tests/test_stats.py;
+# math/stats.py never becomes an anchor.
+
+format: benchmark-case/v2
+
+id: finding-placement-defective-test-not-production
+title: "A new test asserts the wrong expectation for total([]); the fix belongs in the test, not production"
+
+input:
+  patch: |
+    diff --git a/tests/test_stats.py b/tests/test_stats.py
+    index 1111111..2222222 100644
+    --- a/tests/test_stats.py
+    +++ b/tests/test_stats.py
+    @@ -1,5 +1,9 @@
+     from math.stats import total
+
+
+     def test_total_of_populated_list():
+         assert total([1, 2, 3]) == 6
+    +
+    +
+    +def test_total_of_empty_list():
+    +    assert total([]) == 1
+  base:
+    tests/test_stats.py: |
+      from math.stats import total
+
+
+      def test_total_of_populated_list():
+          assert total([1, 2, 3]) == 6
+    math/stats.py: |
+      def total(values):
+          return sum(values)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: test-asserts-wrong-empty-total
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: tests/test_stats.py
+        symbol: test_total_of_empty_list
+        anchor: "assert total([]) == 1"
+      claim: >-
+        tests/test_stats.py's new test_total_of_empty_list asserts
+        total([]) == 1, but total's correct, unchanged behavior for an
+        empty list is 0 (sum([]) == 0). The test encodes an incorrect
+        expectation and fails against correct production code; the
+        fix/action location is the test's assertion, not math/stats.py's
+        total, which requires no change.
+      defect_kind: incorrect-test-expectation
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Negative-direction pair to the "test reveals production defect"
+    case, for #386's "Test versus production placement" rule: when the
+    test itself asserts an incorrect expectation against otherwise
+    correct, unchanged production code, the fix/action location is the
+    test, not production -- proving the rule resolves both directions,
+    not merely "prefer production."
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [unclassified]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

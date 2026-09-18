@@ -228,6 +228,21 @@ see [`../taxonomy.md`](../taxonomy.md) and
   Includes a real-world-derived scenario sourced from PR
   [#390](https://github.com/amirbena/code-review-skill/pull/390).
 
+- [`finding-placement/`](finding-placement/README.md) — a focused
+  `benchmark-case/v2` sub-corpus proving correct primary fix/action
+  location selection for the "Deriving the fix/action location" reasoning
+  in
+  [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md)
+  (Issue [#387](https://github.com/amirbena/code-review-skill/issues/387),
+  parent [#385](https://github.com/amirbena/code-review-skill/issues/385),
+  implementation contract
+  [#386](https://github.com/amirbena/code-review-skill/issues/386)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../../tests/unit/benchmark/test_finding_placement_corpus.py`](../../../tests/unit/benchmark/test_finding_placement_corpus.py)).
+  Consumes, never duplicates,
+  [`../../../skills/github-pr-review/policies/finding-placement.md`](../../../skills/github-pr-review/policies/finding-placement.md)'s
+  (#164) existing anchor-selection/transport fixtures.
+
 ## Validation
 
 [`../../../tests/unit/benchmark/test_benchmark_corpus.py`](../../../tests/unit/benchmark/test_benchmark_corpus.py)
