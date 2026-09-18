@@ -55,7 +55,7 @@ plus its `scripts/benchmark/` and `tests/reference/benchmark/` counterparts:
 | Research / historical records | `claim-correspondence-adequacy.md`, `runtime-candidate-decision.md` |
 | Reference example sets (non-CI-gated) | `senior-voice-examples.md`, `reviewer-brief-examples.md`, `examples/` |
 | Navigation | `docs/benchmark/README.md` |
-| Harness code | `scripts/benchmark/*.py` (10 files: runner, adapter, selector, drift, history, routine, classifier) |
+| Harness code | `scripts/benchmark/*.py` (11 files: `run_benchmark.py`, `benchmark_review_adapter.py`, `select_benchmark_cases.py`, `build_benchmark_index.py`, `benchmark_corpus_membership.py`, `benchmark_drift.py`, `benchmark_history.py`, `run_benchmark_routine.py`, `benchmark_routine_verify.py`, `classify_pr_diff.py`, `shadow_validate.py`) |
 | Reference models (test-only) | `tests/reference/benchmark/*.py` (18 files) |
 
 One correction to #425's Scope text: it names
@@ -79,8 +79,12 @@ it. `capability-architecture-model.md` §H.1 already gives the structural
 evidence for treating this as an evaluation subsystem rather than prose:
 
 - Corpus directory names already match capability names one-to-one
-  (§H.3's assignment table maps all ~180 cases across 20 corpora to a
-  named capability or router boundary).
+  (§H.3's assignment table maps its ~180 cases across 23 entries — root
+  plus 22 named corpora — to a named capability or router boundary; the
+  `docs/benchmark/corpus/` directory itself has since grown to 26
+  subdirectories, so §H.3's own table already lags the current corpus set
+  by several entries, e.g. `candidate-finding-validation`,
+  `decision-derivation`, `finding-placement`).
 - Corpus and policy have independent lifecycles — 0-of-7 commit-set
   overlap for 6 of 7 sampled capabilities (§H.1) — so corpus is not
   incidental prose next to the policy it tests, it is a co-owned artifact
@@ -145,16 +149,17 @@ does; performing the relocation is not.**
 Recorded now so the future child issue inherits a complete list rather
 than rediscovering it:
 
-- Ten `capability.yaml` files already declare a `benchmark:` field pointing
-  at `docs/benchmark/corpus/<name>` paths (`conditional-passes`,
+- Nine `capability.yaml` files already declare a `benchmark:` field
+  pointing at `docs/benchmark/corpus/<name>` paths (`conditional-passes`,
   `authorization-github`, `finding-placement-derivation`,
-  `publication-github`, `parallel-execution`, `runtime-execution`, `scale`,
-  `reviewer-assist`, `specialist-depth`, plus `docs/benchmark/scale-
-  progressive-loading-proof` under `scale`). Four others
-  (`context-resolution`, `remediation`, `repository-checkout`,
+  `publication-github`, `parallel-execution`, `runtime-execution`, `scale`
+  — which lists two paths, also including `docs/benchmark/scale-
+  progressive-loading-proof` — `reviewer-assist`, `specialist-depth`).
+  Four others (`context-resolution`, `remediation`, `repository-checkout`,
   `stateful-review`) point at `tests/reference/review/*.py` instead and are
   out of this boundary's scope entirely — they were never under
-  `docs/benchmark/`.
+  `docs/benchmark/`. That accounts for all 13 existing `capability.yaml`
+  manifests.
 - `docs/ARCHITECTURE.md`'s "Code-review quality benchmark" and
   "Denied-capability security-event benchmark" sections link every
   `docs/benchmark/*` document by relative path.
