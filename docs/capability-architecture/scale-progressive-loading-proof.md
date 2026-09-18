@@ -46,8 +46,10 @@ Per #447/#451:
   mismatch on one reused fixture). Does **not** rewrite this issue's own
   not-yet-pinned fixture's pinned design invariants (severity stays
   `[P1, P2]`, never widened to include the observed `P0` — see §5); only
-  its `defect_kind` wording tolerance was widened, the same class of fix
-  #451 applies to the two reused fixtures' patch corruption in §3. Does
+  its `defect_kind` wording tolerance was widened, following #411 §5's
+  own precedent for recalibrating a not-yet-pinned fixture to observed
+  reviewer behavior — a different class of fix from the two reused
+  fixtures' patch-corruption correction in §3. Does
   **not** attempt a general router extraction, and does **not** change
   `specialist-depth`'s `requires: [... scale]` dependency or any other
   capability's loading behavior (`tests/policy/review/test_scale_447.py`,
@@ -245,7 +247,9 @@ This document and
 are the authoritative proof for #447, completed by #451. Neither is
 packaged into either Skill archive, and no runtime behavior, packaging,
 or loading changed to produce it beyond the two incidental hunk-header
-fixes in §3 — purely additive, matching #408's and #411's own precedent.
+fixes in §3 and the one `defect_kind`-widening recalibration in §5 —
+none of which alter what is packaged or how loading behaves, matching
+#408's and #411's own precedent.
 This, together with
 [`tests/policy/review/test_scale_447.py`](../../tests/policy/review/test_scale_447.py),
 is the evidence #403 is scoped to cite for `scale` as the second
