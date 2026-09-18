@@ -228,6 +228,21 @@ see [`../taxonomy.md`](../taxonomy.md) and
   Includes a real-world-derived scenario sourced from PR
   [#390](https://github.com/amirbena/code-review-skill/pull/390).
 
+- [`decision-derivation/`](decision-derivation/README.md) — a focused
+  `benchmark-case/v2` sub-corpus proving the reverse direction of
+  `shared/policies/severity.md`'s mechanical severity → decision
+  derivation: a P2-only, or empty, finding set must always render
+  `clean`, never `changes-required` (Issue
+  [#450](https://github.com/amirbena/code-review-skill/issues/450),
+  regression guard for the closed Issue
+  [#449](https://github.com/amirbena/code-review-skill/issues/449) / PR
+  [#452](https://github.com/amirbena/code-review-skill/pull/452)).
+  [#350](https://github.com/amirbena/code-review-skill/issues/350) (open)
+  owns the opposite, forward-direction proof and will add its fixtures to
+  this same directory when it lands. Same format and reference validator;
+  its own README, cases, and unit test
+  ([`../../../tests/unit/benchmark/test_decision_derivation_corpus.py`](../../../tests/unit/benchmark/test_decision_derivation_corpus.py)).
+
 ## Validation
 
 [`../../../tests/unit/benchmark/test_benchmark_corpus.py`](../../../tests/unit/benchmark/test_benchmark_corpus.py)
