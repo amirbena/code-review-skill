@@ -27,7 +27,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/users/lookup.py
     +++ b/app/users/lookup.py
-    @@ -1,10 +1,6 @@
+    @@ -1,9 +1,5 @@
      from app.users.db import find_user
     -from app.users.errors import UserNotFound
 
