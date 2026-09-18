@@ -11,6 +11,7 @@ Applies shared policies:
 [`verdict-consistency.md`](../../../shared/policies/verdict-consistency.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
+[`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
 [`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
 [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
@@ -206,6 +207,19 @@ finally: remove the temporary checkout (success, any failure, interruption)
    required mode returns `REVIEW INCOMPLETE` / `REPOSITORY CONTEXT
    UNAVAILABLE` and starts no review execution. Cleanup is mandatory on every
    exit path (see step 8).
+4a. **Check review-base policy compliance** per
+   [`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
+   using the stack topology resolved in step 4. This check applies to the
+   resolved **root** — never to an intermediate layer's parent-PR base,
+   which [`stacked-pr-review.md`](../policies/stacked-pr-review.md)
+   already treats as legitimate. When both the repository-resolved review
+   base and the resolved root are reliably known and they differ, record
+   the single blocking P0 finding that policy defines now, so it is
+   already part of the finding set before step 6's implementation-focused
+   review begins. When the repository-resolved review base cannot be
+   established reliably, or step 4's topology resolution itself fell back
+   to a safe-failure tier, this step records nothing, per that policy's
+   "Fail-closed on an unresolved base."
 5. **Discover applicable repository-local instructions** per
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md):
    after changed-file resolution, resolve each changed file's root-to-specific

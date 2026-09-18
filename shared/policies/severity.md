@@ -139,3 +139,16 @@ here, not linked). That model never overrides this file's P0/P1/P2
 definitions or the mechanical decision derivation above; it only decides
 which classification a candidate has earned before this file's derivation
 runs.
+
+## Relationship to review-base-policy.md
+
+A change under review targeting an integration base that reliably violates
+the target repository's own review-base policy is classified P0 under
+"P0 — Critical / Blocking" above. The repository-relative resolution of
+that base, the fail-closed rule for an unresolved base, and the
+requirement that this finding enters the finding set before
+implementation-focused findings are owned by
+[`review-base-policy.md`](review-base-policy.md) and are not restated
+here. It introduces no new severity tier and does not change this file's
+mechanical decision derivation, which still runs exactly once, over the
+complete finalized finding set, including this finding like any other.

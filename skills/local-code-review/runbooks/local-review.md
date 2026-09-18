@@ -18,6 +18,7 @@ Applies shared policies:
 [`verdict-consistency.md`](../../../shared/policies/verdict-consistency.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
+[`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
 [`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
 [`git-safety.md`](../../../shared/policies/git-safety.md),
@@ -175,6 +176,17 @@ which a value must be resolved before it is used, or what is reported.
    branch unless the target repository's own rules explicitly permit it.
    **Do not create a branch** — validate what already exists; branch
    creation belongs to the implementing workflow.
+2a. **Check review-base policy compliance** per
+   [`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
+   using the base resolved in step 2. Resolve the repository-resolved
+   review base from that policy's ranked signals and, when both it and the
+   base under review are reliably known and they differ, record the single
+   blocking P0 finding that policy defines now, so it is already part of
+   the finding set before step 9's implementation-focused review begins.
+   When the repository-resolved review base cannot be established
+   reliably, this step records nothing, per that policy's "Fail-closed on
+   an unresolved base" — never a guessed branch name, and never `HEAD`
+   substituted for it.
 3. Determine the **complete** local delta — do not assume local `HEAD`
    contains the whole task, and do not blend categories into one
    undifferentiated set. Detect each category with its own command per

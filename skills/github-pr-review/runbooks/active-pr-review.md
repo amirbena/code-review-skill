@@ -11,6 +11,7 @@ decision. Applies shared policies:
 [`verdict-consistency.md`](../../../shared/policies/verdict-consistency.md),
 [`evidence.md`](../../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
+[`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
 [`runtime-validation.md`](../../../shared/policies/runtime-validation.md),
 [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md),
 [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
@@ -293,6 +294,23 @@ stop
    On failure, clean up. Optional mode records a visible API-only degradation;
    required mode returns `REVIEW INCOMPLETE` / `REPOSITORY CONTEXT
    UNAVAILABLE` and starts no workers. See step 18 for mandatory cleanup.
+5a. **Check review-base policy compliance** per
+   [`review-base-policy.md`](../../../shared/policies/review-base-policy.md),
+   using the stack topology resolved in step 5. This check applies to the
+   resolved **root** (the repository's default/target branch the stack
+   chain terminates at, or the PR's own declared base for a non-stacked
+   PR) — never to an intermediate layer's parent-PR base, which
+   [`stacked-pr-review.md`](../policies/stacked-pr-review.md) already
+   treats as legitimate. Resolve the repository-resolved review base from
+   that policy's ranked signals and, when both it and the resolved root
+   are reliably known and they differ, record the single blocking P0
+   finding that policy defines now, so it is already part of the finding
+   set before step 9's implementation-focused review begins. When the
+   repository-resolved review base cannot be established reliably, or
+   step 5's topology resolution itself fell back to a Tier 1/Tier 2 safe
+   failure, this step records nothing, per that policy's "Fail-closed on
+   an unresolved base" — an unresolved stack is not, by itself, evidence
+   of a policy violation.
 6. Determine event-specific capability, including draft, fork,
    comment-only, and permission-limited states, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
