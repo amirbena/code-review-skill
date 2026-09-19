@@ -101,7 +101,7 @@ closed at start-up if one is missing (A10).
 | `drift` | `benchmark-regression` | drift issues (one per fingerprint) | publisher |
 | `keep-open` | `keep-open` | a drift issue a maintainer wants kept open | users with triage rights; only ever *prevents* a close |
 | `missed-run` | `benchmark-missed-run` | the per-lane missed-run issue | watchdog |
-| `tracking` | `benchmark-tracking` | per-lane evidence tracking issues and the health issue | maintainer, at provisioning |
+| `tracking` | `benchmark-evidence` | per-lane evidence tracking issues and the health issue | maintainer, at provisioning |
 
 `benchmark-regression` and `keep-open` are the names
 [`scripts/benchmark_drift.py`](scripts/benchmark_drift.py) already uses

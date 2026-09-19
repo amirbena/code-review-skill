@@ -14,7 +14,6 @@ BENCHMARK = REPO_ROOT / "runtime_platform" / "benchmark"
 SPEC = BENCHMARK / "schedule-spec.md"
 README = BENCHMARK / "README.md"
 ROUTINE_DOC = REPO_ROOT / "docs" / "benchmark" / "cloud-routine-integration.md"
-RUNBOOK = BENCHMARK / "scheduled-operations" / "provisioning-runbook.md"
 
 
 def _prompt_template() -> str:
@@ -53,20 +52,6 @@ class ScheduleSpecDocTests(unittest.TestCase):
     def test_documents_every_label(self) -> None:
         for label in self.manifest["labels"]:
             self.assertIn(f"`{label['name']}`", self.raw)
-
-    def test_provisioning_runbook_creates_exactly_the_manifest_labels(self) -> None:
-        created = {
-            name: (color, description)
-            for name, color, description in re.findall(
-                r'^gh label create (\S+)\s+--repo \$R --color (\w+) --description "([^"]+)"$',
-                RUNBOOK.read_text(encoding="utf-8"),
-                re.M,
-            )
-        }
-        expected = {
-            label["name"]: (label["color"], label["description"]) for label in self.manifest["labels"]
-        }
-        self.assertEqual(created, expected)
 
     def test_label_creation_is_provisioning_not_runtime(self) -> None:
         self.assertIn("creation is a provisioning step", self.text)

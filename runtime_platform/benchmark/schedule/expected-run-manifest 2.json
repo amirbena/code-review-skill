@@ -47,25 +47,25 @@
       "role": "drift",
       "name": "benchmark-regression",
       "color": "b60205",
-      "description": "Confirmed scheduled-benchmark drift (one issue per fingerprint)"
+      "description": "Confirmed benchmark drift tracked by the scheduled benchmark publisher"
     },
     {
       "role": "keep-open",
       "name": "keep-open",
       "color": "5319e7",
-      "description": "Maintainer hold: never auto-close this benchmark issue"
+      "description": "Maintainer override: never auto-close this benchmark issue"
     },
     {
       "role": "missed-run",
       "name": "benchmark-missed-run",
-      "color": "d93f0b",
-      "description": "A scheduled benchmark lane exceeded its max gap"
+      "color": "fbca04",
+      "description": "A scheduled benchmark lane exceeded its maximum gap"
     },
     {
       "role": "tracking",
-      "name": "benchmark-tracking",
-      "color": "1d76db",
-      "description": "Per-lane evidence thread or health status for the scheduled benchmark"
+      "name": "benchmark-evidence",
+      "color": "0e8a16",
+      "description": "Per-lane tracking issue holding scheduled benchmark run evidence"
     }
   ]
 }
