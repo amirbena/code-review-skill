@@ -1,0 +1,330 @@
+{
+  "aggregate": {
+    "duplicate_noise": {
+      "cases_with_duplication": 0,
+      "duplicate_rate": null,
+      "total_duplicate_clusters": 0,
+      "total_produced": 0,
+      "total_redundant_findings": 0
+    },
+    "metrics": {
+      "cases_with_false_negatives": 3,
+      "cases_with_false_positives": 0,
+      "errored_cases": 0,
+      "total_false_negatives": 3,
+      "total_false_positives": 0,
+      "total_near_misses": 0
+    },
+    "severity": {
+      "cases_with_severity_mismatch": 0,
+      "exact_rate": null,
+      "total_matched": 0,
+      "total_over_severity": 0,
+      "total_severity_exact": 0,
+      "total_under_severity": 0
+    }
+  },
+  "baseline": {
+    "comparable_case_ids": [
+      "correctness-off-by-one-pagination",
+      "no-op-comment-and-rename",
+      "quality-duplicated-branch-logic"
+    ],
+    "incomparable_cases": [
+      {
+        "baseline_fixture_digest": "5a2dc39cab5c008eac70ebe91ee336957248287e001058a68d9d8b989eee0a82",
+        "candidate_fixture_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "id": "security-command-injection",
+        "reason": "fixture-digest-mismatch"
+      }
+    ],
+    "record_sha256": "d99fa264b7af038c183bee07edba070bbf630e4092f5c31aaa06dabee7a360a5",
+    "run_id": "sentinel-20260916T010000Z-111111111111",
+    "state": "compared"
+  },
+  "cases": [
+    {
+      "duplicate_noise": {
+        "cluster_members": [],
+        "clusters": 0,
+        "duplicate_clusters": 0,
+        "duplicate_rate": null,
+        "produced": 0,
+        "redundant_findings": 0
+      },
+      "duration_s": 1.0,
+      "fixture_digest": "f9a3d58d4032fa5a77ff05362f499587013b48c8cd463859a7bc845f611df5d2",
+      "id": "correctness-off-by-one-pagination",
+      "metrics": {
+        "absorbed_extra_match": 0,
+        "false_negatives": 1,
+        "false_positives": 0,
+        "findings_completeness": "exhaustive",
+        "incorrect_indices": [],
+        "missed_keys": [
+          "page-end-off-by-one"
+        ],
+        "near_misses": 0,
+        "tolerated_unexpected": 0
+      },
+      "severity": {
+        "exact_rate": null,
+        "matched": 0,
+        "mismatches": [],
+        "over_severity": 0,
+        "severity_exact": 0,
+        "under_severity": 0
+      },
+      "status": "executed"
+    },
+    {
+      "duplicate_noise": {
+        "cluster_members": [],
+        "clusters": 0,
+        "duplicate_clusters": 0,
+        "duplicate_rate": null,
+        "produced": 0,
+        "redundant_findings": 0
+      },
+      "duration_s": 1.0,
+      "fixture_digest": "30e77dbb7cf37a63cfc707970f4fcdbb6299c80740baf64a836d1ac1e96bc012",
+      "id": "no-op-comment-and-rename",
+      "metrics": {
+        "absorbed_extra_match": 0,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "findings_completeness": "exhaustive",
+        "incorrect_indices": [],
+        "missed_keys": [],
+        "near_misses": 0,
+        "tolerated_unexpected": 0
+      },
+      "severity": {
+        "exact_rate": null,
+        "matched": 0,
+        "mismatches": [],
+        "over_severity": 0,
+        "severity_exact": 0,
+        "under_severity": 0
+      },
+      "status": "executed"
+    },
+    {
+      "duplicate_noise": {
+        "cluster_members": [],
+        "clusters": 0,
+        "duplicate_clusters": 0,
+        "duplicate_rate": null,
+        "produced": 0,
+        "redundant_findings": 0
+      },
+      "duration_s": 1.0,
+      "fixture_digest": "08c162bf00c415a22a70ab358f9a729a5f0a1e61e1e05d4e62bd63f2896c1319",
+      "id": "quality-duplicated-branch-logic",
+      "metrics": {
+        "absorbed_extra_match": 0,
+        "false_negatives": 1,
+        "false_positives": 0,
+        "findings_completeness": "exhaustive",
+        "incorrect_indices": [],
+        "missed_keys": [
+          "duplicated-format-message-call"
+        ],
+        "near_misses": 0,
+        "tolerated_unexpected": 0
+      },
+      "severity": {
+        "exact_rate": null,
+        "matched": 0,
+        "mismatches": [],
+        "over_severity": 0,
+        "severity_exact": 0,
+        "under_severity": 0
+      },
+      "status": "executed"
+    },
+    {
+      "duplicate_noise": {
+        "cluster_members": [],
+        "clusters": 0,
+        "duplicate_clusters": 0,
+        "duplicate_rate": null,
+        "produced": 0,
+        "redundant_findings": 0
+      },
+      "duration_s": 1.0,
+      "fixture_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "id": "security-command-injection",
+      "metrics": {
+        "absorbed_extra_match": 0,
+        "false_negatives": 1,
+        "false_positives": 0,
+        "findings_completeness": "exhaustive",
+        "incorrect_indices": [],
+        "missed_keys": [
+          "shell-command-injection"
+        ],
+        "near_misses": 0,
+        "tolerated_unexpected": 0
+      },
+      "severity": {
+        "exact_rate": null,
+        "matched": 0,
+        "mismatches": [],
+        "over_severity": 0,
+        "severity_exact": 0,
+        "under_severity": 0
+      },
+      "status": "executed"
+    }
+  ],
+  "content_sha256": "eeb1cb31675faaf7bc2fbdfeb4af4155beaf045c1cfce071cabf2071bdb562f0",
+  "corpus": {
+    "case_count": 4,
+    "corpus_id": "39fa0e1a40b1acbe94f40d84d90adec2c79a9ff1bc4cb068b92f6f9fb8ab2b97",
+    "membership_digest": "96f4622d88d141011f9569478821a9e92a8798f8f7b5774adc7080fecd6d7499"
+  },
+  "drift": {
+    "attribution": "none",
+    "confirmation": {
+      "max_cases": 10,
+      "reruns": 2,
+      "threshold": 2
+    },
+    "confirmed": [
+      {
+        "case_id": "correctness-off-by-one-pagination",
+        "detail": "case satisfied every required finding in the baseline and no longer does",
+        "drift_type": "decision-flip",
+        "expected_finding_key": "-",
+        "fingerprint": "d80fdc84d0b18df0d58a34647472e8c8e7d2ec394c548bbfe829ef84de8e8901"
+      },
+      {
+        "case_id": "correctness-off-by-one-pagination",
+        "detail": "required finding 'page-end-off-by-one' was matched in the baseline and is now missed",
+        "drift_type": "missed-required-finding",
+        "expected_finding_key": "page-end-off-by-one",
+        "fingerprint": "6364168e067381161aa28bf451c220a1a2aa85f7c330cebe0bd423703c5ac7f9"
+      }
+    ],
+    "evaluated_scope": [
+      "correctness-off-by-one-pagination",
+      "no-op-comment-and-rename",
+      "quality-duplicated-branch-logic"
+    ],
+    "evidence": {
+      "correctness-off-by-one-pagination": "Review of the paginate() diff reported no finding; the required off-by-one at the page boundary was not raised in 2 of 3 observations."
+    },
+    "observations": [
+      {
+        "case_id": "correctness-off-by-one-pagination",
+        "detail": "case satisfied every required finding in the baseline and no longer does",
+        "drift_type": "decision-flip",
+        "expected_finding_key": "-",
+        "fingerprint": "d80fdc84d0b18df0d58a34647472e8c8e7d2ec394c548bbfe829ef84de8e8901"
+      },
+      {
+        "case_id": "correctness-off-by-one-pagination",
+        "detail": "required finding 'page-end-off-by-one' was matched in the baseline and is now missed",
+        "drift_type": "missed-required-finding",
+        "expected_finding_key": "page-end-off-by-one",
+        "fingerprint": "6364168e067381161aa28bf451c220a1a2aa85f7c330cebe0bd423703c5ac7f9"
+      },
+      {
+        "case_id": "quality-duplicated-branch-logic",
+        "detail": "case satisfied every required finding in the baseline and no longer does",
+        "drift_type": "decision-flip",
+        "expected_finding_key": "-",
+        "fingerprint": "ff658c86e0ff99c7d190c9f30925a86fbdf7f868685443bc005d7d335ab3cf08"
+      },
+      {
+        "case_id": "quality-duplicated-branch-logic",
+        "detail": "required finding 'duplicated-format-message-call' was matched in the baseline and is now missed",
+        "drift_type": "missed-required-finding",
+        "expected_finding_key": "duplicated-format-message-call",
+        "fingerprint": "9a419a9d9138b54a5d27388e996a5a50a7a02bd4eb2178b64a07bcfd03d2f7ad"
+      }
+    ],
+    "outcome": {
+      "reason": null,
+      "status": "drift"
+    },
+    "systemic": false,
+    "unconfirmed": [
+      {
+        "case_id": "quality-duplicated-branch-logic",
+        "detail": "case satisfied every required finding in the baseline and no longer does",
+        "drift_type": "decision-flip",
+        "expected_finding_key": "-",
+        "fingerprint": "ff658c86e0ff99c7d190c9f30925a86fbdf7f868685443bc005d7d335ab3cf08",
+        "reason": "not-reproduced"
+      },
+      {
+        "case_id": "quality-duplicated-branch-logic",
+        "detail": "required finding 'duplicated-format-message-call' was matched in the baseline and is now missed",
+        "drift_type": "missed-required-finding",
+        "expected_finding_key": "duplicated-format-message-call",
+        "fingerprint": "9a419a9d9138b54a5d27388e996a5a50a7a02bd4eb2178b64a07bcfd03d2f7ad",
+        "reason": "not-reproduced"
+      }
+    ]
+  },
+  "execution": {
+    "confirmation_reruns": 4,
+    "duration_s": 60.0,
+    "session_ref": null,
+    "warnings": []
+  },
+  "finished_at": "2026-09-19T01:01:00Z",
+  "lane": "sentinel",
+  "mode": "sentinel",
+  "provenance": {
+    "entrypoint_version": "run_benchmark_routine.py@222222222222",
+    "ref": "refs/heads/main",
+    "repo": "amirbena/code-review-skill",
+    "repo_sha": "222222222222bbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "spec_sha256": "ac0dcc0b275c435776a59b2a2035c61152adb3a679531616753a81a166117495"
+  },
+  "raw": {
+    "bundle_sha256": "d9e129e7c57de7ef3b2d82f7b54c2c033004b9534e0d268f098d591589196617",
+    "location": "claude/benchmark-result-sentinel-20260919T010000Z-222222222222"
+  },
+  "reproduction": {
+    "case_ids": [
+      "correctness-off-by-one-pagination",
+      "no-op-comment-and-rename",
+      "quality-duplicated-branch-logic",
+      "security-command-injection"
+    ],
+    "command": "python3 runtime_platform/benchmark/scripts/run_benchmark_routine.py --mode sentinel",
+    "nondeterminism": "Model output is nondeterministic; a rerun may differ.",
+    "python_version": "3.12"
+  },
+  "run_id": "sentinel-20260919T010000Z-222222222222",
+  "runtime": {
+    "adapter_id": "222222222222",
+    "model_id": "claude-sonnet-5",
+    "runtime_name": "claude-code-cloud-routine",
+    "runtime_version": "example"
+  },
+  "schema": "benchmark-result/v1",
+  "sealed_at": "2026-09-19T01:01:01Z",
+  "started_at": "2026-09-19T01:00:00Z",
+  "trigger": "scheduled",
+  "verification": {
+    "overall_verified": true,
+    "runs": [
+      {
+        "case_count": 4,
+        "case_ids": [
+          "correctness-off-by-one-pagination",
+          "no-op-comment-and-rename",
+          "quality-duplicated-branch-logic",
+          "security-command-injection"
+        ],
+        "passed": true,
+        "reason": "verified"
+      }
+    ]
+  }
+}

@@ -145,8 +145,8 @@ store.
   repository size (< 1 GB) and far from the 50 MiB / 100 MiB file thresholds.
 - **Trigger:** when the packed size of `benchmark-history` exceeds **100 MB**,
   or any single file exceeds **10 MB**, a maintainer decides between rotating
-  to a new orphan branch and moving records to an external store. F2 measures
-  the real record size before this is relied on.
+  to a new orphan branch and moving records to an external store. F2's first
+  measurement is in [`../benchmark-result-schema.md`](../benchmark-result-schema.md) §5.
 
 ## 5. Baseline comparison against this store
 
