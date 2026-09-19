@@ -133,6 +133,11 @@ class CaseResult:
     # decided (unreadable, oversized, or over the per-case cap). Like
     # ``post_image``, deliberately absent from ``as_dict()``.
     cited_sources: Mapping[str, str | None] = field(default_factory=dict)
+    # The pre-patch text of each cited file the fixture's ``input.base``
+    # declares (``patch`` cases only), so evidence quoting removed code, or a
+    # file the patch deleted, is not read as fabricated (citation-fidelity.md
+    # §2). Same keys as ``cited_sources``; absent from ``as_dict()``.
+    pre_images: Mapping[str, str] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -367,6 +372,15 @@ def _capture_cited_sources(
     return sources
 
 
+def _capture_pre_images(case: bf.BenchmarkCase, cited: Iterable[str]) -> dict[str, str]:
+    """``input.base`` text for each cited path it declares — fixture data
+    only, nothing read from disk; empty for ``repo_ref`` cases."""
+    if case.input_kind != "patch":
+        return {}
+    base = {cited_path({"path": k}): v for k, v in (case.input.get("base", {}) or {}).items()}
+    return {rel: base[rel] for rel in cited if rel in base}
+
+
 def run_case(
     case: bf.BenchmarkCase,
     reviewer: ReviewerAdapter,
@@ -404,13 +418,15 @@ def run_case(
         except Exception:  # noqa: BLE001 - adapter failure is a per-case error, not a crash
             return CaseResult(case.id, kind, _ERROR, error="reviewer-adapter-raised")
 
+        cited_sources = _capture_cited_sources(produced, workspace)
         result = CaseResult(
             case.id,
             kind,
             _EXECUTED,
             produced_findings=produced,
             post_image=post_image,
-            cited_sources=_capture_cited_sources(produced, workspace),
+            cited_sources=cited_sources,
+            pre_images=_capture_pre_images(case, cited_sources),
         )
         return result
     finally:

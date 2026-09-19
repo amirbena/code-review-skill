@@ -255,7 +255,8 @@ class WorkedExampleTests(unittest.TestCase):
     """citation-fidelity.md §7, verbatim: the two-reader conformance bar."""
 
     TEXT = ReasonRuleTests.TEXT
-    SOURCES = {"a.py": TEXT, "gone.py": None}  # big.py deliberately absent (row 10)
+    SOURCES = {"a.py": TEXT, "gone.py": None, "old.py": None}  # big.py deliberately absent (row 10)
+    PRE = {"a.py": TEXT.replace("return x + 1", "return x + 2"), "old.py": "def legacy():\n    return 1\n"}
 
     ROWS = (
         (1, _pf({"path": "a.py", "line": 42}, quotes=["return x + 1"]), bc.VERIFIED, ()),
@@ -276,16 +277,17 @@ class WorkedExampleTests(unittest.TestCase):
         ),
         (12, _pf({"path": "a.py", "line": 42}, quotes=["x + return 1"]), bc.FABRICATED, (bc.SNIPPET_ABSENT,)),
         (13, _pf({"path": "a.py:L42-L43"}), bc.UNVERIFIABLE, ()),
+        (14, _pf({"path": "a.py", "line": 42}, quotes=["return x + 2"]), bc.VERIFIED, ()),
+        (15, _pf({"path": "old.py", "line": 1}), bc.VERIFIED, ()),
     )
 
     def test_every_documented_row(self) -> None:
         for number, finding, status, reasons in self.ROWS:
             with self.subTest(row=number):
-                self.assertEqual(bc.check_finding(finding, self.SOURCES), (status, reasons))
+                got = bc.check_finding(finding, self.SOURCES, self.PRE)
+                self.assertEqual(got, (status, reasons))
                 # two runs agree (§6 determinism)
-                self.assertEqual(
-                    bc.check_finding(finding, self.SOURCES), bc.check_finding(finding, self.SOURCES)
-                )
+                self.assertEqual(got, bc.check_finding(finding, self.SOURCES, self.PRE))
 
     def test_documented_file_shape(self) -> None:
         self.assertEqual(len(self.TEXT.splitlines()), 42)
@@ -335,6 +337,69 @@ class ParsedReviewOutputTests(unittest.TestCase):
         findings = parse_review_output(self.REPORT.format(loc="app/ghost.py:a-b"))
         (result,) = br.run_cases([case], lambda _ws: findings).case_results
         self.assertEqual(_check(result, case).unverifiable, 1)
+
+
+class PreImageTests(unittest.TestCase):
+    """citation-fidelity.md §2/§4: removed code and deleted files are real
+    evidence of the reviewed change, not fabrication (review F1, re-review)."""
+
+    DELETE_CASE = bf.BenchmarkCase(
+        format="benchmark-case/v2",
+        id="deletes-old",
+        title="t",
+        input={
+            "patch": (
+                "diff --git a/old.py b/old.py\ndeleted file mode 100644\n"
+                "index 1111111..0000000\n--- a/old.py\n+++ /dev/null\n"
+                "@@ -1,2 +0,0 @@\n-def legacy():\n-    return 1\n"
+            ),
+            "base": {"old.py": "def legacy():\n    return 1\n"},
+        },
+        decision=None,
+        findings_completeness="exhaustive",
+        findings=(),
+    )
+
+    def test_quote_of_removed_line_is_verified_through_the_runner(self) -> None:
+        case = _load(PAGINATION)
+        removed = _pf(
+            {"path": "app/pagination.py", "line": 3},
+            quotes=["return items[offset : offset + page_size]"],
+        )
+        result = _run_one(case, removed)
+        self.assertIn("app/pagination.py", result.pre_images)
+        self.assertEqual(_check(result, case).fabricated, 0)
+
+    def test_without_a_pre_image_the_removed_quote_is_still_absent(self) -> None:
+        case = _load(PAGINATION)
+        removed = _pf(
+            {"path": "app/pagination.py", "line": 3},
+            quotes=["return items[offset : offset + page_size]"],
+        )
+        result = _run_one(case, removed)
+        self.assertEqual(
+            bc.check_finding(removed, result.cited_sources), (bc.FABRICATED, (bc.SNIPPET_ABSENT,))
+        )
+
+    def test_fabricated_quote_is_not_rescued_by_the_pre_image(self) -> None:
+        case = _load(PAGINATION)
+        fake = _pf({"path": "app/pagination.py", "line": 3}, quotes=["os.system(user_input)"])
+        self.assertEqual(_check(_run_one(case, fake), case).fabricated, 1)
+
+    def test_finding_on_a_file_the_patch_deleted_is_not_missing(self) -> None:
+        genuine = _pf({"path": "old.py", "line": 1}, quotes=["def legacy():"])
+        result = _run_one(self.DELETE_CASE, genuine)
+        self.assertIsNone(result.cited_sources["old.py"])  # gone from the post-patch tree
+        self.assertEqual(_check(result, self.DELETE_CASE).verified, 1)
+
+    def test_line_range_is_checked_against_the_pre_image_of_a_deleted_file(self) -> None:
+        beyond = _pf({"path": "old.py", "line": 99})
+        m = _check(_run_one(self.DELETE_CASE, beyond), self.DELETE_CASE)
+        self.assertEqual(m.fabricated_findings[0]["reasons"], [bc.LINE_OUT_OF_RANGE])
+
+    def test_pre_image_is_not_part_of_the_stable_result_shape(self) -> None:
+        result = _run_one(_load(PAGINATION), _pf({"path": "app/pagination.py", "line": 1}))
+        self.assertNotIn("pre_images", result.as_dict())
 
 
 class PathContainmentTests(unittest.TestCase):

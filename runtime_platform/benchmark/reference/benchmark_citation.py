@@ -117,7 +117,9 @@ def _quote_present(quote: str, window: str) -> bool:
 
 
 def check_finding(
-    finding: br.ProducedFinding, cited_sources: Mapping[str, str | None]
+    finding: br.ProducedFinding,
+    cited_sources: Mapping[str, str | None],
+    pre_images: Mapping[str, str] | None = None,
 ) -> tuple[str, tuple[str, ...]]:
     """``(status, reasons)`` for one produced finding (§3). ``reasons`` is
     non-empty exactly when the status is ``fabricated``."""
@@ -126,10 +128,12 @@ def check_finding(
         # No cited file, or the runner could not decide its existence:
         # nothing checkable, never an existence claim (§3).
         return UNVERIFIABLE, ()
+    pre = (pre_images or {}).get(path)
     text = cited_sources[path]
     if text is None:
-        return FABRICATED, (FILE_MISSING,)
-
+        if pre is None:
+            return FABRICATED, (FILE_MISSING,)
+        text = pre  # deleted by the patch: it still existed in the reviewed change
     desc = bm.Descriptor.from_produced(finding)
     lines = text.splitlines()
     reasons: list[str] = []
@@ -149,7 +153,7 @@ def check_finding(
             window = "\n".join(lines[lo : desc.lines[1] + SNIPPET_WINDOW_LINES])
         else:
             window = text
-        if not any(_quote_present(q, window) for q in quotes):
+        if not any(_quote_present(q, window) or (pre is not None and _quote_present(q, pre)) for q in quotes):
             reasons.append(SNIPPET_ABSENT)
 
     return (FABRICATED, tuple(reasons)) if reasons else (VERIFIED, ())
@@ -198,7 +202,7 @@ def compute_case_citation_fidelity(
     verified = unverifiable = 0
     flagged: list[dict[str, Any]] = []
     for index, finding in enumerate(case_result.produced_findings):
-        status, reasons = check_finding(finding, case_result.cited_sources)
+        status, reasons = check_finding(finding, case_result.cited_sources, case_result.pre_images)
         if status == VERIFIED:
             verified += 1
         elif status == UNVERIFIABLE:

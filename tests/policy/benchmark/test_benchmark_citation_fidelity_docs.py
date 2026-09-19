@@ -122,7 +122,7 @@ class CitationFidelityContractTests(unittest.TestCase):
     def test_worked_examples_match_the_unit_test_rows(self) -> None:
         self.assertIn("## 7. Worked examples", self.raw)
         rows = [ln for ln in self.raw.splitlines() if ln.startswith("| ") and ln.split("|")[1].strip().isdigit()]
-        self.assertEqual(len(rows), 13)
+        self.assertEqual(len(rows), 15)
         unit = UNIT_TEST.read_text(encoding="utf-8")
         self.assertIn("class WorkedExampleTests", unit)
 

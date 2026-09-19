@@ -71,6 +71,11 @@ stable machine-readable case shape ([`runner-contract.md`](runner-contract.md)
   larger than `MAX_CITED_FILE_BYTES` (1,000,000), or falls past the
   `MAX_CITED_PATHS` (50) distinct-path cap is **left out of the mapping** —
   existence is then undecidable (§3), never `null`.
+- **Pre-image.** For a `patch` case the runner also records, as
+  `CaseResult.pre_images`, the fixture's `input.base` text of each cited path
+  it declares (fixture data, nothing read from disk; `repo_ref` cases have
+  none). It exists so evidence quoting code the patch **removed**, or a
+  finding on a file the patch **deleted**, is not read as fabricated.
 - **Best-effort.** A capture failure never fails the case.
 
 ## 3. The per-finding check
@@ -81,8 +86,10 @@ Statuses are decided in this order:
    location, or a path that still contains `:` — an unparsed
    `path:locator`, which is not a file), or the cited path is **absent from
    `cited_sources`** → `unverifiable`.
-2. The path maps to `null` → `fabricated` with reason `file-missing` (no
-   further check runs).
+2. The path maps to `null` and has **no pre-image** → `fabricated` with
+   reason `file-missing` (no further check runs). A path that maps to `null`
+   but has a pre-image was deleted by the patch: its pre-image text is
+   checked in place of the missing file.
 3. Otherwise the file exists, and each check below adds its reason when it
    fails, reported in this fixed order:
 
@@ -111,6 +118,9 @@ and added none. Nothing the check does depends on whether the finding
   (longest common subsequence) within one segment of consecutive window
   lines as long as the quote has lines — so reordered or scattered
   identifiers that merely occur somewhere nearby do not count.
+- **Pre-image.** A quote is also present when the same rule finds it in the
+  whole pre-image of the cited file (§2), whatever its line numbers — those
+  belong to the other tree.
 - **Any one present quote suffices**; the finding is `snippet-absent` only
   when none is.
 
@@ -118,7 +128,9 @@ These are the only tolerances. They are documented limits, not a claim of
 completeness: a near-copy that changes at most a quarter of a real line's tokens
 still passes, a fabrication whose quoted text happens to exist is not
 caught (the deferred grounding question), and a finding that quotes only
-code from a *different* file than it cites can be flagged.
+code from a *different* file than it cites can be flagged; a `repo_ref`
+case has no pre-image, so a quote of removed code there can still be
+flagged.
 
 ## 5. Per-case and aggregate output
 
@@ -148,7 +160,8 @@ Encoded verbatim as data-driven cases in
 [`../../tests/unit/benchmark/test_benchmark_citation.py`](../../tests/unit/benchmark/test_benchmark_citation.py);
 two readers applying §3–§4 must reach the status and reasons for every row.
 The captured file `a.py` has 42 lines: `line 1` … `line 40`, then
-`def target(x):` (41) and `    return x + 1` (42).
+`def target(x):` (41) and `    return x + 1` (42); its pre-image ends
+`    return x + 2`, and `old.py` exists only in the pre-image.
 
 | # | Produced finding | Status | Reasons |
 |---|---|---|---|
@@ -165,9 +178,11 @@ The captured file `a.py` has 42 lines: `line 1` … `line 40`, then
 | 11 | `a.py:500`, symbol `missing_fn`, quote `os.system(cmd)` | `fabricated` | `line-out-of-range`, `symbol-absent`, `snippet-absent` |
 | 12 | `a.py:42`, quote `x + return 1` (the tokens of line 42, out of order) | `fabricated` | `snippet-absent` |
 | 13 | `a.py:L42-L43`, unparsed (path still contains `:`) | `unverifiable` | — |
+| 14 | `a.py:42`, quote `return x + 2` (the removed line — in the pre-image only) | `verified` | — |
+| 15 | `old.py:1` (deleted by the patch; pre-image only) | `verified` | — |
 
 Rows 2–6, 11, and 12 are the fabrication the acceptance criteria ask to be
-flagged; rows 7–10 and 13 are the deliberate non-flags a looser rule would raise.
+flagged; rows 7–10 and 13–15 are the deliberate non-flags a looser rule would raise.
 
 ## 8. Explicitly out of scope
 
