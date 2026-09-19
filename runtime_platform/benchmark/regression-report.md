@@ -92,11 +92,11 @@ candidate).
   deliberate baseline refresh (§8), not a silent comparison. For the
   scheduled lanes ([`nightly-history-and-baseline.md`](nightly-history-and-baseline.md)
   §3.2, amended by [#467](https://github.com/amirbena/code-review-skill/issues/467)
-  A7) this guard is unchanged for **lane identity** and lane membership — a
-  mismatch is still a total refusal — while a fixture-content divergence within
-  one lane is handled per case: each case carries a `fixture_digest`, and an
-  edited fixture makes only that case `incomparable` (listed, never compared)
-  instead of refusing the whole comparison.
+  A7) this guard is unchanged for **lane identity** — a lane mismatch is still
+  a total refusal — while a corpus change within one lane is handled per case:
+  added and removed cases are reported as such, and each case carries a
+  `fixture_digest`, so an edited fixture makes only that case `incomparable`
+  (listed, never compared) instead of refusing the whole comparison.
 - **Adapter identity is recorded, not gated.** A differing `adapter_id`
   is expected — it is usually the whole point of the comparison — and is
   echoed into the report so the reader knows what changed.
@@ -240,7 +240,7 @@ precision/recall. Those are #41 and are computed from the fixtures'
   (non-zero process status) only when it cannot produce a trustworthy
   comparison: a baseline artifact that will not parse, a candidate run
   result that will not parse, or a `corpus_id` mismatch (§3; for the scheduled
-  lanes, only a lane-identity or lane-membership mismatch — see §3).
+  lanes, only a lane-identity mismatch — see §3).
 - **Finding regressions is not a report failure.** A run that completes
   the comparison is a **successful report** even when
   `has_regressions` is true. Downstream (a CI gate, a human) decides what

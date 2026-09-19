@@ -279,16 +279,19 @@ implementation (`runtime_platform/benchmark/reference/benchmark_report.py::corpu
 computes it.
 
 **Comparability (A7).** `corpus_id` remains the whole-corpus identity, and a
-**lane-identity or lane-membership mismatch stays a total fail-closed
-refusal**, exactly as `regression-report.md` §3 demands: a sentinel record is
-never compared against a comprehensive baseline. What is amended is
-fixture-content divergence *within one lane*. The comprehensive `corpus_id`
-digests every fixture, so any corpus change alters it — the corpus tree
-changed in 41 commits in the 31 days to 2026-09-19 — and a total block plus
-manual re-promotion would leave comparison refused almost continuously. Each
-case therefore carries a `fixture_digest`; a fixture edit downgrades **only
-that case** to `incomparable`, listed in the record, and the remaining cases
-are still compared. Incomparable cases never open, comment on, or close an
+**lane-identity mismatch stays a total fail-closed refusal**, exactly as
+`regression-report.md` §3 demands: a record is only ever compared against a
+baseline of the same lane, so a sentinel record is never compared against a
+comprehensive baseline. Cases added to or removed from a lane's corpus since
+the baseline are not a lane-identity mismatch; they are reported as added and
+removed cases (`regression-report.md` §3) and never refuse the comparison.
+What is amended is fixture-content divergence *within one lane*. The
+comprehensive `corpus_id` digests every fixture, so any corpus change alters
+it — the corpus tree changed in 41 commits in the 31 days to 2026-09-19 — and
+a total block plus manual re-promotion would leave comparison refused almost
+continuously. Each case therefore carries a `fixture_digest`; a fixture edit
+downgrades **only that case** to `incomparable`, listed in the record, and the
+remaining cases are still compared. Incomparable cases never open, comment on, or close an
 issue. No baseline-policy change: #431's "no new guard code" holds for lane
 identity, and per-case `fixture_digest` handling is the one addition.
 

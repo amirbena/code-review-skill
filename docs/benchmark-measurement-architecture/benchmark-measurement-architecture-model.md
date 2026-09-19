@@ -571,10 +571,11 @@ independently-scheduled, independently-baselined lanes by #431 — see
 [`../../runtime_platform/benchmark/nightly-history-and-baseline.md`](../../runtime_platform/benchmark/nightly-history-and-baseline.md)
 §2 for the operational contract. "Nightly" in the rest of this document
 and in #338/#339 is the historical name for this scheduled path; it is not
-a claim that execution happens every night — the sentinel lane runs every
-3 days at most and the comprehensive lane runs weekly at most (each a
-maximum gap between verified runs, not an exact interval — A11 of #467;
-§2 below), neither daily.
+a claim that execution happens every night — the sentinel lane is intended
+every 3 days and the comprehensive lane weekly, neither daily (§2 below). The
+enforced contract is a maximum gap between verified runs of 96 h and 8 d
+respectively, not an exact interval — A11 of #467,
+`nightly-history-and-baseline.md` §2.
 Exact storage implementation and exact drift/noise thresholds remain
 #338's and #339's implementation detail, not recorded here.
 
