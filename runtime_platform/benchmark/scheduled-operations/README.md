@@ -27,6 +27,7 @@ workflow using a publication-only GitHub App persists it and manages issues.
 | [`canonical-result-and-persistence.md`](canonical-result-and-persistence.md) | The canonical run record (every field), the persistence options compared, the `benchmark-history` layout, retention, growth bound, and baseline access. |
 | [`drift-issue-lifecycle-and-recovery.md`](drift-issue-lifecycle-and-recovery.md) | What is issue-worthy, in-run confirmation, dedup/idempotency, scope-aware resolution, spam bounds, the missed-run watchdog, the failure table, and the maintainer health checklist. |
 | [`contract-reconciliation.md`](contract-reconciliation.md) | How #338, #339, #415, #431, and `runtime-execution-contract.md` §2.2 are reconciled, and the amendment list A1–A13 awaiting maintainer approval. |
+| [`provisioning-runbook.md`](provisioning-runbook.md) | The maintainer-only F7 procedure (#473): register the `benchmark-publication` App, environment, secrets, rulesets, labels, and locked tracking/health issues, each with its expected result and an observed-evidence log. |
 | [`follow-up-plan.md`](follow-up-plan.md) | The listed (not created) follow-up issues F1–F12 (plus four conditional ones), their order and ownership class, and the documentation work for both surfaces: the canonical repository specification and the GitHub Wiki page. |
 
 The existing contracts this record builds on and proposes to amend are
