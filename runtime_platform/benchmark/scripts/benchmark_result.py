@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import sys
 from datetime import datetime
@@ -141,7 +142,7 @@ _TYPE_CHECKS = {
     "boolean": lambda v: isinstance(v, bool),
     "null": lambda v: v is None,
     "integer": lambda v: isinstance(v, int) and not isinstance(v, bool),
-    "number": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
+    "number": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v),
 }
 
 
@@ -154,6 +155,17 @@ def _resolve(ref: str, root: Mapping[str, Any]) -> Mapping[str, Any]:
     for part in ref.removeprefix("#/").split("/"):
         node = node[part]
     return node
+
+
+def _pattern_matches(pattern: str, text: str) -> bool:
+    # ECMA `$` never matches before a trailing newline; Python's does.
+    return re.search(re.sub(r"(?<!\\)\$$", r"\\Z", pattern), text) is not None
+
+
+def _describe(value: Any) -> str:
+    if isinstance(value, float) and not math.isfinite(value):
+        return "a non-finite number"
+    return type(value).__name__
 
 
 def validate_against_schema(
@@ -171,7 +183,7 @@ def validate_against_schema(
     if "type" in schema:
         allowed = schema["type"] if isinstance(schema["type"], list) else [schema["type"]]
         if not any(_TYPE_CHECKS[t](instance) for t in allowed):
-            return errors + [f"{path}: expected type {allowed}, got {type(instance).__name__}"]
+            return errors + [f"{path}: expected type {allowed}, got {_describe(instance)}"]
     if "anyOf" in schema and not any(
         not validate_against_schema(instance, sub, root, path) for sub in schema["anyOf"]
     ):
@@ -184,7 +196,7 @@ def validate_against_schema(
             errors.append(f"{path}: shorter than {schema['minLength']}")
         if len(instance) > schema.get("maxLength", len(instance)):
             errors.append(f"{path}: longer than {schema['maxLength']}")
-        if "pattern" in schema and not re.search(schema["pattern"], instance):
+        if "pattern" in schema and not _pattern_matches(schema["pattern"], instance):
             errors.append(f"{path}: does not match {schema['pattern']}")
     if _TYPE_CHECKS["number"](instance) and instance < schema.get("minimum", instance):
         errors.append(f"{path}: below minimum {schema['minimum']}")

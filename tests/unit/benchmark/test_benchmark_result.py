@@ -148,6 +148,34 @@ class RequiredFieldTests(unittest.TestCase):
                 mutate(mutated)
                 self.assertIn(expected, "\n".join(res.validate_record(mutated)))
 
+    def test_trailing_newline_in_an_anchored_pattern_is_rejected(self) -> None:
+        record = _load("sentinel-bootstrap.record.json")
+        record["cases"][0]["fixture_digest"] += "\n"
+        record["raw"]["bundle_sha256"] += "\n"
+        errors = "\n".join(res.validate_record(_resealed(record)))
+        self.assertIn("$.cases[0].fixture_digest: does not match", errors)
+        self.assertIn("$.raw.bundle_sha256: does not match", errors)
+
+    def test_unanchored_prefix_pattern_still_matches(self) -> None:
+        self.assertTrue(res._pattern_matches("^https://", "https://example.test/x"))
+        self.assertFalse(res._pattern_matches("^https://", "http://example.test/x"))
+
+    def test_non_finite_numbers_are_rejected(self) -> None:
+        record = _load("sentinel-bootstrap.record.json")
+        for value in (float("nan"), float("inf")):
+            with self.subTest(value):
+                record["execution"]["duration_s"] = value
+                errors = "\n".join(res.validate_record(_resealed(record)))
+                self.assertIn("$.execution.duration_s: expected type ['number'], got a non-finite number", errors)
+
+    def test_drift_records_are_closed_to_unknown_fields(self) -> None:
+        for group in ("observations", "confirmed", "unconfirmed"):
+            with self.subTest(group):
+                record = _load("sentinel-compared-drift.record.json")
+                record["drift"][group][0]["extra"] = 1
+                errors = "\n".join(res.validate_record(_resealed(record)))
+                self.assertIn(f"$.drift.{group}[0].extra: unexpected field", errors)
+
     def test_receipt_missing_field_is_rejected(self) -> None:
         receipt = _load("sentinel-compared-drift.receipt.json")
         for field in list(receipt):

@@ -47,7 +47,7 @@ The field table names groups; these are the exact shapes it left open.
   [`scheduled-operations/drift-issue-lifecycle-and-recovery.md`](scheduled-operations/drift-issue-lifecycle-and-recovery.md)
   §2: `reruns`, `threshold`, `max_cases`; `drift.systemic` records the cap being hit.
 - `drift.observations[]`, `confirmed[]`, `unconfirmed[]` use the `DriftRecord`
-  shape including `fingerprint`; `confirmed` and `unconfirmed` partition
+  shape including `fingerprint`, closed to unknown fields; `confirmed` and `unconfirmed` partition
   `observations`. Each `unconfirmed` entry adds a `reason`:
   `not-reproduced`, `unconfirmed-timeout`, or `systemic-cap`.
 - `drift.outcome` is `{status: none | drift | not-evaluated, reason}`; `reason` is

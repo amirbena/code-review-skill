@@ -182,20 +182,7 @@
           }
         },
         "confirmed": { "type": "array", "items": { "$ref": "#/$defs/drift_record" } },
-        "unconfirmed": {
-          "type": "array",
-          "items": {
-            "allOf": [
-              { "$ref": "#/$defs/drift_record" },
-              {
-                "properties": {
-                  "reason": { "enum": ["not-reproduced", "unconfirmed-timeout", "systemic-cap"] }
-                },
-                "required": ["reason"]
-              }
-            ]
-          }
-        },
+        "unconfirmed": { "type": "array", "items": { "$ref": "#/$defs/unconfirmed_drift_record" } },
         "systemic": { "type": "boolean" },
         "outcome": {
           "type": "object",
@@ -269,16 +256,31 @@
     },
     "drift_record": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["case_id", "drift_type", "expected_finding_key", "detail", "fingerprint"],
       "properties": {
         "case_id": { "$ref": "#/$defs/text" },
-        "drift_type": {
-          "enum": ["missed-required-finding", "decision-flip", "severity-accuracy-drop"]
-        },
+        "drift_type": { "$ref": "#/$defs/drift_type" },
         "expected_finding_key": { "$ref": "#/$defs/text" },
         "detail": { "type": "string" },
         "fingerprint": { "$ref": "#/$defs/sha256" }
       }
+    },
+    "unconfirmed_drift_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "drift_type", "expected_finding_key", "detail", "fingerprint", "reason"],
+      "properties": {
+        "case_id": { "$ref": "#/$defs/text" },
+        "drift_type": { "$ref": "#/$defs/drift_type" },
+        "expected_finding_key": { "$ref": "#/$defs/text" },
+        "detail": { "type": "string" },
+        "fingerprint": { "$ref": "#/$defs/sha256" },
+        "reason": { "enum": ["not-reproduced", "unconfirmed-timeout", "systemic-cap"] }
+      }
+    },
+    "drift_type": {
+      "enum": ["missed-required-finding", "decision-flip", "severity-accuracy-drop"]
     },
     "case": {
       "type": "object",
