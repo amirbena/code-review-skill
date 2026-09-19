@@ -16,7 +16,6 @@ README = BENCHMARK / "README.md"
 ROUTINE_DOC = REPO_ROOT / "docs" / "benchmark" / "cloud-routine-integration.md"
 
 
-
 def _prompt_template() -> str:
     text = ROUTINE_DOC.read_text(encoding="utf-8")
     section = text.split("## 9. Routine prompt template", 1)[1].split("### 9.1", 1)[0]
@@ -61,6 +60,10 @@ class ScheduleSpecDocTests(unittest.TestCase):
     def test_prompt_spec_defers_to_the_single_literal_template(self) -> None:
         self.assertIn("cloud-routine-integration.md", self.raw)
         self.assertNotIn("```text", self.raw)
+
+    def test_prompt_spec_ties_failure_handling_to_a12(self) -> None:
+        self.assertIn("A12's \"exit non-zero on failure\"", self.text)
+        self.assertIn("reports no success", self.text)
 
     def test_links_resolve(self) -> None:
         for target in re.findall(r"\]\((?!https?:|#)([^)#]+)", self.raw):

@@ -78,10 +78,13 @@ The Routine prompt is exactly the literal template in
 - the checkout is a fresh copy of `repository` at its default branch.
 
 The prompt does three things and nothing else: check out, invoke the
-entrypoint for the named lane, and stop without reporting success or publishing anything if the command fails. It carries no
-dependency installs, no `gh`, no history push, no evidence posting, and no
-cadence, tracking-issue, confirmation, or label values — those live in the
-manifest, and all logic is repository code at the pinned SHA, so provider-side
+entrypoint for the named lane, and stop if the command fails. A Routine session
+realises A12's "exit non-zero on failure" as the template's step 3: on a
+non-zero exit it reports no success, does not retry silently, and posts or
+pushes nothing to GitHub — a run that did not seal is not a verified run. It
+carries no dependency installs, no `gh`, no history push, no evidence posting,
+and no cadence, tracking-issue, confirmation, or label values — those live in
+the manifest, and all logic is repository code at the pinned SHA, so provider-side
 prompt drift cannot change behavior. The Routine definition itself, its
 enabled state, schedule, and stagger are provider-owned and cannot be checked
 from the repository.
