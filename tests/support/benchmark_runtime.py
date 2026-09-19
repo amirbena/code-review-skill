@@ -7,6 +7,12 @@ import os
 import unittest
 
 REQUIRE_RUNTIME_ENV_VAR = "BENCHMARK_REQUIRE_RUNTIME"
+_TRUTHY = frozenset({"1", "true", "yes"})
+
+
+def runtime_required() -> bool:
+    """Only an explicit 1/true/yes enables strict mode; `0`/`false` do not."""
+    return os.environ.get(REQUIRE_RUNTIME_ENV_VAR, "").strip().lower() in _TRUTHY
 
 
 @functools.lru_cache(maxsize=1)
@@ -23,8 +29,7 @@ def runtime_unavailable_reason() -> str | None:
 
 class LiveRuntimeTestCase(unittest.TestCase):
     """Skips with the reason when the runtime is unavailable; errors instead
-    when ``BENCHMARK_REQUIRE_RUNTIME`` is set, so a missing runtime is never
-    read as a pass."""
+    when ``BENCHMARK_REQUIRE_RUNTIME`` is on, so a missing runtime is never a pass."""
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -32,6 +37,6 @@ class LiveRuntimeTestCase(unittest.TestCase):
         reason = runtime_unavailable_reason()
         if reason is None:
             return
-        if os.environ.get(REQUIRE_RUNTIME_ENV_VAR):
+        if runtime_required():
             raise AssertionError(f"{REQUIRE_RUNTIME_ENV_VAR} is set but the runtime is unavailable — {reason}")
         raise unittest.SkipTest(f"skipping the live end-to-end path rather than fabricating a result — {reason}")

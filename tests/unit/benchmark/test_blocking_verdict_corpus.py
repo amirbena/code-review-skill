@@ -286,6 +286,29 @@ class LiveRuntimeGateTests(unittest.TestCase):
             self._run_set_up(reason="claude not found", required=False)
         self.assertIn("claude not found", str(caught.exception))
 
+    def test_strict_flag_is_parsed_explicitly(self) -> None:
+        for value, expected in (
+            ("1", True),
+            ("true", True),
+            ("TRUE", True),
+            (" yes ", True),
+            ("0", False),
+            ("false", False),
+            ("", False),
+            ("no", False),
+        ):
+            with self.subTest(value=value), mock.patch.dict("os.environ", {REQUIRE_RUNTIME_ENV_VAR: value}):
+                self.assertEqual(brt.runtime_required(), expected)
+        with mock.patch.dict("os.environ", clear=False):
+            os.environ.pop(REQUIRE_RUNTIME_ENV_VAR, None)
+            self.assertFalse(brt.runtime_required())
+
+    def test_disabled_strict_flag_still_skips(self) -> None:
+        with mock.patch.dict("os.environ", {REQUIRE_RUNTIME_ENV_VAR: "0"}):
+            with mock.patch.object(brt, "runtime_unavailable_reason", return_value="claude not found"):
+                with self.assertRaises(unittest.SkipTest):
+                    self._Probe.setUpClass()
+
     def test_unavailable_runtime_fails_when_required(self) -> None:
         with self.assertRaises(AssertionError) as caught:
             self._run_set_up(reason="claude not found", required=True)

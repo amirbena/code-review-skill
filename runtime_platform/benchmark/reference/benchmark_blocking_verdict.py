@@ -19,10 +19,8 @@ class RenderedKind(str, Enum):
     UNRECOGNIZED = "unrecognized"
 
 
-# Local (`REVIEW CLEAN` / `CHANGES REQUIRED`), GitHub (`Approve` / `Request
-# Changes`, `APPROVE` / `REQUEST_CHANGES` / `COMMENT`) and Result-line
-# (`Changes Requested`) wordings, matched after lowercasing and stripping
-# punctuation.
+# Local, GitHub (incl. `REQUEST_CHANGES` / `COMMENT` events) and Result-line
+# wordings, matched after lowercasing and stripping punctuation.
 _BLOCKING_RE = re.compile(r"\bchanges (required|requested)\b|\brequest(ed)? changes\b")
 _CLEAN_RE = re.compile(r"\bclean\b|\bapprove[ds]?\b")
 _INCOMPLETE_RE = re.compile(r"\bincomplete\b")
@@ -65,12 +63,8 @@ def check_blocking_verdict(
     decision_label: str | None,
     require_blocking: bool = False,
 ) -> BlockingVerdictCheck:
-    """When any produced severity is P0/P1, neither the Result nor the
-    Decision may render clean (or an unrecognized label). With
-    ``require_blocking`` both must be the blocking value itself, so the
-    sanctioned incomplete/informational outcomes also fail. Vacuously ok
-    without a P0/P1 — callers needing the check exercised assert
-    ``blocking_produced``."""
+    """Once a P0/P1 is produced neither surface may render clean; `require_blocking`
+    demands the blocking value itself. Vacuously ok without a P0/P1."""
     findings = tuple(ds.Finding(id=str(i), severity=ds.Severity(s)) for i, s in enumerate(severities))
     if ds.derive_decision(findings) is ds.Decision.CLEAN:
         return BlockingVerdictCheck(blocking_produced=False, violations=())
