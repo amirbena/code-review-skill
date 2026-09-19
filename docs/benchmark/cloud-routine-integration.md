@@ -274,7 +274,7 @@ provider-side prompt drift cannot change behavior:
 The tracking-issue numbers, cadence text, `max_gap_hours`, and confirmation
 parameters are not Routine arguments: they live in the repository-owned
 schedule spec ([`schedule-spec.md`](../../runtime_platform/benchmark/schedule-spec.md)),
-which also instantiates this template per lane.
+which binds this template to each lane.
 
 ### 9.1 Two lanes, two Cloud Routine schedules (#431)
 
