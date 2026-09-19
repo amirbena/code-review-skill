@@ -70,6 +70,19 @@ the fingerprint, or the tolerance (amendment A8).
   publisher posts: `<!-- benchmark-applied:<run_id>:<fingerprint> -->`. Before
   commenting, the publisher scans the issue's comments for it. This is what
   makes a retried plan a no-op.
+- **Publisher-authored comments only (A14).** A marker counts, and the
+  publisher's own status comment is found, only on a comment authored by the
+  publisher identity `<app-slug>[bot]` — the acting identity every publication
+  run reports. This governs every comment scan: `benchmark-run:<run_id>` on
+  tracking issues, `benchmark-applied:<run_id>:<fingerprint>` on drift issues,
+  and the health-status comment on the pinned health issue. A comment from any
+  other account, the maintainer's included, is data: it is neither a marker nor
+  a status comment, it cannot suppress a post, and the publisher never edits it.
+  The rule replaces locking the tracking and health issues, because the App's
+  installation token cannot comment on a locked issue (observed: `HTTP 403`,
+  [`provisioning-runbook.md`](provisioning-runbook.md) §4). If the App's own
+  post is refused, publication fails closed (§6, cases 3 and 8) and is never
+  retried under another identity.
 - **Provenance and an immutable link** — every create and comment carries the
   #339 §5 metadata block extended with `lane`, `run_id`, a commit-pinned
   permalink to the sealed record, and a commit-pinned permalink to the baseline
@@ -136,11 +149,11 @@ and the Routines page's own warning that a green status is not success).
   forbids to Actions (amendment A13). It must not be a Routine (an LLM session
   with a daily run cap and a GitHub write path). The options and caveats
   are in [`publication-architecture.md`](publication-architecture.md) §6.
-- **Health status.** One comment on a pinned health issue, edited in place,
-  showing per lane: latest verified run and time, model, drift outcome, open
-  drift and missed-run issues, sealed-but-unpublished handoffs and their age,
-  and the last successful publication sweep. It is edited only when content
-  changes.
+- **Health status.** One comment on a pinned health issue, authored by the
+  publisher identity (§3) and edited in place, showing per lane: latest
+  verified run and time, model, drift outcome, open drift and missed-run
+  issues, sealed-but-unpublished handoffs and their age, and the last
+  successful publication sweep. It is edited only when content changes.
 - **Limit.** The watchdog cannot watch itself. A disabled or dropped schedule
   shows as a stale "last publication sweep" and accumulating
   `claude/benchmark-result-*` refs, and no alert is raised — external alerting
@@ -167,6 +180,7 @@ Idempotency key, retry boundary, retrying party, and what a maintainer sees.
 | 9 | Two publication passes overlap | as cases 4–5 | n/a | either | nothing under Actions — one run at a time; only a local `--once` beside a workflow run can duplicate an evidence comment (same run marker) or, rarely, an issue | The workflow's `concurrency` group serializes runs; a further arrival replaces the single pending run, and every run sweeps all unpublished refs, so no result is dropped. After every create the publisher re-lists that fingerprint; if two open issues share it, it keeps the lowest number, comments on it, and closes the other with a pointer. |
 | 10 | Same `run_id`, different content hash | `run_id` + `content_sha256` | none | none | a conflict entry on the health status; nothing published | Refused, never overwritten (§2 of the boundary document). |
 | 11 | Baseline missing or all cases incomparable | n/a | n/a | n/a | evidence comment states `bootstrap` or `incomparable`; no drift issues touched | Neither opens nor resolves an issue, so it cannot cause a false open or a false close. |
+| 12 | Another account posts a comment carrying a marker, or imitating the status comment | none | none | none | nothing: the comment is ignored and the real post is not suppressed | Markers and the status comment count only when the publisher identity authored them (§3); the maintainer's own account is not the publisher either. |
 
 Manual trace: every path either ends at the seal (cases 1–2, unrecoverable by
 design and visible via the watchdog), or continues from the seal by re-reading

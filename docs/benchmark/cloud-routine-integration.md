@@ -137,12 +137,16 @@ transcript/run history:
   (drift/issue lifecycle) read a baseline as a direct file read, not a paginated
   comment scrape;
 - it is never reachable from contributor PR automation — the record and the
-  tracking issue are written only by the publisher, and the tracking issues are
-  locked to collaborators.
+  tracking issue are written only by the publisher. The tracking issues are not
+  locked (the App's installation token cannot comment on a locked issue); only
+  comments authored by the publisher identity count
+  ([`drift-issue-lifecycle-and-recovery.md`](../../runtime_platform/benchmark/scheduled-operations/drift-issue-lifecycle-and-recovery.md)
+  §3, A14).
 
 Each **evidence comment**, one per published run, begins with the per-run
 marker `<!-- benchmark-run:<run_id> -->` (A4; it replaces the constant evidence
-marker, so a retried post is skipped instead of appended), then a short human
+marker, so a retried post is skipped instead of appended; it is recognised only
+on a comment the publisher identity authored, A14), then a short human
 summary — lane, repository SHA, model, executed/total cases, drift outcome,
 baseline state — and two **immutable commit-pinned permalinks**, to the record
 and to the baseline it was compared against, plus links to any issues acted on.

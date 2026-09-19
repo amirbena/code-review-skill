@@ -195,7 +195,8 @@ marker line survives.
 **Per-run marker (A4).** Issue identity is the fingerprint marker above,
 unchanged. Every comment the publisher posts additionally carries a second
 hidden marker, `<!-- benchmark-applied:<run_id>:<fingerprint> -->`, and before
-commenting the publisher scans the issue's comments for it. That is what makes
+commenting the publisher scans the issue's comments for it; only a comment
+authored by the publisher identity counts (A14). That is what makes
 a retried publication a no-op: one run applies to one issue at most once, and
 a retry that finds its marker does nothing.
 

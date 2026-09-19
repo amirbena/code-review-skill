@@ -111,8 +111,8 @@ them.
 ## 4. Provisioning state
 
 `tracking_issue` and `health_issue` are `null` in the committed manifest because
-those issues do not exist until #473 creates and locks them. That provisioning
-change fills the numbers in and is the only edit expected to change them;
+those issues do not exist until the #473 runbook, executed under #484, creates
+them. That provisioning change fills the numbers in and is the only edit expected to change them;
 consumers that write to GitHub must use `--require-provisioned` semantics.
 
 ## 5. What this spec does not own
