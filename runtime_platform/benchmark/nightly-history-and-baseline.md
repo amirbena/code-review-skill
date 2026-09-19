@@ -236,8 +236,9 @@ markers in
 (sorted keys, minimal separators — the canonicalization #339 §3 uses for
 fingerprints).
 
-The sealed result carries these field groups (the exact schema is fixed by the
-schema issue under Epic #466; the enumerated field table is in
+The sealed result carries these field groups (the exact schema is
+[`benchmark-result-schema.md`](benchmark-result-schema.md); the enumerated field
+table is in
 [`scheduled-operations/canonical-result-and-persistence.md`](scheduled-operations/canonical-result-and-persistence.md)
 §1):
 
