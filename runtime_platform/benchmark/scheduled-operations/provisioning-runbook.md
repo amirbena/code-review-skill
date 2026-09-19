@@ -55,8 +55,8 @@ against.
 | Environments | one: `release`, no protection rules, no branch policy | `gh api repos/$R/environments` |
 | Benchmark-related labels | none exist | `gh label list --limit 200` |
 | `benchmark-history` branch | does not exist; no other non-`main` branch | `git ls-remote --heads origin` |
-| Tags | 143 exist; no tag ruleset | `git ls-remote --tags origin` |
-| Benchmark App installation | none (`GET /repos/$R/installation` needs an App JWT, so a user token cannot show it) | — |
+| Tags | 72 exist; no tag ruleset | `git ls-remote --tags origin \| grep -vc '\^{}$'` (a plain line count gives 143 because each annotated tag also lists a peeled `^{}` ref) |
+| Benchmark App installation | not observable with a user token (`GET /repos/$R/installation` answers 401 without an App JWT); [E16](decision-record.md) records no such App | `gh api repos/$R/installation` |
 
 ## 3. Steps
 
@@ -96,21 +96,27 @@ GitHub → Settings → Developer settings → GitHub Apps → New GitHub App:
   `Environments`.
 - Installable by: **Only on this account**.
 - Generate one private key; keep it out of the repository and out of shell
-  history (a local file with `chmod 600`, deleted after P4).
+  history (a local file with `chmod 600`, kept until P7 is done — P7 and any
+  re-check mint a fresh JWT from it — then deleted or moved to a password
+  manager).
 
 Install it on **only** `amirbena/code-review-skill` (Only select repositories).
 
-To verify with `gh`, build an App JWT locally from the key. The JWT is a
-credential: keep it in a shell variable, never paste it anywhere.
+To verify with `gh`, build an App JWT locally from the key. A JWT lives at most
+10 minutes, so mint one **per use** with the function below rather than reusing
+a variable. The JWT is a credential: never paste it anywhere.
 
 ```bash
 export APP_ID=<App ID>  KEY_PEM=/path/to/private-key.pem
 b64() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
-now=$(date +%s)
-h=$(printf '{"alg":"RS256","typ":"JWT"}' | b64)
-p=$(printf '{"iat":%d,"exp":%d,"iss":"%s"}' $((now-60)) $((now+540)) "$APP_ID" | b64)
-s=$(printf '%s.%s' "$h" "$p" | openssl dgst -sha256 -sign "$KEY_PEM" | b64)
-JWT="$h.$p.$s"
+mint_jwt() {
+  local now h p s
+  now=$(date +%s)
+  h=$(printf '{"alg":"RS256","typ":"JWT"}' | b64)
+  p=$(printf '{"iat":%d,"exp":%d,"iss":"%s"}' $((now-60)) $((now+540)) "$APP_ID" | b64)
+  s=$(printf '%s.%s' "$h" "$p" | openssl dgst -sha256 -sign "$KEY_PEM" | b64)
+  printf '%s.%s.%s' "$h" "$p" "$s"
+}
 ```
 
 Verify — **expected** `permissions_match: true` (the matrix equals the boundary
@@ -118,14 +124,15 @@ document's §7 exactly, checked as an equality, not eyeballed) and
 `repository_selection: "selected"`:
 
 ```bash
-gh api repos/$R/installation -H "Authorization: Bearer $JWT" --jq '{
+gh api repos/$R/installation -H "Authorization: Bearer $(mint_jwt)" --jq '{
   app_slug, app_id, installation_id: .id, repository_selection, permissions,
   permissions_match: (.permissions == {"contents":"write","issues":"write","metadata":"read"})}'
+export INSTALL_ID=$(gh api repos/$R/installation -H "Authorization: Bearer $(mint_jwt)" --jq .id)
 ```
 
-This also yields the App ID (rulesets) and installation ID (P7, §4). Confirm in
-Settings → Integrations → the App → Configure that exactly one repository is
-selected.
+This also yields the App ID (rulesets) and the installation ID (`$INSTALL_ID`,
+used by P7 and recorded in §4). Confirm in Settings → Integrations → the App →
+Configure that exactly one repository is selected.
 
 ### P3. Create the environment, default-branch-only
 
@@ -156,8 +163,9 @@ gh secret set BENCHMARK_APP_ID          --env benchmark-publication --repo $R --
 gh secret set BENCHMARK_APP_PRIVATE_KEY --env benchmark-publication --repo $R < "$KEY_PEM"
 ```
 
-Then delete the local key file, or move it to the maintainer's password manager;
-it is never on the execution side and never in the repository.
+Keep the local key file until P7 is finished, then delete it or move it to the
+maintainer's password manager; it is never on the execution side and never in
+the repository.
 
 Verify — **expected** exactly the two names, and none at repository level:
 
@@ -271,16 +279,22 @@ The design assumes the App's `issues: write` lets it comment on a locked thread
 permission, post, and remove the comment:
 
 ```bash
-TOKEN=$(gh api --method POST "app/installations/$INSTALL_ID/access_tokens" -H "Authorization: Bearer $JWT" \
+TOKEN=$(gh api --method POST "app/installations/${INSTALL_ID:?run P2 first}/access_tokens" \
+  -H "Authorization: Bearer $(mint_jwt)" \
   -f 'repositories[]=code-review-skill' -f 'permissions[issues]=write' --jq .token)
-GH_TOKEN=$TOKEN gh api --method POST repos/$R/issues/<SENTINEL_N>/comments -f body='provisioning check (#473); will be removed' --jq '{id, user: .user.login}'
-GH_TOKEN=$TOKEN gh api --method DELETE repos/$R/issues/comments/<id>
+GH_TOKEN="${TOKEN:?token mint failed}" gh api --method POST repos/$R/issues/<SENTINEL_N>/comments -f body='provisioning check (#473); will be removed' --jq '{id, user: .user.login}'
+GH_TOKEN="${TOKEN:?token mint failed}" gh api --method DELETE repos/$R/issues/comments/<id>
 unset TOKEN
 ```
 
-**Expected** `user` = `benchmark-publication[bot]` and a `204` delete. If the
-write is refused on a locked issue, stop and raise it on #466 before F8: the
-"locked to collaborators" design would need changing, not this runbook.
+The `${…:?}` guards abort on an unset or empty value: an empty `GH_TOKEN` would
+otherwise make `gh` fall back to your own credential and post the comment as
+yourself, defeating the check.
+
+**Expected** `user` = `benchmark-publication[bot]` (anything else means the App
+token was not used) and the delete succeeds with no output. If the write is
+refused on a locked issue, stop and raise it on #466 before F8: the "locked to
+collaborators" design would need changing, not this runbook.
 
 ## 4. Observed evidence log
 
