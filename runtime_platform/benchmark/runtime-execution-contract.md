@@ -36,6 +36,21 @@ provisioned CI runtime that has not materialized and is not being further
 pursued. #337 is superseded by this split, not deleted from the record —
 see §6 and §8.
 
+> **Amended by [#467](https://github.com/amirbena/code-review-skill/issues/467)**
+> (Epic [#466](https://github.com/amirbena/code-review-skill/issues/466); design
+> record [#464](https://github.com/amirbena/code-review-skill/issues/464),
+> [`scheduled-operations/`](scheduled-operations/README.md), amendments A1–A13
+> in [`contract-reconciliation.md`](scheduled-operations/contract-reconciliation.md)).
+> §2.2 changes in four ways, each marked by its ID: execution keeps the
+> maintainer's Claude account but no longer holds a GitHub write credential
+> (**A2**); the scheduler choice becomes an admissibility test with Cloud
+> Routines as the selected default (**A3**); the pipeline order becomes
+> evaluate → seal → publish → issue lifecycle (**A8**); and the "no GitHub
+> Actions" statement is restated as the invariant it always meant (**A13**).
+> Class 1 (§2.1), the execution contract (§3), the viability criteria (§4.1,
+> §4.2), the metadata rule (§5), and the historical candidate record (§6) are
+> unchanged.
+
 ## 1. Scope
 
 This document owns four things: the two execution classes and the
@@ -111,19 +126,47 @@ contributor or merge prerequisite.** Concretely:
   landing. There is no independent GitHub Actions benchmark execution
   path from the retired #255 workflow for this class to eventually
   replace.
+- **The invariant (A13): no GitHub Actions workflow schedules, runs,
+  re-runs, or evaluates the benchmark, and none is a contributor or merge
+  prerequisite.** Earlier statements phrased as a blanket "no GitHub Actions
+  cron" were written about benchmark scheduling and execution. A
+  **publication-only workflow** — a `schedule` sweep and watchdog plus manual
+  `workflow_dispatch`, defined on the default branch, that reads sealed
+  records, holds no model or provider credential, imports nothing from the
+  benchmark, and judges nothing — is permitted and is a different thing. Its
+  triggers, credentials, and imports are enforced by a policy test
+  ([`scheduled-operations/publication-architecture.md`](scheduled-operations/publication-architecture.md)
+  §5).
 - A maintainer who never configures any Class 2 execution still has a
   fully functional repository and contribution workflow — nothing in this
   class is load-bearing for ordinary repository use.
-- Execution runs with the maintainer's own already-authorized
-  credentials/session (Claude account, GitHub identity) — not a
-  separately provisioned, repository-level, independently-revocable
-  credential the way Class 1 requires. That is a deliberate consequence
-  of there being no untrusted input in the path, not an oversight.
+- **Execution (A2)** runs with the maintainer's own already-authorized
+  **Claude account** — not a separately provisioned, repository-level,
+  independently-revocable model credential the way Class 1 requires; there is
+  no untrusted input in the path. It does **not** run under the maintainer's
+  GitHub identity for writes: no GitHub write credential is provisioned into
+  the runtime, and repository-owned execution code performs no GitHub
+  mutation other than the seal (a bounded write mediated by the provider).
+  GitHub writes are made by a dedicated, independently revocable
+  `benchmark-publication` GitHub App whose short-lived token is minted inside
+  the publication-only workflow, never on the execution side. The residual
+  risk that a Routine's provider-native GitHub identity is attributed to the
+  maintainer is recorded, not denied
+  ([`scheduled-operations/execution-publication-boundary.md`](scheduled-operations/execution-publication-boundary.md)
+  §4, residual R1).
 
-**Selected scheduled-integration target: Claude Cloud Routines, and only
-Claude Cloud Routines.** Claude Desktop scheduled tasks are explicitly
-excluded: they require the maintainer's own machine to be on and the
-desktop application open to fire, which is structurally the same
+**Selected scheduled-integration target: Claude Cloud Routines (A3).**
+Cloud Routines are the selected default; the choice is now an **admissibility
+test** rather than a closed list. A scheduler is admissible only if it is
+maintainer-controlled; not triggered by repository events; independent of a
+personal machine being on; runs the unchanged entrypoint; and has no
+provisioned GitHub write credential. Cloud Routines meet it. Claude Desktop
+scheduled tasks stay explicitly excluded, and so does GitHub Actions as a
+*benchmark* scheduler or runner (§7; A13 says what Actions may do). The
+recommended architecture needs no other scheduler — admitting one is
+optional. Desktop scheduled tasks fail the test: they require the
+maintainer's own machine to be on and the desktop application open to fire,
+which is structurally the same
 personal-machine/personal-session dependency §2.1 forbids for Class 1,
 even though Class 2's threat model is different (no untrusted input, so
 it does not violate §2.1's *rule* — but it reintroduces the *availability*
@@ -137,30 +180,36 @@ being on or awake, which is why they are the selected target.
 [`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md) §2.1,
 [`nightly-history-and-baseline.md`](nightly-history-and-baseline.md) §2)
 runs as **two** maintainer-configured Cloud Routine schedules, not one: a
-**sentinel** lane (the 4 permanent canonical cases, every 3 days) and a
+**sentinel** lane (the 4 permanent canonical cases, maximum gap ≤ 96 h) and a
 **comprehensive** lane (every `benchmark-case/v2` fixture in the corpus
-tree, weekly). Both stay within this section's Class 2 boundary — optional
+tree, maximum gap ≤ 8 d). Cadence is a maximum gap, not an exact interval
+(A11; `nightly-history-and-baseline.md` §2). Both stay within this section's Class 2 boundary — optional
 maintainer quality observability, never a contributor/PR/merge/deployment
 requirement, targeting a 01:00 Israel-local start / 04:00 maximum-
 completion window that Cloud Routine scheduling configuration owns (never
 repository runtime logic — nothing in `runtime_platform/benchmark/scripts/` computes or
 depends on a timezone). A future implementation issue (scoped separately,
 not by this contract) owns the concrete Routine integration, fixed to this
-pipeline:
+pipeline (order amended by A8 — evaluation, with in-run confirmation, now
+precedes the seal and all GitHub writes; the pre-amendment order was persist
+→ evaluate → issues):
 
 ```text
 benchmark measurement core (scheduler-independent, unchanged — §3):
   corpus → runner → ReviewerAdapter → matcher/scoring → evidence/regression
 
-scheduled benchmark integration (Cloud Routine-specific, not yet built):
+scheduled benchmark integration (admissible-scheduler-specific, not yet built):
   Claude Cloud Routine
     → fresh repository checkout
     → explicitly pin/record evaluated SHA
     → invoke canonical benchmark pipeline (the core above, unmodified)
     → positively verify benchmark completion
+    → evaluate drift, with in-run confirmation
+    → seal the canonical result to a durable handoff      (commit point)
+  ─────────────── one-way publication boundary ───────────────
+  publication-only workflow (benchmark-publication App)
     → persist durable evidence
-    → evaluate confirmed drift
-    → bounded GitHub issue lifecycle
+    → bounded GitHub issue lifecycle (from the sealed result's confirmed drift)
 ```
 
 That implementation issue must additionally satisfy, at minimum: never
@@ -170,10 +219,12 @@ positively verify the benchmark produced the runner's stable per-case
 result shape before treating a run as evidence; record repository SHA and
 runtime/model metadata (§5) with every persisted result, since neither is
 automatic; never rely on the Routine's own transcript/run-history as the
-durable benchmark store; empirically verify GitHub authentication and
-issue-creation permissions before relying on them unattended; and account
-for the maintainer's Claude subscription usage and the account's Routine
-run limits when sizing any scheduled run.
+durable benchmark store; empirically verify the handoff and the publisher —
+and the observed scope of the provider-native identity (R1) — before relying
+on unattended operation; publish from the sealed result only, so a
+publication failure never requires a benchmark re-run; and account for the
+maintainer's Claude subscription usage and the account's Routine run limits
+when sizing any scheduled run.
 
 ## 3. Execution contract
 
@@ -234,12 +285,15 @@ A candidate runtime, in either class, must reliably:
 
 - never reachable from contributor PR automation, and never a required
   check for a normal contributor PR or merge (§2.2);
-- for the scheduled-integration case specifically: Claude Cloud Routines
-  only — never Claude Desktop scheduled tasks (§2.2);
+- for the scheduled-integration case specifically: an admissible scheduler
+  (§2.2, A3) — Claude Cloud Routines are the selected default — never Claude
+  Desktop scheduled tasks, and never GitHub Actions as a benchmark scheduler
+  or runner;
 - positively verify benchmark completion rather than trusting a
   scheduler's own run status as proof of success (§2.2);
 - persist evidence durably outside the scheduler's own transcript/run
-  history (§2.2).
+  history (§2.2), by publication from a sealed result rather than by a
+  GitHub write from the runtime (A2).
 
 ## 5. Runtime metadata required with every result
 
@@ -302,6 +356,11 @@ architectural grounds, not vendor identity.
   that is the whole point of Class 2), but because this mechanism
   reintroduces an availability dependency the architecture otherwise
   avoids.
+- **GitHub Actions as a benchmark scheduler or runner (A3, A13).** Rejected
+  because it would need a provider credential in a repository-hosted,
+  contributor-adjacent runtime — the Class 1 shape whose candidates failed
+  the viability bar (§2.1, §8). This is distinct from a publication-only
+  workflow, which is permitted (§2.2).
 
 ## 8. Follow-up and current status
 
@@ -321,8 +380,10 @@ longer load-bearing for any downstream benchmark-architecture work (see
 For Class 2, this document fixes the contract (§2.2, §4.3) but does not
 implement it: the concrete Claude Cloud Routine integration — profiles,
 Routine execution, drift confirmation, evidence persistence, GitHub issue
-publication — is scoped to a future implementation issue against §2.2's
-pipeline, not opened by this revision.
+publication — is implemented against §2.2's pipeline by the implementation
+issues of Epic
+[#466](https://github.com/amirbena/code-review-skill/issues/466), not by this
+document.
 
 ## 9. Out of scope
 
@@ -331,8 +392,8 @@ pipeline, not opened by this revision.
 - Standing up any actual infrastructure, credential, or workflow for
   either class — including the Class 2 Routine integration itself
   (profiles, Routine execution, drift confirmation, evidence persistence,
-  GitHub issue publication). Scoped to a future implementation issue
-  against §2.2, not this contract.
+  GitHub issue publication). Scoped to the implementation issues of Epic
+  #466 against §2.2, not this contract.
 - Any change to the corpus, runner, matcher, or metrics
   ([#52](https://github.com/amirbena/code-review-skill/issues/52)/[#53](https://github.com/amirbena/code-review-skill/issues/53)/[#54](https://github.com/amirbena/code-review-skill/issues/54)/[#55](https://github.com/amirbena/code-review-skill/issues/55)/[#56](https://github.com/amirbena/code-review-skill/issues/56)/[#57](https://github.com/amirbena/code-review-skill/issues/57)) —
   confirmed already environment-agnostic, untouched by this revision.

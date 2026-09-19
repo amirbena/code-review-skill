@@ -572,7 +572,9 @@ independently-scheduled, independently-baselined lanes by #431 — see
 §2 for the operational contract. "Nightly" in the rest of this document
 and in #338/#339 is the historical name for this scheduled path; it is not
 a claim that execution happens every night — the sentinel lane runs every
-3 days and the comprehensive lane runs weekly (§2 below), neither daily.
+3 days at most and the comprehensive lane runs weekly at most (each a
+maximum gap between verified runs, not an exact interval — A11 of #467;
+§2 below), neither daily.
 Exact storage implementation and exact drift/noise thresholds remain
 #338's and #339's implementation detail, not recorded here.
 
@@ -581,17 +583,19 @@ scheduled trusted execution       (#338/#431, via a Claude Cloud Routine per
                                     §4.1's Class 2 target, or maintainer-
                                     triggered; main only)
   → sentinel lane                 (#431: the 4 fixed canonical cases,
-                                    docs/benchmark/corpus/*.yaml, every 3 days)
+                                    docs/benchmark/corpus/*.yaml, max gap ≤ 96 h)
   → comprehensive lane             (#431: every benchmark-case/v2 fixture in
                                     the corpus tree, derived programmatically,
-                                    weekly)
-  → persisted comparable history, (#338/#431, keyed by date + commit SHA +
-    independently keyed per lane   runtime metadata + lane)
+                                    max gap ≤ 8 d)
+  → persisted comparable history, (#338/#431/#467, keyed by run_id = lane +
+    independently keyed per lane   UTC start + commit SHA; runtime metadata
+                                   recorded with each run)
   → baseline/reference comparison, (#338/#431's chosen baseline policy,
     independently keyed per lane   applied per lane — never cross-lane)
   → meaningful drift detection    (#339, reusing regression-report.md/#55/#56/#57
                                     unchanged, run once per lane)
-  → deduplicated issue lifecycle  (#339, per lane)
+  → deduplicated issue lifecycle  (#339, per lane; resolution scoped by
+                                    lane coverage — A9 of #467)
 ```
 
 **Revised by #391, then #431.** #338's own text still describes this as a
@@ -609,15 +613,19 @@ Principles that hold regardless of the exact storage/threshold choices:
 - **Never blocks PR or main.** Scheduled execution (either lane) runs on a
   schedule (a Claude Cloud Routine, per §4.1's Class 2 target) against
   `main` (or a maintainer-chosen ref) and never gates a merge or
-  deployment, under any outcome. Nothing in this section is reachable from
-  GitHub Actions cron.
+  deployment, under any outcome. No GitHub Actions workflow schedules,
+  runs, re-runs, or evaluates the benchmark, and none is a contributor or
+  merge prerequisite (the A13 invariant of #467,
+  [`runtime-execution-contract.md`](../../runtime_platform/benchmark/runtime-execution-contract.md)
+  §2.2). A publication-only workflow that reads sealed records and touches no
+  model is permitted and is a different thing.
 - **Two lanes, never rotated or merged into one.** The sentinel lane's 4
   cases are permanent and never sampled, rotated, or Top-K'd; the
   comprehensive lane's membership is derived programmatically from the
   corpus tree's `benchmark-case/v2` fixtures, never a hard-coded count.
   The two lanes are not degrees of one schedule — a maintainer configures
   them as two separate Cloud Routine schedules, and when both land on the
-  same night (sentinel's 3-day cadence and comprehensive's weekly Friday
+  same night (sentinel's 3-day cadence and comprehensive's weekly
   cadence can coincide), both runs are valid and independently baselined;
   this document does not dedupe or merge them.
 - **Baseline policy must avoid silent drift ratcheting, per lane.** A
@@ -647,7 +655,10 @@ Principles that hold regardless of the exact storage/threshold choices:
   lane candidate only against the comprehensive baseline — #338/#431's
   `corpus_id` identity (distinct by construction between the two lanes)
   backs `compare()`'s existing fail-closed guard against a cross-lane
-  comparison, so no new guard code was needed for this.
+  comparison, so no new guard code was needed for lane identity. (Amended by
+  #467, A7: a fixture edit within one lane downgrades only that case to
+  `incomparable` via a per-case `fixture_digest`, rather than blocking the
+  whole comparison — `nightly-history-and-baseline.md` §3.2.)
 
 ## 7. Measurement / analytics / learning boundaries
 

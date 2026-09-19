@@ -89,7 +89,14 @@ candidate).
 - **Corpus identity must match.** If `corpus_id` differs between baseline
   and candidate, the report is a **report error** (§9): a delta computed
   across two different corpora is not a regression signal. The remedy is a
-  deliberate baseline refresh (§8), not a silent comparison.
+  deliberate baseline refresh (§8), not a silent comparison. For the
+  scheduled lanes ([`nightly-history-and-baseline.md`](nightly-history-and-baseline.md)
+  §3.2, amended by [#467](https://github.com/amirbena/code-review-skill/issues/467)
+  A7) this guard is unchanged for **lane identity** and lane membership — a
+  mismatch is still a total refusal — while a fixture-content divergence within
+  one lane is handled per case: each case carries a `fixture_digest`, and an
+  edited fixture makes only that case `incomparable` (listed, never compared)
+  instead of refusing the whole comparison.
 - **Adapter identity is recorded, not gated.** A differing `adapter_id`
   is expected — it is usually the whole point of the comparison — and is
   echoed into the report so the reader knows what changed.
