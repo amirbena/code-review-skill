@@ -125,6 +125,14 @@ class CaseResult:
     # ``runtime_platform/benchmark/scripts/run_benchmark.py``'s metrics call, not by anything
     # that inspects a case's execution result.
     post_image: str | None = None
+    # Text of each file a produced finding cites, read from the materialized
+    # workspace before cleanup (issue #349), for the citation-existence check
+    # (runtime_platform/benchmark/citation-fidelity.md §2). Keyed by
+    # ``cited_path()``; ``None`` = the cited path is not a regular file inside
+    # the workspace; a path absent from the mapping = existence could not be
+    # decided (unreadable, oversized, or over the per-case cap). Like
+    # ``post_image``, deliberately absent from ``as_dict()``.
+    cited_sources: Mapping[str, str | None] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -312,6 +320,51 @@ def _capture_post_image(case: bf.BenchmarkCase, workspace: Path) -> str | None:
         return None
 
 
+# Bounds on the cited-file capture (citation-fidelity.md §2): a per-file byte
+# cap and a per-case distinct-path cap keep the capture cheap and finite.
+MAX_CITED_FILE_BYTES = 1_000_000
+MAX_CITED_PATHS = 50
+
+
+def cited_path(location: Any) -> str | None:
+    """The workspace-relative path a structured produced ``location`` cites,
+    normalized (``\\`` -> ``/``, leading ``./`` dropped); ``None`` for a
+    pathless or non-mapping location. The single normalizer both the capture
+    below and the citation check use, so their keys always agree."""
+    if not isinstance(location, Mapping) or not location.get("path"):
+        return None
+    path = str(location["path"]).replace("\\", "/").strip()
+    path = path[2:] if path.startswith("./") else path
+    return path or None
+
+
+def _capture_cited_sources(
+    produced: Sequence[ProducedFinding], workspace: Path
+) -> dict[str, str | None]:
+    """Read each distinct cited file from ``workspace`` — read-only, and only
+    ever from inside it: an absolute path or one that escapes the workspace
+    (``..``, symlink) is not a file *of the reviewed tree*, so it maps to
+    ``None`` rather than being read. Best-effort: never raises."""
+    root = workspace.resolve()
+    sources: dict[str, str | None] = {}
+    for finding in produced:
+        rel = cited_path(finding.location)
+        if rel is None or rel in sources:
+            continue
+        if len(sources) >= MAX_CITED_PATHS:
+            break
+        try:
+            target = (root / rel).resolve()
+            if Path(rel).is_absolute() or root not in target.parents or not target.is_file():
+                sources[rel] = None
+            elif target.stat().st_size <= MAX_CITED_FILE_BYTES:
+                sources[rel] = target.read_text(encoding="utf-8")
+            # else: oversized -> leave absent (undecidable, not fabricated)
+        except (OSError, UnicodeDecodeError, ValueError):
+            continue  # unreadable/binary -> absent; never an existence claim
+    return sources
+
+
 def run_case(
     case: bf.BenchmarkCase,
     reviewer: ReviewerAdapter,
@@ -349,7 +402,14 @@ def run_case(
         except Exception:  # noqa: BLE001 - adapter failure is a per-case error, not a crash
             return CaseResult(case.id, kind, _ERROR, error="reviewer-adapter-raised")
 
-        result = CaseResult(case.id, kind, _EXECUTED, produced_findings=produced, post_image=post_image)
+        result = CaseResult(
+            case.id,
+            kind,
+            _EXECUTED,
+            produced_findings=produced,
+            post_image=post_image,
+            cited_sources=_capture_cited_sources(produced, workspace),
+        )
         return result
     finally:
         try:

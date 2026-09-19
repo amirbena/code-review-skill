@@ -249,6 +249,11 @@ _LOCATION_RE = re.compile(r"^-\s*\*\*Location:\*\*\s*`(?P<loc>[^`]+)`")
 # exactly, immediately followed by `:**`).
 _CLAIM_FIELD_RE = re.compile(r"^-\s*\*\*(?P<field>Evidence|Impact|Details):\*\*\s*(?P<text>.+?)\s*$")
 
+# A backticked span inside an `Evidence` value — the finding's quoted code,
+# carried verbatim into `extra["evidence_quotes"]` for the benchmark's
+# citation-existence check (runtime_platform/benchmark/citation-fidelity.md, #349).
+_BACKTICK_SPAN_RE = re.compile(r"`([^`]+)`")
+
 # `- **Defect kind:** \`sql-injection\`` (shared/templates/finding.md,
 # "Defect classification"; shared/templates/finding-rendering.md,
 # "Canonical full rendering") — the finding's narrow, machine-readable
@@ -323,6 +328,9 @@ def parse_review_output(text: str) -> list[ProducedFinding]:
       classification") is captured into ``ProducedFinding.extra["defect_kind"]``,
       mirroring the existing ``Evidence``/``Impact``/``Details`` extraction
       (issue #355). Absent when the finding did not render one.
+    - Backticked spans in the ``Evidence`` value are captured, verbatim and
+      in order, into ``ProducedFinding.extra["evidence_quotes"]`` for the
+      citation-existence check (issue #349). Absent when there are none.
     - Text that is not a review report at all (no ``**Result:**`` line and
       no recognizable finding headings) raises ``ValueError`` — the caller
       (the adapter) lets this propagate so the runner's existing per-case
@@ -364,7 +372,10 @@ def parse_review_output(text: str) -> list[ProducedFinding]:
                 j += 1
             if severity in _VALID_SEVERITIES and location is not None:
                 claim = _build_claim(title, fields)
-                extra = {"defect_kind": defect_kind} if defect_kind else {}
+                extra: dict = {"defect_kind": defect_kind} if defect_kind else {}
+                quotes = _BACKTICK_SPAN_RE.findall(fields.get("Evidence", ""))
+                if quotes:
+                    extra["evidence_quotes"] = quotes
                 findings.append(
                     ProducedFinding(severity=severity, location=location, claim=claim, extra=extra)
                 )

@@ -12,6 +12,7 @@ never depends on the real `claude` CLI being installed.
 
 from __future__ import annotations
 
+import json
 import os
 import stat
 import subprocess
@@ -78,6 +79,50 @@ class RunBenchmarkCliRuntimeAvailabilityTests(unittest.TestCase):
         )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("definitely-not-a-real-benchmark-review-cli-xyz", proc.stderr)
+
+
+class RunBenchmarkCliCitationFidelityTests(unittest.TestCase):
+    """Issue #349: the production run output carries the citation-existence
+    check as its own `citation_fidelity` section, beside `metrics`."""
+
+    _REPORT = (
+        "**Result: ⚠️ Changes Requested**\n\n"
+        "#### F1 [P1] Off-by-one page end\n\n"
+        "- **Location:** `app/pagination.py:3`\n"
+        "- **Evidence:** `end = offset + page_size + 1` returns one extra row.\n"
+        "- **Impact:** rows repeat across pages.\n\n"
+        "#### F2 [P2] Ghost finding\n\n"
+        "- **Location:** `app/ghost.py:9`\n"
+        "- **Evidence:** `os.system(user_input)` runs unchecked input.\n"
+        "- **Impact:** none.\n"
+    )
+
+    def test_run_output_reports_genuine_and_fabricated_citations(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            stub = Path(tmp) / "stub-review-cli.py"
+            stub.write_text(
+                "#!/usr/bin/env python3\n"
+                "import sys\n"
+                "prompt = sys.argv[sys.argv.index('-p') + 1]\n"
+                f"print({self._REPORT!r} if 'local-code-review' in prompt else 'ok')\n",
+                encoding="utf-8",
+            )
+            stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
+
+            proc = subprocess.run(
+                [sys.executable, str(SCRIPT), "--cli", str(stub), "--case-id", "correctness-off-by-one-pagination"],
+                cwd=str(REPO_ROOT),
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        out = json.loads(proc.stdout)
+        self.assertIn("metrics", out)
+        (case,) = out["citation_fidelity"]["cases"]
+        self.assertEqual((case["verified"], case["fabricated"]), (1, 1))
+        self.assertEqual(case["fabricated_findings"], [{"index": 1, "path": "app/ghost.py", "reasons": ["file-missing"]}])
+        self.assertEqual(out["citation_fidelity"]["aggregate"]["fabrication_rate"], "1/2")
 
 
 if __name__ == "__main__":

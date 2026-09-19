@@ -255,6 +255,36 @@ class ParseReviewOutputTests(unittest.TestCase):
         # claim the lexical fallback path compares.
         self.assertNotIn("command-injection", findings[0].claim)
 
+    def test_evidence_backtick_spans_captured_into_extra(self) -> None:
+        """Backticked spans in the `Evidence` value reach
+        `ProducedFinding.extra["evidence_quotes"]` (issue #349) for the
+        benchmark citation-existence check; spans elsewhere (Impact, Fix)
+        and a finding without any are not carried."""
+        report = textwrap.dedent(
+            """
+            **Result: ⚠️ Changes Requested**
+
+            #### F1 [P0] Command injection via unsanitized shell argument
+
+            - **Location:** `app/exec.py:10`
+            - **Evidence:** `name` reaches `subprocess.run(cmd, shell=True)` unsanitized.
+            - **Impact:** runs `arbitrary` commands.
+            - **Fix:** pass an argument list.
+
+            #### F2 [P2] Missing test
+
+            - **Location:** `app/exec.py`
+            - **Evidence:** no test pins the boundary.
+            - **Impact:** regressions go unnoticed.
+            - **Fix:** add one.
+            """
+        )
+        findings = parse_review_output(report)
+        self.assertEqual(
+            findings[0].extra.get("evidence_quotes"), ["name", "subprocess.run(cmd, shell=True)"]
+        )
+        self.assertNotIn("evidence_quotes", findings[1].extra)
+
     def test_defect_kind_absent_when_not_rendered(self) -> None:
         report = textwrap.dedent(
             """

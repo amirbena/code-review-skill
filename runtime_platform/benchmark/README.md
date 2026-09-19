@@ -25,6 +25,7 @@ concern lives in the file named for it.
 | [`missed-and-incorrect-findings.md`](missed-and-incorrect-findings.md) | Turning match results into **missed-finding (false-negative)** and **incorrect-finding (false-positive)** counts — the deterministic produced↔expected one-to-one pairing (`MATCH` edges only, fixture document order), the per-case and aggregate counts, how `match: optional` / `any_of` / `findings_completeness` change the accounting, and how the counts render alongside the regression report's deltas without gating it. | [#55](https://github.com/amirbena/code-review-skill/issues/55) |
 | [`severity-accuracy.md`](severity-accuracy.md) | Measuring, over the #55 matched set, how often a matched finding carries a permitted expected severity — the **exact** / **over-severity** / **under-severity** classification on the P0 > P1 > P2 ordinal, the `severity`-list and `any_of` member resolution, the per-case and aggregate counts with a single exact-rational exact-match rate, and how they render alongside the regression report's deltas without gating it. | [#56](https://github.com/amirbena/code-review-skill/issues/56) |
 | [`duplicate-noise.md`](duplicate-noise.md) | Measuring duplicate / same-root-cause noise over a case's **produced findings alone** — the same-root-cause edge (the #54 `MATCH` cell applied to a pair of produced findings, unchanged), connected-component clustering, the redundant-finding count and its exact-rational duplicate rate per case and in aggregate, the highest-noise-cases list, and how they render alongside the regression report's deltas without gating it. | [#57](https://github.com/amirbena/code-review-skill/issues/57) |
+| [`citation-fidelity.md`](citation-fidelity.md) | The mechanical **citation-existence check** — whether the file, line span, symbol, and quoted evidence a produced finding cites actually exist in the reviewed tree the runner captured; the closed `verified` / `fabricated` / `unverifiable` statuses and fixed reason order, the conservative undecidable-is-never-a-failure defaults, per-case and aggregate output as its own category beside (never inside) the match/quality metrics, and the no-gate boundary. | [#349](https://github.com/amirbena/code-review-skill/issues/349) |
 | [`claim-correspondence-adequacy.md`](claim-correspondence-adequacy.md) | Research recommendation (not a contract change): whether `match-criteria.md`'s lexical claim-correspondence check can recognize an independently-phrased-but-correct finding, measured with real harness-fidelity-corrected benchmark reruns. Finds the free-text Jaccard/subset path is, in practice, the *only* path that ever decides the defect axis in production because a produced `defect_kind` is never populated, and recommends evaluating `defect_kind` population first per the deterministic-options-first guardrail. | [#343](https://github.com/amirbena/code-review-skill/issues/343) |
 | [`runtime-execution-contract.md`](runtime-execution-contract.md) | The vendor-neutral runtime execution contract any benchmark runtime must satisfy — split into Class 1 (automatic/repository-triggered, untrusted-input, the original non-personal-machine trust boundary; currently unprovisioned, not further pursued) and Class 2 (maintainer-controlled, optional quality observability, never a contributor/merge prerequisite, Claude Cloud Routines as the sole selected scheduled-integration target); the shared `run_benchmark.py` → `ReviewerAdapter` → agent CLI/runtime → unmodified Skill → model backend execution chain; the runtime viability criteria per class; the required runtime/model/Skill-SHA metadata; the historical Class 1 candidate classes A–D; and the rejected approaches for both classes. | [#330](https://github.com/amirbena/code-review-skill/issues/330), revised by [#391](https://github.com/amirbena/code-review-skill/issues/391) |
 | [`runtime-candidate-decision.md`](runtime-candidate-decision.md) | The empirical spike's decision record — the real candidates actually run against a small corpus subset, their results scored against `runtime-execution-contract.md`'s viability criteria and an added economic-sustainability constraint. Historical record: its conditional execution path for #337 is superseded by #391. | [#336](https://github.com/amirbena/code-review-skill/issues/336) |
@@ -195,6 +196,23 @@ mirrors it (executed by
 [`../../tests/unit/benchmark/test_benchmark_dupes.py`](../../tests/unit/benchmark/test_benchmark_dupes.py),
 including every §7 worked example) and consumes the single reference
 matcher.
+
+## Citation existence
+
+[`citation-fidelity.md`](citation-fidelity.md) (#349) is a separate
+mechanical check, not a #41 quality metric: for each produced finding it
+asks whether the cited file, line span, symbol, and quoted evidence
+*exist* in the reviewed tree — never whether the citation was inspected, and
+never whether it matches a fixture. The runner captures each cited file's
+text before workspace cleanup (`CaseResult.cited_sources`); a finding is
+`fabricated` only when a check that could run positively fails, and
+`unverifiable` (never a failure) when existence could not be decided.
+`scripts/run_benchmark.py` reports it as a top-level `citation_fidelity`
+key beside `metrics`; it never gates anything. The test-only reference
+[`reference/benchmark_citation.py`](reference/benchmark_citation.py) mirrors
+it (executed by
+[`../../tests/unit/benchmark/test_benchmark_citation.py`](../../tests/unit/benchmark/test_benchmark_citation.py),
+including every §7 worked example).
 
 ## Senior voice examples
 
