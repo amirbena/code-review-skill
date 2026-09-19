@@ -437,11 +437,12 @@ class ProductionReviewerAdapter:
         self.extra_args = list(extra_args) if extra_args is not None else resolve_cli_extra_args(env)
         self.timeout = timeout
         self.env = dict(env) if env is not None else dict(os.environ)
-        # Raw stdout of the most recent successful invocation, kept so a
-        # caller can inspect the rendered verdict the findings list drops.
+        # Raw stdout of the latest invocation (None if it failed), so a caller
+        # can inspect the rendered verdict the findings list drops.
         self.last_report: str | None = None
 
     def __call__(self, workspace: Path) -> list[ProducedFinding]:
+        self.last_report = None
         command = [
             self.executable,
             "-p",

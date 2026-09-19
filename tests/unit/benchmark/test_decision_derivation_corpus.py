@@ -33,6 +33,7 @@ import yaml
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.reference.review import decision_semantics as ds
+from tests.support.benchmark_runtime import LiveRuntimeTestCase
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "decision-derivation"
@@ -220,30 +221,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
         )
 
 
-def _probe_runtime() -> str | None:
-    """Return None if the real review runtime is actually usable, else a
-    human-readable reason it is not (used as the skip reason). Delegates
-    to the same ``check_runtime_available`` preflight
-    ``test_production_adapter_e2e.py`` and the production entrypoint use,
-    so this sub-corpus exercises the identical binding/probe path rather
-    than a second, hand-rolled one."""
-    try:
-        from runtime_platform.benchmark.scripts.benchmark_review_adapter import check_runtime_available
-
-        check_runtime_available()
-    except Exception as exc:  # noqa: BLE001 - re-raised as a skip reason, never swallowed
-        return str(exc)
-    return None
-
-
-_SKIP_REASON = _probe_runtime()
-
-
-@unittest.skipUnless(
-    _SKIP_REASON is None,
-    f"skipping the live end-to-end path rather than fabricating a result — {_SKIP_REASON}",
-)
-class SubCorpusEndToEndTests(unittest.TestCase):
+class SubCorpusEndToEndTests(LiveRuntimeTestCase):
     """Drives every fixture through the real packaged Skill and asserts
     the decision mechanically derived from the *produced* findings is
     `Decision.CLEAN` — the actual acceptance criterion #450 asks for, not

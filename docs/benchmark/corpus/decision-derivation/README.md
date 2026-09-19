@@ -140,7 +140,8 @@ python3 -m unittest tests.unit.benchmark.test_blocking_verdict_corpus
 Result/Decision assertion below is what
 `test_blocking_verdict_corpus` adds. It exits non-zero before touching any
 case when the review runtime is unavailable, so a missing runtime is never
-read as a clean result.
+read as a clean result. See "Runtime availability" below for the unit
+tests' equivalent.
 
 ## On Skill coverage (local-code-review and github-pr-review)
 
@@ -191,11 +192,8 @@ mechanically consistent `clean`; and the urgent-wording fixture's `claim` text a
 carries alarming/blocking-sounding language, so the case cannot silently
 regress into an unremarkable P2. The same test module also drives every
 fixture through the real packaged Skill end-to-end via
-`ProductionReviewerAdapter` — gated on the same `check_runtime_available`
-preflight
-[`test_production_adapter_e2e.py`](../../../../tests/unit/benchmark/test_production_adapter_e2e.py)
-uses, so the real-runtime path fails loudly with a clear reason rather
-than being silently skipped or fabricating a result — and asserts the
+`ProductionReviewerAdapter` — behind the shared runtime gate described
+under "Runtime availability" below — and asserts the
 rendered decision derived from the real produced findings
 (`tests/reference/review/decision_semantics.derive_decision`) is
 `Decision.CLEAN` for every case. Peer review of the expected findings
@@ -214,17 +212,30 @@ The rendered-verdict assertion is
 `check_blocking_verdict`: when any produced finding is P0/P1, **both** the
 report's `**Result:**` label and its `### Decision` label (extracted by
 `benchmark_review_adapter.parse_rendered_outcome` from the adapter's
-retained `last_report`) must classify as blocking. A clean, incomplete,
-missing, or ambiguous label is a violation. The severity → decision step
-reuses `decision_semantics.derive_decision` — no second derivation path.
+retained `last_report`) must not render clean. By default that is the
+issue's "non-clean" bar: a clean, missing, or ambiguous label is a
+violation, while the sanctioned non-clean outcomes (`REVIEW INCOMPLETE`,
+and GitHub's informational `COMMENT` when a formal `REQUEST_CHANGES` is
+withheld on own work) pass. `require_blocking=True` tightens that to the
+blocking value itself; the live `local-code-review` class uses it, since
+an incomplete review on these small patches is itself unexpected. The
+severity → decision step reuses `decision_semantics.derive_decision` — no
+second derivation path.
 
-The live class runs each case through the real packaged Skill under the
-same `check_runtime_available` gate as above (skipped with the reason
-printed when the runtime is unavailable, never a fabricated pass). Once the
+The live class runs each case through the real packaged Skill. Once the
 runtime is available it fails, rather than passes, if a case errors or if
 the reviewer produces no P0/P1 for these unambiguous defects — otherwise
 the proof would be vacuous. A stub-CLI class exercises the same
 adapter/runner/parser/check path without the runtime and proves a P0 paired
-with `REVIEW CLEAN` fails the check. A run that legitimately renders
-`REVIEW INCOMPLETE` (coverage incomplete) also fails: on these small
-patches that outcome is itself unexpected.
+with `REVIEW CLEAN` fails the check.
+
+### Runtime availability
+
+Every live class in the benchmark unit tests (this corpus's two,
+`test_production_adapter_e2e.py`) shares one gate,
+`tests/support/benchmark_runtime.py`: it probes the runtime once, lazily,
+through `check_runtime_available`. By default an unavailable runtime
+**skips** with the reason printed, never a fabricated pass. Setting
+`BENCHMARK_REQUIRE_RUNTIME=1` turns that skip into an **error**, for
+environments (such as a nightly lane) where a missing runtime must fail
+the run rather than go unnoticed.

@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
-"""Coverage for the blocking-verdict benchmark fixtures (Issue #350).
-
-The fixtures are ``docs/benchmark/corpus/decision-derivation/dd-blocking-*.yaml``:
-unambiguous P0/P1 defects whose real-run rendered Result and Decision must
-be the blocking value, never clean. Fixtures decode through the single
-reference validator; the rendered-verdict check is
-``runtime_platform/benchmark/reference/benchmark_blocking_verdict.py``.
-"""
+"""Coverage for the blocking-verdict benchmark fixtures (Issue #350)."""
 
 from __future__ import annotations
 
+import os
 import stat
 import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -25,6 +20,8 @@ from runtime_platform.benchmark.scripts.benchmark_review_adapter import (
     ProductionReviewerAdapter,
     parse_rendered_outcome,
 )
+from tests.support import benchmark_runtime as brt
+from tests.support.benchmark_runtime import REQUIRE_RUNTIME_ENV_VAR, LiveRuntimeTestCase
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "decision-derivation"
@@ -103,13 +100,14 @@ class RenderedLabelClassificationTests(unittest.TestCase):
             "Request Changes": bbv.RenderedKind.BLOCKING,
             "REQUEST_CHANGES": bbv.RenderedKind.BLOCKING,
             "REVIEW INCOMPLETE": bbv.RenderedKind.INCOMPLETE,
+            "COMMENT": bbv.RenderedKind.INFORMATIONAL,
         }
         for label, kind in expected.items():
             with self.subTest(label=label):
                 self.assertEqual(bbv.classify_rendered_label(label), kind)
 
     def test_absent_empty_or_ambiguous_labels_are_unrecognized(self) -> None:
-        for label in (None, "", "COMMENT", "Approve — changes requested"):
+        for label in (None, "", "LGTM", "Approve — changes requested"):
             with self.subTest(label=label):
                 self.assertEqual(bbv.classify_rendered_label(label), bbv.RenderedKind.UNRECOGNIZED)
 
@@ -158,11 +156,26 @@ class BlockingVerdictCheckTests(unittest.TestCase):
         self.assertFalse(check.ok)
         self.assertEqual(len(check.violations), 2)
 
-    def test_incomplete_is_not_the_blocking_value(self) -> None:
+    def test_sanctioned_non_clean_outcomes_pass_by_default(self) -> None:
+        for label in ("REVIEW INCOMPLETE", "COMMENT"):
+            with self.subTest(label=label):
+                check = bbv.check_blocking_verdict(["P1"], result_label=label, decision_label=label)
+                self.assertTrue(check.ok, check.violations)
+
+    def test_require_blocking_rejects_non_blocking_outcomes(self) -> None:
+        for label in ("REVIEW INCOMPLETE", "COMMENT", "REVIEW CLEAN"):
+            with self.subTest(label=label):
+                check = bbv.check_blocking_verdict(
+                    ["P1"], result_label=label, decision_label=label, require_blocking=True
+                )
+                self.assertFalse(check.ok)
+                self.assertEqual(len(check.violations), 2)
+
+    def test_require_blocking_accepts_the_blocking_value(self) -> None:
         check = bbv.check_blocking_verdict(
-            ["P1"], result_label="REVIEW INCOMPLETE", decision_label="REVIEW INCOMPLETE"
+            ["P1"], result_label="⚠️ Changes Requested", decision_label="CHANGES REQUIRED", require_blocking=True
         )
-        self.assertFalse(check.ok)
+        self.assertTrue(check.ok, check.violations)
 
     def test_no_blocking_finding_is_vacuous_and_reports_it(self) -> None:
         for severities in ([], ["P2"]):
@@ -229,26 +242,57 @@ class StubbedEndToEndTests(unittest.TestCase):
         self.assertTrue(check.blocking_produced)
         self.assertFalse(check.ok)
 
+    def test_failed_invocation_leaves_no_stale_report(self) -> None:
+        workspace = self.tmp_path / "workspace"
+        workspace.mkdir()
+        ok_stub = self.tmp_path / "ok.py"
+        ok_stub.write_text("#!/usr/bin/env python3\nprint('**Result: ✅ Review Clean**')\n", encoding="utf-8")
+        ok_stub.chmod(ok_stub.stat().st_mode | stat.S_IEXEC)
+        bad_stub = self.tmp_path / "bad.py"
+        bad_stub.write_text("#!/usr/bin/env python3\nimport sys\nsys.exit(3)\n", encoding="utf-8")
+        bad_stub.chmod(bad_stub.stat().st_mode | stat.S_IEXEC)
 
-def _probe_runtime() -> str | None:
-    """None when the real review runtime is usable, else the reason it is not."""
-    try:
-        from runtime_platform.benchmark.scripts.benchmark_review_adapter import check_runtime_available
+        adapter = ProductionReviewerAdapter(executable=str(ok_stub))
+        adapter(workspace)
+        self.assertIsNotNone(adapter.last_report)
 
-        check_runtime_available()
-    except Exception as exc:  # noqa: BLE001 - surfaced as the skip reason, never swallowed
-        return str(exc)
-    return None
-
-
-_SKIP_REASON = _probe_runtime()
+        adapter.executable = str(bad_stub)
+        with self.assertRaises(RuntimeError):
+            adapter(workspace)
+        self.assertIsNone(adapter.last_report)
 
 
-@unittest.skipUnless(
-    _SKIP_REASON is None,
-    f"skipping the live end-to-end path rather than fabricating a result — {_SKIP_REASON}",
-)
-class LiveBlockingVerdictTests(unittest.TestCase):
+class LiveRuntimeGateTests(unittest.TestCase):
+    """The shared gate skips without the runtime and errors when it is required."""
+
+    class _Probe(LiveRuntimeTestCase):
+        def test_placeholder(self) -> None:  # pragma: no cover - never reached when gated
+            pass
+
+    def _run_set_up(self, *, reason: str | None, required: bool):
+        env = {REQUIRE_RUNTIME_ENV_VAR: "1"} if required else {}
+        with mock.patch.object(brt, "runtime_unavailable_reason", return_value=reason), mock.patch.dict(
+            "os.environ", env, clear=False
+        ):
+            if not required:
+                os.environ.pop(REQUIRE_RUNTIME_ENV_VAR, None)
+            self._Probe.setUpClass()
+
+    def test_available_runtime_proceeds(self) -> None:
+        self._run_set_up(reason=None, required=True)
+
+    def test_unavailable_runtime_skips_with_the_reason(self) -> None:
+        with self.assertRaises(unittest.SkipTest) as caught:
+            self._run_set_up(reason="claude not found", required=False)
+        self.assertIn("claude not found", str(caught.exception))
+
+    def test_unavailable_runtime_fails_when_required(self) -> None:
+        with self.assertRaises(AssertionError) as caught:
+            self._run_set_up(reason="claude not found", required=True)
+        self.assertIn("claude not found", str(caught.exception))
+
+
+class LiveBlockingVerdictTests(LiveRuntimeTestCase):
     """Real packaged `local-code-review` runs. A case that errors, or that
     produces no P0/P1, fails: the proof was not exercised."""
 
@@ -265,6 +309,7 @@ class LiveBlockingVerdictTests(unittest.TestCase):
                     [f.severity for f in result.produced_findings],
                     result_label=outcome.result_label,
                     decision_label=outcome.decision_label,
+                    require_blocking=True,
                 )
                 self.assertTrue(
                     check.blocking_produced,
