@@ -116,6 +116,11 @@ class RejectionTests(unittest.TestCase):
         self.assert_rejected(lambda m: m["publication"].update(staging_ref_pattern="main"), "staging_ref_pattern")
         self.assert_rejected(lambda m: m["publication"].update(staging_ref_pattern="benchmark/*"), "staging_ref_pattern")
 
+    def test_staging_ref_cannot_widen_to_other_claude_refs(self) -> None:
+        for wide in ("claude/*", "claude/", "claude/issue-1", "claude/benchmark-result"):
+            with self.subTest(pattern=wide):
+                self.assert_rejected(lambda m, p=wide: m["publication"].update(staging_ref_pattern=p), "staging_ref_pattern")
+
     def test_pusher_allowlist(self) -> None:
         self.assert_rejected(lambda m: m["publication"].update(pusher_allowlist=[]), "pusher_allowlist")
         self.assert_rejected(lambda m: m["publication"].update(pusher_allowlist=["-bad"]), "invalid GitHub login")

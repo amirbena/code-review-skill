@@ -26,7 +26,7 @@ SCHEMA_VERSION = "benchmark-schedule/v1"
 MAX_GAP_CEILING_HOURS = {"sentinel": 96, "comprehensive": 192}
 WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 LABEL_ROLES = ("drift", "keep-open", "missed-run", "tracking")
-STAGING_REF_PREFIX = "claude/"
+STAGING_REF_PREFIX = "claude/benchmark-result-"
 
 _TOP_KEYS = {
     "schema", "repository", "entrypoint", "lanes", "health_issue",
@@ -148,8 +148,8 @@ def _validate_publication(section: object, errors: list[str]) -> None:
     if section is None:
         return
     pattern = section.get("staging_ref_pattern")
-    if not isinstance(pattern, str) or not pattern.startswith(STAGING_REF_PREFIX) or not pattern.strip():
-        errors.append(f"publication.staging_ref_pattern: must be a pattern under {STAGING_REF_PREFIX!r}")
+    if not isinstance(pattern, str) or not pattern.startswith(STAGING_REF_PREFIX):
+        errors.append(f"publication.staging_ref_pattern: must start with {STAGING_REF_PREFIX!r}")
     allowlist = section.get("pusher_allowlist")
     if not isinstance(allowlist, list) or not allowlist:
         errors.append("publication.pusher_allowlist: must be a non-empty list")

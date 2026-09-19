@@ -20,9 +20,14 @@ publication is [#471](https://github.com/amirbena/code-review-skill/issues/471).
 ## 1. Expected-run manifest
 
 [`schedule/expected-run-manifest.json`](schedule/expected-run-manifest.json)
-is versioned (`schema: benchmark-schedule/v1`), closed (an unknown or missing
-field is invalid), and read by the execution entrypoint, the publisher, the
-watchdog, and CI. It is validated by
+is versioned (`schema: benchmark-schedule/v1`) and closed (an unknown or missing
+field is invalid). It is the single source of these values for the execution
+entrypoint ([#470](https://github.com/amirbena/code-review-skill/issues/470)),
+the publisher and watchdog
+([#471](https://github.com/amirbena/code-review-skill/issues/471),
+[#472](https://github.com/amirbena/code-review-skill/issues/472)), and CI
+validation ([#476](https://github.com/amirbena/code-review-skill/issues/476)),
+none of which read it yet. It is validated by
 [`scripts/benchmark_schedule_manifest.py`](scripts/benchmark_schedule_manifest.py),
 which is the executable schema.
 
@@ -35,11 +40,11 @@ which is the executable schema.
 | `lanes.<lane>.target_completion_local` | The 04:00 completion target. A target, not a promise: it is measured in [#475](https://github.com/amirbena/code-review-skill/issues/475) before being relied on. |
 | `lanes.<lane>.max_gap_hours` | The **enforced** cadence contract: the longest tolerated gap between verified scheduled runs. Sentinel ≤ 96, comprehensive ≤ 192 (A11). The validator rejects a larger value. |
 | `lanes.<lane>.tracking_issue`, `health_issue` | Per-lane evidence tracking issue and the health-status issue. `null` until provisioned (§4). |
-| `confirmation` | In-run drift confirmation ([`scheduled-operations/drift-issue-lifecycle-and-recovery.md`](scheduled-operations/drift-issue-lifecycle-and-recovery.md) §2): `reruns` 2, `threshold` 2 (≥ 2 and ≤ `1 + reruns`), `max_cases` 10. The run's time budget is not fixed here; it is measured in #475. |
-| `publication.staging_ref_pattern` | The handoff refs the publisher sweeps; must sit under `claude/`. |
+| `confirmation` | In-run drift confirmation ([`scheduled-operations/drift-issue-lifecycle-and-recovery.md`](scheduled-operations/drift-issue-lifecycle-and-recovery.md) §2): `reruns`, `threshold` (≥ 2 and ≤ `1 + reruns`), and `max_cases`; the recommended values (decision M3) are the manifest's. The run's time budget is not fixed here; it is measured in #475. |
+| `publication.staging_ref_pattern` | The handoff refs the publisher sweeps; must start with `claude/benchmark-result-`, never a wider `claude/` pattern. |
 | `publication.pusher_allowlist` | GitHub logins accepted by origin attestation (`branch_creation` actor; commit author metadata is never used). |
-| `publication.max_new_issues_per_run` | Spam bound: 5 new drift issues per published run. |
-| `watchdog.missed_run_comment_interval_hours` | A persisting missed-run issue is commented at most this often (24). |
+| `publication.max_new_issues_per_run` | Spam bound on new drift issues opened per published run. |
+| `watchdog.missed_run_comment_interval_hours` | A persisting missed-run issue is commented at most this often. |
 | `labels` | The four labels of §3. |
 
 The comprehensive lane's Israel-local start weekday is **Friday, 01:00
@@ -58,14 +63,14 @@ python3 runtime_platform/benchmark/scripts/benchmark_schedule_manifest.py valida
 
 `validate_manifest(..., require_provisioned=True)` (CLI
 `--require-provisioned`) additionally rejects a `null` tracking or health
-issue. The publisher and watchdog use it at start-up so they fail closed before
-any GitHub write; the default mode is what CI and the execution side use.
+issue. The publisher and watchdog are to use it at start-up so they fail closed
+before any GitHub write; the default mode is for CI and the execution side.
 
 ## 2. Thin Routine prompt spec
 
 The Routine prompt is exactly the literal template in
 [`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md)
-§9 (A12), instantiated per lane from the manifest:
+§9 (A12), bound per lane to the manifest:
 
 - `--mode` is the lane's `mode`;
 - `--model-id` is the model backend the Routine session runs as (the only value
@@ -73,7 +78,7 @@ The Routine prompt is exactly the literal template in
 - the checkout is a fresh copy of `repository` at its default branch.
 
 The prompt does three things and nothing else: check out, invoke the
-entrypoint for the named lane, and exit non-zero on failure. It carries no
+entrypoint for the named lane, and stop without reporting success or publishing anything if the command fails. It carries no
 dependency installs, no `gh`, no history push, no evidence posting, and no
 cadence, tracking-issue, confirmation, or label values — those live in the
 manifest, and all logic is repository code at the pinned SHA, so provider-side

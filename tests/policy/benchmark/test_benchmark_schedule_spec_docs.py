@@ -15,7 +15,6 @@ SPEC = BENCHMARK / "schedule-spec.md"
 README = BENCHMARK / "README.md"
 ROUTINE_DOC = REPO_ROOT / "docs" / "benchmark" / "cloud-routine-integration.md"
 
-FORBIDDEN_IN_PROMPT = ("gh ", "git push", "pip install", "npm ", "--repo", "issue", "comment")
 
 
 def _prompt_template() -> str:
@@ -72,25 +71,55 @@ class ScheduleSpecDocTests(unittest.TestCase):
 
 
 class RoutinePromptTemplateTests(unittest.TestCase):
-    def test_template_is_thin(self) -> None:
-        template = _prompt_template()
-        for forbidden in FORBIDDEN_IN_PROMPT:
-            self.assertNotIn(forbidden, template.lower(), forbidden)
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.entrypoint = sm.load_manifest()["entrypoint"]
+        cls.lines = [line.rstrip() for line in _prompt_template().splitlines() if line.strip()]
 
-    def test_template_invokes_the_manifest_entrypoint(self) -> None:
-        self.assertIn(sm.load_manifest()["entrypoint"], _prompt_template())
+    def _step(self, number: int) -> str:
+        steps: dict[int, list[str]] = {}
+        current = 0
+        for line in self.lines:
+            match = re.match(r"^(\d+)\. ", line)
+            if match:
+                current = int(match.group(1))
+            steps.setdefault(current, []).append(line.strip())
+        return " ".join(" ".join(steps[number]).split())
 
-    def test_template_takes_a_mode_and_model_id(self) -> None:
+    def test_template_has_exactly_the_three_permitted_steps(self) -> None:
+        numbered = [line for line in self.lines if re.match(r"^\d+\. ", line)]
+        self.assertEqual([line.split(".", 1)[0] for line in numbered], ["1", "2", "3"])
+
+    def test_only_permitted_command_appears(self) -> None:
+        step2 = self._step(2).replace(" \\ ", " ")
+        allowed = re.compile(
+            rf"^2\. Run: python3 {re.escape(self.entrypoint)} --mode \S+"
+            r"( \[--case-id <id> \.\.\.\])? --model-id <[^>]+>$"
+        )
+        self.assertRegex(step2, allowed)
+        self.assertNotRegex(re.sub(r"<[^>]*>", "", step2), r"[;&|`$]")
+
+    def test_checkout_step_is_a_fresh_copy_of_the_manifest_repository(self) -> None:
+        step1 = self._step(1)
+        self.assertIn("fresh copy", step1)
+        self.assertIn(sm.load_manifest()["repository"], step1)
+
+    def test_template_takes_a_mode_and_model_id_for_every_lane(self) -> None:
         template = _prompt_template()
         self.assertIn("--mode", template)
         self.assertIn("--model-id", template)
         for lane in sm.load_manifest()["lanes"].values():
             self.assertIn(lane["mode"], template)
 
-    def test_template_exits_non_zero_without_publishing(self) -> None:
-        template = " ".join(_prompt_template().split())
-        self.assertIn("exits non-zero", template)
-        self.assertIn("do not post or push anything to GitHub", template)
+    def test_failure_step_stops_without_success_retry_or_publication(self) -> None:
+        step3 = self._step(3)
+        for clause in (
+            "exits non-zero, stop",
+            "do not report success",
+            "do not retry silently",
+            "do not post or push anything to GitHub",
+        ):
+            self.assertIn(clause, step3)
 
 
 if __name__ == "__main__":
