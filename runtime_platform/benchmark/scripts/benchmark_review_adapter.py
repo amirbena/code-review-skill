@@ -73,6 +73,7 @@ import re
 import shlex
 import shutil
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Sequence
 
@@ -260,6 +261,13 @@ _DEFECT_KIND_RE = re.compile(r"^-\s*\*\*Defect kind:\*\*\s*`(?P<slug>[^`]+)`")
 # stdout that isn't a review report at all.
 _RESULT_RE = re.compile(r"\*\*Result:", re.IGNORECASE)
 
+# `**Result: ⚠️ Changes Requested**` — the label between `Result:` and the
+# closing `**` (shared/templates/review-summary.md, "Result").
+_RESULT_LABEL_RE = re.compile(r"\*\*Result:\s*(?P<label>.+?)\s*\*\*", re.IGNORECASE)
+
+# `### Decision` heading (shared/templates/review-summary.md, "Decision").
+_DECISION_HEADING_RE = re.compile(r"^#{2,4}\s+Decision\s*$", re.IGNORECASE)
+
 
 def _parse_location(raw: str) -> dict:
     raw = raw.strip()
@@ -372,6 +380,36 @@ def parse_review_output(text: str) -> list[ProducedFinding]:
     return findings
 
 
+@dataclass(frozen=True)
+class RenderedOutcome:
+    """The verdict labels a report actually rendered, verbatim — ``None``
+    when that surface is absent. Never interpreted here."""
+
+    result_label: str | None
+    decision_label: str | None
+
+
+def parse_rendered_outcome(text: str) -> RenderedOutcome:
+    """Pure extractor: the ``Result`` line label and the ``### Decision``
+    section's label from a review report's Markdown text."""
+    result_label = None
+    result_match = _RESULT_LABEL_RE.search(text)
+    if result_match:
+        result_label = result_match.group("label").strip()
+
+    decision_label = None
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if _DECISION_HEADING_RE.match(line.strip()):
+            for following in lines[index + 1 :]:
+                stripped = following.strip()
+                if stripped:
+                    decision_label = stripped.strip("*").strip() or None
+                    break
+            break
+    return RenderedOutcome(result_label=result_label, decision_label=decision_label)
+
+
 # --------------------------------------------------------------------------
 # The adapter itself.
 # --------------------------------------------------------------------------
@@ -399,8 +437,12 @@ class ProductionReviewerAdapter:
         self.extra_args = list(extra_args) if extra_args is not None else resolve_cli_extra_args(env)
         self.timeout = timeout
         self.env = dict(env) if env is not None else dict(os.environ)
+        # Raw stdout of the latest invocation (None if it failed), so a caller
+        # can inspect the rendered verdict the findings list drops.
+        self.last_report: str | None = None
 
     def __call__(self, workspace: Path) -> list[ProducedFinding]:
+        self.last_report = None
         command = [
             self.executable,
             "-p",
@@ -426,6 +468,7 @@ class ProductionReviewerAdapter:
                 f"review CLI {self.executable!r} exited {completed.returncode}: "
                 f"{completed.stderr.strip()[:2000]}"
             )
+        self.last_report = completed.stdout
         return parse_review_output(completed.stdout)
 
 

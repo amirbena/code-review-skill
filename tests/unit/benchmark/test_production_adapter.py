@@ -40,6 +40,7 @@ from runtime_platform.benchmark.scripts.benchmark_review_adapter import (
     ProductionReviewerAdapter,
     RuntimeUnavailableError,
     check_runtime_available,
+    parse_rendered_outcome,
     parse_review_output,
     resolve_cli_executable,
     resolve_cli_extra_args,
@@ -393,6 +394,35 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(resolve_cli_extra_args(env={}), [])
 
 
+class ParseRenderedOutcomeTests(unittest.TestCase):
+    def test_extracts_result_and_decision_labels(self) -> None:
+        report = textwrap.dedent(
+            """
+            ## Code Review
+
+            **Result: ⚠️ Changes Requested**
+
+            ### Decision
+            **CHANGES REQUIRED**
+
+            One P1 blocks approval.
+            """
+        )
+        outcome = parse_rendered_outcome(report)
+        self.assertEqual(outcome.result_label, "⚠️ Changes Requested")
+        self.assertEqual(outcome.decision_label, "CHANGES REQUIRED")
+
+    def test_absent_surfaces_are_none(self) -> None:
+        outcome = parse_rendered_outcome("no report here")
+        self.assertIsNone(outcome.result_label)
+        self.assertIsNone(outcome.decision_label)
+
+    def test_decision_heading_without_label_is_none(self) -> None:
+        outcome = parse_rendered_outcome("**Result: ✅ Review Clean**\n\n### Decision\n")
+        self.assertEqual(outcome.result_label, "✅ Review Clean")
+        self.assertIsNone(outcome.decision_label)
+
+
 class _StubCliMixin:
     """Writes an executable stub script standing in for the real `claude`
     CLI, so the subprocess-invocation boundary is tested without depending
@@ -476,6 +506,17 @@ class ProductionReviewerAdapterTests(unittest.TestCase, _StubCliMixin):
         self.assertEqual(findings, [])
         self.assertTrue(cwd_marker.exists())
         self.assertEqual(Path(cwd_marker.read_text(encoding="utf-8")).resolve(), workspace.resolve())
+
+    def test_adapter_retains_the_raw_report_for_rendered_outcome_inspection(self) -> None:
+        workspace = self.tmp_path / "workspace"
+        workspace.mkdir()
+        report = "**Result: ✅ Review Clean**\n\n### Decision\n**REVIEW CLEAN**\n"
+        adapter = ProductionReviewerAdapter(executable=str(self._write_stub(self.tmp_path, stdout=report)))
+        self.assertIsNone(adapter.last_report)
+
+        adapter(workspace)
+
+        self.assertEqual(adapter.last_report, report)
 
     def test_adapter_parses_findings_from_stub_output(self) -> None:
         workspace = self.tmp_path / "workspace2"

@@ -7,8 +7,9 @@ The sub-corpus is
 focused set of ``benchmark-case/v2`` fixtures pinning the *reverse*
 direction of ``shared/policies/severity.md``'s mechanical severity →
 decision derivation — a P2-only, or empty, finding set must always render
-`clean`, never `changes-required`. Issue #350 (open) owns the opposite,
-forward-direction proof; this sub-corpus never duplicates it.
+`clean`, never `changes-required`. The `dd-blocking-*` fixtures in the same
+directory are the opposite, forward-direction proof (Issue #350) and are
+covered by ``test_blocking_verdict_corpus.py``; this module excludes them.
 
 Like ``test_database_migration_deepening_corpus.py`` and
 ``test_distributed_systems_deepening_corpus.py``, every fixture decodes
@@ -32,6 +33,7 @@ import yaml
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.reference.review import decision_semantics as ds
+from tests.support.benchmark_runtime import LiveRuntimeTestCase
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "decision-derivation"
@@ -52,7 +54,7 @@ MAX_CASES = 3
 
 
 def _corpus_files() -> list:
-    return sorted(CORPUS_DIR.glob("*.yaml"))
+    return sorted(p for p in CORPUS_DIR.glob("*.yaml") if not p.name.startswith("dd-blocking-"))
 
 
 def _load(path) -> dict:
@@ -219,30 +221,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
         )
 
 
-def _probe_runtime() -> str | None:
-    """Return None if the real review runtime is actually usable, else a
-    human-readable reason it is not (used as the skip reason). Delegates
-    to the same ``check_runtime_available`` preflight
-    ``test_production_adapter_e2e.py`` and the production entrypoint use,
-    so this sub-corpus exercises the identical binding/probe path rather
-    than a second, hand-rolled one."""
-    try:
-        from runtime_platform.benchmark.scripts.benchmark_review_adapter import check_runtime_available
-
-        check_runtime_available()
-    except Exception as exc:  # noqa: BLE001 - re-raised as a skip reason, never swallowed
-        return str(exc)
-    return None
-
-
-_SKIP_REASON = _probe_runtime()
-
-
-@unittest.skipUnless(
-    _SKIP_REASON is None,
-    f"skipping the live end-to-end path rather than fabricating a result — {_SKIP_REASON}",
-)
-class SubCorpusEndToEndTests(unittest.TestCase):
+class SubCorpusEndToEndTests(LiveRuntimeTestCase):
     """Drives every fixture through the real packaged Skill and asserts
     the decision mechanically derived from the *produced* findings is
     `Decision.CLEAN` — the actual acceptance criterion #450 asks for, not

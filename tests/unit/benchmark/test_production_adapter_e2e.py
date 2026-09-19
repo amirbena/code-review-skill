@@ -22,40 +22,17 @@ from __future__ import annotations
 
 import unittest
 
-from runtime_platform.benchmark.scripts.benchmark_review_adapter import (
-    ProductionReviewerAdapter,
-    RuntimeUnavailableError,
-    check_runtime_available,
-)
+from runtime_platform.benchmark.scripts.benchmark_review_adapter import ProductionReviewerAdapter
 from runtime_platform.benchmark.reference import benchmark_metrics as bm
 from runtime_platform.benchmark.reference import benchmark_runner as br
+from tests.support.benchmark_runtime import LiveRuntimeTestCase
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
 REAL_CASE_ID = "correctness-off-by-one-pagination"
 
 
-def _probe_runtime() -> str | None:
-    """Return None if the real review runtime is actually usable, else a
-    human-readable reason it is not (used as the skip reason). Delegates
-    to the same ``check_runtime_available`` preflight the production
-    entrypoint uses, so this test exercises the identical binding/probe
-    path rather than a second, hand-rolled one."""
-    try:
-        check_runtime_available()
-    except RuntimeUnavailableError as exc:
-        return str(exc)
-    return None
-
-
-_SKIP_REASON = _probe_runtime()
-
-
-@unittest.skipUnless(
-    _SKIP_REASON is None,
-    f"skipping the live end-to-end path rather than fabricating a result — {_SKIP_REASON}",
-)
-class ProductionAdapterEndToEndTests(unittest.TestCase):
+class ProductionAdapterEndToEndTests(LiveRuntimeTestCase):
     def test_real_case_executes_through_the_real_runtime(self) -> None:
         adapter = ProductionReviewerAdapter(timeout=600.0)
         run_result = br.run_selected(CORPUS_DIR, REAL_CASE_ID, adapter)
