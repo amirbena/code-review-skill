@@ -54,6 +54,7 @@ from runtime_platform.benchmark.scripts.benchmark_review_adapter import (  # noq
     resolve_cli_executable,
     resolve_cli_extra_args,
 )
+from runtime_platform.benchmark.reference import benchmark_citation as bc  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_fixture as bf  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_metrics as bm  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_runner as br  # noqa: E402
@@ -139,6 +140,9 @@ def main(argv: list[str] | None = None) -> int:
                 r.id: r.post_image for r in run_result.case_results if r.post_image is not None
             }
             output["metrics"] = bm.compute_run_metrics(cases, run_result, post_images=post_images).as_dict()
+            # Citation-existence fidelity (issue #349): its own metric
+            # category beside `metrics`, never mixed into match outcomes.
+            output["citation_fidelity"] = bc.compute_run_citation_fidelity(cases, run_result).as_dict()
     except Exception as exc:  # noqa: BLE001 - metrics are a convenience, never hide the run result
         output["metrics_error"] = str(exc)
 

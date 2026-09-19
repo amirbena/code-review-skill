@@ -69,6 +69,7 @@ REFERENCE_TEST_MODULES = (
     "benchmark_metrics.py",
     "benchmark_severity.py",
     "benchmark_dupes.py",
+    "benchmark_citation.py",
 )
 
 

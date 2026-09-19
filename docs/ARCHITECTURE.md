@@ -502,7 +502,11 @@ and no packaged Skill resource depends on them.
   (same-root-cause redundancy) — each rendered alongside the
   regression comparison in
   [`runtime_platform/benchmark/regression-report.md`](../runtime_platform/benchmark/regression-report.md)
-  without gating it. Every benchmark reference metric under
+  without gating it. A separate mechanical
+  citation-existence check
+  ([`runtime_platform/benchmark/citation-fidelity.md`](../runtime_platform/benchmark/citation-fidelity.md),
+  #349) reports fabricated file/line/symbol/snippet citations as its own
+  category beside those metrics, never inside them. Every benchmark reference metric under
   `runtime_platform/benchmark/reference/` is test-only; nothing benchmark is
   packaged. PR-time benchmark relevance is
   determined deterministically by the canonical taxonomy/inverted index

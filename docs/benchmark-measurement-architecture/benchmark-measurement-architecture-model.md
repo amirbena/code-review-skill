@@ -945,12 +945,14 @@ this is benchmark evidence: it runs against the corpus/harness, never
 against a live review, and it does not require #182's telemetry to exist.
 
 The tracking issue for this signal is
-[#349](https://github.com/amirbena/code-review-skill/issues/349). It does
-require the benchmark harness to actually carry a produced finding's real
-location/claim content through to any check that inspects it — the same
-fidelity gap #342 (open, P1) already tracks for the *matcher*. This
+[#349](https://github.com/amirbena/code-review-skill/issues/349); its
+contract is
+[`runtime_platform/benchmark/citation-fidelity.md`](../../runtime_platform/benchmark/citation-fidelity.md).
+It does require the benchmark harness to actually carry a produced
+finding's real location/claim content through to any check that inspects
+it — the same fidelity gap #342 (closed) tracked for the *matcher*. This
 signal is a second, independent consumer of that same
-fix, not a restatement of #342's scope: #342 repairs
+fix, not a restatement of #342's scope: #342 repaired
 `benchmark_review_adapter.py`'s claim/location extraction so the matcher
 can correctly pair a produced finding against an expected fixture entry;
 this signal is a new, additional check built on top of that repaired
