@@ -231,7 +231,7 @@ The publisher's capability surface is closed, in the posture of
 | --- | --- |
 | `READ_HANDOFF` | `claude/benchmark-result-*` refs, or the store prefix |
 | `PERSIST_RECORD` | create-only files under `records/`, `receipts/`; never edit or delete a record; `baselines/<lane>.json` only for per-lane bootstrap |
-| `POST_EVIDENCE` | comment on the lane's tracking issue; edit its own status comment |
+| `POST_EVIDENCE` | comment on the lane's tracking issue; edit its own status comment (authored by the publisher identity) |
 | `OPEN_DRIFT_ISSUE` / `COMMENT_DRIFT_ISSUE` / `CLOSE_DRIFT_ISSUE` | label `benchmark-regression`; close only under scope-aware resolution and never over `keep-open` |
 | `OPEN_MISSED_RUN_ISSUE` / comment / close | label `benchmark-missed-run` |
 | `DELETE_STAGING_REF` | only `claude/benchmark-result-*`, only after a receipt exists |
@@ -249,7 +249,7 @@ above.
 | Merging code that the Routine later runs | not applicable to the key | yes, as for any merged code the maintainer's Routine runs — Class 2 trust, unchanged from [`runtime-execution-contract.md`](../runtime-execution-contract.md) §2.2 | none |
 | Issue/PR comments, labels | none | none | data only; the publisher never acts on comment content |
 | `keep-open` / labels | none | none | applied by users with triage rights; only ever *prevents* a close |
-| Tracking-issue comments | none | none | evidence comments are pointers; authority is the git record, and the tracking issues are locked to collaborators |
+| Tracking and health issue comments | none | none | evidence comments are pointers; authority is the git record. The threads are not locked, because the App's installation token cannot comment on a locked issue; a marker or status comment counts only if the publisher identity authored it ([`drift-issue-lifecycle-and-recovery.md`](drift-issue-lifecycle-and-recovery.md) §3, A14), so a foreign comment is data |
 
 The one honest coupling is the third row: merged repository code runs in the
 maintainer's Routine. That is the existing Class 2 model, and review of

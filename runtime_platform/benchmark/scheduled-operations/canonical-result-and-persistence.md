@@ -124,7 +124,9 @@ begins with `<!-- benchmark-run:<run_id> -->`, then a short human summary
 (lane, SHA, model, executed/total, drift outcome, baseline state) and two
 **immutable commit-pinned permalinks** — the record and the baseline — plus
 links to any issues acted on. It is an index and a notification, not the
-store.
+store. Its marker counts only on a comment authored by the publisher identity
+([`drift-issue-lifecycle-and-recovery.md`](drift-issue-lifecycle-and-recovery.md)
+§3, A14).
 
 ## 4. Retention, growth, and the trigger
 

@@ -4,8 +4,9 @@ Part of the [scheduled benchmark operations decision record](decision-record.md)
 (GitHub Issue [#464](https://github.com/amirbena/code-review-skill/issues/464)),
 implementing follow-up **F7** as GitHub Issue
 [#473](https://github.com/amirbena/code-review-skill/issues/473) (Epic
-[#466](https://github.com/amirbena/code-review-skill/issues/466)). A
-repository-development record, not packaged into either Skill archive.
+[#466](https://github.com/amirbena/code-review-skill/issues/466)) and
+executed under [#484](https://github.com/amirbena/code-review-skill/issues/484).
+A repository-development record, not packaged into either Skill archive.
 
 **Ownership.** The steps below are repository and account administration,
 performed **only by the maintainer**; a coding agent does not register the App,
@@ -244,23 +245,26 @@ These are inspection checks. Behavioral proof (a publication pass writing
 F8 drills (#474), because the maintainer is an Admin bypass actor and cannot
 demonstrate a refusal from their own account.
 
-### P6. Create and lock the tracking and health issues
+### P6. Create the tracking and health issues
 
 One tracking issue per scheduled lane (`sentinel`, `comprehensive`) and one
-health issue. Evidence comments are pointers; the git record is the authority, so
-each thread is locked to collaborators.
+health issue. Evidence comments are pointers; the git record is the authority.
+The threads are **not locked**: the App's installation token cannot comment on a
+locked issue (observed in §4). The publisher instead counts only comments
+authored by its own identity and treats any other comment as data
+([`drift-issue-lifecycle-and-recovery.md`](drift-issue-lifecycle-and-recovery.md)
+§3, A14).
 
 ```bash
 for spec in "Benchmark evidence: sentinel lane" "Benchmark evidence: comprehensive lane" "Benchmark health status"; do
   gh issue create --repo $R --title "$spec" --label benchmark-tracking \
-    --body "Written only by the \`benchmark-publication\` App (see runtime_platform/benchmark/scheduled-operations/). Locked to collaborators; do not comment."
+    --body "Written only by the \`benchmark-publication\` App (see runtime_platform/benchmark/scheduled-operations/). Comments from other accounts are ignored."
 done
-# then, for each issue number N returned:
-gh issue lock <N> --repo $R
-gh issue pin  <HEALTH_N> --repo $R      # health issue only
+# then, for the health issue number returned:
+gh issue pin <HEALTH_N> --repo $R
 ```
 
-Verify — **expected** three open issues carrying the label, all `locked: true`,
+Verify — **expected** three open issues carrying the label, all `locked: false`,
 and exactly the health issue pinned:
 
 ```bash
@@ -269,38 +273,66 @@ gh api repos/$R/issues/<N> --jq '{number, locked, state}'        # repeat for ea
 gh api graphql -f query='query{repository(owner:"amirbena",name:"code-review-skill"){pinnedIssues(first:5){nodes{issue{number title}}}}}'
 ```
 
-Hand the three numbers to #469 (the manifest carries the tracking-issue numbers)
-and #472 (health status).
-
-### P7. Check that the App can write a locked tracking issue (recommended)
-
-The design assumes the App's `issues: write` lets it comment on a locked thread
-(*expected but not demonstrated* until now). Mint a token narrowed to one
-permission, post, and remove the comment:
+If the issues were already created under the earlier procedure (locked, with the
+"Locked to collaborators" body), unlock them and replace the body; the issue
+numbers do not change:
 
 ```bash
+for N in <SENTINEL_N> <COMPREHENSIVE_N> <HEALTH_N>; do
+  gh issue unlock $N --repo $R
+  gh issue edit   $N --repo $R --body "Written only by the \`benchmark-publication\` App (see runtime_platform/benchmark/scheduled-operations/). Comments from other accounts are ignored."
+done
+```
+
+Then re-run the verify block above. Hand the three numbers to #469 (the manifest
+carries the tracking-issue numbers) and #472 (health status).
+
+### P7. Check the App comment lifecycle on a tracking issue
+
+The publisher's evidence and health comments are authored by the App, so this
+step proves the whole lifecycle under the App identity, in the order **POST →
+verify author → PATCH the same comment → DELETE**. Mint a token narrowed to one
+permission and use it for every call. The `${…:?}` guards abort on an unset or
+empty value: an empty `GH_TOKEN` would make `gh` fall back to your own
+credential and act as yourself, defeating the check (and the publisher has no
+such fallback either).
+
+```bash
+export APP_SLUG=$(gh api repos/$R/installation -H "Authorization: Bearer $(mint_jwt)" --jq .app_slug)
 TOKEN=$(gh api --method POST "app/installations/${INSTALL_ID:?run P2 first}/access_tokens" \
   -H "Authorization: Bearer $(mint_jwt)" \
   -f 'repositories[]=code-review-skill' -f 'permissions[issues]=write' --jq .token)
-GH_TOKEN="${TOKEN:?token mint failed}" gh api --method POST repos/$R/issues/<SENTINEL_N>/comments -f body='provisioning check (#473); will be removed' --jq '{id, user: .user.login}'
-GH_TOKEN="${TOKEN:?token mint failed}" gh api --method DELETE repos/$R/issues/comments/<id>
-unset TOKEN
+app() { GH_TOKEN="${TOKEN:?token mint failed}" gh api "$@"; }
+
+# 1. POST
+CID=$(app --method POST repos/$R/issues/<SENTINEL_N>/comments -f body='provisioning check (#484): created' --jq .id)
+# 2. verify the stored author
+app "repos/$R/issues/comments/${CID:?post failed}" --jq '{id, login: .user.login, type: .user.type, author_ok: (.user.login == (env.APP_SLUG + "[bot]"))}'
+# 3. PATCH the same comment
+app --method PATCH "repos/$R/issues/comments/${CID:?post failed}" -f body='provisioning check (#484): edited' --jq '{id, body, login: .user.login}'
+# 4. DELETE
+app --method DELETE "repos/$R/issues/comments/${CID:?post failed}"
+unset TOKEN CID
 ```
 
-The `${…:?}` guards abort on an unset or empty value: an empty `GH_TOKEN` would
-otherwise make `gh` fall back to your own credential and post the comment as
-yourself, defeating the check.
+**Expected:**
 
-**Expected** `user` = `benchmark-publication[bot]` (anything else means the App
-token was not used) and the delete succeeds with no output. If the write is
-refused on a locked issue, stop and raise it on #466 before F8: the "locked to
-collaborators" design would need changing, not this runbook.
+1. POST returns a comment id.
+2. The stored comment reads `login` = `<APP_SLUG>[bot]`, `type` = `Bot`, and
+   `author_ok: true`.
+3. PATCH returns the same `id`, the edited `body`, and the same `login`.
+4. DELETE succeeds with no output.
+
+Anything else is a **stop condition**: a refused POST or PATCH (any `403`), an
+`author_ok` other than `true`, a different `id` after PATCH, or a token that does
+not mint. Stop and raise it on #466 before F8; do not retry under a personal
+credential. The App token is never printed or pasted.
 
 ## 4. Observed evidence log
 
 The maintainer fills one row per step **after performing it**, with the date, the
 verification command run, and the observed output (or a link to it). Until a row
-is filled the step is *not* complete, and #473's acceptance criteria are not met.
+is filled the step is *not* complete, and #484's acceptance criteria are not met.
 
 | Step | Performed (date, by) | Verification run | Observed result | Matches expected |
 | --- | --- | --- | --- | --- |
@@ -313,8 +345,17 @@ is filled the step is *not* complete, and #473's acceptance criteria are not met
 | P5 `benchmark-history` ruleset | pending | | | |
 | P5 `benchmark-staging-refs` ruleset | pending | | | |
 | P5 `main` ruleset unchanged | pending | | | |
-| P6 tracking + health issues (numbers, locked, pinned) | pending | | | |
-| P7 App write to a locked issue | pending | | | |
+| P6 tracking + health issues (numbers, unlocked, pinned) | pending | | | |
+| P7 App comment lifecycle (POST → author → PATCH → DELETE) | pending | | | |
+
+### Recorded deviations
+
+Observed results that did **not** match the expected outcome. They are evidence,
+not failures to hide, and each names its disposition.
+
+| Step | Performed (date, by) | Verification run | Observed result | Matches expected | Disposition |
+| --- | --- | --- | --- | --- | --- |
+| P7 as first specified (App write to a locked issue) | 2026-09-19, `amirbena` | POST `repos/$R/issues/486/comments` on the locked sentinel tracking issue, with a `benchmark-publication` installation token narrowed to `issues: write`; the token minted successfully and no personal credential was used | `HTTP 403: Unable to create comment because issue is locked`; no comment was created; the token was discarded | **No** — the stop condition above fired | The locked-thread design is replaced by publisher-author filtering (A14, [#489](https://github.com/amirbena/code-review-skill/issues/489); approved on [#466](https://github.com/amirbena/code-review-skill/issues/466#issuecomment-5742792835)). P6 and P7 above are the amended procedure. |
 
 ## 5. Handoffs and open reconciliations
 
@@ -323,6 +364,8 @@ is filled the step is *not* complete, and #473's acceptance criteria are not met
 | Tracking-issue label name (`benchmark-tracking`) and label definitions | #469 (F3) | reconciled: the manifest matches P1 |
 | Tracking and health issue numbers | #469 (manifest), #472 (health status) | produced by P6 |
 | Secret names `BENCHMARK_APP_ID`, `BENCHMARK_APP_PRIVATE_KEY` (proposed) | #474 (F8) | workflow must match P4 |
+| Publisher-author filtering (A14): marker recognition and status-comment lookup count only comments authored by `<app-slug>[bot]`, on tracking, health, and drift issues | #471 (F5), #472 (F6) | contract landed by #489; implementation and tests pending in #471/#472 |
+| Tracking and health issues created locked under the earlier procedure | maintainer, under #484 | unlock them and replace the bodies (P6), then re-run P7; issue numbers unchanged |
 | `benchmark-history` branch does not exist yet, and `creation` is not restricted by the design table, so the first writer of the branch is whoever pushes it first; the intended first writer is the publisher's first pass | maintainer decision | decide whether to seed the orphan branch at provisioning or add a `creation` rule (a stricter reading than the design table) |
 | `docs/RELEASE.md` documents the release App only as a `main` bypass actor; the live ruleset also lists Admin (E16) | out of scope here | unchanged |
 
@@ -331,6 +374,6 @@ is filled the step is *not* complete, and #473's acceptance criteria are not met
 Everything above is reversible without touching repository content: delete the
 three new rulesets (`gh api --method DELETE repos/$R/rulesets/<id>`), delete the
 environment (this removes its secrets), uninstall or delete the App (revokes its
-tokens), and unlock/close the tracking issues. Deleting the App or its key is
+tokens), and close the tracking issues. Deleting the App or its key is
 also the credential-revocation path drilled in #474. Do not delete labels that
 open issues still carry.
