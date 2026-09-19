@@ -46,7 +46,7 @@ Every field named in the issue's Scope is here. "Writer" is who produces it.
 | Reproduction provenance | `reproduction.command`, `reproduction.case_ids`, `reproduction.python_version`, `reproduction.nondeterminism` (states that model output is nondeterministic) | executor | new |
 | Drift evidence | `drift.evidence[case_id]` — bounded raw excerpt (≤ 32 KiB per case) for **confirmed** drift only | executor | new |
 | Raw output | `raw.bundle_sha256`, `raw.location` (handoff path); the bundle is **not** in git | executor | new |
-| Publication (receipt) | `record_commit`, `record_permalink`, `evidence_comment_url`, `issue_links[]` (`fingerprint`, `issue`, `action`), `published_at`, `publisher_identity`, `steps_done[]` | publisher | new |
+| Publication (receipt) | `record_commit`, `record_permalink`, `evidence_comment_url`, `issue_links[]` (`fingerprint`, `issue`, `action`), `published_at`, `publisher_identity`, `publisher_run_url`, `steps_done[]` | publisher | new |
 
 `content_sha256` is the SHA-256 of the canonical-JSON sealed body (sorted keys,
 minimal separators, the same canonicalization
@@ -79,8 +79,8 @@ immutability/linkability, and fit with the execution/publication boundary.
 | Immutable exact link | commit permalink | run URL, expires | comment URL, editable | store URL | commit permalink |
 | Needs a workflow to write | no | **yes** | no | no | no |
 | App permissions | `Contents: write` | n/a | `Issues: write` | none on GitHub | `Contents: write` + `Issues: write` |
-| New infrastructure | none | none | none | store, credential, cost | none beyond the publisher |
-| Boundary fit | publisher writes | requires Actions in the write path | publisher writes | publisher writes | publisher writes |
+| New infrastructure | none | none | none | store, credential, cost | none |
+| Boundary fit | publisher writes | written from a workflow run, not an App path | publisher writes | publisher writes | publisher writes |
 
 **Why each rejected option lost**
 
@@ -88,10 +88,10 @@ immutability/linkability, and fit with the execution/publication boundary.
   one comprehensive run is estimated at 1–5 MB, so 50–270 MB a year of
   *unrecoverable* history (git retains it even after a prune). Compaction
   is what keeps git viable, not pruning.
-- **Actions artifacts:** creation requires a workflow run, which this record
-  rules out as an execution or publication path; default retention is 90
-  days, so a pinned baseline would expire; artifacts are not addressable by
-  commit.
+- **Actions artifacts:** default retention is 90 days, so a pinned baseline
+  would expire; artifacts are tied to workflow runs and are not addressable by
+  commit, so an issue could not link to immutable evidence. (The publication
+  workflow exists, but it publishes to git, not to artifacts.)
 - **Issue comments as the store:** comments are editable by their author,
   capped by the API (community-reported 65,536 characters), unschematized,
   and reading the last baseline means paging a thread. They remain valuable

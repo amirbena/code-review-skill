@@ -129,18 +129,25 @@ and the Routines page's own warning that a green status is not success).
   persists, and close it when a new verified scheduled record for the lane is
   published. A gap rule avoids computing wall-clock slots, so no repository
   code owns a timezone or DST (a #431 requirement).
-- **What may schedule it.** The publisher's own pass. It is deterministic and
-  needs no model, so it must not be a Routine (cost, custody) and cannot be a
-  GitHub Actions cron (excluded). Its host schedule need only be hourly.
+- **What may schedule it.** The `schedule` trigger of the publication-only
+  workflow, in the same concurrency group as publication. It is deterministic,
+  reads record metadata only, needs no model, and never executes the benchmark
+  or judges drift, so it is not the benchmark scheduling the fixed requirement
+  forbids to Actions (amendment A13). It must not be a Routine (an LLM session
+  with a daily run cap and a GitHub write path). The options and caveats
+  are in [`publication-architecture.md`](publication-architecture.md) §6.
 - **Health status.** One comment on a pinned health issue, edited in place,
   showing per lane: latest verified run and time, model, drift outcome, open
   drift and missed-run issues, sealed-but-unpublished handoffs and their age,
-  and the publisher's last successful pass. It is edited only when content
+  and the last successful publication sweep. It is edited only when content
   changes.
-- **Limit.** The watchdog cannot watch itself. A dead publisher shows as a
-  stale "last publisher pass" and accumulating `claude/benchmark-result-*`
-  refs, and no alert is raised — external alerting is a non-goal, so the
-  maintainer health checks in §7 are part of the design.
+- **Limit.** The watchdog cannot watch itself. A disabled or dropped schedule
+  shows as a stale "last publication sweep" and accumulating
+  `claude/benchmark-result-*` refs, and no alert is raised — external alerting
+  is a non-goal, so the maintainer health checks in §7 are part of the design.
+  In a public repository GitHub disables scheduled workflows after 60 days
+  without repository activity, so "publication workflow enabled" is on that
+  checklist.
 
 ## 6. Failure table
 
@@ -151,13 +158,13 @@ Idempotency key, retry boundary, retrying party, and what a maintainer sees.
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Benchmark fails verification, or the session dies before the seal | none — no `run_id` was sealed | none automatic | maintainer (`Run now`), prompted by the watchdog | non-green or no Routine run; after `max_gap_hours` a missed-run issue | An unsealed run is by definition **not a verified run**; this is the existing fail-closed rule. The guarantee starts at the seal. |
 | 2 | Benchmark succeeds; the seal (handoff write) fails | `run_id` | the seal step — bounded in-session retries with backoff | the run itself, then case 1 if exhausted | as case 1 | The run exits non-zero rather than reporting success; it never leaves a half-sealed record (the seal is a single ref or object write, verified by hash before exit). |
-| 3 | Sealed; publication fails (GitHub outage, App unavailable, key revoked) | `run_id` | each publication step, independently | publisher loop, or a maintainer `--once` | pending-handoff count and age on the health status; `claude/benchmark-result-*` refs accumulating; stale "last publisher pass" | The sealed result is durable in the handoff; publication re-reads it. **No benchmark re-run is needed.** |
-| 4 | Record persisted; evidence post fails | `<!-- benchmark-run:<run_id> -->` marker | the announce step | publisher | record exists, run comment missing until next pass | Persist is create-only and hash-checked: an existing record with the same hash is success. The comment is skipped if its marker exists. |
-| 5 | Issue created; a later step (evidence, receipt) fails | fingerprint marker + `benchmark-applied` marker | from the first step lacking its marker | publisher | issue exists with the run's comment; receipt appears later | Issues are created **after** the record commit, so an issue never links to a missing record. A retry finds the open fingerprint and takes the comment branch, guarded by the run marker. |
-| 6 | Missed run | none (no run existed) | none automatic | maintainer; optional later: a publisher-fired Routine API trigger, deferred to F13 | `benchmark-missed-run` issue; health status shows overdue | The watchdog makes the absence visible; it cannot make the run happen. |
+| 3 | Sealed; publication fails (GitHub outage, App unavailable, key revoked) | `run_id` | each publication step, independently | the next scheduled sweep (automatic), or a `workflow_dispatch`, or a maintainer `--once` | pending-handoff count and age on the health status; `claude/benchmark-result-*` refs accumulating; a failed run in the Actions tab; stale "last publication sweep" | The sealed result is durable in the handoff; publication re-reads it. **No benchmark re-run is needed.** |
+| 4 | Record persisted; evidence post fails | `<!-- benchmark-run:<run_id> -->` marker | the announce step | next sweep | record exists, run comment missing until next sweep | Persist is create-only and hash-checked: an existing record with the same hash is success. The comment is skipped if its marker exists. |
+| 5 | Issue created; a later step (evidence, receipt) fails | fingerprint marker + `benchmark-applied` marker | from the first step lacking its marker | next sweep | issue exists with the run's comment; receipt appears later | Issues are created **after** the record commit, so an issue never links to a missing record. A retry finds the open fingerprint and takes the comment branch, guarded by the run marker. |
+| 6 | Missed run | none (no run existed) | none automatic | maintainer; optional later: a workflow-fired Routine API trigger, deferred to F13 (needs a dispatch token) | `benchmark-missed-run` issue; health status shows overdue | The watchdog makes the absence visible; it cannot make the run happen. |
 | 7 | Duplicate or retried run | distinct `run_id`s | not retried — both are valid runs | none | two records, two evidence comments | `run_id` prevents double-publication of one run. Two runs may each confirm the same drift; issues dedupe by fingerprint and each observation gets its own run-marked comment. Manual runs (`trigger: manual`) never satisfy the watchdog. |
-| 8 | App unavailable, key rotated or revoked | `run_id` | token mint (`401`/`403` vs `5xx` reported distinctly) | publisher after the maintainer restores the App | as case 3, with the publisher log showing the mint failure | No fallback to the maintainer's personal `gh` identity, ever. A manual `--once` run prints its acting identity and only proceeds under the App. |
-| 9 | Two publisher instances race | as cases 4–5 | n/a | either | at worst a duplicate evidence comment (same run marker) or two issues with one fingerprint | After every create the publisher re-lists that fingerprint; if two open issues share it, it keeps the lowest number, comments on it, and closes the other with a pointer. Run a single instance. |
+| 8 | App unavailable, key rotated or revoked | `run_id` | token mint (`401`/`403` vs `5xx` reported distinctly) | the next sweep, after the maintainer restores the App | as case 3, with the workflow log showing the mint failure | No fallback to the maintainer's personal `gh` identity, ever. A manual `--once` run prints its acting identity and only proceeds under the App. |
+| 9 | Two publication passes overlap | as cases 4–5 | n/a | either | nothing under Actions — one run at a time; only a local `--once` beside a workflow run can duplicate an evidence comment (same run marker) or, rarely, an issue | The workflow's `concurrency` group serializes runs; a further arrival replaces the single pending run, and every run sweeps all unpublished refs, so no result is dropped. After every create the publisher re-lists that fingerprint; if two open issues share it, it keeps the lowest number, comments on it, and closes the other with a pointer. |
 | 10 | Same `run_id`, different content hash | `run_id` + `content_sha256` | none | none | a conflict entry on the health status; nothing published | Refused, never overwritten (§2 of the boundary document). |
 | 11 | Baseline missing or all cases incomparable | n/a | n/a | n/a | evidence comment states `bootstrap` or `incomparable`; no drift issues touched | Neither opens nor resolves an issue, so it cannot cause a false open or a false close. |
 
@@ -172,8 +179,8 @@ published, and no step whose retry can publish a second copy.
 | --- | --- | --- | --- |
 | Routines exist, are enabled, GitHub connection alive | claude.ai/code/routines | both enabled, recent runs | disabled or disconnected → reconnect within 72 h or re-enable |
 | Latest verified record per lane vs `max_gap_hours` | health status comment | within gap | overdue → missed-run issue; check Routine surface |
-| Sealed but unpublished handoffs | health status; `claude/benchmark-result-*` refs | zero, or younger than a few hours | growing → publisher or App problem |
-| Publisher's last pass | health status | within its schedule | stale → publisher host down |
+| Sealed but unpublished handoffs | health status; `claude/benchmark-result-*` refs | zero, or younger than a few hours | growing → publication workflow or App problem |
+| Publication workflow | Actions tab; health status | enabled; scheduled sweeps succeed within the interval | stale or failing → re-enable, fix, or `workflow_dispatch`; disabled after 60 days of repository inactivity |
 | Model and runtime versions | latest record `runtime.*` | as configured | unexpected → prompt spec or provider drift |
 | Drift issues and `keep-open` | `benchmark-regression` label | each has a current provenance link | stale keep-open → maintainer review |
 | App installation and permissions | repository → Settings → Integrations | exactly the matrix in the boundary document | broader → correct it |
