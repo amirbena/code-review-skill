@@ -329,13 +329,15 @@ MAX_CITED_PATHS = 50
 def cited_path(location: Any) -> str | None:
     """The workspace-relative path a structured produced ``location`` cites,
     normalized (``\\`` -> ``/``, leading ``./`` dropped); ``None`` for a
-    pathless or non-mapping location. The single normalizer both the capture
-    below and the citation check use, so their keys always agree."""
+    pathless or non-mapping location, or one whose path still contains ``:``
+    (an unparsed ``path:locator`` — not a file, so never a fabrication
+    claim). The single normalizer both the capture below and the citation
+    check use, so their keys always agree."""
     if not isinstance(location, Mapping) or not location.get("path"):
         return None
     path = str(location["path"]).replace("\\", "/").strip()
     path = path[2:] if path.startswith("./") else path
-    return path or None
+    return path if path and ":" not in path else None
 
 
 def _capture_cited_sources(

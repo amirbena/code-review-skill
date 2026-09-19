@@ -274,19 +274,24 @@ _RESULT_LABEL_RE = re.compile(r"\*\*Result:\s*(?P<label>.+?)\s*\*\*", re.IGNOREC
 _DECISION_HEADING_RE = re.compile(r"^#{2,4}\s+Decision\s*$", re.IGNORECASE)
 
 
+# A `<line-or-range>` tail, tolerating the GitHub-style `L` prefix a reviewer
+# often writes (`L12`, `L12-L20`) — a coordinate, never a symbol (issue #349).
+_LINE_TAIL_RE = re.compile(r"^L?(?P<start>\d+)(?:\s*-\s*L?(?P<end>\d+))?$")
+
+
 def _parse_location(raw: str) -> dict:
     raw = raw.strip()
     if ":" not in raw:
         return {"path": raw}
     path, _, tail = raw.rpartition(":")
     tail = tail.strip()
+    coordinate = _LINE_TAIL_RE.match(tail)
+    if coordinate and coordinate["end"]:
+        return {"path": path, "lines": {"start": int(coordinate["start"]), "end": int(coordinate["end"])}}
+    if coordinate:
+        return {"path": path, "line": int(coordinate["start"])}
     if "-" in tail:
-        start_s, _, end_s = tail.partition("-")
-        if start_s.strip().isdigit() and end_s.strip().isdigit():
-            return {"path": path, "lines": {"start": int(start_s), "end": int(end_s)}}
         return {"path": raw}
-    if tail.isdigit():
-        return {"path": path, "line": int(tail)}
     if tail and path:
         # A non-numeric `<line-or-range>` is the finding's enclosing
         # symbol/function name (finding.md, "location": "... symbol/function,

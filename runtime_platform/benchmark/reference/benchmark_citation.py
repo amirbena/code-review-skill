@@ -21,7 +21,9 @@ pure over that captured text.
 
 from __future__ import annotations
 
+import math
 import re
+from collections import Counter
 from dataclasses import dataclass
 from fractions import Fraction
 from typing import Any, Mapping, Sequence
@@ -81,16 +83,37 @@ def _quotes(finding: br.ProducedFinding) -> list[str]:
     return kept
 
 
+def _tokens(text: str) -> list[str]:
+    return [t for t in _WORD_SPLIT_RE.split(text) if t]
+
+
+def _lcs_len(a: Sequence[str], b: Sequence[str]) -> int:
+    prev = [0] * (len(b) + 1)
+    for x in a:
+        cur = [0]
+        for j, y in enumerate(b, 1):
+            cur.append(prev[j - 1] + 1 if x == y else max(prev[j], cur[j - 1]))
+        prev = cur
+    return prev[-1]
+
+
 def _quote_present(quote: str, window: str) -> bool:
-    """Whitespace-insensitive substring, else token coverage >= 3/4 (§4)."""
+    """Whitespace-insensitive substring, else in-order token coverage >= 3/4
+    within one line-contiguous segment of the window (§4)."""
     if "".join(quote.split()) in "".join(window.split()):
         return True
-    tokens = [t for t in _WORD_SPLIT_RE.split(quote) if t]
-    if not tokens:
+    wanted = _tokens(quote)
+    if not wanted:
         return False
-    have = set(_WORD_SPLIT_RE.split(window))
-    hits = sum(1 for t in tokens if t in have)
-    return Fraction(hits, len(tokens)) >= SNIPPET_TOKEN_COVERAGE
+    need = math.ceil(SNIPPET_TOKEN_COVERAGE * len(wanted))
+    counts = Counter(wanted)
+    rows = [_tokens(line) for line in window.splitlines()]
+    span = len(quote.strip().splitlines()) or 1
+    for start in range(max(len(rows) - span + 1, 1)):
+        seg = [t for row in rows[start : start + span] for t in row]
+        if sum((counts & Counter(seg)).values()) >= need and _lcs_len(wanted, seg) >= need:
+            return True
+    return False
 
 
 def check_finding(

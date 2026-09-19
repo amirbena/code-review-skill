@@ -40,6 +40,7 @@ from runtime_platform.benchmark.reference import benchmark_citation as bc
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from runtime_platform.benchmark.reference import benchmark_metrics as bmet
 from runtime_platform.benchmark.reference import benchmark_runner as br
+from runtime_platform.benchmark.scripts.benchmark_review_adapter import parse_review_output
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
@@ -192,6 +193,25 @@ class ReasonRuleTests(unittest.TestCase):
                 finding = _pf({"path": "a.py", "line": 42}, quotes=[quote])
                 self.assertEqual(self._check(finding)[0], bc.VERIFIED)
 
+    def test_reordered_or_scattered_tokens_do_not_count_as_present(self) -> None:
+        for quote in ("x + return 1", "1 x return", "target(return x)", "x = target + 1 + line"):
+            with self.subTest(quote=quote):
+                finding = _pf({"path": "a.py", "line": 42}, quotes=[quote])
+                self.assertEqual(self._check(finding), (bc.FABRICATED, (bc.SNIPPET_ABSENT,)))
+
+    def test_in_order_match_is_line_local_and_multi_line_quotes_span_lines(self) -> None:
+        # `def target(x): return x + 1` is on two consecutive lines (41-42)
+        two_lines = _pf({"path": "a.py", "line": 42}, quotes=["def target(x):\n    return x + 2"])
+        self.assertEqual(self._check(two_lines)[0], bc.VERIFIED)  # 5/6 tokens, in order
+        # tokens spread over two lines do not satisfy a single-line quote
+        spread = _pf({"path": "a.py", "line": 42}, quotes=["target x return 1"])
+        self.assertEqual(self._check(spread), (bc.FABRICATED, (bc.SNIPPET_ABSENT,)))
+
+    def test_unparsed_path_with_colon_is_unverifiable(self) -> None:
+        finding = _pf({"path": "a.py:L42-L43"})
+        self.assertIsNone(br.cited_path(finding.location))
+        self.assertEqual(self._check(finding), (bc.UNVERIFIABLE, ()))
+
     def test_any_one_present_quote_is_enough(self) -> None:
         finding = _pf({"path": "a.py", "line": 42}, quotes=["os.system(cmd)", "return x + 1"])
         self.assertEqual(self._check(finding)[0], bc.VERIFIED)
@@ -254,6 +274,8 @@ class WorkedExampleTests(unittest.TestCase):
             bc.FABRICATED,
             (bc.LINE_OUT_OF_RANGE, bc.SYMBOL_ABSENT, bc.SNIPPET_ABSENT),
         ),
+        (12, _pf({"path": "a.py", "line": 42}, quotes=["x + return 1"]), bc.FABRICATED, (bc.SNIPPET_ABSENT,)),
+        (13, _pf({"path": "a.py:L42-L43"}), bc.UNVERIFIABLE, ()),
     )
 
     def test_every_documented_row(self) -> None:
@@ -268,6 +290,51 @@ class WorkedExampleTests(unittest.TestCase):
     def test_documented_file_shape(self) -> None:
         self.assertEqual(len(self.TEXT.splitlines()), 42)
         self.assertEqual(self.TEXT.splitlines()[40:], ["def target(x):", "    return x + 1"])
+
+
+class ParsedReviewOutputTests(unittest.TestCase):
+    """Real reviewer-report locations, through the production parser, the
+    runner capture, and the check (issue #349 review F1): a genuine citation
+    is never flagged whichever coordinate spelling the reviewer used."""
+
+    REPORT = (
+        "**Result: ⚠️ Changes Requested**\n\n"
+        "#### F1 [P1] Off-by-one page end\n\n"
+        "- **Location:** `{loc}`\n"
+        "- **Evidence:** `end = offset + page_size + 1` returns one extra row.\n"
+        "- **Impact:** rows repeat.\n"
+        "- **Fix:** drop the +1.\n"
+    )
+
+    def test_genuine_finding_is_never_flagged_for_any_location_spelling(self) -> None:
+        case = _load(PAGINATION)
+        for loc in (
+            "app/pagination.py:3",
+            "app/pagination.py:3-3",
+            "app/pagination.py:L3",
+            "app/pagination.py:L3-L4",
+            "app/pagination.py:3 - 4",
+            "app/pagination.py:3,4",
+            "app/pagination.py:page",
+        ):
+            with self.subTest(loc=loc):
+                findings = parse_review_output(self.REPORT.format(loc=loc))
+                (result,) = br.run_cases([case], lambda _ws, f=findings: f).case_results
+                self.assertEqual(_check(result, case).fabricated, 0)
+
+    def test_genuinely_fabricated_report_is_still_flagged(self) -> None:
+        case = _load(PAGINATION)
+        for loc in ("app/ghost.py:3", "app/ghost.py:L3-L4"):
+            with self.subTest(loc=loc):
+                findings = parse_review_output(self.REPORT.format(loc=loc))
+                (result,) = br.run_cases([case], lambda _ws, f=findings: f).case_results
+                self.assertEqual(_check(result, case).fabricated_findings[0]["reasons"], [bc.FILE_MISSING])
+
+    def test_still_unparsed_spelling_is_undecidable_not_fabricated(self) -> None:
+        case = _load(PAGINATION)
+        findings = parse_review_output(self.REPORT.format(loc="app/ghost.py:a-b"))
+        (result,) = br.run_cases([case], lambda _ws: findings).case_results
+        self.assertEqual(_check(result, case).unverifiable, 1)
 
 
 class PathContainmentTests(unittest.TestCase):

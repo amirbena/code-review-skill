@@ -78,8 +78,9 @@ stable machine-readable case shape ([`runner-contract.md`](runner-contract.md)
 Statuses are decided in this order:
 
 1. **No cited path** (repository-scoped / pathless / non-structured
-   location), or the cited path is **absent from `cited_sources`** →
-   `unverifiable`.
+   location, or a path that still contains `:` — an unparsed
+   `path:locator`, which is not a file), or the cited path is **absent from
+   `cited_sources`** → `unverifiable`.
 2. The path maps to `null` → `fabricated` with reason `file-missing` (no
    further check runs).
 3. Otherwise the file exists, and each check below adds its reason when it
@@ -106,14 +107,18 @@ and added none. Nothing the check does depends on whether the finding
   or after `line-out-of-range`: the whole file.
 - **Present** = the quote, whitespace removed, is a substring of the window,
   whitespace removed; **else** at least `SNIPPET_TOKEN_COVERAGE` (3/4, an
-  exact `Fraction`) of the quote's word tokens occur in the window.
+  exact `Fraction`) of the quote's word tokens are matched **in order**
+  (longest common subsequence) within one segment of consecutive window
+  lines as long as the quote has lines — so reordered or scattered
+  identifiers that merely occur somewhere nearby do not count.
 - **Any one present quote suffices**; the finding is `snippet-absent` only
   when none is.
 
 These are the only tolerances. They are documented limits, not a claim of
-completeness: the check may miss a fabrication whose quoted text happens to
-exist (that is the deferred grounding question), and a finding that quotes
-only code from a *different* file than it cites can be flagged.
+completeness: a near-copy that changes at most a quarter of a real line's tokens
+still passes, a fabrication whose quoted text happens to exist is not
+caught (the deferred grounding question), and a finding that quotes only
+code from a *different* file than it cites can be flagged.
 
 ## 5. Per-case and aggregate output
 
@@ -158,9 +163,11 @@ The captured file `a.py` has 42 lines: `line 1` … `line 40`, then
 | 9 | repository-scoped, no path | `unverifiable` | — |
 | 10 | `big.py:1`, file too large to capture | `unverifiable` | — |
 | 11 | `a.py:500`, symbol `missing_fn`, quote `os.system(cmd)` | `fabricated` | `line-out-of-range`, `symbol-absent`, `snippet-absent` |
+| 12 | `a.py:42`, quote `x + return 1` (the tokens of line 42, out of order) | `fabricated` | `snippet-absent` |
+| 13 | `a.py:L42-L43`, unparsed (path still contains `:`) | `unverifiable` | — |
 
-Rows 2–6 and 11 are the fabrication the acceptance criteria ask to be
-flagged; rows 7–10 are the deliberate non-flags a looser rule would raise.
+Rows 2–6, 11, and 12 are the fabrication the acceptance criteria ask to be
+flagged; rows 7–10 and 13 are the deliberate non-flags a looser rule would raise.
 
 ## 8. Explicitly out of scope
 
