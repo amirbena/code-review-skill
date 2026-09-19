@@ -343,7 +343,7 @@ for the other's.
   later publication leaves the pointer untouched.
 - **Promotion, per lane.** A maintainer promotes explicitly, with their own
   credentials, by writing the lane's pointer under a ruleset bypass scoped to
-  the `benchmark-history` branch only (decision M7). Promotion is never
+  the `benchmark-history` branch only. Promotion is never
   performed by the publisher, a Routine step, or `record`, and never
   automatically; by default the target is that lane's most recent record, or
   an explicit `run_id`. The local `benchmark_history.py promote-baseline

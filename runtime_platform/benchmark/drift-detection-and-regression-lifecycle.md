@@ -234,7 +234,7 @@ comparison, and the map from §4.2:
 | --- | --- |
 | A fingerprint with **no** matching open issue | **Open** one issue: title is human-readable (`Benchmark drift: <case_id> — <drift_type>`, informational only, never matched against); body starts with the §4.1 marker, then a short description, then the §5 machine-readable metadata block; labeled `benchmark-regression`. If a *closed* issue carries the same fingerprint, the new issue links it (`Recurrence of #N`) — see §4.3.2. |
 | A fingerprint that **matches** an already-open issue | **Append a dated comment** to that issue with the current run's metadata (§5) and an updated "still reproducing" note, guarded by the per-run marker (§4.1). Never open a second issue for the same fingerprint. |
-| A previously open, fingerprinted issue whose fingerprint is **absent** from `drift.confirmed[]` of **every scheduled lane that currently covers its case** (§4.3.1) | The regression no longer reproduces: **append a resolution comment** and **close** the issue — unless §4.4's override applies. |
+| A previously open, fingerprinted issue whose case is currently covered by **at least one** scheduled lane, where the fingerprint is **absent** from `drift.confirmed[]` of **every** such lane (§4.3.1); an issue no lane currently covers is left as is | The regression no longer reproduces: **append a resolution comment** and **close** the issue — unless §4.4's override applies. |
 | Drift that is noise (§2), unconfirmed (§2.1), or seen against a `bootstrap` baseline or an `incomparable` case | No action of any kind — it never reaches this table, and it neither opens, comments on, nor closes anything. |
 
 Exactly one issue is open per fingerprint at any time: §4.2's map is keyed by

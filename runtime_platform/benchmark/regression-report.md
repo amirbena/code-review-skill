@@ -222,10 +222,14 @@ precision/recall. Those are #41 and are computed from the fixtures'
   and accepted — promote the candidate run result to the new baseline
   artifact (recomputing its identity block) and commit that change as a
   reviewable diff.
-- A corpus change (adding, removing, or editing a fixture) invalidates
-  the `corpus_id` and therefore **requires** a baseline refresh in the
-  same change set; §3's identity guard makes a stale baseline a hard
-  error rather than a misleading comparison.
+- For a checked-in baseline artifact, a corpus change (adding, removing, or
+  editing a fixture) invalidates the `corpus_id` and therefore **requires** a
+  baseline refresh in the same change set; §3's identity guard makes a stale
+  baseline a hard error rather than a misleading comparison. This does not
+  apply to the scheduled lanes' pinned baselines, where a fixture edit makes
+  only that case `incomparable`
+  ([`nightly-history-and-baseline.md`](nightly-history-and-baseline.md) §3.2,
+  A7).
 - There is no automatic promotion, no "update baseline on green", and no
   flag that makes the report write the baseline. Automating that decision
   is explicitly out of scope for #53.
@@ -235,7 +239,8 @@ precision/recall. Those are #41 and are computed from the fixtures'
 - **Process health is separate from findings.** The report **fails**
   (non-zero process status) only when it cannot produce a trustworthy
   comparison: a baseline artifact that will not parse, a candidate run
-  result that will not parse, or a `corpus_id` mismatch (§3).
+  result that will not parse, or a `corpus_id` mismatch (§3; for the scheduled
+  lanes, only a lane-identity or lane-membership mismatch — see §3).
 - **Finding regressions is not a report failure.** A run that completes
   the comparison is a **successful report** even when
   `has_regressions` is true. Downstream (a CI gate, a human) decides what
