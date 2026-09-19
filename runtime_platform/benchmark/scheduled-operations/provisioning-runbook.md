@@ -336,17 +336,20 @@ is filled the step is *not* complete, and #484's acceptance criteria are not met
 
 | Step | Performed (date, by) | Verification run | Observed result | Matches expected |
 | --- | --- | --- | --- | --- |
-| P1 labels | pending | | | |
-| P2 App registered and installed (App ID, installation ID, slug) | pending | | | |
-| P2 permission matrix equality | pending | | | |
-| P3 environment branch policy | pending | | | |
-| P4 environment secrets (names only) | pending | | | |
-| P5 `tags` ruleset | pending | | | |
-| P5 `benchmark-history` ruleset | pending | | | |
-| P5 `benchmark-staging-refs` ruleset | pending | | | |
-| P5 `main` ruleset unchanged | pending | | | |
-| P6 tracking + health issues (numbers, unlocked, pinned) | pending | | | |
-| P7 App comment lifecycle (POST → author → PATCH → DELETE) | pending | | | |
+| P1 labels | 2026-09-19, `amirbena` | P1 verify command, plus the colour/description listing | `["benchmark-missed-run","benchmark-regression","benchmark-tracking","keep-open"]`; colours and descriptions equal the manifest's `labels` (re-observed read-only at evidence time) | Yes |
+| P2 App registered and installed (App ID, installation ID, slug) | 2026-09-19, `amirbena` | P2 verify output from the live provisioning session, before the local key was removed (maintainer-attested); App ID and bot user cross-checked read-only | `app_id` `5001454`, `app_slug` `benchmark-publication`, `installation_id` `163016436`, `repository_selection` `"selected"` (maintainer-attested). Re-observed: `Integration:5001454` is the bypass actor in the `benchmark-history` and `benchmark-staging-refs` rulesets; bot `benchmark-publication[bot]`, user id `331303104`, type `Bot`. The installation ID cannot be re-observed without the key | Yes (maintainer-attested) |
+| P2 permission matrix equality | 2026-09-19, `amirbena` | P2 verify output from the live provisioning session (maintainer-attested); the App is private (`GET /apps/benchmark-publication` answers 404 without its key), so it is not re-observable here | `permissions` `{contents: write, issues: write, metadata: read}` and `permissions_match: true` (maintainer-attested); the amended P7 minted an installation token narrowed to `issues: write` | Yes (maintainer-attested) |
+| P2 UI checks (installation scope, webhook, installability) | 2026-09-19, `amirbena` | Manual check of the GitHub App settings and installation page during the live provisioning session (maintainer-attested); the API cannot show these, and the key has since been removed | The installation is scoped to exactly `amirbena/code-review-skill`; the webhook is inactive; installation is restricted to "Only on this account" | Yes (maintainer-attested) |
+| P3 environment branch policy | 2026-09-19, `amirbena` (environment created 14:35:20Z) | P3 verify commands | `{"protected_branches":false,"custom_branch_policies":true}` and `[{"name":"main","type":"branch"}]` | Yes |
+| P4 environment secrets (names only) | 2026-09-19, `amirbena` | P4 verify commands | Environment `benchmark-publication`: `BENCHMARK_APP_ID` (updated 14:37:13Z) and `BENCHMARK_APP_PRIVATE_KEY` (14:37:25Z), no others; repository level: none listed | Yes |
+| P5 `tags` ruleset | 2026-09-19, `amirbena` (14:38:28Z) | P5 verify loop | id `23700677`, `active`; refs `["~ALL"]`; rules `creation, deletion, update`; bypass `["Integration:4763596"]` | Yes |
+| P5 `benchmark-history` ruleset | 2026-09-19, `amirbena` (14:39:31Z) | P5 verify loop | id `23700701`, `active`; refs `["refs/heads/benchmark-history"]`; rules `deletion, non_fast_forward, update`; bypass `["Integration:5001454","RepositoryRole:5"]` | Yes |
+| P5 `benchmark-staging-refs` ruleset | 2026-09-19, `amirbena` (14:40:15Z) | P5 verify loop | id `23700709`, `active`; refs `["refs/heads/claude/benchmark-result-*"]`; rules `deletion, non_fast_forward` (no `creation`, no `update`); bypass `["Integration:5001454","RepositoryRole:5"]` | Yes |
+| P5 `main` ruleset unchanged | re-observed 2026-09-19 | P5 last verify command | id `20558650`; bypass `["Integration:4763596","RepositoryRole:5"]`, no benchmark App; equals the §2 baseline | Yes |
+| P6 tracking + health issues (numbers, unlocked, pinned) | 2026-09-19, `amirbena` (locked and #488 pinned 14:42Z; unlocked 15:05:30Z under A14) | P6 verify commands; the issues' timelines | #486 sentinel, #487 comprehensive, #488 health: each open, labelled `benchmark-tracking`, `locked: false`, canonical A14 body. #488 is pinned and the pinned-issues list is exactly #488: its timeline shows `pinned` 14:42:24Z, `unpinned` 15:09:52Z, `pinned` 15:22:02Z, `unpinned` 15:22:54Z, and `pinned` 15:25:45Z (all by `amirbena`), and it remained pinned when re-observed at 15:27Z | Yes |
+| P7 App comment lifecycle (POST → author → PATCH → DELETE) | 2026-09-19, `amirbena`, on #486 | Amended P7 with an installation token narrowed to `issues: write` | Reported by the maintainer: token minted; POST returned comment id `5742925037`; stored author `benchmark-publication[bot]`, type `Bot`, `author_ok: true`; PATCH returned the same id with body `provisioning check (#484): edited`; DELETE succeeded; no personal credential used. Re-observed read-only: `GET` of that comment answers 404 and #486 has 0 comments | Yes |
+
+Rows marked *maintainer-attested* record checks made during the live provisioning session that cannot be re-observed without the App private key, which was removed after P7 and is not regenerated to re-observe P2.
 
 ### Recorded deviations
 
@@ -355,18 +358,18 @@ not failures to hide, and each names its disposition.
 
 | Step | Performed (date, by) | Verification run | Observed result | Matches expected | Disposition |
 | --- | --- | --- | --- | --- | --- |
-| P7 as first specified (App write to a locked issue) | 2026-09-19, `amirbena` | POST `repos/$R/issues/486/comments` on the locked sentinel tracking issue, with a `benchmark-publication` installation token narrowed to `issues: write`; the token minted successfully and no personal credential was used | `HTTP 403: Unable to create comment because issue is locked`; no comment was created; the token was discarded | **No** — the stop condition above fired | The locked-thread design is replaced by publisher-author filtering (A14, [#489](https://github.com/amirbena/code-review-skill/issues/489); approved on [#466](https://github.com/amirbena/code-review-skill/issues/466#issuecomment-5742792835)). P6 and P7 above are the amended procedure. |
+| P7 as first specified (App write to a locked issue) | 2026-09-19, `amirbena` | POST `repos/$R/issues/486/comments` on the locked sentinel tracking issue, with a `benchmark-publication` installation token narrowed to `issues: write`; the token minted successfully and no personal credential was used | `HTTP 403: Unable to create comment because issue is locked`; no comment was created; the token was discarded | **No** — the stop condition above fired | The locked-thread design is replaced by publisher-author filtering (A14, [#489](https://github.com/amirbena/code-review-skill/issues/489); approved on [#466](https://github.com/amirbena/code-review-skill/issues/466#issuecomment-5742792835)). P6 and P7 above are the amended procedure; the amended P7 passed on 2026-09-19 (P7 row). |
 
 ## 5. Handoffs and open reconciliations
 
 | Item | Owner | State |
 | --- | --- | --- |
 | Tracking-issue label name (`benchmark-tracking`) and label definitions | #469 (F3) | reconciled: the manifest matches P1 |
-| Tracking and health issue numbers | #469 (manifest), #472 (health status) | produced by P6 |
+| Tracking and health issue numbers | #469 (manifest), #472 (health status) | produced by P6: sentinel #486, comprehensive #487, health #488; recorded in the manifest |
 | Secret names `BENCHMARK_APP_ID`, `BENCHMARK_APP_PRIVATE_KEY` (proposed) | #474 (F8) | workflow must match P4 |
 | Publisher-author filtering (A14): marker recognition and status-comment lookup count only comments authored by `<app-slug>[bot]`, on tracking, health, and drift issues | #471 (F5), #472 (F6) | contract landed by #489; implementation and tests pending in #471/#472 |
-| Tracking and health issues created locked under the earlier procedure | maintainer, under #484 | unlock them and replace the bodies (P6), then re-run P7; issue numbers unchanged |
-| `benchmark-history` branch does not exist yet, and `creation` is not restricted by the design table, so the first writer of the branch is whoever pushes it first; the intended first writer is the publisher's first pass | maintainer decision | decide whether to seed the orphan branch at provisioning or add a `creation` rule (a stricter reading than the design table) |
+| Tracking and health issues created locked under the earlier procedure | maintainer, under #484 | done 2026-09-19: unlocked, bodies replaced, amended P7 passed; issue numbers unchanged; #488's pin still to be restored |
+| `benchmark-history` branch does not exist yet, and `creation` is not restricted by the design table, so the first writer of the branch is whoever pushes it first; the intended first writer is the publisher's first pass | maintainer decision | decided 2026-09-19, option (a): leave the branch absent; the publisher's first successful publication creates it. No manual seeding and no `creation` rule. Observed: `main` is the only branch on the remote |
 | `docs/RELEASE.md` documents the release App only as a `main` bypass actor; the live ruleset also lists Admin (E16) | out of scope here | unchanged |
 
 ## 6. Rollback
