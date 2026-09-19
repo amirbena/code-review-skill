@@ -231,17 +231,19 @@ see [`../taxonomy.md`](../../../runtime_platform/benchmark/taxonomy.md) and
 - [`decision-derivation/`](decision-derivation/README.md) — a focused
   `benchmark-case/v2` sub-corpus proving the reverse direction of
   `shared/policies/severity.md`'s mechanical severity → decision
-  derivation: a P2-only, or empty, finding set must always render
-  `clean`, never `changes-required` (Issue
+  derivation, in both directions. A P2-only, or empty, finding set must
+  always render `clean`, never `changes-required` (Issue
   [#450](https://github.com/amirbena/code-review-skill/issues/450),
   regression guard for the closed Issue
   [#449](https://github.com/amirbena/code-review-skill/issues/449) / PR
-  [#452](https://github.com/amirbena/code-review-skill/pull/452)).
-  [#350](https://github.com/amirbena/code-review-skill/issues/350) (open)
-  owns the opposite, forward-direction proof and will add its fixtures to
-  this same directory when it lands. Same format and reference validator;
-  its own README, cases, and unit test
-  ([`../../../tests/unit/benchmark/test_decision_derivation_corpus.py`](../../../tests/unit/benchmark/test_decision_derivation_corpus.py)).
+  [#452](https://github.com/amirbena/code-review-skill/pull/452)); an
+  unambiguous P0/P1 defect must always render a blocking Result and
+  Decision, never a clean one (Issue
+  [#350](https://github.com/amirbena/code-review-skill/issues/350), the
+  `dd-blocking-*` fixtures). Same format and reference validator; its own
+  README, cases, and unit tests
+  ([`../../../tests/unit/benchmark/test_decision_derivation_corpus.py`](../../../tests/unit/benchmark/test_decision_derivation_corpus.py),
+  [`../../../tests/unit/benchmark/test_blocking_verdict_corpus.py`](../../../tests/unit/benchmark/test_blocking_verdict_corpus.py)).
 
 - [`finding-placement/`](finding-placement/README.md) — a focused
   `benchmark-case/v2` sub-corpus proving correct primary fix/action

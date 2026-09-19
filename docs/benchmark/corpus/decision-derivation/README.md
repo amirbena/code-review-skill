@@ -3,44 +3,48 @@
 Repository-development artifact for GitHub Issue
 [#450](https://github.com/amirbena/code-review-skill/issues/450). This is
 a focused [`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md) sub-corpus that
-proves the **reverse direction** of the mechanical severity → decision
-path defined in
+proves both directions of the mechanical severity → decision path defined
+in
 [`../../../../shared/policies/severity.md`](../../../../shared/policies/severity.md),
-"Decision derivation (mechanical)": a **P2-only, or empty, finding set
-must always render `REVIEW CLEAN` (`Approve` on GitHub) — never
-`CHANGES REQUIRED` (`Request Changes`)**.
+"Decision derivation (mechanical)":
+
+- **reverse direction (#450):** a P2-only, or empty, finding set must
+  always render `REVIEW CLEAN` (`Approve` on GitHub) — never
+  `CHANGES REQUIRED` (`Request Changes`);
+- **forward direction
+  ([#350](https://github.com/amirbena/code-review-skill/issues/350)):** a
+  P0/P1 finding must always render `CHANGES REQUIRED` (`Request Changes`)
+  — never `REVIEW CLEAN` (`Approve`).
 
 ## Why this corpus exists
 
 [#350](https://github.com/amirbena/code-review-skill/issues/350) proves
-the normal-path direction end-to-end against the real packaged Skill: a
-real P0/P1 finding must never render a clean verdict. Nothing proved the
-opposite direction until now.
+the normal-path (forward) direction end-to-end against the real packaged
+Skill: a real P0/P1 finding must never render a clean verdict. It is the
+cheapest, highest-signal check for the verdict-drift failure mode raised
+by the review-reliability audit in
+[`../../../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](../../../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md)
+§12.4 ("Benchmark proof"). It is proof only: it builds no enforcement
+mechanism and changes nothing in a live review (the runtime boundary is
+[`../verdict-consistency/`](../verdict-consistency/README.md)'s concern).
+
 [#449](https://github.com/amirbena/code-review-skill/issues/449) (closed,
 fixed by PR #452, "Require an explicit P0/P1 tally before rendering the
-review decision") was a real production instance of exactly that
+review decision") was a real production instance of the opposite,
 reverse-direction failure: a P2-only review rendered `CHANGES REQUIRED`
 because a finding's own strongly-worded recommendation was allowed to
 influence the rendered outcome. #449's fix is already in place (the
 mechanical P0/P1 tally is now a required precondition of rendering a
-decision); this corpus is the end-to-end regression guard that keeps that
-fix proven against the real packaged Skill, not just at the pure-function
-level.
+decision); #450's cases are the end-to-end regression guard that keeps
+that fix proven against the real packaged Skill, not just at the
+pure-function level.
 
-**At the time this corpus was written, [#350](https://github.com/amirbena/code-review-skill/issues/350)
-had not yet landed any fixture**, so there is no sibling `benchmark-case/v2`
-directory for it to sit alongside per the issue's own phrasing ("alongside
-#350's fixture(s)"). Rather than invent a placeholder directory for #350's
-future opposite-polarity cases, this corpus is scoped to #450's own
-requirement only, under its own directory named for the domain both issues
-share (mechanical decision *derivation*, as opposed to
+Both directions live in this one directory because they share one domain
+(mechanical decision *derivation*, as opposed to
 [`../verdict-consistency/`](../verdict-consistency/README.md)'s downstream
 *rendering-consistency* domain — see "Distinguishing this corpus" below).
-When #350 lands, its blocking-direction fixtures belong in this same
-`decision-derivation/` directory (same domain, opposite polarity), not a
-second directory — this README should be updated at that point to
-document both directions side by side, the same way sibling corpora
-document multiple outcome shapes in one place.
+Fixture-name prefixes tell them apart: `dd-blocking-*` is #350's, every
+other `dd-*` fixture is #450's.
 
 ## Why this *is* a `benchmark-case/v2` corpus
 
@@ -66,9 +70,18 @@ and the root corpus use.
     #449 — while its severity stays `P2`
     (`dd-p2-only-urgent-wording.yaml`);
   - an empty finding set (`dd-zero-findings-clean.yaml`).
-- **Each case still expects `decision: clean`.** The point of this corpus
-  is that severity, not wording or finding count, is the only thing that
-  can move the decision — see
+- **One case per blocking severity (#350).** Each carries one
+  unambiguous, unarguable defect and expects `decision: changes-required`:
+  a textbook SQL injection (P0, `dd-blocking-p0-sql-injection.yaml`) and
+  an inverted-operand functional bug (P1,
+  `dd-blocking-p1-inverted-error-rate.yaml`, which permits `[P0, P1]` —
+  both derive the same blocking decision). Each also carries an optional
+  missing-test finding so a correct extra finding is not scored as
+  unexpected.
+- **The #450 cases expect `decision: clean`; the #350 cases expect
+  `changes-required`.** The point of the corpus is that severity, not
+  wording or finding count, is the only thing that can move the decision —
+  see
   [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §7's mechanical
   derivation and §11 rule 11's fail-closed check that a fixture's own
   `decision` is consistent with it.
@@ -77,8 +90,8 @@ and the root corpus use.
   sibling sub-corpora reuse a narrow domain to stay small while still
   isolating each outcome shape.
 - **Intentionally small.** Three cases are the smallest representative set
-  for #450's three named outcome shapes; this is not a general P2-finding
-  quality corpus (that breadth is the root corpus's and
+  for #450's three named outcome shapes and two for #350's two blocking
+  severities; this is not a general finding-quality corpus (that breadth is the root corpus's and
   [`../candidate-finding-validation/`](../candidate-finding-validation/README.md)'s
   job).
 
@@ -89,19 +102,20 @@ and the root corpus use.
 | [`dd-p2-only-mild-wording.yaml`](dd-p2-only-mild-wording.yaml) | P2-only, plain wording | report **one P2** (a duplicated constant) and still return `clean` | `clean` |
 | [`dd-p2-only-urgent-wording.yaml`](dd-p2-only-urgent-wording.yaml) | P2-only, deliberately urgent/blocking-sounding wording (#449's regression shape) | report **one P2** whose claim text reads as urgent ("CRITICAL", "must be fixed before merge", "blocking violation") and still return `clean` — wording never independently produces a blocking decision | `clean` |
 | [`dd-zero-findings-clean.yaml`](dd-zero-findings-clean.yaml) | zero findings | report **nothing** and return `clean` | `clean` |
+| [`dd-blocking-p0-sql-injection.yaml`](dd-blocking-p0-sql-injection.yaml) | unambiguous P0 (SQL injection) | report the **P0** and render the blocking Result and Decision | `changes-required` |
+| [`dd-blocking-p1-inverted-error-rate.yaml`](dd-blocking-p1-inverted-error-rate.yaml) | unambiguous P1 (inverted division operands) | report the **P0/P1** and render the blocking Result and Decision | `changes-required` |
 
 Per-case provenance and rationale also live in each fixture's `metadata`
 block (`source`, `tags`, `rationale`).
 
 ## Distinguishing this corpus
 
-- **From [#350](https://github.com/amirbena/code-review-skill/issues/350)
-  (opposite polarity).** #350 proves a real P0/P1 finding must never
-  render clean — the forward direction. This corpus proves the reverse: a
-  P2-only or empty finding set must never render blocking. A regression in
-  #350's (future) fixtures means a real defect got waved through; a
-  regression here means a non-blocking or absent finding got blocked
-  anyway — the exact #449 failure mode.
+- **#350 vs #450 (opposite polarity, same directory).** #350's
+  `dd-blocking-*` cases prove a real P0/P1 finding must never render
+  clean; #450's other cases prove a P2-only or empty finding set must
+  never render blocking. A regression in #350's cases means a real defect
+  got waved through; a regression in #450's means a non-blocking or absent
+  finding got blocked anyway — the exact #449 failure mode.
 - **From [`../verdict-consistency/`](../verdict-consistency/README.md)
   (#377/#378, downstream-consistency enforcement).** That corpus takes an
   **already-finalized, correct** mechanical decision as ground truth and
@@ -119,7 +133,14 @@ block (`source`, `tags`, `rationale`).
 ```sh
 python3 runtime_platform/benchmark/scripts/run_benchmark.py --corpus-dir docs/benchmark/corpus/decision-derivation
 python3 -m unittest tests.unit.benchmark.test_decision_derivation_corpus
+python3 -m unittest tests.unit.benchmark.test_blocking_verdict_corpus
 ```
+
+`run_benchmark.py` scores findings against each fixture; the rendered
+Result/Decision assertion below is what
+`test_blocking_verdict_corpus` adds. It exits non-zero before touching any
+case when the review runtime is unavailable, so a missing runtime is never
+read as a clean result.
 
 ## On Skill coverage (local-code-review and github-pr-review)
 
@@ -148,16 +169,25 @@ benchmark-runtime work, not part of #450's scope (#450 does not touch
 severity.md's derivation rule or the P0/P1/P2 model, and does not build a
 second runtime adapter).
 
+#350's proof has the same boundary. `local-code-review` is the only Skill
+run live; `github-pr-review`'s non-approve outcome is covered at the
+rendered-label level instead. The same check
+(`benchmark_blocking_verdict.classify_rendered_label`) recognizes the
+GitHub vocabulary (`Request Changes` / `REQUEST_CHANGES` as blocking,
+`Approve` / `APPROVE` as clean), and the unit tests assert a P0/P1 finding
+paired with an `Approve`/`APPROVE` signal is a violation. A live
+`github-pr-review` run stays future benchmark-runtime work.
+
 ## Validation
 
 [`../../../../tests/unit/benchmark/test_decision_derivation_corpus.py`](../../../../tests/unit/benchmark/test_decision_derivation_corpus.py)
 loads every fixture here through the single reference validator
 [`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
-— it never defines a second one — and asserts: the three named outcome
-shapes are present; every fixture's required findings are `P2` only (no
-`P0`/`P1` anywhere in this corpus, since that is the opposite-polarity
-concern #350 owns); every fixture's `decision` is the mechanically
-consistent `clean`; and the urgent-wording fixture's `claim` text actually
+— it never defines a second one — and asserts, for the `dd-*` fixtures
+that are not `dd-blocking-*`: the three named outcome
+shapes are present; every fixture's required findings are `P2` only (the
+`P0`/`P1` cases are #350's, below); every fixture's `decision` is the
+mechanically consistent `clean`; and the urgent-wording fixture's `claim` text actually
 carries alarming/blocking-sounding language, so the case cannot silently
 regress into an unremarkable P2. The same test module also drives every
 fixture through the real packaged Skill end-to-end via
@@ -170,3 +200,31 @@ rendered decision derived from the real produced findings
 (`tests/reference/review/decision_semantics.derive_decision`) is
 `Decision.CLEAN` for every case. Peer review of the expected findings
 themselves happens on the pull request.
+
+### Blocking-verdict validation (#350)
+
+[`../../../../tests/unit/benchmark/test_blocking_verdict_corpus.py`](../../../../tests/unit/benchmark/test_blocking_verdict_corpus.py)
+covers the `dd-blocking-*` fixtures through the same single validator. It
+asserts each expects `changes-required` with a required P0/P1 finding,
+that both severities are represented, that anchors occur in the patch, and
+that each patch applies in an isolated workspace.
+
+The rendered-verdict assertion is
+[`../../../../runtime_platform/benchmark/reference/benchmark_blocking_verdict.py`](../../../../runtime_platform/benchmark/reference/benchmark_blocking_verdict.py)'s
+`check_blocking_verdict`: when any produced finding is P0/P1, **both** the
+report's `**Result:**` label and its `### Decision` label (extracted by
+`benchmark_review_adapter.parse_rendered_outcome` from the adapter's
+retained `last_report`) must classify as blocking. A clean, incomplete,
+missing, or ambiguous label is a violation. The severity → decision step
+reuses `decision_semantics.derive_decision` — no second derivation path.
+
+The live class runs each case through the real packaged Skill under the
+same `check_runtime_available` gate as above (skipped with the reason
+printed when the runtime is unavailable, never a fabricated pass). Once the
+runtime is available it fails, rather than passes, if a case errors or if
+the reviewer produces no P0/P1 for these unambiguous defects — otherwise
+the proof would be vacuous. A stub-CLI class exercises the same
+adapter/runner/parser/check path without the runtime and proves a P0 paired
+with `REVIEW CLEAN` fails the check. A run that legitimately renders
+`REVIEW INCOMPLETE` (coverage incomplete) also fails: on these small
+patches that outcome is itself unexpected.

@@ -7,8 +7,9 @@ The sub-corpus is
 focused set of ``benchmark-case/v2`` fixtures pinning the *reverse*
 direction of ``shared/policies/severity.md``'s mechanical severity →
 decision derivation — a P2-only, or empty, finding set must always render
-`clean`, never `changes-required`. Issue #350 (open) owns the opposite,
-forward-direction proof; this sub-corpus never duplicates it.
+`clean`, never `changes-required`. The `dd-blocking-*` fixtures in the same
+directory are the opposite, forward-direction proof (Issue #350) and are
+covered by ``test_blocking_verdict_corpus.py``; this module excludes them.
 
 Like ``test_database_migration_deepening_corpus.py`` and
 ``test_distributed_systems_deepening_corpus.py``, every fixture decodes
@@ -52,7 +53,7 @@ MAX_CASES = 3
 
 
 def _corpus_files() -> list:
-    return sorted(CORPUS_DIR.glob("*.yaml"))
+    return sorted(p for p in CORPUS_DIR.glob("*.yaml") if not p.name.startswith("dd-blocking-"))
 
 
 def _load(path) -> dict:

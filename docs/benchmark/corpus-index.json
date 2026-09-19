@@ -51,6 +51,8 @@
       "database-migration-deepening-unsafe-online-blocking-lock"
     ],
     "decision-derivation": [
+      "dd-blocking-p0-sql-injection",
+      "dd-blocking-p1-inverted-error-rate",
       "dd-p2-only-mild-wording",
       "dd-p2-only-urgent-wording",
       "dd-zero-findings-clean"
@@ -233,6 +235,8 @@
       "security-deepening-single-caller-check-enforced-clean"
     ],
     "severity": [
+      "dd-blocking-p0-sql-injection",
+      "dd-blocking-p1-inverted-error-rate",
       "dd-p2-only-mild-wording",
       "dd-p2-only-urgent-wording",
       "dd-zero-findings-clean"
@@ -318,6 +322,7 @@
       "database-migration-deepening-mongodb-document-shape-rename",
       "database-migration-deepening-nullable-to-non-null-no-backfill",
       "database-migration-deepening-unsafe-online-blocking-lock",
+      "dd-blocking-p1-inverted-error-rate",
       "dependency-supply-chain-deepening-major-version-breaking-api-change",
       "dependency-supply-chain-deepening-no-manifest-touched-not-implicated-clean",
       "dependency-supply-chain-deepening-runtime-minimum-raised",
@@ -413,6 +418,7 @@
       "cfv-valid-defect-severity-downgrade",
       "consolidation-rereview-reconciles-to-authoritative",
       "consolidation-shared-validator-many-call-paths",
+      "dd-blocking-p0-sql-injection",
       "risk-depth-auth-signal-deep",
       "risk-depth-elevated-escalation-deep",
       "risk-depth-large-multiarea-partitioning",
@@ -463,6 +469,8 @@
       "database-migration-deepening-mongodb-document-shape-rename",
       "database-migration-deepening-nullable-to-non-null-no-backfill",
       "database-migration-deepening-unsafe-online-blocking-lock",
+      "dd-blocking-p0-sql-injection",
+      "dd-blocking-p1-inverted-error-rate",
       "dd-p2-only-mild-wording",
       "dd-p2-only-urgent-wording",
       "dd-zero-findings-clean",
