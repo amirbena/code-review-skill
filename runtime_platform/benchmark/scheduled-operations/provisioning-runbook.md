@@ -78,9 +78,9 @@ Verify — **expected** `["benchmark-missed-run","benchmark-regression","benchma
 gh label list --repo $R --limit 200 --json name --jq '[.[].name | select(test("^(benchmark-(regression|missed-run|tracking)|keep-open)$"))] | sort'
 ```
 
-`benchmark-tracking` is a **proposed** name: the tracking-issue label is not
-fixed by any landed contract, and its final name is owned by #469 (F3). Rename
-(`gh label edit`) before F8 if #469 chooses differently.
+The four names, colors, and descriptions above are the manifest's `labels`
+([`../schedule-spec.md`](../schedule-spec.md) §3, #469); a test keeps these
+commands in step with it.
 
 ### P2. Register the App
 
@@ -320,7 +320,7 @@ is filled the step is *not* complete, and #473's acceptance criteria are not met
 
 | Item | Owner | State |
 | --- | --- | --- |
-| Tracking-issue label name (`benchmark-tracking` proposed) and label definitions | #469 (F3) | reconcile against P1 |
+| Tracking-issue label name (`benchmark-tracking`) and label definitions | #469 (F3) | reconciled: the manifest matches P1 |
 | Tracking and health issue numbers | #469 (manifest), #472 (health status) | produced by P6 |
 | Secret names `BENCHMARK_APP_ID`, `BENCHMARK_APP_PRIVATE_KEY` (proposed) | #474 (F8) | workflow must match P4 |
 | `benchmark-history` branch does not exist yet, and `creation` is not restricted by the design table, so the first writer of the branch is whoever pushes it first; the intended first writer is the publisher's first pass | maintainer decision | decide whether to seed the orphan branch at provisioning or add a `creation` rule (a stricter reading than the design table) |

@@ -91,11 +91,11 @@ maximum gap.
   each month, giving gaps of 1–3 days. The contract is therefore the
   **maximum gap** above; the intended cadence is recorded as text, with
   `max_gap_hours` (sentinel 96, comprehensive 192), in the repository-owned
-  schedule spec.
+  schedule spec ([`schedule-spec.md`](schedule-spec.md)).
 - "Friday night" at a 01:00 start is ambiguous (early Friday versus early
   Saturday). The comprehensive schedule names the **Israel-local weekday on
-  which its 01:00 start falls**; that weekday is fixed in the schedule spec
-  and the Routine configuration, never described as a bare "Friday night".
+  which its 01:00 start falls**; that weekday (Friday) is fixed in the schedule
+  spec and the Routine configuration, never described as a bare "Friday night".
 - The **04:00 maximum-completion window is a target, not a promise**: it is
   unmeasured against ~106 sequential invocations plus confirmation re-runs,
   and is to be measured before it is relied on.
