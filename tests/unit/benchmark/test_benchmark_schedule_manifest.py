@@ -27,6 +27,14 @@ def _provisioned() -> dict:
     return manifest
 
 
+def _unprovisioned() -> dict:
+    manifest = _manifest()
+    manifest["lanes"]["sentinel"]["tracking_issue"] = None
+    manifest["lanes"]["comprehensive"]["tracking_issue"] = None
+    manifest["health_issue"] = None
+    return manifest
+
+
 class CommittedManifestTests(unittest.TestCase):
     def test_committed_manifest_is_valid(self) -> None:
         self.assertEqual(sm.validate_manifest(_manifest()), [])
@@ -57,8 +65,12 @@ class CommittedManifestTests(unittest.TestCase):
         self.assertEqual(names["keep-open"], bd.KEEP_OPEN_LABEL)
         self.assertEqual(names["missed-run"], "benchmark-missed-run")
 
+    def test_committed_manifest_is_provisioned(self) -> None:
+        self.assertEqual(sm.validate_manifest(_manifest(), require_provisioned=True), [])
+
     def test_unprovisioned_manifest_fails_closed_only_when_required(self) -> None:
-        errors = sm.validate_manifest(_manifest(), require_provisioned=True)
+        self.assertEqual(sm.validate_manifest(_unprovisioned()), [])
+        errors = sm.validate_manifest(_unprovisioned(), require_provisioned=True)
         self.assertEqual(len(errors), 3)
         self.assertEqual(sm.validate_manifest(_provisioned(), require_provisioned=True), [])
 
@@ -156,8 +168,16 @@ class CliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("valid", out)
 
-    def test_require_provisioned_exits_nonzero_on_committed_manifest(self) -> None:
-        code, _, err = self._run("validate", "--require-provisioned")
+    def test_require_provisioned_passes_on_committed_manifest(self) -> None:
+        code, out, _ = self._run("validate", "--require-provisioned")
+        self.assertEqual(code, 0)
+        self.assertIn("valid", out)
+
+    def test_require_provisioned_exits_nonzero_on_unprovisioned_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "m.json"
+            path.write_text(json.dumps(_unprovisioned()), encoding="utf-8")
+            code, _, err = self._run("validate", "--manifest", str(path), "--require-provisioned")
         self.assertEqual(code, 1)
         self.assertIn("not provisioned", err)
 

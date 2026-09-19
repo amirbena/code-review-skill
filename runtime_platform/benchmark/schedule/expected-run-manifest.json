@@ -13,7 +13,7 @@
       },
       "target_completion_local": "04:00",
       "max_gap_hours": 96,
-      "tracking_issue": null
+      "tracking_issue": 486
     },
     "comprehensive": {
       "mode": "comprehensive",
@@ -25,10 +25,10 @@
       },
       "target_completion_local": "04:00",
       "max_gap_hours": 192,
-      "tracking_issue": null
+      "tracking_issue": 487
     }
   },
-  "health_issue": null,
+  "health_issue": 488,
   "confirmation": {
     "reruns": 2,
     "threshold": 2,
