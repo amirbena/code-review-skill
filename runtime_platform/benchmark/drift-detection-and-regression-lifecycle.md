@@ -21,6 +21,19 @@ the [#54](https://github.com/amirbena/code-review-skill/issues/54)/[#55](https:/
 metrics **unchanged** — it does not redefine matching, counting, or
 severity-accuracy logic.
 
+> **Amended by [#467](https://github.com/amirbena/code-review-skill/issues/467)**
+> (Epic [#466](https://github.com/amirbena/code-review-skill/issues/466); design
+> record [#464](https://github.com/amirbena/code-review-skill/issues/464),
+> [`scheduled-operations/`](scheduled-operations/README.md), amendments A1–A13
+> in [`contract-reconciliation.md`](scheduled-operations/contract-reconciliation.md)).
+> Amended sections carry their IDs — **A4** per-run markers, **A8** evaluation
+> order, in-run confirmation and the publisher boundary, **A9** lane-scoped
+> resolution, **A10** label prerequisites and recurrence. Drift types,
+> tolerance, fingerprint, hidden-marker identity, `keep-open`, and the
+> machine-readable metadata are unchanged. `benchmark_drift.py` still
+> implements the pre-amendment behavior until the implementation issues of
+> Epic #466 land, and those issues cite this text.
+
 ## Non-goals
 
 - Benchmark execution, scheduling, or history persistence — owned
@@ -34,14 +47,22 @@ severity-accuracy logic.
 
 ## 1. Inputs
 
-Exactly two comparable persisted runs, in the shapes
+Exactly two comparable runs of **one lane** (A8), evaluated **during the run
+on the execution side** — not as a separate Routine "sync step" over
+hand-prepared files — from the shapes
 [`nightly-history-and-baseline.md`](nightly-history-and-baseline.md) §3–§5
-already produce:
+define:
 
-- `baseline` — `benchmark_history.py show-baseline`'s artifact (a
+- `baseline` — the record the lane's baseline pointer names (a
   `regression-report.md` §2 `BaselineArtifact`: `results`, `corpus_id`,
-  `adapter_id`).
-- `candidate` — the newest `history/<date>-<sha>.json` entry's `results`.
+  `adapter_id`), read read-only.
+- `candidate` — the current run's own per-case results, the `cases[]` of the
+  canonical result being produced, restricted to the cases that are
+  comparable (matching `fixture_digest`, `nightly-history-and-baseline.md`
+  §3.2). Because `cases[]` carries exactly the per-case metrics and severity
+  `classify_drift` consumes, drift derives from the record itself. A
+  `bootstrap` baseline, or a case listed `incomparable`, produces no drift
+  record.
 
 Both are joined by case `id` exactly as
 [`regression-report.md`](regression-report.md) §3–§4 already defines —
@@ -99,6 +120,30 @@ reaches the issue lifecycle (§4).
   is handled by the lifecycle's auto-resolution in §4, not as a new
   drift record).
 
+### 2.1 Confirmed drift (A8)
+
+[`runtime-execution-contract.md`](runtime-execution-contract.md) §2.2 requires
+the pipeline to evaluate *confirmed* drift, and a model-backed reviewer is
+nondeterministic, so a single observation is not issue-worthy. **Confirmation
+is performed on the execution side, inside the run, before sealing.** For each
+classified drift, only that case is re-run through the existing `selected`
+mode up to a configured number of additional times; every observation is
+re-classified with the same unchanged `classify_drift`; a fingerprint is
+**confirmed** when it appears in at least a configured threshold of the
+observations. The number of drifting cases confirmed per run is bounded — more
+than the bound marks the run systemic and stops confirming — and drift left
+unconfirmed when the run's time budget ends is recorded as such and
+re-evaluated next run. The parameters (re-runs, threshold, per-run cap) live in
+the repository-owned schedule spec; the protocol and the values recommended
+for it are in
+[`scheduled-operations/drift-issue-lifecycle-and-recovery.md`](scheduled-operations/drift-issue-lifecycle-and-recovery.md)
+§2.
+
+A drift seen but not confirmed is recorded as unconfirmed, counted as a flake
+signal, and **never published as an issue**. Confirmation adds a
+pre-publication gate to §2–§4; it does not change the drift types, the
+fingerprint, or the tolerance.
+
 ## 3. Stable regression fingerprinting
 
 ```text
@@ -147,6 +192,13 @@ full-text search ranking. A human is free to edit the visible title/body
 prose (e.g. to add commentary) without breaking dedup, as long as the
 marker line survives.
 
+**Per-run marker (A4).** Issue identity is the fingerprint marker above,
+unchanged. Every comment the publisher posts additionally carries a second
+hidden marker, `<!-- benchmark-applied:<run_id>:<fingerprint> -->`, and before
+commenting the publisher scans the issue's comments for it. That is what makes
+a retried publication a no-op: one run applies to one issue at most once, and
+a retry that finds its marker does nothing.
+
 ### 4.2 Finding candidate issues cheaply, without free-text search
 
 Every issue this document opens or updates carries the label
@@ -167,21 +219,51 @@ requested — proof nothing was left out — up to a fixed safety ceiling
 (`MAX_ISSUE_LIST_LIMIT`) past which it raises rather than looping forever
 against a pathological response.
 
+**Labels are a provisioning prerequisite (A10).** `benchmark-regression`,
+`keep-open`, `benchmark-missed-run`, and the tracking-issue label do not
+exist until a maintainer creates them at provisioning. The publisher has no
+label-creation capability and **fails closed at start-up** if a required
+label is missing; a drift issue is never opened without its label.
+
 ### 4.3 Transitions
 
-For the drift records classified from the current comparison (§2) and the
-map from §4.2:
+For the **confirmed** drift records (§2.1) classified from the current
+comparison, and the map from §4.2:
 
 | Situation | Action |
 | --- | --- |
-| A fingerprint with **no** matching open issue | **Open** one issue: title is human-readable (`Benchmark drift: <case_id> — <drift_type>`, informational only, never matched against); body starts with the §4.1 marker, then a short description, then the §5 machine-readable metadata block; labeled `benchmark-regression`. |
-| A fingerprint that **matches** an already-open issue | **Append a dated comment** to that issue with the current run's metadata (§5) and an updated "still reproducing" note. Never open a second issue for the same fingerprint. |
-| A previously open, fingerprinted issue whose fingerprint is **absent** from the current drift set | The regression no longer reproduces: **append a resolution comment** and **close** the issue — unless §4.4's override applies. |
-| A drift record that is noise (§2) | No action of any kind — it never reaches this table because it is never classified into a drift record in the first place. |
+| A fingerprint with **no** matching open issue | **Open** one issue: title is human-readable (`Benchmark drift: <case_id> — <drift_type>`, informational only, never matched against); body starts with the §4.1 marker, then a short description, then the §5 machine-readable metadata block; labeled `benchmark-regression`. If a *closed* issue carries the same fingerprint, the new issue links it (`Recurrence of #N`) — see §4.3.2. |
+| A fingerprint that **matches** an already-open issue | **Append a dated comment** to that issue with the current run's metadata (§5) and an updated "still reproducing" note, guarded by the per-run marker (§4.1). Never open a second issue for the same fingerprint. |
+| A previously open, fingerprinted issue whose case is currently covered by **at least one** scheduled lane, where the fingerprint is **absent** from `drift.confirmed[]` of **every** such lane (§4.3.1); an issue no lane currently covers is left as is | The regression no longer reproduces: **append a resolution comment** and **close** the issue — unless §4.4's override applies. |
+| Drift that is noise (§2), unconfirmed (§2.1), or seen against a `bootstrap` baseline or an `incomparable` case | No action of any kind — it never reaches this table, and it neither opens, comments on, nor closes anything. |
 
-Exactly one issue exists per fingerprint at any time: §4.2's map is keyed
-by fingerprint, so a fingerprint already open is always routed to the
-comment branch, never the create branch.
+Exactly one issue is open per fingerprint at any time: §4.2's map is keyed by
+fingerprint, so a fingerprint already open is always routed to the comment
+branch, never the create branch.
+
+#### 4.3.1 Resolution is scoped by lane coverage (A9)
+
+An open issue for case *C* is closed only when, for **every scheduled lane
+whose latest published record covers *C*** — *C* is in that record's evaluated
+scope **and** comparable — that record's `drift.confirmed[]` does not contain
+the fingerprint. If no lane currently covers *C*, the issue is left as is.
+Consequences:
+
+- A sentinel record can never close an issue for a comprehensive-only case.
+- An issue for a canonical case (covered by both lanes) stays open until
+  *both* lanes have stopped reproducing it — at most one comprehensive cycle
+  later.
+- A record that is unverified, unpublished, or not `compared` resolves
+  nothing.
+
+#### 4.3.2 Recurrence after closure (A10)
+
+A recurrence while an issue is open is a comment (§4.3). A recurrence **after
+closure** opens a **new** issue that links the previous one (`Recurrence of
+#N`), found by a bounded listing of closed `benchmark-regression` issues and
+a marker match. The publisher does **not** reopen a closed issue: it carries a
+resolution comment and possibly a maintainer's triage, and the cost of a new
+issue is one extra issue per genuine recurrence.
 
 ### 4.4 Maintainer override: `keep-open`
 
@@ -192,7 +274,9 @@ issue is **left open** and **not commented on for resolution** — a human
 relabeled it to say "investigate further before closing," and that
 decision is authoritative until they remove the label themselves. This is
 the only escape hatch from auto-closure; it is never bypassed by any
-other signal (recurrence count, elapsed time, or drift severity).
+other signal (recurrence count, elapsed time, or drift severity). Only users
+with triage rights can apply the label, so it only ever *prevents* a close;
+it cannot cause a mutation.
 
 ## 5. Machine-readable metadata
 
@@ -212,47 +296,69 @@ scraping:
 }
 ```
 
-`baseline`/`candidate` `date`/`repo_sha` are read straight from the #338
-history entries (`nightly-history-and-baseline.md` §3.2) — this document
-never computes or guesses either value.
+`baseline`/`candidate` `date`/`repo_sha` are read straight from the baseline
+record and the sealed result (`nightly-history-and-baseline.md` §3.2) — this
+document never computes or guesses either value.
 
-## 6. The GitHub-mutation boundary is thin and injectable
+**Extended by A4.** Every create and comment the publisher posts also carries
+`lane`, `run_id`, a commit-pinned permalink to the sealed record, and a
+commit-pinned permalink to the baseline record it was compared against, and —
+when the sealed record's `drift.attribution` is `runtime-changed` (the model
+or runtime version differs from the baseline's) — says so. The link names the
+*exact* evidence, so a later record or a baseline promotion cannot change what
+an issue points at. `runtime-changed` never suppresses an issue: hiding it
+would hide a real regression.
 
-`runtime_platform/benchmark/scripts/benchmark_drift.py` defines a small `GitHubIssueClient`
-protocol (`list_labeled_issues`, `create_issue`, `comment`, `close`) and
-one real implementation, `GhCliIssueClient`, that shells out to `gh` —
-the same pattern `runtime_platform/benchmark/scripts/run_benchmark_routine.py::_post_evidence`
-already established for this repository's benchmark tooling (temp-file
-bodies via `--body-file`, `gh issue create`/`comment`, return codes
-surfaced as errors). No new GitHub-mutation library or pattern is
-introduced. `sync_regressions` (the lifecycle orchestrator, §4) takes a
-`GitHubIssueClient` as a parameter and never imports or constructs
-`GhCliIssueClient` itself, so every test in
+## 6. The GitHub-mutation boundary is thin, injectable, and on the publication side (A8)
+
+Drift **classification** stays on the execution side (§1–§3, §2.1) and its
+outcome is sealed into the run's canonical result. The lifecycle in §4 is
+executed by the **publisher** — the deterministic publication step that runs
+after the seal — which consumes the sealed record's `drift.confirmed[]` and
+fingerprints and **never recomputes them**. `sync_regressions` and the `gh`
+client therefore move out of the Routine into the publisher, whose import graph
+excludes the benchmark entrypoint, the reviewer adapter, and `classify_drift`
+(enforced by a policy test,
+[`scheduled-operations/publication-architecture.md`](scheduled-operations/publication-architecture.md)
+§5). Classification, drift types, tolerance, and fingerprint are unchanged.
+
+The mutation boundary itself stays small and injectable.
+`runtime_platform/benchmark/scripts/benchmark_drift.py` defines a small
+`GitHubIssueClient` protocol (`list_labeled_issues`, `create_issue`,
+`comment`, `close`) and one real implementation, `GhCliIssueClient`, that shells
+out to `gh` (temp-file bodies via `--body-file`, `gh issue create`/`comment`,
+return codes surfaced as errors); under this amendment the real client
+authenticates as the `benchmark-publication` App inside the publication job,
+never as the maintainer's personal identity. `sync_regressions` (the lifecycle
+orchestrator, §4) takes a `GitHubIssueClient` as a parameter and never imports
+or constructs `GhCliIssueClient` itself, so every test in
 [`../../tests/unit/benchmark/test_benchmark_drift.py`](../../tests/unit/benchmark/test_benchmark_drift.py)
 runs against an in-memory fake client and makes zero network calls.
+runs against an in-memory fake client and makes zero network calls.
 
-## 7. Two-lane operation (#431) — verified, not redesigned
+## 7. Two-lane operation (#431) — lifecycle corrected (A9)
 
-#431 split scheduled execution into a sentinel lane (every 3 days) and a
-comprehensive lane (weekly) with independently keyed baselines
-(`nightly-history-and-baseline.md` §4). This section records the
-verification #431's acceptance criteria require — that this document's
-existing lifecycle produces correct, non-cross-comparing signals for both
-lanes — and the two bounded consequences of that verification. Nothing in
-§1–§6 above changed.
+#431 split scheduled execution into a sentinel lane and a comprehensive lane
+with independently keyed baselines (`nightly-history-and-baseline.md` §4).
+Its acceptance criterion required verifying that this document produces
+correct, non-cross-comparing signals for both lanes. That verification was
+**incomplete and is corrected here**: the statement held for comparison and
+classification, not for the issue lifecycle.
 
-- **No cross-lane comparison is possible.** `classify_drift` (§1–§2) is
-  handed a `baseline`/`candidate` metrics+severity pair already extracted
-  from one lane's history/baseline files; whichever script prepares those
-  files for a given Cloud Routine run reads that lane's own baseline
-  (`benchmark_history.py show-baseline --lane sentinel` or `--lane
-  comprehensive`), never the other lane's. `benchmark_drift.py` itself
-  performs no `corpus_id` check — that guard lives in `compare()`
-  (`benchmark_report.py`, `nightly-history-and-baseline.md` §3.2) one
-  layer down, and is unaffected by this document. Run the sentinel lane's
-  comparison and the comprehensive lane's comparison as two separate
-  `detect`/`sync` invocations, one per lane, each fed only that lane's own
-  baseline/candidate pair.
+- **Comparison and classification never cross lanes.** `classify_drift`
+  (§1–§2) is handed a `baseline`/`candidate` pair from one lane's own record
+  and baseline, never the other lane's. `benchmark_drift.py` itself performs
+  no `corpus_id` check — that guard lives in `compare()`
+  (`benchmark_report.py`, `nightly-history-and-baseline.md` §3.2) one layer
+  down. Each lane is evaluated once, separately, against its own baseline.
+- **The lifecycle did not hold to that (A9).** Before this amendment, §4.3
+  closed any open labeled issue whose fingerprint was absent from the current
+  drift set, regardless of which lane produced that set. A sentinel
+  evaluation with zero drift records would therefore close an open issue for a
+  case only the comprehensive lane covers — the sentinel run says nothing about
+  that case. Resolution is now **scoped by lane coverage** (§4.3.1); the
+  "non-cross-comparing" statement is true of `compare()`, not of an unscoped
+  lifecycle.
 - **A shared fingerprint across lanes is intentional, not a defect.** §3's
   fingerprint is `{case_id, drift_type, expected_finding_key}` — it does
   not include a lane identifier. Because the comprehensive lane's
@@ -261,30 +367,29 @@ lanes — and the two bounded consequences of that verification. Nothing in
   *same* `case_id` regressing under both lanes independently produces the
   *same* fingerprint by design: it is the same underlying case behaving
   the same way, observed by two schedules, and correctly dedupes to one
-  GitHub issue rather than two duplicate ones. §5's metadata block already
-  distinguishes which run detected each recurrence via `baseline`/
-  `candidate` `date`/`repo_sha`, so no signal is lost by sharing the
+  GitHub issue rather than two duplicates. §5's metadata block distinguishes
+  which run detected each recurrence, so no signal is lost by sharing the
   issue. Adding a lane discriminator to the fingerprint was considered and
   rejected: it would turn one genuine regression signal into two
   separately-tracked issues for the same case, working against §4.2's own
-  cheap-dedup goal, and is exactly the kind of drift-policy redesign #431
-  and this issue's own Non-goals both forbid.
+  cheap-dedup goal. Coverage-scoped resolution (§4.3.1) is what makes the
+  shared fingerprint safe.
 - **The tracking-issue thread and the regression-issue label are
   different concepts, both already per-run/per-fingerprint.** The Cloud
-  Routine's own evidence tracking Issue (`--evidence-issue`,
-  `cloud-routine-integration.md` §4) is one thread per lane (a maintainer
-  configures a separate `--evidence-issue` for the sentinel schedule and
-  the comprehensive schedule); the `benchmark-regression`-labeled issues
-  this document opens (§4) are keyed by fingerprint, not by lane or by
-  evidence-issue thread, for the reason above. No consumer or doc change
-  beyond this section was required.
+  Routine's evidence tracking issue is one thread per lane
+  (`cloud-routine-integration.md` §4); the `benchmark-regression`-labeled
+  issues this document opens (§4) are keyed by fingerprint, not by lane or
+  by evidence-issue thread, for the reason above.
 
 ## 8. Status and canonical home
 
 This document is the authoritative contract for drift detection and the
-regression-issue lifecycle. `runtime_platform/benchmark/scripts/benchmark_drift.py`
-implements it; `tests/unit/benchmark/test_benchmark_drift.py` proves the
-fingerprinting stability/distinctness and the four lifecycle transitions
+regression-issue lifecycle, **as amended by #467 (A4, A8, A9, A10)**.
+`runtime_platform/benchmark/scripts/benchmark_drift.py` implements the
+pre-amendment shape and is brought to this text by the implementation issues
+of Epic [#466](https://github.com/amirbena/code-review-skill/issues/466);
+`tests/unit/benchmark/test_benchmark_drift.py` proves the fingerprinting
+stability/distinctness and the four pre-amendment lifecycle transitions
 against a fixed baseline+candidate pair (open, dedupe-comment, keep-open
 override, close-on-resolution) plus the noise-never-triggers-an-issue
 guarantee. A conflict discovered later is resolved by updating this

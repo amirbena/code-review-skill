@@ -22,12 +22,13 @@ and no Skill launches either.
 ## Two scheduled execution lanes (#431)
 
 The **4 cases in this directory** (below) are the permanent **sentinel**
-corpus — never rotated, sampled, or Top-K'd — scheduled every 3 days. The
+corpus — never rotated, sampled, or Top-K'd — scheduled with a maximum gap
+of 96 h between verified runs. The
 files in this directory **plus every `benchmark-case/v2` fixture in every
 sub-corpus directory listed under "Related sub-corpora"** (excluding a
 handful of test-only/reference-model suites that hold no `benchmark-
 case/v2` fixtures at all — see below) together form the **comprehensive**
-corpus, scheduled weekly, and discovered *programmatically* by
+corpus, scheduled with a maximum gap of 8 days, and discovered *programmatically* by
 `runtime_platform/benchmark/scripts/benchmark_corpus_membership.py` — never a hard-coded
 count. Both lanes execute through the same `run_benchmark_routine.py`
 Class 2 Cloud Routine vehicle, with independently keyed history and
