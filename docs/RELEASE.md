@@ -337,18 +337,41 @@ it. Its ordered flow fails closed before publishing if any step fails:
 2. **Preflight** — release-worthy changes since the baseline tag,
    `## Unreleased` has notes, `vX.Y.Z` is a valid, not-yet-existing tag.
 3. Rolls `## Unreleased` into `## vX.Y.Z — <date>`.
-4. Builds **and verifies** both Skill archives (`package-skills.sh all`,
-   `unzip -t`, presence checks).
-5. Commits the generated, rolled changelog directly to `main`
-   (`chore(release): vX.Y.Z [skip ci]`).
-6. Pushes that commit and re-fetches to confirm `origin/main` advanced to
+4. **Stamps** `vX.Y.Z` (as `X.Y.Z`) into the `version:` frontmatter line of
+   both Skills' `SKILL.md`, so the committed files match the release.
+5. Builds **and verifies** both Skill archives (`package-skills.sh all`,
+   `unzip -t`, presence checks, and that each archive's `SKILL.md` version
+   is exactly `X.Y.Z` — a mismatch fails the run before anything is
+   pushed or tagged).
+6. Commits the generated, rolled changelog and the stamped `SKILL.md`
+   files directly to `main` (`chore(release): vX.Y.Z [skip ci]`).
+7. Pushes that commit and re-fetches to confirm `origin/main` advanced to
    exactly that SHA.
-7. Creates an **annotated** `vX.Y.Z` tag at that exact pushed commit.
-8. Pushes the tag.
-9. Creates the GitHub Release from the tag, notes taken from the matching
-   `CHANGELOG.md` section, both verified Skill ZIPs attached.
-10. Verifies the live tag commit, `origin/main`, and the published
+8. Creates an **annotated** `vX.Y.Z` tag at that exact pushed commit.
+9. Pushes the tag.
+10. Creates the GitHub Release from the tag, notes taken from the matching
+    `CHANGELOG.md` section, both verified Skill ZIPs attached.
+11. Verifies the live tag commit, `origin/main`, and the published
     Release's tag and assets all match the release commit.
+
+### Skill archive version
+
+The version authority is the newest `## vX.Y.Z` heading in `CHANGELOG.md`,
+which only the release flow writes (alongside the `vX.Y.Z` tag). Every
+archive `package-skills.sh` / `package-skills.ps1` builds — a release, a
+local build, or the PR `package` job — has its `SKILL.md` frontmatter
+`version` stamped from it, so an archive never reports a stale committed
+value:
+
+- **Release build:** the heading just rolled in step 3 is the planned
+  version, and step 5 verifies the archives against it.
+- **Local / PR build:** the archives report the newest published release
+  version the tree builds on. If the committed `SKILL.md` value differs,
+  packaging prints a note and uses the authority; if `CHANGELOG.md` is
+  missing or has no release heading, packaging fails with no archive.
+- The committed `version:` is only a mirror that step 4 keeps equal to the
+  release; nobody bumps it by hand, and it is unrelated to
+  `metadata/skill.yaml`'s own independently maintained `version`.
 
 The `release-publish` concurrency group serializes publication. The
 release commit is `[skip ci]` and the workflow listens on no tag or

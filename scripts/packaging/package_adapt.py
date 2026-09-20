@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Rewrite shared-links/metadata-paths and validate SKILL.md frontmatter
-for a staged, standalone packaged Skill.
+"""Rewrite shared-links/metadata-paths, stamp the release version, and
+validate SKILL.md frontmatter for a staged, standalone packaged Skill.
 
 Thin CLI entrypoint. The canonical implementation lives in
 ``package_domain/`` (see ``package_domain/__init__.py`` for the map);
@@ -11,6 +11,7 @@ Usage:
     python3 scripts/packaging/package_adapt.py adapt-shared-links <file>
     python3 scripts/packaging/package_adapt.py adapt-metadata-paths <file>
     python3 scripts/packaging/package_adapt.py validate-frontmatter <file> <expected_name>
+    python3 scripts/packaging/package_adapt.py stamp-release-version <file> <changelog>
 """
 
 from __future__ import annotations

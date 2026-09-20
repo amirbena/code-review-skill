@@ -65,6 +65,13 @@ adapt_metadata_paths() {
   python3 "${package_adapt}" adapt-metadata-paths "${metadata_file}"
 }
 
+# Stamps the staged SKILL.md with the release authority's version (the newest
+# `## vX.Y.Z` heading in CHANGELOG.md); fails closed when there is none.
+stamp_release_version() {
+  local skill_md="$1"
+  python3 "${package_adapt}" stamp-release-version "${skill_md}" "${repo_root}/CHANGELOG.md"
+}
+
 package_skill() {
   local package_target="$1"
   local skill_name
@@ -110,6 +117,7 @@ package_skill() {
     adapt_shared_links "${md_file}"
   done < <(find "${stage_dir}" -name '*.md' -print0)
   adapt_metadata_paths "${stage_dir}/metadata/skill.yaml"
+  stamp_release_version "${stage_dir}/SKILL.md"
 
   # --- Validate staged package structure before archiving ---
   if [[ ! -f "${stage_dir}/SKILL.md" ]]; then

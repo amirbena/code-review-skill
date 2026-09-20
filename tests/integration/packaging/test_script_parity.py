@@ -23,6 +23,15 @@ class PackagingScriptParityTests(unittest.TestCase):
         for script in (self.sh, self.ps1):
             self.assertIn("package-manifest.json", script)
 
+    def test_both_scripts_stamp_the_release_version_before_frontmatter_validation(self) -> None:
+        for script, stamp, validate in (
+            (self.sh, "stamp_release_version \"${stage_dir}/SKILL.md\"", "validate_skill_frontmatter \"${stage_dir}/SKILL.md\""),
+            (self.ps1, "Set-ReleaseVersion -SkillMdPath", "Test-SkillFrontmatter -SkillMdPath"),
+        ):
+            self.assertIn("stamp-release-version", script)
+            self.assertIn("CHANGELOG.md", script)
+            self.assertLess(script.index(stamp), script.index(validate))
+
     def test_scripts_do_not_restate_manifest_resources(self) -> None:
         for obsolete_name in (
             "shared_policies",

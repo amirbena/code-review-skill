@@ -768,7 +768,11 @@ to depth 0, its links into `shared/` change from `../../shared/...` to
 `../../../shared/...` to `../shared/...`. Packaging applies exactly that
 narrow, deterministic text substitution across the staged Markdown —
 Skill-internal links are untouched, and the canonical source files remain
-the single source of truth.
+the single source of truth. Packaging also rewrites the shared-resource
+path prefix in the staged `metadata/skill.yaml`, and stamps the staged
+`SKILL.md`'s frontmatter `version` from the newest `## vX.Y.Z` heading in
+`CHANGELOG.md` so an archive never reports a stale committed value (see
+[`RELEASE.md`](RELEASE.md), "Skill archive version").
 
 Repository-development files — `AGENTS.md`, `policies/`, `docs/`
 (including this file and everything under [`features/`](features/README.md)),

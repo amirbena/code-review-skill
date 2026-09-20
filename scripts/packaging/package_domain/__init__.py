@@ -12,6 +12,7 @@ Module map:
 
 - ``adaptation`` — shared-link and metadata-path rewriting for staged Skills
 - ``validation`` — SKILL.md frontmatter structural validation
+- ``version``    — release-version resolution and SKILL.md version stamping
 - ``cli``        — argument parsing shared by both platform scripts
 
 This package does not own the per-Skill package manifest

@@ -199,15 +199,20 @@ jobs:
       - name: Roll CHANGELOG Unreleased into v${{ needs.plan.outputs.version }}
         run: python scripts/release/release_worthiness.py prepare-changelog --version "${{ needs.plan.outputs.version }}"
 
+      # Writes the planned version into both Skills' SKILL.md frontmatter so
+      # the archives built next, and the commit after them, carry it.
+      - name: Stamp the Skill frontmatter version v${{ needs.plan.outputs.version }}
+        run: python scripts/release/release_worthiness.py stamp-skill-version --version "${{ needs.plan.outputs.version }}"
+
       - name: Build and verify Skill archives
-        run: ./scripts/release/verify-skill-archives.sh --build
+        run: ./scripts/release/verify-skill-archives.sh --build --expect-version "${{ needs.plan.outputs.version }}"
 
       - name: Commit release preparation to main
         id: commit
         run: |
           git config user.name "${{ steps.bot-identity.outputs.login }}"
           git config user.email "${{ steps.bot-identity.outputs.email }}"
-          git add CHANGELOG.md
+          git add CHANGELOG.md skills/*/SKILL.md
           git commit -m "chore(release): v${{ needs.plan.outputs.version }} [skip ci]"
           sha="$(git rev-parse HEAD)"
           echo "sha=${sha}" >> "$GITHUB_OUTPUT"

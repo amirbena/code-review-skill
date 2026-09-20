@@ -45,8 +45,8 @@ if ($packageManifest.schema_version -ne 1) {
   exit 1
 }
 
-# Shared-link adaptation, metadata-path adaptation, and SKILL.md
-# frontmatter structural validation are packaging-domain rules shared
+# Shared-link adaptation, metadata-path adaptation, release-version
+# stamping, and SKILL.md frontmatter structural validation are packaging-domain rules shared
 # with scripts/packaging/package-skills.sh; both platform scripts delegate to the
 # single canonical Python implementation in scripts/packaging/package_domain/ (see
 # scripts/packaging/package_adapt.py) instead of restating the rules here.
@@ -68,6 +68,14 @@ function Adapt-SharedLinks {
 function Adapt-MetadataPaths {
   param([string]$MetadataPath)
   & $pythonCommand $packageAdapt adapt-metadata-paths $MetadataPath
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+
+# Stamps the staged SKILL.md with the release authority's version (the newest
+# `## vX.Y.Z` heading in CHANGELOG.md); fails closed when there is none.
+function Set-ReleaseVersion {
+  param([string]$SkillMdPath)
+  & $pythonCommand $packageAdapt stamp-release-version $SkillMdPath (Join-Path $repoRoot "CHANGELOG.md")
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
@@ -122,6 +130,7 @@ function Package-Skill {
     Adapt-SharedLinks -FilePath $_.FullName
   }
   Adapt-MetadataPaths -MetadataPath (Join-Path $stageDir "metadata/skill.yaml")
+  Set-ReleaseVersion -SkillMdPath (Join-Path $stageDir "SKILL.md")
 
   # --- Validate staged package structure before archiving ---
   if (-not (Test-Path (Join-Path $stageDir "SKILL.md") -PathType Leaf)) {
