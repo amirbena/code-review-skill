@@ -82,11 +82,12 @@ def _load_candidates(ports: Ports, config: SweepConfig, prefix: str) -> list[_Ca
 
 
 def _sealed_at(record: Mapping[str, Any] | None) -> datetime:
-    """Parsed, so fractional seconds order correctly; an unreadable stamp sorts first."""
+    """Parsed, so fractional seconds order correctly; an unreadable or offset-less stamp sorts first."""
     try:
-        return datetime.fromisoformat(str((record or {}).get("sealed_at")).replace("Z", "+00:00"))
+        stamp = datetime.fromisoformat(str((record or {}).get("sealed_at")).replace("Z", "+00:00"))
     except ValueError:
-        return datetime.min.replace(tzinfo=timezone.utc)
+        stamp = None
+    return stamp if stamp is not None and stamp.tzinfo is not None else datetime.min.replace(tzinfo=timezone.utc)
 
 
 def _refused(candidate: _Candidate, refusal: Refusal) -> RunOutcome:
@@ -246,4 +247,7 @@ def run_sweep(ports: Ports, config: SweepConfig) -> SweepReport:
             break
         except PublicationFailure as exc:
             report.outcomes.append(RunOutcome(candidate.ref.name, candidate.run_id, FAILED, str(exc)))
+        except Exception as exc:  # noqa: BLE001 - one malformed ref must never stop the rest
+            detail = f"unexpected {type(exc).__name__}: {exc}"
+            report.outcomes.append(RunOutcome(candidate.ref.name, candidate.run_id, FAILED, detail))
     return report

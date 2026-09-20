@@ -197,6 +197,35 @@ class PersistenceTests(unittest.TestCase):
             self.world.seal(record)
         self.assertEqual([o.run_id for o in self.world.sweep().outcomes], [earlier["run_id"], later["run_id"]])
 
+    def test_a_malformed_seal_never_stops_the_sweep(self) -> None:
+        good = make_record(start=_at(17), sha=S2)
+        self.world.seal(good)
+        nested = ("[" * 100_000 + "]" * 100_000).encode()
+        for index, stamp in enumerate(("2026-09-16", "2026-09-16T01:01:01", "not-a-date", 123)):
+            bad = {**make_record(start=_at(18), sha=f"{index:02d}" * 6), "sealed_at": stamp}
+            self.world.seal(bad, data=encode_json(bad))
+        self.world.seal(make_record(start=_at(19), sha=S3), data=nested)
+        report = self.world.sweep()
+        statuses = [o.status for o in report.outcomes]
+        self.assertEqual((statuses.count("published"), statuses.count("refused")), (1, 5))
+        self.assertEqual(_outcome(report, good["run_id"]).status, "published")
+
+    def test_an_unexpected_error_on_one_ref_is_contained(self) -> None:
+        first, second = make_record(start=_at(16), sha=S0), make_record(start=_at(17), sha=S2)
+        for record in (first, second):
+            self.world.seal(record)
+        real = sweep_module.check_record
+
+        def flaky(record: Any, *args: Any) -> Any:
+            if record["run_id"] == first["run_id"]:
+                raise RuntimeError("boom")
+            return real(record, *args)
+
+        with mock.patch.object(sweep_module, "check_record", side_effect=flaky):
+            report = self.world.sweep()
+        self.assertEqual({o.run_id: o.status for o in report.outcomes}, {first["run_id"]: "failed", second["run_id"]: "published"})
+        self.assertIn("unexpected RuntimeError", _outcome(report, first["run_id"]).detail)
+
     def test_a_receipted_run_is_not_regated_by_later_validation_changes(self) -> None:
         self.world.seal(self.base)
         self.world.sweep()

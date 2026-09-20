@@ -73,7 +73,7 @@ the publisher reads it at the ref's tip SHA and treats it as data.
 ## 3. One publication, in order
 
 Refs are processed in ascending `sealed_at` (parsed, so fractional seconds order correctly); a refusal never blocks the next.
-Start-up is fail closed: a manifest that is not provisioned, or a missing label of
+A malformed ref — unreadable or offset-less `sealed_at`, unparsable or absurdly nested JSON, or an unexpected error while processing it — is refused or reported `failed` for that ref alone and never stops the sweep. Start-up is fail closed: a manifest that is not provisioned, or a missing label of
 the four, aborts the whole sweep before any write.
 
 | Step | Does | On failure |

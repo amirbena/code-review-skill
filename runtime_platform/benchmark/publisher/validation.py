@@ -37,7 +37,7 @@ def parse_handoff(data: bytes) -> tuple[dict[str, Any] | None, Refusal | None]:
         return None, Refusal("schema", f"handoff file exceeds {MAX_HANDOFF_BYTES} bytes")
     try:
         record = json.loads(data.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
         return None, Refusal("schema", f"handoff file is not valid JSON: {exc}")
     if not isinstance(record, dict):
         return None, Refusal("schema", "handoff file is not a JSON object")
