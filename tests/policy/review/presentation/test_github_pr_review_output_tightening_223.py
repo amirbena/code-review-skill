@@ -127,15 +127,38 @@ LOCAL_BASELINE_HASHES = {
 }
 
 
-def _git_blob_sha1(path) -> str:
+# The release flow stamps SKILL.md's frontmatter `version:` line (issue #496),
+# so the pin hashes that one line as its baseline value, everything else exact.
+_BASELINE_VERSION_LINE = b"version: 1.50.2"
+
+
+def _with_baseline_version(data: bytes) -> bytes:
+    lines = data.split(b"\n")
+    if lines[0] != b"---" or b"---" not in lines[1:]:
+        return data
+    closing = lines.index(b"---", 1)
+    for index in range(1, closing):
+        if re.match(rb"version:[ \t]*\S+[ \t]*$", lines[index]):
+            lines[index] = _BASELINE_VERSION_LINE
+            break
+    return b"\n".join(lines)
+
+
+def _git_blob_sha1_of(data: bytes) -> str:
     """Reimplements `git hash-object` so the baseline check needs no
     subprocess/git dependency at test time — a pure content hash of the
-    exact bytes on disk, using git's own blob framing."""
+    exact bytes, using git's own blob framing."""
     import hashlib
 
-    data = path.read_bytes()
     header = f"blob {len(data)}\0".encode()
     return hashlib.sha1(header + data).hexdigest()
+
+
+def _git_blob_sha1(path) -> str:
+    data = path.read_bytes()
+    if path.name == "SKILL.md":
+        data = _with_baseline_version(data)
+    return _git_blob_sha1_of(data)
 
 
 def _norm(path) -> str:
@@ -146,6 +169,41 @@ def _norm(path) -> str:
 def _md_or_text_blocks(path) -> list[str]:
     text = path.read_text(encoding="utf-8")
     return re.findall(r"```(?:markdown|text)\n(.*?)\n```", text, re.S)
+
+
+class BaselineVersionNormalizationTests(unittest.TestCase):
+    """The #223 pin ignores only the frontmatter version, never the body."""
+
+    SKILL = b"---\nname: x\nversion: 1.50.2\ndescription: d\n---\nBody.\n"
+
+    def test_a_different_frontmatter_version_hashes_identically(self) -> None:
+        bumped = self.SKILL.replace(b"1.50.2", b"9.9.9")
+        self.assertEqual(
+            _git_blob_sha1_of(_with_baseline_version(bumped)),
+            _git_blob_sha1_of(_with_baseline_version(self.SKILL)),
+        )
+
+    def test_a_body_change_still_changes_the_hash(self) -> None:
+        edited = self.SKILL.replace(b"Body.", b"Body!")
+        self.assertNotEqual(
+            _git_blob_sha1_of(_with_baseline_version(edited)),
+            _git_blob_sha1_of(_with_baseline_version(self.SKILL)),
+        )
+
+    def test_a_frontmatter_change_other_than_version_still_changes_the_hash(self) -> None:
+        edited = self.SKILL.replace(b"description: d", b"description: e")
+        self.assertNotEqual(
+            _git_blob_sha1_of(_with_baseline_version(edited)),
+            _git_blob_sha1_of(_with_baseline_version(self.SKILL)),
+        )
+
+    def test_a_version_line_outside_the_frontmatter_is_not_normalized(self) -> None:
+        body_version = b"---\nname: x\ndescription: d\n---\nversion: 1.50.2\n"
+        bumped = body_version.replace(b"1.50.2", b"9.9.9")
+        self.assertNotEqual(
+            _git_blob_sha1_of(_with_baseline_version(bumped)),
+            _git_blob_sha1_of(_with_baseline_version(body_version)),
+        )
 
 
 class LocalCodeReviewIsProvablyUnaffected(unittest.TestCase):

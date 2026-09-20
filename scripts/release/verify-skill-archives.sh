@@ -13,18 +13,28 @@
 # stays scripts/packaging/package-skills.sh / scripts/packaging/package-skills.ps1.
 #
 # Usage:
-#   scripts/release/verify-skill-archives.sh [--build]
+#   scripts/release/verify-skill-archives.sh [--build] [--expect-version X.Y.Z]
 #
-#   --build   Run `scripts/packaging/package-skills.sh all` first. Without it
-#             the script only verifies archives already present under dist/.
+#   --build                 Run `scripts/packaging/package-skills.sh all` first.
+#                           Without it the script only verifies archives
+#                           already present under dist/.
+#   --expect-version X.Y.Z  Also fail unless every archive's SKILL.md
+#                           frontmatter version is exactly X.Y.Z (the release
+#                           version being published).
 
 set -euo pipefail
 
 build=0
-for arg in "$@"; do
-  case "${arg}" in
-    --build) build=1 ;;
-    *) echo "error: unknown argument: ${arg}" >&2; exit 2 ;;
+expect_version=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --build) build=1; shift ;;
+    --expect-version)
+      if [[ $# -lt 2 || -z "$2" ]]; then
+        echo "error: --expect-version requires a value" >&2; exit 2
+      fi
+      expect_version="$2"; shift 2 ;;
+    *) echo "error: unknown argument: $1" >&2; exit 2 ;;
   esac
 done
 
@@ -60,5 +70,9 @@ for name in "${expected_archives[@]}"; do
     exit 1
   fi
 done
+
+if [[ -n "${expect_version}" ]]; then
+  python3 scripts/release/release_worthiness.py verify-archive-versions --version "${expect_version}"
+fi
 
 echo "Verified $(printf '%s ' "${expected_archives[@]}")under dist/"

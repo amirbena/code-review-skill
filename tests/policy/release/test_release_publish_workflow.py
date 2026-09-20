@@ -15,7 +15,8 @@ releasable never starts a write-capable job or the `release` Environment
 gate. `publish` is the only job with contents: write and the only one
 that mints the trusted release App token; the workflow never uses
 pull_request_target and cannot recurse. `publish` runs its steps in the
-order generate → preflight → changelog → build/verify → commit(main) →
+order generate → preflight → changelog → stamp Skill version → build/verify
+(each archive must report the release version) → commit(main) →
 push(main) → verify-main → tag → push-tag → publish-release →
 verify-release, with the tag and published assets bound to the pushed
 main commit SHA.
@@ -249,6 +250,7 @@ class PublishFlowOrderingTests(unittest.TestCase):
             "Generate CHANGELOG Unreleased",
             "Preflight",
             "Roll CHANGELOG Unreleased",
+            "Stamp the Skill frontmatter version",
             "Build and verify Skill archives",
             "Commit release preparation to main",
             "Push to main",
@@ -276,6 +278,24 @@ class PublishFlowOrderingTests(unittest.TestCase):
         self.assertIn("release-preflight", preflight["run"])
         self.assertIn('--version "${{ needs.plan.outputs.version }}"', preflight["run"])
         self.assertIn('--base-ref "${{ needs.plan.outputs.baseline }}"', preflight["run"])
+
+    def test_skill_version_is_stamped_from_the_planned_version_before_the_build(self) -> None:
+        stamp = _step(self.steps, "Stamp the Skill frontmatter version")
+        self.assertIn("release_worthiness.py stamp-skill-version", stamp["run"])
+        self.assertIn('--version "${{ needs.plan.outputs.version }}"', stamp["run"])
+        self.assertLess(
+            _step_index(self.steps, "Stamp the Skill frontmatter version"),
+            _step_index(self.steps, "Build and verify Skill archives"),
+        )
+
+    def test_build_fails_closed_unless_archives_report_the_planned_version(self) -> None:
+        build = _step(self.steps, "Build and verify Skill archives")
+        self.assertIn("--build", build["run"])
+        self.assertIn('--expect-version "${{ needs.plan.outputs.version }}"', build["run"])
+
+    def test_release_commit_stages_the_stamped_skill_files(self) -> None:
+        run = _step(self.steps, "Commit release preparation to main")["run"]
+        self.assertIn("git add CHANGELOG.md skills/*/SKILL.md", run)
 
     def test_archives_are_built_from_the_tree_that_gets_committed(self) -> None:
         build = _step_index(self.steps, "Build and verify Skill archives")

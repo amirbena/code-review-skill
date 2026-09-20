@@ -337,18 +337,29 @@ it. Its ordered flow fails closed before publishing if any step fails:
 2. **Preflight** — release-worthy changes since the baseline tag,
    `## Unreleased` has notes, `vX.Y.Z` is a valid, not-yet-existing tag.
 3. Rolls `## Unreleased` into `## vX.Y.Z — <date>`.
-4. Builds **and verifies** both Skill archives (`package-skills.sh all`,
-   `unzip -t`, presence checks).
-5. Commits the generated, rolled changelog directly to `main`
-   (`chore(release): vX.Y.Z [skip ci]`).
-6. Pushes that commit and re-fetches to confirm `origin/main` advanced to
+4. **Stamps** `vX.Y.Z` (as `X.Y.Z`) into the `version:` frontmatter line of
+   both Skills' `SKILL.md`.
+5. Builds **and verifies** both Skill archives (`package-skills.sh all`,
+   `unzip -t`, presence checks, and that each archive's `SKILL.md` version
+   is exactly `X.Y.Z` — a mismatch fails the run before anything is
+   pushed or tagged).
+6. Commits the generated, rolled changelog and the stamped `SKILL.md`
+   files directly to `main` (`chore(release): vX.Y.Z [skip ci]`).
+7. Pushes that commit and re-fetches to confirm `origin/main` advanced to
    exactly that SHA.
-7. Creates an **annotated** `vX.Y.Z` tag at that exact pushed commit.
-8. Pushes the tag.
-9. Creates the GitHub Release from the tag, notes taken from the matching
-   `CHANGELOG.md` section, both verified Skill ZIPs attached.
-10. Verifies the live tag commit, `origin/main`, and the published
+8. Creates an **annotated** `vX.Y.Z` tag at that exact pushed commit.
+9. Pushes the tag.
+10. Creates the GitHub Release from the tag, notes taken from the matching
+    `CHANGELOG.md` section, both verified Skill ZIPs attached.
+11. Verifies the live tag commit, `origin/main`, and the published
     Release's tag and assets all match the release commit.
+
+The Skill frontmatter `version` is therefore written only by the release
+flow and equals the release version in the archives and on `main` after
+each release; nobody bumps it by hand. Between releases, local and PR
+packaging (`package-skills.sh`, the PR `package` job) reports the version
+of the last release. This is unrelated to `metadata/skill.yaml`'s own,
+independently maintained `version`.
 
 The `release-publish` concurrency group serializes publication. The
 release commit is `[skip ci]` and the workflow listens on no tag or

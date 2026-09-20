@@ -15,6 +15,8 @@ from release_lib.commands import (
     cmd_release_verify,
     cmd_resolve_app_identity,
     cmd_resolve_base_ref,
+    cmd_stamp_skill_version,
+    cmd_verify_archive_versions,
 )
 
 _DESCRIPTION = """Classify a change set as release-worthy, enforce PR release intent, and
@@ -112,6 +114,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="required release asset filename (repeatable)",
     )
     verify.set_defaults(func=cmd_release_verify)
+
+    stamp = sub.add_parser(
+        "stamp-skill-version",
+        help="write the release version into every packaged Skill's SKILL.md frontmatter",
+    )
+    stamp.add_argument("--version", required=True, help="release version X.Y.Z")
+    stamp.set_defaults(func=cmd_stamp_skill_version)
+
+    archive_versions = sub.add_parser(
+        "verify-archive-versions",
+        help="fail unless every built Skill archive's SKILL.md reports exactly the release version",
+    )
+    archive_versions.add_argument("--version", required=True, help="release version X.Y.Z")
+    archive_versions.add_argument("--dist", default="dist", help="directory holding the built archives (default: dist)")
+    archive_versions.set_defaults(func=cmd_verify_archive_versions)
 
     base_ref = sub.add_parser(
         "resolve-base-ref",

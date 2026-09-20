@@ -8,6 +8,7 @@ from release_lib.commands.changelog import (
 )
 from release_lib.commands.planning import cmd_auto_release_plan, cmd_classify_semver
 from release_lib.commands.release import cmd_release_preflight, cmd_release_verify
+from release_lib.commands.skill_version import cmd_stamp_skill_version, cmd_verify_archive_versions
 from release_lib.commands.workflow import cmd_resolve_app_identity, cmd_resolve_base_ref
 
 __all__ = [
@@ -21,4 +22,6 @@ __all__ = [
     "cmd_release_verify",
     "cmd_resolve_app_identity",
     "cmd_resolve_base_ref",
+    "cmd_stamp_skill_version",
+    "cmd_verify_archive_versions",
 ]
