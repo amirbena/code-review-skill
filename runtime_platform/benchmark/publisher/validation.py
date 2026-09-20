@@ -63,6 +63,9 @@ def check_record(record: Mapping[str, Any], ref: StagingRef, lanes: Sequence[str
         return Refusal("verification", "verification.overall_verified is not true")
     if record["lane"] not in lanes or parse_run_id(record["run_id"]) is None:
         return Refusal("provenance", f"lane {record['lane']!r} or run_id is not a scheduled identity")
+    baseline_run_id = record["baseline"]["run_id"]
+    if baseline_run_id is not None and baseline_run_id.split("-", 1)[0] != record["lane"]:
+        return Refusal("baseline", "baseline.run_id belongs to a different lane: a cross-lane comparison is never published")
     if run_id_from_ref(ref.name) != record["run_id"] or ref.name != staging_ref_name(record["run_id"]):
         return Refusal("provenance", "staging ref name does not encode the record's run_id")
     errors = validate_record(record)

@@ -30,7 +30,7 @@ from runtime_platform.benchmark.publisher.ports import (
     StagingRef,
 )
 from runtime_platform.benchmark.publisher.validation import Refusal, attest_origin, check_record, parse_handoff
-from runtime_platform.benchmark.scripts.benchmark_result import validate_receipt
+from runtime_platform.benchmark.scripts.benchmark_result import content_sha256, validate_receipt
 from runtime_platform.benchmark.scripts.benchmark_schedule_manifest import validate_manifest
 
 STAGING_RETENTION_DAYS = 30
@@ -78,7 +78,15 @@ def _load_candidates(ports: Ports, config: SweepConfig, prefix: str) -> list[_Ca
             continue
         record, refusal = parse_handoff(data)
         candidates.append(_Candidate(ref, run_id, record, refusal))
-    return sorted(candidates, key=lambda c: (str((c.record or {}).get("sealed_at", "")), c.ref.name))
+    return sorted(candidates, key=lambda c: (_sealed_at(c.record), c.ref.name))
+
+
+def _sealed_at(record: Mapping[str, Any] | None) -> datetime:
+    """Parsed, so fractional seconds order correctly; an unreadable stamp sorts first."""
+    try:
+        return datetime.fromisoformat(str((record or {}).get("sealed_at")).replace("Z", "+00:00"))
+    except ValueError:
+        return datetime.min.replace(tzinfo=timezone.utc)
 
 
 def _refused(candidate: _Candidate, refusal: Refusal) -> RunOutcome:
@@ -158,19 +166,21 @@ def _process(ports: Ports, config: SweepConfig, candidate: _Candidate) -> RunOut
     if candidate.refusal is not None or candidate.record is None or candidate.run_id is None:
         return _refused(candidate, candidate.refusal or Refusal("schema", "no sealed result"))
     record, run_id = candidate.record, candidate.run_id
+    existing = ports.store.read_file(record_path(run_id))
+    receipt = ports.store.read_file(receipt_path(run_id))
+    claimed = record.get("content_sha256")
+    if receipt is not None and isinstance(claimed, str) and content_sha256(record) == claimed:
+        # A receipted run is never re-gated: a later manifest or validator change cannot strand it.
+        if existing is None or not history.same_record(existing, claimed):
+            return _refused(candidate, Refusal("conflict", "history holds this run_id without a matching record"))
+        return _published(ports, config, candidate, claimed, receipt)
     refusal = check_record(record, candidate.ref, list(config.manifest["lanes"]))
     if refusal is not None:
         return _refused(candidate, refusal)
 
     digest = record["content_sha256"]
-    existing = ports.store.read_file(record_path(run_id))
-    receipt = ports.store.read_file(receipt_path(run_id))
     if existing is not None and not history.same_record(existing, digest):
         return _refused(candidate, Refusal("conflict", "history holds this run_id with a different content_sha256"))
-    if receipt is not None:
-        if existing is None:
-            return _refused(candidate, Refusal("conflict", "a receipt exists without its record"))
-        return _published(ports, config, candidate, digest, receipt)
 
     steps = list(STEPS) + (["local-once"] if config.local_once else [])
     if existing is None:

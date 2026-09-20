@@ -68,12 +68,16 @@ def _publisher_issues(ctx: LifecycleContext, state: str, limit: int | None) -> d
     return {fp: sorted(issues, key=lambda i: i.number) for fp, issues in by_fingerprint.items()}
 
 
-def _case_id_of(issue: Issue) -> str | None:
-    match = _JSON_BLOCK_RE.search(issue.body)
+def _case_id_of(issue: Issue, fingerprint: str) -> str | None:
+    """The case from the body's last metadata block, which must carry the issue's own fingerprint."""
+    blocks = _JSON_BLOCK_RE.findall(issue.body)
     try:
-        case_id = json.loads(match.group(1)).get("case_id") if match else None
-    except (json.JSONDecodeError, AttributeError):
+        metadata = json.loads(blocks[-1]) if blocks else None
+    except json.JSONDecodeError:
         return None
+    if not isinstance(metadata, dict) or metadata.get("fingerprint") != fingerprint:
+        return None
+    case_id = metadata.get("case_id")
     return case_id if isinstance(case_id, str) else None
 
 
@@ -134,7 +138,7 @@ def _resolve(
     evidence: render.Evidence,
 ) -> IssueAction | None:
     """Close only when every lane whose latest record covers the case has stopped confirming it (A9)."""
-    case_id = _case_id_of(issue)
+    case_id = _case_id_of(issue, fingerprint)
     if case_id is None:
         return None
     covering = {lane: rec for lane, rec in lane_views.items() if rec is not None and covers(rec, case_id)}

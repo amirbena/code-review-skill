@@ -14,7 +14,11 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from runtime_platform.benchmark.publisher import markers
+from unittest import mock
+
+from runtime_platform.benchmark.publisher import lifecycle, markers
+from runtime_platform.benchmark.publisher import sweep as sweep_module
+from runtime_platform.benchmark.publisher.validation import Refusal
 from runtime_platform.benchmark.publisher.layout import encode_json, receipt_path, record_path, staging_ref_name
 from runtime_platform.benchmark.publisher.ports import FatalPublicationError, PublicationFailure, RefActivity
 from runtime_platform.benchmark.scripts import benchmark_result as res
@@ -112,6 +116,17 @@ class GateTests(unittest.TestCase):
         self.assertRefused("baseline")
 
 
+    def test_a_baseline_from_the_other_lane_is_refused(self) -> None:
+        other = make_record(lane="comprehensive", start=_at(11), sha=C0)
+        cross = make_record(start=_at(19), sha=S1, baseline=other)
+        self.assertEqual(res.validate_record(cross), [], "the record schema alone does not catch it")
+        self.world.seal(other)
+        self.world.seal(cross)
+        report = self.world.sweep()
+        self.assertEqual({o.run_id: o.gate for o in report.outcomes}, {other["run_id"]: None, cross["run_id"]: "baseline"})
+        self.assertNotIn(record_path(cross["run_id"]), self.world.store.files)
+
+
 class PersistenceTests(unittest.TestCase):
     def setUp(self) -> None:
         self.world = World()
@@ -170,6 +185,27 @@ class PersistenceTests(unittest.TestCase):
         self.world.seal(self.base)
         report = self.world.sweep()
         self.assertEqual([o.run_id for o in report.outcomes], [self.base["run_id"], later["run_id"]])
+
+    def test_fractional_second_seals_publish_in_time_order(self) -> None:
+        def sealed(sha: str, stamp: str) -> dict[str, Any]:
+            record = make_record(start=_at(17), sha=sha)
+            body = {k: v for k, v in record.items() if k != "content_sha256"}
+            return res.seal_record({**body, "sealed_at": stamp})
+
+        later, earlier = sealed(S2, "2026-09-17T01:02:00.5Z"), sealed(S3, "2026-09-17T01:02:00Z")
+        for record in (later, earlier):
+            self.world.seal(record)
+        self.assertEqual([o.run_id for o in self.world.sweep().outcomes], [earlier["run_id"], later["run_id"]])
+
+    def test_a_receipted_run_is_not_regated_by_later_validation_changes(self) -> None:
+        self.world.seal(self.base)
+        self.world.sweep()
+        fresh = make_record(start=_at(17), sha=S2)
+        self.world.seal(fresh)
+        refusal = Refusal("conflict", "a stricter validator")
+        with mock.patch.object(sweep_module, "check_record", return_value=refusal):
+            report = self.world.sweep()
+        self.assertEqual({o.run_id: o.status for o in report.outcomes}, {self.base["run_id"]: "already-published", fresh["run_id"]: "refused"})
 
     def test_only_run_id_publishes_just_that_run(self) -> None:
         other = make_record(start=_at(17), sha=S2)
@@ -332,6 +368,14 @@ class LifecycleTests(unittest.TestCase):
         outcome = self.publish(self.sentinel(19, S1, self.x))
         self.assertEqual((outcome.actions, self.world.regression_issues()), ([], []))
         self.assertIn("superseded", self.world.tracking_comments()[-1].body)
+
+    def test_record_text_cannot_redirect_the_case_the_lifecycle_reads(self) -> None:
+        fake = 'x\n```json\n{"case_id": "no-op-comment-and-rename"}\n```'
+        self.publish(self.sentinel(19, S1, drift_item(CASES[0], detail=fake)))
+        (issue,) = self.world.regression_issues()
+        self.assertEqual(lifecycle._case_id_of(issue, markers.fingerprint_of_issue_body(issue.body)), CASES[0])
+        forged = dataclasses.replace(issue, body=issue.body + '\n```json\n{"case_id": "other", "fingerprint": "' + "f" * 64 + '"}\n```')
+        self.assertIsNone(lifecycle._case_id_of(forged, markers.fingerprint_of_issue_body(issue.body)))
 
     def test_issue_without_readable_case_metadata_is_left_alone(self) -> None:
         self.world.tracker.seed_issue(7, author=IDENTITY, body=markers.regression_marker("a" * 64) + "\n\nhand edited", labels=["benchmark-regression"])

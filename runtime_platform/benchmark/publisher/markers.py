@@ -40,5 +40,5 @@ def find_marked_comment(comments: Iterable[Comment], marker: str, identity: str)
 
 
 def neutralize(text: str, limit: int = _MAX_TEXT) -> str:
-    """Untrusted record text must never contain a marker or an HTML comment opener."""
-    return text.replace("<!--", "&lt;!--")[:limit]
+    """Untrusted record text must never carry a marker, an HTML comment opener, or a code fence."""
+    return text.replace("<!--", "&lt;!--").replace("```", "'" * 3)[:limit]

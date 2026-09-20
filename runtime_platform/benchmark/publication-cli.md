@@ -72,13 +72,13 @@ the publisher reads it at the ref's tip SHA and treats it as data.
 
 ## 3. One publication, in order
 
-Refs are processed in ascending `sealed_at`; a refusal never blocks the next.
+Refs are processed in ascending `sealed_at` (parsed, so fractional seconds order correctly); a refusal never blocks the next.
 Start-up is fail closed: a manifest that is not provisioned, or a missing label of
 the four, aborts the whole sweep before any write.
 
 | Step | Does | On failure |
 | --- | --- | --- |
-| validate | The boundary §2 gates, in order — `schema` (known version, shape), `content-hash`, `verification`, `provenance` (lane in the manifest, ref name encodes `run_id`) plus semantic conformance, `origin`, `conflict`, and `baseline` (a compared record's baseline is in history and matches its recorded hash). | **Refuse and report** with the gate name; nothing is written or repaired. |
+| validate | The boundary §2 gates, in order — `schema` (known version, shape), `content-hash`, `verification`, `provenance` (lane in the manifest, ref name encodes `run_id`) plus semantic conformance, `origin`, `conflict`, and `baseline` (a compared record's baseline is in this lane's history and matches its recorded hash; a baseline from the other lane is refused). | **Refuse and report** with the gate name; nothing is written or repaired. |
 | persist | One create-only commit of `records/<lane>/<yyyy>/<run_id>.json`, plus `baselines/<lane>.json` (`source: bootstrap`) when the record is the lane's first and none exists. | A same-hash existing record is a no-op success; a different hash is a refused `conflict`. |
 | reconcile | Drift issues, §4. | The run stays unpublished; the next sweep resumes. |
 | announce | One evidence comment on the lane's tracking issue, beginning `<!-- benchmark-run:<run_id> -->`, with commit-pinned permalinks and the issues acted on. | As above. |
@@ -87,7 +87,7 @@ the four, aborts the whole sweep before any write.
 Reconcile runs before announce so the evidence comment can link the issues it
 acted on and an issue never links a record that does not exist; the receipt is a
 summary and never authoritative for idempotency. **A run is published when its
-receipt exists.** A run with a record and no receipt resumes at reconcile; origin
+receipt exists.** A receipted run is never re-gated: it is checked only against its stored record and receipt hashes, so a later manifest or validator change cannot strand it. A run with a record and no receipt resumes at reconcile; origin
 attestation is not repeated for a record already persisted.
 
 **Origin.** The repository activity API must show a `branch_creation` of that exact
@@ -118,8 +118,8 @@ refused, unless the maintainer dispatches that `run_id` with
   scheduled lane whose latest published record covers its case (evaluated **and**
   comparable), that record's `drift.confirmed[]` lacks the fingerprint; if no lane
   covers it, it is left as is, and `keep-open` (read fresh) blocks the close. The
-  case comes from the issue's own metadata block; unreadable metadata leaves the
-  issue alone. "Latest" is by run start time among receipted runs; if another
+  case comes from the issue's own metadata block; metadata that is unreadable, or whose
+  fingerprint is not the issue's own, leaves the issue alone. "Latest" is by run start time among receipted runs; if another
   lane's latest record cannot be loaded, nothing is closed.
 - A record older than its lane's newest published record is **superseded**: it is
   published but drives no issue.
