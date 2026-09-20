@@ -357,9 +357,10 @@ it. Its ordered flow fails closed before publishing if any step fails:
 The Skill frontmatter `version` is therefore written only by the release
 flow and equals the release version in the archives and on `main` after
 each release; nobody bumps it by hand. Between releases, local and PR
-packaging (`package-skills.sh`, the PR `package` job) reports the version
-of the last release. This is unrelated to `metadata/skill.yaml`'s own,
-independently maintained `version`.
+packaging (`package-skills.sh`, the PR `package` job) reports the last
+*stamped* version — the committed value, which only the release flow
+updates. This is unrelated to `metadata/skill.yaml`'s own, independently
+maintained `version`.
 
 The `release-publish` concurrency group serializes publication. The
 release commit is `[skip ci]` and the workflow listens on no tag or

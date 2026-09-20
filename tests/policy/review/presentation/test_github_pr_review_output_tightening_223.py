@@ -129,6 +129,8 @@ LOCAL_BASELINE_HASHES = {
 
 # The release flow stamps SKILL.md's frontmatter `version:` line (issue #496),
 # so the pin hashes that one line as its baseline value, everything else exact.
+# Re-capture a deliberate SKILL.md change by hashing these normalized bytes,
+# not the raw file: `git hash-object` on the stamped file will not match.
 _BASELINE_VERSION_LINE = b"version: 1.50.2"
 
 
@@ -214,12 +216,19 @@ class LocalCodeReviewIsProvablyUnaffected(unittest.TestCase):
         for path, expected_hash in LOCAL_BASELINE_HASHES.items():
             self.assertTrue(path.is_file(), f"missing: {path}")
             actual = _git_blob_sha1(path)
+            note = (
+                f" (SKILL.md is hashed with its frontmatter version line "
+                f"normalized to {_BASELINE_VERSION_LINE.decode()!r}; re-capture "
+                "a deliberate change the same way, not with git hash-object)"
+                if path.name == "SKILL.md"
+                else ""
+            )
             self.assertEqual(
                 actual,
                 expected_hash,
                 f"{path.relative_to(REPO_ROOT)} changed during Issue #223 "
                 "work — local-code-review's own report format/voice/heading "
-                "must stay byte-for-byte unchanged",
+                f"must stay byte-for-byte unchanged{note}",
             )
 
     def test_local_report_heading_is_unchanged(self) -> None:
