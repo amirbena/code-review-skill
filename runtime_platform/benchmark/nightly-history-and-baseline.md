@@ -31,8 +31,10 @@ lifecycle (Non-goals, below).
 > Sections changed by an amendment carry its ID, e.g. **(A4)**; everything not
 > marked is unchanged, including the baseline *policy* (§4). This document
 > states the amended contract. `benchmark_history.py`,
-> `run_benchmark_routine.py`, and `benchmark_drift.py` still implement the
-> pre-amendment behavior until the implementation issues of Epic #466 land,
+> `run_benchmark_routine.py` still implement the pre-amendment behavior, and
+> `benchmark_drift.py` keeps classification only (its GitHub client and issue
+> lifecycle moved to the publisher, [`publication-cli.md`](publication-cli.md)),
+> until the remaining implementation issues of Epic #466 land,
 > and those issues cite this text.
 
 ## 1. Scope

@@ -104,9 +104,9 @@ closed at start-up if one is missing (A10).
 | `tracking` | `benchmark-tracking` | per-lane evidence tracking issues and the health issue | maintainer, at provisioning |
 
 `benchmark-regression` and `keep-open` are the names
-[`scripts/benchmark_drift.py`](scripts/benchmark_drift.py) already uses
-(`REGRESSION_LABEL`, `KEEP_OPEN_LABEL`); a test keeps the manifest in step with
-them.
+[`drift-detection-and-regression-lifecycle.md`](drift-detection-and-regression-lifecycle.md)
+documents; the publisher takes every label name from the manifest, and a test pins
+the four.
 
 ## 4. Provisioning state
 

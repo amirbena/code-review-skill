@@ -203,22 +203,18 @@ a retry that finds its marker does nothing.
 ### 4.2 Finding candidate issues cheaply, without free-text search
 
 Every issue this document opens or updates carries the label
-`benchmark-regression` (`runtime_platform/benchmark/scripts/benchmark_drift.py::REGRESSION_LABEL`).
+`benchmark-regression` (the manifest's `drift` label, [`schedule-spec.md`](schedule-spec.md) §3).
 A sync pass lists **open** issues with that label (`gh issue list --label
 benchmark-regression --state open --json number,body,labels`), extracts
 each one's marker (§4.1), and builds a `fingerprint → issue` map. The
 label narrows the candidate set to a small, cheap listing; the marker,
 not the label or any text in the listing, is what decides a match.
 
-`gh issue list --limit N` caps *total* results, not results per page, so a
-fixed limit would silently truncate this listing once more than `N`
-labeled issues are open — breaking §4.3's one-issue-per-fingerprint
-guarantee without any error. `list_labeled_issues`
-(`runtime_platform/benchmark/scripts/benchmark_drift.py::GhCliIssueClient.list_labeled_issues`)
-retries with a doubling `--limit` until a response is smaller than
-requested — proof nothing was left out — up to a fixed safety ceiling
-(`MAX_ISSUE_LIST_LIMIT`) past which it raises rather than looping forever
-against a pathological response.
+The open-issue listing is exhaustive: the publisher's REST client pages until a
+page is short, so a full page is never mistaken for the whole set — which would
+silently break §4.3's one-issue-per-fingerprint guarantee. Only issues the
+publisher identity authored are recognized
+([`publication-cli.md`](publication-cli.md) §4).
 
 **Labels are a provisioning prerequisite (A10).** `benchmark-regression`,
 `keep-open`, `benchmark-missed-run`, and the tracking-issue label do not
@@ -270,7 +266,7 @@ issue is one extra issue per genuine recurrence.
 
 Before auto-closing a resolved fingerprint (§4.3, row 3), the sync pass
 checks whether the issue currently carries the label `keep-open`
-(`runtime_platform/benchmark/scripts/benchmark_drift.py::KEEP_OPEN_LABEL`). If it does, the
+(the manifest's `keep-open` label). If it does, the
 issue is **left open** and **not commented on for resolution** — a human
 relabeled it to say "investigate further before closing," and that
 decision is authoritative until they remove the label themselves. This is
@@ -323,19 +319,18 @@ excludes the benchmark entrypoint, the reviewer adapter, and `classify_drift`
 [`scheduled-operations/publication-architecture.md`](scheduled-operations/publication-architecture.md)
 §5). Classification, drift types, tolerance, and fingerprint are unchanged.
 
-The mutation boundary itself stays small and injectable.
-`runtime_platform/benchmark/scripts/benchmark_drift.py` defines a small
-`GitHubIssueClient` protocol (`list_labeled_issues`, `create_issue`,
-`comment`, `close`) and one real implementation, `GhCliIssueClient`, that shells
-out to `gh` (temp-file bodies via `--body-file`, `gh issue create`/`comment`,
-return codes surfaced as errors); under this amendment the real client
-authenticates as the `benchmark-publication` App inside the publication job,
-never as the maintainer's personal identity. `sync_regressions` (the lifecycle
-orchestrator, §4) takes a `GitHubIssueClient` as a parameter and never imports
-or constructs `GhCliIssueClient` itself, so every test in
-[`../../tests/unit/benchmark/test_benchmark_drift.py`](../../tests/unit/benchmark/test_benchmark_drift.py)
-runs against an in-memory fake client and makes zero network calls.
-runs against an in-memory fake client and makes zero network calls.
+The mutation boundary itself stays small and injectable. The publisher reaches
+GitHub only through the ports in `runtime_platform/benchmark/publisher/ports.py`
+(`HandoffReader`, `HistoryStore`, `IssueTracker`); the one real implementation
+(`publisher/github_api.py`) authenticates with the `benchmark-publication` App's
+installation tokens and nothing else, never the maintainer's personal identity,
+and every test in
+[`../../tests/unit/benchmark/test_benchmark_publisher_sweep.py`](../../tests/unit/benchmark/test_benchmark_publisher_sweep.py)
+runs against in-memory ports with zero network calls. `benchmark_drift.py` no
+longer contains a GitHub client or the lifecycle: the in-Routine `GhCliIssueClient`
+and `sync_regressions` were retired by
+[#471](https://github.com/amirbena/code-review-skill/issues/471), and the
+behavior is specified in [`publication-cli.md`](publication-cli.md).
 
 ## 7. Two-lane operation (#431) — lifecycle corrected (A9)
 
