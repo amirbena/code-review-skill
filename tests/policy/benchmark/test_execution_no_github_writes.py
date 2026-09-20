@@ -15,7 +15,7 @@ from tests.support.paths import REPO_ROOT
 SCRIPTS = REPO_ROOT / "runtime_platform" / "benchmark" / "scripts"
 ENTRYPOINT = SCRIPTS / "run_benchmark_routine.py"
 SEAL_MODULE = "benchmark_seal"
-PUBLICATION_SIDE = {"benchmark_regression_lifecycle"}
+PUBLICATION_SIDE = {"publish_benchmark", "publisher"}
 
 FORBIDDEN_IMPORTS = {
     "requests", "httpx", "aiohttp", "urllib3", "http.client", "urllib.request",
@@ -50,7 +50,7 @@ def violations(source: str, *, allow_push: bool = False) -> list[str]:
             if module_hit or name_hits:
                 found.append(f"from {node.module} import ...")
             found += [f"import of {a.name}" for a in node.names if a.name in FORBIDDEN_NAMES]
-            found += [f"import of {node.module}" for _ in [0] if node.module.rsplit(".", 1)[-1] in PUBLICATION_SIDE]
+            found += [f"import of {node.module}" for _ in [0] if PUBLICATION_SIDE & set(node.module.split("."))]
         elif isinstance(node, ast.Name) and node.id in FORBIDDEN_NAMES:
             found.append(f"name {node.id}")
         elif isinstance(node, ast.Attribute) and node.attr in FORBIDDEN_NAMES:
@@ -116,7 +116,7 @@ class ScannerTests(unittest.TestCase):
     def test_flags_the_retired_write_helpers(self) -> None:
         self.assertFlags("def _post_evidence(): ...", "_post_evidence")
         self.assertFlags("from x.benchmark_drift import sync_regressions", "sync_regressions")
-        self.assertFlags("from x.scripts.benchmark_regression_lifecycle import GhCliIssueClient", "benchmark_regression_lifecycle")
+        self.assertFlags("from runtime_platform.benchmark.publisher import sweep", "publisher")
 
     def test_flags_force_and_delete_flags(self) -> None:
         self.assertFlags('cmd = ["git", "push", "--force"]', "git flag --force", allow_push=True)
@@ -158,9 +158,10 @@ class ExecutionScopeTests(unittest.TestCase):
         ]
         self.assertEqual(pushers, [SEAL_MODULE])
 
-    def test_the_publication_side_module_is_the_only_gh_client_left(self) -> None:
-        lifecycle = SCRIPTS / "benchmark_regression_lifecycle.py"
-        self.assertTrue(any("gh invocation" in v or "GhCliIssueClient" in v for v in violations(lifecycle.read_text(encoding="utf-8"))))
+    def test_the_in_routine_gh_client_is_retired(self) -> None:
+        self.assertFalse((SCRIPTS / "benchmark_regression_lifecycle.py").exists())
+        for path in SCRIPTS.glob("*.py"):
+            self.assertNotIn("GhCliIssueClient", path.read_text(encoding="utf-8"), path.name)
 
     def test_the_retired_helpers_are_gone_from_the_entrypoint(self) -> None:
         source = ENTRYPOINT.read_text(encoding="utf-8")

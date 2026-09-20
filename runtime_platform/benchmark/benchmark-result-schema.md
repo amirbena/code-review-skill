@@ -130,8 +130,9 @@ must re-measure before the trigger is relied on.
 
 ## 6. Non-goals
 
-Persisting records to `benchmark-history`, executing the benchmark, evaluating
-drift, and the publisher CLI are
-[#470](https://github.com/amirbena/code-review-skill/issues/470) and
-[#471](https://github.com/amirbena/code-review-skill/issues/471). This change adds
+Executing the benchmark and evaluating drift are
+[#470](https://github.com/amirbena/code-review-skill/issues/470); persisting
+records to `benchmark-history` and the publisher CLI are
+[#471](https://github.com/amirbena/code-review-skill/issues/471)
+([`publication-cli.md`](publication-cli.md)). This change adds
 no workflow, and no packaged Skill resource depends on it.

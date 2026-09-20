@@ -33,9 +33,9 @@ severity-accuracy logic.
 > machine-readable metadata are unchanged. Execution-side evaluation and
 > in-run confirmation are implemented by [#470](https://github.com/amirbena/code-review-skill/issues/470)
 > (`scripts/benchmark_drift_evaluation.py`, over the unchanged `classify_drift`
-> in `benchmark_drift.py`); `scripts/benchmark_regression_lifecycle.py` still
-> implements the pre-amendment issue lifecycle until the publisher (#471)
-> replaces it.
+> in `benchmark_drift.py`); the issue lifecycle is implemented by the publisher
+> ([#471](https://github.com/amirbena/code-review-skill/issues/471),
+> [`publication-cli.md`](publication-cli.md)).
 
 ## Non-goals
 
@@ -206,22 +206,18 @@ a retry that finds its marker does nothing.
 ### 4.2 Finding candidate issues cheaply, without free-text search
 
 Every issue this document opens or updates carries the label
-`benchmark-regression` (`runtime_platform/benchmark/scripts/benchmark_drift.py::REGRESSION_LABEL`).
+`benchmark-regression` (the manifest's `drift` label, [`schedule-spec.md`](schedule-spec.md) §3).
 A sync pass lists **open** issues with that label (`gh issue list --label
 benchmark-regression --state open --json number,body,labels`), extracts
 each one's marker (§4.1), and builds a `fingerprint → issue` map. The
 label narrows the candidate set to a small, cheap listing; the marker,
 not the label or any text in the listing, is what decides a match.
 
-`gh issue list --limit N` caps *total* results, not results per page, so a
-fixed limit would silently truncate this listing once more than `N`
-labeled issues are open — breaking §4.3's one-issue-per-fingerprint
-guarantee without any error. `list_labeled_issues`
-(`runtime_platform/benchmark/scripts/benchmark_regression_lifecycle.py::GhCliIssueClient.list_labeled_issues`)
-retries with a doubling `--limit` until a response is smaller than
-requested — proof nothing was left out — up to a fixed safety ceiling
-(`MAX_ISSUE_LIST_LIMIT`) past which it raises rather than looping forever
-against a pathological response.
+The open-issue listing is exhaustive: the publisher's REST client pages until a
+page is short, so a full page is never mistaken for the whole set — which would
+silently break §4.3's one-issue-per-fingerprint guarantee. Only issues the
+publisher identity authored are recognized
+([`publication-cli.md`](publication-cli.md) §4).
 
 **Labels are a provisioning prerequisite (A10).** `benchmark-regression`,
 `keep-open`, `benchmark-missed-run`, and the tracking-issue label do not
@@ -273,7 +269,7 @@ issue is one extra issue per genuine recurrence.
 
 Before auto-closing a resolved fingerprint (§4.3, row 3), the sync pass
 checks whether the issue currently carries the label `keep-open`
-(`runtime_platform/benchmark/scripts/benchmark_drift.py::KEEP_OPEN_LABEL`). If it does, the
+(the manifest's `keep-open` label). If it does, the
 issue is **left open** and **not commented on for resolution** — a human
 relabeled it to say "investigate further before closing," and that
 decision is authoritative until they remove the label themselves. This is
@@ -320,27 +316,24 @@ outcome is sealed into the run's canonical result. The lifecycle in §4 is
 executed by the **publisher** — the deterministic publication step that runs
 after the seal — which consumes the sealed record's `drift.confirmed[]` and
 fingerprints and **never recomputes them**. `sync_regressions` and the `gh`
-client therefore move out of the Routine into the publisher (relocated by [#470](https://github.com/amirbena/code-review-skill/issues/470) into
-`scripts/benchmark_regression_lifecycle.py`, which execution-side code cannot
-import — a policy test enforces it), whose import graph
+client therefore move out of the Routine into the publisher (out of the execution import closure by [#470](https://github.com/amirbena/code-review-skill/issues/470), where a policy test keeps it unreachable, and reimplemented and retired by [#471](https://github.com/amirbena/code-review-skill/issues/471)), whose import graph
 excludes the benchmark entrypoint, the reviewer adapter, and `classify_drift`
 (enforced by a policy test,
 [`scheduled-operations/publication-architecture.md`](scheduled-operations/publication-architecture.md)
 §5). Classification, drift types, tolerance, and fingerprint are unchanged.
 
-The mutation boundary itself stays small and injectable.
-`runtime_platform/benchmark/scripts/benchmark_regression_lifecycle.py` defines a small
-`GitHubIssueClient` protocol (`list_labeled_issues`, `create_issue`,
-`comment`, `close`) and one real implementation, `GhCliIssueClient`, that shells
-out to `gh` (temp-file bodies via `--body-file`, `gh issue create`/`comment`,
-return codes surfaced as errors); under this amendment the real client
-authenticates as the `benchmark-publication` App inside the publication job,
-never as the maintainer's personal identity. `sync_regressions` (the lifecycle
-orchestrator, §4) takes a `GitHubIssueClient` as a parameter and never imports
-or constructs `GhCliIssueClient` itself, so every test in
-[`../../tests/unit/benchmark/test_benchmark_drift_lifecycle.py`](../../tests/unit/benchmark/test_benchmark_drift_lifecycle.py)
-runs against an in-memory fake client and makes zero network calls.
-runs against an in-memory fake client and makes zero network calls.
+The mutation boundary itself stays small and injectable. The publisher reaches
+GitHub only through the ports in `runtime_platform/benchmark/publisher/ports.py`
+(`HandoffReader`, `HistoryStore`, `IssueTracker`); the one real implementation
+(`publisher/github_api.py`) authenticates with the `benchmark-publication` App's
+installation tokens and nothing else, never the maintainer's personal identity,
+and every test in
+[`../../tests/unit/benchmark/test_benchmark_publisher_sweep.py`](../../tests/unit/benchmark/test_benchmark_publisher_sweep.py)
+runs against in-memory ports with zero network calls. `benchmark_drift.py` no
+longer contains a GitHub client or the lifecycle: the in-Routine `GhCliIssueClient`
+and `sync_regressions` were retired by
+[#471](https://github.com/amirbena/code-review-skill/issues/471), and the
+behavior is specified in [`publication-cli.md`](publication-cli.md).
 
 ## 7. Two-lane operation (#431) — lifecycle corrected (A9)
 
@@ -393,12 +386,12 @@ This document is the authoritative contract for drift detection and the
 regression-issue lifecycle, **as amended by #467 (A4, A8, A9, A10)**.
 `runtime_platform/benchmark/scripts/benchmark_drift.py` implements classification
 and fingerprinting unchanged; execution-side evaluation and in-run confirmation
-are [#470](https://github.com/amirbena/code-review-skill/issues/470). `benchmark_regression_lifecycle.py` implements the pre-amendment
-lifecycle shape and is brought to this text by the publication issue of Epic
-[#466](https://github.com/amirbena/code-review-skill/issues/466);
+are [#470](https://github.com/amirbena/code-review-skill/issues/470). The issue
+lifecycle is the publisher's ([#471](https://github.com/amirbena/code-review-skill/issues/471),
+[`publication-cli.md`](publication-cli.md));
 `tests/unit/benchmark/test_benchmark_drift.py` proves the fingerprinting
-stability/distinctness, and `test_benchmark_drift_lifecycle.py` the four
-pre-amendment lifecycle transitions against a fixed baseline+candidate pair (open, dedupe-comment, keep-open
-override, close-on-resolution) plus the noise-never-triggers-an-issue
-guarantee. A conflict discovered later is resolved by updating this
+stability/distinctness, and `test_benchmark_publisher_sweep.py` the lifecycle
+transitions (open, comment-on-recurrence, keep-open override, lane-aware
+close-on-resolution, recurrence after closure) and that unconfirmed or
+non-comparable drift never touches an issue. A conflict discovered later is resolved by updating this
 document through a reviewed change, not by silently deviating in code.

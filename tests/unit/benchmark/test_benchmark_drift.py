@@ -159,7 +159,7 @@ class ClassifyDriftNoiseTests(unittest.TestCase):
 
     def test_recovering_to_zero_missed_keys_is_not_a_drift_record(self) -> None:
         # The reverse direction of decision-flip is a resolution, handled by
-        # the lifecycle's auto-close (see test_benchmark_drift_lifecycle.py),
+        # the lifecycle's auto-close (see test_benchmark_publisher_sweep.py),
         # never a new drift record.
         base = {"case-a": _metrics("case-a", missed=("sqli-key",))}
         cand = {"case-a": _metrics("case-a", missed=())}
