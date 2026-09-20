@@ -46,7 +46,8 @@ class VerifyScriptExpectVersionTests(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         self.root = Path(tmp.name)
         for rel in (SCRIPT, "scripts/release/release_worthiness.py", "scripts/release/release_lib",
-                    "scripts/packaging/package-manifest.json", "scripts/packaging/package_manifest.py"):
+                    "scripts/packaging/package-manifest.json", "scripts/packaging/package_manifest.py",
+                    "scripts/packaging/package_domain"):
             _copy(rel, self.root)
 
     def _build_archives(self, versions: dict[str, str]) -> None:
@@ -87,7 +88,7 @@ class VerifyScriptExpectVersionTests(unittest.TestCase):
 
 @unittest.skipUnless(TOOLS_PRESENT, "needs bash, unzip, zip, and python3")
 class StampPackageVerifyTests(unittest.TestCase):
-    """The release sequence end to end on a copy of the real Skill sources."""
+    """The release sequence (roll → stamp → package → verify) on a copy of the real sources."""
 
     VERSION = "9.8.7"
 
@@ -98,20 +99,25 @@ class StampPackageVerifyTests(unittest.TestCase):
         for rel in ("skills", "shared", "scripts", "capabilities", "docs", "LICENSE"):
             _copy(rel, self.root)
 
-    def _sh(self, *cmd: str) -> subprocess.CompletedProcess:
-        return subprocess.run(
-            list(cmd), capture_output=True, text=True, cwd=self.root,
-            env=ENV,
+    def _roll_changelog(self, version: str) -> None:
+        (self.root / "CHANGELOG.md").write_text(
+            f"# Changelog\n\n## Unreleased\n\n## v{version} — 2026-01-01\n\n### Fixed\n\n- x\n", encoding="utf-8"
         )
 
-    def test_stamped_tree_packages_archives_reporting_the_release_version(self) -> None:
+    def _sh(self, *cmd: str) -> subprocess.CompletedProcess:
+        return subprocess.run(list(cmd), capture_output=True, text=True, cwd=self.root, env=ENV)
+
+    def test_rolled_and_stamped_tree_packages_archives_reporting_the_release_version(self) -> None:
+        self._roll_changelog(self.VERSION)
         stamp = self._sh("python3", "scripts/release/release_worthiness.py", "stamp-skill-version",
                          "--version", self.VERSION)
         self.assertEqual(stamp.returncode, 0, stamp.stdout + stamp.stderr)
         result = self._sh(SCRIPT, "--build", "--expect-version", self.VERSION)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("note:", result.stdout)
 
-    def test_unstamped_tree_cannot_pass_the_release_gate(self) -> None:
+    def test_release_build_whose_changelog_was_not_rolled_to_the_planned_version_is_blocked(self) -> None:
+        self._roll_changelog("9.8.6")
         result = self._sh(SCRIPT, "--build", "--expect-version", self.VERSION)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(f"expected release version '{self.VERSION}'", result.stdout)

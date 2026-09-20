@@ -338,7 +338,7 @@ it. Its ordered flow fails closed before publishing if any step fails:
    `## Unreleased` has notes, `vX.Y.Z` is a valid, not-yet-existing tag.
 3. Rolls `## Unreleased` into `## vX.Y.Z — <date>`.
 4. **Stamps** `vX.Y.Z` (as `X.Y.Z`) into the `version:` frontmatter line of
-   both Skills' `SKILL.md`.
+   both Skills' `SKILL.md`, so the committed files match the release.
 5. Builds **and verifies** both Skill archives (`package-skills.sh all`,
    `unzip -t`, presence checks, and that each archive's `SKILL.md` version
    is exactly `X.Y.Z` — a mismatch fails the run before anything is
@@ -354,13 +354,24 @@ it. Its ordered flow fails closed before publishing if any step fails:
 11. Verifies the live tag commit, `origin/main`, and the published
     Release's tag and assets all match the release commit.
 
-The Skill frontmatter `version` is therefore written only by the release
-flow and equals the release version in the archives and on `main` after
-each release; nobody bumps it by hand. Between releases, local and PR
-packaging (`package-skills.sh`, the PR `package` job) reports the last
-*stamped* version — the committed value, which only the release flow
-updates. This is unrelated to `metadata/skill.yaml`'s own, independently
-maintained `version`.
+### Skill archive version
+
+The version authority is the newest `## vX.Y.Z` heading in `CHANGELOG.md`,
+which only the release flow writes (alongside the `vX.Y.Z` tag). Every
+archive `package-skills.sh` / `package-skills.ps1` builds — a release, a
+local build, or the PR `package` job — has its `SKILL.md` frontmatter
+`version` stamped from it, so an archive never reports a stale committed
+value:
+
+- **Release build:** the heading just rolled in step 3 is the planned
+  version, and step 5 verifies the archives against it.
+- **Local / PR build:** the archives report the newest published release
+  version the tree builds on. If the committed `SKILL.md` value differs,
+  packaging prints a note and uses the authority; if `CHANGELOG.md` is
+  missing or has no release heading, packaging fails with no archive.
+- The committed `version:` is only a mirror that step 4 keeps equal to the
+  release; nobody bumps it by hand, and it is unrelated to
+  `metadata/skill.yaml`'s own independently maintained `version`.
 
 The `release-publish` concurrency group serializes publication. The
 release commit is `[skip ci]` and the workflow listens on no tag or

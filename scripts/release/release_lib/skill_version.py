@@ -3,47 +3,25 @@
 from __future__ import annotations
 
 import json
-import re
+import sys
 import zipfile
 from pathlib import Path
 
 from release_lib.semver_version import validate_semver
 
-PACKAGE_MANIFEST = Path("scripts") / "packaging" / "package-manifest.json"
+_PACKAGING = str(Path(__file__).resolve().parents[2] / "packaging")
+if _PACKAGING not in sys.path:
+    sys.path.insert(0, _PACKAGING)
 
-_VERSION_LINE = re.compile(r"^version:[ \t]*(\S+)[ \t]*$")
+from package_domain.version import frontmatter_version, stamp_frontmatter_version  # noqa: E402
+
+PACKAGE_MANIFEST = Path("scripts") / "packaging" / "package-manifest.json"
 
 
 def skill_targets(repo_root: Path) -> list[tuple[str, str]]:
     """(skill name, archive filename) for every packaged Skill, from the package manifest."""
     manifest = json.loads((repo_root / PACKAGE_MANIFEST).read_text(encoding="utf-8"))
     return [(skill["name"], skill["archive"]) for skill in manifest["skills"].values()]
-
-
-def _frontmatter_version_index(lines: list[str]) -> int | None:
-    if not lines or lines[0] != "---" or "---" not in lines[1:]:
-        return None
-    closing = lines.index("---", 1)
-    for index in range(1, closing):
-        if _VERSION_LINE.match(lines[index]):
-            return index
-    return None
-
-
-def frontmatter_version(text: str) -> str | None:
-    lines = text.split("\n")
-    index = _frontmatter_version_index(lines)
-    return None if index is None else _VERSION_LINE.match(lines[index]).group(1)
-
-
-def stamp_frontmatter_version(text: str, version: str) -> str:
-    validate_semver(version)
-    lines = text.split("\n")
-    index = _frontmatter_version_index(lines)
-    if index is None:
-        raise ValueError("SKILL.md frontmatter has no 'version:' line to stamp")
-    lines[index] = f"version: {version}"
-    return "\n".join(lines)
 
 
 def stamp_skill_versions(repo_root: Path, version: str) -> list[Path]:

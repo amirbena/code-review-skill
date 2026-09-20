@@ -3,8 +3,8 @@
 Invoked identically by ``scripts/packaging/package-skills.sh`` and
 ``scripts/packaging/package-skills.ps1`` (via ``scripts/packaging/package_adapt.py``) so both
 platform orchestration scripts share one implementation of shared-link
-adaptation, metadata-path adaptation, and SKILL.md frontmatter structural
-validation.
+adaptation, metadata-path adaptation, release-version stamping, and SKILL.md
+frontmatter structural validation.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from pathlib import Path
 
 from .adaptation import adapt_metadata_paths_file, adapt_shared_links_file
 from .validation import SkillFrontmatterError, validate_skill_frontmatter
+from .version import stamp_skill_md_from_authority
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -37,6 +38,13 @@ def main(argv: list[str] | None = None) -> int:
     validate_frontmatter.add_argument("file", type=Path)
     validate_frontmatter.add_argument("expected_name")
 
+    stamp_version = subparsers.add_parser(
+        "stamp-release-version",
+        help="stamp a staged root SKILL.md with the version from CHANGELOG.md's newest release heading",
+    )
+    stamp_version.add_argument("file", type=Path)
+    stamp_version.add_argument("changelog", type=Path)
+
     args = parser.parse_args(argv)
 
     try:
@@ -46,7 +54,16 @@ def main(argv: list[str] | None = None) -> int:
             adapt_metadata_paths_file(args.file)
         elif args.command == "validate-frontmatter":
             validate_skill_frontmatter(args.file, args.expected_name)
-    except (OSError, SkillFrontmatterError) as exc:
+        elif args.command == "stamp-release-version":
+            version, previous = stamp_skill_md_from_authority(args.file, args.changelog)
+            if previous is None:
+                print(f"packaged Skill version {version} (release authority: {args.changelog})")
+            else:
+                print(
+                    f"note: committed SKILL.md version {previous} differs from the release "
+                    f"authority {version}; packaged with {version}"
+                )
+    except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     return 0
