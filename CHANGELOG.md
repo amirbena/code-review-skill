@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.54.0 — 2026-09-20
+
+### Changed
+
+- `local-code-review` now compares a recorded reviewed-state identity when reconciling existing PR findings, re-evaluating instead of marking them resolved when the state and surrounding code changed (#495).
+
 ## v1.53.0 — 2026-09-18
 
 ### Added
