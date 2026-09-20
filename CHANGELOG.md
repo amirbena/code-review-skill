@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.54.1 — 2026-09-20
+
+### Fixed
+
+- Skill archives now report the current release version in their SKILL.md frontmatter, both for published releases and for local or PR packaging, instead of a stale committed value (#498).
+
 ## v1.54.0 — 2026-09-20
 
 ### Changed
