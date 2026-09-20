@@ -91,6 +91,38 @@ class StampTests(unittest.TestCase):
             stamp_frontmatter_version("---\nname: x\n---\nBody\n", "1.54.0")
 
 
+class CrlfTests(unittest.TestCase):
+    """Windows checkouts carry CRLF; reading and stamping must tolerate it and keep it."""
+
+    CRLF_SKILL = SKILL.replace("\n", "\r\n")
+
+    def test_reads_the_version_from_a_crlf_file(self) -> None:
+        self.assertEqual(frontmatter_version(self.CRLF_SKILL), "1.50.2")
+
+    def test_stamping_changes_only_the_version_line_and_keeps_crlf(self) -> None:
+        stamped = stamp_frontmatter_version(self.CRLF_SKILL, "1.54.0")
+        self.assertEqual(stamped, self.CRLF_SKILL.replace("1.50.2", "1.54.0"))
+        self.assertNotIn("\n", stamped.replace("\r\n", ""))
+
+    def test_a_crlf_file_without_a_version_line_is_still_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            stamp_frontmatter_version("---\r\nname: x\r\n---\r\nBody\r\n", "1.54.0")
+
+    def test_newest_release_version_reads_a_crlf_changelog(self) -> None:
+        self.assertEqual(newest_release_version(CHANGELOG.replace("\n", "\r\n")), "1.54.0")
+
+    def test_the_cli_stamps_a_crlf_skill_md_byte_exactly(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            skill, changelog = Path(tmp) / "SKILL.md", Path(tmp) / "CHANGELOG.md"
+            skill.write_bytes(self.CRLF_SKILL.encode("utf-8"))
+            changelog.write_bytes(CHANGELOG.replace("\n", "\r\n").encode("utf-8"))
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                code = main(["stamp-release-version", str(skill), str(changelog)])
+            self.assertEqual(code, 0)
+            self.assertEqual(skill.read_bytes(), self.CRLF_SKILL.replace("1.50.2", "1.54.0").encode("utf-8"))
+
+
 class StampFromAuthorityTests(unittest.TestCase):
     def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()

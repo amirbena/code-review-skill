@@ -12,7 +12,7 @@ from pathlib import Path
 _STRICT = r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)"
 VERSION_RE = re.compile(rf"^{_STRICT}$")
 _RELEASE_HEADING = re.compile(rf"^## v({_STRICT})(?=\s|$)", re.MULTILINE)
-_VERSION_LINE = re.compile(r"^version:[ \t]*(\S+)[ \t]*$")
+_VERSION_LINE = re.compile(r"^version:[ \t]*(\S+)[ \t]*\r?$")
 
 
 class ReleaseVersionError(ValueError):
@@ -38,9 +38,11 @@ def resolve_release_version(changelog: Path) -> str:
 
 
 def _frontmatter_version_index(lines: list[str]) -> int | None:
-    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+    # Lines keep any trailing "\r" so CRLF files are read and rewritten unchanged.
+    stripped = [line.rstrip("\r") for line in lines]
+    if not stripped or stripped[0] != "---" or "---" not in stripped[1:]:
         return None
-    for index in range(1, lines.index("---", 1)):
+    for index in range(1, stripped.index("---", 1)):
         if _VERSION_LINE.match(lines[index]):
             return index
     return None
@@ -59,7 +61,7 @@ def stamp_frontmatter_version(text: str, version: str) -> str:
     index = _frontmatter_version_index(lines)
     if index is None:
         raise ValueError("SKILL.md frontmatter has no 'version:' line to stamp")
-    lines[index] = f"version: {version}"
+    lines[index] = f"version: {version}" + ("\r" if lines[index].endswith("\r") else "")
     return "\n".join(lines)
 
 
