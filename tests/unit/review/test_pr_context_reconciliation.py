@@ -182,9 +182,14 @@ class ReviewedStateIdentityTests(unittest.TestCase):
     reviewed_sha / head_changed handling (pr-context.md, "Reviewed-state
     identity")."""
 
-    STATE_A = prc.ReviewedState(staged_fingerprint="a" * 64, head_sha="1" * 40)
-    STATE_B = prc.ReviewedState(staged_fingerprint="b" * 64, head_sha="1" * 40)
-    STATE_NEW_HEAD = prc.ReviewedState(staged_fingerprint="a" * 64, head_sha="2" * 40)
+    STATE_A = prc.ReviewedState(staged_fingerprint="a" * 64, base_sha="0" * 40, head_sha="1" * 40)
+    STATE_B = prc.ReviewedState(staged_fingerprint="b" * 64, base_sha="0" * 40, head_sha="1" * 40)
+    STATE_NEW_HEAD = prc.ReviewedState(
+        staged_fingerprint="a" * 64, base_sha="0" * 40, head_sha="2" * 40
+    )
+    STATE_NEW_BASE = prc.ReviewedState(
+        staged_fingerprint="a" * 64, base_sha="9" * 40, head_sha="1" * 40
+    )
 
     def _finding(self, state=STATE_A) -> prc.ExistingFinding:
         return prc.ExistingFinding(
@@ -205,7 +210,9 @@ class ReviewedStateIdentityTests(unittest.TestCase):
         self.assertIsNone(finding.reviewed_state)
 
     def test_identical_identity_is_unchanged(self) -> None:
-        same = prc.ReviewedState(staged_fingerprint="a" * 64, head_sha="1" * 40)
+        same = prc.ReviewedState(
+            staged_fingerprint="a" * 64, base_sha="0" * 40, head_sha="1" * 40
+        )
         self.assertFalse(prc.reviewed_state_changed(self.STATE_A, same))
 
     def test_staged_fingerprint_difference_is_changed(self) -> None:
@@ -213,6 +220,9 @@ class ReviewedStateIdentityTests(unittest.TestCase):
 
     def test_head_difference_is_changed(self) -> None:
         self.assertTrue(prc.reviewed_state_changed(self.STATE_A, self.STATE_NEW_HEAD))
+
+    def test_base_difference_with_same_head_is_changed(self) -> None:
+        self.assertTrue(prc.reviewed_state_changed(self.STATE_A, self.STATE_NEW_BASE))
 
     def test_unknown_identity_is_never_treated_as_unchanged(self) -> None:
         self.assertTrue(prc.reviewed_state_changed(None, self.STATE_A))
@@ -297,7 +307,8 @@ class ReviewedStateIdentityTests(unittest.TestCase):
 
     def test_identity_is_never_derived_from_unstaged_or_untracked_state(self) -> None:
         self.assertEqual(
-            set(prc.ReviewedState.__dataclass_fields__), {"staged_fingerprint", "head_sha"}
+            set(prc.ReviewedState.__dataclass_fields__),
+            {"staged_fingerprint", "base_sha", "head_sha"},
         )
 
 

@@ -121,7 +121,7 @@ LOCAL_BASELINE_HASHES = {
     LOCAL_RUNBOOK: "043341bfe83aa24d83775699abfbfe70da732c2f",
     LOCAL_SKILL: "9f638065b9d0f7285b3887127065cb82739a13c3",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
-    LOCAL_POLICY_DIR / "pr-context.md": "bd8fd743c9ae07097cede5aa8c6e5c64b5bd2d67",
+    LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "6792d7e3f7ae1ad0214fff2e85db5e28ac6fb108",
     LOCAL_POLICY_DIR / "review-context.md": "ea16e2e8425e8c85f83ba5588d0e8aee94bd495e",
 }

@@ -185,15 +185,21 @@ authority.**
 ### Reviewed-state identity
 
 The local counterpart of the GitHub side's reviewed-HEAD comparison in
-[`review-evidence.md`](../../../shared/policies/review-evidence.md), "HEAD
-changes reset applicability." An existing finding may carry the identity of
-the local state it was recorded against — for example, when it is carried
-forward from a prior local review report. That identity reuses the
-mechanisms [`repository-state.md`](repository-state.md) already defines; it
-adds no new one:
+[`review-evidence.md`](../../../shared/policies/review-evidence.md),
+"Interpret prior evidence against the current target." An existing finding
+may carry the identity of the local state it was recorded against — for
+example, when it is carried forward from a prior local review report. That
+identity reuses values [`repository-state.md`](repository-state.md) and the
+report's Review Metadata already define; it adds no new mechanism:
 
 - the **staged-delta fingerprint** ("Staged delta fingerprint"); and
-- the **HEAD commit** the committed delta ended at.
+- the **base SHA and HEAD commit** the committed delta
+  (`git diff <base>...HEAD`) spans — HEAD alone does not identify it, since
+  the same HEAD reviewed against a different base is a different delta.
+
+The report omits the fingerprint when nothing was staged, so an omitted
+fingerprint is read as the empty-input hash `repository-state.md` documents
+for "nothing staged," not as a missing identity.
 
 It never covers unstaged or untracked state, which is re-detected on every
 invocation and about which an identity comparison asserts nothing.
@@ -203,7 +209,7 @@ The recorded identity is compared with the current one:
 - **Unchanged** — both identities are known and equal, and the
   applicable-review-standard precondition in `repository-state.md`,
   "Precondition: the applicable review standard must be unchanged," holds.
-- **Changed** — the fingerprint or HEAD differs. A missing identity on
+- **Changed** — the fingerprint, base, or HEAD differs. A missing identity on
   either side, or an unestablished precondition, also counts as changed:
   "unchanged" is never assumed.
 

@@ -75,10 +75,11 @@ class FindingStatus(Enum):
 class ReviewedState:
     """Identity of the local state a finding was recorded against
     (pr-context.md, "Reviewed-state identity"): the staged-delta fingerprint
-    plus the HEAD the committed delta ended at. Unstaged and untracked state
-    are deliberately not part of it."""
+    plus the base and HEAD the committed delta spans. Unstaged and untracked
+    state are deliberately not part of it."""
 
     staged_fingerprint: str  # SHA-256 of `git diff --cached --raw -M -z`
+    base_sha: str
     head_sha: str
 
 
