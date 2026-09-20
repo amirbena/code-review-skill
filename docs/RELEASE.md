@@ -373,6 +373,21 @@ value:
   release; nobody bumps it by hand, and it is unrelated to
   `metadata/skill.yaml`'s own independently maintained `version`.
 
+**Repairing published archives.** `scripts/release/repair_archive_versions.py`
+rebuilds an already-published release's archives from its exact tag, with only
+the release version stamped by the same `stamp-skill-version` mechanism and
+checked by the same archive-version verification (the tag's own
+`package-skills.sh` builds them, so no `main` content enters an archive). It
+runs three separate phases per `vX.Y.Z` tag, with `--work-dir` outside the repo
+holding the rebuilt archives and per-archive JSON evidence:
+
+- `reconstruct` and `verify` never modify a Release. `verify` fails an archive
+  unless its inventory matches the published one and only `SKILL.md`'s
+  `version:` line differs.
+- `replace --confirm-replace` uploads only archives that passed `verify` (and
+  whose published asset is unchanged since), then re-downloads each and
+  re-checks its version and inventory. A failing archive is left untouched.
+
 The `release-publish` concurrency group serializes publication. The
 release commit is `[skip ci]` and the workflow listens on no tag or
 `release` event, so publishing cannot re-enter the flow.
