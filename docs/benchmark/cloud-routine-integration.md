@@ -133,7 +133,10 @@ entrypoint:
    outside `claude/`. `--seal-dir DIR` writes the same files to a directory
    instead: a local dry run that pushes nothing.
 
-Any failure before the read-back leaves nothing durable. `--trigger`
+A failure before the push completes leaves nothing durable. A failure after it
+(a timeout, or a failed read-back) can leave a sealed ref while the run reports
+failure; the publisher still publishes that ref, and a re-run gets a distinct
+`run_id`. `--trigger`
 (`scheduled`, `manual`, or `api`; default `manual`) is recorded in the result and
 only the Routine prompt passes `scheduled`, so a hand-started run never counts
 toward a lane's cadence. A sentinel invocation covers several cases, so its wall

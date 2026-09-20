@@ -82,6 +82,7 @@ class LaneRun:
     repo_ref: str
     started_at: str
     started_mono: float
+    spec_sha256: str
     confirmation_budget_s: float | None = None
 
 
@@ -149,7 +150,7 @@ def _prompt_template() -> str:
     return match.group(1)
 
 
-def _spec_sha256(manifest: Mapping[str, Any]) -> str:
+def spec_sha256(manifest: Mapping[str, Any]) -> str:
     """Digest of the prompt template and the manifest only, so unrelated doc edits do not change it."""
     template = hashlib.sha256(_prompt_template().encode("utf-8")).hexdigest()
     return res.sha256_hex(res.canonical_json({"manifest": manifest, "prompt_template_sha256": template}))
@@ -214,7 +215,7 @@ def build_sealed_run(
             "repo_sha": run.repo_sha,
             "ref": run.repo_ref,
             "entrypoint_version": f"run_benchmark_routine.py@{run.repo_sha[:12]}",
-            "spec_sha256": _spec_sha256(manifest),
+            "spec_sha256": run.spec_sha256,
         },
         runtime={**run.runtime, "adapter_id": f"production-review-adapter@{run.repo_sha[:12]}"},
         verification={"overall_verified": True, "runs": [i.verification for i in invocations]},

@@ -123,6 +123,18 @@ class FailClosedTests(EntrypointTestCase):
         self.assertIn("invalid manifest", err)
         self.assertEqual(runner.calls, [])
 
+    def test_a_broken_prompt_template_fails_before_any_invocation(self) -> None:
+        corpus = _corpus(self.tmp / "corpus", ["a"])
+        doc = self.tmp / "doc.md"
+        doc.write_text("no template block\n", encoding="utf-8")
+        runner = FakeRunner()
+        with mock.patch.object(lane_run, "ROUTINE_DOC", doc):
+            code, _, err = self.run_main(runner, "--mode", "sentinel", "--corpus-dir", str(corpus), "--seal-dir", str(self.seal_dir))
+        self.assertEqual(code, 1)
+        self.assertIn("prompt template", err)
+        self.assertEqual(runner.calls, [])
+        self.assertFalse(self.seal_dir.exists())
+
     def test_a_lane_with_no_fixtures_fails_closed(self) -> None:
         empty = self.tmp / "empty"
         empty.mkdir()

@@ -64,7 +64,7 @@ class SpecDigestTests(unittest.TestCase):
             doc = Path(tmp) / "doc.md"
             doc.write_text(text, encoding="utf-8")
             with mock.patch.object(lane_run, "ROUTINE_DOC", doc):
-                return lane_run._spec_sha256(self.MANIFEST)
+                return lane_run.spec_sha256(self.MANIFEST)
 
     @staticmethod
     def _doc(prose: str = "intro", template: str = "1. run it\n") -> str:
@@ -81,7 +81,7 @@ class SpecDigestTests(unittest.TestCase):
             doc = Path(tmp) / "doc.md"
             doc.write_text(self._doc(), encoding="utf-8")
             with mock.patch.object(lane_run, "ROUTINE_DOC", doc):
-                self.assertNotEqual(lane_run._spec_sha256({"a": 1}), lane_run._spec_sha256({"a": 2}))
+                self.assertNotEqual(lane_run.spec_sha256({"a": 1}), lane_run.spec_sha256({"a": 2}))
 
     def test_a_missing_template_fails_closed(self) -> None:
         with self.assertRaises(lane_run.RoutineExecutionError):

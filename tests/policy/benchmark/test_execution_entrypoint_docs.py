@@ -46,6 +46,10 @@ class ExecutionEntrypointDocTests(unittest.TestCase):
         ):
             self.assertIn(phrase, self.section, phrase)
 
+    def test_states_what_a_failed_seal_can_leave_behind(self) -> None:
+        self.assertIn("A failure before the push completes leaves nothing durable", self.section)
+        self.assertIn("can leave a sealed ref while the run reports failure", self.section)
+
     def test_retired_evidence_argument_is_documented_as_gone(self) -> None:
         self.assertIn("`--evidence-issue` argument is no longer accepted", self.section)
         self.assertNotIn("evidence_issue", self.options)

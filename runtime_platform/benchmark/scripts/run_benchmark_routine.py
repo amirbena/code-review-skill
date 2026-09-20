@@ -51,6 +51,7 @@ from runtime_platform.benchmark.scripts.benchmark_lane_run import (  # noqa: E40
     build_sealed_run,
     invoke,
     lane_corpus,
+    spec_sha256,
     utc_now,
 )
 from runtime_platform.benchmark.scripts.benchmark_review_adapter import resolve_cli_executable  # noqa: E402
@@ -236,6 +237,7 @@ def run_handoff_check(args: argparse.Namespace) -> int:
 def run_benchmark_mode(args: argparse.Namespace) -> int:
     plan = _plan(args)
     manifest = _load_manifest(args.manifest) if plan.corpus is not None else None
+    spec = spec_sha256(manifest) if manifest is not None else None  # fail before any invocation
     executable = args.cli or resolve_cli_executable()
     runtime = {
         "runtime_name": args.runtime_name or executable,
@@ -266,6 +268,7 @@ def run_benchmark_mode(args: argparse.Namespace) -> int:
         repo_ref=_git_ref(),
         started_at=started_at,
         started_mono=started_mono,
+        spec_sha256=spec,
         confirmation_budget_s=args.confirmation_budget_s,
     )
     sealed = build_sealed_run(
