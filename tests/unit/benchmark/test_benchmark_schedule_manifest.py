@@ -10,7 +10,6 @@ import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
-from runtime_platform.benchmark.scripts import benchmark_drift as bd
 from runtime_platform.benchmark.scripts import benchmark_schedule_manifest as sm
 from tests.support.paths import REPO_ROOT
 
@@ -59,11 +58,12 @@ class CommittedManifestTests(unittest.TestCase):
     def test_confirmation_matches_recommended_parameters(self) -> None:
         self.assertEqual(_manifest()["confirmation"], {"reruns": 2, "threshold": 2, "max_cases": 10})
 
-    def test_labels_agree_with_drift_module(self) -> None:
+    def test_label_names_are_the_ones_the_lifecycle_documents(self) -> None:
         names = {label["role"]: label["name"] for label in _manifest()["labels"]}
-        self.assertEqual(names["drift"], bd.REGRESSION_LABEL)
-        self.assertEqual(names["keep-open"], bd.KEEP_OPEN_LABEL)
-        self.assertEqual(names["missed-run"], "benchmark-missed-run")
+        self.assertEqual(names, {
+            "drift": "benchmark-regression", "keep-open": "keep-open",
+            "missed-run": "benchmark-missed-run", "tracking": "benchmark-tracking",
+        })
 
     def test_committed_manifest_is_provisioned(self) -> None:
         self.assertEqual(sm.validate_manifest(_manifest(), require_provisioned=True), [])

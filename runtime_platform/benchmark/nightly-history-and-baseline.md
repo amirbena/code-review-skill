@@ -30,10 +30,12 @@ lifecycle (Non-goals, below).
 > in [`contract-reconciliation.md`](scheduled-operations/contract-reconciliation.md)).
 > Sections changed by an amendment carry its ID, e.g. **(A4)**; everything not
 > marked is unchanged, including the baseline *policy* (§4). This document
-> states the amended contract. `benchmark_history.py` and
-> `benchmark_regression_lifecycle.py` still implement the pre-amendment
-> behavior until the implementation issues of Epic #466 land, and those issues
-> cite this text; `run_benchmark_routine.py` was brought to it by [#470](https://github.com/amirbena/code-review-skill/issues/470).
+> states the amended contract. `benchmark_history.py` still implements the
+> pre-amendment behavior until the remaining implementation issues of Epic #466
+> land, and those issues cite this text; `run_benchmark_routine.py` was brought
+> to it by [#470](https://github.com/amirbena/code-review-skill/issues/470), and
+> the GitHub client and issue lifecycle now live in the publisher
+> ([`publication-cli.md`](publication-cli.md)).
 
 ## 1. Scope
 

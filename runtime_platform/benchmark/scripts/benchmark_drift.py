@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Drift classification (Issue #339): meaning, fingerprint identity, and the `detect` CLI.
+"""Drift classification and fingerprints (Issue #339); the issue lifecycle lives in `publisher/`.
 
 Full contract: `runtime_platform/benchmark/drift-detection-and-regression-lifecycle.md`.
-The GitHub issue lifecycle lives in `benchmark_regression_lifecycle.py`.
 """
 
 from __future__ import annotations
@@ -133,9 +132,9 @@ def classify_drift(
     return sorted(records, key=lambda r: (r.case_id, r.drift_type, r.expected_finding_key))
 
 
-# Labels the publication side applies; owned here so the manifest test can pin them.
-REGRESSION_LABEL = "benchmark-regression"
-KEEP_OPEN_LABEL = "keep-open"
+# --------------------------------------------------------------------------
+# CLI
+# --------------------------------------------------------------------------
 
 
 def _load_case_metrics_and_severity(
@@ -179,9 +178,11 @@ def _load_case_metrics_and_severity(
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
+
     detect = sub.add_parser("detect", help="Classify drift between a baseline and candidate metrics/severity file.")
     detect.add_argument("--baseline-file", required=True, type=Path)
     detect.add_argument("--candidate-file", required=True, type=Path)
+
     return parser
 
 
