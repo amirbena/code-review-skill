@@ -30,9 +30,12 @@ severity-accuracy logic.
 > order, in-run confirmation and the publisher boundary, **A9** lane-scoped
 > resolution, **A10** label prerequisites and recurrence. Drift types,
 > tolerance, fingerprint, hidden-marker identity, `keep-open`, and the
-> machine-readable metadata are unchanged. `benchmark_drift.py` still
-> implements the pre-amendment behavior until the implementation issues of
-> Epic #466 land, and those issues cite this text.
+> machine-readable metadata are unchanged. Execution-side evaluation and
+> in-run confirmation are implemented by [#470](https://github.com/amirbena/code-review-skill/issues/470)
+> (`scripts/benchmark_drift_evaluation.py`, over the unchanged `classify_drift`
+> in `benchmark_drift.py`); the issue lifecycle is implemented by the publisher
+> ([#471](https://github.com/amirbena/code-review-skill/issues/471),
+> [`publication-cli.md`](publication-cli.md)).
 
 ## Non-goals
 
@@ -313,7 +316,7 @@ outcome is sealed into the run's canonical result. The lifecycle in §4 is
 executed by the **publisher** — the deterministic publication step that runs
 after the seal — which consumes the sealed record's `drift.confirmed[]` and
 fingerprints and **never recomputes them**. `sync_regressions` and the `gh`
-client therefore move out of the Routine into the publisher, whose import graph
+client therefore move out of the Routine into the publisher (out of the execution import closure by [#470](https://github.com/amirbena/code-review-skill/issues/470), where a policy test keeps it unreachable, and reimplemented and retired by [#471](https://github.com/amirbena/code-review-skill/issues/471)), whose import graph
 excludes the benchmark entrypoint, the reviewer adapter, and `classify_drift`
 (enforced by a policy test,
 [`scheduled-operations/publication-architecture.md`](scheduled-operations/publication-architecture.md)
@@ -381,12 +384,14 @@ classification, not for the issue lifecycle.
 
 This document is the authoritative contract for drift detection and the
 regression-issue lifecycle, **as amended by #467 (A4, A8, A9, A10)**.
-`runtime_platform/benchmark/scripts/benchmark_drift.py` implements the
-pre-amendment shape and is brought to this text by the implementation issues
-of Epic [#466](https://github.com/amirbena/code-review-skill/issues/466);
+`runtime_platform/benchmark/scripts/benchmark_drift.py` implements classification
+and fingerprinting unchanged; execution-side evaluation and in-run confirmation
+are [#470](https://github.com/amirbena/code-review-skill/issues/470). The issue
+lifecycle is the publisher's ([#471](https://github.com/amirbena/code-review-skill/issues/471),
+[`publication-cli.md`](publication-cli.md));
 `tests/unit/benchmark/test_benchmark_drift.py` proves the fingerprinting
-stability/distinctness and the four pre-amendment lifecycle transitions
-against a fixed baseline+candidate pair (open, dedupe-comment, keep-open
-override, close-on-resolution) plus the noise-never-triggers-an-issue
-guarantee. A conflict discovered later is resolved by updating this
+stability/distinctness, and `test_benchmark_publisher_sweep.py` the lifecycle
+transitions (open, comment-on-recurrence, keep-open override, lane-aware
+close-on-resolution, recurrence after closure) and that unconfirmed or
+non-comparable drift never touches an issue. A conflict discovered later is resolved by updating this
 document through a reviewed change, not by silently deviating in code.

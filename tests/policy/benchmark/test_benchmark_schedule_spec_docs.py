@@ -112,7 +112,7 @@ class RoutinePromptTemplateTests(unittest.TestCase):
         step2 = self._step(2).replace(" \\ ", " ")
         allowed = re.compile(
             rf"^2\. Run: python3 {re.escape(self.entrypoint)} --mode \S+"
-            r"( \[--case-id <id> \.\.\.\])? --model-id <[^>]+>$"
+            r"( \[--case-id <id> \.\.\.\])? --trigger scheduled --model-id <[^>]+>$"
         )
         self.assertRegex(step2, allowed)
         self.assertNotRegex(re.sub(r"<[^>]*>", "", step2), r"[;&|`$]")
