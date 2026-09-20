@@ -177,6 +177,141 @@ class ExistingFindingReconciliationTests(unittest.TestCase):
         self.assertFalse(result.reuse_evidence)
 
 
+class ReviewedStateIdentityTests(unittest.TestCase):
+    """Reviewed-state identity: the local mirror of the github side's
+    reviewed_sha / head_changed handling (pr-context.md, "Reviewed-state
+    identity")."""
+
+    STATE_A = prc.ReviewedState(staged_fingerprint="a" * 64, base_sha="0" * 40, head_sha="1" * 40)
+    STATE_B = prc.ReviewedState(staged_fingerprint="b" * 64, base_sha="0" * 40, head_sha="1" * 40)
+    STATE_NEW_HEAD = prc.ReviewedState(
+        staged_fingerprint="a" * 64, base_sha="0" * 40, head_sha="2" * 40
+    )
+    STATE_NEW_BASE = prc.ReviewedState(
+        staged_fingerprint="a" * 64, base_sha="9" * 40, head_sha="1" * 40
+    )
+
+    def _finding(self, state=STATE_A) -> prc.ExistingFinding:
+        return prc.ExistingFinding(
+            id="F-PR-7", touches={"src/payments/charge.py"}, reviewed_state=state
+        )
+
+    def _reconcile(self, current, **kwargs) -> prc.FindingReconciliation:
+        return prc.reconcile_finding(
+            self._finding(), LOCAL_DELTA_TOUCHES, current_state=current, **kwargs
+        )
+
+    def test_finding_carries_reviewed_state_identity_field(self) -> None:
+        self.assertIn("reviewed_state", prc.ExistingFinding.__dataclass_fields__)
+        self.assertEqual(self._finding().reviewed_state, self.STATE_A)
+
+    def test_identity_is_optional_for_findings_recorded_without_one(self) -> None:
+        finding = prc.ExistingFinding(id="F-PR-1", touches={"src/payments/charge.py"})
+        self.assertIsNone(finding.reviewed_state)
+
+    def test_identical_identity_is_unchanged(self) -> None:
+        same = prc.ReviewedState(
+            staged_fingerprint="a" * 64, base_sha="0" * 40, head_sha="1" * 40
+        )
+        self.assertFalse(prc.reviewed_state_changed(self.STATE_A, same))
+
+    def test_staged_fingerprint_difference_is_changed(self) -> None:
+        self.assertTrue(prc.reviewed_state_changed(self.STATE_A, self.STATE_B))
+
+    def test_head_difference_is_changed(self) -> None:
+        self.assertTrue(prc.reviewed_state_changed(self.STATE_A, self.STATE_NEW_HEAD))
+
+    def test_base_difference_with_same_head_is_changed(self) -> None:
+        self.assertTrue(prc.reviewed_state_changed(self.STATE_A, self.STATE_NEW_BASE))
+
+    def test_unknown_identity_is_never_treated_as_unchanged(self) -> None:
+        self.assertTrue(prc.reviewed_state_changed(None, self.STATE_A))
+        self.assertTrue(prc.reviewed_state_changed(self.STATE_A, None))
+        self.assertTrue(prc.reviewed_state_changed(None, None))
+
+    def test_matching_identity_does_not_count_when_review_standard_changed(self) -> None:
+        self.assertTrue(
+            prc.reviewed_state_changed(
+                self.STATE_A, self.STATE_A, review_standard_unchanged=False
+            )
+        )
+
+    def test_unchanged_state_absent_issue_is_resolved(self) -> None:
+        result = self._reconcile(self.STATE_A, issue_still_present=False)
+        self.assertEqual(result.status, prc.FindingStatus.RESOLVED)
+        self.assertFalse(result.reuse_evidence)
+
+    def test_changed_state_alone_does_not_block_a_resolved_verdict(self) -> None:
+        result = self._reconcile(self.STATE_B, issue_still_present=False)
+        self.assertEqual(result.status, prc.FindingStatus.RESOLVED)
+
+    def test_changed_state_with_material_churn_requires_reevaluation(self) -> None:
+        result = self._reconcile(
+            self.STATE_B,
+            issue_still_present=False,
+            surrounding_code_materially_changed=True,
+        )
+        self.assertEqual(result.status, prc.FindingStatus.REQUIRES_REEVALUATION)
+        self.assertTrue(result.reuse_evidence)
+
+    def test_unchanged_state_with_churn_flag_stays_resolved(self) -> None:
+        result = self._reconcile(
+            self.STATE_A,
+            issue_still_present=False,
+            surrounding_code_materially_changed=True,
+        )
+        self.assertEqual(result.status, prc.FindingStatus.RESOLVED)
+
+    def test_unknown_state_with_material_churn_requires_reevaluation(self) -> None:
+        finding = prc.ExistingFinding(id="F-PR-1", touches={"src/payments/charge.py"})
+        result = prc.reconcile_finding(
+            finding,
+            LOCAL_DELTA_TOUCHES,
+            issue_still_present=False,
+            surrounding_code_materially_changed=True,
+        )
+        self.assertEqual(result.status, prc.FindingStatus.REQUIRES_REEVALUATION)
+
+    def test_changed_review_standard_with_churn_requires_reevaluation(self) -> None:
+        result = self._reconcile(
+            self.STATE_A,
+            issue_still_present=False,
+            review_standard_unchanged=False,
+            surrounding_code_materially_changed=True,
+        )
+        self.assertEqual(result.status, prc.FindingStatus.REQUIRES_REEVALUATION)
+
+    def test_present_issue_is_still_valid_regardless_of_state_change(self) -> None:
+        for current in (self.STATE_A, self.STATE_B, None):
+            result = self._reconcile(current, issue_still_present=True)
+            self.assertEqual(result.status, prc.FindingStatus.STILL_VALID)
+            self.assertTrue(result.reuse_evidence)
+
+    def test_undeterminable_issue_requires_reevaluation_regardless_of_state(self) -> None:
+        for current in (self.STATE_A, self.STATE_B, None):
+            result = self._reconcile(current, issue_still_present=None)
+            self.assertEqual(result.status, prc.FindingStatus.REQUIRES_REEVALUATION)
+
+    def test_out_of_scope_wins_over_state_handling(self) -> None:
+        finding = prc.ExistingFinding(
+            id="F-PR-1", touches=UNRELATED_TOUCHES, reviewed_state=self.STATE_A
+        )
+        result = prc.reconcile_finding(
+            finding,
+            LOCAL_DELTA_TOUCHES,
+            issue_still_present=False,
+            current_state=self.STATE_B,
+            surrounding_code_materially_changed=True,
+        )
+        self.assertEqual(result.status, prc.FindingStatus.OUT_OF_SCOPE)
+
+    def test_identity_is_never_derived_from_unstaged_or_untracked_state(self) -> None:
+        self.assertEqual(
+            set(prc.ReviewedState.__dataclass_fields__),
+            {"staged_fingerprint", "base_sha", "head_sha"},
+        )
+
+
 class ArchitecturalDecisionTests(unittest.TestCase):
     """Scenarios 3, 4, 5, 6: settled decisions, violations, supersession,
     and mere preferences."""

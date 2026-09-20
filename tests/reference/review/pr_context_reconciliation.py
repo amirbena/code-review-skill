@@ -72,9 +72,24 @@ class FindingStatus(Enum):
 
 
 @dataclass(frozen=True)
+class ReviewedState:
+    """Identity of the local state a finding was recorded against
+    (pr-context.md, "Reviewed-state identity"): the staged-delta fingerprint
+    plus the base and HEAD the committed delta spans. Unstaged and untracked
+    state are deliberately not part of it."""
+
+    staged_fingerprint: str  # SHA-256 of `git diff --cached --raw -M -z`
+    base_sha: str
+    head_sha: str
+
+
+@dataclass(frozen=True)
 class ExistingFinding:
     id: str
     touches: FrozenSet[str]
+    # `None` when the finding carries no local reviewed-state identity, e.g.
+    # a plain PR reviewer comment.
+    reviewed_state: Optional[ReviewedState] = None
 
 
 @dataclass(frozen=True)
@@ -89,16 +104,39 @@ class FindingReconciliation:
     reuse_evidence: bool
 
 
+def reviewed_state_changed(
+    recorded: Optional[ReviewedState],
+    current: Optional[ReviewedState],
+    *,
+    review_standard_unchanged: bool = True,
+) -> bool:
+    """Whether the reviewed local state differs from the one the finding was
+    recorded against.
+
+    "Unchanged" is asserted only when both identities are known, equal, and
+    the applicable review standard is unchanged (repository-state.md,
+    "Precondition"); anything else counts as changed, never as unchanged.
+    """
+    if recorded is None or current is None or not review_standard_unchanged:
+        return True
+    return recorded != current
+
+
 def reconcile_finding(
     finding: ExistingFinding,
     local_delta_touches: FrozenSet[str],
     *,
     issue_still_present: Optional[bool],
+    current_state: Optional[ReviewedState] = None,
+    review_standard_unchanged: bool = True,
+    surrounding_code_materially_changed: bool = False,
 ) -> FindingReconciliation:
     """Resolve one finding's status against the current local delta.
 
     `issue_still_present` is about the *current* delta, never historical PR
-    state; `None` (undeterminable) maps to REQUIRES_REEVALUATION.
+    state; `None` (undeterminable) maps to REQUIRES_REEVALUATION. An absent
+    issue is RESOLVED unless the reviewed state changed and the surrounding
+    code materially changed too, which needs a fresh look instead.
     """
     if not is_relevant_to_local_delta(finding.touches, local_delta_touches):
         return FindingReconciliation(finding.id, FindingStatus.OUT_OF_SCOPE, reuse_evidence=False)
@@ -108,6 +146,15 @@ def reconcile_finding(
         )
     if issue_still_present:
         return FindingReconciliation(finding.id, FindingStatus.STILL_VALID, reuse_evidence=True)
+    state_changed = reviewed_state_changed(
+        finding.reviewed_state,
+        current_state,
+        review_standard_unchanged=review_standard_unchanged,
+    )
+    if state_changed and surrounding_code_materially_changed:
+        return FindingReconciliation(
+            finding.id, FindingStatus.REQUIRES_REEVALUATION, reuse_evidence=True
+        )
     return FindingReconciliation(finding.id, FindingStatus.RESOLVED, reuse_evidence=False)
 
 

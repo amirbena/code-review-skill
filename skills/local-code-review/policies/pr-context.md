@@ -182,6 +182,49 @@ and [`evidence.md`](../../../shared/policies/evidence.md) to reach its own
 finding. **Existing reviewer findings are evidence and context, not
 authority.**
 
+### Reviewed-state identity
+
+The local counterpart of the GitHub side's reviewed-HEAD comparison in
+[`review-evidence.md`](../../../shared/policies/review-evidence.md),
+"Interpret prior evidence against the current target." An existing finding
+may carry the identity of the local state it was recorded against — for
+example, when it is carried forward from a prior local review report. That
+identity reuses values [`repository-state.md`](repository-state.md) and the
+report's Review Metadata already define; it adds no new mechanism:
+
+- the **staged-delta fingerprint** ("Staged delta fingerprint"); and
+- the **base SHA and HEAD commit** the committed delta
+  (`git diff <base>...HEAD`) spans — HEAD alone does not identify it, since
+  the same HEAD reviewed against a different base is a different delta.
+
+The report omits the fingerprint when nothing was staged, so an omitted
+fingerprint is read as the empty-input hash `repository-state.md` documents
+for "nothing staged," not as a missing identity.
+
+It never covers unstaged or untracked state, which is re-detected on every
+invocation and about which an identity comparison asserts nothing.
+
+The recorded identity is compared with the current one:
+
+- **Unchanged** — both identities are known and equal, and the
+  applicable-review-standard precondition in `repository-state.md`,
+  "Precondition: the applicable review standard must be unchanged," holds.
+- **Changed** — the fingerprint, base, or HEAD differs. A missing identity on
+  either side, or an unestablished precondition, also counts as changed:
+  "unchanged" is never assumed.
+
+The comparison affects only one outcome. A finding whose issue is absent
+from the current local delta is **resolved** if the state is unchanged. If
+the state changed and the surrounding code changed materially, "absent"
+is not enough to call it resolved, so it is **requires re-evaluation**.
+A state change alone does not stop a finding from being resolved. It also
+changes nothing for a finding that is still present, outside the current
+local review scope, or whose applicability cannot be determined; those
+keep the statuses above.
+
+An identity comparison is only an input to the status. It never makes an
+existing finding authoritative, and the local delta stays the review target.
+
 ### Avoiding duplicate findings
 
 - A still-valid existing finding that maps onto the current local delta
