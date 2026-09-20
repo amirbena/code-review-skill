@@ -21,10 +21,11 @@ from __future__ import annotations
 import unittest
 
 from runtime_platform.benchmark.scripts import benchmark_drift as bd
+from runtime_platform.benchmark.scripts import benchmark_regression_lifecycle as bl
 from runtime_platform.benchmark.reference import benchmark_metrics as bmet
 
-_BASELINE = bd.RunIdentity(date="2026-09-15", repo_sha="aaa111")
-_CANDIDATE = bd.RunIdentity(date="2026-09-16", repo_sha="bbb222")
+_BASELINE = bl.RunIdentity(date="2026-09-15", repo_sha="aaa111")
+_CANDIDATE = bl.RunIdentity(date="2026-09-16", repo_sha="bbb222")
 
 
 def _metrics(case_id: str, *, missed: tuple[str, ...] = ()) -> bmet.CaseMetrics:
@@ -50,19 +51,19 @@ class FakeGitHubIssueClient:
         self.issues: dict[int, dict] = {}
         self.comments: dict[int, list[str]] = {}
 
-    def list_labeled_issues(self, label: str, *, state: str = "open") -> list[bd.IssueRecord]:
+    def list_labeled_issues(self, label: str, *, state: str = "open") -> list[bl.IssueRecord]:
         return [
-            bd.IssueRecord(number=num, body=data["body"], labels=tuple(data["labels"]))
+            bl.IssueRecord(number=num, body=data["body"], labels=tuple(data["labels"]))
             for num, data in self.issues.items()
             if label in data["labels"] and data["state"] == state
         ]
 
-    def create_issue(self, *, title: str, body: str, labels) -> bd.IssueRecord:
+    def create_issue(self, *, title: str, body: str, labels) -> bl.IssueRecord:
         number = self._next_number
         self._next_number += 1
         self.issues[number] = {"title": title, "body": body, "labels": list(labels), "state": "open"}
         self.comments[number] = []
-        return bd.IssueRecord(number=number, body=body, labels=tuple(labels))
+        return bl.IssueRecord(number=number, body=body, labels=tuple(labels))
 
     def comment(self, issue_number: int, body: str) -> None:
         self.comments[issue_number].append(body)
@@ -80,7 +81,7 @@ class RegressionLifecycleTests(unittest.TestCase):
         base = {"case-a": _metrics("case-a")}
         cand = {"case-a": _metrics("case-a")}
         records = bd.classify_drift(base, cand, {}, {})
-        outcome = bd.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
+        outcome = bl.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
         self.assertEqual(outcome.opened, ())
         self.assertEqual(outcome.commented, ())
         self.assertEqual(outcome.closed, ())
@@ -90,12 +91,12 @@ class RegressionLifecycleTests(unittest.TestCase):
         base = {"case-a": _metrics("case-a")}
         cand = {"case-a": _metrics("case-a", missed=("sqli-key",))}
         records = bd.classify_drift(base, cand, {}, {})
-        outcome = bd.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
+        outcome = bl.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
 
         self.assertEqual(len(self.client.issues), 2)  # missed-required-finding + decision-flip
         self.assertEqual(len(outcome.opened), 2)
         for issue in self.client.issues.values():
-            fp = bd.extract_fingerprint(issue["body"])
+            fp = bl.extract_fingerprint(issue["body"])
             self.assertIsNotNone(fp)
             self.assertIn(bd.REGRESSION_LABEL, issue["labels"])
 
@@ -104,11 +105,11 @@ class RegressionLifecycleTests(unittest.TestCase):
         cand = {"case-a": _metrics("case-a", missed=("sqli-key",))}
         records = bd.classify_drift(base, cand, {}, {})
 
-        bd.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
+        bl.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
         issue_count_after_first = len(self.client.issues)
 
-        second_candidate = bd.RunIdentity(date="2026-09-17", repo_sha="ccc333")
-        outcome = bd.sync_regressions(
+        second_candidate = bl.RunIdentity(date="2026-09-17", repo_sha="ccc333")
+        outcome = bl.sync_regressions(
             records, self.client, baseline=_BASELINE, candidate=second_candidate
         )
 
@@ -121,12 +122,12 @@ class RegressionLifecycleTests(unittest.TestCase):
         base = {"case-a": _metrics("case-a")}
         cand_regressed = {"case-a": _metrics("case-a", missed=("sqli-key",))}
         records = bd.classify_drift(base, cand_regressed, {}, {})
-        bd.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
+        bl.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
         self.assertTrue(all(data["state"] == "open" for data in self.client.issues.values()))
 
         cand_fixed = {"case-a": _metrics("case-a")}
         no_more_records = bd.classify_drift(base, cand_fixed, {}, {})
-        outcome = bd.sync_regressions(
+        outcome = bl.sync_regressions(
             no_more_records, self.client, baseline=_BASELINE, candidate=_CANDIDATE
         )
 
@@ -138,7 +139,7 @@ class RegressionLifecycleTests(unittest.TestCase):
         base = {"case-a": _metrics("case-a")}
         cand_regressed = {"case-a": _metrics("case-a", missed=("sqli-key",))}
         records = bd.classify_drift(base, cand_regressed, {}, {})
-        bd.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
+        bl.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
 
         # A maintainer relabels every open regression issue `keep-open`.
         for data in self.client.issues.values():
@@ -146,7 +147,7 @@ class RegressionLifecycleTests(unittest.TestCase):
 
         cand_fixed = {"case-a": _metrics("case-a")}
         no_more_records = bd.classify_drift(base, cand_fixed, {}, {})
-        outcome = bd.sync_regressions(
+        outcome = bl.sync_regressions(
             no_more_records, self.client, baseline=_BASELINE, candidate=_CANDIDATE
         )
 
@@ -159,7 +160,7 @@ class RegressionLifecycleTests(unittest.TestCase):
         cand = {"case-a": _metrics("case-a")}  # identical -> zero drift records
         records = bd.classify_drift(base, cand, {}, {})
         self.assertEqual(records, [])
-        outcome = bd.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
+        outcome = bl.sync_regressions(records, self.client, baseline=_BASELINE, candidate=_CANDIDATE)
         self.assertEqual(outcome.as_dict(), {"opened": [], "commented": [], "closed": [], "kept_open": []})
         self.assertEqual(self.client.issues, {})
 

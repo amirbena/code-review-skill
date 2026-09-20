@@ -123,6 +123,9 @@ class RunBenchmarkCliCitationFidelityTests(unittest.TestCase):
         self.assertEqual((case["verified"], case["fabricated"]), (1, 1))
         self.assertEqual(case["fabricated_findings"], [{"index": 1, "path": "app/ghost.py", "reasons": ["file-missing"]}])
         self.assertEqual(out["citation_fidelity"]["aggregate"]["fabrication_rate"], "1/2")
+        # The scheduled entrypoint seals per-case severity and duplicate noise beside `metrics` (#470).
+        for section in ("severity", "duplicate_noise"):
+            self.assertEqual([c["id"] for c in out[section]["cases"]], ["correctness-off-by-one-pagination"])
 
 
 if __name__ == "__main__":

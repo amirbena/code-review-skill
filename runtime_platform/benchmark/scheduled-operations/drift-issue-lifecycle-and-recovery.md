@@ -50,6 +50,11 @@ Protocol (parameters live in the manifest; recommended values are M3):
 - At most `max_cases` (10) drifting cases are confirmed per run. If more drift,
   the run is flagged `drift.systemic = true` and confirmation stops; no issue
   is opened for the unconfirmed remainder, and the evidence comment says so.
+- A confirmation rerun that does not pass positive completion verification fails
+  the whole run closed: nothing is sealed, and the next scheduled run
+  re-evaluates. The closed `unconfirmed` reasons deliberately have no value for
+  an unverified rerun, so an unverified observation is never read as "not
+  reproduced".
 - If the run's time budget is exhausted, remaining drifts are recorded as
   `unconfirmed-timeout` — no issue this run; the next run re-evaluates.
 

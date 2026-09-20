@@ -17,7 +17,7 @@ import json
 import unittest
 from unittest import mock
 
-from runtime_platform.benchmark.scripts import benchmark_drift as bd
+from runtime_platform.benchmark.scripts import benchmark_regression_lifecycle as bl
 
 
 def _issue(number: int) -> dict:
@@ -32,7 +32,7 @@ class GhCliIssueClientPaginationTests(unittest.TestCase):
     def test_single_call_when_first_page_is_not_full(self) -> None:
         items = [_issue(1), _issue(2)]
         with mock.patch("subprocess.run", return_value=_completed(items)) as run:
-            result = bd.GhCliIssueClient().list_labeled_issues("benchmark-regression")
+            result = bl.GhCliIssueClient().list_labeled_issues("benchmark-regression")
 
         self.assertEqual([r.number for r in result], [1, 2])
         self.assertEqual(run.call_count, 1)
@@ -48,7 +48,7 @@ class GhCliIssueClientPaginationTests(unittest.TestCase):
         true_set = [_issue(i) for i in range(250)]
         responses = [_completed(full_page), _completed(true_set)]
         with mock.patch("subprocess.run", side_effect=responses) as run:
-            result = bd.GhCliIssueClient().list_labeled_issues("benchmark-regression")
+            result = bl.GhCliIssueClient().list_labeled_issues("benchmark-regression")
 
         self.assertEqual(len(result), 250)
         self.assertEqual(run.call_count, 2)
@@ -59,7 +59,7 @@ class GhCliIssueClientPaginationTests(unittest.TestCase):
 
     def test_no_open_issues_returns_empty_list_in_one_call(self) -> None:
         with mock.patch("subprocess.run", return_value=_completed([])) as run:
-            result = bd.GhCliIssueClient().list_labeled_issues("benchmark-regression")
+            result = bl.GhCliIssueClient().list_labeled_issues("benchmark-regression")
 
         self.assertEqual(result, [])
         self.assertEqual(run.call_count, 1)
@@ -72,12 +72,12 @@ class GhCliIssueClientPaginationTests(unittest.TestCase):
                 [_issue(i) for i in range(int(args[args.index("--limit") + 1]))]
             )
             with self.assertRaises(RuntimeError):
-                bd.GhCliIssueClient().list_labeled_issues("benchmark-regression")
+                bl.GhCliIssueClient().list_labeled_issues("benchmark-regression")
 
         limits_requested = [
             int(call.args[0][call.args[0].index("--limit") + 1]) for call in run.call_args_list
         ]
-        self.assertEqual(limits_requested[-1], bd.MAX_ISSUE_LIST_LIMIT)
+        self.assertEqual(limits_requested[-1], bl.MAX_ISSUE_LIST_LIMIT)
 
 
 if __name__ == "__main__":
