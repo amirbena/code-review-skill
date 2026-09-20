@@ -30,9 +30,12 @@ severity-accuracy logic.
 > order, in-run confirmation and the publisher boundary, **A9** lane-scoped
 > resolution, **A10** label prerequisites and recurrence. Drift types,
 > tolerance, fingerprint, hidden-marker identity, `keep-open`, and the
-> machine-readable metadata are unchanged. `benchmark_drift.py` still
-> implements the pre-amendment behavior until the implementation issues of
-> Epic #466 land, and those issues cite this text.
+> machine-readable metadata are unchanged. Execution-side evaluation and
+> in-run confirmation are implemented by [#470](https://github.com/amirbena/code-review-skill/issues/470)
+> (`scripts/benchmark_drift_evaluation.py`, over the unchanged `classify_drift`
+> in `benchmark_drift.py`); `scripts/benchmark_regression_lifecycle.py` still
+> implements the pre-amendment issue lifecycle until the publisher (#471)
+> replaces it.
 
 ## Non-goals
 
@@ -214,7 +217,7 @@ not the label or any text in the listing, is what decides a match.
 fixed limit would silently truncate this listing once more than `N`
 labeled issues are open — breaking §4.3's one-issue-per-fingerprint
 guarantee without any error. `list_labeled_issues`
-(`runtime_platform/benchmark/scripts/benchmark_drift.py::GhCliIssueClient.list_labeled_issues`)
+(`runtime_platform/benchmark/scripts/benchmark_regression_lifecycle.py::GhCliIssueClient.list_labeled_issues`)
 retries with a doubling `--limit` until a response is smaller than
 requested — proof nothing was left out — up to a fixed safety ceiling
 (`MAX_ISSUE_LIST_LIMIT`) past which it raises rather than looping forever
@@ -317,14 +320,16 @@ outcome is sealed into the run's canonical result. The lifecycle in §4 is
 executed by the **publisher** — the deterministic publication step that runs
 after the seal — which consumes the sealed record's `drift.confirmed[]` and
 fingerprints and **never recomputes them**. `sync_regressions` and the `gh`
-client therefore move out of the Routine into the publisher, whose import graph
+client therefore move out of the Routine into the publisher (relocated by [#470](https://github.com/amirbena/code-review-skill/issues/470) into
+`scripts/benchmark_regression_lifecycle.py`, which execution-side code cannot
+import — a policy test enforces it), whose import graph
 excludes the benchmark entrypoint, the reviewer adapter, and `classify_drift`
 (enforced by a policy test,
 [`scheduled-operations/publication-architecture.md`](scheduled-operations/publication-architecture.md)
 §5). Classification, drift types, tolerance, and fingerprint are unchanged.
 
 The mutation boundary itself stays small and injectable.
-`runtime_platform/benchmark/scripts/benchmark_drift.py` defines a small
+`runtime_platform/benchmark/scripts/benchmark_regression_lifecycle.py` defines a small
 `GitHubIssueClient` protocol (`list_labeled_issues`, `create_issue`,
 `comment`, `close`) and one real implementation, `GhCliIssueClient`, that shells
 out to `gh` (temp-file bodies via `--body-file`, `gh issue create`/`comment`,
@@ -333,7 +338,7 @@ authenticates as the `benchmark-publication` App inside the publication job,
 never as the maintainer's personal identity. `sync_regressions` (the lifecycle
 orchestrator, §4) takes a `GitHubIssueClient` as a parameter and never imports
 or constructs `GhCliIssueClient` itself, so every test in
-[`../../tests/unit/benchmark/test_benchmark_drift.py`](../../tests/unit/benchmark/test_benchmark_drift.py)
+[`../../tests/unit/benchmark/test_benchmark_drift_lifecycle.py`](../../tests/unit/benchmark/test_benchmark_drift_lifecycle.py)
 runs against an in-memory fake client and makes zero network calls.
 runs against an in-memory fake client and makes zero network calls.
 
@@ -386,12 +391,14 @@ classification, not for the issue lifecycle.
 
 This document is the authoritative contract for drift detection and the
 regression-issue lifecycle, **as amended by #467 (A4, A8, A9, A10)**.
-`runtime_platform/benchmark/scripts/benchmark_drift.py` implements the
-pre-amendment shape and is brought to this text by the implementation issues
-of Epic [#466](https://github.com/amirbena/code-review-skill/issues/466);
+`runtime_platform/benchmark/scripts/benchmark_drift.py` implements classification
+and fingerprinting unchanged; execution-side evaluation and in-run confirmation
+are [#470](https://github.com/amirbena/code-review-skill/issues/470). `benchmark_regression_lifecycle.py` implements the pre-amendment
+lifecycle shape and is brought to this text by the publication issue of Epic
+[#466](https://github.com/amirbena/code-review-skill/issues/466);
 `tests/unit/benchmark/test_benchmark_drift.py` proves the fingerprinting
-stability/distinctness and the four pre-amendment lifecycle transitions
-against a fixed baseline+candidate pair (open, dedupe-comment, keep-open
+stability/distinctness, and `test_benchmark_drift_lifecycle.py` the four
+pre-amendment lifecycle transitions against a fixed baseline+candidate pair (open, dedupe-comment, keep-open
 override, close-on-resolution) plus the noise-never-triggers-an-issue
 guarantee. A conflict discovered later is resolved by updating this
 document through a reviewed change, not by silently deviating in code.

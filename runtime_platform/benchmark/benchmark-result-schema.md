@@ -83,9 +83,11 @@ shape, never recomputes them.
 cases by `fixture_digest`. A digest mismatch makes **only that case**
 `incomparable`; cases present on one side only are reported as added or removed
 and never block the rest. Lane-identity mismatch remains a total fail-closed
-refusal ([`regression-report.md`](regression-report.md) §3). Applying the
-partition when evaluating drift is
-[#470](https://github.com/amirbena/code-review-skill/issues/470).
+refusal ([`regression-report.md`](regression-report.md) §3). The execution
+entrypoint applies the partition when evaluating drift
+([#470](https://github.com/amirbena/code-review-skill/issues/470),
+[`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md)
+§2.2).
 
 ## 5. First record-size measurement
 

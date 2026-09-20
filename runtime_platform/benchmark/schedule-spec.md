@@ -73,6 +73,8 @@ The Routine prompt is exactly the literal template in
 §9 (A12), bound per lane to the manifest:
 
 - `--mode` is the lane's `mode`;
+- `--trigger scheduled` marks the run as scheduled, so it counts toward the
+  lane's cadence (a run started without it is recorded as `manual`);
 - `--model-id` is the model backend the Routine session runs as (the only value
   the repository cannot know; it is recorded as declared in `runtime.model_id`);
 - the checkout is a fresh copy of `repository` at its default branch.

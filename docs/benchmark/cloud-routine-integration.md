@@ -23,9 +23,9 @@ document or in code.
 > [`contract-reconciliation.md`](../../runtime_platform/benchmark/scheduled-operations/contract-reconciliation.md)).
 > Amended sections carry their IDs. Unchanged: the modes, positive completion
 > verification, explicit metadata, non-reachability, and fail-closed behavior.
-> `run_benchmark_routine.py` still implements the pre-amendment behavior
-> (in-Routine `gh` posting) until the implementation issues of Epic #466 land,
-> and those issues cite this text.
+> `run_benchmark_routine.py` implements this text since [#470](https://github.com/amirbena/code-review-skill/issues/470); the publication
+> side ([#471](https://github.com/amirbena/code-review-skill/issues/471)) is not
+> implemented yet, so a sealed result is not yet published.
 
 ## 1. Vehicle, not policy
 
@@ -63,9 +63,10 @@ benchmark imports)
 Order (A8): evaluate with in-run confirmation → seal → publish → issue
 lifecycle. The Routine no longer posts evidence or pushes history itself (A2);
 those are publication steps, and a sealed run whose publication fails is
-republished from the seal, never re-run. How `smoke` and `selected` runs hand
-off their output is fixed by the execution-entrypoint implementation issue;
-neither has a GitHub write credential provisioned into it.
+republished from the seal, never re-run. `smoke` and `selected` are not lane
+runs: they run and verify, print the verified metadata to stdout (and, with
+`--results-out`, the raw output), and are never sealed or published. Neither has
+a GitHub write credential provisioned into it.
 
 `run_benchmark_routine.py` (`runtime_platform/benchmark/scripts/run_benchmark_routine.py`)
 is the only new execution-path code. It never re-implements
@@ -88,7 +89,7 @@ discovery added by #431
 | `sentinel` | none — runs the whole `--corpus-dir` (non-recursive: the 4 permanent canonical cases) | scheduled sentinel lane, maximum gap ≤ 96 h (#431, A11) |
 | `comprehensive` | none — runs every `benchmark-case/v2` fixture discovered recursively under `--corpus-dir` | scheduled comprehensive lane, maximum gap ≤ 8 d (#431, A11) |
 | `full` | none — **deprecated fixed synonym for `sentinel`** (#431) | kept, unchanged in behavior, only for backward compatibility with existing Routine prompt configuration; emits a stderr deprecation notice; new configuration must use `sentinel` explicitly. Never means `comprehensive`. |
-| `auth-check` | none — no benchmark run | handoff and publisher smoke test (§5) |
+| `auth-check` | none — no benchmark run | handoff smoke test (§5) |
 
 `sentinel` and `comprehensive` are the two-tier scheduled execution lanes
 `docs/benchmark/corpus/README.md` and
@@ -96,6 +97,48 @@ discovery added by #431
 pre-#431 ambiguity (it happened to only ever resolve to the 4 top-level
 cases, because `--corpus-dir`'s glob is non-recursive) is resolved by this
 table, not left as a second live meaning.
+
+### 2.2 Evaluation, confirmation, and the seal (A2, A8)
+
+For `sentinel` and `comprehensive`, once every invocation verifies, the
+entrypoint:
+
+1. reads the lane baseline **read-only** from `benchmark-history`
+   (`baselines/<lane>.json` and the record it names, verified). No pointer is
+   `bootstrap`. Anything unusable — history unreachable, a hash or lane-identity
+   mismatch, an invalid record — is `incomparable`, with drift `not-evaluated`
+   and the reason recorded; it never guesses. `--history-root` reads a local
+   checkout instead;
+2. compares only the cases whose `fixture_digest` matches the baseline's
+   (A7) and classifies them with the unchanged `classify_drift`;
+3. **confirms** each drifting case by re-running only that case through the
+   same invocation `selected` mode uses, `reruns` more times. A fingerprint is
+   confirmed when it appears in at least `threshold` of the `1 + reruns`
+   observations. At most `max_cases` drifting cases (in case-id order) are
+   confirmed per run; beyond that `drift.systemic` is true and the remainder is
+   `systemic-cap`. When `--confirmation-budget-s` (seconds from run start) is
+   exhausted the rest is `unconfirmed-timeout`. Parameters come from the
+   manifest, and an unverified rerun fails the run closed
+   ([`drift-issue-lifecycle-and-recovery.md`](../../runtime_platform/benchmark/scheduled-operations/drift-issue-lifecycle-and-recovery.md)
+   §2);
+4. builds the `benchmark-result/v1` record and validates it; a record that does
+   not validate is never sealed;
+5. **seals**: one orphan commit holding `benchmark-result.json` and
+   `raw-bundle.json` (the raw per-invocation output and the confirmation
+   reruns, hashed as `raw.bundle_sha256`), pushed with a plain — never forced —
+   `git push` to `claude/benchmark-result-<run_id>` on `--seal-remote` (default
+   `origin`) and read back with `git ls-remote`. The push goes through the
+   checkout's own remote, so the provider mediates it (§5); the entrypoint holds
+   no token and calls no GitHub API or `gh`, and the seal code refuses any ref
+   outside `claude/`. `--seal-dir DIR` writes the same files to a directory
+   instead: a local dry run that pushes nothing.
+
+Any failure before the read-back leaves nothing durable. `--trigger`
+(`scheduled`, `manual`, or `api`; default `manual`) is recorded in the result and
+only the Routine prompt passes `scheduled`, so a hand-started run never counts
+toward a lane's cadence. A sentinel invocation covers several cases, so its wall
+time is shared evenly across them as each case's `duration_s`. The retired
+`--evidence-issue` argument is no longer accepted.
 
 ## 3. Positive completion verification
 
@@ -112,9 +155,8 @@ silently pass.
 
 `run_benchmark_routine.py` runs one `run_benchmark.py` invocation per
 requested case id (so a single case's failure is individually visible)
-and requires every invocation in the batch to verify before posting any
-evidence — a partial pass is still an overall fail-closed non-passing
-run.
+and requires every invocation in the batch to verify before it seals
+anything — the first unverified invocation fails the run closed.
 
 ## 4. Evidence persistence (A1, A4)
 
@@ -177,12 +219,16 @@ through to read a baseline — which is why they are the index, not the store.
 
 `--mode auth-check` is repurposed. It no longer proves GitHub issue
 create/comment permissions from inside the Routine — no GitHub write credential
-is provisioned there. It smoke-tests the **handoff** (a Routine can seal a
-result) and the **publisher** (the publication step can read and validate it),
-independent of any benchmark run, not `gh`. Run it once whenever the Routine's
-connection or the App changes, and before the first scheduled run relies on
-unattended publication; its exact behavior is fixed by the execution-entrypoint
-implementation issue.
+is provisioned there. It smoke-tests the **handoff**: it seals a one-file marker
+(`handoff-check.json`) to `claude/benchmark-handoff-check-<UTC>-<sha12>` through
+the same transport as a result, runs no benchmark, and prints the ref. That ref
+does not match the publisher's `claude/benchmark-result-*` pattern, so it is never
+published, and it is not covered by the staging-ref ruleset, so the maintainer
+deletes it. The **publisher** half of the smoke test (the publication step can
+read and validate a sealed result) arrives with the publisher
+([#471](https://github.com/amirbena/code-review-skill/issues/471)). Run it once
+whenever the Routine's connection or the App changes, and before the first
+scheduled run relies on unattended publication.
 
 **Residual risk R1 is documented, not denied.** A Routine clones and pushes
 through the maintainer's provider-side GitHub connection; its git credentials
@@ -269,6 +315,7 @@ provider-side prompt drift cannot change behavior:
    python3 runtime_platform/benchmark/scripts/run_benchmark_routine.py \
      --mode <sentinel|comprehensive|smoke|selected|auth-check> \
      [--case-id <id> ...] \
+     --trigger scheduled \
      --model-id <the model backend this Routine session is running as>
 3. If the command exits non-zero, stop — do not report success, do not retry
    silently, and do not post or push anything to GitHub. A run that did not
