@@ -87,6 +87,23 @@ class PRContextPolicyExistsAndIsScopedTests(unittest.TestCase):
             self.text,
         )
 
+    def test_reviewed_state_identity_reuses_repository_state_mechanisms(self) -> None:
+        self.assertIn("Reviewed-state identity", self.text)
+        self.assertIn("staged-delta fingerprint", self.text)
+        self.assertIn("HEAD commit", self.text)
+        self.assertIn("it adds no new one", self.text)
+        self.assertIn("never covers unstaged or untracked state", self.text)
+
+    def test_reviewed_state_identity_distinguishes_unchanged_from_changed(self) -> None:
+        for phrase in (
+            "Unchanged — both identities are known and equal",
+            "Changed — the fingerprint or HEAD differs",
+            "is never assumed",
+            "A state change alone does not stop a finding from being resolved",
+            "state changed and the surrounding code changed materially",
+        ):
+            self.assertIn(phrase, self.text)
+
     def test_settled_decision_requires_actual_agreement_evidence(self) -> None:
         self.assertIn(
             "A decision is settled only when the PR context provides "
