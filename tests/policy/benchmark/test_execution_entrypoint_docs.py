@@ -50,6 +50,14 @@ class ExecutionEntrypointDocTests(unittest.TestCase):
         self.assertIn("`--evidence-issue` argument is no longer accepted", self.section)
         self.assertNotIn("evidence_issue", self.options)
 
+    def test_the_canonical_protocol_states_the_unverified_rerun_outcome(self) -> None:
+        text = " ".join((REPO_ROOT / "runtime_platform" / "benchmark" / "scheduled-operations" / "drift-issue-lifecycle-and-recovery.md").read_text(encoding="utf-8").split())
+        self.assertIn("A confirmation rerun that does not pass positive completion verification fails the whole run closed", text)
+
+    def test_the_schema_doc_defines_the_spec_digest(self) -> None:
+        text = " ".join((REPO_ROOT / "runtime_platform" / "benchmark" / "benchmark-result-schema.md").read_text(encoding="utf-8").split())
+        self.assertIn("`provenance.spec_sha256` is the SHA-256 of the canonical JSON of the expected-run manifest", text)
+
 
 if __name__ == "__main__":
     unittest.main()

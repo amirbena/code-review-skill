@@ -74,8 +74,7 @@ class GitHubIssueClient(Protocol):
 
 
 class GhCliIssueClient:
-    """Real client: shells out to `gh`, mirroring
-    `run_benchmark_routine.py::_post_evidence`'s temp-file-body pattern."""
+    """Real client: shells out to `gh`, passing bodies through temp files (`--body-file`)."""
 
     def _gh(self, *args: str) -> str:
         proc = subprocess.run(["gh", *args], capture_output=True, text=True)

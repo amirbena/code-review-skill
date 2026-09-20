@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import platform
+import re
 import subprocess
 import sys
 import time
@@ -44,6 +45,7 @@ from runtime_platform.benchmark.scripts.benchmark_run_record import (  # noqa: E
 ROUTINE_DOC = REPO_ROOT / "docs" / "benchmark" / "cloud-routine-integration.md"
 RUN_BENCHMARK = REPO_ROOT / "runtime_platform" / "benchmark" / "scripts" / "run_benchmark.py"
 NONDETERMINISM = "Model output is nondeterministic; a rerun may differ."
+PROMPT_SECTION = "## 9. Routine prompt template"
 
 
 class RoutineExecutionError(RuntimeError):
@@ -137,9 +139,20 @@ def _excerpt(case_run: Mapping[str, Any]) -> str:
     return data[: res.EVIDENCE_MAX_BYTES].decode("utf-8", errors="ignore")
 
 
+def _prompt_template() -> str:
+    """The literal Routine prompt template block of `cloud-routine-integration.md` §9."""
+    text = ROUTINE_DOC.read_text(encoding="utf-8")
+    section = text.split(PROMPT_SECTION, 1)[1].split("### 9.1", 1)[0] if PROMPT_SECTION in text else ""
+    match = re.search(r"```text\n(.*?)```", section, re.S)
+    if match is None:
+        raise RoutineExecutionError(f"{ROUTINE_DOC.name} has no prompt template block under {PROMPT_SECTION!r}")
+    return match.group(1)
+
+
 def _spec_sha256(manifest: Mapping[str, Any]) -> str:
-    prompt_spec = hashlib.sha256(ROUTINE_DOC.read_bytes()).hexdigest()
-    return res.sha256_hex(res.canonical_json({"manifest": manifest, "prompt_spec_sha256": prompt_spec}))
+    """Digest of the prompt template and the manifest only, so unrelated doc edits do not change it."""
+    template = hashlib.sha256(_prompt_template().encode("utf-8")).hexdigest()
+    return res.sha256_hex(res.canonical_json({"manifest": manifest, "prompt_template_sha256": template}))
 
 
 def build_sealed_run(

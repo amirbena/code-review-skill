@@ -21,6 +21,8 @@ RECORD_FILE = "benchmark-result.json"
 RAW_FILE = "raw-bundle.json"
 HANDOFF_CHECK_FILE = "handoff-check.json"
 
+GIT_TIMEOUT_S = 120
+
 _COMMIT_IDENTITY = {
     "GIT_AUTHOR_NAME": "benchmark-execution",
     "GIT_AUTHOR_EMAIL": "benchmark-execution@users.noreply.github.com",
@@ -42,13 +44,17 @@ def encode_json(value: Any) -> bytes:
 
 
 def _git(repo_root: Path, *args: str, stdin: bytes | None = None, env: Mapping[str, str] | None = None) -> str:
-    proc = subprocess.run(
-        ["git", *args],
-        cwd=str(repo_root),
-        input=stdin,
-        capture_output=True,
-        env={**os.environ, **(env or {})},
-    )
+    try:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=str(repo_root),
+            input=stdin,
+            capture_output=True,
+            env={**os.environ, "GIT_TERMINAL_PROMPT": "0", **(env or {})},
+            timeout=GIT_TIMEOUT_S,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise SealError(f"git {' '.join(args)} timed out after {GIT_TIMEOUT_S}s") from exc
     if proc.returncode != 0:
         raise SealError(f"git {' '.join(args)} failed: {proc.stderr.decode('utf-8', 'replace').strip()}")
     return proc.stdout.decode("utf-8").strip()

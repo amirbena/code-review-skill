@@ -8,6 +8,7 @@ Only git reads (`ls-remote`, `fetch`, `show`); never writes to GitHub.
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -22,6 +23,7 @@ if str(REPO_ROOT) not in sys.path:
 from runtime_platform.benchmark.scripts import benchmark_result as res  # noqa: E402
 
 HISTORY_BRANCH = "benchmark-history"
+GIT_TIMEOUT_S = 120
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -53,7 +55,17 @@ class GitRefHistory:
         self._tip: str | None | bool = False  # False = not resolved yet
 
     def _git(self, *args: str) -> subprocess.CompletedProcess:
-        return subprocess.run(["git", *args], cwd=str(self.repo_root), capture_output=True, text=True)
+        try:
+            return subprocess.run(
+                ["git", *args],
+                cwd=str(self.repo_root),
+                capture_output=True,
+                text=True,
+                env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
+                timeout=GIT_TIMEOUT_S,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise BaselineError(f"git {' '.join(args)} timed out after {GIT_TIMEOUT_S}s") from exc
 
     def _resolve_tip(self) -> str | None:
         ref = f"refs/heads/{self.branch}"

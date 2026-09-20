@@ -57,6 +57,10 @@ The field table names groups; these are the exact shapes it left open.
   32 KiB (UTF-8 bytes).
 - `baseline.incomparable_cases[]` entries carry `id`, `reason:
   fixture-digest-mismatch`, and both digests.
+- `provenance.spec_sha256` is the SHA-256 of the canonical JSON of the expected-run
+  manifest and the SHA-256 of the literal Routine prompt template block
+  ([`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md)
+  §9), so edits elsewhere in that document do not change it.
 - Only verified runs are sealed: `verification.overall_verified` must be `true`.
 
 ## 3. Conformance

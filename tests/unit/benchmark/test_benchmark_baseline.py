@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from runtime_platform.benchmark.scripts import benchmark_result as res
 from runtime_platform.benchmark.scripts.benchmark_baseline import (
@@ -125,6 +126,12 @@ class GitRefBaselineTests(unittest.TestCase):
         found = load_baseline(GitRefHistory(self.work, remote="nowhere"), "sentinel")
         self.assertEqual(found.state, "incomparable")
         self.assertIn("unreachable", found.reason)
+
+    def test_a_stalled_git_call_is_incomparable_never_bootstrap(self) -> None:
+        with mock.patch("runtime_platform.benchmark.scripts.benchmark_baseline.subprocess.run", side_effect=subprocess.TimeoutExpired("git", 1)):
+            found = load_baseline(GitRefHistory(self.work), "sentinel")
+        self.assertEqual(found.state, "incomparable")
+        self.assertIn("timed out", found.reason)
 
 
 if __name__ == "__main__":

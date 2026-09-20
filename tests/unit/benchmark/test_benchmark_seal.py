@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from runtime_platform.benchmark.scripts import benchmark_seal as seal
 
@@ -52,6 +53,17 @@ class SealToRefTests(unittest.TestCase):
             with self.assertRaises(seal.SealError):
                 seal.seal_to_ref(self.work, "origin", ref, FILES, "seal")
         self.assertEqual(_git(self.remote, "for-each-ref"), "")
+
+    def test_a_stalled_git_call_times_out_as_a_seal_error(self) -> None:
+        with mock.patch.object(seal.subprocess, "run", side_effect=subprocess.TimeoutExpired("git", 1)):
+            with self.assertRaisesRegex(seal.SealError, "timed out"):
+                seal.seal_to_ref(self.work, "origin", REF, FILES, "seal")
+
+    def test_git_never_prompts_for_credentials_and_is_bounded(self) -> None:
+        with mock.patch.object(seal.subprocess, "run", return_value=mock.Mock(returncode=0, stdout=b"x\n", stderr=b"")) as run:
+            seal._git(self.work, "status")
+        self.assertEqual(run.call_args.kwargs["env"]["GIT_TERMINAL_PROMPT"], "0")
+        self.assertEqual(run.call_args.kwargs["timeout"], seal.GIT_TIMEOUT_S)
 
     def test_an_unreachable_remote_fails_closed(self) -> None:
         with self.assertRaises(seal.SealError):
