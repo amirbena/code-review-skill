@@ -43,8 +43,26 @@ def require_installation_token(name: str, token: str | None) -> str:
     return token
 
 
+def _origin(url: str) -> tuple[str, str]:
+    parts = urllib.parse.urlsplit(url)
+    return parts.scheme, parts.netloc
+
+
+class SameOriginRedirects(urllib.request.HTTPRedirectHandler):
+    """urllib forwards every header on a redirect; the App token must never leave its origin."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # type: ignore[no-untyped-def]
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is not None and _origin(newurl) != _origin(req.full_url):
+            redirected.remove_header("Authorization")
+        return redirected
+
+
+DEFAULT_OPENER = urllib.request.build_opener(SameOriginRedirects).open
+
+
 class GitHubClient:
-    def __init__(self, token: str, *, api: str = API, opener: Opener = urllib.request.urlopen) -> None:
+    def __init__(self, token: str, *, api: str = API, opener: Opener = DEFAULT_OPENER) -> None:
         self._token, self._api, self._opener = token, api, opener
 
     def call(

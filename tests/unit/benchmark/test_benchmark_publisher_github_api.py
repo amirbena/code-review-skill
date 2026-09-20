@@ -8,6 +8,7 @@ import json
 import unittest
 import urllib.error
 import urllib.parse
+import urllib.request
 from typing import Any
 
 from runtime_platform.benchmark.publisher import github_api
@@ -88,6 +89,22 @@ class ClientTests(unittest.TestCase):
 
         rows = list(github_api.GitHubClient("ghs_x", opener=opener).paginate("/items"))
         self.assertEqual((len(rows), seen), (102, ["1", "2"]))
+
+    def test_the_token_is_dropped_on_a_cross_origin_redirect_only(self) -> None:
+        handler = github_api.SameOriginRedirects()
+
+        def redirected(target: str) -> urllib.request.Request:
+            request = urllib.request.Request("https://api.github.com/repos/x", headers={"Authorization": "Bearer ghs_t"})
+            return handler.redirect_request(request, None, 302, "Found", {}, target)
+
+        self.assertFalse(redirected("https://objects.example.net/blob").has_header("Authorization"))
+        self.assertFalse(redirected("http://api.github.com/repos/x").has_header("Authorization"))
+        self.assertEqual(redirected("https://api.github.com/repos/y").get_header("Authorization"), "Bearer ghs_t")
+
+    def test_the_default_client_uses_the_origin_checking_opener(self) -> None:
+        handlers = github_api.DEFAULT_OPENER.__self__.handlers  # type: ignore[attr-defined]
+        self.assertTrue(any(isinstance(h, github_api.SameOriginRedirects) for h in handlers))
+        self.assertIs(github_api.GitHubClient("ghs_x")._opener, github_api.DEFAULT_OPENER)
 
     def test_installation_token_guard(self) -> None:
         for bad in (None, "", "ghp_personal", "github_pat_x", "gho_oauth"):
