@@ -456,6 +456,19 @@ and no packaged Skill resource depends on them.
   [`../shared/templates/finding.md`](../shared/templates/finding.md); the #67
   machine-readable output schema wiring is deferred — see "Future work"
   below.
+- **Review result schema** — the first machine-readable serialization of a
+  review's output: one JSON Schema (draft-07) for findings, the derived
+  decision, reviewed-SHA state, counts, and finding identity, plus one
+  validating example. It points at the existing canonical owners
+  (`finding.md`, `severity.md`, the reviewed-SHA and identity contracts)
+  instead of redefining them; the representation decisions (naming, enum
+  values, required vs `null`, structure) and the deliberate omissions are
+  recorded in the model
+  ([`review-result/README.md`](review-result/README.md) →
+  [`review-result/review-result-model.md`](review-result/review-result-model.md),
+  #67, with a test-only validator). No packaged Skill resource is changed;
+  versioning (#68) and runtime emission (#69/#70) are deferred — see
+  "Future work" below.
 - **Candidate-finding validation model** — the `observation → candidate
   claim → validated finding → severity` reasoning contract: the
   observation-first gate, semantic-role validation, the evidence/contract
@@ -637,14 +650,15 @@ or runbook implements them today:
   field. No code retrieves, resolves, infers, or auto-attaches contextual
   evidence; there is no Jira / GitHub Issue / Slack / ADR ingestion
   adapter, no automatic PR↔Issue discovery, and no machine-readable
-  provenance block in review output (that waits on the #67 output schema).
+  provenance block in review output (the #67 schema carries `contextual_evidence`, but nothing emits it yet).
 - **Machine-readable review output schema** — #178 defines the unified
   finding `confidence` field and its values (the finding-confidence model,
   "Repository-development instrumentation" above), and the finding template
-  renders it in human output. The #67 JSON-style schema document that would
-  carry `confidence`, `severity`, `location`, and the rest as a formal
-  contract for machine consumers, and its versioning (#68), are still
-  unbuilt.
+  renders it in human output. The #67 schema
+  ([`review-result/README.md`](review-result/README.md)) now carries
+  `confidence`, `severity`, `location`, and the rest as a formal contract
+  for machine consumers; its versioning policy (#68), Skill wiring and
+  runtime emission (#69/#70), and consumers (#71) are still unbuilt.
 - **Repository-intelligence retrieval and a packaged relationship-influence
   field** — the repository-intelligence model (#129, "Repository-development
   instrumentation" above) is a design record and a test-only reference
