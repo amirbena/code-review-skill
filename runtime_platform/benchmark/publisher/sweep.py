@@ -21,6 +21,7 @@ from runtime_platform.benchmark.publisher.model import (
     RunOutcome,
     SweepConfig,
     SweepReport,
+    format_instant,
 )
 from runtime_platform.benchmark.publisher.ports import (
     FatalPublicationError,
@@ -45,20 +46,16 @@ class _Candidate:
     refusal: Refusal | None
 
 
-def _labels(manifest: Mapping[str, Any]) -> dict[str, str]:
+def manifest_labels(manifest: Mapping[str, Any]) -> dict[str, str]:
     return {entry["role"]: entry["name"] for entry in manifest["labels"]}
 
 
-def _timestamp(moment: datetime) -> str:
-    return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _preflight(config: SweepConfig, tracker: IssueTracker) -> None:
+def preflight(manifest: Mapping[str, Any], tracker: IssueTracker) -> None:
     """Fail closed before any write: a usable manifest and every required label."""
-    errors = validate_manifest(config.manifest, require_provisioned=True)
+    errors = validate_manifest(manifest, require_provisioned=True)
     if errors:
         raise FatalPublicationError("manifest is not usable: " + "; ".join(errors))
-    missing = tracker.missing_labels(sorted(_labels(config.manifest).values()))
+    missing = tracker.missing_labels(sorted(manifest_labels(manifest).values()))
     if missing:
         raise FatalPublicationError(f"required labels are missing (provisioning prerequisite): {', '.join(missing)}")
 
@@ -198,7 +195,7 @@ def _process(ports: Ports, config: SweepConfig, candidate: _Candidate) -> RunOut
     if isinstance(baseline, Refusal):
         return _refused(candidate, baseline)
 
-    now = _timestamp(config.clock())
+    now = format_instant(config.clock())
     commit = history.persist(ports.store, record, existing, config.identity, now)
     evidence = render.Evidence(record_permalink=ports.store.permalink(commit, record_path(run_id)), **baseline)
 
@@ -207,7 +204,7 @@ def _process(ports: Ports, config: SweepConfig, candidate: _Candidate) -> RunOut
     if superseded:
         reconciliation = lifecycle.Reconciliation(skipped="superseded by a newer published record of this lane: no drift issue is touched")
     else:
-        labels = _labels(config.manifest)
+        labels = manifest_labels(config.manifest)
         ctx = lifecycle.LifecycleContext(
             tracker=ports.tracker, identity=config.identity, regression_label=labels["drift"],
             keep_open_label=labels["keep-open"], max_new_issues=config.manifest["publication"]["max_new_issues_per_run"], now=now,
@@ -230,7 +227,7 @@ def run_sweep(ports: Ports, config: SweepConfig) -> SweepReport:
     """Process every unpublished sealed ref in ascending `sealed_at`; a refusal never blocks the rest."""
     report = SweepReport(identity=config.identity)
     try:
-        _preflight(config, ports.tracker)
+        preflight(config.manifest, ports.tracker)
         prefix = config.manifest["publication"]["staging_ref_pattern"].rstrip("*")
         candidates = _load_candidates(ports, config, prefix)
         if config.only_run_id is not None and not candidates:

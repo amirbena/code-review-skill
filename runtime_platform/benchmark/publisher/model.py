@@ -1,4 +1,4 @@
-"""The ports bundle, sweep configuration, and report types."""
+"""The ports bundle, the sweep and watchdog configuration, and report types."""
 
 from __future__ import annotations
 
@@ -9,6 +9,23 @@ from typing import Any, Callable, Mapping
 from runtime_platform.benchmark.publisher.ports import HandoffReader, HistoryStore, IssueTracker
 
 PUBLISHED, ALREADY_PUBLISHED, REFUSED, FAILED = "published", "already-published", "refused", "failed"
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def format_instant(instant: datetime) -> str:
+    return instant.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def parse_instant(text: object) -> datetime | None:
+    """A zone-aware instant from an ISO-8601 string, or None when it is not one."""
+    try:
+        instant = datetime.fromisoformat(str(text).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return instant if instant.tzinfo is not None else None
 
 
 @dataclass(frozen=True)
@@ -26,7 +43,15 @@ class SweepConfig:
     local_once: bool = False
     only_run_id: str | None = None
     accept_unattributed: bool = False
-    clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc)
+    clock: Callable[[], datetime] = utc_now
+
+
+@dataclass(frozen=True)
+class WatchdogConfig:
+    manifest: Mapping[str, Any]
+    identity: str
+    sweep_succeeded: bool = False
+    clock: Callable[[], datetime] = utc_now
 
 
 @dataclass
@@ -61,3 +86,18 @@ class SweepReport:
             "aborted": self.aborted,
             "runs": [o.as_dict() for o in self.outcomes],
         }
+
+
+@dataclass
+class WatchdogReport:
+    identity: str
+    lanes: list[dict[str, Any]] = field(default_factory=list)
+    health: dict[str, Any] = field(default_factory=dict)
+    aborted: str | None = None
+
+    @property
+    def ok(self) -> bool:
+        return self.aborted is None
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"identity": self.identity, "ok": self.ok, "aborted": self.aborted, "lanes": self.lanes, "health": self.health}

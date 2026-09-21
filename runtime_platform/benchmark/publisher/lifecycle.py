@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any, Mapping
 
 from runtime_platform.benchmark.publisher import markers, render
-from runtime_platform.benchmark.publisher.ports import FatalPublicationError, Issue, IssueTracker
+from runtime_platform.benchmark.publisher.ports import Issue, IssueTracker
 
 CLOSED_SCAN_LIMIT = 200
 _JSON_BLOCK_RE = re.compile(r"```json\n(.*?)\n```", re.DOTALL)
@@ -54,8 +54,7 @@ def covers(record: Mapping[str, Any], case_id: str) -> bool:
 
 
 def _verified(ctx: LifecycleContext, kind: str, author: str) -> None:
-    if author != ctx.identity:
-        raise FatalPublicationError(f"{kind} was authored by {author!r}, not the publisher identity {ctx.identity!r}")
+    markers.require_publisher(kind, author, ctx.identity)
 
 
 def _publisher_issues(ctx: LifecycleContext, state: str, limit: int | None) -> dict[str, list[Issue]]:
