@@ -97,6 +97,23 @@ class ExampleTests(unittest.TestCase):
         )
         self.assertEqual(rr.validate_review_result(result), ())
 
+    def test_distinct_findings_may_share_a_minted_identity(self) -> None:
+        common = dict(
+            repository="acme/payments",
+            location="src/payments/retry.py:88",
+            anchor_fragment="except TimeoutError: continue",
+        )
+        first = fi.build_descriptor(**common, behavioral_claim_text="swallows the timeout")
+        second = fi.build_descriptor(**common, behavioral_claim_text="logs no error on failure")
+        self.assertEqual(fi.mint_identity(first), fi.mint_identity(second))
+        self.assertFalse(fi.is_matchable(first) or fi.is_matchable(second))
+
+        result = _example()
+        shared = {"stable_id": fi.mint_identity(first), "matching_eligible": False}
+        for finding in result["findings"]:
+            finding["identity"] = dict(shared)
+        self.assertEqual(rr.validate_review_result(result), ())
+
     def test_escalated_full_review_keeps_its_prior_reviewed_sha(self) -> None:
         result = _example()
         result["reviewed_state"]["prior_reviewed_sha"] = "a" * 40
@@ -303,11 +320,6 @@ class ConsistencyRejectionTests(unittest.TestCase):
         result = _example()
         result["findings"][1]["id"] = result["findings"][0]["id"]
         self.assertRejected(result, "finding ids are not unique")
-
-    def test_duplicate_stable_identities(self) -> None:
-        result = _example()
-        result["findings"][1]["identity"] = dict(result["findings"][0]["identity"])
-        self.assertRejected(result, "stable identities are not unique")
 
     def test_prior_reviewed_sha_cannot_name_the_head(self) -> None:
         result = _example()

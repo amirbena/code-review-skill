@@ -63,9 +63,9 @@ def _comments(node: object) -> list[str]:
 
 
 def _owner_exists(token: str) -> bool:
-    if (REPO_ROOT / token).exists():
-        return True
-    return any(next(d.rglob(Path(token).name), None) for d in OWNER_DIRS)
+    if "/" in token:
+        return (REPO_ROOT / token).exists()
+    return any(next(d.rglob(token), None) for d in OWNER_DIRS)
 
 
 class FilesAndLinksTests(unittest.TestCase):
@@ -104,6 +104,15 @@ class FilesAndLinksTests(unittest.TestCase):
                     self.assertTrue(_owner_exists(token), f"{token!r} names no repository file")
 
 
+class OwnerPathResolutionTests(unittest.TestCase):
+    def test_bare_name_resolves_by_file_name(self) -> None:
+        self.assertTrue(_owner_exists("finding.md"))
+
+    def test_qualified_path_must_be_exact(self) -> None:
+        self.assertTrue(_owner_exists("shared/templates/finding.md"))
+        self.assertFalse(_owner_exists("shared/policies/finding.md"))
+
+
 class OwnerTraceabilityTests(unittest.TestCase):
     def test_every_finding_field_traces_to_the_canonical_template(self) -> None:
         schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
@@ -117,6 +126,14 @@ class OwnerTraceabilityTests(unittest.TestCase):
                     any(f"**{s}**" in template for s in spellings),
                     f"{name!r} is not a field in finding.md",
                 )
+
+    def test_unresolved_location_flag_is_attributed_to_its_real_section(self) -> None:
+        row = next(
+            line for line in MODEL.read_text(encoding="utf-8").splitlines()
+            if line.startswith("| `findings[].fix_location_resolved`")
+        )
+        self.assertIn("Fix/action location, evidence location, publication", row)
+        self.assertIn("introduced by this schema", row)
 
     def test_model_names_the_owner_of_each_decision_source(self) -> None:
         text = MODEL.read_text(encoding="utf-8")

@@ -47,7 +47,8 @@ those pointers resolving.
 
 | Result field(s) | Canonical owner |
 | --- | --- |
-| `findings[].id`, `severity`, `title`, `location`, `evidence`, `impact`, `fix`, `follow_up`, `details`, `evidence_location`, `affected_locations`, `contextual_evidence`, `capability`, `defect_kind`, `fix_location_resolved` | [`shared/templates/finding.md`](../../shared/templates/finding.md) — "Fields" and "Optional and surface-specific fields" |
+| `findings[].id`, `severity`, `title`, `location`, `evidence`, `impact`, `fix`, `follow_up`, `details`, `evidence_location`, `affected_locations`, `contextual_evidence`, `capability`, `defect_kind` | [`shared/templates/finding.md`](../../shared/templates/finding.md) — "Fields" and "Optional and surface-specific fields" |
+| `findings[].fix_location_resolved` | [`shared/templates/finding.md`](../../shared/templates/finding.md) — "Fix/action location, evidence location, publication" ("No silent promotion"). `finding.md` defines this state only as the trailing `location` annotation `_(evidence location; fix/action location unresolved)_`; the key name is introduced by this schema (matching the test-only `finding_contract.py`) as that annotation's serialization. `false` means the annotation applies. |
 | `findings[].severity` meaning; `decision.derived`; `counts` | [`shared/policies/severity.md`](../../shared/policies/severity.md) — P0/P1/P2 and "Decision derivation (mechanical)" |
 | `findings[].evidence` bar | [`shared/policies/evidence.md`](../../shared/policies/evidence.md) |
 | `findings[].fix` guidance | [`shared/policies/remediation-guidance.md`](../../shared/policies/remediation-guidance.md) |
@@ -90,7 +91,14 @@ delegating to the owner's reference model instead of restating the rule:
 | `decision.derived` equals the derivation over the findings | `tests/reference/review/decision_semantics.py` |
 | `decision.outcome` equals `derived` unless coverage is `incomplete` | `tests/reference/review/review_stopping_criteria.py` |
 | `confidence` does not contradict `runtime_validation` | `tests/reference/review/finding_confidence.py` |
-| finding ids and `identity.stable_id` are unique within one review; `prior_reviewed_sha` never names the reviewed head | `finding.md` (`id`), the identity contract, reviewed-SHA contract section 5 |
+| finding `id`s are unique within one review; `prior_reviewed_sha` never names the reviewed head | `finding.md` (`id`), reviewed-SHA contract section 5 |
+
+`identity.stable_id` is deliberately **not** required to be unique within a
+review: the identity contract mints non-matchable findings deterministically
+and lets distinct findings that reduce to the same descriptor share a value
+([`finding-stable-identity.md`](../findings/finding-stable-identity.md) §7,
+[`finding-identity-requirements.md`](../findings/finding-identity-requirements.md)
+§6 "No global-uniqueness claim"), so the result does not assert otherwise.
 
 A drift test also pins each schema enum and the identity token format to the
 same reference models, so a value cannot change in an owner without the

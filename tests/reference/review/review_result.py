@@ -187,9 +187,6 @@ def consistency_errors(result: Mapping) -> tuple[str, ...]:
     ids = [f["id"] for f in findings]
     if len(set(ids)) != len(ids):
         errors.append("$.findings: finding ids are not unique within the review")
-    stable_ids = [f["identity"]["stable_id"] for f in findings]
-    if len(set(stable_ids)) != len(stable_ids):
-        errors.append("$.findings: stable identities are not unique within the review")
 
     state = result["reviewed_state"]
     if state["prior_reviewed_sha"] is not None and state["prior_reviewed_sha"] == state["reviewed_head_sha"]:
