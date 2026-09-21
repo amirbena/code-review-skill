@@ -1,14 +1,15 @@
-# Publication CLI: `sweep`
+# Publication CLI: `sweep` and `watchdog`
 
-Repository-development contract for GitHub Issue
-[#471](https://github.com/amirbena/code-review-skill/issues/471) (F5 of Epic
+Repository-development contract for GitHub Issues
+[#471](https://github.com/amirbena/code-review-skill/issues/471) (`sweep`, F5) and
+[#472](https://github.com/amirbena/code-review-skill/issues/472) (`watchdog`, F6) of Epic
 [#466](https://github.com/amirbena/code-review-skill/issues/466); design record
-[#464](https://github.com/amirbena/code-review-skill/issues/464)). Like the rest of
+[#464](https://github.com/amirbena/code-review-skill/issues/464). Like the rest of
 [`./`](README.md) it is **not packaged into either Skill archive**.
 
-It owns what the deterministic publisher **does**: the command, its credentials,
-the handoff file it reads, the order and gates of one publication, how issues
-are reconciled, and how a failed pass is retried. The design it implements is
+It owns what the deterministic publisher **does**: the commands, their credentials,
+the handoff file `sweep` reads, the order and gates of one publication, how issues
+are reconciled, how a failed pass is retried, and (§7) what `watchdog` watches. The design it implements is
 [`scheduled-operations/execution-publication-boundary.md`](scheduled-operations/execution-publication-boundary.md)
 §2 and §5,
 [`scheduled-operations/drift-issue-lifecycle-and-recovery.md`](scheduled-operations/drift-issue-lifecycle-and-recovery.md)
@@ -20,11 +21,12 @@ are [`benchmark-result-schema.md`](benchmark-result-schema.md); the manifest is
 
 | Artifact | Owns |
 | --- | --- |
-| [`scripts/publish_benchmark.py`](scripts/publish_benchmark.py) | The entrypoint (`sweep`). |
+| [`scripts/publish_benchmark.py`](scripts/publish_benchmark.py) | The entrypoint (`sweep`, `watchdog`). |
 | [`publisher/`](publisher/) | The pass itself: `sweep.py` (order, gates, persist, receipt), `validation.py` (the §2 gates), `lifecycle.py` (drift issues), `render.py` and `markers.py` (post bodies and idempotency markers), `github_api.py` (the REST ports), `memory.py` (in-memory ports for tests and `--dry-run`). |
+| [`publisher/watchdog.py`, `publisher/health.py`](publisher/) | `watchdog`: the gap rule and missed-run issues, and the health-status comment. |
 
 It never runs the benchmark, calls a model, or derives drift: it reads
-`drift.confirmed[]` and fingerprints from the sealed record. Nothing under
+`drift.confirmed[]` and fingerprints from the sealed record (`watchdog` reads record metadata only). Nothing under
 `publisher/` imports the benchmark entrypoint, the reviewer adapter, or
 `benchmark_drift.py`, and none shells out; a test enforces it
 ([`test_benchmark_publisher_boundary.py`](../../tests/unit/benchmark/test_benchmark_publisher_boundary.py)).
@@ -58,7 +60,7 @@ python3 runtime_platform/benchmark/scripts/publish_benchmark.py sweep [--once] [
 - **`--run-id`** publishes only that run (pattern-validated). With
   **`--accept-unattributed`** it also accepts a ref whose server-side attribution
   is *unavailable*; attribution that contradicts the allowlist is never accepted.
-- **Output.** A JSON report on stdout, refusals and failures on stderr. Exit `0`
+- **Output.** A JSON report on stdout (naming its `scope` and `dry_run`), refusals and failures on stderr. Exit `0`
   when every ref is published or already published, `1` on any refusal, failure,
   or abort, `2` for a usage or credential error.
 
@@ -153,3 +155,75 @@ cannot be re-listed, so a resumed run's receipt may omit that `closed` link.
 A staging ref is deleted (`DELETE_STAGING_REF`) only when its receipt exists, its
 content hash matches the receipt, and the receipt is at least 30 days old. An
 unpublished ref is never deleted.
+
+## 7. `watchdog`
+
+```bash
+python3 runtime_platform/benchmark/scripts/publish_benchmark.py watchdog [--once] [--dry-run] \
+    [--sweep-report PATH] [--manifest PATH] [--app-slug SLUG]
+```
+
+It makes a run that never happened visible ([failure-table case 6](scheduled-operations/drift-issue-lifecycle-and-recovery.md));
+it cannot make the run happen, retries nothing, and never executes the benchmark or judges drift. Credentials, acting
+identity, `--once`, and `--dry-run` are §1's, with one narrowing: it never writes `benchmark-history`, so when
+`BENCHMARK_READ_TOKEN` is set the history client carries that read token alone and `BENCHMARK_CONTENTS_TOKEN` is not needed.
+Start-up is fail closed exactly as for `sweep`: an unprovisioned manifest or a missing label aborts before any write, and so
+does any failure to read history, so an unreadable lane never opens an issue. Exit `0` unless the pass aborted; an overdue
+lane is the watchdog working, not failing.
+
+**The gap rule.** For each scheduled lane the reference is the latest **published** record (its receipt exists) that is
+intact (`content_sha256` matches), `verification.overall_verified`, and `trigger: scheduled`. The lane is overdue when
+`now − reference > max_gap_hours` from the manifest (strictly greater), where the reference is that record's `finished_at`
+or the lane's manifest `expected_from`, whichever is later. Only elapsed time is computed: no weekday, local time,
+timezone, or slot appears in this code (a test scans it), so nothing here owns a zone or DST (#431). A manual or `api` run
+never counts.
+
+**Before the first record.** `expected_from` ([`schedule-spec.md`](schedule-spec.md) §1) is the maintainer-set UTC instant
+from which a lane is expected to run; it is the only bootstrap authority, and the watchdog derives nothing from
+`intended_start`. While it is `null` the lane is *not activated*: nothing is judged or opened, and the health status says
+`not activated`. Once set, a lane with no qualifying record is `awaiting first scheduled run` until `max_gap_hours` have
+elapsed since `expected_from`, and is then overdue like any other, so a lane broken since its first expected run cannot
+stay silent. A record older than `expected_from` never advances the lane or closes an issue, and moving `expected_from`
+later leaves an open issue alone; only a published scheduled record at or after `expected_from` recovers the lane.
+
+**Missed-run issues.** Labelled `benchmark-missed-run`; first line `<!-- benchmark-missed-run:<lane> -->`; recognized only
+when authored by the publisher identity (A14).
+
+| Lane state | Action |
+| --- | --- |
+| overdue, no open issue | Open one, naming the last verified run, its `finished_at`, the gap, and the checklist to run. |
+| overdue, issue open | Comment at most once per `watchdog.missed_run_comment_interval_hours`, measured from the last `<!-- benchmark-missed-run-notice:<lane>:<UTC> -->` stamp the publisher itself wrote. |
+| not overdue, issue open | Comment `<!-- benchmark-missed-run-resolved:<lane>:<run_id> -->` (once) and close. |
+| more than one open issue for a lane | Keep the lowest number; comment a pointer on, and close, the rest (also after every create). |
+
+A missed-run issue is not held open by `keep-open`; it closes exactly when the lane recovers.
+
+**Health status.** One comment on `health_issue`, first line `<!-- benchmark-health-status -->`, found, created and
+edited only as a comment the publisher identity authored; a foreign comment carrying the marker is data and is never
+edited (case 12). It holds facts only, no "as of" time, and is edited only when its rendered body differs. `--sweep-report`
+takes the JSON `sweep` printed, which records its `scope` (`all` or `run-id`) and `dry_run`: only an `ok` report with no
+`aborted` reason, `scope: all` and `dry_run: false` marks "last successful publication sweep" as this pass's time. A
+`--run-id` or `--dry-run` pass, a failed one, or a report without those fields keeps the value the previous comment carried,
+and none yet reads `not reported`. Run it right
+after `sweep` for that to mean what it says. Pending handoffs are `claude/benchmark-result-*` refs without a receipt; their age
+is the oldest readable `sealed_at`, in whole hours. Sample (asserted against the renderer by
+[`test_benchmark_publisher_watchdog.py`](../../tests/unit/benchmark/test_benchmark_publisher_watchdog.py)):
+
+<!-- sample-health-status -->
+````markdown
+<!-- benchmark-health-status -->
+
+**Scheduled benchmark health**
+
+| Lane | State | Latest verified scheduled run | Finished (UTC) | Model | Drift outcome | Max gap | Missed-run issue |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `sentinel` | on schedule | `sentinel-20260916T010000Z-5a5a5a5a5a5a` | 2026-09-16T01:01:00Z | `claude-sonnet-5` | not evaluated (bootstrap: first record for this lane is the baseline) | 96 h | — |
+| `comprehensive` | on schedule | `comprehensive-20260914T010000Z-5b5b5b5b5b5b` | 2026-09-14T01:01:00Z | `claude-sonnet-5` | not evaluated (bootstrap: first record for this lane is the baseline) | 192 h | — |
+
+- Open drift issues: 0
+- Open missed-run issues: 0
+- Sealed but unpublished handoffs: none
+- Last successful publication sweep: 2026-09-19T01:01:00Z
+
+Edited in place by the publisher identity, and only when a fact above changes.
+````

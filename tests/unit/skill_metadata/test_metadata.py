@@ -151,17 +151,20 @@ class CheckSkillMetadataFrontmatterTests(unittest.TestCase):
 
 
 class RealSkillFrontmatterVersionTests(unittest.TestCase):
-    """Both published Skills currently carry the same normalized version."""
+    """Both published Skills carry the same normalized version; the release flow owns its value."""
 
-    def test_both_skills_declare_version_1_50_2(self) -> None:
+    def test_both_skills_declare_the_same_semver_version(self) -> None:
         from tests.support.paths import REPO_ROOT
         from skill_metadata._support import load_frontmatter
 
+        versions = set()
         for skill_name in ("local-code-review", "github-pr-review"):
             skill_md = REPO_ROOT / "skills" / skill_name / "SKILL.md"
             frontmatter = load_frontmatter(skill_md)
             self.assertEqual(list(frontmatter), ["name", "version", "description"])
-            self.assertEqual(frontmatter["version"], "1.50.2")
+            self.assertRegex(frontmatter["version"], r"^\d+\.\d+\.\d+$")
+            versions.add(frontmatter["version"])
+        self.assertEqual(len(versions), 1, versions)
 
     def test_both_skills_have_single_line_description(self) -> None:
         from tests.support.paths import REPO_ROOT

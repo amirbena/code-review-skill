@@ -10,8 +10,9 @@ from typing import Any, Callable, Sequence
 from runtime_platform.benchmark.publisher.layout import encode_json, staging_ref_name
 from runtime_platform.benchmark.publisher.memory import InMemoryHandoff, InMemoryHistory, InMemoryTracker
 from runtime_platform.benchmark.publisher.ports import RefActivity
-from runtime_platform.benchmark.publisher.model import Ports, SweepConfig, SweepReport
+from runtime_platform.benchmark.publisher.model import Ports, SweepConfig, SweepReport, WatchdogConfig, WatchdogReport
 from runtime_platform.benchmark.publisher.sweep import run_sweep
+from runtime_platform.benchmark.publisher.watchdog import run_watchdog
 from runtime_platform.benchmark.scripts import benchmark_result as res
 from runtime_platform.benchmark.scripts.benchmark_drift import fingerprint
 from runtime_platform.benchmark.scripts.benchmark_schedule_manifest import load_manifest
@@ -113,6 +114,10 @@ class HookedTracker(_Hooked, InMemoryTracker):
         self._before("create_comment", issue, body)
         return super().create_comment(issue, body)
 
+    def update_comment(self, comment_id: int, body: str) -> Any:
+        self._before("update_comment", comment_id, body)
+        return super().update_comment(comment_id, body)
+
     def create_issue(self, *, title: str, body: str, labels: Sequence[str]) -> Any:
         self._before("create_issue", title, body)
         return super().create_issue(title=title, body=body, labels=labels)
@@ -154,6 +159,17 @@ class World:
 
     def sweep(self, **overrides: Any) -> SweepReport:
         return run_sweep(self.ports(), self.config(**overrides))
+
+    def watchdog(self, **overrides: Any) -> WatchdogReport:
+        values: dict[str, Any] = dict(manifest=self.manifest, identity=IDENTITY, clock=lambda: self.now)
+        values.update(overrides)
+        return run_watchdog(self.ports(), WatchdogConfig(**values))
+
+    def health_comments(self) -> list[Any]:
+        return self.tracker.comments.get(self.manifest["health_issue"], [])
+
+    def missed_run_issues(self, state: str = "open") -> list[Any]:
+        return self.tracker.list_issues("benchmark-missed-run", state=state)
 
     def stored(self, path: str) -> dict[str, Any]:
         return json.loads(self.store.files[path].decode("utf-8"))
