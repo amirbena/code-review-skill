@@ -48,6 +48,10 @@ def missed_run_resolved(lane: str, run_id: str) -> str:
     return f"<!-- benchmark-missed-run-resolved:{lane}:{run_id} -->"
 
 
+def missed_run_duplicate(kept: int) -> str:
+    return f"<!-- benchmark-missed-run-duplicate:{kept} -->"
+
+
 def lane_of_missed_run_issue(body: str) -> str | None:
     first_line = (body or "").lstrip().split("\n", 1)[0].strip()
     match = _MISSED_RUN_RE.match(first_line)

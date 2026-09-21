@@ -49,6 +49,7 @@ _LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")
 _COLOR_RE = re.compile(r"^[0-9a-f]{6}$")
 _LABEL_DESCRIPTION_MAX = 100
 INSTANT_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+_INSTANT_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 
 
 class ManifestError(RuntimeError):
@@ -120,7 +121,7 @@ def _validate_expected_from(value: object, where: str, errors: list[str]) -> Non
     if value is None:
         return
     try:
-        if not isinstance(value, str):
+        if not isinstance(value, str) or not _INSTANT_RE.match(value):
             raise ValueError(value)
         datetime.strptime(value, INSTANT_FORMAT)
     except ValueError:

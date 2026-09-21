@@ -15,7 +15,7 @@ from typing import Any, Mapping
 from runtime_platform.benchmark.publisher import health, markers, render
 from runtime_platform.benchmark.publisher.layout import record_path, run_sort_key
 from runtime_platform.benchmark.publisher.model import Ports, WatchdogConfig, WatchdogReport, format_instant, parse_instant
-from runtime_platform.benchmark.publisher.ports import HistoryStore, Issue, IssueTracker, PublicationFailure
+from runtime_platform.benchmark.publisher.ports import FatalPublicationError, HistoryStore, Issue, IssueTracker, PublicationFailure
 from runtime_platform.benchmark.publisher.sweep import manifest_labels, preflight
 from runtime_platform.benchmark.scripts.benchmark_result import content_sha256, parse_run_id
 
@@ -66,6 +66,16 @@ def _verified_scheduled(store: HistoryStore, run_id: str, lane: str) -> tuple[di
         return None
     finished = parse_instant(record["finished_at"]) if qualifies else None
     return (record, finished) if finished is not None else None
+
+
+def expected_from(lane: str, value: object) -> datetime | None:
+    """`null` is "not activated"; anything else that is not a UTC instant stops the pass instead of reading as unset."""
+    if value is None:
+        return None
+    instant = parse_instant(value)
+    if instant is None:
+        raise FatalPublicationError(f"lanes.{lane}.expected_from {value!r} is not a UTC instant; refusing to treat the lane as not activated")
+    return instant
 
 
 def lane_status(store: HistoryStore, lane: str, max_gap_hours: int, expected_from: datetime | None, now: datetime) -> LaneStatus:
@@ -126,8 +136,10 @@ def _post(ctx: MissedRunContext, issue: int, body: str) -> None:
 
 
 def _close_extras(ctx: MissedRunContext, issues: list[Issue], kept: int) -> None:
+    marker = markers.missed_run_duplicate(kept)
     for extra in (i for i in issues if i.number != kept):
-        _post(ctx, extra.number, f"Duplicate of #{kept} (one open missed-run issue per lane). Closing.")
+        if markers.find_marked_comment(ctx.tracker.list_comments(extra.number), marker, ctx.identity) is None:
+            _post(ctx, extra.number, f"{marker}\n\nDuplicate of #{kept} (one open missed-run issue per lane). Closing.")
         ctx.tracker.close_issue(extra.number)
 
 
@@ -217,7 +229,7 @@ def run_watchdog(ports: Ports, config: WatchdogConfig) -> WatchdogReport:
         preflight(manifest, ports.tracker)
         now, labels = config.clock(), manifest_labels(manifest)
         statuses = [
-            lane_status(ports.store, lane, spec["max_gap_hours"], parse_instant(spec["expected_from"]), now)
+            lane_status(ports.store, lane, spec["max_gap_hours"], expected_from(lane, spec["expected_from"]), now)
             for lane, spec in manifest["lanes"].items()
         ]
         ctx = MissedRunContext(

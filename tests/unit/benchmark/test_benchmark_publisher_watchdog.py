@@ -20,7 +20,7 @@ from typing import Any
 
 from runtime_platform.benchmark.publisher import cli, github_api, markers
 from runtime_platform.benchmark.publisher.layout import receipt_path, record_path
-from runtime_platform.benchmark.publisher.ports import FatalPublicationError
+from runtime_platform.benchmark.publisher.ports import FatalPublicationError, PublicationFailure
 from tests.support.benchmark_publisher_fakes import IDENTITY, REPOSITORY, SLUG, World, make_record
 from tests.support.paths import REPO_ROOT
 from tests.unit.benchmark.test_benchmark_publisher_github_api import REPO, client
@@ -218,6 +218,19 @@ class BootstrapTests(unittest.TestCase):
         self.activate(sentinel=EXPECTED)
         self.assertEqual(self.watch(194)["comprehensive"]["action"], "not-activated")
 
+    def test_an_unparsable_expected_from_is_never_read_as_not_activated(self) -> None:
+        from unittest import mock
+
+        from runtime_platform.benchmark.publisher import watchdog
+
+        self.activate()
+        self.world.manifest["lanes"]["sentinel"]["expected_from"] = "2026-9-25T1:00:00Z"
+        with mock.patch.object(watchdog, "preflight"):  # what a validator gap would let through
+            report = self.world.watchdog()
+        self.assertFalse(report.ok)
+        self.assertIn("refusing to treat the lane as not activated", report.aborted)
+        self.assertEqual((self.world.missed_run_issues(), self.world.health_comments()), ([], []))
+
     def test_an_invalid_expected_from_aborts_before_any_write(self) -> None:
         self.activate()
         self.world.manifest["lanes"]["sentinel"]["expected_from"] = "2026-09-18 01:00"
@@ -301,6 +314,25 @@ class LifecycleTests(WatchdogCase):
         self.assertEqual([i.number for i in self.world.missed_run_issues()], [first.number])
         self.assertEqual(self.lane(report)["missed_run_issue"], first.number)
         self.assertIn(f"Duplicate of #{first.number}", self.world.tracker.comments[duplicate.number][0].body)
+
+    def test_a_failed_duplicate_close_is_retried_without_a_second_pointer_comment(self) -> None:
+        self.watch(107)
+        (first,) = self.world.missed_run_issues()
+        duplicate = self.world.tracker.seed_issue(first.number + 10, author=IDENTITY, body=first.body, labels=first.labels)
+
+        def fail(method: str, *args: Any) -> None:
+            if method == "close_issue":
+                raise PublicationFailure("HTTP 502")
+
+        self.world.tracker.hook = fail
+        self.world.now = _after(SENTINEL_FINISHED, 108)
+        self.assertFalse(self.world.watchdog().ok)
+        self.world.tracker.hook = None
+        self.watch(109)
+        self.assertEqual(self.world.tracker.get_issue(duplicate.number).state, "closed")
+        pointers = [c for c in self.world.tracker.comments[duplicate.number] if f"Duplicate of #{first.number}" in c.body]
+        self.assertEqual(len(pointers), 1)
+        self.assertIn(markers.missed_run_duplicate(first.number), pointers[0].body)
 
     def test_an_issue_carrying_the_marker_from_another_author_is_ignored(self) -> None:
         self.world.tracker.seed_issue(
