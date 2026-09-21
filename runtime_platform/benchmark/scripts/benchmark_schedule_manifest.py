@@ -16,6 +16,7 @@ import argparse
 import json
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -34,7 +35,7 @@ _TOP_KEYS = {
 }
 _LANE_KEYS = {
     "mode", "intended_cadence", "intended_start", "target_completion_local",
-    "max_gap_hours", "tracking_issue",
+    "max_gap_hours", "tracking_issue", "expected_from",
 }
 _START_KEYS = {"weekday", "local_time", "timezone"}
 _CONFIRMATION_KEYS = {"reruns", "threshold", "max_cases"}
@@ -47,6 +48,8 @@ _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 _LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")
 _COLOR_RE = re.compile(r"^[0-9a-f]{6}$")
 _LABEL_DESCRIPTION_MAX = 100
+INSTANT_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+_INSTANT_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 
 
 class ManifestError(RuntimeError):
@@ -110,6 +113,19 @@ def _validate_lane(name: str, lane: object, require_provisioned: bool, errors: l
     if _positive_int(gap, f"{where}.max_gap_hours", errors) and gap > MAX_GAP_CEILING_HOURS[name]:
         errors.append(f"{where}.max_gap_hours: must be <= {MAX_GAP_CEILING_HOURS[name]}")
     _issue_number(lane.get("tracking_issue"), f"{where}.tracking_issue", require_provisioned, errors)
+    _validate_expected_from(lane.get("expected_from"), f"{where}.expected_from", errors)
+
+
+def _validate_expected_from(value: object, where: str, errors: list[str]) -> None:
+    """`null` means the lane is not activated; otherwise a UTC instant, the reference before a first record exists."""
+    if value is None:
+        return
+    try:
+        if not isinstance(value, str) or not _INSTANT_RE.match(value):
+            raise ValueError(value)
+        datetime.strptime(value, INSTANT_FORMAT)
+    except ValueError:
+        errors.append(f"{where}: must be null or a UTC instant like 2026-09-25T01:00:00Z")
 
 
 def _validate_start(name: str, start: object, lane_where: str, errors: list[str]) -> None:

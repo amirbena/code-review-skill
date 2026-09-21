@@ -99,7 +99,7 @@ def duplicate_pointer_comment(kept: int) -> str:
     return f"Duplicate of #{kept} (one open issue per fingerprint). Closing."
 
 
-def _drift_summary(record: Mapping[str, Any]) -> str:
+def drift_summary(record: Mapping[str, Any]) -> str:
     drift = record["drift"]
     outcome = drift["outcome"]
     if outcome["status"] == "not-evaluated":
@@ -124,7 +124,7 @@ def evidence_comment(
         f"- Repository SHA `{record['provenance']['repo_sha'][:12]}`, model `{markers.neutralize(record['runtime']['model_id'], 80)}`",
         f"- Cases executed: {executed}/{len(cases)}",
         f"- Baseline: {baseline['state']}" + (f" (`{baseline['run_id']}`)" if baseline["run_id"] else ""),
-        f"- Drift: {_drift_summary(record)}",
+        f"- Drift: {drift_summary(record)}",
         f"- {_links(evidence)}",
         *[f"- {line}" for line in issue_lines],
         *[f"- {note}" for note in notes],

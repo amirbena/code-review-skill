@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 from dataclasses import dataclass
 from typing import Mapping, Sequence
@@ -94,6 +95,7 @@ class InMemoryTracker:
         self.comments: dict[int, list[Comment]] = {}
         self._next_number = DRY_RUN_ISSUE_BASE if inner else 1
         self._next_comment = 1
+        self.edits: dict[int, str] = {}
 
     def _url(self, number: int) -> str:
         return f"https://github.com/{self.repository}/issues/{number}"
@@ -117,10 +119,21 @@ class InMemoryTracker:
 
     def list_comments(self, issue: int) -> list[Comment]:
         inner = self.inner.list_comments(issue) if self.inner and issue < DRY_RUN_ISSUE_BASE else []
+        inner = [dataclasses.replace(c, body=self.edits[c.id]) if c.id in self.edits else c for c in inner]
         return inner + list(self.comments.get(issue, []))
 
     def create_comment(self, issue: int, body: str) -> Comment:
         return self.seed_comment(issue, author=self.identity, body=body)
+
+    def update_comment(self, comment_id: int, body: str) -> Comment:
+        """A local comment is replaced; a real one read through the overlay is shadowed, never written."""
+        for issue, comments in self.comments.items():
+            for index, comment in enumerate(comments):
+                if comment.id == comment_id:
+                    comments[index] = dataclasses.replace(comment, body=body)
+                    return comments[index]
+        self.edits[comment_id] = body
+        return Comment(comment_id, self.identity, body, "")
 
     def list_issues(self, label: str, *, state: str, limit: int | None = None) -> list[Issue]:
         local = {n: i for n, i in self.issues.items()}

@@ -90,6 +90,8 @@ class IssueTracker(Protocol):
 
     def create_comment(self, issue: int, body: str) -> Comment: ...
 
+    def update_comment(self, comment_id: int, body: str) -> Comment: ...
+
     def list_issues(self, label: str, *, state: str, limit: int | None = None) -> list[Issue]:
         """Newest first; `limit` bounds the scan, None lists everything."""
 

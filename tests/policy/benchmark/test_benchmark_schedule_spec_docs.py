@@ -40,7 +40,7 @@ class ScheduleSpecDocTests(unittest.TestCase):
     def test_documents_every_manifest_field(self) -> None:
         for field in (
             "repository", "entrypoint", "mode", "intended_cadence", "intended_start",
-            "target_completion_local", "max_gap_hours", "tracking_issue", "health_issue",
+            "target_completion_local", "max_gap_hours", "tracking_issue", "expected_from", "health_issue",
             "confirmation", "staging_ref_pattern", "pusher_allowlist",
             "max_new_issues_per_run", "missed_run_comment_interval_hours", "labels",
         ):

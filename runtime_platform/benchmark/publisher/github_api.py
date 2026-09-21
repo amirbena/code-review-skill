@@ -230,6 +230,10 @@ class GitHubIssueTracker:
         _, item = self._client.call("POST", f"/repos/{self._repo}/issues/{issue}/comments", body={"body": body})
         return _comment(item)
 
+    def update_comment(self, comment_id: int, body: str) -> Comment:
+        _, item = self._client.call("PATCH", f"/repos/{self._repo}/issues/comments/{comment_id}", body={"body": body})
+        return _comment(item)
+
     def list_issues(self, label: str, *, state: str, limit: int | None = None) -> list[Issue]:
         rows: list[Issue] = []
         params = {"labels": label, "state": state, "sort": "created", "direction": "desc"}

@@ -109,6 +109,31 @@ class RejectionTests(unittest.TestCase):
             with self.subTest(bad=bad):
                 self.assert_rejected(lambda m, b=bad: m["lanes"]["sentinel"].update(max_gap_hours=b), "max_gap_hours")
 
+    def test_expected_from_is_null_or_a_utc_instant(self) -> None:
+        for good in (None, "2026-09-25T01:00:00Z"):
+            manifest = copy.deepcopy(sm.load_manifest())
+            manifest["lanes"]["sentinel"]["expected_from"] = good
+            self.assertEqual(sm.validate_manifest(manifest), [], good)
+        for bad in ("2026-09-25", "2026-09-25 01:00:00", "2026-09-25T01:00:00+03:00", "2026-13-25T01:00:00Z", 5, True, "",
+                    "2026-9-25T1:00:00Z", "2026-09-25T1:00:00Z", "2026-9-5T01:00:00Z", "2026-09-25T01:00:00Z\n"):
+            with self.subTest(bad=bad):
+                self.assert_rejected(lambda m, b=bad: m["lanes"]["comprehensive"].update(expected_from=b), "expected_from")
+        self.assert_rejected(lambda m: m["lanes"]["sentinel"].pop("expected_from"), "missing field 'expected_from'")
+
+    def test_every_accepted_expected_from_is_readable_by_the_watchdog(self) -> None:
+        from runtime_platform.benchmark.publisher.model import parse_instant
+
+        for value in ("2026-09-25T01:00:00Z", "2030-01-01T00:00:00Z", "2026-12-31T23:59:59Z"):
+            manifest = copy.deepcopy(sm.load_manifest())
+            manifest["lanes"]["sentinel"]["expected_from"] = value
+            self.assertEqual(sm.validate_manifest(manifest), [], value)
+            self.assertIsNotNone(parse_instant(value), value)
+
+    def test_expected_from_is_unset_until_activation_and_is_not_a_provisioning_requirement(self) -> None:
+        manifest = sm.load_manifest()
+        self.assertEqual({lane["expected_from"] for lane in manifest["lanes"].values()}, {None})
+        self.assertEqual(sm.validate_manifest(manifest, require_provisioned=True), [])
+
     def test_weekday_rules(self) -> None:
         self.assert_rejected(lambda m: m["lanes"]["comprehensive"]["intended_start"].update(weekday=None), "weekday")
         self.assert_rejected(lambda m: m["lanes"]["comprehensive"]["intended_start"].update(weekday="Fri"), "weekday")
