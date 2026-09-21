@@ -17,6 +17,8 @@ from runtime_platform.benchmark.publisher.model import (
     FAILED,
     PUBLISHED,
     REFUSED,
+    SCOPE_ALL,
+    SCOPE_RUN_ID,
     Ports,
     RunOutcome,
     SweepConfig,
@@ -225,7 +227,9 @@ def _process(ports: Ports, config: SweepConfig, candidate: _Candidate) -> RunOut
 
 def run_sweep(ports: Ports, config: SweepConfig) -> SweepReport:
     """Process every unpublished sealed ref in ascending `sealed_at`; a refusal never blocks the rest."""
-    report = SweepReport(identity=config.identity)
+    report = SweepReport(
+        identity=config.identity, scope=SCOPE_ALL if config.only_run_id is None else SCOPE_RUN_ID, dry_run=config.dry_run
+    )
     try:
         preflight(config.manifest, ports.tracker)
         prefix = config.manifest["publication"]["staging_ref_pattern"].rstrip("*")

@@ -60,7 +60,7 @@ python3 runtime_platform/benchmark/scripts/publish_benchmark.py sweep [--once] [
 - **`--run-id`** publishes only that run (pattern-validated). With
   **`--accept-unattributed`** it also accepts a ref whose server-side attribution
   is *unavailable*; attribution that contradicts the allowlist is never accepted.
-- **Output.** A JSON report on stdout, refusals and failures on stderr. Exit `0`
+- **Output.** A JSON report on stdout (naming its `scope` and `dry_run`), refusals and failures on stderr. Exit `0`
   when every ref is published or already published, `1` on any refusal, failure,
   or abort, `2` for a usage or credential error.
 
@@ -201,8 +201,10 @@ A missed-run issue is not held open by `keep-open`; it closes exactly when the l
 **Health status.** One comment on `health_issue`, first line `<!-- benchmark-health-status -->`, found, created and
 edited only as a comment the publisher identity authored; a foreign comment carrying the marker is data and is never
 edited (case 12). It holds facts only, no "as of" time, and is edited only when its rendered body differs. `--sweep-report`
-takes the JSON `sweep` printed: an `ok` report with no `aborted` reason marks "last successful publication sweep" as this
-pass's time; anything else keeps the value the previous comment carried, and none yet reads `not reported`. Run it right
+takes the JSON `sweep` printed, which records its `scope` (`all` or `run-id`) and `dry_run`: only an `ok` report with no
+`aborted` reason, `scope: all` and `dry_run: false` marks "last successful publication sweep" as this pass's time. A
+`--run-id` or `--dry-run` pass, a failed one, or a report without those fields keeps the value the previous comment carried,
+and none yet reads `not reported`. Run it right
 after `sweep` for that to mean what it says. Pending handoffs are `claude/benchmark-result-*` refs without a receipt; their age
 is the oldest readable `sealed_at`, in whole hours. Sample (asserted against the renderer by
 [`test_benchmark_publisher_watchdog.py`](../../tests/unit/benchmark/test_benchmark_publisher_watchdog.py)):

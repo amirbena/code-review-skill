@@ -13,7 +13,7 @@ from typing import Any, Callable, Mapping, Sequence
 from runtime_platform.benchmark.publisher import github_api
 from runtime_platform.benchmark.publisher.memory import dry_run_overlay
 from runtime_platform.benchmark.publisher.ports import FatalPublicationError
-from runtime_platform.benchmark.publisher.model import Ports, SweepConfig, WatchdogConfig
+from runtime_platform.benchmark.publisher.model import SCOPE_ALL, Ports, SweepConfig, WatchdogConfig
 from runtime_platform.benchmark.publisher.sweep import run_sweep
 from runtime_platform.benchmark.publisher.watchdog import run_watchdog
 from runtime_platform.benchmark.scripts.benchmark_result import parse_run_id
@@ -105,7 +105,7 @@ def _sweep(
 ) -> int:
     config = SweepConfig(
         manifest=manifest, identity=identity, run_url=run_url, local_once=args.once,
-        only_run_id=args.run_id, accept_unattributed=args.accept_unattributed, **({"clock": clock} if clock else {}),
+        only_run_id=args.run_id, accept_unattributed=args.accept_unattributed, dry_run=args.dry_run, **({"clock": clock} if clock else {}),
     )
     report = run_sweep(ports, config)
     for outcome in report.outcomes:
@@ -118,7 +118,10 @@ def _sweep(
 
 
 def _sweep_succeeded(path: Path | None) -> bool | str:
-    """Whether the given `sweep` report shows a fully successful pass, or an error message."""
+    """Whether the given `sweep` report shows a successful full, real pass, or an error message.
+
+    A `--run-id` or `--dry-run` pass, or a report that does not say which it was, never counts.
+    """
     if path is None:
         return False
     try:
@@ -127,7 +130,7 @@ def _sweep_succeeded(path: Path | None) -> bool | str:
         return f"cannot read --sweep-report {path}: {exc}"
     if not isinstance(report, dict):
         return f"--sweep-report {path} is not a JSON object"
-    return report.get("ok") is True and report.get("aborted") is None
+    return report.get("ok") is True and report.get("aborted") is None and report.get("scope") == SCOPE_ALL and report.get("dry_run") is False
 
 
 def _watchdog(manifest: Mapping[str, Any], identity: str, ports: Ports, succeeded: bool, clock: Clock | None) -> int:

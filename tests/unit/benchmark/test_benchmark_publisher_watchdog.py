@@ -560,10 +560,47 @@ class CliTests(WatchdogCase):
     def test_an_ok_sweep_report_marks_the_sweep_successful(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "sweep.json"
-            path.write_text(json.dumps({"ok": True, "aborted": None, "runs": []}))
+            path.write_text(json.dumps({"ok": True, "aborted": None, "scope": "all", "dry_run": False, "runs": []}))
             code, out, err = run_cli(["watchdog", "--once", "--sweep-report", str(path)], self.ENV, self.world)
         self.assertEqual(code, 0, err)
         self.assertRegex(json.loads(out)["health"]["last_successful_sweep"], r"^\d{4}-\d\d-\d\dT")
+
+    def test_only_a_full_real_sweep_report_marks_the_sweep_successful(self) -> None:
+        base = {"ok": True, "aborted": None, "runs": []}
+        cases = {
+            "run-id scoped": {**base, "scope": "run-id", "dry_run": False},
+            "dry run": {**base, "scope": "all", "dry_run": True},
+            "no scope fields": base,
+            "unknown scope": {**base, "scope": "everything", "dry_run": False},
+            "dry_run not a boolean": {**base, "scope": "all", "dry_run": 0},
+        }
+        for name, report in cases.items():
+            with self.subTest(name), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "sweep.json"
+                path.write_text(json.dumps(report))
+                code, out, err = run_cli(["watchdog", "--once", "--sweep-report", str(path)], self.ENV, self.world)
+                self.assertEqual(code, 0, err)
+                self.assertIsNone(json.loads(out)["health"]["last_successful_sweep"])
+
+    def test_the_sweep_reports_its_own_scope_and_the_watchdog_reads_it_end_to_end(self) -> None:
+        pending = make_record(start=_after(SENTINEL_FINISHED, 60), sha=SHA["fresh"])
+        self.world.seal(pending)
+        self.world.now = _after(SENTINEL_FINISHED, 72)
+        runs = {  # non-marking passes first: a marked value is carried forward by later passes
+            "dry-run": (["--dry-run"], "all", True, False),
+            "run-id": (["--run-id", pending["run_id"]], "run-id", False, False),
+            "full": ([], "all", False, True),
+        }
+        for name, (extra, scope, dry_run, marks) in runs.items():
+            with self.subTest(name), tempfile.TemporaryDirectory() as tmp:
+                code, out, err = run_cli(["sweep", "--once", *extra], self.ENV, self.world)
+                self.assertEqual(code, 0, err)
+                report = json.loads(out)
+                self.assertEqual((report["scope"], report["dry_run"]), (scope, dry_run))
+                path = Path(tmp) / "sweep.json"
+                path.write_text(out)
+                _, out, _ = run_cli(["watchdog", "--once", "--sweep-report", str(path)], self.ENV, self.world)
+                self.assertEqual(json.loads(out)["health"]["last_successful_sweep"] is not None, marks)
 
     def test_a_failed_or_unreadable_sweep_report_never_marks_success(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -9,6 +9,7 @@ from typing import Any, Callable, Mapping
 from runtime_platform.benchmark.publisher.ports import HandoffReader, HistoryStore, IssueTracker
 
 PUBLISHED, ALREADY_PUBLISHED, REFUSED, FAILED = "published", "already-published", "refused", "failed"
+SCOPE_ALL, SCOPE_RUN_ID = "all", "run-id"
 
 
 def utc_now() -> datetime:
@@ -43,6 +44,7 @@ class SweepConfig:
     local_once: bool = False
     only_run_id: str | None = None
     accept_unattributed: bool = False
+    dry_run: bool = False
     clock: Callable[[], datetime] = utc_now
 
 
@@ -72,6 +74,8 @@ class RunOutcome:
 @dataclass
 class SweepReport:
     identity: str
+    scope: str = SCOPE_ALL
+    dry_run: bool = False
     outcomes: list[RunOutcome] = field(default_factory=list)
     aborted: str | None = None
 
@@ -84,6 +88,8 @@ class SweepReport:
             "identity": self.identity,
             "ok": self.ok,
             "aborted": self.aborted,
+            "scope": self.scope,
+            "dry_run": self.dry_run,
             "runs": [o.as_dict() for o in self.outcomes],
         }
 
