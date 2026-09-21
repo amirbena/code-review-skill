@@ -29,7 +29,18 @@ class LaneStatus:
     max_gap_hours: int
     record: Mapping[str, Any] | None
     finished: datetime | None
+    expected_from: datetime | None
     overdue: bool
+
+    @property
+    def reference(self) -> datetime | None:
+        """The later of the last verified scheduled `finished_at` and the manifest's `expected_from`."""
+        return max((t for t in (self.finished, self.expected_from) if t is not None), default=None)
+
+    @property
+    def from_record(self) -> bool:
+        """The gap is measured from a published record, not from the activation anchor."""
+        return self.finished is not None and (self.expected_from is None or self.finished >= self.expected_from)
 
 
 def _published_run_ids(store: HistoryStore, lane: str) -> list[str]:
@@ -57,14 +68,17 @@ def _verified_scheduled(store: HistoryStore, run_id: str, lane: str) -> tuple[di
     return (record, finished) if finished is not None else None
 
 
-def lane_status(store: HistoryStore, lane: str, max_gap_hours: int, now: datetime) -> LaneStatus:
-    """Latest verified scheduled record of the lane; a manual run never satisfies the gap (case 7)."""
-    for run_id in _published_run_ids(store, lane):
-        found = _verified_scheduled(store, run_id, lane)
-        if found is not None:
-            record, finished = found
-            return LaneStatus(lane, max_gap_hours, record, finished, now - finished > timedelta(hours=max_gap_hours))
-    return LaneStatus(lane, max_gap_hours, None, None, False)
+def lane_status(store: HistoryStore, lane: str, max_gap_hours: int, expected_from: datetime | None, now: datetime) -> LaneStatus:
+    """Latest verified scheduled record of the lane; a manual run never satisfies the gap (case 7).
+
+    Before any record exists the manifest's `expected_from` is the reference, so a lane broken since its
+    first expected run cannot stay silent; while it is unset the lane is not activated and nothing is judged.
+    """
+    found = (_verified_scheduled(store, run_id, lane) for run_id in _published_run_ids(store, lane))
+    record, finished = next(filter(None, found), (None, None))
+    reference = max((t for t in (finished, expected_from) if t is not None), default=None)
+    overdue = reference is not None and now - reference > timedelta(hours=max_gap_hours)
+    return LaneStatus(lane, max_gap_hours, record, finished, expected_from, overdue)
 
 
 @dataclass(frozen=True)
@@ -78,19 +92,19 @@ class MissedRunContext:
 
 
 def _describe(status: LaneStatus, now: datetime) -> str:
-    hours = int((now - status.finished).total_seconds() // 3600)
-    return (
-        f"the `{status.lane}` lane's latest verified scheduled record (`{status.record['run_id']}`) finished "
-        f"{status.record['finished_at']}, {hours} h ago; the limit is {status.max_gap_hours} h"
-    )
+    hours = int((now - status.reference).total_seconds() // 3600)
+    if status.from_record:
+        since = f"its latest verified scheduled record (`{status.record['run_id']}`) finished {status.record['finished_at']}"
+    else:
+        since = f"it has published no verified scheduled record since its expected start {format_instant(status.expected_from)}"
+    return f"{since}, {hours} h ago; the limit is {status.max_gap_hours} h"
 
 
 def _issue_body(ctx: MissedRunContext, status: LaneStatus) -> str:
     stamp = format_instant(ctx.now)
     return (
         f"{markers.missed_run_marker(status.lane)}\n{markers.missed_run_notice(status.lane, stamp)}\n\n"
-        f"No newer verified scheduled benchmark record has been published for the `{status.lane}` lane: "
-        f"{_describe(status, ctx.now)}.\n\n"
+        f"The `{status.lane}` lane is overdue: {_describe(status, ctx.now)}.\n\n"
         f"Check the Routine (enabled, GitHub connection alive), the publication workflow and the sealed-but-unpublished "
         f"handoffs on the health status (#{ctx.health_issue}). A manual run does not count. This issue closes when a "
         f"new verified scheduled record for the lane is published; see `{_RUNBOOK}` §5 and §7."
@@ -152,7 +166,7 @@ def _open_or_comment(ctx: MissedRunContext, status: LaneStatus, issues: list[Iss
     if not _notice_due(ctx, kept, status.lane):
         return kept.number, "overdue"
     stamp = markers.missed_run_notice(status.lane, format_instant(ctx.now))
-    _post(ctx, kept.number, f"{stamp}\n\nStill overdue: {_describe(status, ctx.now)}.")
+    _post(ctx, kept.number, f"{stamp}\n\nStill overdue (`{status.lane}`): {_describe(status, ctx.now)}.")
     return kept.number, "commented"
 
 
@@ -162,23 +176,35 @@ def reconcile_missed_runs(ctx: MissedRunContext, statuses: list[LaneStatus]) -> 
     result: dict[str, tuple[int | None, str]] = {}
     for status in statuses:
         issues = open_issues.get(status.lane, [])
-        if status.record is None:
-            result[status.lane] = (issues[0].number if issues else None, "no-scheduled-record")
-        elif not status.overdue:
+        if status.reference is None:
+            result[status.lane] = (issues[0].number if issues else None, "not-activated")
+        elif status.overdue:
+            result[status.lane] = _open_or_comment(ctx, status, issues)
+        elif status.from_record:
             for issue in issues:
                 _resolve(ctx, status, issue)
             result[status.lane] = (None, "closed" if issues else "on-schedule")
         else:
-            result[status.lane] = _open_or_comment(ctx, status, issues)
+            result[status.lane] = (issues[0].number if issues else None, "awaiting-first-run")
     return result
 
 
+def _state(status: LaneStatus) -> str:
+    if status.overdue:
+        return "OVERDUE"
+    if status.reference is None:
+        return health.NOT_ACTIVATED
+    if status.from_record:
+        return "on schedule"
+    return f"awaiting first scheduled run (expected from {format_instant(status.expected_from)})"
+
+
 def _row(status: LaneStatus, issue: int | None) -> health.LaneRow:
-    if status.record is None:
-        return health.LaneRow(status.lane, health.NO_SCHEDULED_RUN, status.max_gap_hours, missed_run_issue=issue)
     record = status.record
+    if record is None:
+        return health.LaneRow(status.lane, _state(status), status.max_gap_hours, missed_run_issue=issue)
     return health.LaneRow(
-        status.lane, "OVERDUE" if status.overdue else "on schedule", status.max_gap_hours, record["run_id"],
+        status.lane, _state(status), status.max_gap_hours, record["run_id"],
         record["finished_at"], markers.neutralize(record["runtime"]["model_id"], 80), render.drift_summary(record), issue,
     )
 
@@ -190,7 +216,10 @@ def run_watchdog(ports: Ports, config: WatchdogConfig) -> WatchdogReport:
     try:
         preflight(manifest, ports.tracker)
         now, labels = config.clock(), manifest_labels(manifest)
-        statuses = [lane_status(ports.store, lane, spec["max_gap_hours"], now) for lane, spec in manifest["lanes"].items()]
+        statuses = [
+            lane_status(ports.store, lane, spec["max_gap_hours"], parse_instant(spec["expected_from"]), now)
+            for lane, spec in manifest["lanes"].items()
+        ]
         ctx = MissedRunContext(
             ports.tracker, config.identity, labels["missed-run"],
             timedelta(hours=manifest["watchdog"]["missed_run_comment_interval_hours"]), now, manifest["health_issue"],
@@ -199,6 +228,7 @@ def run_watchdog(ports: Ports, config: WatchdogConfig) -> WatchdogReport:
         report.lanes = [
             {
                 "lane": s.lane, "action": missed[s.lane][1], "overdue": s.overdue, "missed_run_issue": missed[s.lane][0],
+                "expected_from": format_instant(s.expected_from) if s.expected_from else None,
                 "latest_run_id": s.record["run_id"] if s.record else None,
                 "finished_at": s.record["finished_at"] if s.record else None,
             }

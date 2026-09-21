@@ -173,10 +173,18 @@ lane is the watchdog working, not failing.
 
 **The gap rule.** For each scheduled lane the reference is the latest **published** record (its receipt exists) that is
 intact (`content_sha256` matches), `verification.overall_verified`, and `trigger: scheduled`. The lane is overdue when
-`now − finished_at > max_gap_hours` from the manifest (strictly greater). Only elapsed time is computed: no weekday, local
-time, timezone, or slot appears in this code (a test scans it), so nothing here owns a zone or DST (#431). A manual or `api`
-run never counts. A lane with **no** such record has no reference instant, so nothing is opened for it and the health status
-says so; the first scheduled run is a provisioning check, not something gap arithmetic can watch.
+`now − reference > max_gap_hours` from the manifest (strictly greater), where the reference is that record's `finished_at`
+or the lane's manifest `expected_from`, whichever is later. Only elapsed time is computed: no weekday, local time,
+timezone, or slot appears in this code (a test scans it), so nothing here owns a zone or DST (#431). A manual or `api` run
+never counts.
+
+**Before the first record.** `expected_from` ([`schedule-spec.md`](schedule-spec.md) §1) is the maintainer-set UTC instant
+from which a lane is expected to run; it is the only bootstrap authority, and the watchdog derives nothing from
+`intended_start`. While it is `null` the lane is *not activated*: nothing is judged or opened, and the health status says
+`not activated`. Once set, a lane with no qualifying record is `awaiting first scheduled run` until `max_gap_hours` have
+elapsed since `expected_from`, and is then overdue like any other, so a lane broken since its first expected run cannot
+stay silent. A record older than `expected_from` never advances the lane or closes an issue, and moving `expected_from`
+later leaves an open issue alone; only a published scheduled record at or after `expected_from` recovers the lane.
 
 **Missed-run issues.** Labelled `benchmark-missed-run`; first line `<!-- benchmark-missed-run:<lane> -->`; recognized only
 when authored by the publisher identity (A14).

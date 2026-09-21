@@ -13,7 +13,8 @@
       },
       "target_completion_local": "04:00",
       "max_gap_hours": 96,
-      "tracking_issue": 486
+      "tracking_issue": 486,
+      "expected_from": null
     },
     "comprehensive": {
       "mode": "comprehensive",
@@ -25,7 +26,8 @@
       },
       "target_completion_local": "04:00",
       "max_gap_hours": 192,
-      "tracking_issue": 487
+      "tracking_issue": 487,
+      "expected_from": null
     }
   },
   "health_issue": 488,

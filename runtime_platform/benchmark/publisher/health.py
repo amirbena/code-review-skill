@@ -17,7 +17,7 @@ from runtime_platform.benchmark.publisher.ports import Comment, HandoffReader, H
 from runtime_platform.benchmark.publisher.validation import parse_handoff
 
 _LAST_SWEEP_RE = re.compile(r"^- Last successful publication sweep: (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)$", re.MULTILINE)
-NO_SCHEDULED_RUN = "no verified scheduled run published yet"
+NOT_ACTIVATED = "not activated (`expected_from` unset)"
 _NOT_REPORTED = "not reported"
 
 

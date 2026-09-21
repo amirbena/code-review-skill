@@ -147,6 +147,14 @@ and the Routines page's own warning that a green status is not success).
   persists, and close it when a new verified scheduled record for the lane is
   published. A gap rule avoids computing wall-clock slots, so no repository
   code owns a timezone or DST (a #431 requirement).
+- **Before the first record.** A lane with no verified scheduled record has no
+  `finished_at`, so the reference is the manifest's `expected_from` — the
+  maintainer-set instant from which the lane is expected to run, `null` until
+  activation ([`schedule-spec.md`](../schedule-spec.md) §1). Once set, the lane
+  is overdue when `now − expected_from > max_gap_hours`; a later record makes
+  `expected_from` a floor (the reference is the later of the two), so a record
+  from before activation never advances the lane. This closes the case where a
+  lane is broken from its first expected run and would otherwise never alert.
 - **What may schedule it.** The `schedule` trigger of the publication-only
   workflow, in the same concurrency group as publication. It is deterministic,
   reads record metadata only, needs no model, and never executes the benchmark
@@ -197,7 +205,7 @@ published, and no step whose retry can publish a second copy.
 | Signal | Where | Healthy | Unhealthy → action |
 | --- | --- | --- | --- |
 | Routines exist, are enabled, GitHub connection alive | claude.ai/code/routines | both enabled, recent runs | disabled or disconnected → reconnect within 72 h or re-enable |
-| Latest verified record per lane vs `max_gap_hours` | health status comment | within gap | overdue → missed-run issue; check Routine surface |
+| Latest verified record per lane vs `max_gap_hours` (from `expected_from` until the first record) | health status comment | within gap; `expected_from` set for every enabled Routine | overdue → missed-run issue; check Routine surface; `not activated` on an enabled lane → set `expected_from` |
 | Sealed but unpublished handoffs | health status; `claude/benchmark-result-*` refs | zero, or younger than a few hours | growing → publication workflow or App problem |
 | Publication workflow | Actions tab; health status | enabled; scheduled sweeps succeed within the interval | stale or failing → re-enable, fix, or `workflow_dispatch`; disabled after 60 days of repository inactivity |
 | Model and runtime versions | latest record `runtime.*` | as configured | unexpected → prompt spec or provider drift |

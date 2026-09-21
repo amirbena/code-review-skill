@@ -105,13 +105,125 @@ class GapRuleTests(WatchdogCase):
         report = self.watch(107)
         self.assertEqual(self.lane(report)["latest_run_id"], self.sentinel["run_id"])
 
-    def test_a_lane_with_no_scheduled_record_has_no_reference_point_and_opens_nothing(self) -> None:
-        world = World()
-        report = world.watchdog()
-        self.assertTrue(report.ok)
-        self.assertEqual({r["action"] for r in report.lanes}, {"no-scheduled-record"})
-        self.assertEqual(world.missed_run_issues(), [])
-        self.assertIn("no verified scheduled run published yet", world.health_comments()[0].body)
+
+EXPECTED = datetime(2026, 9, 18, 1, 0, tzinfo=timezone.utc)
+
+
+def _stamp(moment: datetime) -> str:
+    return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+class BootstrapTests(unittest.TestCase):
+    """A lane with no published scheduled record is judged from the manifest's `expected_from`, never a guess."""
+
+    def setUp(self) -> None:
+        self.world = World()
+
+    def activate(self, sentinel: datetime | None = EXPECTED, comprehensive: datetime | None = None) -> None:
+        manifest = json.loads(json.dumps(self.world.manifest))
+        for lane, moment in (("sentinel", sentinel), ("comprehensive", comprehensive)):
+            manifest["lanes"][lane]["expected_from"] = _stamp(moment) if moment else None
+        self.world.manifest = manifest
+
+    def watch(self, hours: float) -> dict[str, dict[str, Any]]:
+        self.world.now = EXPECTED + timedelta(hours=hours)
+        report = self.world.watchdog()
+        self.assertTrue(report.ok, report.aborted)
+        return {row["lane"]: row for row in report.lanes}
+
+    def state_row(self, lane: str = "sentinel") -> str:
+        return next(line for line in self.world.health_comments()[0].body.splitlines() if line.startswith(f"| `{lane}` |"))
+
+    def publish(self, start: datetime, sha: str, **kwargs: Any) -> dict[str, Any]:
+        record = make_record(start=start, sha=sha, **kwargs)
+        self.world.seal(record)
+        self.world.now = start + timedelta(minutes=5)
+        self.assertTrue(self.world.sweep().ok)
+        return record
+
+    def test_an_unset_expected_from_means_not_activated_and_nothing_is_judged(self) -> None:
+        self.activate(sentinel=None)
+        lanes = self.watch(10_000)
+        self.assertEqual({row["action"] for row in lanes.values()}, {"not-activated"})
+        self.assertEqual(self.world.missed_run_issues(), [])
+        self.assertIn("not activated (`expected_from` unset)", self.state_row())
+
+    def test_before_the_gap_elapses_the_lane_is_awaiting_its_first_run(self) -> None:
+        self.activate()
+        row = self.watch(96)["sentinel"]
+        self.assertEqual((row["action"], row["overdue"]), ("awaiting-first-run", False))
+        self.assertEqual(self.world.missed_run_issues(), [])
+        self.assertIn(f"awaiting first scheduled run (expected from {_stamp(EXPECTED)})", self.state_row())
+
+    def test_a_lane_broken_since_its_first_expected_run_opens_a_missed_run_issue(self) -> None:
+        self.activate()
+        row = self.watch(96.01)["sentinel"]
+        (issue,) = self.world.missed_run_issues()
+        self.assertEqual((row["action"], row["missed_run_issue"]), ("opened", issue.number))
+        self.assertIn(f"published no verified scheduled record since its expected start {_stamp(EXPECTED)}", issue.body)
+        self.assertIn("96 h ago; the limit is 96 h", issue.body)
+        self.assertIn("OVERDUE", self.state_row())
+        self.assertEqual(self.watch(96.02)["comprehensive"]["action"], "not-activated")
+
+    def test_a_persisting_first_run_failure_is_commented_at_the_manifest_interval(self) -> None:
+        self.activate()
+        self.watch(100)
+        self.watch(101)
+        (issue,) = self.world.missed_run_issues()
+        self.assertEqual(self.world.tracker.comments.get(issue.number, []), [])
+        self.assertEqual(self.watch(124.1)["sentinel"]["action"], "commented")
+        self.assertIn("Still overdue (`sentinel`): it has published no verified scheduled record", self.world.tracker.comments[issue.number][0].body)
+
+    def test_the_first_published_scheduled_record_recovers_the_lane_and_closes_the_issue(self) -> None:
+        self.activate()
+        self.watch(100)
+        (issue,) = self.world.missed_run_issues()
+        first = self.publish(EXPECTED + timedelta(hours=110), "6a" * 6)
+        self.world.now = EXPECTED + timedelta(hours=111)
+        row = {r["lane"]: r for r in self.world.watchdog().lanes}["sentinel"]
+        self.assertEqual((row["action"], row["missed_run_issue"]), ("closed", None))
+        self.assertEqual(self.world.tracker.get_issue(issue.number).state, "closed")
+        self.assertIn(markers.missed_run_resolved("sentinel", first["run_id"]), self.world.tracker.comments[issue.number][-1].body)
+        self.assertIn("on schedule", self.state_row())
+
+    def test_a_manual_run_never_ends_a_first_run_failure(self) -> None:
+        self.activate()
+        self.publish(EXPECTED + timedelta(hours=50), "6b" * 6, trigger="manual")
+        row = self.watch(100)["sentinel"]
+        self.assertEqual(row["action"], "opened")
+        self.assertIsNone(row["latest_run_id"])
+
+    def test_a_record_from_before_activation_neither_alarms_nor_recovers(self) -> None:
+        self.publish(EXPECTED - timedelta(hours=200), "6c" * 6)
+        self.activate()
+        row = self.watch(50)["sentinel"]
+        self.assertEqual((row["action"], row["overdue"]), ("awaiting-first-run", False))
+        self.assertEqual(self.watch(97)["sentinel"]["action"], "opened")
+        self.publish(EXPECTED + timedelta(hours=98), "6d" * 6)
+        self.assertEqual(self.watch(99)["sentinel"]["action"], "closed")
+
+    def test_moving_expected_from_later_leaves_an_open_issue_untouched(self) -> None:
+        self.activate()
+        self.watch(100)
+        (issue,) = self.world.missed_run_issues()
+        self.activate(sentinel=EXPECTED + timedelta(hours=90))
+        row = self.watch(101)["sentinel"]
+        self.assertEqual((row["action"], row["missed_run_issue"]), ("awaiting-first-run", issue.number))
+        self.assertEqual(self.world.tracker.get_issue(issue.number).state, "open")
+
+    def test_each_lane_is_activated_independently(self) -> None:
+        self.activate(sentinel=EXPECTED, comprehensive=EXPECTED)
+        lanes = self.watch(193)
+        self.assertEqual({lane: row["action"] for lane, row in lanes.items()}, {"sentinel": "opened", "comprehensive": "opened"})
+        self.activate(sentinel=EXPECTED)
+        self.assertEqual(self.watch(194)["comprehensive"]["action"], "not-activated")
+
+    def test_an_invalid_expected_from_aborts_before_any_write(self) -> None:
+        self.activate()
+        self.world.manifest["lanes"]["sentinel"]["expected_from"] = "2026-09-18 01:00"
+        report = self.world.watchdog()
+        self.assertIn("expected_from", report.aborted)
+        self.assertEqual((self.world.tracker.issues, self.world.tracker.comments), ({}, {}))
 
 
 class LifecycleTests(WatchdogCase):
