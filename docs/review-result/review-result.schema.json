@@ -1,0 +1,243 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://code-review-skill/docs/review-result/review-result.schema.json",
+  "title": "Review result (Issue #67)",
+  "description": "Machine-readable serialization of one completed review: its findings, the decision derived from them, and the review-level metadata. Shape only -- every field's meaning is owned by the canonical source named in its $comment (see review-result-model.md, section 3); this schema restates none of those rules. Cross-field consistency (counts, decision derivation, identity) is checked against those owners by tests/reference/review/review_result.py, not encoded here.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "skill",
+    "reviewed_state",
+    "coverage",
+    "decision",
+    "counts",
+    "summary",
+    "findings"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "$comment": "Versioning policy (when this value changes, compatibility rules) is Issue #68's; this constant is the only place the version is stated.",
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "skill": {
+      "$comment": "Which Code Review Agent Skill produced the review: skills/local-code-review/SKILL.md or skills/github-pr-review/SKILL.md.",
+      "type": "string",
+      "enum": ["local-code-review", "github-pr-review"]
+    },
+    "reviewed_state": {
+      "$comment": "The facts a Reviewed State Record binds to a completed review: docs/findings/reviewed-sha-state-contract.md, section 1 (fields), section 2 (which SHA is authoritative), section 5 (completeness and prior reviewed SHA). Persistence fields (provenance marker, associated review evidence reference) belong to a written record, not to the result, and are not carried here.",
+      "type": "object",
+      "required": [
+        "repository",
+        "base_branch",
+        "base_sha",
+        "merge_base_sha",
+        "reviewed_head_sha",
+        "reviewer_identity",
+        "completeness",
+        "prior_reviewed_sha"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "base_branch": { "type": "string", "minLength": 1 },
+        "base_sha": { "$ref": "#/definitions/nullable_sha" },
+        "merge_base_sha": { "$ref": "#/definitions/nullable_sha" },
+        "reviewed_head_sha": {
+          "$comment": "null when the review target has no committed head (for example uncommitted local changes); such a result cannot seed a delta re-review (reviewed-sha-state-contract.md, section 7).",
+          "$ref": "#/definitions/nullable_sha"
+        },
+        "reviewer_identity": {
+          "$comment": "null when the reviewer identity could not be established (reviewed-sha-state-contract.md, section 4).",
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "completeness": {
+          "$comment": "reviewed-sha-state-contract.md, section 5.",
+          "type": "string",
+          "enum": ["full", "delta-re-review"]
+        },
+        "prior_reviewed_sha": {
+          "$comment": "null only at the supersession-chain root (reviewed-sha-state-contract.md, section 5).",
+          "$ref": "#/definitions/nullable_sha"
+        }
+      }
+    },
+    "coverage": {
+      "$comment": "shared/policies/review-stopping-criteria.md, 'Labeling'. An incomplete review must never present as clean; that override is reflected in decision.outcome.",
+      "type": "string",
+      "enum": ["complete", "incomplete"]
+    },
+    "decision": {
+      "type": "object",
+      "required": ["derived", "outcome"],
+      "additionalProperties": false,
+      "properties": {
+        "derived": {
+          "$comment": "The one mechanical decision shared/policies/severity.md, 'Decision derivation (mechanical)', derives from the finding set: clean (no unresolved P0/P1) or blocking. Skill-specific labels (REVIEW CLEAN / Approve, CHANGES REQUIRED / Request Changes) are renderings of these two values; see review-result-model.md, section 4.",
+          "type": "string",
+          "enum": ["clean", "blocking"]
+        },
+        "outcome": {
+          "$comment": "The primary outcome the review presents: 'derived', except an incomplete coverage state overrides it with 'incomplete' (review-stopping-criteria.md, 'Labeling').",
+          "type": "string",
+          "enum": ["clean", "blocking", "incomplete"]
+        }
+      }
+    },
+    "counts": {
+      "$comment": "The severity tally severity.md's derivation is stated over (its 'P0: 0, P1: 1' basis). Each count equals the number of findings of that severity.",
+      "type": "object",
+      "required": ["p0", "p1", "p2"],
+      "additionalProperties": false,
+      "properties": {
+        "p0": { "type": "integer", "minimum": 0 },
+        "p1": { "type": "integer", "minimum": 0 },
+        "p2": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "summary": {
+      "$comment": "The review's 'What changed' section (shared/templates/review-summary.md); presentation prose, never an input to the decision.",
+      "type": "string",
+      "minLength": 1
+    },
+    "findings": {
+      "$comment": "Every finding the review produced, in report order -- including P2 findings on a clean review (severity.md: REVIEW CLEAN means no blocking findings, not no findings).",
+      "type": "array",
+      "items": { "$ref": "#/definitions/finding" }
+    }
+  },
+  "definitions": {
+    "nullable_sha": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+    },
+    "finding": {
+      "$comment": "shared/templates/finding.md, 'Fields' (the canonical finding contract) and 'Optional and surface-specific fields'. Rendering-only fields (source annotation on location, implementation prompt) are not part of the result.",
+      "type": "object",
+      "required": [
+        "id",
+        "severity",
+        "title",
+        "location",
+        "fix_location_resolved",
+        "evidence",
+        "impact",
+        "fix",
+        "runtime_validation",
+        "confidence",
+        "identity"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$comment": "finding.md 'id': the review-local identifier (F1, F2, ...). Cross-review identity is 'identity' below, not this field.",
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "$comment": "finding.md 'severity'; definitions and blocking rule are shared/policies/severity.md.",
+          "type": "string",
+          "enum": ["P0", "P1", "P2"]
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "location": {
+          "$comment": "finding.md 'location': the canonical fix/action location, free-form (file, line/range, symbol, or section). Its parsing belongs to the identity contract, not this schema.",
+          "type": "string",
+          "minLength": 1
+        },
+        "fix_location_resolved": {
+          "$comment": "finding.md, 'Fix/action location, evidence location, publication'. false means 'location' is only the best-known evidence coordinate and the fix/action location is unresolved. Always present so an absent key is never read as 'resolved'.",
+          "type": "boolean"
+        },
+        "evidence_location": {
+          "$comment": "finding.md 'evidence location'. Omitted when it adds nothing over 'location'.",
+          "type": "string",
+          "minLength": 1
+        },
+        "affected_locations": {
+          "$comment": "finding.md 'affected locations': the exhaustive manifestation sites of a consolidated root-cause finding (at least two). Omitted on an ordinary single-site finding.",
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["location", "note"],
+            "additionalProperties": false,
+            "properties": {
+              "location": { "type": "string", "minLength": 1 },
+              "note": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "evidence": {
+          "$comment": "finding.md 'evidence'; the evidence bar is shared/policies/evidence.md.",
+          "type": "string",
+          "minLength": 1
+        },
+        "impact": { "type": "string", "minLength": 1 },
+        "fix": {
+          "$comment": "finding.md 'fix' -- the field that carries the remediation direction governed by shared/policies/remediation-guidance.md.",
+          "type": "string",
+          "minLength": 1
+        },
+        "follow_up": {
+          "$comment": "finding.md 'follow-up'; shared/policies/remediation-scope-boundary.md. Omitted when there is none.",
+          "type": "string",
+          "minLength": 1
+        },
+        "details": {
+          "$comment": "finding.md 'details' (the controlled longer explanation). Omitted when there is none.",
+          "type": "string",
+          "minLength": 1
+        },
+        "runtime_validation": {
+          "$comment": "finding.md 'runtime validation'; shared/policies/runtime-validation.md, 'Targeted validation of a suspected finding'. 'reasoned' is the canonical default (no targeted validation attempted), carried explicitly so it is never confused with an omitted key.",
+          "type": "string",
+          "enum": ["reasoned", "runtime-confirmed", "attempted-inconclusive"]
+        },
+        "contextual_evidence": {
+          "$comment": "finding.md 'contextual evidence': provenance entries, each a short 'source: clause' string. Omitted when no contextual evidence informed the finding.",
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "confidence": {
+          "$comment": "finding.md 'confidence' and docs/finding-confidence/finding-confidence-model.md: the closed evidence-state value set. 'credible' is the canonical default, carried explicitly.",
+          "type": "string",
+          "enum": [
+            "confirmed",
+            "credible",
+            "runtime-validation-unavailable",
+            "external-contract-unvalidated",
+            "insufficient-context"
+          ]
+        },
+        "capability": {
+          "$comment": "finding.md 'capability'; shared/policies/specialist-depth.md. Omitted when no domain-specific deepening capability contributed.",
+          "type": "string",
+          "minLength": 1
+        },
+        "defect_kind": {
+          "$comment": "finding.md 'defect_kind': a lowercase kebab-case defect-class slug. Omitted when no narrow class applies.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "identity": {
+          "$comment": "docs/findings/finding-stable-identity.md: the effective identity a finding carries out of a review (section 1) and its fail-closed matching eligibility (section 7). Construction, propagation and matching are owned there and in finding-matching-strategy.md; lifecycle state is finding-lifecycle-contract.md's and is not carried in the result.",
+          "type": "object",
+          "required": ["stable_id", "matching_eligible"],
+          "additionalProperties": false,
+          "properties": {
+            "stable_id": {
+              "type": "string",
+              "pattern": "^fid_v1_[0-9a-f]{32}$"
+            },
+            "matching_eligible": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}

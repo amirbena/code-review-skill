@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0.0",
+  "skill": "github-pr-review",
+  "reviewed_state": {
+    "repository": "acme/payments",
+    "base_branch": "main",
+    "base_sha": "3f9c1e2a7b4d5c60918273645a1b2c3d4e5f6071",
+    "merge_base_sha": "3f9c1e2a7b4d5c60918273645a1b2c3d4e5f6071",
+    "reviewed_head_sha": "b81d4a9e0c7f3625d1e8a4b6c90f2e7d5a31c84f",
+    "reviewer_identity": "review-bot",
+    "completeness": "full",
+    "prior_reviewed_sha": null
+  },
+  "coverage": "complete",
+  "decision": {
+    "derived": "blocking",
+    "outcome": "blocking"
+  },
+  "counts": {
+    "p0": 0,
+    "p1": 1,
+    "p2": 1
+  },
+  "summary": "Adds bounded retries around the charge call. The retry loop hides a timeout as success, and the new path has no test.",
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "P1",
+      "title": "Retry loop reports a timed-out charge as successful",
+      "location": "src/payments/retry.py:88",
+      "fix_location_resolved": true,
+      "evidence": "`charge_with_retry` catches `TimeoutError` and `continue`s; after the last attempt it falls through to `return ChargeResult.ok()` without checking that any attempt completed.",
+      "impact": "A charge that never completed is recorded as paid, so the order ships without payment.",
+      "fix": "Track whether an attempt succeeded and raise or return a failure result when every attempt timed out.",
+      "runtime_validation": "reasoned",
+      "confidence": "credible",
+      "defect_kind": "swallowed-exception",
+      "identity": {
+        "stable_id": "fid_v1_2c7a0d6b2c80a885a1752c05f15d70c0",
+        "matching_eligible": true
+      }
+    },
+    {
+      "id": "F2",
+      "severity": "P2",
+      "title": "Timeout path of the retry loop is untested",
+      "location": "tests/unit/payments/test_retry.py",
+      "fix_location_resolved": true,
+      "evidence_location": "src/payments/retry.py:80-92",
+      "evidence": "The only new test, `test_charge_retries_on_failure`, exercises a non-timeout failure; no test drives the `TimeoutError` branch.",
+      "impact": "The timeout regression in F1 would not be caught by the suite.",
+      "fix": "Add a test that makes every attempt time out and asserts a failure result.",
+      "follow_up": "Audit the other retry helpers in `src/payments/` for the same fall-through.",
+      "runtime_validation": "attempted-inconclusive",
+      "contextual_evidence": ["acceptance criterion: failed charges must never be recorded as paid"],
+      "confidence": "runtime-validation-unavailable",
+      "defect_kind": "missing-test-coverage",
+      "identity": {
+        "stable_id": "fid_v1_d3b3f8809dcaa5f1dfd78b9cbed739ba",
+        "matching_eligible": true
+      }
+    }
+  ]
+}
