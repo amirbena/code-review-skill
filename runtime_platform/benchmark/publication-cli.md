@@ -1,15 +1,16 @@
 # Publication CLI: `sweep` and `watchdog`
 
 Repository-development contract for GitHub Issues
-[#471](https://github.com/amirbena/code-review-skill/issues/471) (`sweep`, F5) and
-[#472](https://github.com/amirbena/code-review-skill/issues/472) (`watchdog`, F6) of Epic
+[#471](https://github.com/amirbena/code-review-skill/issues/471) (`sweep`, F5),
+[#472](https://github.com/amirbena/code-review-skill/issues/472) (`watchdog`, F6), and
+[#474](https://github.com/amirbena/code-review-skill/issues/474) (the workflow, F8) of Epic
 [#466](https://github.com/amirbena/code-review-skill/issues/466); design record
 [#464](https://github.com/amirbena/code-review-skill/issues/464). Like the rest of
 [`./`](README.md) it is **not packaged into either Skill archive**.
 
 It owns what the deterministic publisher **does**: the commands, their credentials,
 the handoff file `sweep` reads, the order and gates of one publication, how issues
-are reconciled, how a failed pass is retried, and (§7) what `watchdog` watches. The design it implements is
+are reconciled, how a failed pass is retried, (§7) what `watchdog` watches, and (§8) how the workflow runs both. The design it implements is
 [`scheduled-operations/execution-publication-boundary.md`](scheduled-operations/execution-publication-boundary.md)
 §2 and §5,
 [`scheduled-operations/drift-issue-lifecycle-and-recovery.md`](scheduled-operations/drift-issue-lifecycle-and-recovery.md)
@@ -24,14 +25,17 @@ are [`benchmark-result-schema.md`](benchmark-result-schema.md); the manifest is
 | [`scripts/publish_benchmark.py`](scripts/publish_benchmark.py) | The entrypoint (`sweep`, `watchdog`). |
 | [`publisher/`](publisher/) | The pass itself: `sweep.py` (order, gates, persist, receipt), `validation.py` (the §2 gates), `lifecycle.py` (drift issues), `render.py` and `markers.py` (post bodies and idempotency markers), `github_api.py` (the REST ports), `memory.py` (in-memory ports for tests and `--dry-run`). |
 | [`publisher/watchdog.py`, `publisher/health.py`](publisher/) | `watchdog`: the gap rule and missed-run issues, and the health-status comment. |
+| [`.github/workflows/benchmark-publish.yml`](../../.github/workflows/benchmark-publish.yml) | The publication-only workflow that runs both (§8). |
 
 It never runs the benchmark, calls a model, or derives drift: it reads
 `drift.confirmed[]` and fingerprints from the sealed record (`watchdog` reads record metadata only). Nothing under
 `publisher/` imports the benchmark entrypoint, the reviewer adapter, or
 `benchmark_drift.py`, and none shells out; a test enforces it
 ([`test_benchmark_publisher_boundary.py`](../../tests/unit/benchmark/test_benchmark_publisher_boundary.py)).
-`benchmark_drift.py` keeps classification and fingerprints only: its in-Routine
-`GhCliIssueClient`, `sync_regressions`, and `sync` subcommand are retired.
+`benchmark_drift.py` keeps classification only: its in-Routine
+`GhCliIssueClient`, `sync_regressions`, and `sync` subcommand are retired, and the
+fingerprint the record validator checks lives in the stdlib-only
+`benchmark_fingerprint.py`, so no drift classification is in the publisher's import graph.
 
 ## 1. Invocation
 
@@ -40,11 +44,13 @@ python3 runtime_platform/benchmark/scripts/publish_benchmark.py sweep [--once] [
     [--run-id RUN_ID [--accept-unattributed]] [--manifest PATH] [--app-slug SLUG] [--run-url URL]
 ```
 
-- **Credentials.** Three App installation tokens, from `BENCHMARK_CONTENTS_TOKEN`
-  (`contents: write`), `BENCHMARK_ISSUES_TOKEN` (`issues: write`), and optionally
-  `BENCHMARK_READ_TOKEN` (`contents: read`, else the contents token). A token that
-  is not an installation token (`ghs_…`) is refused. No other variable is read —
-  never `GH_TOKEN`, `GITHUB_TOKEN`, or a `gh` login — so there is **no
+- **Credentials.** Installation tokens only: `BENCHMARK_CONTENTS_TOKEN`
+  (`contents: write`) and `BENCHMARK_ISSUES_TOKEN` (`issues: write`) are the
+  publication App's; optional `BENCHMARK_READ_TOKEN` (`contents: read`, else the
+  contents token) carries reads only and may be any read-only installation token —
+  the workflow passes the job's `GITHUB_TOKEN` (§8). Every write is made with an App
+  token. A token that is not an installation token (`ghs_…`) is refused. No other variable is read —
+  the CLI never reads `GH_TOKEN`, `GITHUB_TOKEN`, or a `gh` login itself — so there is **no
   personal-identity fallback path**; a missing token stops the run before any call.
 - **Identity.** The acting identity is `<app-slug>[bot]` (`--app-slug` or
   `BENCHMARK_APP_SLUG`). It is printed to stderr before anything acts, and every
@@ -227,3 +233,39 @@ is the oldest readable `sealed_at`, in whole hours. Sample (asserted against the
 
 Edited in place by the publisher identity, and only when a fact above changes.
 ````
+
+## 8. The workflow
+
+[`benchmark-publish.yml`](../../.github/workflows/benchmark-publish.yml) (F8,
+[#474](https://github.com/amirbena/code-review-skill/issues/474)) is the publication-only
+workflow of [`publication-architecture.md`](scheduled-operations/publication-architecture.md)
+§3–§5, permitted by amendment A13. It runs `sweep`, then `watchdog`, in one job.
+
+- **Triggers.** `schedule` (every two hours, at minute 23) and `workflow_dispatch`, whose
+  inputs map to `sweep`'s `--run-id`, `--accept-unattributed`, and `--dry-run` (`--dry-run`
+  also applies to `watchdog`). The job runs only for `refs/heads/main`, in the
+  `benchmark-publication` environment, and one run at a time (`concurrency: benchmark-publish`,
+  never cancelled).
+- **Credentials.** The job's `GITHUB_TOKEN` is `contents: read`. Two tokens are minted from
+  `BENCHMARK_APP_ID` / `BENCHMARK_APP_PRIVATE_KEY` with `actions/create-github-app-token`,
+  each for this repository and one permission. Unless both belong to the App
+  `BENCHMARK_APP_SLUG` names (`benchmark-publication`), the job stops and neither
+  `sweep` nor `watchdog` runs:
+
+  | Step | `BENCHMARK_CONTENTS_TOKEN` | `BENCHMARK_ISSUES_TOKEN` | `BENCHMARK_READ_TOKEN` |
+  | --- | --- | --- | --- |
+  | `sweep` | App, `contents: write` (also its reads) | App, `issues: write` | — |
+  | `watchdog` | — | App, `issues: write` | the job's `GITHUB_TOKEN` |
+
+- **Sweep → watchdog.** `sweep`'s stdout report is written to a file that `watchdog` reads
+  as `--sweep-report` (§7). `watchdog` also runs when `sweep` fails, so a stalled publication
+  stays visible; if `sweep` died before printing a report, `watchdog` runs without one and
+  keeps the previous "last successful publication sweep". The job fails when either step does.
+- **Recovery.** A fresh dispatch rather than a re-run (a re-run replays the old definition);
+  if Actions itself is unavailable, `--once` locally under App tokens (§1).
+
+[`test_benchmark_publish_workflow.py`](../../tests/policy/benchmark/test_benchmark_publish_workflow.py)
+enforces the triggers, the environment and branch guard, the token permissions, the only
+secrets, no model or provider credential, pinned first-party actions, no expression inside a
+shell step, the step order, and an import closure with no benchmark execution, evaluation,
+or reference module, no drift classification, and no third-party or process-spawning import.

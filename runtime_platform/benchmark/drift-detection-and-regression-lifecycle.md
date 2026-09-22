@@ -385,7 +385,8 @@ classification, not for the issue lifecycle.
 This document is the authoritative contract for drift detection and the
 regression-issue lifecycle, **as amended by #467 (A4, A8, A9, A10)**.
 `runtime_platform/benchmark/scripts/benchmark_drift.py` implements classification
-and fingerprinting unchanged; execution-side evaluation and in-run confirmation
+and fingerprinting unchanged (the fingerprint function lives in `benchmark_fingerprint.py`
+and is re-exported); execution-side evaluation and in-run confirmation
 are [#470](https://github.com/amirbena/code-review-skill/issues/470). The issue
 lifecycle is the publisher's ([#471](https://github.com/amirbena/code-review-skill/issues/471),
 [`publication-cli.md`](publication-cli.md));

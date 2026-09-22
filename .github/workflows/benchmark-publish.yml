@@ -1,0 +1,125 @@
+name: Benchmark publish
+
+# Publication only (Issue #474, F8). Publishes already-sealed benchmark results and
+# runs the missed-run watchdog; it never schedules, runs, re-runs, or evaluates the
+# benchmark, holds no model or provider credential, and derives no drift
+# (runtime_platform/benchmark/scheduled-operations/execution-publication-boundary.md §9).
+#
+# Triggers are `schedule` and `workflow_dispatch` only, so the default-branch
+# definition always runs; no event on `benchmark-history` or a staging ref starts
+# it, so the App's own writes cannot re-trigger it. The App key lives in the
+# `benchmark-publication` environment, whose deployment branch policy is the
+# default branch only. The job's GITHUB_TOKEN is `contents: read`; two App tokens,
+# each narrowed to this repository and one permission, carry every write.
+#
+# Commands and credentials: runtime_platform/benchmark/publication-cli.md.
+# Guarded by tests/policy/benchmark/test_benchmark_publish_workflow.py.
+
+on:
+  schedule:
+    - cron: "23 */2 * * *"
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Publish only this run_id (optional)"
+        required: false
+        default: ""
+      accept_unattributed:
+        description: "With run_id: accept a ref whose origin attribution is unavailable"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Read and plan only; every write lands in memory"
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: benchmark-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: benchmark-publication
+    permissions:
+      contents: read
+    env:
+      BENCHMARK_APP_SLUG: benchmark-publication
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+
+      - name: Mint the contents token (contents write)
+        id: contents-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
+        with:
+          app-id: ${{ secrets.BENCHMARK_APP_ID }}
+          private-key: ${{ secrets.BENCHMARK_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: code-review-skill
+          permission-contents: write
+
+      - name: Mint the issues token (issues write)
+        id: issues-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
+        with:
+          app-id: ${{ secrets.BENCHMARK_APP_ID }}
+          private-key: ${{ secrets.BENCHMARK_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: code-review-skill
+          permission-issues: write
+
+      - name: Refuse a token minted for another App
+        id: identity
+        env:
+          CONTENTS_SLUG: ${{ steps.contents-token.outputs.app-slug }}
+          ISSUES_SLUG: ${{ steps.issues-token.outputs.app-slug }}
+        run: |
+          if [ "$CONTENTS_SLUG" != "$BENCHMARK_APP_SLUG" ] || [ "$ISSUES_SLUG" != "$BENCHMARK_APP_SLUG" ]; then
+            echo "::error::the minted tokens belong to '$CONTENTS_SLUG'/'$ISSUES_SLUG', not '$BENCHMARK_APP_SLUG'"
+            exit 1
+          fi
+
+      - name: Sweep sealed results
+        id: sweep
+        env:
+          BENCHMARK_CONTENTS_TOKEN: ${{ steps.contents-token.outputs.token }}
+          BENCHMARK_ISSUES_TOKEN: ${{ steps.issues-token.outputs.token }}
+          RUN_ID: ${{ inputs.run_id }}
+          ACCEPT_UNATTRIBUTED: ${{ inputs.accept_unattributed }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          SWEEP_REPORT: ${{ runner.temp }}/sweep-report.json
+        run: |
+          args=()
+          if [ -n "$RUN_ID" ]; then args+=(--run-id "$RUN_ID"); fi
+          if [ "$ACCEPT_UNATTRIBUTED" = "true" ]; then args+=(--accept-unattributed); fi
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          python runtime_platform/benchmark/scripts/publish_benchmark.py sweep "${args[@]}" > "$SWEEP_REPORT"
+
+      # Runs after a failed sweep too, so a stalled publication stays visible, but never
+      # with a token minted for another App; only an `ok`, full, non-dry-run report
+      # advances "last successful publication sweep". It holds no contents-write token:
+      # history is read with the job's read token.
+      - name: Watchdog
+        if: ${{ !cancelled() && steps.identity.outcome == 'success' }}
+        env:
+          BENCHMARK_READ_TOKEN: ${{ github.token }}
+          BENCHMARK_ISSUES_TOKEN: ${{ steps.issues-token.outputs.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          SWEEP_REPORT: ${{ runner.temp }}/sweep-report.json
+        run: |
+          args=()
+          if [ -s "$SWEEP_REPORT" ]; then args+=(--sweep-report "$SWEEP_REPORT"); fi
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          python runtime_platform/benchmark/scripts/publish_benchmark.py watchdog "${args[@]}"

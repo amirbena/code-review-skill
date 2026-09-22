@@ -27,7 +27,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from runtime_platform.benchmark.scripts.benchmark_corpus_membership import canonical_lane  # noqa: E402
-from runtime_platform.benchmark.scripts.benchmark_drift import fingerprint  # noqa: E402
+from runtime_platform.benchmark.scripts.benchmark_fingerprint import fingerprint  # noqa: E402
 
 SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 RESULT_SCHEMA_PATH = SCHEMA_DIR / "benchmark-result-v1.schema.json"
@@ -46,7 +46,7 @@ _RUN_ID_RE = re.compile(r"^(sentinel|comprehensive)-(\d{8}T\d{6}Z)-([0-9a-f]{12}
 
 
 def canonical_json(value: Any) -> str:
-    """The canonicalization `benchmark_drift.fingerprint` uses: sorted keys, minimal separators."""
+    """The canonicalization `benchmark_fingerprint.fingerprint` uses: sorted keys, minimal separators."""
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
 

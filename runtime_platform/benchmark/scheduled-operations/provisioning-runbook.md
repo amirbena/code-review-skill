@@ -366,7 +366,7 @@ not failures to hide, and each names its disposition.
 | --- | --- | --- |
 | Tracking-issue label name (`benchmark-tracking`) and label definitions | #469 (F3) | reconciled: the manifest matches P1 |
 | Tracking and health issue numbers | #469 (manifest), #472 (health status) | produced by P6: sentinel #486, comprehensive #487, health #488; recorded in the manifest |
-| Secret names `BENCHMARK_APP_ID`, `BENCHMARK_APP_PRIVATE_KEY` (proposed) | #474 (F8) | workflow must match P4 |
+| Secret names `BENCHMARK_APP_ID`, `BENCHMARK_APP_PRIVATE_KEY` | #474 (F8) | reconciled: [`benchmark-publish.yml`](../../../.github/workflows/benchmark-publish.yml) reads exactly the P4 names |
 | Publisher-author filtering (A14): marker recognition and status-comment lookup count only comments authored by `<app-slug>[bot]`, on tracking, health, and drift issues | #471 (F5), #472 (F6) | contract landed by #489; implemented and tested for drift and tracking issues by #471 ([`../publication-cli.md`](../publication-cli.md) §4), status-comment lookup pending in #472 |
 | Tracking and health issues created locked under the earlier procedure | maintainer, under #484 | done 2026-09-19: unlocked, bodies replaced, amended P7 passed; issue numbers unchanged; #488's pin still to be restored |
 | `benchmark-history` branch does not exist yet, and `creation` is not restricted by the design table, so the first writer of the branch is whoever pushes it first; the intended first writer is the publisher's first pass | maintainer decision | decided 2026-09-19, option (a): leave the branch absent; the publisher's first successful publication creates it. No manual seeding and no `creation` rule. Observed: `main` is the only branch on the remote |
