@@ -14,7 +14,7 @@ from runtime_platform.benchmark.publisher.model import Ports, SweepConfig, Sweep
 from runtime_platform.benchmark.publisher.sweep import run_sweep
 from runtime_platform.benchmark.publisher.watchdog import run_watchdog
 from runtime_platform.benchmark.scripts import benchmark_result as res
-from runtime_platform.benchmark.scripts.benchmark_drift import fingerprint
+from runtime_platform.benchmark.scripts.benchmark_fingerprint import fingerprint
 from runtime_platform.benchmark.scripts.benchmark_schedule_manifest import load_manifest
 from tests.support.paths import REPO_ROOT
 

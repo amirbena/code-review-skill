@@ -7,7 +7,6 @@ Full contract: `runtime_platform/benchmark/drift-detection-and-regression-lifecy
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from dataclasses import dataclass
@@ -23,6 +22,7 @@ if str(REPO_ROOT) not in sys.path:
 # is the only executable projection of #53/#54/#55/#56/#57 today.
 from runtime_platform.benchmark.reference import benchmark_metrics as bmet  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_severity as bsev  # noqa: E402
+from runtime_platform.benchmark.scripts.benchmark_fingerprint import fingerprint  # noqa: E402
 
 # --------------------------------------------------------------------------
 # Meaningful drift vs. noise (contract §2).
@@ -59,23 +59,6 @@ class DriftRecord:
             "detail": self.detail,
             "fingerprint": self.fingerprint,
         }
-
-
-def fingerprint(case_id: str, drift_type: str, expected_finding_key: str) -> str:
-    """Stable identity for a regression (contract §3): sha256 of the
-    canonical `{case_id, drift_type, expected_finding_key}` triple, built
-    from the fields directly so a caller's key ordering/whitespace never
-    changes the result."""
-    canonical = json.dumps(
-        {
-            "case_id": case_id,
-            "drift_type": drift_type,
-            "expected_finding_key": expected_finding_key,
-        },
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def classify_drift(
