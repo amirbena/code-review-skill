@@ -168,7 +168,7 @@ and the workflow's incapabilities are in
 
 | Where it runs | Verdict |
 | --- | --- |
-| **Publication-only Actions workflow** — default-branch definition; `schedule` sweep plus manual `workflow_dispatch` | **Chosen.** No host, deployment path, or separate secret store; native serialization; the run URL goes in the receipt. |
+| **Publication-only Actions workflow** — `schedule` sweep (runs the default-branch definition) plus manual `workflow_dispatch`; only `main` receives the App key | **Chosen.** No host, deployment path, or separate secret store; native serialization; the run URL goes in the receipt. |
 | Maintainer running `--once` by hand | Accepted as **bootstrap and disaster recovery** — publication is idempotent and asynchronous. Must print the acting identity; never falls back to a personal `gh` identity. |
 | External scheduled host holding the App key (option A) | Rejected: it preserves no guarantee the workflow cannot, and adds hosting, deployment, a secret store, and monitoring. |
 | Privileged workflow on `push`/`create` of the staging ref (B1) | Rejected: it runs the definition carried by the ref it processes. |
@@ -244,7 +244,7 @@ above.
 
 | Contributor surface | Path to App key | Path to benchmark execution | Path to handoff/publisher |
 | --- | --- | --- | --- |
-| Fork or branch PR | none — the key is an environment secret gated to the default branch; a PR or branch workflow cannot read it | none — no workflow runs the benchmark | none — the publication triggers are `schedule` and `workflow_dispatch` on the default-branch definition |
+| Fork or branch PR | none — the key is an environment secret gated to the default branch; a PR or branch workflow cannot read it | none — no workflow runs the benchmark | none — the publication triggers are `schedule`, which runs the default-branch definition, and `workflow_dispatch`, which runs the selected ref's copy but needs write access; the `benchmark-publication` environment's `main`-only deployment policy withholds the App credentials from any other ref |
 | Pushing a `claude/…` ref | none | none | requires write access (E18: one collaborator); the sweep publishes only a ref whose activity attribution, name, and record validate |
 | Merging code that the Routine later runs | not applicable to the key | yes, as for any merged code the maintainer's Routine runs — Class 2 trust, unchanged from [`runtime-execution-contract.md`](../runtime-execution-contract.md) §2.2 | none |
 | Issue/PR comments, labels | none | none | data only; the publisher never acts on comment content |
