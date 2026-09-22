@@ -115,6 +115,16 @@ class CredentialTests(unittest.TestCase):
             self.assertEqual(name, "BENCHMARK_APP_SLUG")
         self.assertIsNone(MODEL_CREDENTIAL.search(_uncommented()))
 
+    def test_no_app_token_is_used_before_its_identity_is_checked(self) -> None:
+        names = [s["name"] for s in self.steps]
+        check = self._step("Refuse a token minted for another App")
+        self.assertEqual(check["id"], "identity")
+        for step in self.steps[names.index(check["name"]) + 1:]:
+            if "BENCHMARK_ISSUES_TOKEN" in step.get("env", {}):
+                self.assertIn(step.get("if", "success()"), ("success()", "${{ !cancelled() && steps.identity.outcome == 'success' }}"), step["name"])
+        for step in self.steps[: names.index(check["name"])]:
+            self.assertFalse({"BENCHMARK_CONTENTS_TOKEN", "BENCHMARK_ISSUES_TOKEN"} & set(step.get("env", {})), step["name"])
+
     def test_the_watchdog_never_receives_the_contents_write_token(self) -> None:
         watchdog = self._step("Watchdog")
         self.assertNotIn("BENCHMARK_CONTENTS_TOKEN", watchdog["env"])
@@ -153,7 +163,7 @@ class CommandTests(unittest.TestCase):
         names = [s["name"] for s in self.steps]
         sweep, watchdog = self.steps[names.index("Sweep sealed results")], self.steps[names.index("Watchdog")]
         self.assertEqual(names.index("Watchdog"), names.index("Sweep sealed results") + 1)
-        self.assertEqual(watchdog["if"], "${{ !cancelled() }}")
+        self.assertEqual(watchdog["if"], "${{ !cancelled() && steps.identity.outcome == 'success' }}")
         self.assertEqual(sweep["env"]["SWEEP_REPORT"], watchdog["env"]["SWEEP_REPORT"])
         self.assertIn('> "$SWEEP_REPORT"', sweep["run"])
         self.assertIn('--sweep-report "$SWEEP_REPORT"', watchdog["run"])

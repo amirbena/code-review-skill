@@ -44,11 +44,13 @@ python3 runtime_platform/benchmark/scripts/publish_benchmark.py sweep [--once] [
     [--run-id RUN_ID [--accept-unattributed]] [--manifest PATH] [--app-slug SLUG] [--run-url URL]
 ```
 
-- **Credentials.** Three App installation tokens, from `BENCHMARK_CONTENTS_TOKEN`
-  (`contents: write`), `BENCHMARK_ISSUES_TOKEN` (`issues: write`), and optionally
-  `BENCHMARK_READ_TOKEN` (`contents: read`, else the contents token). A token that
-  is not an installation token (`ghs_…`) is refused. No other variable is read —
-  never `GH_TOKEN`, `GITHUB_TOKEN`, or a `gh` login — so there is **no
+- **Credentials.** Installation tokens only: `BENCHMARK_CONTENTS_TOKEN`
+  (`contents: write`) and `BENCHMARK_ISSUES_TOKEN` (`issues: write`) are the
+  publication App's; optional `BENCHMARK_READ_TOKEN` (`contents: read`, else the
+  contents token) carries reads only and may be any read-only installation token —
+  the workflow passes the job's `GITHUB_TOKEN` (§8). Every write is made with an App
+  token. A token that is not an installation token (`ghs_…`) is refused. No other variable is read —
+  the CLI never reads `GH_TOKEN`, `GITHUB_TOKEN`, or a `gh` login itself — so there is **no
   personal-identity fallback path**; a missing token stops the run before any call.
 - **Identity.** The acting identity is `<app-slug>[bot]` (`--app-slug` or
   `BENCHMARK_APP_SLUG`). It is printed to stderr before anything acts, and every
@@ -246,8 +248,9 @@ workflow of [`publication-architecture.md`](scheduled-operations/publication-arc
   never cancelled).
 - **Credentials.** The job's `GITHUB_TOKEN` is `contents: read`. Two tokens are minted from
   `BENCHMARK_APP_ID` / `BENCHMARK_APP_PRIVATE_KEY` with `actions/create-github-app-token`,
-  each for this repository and one permission, and refused unless both belong to the App
-  `BENCHMARK_APP_SLUG` names (`benchmark-publication`):
+  each for this repository and one permission. Unless both belong to the App
+  `BENCHMARK_APP_SLUG` names (`benchmark-publication`), the job stops and neither
+  `sweep` nor `watchdog` runs:
 
   | Step | `BENCHMARK_CONTENTS_TOKEN` | `BENCHMARK_ISSUES_TOKEN` | `BENCHMARK_READ_TOKEN` |
   | --- | --- | --- | --- |

@@ -81,6 +81,7 @@ jobs:
           permission-issues: write
 
       - name: Refuse a token minted for another App
+        id: identity
         env:
           CONTENTS_SLUG: ${{ steps.contents-token.outputs.app-slug }}
           ISSUES_SLUG: ${{ steps.issues-token.outputs.app-slug }}
@@ -106,11 +107,12 @@ jobs:
           if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
           python runtime_platform/benchmark/scripts/publish_benchmark.py sweep "${args[@]}" > "$SWEEP_REPORT"
 
-      # Runs after a failed sweep too, so a stalled publication stays visible; only an
-      # `ok`, full, non-dry-run report advances "last successful publication sweep".
-      # It holds no contents-write token: history is read with the job's read token.
+      # Runs after a failed sweep too, so a stalled publication stays visible, but never
+      # with a token minted for another App; only an `ok`, full, non-dry-run report
+      # advances "last successful publication sweep". It holds no contents-write token:
+      # history is read with the job's read token.
       - name: Watchdog
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.identity.outcome == 'success' }}
         env:
           BENCHMARK_READ_TOKEN: ${{ github.token }}
           BENCHMARK_ISSUES_TOKEN: ${{ steps.issues-token.outputs.token }}
