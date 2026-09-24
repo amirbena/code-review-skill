@@ -121,7 +121,8 @@ schema failing.
 | Versioning policy and compatibility rules for `schema_version` | [`schema-versioning.md`](schema-versioning.md) ([#68](https://github.com/amirbena/code-review-skill/issues/68)) |
 | Local Skill emission (opt-in `structured_review_result`; packaged restatement in [`structured-output.md`](../../shared/policies/structured-output.md), pinned to this schema by a drift test) | [#69](https://github.com/amirbena/code-review-skill/issues/69) |
 | GitHub Skill emission | [#70](https://github.com/amirbena/code-review-skill/issues/70) |
-| Consumers of the result | [#71](https://github.com/amirbena/code-review-skill/issues/71) |
+| Cross-Skill contract tests (section 8) | [#71](https://github.com/amirbena/code-review-skill/issues/71) |
+| Consumers of the result | None in this repository; consumer handling is the guidance in [`schema-versioning.md`](schema-versioning.md) section 3 |
 | Parent capability | [#44](https://github.com/amirbena/code-review-skill/issues/44) |
 
 `github-pr-review` emits the result on explicit request, returned to the
@@ -135,3 +136,21 @@ and identity minting owned by the shared
 [`finding.md`](../../shared/templates/finding.md)'s note that a
 machine-readable renderer would be "another projection of the same fields"
 is what this schema is the first instance of.
+
+## 8. Cross-Skill contract tests
+
+[#71](https://github.com/amirbena/code-review-skill/issues/71) checks
+sample outputs of both Skills against this record. The samples are
+[`../../tests/unit/review/findings/structured_output_samples/`](../../tests/unit/review/findings/structured_output_samples/);
+the checks are
+[`../../tests/reference/review/structured_output_contract.py`](../../tests/reference/review/structured_output_contract.py).
+
+| Check | Rule |
+| --- | --- |
+| Schema and version | Each result passes the section 5 validator. A missing or malformed `schema_version`, a different `MAJOR`, or a version newer than the published schema fails closed ([`schema-versioning.md`](schema-versioning.md) section 3). |
+| Surface population | `skill` names the producer. `reviewed_state.reviewed_head_sha` equals the known workspace head, or the PR head. It is `null` only for an uncommitted local target or an incomplete PR review. |
+| Shared-field parity | `skill` and `reviewed_state` are the only surface-specific fields. For the same review, every other field is identical across the two Skills. |
+| Report ↔ result agreement | The rendered decision label maps to `decision.outcome` through the section 4 table. The rendered counts, coverage, reviewed head, finding set (severity and title), finding ids, and affected locations equal the result's. The comparator reads both surfaces and never re-derives the decision. |
+
+The benchmark does not read the result. It invokes `local-code-review` with
+the option off and scores only the Markdown report.

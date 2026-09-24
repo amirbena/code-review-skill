@@ -1,0 +1,80 @@
+{
+  "identity_inputs": {
+    "retry-timeout": {
+      "repository": "acme/payments",
+      "location": "src/payments/retry.py:88",
+      "symbol": "charge_with_retry",
+      "behavioral_claim_text": "the retry loop swallows TimeoutError, so a charge that never completed is reported as successful",
+      "anchor_fragment": "except TimeoutError: continue",
+      "defect_kind_text": "swallowed-exception"
+    },
+    "retry-untested": {
+      "repository": "acme/payments",
+      "location": "tests/unit/payments/test_retry.py",
+      "behavioral_claim_text": "no test covers the timeout path, so the retry regression is not caught",
+      "anchor_fragment": "def test_charge_retries_on_failure",
+      "defect_kind_text": "missing-test-coverage"
+    },
+    "idempotency-dropped": {
+      "repository": "acme/payments",
+      "location": "src/payments/client.py:41",
+      "symbol": "PaymentsClient.post",
+      "behavioral_claim_text": "the client drops the idempotency key header, so a retried request is processed twice",
+      "anchor_fragment": "headers = {'Content-Type': 'application/json'}",
+      "defect_kind_text": "missing-idempotency-key"
+    },
+    "log-level": {
+      "repository": "acme/payments",
+      "location": "src/payments/retry.py:95",
+      "symbol": "charge_with_retry",
+      "behavioral_claim_text": "each retry logs at error level, so a recovered transient failure pages on-call",
+      "anchor_fragment": "log.error('charge attempt failed')",
+      "defect_kind_text": "log-level-misuse"
+    }
+  },
+  "samples": [
+    {
+      "file": "local-code-review/blocking-committed.md",
+      "skill": "local-code-review",
+      "known_head": "b81d4a9e0c7f3625d1e8a4b6c90f2e7d5a31c84f",
+      "target_committed": true,
+      "parity_group": "blocking",
+      "findings": {"F1": "retry-timeout", "F2": "idempotency-dropped", "F3": "retry-untested"}
+    },
+    {
+      "file": "github-pr-review/blocking.md",
+      "skill": "github-pr-review",
+      "known_head": "b81d4a9e0c7f3625d1e8a4b6c90f2e7d5a31c84f",
+      "parity_group": "blocking",
+      "findings": {"F1": "retry-timeout", "F2": "idempotency-dropped", "F3": "retry-untested"}
+    },
+    {
+      "file": "local-code-review/clean-p2-uncommitted.md",
+      "skill": "local-code-review",
+      "known_head": "5e0f7c2d9a1b4e3f6c8d0a2b4c6e8f0a1b3c5d7e",
+      "target_committed": false,
+      "parity_group": "clean-p2",
+      "findings": {"F1": "log-level"}
+    },
+    {
+      "file": "github-pr-review/clean-p2-delta.md",
+      "skill": "github-pr-review",
+      "known_head": "5e0f7c2d9a1b4e3f6c8d0a2b4c6e8f0a1b3c5d7e",
+      "parity_group": "clean-p2",
+      "findings": {"F1": "log-level"}
+    },
+    {
+      "file": "local-code-review/incomplete.md",
+      "skill": "local-code-review",
+      "known_head": "c4a9e1f07b3d5a2c8e6f0b1d3a5c7e9f2b4d6a80",
+      "target_committed": true,
+      "findings": {"F1": "retry-timeout"}
+    },
+    {
+      "file": "github-pr-review/incomplete-head-unknown.md",
+      "skill": "github-pr-review",
+      "known_head": null,
+      "findings": {}
+    }
+  ]
+}
