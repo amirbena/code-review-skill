@@ -525,8 +525,13 @@ class RestPortTests(unittest.TestCase):
 def run_cli(argv: list[str], env: dict[str, str], world: World | None = None) -> tuple[int, str, str]:
     out, err = io.StringIO(), io.StringIO()
     factory = (lambda manifest, identity: world.ports()) if world else None
-    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-        code = cli.main(argv, env=env, ports_factory=factory, clock=(lambda: world.now) if world else None)
+    with tempfile.TemporaryDirectory() as tmp:
+        if world:  # the CLI loads its manifest from disk; hand it the fixture's, not the live activation floor
+            path = Path(tmp) / "manifest.json"
+            path.write_text(json.dumps(world.manifest), encoding="utf-8")
+            argv = [*argv, "--manifest", str(path)]
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = cli.main(argv, env=env, ports_factory=factory, clock=(lambda: world.now) if world else None)
     return code, out.getvalue(), err.getvalue()
 
 

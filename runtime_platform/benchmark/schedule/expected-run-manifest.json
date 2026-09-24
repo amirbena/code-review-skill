@@ -14,7 +14,7 @@
       "target_completion_local": "04:00",
       "max_gap_hours": 96,
       "tracking_issue": 486,
-      "expected_from": null
+      "expected_from": "2026-09-24T08:25:45Z"
     },
     "comprehensive": {
       "mode": "comprehensive",
@@ -27,7 +27,7 @@
       "target_completion_local": "04:00",
       "max_gap_hours": 192,
       "tracking_issue": 487,
-      "expected_from": null
+      "expected_from": "2026-09-24T08:25:45Z"
     }
   },
   "health_issue": 488,

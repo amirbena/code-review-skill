@@ -129,9 +129,12 @@ class RejectionTests(unittest.TestCase):
             self.assertEqual(sm.validate_manifest(manifest), [], value)
             self.assertIsNotNone(parse_instant(value), value)
 
-    def test_expected_from_is_unset_until_activation_and_is_not_a_provisioning_requirement(self) -> None:
+    def test_expected_from_is_not_a_provisioning_requirement(self) -> None:
+        # Shipped state may be pre- or post-activation; format is covered by the tests above.
         manifest = sm.load_manifest()
-        self.assertEqual({lane["expected_from"] for lane in manifest["lanes"].values()}, {None})
+        self.assertEqual(sm.validate_manifest(manifest, require_provisioned=True), [])
+        for lane in manifest["lanes"].values():
+            lane["expected_from"] = None
         self.assertEqual(sm.validate_manifest(manifest, require_provisioned=True), [])
 
     def test_weekday_rules(self) -> None:
