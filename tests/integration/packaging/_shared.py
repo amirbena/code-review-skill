@@ -36,6 +36,10 @@ LOCAL_SKILL_DIR = REPO_ROOT / "skills" / "local-code-review"
 GITHUB_SKILL_DIR = REPO_ROOT / "skills" / "github-pr-review"
 DIST_DIR = REPO_ROOT / "dist"
 
+# Repository paths copied into the temp build roots of the packaging and
+# release version tests; the CI routing guard keeps these off the FAST allowlist.
+TEMP_ROOT_INPUTS = ("skills", "shared", "scripts", "capabilities", "docs", "LICENSE", "CHANGELOG.md")
+
 # The reference modules this test guards — none is a runtime dependency.
 REFERENCE_TEST_MODULES = (
     "current_evidence.py",

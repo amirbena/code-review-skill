@@ -2,12 +2,55 @@ name: Validate repository
 
 on:
   pull_request:
+  # Every merged commit runs the full suite (the router resolves any
+  # non-pull_request event to FULL), so a stale FAST allowlist turns main red.
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
+  route:
+    name: Route tests (FAST/FULL)
+    runs-on: ubuntu-latest
+    outputs:
+      tier: ${{ steps.route.outputs.tier }}
+    steps:
+      - name: Check out trusted router at base
+        # The router is trusted from the base, never the head: a PR that
+        # introduces or edits it is FULL (#533).
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+
+      - name: Fetch pull request head
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git fetch --no-tags origin "$HEAD_SHA" || echo "::warning::Could not fetch the pull request head; routing falls back to FULL."
+
+      - name: Route
+        id: route
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ -f scripts/validation/ci_test_route.py ]; then
+            python3 scripts/validation/ci_test_route.py route --event-name "$EVENT_NAME" --base "$BASE_SHA" --head "$HEAD_SHA"
+          else
+            echo "tier=full" >> "$GITHUB_OUTPUT"
+            printf '### CI test route\n\n- Tier: **FULL**\n- Reason: no router at the base commit\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   test:
+    needs: route
+    # Always created, so the required `test` context always reports; a failed
+    # or skipped route leaves the tier empty, which runs FULL.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out pull request
@@ -45,9 +88,17 @@ jobs:
           for tree in dist/skills/*/; do agentskills validate "$tree"; done
 
       - name: Run repository tests
+        # FULL unless the router positively selected FAST.
+        if: ${{ needs.route.outputs.tier != 'fast' }}
         env:
           DISTRIBUTION_INSTALL_CHECK: "1"
         run: python -m unittest discover -s tests -t .
+
+      - name: Run repository tests except tests.integration (FAST tier)
+        if: ${{ needs.route.outputs.tier == 'fast' }}
+        env:
+          DISTRIBUTION_INSTALL_CHECK: "1"
+        run: python scripts/validation/ci_test_route.py run-fast
 
   skill-tree-parity:
     name: Skill tree (${{ matrix.shell }} on ${{ matrix.os }})

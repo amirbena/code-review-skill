@@ -76,12 +76,41 @@ relevant to the change — see
 targeted mapping from change type to command. The full suite
 (`python3 -m unittest discover -s tests -t .` plus both metadata
 validations, link validation, and packaging) is not a local precondition;
-it runs on every PR in `.github/workflows/validate.yml`, which is the
+CI runs it through `.github/workflows/validate.yml`, which is the
 authoritative regression gate before merge
-([`git-pr-merge-policy.md`](git-pr-merge-policy.md)). Running the full
-sequence locally beforehand is optional, never required, and appropriate
-when a change genuinely spans multiple areas or a shared cross-cutting
-contract.
+([`git-pr-merge-policy.md`](git-pr-merge-policy.md)), routed as described
+under [Routed CI tests](#routed-ci-tests). Running the full sequence
+locally beforehand is optional, never required, and appropriate when a
+change genuinely spans multiple areas or a shared cross-cutting contract.
+
+### Routed CI tests
+
+The required `test` job in `validate.yml` routes every PR to exactly one
+tier. **FULL is the default**:
+
+- **FULL** runs the full suite exactly as above
+  (`python -m unittest discover -s tests -t .`).
+- **FAST** runs the same discovery minus exactly the tests whose ID starts
+  with `tests.integration.`. Every unit, policy, and repository test — and
+  any new top-level test directory — still runs, as do metadata
+  validation, the canonical build, Agent Skills spec validation, and the
+  shell/PowerShell parity jobs. FAST never removes a contract or
+  correctness test.
+
+A PR is FAST only when **every** changed path (a three-dot merge-base
+diff, renames counted as both paths) is on the allowlist in
+[`../scripts/validation/ci_test_route.py`](../scripts/validation/ci_test_route.py),
+the single canonical home of that list. Every entry must have positive,
+repository-backed evidence that no integration test copies, reads, or
+packages it; anything unknown, mixed, empty, or erroring is FULL, and
+there is no label or flag that selects FAST. The router runs from the PR's
+base commit, so a PR that edits it (or `validate.yml`) is FULL, and every
+push to `main` runs FULL so a stale allowlist entry surfaces at the first
+merge that exposes it. `tests/policy/governance/test_ci_test_routing.py`
+fails on every PR if an integration temp-root copy list or `REPO_ROOT`
+read starts consuming an allowlisted path. Admitting a path to the
+allowlist is a maintainer decision made in its own PR with that evidence
+([#533](https://github.com/amirbena/code-review-skill/issues/533)).
 
 Repository-owned Python that any of these steps touch follows
 [`python_scripts_coding_policy.md`](python_scripts_coding_policy.md).

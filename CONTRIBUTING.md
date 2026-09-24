@@ -79,8 +79,11 @@ bot replies. Maintainers can tune the three named `CLAIM_*` values in
 3. Implement the issue without adding unrelated changes.
 4. Run the checks relevant to your change from
    [README § Local validation before opening a PR](README.md#local-validation-before-opening-a-pr).
-   The full test suite is not required locally before every push or PR — it
-   runs on every PR in CI, which is the authoritative regression gate.
+   The full test suite is not required locally before every push or PR — CI
+   is the authoritative regression gate. It runs the full suite unless every
+   changed path is provably not an integration input, in which case it omits
+   only `tests/integration/`
+   ([routed CI tests](policies/validation-and-clean-exit.md#routed-ci-tests)).
 5. Open a pull request against this repository and use `Fixes #<issue>` when
    the pull request should close the issue.
 

@@ -178,10 +178,14 @@ python -m pip install -r requirements-dev.txt
 
 Local validation is **targeted**, not a fixed sequence: run only the checks
 relevant to what you changed, for fast feedback before pushing. The full
-suite below is **not** required locally before every push or PR — it runs
-automatically in [`.github/workflows/validate.yml`](.github/workflows/validate.yml)
-on every PR, which remains the authoritative regression gate before merge
+suite below is **not** required locally before every push or PR — CI runs
+it in [`.github/workflows/validate.yml`](.github/workflows/validate.yml),
+which remains the authoritative regression gate before merge
 (see [`policies/git-pr-merge-policy.md`](policies/git-pr-merge-policy.md)).
+CI routes each PR to FULL (the default) or to FAST, which omits only
+`tests/integration/` when every changed path is provably not an
+integration input; every push to `main` runs FULL
+(see [`policies/validation-and-clean-exit.md`](policies/validation-and-clean-exit.md#routed-ci-tests)).
 
 | Change | Run |
 | --- | --- |
