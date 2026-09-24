@@ -224,6 +224,11 @@ def publish(build: Build, remote: str, version: str, source_repository: str, ide
         ) != want:
             tip_tag = _trailers(_git(["log", "-1", "--format=%B", tip], work)).get("Source-Tag", "")
             newer, this = _semver_key(tip_tag), _semver_key(tag)
+            if tip_tag and (newer is None or this is None):
+                raise DistributionError(
+                    f"refusing to publish {tag}: cannot order it against {BRANCH}'s {tip_tag!r}; "
+                    f"nothing was changed"
+                )
             if newer and this and newer > this:
                 raise DistributionError(
                     f"refusing to publish {tag}: {BRANCH} already carries {tip_tag}, so this would put "

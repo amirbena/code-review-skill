@@ -129,6 +129,19 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual(_git(self.remote, "rev-parse", "main"), head)
         self.assertEqual(self._tags().split(), ["v1.1.0"])
 
+    def test_unorderable_tip_tag_fails_closed(self) -> None:
+        clone = self.tmp / "clone"
+        _git(self.tmp, "clone", "-q", str(self.remote), str(clone))
+        _git(clone, "-c", "user.name=h", "-c", "user.email=h@x", "commit", "--allow-empty", "-m",
+             "x\n\nSource-Tag: vnext")
+        _git(clone, "push", "-q", "origin", "main")
+        head = _git(self.remote, "rev-parse", "main")
+        code, out = self._run("distribution-publish")
+        self.assertEqual(code, 1)
+        self.assertIn("cannot order", out)
+        self.assertEqual(_git(self.remote, "rev-parse", "main"), head)
+        self.assertEqual(self._tags(), "")
+
     def test_verify_detects_content_mismatch_and_missing_tag(self) -> None:
         self.assertEqual(self._run("distribution-verify")[0], 1)
         self._run("distribution-publish")

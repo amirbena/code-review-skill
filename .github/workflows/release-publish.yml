@@ -420,8 +420,6 @@ jobs:
           VERSION: ${{ steps.source.outputs.version }}
           SHA: ${{ steps.source.outputs.sha }}
           SOURCE_REPOSITORY: ${{ github.repository }}
-          GIT_NAME: ${{ steps.bot-identity.outputs.login }}
-          GIT_EMAIL: ${{ steps.bot-identity.outputs.email }}
         run: |
           python scripts/release/release_worthiness.py distribution-verify \
             --version "${VERSION}" \
