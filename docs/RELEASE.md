@@ -565,6 +565,47 @@ restriction or required reviewers. Restricting it to `main` before #509
 lands is recommended, so only the reviewed publication workflow can reach
 the key.
 
+## Publishing each release to the distribution repository (#509)
+
+Order: **source release first, distribution second.** The `publish` job
+builds the #507 tree once (zips and tree come from that one build),
+commits, tags, publishes the GitHub Release and runs `release-verify`,
+then uploads the build as the `distribution-build` artifact. The
+`distribute` job (Environment `release-skills-distribution`, the
+publisher App token scoped to `code-review-skills`) then runs
+`release_worthiness.py distribution-publish` and `distribution-verify`:
+
+- **Publish** commits `skills/<name>/`, `DISTRIBUTION.json` (source
+  repository, source commit, version, content manifest hash), `LICENSE`,
+  a generated `README.md`, and any adapter files the build emits under
+  `dist/distribution-root/` as a fast-forward on `main`, with
+  `Source-Repository` / `Source-Commit` / `Source-Tag` trailers, then
+  pushes the annotated tag `vX.Y.Z`. It never force-pushes. The zips are
+  first checked byte-for-byte against the tree being published.
+- **Verify** fetches the distribution tag and requires its file manifest
+  and commit trailers to equal the build's.
+- **Idempotent:** an existing `vX.Y.Z` with identical content is a no-op;
+  with different content the command fails and changes nothing.
+- **Fail closed:** a rejected push, a failed tag push, or a mismatch fails
+  the run with an actionable message. A tag is only pushed after its
+  commit is on `main`, so no half-written tag exists; a commit pushed
+  without its tag is completed (tag only) by the next run.
+
+The version is the source tag, never an input; `auto-release-plan` remains
+the only version authority.
+
+### Recovery
+
+If `distribute` fails after the source release, the run is red — it is
+never skipped. Fix the cause (credentials, ruleset, network), then run
+**Release publish** via `workflow_dispatch` on `main`. When `plan` finds
+nothing new to release, `distribute` rebuilds the latest source release tag
+and publishes it, completing a lagging distribution without re-releasing
+the source. A mismatch error means the distribution tag holds different
+content than the source tag builds; investigate before any manual action
+(humans do not edit the distribution repository; do not delete the tag
+without maintainer review).
+
 ## Permissions model
 
 | Workflow | Trigger | Job | `permissions` | Runs contributor code | Mutates repo |
@@ -572,6 +613,7 @@ the key.
 | `release-worthiness.yml` | `pull_request` | `release-gate` (required) | `contents: read` | yes | never |
 | `release-worthiness.yml` | after `release-gate`, when release-worthy | `package` (not required) | `contents: read` | yes | never |
 | `release-publish.yml` | `push` to `main` (non-`[skip ci]`), `workflow_dispatch` | `plan` | `contents: read`, `pull-requests: read` | no — checks out `main` | never — generates notes and derives the version in memory |
+| `release-publish.yml` | after `publish` succeeds, or on `workflow_dispatch` recovery | `distribute` | `contents: read` | no — checks out the source release commit/tag | pushes only to the distribution repository, using the publisher App token; never force |
 | `release-publish.yml` | after `plan`, when a release is due | `publish` | `contents: write`, `pull-requests: read` | no — checks out `main` | commits to `main`, tags, publishes a Release, using the App token |
 
 - No `pull_request_target`; the read-only jobs check out with

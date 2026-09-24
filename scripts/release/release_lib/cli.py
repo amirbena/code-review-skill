@@ -9,6 +9,8 @@ from release_lib.commands import (
     cmd_auto_release_plan,
     cmd_changelog_section,
     cmd_classify_semver,
+    cmd_distribution_publish,
+    cmd_distribution_verify,
     cmd_generate_changelog,
     cmd_prepare_changelog,
     cmd_release_preflight,
@@ -154,6 +156,23 @@ def build_parser() -> argparse.ArgumentParser:
     app_identity.add_argument("--app-slug", required=True, help="app-slug from actions/create-github-app-token")
     app_identity.add_argument("--github-output", default=None, help="path for the login/email outputs")
     app_identity.set_defaults(func=cmd_resolve_app_identity)
+
+    for name, func, text in (
+        ("distribution-publish", cmd_distribution_publish,
+         "publish the built distribution tree to the distribution repository as v<version> (fast-forward, never forced; idempotent)"),
+        ("distribution-verify", cmd_distribution_verify,
+         "verify the distribution repository's v<version> tag equals the build and carries the source trailers"),
+    ):
+        dist = sub.add_parser(name, help=text)
+        dist.add_argument("--version", required=True, help="released version X.Y.Z")
+        dist.add_argument("--source-commit", required=True, help="the verified source release commit SHA")
+        dist.add_argument("--source-repository", required=True, help="owner/name of this (source) repository")
+        dist.add_argument("--remote", required=True, help="distribution repository URL (token from DISTRIBUTION_TOKEN)")
+        dist.add_argument("--dist", default="dist", help="directory holding the single build (default: dist)")
+        if name == "distribution-publish":
+            dist.add_argument("--git-name", required=True, help="publishing App bot commit/tag author name")
+            dist.add_argument("--git-email", required=True, help="publishing App bot commit/tag author email")
+        dist.set_defaults(func=func)
     return parser
 
 

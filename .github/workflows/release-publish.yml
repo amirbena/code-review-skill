@@ -135,6 +135,8 @@ jobs:
     concurrency:
       group: release-publish
       cancel-in-progress: false
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
     steps:
       - name: Require trusted release App credentials
         env:
@@ -257,6 +259,18 @@ jobs:
             --asset local-code-review-skill.zip \
             --asset github-pr-review-skill.zip
 
+      # The one build (skill trees, their manifest, and the zips built from
+      # them) is handed to the `distribute` job unchanged; nothing is rebuilt.
+      - name: Hand the single build to the distribution job
+        uses: actions/upload-artifact@v4
+        with:
+          name: distribution-build
+          path: |
+            dist/skills
+            dist/skills-manifest.json
+            dist/*.zip
+          if-no-files-found: error
+
       - name: Release summary
         run: |
           {
@@ -266,4 +280,138 @@ jobs:
             echo "- main commit: \`${{ steps.commit.outputs.sha }}\`"
             echo "- annotated tag \`v${{ needs.plan.outputs.version }}\` points at that commit"
             echo "- GitHub Release published with both Skill archives, verified"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  distribute:
+    # Carries a verified source release to the generated distribution
+    # repository (#509). Runs after `publish` (source tag and GitHub Release
+    # already verified), or on workflow_dispatch when the source release is
+    # already complete but the distribution repository lags — recovery
+    # republishes the latest source tag without re-releasing the source. The
+    # version is never an input: it is the source tag (created only by
+    # `publish`, derived by `plan`). It never force-pushes, and it fails the
+    # run (never skips) when publication or verification fails. It has its
+    # own Environment because the publishing App is a different identity
+    # from the source release App (docs/RELEASE.md).
+    needs: [plan, publish]
+    if: >-
+      ${{ always() && (needs.publish.result == 'success'
+      || (github.event_name == 'workflow_dispatch'
+          && needs.plan.result == 'success'
+          && needs.plan.outputs.should_release != 'true')) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    environment: release-skills-distribution
+    concurrency:
+      group: release-distribution
+      cancel-in-progress: false
+    steps:
+      - name: Require distribution publisher App credentials
+        env:
+          APP_ID: ${{ secrets.DISTRIBUTION_APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.DISTRIBUTION_APP_PRIVATE_KEY }}
+        run: |
+          if [ -z "${APP_ID}" ] || [ -z "${APP_PRIVATE_KEY}" ]; then
+            echo "::error::DISTRIBUTION_APP_ID / DISTRIBUTION_APP_PRIVATE_KEY are not configured on the release-skills-distribution Environment. See docs/RELEASE.md."
+            exit 1
+          fi
+
+      - name: Mint distribution App token (scoped to the distribution repository)
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.DISTRIBUTION_APP_ID }}
+          private-key: ${{ secrets.DISTRIBUTION_APP_PRIVATE_KEY }}
+          owner: amirbena
+          repositories: code-review-skills
+
+      - name: Check out the source release commit
+        if: needs.publish.result == 'success'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.sha }}
+          persist-credentials: false
+
+      - name: Check out main to find the latest source release (recovery)
+        if: needs.publish.result != 'success'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dev dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Resolve the source version and commit
+        id: source
+        run: |
+          if [ "${{ needs.publish.result }}" = "success" ]; then
+            version="${{ needs.plan.outputs.version }}"
+            sha="${{ needs.publish.outputs.sha }}"
+          else
+            tag="$(git tag --list --sort=-v:refname 'v[0-9]*.[0-9]*.[0-9]*' | head -n1)"
+            [ -n "${tag}" ] || { echo "::error::no source release tag exists; nothing to distribute"; exit 1; }
+            version="${tag#v}"
+            sha="$(git rev-parse "${tag}^{commit}")"
+            git checkout --detach "${sha}"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch the single build from the publish job
+        if: needs.publish.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: distribution-build
+          path: dist
+
+      - name: Rebuild the tree from the source tag (recovery only)
+        if: needs.publish.result != 'success'
+        run: ./scripts/release/verify-skill-archives.sh --build --expect-version "${{ steps.source.outputs.version }}"
+
+      - name: Resolve the publishing App bot identity
+        id: bot-identity
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          python scripts/release/release_worthiness.py resolve-app-identity \
+            --app-slug "${{ steps.app-token.outputs.app-slug }}" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Publish the distribution tree (fast-forward, idempotent, never forced)
+        env:
+          DISTRIBUTION_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          python scripts/release/release_worthiness.py distribution-publish \
+            --version "${{ steps.source.outputs.version }}" \
+            --source-commit "${{ steps.source.outputs.sha }}" \
+            --source-repository "${{ github.repository }}" \
+            --remote "https://github.com/amirbena/code-review-skills" \
+            --git-name "${{ steps.bot-identity.outputs.login }}" \
+            --git-email "${{ steps.bot-identity.outputs.email }}"
+
+      - name: Verify the distribution tag equals the build
+        env:
+          DISTRIBUTION_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          python scripts/release/release_worthiness.py distribution-verify \
+            --version "${{ steps.source.outputs.version }}" \
+            --source-commit "${{ steps.source.outputs.sha }}" \
+            --source-repository "${{ github.repository }}" \
+            --remote "https://github.com/amirbena/code-review-skills"
+
+      - name: Distribution summary
+        run: |
+          {
+            echo "## Distributed v${{ steps.source.outputs.version }}"
+            echo
+            echo "- source commit: \`${{ steps.source.outputs.sha }}\`"
+            echo "- amirbena/code-review-skills tag \`v${{ steps.source.outputs.version }}\` verified against the build"
           } >> "$GITHUB_STEP_SUMMARY"
