@@ -80,6 +80,45 @@ class SandboxRunnerTests(unittest.TestCase):
             result = run_instance.run(self._request())
         self.assertEqual(result.outcome, Outcome.UNAVAILABLE)
 
+    def _run_with(self, primitive: capability.Primitive, bounded: BoundedRunResult):
+        with mock.patch.dict(runner._DISPATCH, {primitive: lambda req, ws: bounded}):
+            return runner.SandboxRunner(primitive=primitive).run(self._request())
+
+    def test_payload_launch_failure_maps_to_unavailable_not_failed(self) -> None:
+        """#535: the launcher could not exec the payload, so no test ran."""
+        cases = (
+            (capability.Primitive.MACOS_SEATBELT, 71,
+             "sandbox-exec: execvp() of 'pytest' failed: No such file or directory\n"),
+            (capability.Primitive.LINUX_BWRAP, 1,
+             "bwrap: execvp pytest: No such file or directory\n"),
+            (capability.Primitive.DOCKER, 127,
+             'docker: Error response from daemon: failed to create task for container: '
+             'exec: "pytest": executable file not found in $PATH: unknown.\n'),
+        )
+        for primitive, exit_code, stderr in cases:
+            with self.subTest(primitive=primitive):
+                result = self._run_with(primitive, _bounded(exit_code=exit_code, stderr=stderr))
+                self.assertEqual(result.outcome, Outcome.UNAVAILABLE)
+                self.assertIn("could not launch", result.reason)
+                self.assertIsNone(result.exit_code)
+
+    def test_started_payload_failure_stays_failed(self) -> None:
+        cases = (
+            (capability.Primitive.MACOS_SEATBELT, 1, "FAILED tests/test_app.py::test_value\n", ""),
+            (capability.Primitive.MACOS_SEATBELT, 71, "some unrelated error\n", ""),
+            (capability.Primitive.MACOS_SEATBELT, 71,
+             "sandbox-exec: execvp() of 'pytest' failed: No such file or directory\n", "collected 3 items\n"),
+            (capability.Primitive.LINUX_BWRAP, 2, "bwrap: execvp pytest: No such file or directory\n", ""),
+            (capability.Primitive.DOCKER, 127, "sh: 1: tool: not found\n", ""),
+        )
+        for primitive, exit_code, stderr, stdout in cases:
+            with self.subTest(primitive=primitive, exit_code=exit_code, stderr=stderr):
+                result = self._run_with(
+                    primitive, _bounded(exit_code=exit_code, stderr=stderr, stdout=stdout)
+                )
+                self.assertEqual(result.outcome, Outcome.FAILED)
+                self.assertEqual(result.exit_code, exit_code)
+
     def test_source_integrity_violation_never_reported_as_executed(self) -> None:
         with mock.patch.dict(
             runner._DISPATCH, {capability.Primitive.MACOS_SEATBELT: lambda req, ws: _bounded(exit_code=0)}

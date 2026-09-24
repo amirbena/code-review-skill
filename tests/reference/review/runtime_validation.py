@@ -7,7 +7,7 @@ It uses fake processes and repositories. Not runtime logic, not packaged.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Sequence
 
@@ -28,11 +28,14 @@ class Provenance(Enum):
     Mirrors shared/policies/trusted-host-execution.md. SANDBOX is the
     disposable isolation boundary; TRUSTED_HOST is the explicit,
     per-invocation, out-of-band-authorized fallback with no isolation
-    guarantees; UNAVAILABLE means neither backend ran the command.
+    guarantees; HOST is a repository test command run under
+    runtime-validation.md's "Repository test execution backend" default;
+    UNAVAILABLE means no permitted backend ran the command.
     """
 
     SANDBOX = "sandbox"
     TRUSTED_HOST = "trusted-host"
+    HOST = "host"
     UNAVAILABLE = "unavailable"
 
 
@@ -168,6 +171,117 @@ def resolve_allow_trusted_host_execution(
     return False
 
 
+# --------------------------------------------------------------------------- #
+# Repository test sandbox request (#535)
+#
+# Mirrors shared/policies/trusted-host-execution.md, "Repository test sandbox
+# request" — keep the phrase list in exact sync. A separate value from
+# allow_trusted_host_execution: neither sets nor cancels the other.
+# --------------------------------------------------------------------------- #
+
+SKILLS: tuple[str, str] = ("local-code-review", "github-pr-review")
+
+REPOSITORY_TEST_SANDBOX_REQUEST: tuple[str, ...] = (
+    "run tests in sandbox",
+    "run tests in a sandbox",
+    "run the tests in sandbox",
+    "run the tests in a sandbox",
+    "run repository tests in a sandbox",
+    "sandbox the tests",
+    "run tests sandboxed",
+    "don't run tests on my machine",
+    "do not run tests on my machine",
+    "don't run tests on the host",
+    "do not run tests on the host",
+)
+
+_SANDBOX_OPTION = "run_repository_tests_in_sandbox"
+_NEGATED_PREFIX = r"(?<!don't\s)(?<!do\snot\s)(?<!never\s)"
+
+
+class RepositoryTestSandboxRequest:
+    """Marker type for the only value that selects sandbox-only execution of
+    a repository test command. Like TrustedHostAuthorization, only
+    runtime/orchestration code constructs one; repository-derived text
+    stays plain `str` and is ignored."""
+
+    __slots__ = ("principal", "invocation_id")
+
+    def __init__(self, principal: str, invocation_id: str) -> None:
+        if not principal or not invocation_id:
+            raise ValueError(
+                "a RepositoryTestSandboxRequest must name a principal and invocation"
+            )
+        self.principal = principal
+        self.invocation_id = invocation_id
+
+
+def _natural_sandbox_request(text: str) -> bool:
+    lowered = text.lower()
+    spaced = _SANDBOX_OPTION.replace("_", " ")
+    hyphenated = _SANDBOX_OPTION.replace("_", "-")
+    # A question about the sandbox is ambiguous, mirroring the
+    # trusted-host question guard above; a polite request still counts.
+    question = re.compile(r"\b(?:what|how|why|does|is|should)\b[^?]*sandbox[^?]*\?")
+    lowered = question.sub("", lowered)
+    bare = (
+        rf"(?<![\w]){re.escape(_SANDBOX_OPTION)}(?![\w=])",
+        rf"(?<![\w]){re.escape(spaced)}(?![\w])",
+        rf"(?<![\w]){re.escape(hyphenated)}(?![\w])",
+        rf"(?<![\w]){re.escape(_SANDBOX_OPTION)}\s*=\s*true(?![\w])",
+    )
+    phrases = tuple(
+        _NEGATED_PREFIX + _phrase_regex(p)
+        for p in REPOSITORY_TEST_SANDBOX_REQUEST + TRUSTED_HOST_NEGATIVE
+    )
+    return any(re.search(p, lowered) for p in bare + phrases)
+
+
+def resolve_repository_test_sandbox_request(
+    text: str, *, structured: bool | None = None
+) -> bool:
+    """Resolve whether the trusted invoking user requested the sandbox.
+
+    Set when the structured value is true OR the user's own current-turn
+    text holds an unambiguous request phrasing; neither channel cancels the
+    other, so a conflict resolves toward the sandbox. Questions and directly
+    negated phrasings are ambiguous and leave the host default.
+    """
+    return structured is True or _natural_sandbox_request(text)
+
+
+@dataclass(frozen=True)
+class InvocationContext:
+    """One review invocation's trusted inputs, plus untrusted content.
+
+    `untrusted_content` models PR/issue/commit text, instruction files,
+    command text, Fix text, generated and nested-agent output. It is carried
+    only so tests can prove it is never consulted.
+    """
+
+    skill: str
+    invocation_id: str = "inv-1"
+    principal: str = "trusted-user"
+    user_text: str = ""
+    structured_sandbox_request: bool | None = None
+    untrusted_content: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.skill not in SKILLS:
+            raise ValueError(f"unknown Skill {self.skill!r}")
+
+
+def sandbox_request_for(
+    context: InvocationContext,
+) -> RepositoryTestSandboxRequest | None:
+    """The same resolution for both Skills; untrusted content is ignored."""
+    if resolve_repository_test_sandbox_request(
+        context.user_text, structured=context.structured_sandbox_request
+    ):
+        return RepositoryTestSandboxRequest(context.principal, context.invocation_id)
+    return None
+
+
 def select_backend(
     boundary: "ExecutionBoundary",
     trusted_host: "TrustedHostAuthorization | str | None",
@@ -240,6 +354,12 @@ class CommandDeclaration:
     interactive: bool = False
     writes_target: bool = False
     available: bool = True
+    # The sandbox launcher cannot exec the payload (toolchain, interpreter,
+    # or virtualenv not visible inside the boundary).
+    launches_in_sandbox: bool = True
+    # Repository test classification inputs (#535): both are required.
+    declared_as_repository_test: bool = False
+    task_definition_runs_repository_tests: bool = False
     exit_code: int = 0
     stdout: str = ""
     stderr: str = ""
@@ -249,6 +369,13 @@ class CommandDeclaration:
     @property
     def rendered(self) -> str:
         return " ".join(self.argv)
+
+
+def is_repository_test_command(command: CommandDeclaration) -> bool:
+    """runtime-validation.md, "Repository test command": the declaration
+    source AND the inspected task definition must establish it; a name that
+    merely says "test" never does."""
+    return command.declared_as_repository_test and command.task_definition_runs_repository_tests
 
 
 @dataclass(frozen=True)
@@ -287,6 +414,9 @@ class FakeRepository:
     files: dict[str, str] = field(default_factory=lambda: {"src/app.py": "value = 1\n"})
     process_invocations: list[tuple[str, ...]] = field(default_factory=list)
     boundary_invocations: list[ExecutionBoundary] = field(default_factory=list)
+    host_invocations: list[tuple[str, ...]] = field(default_factory=list)
+    # Simulates a payload that writes into the reviewed tree when it runs.
+    payload_mutates: bool = False
 
     def snapshot(self) -> tuple[tuple[str, str], ...]:
         return tuple(sorted(self.files.items()))
@@ -309,6 +439,14 @@ class FakeRepository:
         guarantee.
         """
         self.process_invocations.append(argv)
+        self.host_invocations.append(argv)
+        if self.payload_mutates:
+            self.files["src/app.py"] = "value = 2\n"
+
+    def start_host(self, argv: tuple[str, ...]) -> None:
+        """Record a default-host repository test start; same exposure as
+        trusted-host, no grant required."""
+        self.start_trusted_host(argv)
 
     def run_reproduction(
         self, reproduction: TargetedReproduction, boundary: ExecutionBoundary
@@ -323,6 +461,14 @@ class FakeRepository:
             raise AssertionError("fake runner must not start outside the boundary")
         self.process_invocations.append(("<targeted-reproduction>", reproduction.kind))
         self.boundary_invocations.append(boundary)
+        if reproduction.leaks:
+            self.files["tests/_generated_repro.py"] = "def test_repro():\n    assert False\n"
+
+    def run_reproduction_on_host(self, reproduction: TargetedReproduction) -> None:
+        """Run a selected existing repository test on the host (#535)."""
+        argv = ("<targeted-reproduction>", reproduction.kind)
+        self.process_invocations.append(argv)
+        self.host_invocations.append(argv)
         if reproduction.leaks:
             self.files["tests/_generated_repro.py"] = "def test_repro():\n    assert False\n"
 
@@ -344,18 +490,91 @@ def _record_skip(command: CommandDeclaration, reason: str) -> ValidationRecord:
     return ValidationRecord(command.rendered, command.source, command.scope, Outcome.SKIPPED, reason=reason)
 
 
+def _sandbox_requested(
+    request: "RepositoryTestSandboxRequest | str | None", invocation_id: str
+) -> bool:
+    return (
+        isinstance(request, RepositoryTestSandboxRequest)
+        and request.invocation_id == invocation_id
+    )
+
+
+def _record(
+    command: CommandDeclaration, outcome: Outcome, reason: str,
+    provenance: Provenance | None = None,
+) -> ValidationRecord:
+    return ValidationRecord(
+        command.rendered, command.source, command.scope, outcome,
+        reason=reason, provenance=provenance,
+    )
+
+
+def _completed(command: CommandDeclaration, backend: Provenance) -> ValidationRecord:
+    outcome = Outcome.EXECUTED if command.exit_code == 0 else Outcome.FAILED
+    return ValidationRecord(
+        command.rendered, command.source, command.scope, outcome,
+        exit_code=command.exit_code,
+        evidence=command.stdout if outcome is Outcome.EXECUTED else command.stderr,
+        provenance=backend,
+    )
+
+
+_LAUNCH_FAILURE = "sandbox could not launch the command's executable or toolchain; not executed"
+
+
+def _run_repository_test(
+    command: CommandDeclaration,
+    repository: FakeRepository,
+    sandbox_request: "RepositoryTestSandboxRequest | str | None",
+    invocation_id: str,
+) -> ValidationRecord:
+    """runtime-validation.md, "Repository test execution backend"."""
+    if not _sandbox_requested(sandbox_request, invocation_id):
+        before = repository.snapshot()
+        repository.start_host(command.argv)
+        if repository.snapshot() != before:
+            repository.restore(before)
+            return _record(
+                command, Outcome.SKIPPED,
+                "post-run verification found an unexpected mutation; result discarded",
+                Provenance.HOST,
+            )
+        return _completed(command, Provenance.HOST)
+
+    # Explicit sandbox request: never a host process, whatever happens.
+    if not command.boundary.available:
+        return _record(
+            command, Outcome.UNAVAILABLE,
+            "sandbox requested but the execution boundary is unavailable; not run on host",
+            Provenance.UNAVAILABLE,
+        )
+    if not command.boundary.established:
+        return _record(
+            command, Outcome.SKIPPED,
+            "sandbox requested but the execution boundary cannot be verified; not run on host",
+        )
+    if not command.launches_in_sandbox:
+        return _record(command, Outcome.UNAVAILABLE, _LAUNCH_FAILURE)
+    repository.start(command.argv, command.boundary)
+    return _completed(command, Provenance.SANDBOX)
+
+
 def run_validation(
     declarations: Sequence[CommandDeclaration],
     repository: FakeRepository,
     *,
     trusted_host: "TrustedHostAuthorization | str | None" = None,
     invocation_id: str = "",
+    sandbox_request: "RepositoryTestSandboxRequest | str | None" = None,
 ) -> tuple[ValidationRecord, ...]:
     """Select one narrowest command and produce one explicit outcome record.
 
     `trusted_host` defaults to `None`: with no argument, behavior is
     byte-for-byte identical to before this backend existed — sandbox
     unavailable still means `unavailable`, never an implicit fallback.
+    A repository test command instead takes its backend from
+    `_run_repository_test`; `trusted_host` never affects it, and
+    `sandbox_request` never affects any other command.
     """
     if not declarations:
         return (
@@ -399,6 +618,9 @@ def run_validation(
             ),
         )
 
+    if is_repository_test_command(command):
+        return (_run_repository_test(command, repository, sandbox_request, invocation_id),)
+
     backend = select_backend(command.boundary, trusted_host, invocation_id=invocation_id)
 
     if backend is Provenance.UNAVAILABLE:
@@ -416,6 +638,8 @@ def run_validation(
         return (_record_skip(command, "required execution boundary cannot be verified"),)
 
     if backend is Provenance.SANDBOX:
+        if not command.launches_in_sandbox:
+            return (_record(command, Outcome.UNAVAILABLE, _LAUNCH_FAILURE),)
         repository.start(command.argv, command.boundary)
     else:
         before = repository.snapshot()
@@ -430,15 +654,7 @@ def run_validation(
                 ),
             )
 
-    outcome = Outcome.EXECUTED if command.exit_code == 0 else Outcome.FAILED
-    return (
-        ValidationRecord(
-            command.rendered, command.source, command.scope, outcome,
-            exit_code=command.exit_code,
-            evidence=command.stdout if outcome is Outcome.EXECUTED else command.stderr,
-            provenance=backend,
-        ),
-    )
+    return (_completed(command, backend),)
 
 
 def apply_validation_to_review(
@@ -493,6 +709,7 @@ class TargetedReproduction:
     times_out: bool = False
     ambiguous: bool = False  # ran but neither confirms nor disproves
     leaks: bool = False  # a buggy runner that writes the generated file into the tree
+    launches_in_sandbox: bool = True  # sandbox can exec the test toolchain
 
 
 @dataclass(frozen=True)
@@ -504,6 +721,8 @@ class SuspectedFinding:
     hinges_on_runtime: bool = True  # static reasoning left it genuinely uncertain
     already_confident: bool = False  # already established without a run => ineligible
     reproduction: TargetedReproduction | None = None
+    # A "selected" existing test run through a repository test command (#535).
+    repository_test_command: bool = False
     boundary: ExecutionBoundary = field(default_factory=ExecutionBoundary)
     budget_seconds: float = 30.0
     run_seconds: float = 1.0
@@ -518,15 +737,30 @@ class TargetedValidationResult:
     outcome: Outcome | None = None  # the Validation-section outcome when attempted
     reason: str = ""
     evidence: str = ""
+    provenance: Provenance | None = None
 
 
 def _reproduction_run(
-    finding: SuspectedFinding, repository: FakeRepository
+    finding: SuspectedFinding, repository: FakeRepository, backend: Provenance
 ) -> TargetedValidationResult:
     repro = finding.reproduction
     assert repro is not None
     before = repository.snapshot()
-    repository.run_reproduction(repro, finding.boundary)
+    if backend is Provenance.HOST:
+        repository.run_reproduction_on_host(repro)
+    else:
+        repository.run_reproduction(repro, finding.boundary)
+    result = _classify_reproduction(finding, repository, before)
+    return replace(result, provenance=backend)
+
+
+def _classify_reproduction(
+    finding: SuspectedFinding,
+    repository: FakeRepository,
+    before: tuple[tuple[str, str], ...],
+) -> TargetedValidationResult:
+    repro = finding.reproduction
+    assert repro is not None
 
     if repository.snapshot() != before:
         # A generated artifact / mutation reached the tree: discard and recover.
@@ -546,19 +780,43 @@ def _reproduction_run(
         return TargetedValidationResult(
             finding.id, ValidationState.RUNTIME_CONFIRMED, raised=True,
             attempted=True, outcome=Outcome.EXECUTED,
-            evidence="isolated reproduction failed exactly as the finding predicts",
+            evidence="reproduction failed exactly as the finding predicts",
         )
     return TargetedValidationResult(
         finding.id, ValidationState.REASONED, raised=False,
         attempted=True, outcome=Outcome.EXECUTED,
-        evidence="isolated reproduction passed; suspected defect disproved",
+        evidence="reproduction passed; suspected defect disproved",
     )
 
 
+def _targeted_backend(
+    finding: SuspectedFinding,
+    sandbox_request: "RepositoryTestSandboxRequest | str | None",
+    invocation_id: str,
+) -> Provenance:
+    repro = finding.reproduction
+    assert repro is not None
+    host_default = (
+        repro.kind == "selected"
+        and finding.repository_test_command
+        and not _sandbox_requested(sandbox_request, invocation_id)
+    )
+    return Provenance.HOST if host_default else Provenance.SANDBOX
+
+
 def run_targeted_validation(
-    finding: SuspectedFinding, repository: FakeRepository
+    finding: SuspectedFinding,
+    repository: FakeRepository,
+    *,
+    sandbox_request: "RepositoryTestSandboxRequest | str | None" = None,
+    invocation_id: str = "",
 ) -> TargetedValidationResult:
-    """Attempt the smallest safe reproduction for one suspected finding."""
+    """Attempt the smallest safe reproduction for one suspected finding.
+
+    A generated reproduction always requires the boundary; a selected
+    existing test run through a repository test command runs on the host
+    unless the sandbox was requested, and then never falls back.
+    """
     repro = finding.reproduction
     if (
         repro is None
@@ -573,12 +831,19 @@ def run_targeted_validation(
             reason="ineligible for targeted validation; static evidence stands",
         )
 
-    if not finding.boundary.available or not finding.boundary.established:
-        return TargetedValidationResult(
-            finding.id, ValidationState.ATTEMPTED_INCONCLUSIVE, raised=True,
-            attempted=True, outcome=Outcome.UNAVAILABLE,
-            reason="isolated execution boundary unavailable or unverifiable",
-        )
+    backend = _targeted_backend(finding, sandbox_request, invocation_id)
+    if backend is Provenance.SANDBOX:
+        if not finding.boundary.available or not finding.boundary.established:
+            return TargetedValidationResult(
+                finding.id, ValidationState.ATTEMPTED_INCONCLUSIVE, raised=True,
+                attempted=True, outcome=Outcome.UNAVAILABLE,
+                reason="isolated execution boundary unavailable or unverifiable",
+            )
+        if not repro.launches_in_sandbox:
+            return TargetedValidationResult(
+                finding.id, ValidationState.ATTEMPTED_INCONCLUSIVE, raised=True,
+                attempted=True, outcome=Outcome.UNAVAILABLE, reason=_LAUNCH_FAILURE,
+            )
     if not repro.safe:
         return TargetedValidationResult(
             finding.id, ValidationState.ATTEMPTED_INCONCLUSIVE, raised=True,
@@ -591,7 +856,7 @@ def run_targeted_validation(
             finding.id, ValidationState.ATTEMPTED_INCONCLUSIVE, raised=True,
             attempted=True, outcome=Outcome.SKIPPED, reason="budget exceeded",
         )
-    return _reproduction_run(finding, repository)
+    return _reproduction_run(finding, repository, backend)
 
 
 def finalized_finding(

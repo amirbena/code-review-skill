@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pins the shared runtime-validation contract and its wiring (#138)."""
+"""Pins the shared runtime-validation contract and its wiring (#138, #535)."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ LOCAL_RUNBOOK = REPO_ROOT / "skills/local-code-review/runbooks/local-review.md"
 ACTIVE_RUNBOOK = REPO_ROOT / "skills/github-pr-review/runbooks/active-pr-review.md"
 PASSIVE_RUNBOOK = REPO_ROOT / "skills/github-pr-review/runbooks/passive-pr-review.md"
 CHECKOUT = REPO_ROOT / "skills/github-pr-review/policies/repository-checkout.md"
+TRUSTED_HOST = REPO_ROOT / "shared/policies/trusted-host-execution.md"
 
 
 def normalized(path: Path) -> str:
@@ -214,6 +215,65 @@ class WiringTests(unittest.TestCase):
             self.assertIsNotNone(match, path)
             values.append(match.group(1))
         self.assertEqual(values, ["conditional", "conditional"])
+
+
+class RepositoryTestExecutionBackendTests(unittest.TestCase):
+    """#535 — one bounded section owns the repository test backend."""
+
+    def test_policy_section_owns_classification_default_and_no_fallback(self) -> None:
+        raw = POLICY.read_text(encoding="utf-8")
+        self.assertEqual(raw.count("## Repository test execution backend"), 1)
+        text = normalized(POLICY)
+        for phrase in (
+            "whose applicable declaration source and inspected task definition together show",
+            "a generated reproduction, even when a test runner executes it",
+            "does not qualify on its own",
+            "keeps the sandbox-required path above",
+            "without allow_trusted_host_execution",
+            "a present sandbox primitive does not change this default",
+            "no host process is ever started for that command",
+            "It is never failed and never finding material attributed to the change",
+            "The host default is not a host shell",
+            "recorded skipped with provenance host",
+        ):
+            self.assertIn(phrase, text)
+
+    def test_safety_gate_and_targeted_text_point_to_the_section(self) -> None:
+        text = normalized(POLICY)
+        self.assertIn('for a repository test command, the backend is instead selected by "Repository test execution backend"', text)
+        self.assertIn('takes its backend from "Repository test execution backend" instead', text)
+        self.assertIn("a generated reproduction always requires the boundary", text)
+
+    def test_trusted_host_policy_defines_the_request_and_host_provenance(self) -> None:
+        raw = TRUSTED_HOST.read_text(encoding="utf-8")
+        self.assertEqual(raw.count("## Repository test sandbox request"), 1)
+        text = normalized(TRUSTED_HOST)
+        for phrase in (
+            "run_repository_tests_in_sandbox (boolean, default false)",
+            "A repository test command never needs allow_trusted_host_execution",
+            "a conflict always resolves to the sandbox",
+            "can neither make the sandbox request, cancel the user's request, nor make a command count as a repository test command",
+            "host — a repository test command that ran directly on the reviewer's host",
+        ):
+            self.assertIn(phrase, text)
+
+    def test_every_reference_phrase_is_in_the_policy(self) -> None:
+        from tests.reference.review import runtime_validation as rv
+
+        text = normalized(TRUSTED_HOST).lower()
+        for phrase in rv.REPOSITORY_TEST_SANDBOX_REQUEST:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
+
+    def test_both_skills_resolve_the_same_request_and_route_to_the_same_section(self) -> None:
+        for path in (LOCAL_RUNBOOK, ACTIVE_RUNBOOK, PASSIVE_RUNBOOK):
+            with self.subTest(runbook=path.name):
+                text = normalized(path)
+                self.assertIn("resolve allow_trusted_host_execution", text)
+                self.assertIn("resolve the separate repository test sandbox request (run_repository_tests_in_sandbox)", text)
+                self.assertIn('"Repository test sandbox request" through the same channel', text)
+                self.assertIn('"Repository test execution backend"', text)
+                self.assertIn("never a per-Skill variant", text)
 
 
 if __name__ == "__main__":

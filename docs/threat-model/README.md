@@ -36,7 +36,7 @@ security architecture* issues instead
 | --- | --- | --- |
 | [`threat-model.md`](threat-model.md) | Trust domains, the six adversary/failure models, security assumptions, capability-boundary architecture, and how the canonical catalog is used by dependent issues. | [#300](https://github.com/amirbena/code-review-skill/issues/300) |
 | [`catalog/README.md`](catalog/README.md) | The `threat-scenario-catalog/v1` schema, the one-file-per-category catalog layout, and the `COVERAGE_GAP` / `NOT_APPLICABLE` machine-detectable gap convention. | [#300](https://github.com/amirbena/code-review-skill/issues/300) |
-| [`catalog/*.yaml`](catalog/) | The 68 canonical threat scenarios themselves, one file per threat domain (`AUTH`, `SBOX`, `DELEG`, `INJECT`, `GIT`, `SCOPE`, `DOS`). | [#300](https://github.com/amirbena/code-review-skill/issues/300) |
+| [`catalog/*.yaml`](catalog/) | The 70 canonical threat scenarios themselves, one file per threat domain (`AUTH`, `SBOX`, `DELEG`, `INJECT`, `GIT`, `SCOPE`, `DOS`). | [#300](https://github.com/amirbena/code-review-skill/issues/300) |
 | [`../../scripts/security/validate_threat_model_traceability.py`](../../scripts/security/validate_threat_model_traceability.py) | Cross-references the catalog against the `#305`/`#306`/`#307`/`#308` benchmark corpora, derives a per-scenario `covered`/`partial`/`not-applicable-to-benchmark`/`gap` rollup, and detects drift (stale scenario ids, claimed-but-missing benchmark cases, unrationalized high-severity gaps). | [#310](https://github.com/amirbena/code-review-skill/issues/310) |
 
 ## Related

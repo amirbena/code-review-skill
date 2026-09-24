@@ -262,5 +262,53 @@ class MalformedFixtureRejectionTests(unittest.TestCase):
             tf.validate_corpus(())
 
 
+class RepositoryTestSandboxRequestCorpusTests(unittest.TestCase):
+    """#535: the separate repository test sandbox-request case set."""
+
+    def test_corpus_validates_and_every_category_has_a_case(self) -> None:
+        tf.validate_sandbox_request_corpus(tf.SANDBOX_REQUEST_CASES)
+        for category in tf.SANDBOX_REQUEST_CATEGORIES:
+            with self.subTest(category=category):
+                self.assertTrue(any(c.category == category for c in tf.SANDBOX_REQUEST_CASES))
+
+    def test_existing_trusted_host_corpus_is_separate(self) -> None:
+        ids = {c.case_id for c in tf.ALL_CASES}
+        self.assertFalse(ids & {c.case_id for c in tf.SANDBOX_REQUEST_CASES})
+
+    def test_every_request_and_denial_phrase_has_a_case(self) -> None:
+        descriptions = " ".join(c.description for c in tf.SANDBOX_REQUEST_CASES)
+        for phrase in rv.REPOSITORY_TEST_SANDBOX_REQUEST + rv.TRUSTED_HOST_NEGATIVE:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, descriptions)
+
+    def test_every_case_actual_outcome_matches_its_declared_expectation(self) -> None:
+        for case in tf.SANDBOX_REQUEST_CASES:
+            with self.subTest(case=case.case_id):
+                outcome = case.run()
+                self.assertEqual(outcome.resolved, case.expected_resolved)
+                self.assertEqual(outcome.provenance, case.expected_provenance)
+
+    def test_a_requested_sandbox_never_yields_host(self) -> None:
+        for case in tf.SANDBOX_REQUEST_CASES:
+            if case.expected_resolved:
+                with self.subTest(case=case.case_id):
+                    self.assertNotEqual(case.run().provenance, rv.Provenance.HOST)
+
+    def test_malformed_cases_are_rejected(self) -> None:
+        from dataclasses import replace
+
+        valid = tf.SANDBOX_REQUEST_CASES[0]
+        for bad in (
+            replace(valid, category="unknown"),
+            replace(valid, skills=("local-code-review",)),
+            replace(valid, expected_provenance=rv.Provenance.TRUSTED_HOST),
+            replace(valid, expected_provenance=rv.Provenance.HOST),
+            replace(valid, category=tf.SANDBOX_REQUEST_CATEGORY_UNTRUSTED_SOURCE),
+        ):
+            with self.subTest(case=bad):
+                with self.assertRaises(tf.TrustedHostNLFixtureError):
+                    tf.validate_sandbox_request_case(bad)
+
+
 if __name__ == "__main__":
     unittest.main()

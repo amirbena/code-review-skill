@@ -86,6 +86,10 @@ sandbox isolation is unavailable — see "Trusted-host execution" below.
 This is a narrow, explicit exception to the sandbox default, never a
 relaxation of it.
 
+**Repository test commands are the one exception to the sandbox default**:
+once admitted, they run on the host by default — see "Repository tests"
+below.
+
 ## How to invoke it
 
 There is no flag for the sandboxed default. The reviewer applies the
@@ -119,6 +123,31 @@ forces `unavailable` even when sandbox is unavailable. Both Skills share
 one resolution definition; there is no per-Skill variant.
 Canonical semantics: [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md),
 "Natural-language authorization phrasings".
+
+## Repository tests
+
+When the review runs the repository's **own test suite** (or a declared
+focused subset) — and both the declaring source and the inspected task
+definition establish that — the command runs in your host environment by
+default, with its real toolchain, virtualenv, and `PATH`, recorded with
+provenance `host`. It needs no `allow_trusted_host_execution`. Selection
+and every safety gate are unchanged: tests needing secrets, services,
+network, or interaction are still skipped, and a run that mutates the
+tree is still discarded. Lint, type-check, build, other commands, and
+generated reproductions keep the sandbox-required default.
+
+Host runs have no filesystem, credential, or network isolation, so the
+test code (including a PR author's, for `github-pr-review`) can reach
+what your host can. To opt out for one invocation — for example when
+reviewing an untrusted fork — say "run the tests in a sandbox" (or
+"sandbox only"), or pass `run_repository_tests_in_sandbox=true`. The tests
+then run only in the sandbox and never fall back to the host; if the
+sandbox is missing or cannot start the test toolchain, the record is
+`unavailable` with the reason — never a test failure. Canonical
+semantics: [`runtime-validation.md`](../../shared/policies/runtime-validation.md),
+"Repository test execution backend", and
+[`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md),
+"Repository test sandbox request".
 
 ## Limitations & safety boundaries
 

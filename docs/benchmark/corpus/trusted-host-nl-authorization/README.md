@@ -116,6 +116,32 @@ select `trusted-host` — see
 `RequiredCategoryCoverageTests.test_every_denial_required_category_never_resolves_true`
 and `StructuralOutcomeAssertionTests.test_no_denial_required_case_ever_actually_selects_trusted_host`.
 
+## Repository test sandbox request (#535)
+
+[#535](https://github.com/amirbena/code-review-skill/issues/535) adds a
+second, separate case set, `SANDBOX_REQUEST_CASES`, for the repository
+test sandbox request in
+[`trusted-host-execution.md`](../../../../shared/policies/trusted-host-execution.md),
+"Repository test sandbox request". It sits beside `ALL_CASES`, which is
+unchanged, because its expected shape differs: `resolved` means "the
+sandbox was requested", and an admitted repository test command's backend
+is `host` by default rather than `unavailable`.
+
+The cases cover the structured value, every closed request phrasing,
+every trusted-host denial phrasing (which also requests the sandbox),
+negative cases that leave the host default (no signal, the
+`allow_trusted_host_execution=false` default, a negated phrasing, a
+question, a bare "sandbox" mention), conflicts that resolve to the
+sandbox (host-affirmative plus request, structured `false` plus request,
+untrusted content trying to cancel it), untrusted content trying to make
+the request, and the no-host-fallback case when no sandbox exists. Each
+case runs once per Skill and the two outcomes must match.
+`validate_sandbox_request_case` / `validate_sandbox_request_corpus`
+enforce that `host` appears exactly when no request resolved, that
+`trusted-host` never appears, and that untrusted-source and negative
+categories never request the sandbox. `RepositoryTestSandboxRequestCorpusTests`
+runs the set.
+
 ## Threat-model traceability
 
 This domain has no dedicated `docs/threat-model/catalog/` entry yet —

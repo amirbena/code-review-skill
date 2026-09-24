@@ -117,10 +117,12 @@ SEVERITY_LEGEND = {
 # #89/#237/#211/#121/#175/#258/#82/#303/#369/#377/#406/#449/#134/#74 and keep
 # their original #223-era hashes. The local report template, runbook, and
 # SKILL.md were re-captured after Issue #69 (the opt-in structured review
-# result option) — deliberate and unrelated to #223.
+# result option) — deliberate and unrelated to #223. LOCAL_RUNBOOK was
+# re-captured again on 2026-09-24 after Issue #535 (step 8a also resolves the
+# repository test sandbox request) — also deliberate and unrelated to #223.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "605fa1af75319e224140caa15c80f8e2448622a3",
-    LOCAL_RUNBOOK: "dcf0cf3c3283f7b4acc8a2b26f8c4951360d78e7",
+    LOCAL_RUNBOOK: "a2fabac5a4146663d50495650cb2109a622bdc7e",
     LOCAL_SKILL: "f46c252519f80d00a4f4cb9b2f06f510b14b96df",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",

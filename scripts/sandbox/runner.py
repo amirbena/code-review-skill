@@ -4,10 +4,13 @@ reviewer -> runtime-validation request -> SandboxRunner.run() -> bounded evidenc
 
 Never falls back to unsandboxed host execution: if no isolation primitive is
 available, or the run cannot be verified safe, the result is `unavailable`.
+A payload the launcher could not exec is `unavailable`, never `failed`.
 Contract: shared/policies/runtime-validation.md.
 """
 
 from __future__ import annotations
+
+import re
 
 from scripts.sandbox import capability, docker_runner, linux_bwrap, macos_seatbelt
 from scripts.sandbox.boundary import Outcome, SandboxRequest, SandboxResult
@@ -19,6 +22,37 @@ _DISPATCH = {
     capability.Primitive.MACOS_SEATBELT: macos_seatbelt.run,
     capability.Primitive.LINUX_BWRAP: linux_bwrap.run,
 }
+
+
+# Per primitive: the launcher's own exit status(es) and first stderr line
+# when it could not exec the payload (the payload never started).
+_LAUNCH_FAILURES: dict[capability.Primitive, tuple[frozenset[int], re.Pattern[str]]] = {
+    capability.Primitive.MACOS_SEATBELT: (
+        frozenset({71}),
+        re.compile(r"^sandbox-exec: execvp\(\) of '.*' failed: "),
+    ),
+    capability.Primitive.LINUX_BWRAP: (
+        frozenset({1}),
+        re.compile(r"^bwrap: execvp .+: "),
+    ),
+    capability.Primitive.DOCKER: (
+        frozenset({126, 127}),
+        re.compile(
+            r"^docker: Error response from daemon: .*"
+            r"(?:executable file not found|no such file or directory|permission denied)",
+            re.IGNORECASE,
+        ),
+    ),
+}
+
+
+def _launch_failure(bounded: BoundedRunResult, primitive: str) -> str | None:
+    """The launcher's exec-failure line, or None when the payload started."""
+    signature = _LAUNCH_FAILURES.get(capability.Primitive(primitive))
+    if signature is None or bounded.stdout or bounded.exit_code not in signature[0]:
+        return None
+    first_line = bounded.stderr.lstrip().splitlines()[0] if bounded.stderr.strip() else ""
+    return first_line if signature[1].search(first_line) else None
 
 
 def _to_sandbox_result(
@@ -54,6 +88,16 @@ def _to_sandbox_result(
             reason="budget exceeded: filesystem growth limit",
             primitive=primitive,
             duration_seconds=bounded.duration_seconds,
+        )
+    launch_error = _launch_failure(bounded, primitive)
+    if launch_error is not None:
+        return SandboxResult(
+            outcome=Outcome.UNAVAILABLE,
+            reason=f"sandbox could not launch the command payload: {launch_error}",
+            stderr=bounded.stderr,
+            primitive=primitive,
+            duration_seconds=bounded.duration_seconds,
+            source_integrity_verified=True,
         )
     outcome = Outcome.EXECUTED if bounded.exit_code == 0 else Outcome.FAILED
     return SandboxResult(

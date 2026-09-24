@@ -52,8 +52,10 @@ important concern or attention point; include scope only when useful>
   exactly `executed`, `skipped`, `failed`, or `unavailable`; include the exact
   command, declaration source, scope/justification, observed evidence, a
   reason where applicable, and — when executed or failed — its `sandbox` /
-  `trusted-host` provenance (a `trusted-host` entry states explicit user
-  authorization and absent sandbox isolation)>
+  `trusted-host` / `host` provenance (a `trusted-host` entry states explicit
+  user authorization and absent sandbox isolation; a `host` entry states the
+  repository test command ran on the host by default, without sandbox
+  isolation)>
 - <one entry per attempted targeted per-finding validation: the targeted
   finding id, the `executed` / `failed` / `skipped` / `unavailable` outcome
   with the same provenance dimension when executed or failed,
@@ -128,11 +130,13 @@ additive documentation and changes no Skill's rendered output by itself.
   contract: every selected command is explicitly `executed`, `skipped`,
   `failed`, or `unavailable`, with exact command and reason/evidence;
   non-execution is never a pass. An `executed` or `failed` entry also
-  carries its execution **provenance** — `sandbox` or `trusted-host` —
-  per [`trusted-host-execution.md`](../policies/trusted-host-execution.md);
+  carries its execution **provenance** — `sandbox`, `trusted-host`, or
+  `host` — per [`trusted-host-execution.md`](../policies/trusted-host-execution.md);
   a `trusted-host` entry additionally states plainly that the command ran
   on the reviewer's own host under explicit user authorization with no
-  sandbox isolation. A **targeted per-finding** validation is
+  sandbox isolation, and a `host` entry that a repository test command ran
+  on the reviewer's own host by default, with no sandbox isolation. None
+  is ever presented as sandboxed. A **targeted per-finding** validation is
   recorded here too — the targeted finding id, the same
   `executed` / `failed` / `skipped` / `unavailable` outcome (with the
   same provenance dimension when executed or failed), and the

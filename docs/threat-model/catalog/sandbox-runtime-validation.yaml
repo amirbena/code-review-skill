@@ -275,3 +275,64 @@ scenarios:
   notes: 'Not itself a denial of an attacker action, so no denied-capability event is expected — the safe
     outcome is refusal to run at all, which #299 may still choose to log as an operational event distinct
     from a denied-capability event.'
+- id: SBOX-014
+  title: A repository test command runs on the reviewer host by default (accepted risk)
+  category: SBOX
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - repository-controlled test code (conftest/fixtures, test-runner plugins, package test scripts)
+  - repository content claiming a non-test command is the repository's test command
+  - repository content trying to cancel the user's sandbox request
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository or PR content, including test code an admitted repository test
+    command executes
+  trusted_inputs:
+  - the trusted invoking user's explicit per-invocation sandbox request, when present
+  protected_asset: host credentials, filesystem, and network reachable by a default-host repository test run
+  required_capability_state: only an admitted repository test command, classified from its declaration
+    source and inspected task definition, runs on the host by default; every other command keeps the
+    sandbox-required contract; repository content can neither widen the classification nor cancel the
+    user's sandbox request
+  enforcement_owner: '#302 (sandbox-required path for every other command), #535 (repository test backend)'
+  enforcement_point: 'shared/policies/runtime-validation.md ("Repository test execution backend") and shared/policies/trusted-host-execution.md ("Repository test sandbox request")'
+  expected_safe_outcome: a non-test command repository content calls a "test" is not classified and takes
+    the sandbox-required path; repository content never cancels the user's sandbox request; a malicious
+    test payload reaching host credentials or network is a documented residual risk mitigated only by the
+    explicit sandbox opt-in
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: 'Not an adversarial sandbox-containment case: a default-host run has no boundary to
+    probe, so the #306 real-runner corpus does not apply; the classification and authorization boundary are
+    covered by reference-model regression tests instead.'
+  regression_evidence: tests/unit/review/test_runtime_validation.py::RepositoryTestClassification, tests/unit/review/test_runtime_validation.py::RepositoryTestAuthorizationBoundary
+  threat_severity: HIGH
+  notes: 'Accepted risk (#535): a repository test payload is untrusted and, under the host default, runs
+    with the reviewer host''s filesystem, ambient credentials, and network — the exposure
+    shared/policies/trusted-host-execution.md, "What trusted-host execution does not provide", documents.
+    The Safety gate screens declared behavior only and does not contain a malicious payload; post-run
+    mutation verification still discards a run that changed the reviewed tree or Git state. For
+    github-pr-review of an untrusted fork, the user should request the sandbox. SBOX-013 is unchanged.'
+- id: SBOX-015
+  title: An explicitly sandbox-requested repository test command cannot run in the sandbox
+  category: SBOX
+  attacker_model: runtime_misconfiguration
+  attacker_controlled_inputs:
+  - host/platform capability surface and sandbox-visible toolchain at the time the tests are requested
+  assumed_attacker_capabilities:
+  - no attacker control; a platform/runtime limitation
+  trusted_inputs:
+  - the trusted invoking user's explicit per-invocation sandbox request
+  protected_asset: the user's explicit sandbox opt-in for repository tests
+  required_capability_state: explicit repository test sandbox request present; sandbox primitive missing,
+    boundary unverifiable, or the sandbox cannot launch the test executable/toolchain
+  enforcement_owner: '#302 (sandbox runner), #535 (no host fallback, launch failure is not a test failure)'
+  enforcement_point: 'shared/policies/runtime-validation.md ("Repository test execution backend": no fallback; not executed is not failed) and scripts/sandbox/runner.py (_launch_failure maps a launcher exec failure to UNAVAILABLE)'
+  expected_safe_outcome: the command is recorded not executed (`unavailable`/`skipped`, or
+    `attempted-inconclusive` for a targeted run) with the concrete reason; no host process is started for
+    it and it is never reported as a repository test failure
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: 'Fail-closed selection behavior, not containment: covered by reference-model and
+    sandbox-runner unit regression tests rather than the #306 adversarial corpus.'
+  regression_evidence: tests/unit/review/test_runtime_validation.py::RepositoryTestExplicitSandbox, tests/unit/sandbox/test_runner.py::SandboxRunnerTests::test_payload_launch_failure_maps_to_unavailable_not_failed
+  threat_severity: HIGH

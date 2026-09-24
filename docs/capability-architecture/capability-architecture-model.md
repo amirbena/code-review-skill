@@ -287,7 +287,7 @@ rewrite:
   0..N composability, capability provenance on findings, cascading bounded
   by `repository-expansion.md`. The repository invented the right
   abstraction and then did not apply it to loading.
-- The **trust architecture** (`docs/threat-model/`, 68 catalog scenarios)
+- The **trust architecture** (`docs/threat-model/`, 70 catalog scenarios)
   is explicitly designed to hold against a non-cooperative reviewer. It
   constrains the loading design in a way §C.4 treats as a hard rule.
 - The **measurement architecture** (`docs/benchmark-measurement-architecture/`)
@@ -506,7 +506,7 @@ Four current placements do not survive the analysis:
    placement, confused deputy, sanitization in the code under review) and
    is lazy-loadable. The latter (`mutation-authority.md`,
    `agent-delegation.md`, `trusted-host-execution.md`,
-   `review-action-authorization.md`, the 68-scenario threat catalog) is
+   `review-action-authorization.md`, the 70-scenario threat catalog) is
    the *reviewer's own* capability boundary and its always-on half must
    never be lazy. The core hypothesis's single `security` capability
    would have fused them.
