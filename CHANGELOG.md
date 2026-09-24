@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.55.0 — 2026-09-24
+
+### Changed
+
+- Skill archives now carry their version as `metadata.version` so they validate against the Agent Skills spec, and are built reproducibly from a canonical `dist/skills/<name>/` tree (#514).
+
 ## v1.54.1 — 2026-09-20
 
 ### Fixed
