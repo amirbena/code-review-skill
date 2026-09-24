@@ -1,0 +1,102 @@
+{
+  "confirmation_reruns": [],
+  "invocations": [
+    {
+      "case_id": null,
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`page()` returns an extra, duplicated item per call `end = offset + page_size + 1` makes `items[offset:end]` return `page_size + 1` elements. For `page(items, 1, 3)`, `items[0:4]` yields 4 items instead of 3; the extra item at index `offset + page_size` also reappears at the start of the next page, since page `N+1`'s own offset is `page_number * page_size == old_offset + page_size`. Every page returns one more item than requested and consecutive pages share a duplicate boundary item, breaking any caller (API pagination, UI list rendering, batch processing) that assumes fixed page sizes and non-overlapping pages.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "end = offset + page_size + 1",
+                    "items[offset:end]",
+                    "page_size + 1",
+                    "page(items, 1, 3)",
+                    "items[0:4]",
+                    "offset + page_size",
+                    "N+1",
+                    "page_number * page_size == old_offset + page_size"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "app/pagination.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "no-op-comment-and-rename",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          },
+          {
+            "id": "quality-duplicated-branch-logic",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`format_message(user)` call duplicated across `notify()` branches The new `\"sms\"` branch (`app/notify.py:6`) repeats the identical `msg = format_message(user)` call already present in the `\"email\"` branch (`app/notify.py:3`); the formatting step does not vary by `kind`. Message formatting is now expressed twice for a single logical step. A future change to how messages are formatted (or a new channel added the same way) has to be applied in each branch individually, raising the odds that one branch is updated and another is missed.",
+                "extra": {
+                  "defect_kind": "duplicated-logic",
+                  "evidence_quotes": [
+                    "\"sms\"",
+                    "app/notify.py:6",
+                    "msg = format_message(user)",
+                    "\"email\"",
+                    "app/notify.py:3",
+                    "kind"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 6,
+                    "start": 3
+                  },
+                  "path": "app/notify.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "security-command-injection",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Command injection via unescaped shell interpolation of `name` The new code builds `cmd = f\"tar -czf {name}.tar.gz data/\"` and executes it with `subprocess.run(cmd, shell=True, check=True)`. `name` is interpolated directly into the shell command string with no escaping, quoting, or validation. The prior implementation (`args = [\"tar\", \"-czf\", name + \".tar.gz\", \"data/\"]`, run without `shell=True`) passed `name` as a single argv element, which the shell never parsed \u2014 that safety property is removed by this change. Any caller that derives `name` from external or user-controlled input (a filename, request parameter, config value, etc.) can achieve arbitrary command execution in the context the archiving process runs in \u2014 a classic OS command injection (CWE-78). The function's signature places no constraint on `name`'s character set, so nothing in the contract prevents such a caller from existing now or being added later.",
+                "extra": {
+                  "defect_kind": "command-injection",
+                  "evidence_quotes": [
+                    "cmd = f\"tar -czf {name}.tar.gz data/\"",
+                    "subprocess.run(cmd, shell=True, check=True)",
+                    "name",
+                    "args = [\"tar\", \"-czf\", name + \".tar.gz\", \"data/\"]",
+                    "shell=True",
+                    "name"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "app/backup.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    }
+  ]
+}
