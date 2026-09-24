@@ -489,9 +489,7 @@ Create two repository rulesets on the distribution repository:
 ### Publishing identity decision
 
 The identity that pushes to the distribution repository is one of two
-options. **Recommendation: a dedicated publication App.** This section
-records the analysis; the maintainer confirms the choice when
-provisioning, and updates the "Decision" line below.
+options. This section records the analysis and the confirmed decision.
 
 | | A. Reuse the "Skill Release Automation" App | B. Dedicated publication App |
 | --- | --- | --- |
@@ -507,14 +505,17 @@ leaked publication key from ever reaching the source repository, and it
 keeps this repository's release App permissions unchanged (see the
 non-goal in #508).
 
-**Decision:** dedicated publication App (pending maintainer
-confirmation at provisioning).
+**Decision (confirmed):** a dedicated publication App,
+`code-review-skills-publisher` (App ID `5058568`), installed only on
+`amirbena/code-review-skills`. It is not installed on this repository, and
+the source-repository release App is unchanged.
 
 Grant the chosen identity **Contents: Read and write** and **Metadata:
 Read-only** on the distribution repository only — install it there and
 nowhere else — with no webhook. Store its credentials as
-`DISTRIBUTION_APP_ID` and `DISTRIBUTION_APP_PRIVATE_KEY` on the protected
-`release` Environment, and mint a short-lived installation token scoped
+`DISTRIBUTION_APP_ID` and `DISTRIBUTION_APP_PRIVATE_KEY` on the
+`release-skills-distribution` Environment of this repository (not the
+`release` Environment, which belongs to source releases), and mint a short-lived installation token scoped
 to the distribution repository at publication time (#509), as the release
 job does today.
 
@@ -525,14 +526,34 @@ secret, run a publication dry run, then delete the old key.
 distribution repository's commit and tag history against `DISTRIBUTION.json`
 provenance.
 
-### Provisioning validation
+### Provisioning validation (recorded 2026-09-24)
 
-Once the repository, rulesets, and App exist, record both checks:
+The private key was never exposed to a maintainer or agent session; the
+dry run ran inside GitHub Actions on the `release-skills-distribution`
+Environment, minting a token scoped to `code-review-skills` and refusing
+any App slug other than `code-review-skills-publisher`.
 
-1. A push from a maintainer account is rejected by the ruleset (shown once).
-2. The publishing identity pushes a commit and a tag on a scratch branch
-   and tag in a dry run; both are then removed through the
-   ruleset-permitted path. No other permission changes in either repo.
+1. **Negative control.** Before the App was added to the rulesets, a push
+   of `main` and of a `v*` tag from the maintainer account was rejected:
+   "push declined due to repository rule violations" (creations
+   restricted). The repository still had no branches.
+2. **Bypass.** The App (integration `5058568`, `bypass_mode: always`) is
+   the sole bypass actor on both rulesets.
+3. **Mutation.** The App pushed the single bootstrap commit to `main`
+   (an empty commit, `39294c6`) and created the annotated scratch tag
+   `v0.0.0-scratch-508`; GitHub reported "Bypassed rule violations" for
+   both refs. The commit author and the repository events actor are
+   `code-review-skills-publisher[bot]`.
+4. **Cleanup.** The App deleted the scratch tag and the scratch branch
+   with the same token; the rulesets stayed active throughout and were
+   never weakened. Final refs: `refs/heads/main` only.
+5. The dry-run workflow lived on a scratch branch of this repository and
+   was deleted with it; it is not part of this change.
+
+The `release-skills-distribution` Environment currently has no branch
+restriction or required reviewers. Restricting it to `main` before #509
+lands is recommended, so only the reviewed publication workflow can reach
+the key.
 
 ## Permissions model
 
