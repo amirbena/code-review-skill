@@ -93,7 +93,15 @@ equivalent to a managed one (no update command, not counted toward skills.sh).
      ```
 
      A bare `/local-code-review` with no context is fully supported.
-   - `github-pr-review` takes a PR URL or number.
+   - `github-pr-review` takes a PR URL, or a PR number when the repository
+     is clear from context:
+
+     ```text
+     /github-pr-review https://github.com/OWNER/REPO/pull/123
+     ```
+
+     By default it returns the report without posting anything to GitHub;
+     publishing is covered in [`docs/features/`](docs/features/README.md).
 
 Missing optional context never fails or degrades a review.
 
