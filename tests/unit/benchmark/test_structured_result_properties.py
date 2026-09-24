@@ -237,6 +237,16 @@ class StableIdStabilityTests(unittest.TestCase):
         flags = bsr.stable_id_stability([self._on(bsr.POLICY_EXAMPLE_STABLE_ID)] * 2)["flags"]
         self.assertEqual([f.split(":")[0] for f in flags], ["example-copy", "example-copy"])
 
+    def test_flags_number_runs_as_the_record_lists_them(self) -> None:
+        failed = bsr.RunObservation(CASE.id, True, "error", error="reviewer-adapter-raised")
+        copied = self._on(bsr.POLICY_EXAMPLE_STABLE_ID)
+        record = bsr.case_record(CASE.id, [failed, copied, copied])
+        self.assertEqual(
+            [f.split(" emitted")[0] for f in record["stable_id"]["flags"]],
+            ["example-copy: run 1", "example-copy: run 2"],
+        )
+        self.assertEqual(record["runs"]["on"][1]["stable_ids"], {self.KEY: bsr.POLICY_EXAMPLE_STABLE_ID})
+
     def test_policy_example_constant_tracks_the_policy(self) -> None:
         policy = (REPO_ROOT / "shared" / "policies" / "structured-output.md").read_text(encoding="utf-8")
         self.assertIn(f'"stable_id": "{bsr.POLICY_EXAMPLE_STABLE_ID}"', policy)
@@ -271,6 +281,17 @@ class OptionInvarianceTests(unittest.TestCase):
         verdict = bsr.option_invariance(on, [self._run(False, "clean")] * 2)
         self.assertEqual(verdict["components"]["severities"]["verdict"], bsr.DIVERGENT)
         self.assertEqual(verdict["components"]["unpaired"]["verdict"], bsr.DIVERGENT)
+
+    def test_one_executed_run_in_an_arm_is_inconclusive_not_divergent(self) -> None:
+        failed = bsr.RunObservation(CASE.id, True, "error", error="reviewer-adapter-raised")
+        on = [failed, failed, self._run(True, "blocking")]
+        verdict = bsr.option_invariance(on, [self._run(False, "clean")] * 3)
+        self.assertEqual(verdict["verdict"], bsr.INCONCLUSIVE)
+        self.assertEqual(verdict["components"]["decision"]["verdict"], bsr.INCONCLUSIVE)
+
+    def test_one_executed_run_in_an_arm_is_not_consistent_either(self) -> None:
+        verdict = bsr.option_invariance([self._run(True, "clean")], [self._run(False, "clean")] * 3)
+        self.assertEqual(verdict["verdict"], bsr.INCONCLUSIVE)
 
     def test_an_arm_with_no_executed_run_is_not_evaluated(self) -> None:
         failed = bsr.RunObservation(CASE.id, True, "error", error="reviewer-adapter-raised")

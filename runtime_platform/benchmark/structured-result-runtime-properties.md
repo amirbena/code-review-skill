@@ -136,7 +136,9 @@ consumer needs a stronger guarantee.
 Four components are compared across arms: `decision`, `finding_set`
 (paired entry keys), `severities` (paired keys with severity), and
 `unpaired` (severities of extra findings). For each component, the set of
-values seen in the on-arm is compared with the set seen in the off-arm:
+values seen in the on-arm is compared with the set seen in the off-arm.
+`consistent` and `divergent` need at least two executed runs in each arm;
+a run that errored does not count:
 
 | Verdict | Rule | Reading |
 | --- | --- | --- |
@@ -144,6 +146,9 @@ values seen in the on-arm is compared with the set seen in the off-arm:
 | `divergent` | each arm repeats one value, and the values differ | the option changed the review; listed in `option_dependent` |
 | `inconclusive` | anything else | run-to-run variance the run count cannot separate from an option effect; rerun with a higher `--runs`, never read as a pass |
 | `not-evaluated` | an arm has no executed run | nothing measured |
+
+Run numbers in `stable_id` flags and `contract_errors` are positions in
+the record's `runs.on` list, errored runs included.
 
 A case takes its worst component verdict. The rule is deliberately strict
 about calling a difference an option effect. A `divergent` verdict needs

@@ -40,6 +40,9 @@ INSUFFICIENT = "insufficient-runs"
 
 COMPONENTS = ("decision", "finding_set", "severities", "unpaired")
 
+# Executed runs an arm needs before an invariance verdict other than inconclusive.
+MIN_RUNS_PER_ARM = 2
+
 
 @dataclass(frozen=True)
 class RunObservation:
@@ -141,10 +144,13 @@ def observe_run(
 
 
 def stable_id_stability(on_runs: Sequence[RunObservation]) -> dict[str, Any]:
-    """Per matched expected entry: one distinct stable_id across >= 2 on-runs is stable."""
-    runs = [r for r in on_runs if r.executed]
+    """Per matched expected entry: one distinct stable_id across >= 2 on-runs is stable.
+
+    Flags number runs by position in `on_runs`, the same order the record lists them.
+    """
+    runs = [(index, r) for index, r in enumerate(on_runs) if r.executed]
     per_entry: dict[str, list[str]] = {}
-    for run in runs:
+    for _, run in runs:
         for key, stable_id in run.stable_ids.items():
             per_entry.setdefault(key, []).append(stable_id)
     entries = {}
@@ -157,7 +163,7 @@ def stable_id_stability(on_runs: Sequence[RunObservation]) -> dict[str, Any]:
     for key, entry in entries.items():
         if entry["status"] == UNSTABLE:
             flags.append(f"unstable: {key} carried {len(entry['stable_ids'])} stable_ids over {entry['runs']} runs")
-    for index, run in enumerate(runs):
+    for index, run in runs:
         if POLICY_EXAMPLE_STABLE_ID in run.all_stable_ids:
             flags.append(f"example-copy: run {index} emitted the policy's illustrative stable_id")
         owners: dict[str, set[str]] = {}
@@ -169,9 +175,9 @@ def stable_id_stability(on_runs: Sequence[RunObservation]) -> dict[str, Any]:
     return {"entries": entries, "flags": flags}
 
 
-def _classify(on_values: set, off_values: set) -> str:
-    if not on_values or not off_values:
-        return NOT_EVALUATED
+def _classify(on_values: set, off_values: set, runs_per_arm: int) -> str:
+    if runs_per_arm < MIN_RUNS_PER_ARM:
+        return NOT_EVALUATED if not on_values or not off_values else INCONCLUSIVE
     if on_values == off_values:
         return CONSISTENT
     if on_values.isdisjoint(off_values) and len(on_values) == len(off_values) == 1:
@@ -183,18 +189,20 @@ def option_invariance(on_runs: Sequence[RunObservation], off_runs: Sequence[RunO
     """Compare each component's observed values across the two arms.
 
     Equal value sets are consistent. Each arm repeating one value, and the two
-    values differing, is divergent: the option changed the review. Anything
-    else is variance the run count cannot separate from an option effect, so
-    it is inconclusive, never a pass.
+    values differing, is divergent: the option changed the review. Either needs
+    at least two executed runs in each arm. Anything else is variance the run
+    count cannot separate from an option effect, so it is inconclusive, never a
+    pass.
     """
     on = [r for r in on_runs if r.executed]
     off = [r for r in off_runs if r.executed]
+    runs_per_arm = min(len(on), len(off))
     components = {}
     for name in COMPONENTS:
         on_values = {r.component(name) for r in on}
         off_values = {r.component(name) for r in off}
         components[name] = {
-            "verdict": _classify(on_values, off_values),
+            "verdict": _classify(on_values, off_values, runs_per_arm),
             "on": sorted(map(_jsonable, on_values), key=repr),
             "off": sorted(map(_jsonable, off_values), key=repr),
         }

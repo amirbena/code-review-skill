@@ -97,8 +97,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
-    if args.runs < 2:
-        print("--runs must be at least 2: stability needs two runs per arm", file=sys.stderr)
+    if args.runs < bsr.MIN_RUNS_PER_ARM:
+        print(f"--runs must be at least {bsr.MIN_RUNS_PER_ARM}: verdicts need two runs per arm", file=sys.stderr)
         return 2
     executable = args.cli or resolve_cli_executable()
     try:
