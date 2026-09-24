@@ -44,12 +44,26 @@ its own PR — see
 side-by-side detail is
 in [`docs/CODE_REVIEW_COMPARISON.md`](docs/CODE_REVIEW_COMPARISON.md) §9.
 
-## Install / package
+## Install
 
-Building a Skill produces one standalone archive with `SKILL.md` and
-`LICENSE` at its root (never nested under a `skills/` path), so a consumer
-never needs to know this repository's layout. Pick the archive that matches
-how the reviewer will be used — packaging both is rarely needed.
+Install from the generated distribution repository, through your tool's own
+Skill or plugin mechanism. For the `skills` CLI:
+
+```bash
+npx skills add amirbena/code-review-skills --skill local-code-review
+```
+
+[`docs/distribution.md`](docs/distribution.md) is the canonical install guide:
+commands for Claude Code, Codex, Cursor and GitHub Copilot, how updating
+works per tool, and which paths are verified versus only documented.
+
+### Manual / offline
+
+Only when managed installation is unavailable. Building a Skill produces one
+standalone archive with `SKILL.md` and `LICENSE` at its root (never nested
+under a `skills/` path), so a consumer never needs to know this repository's
+layout. Pick the archive that matches how the reviewer will be used —
+packaging both is rarely needed.
 
 | Package | Command (shell · PowerShell) | Output |
 |---|---|---|
@@ -57,25 +71,15 @@ how the reviewer will be used — packaging both is rarely needed.
 | GitHub PR review only | `./scripts/packaging/package-skills.sh github` · `./scripts/packaging/package-skills.ps1 github` | `dist/github-pr-review-skill.zip` |
 | Both entry points | `./scripts/packaging/package-skills.sh all` · `./scripts/packaging/package-skills.ps1 all` | both archives above |
 
-To install from the published distribution repository instead:
-
-```bash
-npx skills add amirbena/code-review-skills --skill local-code-review
-```
-
-For the Claude Code marketplace, Codex, Copilot, updates, and which install
-paths are verified versus only documented, see
-[`docs/distribution.md`](docs/distribution.md).
+Unzip an archive directly into your runtime's Skill directory — for example
+`.claude/skills/<name>/`, `.agents/skills/<name>/`,
+`.cursor/skills/<name>/`, or `.opencode/skills/<name>/`. A ZIP install is not
+equivalent to a managed one (no update command, not counted toward skills.sh).
 
 ## Quick start
 
-1. **Package** the Skill you need (above).
-2. **Install** the archive into your runtime's Skill directory — for
-   example `.claude/skills/<name>/`, `.agents/skills/<name>/`,
-   `.cursor/skills/<name>/`, or `.opencode/skills/<name>/`. Each archive
-   already keeps `SKILL.md` at its own root, so unzip it directly into that
-   directory.
-3. **Invoke** it from the runtime.
+1. **Install** a Skill (above).
+2. **Invoke** it from the runtime.
    - `local-code-review` is opt-in — it runs only when you explicitly ask,
      every time. Optionally pass review context to focus attention:
 
