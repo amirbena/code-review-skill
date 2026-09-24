@@ -58,6 +58,7 @@ REFERENCE_TEST_MODULES = (
     "finding_confidence.py",
     "review_telemetry.py",
     "review_result.py",
+    "structured_output_contract.py",
     "invocation_options.py",
     "finding_identity.py",
     "runtime_validation.py",

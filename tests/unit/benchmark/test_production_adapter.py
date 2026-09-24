@@ -492,6 +492,31 @@ class ParseRenderedOutcomeTests(unittest.TestCase):
         self.assertIsNone(outcome.decision_label)
 
 
+
+class StructuredReviewResultBoundaryTests(unittest.TestCase):
+    """#71 audit: the benchmark scores only the Markdown report; the opt-in
+    structured result (#69) stays off and cannot leak into parsed findings."""
+
+    SAMPLE = (
+        Path(__file__).resolve().parents[1]
+        / "review" / "findings" / "structured_output_samples"
+        / "local-code-review" / "blocking-committed.md"
+    )
+
+    def test_benchmark_prompt_leaves_the_structured_result_off(self) -> None:
+        from runtime_platform.benchmark.scripts.benchmark_review_adapter import _REVIEW_PROMPT
+        from tests.reference.review.invocation_options import OPTION_CONCEPTS, normalize
+
+        resolved = normalize(_REVIEW_PROMPT, defaults=dict.fromkeys(OPTION_CONCEPTS, False))
+        self.assertIs(resolved["structured_review_result"], False)
+
+    def test_appended_structured_result_does_not_change_parsed_output(self) -> None:
+        text = self.SAMPLE.read_text(encoding="utf-8")
+        report_only = text.split("### Structured Review Result", 1)[0]
+        self.assertEqual(parse_review_output(text), parse_review_output(report_only))
+        self.assertEqual(parse_rendered_outcome(text), parse_rendered_outcome(report_only))
+        self.assertEqual([f.severity for f in parse_review_output(text)], ["P1", "P1", "P2"])
+
 class _StubCliMixin:
     """Writes an executable stub script standing in for the real `claude`
     CLI, so the subprocess-invocation boundary is tested without depending

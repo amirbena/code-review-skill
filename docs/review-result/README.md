@@ -30,6 +30,10 @@ archive, and no packaged Skill resource depends on them.
   [`../../shared/templates/finding.md`](../../shared/templates/finding.md),
   [`../../shared/policies/severity.md`](../../shared/policies/severity.md),
   [`../findings/README.md`](../findings/README.md).
+- Cross-Skill contract tests and sample outputs
+  ([#71](https://github.com/amirbena/code-review-skill/issues/71)):
+  [`../../tests/reference/review/structured_output_contract.py`](../../tests/reference/review/structured_output_contract.py),
+  described in [`review-result-model.md`](review-result-model.md) section 8.
 - Test-only version-rule reference:
   [`../../tests/reference/review/review_result_version.py`](../../tests/reference/review/review_result_version.py).
 - The architecture map: [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
