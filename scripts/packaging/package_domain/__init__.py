@@ -12,6 +12,7 @@ Module map:
 
 - ``adaptation`` — shared-link and metadata-path rewriting for staged Skills
 - ``validation`` — SKILL.md frontmatter structural validation
+- ``tree``       — the deterministic ``dist/skills/<name>/`` tree, its manifest, and the zip built from it
 - ``version``    — release-version resolution and SKILL.md version stamping
 - ``cli``        — argument parsing shared by both platform scripts
 

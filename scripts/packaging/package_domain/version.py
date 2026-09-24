@@ -48,10 +48,24 @@ def _frontmatter_version_index(lines: list[str]) -> int | None:
     return None
 
 
+_METADATA_VERSION_LINE = re.compile(r"^[ \t]+version:[ \t]*\"?([^\s\"]+)\"?[ \t]*\r?$")
+
+
 def frontmatter_version(text: str) -> str | None:
+    """The Skill version: top-level `version:` (source form), else `metadata.version` (built form, #507)."""
     lines = text.split("\n")
     index = _frontmatter_version_index(lines)
-    return None if index is None else _VERSION_LINE.match(lines[index]).group(1)
+    if index is not None:
+        return _VERSION_LINE.match(lines[index]).group(1)
+    stripped = [line.rstrip("\r") for line in lines]
+    if not stripped or stripped[0] != "---" or "---" not in stripped[1:]:
+        return None
+    closing = stripped.index("---", 1)
+    for at in range(1, closing - 1):
+        if stripped[at] == "metadata:":
+            match = _METADATA_VERSION_LINE.match(lines[at + 1])
+            return match.group(1) if match else None
+    return None
 
 
 def stamp_frontmatter_version(text: str, version: str) -> str:

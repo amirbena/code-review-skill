@@ -340,8 +340,9 @@ it. Its ordered flow fails closed before publishing if any step fails:
 4. **Stamps** `vX.Y.Z` (as `X.Y.Z`) into the `version:` frontmatter line of
    both Skills' `SKILL.md`, so the committed files match the release.
 5. Builds **and verifies** both Skill archives (`package-skills.sh all`,
-   `unzip -t`, presence checks, and that each archive's `SKILL.md` version
-   is exactly `X.Y.Z` — a mismatch fails the run before anything is
+   which also leaves the validated `dist/skills/<name>/` trees the zips are
+   built from, `unzip -t`, presence checks, and that each archive's
+   `SKILL.md` version is exactly `X.Y.Z` — a mismatch fails the run before anything is
    pushed or tagged).
 6. Commits the generated, rolled changelog and the stamped `SKILL.md`
    files directly to `main` (`chore(release): vX.Y.Z [skip ci]`).
@@ -372,6 +373,16 @@ value:
 - The committed `version:` is only a mirror that step 4 keeps equal to the
   release; nobody bumps it by hand, and it is unrelated to
   `metadata/skill.yaml`'s own independently maintained `version`.
+
+In the built tree and archive the version is written as `metadata.version`
+rather than the source's top-level `version:` line, because the Agent Skills
+reference validator rejects the latter (#507; see
+[`ARCHITECTURE.md`](ARCHITECTURE.md), section 7). That is the only change to
+any packaged file's content. The archives are also now written from the
+`dist/skills/<name>/` tree with sorted entries and fixed timestamps, so
+they carry no explicit directory entries and are byte-reproducible; names and
+layout are unchanged. The source `SKILL.md` keeps its top-level `version:`,
+which the release flow stamps as before.
 
 The `release-publish` concurrency group serializes publication. The
 release commit is `[skip ci]` and the workflow listens on no tag or

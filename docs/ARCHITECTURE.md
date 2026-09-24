@@ -773,10 +773,12 @@ shared/policies/…, shared/templates/…  →  shared/policies/…, shared/temp
 single source of truth for archive names, copied resources, their archive
 destinations, and required-entry guards. `scripts/packaging/package-skills.sh` /
 `scripts/packaging/package-skills.ps1` consume it through the shared containment
-validator in `scripts/packaging/package_manifest.py` and stage each Skill's files under
-`dist/.staging/`, drop the `skills/<name>/` prefix so
-`SKILL.md` lands at the archive root, then zip the staged tree's
-*contents* into `dist/*.zip`. Because `SKILL.md` moves from source depth 2
+validator in `scripts/packaging/package_manifest.py` and build each Skill's files into the
+canonical tree at `dist/skills/<name>/`, dropping the `skills/<name>/` prefix so
+`SKILL.md` lands at the tree (and archive) root. That tree is a first-class,
+gitignored build output — never published from this repository (the `skills`
+CLI skips any directory named `dist`) — and `dist/*.zip` is built from exactly
+that tree, never re-derived. Because `SKILL.md` moves from source depth 2
 to depth 0, its links into `shared/` change from `../../shared/...` to
 `shared/...`, and nested files (source depth 3) change from
 `../../../shared/...` to `../shared/...`. Packaging applies exactly that
@@ -787,6 +789,28 @@ path prefix in the staged `metadata/skill.yaml`, and stamps the staged
 `SKILL.md`'s frontmatter `version` from the newest `## vX.Y.Z` heading in
 `CHANGELOG.md` so an archive never reports a stale committed value (see
 [`RELEASE.md`](RELEASE.md), "Skill archive version").
+
+The tree is then made deterministic and distribution-conformant by
+`package_domain/tree.py` (identically for both platform scripts): sorted
+traversal, LF line endings, no BOM, normalized file modes, and no timestamps;
+`dist/skills-manifest.json` (outside the Skill directories) records every
+file's SHA-256 plus an aggregate tree hash, so a rebuild of the same commit —
+or the same build from the shell and PowerShell scripts — must reproduce it.
+The archive is written from the tree with fixed timestamps and verified to
+extract to it byte for byte. Each tree must pass Agent Skills validation
+(`skills-ref validate`, run in `validate.yml`; an offline equivalent runs in the
+build) and be self-contained: every relative link and metadata path resolves
+inside the tree, with no `../../shared` reference left.
+
+**Distribution-only frontmatter normalization.** The reference validator
+rejects the source `SKILL.md`'s top-level `version` (#439) with
+`Unexpected fields in frontmatter: version` (skills-ref 0.1.1; the spec allows
+only `name`, `description`, `license`, `compatibility`, `metadata`,
+`allowed-tools`). So the *built tree only* carries the stamped version as
+`metadata.version`, in the position of the original line; the source
+`SKILL.md` and its contract are unchanged.
+`verify-skill-archives.sh --expect-version` and the archive-version check read
+either form.
 
 Repository-development files — `AGENTS.md`, `policies/`, `docs/`
 (including this file and everything under [`features/`](features/README.md)),

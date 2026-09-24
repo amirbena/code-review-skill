@@ -3,8 +3,12 @@
 # standalone distributable archives, using explicit allowlists (never the
 # whole repository). Each archive has its own SKILL.md at the archive
 # ROOT (not nested under skills/<name>/), so a consumer never needs to
-# know this repository's source layout. All generated output (staging
-# and final zips) stays strictly under dist/.
+# know this repository's source layout. All generated output stays
+# strictly under dist/: the canonical, deterministic, validated
+# self-contained Skill trees at dist/skills/<name>/ (with a content
+# manifest at dist/skills-manifest.json), and the release zips built from
+# exactly those trees. dist/ is gitignored and is never published from
+# this repository.
 #
 # Usage:
 #   scripts/packaging/package-skills.sh [local|github|all]
@@ -14,7 +18,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
 dist_dir="${repo_root}/dist"
-staging_root="${dist_dir}/.staging"
+trees_root="${dist_dir}/skills"
 metadata_validator="${repo_root}/scripts/validation/validate-skill-metadata.py"
 package_manifest="${script_dir}/package-manifest.json"
 package_manifest_helper="${script_dir}/package_manifest.py"
@@ -79,7 +83,7 @@ package_skill() {
   skill_name="$(manifest_query "${package_target}" name)"
   archive_name="$(manifest_query "${package_target}" archive)"
   local skill_src="${repo_root}/skills/${skill_name}"
-  local stage_dir="${staging_root}/${archive_name%.zip}"
+  local stage_dir="${trees_root}/${skill_name}"
   local archive_path="${dist_dir}/${archive_name}"
 
   if [[ ! -d "${skill_src}" ]]; then
@@ -88,7 +92,7 @@ package_skill() {
   fi
   python3 "${metadata_validator}" "${skill_src}" --containment-root "${repo_root}"
 
-  # Only ever clean our own controlled staging/output location, and only
+  # Only ever clean our own controlled tree/output location, and only
   # ever write generated content under dist/.
   rm -rf "${stage_dir}"
   mkdir -p "${stage_dir}"
@@ -109,6 +113,10 @@ package_skill() {
     cp "${repo_root}/${source}" "${stage_dir}/${destination}"
   done < "${manifest_files}"
   rm -f "${manifest_files}"
+
+  # Normalize line endings/BOM first, so a CRLF checkout (e.g. Windows
+  # autocrlf) validates and stamps identically to an LF one.
+  python3 "${package_adapt}" normalize-tree "${stage_dir}"
 
   # Adapt relative links into shared/ across every packaged Markdown
   # file (skill-local links like ../SKILL.md or runbooks/... need no
@@ -135,11 +143,14 @@ package_skill() {
   validate_skill_frontmatter "${stage_dir}/SKILL.md" "${skill_name}"
   python3 "${metadata_validator}" "${stage_dir}" --containment-root "${stage_dir}"
 
-  rm -f "${archive_path}"
-  (
-    cd "${stage_dir}"
-    zip -r -q "${archive_path}" .
-  )
+  # Make the tree deterministic and distribution-conformant (LF, no BOM,
+  # normalized modes, built-tree-only metadata.version), then validate it
+  # against the Agent Skills spec and for self-containment. The zip is
+  # built from, and verified against, this exact tree.
+  python3 "${package_adapt}" finalize-tree "${stage_dir}" "${skill_name}"
+
+  python3 "${package_adapt}" build-archive "${stage_dir}" "${archive_path}"
+  python3 "${package_adapt}" verify-archive "${stage_dir}" "${archive_path}"
 
   # --- Verify archive contents ---
   local required_entries
@@ -157,13 +168,14 @@ package_skill() {
     exit 1
   fi
 
-  rm -rf "${stage_dir}"
-
+  built_skills+=("${skill_name}")
+  echo "Skill tree built at: ${stage_dir}"
   echo "Archive created at: ${archive_path}"
 }
 
+built_skills=()
 echo "Repository root: ${repo_root}"
-mkdir -p "${dist_dir}"
+mkdir -p "${dist_dir}" "${trees_root}"
 
 if [[ "${target}" == "local" || "${target}" == "all" ]]; then
   package_skill "local"
@@ -173,5 +185,4 @@ if [[ "${target}" == "github" || "${target}" == "all" ]]; then
   package_skill "github"
 fi
 
-# Remove the now-empty staging root if packaging left nothing behind.
-rmdir "${staging_root}" 2>/dev/null || true
+python3 "${package_adapt}" write-tree-manifest "${dist_dir}" "${built_skills[@]}"
