@@ -455,6 +455,116 @@ the `main` branch. Because `publish` starts only when a release is
 actually due, this prompts a maintainer per real release, not per merge.
 If the Environment has no rules it simply passes through.
 
+## Generated distribution repository
+
+Marketplace publication (parent #506) does not commit built Skill trees to
+this repository: a committed copy would put three copies of `shared/` in
+one repo, and the `skills` CLI's standard discovery would find the
+non-self-contained `skills/<name>/` source folders first. The built
+output is published to a separate, **generated-only** public repository,
+`amirbena/code-review-skills`.
+
+### Layout (written by #509 and #510, fixed here)
+
+| Path | Content | Written by |
+| --- | --- | --- |
+| `skills/<name>/` | the self-contained built tree of each Skill (from #507) | #509 |
+| `README.md` | generated; points back to this repository | #509 |
+| `LICENSE` | copied from this repository | #509 |
+| `DISTRIBUTION.json` | source repo, source commit, version, content manifest hash | #509 |
+| `.claude-plugin/marketplace.json` and other adapter files | Claude adapter layer | #510 |
+
+The only hand-authored content allowed is one optional bootstrap commit.
+Issues and Discussions are disabled, and the repository description links
+back to this repository.
+
+### Generated-only policy
+
+Humans never edit the distribution repository. Every fix — including a
+typo in the generated `README.md` — goes through this repository and a
+release, and the next publication overwrites the output. There is no
+routine human bypass on the default branch or on `v*` tags.
+
+### Rulesets
+
+Create two repository rulesets on the distribution repository:
+
+- **Default branch:** restrict creations, updates, and deletions, and
+  block force pushes; only the bypass actor below can push.
+- **Tags matching `v*`:** restrict creation, updates, and deletions, and
+  block force pushes; only the bypass actor below can create tags.
+- **Bypass list (both rulesets): the publishing identity only.** No
+  `Repository admin`, no team, no human.
+
+### Publishing identity decision
+
+The identity that pushes to the distribution repository is one of two
+options. This section records the analysis and the confirmed decision.
+
+| | A. Reuse the "Skill Release Automation" App | B. Dedicated publication App |
+| --- | --- | --- |
+| What a leaked key can write | `contents: write` on this repo **and** the distribution repo: it can push to this repo's `main` (it is that ruleset's sole bypass actor) and to the distribution repo | `contents: write` on the distribution repo only; it cannot touch this repo |
+| Ruleset bypass lists | the App is added to a second ruleset, and the same key now bypasses two repos | this App is the only entry in the distribution rulesets; this repo's `main` bypass list is unchanged |
+| Rotation | rotating the one key affects both the release and the publication jobs at once | rotate the publication key independently; the release flow is unaffected |
+| Revocation | uninstalling from the distribution repo is possible, but revoking the key stops source releases too | uninstall the App or delete its key; publication stops, source releases continue |
+| Operational cost | no new App, secrets, or installation | one more App, two secrets, and one more installation to maintain |
+
+Option A widens the blast radius of the key that can already bypass this
+repository's `main` protection. Option B costs one extra App but keeps a
+leaked publication key from ever reaching the source repository, and it
+keeps this repository's release App permissions unchanged (see the
+non-goal in #508).
+
+**Decision (confirmed):** a dedicated publication App,
+`code-review-skills-publisher` (App ID `5058568`), installed only on
+`amirbena/code-review-skills`. It is not installed on this repository, and
+the source-repository release App is unchanged.
+
+Grant the chosen identity **Contents: Read and write** and **Metadata:
+Read-only** on the distribution repository only — install it there and
+nowhere else — with no webhook. Store its credentials as
+`DISTRIBUTION_APP_ID` and `DISTRIBUTION_APP_PRIVATE_KEY` on the
+`release-skills-distribution` Environment of this repository (not the
+`release` Environment, which belongs to source releases), and mint a
+short-lived installation token scoped to the distribution repository at
+publication time (#509), as the release job does today.
+
+**Rotate:** generate a new private key in the App settings, update the
+secret, run a publication dry run, then delete the old key.
+**Revoke (suspected leak):** delete the key in the App settings first
+(the token minting fails closed), then rotate, then review the
+distribution repository's commit and tag history against `DISTRIBUTION.json`
+provenance.
+
+### Provisioning validation (recorded 2026-09-24)
+
+The private key was never exposed to a maintainer or agent session; the
+dry run ran inside GitHub Actions on the `release-skills-distribution`
+Environment, minting a token scoped to `code-review-skills` and refusing
+any App slug other than `code-review-skills-publisher`.
+
+1. **Negative control.** Before the App was added to the rulesets, a push
+   of `main` and of a `v*` tag from the maintainer account was rejected:
+   "push declined due to repository rule violations" (creations
+   restricted). The repository still had no branches.
+2. **Bypass.** The App (integration `5058568`, `bypass_mode: always`) is
+   the sole bypass actor on both rulesets.
+3. **Mutation.** The App pushed the single bootstrap commit to `main`
+   (an empty commit, `39294c6`) and created the annotated scratch tag
+   `v0.0.0-scratch-508`; GitHub reported "Bypassed rule violations" for
+   both refs. The commit author and the repository events actor are
+   `code-review-skills-publisher[bot]`.
+4. **Cleanup.** The App deleted the scratch tag and the scratch branch
+   with the same token; the rulesets stayed active throughout and were
+   never weakened. Final refs: `refs/heads/main` only.
+5. The dry-run workflow lived on a scratch branch of this repository and
+   was deleted with it; it is not part of this change.
+
+The `release-skills-distribution` Environment currently has no branch
+restriction or required reviewers. Restricting it to `main` before #509
+lands is recommended, so only the reviewed publication workflow can reach
+the key.
+
 ## Permissions model
 
 | Workflow | Trigger | Job | `permissions` | Runs contributor code | Mutates repo |
