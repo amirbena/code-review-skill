@@ -132,6 +132,8 @@ class World:
 
     def __init__(self, *, identity: str = IDENTITY, labels: Sequence[str] | None = None) -> None:
         self.manifest = load_manifest()
+        for lane in self.manifest["lanes"].values():
+            lane["expected_from"] = None  # pre-activation fixture; tests that need a floor set it themselves
         names = [entry["name"] for entry in self.manifest["labels"]] if labels is None else labels
         self.handoff = InMemoryHandoff()
         self.store = HookedHistory(REPOSITORY)
