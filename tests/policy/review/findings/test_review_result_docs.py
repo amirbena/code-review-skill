@@ -156,6 +156,28 @@ class OwnerTraceabilityTests(unittest.TestCase):
                 self.assertRegex(text, rf"issues/{issue[1:]}\)")
 
 
+class ContractTestRecordTests(unittest.TestCase):
+    def _boundaries(self) -> str:
+        return MODEL.read_text(encoding="utf-8").split("## 7. Boundaries", 1)[1].split("## 8.", 1)[0]
+
+    def test_consumers_are_not_attributed_to_the_contract_test_issue(self) -> None:
+        row = next(line for line in self._boundaries().splitlines() if line.startswith("| Consumers of the result"))
+        self.assertNotIn("issues/71", row)
+
+    def test_contract_tests_are_recorded_and_linked(self) -> None:
+        self.assertIn("| Cross-Skill contract tests (section 8) | [#71]", self._boundaries())
+        section = MODEL.read_text(encoding="utf-8").split("## 8. Cross-Skill contract tests", 1)[1]
+        for target in (
+            "../../tests/reference/review/structured_output_contract.py",
+            "../../tests/unit/review/findings/structured_output_samples/",
+        ):
+            with self.subTest(target=target):
+                self.assertIn(f"]({target})", section)
+
+    def test_contract_module_is_registered_as_test_only(self) -> None:
+        self.assertIn("structured_output_contract.py", _shared.REFERENCE_TEST_MODULES)
+
+
 class WiringAndPackagingTests(unittest.TestCase):
     def test_architecture_map_links_the_record(self) -> None:
         self.assertIn("review-result/README.md", ARCHITECTURE.read_text(encoding="utf-8"))
