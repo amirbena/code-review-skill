@@ -88,7 +88,12 @@ class _FakeGit:
         rev_parse: str | None = None,
         merge_base: str | None = None,
         log: str = "",
+        is_ancestor: bool = True,
+        ls_remote_dist: str = "",
     ) -> None:
+        self.is_ancestor = is_ancestor
+        # `git ls-remote --tags <url>` against any remote other than origin.
+        self.ls_remote_dist = ls_remote_dist
         self.describe = describe
         self.diff = diff
         self.merge_base = merge_base
@@ -121,10 +126,18 @@ class _FakeGit:
             if self.rev_parse is None:
                 raise subprocess.CalledProcessError(128, ["git", *a])
             return self.rev_parse
+        if a[:2] == ["merge-base", "--is-ancestor"]:
+            if not self.is_ancestor:
+                raise subprocess.CalledProcessError(1, ["git", *a])
+            return ""
+        if a[:2] == ["tag", "-a"] or a[:1] in (["push"], ["fetch"]):
+            return ""
         if a[:1] == ["merge-base"]:
             if self.merge_base is None:
                 raise subprocess.CalledProcessError(1, ["git", *a])
             return self.merge_base
         if a[:1] == ["ls-remote"]:
-            return self.ls_remote_tags if "--tags" in a else self.ls_remote_main
+            if "--tags" in a:
+                return self.ls_remote_tags if a[2] == "origin" else self.ls_remote_dist
+            return self.ls_remote_main
         raise AssertionError(f"unexpected git call: {a}")

@@ -18,9 +18,14 @@ name: Release publish
 # coverage), not merely a version calculator. Only when it reports
 # `should_release=true` does the `publish` job run: it generates and rolls
 # the changelog, builds and verifies both Skill archives, commits to main,
-# tags, and publishes the GitHub Release, all through the trusted release
-# GitHub App. A normal merge that ships nothing releasable never starts
-# `publish` at all — no write token, no release Environment gate.
+# and tags, all through the trusted release GitHub App. `distribute` then
+# publishes and verifies the distribution repository, and only after that
+# does `finalize` create the GitHub Release (#528): a version never becomes
+# an official source release before its distribution is verified. A normal
+# merge that ships nothing releasable never starts `publish` at all — no
+# write token, no release Environment gate. If the latest version stopped
+# before finalization, `plan` fails closed on push and hands the same
+# version to recovery on workflow_dispatch; it never plans past it.
 #
 # Classification, SemVer, and release checks: scripts/release/release_worthiness.py.
 # Repository configuration (branch ruleset + the trusted release GitHub
@@ -31,9 +36,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Read-only by default. Only the publish job below is granted write, and it
-# performs main/tag/release mutations with a short-lived GitHub App token,
-# never the Actions GITHUB_TOKEN.
+# Read-only by default. Only the release App's jobs (`publish`, `recover-tag`,
+# `finalize`) are granted write, and they perform main/tag/release mutations
+# with a short-lived GitHub App token, never the Actions GITHUB_TOKEN.
 permissions:
   contents: read
 
@@ -68,6 +73,9 @@ jobs:
       impact: ${{ steps.plan.outputs.impact }}
       baseline: ${{ steps.plan.outputs.baseline }}
       reason: ${{ steps.plan.outputs.reason }}
+      recover: ${{ steps.plan.outputs.recover }}
+      recover_version: ${{ steps.plan.outputs.recover_version }}
+      recover_sha: ${{ steps.plan.outputs.recover_sha }}
     steps:
       - name: Check out main
         uses: actions/checkout@v4
@@ -91,6 +99,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           python scripts/release/release_worthiness.py auto-release-plan \
+            --event-name "${{ github.event_name }}" \
+            --distribution-remote "https://github.com/amirbena/code-review-skills" \
             --github-output "$GITHUB_OUTPUT" \
             --step-summary "$GITHUB_STEP_SUMMARY"
 
@@ -114,16 +124,18 @@ jobs:
 
   publish:
     # Authoritative release flow. Runs only when `plan` reports a
-    # classified, release-worthy accumulated set. This is the single job
-    # granted contents: write and the only one behind the `release`
-    # Environment; it mints a short-lived token from the trusted release
-    # GitHub App (the sole bypass actor on the main branch ruleset) for the
-    # protected push/tag/release mutations — the Actions GITHUB_TOKEN
-    # cannot bypass the ruleset and is never used for them. The release
-    # commit is marked [skip ci] and no trigger here listens on tag pushes
-    # or releases, so the flow cannot recurse. A retry after a completed
-    # release is a clean no-op: `plan` reports nothing to release and this
-    # job does not run.
+    # classified, release-worthy accumulated set. This is
+    # one of the release App's jobs behind the `release` Environment; it
+    # mints a short-lived token from the trusted release GitHub App (the
+    # sole bypass actor on the main branch ruleset) for the protected
+    # push/tag mutations — the Actions GITHUB_TOKEN cannot bypass the
+    # ruleset and is never used for them. It creates no GitHub Release:
+    # the release commit and source tag are pre-finalization provenance
+    # anchors the distribution names, and `finalize` publishes the Release
+    # only after `distribute` verified. The release commit is marked
+    # [skip ci] and no trigger here listens on tag pushes or releases, so
+    # the flow cannot recurse. A retry after a completed release is a clean
+    # no-op: `plan` reports nothing to release and this job does not run.
     needs: plan
     if: needs.plan.outputs.should_release == 'true'
     runs-on: ubuntu-latest
@@ -237,30 +249,15 @@ jobs:
       - name: Push the tag
         run: git push origin "refs/tags/v${{ needs.plan.outputs.version }}"
 
-      - name: Publish the GitHub Release with the verified archives
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          python scripts/release/release_worthiness.py changelog-section --version "${{ needs.plan.outputs.version }}" > release-notes.md
-          gh release create "v${{ needs.plan.outputs.version }}" \
-            --target "${{ steps.commit.outputs.sha }}" \
-            --title "v${{ needs.plan.outputs.version }}" \
-            --notes-file release-notes.md \
-            dist/local-code-review-skill.zip \
-            dist/github-pr-review-skill.zip
-
-      - name: Verify the live tag, release target, and uploaded assets
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      # No GitHub Release yet: that is `finalize`'s, after distribution-verify.
+      - name: Verify the live tag and main advanced to the release commit
         run: |
           python scripts/release/release_worthiness.py release-verify \
             --version "${{ needs.plan.outputs.version }}" \
-            --expected-sha "${{ steps.commit.outputs.sha }}" \
-            --asset local-code-review-skill.zip \
-            --asset github-pr-review-skill.zip
+            --expected-sha "${{ steps.commit.outputs.sha }}"
 
       # The one build (skill trees, their manifest, and the zips built from
-      # them) is handed to the `distribute` job unchanged; nothing is rebuilt.
+      # them) is handed to `distribute` and `finalize` unchanged; nothing is rebuilt.
       - name: Hand the single build to the distribution job
         uses: actions/upload-artifact@v4
         with:
@@ -274,31 +271,107 @@ jobs:
       - name: Release summary
         run: |
           {
-            echo "## Released v${{ needs.plan.outputs.version }}"
+            echo "## Source tagged v${{ needs.plan.outputs.version }} (not yet released)"
             echo
             echo "- SemVer impact: ${{ needs.plan.outputs.impact }} (derived from merged PRs' release intent)"
             echo "- main commit: \`${{ steps.commit.outputs.sha }}\`"
-            echo "- annotated tag \`v${{ needs.plan.outputs.version }}\` points at that commit"
-            echo "- GitHub Release published with both Skill archives, verified"
+            echo "- annotated tag \`v${{ needs.plan.outputs.version }}\` points at that commit, verified"
+            echo "- the GitHub Release is created by \`finalize\` after the distribution is verified"
           } >> "$GITHUB_STEP_SUMMARY"
 
+  recover-tag:
+    # Recovery only (workflow_dispatch): the release commit reached main but
+    # its source tag push failed. The tags ruleset lets only the release App
+    # create tags, so a maintainer cannot finish this by hand; this job tags
+    # exactly the commit `plan` found (subject `chore(release): vX.Y.Z
+    # [skip ci]`, in main's history) with the release App, then
+    # `distribute` and `finalize` complete the same version. It never moves
+    # an existing tag.
+    needs: plan
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch'
+      && needs.plan.outputs.recover == 'tag' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    environment: release
+    concurrency:
+      group: release-publish
+      cancel-in-progress: false
+    steps:
+      - name: Require trusted release App credentials
+        env:
+          APP_ID: ${{ secrets.RELEASE_APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+        run: |
+          if [ -z "${APP_ID}" ] || [ -z "${APP_PRIVATE_KEY}" ]; then
+            echo "::error::RELEASE_APP_ID / RELEASE_APP_PRIVATE_KEY are not configured. See docs/RELEASE.md."
+            exit 1
+          fi
+
+      - name: Mint release App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dev dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Resolve the authenticated release App bot identity
+        id: bot-identity
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          python scripts/release/release_worthiness.py resolve-app-identity \
+            --app-slug "${{ steps.app-token.outputs.app-slug }}" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Tag the untagged release commit (never moves a tag)
+        env:
+          VERSION: ${{ needs.plan.outputs.recover_version }}
+          SHA: ${{ needs.plan.outputs.recover_sha }}
+        run: |
+          git config user.name "${{ steps.bot-identity.outputs.login }}"
+          git config user.email "${{ steps.bot-identity.outputs.email }}"
+          python scripts/release/release_worthiness.py recover-release-tag \
+            --version "${VERSION}" \
+            --expected-sha "${SHA}"
+
   distribute:
-    # Carries a verified source release to the generated distribution
-    # repository (#509). Runs after `publish` (source tag and GitHub Release
-    # already verified), or on workflow_dispatch when the source release is
-    # already complete but the distribution repository lags — recovery
-    # republishes the latest source tag without re-releasing the source. The
-    # version is never an input: it is the source tag (created only by
-    # `publish`, derived by `plan`). It never force-pushes, and it fails the
-    # run (never skips) when publication or verification fails. It has its
-    # own Environment because the publishing App is a different identity
-    # from the source release App (docs/RELEASE.md).
-    needs: [plan, publish]
+    # Carries a tagged source release to the generated distribution
+    # repository (#509). Runs after `publish` (source tag verified, no
+    # GitHub Release yet), or on workflow_dispatch recovery when nothing new
+    # is due — recovery republishes the latest source tag (after
+    # `recover-tag` when that tag had to be created), a no-op when the
+    # distribution already holds it. The version is never an input: it is
+    # the source tag (created only by the release App, derived by `plan`).
+    # It never force-pushes, and it fails the run (never skips) when
+    # publication or verification fails; `finalize` runs only on its
+    # success. It has its own Environment because the publishing App is a
+    # different identity from the source release App (docs/RELEASE.md).
+    # Tooling runs from this run's revision; the source commit is content.
+    needs: [plan, publish, recover-tag]
     if: >-
       ${{ always() && (needs.publish.result == 'success'
       || (github.event_name == 'workflow_dispatch'
           && needs.plan.result == 'success'
-          && needs.plan.outputs.should_release != 'true')) }}
+          && needs.plan.outputs.should_release != 'true'
+          && (needs.plan.outputs.recover != 'tag' || needs.recover-tag.result == 'success'))) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -306,6 +379,9 @@ jobs:
     concurrency:
       group: release-distribution
       cancel-in-progress: false
+    outputs:
+      version: ${{ steps.source.outputs.version }}
+      sha: ${{ steps.source.outputs.sha }}
     steps:
       - name: Require distribution publisher App credentials
         env:
@@ -326,18 +402,14 @@ jobs:
           owner: amirbena
           repositories: code-review-skills
 
-      - name: Check out the source release commit
-        if: needs.publish.result == 'success'
+      # The release tooling always comes from this run's own revision, so the
+      # workflow and the release_worthiness.py it calls never drift apart.
+      # The source release commit is only content: it is checked out beside
+      # it (release-source/) as the build and distribution input.
+      - name: Check out this run's release tooling (with every source tag)
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.publish.outputs.sha }}
-          persist-credentials: false
-
-      - name: Check out main to find the latest source release (recovery)
-        if: needs.publish.result != 'success'
-        uses: actions/checkout@v4
-        with:
-          ref: main
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -355,6 +427,7 @@ jobs:
           PUBLISH_RESULT: ${{ needs.publish.result }}
           PLAN_VERSION: ${{ needs.plan.outputs.version }}
           PUBLISH_SHA: ${{ needs.publish.outputs.sha }}
+          RECOVER_VERSION: ${{ needs.plan.outputs.recover_version }}
         run: |
           if [ "${PUBLISH_RESULT}" = "success" ]; then
             version="${PLAN_VERSION}"
@@ -364,7 +437,11 @@ jobs:
             [ -n "${tag}" ] || { echo "::error::no source release tag exists; nothing to distribute"; exit 1; }
             version="${tag#v}"
             sha="$(git rev-parse "${tag}^{commit}")"
-            git checkout --detach "${sha}"
+            # Recovery finishes exactly the version `plan` found unfinalized.
+            if [ -n "${RECOVER_VERSION}" ] && [ "${RECOVER_VERSION}" != "${version}" ]; then
+              echo "::error::latest source tag ${tag} is not the unfinalized v${RECOVER_VERSION} plan reported"
+              exit 1
+            fi
           fi
           # The tag glob allows arbitrary characters; only a strict X.Y.Z
           # ever reaches a later step.
@@ -375,18 +452,46 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "sha=${sha}" >> "$GITHUB_OUTPUT"
 
+      - name: Check out the source release commit as content (release-source/)
+        env:
+          SHA: ${{ steps.source.outputs.sha }}
+        run: git worktree add --detach release-source "${SHA}"
+
+      # Provenance: the tag the distribution will name must be this commit.
+      - name: Verify the source tag resolves to the release commit
+        env:
+          VERSION: ${{ steps.source.outputs.version }}
+          SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          python scripts/release/release_worthiness.py release-verify \
+            --version "${VERSION}" \
+            --expected-sha "${SHA}" \
+            --main-ancestor
+
       - name: Fetch the single build from the publish job
         if: needs.publish.result == 'success'
         uses: actions/download-artifact@v4
         with:
           name: distribution-build
-          path: dist
+          path: release-source/dist
 
+      # The tag's own packaging builds the tag's content, exactly as it was
+      # built when that version was published.
       - name: Rebuild the tree from the source tag (recovery only)
         if: needs.publish.result != 'success'
         env:
           VERSION: ${{ steps.source.outputs.version }}
-        run: ./scripts/release/verify-skill-archives.sh --build --expect-version "${VERSION}"
+        run: ./release-source/scripts/release/verify-skill-archives.sh --build --expect-version "${VERSION}"
+
+      # The one recovery rebuild is what `finalize` releases, once
+      # distribution-verify has proved it equals the distribution tag.
+      - name: Hand the recovery rebuild to the finalize job
+        if: needs.publish.result != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: distribution-rebuild
+          path: release-source/dist/*.zip
+          if-no-files-found: error
 
       - name: Resolve the publishing App bot identity
         id: bot-identity
@@ -406,8 +511,9 @@ jobs:
           GIT_NAME: ${{ steps.bot-identity.outputs.login }}
           GIT_EMAIL: ${{ steps.bot-identity.outputs.email }}
         run: |
-          python scripts/release/release_worthiness.py distribution-publish \
+          python scripts/release/release_worthiness.py --repo-root release-source distribution-publish \
             --version "${VERSION}" \
+            --dist release-source/dist \
             --source-commit "${SHA}" \
             --source-repository "${SOURCE_REPOSITORY}" \
             --remote "https://github.com/amirbena/code-review-skills" \
@@ -421,8 +527,9 @@ jobs:
           SHA: ${{ steps.source.outputs.sha }}
           SOURCE_REPOSITORY: ${{ github.repository }}
         run: |
-          python scripts/release/release_worthiness.py distribution-verify \
+          python scripts/release/release_worthiness.py --repo-root release-source distribution-verify \
             --version "${VERSION}" \
+            --dist release-source/dist \
             --source-commit "${SHA}" \
             --source-repository "${SOURCE_REPOSITORY}" \
             --remote "https://github.com/amirbena/code-review-skills"
@@ -434,4 +541,115 @@ jobs:
             echo
             echo "- source commit: \`${{ steps.source.outputs.sha }}\`"
             echo "- amirbena/code-review-skills tag \`v${{ steps.source.outputs.version }}\` verified against the build"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  finalize:
+    # Makes the version an official source release (#528): creates the
+    # GitHub Release from the same build's archives only after `distribute`
+    # published and verified the distribution tag. Release App identity
+    # (`release` Environment); it never touches the publisher App's
+    # credentials. `release-finalize` is idempotent: it creates the Release,
+    # completes a partial one (missing assets, a leftover draft), or no-ops
+    # on an existing matching one, and fails closed without mutation when an
+    # existing Release's tag, target, or asset digests differ from the
+    # build. Its main check is ancestry, because main may have advanced
+    # while distribution ran.
+    needs: [plan, publish, distribute]
+    if: ${{ always() && needs.distribute.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    environment: release
+    concurrency:
+      group: release-publish
+      cancel-in-progress: false
+    steps:
+      - name: Require trusted release App credentials
+        env:
+          APP_ID: ${{ secrets.RELEASE_APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+        run: |
+          if [ -z "${APP_ID}" ] || [ -z "${APP_PRIVATE_KEY}" ]; then
+            echo "::error::RELEASE_APP_ID / RELEASE_APP_PRIVATE_KEY are not configured. See docs/RELEASE.md."
+            exit 1
+          fi
+
+      - name: Mint release App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      # Tooling from this run's own revision (see `distribute`); the source
+      # release commit supplies only the release notes and the tag.
+      - name: Check out this run's release tooling (with every source tag)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dev dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Fetch the single build from the publish job
+        if: needs.publish.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: distribution-build
+          path: dist
+
+      - name: Fetch the verified recovery rebuild from the distribute job
+        if: needs.publish.result != 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: distribution-rebuild
+          path: dist
+
+      - name: Create or complete the GitHub Release (idempotent, fails closed on mismatch)
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ needs.distribute.outputs.version }}
+          SHA: ${{ needs.distribute.outputs.sha }}
+        run: |
+          git show "${SHA}:CHANGELOG.md" > "${RUNNER_TEMP}/source-CHANGELOG.md"
+          python scripts/release/release_worthiness.py --changelog "${RUNNER_TEMP}/source-CHANGELOG.md" \
+            changelog-section --version "${VERSION}" > release-notes.md
+          python scripts/release/release_worthiness.py release-finalize \
+            --version "${VERSION}" \
+            --expected-sha "${SHA}" \
+            --notes-file release-notes.md \
+            --asset dist/local-code-review-skill.zip \
+            --asset dist/github-pr-review-skill.zip
+
+      - name: Verify the GitHub Release, tag, and main ancestry
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ needs.distribute.outputs.version }}
+          SHA: ${{ needs.distribute.outputs.sha }}
+        run: |
+          python scripts/release/release_worthiness.py release-verify \
+            --version "${VERSION}" \
+            --expected-sha "${SHA}" \
+            --main-ancestor \
+            --asset dist/local-code-review-skill.zip \
+            --asset dist/github-pr-review-skill.zip
+
+      - name: Release summary
+        env:
+          VERSION: ${{ needs.distribute.outputs.version }}
+          SHA: ${{ needs.distribute.outputs.sha }}
+        run: |
+          {
+            echo "## Released v${VERSION}"
+            echo
+            echo "- order: publish (source tag) → distribute (verified) → finalize"
+            echo "- source commit: \`${SHA}\`"
+            echo "- GitHub Release published with both Skill archives, digests verified against the distributed build"
           } >> "$GITHUB_STEP_SUMMARY"

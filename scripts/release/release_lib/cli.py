@@ -13,6 +13,8 @@ from release_lib.commands import (
     cmd_distribution_verify,
     cmd_generate_changelog,
     cmd_prepare_changelog,
+    cmd_recover_release_tag,
+    cmd_release_finalize,
     cmd_release_preflight,
     cmd_release_verify,
     cmd_resolve_app_identity,
@@ -20,6 +22,7 @@ from release_lib.commands import (
     cmd_stamp_skill_version,
     cmd_verify_archive_versions,
 )
+from release_lib.finalization import DISTRIBUTION_REMOTE
 
 _DESCRIPTION = """Classify a change set as release-worthy, enforce PR release intent, and
 drive the deterministic parts of the direct-to-main release flow.
@@ -94,6 +97,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     plan.add_argument("--github-output", default=None, help="path for should_release/version/impact outputs")
     plan.add_argument("--step-summary", default=None, help="append the planned release notes here (e.g. $GITHUB_STEP_SUMMARY)")
+    plan.add_argument(
+        "--event-name", default="push",
+        help="the triggering GitHub event; on workflow_dispatch an unfinalized latest version is "
+        "reported for recovery instead of failing closed",
+    )
+    plan.add_argument(
+        "--distribution-remote", default=DISTRIBUTION_REMOTE,
+        help="distribution repository URL whose vX.Y.Z tag the latest source release must have",
+    )
     plan.set_defaults(func=cmd_auto_release_plan)
 
     preflight = sub.add_parser(
@@ -107,15 +119,40 @@ def build_parser() -> argparse.ArgumentParser:
 
     verify = sub.add_parser(
         "release-verify",
-        help="verify the live tag, origin/main, and the published GitHub Release all match the release commit",
+        help="verify the live source tag and origin/main match the release commit and, given --asset, "
+        "that the GitHub Release carries exactly the build's archives",
     )
     verify.add_argument("--version", required=True, help="released version X.Y.Z")
     verify.add_argument("--expected-sha", required=True, help="the pushed main commit the release must point at")
     verify.add_argument(
-        "--asset", action="append", default=[], metavar="NAME",
-        help="required release asset filename (repeatable)",
+        "--main-ancestor", action="store_true",
+        help="accept an origin/main that has advanced past the release commit (it must stay in main's history)",
+    )
+    verify.add_argument(
+        "--asset", action="append", default=[], metavar="PATH",
+        help="build archive the GitHub Release must carry with the same digest (repeatable); "
+        "omit to verify the source tag and main only",
     )
     verify.set_defaults(func=cmd_release_verify)
+
+    finalize = sub.add_parser(
+        "release-finalize",
+        help="create, complete, or no-op the GitHub Release from the build's archives; "
+        "fails closed without mutation when an existing Release differs",
+    )
+    finalize.add_argument("--version", required=True, help="released version X.Y.Z")
+    finalize.add_argument("--expected-sha", required=True, help="the source release commit the tag must resolve to")
+    finalize.add_argument("--notes-file", required=True, help="release notes (the version's CHANGELOG section)")
+    finalize.add_argument("--asset", action="append", default=[], metavar="PATH", help="build archive (repeatable)")
+    finalize.set_defaults(func=cmd_release_finalize)
+
+    recover_tag = sub.add_parser(
+        "recover-release-tag",
+        help="tag a release commit that reached main without its source tag (release App only); never moves a tag",
+    )
+    recover_tag.add_argument("--version", required=True, help="release version X.Y.Z")
+    recover_tag.add_argument("--expected-sha", required=True, help="the 'chore(release): vX.Y.Z [skip ci]' commit")
+    recover_tag.set_defaults(func=cmd_recover_release_tag)
 
     stamp = sub.add_parser(
         "stamp-skill-version",

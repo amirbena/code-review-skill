@@ -60,6 +60,9 @@ class ReleasePreflightTests(unittest.TestCase):
 
 
 class ReleaseVerifyTests(unittest.TestCase):
+    """Source stage (publish): tag and main only, no GitHub Release looked up.
+    The Release stage is covered in test_release_finalization.py."""
+
     SHA = "a" * 40
 
     def setUp(self) -> None:
@@ -76,42 +79,34 @@ class ReleaseVerifyTests(unittest.TestCase):
         base.update(overrides)
         return _FakeGit(**base)
 
-    def _gh_release(self, assets=("local-code-review-skill.zip", "github-pr-review-skill.zip")):
-        payload = {
-            "tagName": "v1.0.3",
-            "targetCommitish": "main",
-            "assets": [{"name": name} for name in assets],
-        }
-        return lambda args, repo_root: json.dumps(payload)
+    def _no_gh(self, args, repo_root):  # noqa: ANN001 - test shim
+        raise AssertionError(f"the source stage must not read a GitHub Release: {args}")
 
-    def _run(self, git: _FakeGit, gh, expected: str = SHA) -> int:
-        rw.gitgh._git, rw.gitgh._gh = git, gh
+    def _run(self, git: _FakeGit, expected: str = SHA, *extra: str) -> int:
+        rw.gitgh._git, rw.gitgh._gh = git, self._no_gh
         with contextlib.redirect_stdout(io.StringIO()):
-            return rw.main(
-                [
-                    "release-verify",
-                    "--version", "1.0.3",
-                    "--expected-sha", expected,
-                    "--asset", "local-code-review-skill.zip",
-                    "--asset", "github-pr-review-skill.zip",
-                ]
-            )
+            return rw.main(["release-verify", "--version", "1.0.3", "--expected-sha", expected, *extra])
 
-    def test_all_match_passes(self) -> None:
-        self.assertEqual(self._run(self._good_git(), self._gh_release()), 0)
+    def test_all_match_passes_without_a_release(self) -> None:
+        self.assertEqual(self._run(self._good_git()), 0)
 
     def test_tag_points_elsewhere_fails(self) -> None:
-        self.assertEqual(self._run(self._good_git(rev_parse="b" * 40 + "\n"), self._gh_release()), 1)
+        self.assertEqual(self._run(self._good_git(rev_parse="b" * 40 + "\n")), 1)
 
     def test_main_not_advanced_fails(self) -> None:
         git = self._good_git(ls_remote_main="c" * 40 + "\trefs/heads/main\n")
-        self.assertEqual(self._run(git, self._gh_release()), 1)
+        self.assertEqual(self._run(git), 1)
 
-    def test_missing_release_asset_fails(self) -> None:
-        self.assertEqual(self._run(self._good_git(), self._gh_release(assets=("local-code-review-skill.zip",))), 1)
+    def test_advanced_main_passes_the_ancestor_check(self) -> None:
+        git = self._good_git(ls_remote_main="c" * 40 + "\trefs/heads/main\n")
+        self.assertEqual(self._run(git, self.SHA, "--main-ancestor"), 0)
+
+    def test_main_that_dropped_the_release_commit_fails_the_ancestor_check(self) -> None:
+        git = self._good_git(ls_remote_main="c" * 40 + "\trefs/heads/main\n", is_ancestor=False)
+        self.assertEqual(self._run(git, self.SHA, "--main-ancestor"), 1)
 
     def test_non_sha_expected_fails(self) -> None:
-        self.assertEqual(self._run(self._good_git(), self._gh_release(), expected="main"), 1)
+        self.assertEqual(self._run(self._good_git(), "main"), 1)
 
 
 class AutoReleasePlanTests(unittest.TestCase):

@@ -364,12 +364,9 @@ class PlanFromReleaseIntentTests(_PatchedRepoCase):
         self.assertIn("::error::PR #11", text)
         self.assertNotIn("curl", outputs["reason"])
 
-    def test_partially_published_release_is_a_no_op(self) -> None:
+    def _untagged_release(self) -> str:
         # The release commit (rolled CHANGELOG) landed on main but its tag
-        # was never pushed: regenerating must not cut v1.1.1 a second time.
-        rolled = PLACEHOLDER.replace(
-            "## v1.1.0", "## v1.1.1 — 2026-09-11\n\n### Fixed\n\n- Tighten a rule (#11).\n\n## v1.1.0"
-        )
+        # was never pushed (#528).
         self.use(_FakeRepo(
             [
                 (_sha(2), "Tighten rule (#11)", [SKILL]),
@@ -377,11 +374,32 @@ class PlanFromReleaseIntentTests(_PatchedRepoCase):
             ],
             {11: _merged(11, _sha(2), _body("Fixed", "Tighten a rule"))},
         ))
-        rc, outputs, _, _ = self._plan(rolled)
+        return PLACEHOLDER.replace(
+            "## v1.1.0", "## v1.1.1 — 2026-09-11\n\n### Fixed\n\n- Tighten a rule (#11).\n\n## v1.1.0"
+        )
+
+    def test_push_after_an_untagged_release_commit_fails_closed(self) -> None:
+        # Never cut v1.1.1 again or plan past it: name the recovery instead.
+        rc, outputs, text, _ = self._plan(self._untagged_release())
+        self.assertEqual(rc, 1)
+        self.assertEqual(outputs["should_release"], "false")
+        self.assertNotIn("version", outputs)
+        self.assertIn("v1.1.1", outputs["reason"])
+        self.assertIn("workflow_dispatch", text)
+
+    def test_dispatch_recovers_the_untagged_release_commit(self) -> None:
+        rolled = self._untagged_release()
+        out = self.root / "gh-out.txt"
+        rc, _ = self.run_cli(
+            "--changelog", str(self.changelog(rolled)), "auto-release-plan",
+            "--event-name", "workflow_dispatch", "--github-output", str(out),
+        )
+        outputs = dict(line.split("=", 1) for line in out.read_text(encoding="utf-8").splitlines())
         self.assertEqual(rc, 0)
         self.assertEqual(outputs["should_release"], "false")
-        self.assertIn("v1.1.1", outputs["reason"])
-
+        self.assertEqual(outputs["recover"], "tag")
+        self.assertEqual(outputs["recover_version"], "1.1.1")
+        self.assertEqual(outputs["recover_sha"], _sha(3))
 
 if __name__ == "__main__":
     unittest.main()

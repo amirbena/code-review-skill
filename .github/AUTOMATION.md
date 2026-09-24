@@ -26,7 +26,7 @@ workflows change.
 | Sync Engineering Task labels | [`workflows/sync-issue-labels.yml`](workflows/sync-issue-labels.yml) | `issues` (opened, edited) | Compute managed-label changes from the issue body (`scripts/governance/sync_issue_labels.py`), then `gh issue edit` to apply the add/remove set; per-issue `concurrency` with cancel-in-progress | Mutates issue labels (`issues: write`) |
 | Claim contribution issue | [`workflows/claim-issue.yml`](workflows/claim-issue.yml) | `issue_comment` (created) | On `/claim` or `/unclaim` on a non-PR issue: check out trusted default-branch automation, read the issue and comment history, plan via `scripts/governance/claim_issue.py` with churn/cooldown thresholds, persist a trusted receipt and a reconciled-state checkpoint comment, then project state onto the `claimed` label; repo-wide serialized `concurrency` queue | Mutates issue comments + the `claimed` label (`issues: write`) |
 | Release worthiness | [`workflows/release-worthiness.yml`](workflows/release-worthiness.yml) | `pull_request` | PR lifecycle, read-only preview. `release-gate` (required check): classify the change set the PR itself contributes, and — only when release-worthy — enforce release intent (CHANGELOG category + entry in the PR description, passed via env); always resolves, with an explicit not-applicable result when the change isn't release-worthy. `package` (not required, `needs: release-gate` when release-worthy): build/verify the Skill archives as a dry run. Never builds a release; never touches `main`. | `release-gate` / `package` read-only |
-| Release publish | [`workflows/release-publish.yml`](workflows/release-publish.yml) | `push` to `main`, `workflow_dispatch` | Main/release lifecycle, authoritative. Never triggered by `pull_request`, so `plan`/`publish` never exist as PR check runs; recomputes the release assessment itself rather than trusting `release-gate`'s preview. `plan` (read-only, trusted `main` only): the authoritative release-worthiness assessment — classify everything since the latest `v*` tag, generate `## Unreleased` from merged PRs' release intent, and derive the next version. `publish` (only when `plan` reports release-worthy): mint a trusted release GitHub App token, generate and roll the CHANGELOG, build + verify both archives, commit to `main` `[skip ci]`, create an annotated tag, publish the GitHub Release with archives, verify | `plan` read-only; `publish` mutates (`contents: write` via the release GitHub App: commit to `main`, tag, GitHub Release) behind the `release` Environment |
+| Release publish | [`workflows/release-publish.yml`](workflows/release-publish.yml) | `push` to `main`, `workflow_dispatch` | Main/release lifecycle, authoritative. Never triggered by `pull_request`, so `plan`/`publish` never exist as PR check runs; recomputes the release assessment itself rather than trusting `release-gate`'s preview. `plan` (read-only, trusted `main` only): the authoritative release-worthiness assessment — classify everything since the latest `v*` tag, generate `## Unreleased` from merged PRs' release intent, and derive the next version. `publish` (only when `plan` reports release-worthy): mint a trusted release GitHub App token, generate and roll the CHANGELOG, build + verify both archives, commit to `main` `[skip ci]`, create an annotated tag, verify. `distribute` (publisher App): publish and verify the distribution repository. `finalize` (only after `distribute` succeeds): create, complete, or no-op the GitHub Release with the same build's archives and verify their digests. `recover-tag` (dispatch recovery only): tag a release commit whose tag push failed | `plan` read-only; `publish`, `recover-tag`, `finalize` mutate (`contents: write` via the release GitHub App: commit to `main`, tag, GitHub Release) behind the `release` Environment; `distribute` writes only the distribution repository |
 
 ## Automation areas
 
@@ -92,7 +92,15 @@ the release assessment itself; it never trusts or consumes
   the sole job granted `contents: write` and the only one behind the
   `release` Environment; it mints a short-lived token from the trusted
   release GitHub App (the sole `main`-ruleset bypass actor) for the
-  protected push/tag/release mutations.
+  protected push/tag mutations. It creates no GitHub Release.
+- **`distribute`** publishes and verifies the generated distribution
+  repository with the separate publisher App.
+- **`finalize`** runs only after `distribute` succeeded and is the only
+  job that creates the GitHub Release: a version never becomes an official
+  source release before its distribution is verified (#528). If a version
+  stops before that, `plan` fails closed on the next push and
+  `workflow_dispatch` finishes the same version (`recover-tag` covers a
+  missing source tag).
 
 Canonical reference — release-worthiness rules, SemVer classification,
 the permissions model, and the required repository configuration
@@ -136,7 +144,15 @@ Conceptual stages from a pull request to a published release:
         ├─ build + verify both Skill archives
         ├─ commit to main  "chore(release): vX.Y.Z [skip ci]"
         ├─ create annotated tag vX.Y.Z at that commit
-        └─ publish GitHub Release with both Skill archives, then verify
+        └─ verify tag + main (no GitHub Release yet)
+        │
+        ▼
+  release-publish: distribute  (publisher App, release-skills-distribution)
+        └─ distribution commit + tag, distribution-verify
+        │
+        ▼  only on distribute success
+  release-publish: finalize  (release App, release Environment)
+        └─ create/complete GitHub Release with the same archives, verify digests
 ```
 
 ## Issue-operations flow
