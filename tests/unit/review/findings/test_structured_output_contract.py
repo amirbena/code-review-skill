@@ -163,8 +163,22 @@ class FailClosedTests(unittest.TestCase):
         block = re.search(r"```json\n.*?\n```\n", text, re.S).group(0)
         self.assertIn("exactly one json block", _errors(self.NAME, text + "\n" + block)[0])
 
-    def test_content_after_the_block(self) -> None:
-        self.assertIn("must be the last part", _errors(self.NAME, _text(self.NAME) + "\nTrailing prose.\n")[0])
+    def test_local_content_after_the_block(self) -> None:
+        name = "local-code-review/blocking-committed.md"
+        self.assertIn("must be the last part", _errors(name, _text(name) + "\nTrailing prose.\n")[0])
+
+    def test_github_brief_may_follow_the_block(self) -> None:
+        text = _text(self.NAME)
+        brief_start = text.index("## Reviewer Brief")
+        block_start = text.index("```json")
+        reordered = text[:brief_start] + text[block_start:] + "\n" + text[brief_start:block_start]
+        self.assertEqual(_errors(self.NAME, reordered), ())
+
+    def test_github_block_before_the_decision(self) -> None:
+        text = _text(self.NAME)
+        block = re.search(r"```json\n.*?\n```\n", text, re.S).group(0)
+        moved = text.replace(block, "").replace("### Decision", block + "\n### Decision", 1)
+        self.assertIn("must follow the report's Decision", _errors(self.NAME, moved)[0])
 
     def test_local_result_needs_its_heading(self) -> None:
         name = "local-code-review/blocking-committed.md"

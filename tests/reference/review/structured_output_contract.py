@@ -108,6 +108,11 @@ def split_output(text: str, skill: str) -> SplitOutput:
     if len(fences) > 1:
         raise ContractError(f"expected exactly one json block, found {len(fences)}")
     fence = fences[0]
+    if skill == GITHUB:
+        # Only "after the caller-facing report": the Reviewer Brief may precede or follow it.
+        if not _DECISION.search(text, 0, fence.start()):
+            raise ContractError("the structured result must follow the report's Decision")
+        return SplitOutput(text[: fence.start()] + text[fence.end():], _load(fence.group(1)))
     if text[fence.end():].strip():
         raise ContractError("the structured result must be the last part of the output")
     human = text[: fence.start()]
@@ -116,15 +121,19 @@ def split_output(text: str, skill: str) -> SplitOutput:
         if not stripped.endswith(STRUCTURED_HEADING) or human.count(STRUCTURED_HEADING) != 1:
             raise ContractError(f"local result must directly follow one {STRUCTURED_HEADING!r} heading")
         human = stripped[: -len(STRUCTURED_HEADING)]
+    return SplitOutput(human, _load(fence.group(1)))
+
+
+def _load(block: str) -> Any:
     try:
-        result = json.loads(fence.group(1))
+        return json.loads(block)
     except json.JSONDecodeError as exc:
         raise ContractError(f"structured result is not valid JSON: {exc}") from exc
-    return SplitOutput(human, result)
 
 
 def producer_errors(result: Any) -> tuple[str, ...]:
-    """Fail closed per schema-versioning.md section 3, then schema + owner consistency."""
+    """Fail closed on a missing/malformed or other-MAJOR version (schema-versioning.md §3) and on
+    a version newer than the published schema (§4: producers emit the version they target)."""
     if not isinstance(result, dict):
         return ("$: structured result is not a JSON object",)
     major, minor, _patch = rv.parse_version(rr.SCHEMA_VERSION)

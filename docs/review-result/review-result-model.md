@@ -147,7 +147,7 @@ the checks are
 
 | Check | Rule |
 | --- | --- |
-| Schema and version | Each result passes the section 5 validator. A missing or malformed `schema_version`, a different `MAJOR`, or a version newer than the published schema fails closed ([`schema-versioning.md`](schema-versioning.md) section 3). |
+| Schema and version | Each result passes the section 5 validator. A missing or malformed `schema_version`, or a different `MAJOR`, fails closed ([`schema-versioning.md`](schema-versioning.md) section 3). A version newer than the published schema is also rejected. This is a producer rule: producers emit the version they were written for (section 4). A consumer would accept a newer `MINOR`. |
 | Surface population | `skill` names the producer. `reviewed_state.reviewed_head_sha` equals the known workspace head, or the PR head. It is `null` only for an uncommitted local target or an incomplete PR review. |
 | Shared-field parity | `skill` and `reviewed_state` are the only surface-specific fields. For the same review, every other field is identical across the two Skills. |
 | Report ↔ result agreement | The rendered decision label maps to `decision.outcome` through the section 4 table. The rendered counts, coverage, reviewed head, finding set (severity and title), finding ids, and affected locations equal the result's. The comparator reads both surfaces and never re-derives the decision. |
