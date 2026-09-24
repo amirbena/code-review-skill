@@ -455,7 +455,13 @@ release is in flight plans only after that run's `finalize` finished.
 | `finalize` fails (create or verify) | distribution verified, no or partial Release | Dispatch re-verifies the distribution (no-op publish), then `release-finalize` creates or completes the Release; a matching one is a no-op, a mismatching one fails closed. |
 | New push while a version is unfinalized | — | `plan` fails closed and names the dispatch recovery; it never plans `vX.Y.Z+1`. |
 
-Recovery rebuilds once from the source tag in `distribute`;
+`distribute` and `finalize` always run `release_worthiness.py` from the
+workflow run's own revision, never from the tag: an older tag's CLI lacks
+flags and subcommands the current workflow calls. The source release commit
+is only content — checked out beside the tooling as `release-source/` for
+the build and the distribution tree, and read for its `CHANGELOG.md` release
+notes. Recovery rebuilds once from the source tag in `distribute` (with the
+tag's own packaging, so the rebuild is the tag's build);
 `distribution-verify` must prove that rebuild equals the published
 distribution tag, and `finalize` then attaches exactly those zips.
 

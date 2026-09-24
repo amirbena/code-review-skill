@@ -364,6 +364,7 @@ jobs:
     # publication or verification fails; `finalize` runs only on its
     # success. It has its own Environment because the publishing App is a
     # different identity from the source release App (docs/RELEASE.md).
+    # Tooling runs from this run's revision; the source commit is content.
     needs: [plan, publish, recover-tag]
     if: >-
       ${{ always() && (needs.publish.result == 'success'
@@ -401,19 +402,14 @@ jobs:
           owner: amirbena
           repositories: code-review-skills
 
-      - name: Check out the source release commit
-        if: needs.publish.result == 'success'
+      # The release tooling always comes from this run's own revision, so the
+      # workflow and the release_worthiness.py it calls never drift apart.
+      # The source release commit is only content: it is checked out beside
+      # it (release-source/) as the build and distribution input.
+      - name: Check out this run's release tooling (with every source tag)
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.publish.outputs.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Check out main to find the latest source release (recovery)
-        if: needs.publish.result != 'success'
-        uses: actions/checkout@v4
-        with:
-          ref: main
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -441,7 +437,6 @@ jobs:
             [ -n "${tag}" ] || { echo "::error::no source release tag exists; nothing to distribute"; exit 1; }
             version="${tag#v}"
             sha="$(git rev-parse "${tag}^{commit}")"
-            git checkout --detach "${sha}"
             # Recovery finishes exactly the version `plan` found unfinalized.
             if [ -n "${RECOVER_VERSION}" ] && [ "${RECOVER_VERSION}" != "${version}" ]; then
               echo "::error::latest source tag ${tag} is not the unfinalized v${RECOVER_VERSION} plan reported"
@@ -456,6 +451,11 @@ jobs:
             || { echo "::error::refusing malformed source commit '${sha}'"; exit 1; }
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the source release commit as content (release-source/)
+        env:
+          SHA: ${{ steps.source.outputs.sha }}
+        run: git worktree add --detach release-source "${SHA}"
 
       # Provenance: the tag the distribution will name must be this commit.
       - name: Verify the source tag resolves to the release commit
@@ -473,13 +473,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: distribution-build
-          path: dist
+          path: release-source/dist
 
+      # The tag's own packaging builds the tag's content, exactly as it was
+      # built when that version was published.
       - name: Rebuild the tree from the source tag (recovery only)
         if: needs.publish.result != 'success'
         env:
           VERSION: ${{ steps.source.outputs.version }}
-        run: ./scripts/release/verify-skill-archives.sh --build --expect-version "${VERSION}"
+        run: ./release-source/scripts/release/verify-skill-archives.sh --build --expect-version "${VERSION}"
 
       # The one recovery rebuild is what `finalize` releases, once
       # distribution-verify has proved it equals the distribution tag.
@@ -488,7 +490,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: distribution-rebuild
-          path: dist/*.zip
+          path: release-source/dist/*.zip
           if-no-files-found: error
 
       - name: Resolve the publishing App bot identity
@@ -509,8 +511,9 @@ jobs:
           GIT_NAME: ${{ steps.bot-identity.outputs.login }}
           GIT_EMAIL: ${{ steps.bot-identity.outputs.email }}
         run: |
-          python scripts/release/release_worthiness.py distribution-publish \
+          python scripts/release/release_worthiness.py --repo-root release-source distribution-publish \
             --version "${VERSION}" \
+            --dist release-source/dist \
             --source-commit "${SHA}" \
             --source-repository "${SOURCE_REPOSITORY}" \
             --remote "https://github.com/amirbena/code-review-skills" \
@@ -524,8 +527,9 @@ jobs:
           SHA: ${{ steps.source.outputs.sha }}
           SOURCE_REPOSITORY: ${{ github.repository }}
         run: |
-          python scripts/release/release_worthiness.py distribution-verify \
+          python scripts/release/release_worthiness.py --repo-root release-source distribution-verify \
             --version "${VERSION}" \
+            --dist release-source/dist \
             --source-commit "${SHA}" \
             --source-repository "${SOURCE_REPOSITORY}" \
             --remote "https://github.com/amirbena/code-review-skills"
@@ -577,10 +581,12 @@ jobs:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
-      - name: Check out the source release commit
+      # Tooling from this run's own revision (see `distribute`); the source
+      # release commit supplies only the release notes and the tag.
+      - name: Check out this run's release tooling (with every source tag)
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.distribute.outputs.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -612,7 +618,9 @@ jobs:
           VERSION: ${{ needs.distribute.outputs.version }}
           SHA: ${{ needs.distribute.outputs.sha }}
         run: |
-          python scripts/release/release_worthiness.py changelog-section --version "${VERSION}" > release-notes.md
+          git show "${SHA}:CHANGELOG.md" > "${RUNNER_TEMP}/source-CHANGELOG.md"
+          python scripts/release/release_worthiness.py --changelog "${RUNNER_TEMP}/source-CHANGELOG.md" \
+            changelog-section --version "${VERSION}" > release-notes.md
           python scripts/release/release_worthiness.py release-finalize \
             --version "${VERSION}" \
             --expected-sha "${SHA}" \

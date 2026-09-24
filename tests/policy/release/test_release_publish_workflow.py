@@ -415,6 +415,25 @@ class FinalizationGateTests(unittest.TestCase):
         download = _step(self.steps, "Fetch the verified recovery rebuild")
         self.assertEqual(download["with"]["name"], upload["with"]["name"])
 
+    def test_tooling_comes_from_the_workflow_revision_not_the_tag(self) -> None:
+        # The release_worthiness.py a job calls must match the workflow that
+        # calls it; an older tag's CLI lacks newer flags and subcommands.
+        for name in ("distribute", "finalize"):
+            steps = self.jobs[name]["steps"]
+            checkouts = [s for s in steps if str(s.get("uses", "")).startswith("actions/checkout")]
+            self.assertEqual([c["with"]["ref"] for c in checkouts], ["${{ github.sha }}"], name)
+            self.assertNotIn("git checkout", yaml.safe_dump(steps), name)
+        dist = self.jobs["distribute"]["steps"]
+        self.assertIn("git worktree add --detach release-source", _step(dist, "as content")["run"])
+        for needle in ("Publish the distribution tree", "Verify the distribution tag equals the build"):
+            run = _step(dist, needle)["run"]
+            self.assertIn("--repo-root release-source", run)
+            self.assertIn("--dist release-source/dist", run)
+        rebuild = _step(dist, "Rebuild the tree from the source tag")["run"]
+        self.assertTrue(rebuild.startswith("./release-source/scripts/release/verify-skill-archives.sh"))
+        notes = _step(self.steps, "Create or complete the GitHub Release")["run"]
+        self.assertIn('git show "${SHA}:CHANGELOG.md"', notes)
+
     def test_recover_tag_runs_only_on_dispatch_for_a_missing_tag(self) -> None:
         job = self.jobs["recover-tag"]
         self.assertEqual(job["needs"], "plan")
