@@ -6,6 +6,7 @@ from release_lib.commands.changelog import (
     cmd_generate_changelog,
     cmd_prepare_changelog,
 )
+from release_lib.commands.distribution import cmd_distribution_publish, cmd_distribution_verify
 from release_lib.commands.planning import cmd_auto_release_plan, cmd_classify_semver
 from release_lib.commands.release import cmd_release_preflight, cmd_release_verify
 from release_lib.commands.skill_version import cmd_stamp_skill_version, cmd_verify_archive_versions
@@ -16,6 +17,8 @@ __all__ = [
     "cmd_auto_release_plan",
     "cmd_changelog_section",
     "cmd_classify_semver",
+    "cmd_distribution_publish",
+    "cmd_distribution_verify",
     "cmd_generate_changelog",
     "cmd_prepare_changelog",
     "cmd_release_preflight",
