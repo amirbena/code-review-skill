@@ -14,6 +14,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
+from tests.integration.packaging._shared import TEMP_ROOT_INPUTS
 from tests.support.paths import REPO_ROOT
 
 SCRIPT = "scripts/release/verify-skill-archives.sh"
@@ -96,8 +97,9 @@ class StampPackageVerifyTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.root = Path(tmp.name)
-        for rel in ("skills", "shared", "scripts", "capabilities", "docs", "LICENSE"):
-            _copy(rel, self.root)
+        for rel in TEMP_ROOT_INPUTS:
+            if rel != "CHANGELOG.md":  # each test writes its own rolled changelog
+                _copy(rel, self.root)
 
     def _roll_changelog(self, version: str) -> None:
         (self.root / "CHANGELOG.md").write_text(

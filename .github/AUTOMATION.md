@@ -21,7 +21,7 @@ workflows change.
 
 | Workflow | File | Trigger | Responsibility | GitHub state |
 | --- | --- | --- | --- | --- |
-| Validate repository | [`workflows/validate.yml`](workflows/validate.yml) | `pull_request` | Set up Python 3.13, validate both Skills' metadata (`scripts/validation/validate-skill-metadata.py`), run `python -m unittest discover -s tests` | Read-only (`contents: read`) |
+| Validate repository | [`workflows/validate.yml`](workflows/validate.yml) | `pull_request`, `push` to `main` | `test` (required): set up Python 3.13, extract the trusted router (`scripts/validation/ci_test_route.py`) from the PR base SHA through a separate blobless clone and pick the FAST or FULL tier (FULL by default, on any error, and on every push to `main`), validate both Skills' metadata (`scripts/validation/validate-skill-metadata.py`), build and spec-validate the Skill trees, then run `python -m unittest discover -s tests -t .` (FULL) or the same discovery minus `tests.integration.*` (FAST). Skill-tree shell/PowerShell parity on both tiers | Read-only (`contents: read`) |
 | Validate PR description length | [`workflows/pr-description-length.yml`](workflows/pr-description-length.yml) | `pull_request` (opened, edited, synchronize) | Check out the trusted validator from the PR base SHA (bootstrapping from head only for the PR that introduces the script), enforce the useful-content limit and the canonical PR-template structure via `scripts/validation/pr_description_length.py` | Read-only (`contents: read`) |
 | Sync Engineering Task labels | [`workflows/sync-issue-labels.yml`](workflows/sync-issue-labels.yml) | `issues` (opened, edited) | Compute managed-label changes from the issue body (`scripts/governance/sync_issue_labels.py`), then `gh issue edit` to apply the add/remove set; per-issue `concurrency` with cancel-in-progress | Mutates issue labels (`issues: write`) |
 | Claim contribution issue | [`workflows/claim-issue.yml`](workflows/claim-issue.yml) | `issue_comment` (created) | On `/claim` or `/unclaim` on a non-PR issue: check out trusted default-branch automation, read the issue and comment history, plan via `scripts/governance/claim_issue.py` with churn/cooldown thresholds, persist a trusted receipt and a reconciled-state checkpoint comment, then project state onto the `claimed` label; repo-wide serialized `concurrency` queue | Mutates issue comments + the `claimed` label (`issues: write`) |
@@ -36,8 +36,11 @@ Runs on the pull request, read-only. `validate.yml` and the `Release
 worthiness` `release-gate` job are the required status checks on the
 `main` ruleset ([`../docs/RELEASE.md`](../docs/RELEASE.md)):
 
-- **`validate.yml`** — Skill metadata validation plus the full
-  `tests/` suite.
+- **`validate.yml`** — Skill metadata validation plus the `tests/`
+  suite, routed per PR: FULL by default, or FAST (omitting only
+  `tests/integration/`) when every changed path is on the router's
+  allowlist; every push to `main` runs FULL. Contract:
+  [`../policies/validation-and-clean-exit.md`](../policies/validation-and-clean-exit.md#routed-ci-tests).
 - **`pr-description-length.yml`** — enforces the PR-description
   useful-content limit and the canonical PR-template structure (required
   headings/fields, unresolved placeholders), checking out the validator

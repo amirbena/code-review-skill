@@ -20,6 +20,7 @@ from pathlib import Path
 import tests.unit.package_domain._shared  # noqa: F401 - sys.path wiring
 
 from package_domain.version import frontmatter_version, newest_release_version
+from tests.integration.packaging._shared import TEMP_ROOT_INPUTS
 from tests.support.paths import REPO_ROOT
 
 PACKAGE = "scripts/packaging/package-skills.sh"
@@ -45,7 +46,7 @@ class OrdinaryPackagingVersionTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.root = Path(tmp.name)
-        for rel in ("skills", "shared", "scripts", "capabilities", "docs", "LICENSE", "CHANGELOG.md"):
+        for rel in TEMP_ROOT_INPUTS:
             _copy(rel, self.root)
 
     def _set_committed_version(self, version: str) -> None:
