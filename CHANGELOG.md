@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.59.0 — 2026-09-24
+
+### Changed
+
+- Repository test commands admitted for runtime validation now run on the reviewer's host by default; an explicit sandbox request makes them sandbox-only with no host fallback, and a sandbox that cannot launch the test toolchain is reported `unavailable` instead of `failed` (#540).
+
 ## v1.58.0 — 2026-09-24
 
 ### Added
