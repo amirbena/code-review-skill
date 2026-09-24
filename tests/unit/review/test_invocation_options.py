@@ -17,6 +17,7 @@ LOCAL_DEFAULTS = {
     "human_inline_findings": False,
     # local-code-review has no severity legend; normalized for parity only
     "include_severity_description": False,
+    "structured_review_result": False,
 }
 GITHUB_DEFAULTS = {
     "include_fix_prompt": False,
@@ -25,6 +26,7 @@ GITHUB_DEFAULTS = {
     "human_review_output": False,
     "human_inline_findings": False,
     "include_severity_description": False,
+    "structured_review_result": False,
 }
 
 
@@ -436,6 +438,66 @@ class SeverityDescriptionOptionTests(unittest.TestCase):
                 "include_severity_description"
             ]
         )
+
+
+class StructuredReviewResultOptionTests(unittest.TestCase):
+    def test_defaults_false(self) -> None:
+        self.assertFalse(
+            normalize("review this", defaults=LOCAL_DEFAULTS)["structured_review_result"]
+        )
+
+    def test_canonical_and_natural_forms_enable_it(self) -> None:
+        for text in (
+            "structured_review_result=true",
+            "structured review result",
+            "include a structured review result",
+            "give me a machine-readable review result",
+            "emit the review result as JSON",
+        ):
+            with self.subTest(text=text):
+                self.assertTrue(
+                    normalize(text, defaults=LOCAL_DEFAULTS)["structured_review_result"]
+                )
+
+    def test_negative_and_ambiguous_forms_stay_off(self) -> None:
+        for text in (
+            "structured_review_result=false",
+            "no machine-readable review result",
+            "human report only",
+            "give me json",
+            "make it parseable",
+            "What does structured_review_result do?",
+        ):
+            with self.subTest(text=text):
+                self.assertFalse(
+                    normalize(text, defaults=LOCAL_DEFAULTS)["structured_review_result"]
+                )
+
+    def test_conflict_falls_through_to_default(self) -> None:
+        text = "machine-readable review result but human report only"
+        self.assertFalse(
+            normalize(text, defaults=LOCAL_DEFAULTS)["structured_review_result"]
+        )
+
+    def test_name_is_not_read_as_human_output_negative_phrase(self) -> None:
+        result = normalize(
+            "review like a senior engineer and include a structured review result",
+            defaults=LOCAL_DEFAULTS,
+        )
+        self.assertTrue(result["human_review_output"])
+        self.assertTrue(result["structured_review_result"])
+        self.assertFalse(
+            normalize("structured review", defaults={**LOCAL_DEFAULTS, "human_review_output": True})[
+                "human_review_output"
+            ]
+        )
+
+    def test_it_does_not_change_any_other_option(self) -> None:
+        off = normalize("review this", defaults=LOCAL_DEFAULTS)
+        on = normalize("review this, structured_review_result=true", defaults=LOCAL_DEFAULTS)
+        self.assertTrue(on.pop("structured_review_result"))
+        off.pop("structured_review_result")
+        self.assertEqual(on, off)
 
 
 if __name__ == "__main__":

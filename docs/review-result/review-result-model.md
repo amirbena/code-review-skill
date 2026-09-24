@@ -15,7 +15,7 @@ this record is the bug.
 Not packaged: no packaged Skill resource depends on this record, the
 schema, or the example (see [`../../AGENTS.md`](../../AGENTS.md), "Packaged
 Skills are independent of repository-level instructions").
-`github-pr-review` emits one on explicit request; local emission is pending — see section 7.
+`github-pr-review` and `local-code-review` each emit one on explicit request — see section 7.
 
 ## 1. Files
 
@@ -119,16 +119,19 @@ schema failing.
 | Concern | Owner |
 | --- | --- |
 | Versioning policy and compatibility rules for `schema_version` | [`schema-versioning.md`](schema-versioning.md) ([#68](https://github.com/amirbena/code-review-skill/issues/68)) |
-| Skill wiring and runtime emission of a result | [#69](https://github.com/amirbena/code-review-skill/issues/69), [#70](https://github.com/amirbena/code-review-skill/issues/70) |
+| Local Skill emission (opt-in `structured_review_result`; packaged restatement in [`structured-output.md`](../../shared/policies/structured-output.md), pinned to this schema by a drift test) | [#69](https://github.com/amirbena/code-review-skill/issues/69) |
+| GitHub Skill emission | [#70](https://github.com/amirbena/code-review-skill/issues/70) |
 | Consumers of the result | [#71](https://github.com/amirbena/code-review-skill/issues/71) |
 | Parent capability | [#44](https://github.com/amirbena/code-review-skill/issues/44) |
 
 `github-pr-review` emits the result on explicit request, returned to the
 caller only, with PR-specific field population owned by its
 [`structured-output.md`](../../skills/github-pr-review/policies/structured-output.md)
-([#70](https://github.com/amirbena/code-review-skill/issues/70)). Until
-[#69](https://github.com/amirbena/code-review-skill/issues/69) lands,
-`local-code-review` still produces only its existing Markdown output, and
+([#70](https://github.com/amirbena/code-review-skill/issues/70)).
+`local-code-review` emits it on explicit request, with its field population
+and identity minting owned by the shared
+[`structured-output.md`](../../shared/policies/structured-output.md)
+([#69](https://github.com/amirbena/code-review-skill/issues/69)); its
 [`finding.md`](../../shared/templates/finding.md)'s note that a
 machine-readable renderer would be "another projection of the same fields"
 is what this schema is the first instance of.

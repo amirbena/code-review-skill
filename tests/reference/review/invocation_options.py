@@ -17,6 +17,7 @@ OPTION_CONCEPTS = {
     "human_review_output": "human review output",
     "human_inline_findings": "human inline findings",
     "include_severity_description": "severity description",
+    "structured_review_result": "structured review result",
 }
 
 # Options with no fixed Skill default: after every other option is resolved,
@@ -53,6 +54,10 @@ OPTION_EXTRA_AFFIRMATIVE: dict[str, tuple[str, ...]] = {
         "show severity descriptions",
         "show blocking/non-blocking labels",
     ),
+    "structured_review_result": (
+        "machine-readable review result",
+        "review result as json",
+    ),
 }
 OPTION_EXTRA_NEGATIVE: dict[str, tuple[str, ...]] = {
     "human_review_output": (
@@ -74,7 +79,17 @@ OPTION_EXTRA_NEGATIVE: dict[str, tuple[str, ...]] = {
         "don't include severity descriptions",
         "show only p0/p1/p2",
     ),
+    "structured_review_result": (
+        "no machine-readable review result",
+        "human report only",
+    ),
 }
+
+
+# The `structured review result` name is consumed by its own option so its
+# `structured review` prefix is never read as human_review_output's negative
+# phrase (invocation-options.md, "`structured_review_result` phrasings").
+_STRUCTURED_NAME = re.compile(r"(?<![\w])structured[\s_-]+review[\s_-]+result(?![\w])", re.I)
 
 
 def _phrase_regex(phrase: str) -> str:
@@ -132,7 +147,8 @@ def normalize(text: str, *, defaults: Mapping[str, bool]) -> dict[str, bool]:
     result = dict(defaults)
     explicit: set[str] = set()
     for option in OPTION_CONCEPTS:
-        canonical = _canonical_values(text, option)
+        option_text = text if option == "structured_review_result" else _STRUCTURED_NAME.sub(" ", text)
+        canonical = _canonical_values(option_text, option)
         if False in canonical:
             result[option] = False
             explicit.add(option)
@@ -140,7 +156,7 @@ def normalize(text: str, *, defaults: Mapping[str, bool]) -> dict[str, bool]:
             result[option] = True
             explicit.add(option)
         else:
-            natural = _natural_values(text, option)
+            natural = _natural_values(option_text, option)
             if len(natural) == 1:
                 result[option] = natural.pop()
                 explicit.add(option)

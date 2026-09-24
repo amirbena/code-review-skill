@@ -10,7 +10,8 @@ are repository-development docs: **not** packaged into either Skill
 archive, and no packaged Skill resource depends on them.
 `github-pr-review` can emit a review result on explicit request ([#70](https://github.com/amirbena/code-review-skill/issues/70),
 [`structured-output.md`](../../skills/github-pr-review/policies/structured-output.md));
-`local-code-review` emission is [#69](https://github.com/amirbena/code-review-skill/issues/69).
+`local-code-review` emits one on request ([#69](https://github.com/amirbena/code-review-skill/issues/69),
+[`structured-output.md`](../../shared/policies/structured-output.md)).
 
 ## Document map
 

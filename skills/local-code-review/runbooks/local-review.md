@@ -471,7 +471,15 @@ which a value must be resolved before it is used, or what is reported.
     (review base, per-category inclusion/exclusion, initial-review-vs-
     re-review, and, per that template's own "Relevance-aware metadata
     rendering," the staged fingerprint and whether previously reviewed
-    state changed) — and return it. **Stop.**
+    state changed) — and return it, together with the step 13b section when
+    that step applies. **Stop.**
+13b. **If, and only if, the current invocation normalized
+    `structured_review_result` to `true`:** load
+    [`structured-output.md`](../../../shared/policies/structured-output.md)
+    and append its single "Structured Review Result" section after the
+    rendered report, generated from the already-finalized findings,
+    coverage, and Decision. The human report above is unchanged. Skip this
+    step entirely otherwise.
 
 ## Constraints
 

@@ -353,6 +353,13 @@ serve are owned by the linked policies and are not restated here.
   the one field that **does** change the Decision: `incomplete` overrides
   the mechanical clean/blocking derivation and renders `REVIEW INCOMPLETE`
   instead, per the "Decision" rule above.
+- **Structured Review Result (opt-in).** Only when the invocation
+  selects `structured_review_result` (default `false`), one
+  `### Structured Review Result` section holding a single fenced `json`
+  block follows the trailing "Review scope contract", per
+  [`../../../shared/policies/structured-output.md`](../../../shared/policies/structured-output.md).
+  It is generated from the finalized review; with the option off, the
+  report has no such section and is unchanged.
 - **No loop/orchestration metadata.** This report never tracks review
   iteration count, a configured maximum, or whether another iteration is
   allowed — that belongs to the orchestrator (see
