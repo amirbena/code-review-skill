@@ -222,7 +222,10 @@ def _natural_sandbox_request(text: str) -> bool:
     hyphenated = _SANDBOX_OPTION.replace("_", "-")
     # A question about the sandbox is ambiguous, mirroring the
     # trusted-host question guard above; a polite request still counts.
-    question = re.compile(r"\b(?:what|how|why|does|is|should)\b[^?]*sandbox[^?]*\?")
+    # One sentence only: an earlier sentence never swallows a later request.
+    question = re.compile(
+        r"(?:^|(?<=[.!?\n]))\s*(?:what|how|why|does|is|should)\b[^.!?\n]*sandbox[^.!?\n]*\?"
+    )
     lowered = question.sub("", lowered)
     bare = (
         rf"(?<![\w]){re.escape(_SANDBOX_OPTION)}(?![\w=])",

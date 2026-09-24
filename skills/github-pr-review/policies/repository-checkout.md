@@ -38,7 +38,11 @@ not isolate the reviewer's filesystem, credentials, network, privileges,
 resources, or disposable state. The shared runtime-validation contract stays
 dormant until an external runtime supplies and verifiably checks that boundary;
 checkout isolation alone must therefore never turn validation into a live
-execution capability.
+execution capability. The one exception is an admitted repository test
+command, which runs on the host by default (sandbox-only on an explicit
+request) per the shared policy's "Repository test execution backend"; that
+backend rule, not the checkout, is what permits it, and it grants nothing to
+any other command.
 
 ## Normalized PR source
 

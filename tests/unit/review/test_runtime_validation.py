@@ -984,6 +984,15 @@ class RepositoryTestSandboxRequestResolution(unittest.TestCase):
     def test_polite_request_phrased_as_a_question_still_counts(self) -> None:
         self.assertTrue(rv.resolve_repository_test_sandbox_request("can you run the tests in a sandbox?"))
 
+    def test_an_earlier_sentence_never_swallows_a_later_request(self) -> None:
+        for text in (
+            "The PR is large. Run the tests in a sandbox, ok?",
+            "Does this look right to you. Sandbox only, thanks?",
+            "What changed here?\nIs it safe? run tests in a sandbox",
+        ):
+            with self.subTest(text=text):
+                self.assertTrue(rv.resolve_repository_test_sandbox_request(text))
+
 
 class RepositoryTestTargetedReproduction(_PerSkill):
     def finding(self, **kwargs) -> rv.SuspectedFinding:

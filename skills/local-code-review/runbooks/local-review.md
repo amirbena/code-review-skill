@@ -129,11 +129,13 @@ stop
 `local-code-review` operates on the user's real working tree in place. That
 working tree is review input, not a disposable execution boundary, so local
 review does not itself make repository validation available and must not imply
-that target-repository code may run. A runtime-validation outcome may be
-recorded only when an external runner separately supplies and verifiably
-establishes the shared policy's required boundary; otherwise the dormant
-capability remains `unavailable` (or `skipped` when a supplied boundary cannot
-be verified).
+that target-repository code may run. Except for an admitted repository test
+command — which runs on the host by default, or sandbox-only on an explicit
+request, per the shared policy's "Repository test execution backend" — a
+runtime-validation outcome may be recorded only when an external runner
+separately supplies and verifiably establishes the shared policy's required
+boundary; otherwise the dormant capability remains `unavailable` (or `skipped`
+when a supplied boundary cannot be verified).
 
 ## Execution efficiency (does not change what is inspected)
 

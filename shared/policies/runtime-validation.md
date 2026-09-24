@@ -19,7 +19,9 @@ An isolated checkout by itself is not the required execution boundary. It is
 repository context for review and may still share the reviewer's host
 filesystem, credentials, network, or other ambient state. Repository
 validation remains dormant and unavailable unless the consuming runtime can
-separately establish and verify every required isolation property below.
+separately establish and verify every required isolation property below —
+except an admitted repository test command, whose host-default backend
+"Repository test execution backend" below owns.
 The metadata capability value `conditional` describes this contract: it does
 not imply that any current runtime supports live execution.
 

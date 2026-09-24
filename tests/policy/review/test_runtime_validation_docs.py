@@ -43,6 +43,7 @@ class CanonicalPolicyTests(unittest.TestCase):
             "Runtime validation executes target-repository-controlled code",
             "isolated checkout by itself is not the required execution boundary",
             "remains dormant and unavailable",
+            'except an admitted repository test command, whose host-default backend "Repository test execution backend" below owns',
             "conditional",
             "command-source trust",
             "execution-payload trust",
@@ -181,6 +182,8 @@ class WiringTests(unittest.TestCase):
         self.assertIn("exact declared command", text)
         self.assertIn("is not the runtime-validation execution boundary", text)
         self.assertIn("dormant", text)
+        self.assertIn('The one exception is an admitted repository test command', text)
+        self.assertIn('"Repository test execution backend"; that backend rule, not the checkout, is what permits it', text)
         self.assertNotIn("tests/builds/linters — those remain future work", text)
 
     def test_local_review_does_not_supply_repository_execution_boundary(self) -> None:
@@ -188,6 +191,8 @@ class WiringTests(unittest.TestCase):
         self.assertIn("user's real working tree in place", text)
         self.assertIn("does not itself make repository validation available", text)
         self.assertIn("target-repository code may run", text)
+        self.assertIn('Except for an admitted repository test command', text)
+        self.assertIn('"Repository test execution backend"', text)
 
     def test_summary_validation_contract_uses_the_four_outcomes(self) -> None:
         text = normalized(SUMMARY)
