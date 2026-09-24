@@ -472,7 +472,31 @@ output is published to a separate, **generated-only** public repository,
 | `README.md` | generated; points back to this repository | #509 |
 | `LICENSE` | copied from this repository | #509 |
 | `DISTRIBUTION.json` | source repo, source commit, version, content manifest hash | #509 |
-| `.claude-plugin/marketplace.json` and other adapter files | Claude adapter layer | #510 |
+| `plugin.json` | portable Agent Plugins 1.0.0 root manifest, rendered from `distribution/portable/plugin.json` | #510 (emitted by #509) |
+| `.claude-plugin/marketplace.json` | the only Claude-specific file, rendered from `distribution/claude/marketplace.json` | #510 (emitted by #509) |
+
+Both manifests are rendered by `build_distribution` from the single release
+version, so they are part of the content manifest hash and the
+idempotency/drift checks. `skills/<name>/` is never touched by the adapter.
+
+### Claude marketplace decisions (#510)
+
+- Marketplace and plugin are both named `code-review-skills`; one plugin
+  exposes both Skills, giving `/code-review-skills:local-code-review` and
+  `/code-review-skills:github-pr-review`. Install with
+  `/plugin marketplace add amirbena/code-review-skills`, then
+  `/plugin install code-review-skills@code-review-skills`.
+- `disable-model-invocation` is **not** applied: neither Skill needs it, and
+  if that changes it belongs in the Claude adapter only, never in source
+  `SKILL.md`.
+- The plugin entry pins `version` to the release version so it does not
+  update on every distribution commit.
+- Verified locally: `claude plugin validate` passes on the built root, and
+  `marketplace add` + `install` succeed. Codex, Cursor and Copilot reading
+  the root `plugin.json` is documented compatibility only until #511.
+- The `archive`-source behaviour for the release zips is **not yet tested**;
+  the zips carry no `.claude-plugin/`, and nothing depends on that source
+  type.
 
 The only hand-authored content allowed is one optional bootstrap commit.
 Issues and Discussions are disabled, and the repository description links

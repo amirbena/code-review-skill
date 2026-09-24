@@ -26,6 +26,12 @@ from release_lib.skill_version import skill_targets
 MANIFEST_NAME = "skills-manifest.json"
 DISTRIBUTION_JSON = "DISTRIBUTION.json"
 ROOT_FILES_DIR = "distribution-root"
+# Adapter templates (#510): published path -> template path under the source repo.
+# The version is the single release version; no second source exists.
+ROOT_TEMPLATES = {
+    "plugin.json": "distribution/portable/plugin.json",
+    ".claude-plugin/marketplace.json": "distribution/claude/marketplace.json",
+}
 BRANCH = "main"
 TOKEN_ENV = "DISTRIBUTION_TOKEN"
 _TRAILER_KEYS = ("Source-Repository", "Source-Commit", "Source-Tag")
@@ -89,6 +95,13 @@ def build_distribution(
     if root_dir.is_dir():
         files.update(_read_tree(root_dir))
     files["LICENSE"] = (repo_root / "LICENSE").read_bytes()
+    for published, template in ROOT_TEMPLATES.items():
+        path = repo_root / template
+        if not path.is_file():
+            raise DistributionError(f"distribution template {template} is missing")
+        rendered = path.read_text(encoding="utf-8").replace("{{version}}", version)
+        files[published] = rendered.replace("{{source_repository}}", source_repository).encode("utf-8")
+        json.loads(files[published])  # invalid rendered JSON must fail here, not at install time
     if "README.md" not in files:
         files["README.md"] = _readme(source_repository, version).encode("utf-8")
     hashes = {p: _sha(b) for p, b in files.items()}

@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -42,6 +43,7 @@ class DistributionTests(unittest.TestCase):
     def _make_repo(self) -> None:
         (self.repo / "scripts" / "packaging").mkdir(parents=True)
         (self.repo / "LICENSE").write_text("MIT\n")
+        shutil.copytree(Path(__file__).resolve().parents[3] / "distribution", self.repo / "distribution")
         (self.repo / "scripts" / "packaging" / "package-manifest.json").write_text(
             json.dumps({"skills": {"a": {"name": "a", "archive": "a-skill.zip"}}})
         )
@@ -77,12 +79,24 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual(code, 0, out)
         self.assertEqual(self._tags().split(), ["v1.0.0"])
         files = _git(self.remote, "ls-tree", "-r", "--name-only", "v1.0.0").split()
-        self.assertEqual(sorted(files), ["DISTRIBUTION.json", "LICENSE", "README.md", "skills/a/SKILL.md"])
+        self.assertEqual(sorted(files), [".claude-plugin/marketplace.json", "DISTRIBUTION.json", "LICENSE", "README.md", "plugin.json", "skills/a/SKILL.md"],
+        )
         message = _git(self.remote, "log", "-1", "--format=%B", "v1.0.0")
         self.assertIn(f"Source-Commit: {SHA}", message)
         self.assertIn("Source-Tag: v1.0.0", message)
         self.assertIn(f"Source-Repository: {SRC}", message)
         self.assertEqual(self._run("distribution-verify")[0], 0)
+
+    def test_manifests_carry_the_release_version_and_leave_skills_untouched(self) -> None:
+        self._run("distribution-publish", version="2.3.4")
+        show = lambda p: _git(self.remote, "show", f"v2.3.4:{p}")  # noqa: E731
+        plugin = json.loads(show("plugin.json"))
+        market = json.loads(show(".claude-plugin/marketplace.json"))
+        self.assertEqual(plugin["version"], "2.3.4")
+        self.assertEqual(market["plugins"][0]["version"], "2.3.4")
+        self.assertEqual(market["plugins"][0]["source"], "./")
+        self.assertEqual(plugin["$schema"], "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json")
+        self.assertEqual(show("skills/a/SKILL.md"), "body")
 
     def test_rerun_with_identical_content_is_a_noop(self) -> None:
         self._run("distribution-publish")
