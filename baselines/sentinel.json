@@ -1,0 +1,10 @@
+{
+  "corpus_id": "39fa0e1a40b1acbe94f40d84d90adec2c79a9ff1bc4cb068b92f6f9fb8ab2b97",
+  "lane": "sentinel",
+  "promoted_at": "2026-09-24T23:14:58Z",
+  "promoted_by": "benchmark-publication[bot]",
+  "record_path": "records/sentinel/2026/sentinel-20260924T220515Z-bf01aff11010.json",
+  "record_sha256": "5254f837cd91e87d9aec305a34e7245aad48698d1d9b00957238c1b4db39d82c",
+  "run_id": "sentinel-20260924T220515Z-bf01aff11010",
+  "source": "bootstrap"
+}
