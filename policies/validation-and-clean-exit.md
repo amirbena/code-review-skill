@@ -108,6 +108,12 @@ router from the PR's base commit (via a separate blobless clone, so the
 checkout under test is unchanged), so a PR that edits it (or
 `validate.yml`) is FULL.
 
+`validate.yml` runs on `pull_request` only. Repository validation is the
+pre-merge boundary; a push to `main` does not re-run it, and is reserved
+for the release lifecycle in `release-publish.yml`, whose own build,
+provenance, distribution, tag, and release verification are unaffected
+([#538](https://github.com/amirbena/code-review-skill/issues/538)).
+
 `tests/policy/governance/test_ci_test_routing.py` is a narrow tripwire,
 not proof that an allowlisted path is inert. On every PR it fails if the
 shared temp-root copy list (`TEMP_ROOT_INPUTS` in
@@ -118,9 +124,10 @@ forms (`joinpath`, `Path(REPO_ROOT, …)`, f-strings), or files read by a
 script an integration test invokes. Admitting a path to the allowlist
 therefore stays a maintainer decision made in its own PR with that
 positive evidence gathered by hand
-([#533](https://github.com/amirbena/code-review-skill/issues/533)); the
-safety net for a missed consumer is that every push to `main` runs FULL,
-so a stale entry surfaces at the first merge that exposes it.
+([#533](https://github.com/amirbena/code-review-skill/issues/533)). There
+is no post-merge FULL run: a missed consumer surfaces on the next PR that
+routes FULL (the default for any change outside the allowlist) and
+exercises it.
 
 Repository-owned Python that any of these steps touch follows
 [`python_scripts_coding_policy.md`](python_scripts_coding_policy.md).
