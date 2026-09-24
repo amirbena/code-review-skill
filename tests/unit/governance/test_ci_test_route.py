@@ -199,6 +199,13 @@ class CliTests(unittest.TestCase):
         self.assertIn("Tier: **FULL**", text)
         self.assertIn("Reason: non-pull_request event (push)", text)
 
+    def test_tier_is_written_last_so_a_failed_write_leaves_it_unset(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "out"
+            with redirect_stdout(StringIO()), self.assertRaises(OSError):
+                router.main(["route", "--event-name", "push", "--github-output", str(output), "--step-summary", tmp])
+            self.assertFalse(output.exists())
+
     def test_summary_names_the_first_path_that_forced_full(self) -> None:
         text = router.summary_markdown(router.classify(["README.md", "shared/x.md"]))
         self.assertIn("First path that forced FULL: `shared/x.md`", text)

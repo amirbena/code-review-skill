@@ -120,8 +120,9 @@ def fast_suite(start_dir: str | Path = "tests", top_level_dir: str | Path = ".")
 def _cmd_route(args: argparse.Namespace) -> int:
     result = safe_route(args.event_name, Path(args.repo), args.base, args.head)
     print(summary_markdown(result), end="")
-    _append(args.github_output, f"tier={result.tier}\n")
     _append(args.step_summary, summary_markdown(result))
+    # Last, so a failure anywhere above leaves the tier unset, which runs FULL.
+    _append(args.github_output, f"tier={result.tier}\n")
     return 0
 
 

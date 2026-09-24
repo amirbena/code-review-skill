@@ -11,46 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  route:
-    name: Route tests (FAST/FULL)
-    runs-on: ubuntu-latest
-    outputs:
-      tier: ${{ steps.route.outputs.tier }}
-    steps:
-      - name: Check out trusted router at base
-        # The router is trusted from the base, never the head: a PR that
-        # introduces or edits it is FULL (#533).
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.base.sha || github.sha }}
-
-      - name: Fetch pull request head
-        if: ${{ github.event_name == 'pull_request' }}
-        env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: git fetch --no-tags origin "$HEAD_SHA" || echo "::warning::Could not fetch the pull request head; routing falls back to FULL."
-
-      - name: Route
-        id: route
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          if [ -f scripts/validation/ci_test_route.py ]; then
-            python3 scripts/validation/ci_test_route.py route --event-name "$EVENT_NAME" --base "$BASE_SHA" --head "$HEAD_SHA"
-          else
-            echo "tier=full" >> "$GITHUB_OUTPUT"
-            printf '### CI test route\n\n- Tier: **FULL**\n- Reason: no router at the base commit\n' >> "$GITHUB_STEP_SUMMARY"
-          fi
-
   test:
-    needs: route
-    # Always created, so the required `test` context always reports; a failed
-    # or skipped route leaves the tier empty, which runs FULL.
-    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out pull request
@@ -62,6 +23,33 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+
+      - name: Route tests (FAST/FULL)
+        id: route
+        # The router is trusted from the base, never the head: a PR that
+        # introduces or edits it is FULL (#533). A separate blobless clone keeps
+        # the checkout under test unchanged; any failure leaves the tier FULL.
+        continue-on-error: true
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          route_repo="$RUNNER_TEMP/ci-route"
+          router="$RUNNER_TEMP/ci_test_route.py"
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            reason="non-pull_request event ($EVENT_NAME)"
+          elif git init -q "$route_repo" \
+            && git -C "$route_repo" remote add origin "$REPO_URL" \
+            && git -C "$route_repo" fetch -q --no-tags --filter=blob:none origin "$BASE_SHA" "$HEAD_SHA" \
+            && git -C "$route_repo" show "$BASE_SHA:scripts/validation/ci_test_route.py" > "$router"; then
+            exec python "$router" route --event-name "$EVENT_NAME" --base "$BASE_SHA" --head "$HEAD_SHA" --repo "$route_repo"
+          else
+            reason="no router at the base commit, or the base/head could not be fetched"
+          fi
+          printf '### CI test route\n\n- Tier: **FULL**\n- Reason: %s\n' "$reason" >> "$GITHUB_STEP_SUMMARY"
+          echo "tier=full" >> "$GITHUB_OUTPUT"
 
       - name: Set up Node.js
         # The distribution consumer check drives the pinned `skills` CLI (#511).
@@ -89,16 +77,17 @@ jobs:
 
       - name: Run repository tests
         # FULL unless the router positively selected FAST.
-        if: ${{ needs.route.outputs.tier != 'fast' }}
+        if: ${{ steps.route.outputs.tier != 'fast' }}
         env:
           DISTRIBUTION_INSTALL_CHECK: "1"
         run: python -m unittest discover -s tests -t .
 
       - name: Run repository tests except tests.integration (FAST tier)
-        if: ${{ needs.route.outputs.tier == 'fast' }}
+        if: ${{ steps.route.outputs.tier == 'fast' }}
         env:
           DISTRIBUTION_INSTALL_CHECK: "1"
-        run: python scripts/validation/ci_test_route.py run-fast
+        # The base's router, extracted by the route step, selects the tests.
+        run: python "$RUNNER_TEMP/ci_test_route.py" run-fast
 
   skill-tree-parity:
     name: Skill tree (${{ matrix.shell }} on ${{ matrix.os }})

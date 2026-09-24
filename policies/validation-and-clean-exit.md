@@ -103,14 +103,24 @@ diff, renames counted as both paths) is on the allowlist in
 the single canonical home of that list. Every entry must have positive,
 repository-backed evidence that no integration test copies, reads, or
 packages it; anything unknown, mixed, empty, or erroring is FULL, and
-there is no label or flag that selects FAST. The router runs from the PR's
-base commit, so a PR that edits it (or `validate.yml`) is FULL, and every
-push to `main` runs FULL so a stale allowlist entry surfaces at the first
-merge that exposes it. `tests/policy/governance/test_ci_test_routing.py`
-fails on every PR if an integration temp-root copy list or `REPO_ROOT`
-read starts consuming an allowlisted path. Admitting a path to the
-allowlist is a maintainer decision made in its own PR with that evidence
-([#533](https://github.com/amirbena/code-review-skill/issues/533)).
+there is no label or flag that selects FAST. The `test` job extracts the
+router from the PR's base commit (via a separate blobless clone, so the
+checkout under test is unchanged), so a PR that edits it (or
+`validate.yml`) is FULL.
+
+`tests/policy/governance/test_ci_test_routing.py` is a narrow tripwire,
+not proof that an allowlisted path is inert. On every PR it fails if the
+shared temp-root copy list (`TEMP_ROOT_INPUTS` in
+`tests/integration/packaging/_shared.py`) or a literal
+`REPO_ROOT / "…"` read under `tests/integration/` overlaps the allowlist.
+It does not see an integration test's own inline copy list, other path
+forms (`joinpath`, `Path(REPO_ROOT, …)`, f-strings), or files read by a
+script an integration test invokes. Admitting a path to the allowlist
+therefore stays a maintainer decision made in its own PR with that
+positive evidence gathered by hand
+([#533](https://github.com/amirbena/code-review-skill/issues/533)); the
+safety net for a missed consumer is that every push to `main` runs FULL,
+so a stale entry surfaces at the first merge that exposes it.
 
 Repository-owned Python that any of these steps touch follows
 [`python_scripts_coding_policy.md`](python_scripts_coding_policy.md).

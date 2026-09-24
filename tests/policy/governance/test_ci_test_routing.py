@@ -50,11 +50,12 @@ class ValidateWorkflowRoutingTests(unittest.TestCase):
         self.workflow = _load_workflow()
         self.jobs = self.workflow["jobs"]
 
-    def test_required_test_job_is_always_created(self) -> None:
+    def test_required_test_job_is_always_created_and_routes_itself(self) -> None:
         test = self.jobs["test"]
         self.assertNotIn("name", test)
-        self.assertEqual(test["needs"], "route")
-        self.assertEqual(test["if"], "${{ !cancelled() }}")
+        self.assertNotIn("needs", test)
+        self.assertNotIn("if", test)
+        self.assertEqual(set(self.jobs), {"test", "skill-tree-parity", "skill-tree-hash-equality"})
 
     def test_no_path_filters(self) -> None:
         for event, config in _on(self.workflow).items():
@@ -66,26 +67,31 @@ class ValidateWorkflowRoutingTests(unittest.TestCase):
         self.assertIn("pull_request", on)
         self.assertEqual(on["push"], {"branches": ["main"]})
 
-    def test_router_runs_from_the_base_sha(self) -> None:
-        route = self.jobs["route"]
-        checkout = route["steps"][0]
-        self.assertEqual(checkout["uses"], "actions/checkout@v4")
-        self.assertEqual(checkout["with"]["ref"], "${{ github.event.pull_request.base.sha || github.sha }}")
-        self.assertEqual(checkout["with"]["fetch-depth"], 0)
-        step = _step(route, "Route")
-        self.assertIn("python3 scripts/validation/ci_test_route.py route", step["run"])
-        self.assertIn('echo "tier=full"', step["run"])
-        self.assertEqual(route["outputs"]["tier"], "${{ steps.route.outputs.tier }}")
+    def test_router_runs_from_the_base_sha_outside_the_checkout(self) -> None:
+        test = self.jobs["test"]
+        self.assertEqual(test["steps"][0]["with"], {"persist-credentials": False})
+        route = _step(test, "Route tests (FAST/FULL)")
+        self.assertEqual(route["id"], "route")
+        self.assertIs(route["continue-on-error"], True)
+        run = route["run"]
+        self.assertIn('route_repo="$RUNNER_TEMP/ci-route"', run)
+        self.assertIn('fetch -q --no-tags --filter=blob:none origin "$BASE_SHA" "$HEAD_SHA"', run)
+        self.assertIn('show "$BASE_SHA:scripts/validation/ci_test_route.py" > "$router"', run)
+        self.assertIn('--repo "$route_repo"', run)
+        self.assertIn('echo "tier=full"', run)
+        self.assertNotIn("HEAD_SHA:scripts", run)
+        steps = [step.get("name") for step in test["steps"]]
+        self.assertLess(steps.index("Route tests (FAST/FULL)"), steps.index("Run repository tests"))
 
     def test_integration_runs_unless_tier_is_exactly_fast(self) -> None:
         test = self.jobs["test"]
         full = _step(test, "Run repository tests")
-        self.assertEqual(full["if"], "${{ needs.route.outputs.tier != 'fast' }}")
+        self.assertEqual(full["if"], "${{ steps.route.outputs.tier != 'fast' }}")
         self.assertEqual(full["run"], FULL_COMMAND)
         self.assertEqual(full["env"], {"DISTRIBUTION_INSTALL_CHECK": "1"})
         fast = _step(test, "Run repository tests except tests.integration (FAST tier)")
-        self.assertEqual(fast["if"], "${{ needs.route.outputs.tier == 'fast' }}")
-        self.assertEqual(fast["run"], "python scripts/validation/ci_test_route.py run-fast")
+        self.assertEqual(fast["if"], "${{ steps.route.outputs.tier == 'fast' }}")
+        self.assertEqual(fast["run"], 'python "$RUNNER_TEMP/ci_test_route.py" run-fast')
 
     def test_non_test_validation_runs_on_both_tiers(self) -> None:
         test = self.jobs["test"]
@@ -99,7 +105,6 @@ class ValidateWorkflowRoutingTests(unittest.TestCase):
         for job in ("skill-tree-parity", "skill-tree-hash-equality"):
             with self.subTest(job=job):
                 self.assertNotIn("if", self.jobs[job])
-                self.assertNotEqual(self.jobs[job].get("needs"), "route")
 
 
 class IntegrationInputGuardTests(unittest.TestCase):
