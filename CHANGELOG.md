@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.56.0 — 2026-09-24
+
+### Added
+
+- Add a portable Agent Plugin manifest and a Claude Code marketplace manifest to the distribution repository so both Skills install with `/plugin marketplace add` (#518).
+
 ## v1.55.0 — 2026-09-24
 
 ### Changed
