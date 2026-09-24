@@ -17,9 +17,11 @@ that mints the trusted release App token; the workflow never uses
 pull_request_target and cannot recurse. `publish` runs its steps in the
 order generate → preflight → changelog → stamp Skill version → build/verify
 (each archive must report the release version) → commit(main) →
-push(main) → verify-main → tag → push-tag → publish-release →
-verify-release, with the tag and published assets bound to the pushed
-main commit SHA.
+push(main) → verify-main → tag → push-tag → verify tag and main, and
+creates no GitHub Release. The GitHub Release is created only by the
+`finalize` job, which needs `distribute` and runs only on its success, so a
+version never becomes an official source release before its distribution
+is verified (#528).
 """
 
 from __future__ import annotations
@@ -90,8 +92,10 @@ class JobTopologyTests(unittest.TestCase):
         self.data = _load()
         self.jobs = self.data["jobs"]
 
-    def test_defines_exactly_plan_publish_and_distribute(self) -> None:
-        self.assertEqual(set(self.jobs.keys()), {"plan", "publish", "distribute"})
+    def test_defines_exactly_the_release_jobs(self) -> None:
+        self.assertEqual(
+            set(self.jobs.keys()), {"plan", "publish", "recover-tag", "distribute", "finalize"}
+        )
 
     def test_does_not_define_release_gate(self) -> None:
         self.assertNotIn("release-gate", self.jobs)
@@ -121,17 +125,17 @@ class PermissionsTests(unittest.TestCase):
         )
         self.assertIs(checkout["with"]["persist-credentials"], False)
 
-    def test_only_publish_job_has_write(self) -> None:
+    def test_only_release_app_jobs_have_write(self) -> None:
         writers = [
             name for name, job in self.jobs.items()
             if (job.get("permissions") or {}).get("contents") == "write"
         ]
-        self.assertEqual(writers, ["publish"])
+        self.assertEqual(writers, ["publish", "recover-tag", "finalize"])
 
     def test_every_other_grant_is_read_only(self) -> None:
         for name, job in self.jobs.items():
             for scope, level in (job.get("permissions") or {}).items():
-                if (name, scope) == ("publish", "contents"):
+                if scope == "contents" and name in ("publish", "recover-tag", "finalize"):
                     continue
                 self.assertEqual(level, "read", f"{name}: {scope}")
 
@@ -143,10 +147,12 @@ class PermissionsTests(unittest.TestCase):
                 for s in job["steps"]
             )
         ]
-        self.assertEqual(minters, ["publish", "distribute"])
+        self.assertEqual(minters, ["publish", "recover-tag", "distribute", "finalize"])
         for name, secret, other in (
             ("publish", "RELEASE_APP", "DISTRIBUTION_APP"),
+            ("recover-tag", "RELEASE_APP", "DISTRIBUTION_APP"),
             ("distribute", "DISTRIBUTION_APP", "RELEASE_APP"),
+            ("finalize", "RELEASE_APP", "DISTRIBUTION_APP"),
         ):
             blob = yaml.safe_dump(self.jobs[name])
             self.assertIn(secret, blob)
@@ -160,7 +166,15 @@ class PermissionsTests(unittest.TestCase):
 
     def test_environments_are_release_for_publish_and_distribution_for_distribute(self) -> None:
         gated = {name: job["environment"] for name, job in self.jobs.items() if job.get("environment")}
-        self.assertEqual(gated, {"publish": "release", "distribute": "release-skills-distribution"})
+        self.assertEqual(
+            gated,
+            {
+                "publish": "release",
+                "recover-tag": "release",
+                "distribute": "release-skills-distribution",
+                "finalize": "release",
+            },
+        )
 
     def test_distribute_is_read_only_and_never_forces(self) -> None:
         job = self.jobs["distribute"]
@@ -238,8 +252,9 @@ class PublishJobGovernanceTests(unittest.TestCase):
         steps = self.publish["steps"]
         checkout = next(s for s in steps if str(s.get("uses", "")).startswith("actions/checkout"))
         self.assertEqual(checkout["with"]["token"], "${{ steps.app-token.outputs.token }}")
-        for name in ("Publish the GitHub Release", "Verify the live tag"):
-            step = _step(steps, name)
+        finalize = self.jobs["finalize"]["steps"]
+        for name in ("Create or complete the GitHub Release", "Verify the GitHub Release"):
+            step = _step(finalize, name)
             self.assertEqual(step["env"]["GH_TOKEN"], "${{ steps.app-token.outputs.token }}")
         self.assertNotIn("GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}", self.raw)
 
@@ -270,8 +285,8 @@ class PublishFlowOrderingTests(unittest.TestCase):
             "Verify main advanced",
             "Create annotated tag",
             "Push the tag",
-            "Publish the GitHub Release",
-            "Verify the live tag",
+            "Verify the live tag and main",
+            "Hand the single build",
         ]
         indices = [_step_index(self.steps, needle) for needle in order]
         self.assertEqual(indices, sorted(indices), f"steps out of order: {indices}")
@@ -323,20 +338,104 @@ class PublishFlowOrderingTests(unittest.TestCase):
         self.assertIn("git tag -a", tag_step["run"])
         self.assertIn("${{ steps.commit.outputs.sha }}", tag_step["run"])
 
-    def test_verify_binds_tag_and_assets_to_the_release_sha(self) -> None:
-        verify = _step(self.steps, "Verify the live tag")
-        run = verify["run"]
+    def test_verify_binds_the_tag_and_main_to_the_release_sha_without_a_release(self) -> None:
+        run = _step(self.steps, "Verify the live tag and main")["run"]
         self.assertIn("release-verify", run)
         self.assertIn("--expected-sha \"${{ steps.commit.outputs.sha }}\"", run)
-        self.assertIn("--asset local-code-review-skill.zip", run)
-        self.assertIn("--asset github-pr-review-skill.zip", run)
+        self.assertNotIn("--asset", run)
+        self.assertNotIn("--main-ancestor", run)
 
-    def test_published_release_targets_the_release_sha_with_both_zips(self) -> None:
-        publish = _step(self.steps, "Publish the GitHub Release")
-        run = publish["run"]
-        self.assertIn("--target \"${{ steps.commit.outputs.sha }}\"", run)
-        self.assertIn("dist/local-code-review-skill.zip", run)
-        self.assertIn("dist/github-pr-review-skill.zip", run)
+    def test_publish_creates_no_github_release(self) -> None:
+        blob = yaml.safe_dump(self.steps)
+        self.assertNotIn("gh release", blob)
+        self.assertNotIn("release-finalize", blob)
+
+
+class FinalizationGateTests(unittest.TestCase):
+    """#528: the GitHub Release is created only after distribution-verify."""
+
+    def setUp(self) -> None:
+        self.jobs = _load()["jobs"]
+        self.finalize = self.jobs["finalize"]
+        self.steps = self.finalize["steps"]
+
+    def test_finalize_needs_distribute_and_runs_only_on_its_success(self) -> None:
+        self.assertIn("distribute", self.finalize["needs"])
+        cond = str(self.finalize["if"])
+        self.assertIn("needs.distribute.result == 'success'", cond)
+        self.assertNotIn("||", cond)
+
+    def test_only_finalize_creates_a_github_release(self) -> None:
+        for name, job in self.jobs.items():
+            blob = yaml.safe_dump(job)
+            if name == "finalize":
+                self.assertIn("release-finalize", blob)
+            else:
+                self.assertNotIn("release-finalize", blob, name)
+                self.assertNotIn("gh release", blob, name)
+
+    def test_distribute_verifies_before_finalize_can_start(self) -> None:
+        dist = self.jobs["distribute"]["steps"]
+        self.assertLess(
+            _step_index(dist, "Verify the source tag resolves"),
+            _step_index(dist, "Publish the distribution tree"),
+        )
+        self.assertLess(
+            _step_index(dist, "Publish the distribution tree"),
+            _step_index(dist, "Verify the distribution tag equals the build"),
+        )
+
+    def test_finalize_step_order(self) -> None:
+        order = [
+            "Require trusted release App credentials",
+            "create-github-app-token",
+            "actions/checkout",
+            "Fetch the single build from the publish job",
+            "Create or complete the GitHub Release",
+            "Verify the GitHub Release",
+        ]
+        indices = [_step_index(self.steps, needle) for needle in order]
+        self.assertEqual(indices, sorted(indices), f"steps out of order: {indices}")
+
+    def test_finalize_releases_the_distributed_build_with_digest_checks(self) -> None:
+        create = _step(self.steps, "Create or complete the GitHub Release")["run"]
+        verify = _step(self.steps, "Verify the GitHub Release")["run"]
+        for run in (create, verify):
+            self.assertIn('--expected-sha "${SHA}"', run)
+            self.assertIn("--asset dist/local-code-review-skill.zip", run)
+            self.assertIn("--asset dist/github-pr-review-skill.zip", run)
+        self.assertIn("--main-ancestor", verify)
+        env = _step(self.steps, "Create or complete the GitHub Release")["env"]
+        self.assertEqual(env["SHA"], "${{ needs.distribute.outputs.sha }}")
+        self.assertEqual(env["VERSION"], "${{ needs.distribute.outputs.version }}")
+
+    def test_recovery_hands_the_verified_rebuild_to_finalize(self) -> None:
+        upload = _step(self.jobs["distribute"]["steps"], "Hand the recovery rebuild")
+        self.assertEqual(upload["if"], "needs.publish.result != 'success'")
+        download = _step(self.steps, "Fetch the verified recovery rebuild")
+        self.assertEqual(download["with"]["name"], upload["with"]["name"])
+
+    def test_recover_tag_runs_only_on_dispatch_for_a_missing_tag(self) -> None:
+        job = self.jobs["recover-tag"]
+        self.assertEqual(job["needs"], "plan")
+        self.assertIn("github.event_name == 'workflow_dispatch'", job["if"])
+        self.assertIn("needs.plan.outputs.recover == 'tag'", job["if"])
+        run = _step(job["steps"], "Tag the untagged release commit")["run"]
+        self.assertIn("recover-release-tag", run)
+        self.assertNotIn("--force", yaml.safe_dump(job))
+
+    def test_distribute_waits_for_tag_recovery(self) -> None:
+        job = self.jobs["distribute"]
+        self.assertIn("recover-tag", job["needs"])
+        self.assertIn("needs.recover-tag.result == 'success'", job["if"])
+
+    def test_plan_reports_recovery_on_dispatch(self) -> None:
+        plan = self.jobs["plan"]
+        run = _step(plan["steps"], "Plan the release")["run"]
+        self.assertIn('--event-name "${{ github.event_name }}"', run)
+        self.assertIn("--distribution-remote", run)
+        for key in ("recover", "recover_version", "recover_sha"):
+            self.assertIn(key, plan["outputs"])
 
 
 class ReleaseCommitAttributionTests(unittest.TestCase):

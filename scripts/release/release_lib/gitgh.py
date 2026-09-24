@@ -2,9 +2,12 @@
 
 This module is the boundary between pure planning and the outside world:
 everything above it (classification, changelog, SemVer) is
-side-effect-free and unit-tested directly; the actual repository-mutating
-commands (push, tag, ``gh release create``) live in the workflow, not
-here. Tests replace ``_git`` / ``_gh`` on this module with a fake runner.
+side-effect-free and unit-tested directly. The only mutations routed
+through here are the idempotent, precondition-checked ones owned by
+``commands/finalize.py`` (recovering a missing source tag, creating or
+completing the GitHub Release); the ordinary release commit, tag, and push
+stay in the workflow. Tests replace ``_git`` / ``_gh`` on this module with a
+fake runner.
 """
 
 from __future__ import annotations
@@ -14,6 +17,7 @@ import subprocess
 from pathlib import Path
 from typing import Sequence
 
+from release_lib.remote_state import resolved_tag_commit
 from release_lib.semver_version import _VERSION_RE
 
 
@@ -78,6 +82,42 @@ def merge_base(repo_root: Path, a: str, b: str) -> str | None:
         return None
     sha = out.strip()
     return sha or None
+
+
+def is_ancestor(repo_root: Path, ancestor: str, descendant: str) -> bool:
+    """True when `ancestor` is reachable from `descendant` (both must exist locally)."""
+    try:
+        _git(["merge-base", "--is-ancestor", ancestor, descendant], repo_root)
+    except subprocess.CalledProcessError:
+        return False
+    return True
+
+
+def remote_tag_commit(repo_root: Path, remote: str, tag: str) -> str | None:
+    """The commit `tag` resolves to on `remote` (annotated tags peeled), or `None`."""
+    out = _git(["ls-remote", "--tags", remote, f"refs/tags/{tag}", f"refs/tags/{tag}^{{}}"], repo_root)
+    return resolved_tag_commit(out, tag.removeprefix("v"))
+
+
+def release_view(repo_root: Path, tag: str) -> dict | None:
+    """The GitHub Release for `tag` (drafts included), or `None` when there is none.
+
+    Any failure other than "not found" propagates: an unreadable Release is
+    never mistaken for a missing one.
+    """
+    try:
+        out = _gh(
+            ["release", "view", tag, "--json", "tagName,targetCommitish,isDraft,isPrerelease,assets"],
+            repo_root,
+        )
+    except subprocess.CalledProcessError as exc:
+        if "not found" in (exc.stderr or "").lower():
+            return None
+        raise
+    data = json.loads(out)
+    if not isinstance(data, dict):
+        raise ValueError(f"unexpected gh release view output for {tag}")
+    return data
 
 
 def changed_files(repo_root: Path, base_ref: str | None) -> list[str]:

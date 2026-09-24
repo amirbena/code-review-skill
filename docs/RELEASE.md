@@ -314,6 +314,13 @@ merely a version calculator) and the version-planning step. It holds
 It **plans** the release with `release_worthiness.py auto-release-plan`:
 
 - finds the latest valid `vX.Y.Z` tag — the version baseline;
+- **fails closed if that version is unfinalized** (see "Finalization gate"
+  below): a `chore(release): vX.Y.Z [skip ci]` commit on `main` without its
+  tag, or a latest tag (from the first distributed version, `v1.56.0`, on)
+  that lacks its distribution tag or its published GitHub Release with both
+  archives. On `push` it exits with an error naming the `workflow_dispatch`
+  recovery and never plans `vX.Y.Z+1`; on `workflow_dispatch` it reports
+  `recover=tag|finalize` for that same version instead;
 - classifies everything since that tag; if nothing is release-worthy it
   reports `should_release=false` and the job is a **clean no-op**;
 - generates `## Unreleased` in memory from the merged PRs' release intent,
@@ -325,13 +332,14 @@ It **plans** the release with `release_worthiness.py auto-release-plan`:
 - if that tag already exists, treats the set as already released (no-op) —
   this is what makes a **retry after a completed release** safe; if
   `CHANGELOG.md` already has that version's heading, the release was
-  partially published (see below) and it is also a no-op;
+  partially published and it is also a no-op that names the recovery;
 - writes the generated release notes to the run summary.
 
 Only when `plan` reports `should_release=true` does the **`publish`** job
-run — the sole job granted `contents: write` and the only one behind the
-`release` Environment. A merge that ships nothing releasable never starts
-it. Its ordered flow fails closed before publishing if any step fails:
+run — one of the release App's jobs (with `recover-tag` and `finalize`),
+the only ones granted `contents: write` and behind the `release`
+Environment. A merge that ships nothing releasable never starts it. Its
+ordered flow fails closed before anything is pushed if any step fails:
 
 1. **Generates** `## Unreleased` from the merged PRs' release intent — the
    same deterministic generation `plan` previewed.
@@ -351,10 +359,50 @@ it. Its ordered flow fails closed before publishing if any step fails:
    exactly that SHA.
 8. Creates an **annotated** `vX.Y.Z` tag at that exact pushed commit.
 9. Pushes the tag.
-10. Creates the GitHub Release from the tag, notes taken from the matching
-    `CHANGELOG.md` section, both verified Skill ZIPs attached.
-11. Verifies the live tag commit, `origin/main`, and the published
-    Release's tag and assets all match the release commit.
+10. Verifies the live tag commit and `origin/main` both equal the release
+    commit (`release-verify`, no GitHub Release yet), then hands the one
+    build (trees, manifest, zips) to the next jobs as an artifact.
+
+Then **`distribute`** publishes and verifies the distribution repository
+(see "Publishing each release to the distribution repository" below), and
+only on its success does **`finalize`**:
+
+11. Create the GitHub Release from the existing tag (`release-finalize`),
+    notes taken from the matching `CHANGELOG.md` section, the same build's
+    two ZIPs attached — or complete or no-op an existing one (see below).
+12. Verify the Release's tag, target, and asset **digests** against the
+    build, the tag against the release commit, and that the release commit
+    is in `origin/main`'s history (`release-verify --main-ancestor`; `main`
+    may legitimately advance while distribution runs).
+
+### Finalization gate (#528)
+
+> A version MUST NOT become an official source GitHub Release until the
+> required external distribution publication has succeeded and been
+> verified.
+
+The release commit and the source tag are **pre-finalization provenance
+anchors**, not the official release. They come first because the
+distribution names them (`DISTRIBUTION.json.source_commit` and the
+`Source-Commit` / `Source-Tag` trailers), `plan` keys its idempotency on
+the tag, and recovery resolves its target from it. The GitHub Release is
+the only step that waits: nothing in distribution reads it, so there is no
+circular dependency. Moving the tag after distribution too was rejected —
+the `Source-Tag` trailer would name a ref that does not exist yet.
+
+```text
+plan → publish: build once, commit, tag, verify tag + main, upload build
+     → distribute: distribution commit + tag, distribution-verify
+     → finalize: GitHub Release from the same build's zips, verify digests
+```
+
+`release-finalize` is idempotent and never overwrites: with no Release it
+creates one (`gh release create --verify-tag`); an existing Release whose
+tag, assets, and asset digests all match the build is a no-op; one missing
+assets or left as a draft by an interrupted create is completed (only the
+missing assets are uploaded, then it is published); a Release with a
+different target, an unexpected or mismatching asset, or prerelease status
+fails closed with nothing changed.
 
 ### Skill archive version
 
@@ -390,12 +438,26 @@ release commit is `[skip ci]` and the workflow listens on no tag or
 `release` event, so publishing cannot re-enter the flow.
 
 **Retry and recovery.** A re-run after a completed release is a safe
-no-op (the accumulated set is already published). If a publish fails
-**after** the changelog roll was committed to `main` but before the tag
-was pushed, `auto-release-plan` reports nothing to release (`CHANGELOG.md`
-already has the `## vX.Y.Z` heading); a maintainer finishes that one
-release by hand — tag the pushed `chore(release): vX.Y.Z` commit and
-`gh release create` from it — after which automation resumes normally.
+no-op (the accumulated set is already published). Every failure before
+finalization is finished for the **same** version by running **Release
+publish** via `workflow_dispatch` on `main` — never by a new version, a
+forced push, or a moved tag on either repository. The workflow-level
+concurrency group serializes runs on `main`, so a merge landing while a
+release is in flight plans only after that run's `finalize` finished.
+
+| Failure point | State left behind | Outcome |
+| --- | --- | --- |
+| Before the push to `main` (generate, preflight, build) | nothing external | Red run; the next push retries the same version. |
+| Release commit pushed, tag push fails | release commit on `main`, no tag | `plan` fails closed on every push. Dispatch: `plan` reports `recover=tag`, the **`recover-tag`** job (release App — the tags ruleset blocks humans from tagging) runs `recover-release-tag`, which tags exactly that `chore(release): vX.Y.Z [skip ci]` commit after checking it is in `main`'s history, then `distribute` and `finalize` complete it. |
+| `distribute` fails before any distribution write | source commit + tag, no Release | Red run, **no GitHub Release**; `plan` fails closed on push. Dispatch republishes the same version. |
+| Distribution commit pushed, its tag fails | distribution `main` has the commit, no tag | `finalize` does not run. Dispatch: `distribution-publish` completes the tag without a second commit. |
+| Distribution tag exists, `distribution-verify` fails | distribution tag | `finalize` does not run. Dispatch re-verifies; a content mismatch fails closed and never repoints the tag. |
+| `finalize` fails (create or verify) | distribution verified, no or partial Release | Dispatch re-verifies the distribution (no-op publish), then `release-finalize` creates or completes the Release; a matching one is a no-op, a mismatching one fails closed. |
+| New push while a version is unfinalized | — | `plan` fails closed and names the dispatch recovery; it never plans `vX.Y.Z+1`. |
+
+Recovery rebuilds once from the source tag in `distribute`;
+`distribution-verify` must prove that rebuild equals the published
+distribution tag, and `finalize` then attaches exactly those zips.
 
 ## Repository configuration
 
@@ -444,8 +506,10 @@ uses `GITHUB_TOKEN` to *read* merged pull requests for generation.
 
 The `publish` job mints a short-lived installation token with
 [`actions/create-github-app-token`](https://github.com/actions/create-github-app-token)
-and uses it for every `git push` and `gh release` call. The token
-expires in ~1 hour and is scoped to this repo's contents.
+and uses it for every `git push` and tag push; `finalize` mints its own
+token the same way for the GitHub Release, and `recover-tag` for a
+recovered tag. The token expires in ~1 hour and is scoped to this repo's
+contents.
 
 ### 3. Optional hardening — `release` Environment
 
@@ -453,7 +517,9 @@ The `publish` job declares `environment: release`. Add **required
 reviewers** to that Environment (Settings → Environments → `release`) so
 each automatic publish needs a maintainer's approval, and restrict it to
 the `main` branch. Because `publish` starts only when a release is
-actually due, this prompts a maintainer per real release, not per merge.
+actually due, this prompts a maintainer per real release, not per merge —
+twice per release, since `finalize` (and, in recovery, `recover-tag`)
+declares the same Environment.
 If the Environment has no rules it simply passes through.
 
 ## Generated distribution repository
@@ -596,12 +662,15 @@ the key.
 
 ## Publishing each release to the distribution repository (#509)
 
-Order: **source release first, distribution second.** The `publish` job
-builds the #507 tree once (zips and tree come from that one build),
-commits, tags, publishes the GitHub Release and runs `release-verify`,
-then uploads the build as the `distribution-build` artifact. The
+Order: **source tag, then distribution, then the GitHub Release** (see
+"Finalization gate"). The `publish` job builds the #507 tree once (zips
+and tree come from that one build), commits, tags, runs `release-verify`
+on the tag and `main`, then uploads the build as the `distribution-build`
+artifact. The
 `distribute` job (Environment `release-skills-distribution`, the
 publisher App token scoped to `code-review-skills`) then runs
+`release-verify --main-ancestor` (the source tag resolves to the release
+commit, which is in `main`'s history), then
 `release_worthiness.py distribution-publish` and `distribution-verify`:
 
 - **Publish** commits `skills/<name>/`, `DISTRIBUTION.json` (source
@@ -627,9 +696,10 @@ the only version authority.
 
 `amirbena/code-review-skills` is authoritative for distribution artifacts
 beginning with the first marketplace-enabled distribution release, that
-is, the first `vX.Y.Z` tag successfully written by the `distribute` job.
-Until that first publication happens the boundary is not yet established;
-record the concrete version here once it is.
+is, the first `vX.Y.Z` tag successfully written by the `distribute` job:
+**`v1.56.0`**. `auto-release-plan`'s finalization check starts there
+(`FIRST_DISTRIBUTED_VERSION` in `scripts/release/release_lib/finalization.py`);
+earlier source releases are exempt.
 
 Releases before that boundary are represented only by their original
 GitHub Release archives in this repository. They are not backfilled: those
@@ -641,15 +711,17 @@ distribution repository as a missing release.
 
 ### Recovery
 
-If `distribute` fails after the source release, the run is red — it is
-never skipped. Fix the cause (credentials, ruleset, network), then run
-**Release publish** via `workflow_dispatch` on `main`. When `plan` finds
-nothing new to release, `distribute` rebuilds the latest source release tag
-and publishes it, completing a lagging distribution without re-releasing
-the source. A mismatch error means the distribution tag holds different
-content than the source tag builds; investigate before any manual action
-(humans do not edit the distribution repository; do not delete the tag
-without maintainer review).
+If `distribute` fails, the run is red — it is never skipped — and the
+version has **no GitHub Release** yet. Fix the cause (credentials,
+ruleset, network), then run **Release publish** via `workflow_dispatch` on
+`main`. `plan` hands the unfinalized latest version to recovery;
+`distribute` rebuilds that source tag, publishes it (a no-op when the
+distribution already holds it), verifies it, and `finalize` creates the
+GitHub Release. Every failure row and its outcome is in "Retry and
+recovery" above. A mismatch error means the distribution tag holds
+different content than the source tag builds; investigate before any
+manual action (humans do not edit the distribution repository; do not
+delete the tag without maintainer review).
 
 ## Permissions model
 
@@ -658,13 +730,18 @@ without maintainer review).
 | `release-worthiness.yml` | `pull_request` | `release-gate` (required) | `contents: read` | yes | never |
 | `release-worthiness.yml` | after `release-gate`, when release-worthy | `package` (not required) | `contents: read` | yes | never |
 | `release-publish.yml` | `push` to `main` (non-`[skip ci]`), `workflow_dispatch` | `plan` | `contents: read`, `pull-requests: read` | no — checks out `main` | never — generates notes and derives the version in memory |
-| `release-publish.yml` | after `publish` succeeds, or on `workflow_dispatch` recovery | `distribute` | `contents: read` | no — checks out the source release commit/tag | pushes only to the distribution repository, using the publisher App token; never force |
-| `release-publish.yml` | after `plan`, when a release is due | `publish` | `contents: write`, `pull-requests: read` | no — checks out `main` | commits to `main`, tags, publishes a Release, using the App token |
+| `release-publish.yml` | after `plan`, when a release is due | `publish` | `contents: write`, `pull-requests: read` | no — checks out `main` | commits to `main` and tags, using the release App token; creates **no** GitHub Release |
+| `release-publish.yml` | `workflow_dispatch` recovery, when `plan` reports `recover=tag` | `recover-tag` | `contents: write` | no — checks out `main` | tags the untagged release commit only, using the release App token; never moves a tag |
+| `release-publish.yml` | after `publish` (or `recover-tag`) succeeds, or on `workflow_dispatch` recovery | `distribute` | `contents: read` | no — checks out the source release commit/tag | pushes only to the distribution repository, using the publisher App token; never force |
+| `release-publish.yml` | only after `distribute` succeeds | `finalize` | `contents: write` | no — checks out the source release commit | creates, completes, or no-ops the GitHub Release, using the release App token |
 
 - No `pull_request_target`; the read-only jobs check out with
-  `persist-credentials: false`. Neither `plan` nor `publish` runs on
-  `pull_request`, so contributor-controlled code never reaches the App
-  credentials.
+  `persist-credentials: false`. No job in `release-publish.yml` runs on
+  `pull_request`, so contributor-controlled code never reaches either App's
+  credentials. Each App token is minted only by its own jobs and
+  Environment: the release App by `publish`, `recover-tag`, and `finalize`
+  (`release`), the publisher App by `distribute`
+  (`release-skills-distribution`).
 - Contributor-controlled text (a PR description) is passed to scripts
   through environment variables or read through the API by trusted code,
   never interpolated into a shell `run:` step. It enters `CHANGELOG.md`
