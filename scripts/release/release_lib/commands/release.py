@@ -1,9 +1,8 @@
-"""Handlers for release preflight and published-release verification."""
+"""Handlers for release preflight and source-tag / GitHub Release verification."""
 
 from __future__ import annotations
 
 import argparse
-import json
 import subprocess
 from pathlib import Path
 
@@ -11,12 +10,8 @@ from release_lib import gitgh
 from release_lib.changelog import unreleased_has_coverage
 from release_lib.classification import classify_paths
 from release_lib.commands.shared import resolve_changelog
-from release_lib.remote_state import (
-    _FULL_SHA_RE,
-    parse_ref_lines,
-    release_assets_present,
-    resolved_tag_commit,
-)
+from release_lib.finalization import file_digest, release_mismatches
+from release_lib.remote_state import _FULL_SHA_RE, parse_ref_lines
 from release_lib.semver_version import validate_semver
 
 
@@ -53,64 +48,92 @@ def cmd_release_preflight(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_release_verify(args: argparse.Namespace) -> int:
-    repo_root = Path(args.repo_root).resolve()
-    tag = f"v{args.version}"
-    expected = args.expected_sha.strip()
+def source_failures(repo_root: Path, tag: str, expected: str, *, main_ancestor: bool) -> list[str]:
+    """Tag (local and origin) resolves to ``expected``; origin/main is, or descends from, it.
+
+    Right after the release commit is pushed, main must be exactly that
+    commit. Later stages (distribution, finalization, recovery) accept a
+    main that has legitimately advanced, as long as the release commit is
+    still in its history.
+    """
     failures: list[str] = []
-
-    try:
-        validate_semver(args.version)
-    except ValueError as exc:
-        print(f"::error::{exc}")
-        return 1
-    if not _FULL_SHA_RE.match(expected):
-        print(f"::error::--expected-sha must be a full 40-hex commit SHA, got {expected!r}")
-        return 1
-
-    try:
-        local_commit = gitgh._git(["rev-parse", f"{tag}^{{commit}}"], repo_root).strip()
-    except subprocess.CalledProcessError:
-        local_commit = None
+    local_commit = gitgh.rev_parse_commit(repo_root, tag)
     if local_commit != expected:
         failures.append(f"local tag {tag} resolves to {local_commit or 'nothing'}, expected {expected}")
 
-    remote_tags = gitgh._git(
-        ["ls-remote", "--tags", "origin", f"refs/tags/{tag}", f"refs/tags/{tag}^{{}}"], repo_root
-    )
-    remote_commit = resolved_tag_commit(remote_tags, args.version)
+    remote_commit = gitgh.remote_tag_commit(repo_root, "origin", tag)
     if remote_commit != expected:
         failures.append(f"origin tag {tag} resolves to {remote_commit or 'nothing'}, expected {expected}")
 
     main_refs = parse_ref_lines(gitgh._git(["ls-remote", "origin", "refs/heads/main"], repo_root))
     main_commit = main_refs.get("refs/heads/main")
-    if main_commit != expected:
-        failures.append(f"origin/main is at {main_commit or 'nothing'}, expected {expected}")
+    if not main_ancestor:
+        if main_commit != expected:
+            failures.append(f"origin/main is at {main_commit or 'nothing'}, expected {expected}")
+    elif main_commit is None:
+        failures.append("origin/main could not be read")
+    else:
+        try:
+            gitgh._git(["fetch", "--quiet", "origin", "refs/heads/main"], repo_root)
+        except subprocess.CalledProcessError as exc:
+            failures.append(f"could not fetch origin/main: {exc}")
+        else:
+            if not gitgh.is_ancestor(repo_root, expected, main_commit):
+                failures.append(f"release commit {expected} is not in origin/main's history ({main_commit})")
+    return failures
 
+
+def validated_request(version: str, expected: str) -> str | None:
+    """An error message for a malformed version or SHA, else ``None``."""
     try:
-        release_json = json.loads(
-            gitgh._gh(["release", "view", tag, "--json", "tagName,targetCommitish,assets"], repo_root)
-        )
-    except (subprocess.CalledProcessError, json.JSONDecodeError) as exc:
-        failures.append(f"could not read GitHub Release {tag}: {exc}")
-        release_json = None
+        validate_semver(version)
+    except ValueError as exc:
+        return str(exc)
+    if not _FULL_SHA_RE.match(expected):
+        return f"--expected-sha must be a full 40-hex commit SHA, got {expected!r}"
+    return None
 
-    if release_json is not None:
-        if release_json.get("tagName") != tag:
-            failures.append(f"GitHub Release tagName is {release_json.get('tagName')!r}, expected {tag}")
-        target = str(release_json.get("targetCommitish", ""))
-        if _FULL_SHA_RE.match(target) and target != expected:
-            failures.append(f"GitHub Release target is {target}, expected {expected}")
-        if not release_assets_present(release_json, args.asset):
-            have = sorted(asset.get("name") for asset in release_json.get("assets", []))
-            failures.append(f"GitHub Release assets {have} are missing one of {list(args.asset)}")
+
+def build_digests(paths: list[str]) -> dict[str, str]:
+    """``{asset name: sha256 digest}`` for the build's archives (name = file name)."""
+    return {Path(path).name: file_digest(Path(path)) for path in paths}
+
+
+def cmd_release_verify(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).resolve()
+    tag = f"v{args.version}"
+    expected = args.expected_sha.strip()
+    problem = validated_request(args.version, expected)
+    if problem:
+        print(f"::error::{problem}")
+        return 1
+    try:
+        want = build_digests(args.asset)
+    except OSError as exc:
+        print(f"::error::cannot read a build archive: {exc}")
+        return 1
+
+    failures = source_failures(repo_root, tag, expected, main_ancestor=args.main_ancestor)
+    if want:
+        try:
+            release = gitgh.release_view(repo_root, tag)
+        except (subprocess.CalledProcessError, ValueError) as exc:
+            failures.append(f"could not read GitHub Release {tag}: {exc}")
+        else:
+            if release is None:
+                failures.append(f"GitHub Release {tag} does not exist")
+            else:
+                problems, missing = release_mismatches(release, tag, expected, want)
+                failures.extend(problems)
+                failures.extend(f"GitHub Release asset {name} is missing" for name in missing)
+                if release.get("isDraft"):
+                    failures.append(f"GitHub Release {tag} is still a draft")
 
     if failures:
         for failure in failures:
             print(f"::error::{failure}")
         return 1
-    print(
-        f"Verified: {tag} → {expected}; origin/main → {expected}; "
-        f"GitHub Release published with assets {list(args.asset)}"
-    )
+    main = "contains" if args.main_ancestor else "is at"
+    released = f"; GitHub Release carries exactly {sorted(want)} with matching digests" if want else ""
+    print(f"Verified: {tag} → {expected}; origin/main {main} {expected}{released}")
     return 0

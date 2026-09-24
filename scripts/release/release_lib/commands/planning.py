@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
 from pathlib import Path
 
 from release_lib import gitgh
@@ -11,6 +12,7 @@ from release_lib.changelog_generation import ChangelogGenerationError, generate_
 from release_lib.classification import classify_paths
 from release_lib.commands.changelog import INTENT_FIX_HINT
 from release_lib.commands.shared import emit_output, fenced, resolve_changelog, write_step_summary
+from release_lib.finalization import RECOVERY_HINT, Unfinished, unfinished_release
 from release_lib.semver_policy import (
     AmbiguousReleaseImpact,
     classify_semver_impact,
@@ -54,6 +56,26 @@ def _no_release(args: argparse.Namespace, reason: str, **pairs: str) -> int:
     return 0
 
 
+def _unfinished(args: argparse.Namespace, state: Unfinished, baseline: str) -> int:
+    """Recovery (workflow_dispatch) finishes the same version; anything else fails closed."""
+    reason = f"v{state.version} is not finalized: {state.detail}"
+    if args.event_name == "workflow_dispatch":
+        print(f"Recovery: {reason}; finishing v{state.version} (stage: {state.stage}) without a new version")
+        emit_output(
+            args.github_output,
+            should_release="false",
+            reason=reason,
+            baseline=baseline,
+            recover=state.stage,
+            recover_version=state.version,
+            recover_sha=state.sha,
+        )
+        return 0
+    print(f"::error::{reason}; refusing to plan a newer version until it is finished — {RECOVERY_HINT}")
+    emit_output(args.github_output, should_release="false", reason=reason, baseline=baseline)
+    return 1
+
+
 def cmd_auto_release_plan(args: argparse.Namespace) -> int:
     repo_root = Path(args.repo_root).resolve()
     changelog_path = resolve_changelog(args, repo_root)
@@ -63,6 +85,15 @@ def cmd_auto_release_plan(args: argparse.Namespace) -> int:
         print("::error::no valid vX.Y.Z release tag to use as the version baseline")
         emit_output(args.github_output, should_release="false", reason="no release tag baseline")
         return 1
+
+    try:
+        state = unfinished_release(repo_root, baseline, args.distribution_remote)
+    except (subprocess.CalledProcessError, ValueError, OSError) as exc:
+        print(f"::error::cannot tell whether {baseline} was finalized ({exc}); refusing to plan")
+        emit_output(args.github_output, should_release="false", reason="finalization state unreadable", baseline=baseline)
+        return 1
+    if state is not None:
+        return _unfinished(args, state, baseline)
 
     classification = classify_paths(gitgh.changed_files(repo_root, baseline))
     if not classification.release_worthy:
@@ -105,7 +136,8 @@ def cmd_auto_release_plan(args: argparse.Namespace) -> int:
         return _no_release(args, f"v{version} already exists; the accumulated set is already released", **done)
     if has_version_section(on_disk, version):
         return _no_release(
-            args, f"CHANGELOG.md already has v{version}; finish the partially published release by hand", **done
+            args, f"CHANGELOG.md already has v{version}; the partially published release needs recovery — {RECOVERY_HINT}",
+            **done,
         )
 
     print(f"Release planned: {baseline} -> v{version} ({impact}, {impact_source}); {classification.reason}")
