@@ -1,66 +1,146 @@
-# Installing from the distribution repository
+# Installing, updating, and verifying the distributed Skills
 
-Both Skills are published, on every release, to a generated repository,
-[`amirbena/code-review-skills`](https://github.com/amirbena/code-review-skills).
-This page says how to install and update from it, which install paths have
-been exercised, and how to tell which release you have. It is explanatory;
-the publication mechanics are owned by [`RELEASE.md`](RELEASE.md).
+This is the consumer-facing guide for installing and updating
+`local-code-review` and `github-pr-review`, and for seeing which install
+paths have actually been exercised. It is explanatory; the publication
+mechanics are owned by [`RELEASE.md`](RELEASE.md).
 
-## Which repository does what
+**Recommended:** install from the generated distribution repository,
+[`amirbena/code-review-skills`](https://github.com/amirbena/code-review-skills),
+through your tool's own Skill or plugin mechanism (below). Downloading and
+copying release ZIPs by hand is a fallback, covered last under
+[Manual / offline installation](#manual--offline-installation).
 
-| | Source repository (`amirbena/code-review-skill`) | Distribution repository (`amirbena/code-review-skills`) |
-| --- | --- | --- |
-| Purpose | development, issues, PRs, releases, GitHub Release zips | what consumers install from |
-| Skill content | `skills/<name>/` source folders (not self-contained: they depend on `shared/`) | `skills/<name>/` built, self-contained trees |
-| Edited by | contributors | nobody: generated at release time, never by hand |
-| Report problems here | yes | no |
+## Why a distribution repository
 
-Install from the distribution repository, not from a checkout of the source
-repository: the source `skills/<name>/` folders are not standalone.
+```text
+source repository (amirbena/code-review-skill)
+       ↓
+canonical deterministic build
+       ↓
+amirbena/code-review-skills   (generated, never edited by hand)
+       ↓
+skills.sh / Claude Code / Codex / Cursor / GitHub Copilot
+```
 
-## Install
+- The source repository stays canonical for development, issues, PRs and
+  releases. Its `skills/<name>/` folders are not standalone (they depend on
+  `shared/`), so do not install from a checkout of it.
+- Each release builds deterministic, self-contained Skill trees. The
+  distribution repository is the consumer-facing publication surface for
+  those trees.
+- Every consumer therefore receives the same canonical Skill trees.
+  Vendor-specific metadata (the Claude marketplace file, the portable
+  `plugin.json`) is an adapter around those trees and does not change the
+  Skill content.
 
-Replace `<name>` with `local-code-review` or `github-pr-review`.
+Build and publication details: [`RELEASE.md`](RELEASE.md), "Generated
+distribution repository" and "Publishing each release to the distribution
+repository".
 
-| Path | Command | Notes |
-| --- | --- | --- |
-| skills.sh (`skills` CLI) | `npx skills add amirbena/code-review-skills --skill <name>` | Lists what is available with `--list`. |
-| Claude Code marketplace | `/plugin marketplace add amirbena/code-review-skills`, then `/plugin install code-review-skills@code-review-skills` | One plugin exposing both Skills. |
-| Codex, Cursor, GitHub Copilot | via the root `plugin.json` (Agent Plugins 1.0.0) | See the table below; not yet exercised. |
-| GitHub Release zip | download `local-code-review-skill.zip` or `github-pr-review-skill.zip` from the [source repository's releases](https://github.com/amirbena/code-review-skill/releases) and unzip into your runtime's Skill directory | Manual. Not the same as the paths above; see the note below. |
+## Install by consumer
 
-A direct release-zip install is **not** equivalent to a skills.sh install:
-it sends no install telemetry, so it is never counted toward, or listed on,
-skills.sh, and it has no update command.
+Use `<name>` = `local-code-review` or `github-pr-review`. Every command below
+was run during [#511](https://github.com/amirbena/code-review-skill/issues/511)
+(client versions in the matrix).
 
-## Compatibility: documented vs. verified
+| Consumer | Install |
+| --- | --- |
+| skills CLI / skills.sh | `npx skills add amirbena/code-review-skills --skill <name>` (`--list` shows what is available) |
+| Claude Code | `/plugin marketplace add amirbena/code-review-skills`, then `/plugin install code-review-skills@code-review-skills` (one plugin, both Skills) |
+| Codex | `codex plugin marketplace add amirbena/code-review-skills`, then `codex plugin add code-review-skills@code-review-skills` (reads the same `.claude-plugin/marketplace.json`) |
+| Cursor | install from `amirbena/code-review-skills` in the Cursor app; the exact UI steps were not recorded, so "Import from Repo" is not claimed as the tested path |
+| GitHub Copilot CLI | `copilot plugin marketplace add amirbena/code-review-skills`, then `copilot plugin install code-review-skills@code-review-skills`; a direct `copilot plugin install amirbena/code-review-skills` also worked, but the CLI warns direct installs are deprecated |
 
-Each row is one of two states. **Verified** means the path was exercised by
-a real install from the distribution repository, with evidence recorded in
-[#511](https://github.com/amirbena/code-review-skill/issues/511). **Documented**
-means the ecosystem's own documentation says it should work and nothing here
-has shown that it does. An unexercised path is never to be read as working.
+The `skills` run in #511 targeted Claude Code (`-a claude-code --copy`).
 
-| Ecosystem | State | Evidence |
-| --- | --- | --- |
-| skills.sh (`skills` CLI): discovery and copy install from the built tree | verified | CI, against a local copy of the built tree: `tests/integration/packaging/test_distribution_consumer_install.py` |
-| skills.sh: install from `amirbena/code-review-skills`, `skills update`, listing on skills.sh | documented | pending live evidence in #511 |
-| Claude Code marketplace | verified | run locally in #510 (`claude plugin validate`, `marketplace add`, `install`), see [`RELEASE.md`](RELEASE.md); clean-install outcome still to be recorded in #511 |
-| Codex Agent Plugin path | documented | pending; the marketplace entry-path (`"./"`) restriction is unresolved |
-| Cursor Agent Plugin path ("Import from Repo") | documented | pending |
-| GitHub Copilot Agent Plugin path | documented | pending |
-
-Live evidence for each row records the client version, date, command, and
-the version observed. A path that fails or cannot be exercised is recorded
-as such. Gemini CLI and any vendor-specific adapter are out of scope here.
-
-## Updates
+## Updating
 
 Updates are release-only: the distribution repository changes only when a
-new release is published, and the Claude plugin entry pins that release
-version, so nothing updates between releases. To pick up a release, use your
-client's update command (for the `skills` CLI, `npx skills update`) or
-reinstall.
+release is published, and the plugin entry pins that release version, so
+nothing changes between releases. **Update mechanisms are consumer-specific.**
+`npx skills update` manages Skills installed by the `skills` CLI; it does not
+update Claude Code, Codex, Cursor, or Copilot plugin installations, which use
+their own tools.
+
+| Consumer | Update path | State |
+| --- | --- | --- |
+| skills CLI / skills.sh | `npx skills update` | **verified**: an existing v1.56.0 install updated to v1.57.0 in place, both Skills still discoverable |
+| Claude Code / Desktop | refresh the marketplace through the Claude Code CLI, then the native Desktop **Update** button (or Claude Code's own plugin update) | **verified**: 1.56.0 → 1.57.0 without reinstalling; see the note below on when Desktop offers the update |
+| Codex | `codex plugin marketplace upgrade code-review-skills` | **verified**: 1.56.0 → 1.57.0, both Skills discovered and smoke-tested at 1.57.0 |
+| GitHub Copilot CLI | the CLI documents `plugin update` | documented, not exercised |
+| Cursor | none found for the tested install | **not verified for the tested path**: a local `file://` marketplace install is commit-pinned and stayed at 1.56.0. This does not mean Cursor cannot update plugins; a source that supports refresh was not tested |
+
+If in doubt, reinstall from the distribution repository. Installing
+successfully is never evidence that a path's update mechanism works; each
+update row above is verified only for the path and release pair stated.
+
+## Compatibility and verification
+
+**Verified** means exercised by a real run against the published
+distribution repository, with evidence recorded in
+[#511](https://github.com/amirbena/code-review-skill/issues/511).
+**Documented** means the tool's own documentation says it should work and
+nothing here has shown that it does. A "not recorded" or "not verified" cell
+is unverified, never assumed working.
+
+Installation, discovery and runtime smoke runs are v1.56.0. Update runs are
+v1.56.0 → v1.57.0 (the first release after v1.56.0). All on macOS,
+2026-09-24. Client versions for the update runs were not re-captured except
+Cursor's.
+
+| Consumer (client version) | Installation | Discovery of both Skills | Runtime smoke | Update |
+| --- | --- | --- | --- | --- |
+| CI, `skills` CLI against a local copy of the built tree | verified | verified | not applicable | not applicable |
+| skills CLI / skills.sh (`skills` 1.7.0 for install) | verified | verified | not recorded | verified (1.56.0 → 1.57.0) |
+| Claude Code (2.1.272 for install) | verified | verified | verified | verified (1.56.0 → 1.57.0) |
+| Codex (CLI 0.156.1 for install) | verified | verified | verified | verified (1.56.0 → 1.57.0) |
+| Cursor (3.17.8, installed app version) | verified | verified | verified | not verified for the tested local commit-pinned install |
+| GitHub Copilot (CLI 1.0.88) | verified | verified (the CLI reported two installed Skills) | not recorded | not verified |
+
+Notes on the evidence:
+
+- **skills.sh listing:** per-Skill pages exist under
+  `skills.sh/amirbena/code-review-skills/`, but the directory search did not
+  return the Skills earlier on 2026-09-24. A later check the same day returned
+  `github-pr-review` (1 install) and not `local-code-review`. Listing depends
+  on install telemetry, so neither Skill is confirmed as listed yet.
+- **Claude Code:** `local-code-review` ran scope discovery, found an empty
+  delta, and returned a vacuous `REVIEW CLEAN` with no invented findings.
+  `github-pr-review`, invoked without a valid PR, asked for a PR target and
+  publication mode and made no GitHub write.
+- **Codex:** no Codex adapter was needed; the `"./"` marketplace entry path
+  did not block installation. The version shown is from the install run and
+  was not re-captured for the later runtime run. Reading only the root
+  `plugin.json`, without the marketplace file, was not exercised.
+- **Cursor:** no Cursor adapter or `.cursor-plugin` was needed. The version is
+  the locally installed app version. The update test used an install from a
+  local `file://` marketplace pinned to a commit; Cursor kept resolving that
+  cached commit after reload, and the `install_plugin` operation is a
+  reinstall, so it was not used. Testing a refresh-capable source (for example
+  an imported GitHub marketplace) across a later release is still open.
+- **Claude Desktop update lifecycle:** Desktop kept showing 1.56.0 with Update
+  disabled, even after a full restart, while the local marketplace clone
+  under `~/.claude/plugins/marketplaces/` was still at the 1.56.0
+  publication. After the marketplace was refreshed through the Claude Code
+  CLI, the clone advanced to 1.57.0, Update became enabled, and using it
+  upgraded the plugin in place. This shows that refreshing the locally cached
+  marketplace exposed the newer version and enabled the native update. It does not establish whether or when Desktop refreshes
+  marketplaces on its own; the test environment had `DISABLE_AUTOUPDATER=1`.
+- **Codex update:** besides both Skills being discovered at 1.57.0, the smoke
+  runs reported the version and boundary of each Skill. Plugin icon paths
+  containing `..` were ignored and both large Skill prompts produced
+  context-truncation warnings; neither blocked discovery or invocation.
+- **Copilot:** tested through both the marketplace and the direct install;
+  not run against a pinned tag.
+- **Not exercised anywhere:** Windows, and a clean machine (runs used isolated
+  config directories).
+
+**What "runtime smoke" means.** It shows that the distributed Skill can be
+discovered, loaded, and invoked, and that it follows its basic invocation and
+input contract. It does not show that reviews are correct. Review behavior
+and quality are validated separately by the repository's deterministic tests
+and benchmark system.
 
 ## Which release do I have?
 
@@ -68,4 +148,19 @@ reinstall.
   `metadata.version` field.
 - In the distribution repository, `DISTRIBUTION.json` records the version,
   the source repository and commit, and a hash of the published contents.
-  Tags `vX.Y.Z` in that repository match the source repository's releases.
+  Tags `vX.Y.Z` there match the source repository's releases.
+
+## Manual / offline installation
+
+Use this only when managed installation is unavailable: offline machines,
+archival, or debugging. Download `local-code-review-skill.zip` or
+`github-pr-review-skill.zip` from the
+[source repository's releases](https://github.com/amirbena/code-review-skill/releases)
+and unzip it into your runtime's Skill directory (for example
+`.claude/skills/<name>/`, `.agents/skills/<name>/`, or `.cursor/skills/<name>/`);
+each archive keeps `SKILL.md` at its root. To build an archive yourself, see
+the root [README](../README.md#install).
+
+A ZIP install is **not** equivalent to a managed install: it sends no install
+telemetry, so it is never counted toward or listed on skills.sh, it has no
+update command, and none of the verification above applies to it.
