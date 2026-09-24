@@ -154,3 +154,10 @@ the checks are
 
 The benchmark does not read the result. It invokes `local-code-review` with
 the option off and scores only the Markdown report.
+
+Two properties are outside these checks: whether `identity.stable_id` was
+computed, and whether the option leaves the review unchanged. Each shows
+only across live runs.
+[`structured-result-runtime-properties.md`](../../runtime_platform/benchmark/structured-result-runtime-properties.md)
+([#529](https://github.com/amirbena/code-review-skill/issues/529)) measures
+them on demand. It reuses these checks and does not add a second comparator.
