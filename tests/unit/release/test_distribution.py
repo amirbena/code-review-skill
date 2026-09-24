@@ -120,6 +120,15 @@ class DistributionTests(unittest.TestCase):
         self.assertIn("rejected", out)
         self.assertEqual(self._tags(), "")
 
+    def test_older_version_is_refused_when_main_carries_a_newer_one(self) -> None:
+        self._run("distribution-publish", "1.1.0")
+        head = _git(self.remote, "rev-parse", "main")
+        code, out = self._run("distribution-publish", "1.0.0")
+        self.assertEqual(code, 1)
+        self.assertIn("older content", out)
+        self.assertEqual(_git(self.remote, "rev-parse", "main"), head)
+        self.assertEqual(self._tags().split(), ["v1.1.0"])
+
     def test_verify_detects_content_mismatch_and_missing_tag(self) -> None:
         self.assertEqual(self._run("distribution-verify")[0], 1)
         self._run("distribution-publish")

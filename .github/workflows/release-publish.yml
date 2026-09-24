@@ -351,10 +351,14 @@ jobs:
 
       - name: Resolve the source version and commit
         id: source
+        env:
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+          PLAN_VERSION: ${{ needs.plan.outputs.version }}
+          PUBLISH_SHA: ${{ needs.publish.outputs.sha }}
         run: |
-          if [ "${{ needs.publish.result }}" = "success" ]; then
-            version="${{ needs.plan.outputs.version }}"
-            sha="${{ needs.publish.outputs.sha }}"
+          if [ "${PUBLISH_RESULT}" = "success" ]; then
+            version="${PLAN_VERSION}"
+            sha="${PUBLISH_SHA}"
           else
             tag="$(git tag --list --sort=-v:refname 'v[0-9]*.[0-9]*.[0-9]*' | head -n1)"
             [ -n "${tag}" ] || { echo "::error::no source release tag exists; nothing to distribute"; exit 1; }
@@ -362,6 +366,12 @@ jobs:
             sha="$(git rev-parse "${tag}^{commit}")"
             git checkout --detach "${sha}"
           fi
+          # The tag glob allows arbitrary characters; only a strict X.Y.Z
+          # ever reaches a later step.
+          printf '%s' "${version}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' \
+            || { echo "::error::refusing malformed release version '${version}'"; exit 1; }
+          printf '%s' "${sha}" | grep -Eq '^[0-9a-f]{40}$' \
+            || { echo "::error::refusing malformed source commit '${sha}'"; exit 1; }
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "sha=${sha}" >> "$GITHUB_OUTPUT"
 
@@ -374,7 +384,9 @@ jobs:
 
       - name: Rebuild the tree from the source tag (recovery only)
         if: needs.publish.result != 'success'
-        run: ./scripts/release/verify-skill-archives.sh --build --expect-version "${{ steps.source.outputs.version }}"
+        env:
+          VERSION: ${{ steps.source.outputs.version }}
+        run: ./scripts/release/verify-skill-archives.sh --build --expect-version "${VERSION}"
 
       - name: Resolve the publishing App bot identity
         id: bot-identity
@@ -388,23 +400,33 @@ jobs:
       - name: Publish the distribution tree (fast-forward, idempotent, never forced)
         env:
           DISTRIBUTION_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.source.outputs.version }}
+          SHA: ${{ steps.source.outputs.sha }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          GIT_NAME: ${{ steps.bot-identity.outputs.login }}
+          GIT_EMAIL: ${{ steps.bot-identity.outputs.email }}
         run: |
           python scripts/release/release_worthiness.py distribution-publish \
-            --version "${{ steps.source.outputs.version }}" \
-            --source-commit "${{ steps.source.outputs.sha }}" \
-            --source-repository "${{ github.repository }}" \
+            --version "${VERSION}" \
+            --source-commit "${SHA}" \
+            --source-repository "${SOURCE_REPOSITORY}" \
             --remote "https://github.com/amirbena/code-review-skills" \
-            --git-name "${{ steps.bot-identity.outputs.login }}" \
-            --git-email "${{ steps.bot-identity.outputs.email }}"
+            --git-name "${GIT_NAME}" \
+            --git-email "${GIT_EMAIL}"
 
       - name: Verify the distribution tag equals the build
         env:
           DISTRIBUTION_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.source.outputs.version }}
+          SHA: ${{ steps.source.outputs.sha }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          GIT_NAME: ${{ steps.bot-identity.outputs.login }}
+          GIT_EMAIL: ${{ steps.bot-identity.outputs.email }}
         run: |
           python scripts/release/release_worthiness.py distribution-verify \
-            --version "${{ steps.source.outputs.version }}" \
-            --source-commit "${{ steps.source.outputs.sha }}" \
-            --source-repository "${{ github.repository }}" \
+            --version "${VERSION}" \
+            --source-commit "${SHA}" \
+            --source-repository "${SOURCE_REPOSITORY}" \
             --remote "https://github.com/amirbena/code-review-skills"
 
       - name: Distribution summary

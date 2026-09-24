@@ -90,8 +90,8 @@ class JobTopologyTests(unittest.TestCase):
         self.data = _load()
         self.jobs = self.data["jobs"]
 
-    def test_defines_exactly_plan_and_publish(self) -> None:
-        self.assertEqual(set(self.jobs.keys()), {"plan", "publish"})
+    def test_defines_exactly_plan_publish_and_distribute(self) -> None:
+        self.assertEqual(set(self.jobs.keys()), {"plan", "publish", "distribute"})
 
     def test_does_not_define_release_gate(self) -> None:
         self.assertNotIn("release-gate", self.jobs)
@@ -135,7 +135,7 @@ class PermissionsTests(unittest.TestCase):
                     continue
                 self.assertEqual(level, "read", f"{name}: {scope}")
 
-    def test_only_publish_job_mints_the_app_token(self) -> None:
+    def test_each_app_token_is_minted_only_by_its_own_job(self) -> None:
         minters = [
             name for name, job in self.jobs.items()
             if any(
@@ -143,16 +143,29 @@ class PermissionsTests(unittest.TestCase):
                 for s in job["steps"]
             )
         ]
-        self.assertEqual(minters, ["publish"])
+        self.assertEqual(minters, ["publish", "distribute"])
+        for name, secret, other in (
+            ("publish", "RELEASE_APP", "DISTRIBUTION_APP"),
+            ("distribute", "DISTRIBUTION_APP", "RELEASE_APP"),
+        ):
+            blob = yaml.safe_dump(self.jobs[name])
+            self.assertIn(secret, blob)
+            self.assertNotIn(other, blob, f"{name} must not touch the other App's credentials")
 
     def test_plan_never_references_app_secrets_or_token(self) -> None:
         blob = yaml.safe_dump(self.jobs["plan"])
         self.assertNotIn("RELEASE_APP", blob)
         self.assertNotIn("app-token", blob)
+        self.assertNotIn("DISTRIBUTION_APP", blob)
 
-    def test_only_publish_job_is_behind_the_release_environment(self) -> None:
-        gated = [name for name, job in self.jobs.items() if job.get("environment")]
-        self.assertEqual(gated, ["publish"])
+    def test_environments_are_release_for_publish_and_distribution_for_distribute(self) -> None:
+        gated = {name: job["environment"] for name, job in self.jobs.items() if job.get("environment")}
+        self.assertEqual(gated, {"publish": "release", "distribute": "release-skills-distribution"})
+
+    def test_distribute_is_read_only_and_never_forces(self) -> None:
+        job = self.jobs["distribute"]
+        self.assertEqual(job["permissions"], {"contents": "read"})
+        self.assertNotIn("--force", yaml.safe_dump(job))
 
 
 class PlanJobTests(unittest.TestCase):

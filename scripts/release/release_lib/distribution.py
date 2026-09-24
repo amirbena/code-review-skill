@@ -183,6 +183,13 @@ def _expected_trailers(build: Build, tag: str, source_repository: str) -> dict[s
     }
 
 
+def _semver_key(tag: str) -> tuple[int, ...] | None:
+    try:
+        return tuple(int(part) for part in tag.removeprefix("v").split("."))
+    except ValueError:
+        return None
+
+
 def _diff(want: dict[str, str], have: dict[str, str]) -> str:
     missing = sorted(set(want) - set(have))
     extra = sorted(set(have) - set(want))
@@ -215,6 +222,13 @@ def publish(build: Build, remote: str, version: str, source_repository: str, ide
         if _trailers(_git(["log", "-1", "--format=%B", tip], work)) != trailers or _checkout_hashes(
             work, tip
         ) != want:
+            tip_tag = _trailers(_git(["log", "-1", "--format=%B", tip], work)).get("Source-Tag", "")
+            newer, this = _semver_key(tip_tag), _semver_key(tag)
+            if newer and this and newer > this:
+                raise DistributionError(
+                    f"refusing to publish {tag}: {BRANCH} already carries {tip_tag}, so this would put "
+                    f"older content on the branch tip; nothing was changed"
+                )
             for child in work.iterdir():
                 if child.name != ".git":
                     shutil.rmtree(child) if child.is_dir() else child.unlink()
