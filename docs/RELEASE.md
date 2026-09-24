@@ -496,8 +496,8 @@ idempotency/drift checks. `skills/<name>/` is never touched by the adapter.
   1.0.0 schema by hand (every field is declared; `additionalProperties` is
   false). No validator runs in CI.
 - Verified locally: `claude plugin validate` passes on the built root, and
-  `marketplace add` + `install` succeed. Codex, Cursor and Copilot reading
-  the root `plugin.json` is documented compatibility only until #511; consumer-facing install steps and the verified/documented
+  `marketplace add` + `install` succeed. Live installs from the distribution repository are
+  recorded in #511; consumer-facing install steps and the verified/documented
   table live in [`distribution.md`](distribution.md).
 - The `archive`-source behaviour for the release zips is **not yet tested**;
   the zips carry no `.claude-plugin/`, and nothing depends on that source

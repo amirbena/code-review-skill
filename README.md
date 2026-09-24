@@ -57,9 +57,15 @@ how the reviewer will be used — packaging both is rarely needed.
 | GitHub PR review only | `./scripts/packaging/package-skills.sh github` · `./scripts/packaging/package-skills.ps1 github` | `dist/github-pr-review-skill.zip` |
 | Both entry points | `./scripts/packaging/package-skills.sh all` · `./scripts/packaging/package-skills.ps1 all` | both archives above |
 
-To install from the published distribution repository instead (skills.sh,
-Claude Code marketplace), and to see which install paths are verified versus
-only documented, see [`docs/distribution.md`](docs/distribution.md).
+To install from the published distribution repository instead:
+
+```bash
+npx skills add amirbena/code-review-skills --skill local-code-review
+```
+
+For the Claude Code marketplace, Codex, Copilot, updates, and which install
+paths are verified versus only documented, see
+[`docs/distribution.md`](docs/distribution.md).
 
 ## Quick start
 
