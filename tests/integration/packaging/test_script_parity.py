@@ -32,6 +32,16 @@ class PackagingScriptParityTests(unittest.TestCase):
             self.assertIn("CHANGELOG.md", script)
             self.assertLess(script.index(stamp), script.index(validate))
 
+    def test_both_scripts_build_the_canonical_tree_and_derive_the_zip_from_it(self) -> None:
+        for script in (self.sh, self.ps1):
+            for step in ("finalize-tree", "build-archive", "verify-archive", "write-tree-manifest"):
+                self.assertIn(step, script)
+            self.assertLess(script.index("finalize-tree"), script.index("build-archive"))
+            self.assertLess(script.index("build-archive"), script.index("verify-archive"))
+            self.assertNotIn(".staging", script)
+        self.assertNotIn("zip -r", self.sh)
+        self.assertNotIn("Compress-Archive", self.ps1)
+
     def test_scripts_do_not_restate_manifest_resources(self) -> None:
         for obsolete_name in (
             "shared_policies",

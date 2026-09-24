@@ -12,6 +12,10 @@ Usage:
     python3 scripts/packaging/package_adapt.py adapt-metadata-paths <file>
     python3 scripts/packaging/package_adapt.py validate-frontmatter <file> <expected_name>
     python3 scripts/packaging/package_adapt.py stamp-release-version <file> <changelog>
+    python3 scripts/packaging/package_adapt.py finalize-tree <tree> <expected_name>
+    python3 scripts/packaging/package_adapt.py write-tree-manifest <dist_dir>
+    python3 scripts/packaging/package_adapt.py build-archive <tree> <archive>
+    python3 scripts/packaging/package_adapt.py verify-archive <tree> <archive>
 """
 
 from __future__ import annotations
