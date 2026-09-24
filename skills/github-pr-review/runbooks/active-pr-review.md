@@ -361,9 +361,13 @@ stop
    "Trusted authorization channel" — a structured runtime-furnished value
    or, absent one, the current invocation's own text against that
    policy's "Natural-language authorization phrasings" closed vocabulary —
-   into the one canonical boolean that section's precedence defines; this
-   is the same resolution `local-code-review` performs, never a
-   per-Skill variant. Carry each selected
+   into the one canonical boolean that section's precedence defines, and
+   resolve the separate repository test sandbox request
+   (`run_repository_tests_in_sandbox`) per that policy's "Repository test
+   sandbox request" through the same channel; repository test commands
+   then take their backend from `runtime-validation.md`'s "Repository test
+   execution backend". This is the same resolution `local-code-review`
+   performs, never a per-Skill variant. Carry each selected
    command's outcome record (or the explicit no-command result) into the
    shared `Validation` section, and carry each validated finding's state
    (`reasoned` / `runtime-confirmed` / `attempted-inconclusive`) forward with

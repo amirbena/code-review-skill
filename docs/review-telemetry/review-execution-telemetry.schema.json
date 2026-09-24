@@ -67,7 +67,7 @@
         "additionalProperties": false,
         "properties": {
           "outcome": { "type": "string", "enum": ["executed", "failed", "skipped", "unavailable"] },
-          "provenance": { "type": ["string", "null"], "enum": ["sandbox", "trusted_host", null] }
+          "provenance": { "type": ["string", "null"], "enum": ["sandbox", "trusted_host", "host", null] }
         }
       }
     },

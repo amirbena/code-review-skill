@@ -129,11 +129,13 @@ stop
 `local-code-review` operates on the user's real working tree in place. That
 working tree is review input, not a disposable execution boundary, so local
 review does not itself make repository validation available and must not imply
-that target-repository code may run. A runtime-validation outcome may be
-recorded only when an external runner separately supplies and verifiably
-establishes the shared policy's required boundary; otherwise the dormant
-capability remains `unavailable` (or `skipped` when a supplied boundary cannot
-be verified).
+that target-repository code may run. Except for an admitted repository test
+command — which runs on the host by default, or sandbox-only on an explicit
+request, per the shared policy's "Repository test execution backend" — a
+runtime-validation outcome may be recorded only when an external runner
+separately supplies and verifiably establishes the shared policy's required
+boundary; otherwise the dormant capability remains `unavailable` (or `skipped`
+when a supplied boundary cannot be verified).
 
 ## Execution efficiency (does not change what is inspected)
 
@@ -273,9 +275,13 @@ which a value must be resolved before it is used, or what is reported.
    "Trusted authorization channel" — a structured runtime-furnished value
    or, absent one, the current invocation's own text against that
    policy's "Natural-language authorization phrasings" closed vocabulary —
-   into the one canonical boolean that section's precedence defines; this
-   is the same resolution `github-pr-review` performs, never a
-   per-Skill variant. Use the target repository instruction context and
+   into the one canonical boolean that section's precedence defines, and
+   resolve the separate repository test sandbox request
+   (`run_repository_tests_in_sandbox`) per that policy's "Repository test
+   sandbox request" through the same channel; repository test commands
+   then take their backend from `runtime-validation.md`'s "Repository test
+   execution backend". This is the same resolution `github-pr-review`
+   performs, never a per-Skill variant. Use the target repository instruction context and
    the changed delta's blast radius already resolved above. Carry exactly
    one outcome
    record per selected command, or the explicit no-command result, into the

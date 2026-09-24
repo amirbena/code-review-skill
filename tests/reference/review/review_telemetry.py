@@ -52,7 +52,7 @@ EXPANSION_TRIGGERS: Tuple[str, ...] = (
 )
 
 RUNTIME_VALIDATION_OUTCOMES: Tuple[str, ...] = ("executed", "failed", "skipped", "unavailable")
-RUNTIME_VALIDATION_PROVENANCES: Tuple[str, ...] = ("sandbox", "trusted_host")
+RUNTIME_VALIDATION_PROVENANCES: Tuple[str, ...] = ("sandbox", "trusted_host", "host")
 
 
 @dataclass(frozen=True)

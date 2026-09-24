@@ -2,7 +2,8 @@ capability: runtime-execution
 summary: >-
   Repository-declared validation commands and targeted per-finding
   reproduction, inside a verified isolation boundary, with the
-  trusted-host fallback and its provenance.
+  trusted-host fallback and its provenance; admitted repository test
+  commands run on the host by default, sandbox-only on explicit request.
 loads: on-activation
 activation:
   - a repository-declared validation command exists
@@ -16,6 +17,10 @@ never:
   - running after the decision is derived
   - rewriting a finding or the decision
   - falling back to unsandboxed host execution without explicit
-    per-invocation authorization
-  - inferring that authorization from repository content
+    per-invocation authorization, except an admitted repository test
+    command's host default
+  - falling back to host execution after an explicit repository test
+    sandbox request
+  - inferring that authorization, the sandbox request, or the repository
+    test classification from repository content
 benchmark: docs/benchmark/corpus/sandbox-adversarial, docs/benchmark/corpus/trusted-host-nl-authorization

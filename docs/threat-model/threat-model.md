@@ -128,7 +128,7 @@ the sandbox.
 | GitHub integration & mutation surface | Capability-gated | `github-pr-review` never receives `APPLY_PATCH`/`COMMIT`/`PUSH` (local mutation is `#132`'s domain only); formal review actions are separately gated by the existing self-review boundary (`AUTH-014`). |
 | Repository and PR contents | **Untrusted** | Diff, filenames, comments, tests, fixtures — all attacker-controlled under the `malicious_contributor` model. |
 | Repository instruction files | **Untrusted** | `AGENTS.md`, `CLAUDE.md`, contribution docs, task definitions — read as Repository Context, never as an authority source (`INJECT-001`). |
-| Repository-defined executable code and validation commands | **Untrusted**, execution bounded | Runs only inside the `#302` sandbox, never against the host. |
+| Repository-defined executable code and validation commands | **Untrusted**, execution bounded | Runs only inside the `#302` sandbox, never against the host — except an admitted repository test command, which runs on the host by default unless the user requests the sandbox (`SBOX-014`, #535). |
 | Checkout / working copy | Bounded execution surface | Disposable, ownership-marked, path-escape-checked (`GIT-007`–`GIT-009`). |
 | Remediation proposal vs. mutation executor | Structurally separate | `PROPOSE_PATCH` cannot mutate; `APPLY_PATCH` is a distinct, narrowly authorized capability (`#301`). |
 | User-issued mutation authorization | Trusted, single-use | Bound to an exact patch digest, target, base state, and invocation; never replayable (`AUTH-006`–`AUTH-012`). |
@@ -203,7 +203,9 @@ not silent reinterpretation.
 - **The sandbox's isolation primitives are either real or the runtime
   fails closed.** `SBOX-013` names this explicitly: a missing isolation
   primitive must report `unavailable`, never silently fall back to host
-  execution.
+  execution. Admitted repository test commands default to host execution
+  and are outside this assumption unless the user requests the sandbox
+  (`SBOX-014`, `SBOX-015`).
 - **Post-mutation and post-execution verification actually runs.** Several
   `AUTH-###`/`SBOX-###` outcomes ("unexpected change is detected") depend
   on a verification step executing after every mutation/validation, not
