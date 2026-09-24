@@ -65,14 +65,15 @@ their own tools.
 
 | Consumer | Update path | State |
 | --- | --- | --- |
-| skills CLI / skills.sh | `npx skills update` | **pending verification**: run once at v1.56.0 it only refreshed the same version. A real cross-release update can only be verified after a later release |
-| Codex | the CLI documents `plugin marketplace upgrade` | documented, not exercised |
+| skills CLI / skills.sh | `npx skills update` | **verified**: an existing v1.56.0 install updated to v1.57.0 in place, both Skills still discoverable |
+| Claude Code / Desktop | refresh the marketplace through the Claude Code CLI, then the native Desktop **Update** button (or Claude Code's own plugin update) | **verified**: 1.56.0 → 1.57.0 without reinstalling; see the note below on when Desktop offers the update |
+| Codex | `codex plugin marketplace upgrade code-review-skills` | **verified**: 1.56.0 → 1.57.0, both Skills discovered and smoke-tested at 1.57.0 |
 | GitHub Copilot CLI | the CLI documents `plugin update` | documented, not exercised |
-| Claude Code | the plugin/marketplace update flow of Claude Code | documented, not exercised |
-| Cursor | not investigated | not exercised |
+| Cursor | none found for the tested install | **not verified for the tested path**: a local `file://` marketplace install is commit-pinned and stayed at 1.56.0. This does not mean Cursor cannot update plugins; a source that supports refresh was not tested |
 
 If in doubt, reinstall from the distribution repository. Installing
-successfully is never evidence that a path's update mechanism works.
+successfully is never evidence that a path's update mechanism works; each
+update row above is verified only for the path and release pair stated.
 
 ## Compatibility and verification
 
@@ -83,23 +84,27 @@ distribution repository, with evidence recorded in
 nothing here has shown that it does. A "not recorded" or "not verified" cell
 is unverified, never assumed working.
 
-All runs below are v1.56.0, macOS, 2026-09-24.
+Installation, discovery and runtime smoke runs are v1.56.0. Update runs are
+v1.56.0 → v1.57.0 (the first release after v1.56.0). All on macOS,
+2026-09-24. Client versions for the update runs were not re-captured except
+Cursor's.
 
 | Consumer (client version) | Installation | Discovery of both Skills | Runtime smoke | Update |
 | --- | --- | --- | --- | --- |
 | CI, `skills` CLI against a local copy of the built tree | verified | verified | not applicable | not applicable |
-| skills CLI / skills.sh (`skills` 1.7.0) | verified | verified | not recorded | pending verification |
-| Claude Code (2.1.272) | verified | verified | verified | not verified |
-| Codex (CLI 0.156.1) | verified | verified | verified | not verified |
-| Cursor (3.17.8, installed app version) | verified | verified | verified | not verified |
+| skills CLI / skills.sh (`skills` 1.7.0 for install) | verified | verified | not recorded | verified (1.56.0 → 1.57.0) |
+| Claude Code (2.1.272 for install) | verified | verified | verified | verified (1.56.0 → 1.57.0) |
+| Codex (CLI 0.156.1 for install) | verified | verified | verified | verified (1.56.0 → 1.57.0) |
+| Cursor (3.17.8, installed app version) | verified | verified | verified | not verified for the tested local commit-pinned install |
 | GitHub Copilot (CLI 1.0.88) | verified | verified (the CLI reported two installed Skills) | not recorded | not verified |
 
 Notes on the evidence:
 
 - **skills.sh listing:** per-Skill pages exist under
   `skills.sh/amirbena/code-review-skills/`, but the directory search did not
-  return the Skills on 2026-09-24. Listing depends on install telemetry;
-  re-check after a later release.
+  return the Skills earlier on 2026-09-24. A later check the same day returned
+  `github-pr-review` (1 install) and not `local-code-review`. Listing depends
+  on install telemetry, so neither Skill is confirmed as listed yet.
 - **Claude Code:** `local-code-review` ran scope discovery, found an empty
   delta, and returned a vacuous `REVIEW CLEAN` with no invented findings.
   `github-pr-review`, invoked without a valid PR, asked for a PR target and
@@ -109,7 +114,23 @@ Notes on the evidence:
   was not re-captured for the later runtime run. Reading only the root
   `plugin.json`, without the marketplace file, was not exercised.
 - **Cursor:** no Cursor adapter or `.cursor-plugin` was needed. The version is
-  the locally installed app version.
+  the locally installed app version. The update test used an install from a
+  local `file://` marketplace pinned to a commit; Cursor kept resolving that
+  cached commit after reload, and the `install_plugin` operation is a
+  reinstall, so it was not used. Testing a refresh-capable source (for example
+  an imported GitHub marketplace) across a later release is still open.
+- **Claude Desktop update lifecycle:** Desktop kept showing 1.56.0 with Update
+  disabled, even after a full restart, while the local marketplace clone
+  under `~/.claude/plugins/marketplaces/` was still at the 1.56.0
+  publication. After the marketplace was refreshed through the Claude Code
+  CLI, the clone advanced to 1.57.0, Update became enabled, and using it
+  upgraded the plugin in place. This shows that refreshing the locally cached
+  marketplace exposed the newer version and enabled the native update. It does not establish whether or when Desktop refreshes
+  marketplaces on its own; the test environment had `DISABLE_AUTOUPDATER=1`.
+- **Codex update:** besides both Skills being discovered at 1.57.0, the smoke
+  runs reported the version and boundary of each Skill. Plugin icon paths
+  containing `..` were ignored and both large Skill prompts produced
+  context-truncation warnings; neither blocked discovery or invocation.
 - **Copilot:** tested through both the marketplace and the direct install;
   not run against a pinned tag.
 - **Not exercised anywhere:** Windows, and a clean machine (runs used isolated
