@@ -1,0 +1,8 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "code-review-skills",
+  "version": "{{version}}",
+  "description": "Code Review Agent Skills: local-code-review and github-pr-review, evidence-backed P0/P1/P2 findings.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/{{source_repository}}"
+}
