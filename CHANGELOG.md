@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.58.0 — 2026-09-24
+
+### Added
+
+- `local-code-review` can append an opt-in, schema-versioned machine-readable review result via `structured_review_result` (#527).
+
 ## v1.57.0 — 2026-09-24
 
 ### Added
