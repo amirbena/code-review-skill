@@ -65,6 +65,12 @@ def main(argv: list[str] | None = None) -> int:
         "write-tree-manifest", help="write dist/skills-manifest.json for every built dist/skills/<name>/ tree"
     )
     manifest.add_argument("dist_dir", type=Path)
+    manifest.add_argument("names", nargs="+", help="the Skills built in this run")
+
+    normalize = subparsers.add_parser(
+        "normalize-tree", help="normalize line endings, BOM and modes of a staged tree in place"
+    )
+    normalize.add_argument("tree", type=Path)
 
     archive = subparsers.add_parser("build-archive", help="zip a built tree deterministically")
     archive.add_argument("tree", type=Path)
@@ -97,8 +103,10 @@ def main(argv: list[str] | None = None) -> int:
             distribute_skill_md(args.tree / "SKILL.md")
             validate_agent_skill(args.tree, args.expected_name)
             check_tree_self_contained(args.tree)
+        elif args.command == "normalize-tree":
+            normalize_tree(args.tree)
         elif args.command == "write-tree-manifest":
-            print(f"tree manifest written to: {write_tree_manifest(args.dist_dir)}")
+            print(f"tree manifest written to: {write_tree_manifest(args.dist_dir, args.names)}")
         elif args.command == "build-archive":
             build_archive(args.tree, args.archive)
         elif args.command == "verify-archive":

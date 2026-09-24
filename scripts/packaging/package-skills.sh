@@ -114,6 +114,10 @@ package_skill() {
   done < "${manifest_files}"
   rm -f "${manifest_files}"
 
+  # Normalize line endings/BOM first, so a CRLF checkout (e.g. Windows
+  # autocrlf) validates and stamps identically to an LF one.
+  python3 "${package_adapt}" normalize-tree "${stage_dir}"
+
   # Adapt relative links into shared/ across every packaged Markdown
   # file (skill-local links like ../SKILL.md or runbooks/... need no
   # change, since skill-internal relative depth is unchanged).
@@ -164,10 +168,12 @@ package_skill() {
     exit 1
   fi
 
+  built_skills+=("${skill_name}")
   echo "Skill tree built at: ${stage_dir}"
   echo "Archive created at: ${archive_path}"
 }
 
+built_skills=()
 echo "Repository root: ${repo_root}"
 mkdir -p "${dist_dir}" "${trees_root}"
 
@@ -179,4 +185,4 @@ if [[ "${target}" == "github" || "${target}" == "all" ]]; then
   package_skill "github"
 fi
 
-python3 "${package_adapt}" write-tree-manifest "${dist_dir}"
+python3 "${package_adapt}" write-tree-manifest "${dist_dir}" "${built_skills[@]}"

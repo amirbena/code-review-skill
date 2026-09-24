@@ -42,6 +42,11 @@ class PackagingScriptParityTests(unittest.TestCase):
         self.assertNotIn("zip -r", self.sh)
         self.assertNotIn("Compress-Archive", self.ps1)
 
+    def test_both_scripts_normalize_line_endings_before_stamping_and_validating(self) -> None:
+        for script, stamp in ((self.sh, "stamp_release_version \"${stage_dir}/SKILL.md\""), (self.ps1, "Set-ReleaseVersion -SkillMdPath")):
+            self.assertIn("normalize-tree", script)
+            self.assertLess(script.index("normalize-tree"), script.index(stamp))
+
     def test_scripts_do_not_restate_manifest_resources(self) -> None:
         for obsolete_name in (
             "shared_policies",

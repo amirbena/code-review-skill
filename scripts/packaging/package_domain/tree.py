@@ -215,14 +215,20 @@ def tree_files(tree: Path) -> dict[str, str]:
     return {p.relative_to(tree).as_posix(): _sha256(p) for p in _files(tree)}
 
 
-def write_tree_manifest(dist_dir: Path) -> Path:
-    """Write ``dist/skills-manifest.json`` covering every built ``dist/skills/<name>/`` tree."""
+def write_tree_manifest(dist_dir: Path, names: list[str]) -> Path:
+    """Write ``dist/skills-manifest.json`` covering exactly the named ``dist/skills/<name>/`` trees.
+
+    The caller names the Skills built in this run, so a stale tree from an
+    earlier build (or a stray directory) is never described.
+    """
     dist_dir = Path(dist_dir)
-    skills_dir = dist_dir / "skills"
     skills: dict[str, dict] = {}
-    for tree in sorted(p for p in skills_dir.iterdir() if p.is_dir()):
+    for name in sorted(set(names)):
+        tree = dist_dir / "skills" / name
+        if not tree.is_dir():
+            raise SkillTreeError(f"cannot write the manifest: no built tree at {tree}")
         files = tree_files(tree)
-        skills[tree.name] = {"tree_hash": tree_hash(files), "files": files}
+        skills[name] = {"tree_hash": tree_hash(files), "files": files}
     manifest = {
         "schema_version": MANIFEST_SCHEMA_VERSION,
         "algorithm": "sha256",

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import stat
 import tempfile
 import unittest
@@ -154,11 +155,20 @@ class DeterminismTests(unittest.TestCase):
     def test_manifest_is_reproducible_and_sits_outside_the_skill_trees(self) -> None:
         tree = self.make_tree()
         normalize_tree(tree)
-        first = write_tree_manifest(self.root / "dist").read_bytes()
-        second = write_tree_manifest(self.root / "dist").read_bytes()
+        first = write_tree_manifest(self.root / "dist", ["demo-skill"]).read_bytes()
+        second = write_tree_manifest(self.root / "dist", ["demo-skill"]).read_bytes()
         self.assertEqual(first, second)
-        self.assertEqual(write_tree_manifest(self.root / "dist"), self.root / "dist" / MANIFEST_NAME)
+        self.assertEqual(write_tree_manifest(self.root / "dist", ["demo-skill"]), self.root / "dist" / MANIFEST_NAME)
         self.assertFalse((tree / MANIFEST_NAME).exists())
+
+    def test_manifest_lists_only_the_named_trees(self) -> None:
+        self.make_tree("built")
+        self.make_tree("stale")
+        (self.root / "dist" / "skills" / "stray").mkdir()
+        path = write_tree_manifest(self.root / "dist", ["built"])
+        self.assertEqual(list(json.loads(path.read_text(encoding="utf-8"))["skills"]), ["built"])
+        with self.assertRaises(SkillTreeError):
+            write_tree_manifest(self.root / "dist", ["missing"])
 
     def test_archive_is_deterministic_and_equals_the_tree(self) -> None:
         tree = self.make_tree()

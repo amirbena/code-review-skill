@@ -127,6 +127,11 @@ function Package-Skill {
     Copy-Item -LiteralPath $sourcePath -Destination $destPath
   }
 
+  # Normalize line endings/BOM first, so a CRLF checkout (e.g. Windows
+  # autocrlf) validates and stamps identically to an LF one.
+  & $pythonCommand $packageAdapt normalize-tree $stageDir
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
   # Adapt relative links into shared/ across every packaged Markdown
   # file (skill-local links like ../SKILL.md or runbooks/... need no
   # change, since skill-internal relative depth is unchanged).
@@ -186,10 +191,12 @@ function Package-Skill {
     exit 1
   }
 
+  $script:builtSkills += $SkillName
   Write-Host "Skill tree built at: $stageDir"
   Write-Host "Archive created at: $archivePath"
 }
 
+$script:builtSkills = @()
 Write-Host "Repository root: $repoRoot"
 New-Item -ItemType Directory -Path $distDir, $treesRoot -Force | Out-Null
 
@@ -201,5 +208,5 @@ if ($Skill -eq "github" -or $Skill -eq "all") {
   Package-Skill -PackageTarget "github"
 }
 
-& $pythonCommand $packageAdapt write-tree-manifest $distDir
+& $pythonCommand $packageAdapt write-tree-manifest $distDir @($script:builtSkills)
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
