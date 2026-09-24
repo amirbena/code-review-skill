@@ -43,9 +43,9 @@ has shown that it does. An unexercised path is never to be read as working.
 
 | Ecosystem | State | Evidence |
 | --- | --- | --- |
-| skills.sh (`skills` CLI): discovery and copy install from the built tree | verified (CI, local source) | `tests/integration/packaging/test_distribution_consumer_install.py` |
+| skills.sh (`skills` CLI): discovery and copy install from the built tree | verified | CI, against a local copy of the built tree: `tests/integration/packaging/test_distribution_consumer_install.py` |
 | skills.sh: install from `amirbena/code-review-skills`, `skills update`, listing on skills.sh | documented | pending live evidence in #511 |
-| Claude Code marketplace | verified locally by #510 (`claude plugin validate`, `marketplace add`, `install`) | see [`RELEASE.md`](RELEASE.md); clean-install outcome to be recorded in #511 |
+| Claude Code marketplace | verified | run locally in #510 (`claude plugin validate`, `marketplace add`, `install`), see [`RELEASE.md`](RELEASE.md); clean-install outcome still to be recorded in #511 |
 | Codex Agent Plugin path | documented | pending; the marketplace entry-path (`"./"`) restriction is unresolved |
 | Cursor Agent Plugin path ("Import from Repo") | documented | pending |
 | GitHub Copilot Agent Plugin path | documented | pending |
