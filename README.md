@@ -57,6 +57,10 @@ how the reviewer will be used — packaging both is rarely needed.
 | GitHub PR review only | `./scripts/packaging/package-skills.sh github` · `./scripts/packaging/package-skills.ps1 github` | `dist/github-pr-review-skill.zip` |
 | Both entry points | `./scripts/packaging/package-skills.sh all` · `./scripts/packaging/package-skills.ps1 all` | both archives above |
 
+To install from the published distribution repository instead (skills.sh,
+Claude Code marketplace), and to see which install paths are verified versus
+only documented, see [`docs/distribution.md`](docs/distribution.md).
+
 ## Quick start
 
 1. **Package** the Skill you need (above).
@@ -222,4 +226,5 @@ are rewritten during staging — are described in
 | [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md) · [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md) | the complete, normative Skill definitions |
 | [`SECURITY.md`](SECURITY.md) | how to report a vulnerability privately |
 | [`CHANGELOG.md`](CHANGELOG.md) | notable user-facing changes per release |
+| [`docs/distribution.md`](docs/distribution.md) | installing and updating from the distribution repository, and which consumer paths are verified vs. documented |
 | [`docs/RELEASE.md`](docs/RELEASE.md) | how release-worthy changes are detected, CHANGELOG coverage, deterministic SemVer classification, and the automatic publication flow |
