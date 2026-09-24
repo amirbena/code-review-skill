@@ -10,3 +10,6 @@ __pycache__/
 *.iml
 *.ipr
 *.iws
+
+# Claude Code local context
+.claude/
