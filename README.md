@@ -192,7 +192,8 @@ which remains the authoritative regression gate before merge
 (see [`policies/git-pr-merge-policy.md`](policies/git-pr-merge-policy.md)).
 CI routes each PR to FULL (the default) or to FAST, which omits only
 `tests/integration/` when every changed path is provably not an
-integration input; every push to `main` runs FULL
+integration input. It runs on pull requests only — a push to `main`
+triggers the release lifecycle, not repository validation again
 (see [`policies/validation-and-clean-exit.md`](policies/validation-and-clean-exit.md#routed-ci-tests)).
 
 | Change | Run |

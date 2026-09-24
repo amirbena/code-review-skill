@@ -62,10 +62,9 @@ class ValidateWorkflowRoutingTests(unittest.TestCase):
             with self.subTest(event=event):
                 self.assertFalse({"paths", "paths-ignore"} & set(config or {}))
 
-    def test_runs_full_on_push_to_main(self) -> None:
-        on = _on(self.workflow)
-        self.assertIn("pull_request", on)
-        self.assertEqual(on["push"], {"branches": ["main"]})
+    def test_runs_on_pull_requests_only(self) -> None:
+        # A push to main is reserved for release-publish.yml (#538).
+        self.assertEqual(set(_on(self.workflow)), {"pull_request"})
 
     def test_router_runs_from_the_base_sha_outside_the_checkout(self) -> None:
         test = self.jobs["test"]
