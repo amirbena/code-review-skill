@@ -160,6 +160,7 @@ _GITHUB_ORDER: tuple[Entry, ...] = (
     Entry("skills/github-pr-review/policies/finding-placement.md", "finding-placement-derivation"),
     Entry("skills/github-pr-review/policies/review-output.md", "publication-github"),
     Entry("skills/github-pr-review/policies/reviewer-brief.md", "reviewer-assist"),
+    Entry("skills/github-pr-review/policies/structured-output.md", "reviewer-assist"),
     Entry("skills/github-pr-review/policies/review-status-enforcement.md", "publication-github"),
     Entry("skills/github-pr-review/runbooks/passive-pr-review.md", None),
     Entry("skills/github-pr-review/runbooks/active-pr-review.md", None),
