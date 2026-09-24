@@ -1,11 +1,9 @@
 name: Validate repository
 
 on:
+  # Pull requests only: repository validation is the pre-merge boundary, and a
+  # push to main is reserved for release-publish.yml (#538).
   pull_request:
-  # Every merged commit runs the full suite (the router resolves any
-  # non-pull_request event to FULL), so a stale FAST allowlist turns main red.
-  push:
-    branches: [main]
 
 permissions:
   contents: read
@@ -38,6 +36,8 @@ jobs:
         run: |
           route_repo="$RUNNER_TEMP/ci-route"
           router="$RUNNER_TEMP/ci_test_route.py"
+          # Defensive: only pull_request triggers this workflow, but any other
+          # event would still resolve to FULL.
           if [ "$EVENT_NAME" != "pull_request" ]; then
             reason="non-pull_request event ($EVENT_NAME)"
           elif git init -q "$route_repo" \
