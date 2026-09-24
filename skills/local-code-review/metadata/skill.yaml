@@ -21,6 +21,7 @@ capabilities:
   local_repository_access: required
   human_review_output: optional # presentation-only; natural-language opt-in ("make the review shorter and more human" / "like a senior engineer"), no CLI flag; renders only the human-facing body in a concise senior-engineer voice, trailing metadata unchanged; never changes findings/severity/dedup/reconciliation or the mechanical Decision; see ../../../shared/policies/invocation-options.md
   human_inline_findings: optional # presentation-only; derived default `explicit_value ?? human_review_output`; a github-pr-review inline-comment concept, normalized here only for direct/mediated parity — local-code-review publishes no inline review comments, so it has no effect on local output; see ../../../shared/policies/invocation-options.md
+  structured_review_result: optional # output-only; opt-in via `structured_review_result=true` or a fixed phrase set; appends one schema-versioned machine-readable JSON result after the unchanged human report, generated from the finalized review; never changes findings/severity/coverage or the mechanical Decision; see ../../../shared/policies/structured-output.md
   external_review_context: optional # free-form requirements / pasted Jira / GitHub Issue / HLD / ADR / plan; see ../../../shared/policies/review-context.md and ../policies/review-context.md
   requirement_coverage: conditional # activates only for authoritative requirements / acceptance criteria; emits evidence-backed per-requirement status plus task-relative completeness; see ../../../shared/policies/requirement-coverage.md
   jira_context_resolution: optional # only when a Jira reference is supplied; resolved via an available Jira MCP/connector, read-only; unresolved -> JIRA CONTEXT UNRESOLVED (no inference fallback); see ../../../shared/policies/review-context.md "Jira context resolution"
@@ -65,6 +66,7 @@ shared:
     - ../../../shared/policies/invocation-options.md
     - ../../../shared/policies/remediation-guidance.md
     - ../../../shared/policies/remediation-scope-boundary.md
+    - ../../../shared/policies/structured-output.md
     - ../../../shared/policies/specialist-depth.md
     - ../../../shared/policies/security-deepening.md
     - ../../../shared/policies/distributed-systems-deepening.md

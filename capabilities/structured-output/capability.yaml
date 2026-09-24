@@ -1,0 +1,16 @@
+capability: structured-output
+summary: >-
+  Opt-in machine-readable rendering of an already-finalized review: one
+  schema-versioned JSON result appended after the unchanged human report.
+loads: on-activation
+activation:
+  - the invocation resolves structured_review_result to true
+adapters: [local, github]
+files:
+  - shared/policies/structured-output.md
+requires: [review-kernel]
+never:
+  - changing a finding, severity, coverage, or the mechanical Decision
+  - replacing or reordering the human-readable report
+  - inventing an identity value that was not computed
+benchmark: tests/reference/review/review_result.py

@@ -100,6 +100,7 @@ _SHARED_ORDER: tuple[Entry, ...] = (
     Entry("shared/policies/invocation-options.md", None),
     Entry("shared/policies/remediation-guidance.md", "remediation"),
     Entry("shared/policies/remediation-scope-boundary.md", "remediation"),
+    Entry("shared/policies/structured-output.md", "structured-output"),
     Entry("shared/policies/specialist-depth.md", "specialist-depth"),
     Entry("shared/policies/security-deepening.md", "specialist-depth"),
     Entry("shared/policies/distributed-systems-deepening.md", "specialist-depth"),

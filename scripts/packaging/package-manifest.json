@@ -32,6 +32,7 @@
     { "source": "shared/policies/invocation-options.md", "destination": "shared/policies/invocation-options.md" },
     { "source": "shared/policies/remediation-guidance.md", "destination": "shared/policies/remediation-guidance.md" },
     { "source": "shared/policies/remediation-scope-boundary.md", "destination": "shared/policies/remediation-scope-boundary.md" },
+    { "source": "shared/policies/structured-output.md", "destination": "shared/policies/structured-output.md" },
     { "source": "shared/policies/specialist-depth.md", "destination": "shared/policies/specialist-depth.md" },
     { "source": "shared/policies/security-deepening.md", "destination": "shared/policies/security-deepening.md" },
     { "source": "shared/policies/distributed-systems-deepening.md", "destination": "shared/policies/distributed-systems-deepening.md" },

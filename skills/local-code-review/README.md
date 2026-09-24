@@ -51,7 +51,9 @@ without widening the local delta;
 [`include_fix_prompt`](../../docs/features/fix-prompt.md) adds a
 coding-agent-ready prompt to qualifying findings;
 [`human_review_output`](../../docs/features/human-review-output.md) renders
-the summary in a concise senior-engineer voice.
+the summary in a concise senior-engineer voice;
+[`structured_review_result`](../../docs/features/structured-review-result.md)
+appends a schema-versioned machine-readable result.
 [Runtime validation evidence](../../docs/features/runtime-validation.md)
 applies automatically when the repository declares a suitable command and
 the runtime provides a verified isolation boundary. The
@@ -109,7 +111,8 @@ These are summaries. The binding text lives in
   [runtime validation](../../docs/features/runtime-validation.md),
   [parallel review](../../docs/features/parallel-review.md),
   [human-style output](../../docs/features/human-review-output.md),
-  [fix prompt](../../docs/features/fix-prompt.md)
+  [fix prompt](../../docs/features/fix-prompt.md),
+  [structured result](../../docs/features/structured-review-result.md)
 - [`runbooks/local-review.md`](runbooks/local-review.md) — the full
   numbered procedure
 - [`policies/`](policies/repository-state.md) — the rules this Skill owns
