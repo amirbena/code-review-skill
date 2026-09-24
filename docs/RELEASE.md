@@ -594,6 +594,22 @@ publisher App token scoped to `code-review-skills`) then runs
 The version is the source tag, never an input; `auto-release-plan` remains
 the only version authority.
 
+### Authority boundary and earlier releases
+
+`amirbena/code-review-skills` is authoritative for distribution artifacts
+beginning with the first marketplace-enabled distribution release, that
+is, the first `vX.Y.Z` tag successfully written by the `distribute` job.
+Until that first publication happens the boundary is not yet established;
+record the concrete version here once it is.
+
+Releases before that boundary are represented only by their original
+GitHub Release archives in this repository. They are not backfilled: those
+archives were built under earlier packaging contracts (for example,
+before the canonical Skill tree and its distribution-only `metadata.version`
+normalization), so no marketplace artifact for them would be equivalent to
+what was released. Do not read the absence of an older tag in the
+distribution repository as a missing release.
+
 ### Recovery
 
 If `distribute` fails after the source release, the run is red — it is
