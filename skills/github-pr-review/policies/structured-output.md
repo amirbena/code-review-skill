@@ -7,12 +7,13 @@ Canonical semantics for the optional machine-readable review result
 the same finalized analysis result and is composed only once findings,
 severity, coverage, and the verdict are final.
 
-The document is the same review-result schema `local-code-review` emits
-(this repository's `docs/review-result/`, a repository-development record
-that is not packaged): identical field names, enums, and meaning. This
-policy states only what is specific to a pull request — which values
-populate the PR-shaped fields — and defines no finding, severity, or
-decision rule of its own.
+The document is the same review-result document `local-code-review` emits:
+identical field names, enums, and meaning. The shape is stated in
+"Document shape" below so it is usable from the packaged Skill alone (this
+repository's `docs/review-result/` holds the JSON Schema it mirrors; it is
+not packaged). Beyond that shape, this policy states only what is specific
+to a pull request — which values populate the PR-shaped fields — and
+defines no finding, severity, or decision rule of its own.
 
 ## What it is not
 
@@ -34,6 +35,42 @@ Off by default. Emitted only when the caller explicitly asks for a
 machine-readable, structured, or JSON review result (for example "also
 return the review as JSON"). It is additive: the human-readable report,
 the Reviewer Brief, and any publication are unchanged.
+
+## Document shape
+
+One JSON object. Keys are `snake_case`; required keys are always present;
+an optional finding field with no value is omitted, never `null`.
+
+```json
+{
+  "schema_version": "1.0.0",
+  "skill": "github-pr-review",
+  "reviewed_state": {
+    "repository": "owner/name", "base_branch": "main",
+    "base_sha": "<sha|null>", "merge_base_sha": "<sha|null>",
+    "reviewed_head_sha": "<sha|null>", "reviewer_identity": "<string|null>",
+    "completeness": "full | delta-re-review", "prior_reviewed_sha": "<sha|null>"
+  },
+  "coverage": "complete | incomplete",
+  "decision": { "derived": "clean | blocking",
+                "outcome": "clean | blocking | incomplete" },
+  "counts": { "p0": 0, "p1": 0, "p2": 0 },
+  "summary": "<the review's What changed prose>",
+  "findings": [ { "id": "F1", "severity": "P0 | P1 | P2", "title": "",
+    "location": "", "fix_location_resolved": true, "evidence": "",
+    "impact": "", "fix": "",
+    "runtime_validation": "reasoned | runtime-confirmed | attempted-inconclusive",
+    "confidence": "confirmed | credible | runtime-validation-unavailable | external-contract-unvalidated | insufficient-context",
+    "identity": { "stable_id": "fid_v1_<hex>", "matching_eligible": true } } ]
+}
+```
+
+Optional finding fields, each from [`finding.md`](../../../shared/templates/finding.md)
+and omitted when empty: `evidence_location`, `affected_locations`,
+`follow_up`, `details`, `contextual_evidence`, `capability`, `defect_kind`.
+`fix_location_resolved` is `false` exactly when the finding carries the
+"evidence location; fix/action location unresolved" annotation. `counts`
+equals the tally of `findings` by severity; no other key is permitted.
 
 ## Field population
 
@@ -57,9 +94,9 @@ PR-specific values are:
 | `decision.derived` | mechanically derived from the finding set: `blocking` when any unresolved P0/P1 remains, otherwise `clean` |
 | `decision.outcome` | `derived`, except `incomplete` when coverage is incomplete |
 
-A PR always has a committed head, so `reviewed_head_sha` is never `null`;
-if the head cannot be established the review is incomplete and no
-document is emitted as if it were graded.
+If the head cannot be established the review is incomplete: emit
+`coverage: incomplete`, `decision.outcome: incomplete`, and
+`reviewed_head_sha: null` — never a graded outcome.
 
 ### Decision consistency
 

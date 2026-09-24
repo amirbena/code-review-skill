@@ -18,6 +18,7 @@ from tests.support.paths import REPO_ROOT
 POLICY = REPO_ROOT / "skills" / "github-pr-review" / "policies" / "structured-output.md"
 OUTPUT_POLICY = REPO_ROOT / "skills" / "github-pr-review" / "policies" / "review-output.md"
 SCHEMA = REPO_ROOT / "docs" / "review-result" / "review-result.schema.json"
+EXAMPLE = REPO_ROOT / "docs" / "review-result" / "examples" / "review-result.example.json"
 
 
 class StructuredOutputPolicyTests(unittest.TestCase):
@@ -43,6 +44,21 @@ class StructuredOutputPolicyTests(unittest.TestCase):
         self.assertIn("review-status-enforcement.md", self.text)
         self.assertIn("never an input to the publication payload", self.text)
         self.assertNotIn("structured-output", OUTPUT_POLICY.read_text(encoding="utf-8"))
+
+    def test_inline_shape_matches_schema_and_example(self) -> None:
+        finding = self.schema["definitions"]["finding"]
+        for key in finding["required"] + list(self.schema["required"]):
+            self.assertIn(f'"{key}"', self.text)
+        for key in finding["properties"]:
+            self.assertIn(f"`{key}`" if key not in finding["required"] else f'"{key}"', self.text)
+        example = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+        self.assertEqual(set(example["reviewed_state"]), set(self.schema["properties"]["reviewed_state"]["required"]))
+        self.assertEqual(example["skill"], "github-pr-review")
+
+    def test_runbooks_compose_structured_output(self) -> None:
+        for name in ("active-pr-review.md", "passive-pr-review.md"):
+            runbook = (POLICY.parents[1] / "runbooks" / name).read_text(encoding="utf-8")
+            self.assertIn("policies/structured-output.md", runbook)
 
 
 if __name__ == "__main__":
