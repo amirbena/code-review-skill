@@ -38,7 +38,7 @@ Each is stated once here; the schema is their executable form.
 | **Decision values** | `derived` ∈ {`clean`, `blocking`}; `outcome` ∈ {`clean`, `blocking`, `incomplete`}. | [`severity.md`](../../shared/policies/severity.md) names the two derived results Skill-neutrally ("clean/approved", "blocking"); the Skill labels are renderings (section 4). No canonical machine code existed. |
 | **Structure** | One document; `findings` is an inline array of self-contained finding objects; review-level facts sit beside it. | A result is consumed whole; references between arrays would add a join with no benefit at review scale. |
 | **Absent vs `null`** | Required keys are always present. A value that is legitimately unknown or not applicable at *review* level is `null` (`prior_reviewed_sha` at a chain root, `reviewed_head_sha` with no committed head). An optional *finding* field with no value is **omitted**, never `null`. A field with a canonical default (`confidence`, `runtime_validation`, `fix_location_resolved`) is always present and carries the default explicitly. | Explicit state facts cannot be mistaken for "not recorded"; optional prose fields stay out of the way; a canonical default is never inferred from a missing key. |
-| **Unknown keys** | Rejected (`additionalProperties: false`) at every object. | An added field is a schema change, which is [#68](https://github.com/amirbena/code-review-skill/issues/68)'s to version. |
+| **Unknown keys** | Rejected (`additionalProperties: false`) at every object. | An added field is a schema change, which is versioned under [`schema-versioning.md`](schema-versioning.md). |
 
 ## 3. Field → canonical owner
 
@@ -118,7 +118,7 @@ schema failing.
 
 | Concern | Owner |
 | --- | --- |
-| Versioning policy and compatibility rules for `schema_version` | [#68](https://github.com/amirbena/code-review-skill/issues/68) |
+| Versioning policy and compatibility rules for `schema_version` | [`schema-versioning.md`](schema-versioning.md) ([#68](https://github.com/amirbena/code-review-skill/issues/68)) |
 | Skill wiring and runtime emission of a result | [#69](https://github.com/amirbena/code-review-skill/issues/69), [#70](https://github.com/amirbena/code-review-skill/issues/70) |
 | Consumers of the result | [#71](https://github.com/amirbena/code-review-skill/issues/71) |
 | Parent capability | [#44](https://github.com/amirbena/code-review-skill/issues/44) |
