@@ -4,9 +4,13 @@
   standalone distributable archives, using explicit allowlists (never the
   whole repository). Each archive has its own SKILL.md at the archive
   ROOT (not nested under skills/<name>/), so a consumer never needs to
-  know this repository's source layout. All generated output (staging
-  and final zips) stays strictly under dist/. Cross-platform equivalent
-  of scripts/packaging/package-skills.sh.
+  know this repository's source layout. All generated output stays
+  strictly under dist/: the canonical, deterministic, validated
+  self-contained Skill trees at dist/skills/<name>/ (with a content
+  manifest at dist/skills-manifest.json), and the release zips built from
+  exactly those trees. dist/ is gitignored and is never published from
+  this repository. Cross-platform equivalent of
+  scripts/packaging/package-skills.sh.
 
   Usage:
     ./scripts/packaging/package-skills.ps1 local
@@ -25,7 +29,7 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptDir "../..")
 $distDir = Join-Path $repoRoot "dist"
-$stagingRoot = Join-Path $distDir ".staging"
+$treesRoot = Join-Path $distDir "skills"
 $metadataValidator = Join-Path $repoRoot "scripts/validation/validate-skill-metadata.py"
 $packageManifestPath = Join-Path $scriptDir "package-manifest.json"
 $packageManifestHelper = Join-Path $scriptDir "package_manifest.py"
@@ -94,7 +98,7 @@ function Package-Skill {
   $skillName = $skill.name
   $archiveName = $skill.archive
   $skillSrc = Join-Path $repoRoot "skills/$SkillName"
-  $stageDir = Join-Path $stagingRoot ([System.IO.Path]::GetFileNameWithoutExtension($archiveName))
+  $stageDir = Join-Path $treesRoot $skillName
   $archivePath = Join-Path $distDir $archiveName
 
   if (-not (Test-Path $skillSrc -PathType Container)) {
@@ -104,7 +108,7 @@ function Package-Skill {
   & $pythonCommand $metadataValidator $skillSrc --containment-root $repoRoot
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-  # Only ever clean our own controlled staging/output location, and only
+  # Only ever clean our own controlled tree/output location, and only
   # ever write generated content under dist/.
   if (Test-Path $stageDir) {
     Remove-Item -Recurse -Force $stageDir
@@ -122,6 +126,11 @@ function Package-Skill {
     New-Item -ItemType Directory -Path (Split-Path -Parent $destPath) -Force | Out-Null
     Copy-Item -LiteralPath $sourcePath -Destination $destPath
   }
+
+  # Normalize line endings/BOM first, so a CRLF checkout (e.g. Windows
+  # autocrlf) validates and stamps identically to an LF one.
+  & $pythonCommand $packageAdapt normalize-tree $stageDir
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   # Adapt relative links into shared/ across every packaged Markdown
   # file (skill-local links like ../SKILL.md or runbooks/... need no
@@ -150,12 +159,18 @@ function Package-Skill {
   & $pythonCommand $metadataValidator $stageDir --containment-root $stageDir
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-  if (Test-Path $archivePath) {
-    Remove-Item -Force $archivePath
-  }
-  # Compress the staged package's *contents* (not the staging folder
-  # itself) so SKILL.md lands at the archive root.
-  Compress-Archive -Path (Join-Path $stageDir "*") -DestinationPath $archivePath -Force
+  # Make the tree deterministic and distribution-conformant (LF, no BOM,
+  # normalized modes, built-tree-only metadata.version), then validate it
+  # against the Agent Skills spec and for self-containment. The zip is
+  # built from, and verified against, this exact tree (the same Python
+  # implementation as package-skills.sh, so both produce identical bytes).
+  & $pythonCommand $packageAdapt finalize-tree $stageDir $SkillName
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  & $pythonCommand $packageAdapt build-archive $stageDir $archivePath
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  & $pythonCommand $packageAdapt verify-archive $stageDir $archivePath
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   # --- Verify archive contents ---
   Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -176,13 +191,14 @@ function Package-Skill {
     exit 1
   }
 
-  Remove-Item -Recurse -Force $stageDir
-
+  $script:builtSkills += $SkillName
+  Write-Host "Skill tree built at: $stageDir"
   Write-Host "Archive created at: $archivePath"
 }
 
+$script:builtSkills = @()
 Write-Host "Repository root: $repoRoot"
-New-Item -ItemType Directory -Path $distDir -Force | Out-Null
+New-Item -ItemType Directory -Path $distDir, $treesRoot -Force | Out-Null
 
 if ($Skill -eq "local" -or $Skill -eq "all") {
   Package-Skill -PackageTarget "local"
@@ -192,7 +208,5 @@ if ($Skill -eq "github" -or $Skill -eq "all") {
   Package-Skill -PackageTarget "github"
 }
 
-# Remove the now-empty staging root if packaging left nothing behind.
-if ((Test-Path $stagingRoot) -and ((Get-ChildItem -Path $stagingRoot -Force | Measure-Object).Count -eq 0)) {
-  Remove-Item -Force $stagingRoot
-}
+& $pythonCommand $packageAdapt write-tree-manifest $distDir @($script:builtSkills)
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
