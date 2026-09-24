@@ -79,7 +79,16 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual(code, 0, out)
         self.assertEqual(self._tags().split(), ["v1.0.0"])
         files = _git(self.remote, "ls-tree", "-r", "--name-only", "v1.0.0").split()
-        self.assertEqual(sorted(files), [".claude-plugin/marketplace.json", "DISTRIBUTION.json", "LICENSE", "README.md", "plugin.json", "skills/a/SKILL.md"],
+        self.assertEqual(
+            sorted(files),
+            [
+                ".claude-plugin/marketplace.json",
+                "DISTRIBUTION.json",
+                "LICENSE",
+                "README.md",
+                "plugin.json",
+                "skills/a/SKILL.md",
+            ],
         )
         message = _git(self.remote, "log", "-1", "--format=%B", "v1.0.0")
         self.assertIn(f"Source-Commit: {SHA}", message)

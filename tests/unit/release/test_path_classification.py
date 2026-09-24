@@ -48,6 +48,10 @@ class ClassifyPathTests(unittest.TestCase):
         ):
             self.assertEqual(rw.classify_path(path), "packaging", path)
 
+    def test_distribution_adapter_templates_are_release_worthy(self) -> None:
+        for path in ("distribution/claude/marketplace.json", "distribution/portable/plugin.json"):
+            self.assertEqual(rw.classify_path(path), "packaging", path)
+
     def test_packaging_domain_package_is_release_worthy(self) -> None:
         # The shared-link/metadata-path/frontmatter package behind
         # scripts/packaging/package_adapt.py is a package (issue #266); editing any

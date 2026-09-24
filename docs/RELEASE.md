@@ -35,7 +35,8 @@ A change is release-worthy when it affects either:
   shipped archives contain or whether they build:
   `scripts/packaging/package-skills.sh`, `scripts/packaging/package-skills.ps1`,
   `scripts/packaging/package-manifest.json`, `scripts/packaging/package_manifest.py`,
-  `scripts/packaging/package_adapt.py`, `scripts/validation/validate-skill-metadata.py`.
+  `scripts/packaging/package_adapt.py`, `scripts/validation/validate-skill-metadata.py`,
+  and the `distribution/` adapter templates rendered into the distribution root.
 
 Everything else is **not** release-worthy on its own: documentation
 (including each Skill's `README.md` and `shared/`'s READMEs), tests,
@@ -491,6 +492,9 @@ idempotency/drift checks. `skills/<name>/` is never touched by the adapter.
   `SKILL.md`.
 - The plugin entry pins `version` to the release version so it does not
   update on every distribution commit.
+- The root `plugin.json` was checked against the published Agent Plugins
+  1.0.0 schema by hand (every field is declared; `additionalProperties` is
+  false). No validator runs in CI.
 - Verified locally: `claude plugin validate` passes on the built root, and
   `marketplace add` + `install` succeed. Codex, Cursor and Copilot reading
   the root `plugin.json` is documented compatibility only until #511.
