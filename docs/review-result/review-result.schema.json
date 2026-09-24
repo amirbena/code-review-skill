@@ -17,8 +17,9 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "$comment": "Versioning policy (when this value changes, compatibility rules) is Issue #68's; this constant is the only place the version is stated.",
+      "$comment": "Required. MAJOR.MINOR.PATCH; when this value changes and how consumers react is owned by schema-versioning.md. This constant is the only place the current version is stated.",
       "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
       "const": "1.0.0"
     },
     "skill": {

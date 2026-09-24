@@ -22,6 +22,7 @@ from tests.reference.review import finding_confidence as fc
 from tests.reference.review import finding_contract as contract
 from tests.reference.review import finding_identity as fi
 from tests.reference.review import review_result as rr
+from tests.reference.review import review_result_version as rv
 
 SCHEMA = rr.load_schema()
 FINDING_SCHEMA = SCHEMA["definitions"]["finding"]
@@ -352,6 +353,38 @@ class SeverityIsTheOnlyDecisionInputTests(unittest.TestCase):
             finding["capability"] = "security-deepening"
         self.assertEqual(rr.validate_review_result(result), ())
         self.assertEqual(result["decision"]["derived"], base)
+
+
+class ConsumerVersionDecisionTests(unittest.TestCase):
+    def test_table(self) -> None:
+        D = rv.VersionDecision
+        cases = [
+            ("1.0.0", D.ACCEPT),
+            ("1.0.7", D.ACCEPT),
+            ("1.2.0", D.ACCEPT_KNOWN_FIELDS_ONLY),
+            ("2.0.0", D.REJECT_UNSUPPORTED_MAJOR),
+            ("0.9.0", D.REJECT_UNSUPPORTED_MAJOR),
+            ("1.0", D.REJECT_INVALID),
+            ("01.0.0", D.REJECT_INVALID),
+            ("1.0.0-rc1", D.REJECT_INVALID),
+            (1, D.REJECT_INVALID),
+            (None, D.REJECT_INVALID),
+        ]
+        for version, expected in cases:
+            with self.subTest(version=version):
+                self.assertIs(rv.consumer_decision(version, 1, 1), expected)
+
+    def test_example_version_is_supported(self) -> None:
+        version = rr.load_example()["schema_version"]
+        self.assertIs(rv.consumer_decision(version, 1, 0), rv.VersionDecision.ACCEPT)
+
+    def test_missing_or_malformed_version_fails_schema(self) -> None:
+        missing = copy.deepcopy(rr.load_example())
+        del missing["schema_version"]
+        self.assertTrue(rr.validate_against_schema(missing))
+        bad = copy.deepcopy(rr.load_example())
+        bad["schema_version"] = "1"
+        self.assertTrue(rr.validate_against_schema(bad))
 
 
 if __name__ == "__main__":

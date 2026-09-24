@@ -24,6 +24,7 @@ from tests.support.paths import REPO_ROOT
 DOCDIR = REPO_ROOT / "docs" / "review-result"
 README = DOCDIR / "README.md"
 MODEL = DOCDIR / "review-result-model.md"
+VERSIONING = DOCDIR / "schema-versioning.md"
 SCHEMA = DOCDIR / "review-result.schema.json"
 EXAMPLE = DOCDIR / "examples" / "review-result.example.json"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
@@ -70,7 +71,7 @@ def _owner_exists(token: str) -> bool:
 
 class FilesAndLinksTests(unittest.TestCase):
     def test_files_exist(self) -> None:
-        for path in (README, MODEL, SCHEMA, EXAMPLE):
+        for path in (README, MODEL, VERSIONING, SCHEMA, EXAMPLE):
             with self.subTest(path=path.name):
                 self.assertTrue(path.is_file())
 
@@ -78,6 +79,7 @@ class FilesAndLinksTests(unittest.TestCase):
         text = README.read_text(encoding="utf-8")
         for target in (
             "review-result-model.md",
+            "schema-versioning.md",
             "review-result.schema.json",
             "examples/review-result.example.json",
             "../../tests/reference/review/review_result.py",
@@ -86,7 +88,7 @@ class FilesAndLinksTests(unittest.TestCase):
                 self.assertIn(f"]({target})", text)
 
     def test_markdown_links_resolve(self) -> None:
-        for doc in (README, MODEL):
+        for doc in (README, MODEL, VERSIONING):
             for target in MARKDOWN_LINK.findall(doc.read_text(encoding="utf-8")):
                 if target.startswith(("http://", "https://")):
                     continue
@@ -98,7 +100,7 @@ class FilesAndLinksTests(unittest.TestCase):
         self.assertTrue(comments)
         for comment in comments:
             for token in OWNER_FILE.findall(comment):
-                if token in {"review-result-model.md", "review_result.py"}:
+                if token in {"review-result-model.md", "review_result.py", "schema-versioning.md"}:
                     continue
                 with self.subTest(token=token):
                     self.assertTrue(_owner_exists(token), f"{token!r} names no repository file")
@@ -165,6 +167,32 @@ class WiringAndPackagingTests(unittest.TestCase):
         manifest = PACKAGE_MANIFEST.read_text(encoding="utf-8")
         self.assertNotIn("review-result", manifest)
         self.assertNotIn("review_result", manifest)
+
+
+
+class SchemaVersioningPolicyTests(unittest.TestCase):
+    def test_version_field_is_required_and_pinned(self) -> None:
+        schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+        self.assertIn("schema_version", schema["required"])
+        self.assertEqual(schema["properties"]["schema_version"]["const"], "1.0.0")
+
+    def test_example_carries_the_version(self) -> None:
+        example = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+        self.assertEqual(example["schema_version"], "1.0.0")
+
+    def test_policy_covers_required_topics(self) -> None:
+        text = VERSIONING.read_text(encoding="utf-8")
+        for heading in (
+            "## 1. The version field",
+            "## 2. Compatible vs breaking changes",
+            "## 3. Consumer guidance",
+            "## 4. Deprecation and rollout",
+            "## 6. Prior art",
+        ):
+            with self.subTest(heading=heading):
+                self.assertIn(heading, text)
+        self.assertIn("scripts/packaging/package_manifest.py", text)
+        self.assertIn("Fail closed", text)
 
 
 if __name__ == "__main__":
