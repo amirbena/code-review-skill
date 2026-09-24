@@ -79,6 +79,7 @@ shared:
     - ../../../shared/policies/invocation-options.md
     - ../../../shared/policies/remediation-guidance.md
     - ../../../shared/policies/remediation-scope-boundary.md
+    - ../../../shared/policies/structured-output.md
     - ../../../shared/policies/specialist-depth.md
     - ../../../shared/policies/security-deepening.md
     - ../../../shared/policies/distributed-systems-deepening.md

@@ -62,6 +62,13 @@ language interpretation.
   anchor (`github-pr-review`'s `finding-placement.md` is unchanged and
   remains authoritative for placement), or publication ordering — only the
   wording of an inline finding.
+- `structured_review_result` — local-only, default `false`; when `true`,
+  `local-code-review` appends one schema-versioned machine-readable JSON
+  result after its unchanged human report, per
+  [`structured-output.md`](structured-output.md).
+  `github-pr-review` normalizes it for parity but has no structured result
+  surface, so it has no effect there. Output-only: it never changes scope,
+  findings, severity, coverage, or the mechanical Decision.
 - `include_severity_description` — default `false` for both Skills;
   controls whether `github-pr-review`'s reader-visible severity-legend
   parenthetical (`P0 (Critical)` / `P1 (Blocking)` / `P2 (Non-Blocking)`)
@@ -122,7 +129,8 @@ underscores treated as equivalent inside the option name:
 
 The finite vocabulary is the five canonical option concepts: `fix prompt`,
 `fix guidance`, `finding details`, `human review output`, and `severity
-description`. Ordinary
+description`. The local-only `structured review result` concept is recognized
+by its own fixed phrase set below. Ordinary
 mentions, questions about an option, quoted examples, and vague requests such
 as “make it helpful”, “be detailed”, or “make it nicer” are ambiguous and do
 not set a flag. Do not use sentiment, urgency, severity, prior turns, or a
@@ -217,6 +225,27 @@ affect presentation only" rule above requires: it controls only whether
 the severity-legend parenthetical renders; it never changes whether
 severity is shown, whether the headline is emphasized, or any semantics
 owned by `severity.md`.
+
+### `structured_review_result` phrasings
+
+Alongside the canonical `structured_review_result=true|false` assignment and
+the bare option name (`structured_review_result`, `structured review
+result`, `structured-review-result`), it recognizes a small, fixed set of
+explicit phrasings (case-insensitively, whitespace-flexible):
+
+- affirmative: `machine-readable review result`, `review result as json`;
+- negative: `no machine-readable review result`, `human report only`.
+
+Text naming `structured review result` (any of the spellings above) belongs
+to this option alone: it is never also read as the `structured review`
+negative phrase of `human_review_output`, so requesting both a senior-style
+review and a structured result sets both.
+
+This phrase set is exhaustive. Anything outside it — "give me json", "make
+it parseable", a question about the option — is ambiguous and does not set
+the flag; the default `false` then applies. When both an affirmative and a
+negative phrasing appear, the values conflict and the option falls through
+to the default.
 
 Resolve each option independently with this precedence:
 

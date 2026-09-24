@@ -466,8 +466,9 @@ and no packaged Skill resource depends on them.
   recorded in the model
   ([`review-result/README.md`](review-result/README.md) →
   [`review-result/review-result-model.md`](review-result/review-result-model.md),
-  #67, with a test-only validator). No packaged Skill resource is changed;
-  versioning (#68) and runtime emission (#69/#70) are deferred — see
+  #67, with a test-only validator). Versioning is #68;
+  `local-code-review` emits the result opt-in (#69, packaged
+  `structured-output.md`); GitHub emission (#70) is deferred — see
   "Future work" below.
 - **Candidate-finding validation model** — the `observation → candidate
   claim → validated finding → severity` reasoning contract: the
@@ -657,8 +658,8 @@ or runbook implements them today:
   renders it in human output. The #67 schema
   ([`review-result/README.md`](review-result/README.md)) now carries
   `confidence`, `severity`, `location`, and the rest as a formal contract
-  for machine consumers; its versioning policy (#68), Skill wiring and
-  runtime emission (#69/#70), and consumers (#71) are still unbuilt.
+  for machine consumers; its versioning policy (#68) and local emission
+  (#69) are built; GitHub emission (#70) and consumers (#71) are still unbuilt.
 - **Repository-intelligence retrieval and a packaged relationship-influence
   field** — the repository-intelligence model (#129, "Repository-development
   instrumentation" above) is a design record and a test-only reference

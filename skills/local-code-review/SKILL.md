@@ -142,6 +142,12 @@ current invocation only per
   Output-only: it never changes the Review Target, inspection, evidence,
   finding identity, severity, deduplication, PR-context reconciliation, or
   the mechanical Decision.
+- `structured_review_result` (boolean, default `false`) — output-only
+  opt-in: when `true`, one schema-versioned machine-readable JSON result
+  is appended after the unchanged human report, per
+  [`structured-output.md`](../../shared/policies/structured-output.md);
+  loaded only then. Never changes findings, severity, coverage, or the
+  mechanical Decision.
 - `human_inline_findings` (derived default — `explicit_value ??
   human_review_output`) — a `github-pr-review` inline-comment concept,
   recognized here only for direct/mediated normalization parity; it has

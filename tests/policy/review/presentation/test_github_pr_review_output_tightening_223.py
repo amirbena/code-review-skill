@@ -115,11 +115,13 @@ SEVERITY_LEGEND = {
 # comparison) — also deliberate and unrelated to #223. The other files in
 # this map are untouched by
 # #89/#237/#211/#121/#175/#258/#82/#303/#369/#377/#406/#449/#134/#74 and keep
-# their original #223-era hashes.
+# their original #223-era hashes. The local report template, runbook, and
+# SKILL.md were re-captured after Issue #69 (the opt-in structured review
+# result option) — deliberate and unrelated to #223.
 LOCAL_BASELINE_HASHES = {
-    LOCAL_REPORT: "1abf7c6a28f6d6b73a845aa8c8f9e06e7d062a82",
-    LOCAL_RUNBOOK: "043341bfe83aa24d83775699abfbfe70da732c2f",
-    LOCAL_SKILL: "9f638065b9d0f7285b3887127065cb82739a13c3",
+    LOCAL_REPORT: "605fa1af75319e224140caa15c80f8e2448622a3",
+    LOCAL_RUNBOOK: "dcf0cf3c3283f7b4acc8a2b26f8c4951360d78e7",
+    LOCAL_SKILL: "f46c252519f80d00a4f4cb9b2f06f510b14b96df",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "6792d7e3f7ae1ad0214fff2e85db5e28ac6fb108",
