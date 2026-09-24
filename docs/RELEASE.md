@@ -451,8 +451,7 @@ this repository: a committed copy would put three copies of `shared/` in
 one repo, and the `skills` CLI's standard discovery would find the
 non-self-contained `skills/<name>/` source folders first. The built
 output is published to a separate, **generated-only** public repository,
-proposed name `amirbena/code-review-skills` (name to be confirmed when it
-is created).
+`amirbena/code-review-skills`.
 
 ### Layout (written by #509 and #510, fixed here)
 
@@ -479,8 +478,8 @@ routine human bypass on the default branch or on `v*` tags.
 
 Create two repository rulesets on the distribution repository:
 
-- **Default branch:** restrict deletions, block force pushes, restrict
-  updates so that only the bypass actor below can push.
+- **Default branch:** restrict creations, updates, and deletions, and
+  block force pushes; only the bypass actor below can push.
 - **Tags matching `v*`:** restrict creation, updates, and deletions, and
   block force pushes; only the bypass actor below can create tags.
 - **Bypass list (both rulesets): the publishing identity only.** No
@@ -515,9 +514,9 @@ Read-only** on the distribution repository only — install it there and
 nowhere else — with no webhook. Store its credentials as
 `DISTRIBUTION_APP_ID` and `DISTRIBUTION_APP_PRIVATE_KEY` on the
 `release-skills-distribution` Environment of this repository (not the
-`release` Environment, which belongs to source releases), and mint a short-lived installation token scoped
-to the distribution repository at publication time (#509), as the release
-job does today.
+`release` Environment, which belongs to source releases), and mint a
+short-lived installation token scoped to the distribution repository at
+publication time (#509), as the release job does today.
 
 **Rotate:** generate a new private key in the App settings, update the
 secret, run a publication dry run, then delete the old key.
