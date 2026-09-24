@@ -14,8 +14,8 @@ this record is the bug.
 
 Not packaged: no packaged Skill resource depends on this record, the
 schema, or the example (see [`../../AGENTS.md`](../../AGENTS.md), "Packaged
-Skills are independent of repository-level instructions"). Nothing emits a
-review result yet — see section 7.
+Skills are independent of repository-level instructions"). `github-pr-review` emits
+one on explicit request; local emission is pending — see section 7.
 
 ## 1. Files
 
@@ -123,8 +123,11 @@ schema failing.
 | Consumers of the result | [#71](https://github.com/amirbena/code-review-skill/issues/71) |
 | Parent capability | [#44](https://github.com/amirbena/code-review-skill/issues/44) |
 
-Until emission lands, this record, the schema, and the example are
-contract-only: the packaged Skills still produce their existing Markdown
-output, and [`finding.md`](../../shared/templates/finding.md)'s note that a
+`github-pr-review` emits the result on explicit request, returned to the
+caller only, with PR-specific field population owned by its
+[`structured-output.md`](../../skills/github-pr-review/policies/structured-output.md)
+([#70](https://github.com/amirbena/code-review-skill/issues/70)). Until
+[#69](https://github.com/amirbena/code-review-skill/issues/69) lands,
+`local-code-review` still produces only its existing Markdown output, and [`finding.md`](../../shared/templates/finding.md)'s note that a
 machine-readable renderer would be "another projection of the same fields"
 is what this schema is the first instance of.

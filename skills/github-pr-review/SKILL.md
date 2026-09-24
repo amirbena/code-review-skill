@@ -247,6 +247,11 @@ If unavailable, do not fake success — fall back to passive review.
   composed once findings/severity/coverage/verdict are finalized and
   structurally excluded from anything published to GitHub — see
   [`policies/reviewer-brief.md`](policies/reviewer-brief.md).
+- **On explicit request**, additionally a machine-readable review result
+  in the same schema as `local-code-review` (PR head SHA and decision
+  populated), returned to the caller only — never published, and not the
+  commit status — see
+  [`policies/structured-output.md`](policies/structured-output.md).
 - **Passive:** a human-readable report using the shared shape
   ([`review-summary.md`](../../shared/templates/review-summary.md)),
   returned to the caller, not published.

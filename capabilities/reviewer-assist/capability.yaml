@@ -1,13 +1,17 @@
 capability: reviewer-assist
 summary: >-
   The private Reviewer Brief: what changed, stated focus, manual-review
-  focus, and open questions, composed from the finalized result only.
+  focus, and open questions, composed from the finalized result only;
+  plus the optional machine-readable review result, a projection of the
+  same finalized result returned to the caller.
 loads: on-activation
 activation:
   - always, once findings, severity, coverage, and the verdict are final
+  - the caller explicitly requests a machine-readable (structured/JSON) result
 adapters: [github]
 files:
   - skills/github-pr-review/policies/reviewer-brief.md
+  - skills/github-pr-review/policies/structured-output.md
   - skills/github-pr-review/templates/reviewer-brief.md
 requires: [review-kernel]
 never:
