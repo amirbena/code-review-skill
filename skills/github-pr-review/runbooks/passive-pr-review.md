@@ -433,6 +433,10 @@ finally: remove the temporary checkout (success, any failure, interruption)
    field, synthesis, and mode-composition rule in that policy (clean
    review, delta re-review, stacked PR, partitioned large PR alike) so
    passive and active results carry identical brief semantics.
+   **When the caller explicitly requested a machine-readable result**,
+   also compose it here, from the same finalized result, per
+   [`../policies/structured-output.md`](../policies/structured-output.md);
+   it is returned to the caller only.
 8e. **Check verdict consistency** per
    [`../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md)
    before returning the report composed above: confirm the decision

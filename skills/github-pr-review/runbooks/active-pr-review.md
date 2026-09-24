@@ -640,6 +640,11 @@ stop
     body, per
     [`../policies/reviewer-brief.md`](../policies/reviewer-brief.md),
     "Composition with invocation modes" — never its fields or boundaries.
+    **When the caller explicitly requested a machine-readable result**,
+    compose it here too, from the same finalized result, per
+    [`../policies/structured-output.md`](../policies/structured-output.md);
+    like the brief it joins the returned result only and is never passed
+    into steps 15-16.
 14. **Apply the review-action authorization gate** per
     [`../policies/review-action-authorization.md`](../policies/review-action-authorization.md)
     and [`../policies/review-output.md`](../policies/review-output.md),

@@ -7,8 +7,10 @@ Schema and example for the machine-readable form of one review's output.
 Like [`../review-telemetry/README.md`](../review-telemetry/README.md) and
 [`../finding-confidence/README.md`](../finding-confidence/README.md), these
 are repository-development docs: **not** packaged into either Skill
-archive, and no packaged Skill resource depends on them. Nothing emits a
-review result yet.
+archive, and no packaged Skill resource depends on them.
+`github-pr-review` can emit a review result on explicit request ([#70](https://github.com/amirbena/code-review-skill/issues/70),
+[`structured-output.md`](../../skills/github-pr-review/policies/structured-output.md));
+`local-code-review` emission is [#69](https://github.com/amirbena/code-review-skill/issues/69).
 
 ## Document map
 

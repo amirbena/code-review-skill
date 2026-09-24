@@ -83,6 +83,11 @@ Every result also carries a private, caller-only
 your stated focus, and 2-4 areas worth a manual look — that is
 structurally excluded from GitHub publication.
 
+On explicit request it can also return a machine-readable review result
+(same schema as local review; reviewed head SHA and decision populated) —
+returned to you only, never published, and not the commit status. See
+[`structured-output.md`](policies/structured-output.md).
+
 ## Boundaries worth knowing
 
 | Rule | Short version |
