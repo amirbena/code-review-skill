@@ -224,6 +224,22 @@ _REVIEW_PROMPT = (
     "restatement of the title."
 )
 
+# Appended only for the structured-result measurement (issue #529,
+# runtime_platform/benchmark/structured-result-runtime-properties.md): the
+# canonical assignment turns the option on; the ordinary benchmark keeps it off.
+_STRUCTURED_RESULT_PROMPT = (
+    "\n\nstructured_review_result=true\n\n"
+    "Because that option is on, end the reply with the Skill's "
+    "`### Structured Review Result` section and its single fenced `json` "
+    "block, directly after the report, with nothing after the block."
+)
+
+# The ordinary benchmark allowlist (read-only review). The measurement widens
+# it with the shell hashing commands structured-output.md "Finding identity"
+# requires, for both of its arms so the option is the only variable.
+DEFAULT_ALLOWED_TOOLS = "Bash(git *) Read Grep Glob"
+HASHING_ALLOWED_TOOLS = f"{DEFAULT_ALLOWED_TOOLS} Bash(printf *) Bash(shasum *) Bash(sha256sum *)"
+
 
 # --------------------------------------------------------------------------
 # Normalization: CLI stdout -> ProducedFinding objects.
@@ -448,8 +464,12 @@ class ProductionReviewerAdapter:
         extra_args: Sequence[str] | None = None,
         timeout: float = DEFAULT_TIMEOUT_SECONDS,
         env: Mapping[str, str] | None = None,
+        structured_review_result: bool = False,
+        allowed_tools: str = DEFAULT_ALLOWED_TOOLS,
     ) -> None:
         self.executable = executable or resolve_cli_executable(env)
+        self.structured_review_result = structured_review_result
+        self.allowed_tools = allowed_tools
         self.extra_args = list(extra_args) if extra_args is not None else resolve_cli_extra_args(env)
         self.timeout = timeout
         self.env = dict(env) if env is not None else dict(os.environ)
@@ -462,13 +482,13 @@ class ProductionReviewerAdapter:
         command = [
             self.executable,
             "-p",
-            _REVIEW_PROMPT,
+            _REVIEW_PROMPT + (_STRUCTURED_RESULT_PROMPT if self.structured_review_result else ""),
             "--output-format",
             "text",
             "--plugin-dir",
             str(SKILL_PLUGIN_DIR),
             "--allowedTools",
-            "Bash(git *) Read Grep Glob",
+            self.allowed_tools,
             *self.extra_args,
         ]
         completed = subprocess.run(
