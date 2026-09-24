@@ -1,6 +1,6 @@
 ---
 name: github-pr-review
-version: 1.56.0
+version: 1.57.0
 description: Review an existing GitHub pull request and return or publish evidence-backed P0/P1/P2 findings.
 ---
 
