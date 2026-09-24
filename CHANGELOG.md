@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.57.0 — 2026-09-24
+
+### Added
+
+- GitHub PR review can return a machine-readable review result on request (#526).
+
 ## v1.56.0 — 2026-09-24
 
 ### Added

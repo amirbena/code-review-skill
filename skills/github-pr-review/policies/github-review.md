@@ -69,6 +69,11 @@ reviewer-brief.md            private caller-facing Reviewer Brief; never
                             published; composed only from the finalized
                             analysis result above
         ↓
+structured-output.md        optional machine-readable review result (same
+                            schema as local review); PR head SHA + decision
+                            populated; caller-only, never published; not the
+                            commit status below
+        ↓
 review-status-enforcement.md  optional exact-HEAD machine-readable status;
                             blocking vs. positive authority; enforcement
                             detection; explicit opt-in required-check setup

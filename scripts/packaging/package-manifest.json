@@ -82,6 +82,7 @@
         { "source": "skills/github-pr-review/policies/finding-placement.md", "destination": "policies/finding-placement.md" },
         { "source": "skills/github-pr-review/policies/review-output.md", "destination": "policies/review-output.md" },
         { "source": "skills/github-pr-review/policies/reviewer-brief.md", "destination": "policies/reviewer-brief.md" },
+        { "source": "skills/github-pr-review/policies/structured-output.md", "destination": "policies/structured-output.md" },
         { "source": "skills/github-pr-review/policies/review-status-enforcement.md", "destination": "policies/review-status-enforcement.md" },
         { "source": "skills/github-pr-review/runbooks/passive-pr-review.md", "destination": "runbooks/passive-pr-review.md" },
         { "source": "skills/github-pr-review/runbooks/active-pr-review.md", "destination": "runbooks/active-pr-review.md" },
