@@ -30,7 +30,7 @@ place that talks to GitHub (through `gh api`).
 | Entry point | Purpose | Guard |
 | --- | --- | --- |
 | `read()` | GET-only reads (detection) | none needed |
-| `write()` | Non-governance writes (e.g. commit statuses) | Refuses rulesets / branch-protection / branch-rules endpoints |
+| `write()` | Non-governance writes (e.g. commit statuses) | Allowlist only (statuses, PR/issue comments, PR reviews); everything else, including `graphql`, is refused |
 | `mutate_governance()` | Governance mutations | Keyword-only `authorization`; refused unless it records an explicit user request |
 | `preflight()` | Authentication and, for classic tokens, scope check | Actionable errors |
 

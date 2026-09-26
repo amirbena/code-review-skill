@@ -12,8 +12,10 @@ from typing import Any, Callable, Mapping, Sequence
 READ_METHODS = frozenset({"GET", "HEAD"})
 TOKEN_ENV_VARS = ("GH_TOKEN", "GITHUB_TOKEN")
 SCOPES_HEADER = "x-oauth-scopes"
-GOVERNANCE_ENDPOINT_RE = re.compile(
-    r"(/rulesets(/|$|\?)|/branches/[^/]+/protection|/rules/branches|/branch_protection_rule)"
+NON_GOVERNANCE_WRITE_RE = re.compile(
+    r"^repos/[^/]+/[^/]+/(statuses/[0-9a-f]{7,40}"
+    r"|issues/\d+/comments(/\d+)?"
+    r"|pulls/\d+/(reviews|comments)(/\d+)?)$"
 )
 
 Transport = Callable[[Sequence[str], Mapping[str, str], "str | None"], "RawResponse"]
@@ -62,14 +64,17 @@ def _redact(text: str, token: str | None) -> str:
 
 
 def _gh_transport(args: Sequence[str], env: Mapping[str, str], stdin: str | None) -> RawResponse:
-    proc = subprocess.run(
-        ["gh", "api", "--include", *args],
-        input=stdin,
-        capture_output=True,
-        text=True,
-        env={**os.environ, **env},
-        check=False,
-    )
+    try:
+        proc = subprocess.run(
+            ["gh", "api", "--include", *args],
+            input=stdin,
+            capture_output=True,
+            text=True,
+            env={**os.environ, **env},
+            check=False,
+        )
+    except OSError as exc:
+        return RawResponse(0, f"gh CLI not runnable ({exc}); install it or add it to PATH")
     head, _, body = proc.stdout.partition("\r\n\r\n")
     lines = head.splitlines()
     status = int(lines[0].split()[1]) if lines and lines[0].startswith("HTTP") else 0
@@ -105,8 +110,11 @@ class GitHubClient:
 
     def _interpret(self, method: str, endpoint: str, resp: RawResponse, token: str | None) -> Any:
         if resp.status in (200, 201, 202, 204):
-            return json.loads(resp.body) if resp.body.strip() else None
-        detail = _redact(resp.body[:300], token)
+            try:
+                return json.loads(resp.body) if resp.body.strip() else None
+            except ValueError as exc:
+                raise GitHubCallError(f"{method} {endpoint}: non-JSON response body") from exc
+        detail = _redact(resp.body, token)[:300]
         where = f"{method} {endpoint}"
         if resp.status == 0:
             raise GitHubCallError(f"{where}: gh unavailable or unreachable: {detail}")
@@ -141,13 +149,14 @@ class GitHubClient:
         return self._call("GET", endpoint, None)
 
     def write(self, method: str, endpoint: str, payload: Mapping[str, Any] | None = None) -> Any:
-        """Non-governance write (e.g. commit statuses); governance endpoints are refused."""
+        """Write to an allowlisted non-governance endpoint; anything else is refused."""
         method = method.upper()
         if method in READ_METHODS:
             raise GitHubBoundaryError("Use read() for read-only calls.")
-        if GOVERNANCE_ENDPOINT_RE.search(endpoint):
+        if not NON_GOVERNANCE_WRITE_RE.fullmatch(endpoint):
             raise AuthorizationRequiredError(
-                f"Refusing {method} {endpoint}: governance endpoint; use mutate_governance()."
+                f"Refusing {method} {endpoint}: not an allowlisted non-governance write; "
+                "use mutate_governance()."
             )
         return self._call(method, endpoint, payload)
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import unittest
+from unittest import mock
 
 from scripts.github_integration import boundary as b
 
@@ -67,13 +68,17 @@ class PreflightTests(unittest.TestCase):
 class WriteTests(unittest.TestCase):
     def test_write_sends_payload_on_stdin(self):
         c, rec = client(b.RawResponse(201, "{}"))
-        c.write("POST", "repos/o/r/statuses/abc", {"state": "success"})
+        c.write("POST", "repos/o/r/statuses/abc1234", {"state": "success"})
         self.assertEqual(json.loads(rec.calls[0][2]), {"state": "success"})
 
     def test_write_refuses_governance_endpoints(self):
         for ep in (
             "repos/o/r/rulesets/1",
             "repos/o/r/branches/main/protection/required_status_checks",
+            "graphql",
+            "repos/o",
+            "repos/o/r",
+            "repos/o/r/statuses/abc1234/../../rulesets",
         ):
             c, rec = client()
             with self.assertRaises(b.AuthorizationRequiredError):
@@ -84,6 +89,34 @@ class WriteTests(unittest.TestCase):
         c, _ = client()
         with self.assertRaises(b.GitHubBoundaryError):
             c.write("GET", "user")
+
+
+class HardeningTests(unittest.TestCase):
+    def test_token_straddling_truncation_is_fully_redacted(self):
+        token = "tok" + "X" * 20
+        c, _ = client(b.RawResponse(500, "a" * 290 + token), env={"GH_TOKEN": token})
+        with self.assertRaises(b.GitHubCallError) as ctx:
+            c.read("user")
+        self.assertNotIn("XXX", str(ctx.exception))
+
+    def test_non_json_success_body_is_typed_error(self):
+        c, _ = client(b.RawResponse(200, "<html>"))
+        with self.assertRaises(b.GitHubCallError):
+            c.read("user")
+
+    def test_missing_gh_binary_is_actionable(self):
+        with mock.patch.object(b.subprocess, "run", side_effect=FileNotFoundError("gh")):
+            resp = b._gh_transport(["user"], {}, None)
+        self.assertEqual(resp.status, 0)
+        self.assertIn("PATH", resp.body)
+
+    def test_gh_transport_parses_status_headers_and_body(self):
+        out = "HTTP/2.0 403 Forbidden\r\nX-Accepted-Oauth-Scopes: repo\r\n\r\n{\"m\": 1}"
+        proc = mock.Mock(stdout=out, stderr="")
+        with mock.patch.object(b.subprocess, "run", return_value=proc):
+            resp = b._gh_transport(["user"], {}, None)
+        self.assertEqual((resp.status, resp.body), (403, '{"m": 1}'))
+        self.assertEqual(resp.headers["x-accepted-oauth-scopes"], "repo")
 
 
 class GovernanceTests(unittest.TestCase):
