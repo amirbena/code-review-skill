@@ -28,14 +28,14 @@ input:
     index 9f8e7d6..2b3c4d5 100644
     --- a/app/accounts/models.py
     +++ b/app/accounts/models.py
-    @@ -7,6 +7,7 @@ class User(models.Model):
-             moved onto email_normalized and the rollout has baked."""
+    @@ -8,6 +8,7 @@ class User(models.Model):
+         moved onto email_normalized and the rollout has baked."""
 
-             email = models.EmailField(unique=True)
-    +        email_normalized = models.EmailField(null=True, blank=True)
+         email = models.EmailField(unique=True)
+    +    email_normalized = models.EmailField(null=True, blank=True)
 
-             def save(self, *args, **kwargs):
-                 # Dual-write: every save already keeps email_normalized in
+         def save(self, *args, **kwargs):
+             # Dual-write, established before this change: sets
     diff --git a/app/accounts/migrations/0010_add_email_normalized.py b/app/accounts/migrations/0010_add_email_normalized.py
     new file mode 100644
     index 0000000..1a2b3c4
