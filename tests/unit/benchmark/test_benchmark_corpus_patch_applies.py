@@ -42,8 +42,8 @@ class CorpusPatchAppliesTest(unittest.TestCase):
             case = bf.parse_case(yaml.safe_load(path.read_text(encoding="utf-8")))
             with tempfile.TemporaryDirectory() as tmp:
                 try:
-                    runner._materialize_patch(case, Path(tmp))
-                except runner._PatchDidNotApply as exc:
+                    runner.materialize_patch(case, Path(tmp))
+                except runner.PatchDidNotApply as exc:
                     failures.append(f"{path.relative_to(CORPUS_DIR)}: {exc}")
         self.assertEqual([], failures, "\n".join(failures))
 
