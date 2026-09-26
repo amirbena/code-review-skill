@@ -23,7 +23,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/utils/currency.py
     +++ b/app/utils/currency.py
-    @@ -1,4 +1,4 @@
+    @@ -1,2 +1,2 @@
     -def format_currency(amount, currency):
     -    return f"{currency} {amount:,.2f}"
     +def format_currency(currency, amount):
@@ -32,7 +32,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/billing/invoice.py
     +++ b/app/billing/invoice.py
-    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+    @@ -3,3 +3,3 @@ from app.utils.currency import format_currency
 
      def render_invoice_total(amount, currency):
     -    return format_currency(amount, currency)
@@ -41,7 +41,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/billing/receipt.py
     +++ b/app/billing/receipt.py
-    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+    @@ -3,3 +3,3 @@ from app.utils.currency import format_currency
 
      def render_receipt_total(amount, currency):
     -    return format_currency(amount, currency)
@@ -50,7 +50,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/billing/refund.py
     +++ b/app/billing/refund.py
-    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+    @@ -3,3 +3,3 @@ from app.utils.currency import format_currency
 
      def render_refund_total(amount, currency):
     -    return format_currency(amount, currency)
@@ -59,7 +59,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/billing/statement.py
     +++ b/app/billing/statement.py
-    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+    @@ -3,3 +3,3 @@ from app.utils.currency import format_currency
 
      def render_statement_total(amount, currency):
     -    return format_currency(amount, currency)
@@ -68,7 +68,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/billing/credit_note.py
     +++ b/app/billing/credit_note.py
-    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+    @@ -3,3 +3,3 @@ from app.utils.currency import format_currency
 
      def render_credit_note_total(amount, currency):
     -    return format_currency(amount, currency)
@@ -77,7 +77,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/billing/quote.py
     +++ b/app/billing/quote.py
-    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+    @@ -3,3 +3,3 @@ from app.utils.currency import format_currency
 
      def render_quote_total(amount, currency):
     -    return format_currency(amount, currency)
@@ -86,7 +86,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/billing/estimate.py
     +++ b/app/billing/estimate.py
-    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+    @@ -3,3 +3,3 @@ from app.utils.currency import format_currency
 
      def render_estimate_total(amount, currency):
     -    return format_currency(amount, currency)
@@ -95,7 +95,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/billing/proposal.py
     +++ b/app/billing/proposal.py
-    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+    @@ -3,3 +3,3 @@ from app.utils.currency import format_currency
 
      def render_proposal_total(amount, currency):
     -    return format_currency(amount, currency)
@@ -104,7 +104,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/billing/dunning.py
     +++ b/app/billing/dunning.py
-    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+    @@ -3,3 +3,3 @@ from app.utils.currency import format_currency
 
      def render_dunning_total(amount, currency):
     -    return format_currency(amount, currency)
@@ -113,12 +113,75 @@ input:
     index 1111111..2222222 100644
     --- a/app/billing/chargeback.py
     +++ b/app/billing/chargeback.py
-    @@ -3,4 +3,4 @@ from app.utils.currency import format_currency
+    @@ -3,3 +3,3 @@ from app.utils.currency import format_currency
 
      def render_chargeback_total(amount, currency):
     -    return format_currency(amount, currency)
     +    return format_currency(currency, amount)
   base:
+    app/utils/currency.py: |
+      def format_currency(amount, currency):
+          return f"{currency} {amount:,.2f}"
+    app/billing/invoice.py: |
+      from app.utils.currency import format_currency
+
+
+      def render_invoice_total(amount, currency):
+          return format_currency(amount, currency)
+    app/billing/receipt.py: |
+      from app.utils.currency import format_currency
+
+
+      def render_receipt_total(amount, currency):
+          return format_currency(amount, currency)
+    app/billing/refund.py: |
+      from app.utils.currency import format_currency
+
+
+      def render_refund_total(amount, currency):
+          return format_currency(amount, currency)
+    app/billing/statement.py: |
+      from app.utils.currency import format_currency
+
+
+      def render_statement_total(amount, currency):
+          return format_currency(amount, currency)
+    app/billing/credit_note.py: |
+      from app.utils.currency import format_currency
+
+
+      def render_credit_note_total(amount, currency):
+          return format_currency(amount, currency)
+    app/billing/quote.py: |
+      from app.utils.currency import format_currency
+
+
+      def render_quote_total(amount, currency):
+          return format_currency(amount, currency)
+    app/billing/estimate.py: |
+      from app.utils.currency import format_currency
+
+
+      def render_estimate_total(amount, currency):
+          return format_currency(amount, currency)
+    app/billing/proposal.py: |
+      from app.utils.currency import format_currency
+
+
+      def render_proposal_total(amount, currency):
+          return format_currency(amount, currency)
+    app/billing/dunning.py: |
+      from app.utils.currency import format_currency
+
+
+      def render_dunning_total(amount, currency):
+          return format_currency(amount, currency)
+    app/billing/chargeback.py: |
+      from app.utils.currency import format_currency
+
+
+      def render_chargeback_total(amount, currency):
+          return format_currency(amount, currency)
     app/billing/payout.py: |
       from app.utils.currency import format_currency
 

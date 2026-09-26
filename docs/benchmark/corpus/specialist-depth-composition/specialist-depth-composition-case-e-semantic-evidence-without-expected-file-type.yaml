@@ -21,7 +21,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/sessions/cache.py
     +++ b/app/sessions/cache.py
-    @@ -10,10 +10,7 @@ def remember(session_id, profile):
+    @@ -10,13 +10,10 @@ def remember(session_id, profile):
          """Cache a user's profile under their session id.
 
          Entries are read back by read_profile below for the lifetime of
@@ -37,7 +37,7 @@ input:
 
 
      def read_profile(session_id):
-    @@ -21,4 +18,4 @@ def read_profile(session_id):
+    @@ -21,3 +18,3 @@ def read_profile(session_id):
          """Read back a cached profile written by remember above."""
          entry = redis_client.hgetall(session_id)
     -    return Profile(id=entry["id"], email=entry["email"], display_name=entry["display_name"])

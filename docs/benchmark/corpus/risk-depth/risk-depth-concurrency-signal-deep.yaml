@@ -21,7 +21,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/inventory/stock.py
     +++ b/app/inventory/stock.py
-    @@ -6,7 +6,7 @@ _stock: dict[str, int] = {}
+    @@ -6,8 +6,8 @@ _stock: dict[str, int] = {}
 
 
      def reserve(sku: str, qty: int) -> None:

@@ -21,7 +21,7 @@ input:
     index 1111111..2222222 100644
     --- a/jobs/export.py
     +++ b/jobs/export.py
-    @@ -3,5 +3,5 @@ import json
+    @@ -3,4 +3,4 @@ import json
      def write_export(records, path):
          with open(path, "w") as f:
              for r in records:

@@ -35,7 +35,7 @@ input:
     index 3333333..4444444 100644
     --- a/src/cache/RedisCache.ts
     +++ b/src/cache/RedisCache.ts
-    @@ -1,10 +1,12 @@
+    @@ -1,11 +1,12 @@
      import { Cache } from "./Cache";
     +import { CacheMiss } from "./errors";
 
