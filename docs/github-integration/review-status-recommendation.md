@@ -85,5 +85,7 @@ from native review events" and "No merge" sections and with
 - The Skill never merges, never enables auto-merge, never changes
   draft/ready, never deletes branches, and never treats a published status
   as merge authority. A status on SHA A says nothing about SHA B.
-- Self-approval stays forbidden in every mode; blocking signals are always
-  permitted, positive ones need an independent, authorized reviewer.
+- Self-approval stays forbidden in every mode. Blocking signals do not
+  require reviewer independence (they still need write capability and a
+  fresh reviewed HEAD); positive (`success`) ones need `ACTIVE` mode and an
+  independent reviewer.
