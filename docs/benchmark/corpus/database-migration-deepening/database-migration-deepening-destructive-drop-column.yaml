@@ -20,7 +20,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/accounts/models.py
     +++ b/app/accounts/models.py
-    @@ -6,7 +6,6 @@ class User(models.Model):
+    @@ -6,4 +6,3 @@ class User(models.Model):
 
          email = models.EmailField(unique=True)
     -    legacy_email = models.EmailField(null=True, blank=True)

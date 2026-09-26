@@ -33,7 +33,7 @@ input:
     index 3333333..4444444 100644
     --- a/app/accounts/views.py
     +++ b/app/accounts/views.py
-    @@ -10,4 +10,7 @@ def account_settings(request):
+    @@ -10,3 +10,4 @@ def account_settings(request):
          return render(request, "settings.html", {
              "user": request.user,
     +        "preferred_language": request.user.preferred_language or "en",

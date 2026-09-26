@@ -27,7 +27,7 @@ input:
     index 1111111..2222222 100644
     --- a/app/handlers/base.py
     +++ b/app/handlers/base.py
-    @@ -1,6 +1,8 @@
+    @@ -1,4 +1,5 @@
      class BaseHandler:
          def process(self, payload):
     -        self.validate(payload)

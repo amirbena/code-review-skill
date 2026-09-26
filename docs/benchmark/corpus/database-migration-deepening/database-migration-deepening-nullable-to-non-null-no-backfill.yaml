@@ -21,7 +21,7 @@ input:
     --- a/app/billing/models.py
     +++ b/app/billing/models.py
     @@ -7,4 +7,4 @@ class Account(models.Model):
-         predate this field and were never backfilled."""
+         this field and were never backfilled."""
 
          name = models.CharField(max_length=200)
     -    subscription_tier = models.CharField(max_length=20, null=True)
@@ -31,7 +31,7 @@ input:
     index 0000000..9f1b2c3
     --- /dev/null
     +++ b/app/billing/migrations/0005_require_subscription_tier.py
-    @@ -0,0 +1,17 @@
+    @@ -0,0 +1,16 @@
     +from django.db import migrations, models
     +
     +

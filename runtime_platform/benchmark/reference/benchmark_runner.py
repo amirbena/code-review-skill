@@ -238,7 +238,7 @@ def capture_repo_state(repo: Path) -> RepoState:
 # --------------------------------------------------------------------------
 
 
-class _PatchDidNotApply(Exception):
+class PatchDidNotApply(Exception):
     pass
 
 
@@ -246,7 +246,7 @@ class _WorkspaceSetupFailed(Exception):
     pass
 
 
-def _materialize_patch(case: bf.BenchmarkCase, workspace: Path) -> None:
+def materialize_patch(case: bf.BenchmarkCase, workspace: Path) -> None:
     """Build the pre-image tree in ``workspace`` and apply ``input.patch``
     there — and only there (contract §3)."""
     _git(workspace, "init", "-q", "-b", "main", ".")
@@ -264,7 +264,7 @@ def _materialize_patch(case: bf.BenchmarkCase, workspace: Path) -> None:
     applied = _git(workspace, "apply", "--whitespace=nowarn", str(patch_file), check=False)
     patch_file.unlink()
     if applied.returncode != 0:
-        raise _PatchDidNotApply(applied.stderr.strip() or "git apply failed")
+        raise PatchDidNotApply(applied.stderr.strip() or "git apply failed")
 
 
 def _materialize_repo_ref(
@@ -401,10 +401,10 @@ def run_case(
     try:
         try:
             if kind == "patch":
-                _materialize_patch(case, workspace)
+                materialize_patch(case, workspace)
             else:
                 _materialize_repo_ref(case, workspace, repo_ref_resolver)
-        except _PatchDidNotApply:
+        except PatchDidNotApply:
             return CaseResult(case.id, kind, _ERROR, error="patch-did-not-apply")
         except _WorkspaceSetupFailed:
             return CaseResult(case.id, kind, _ERROR, error="workspace-setup-failed")
