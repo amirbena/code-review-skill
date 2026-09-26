@@ -111,12 +111,33 @@ class HardeningTests(unittest.TestCase):
         self.assertIn("PATH", resp.body)
 
     def test_gh_transport_parses_status_headers_and_body(self):
-        out = "HTTP/2.0 403 Forbidden\r\nX-Accepted-Oauth-Scopes: repo\r\n\r\n{\"m\": 1}"
-        proc = mock.Mock(stdout=out, stderr="")
+        out = b'HTTP/2.0 403 Forbidden\nX-Accepted-Oauth-Scopes: repo\r\n\r\n{"m": 1}'
+        proc = mock.Mock(stdout=out, stderr=b"")
         with mock.patch.object(b.subprocess, "run", return_value=proc):
             resp = b._gh_transport(["user"], {}, None)
         self.assertEqual((resp.status, resp.body), (403, '{"m": 1}'))
         self.assertEqual(resp.headers["x-accepted-oauth-scopes"], "repo")
+
+
+class MethodTests(unittest.TestCase):
+    def test_invalid_methods_refused_before_transport(self):
+        c, rec = client()
+        for m in ("TRACE", " GET", "DELETE"):
+            with self.assertRaises(b.GitHubBoundaryError):
+                c.write(m, "repos/o/r/statuses/abc1234", {})
+        with self.assertRaises(b.GitHubBoundaryError):
+            c.mutate_governance("TRACE", "repos/o/r/rulesets/1", {}, authorization=AUTH)
+        self.assertEqual(rec.calls, [])
+
+    def test_governance_delete_allowed_when_authorized(self):
+        c, rec = client(b.RawResponse(204, ""))
+        c.mutate_governance("DELETE", "repos/o/r/rulesets/1", None, authorization=AUTH)
+        self.assertEqual(len(rec.calls), 1)
+
+    def test_real_gh_read_returns_body(self):
+        out = b'HTTP/2.0 200 OK\nX-A: b\r\n\r\n{"ok": true}'
+        with mock.patch.object(b.subprocess, "run", return_value=mock.Mock(stdout=out, stderr=b"")):
+            self.assertEqual(b.GitHubClient(env={}).read("rate_limit"), {"ok": True})
 
 
 class GovernanceTests(unittest.TestCase):

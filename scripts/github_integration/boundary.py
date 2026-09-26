@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from typing import Any, Callable, Mapping, Sequence
 
 READ_METHODS = frozenset({"GET", "HEAD"})
+WRITE_METHODS = frozenset({"POST", "PATCH", "PUT"})
+GOVERNANCE_METHODS = WRITE_METHODS | {"DELETE"}
 TOKEN_ENV_VARS = ("GH_TOKEN", "GITHUB_TOKEN")
 SCOPES_HEADER = "x-oauth-scopes"
 NON_GOVERNANCE_WRITE_RE = re.compile(
@@ -67,15 +69,16 @@ def _gh_transport(args: Sequence[str], env: Mapping[str, str], stdin: str | None
     try:
         proc = subprocess.run(
             ["gh", "api", "--include", *args],
-            input=stdin,
+            input=stdin.encode() if stdin is not None else None,
             capture_output=True,
-            text=True,
             env={**os.environ, **env},
             check=False,
         )
     except OSError as exc:
         return RawResponse(0, f"gh CLI not runnable ({exc}); install it or add it to PATH")
-    head, _, body = proc.stdout.partition("\r\n\r\n")
+    stdout = proc.stdout.decode("utf-8", "replace")
+    stderr = proc.stderr.decode("utf-8", "replace")
+    head, _, body = stdout.partition("\r\n\r\n")
     lines = head.splitlines()
     status = int(lines[0].split()[1]) if lines and lines[0].startswith("HTTP") else 0
     headers = {
@@ -83,7 +86,7 @@ def _gh_transport(args: Sequence[str], env: Mapping[str, str], stdin: str | None
         for k, _, v in (ln.partition(":") for ln in lines[1:])
     }
     if status == 0:
-        return RawResponse(0, proc.stderr, headers)
+        return RawResponse(0, stderr, headers)
     return RawResponse(status, body, headers)
 
 
@@ -153,6 +156,8 @@ class GitHubClient:
         method = method.upper()
         if method in READ_METHODS:
             raise GitHubBoundaryError("Use read() for read-only calls.")
+        if method not in WRITE_METHODS:
+            raise GitHubBoundaryError(f"Unsupported write method: {method!r}.")
         if not NON_GOVERNANCE_WRITE_RE.fullmatch(endpoint):
             raise AuthorizationRequiredError(
                 f"Refusing {method} {endpoint}: not an allowlisted non-governance write; "
@@ -172,6 +177,8 @@ class GitHubClient:
         method = method.upper()
         if method in READ_METHODS:
             raise GitHubBoundaryError("Use read() for read-only calls.")
+        if method not in GOVERNANCE_METHODS:
+            raise GitHubBoundaryError(f"Unsupported governance method: {method!r}.")
         if authorization is None or not authorization.is_valid():
             raise AuthorizationRequiredError(
                 f"Refusing {method} {endpoint}: governance mutation needs an explicit "
