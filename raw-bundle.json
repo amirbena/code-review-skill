@@ -1,0 +1,107 @@
+{
+  "confirmation_reruns": [],
+  "invocations": [
+    {
+      "case_id": null,
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`page()` returns one extra item and duplicates the boundary item across consecutive pages `end = offset + page_size + 1` extends the slice one element past `offset + page_size`. For `page_size=10`: `page(items, 1, 10)` computes `offset=0, end=11` \u2192 returns indices `0..10` (11 items); `page(items, 2, 10)` computes `offset=10, end=21` \u2192 returns indices `10..20` (11 items). Index `10` is returned by both calls. Every page returns `page_size + 1` items instead of `page_size`, and each pair of consecutive pages shares one duplicated element at the boundary. Any caller relying on `page()` for fixed-size pagination (API responses, UI listings, batch iteration) gets over-sized pages and duplicate records, and code that sums/counts across pages will over-count by one item per page boundary.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "end = offset + page_size + 1",
+                    "offset + page_size",
+                    "page_size=10",
+                    "page(items, 1, 10)",
+                    "offset=0, end=11",
+                    "0..10",
+                    "page(items, 2, 10)",
+                    "offset=10, end=21",
+                    "10..20",
+                    "10"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "app/pagination.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "no-op-comment-and-rename",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          },
+          {
+            "id": "quality-duplicated-branch-logic",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`msg = format_message(user)` is duplicated across the email and sms branches The new `elif kind == \"sms\":` branch at `app/notify.py:5-7` re-executes `msg = format_message(user)` (`app/notify.py:6`), which is byte-identical to the call already made in the `if kind == \"email\":` branch (`app/notify.py:3`). Both branches compute the exact same value from the exact same input before diverging only on the send call. The two branches now maintain two independent copies of the same message-formatting step. A future change to how `format_message` is invoked (e.g. passing a channel argument, adding a length cap for SMS, or wrapping it in error handling) is easy to apply to one branch and silently forget in the other, letting the email and SMS paths drift out of sync without any test or reviewer signal pointing at the omission.",
+                "extra": {
+                  "defect_kind": "duplicated-logic",
+                  "evidence_quotes": [
+                    "elif kind == \"sms\":",
+                    "app/notify.py:5-7",
+                    "msg = format_message(user)",
+                    "app/notify.py:6",
+                    "if kind == \"email\":",
+                    "app/notify.py:3"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 7,
+                    "start": 2
+                  },
+                  "path": "app/notify.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "security-command-injection",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`make_archive` builds a shell command by string-interpolating an unsanitized argument The change replaces a safe argument-list `subprocess.run([\"tar\", \"-czf\", name + \".tar.gz\", \"data/\"])` with `cmd = f\"tar -czf {name}.tar.gz data/\"` followed by `subprocess.run(cmd, shell=True, check=True)`. `name` is passed straight into a shell string with no escaping or validation, and `shell=True` causes it to be interpreted by `/bin/sh`. Any caller that passes attacker-influenced data as `name` (e.g. a filename, request field, or config value) can inject arbitrary shell syntax (`;`, `&&`, backticks, `$()`, redirections) and execute arbitrary commands with the privileges of the process running the backup \u2014 a full command-injection vulnerability where previously none existed. `subprocess.run` with a list argument (the pre-change form) execs `tar` directly and treats `name` as an inert single argument regardless of its contents. Switching to a single interpolated string with `shell=True` hands the whole string to a shell, so any shell metacharacter inside `name` changes what gets executed rather than merely what gets archived \u2014 e.g. `name = \"x; rm -rf /\"` produces `tar -czf x; rm -rf /.tar.gz data/`, running `rm -rf /` as a second command.",
+                "extra": {
+                  "defect_kind": "command-injection",
+                  "evidence_quotes": [
+                    "subprocess.run([\"tar\", \"-czf\", name + \".tar.gz\", \"data/\"])",
+                    "cmd = f\"tar -czf {name}.tar.gz data/\"",
+                    "subprocess.run(cmd, shell=True, check=True)",
+                    "name",
+                    "shell=True",
+                    "/bin/sh"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 6,
+                    "start": 5
+                  },
+                  "path": "app/backup.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    }
+  ]
+}
