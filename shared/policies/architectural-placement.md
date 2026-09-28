@@ -112,6 +112,16 @@ blast radius, and available repository evidence — the same scaling
 [`evidence.md`](evidence.md) already applies to any other cross-file
 reasoning.
 
+For `local-code-review`'s explicit, user-authorized multi-repository
+Review Target (see
+`skills/local-code-review/policies/multi-repository-review-target.md`),
+a ring may resolve to the owning abstraction, interface, orchestrator, or
+sibling implementation in an already-admitted member repository, exactly
+as it would within one repository — never in a repository outside that
+already-admitted member set, per
+[`repository-expansion.md`](repository-expansion.md), "No
+cross-repository expansion."
+
 ### Stop conditions
 
 Stop expanding as soon as any of these holds:

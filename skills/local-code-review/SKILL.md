@@ -83,6 +83,13 @@ is resolved against the branch's configured upstream, never the review
 base. The full implementation state is reviewed; no category is silently
 skipped without saying so in the report.
 
+**Optional — repository roots (multi-repository Review Target):** an
+explicit list of 2+ local repository roots, composed into one combined
+Review Target from N unchanged single-repository resolutions — never
+invented discovery or a synthetic shared base. Governed in full by
+[`policies/multi-repository-review-target.md`](policies/multi-repository-review-target.md).
+When omitted (the default), behavior and cost are unchanged.
+
 **Optional — review context** describing the intended change, per
 [`review-context.md`](../../shared/policies/review-context.md), "Input
 form" (thin local application:
@@ -191,6 +198,13 @@ This Skill's own, always:
 per-invocation explicit-user-approval contract — see section 5) and
 [`policies/repository-state.md`](policies/repository-state.md) (category
 definitions, per-category detection commands, staged-delta fingerprint).
+
+Conditionally, only when the section 1 repository-roots input is
+supplied with 2 or more roots (fewer than 2 is treated as not supplied):
+[`policies/multi-repository-review-target.md`](policies/multi-repository-review-target.md)
+(root validation, per-member resolution, combined-target composition,
+sibling-member ring expansion, instruction isolation, and
+repository-qualified finding location) — never loaded otherwise.
 
 Conditionally, only when its own input is supplied per section 1: the
 shared `review-context.md` requirement-context / scope-boundary sections

@@ -215,8 +215,17 @@ re-deriving or loosening this policy's ring ceiling.
 - **Not a merge gate.** An expansion decision never blocks a merge on its
   own and is never itself a finding.
 - **No cross-repository expansion.** Investigation stays within the
-  current repository; a separate dependency, submodule, or service
-  repository is out of scope for this policy.
+  current repository, or, for `local-code-review`'s explicit,
+  user-authorized multi-repository Review Target (see
+  `skills/local-code-review/policies/multi-repository-review-target.md`),
+  within the already-admitted member repositories of that target — never
+  into a repository the caller did not explicitly supply. This governs
+  expansion into a **non-member** repository specifically: a separate
+  dependency, submodule, or service repository that is not itself an
+  admitted Review Target member is out of scope for this policy; it does
+  not restrict evidence-connection between repositories the caller has
+  already, explicitly admitted as co-equal members of the same combined
+  target.
 - **Not a repository-wide audit.** Ring-bounded expansion investigates
   only what a fired trigger needs; it is never license to explore
   unrelated repository areas.

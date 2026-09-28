@@ -132,11 +132,25 @@ proceed.
 
 ### Review Metadata
 
+<Single-repository review (no multi-repository input supplied) — the
+default and backward-compatible case:>
+
 - Base branch: `<name>`
 - Base SHA: `<sha>`
 - Local HEAD: `<sha>`
 - Remote HEAD: `<sha | none>`
 - Synchronization status: <in sync | local ahead | local behind | diverged | no tracking branch>
+
+<Multi-repository Review Target (a repository-roots list was supplied) —
+replaces the single set of fields above with one entry per member, per
+[`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
+"Reporting combined review scope":>
+
+- Members:
+  - `<repo-alias>` (`<root>`) — Base branch: `<name>`, Base SHA: `<sha>`, Local HEAD: `<sha>`, Remote HEAD: `<sha | none>`, Synchronization status: `<...>`
+  - `<repo-alias>` (`<root>`) — ...
+- Unresolved members: <none | `<root>` — `<reason>`, one per unresolved entry>
+
 - P0: <n>, P1: <n>, P2: <n>
 - Change-risk depth: <standard | elevated | deep>
 - Change-risk signals: <none | comma-separated `signal (tier) — evidence` entries, one per resolved occurrence>
@@ -147,7 +161,11 @@ proceed.
 **Review scope contract** (per
 [`../policies/repository-state.md`](../policies/repository-state.md)) —
 states plainly what was inspected; a category marked "excluded" is a
-deliberate, stated exclusion, never a silent omission:
+deliberate, stated exclusion, never a silent omission. For a
+multi-repository Review Target, this block repeats once per resolved
+member (each member's own category inclusion/exclusion is independent),
+per
+[`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md):
 
 - Committed delta relative to base: <included, `<base>..HEAD` summary | excluded, reason>
 - Staged: <included, files/delta summary | excluded, reason>
@@ -283,7 +301,14 @@ serve are owned by the linked policies and are not restated here.
   — per that contract's "Location source annotation" and
   [`../policies/repository-state.md`](../policies/repository-state.md),
   "Attribution in findings"; when the shared unresolved-fix marker also
-  applies, the source-category annotation comes first.
+  applies, the source-category annotation comes first. For a
+  multi-repository Review Target, the `Location` value's `<path>` also
+  carries the leading `<repo-alias>:` qualifier per
+  [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+  "Location source annotation," and
+  [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
+  "Finding location with structural repository identity"; a
+  single-repository review never renders it.
 - **Validation** records `executed` / `skipped` / `failed` /
   `unavailable` explicitly per the shared
   [`runtime-validation.md`](../../../shared/policies/runtime-validation.md)

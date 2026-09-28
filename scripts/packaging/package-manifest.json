@@ -52,6 +52,7 @@
         { "source": "skills/local-code-review/agents/openai.yaml", "destination": "agents/openai.yaml" },
         { "source": "skills/local-code-review/metadata/skill.yaml", "destination": "metadata/skill.yaml" },
         { "source": "skills/local-code-review/policies/invocation-approval.md", "destination": "policies/invocation-approval.md" },
+        { "source": "skills/local-code-review/policies/multi-repository-review-target.md", "destination": "policies/multi-repository-review-target.md" },
         { "source": "skills/local-code-review/policies/repository-state.md", "destination": "policies/repository-state.md" },
         { "source": "skills/local-code-review/policies/review-context.md", "destination": "policies/review-context.md" },
         { "source": "skills/local-code-review/policies/pr-context.md", "destination": "policies/pr-context.md" },

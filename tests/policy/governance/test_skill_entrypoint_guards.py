@@ -75,7 +75,13 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # Issue #439 (published Skill frontmatter cleanup) added a single
 # `version: 1.50.2` line to both SKILL.md frontmatter blocks, raising
 # local 273 -> 274 and github 400 -> 401.
-LOCAL_MAX_LINES = 274
+# Issue #556 (epic #555: the optional, explicit multi-repository Review
+# Target input — a new section-1 input paragraph and a new conditional
+# section-2 policy-load paragraph, both thin pointers to the new
+# skills/local-code-review/policies/multi-repository-review-target.md)
+# raised local 274 -> 288. github is unaffected (local-code-review only,
+# an explicit non-goal for github-pr-review) and stays 401.
+LOCAL_MAX_LINES = 288
 GITHUB_MAX_LINES = 401
 
 

@@ -69,6 +69,18 @@ this Skill's own source repository, or any unrelated checkout — a Skill
 authored in a repository that has an `AGENTS.md` does not carry that
 `AGENTS.md` into an external review.
 
+For `local-code-review`'s explicit, user-authorized multi-repository
+Review Target (see
+`skills/local-code-review/policies/multi-repository-review-target.md`),
+this discovery and normalization procedure runs **independently for each
+member repository**, anchored to that member's own root exactly as above.
+A member's resulting instruction context applies only to files under that
+member's own root — never to a sibling member's files, even though
+multiple members' instruction contexts are loaded in the same review.
+This is an isolation guarantee, not a second discovery mechanism: each
+member still resolves its own instructions by the identical procedure
+this section already defines.
+
 The normalized result is part of **Repository Context**, not Review Context,
 and contains:
 
