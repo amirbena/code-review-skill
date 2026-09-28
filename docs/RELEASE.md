@@ -431,6 +431,19 @@ silently failed to land). Any of these failing — including remote `main`
 never actually advancing to the published commit — fails `distribute`
 closed, so `finalize` never runs.
 
+This gate is not left as an inferred side effect of `distribute`'s
+internal step order. `distribute` exposes an explicit, named `verified`
+job output, set by a dedicated step (`Record verified remote
+publication`) that runs immediately after `distribution-verify` and can
+only succeed if every step before it — including that independent remote
+observation — already did. `finalize`'s own condition requires both
+`needs.distribute.result == 'success'` **and**
+`needs.distribute.outputs.verified == 'true'`: either alone already
+implies the other today, but naming the claim explicitly means a reader
+(or a future edit) sees exactly what `finalize` depends on instead of
+having to trace `distribute`'s step sequence, and a change that weakens
+one without the other still fails closed.
+
 **Explicitly out of scope: the skills.sh directory listing.** Whether a
 Skill shows up in `skills.sh`'s search/browse pages depends on install
 telemetry accumulated after people install it — there is no callable,

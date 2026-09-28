@@ -365,6 +365,35 @@ class FinalizationGateTests(unittest.TestCase):
         self.assertIn("needs.distribute.result == 'success'", cond)
         self.assertNotIn("||", cond)
 
+    def test_finalize_gate_also_names_the_verified_output_explicitly(self) -> None:
+        # #559: generic job success alone is only an *inferred* consequence
+        # of step order; the gate must also name the exact claim it depends
+        # on (independent remote verification) as its own output, so a
+        # reader — and this test — can see the dependency without reading
+        # `distribute`'s internal step sequence.
+        cond = str(self.finalize["if"])
+        self.assertIn("needs.distribute.outputs.verified == 'true'", cond)
+        self.assertIn("&&", cond)  # both the generic result and the named output are required
+
+    def test_distribute_declares_the_verified_output_from_its_own_dedicated_step(self) -> None:
+        dist_job = self.jobs["distribute"]
+        self.assertEqual(dist_job["outputs"]["verified"], "${{ steps.verified.outputs.verified }}")
+        step = _step(dist_job["steps"], "Record verified remote publication")
+        self.assertEqual(step.get("id"), "verified")
+        self.assertIn("verified=true", step["run"])
+        # No `if:`/`continue-on-error` on this step: it can only run — and
+        # therefore the output can only be set — after every prior step,
+        # including the independent remote verify, already succeeded.
+        self.assertNotIn("if", step)
+        self.assertNotIn("continue-on-error", step)
+
+    def test_verified_output_step_runs_only_after_remote_verification(self) -> None:
+        dist = self.jobs["distribute"]["steps"]
+        self.assertLess(
+            _step_index(dist, "Verify the distribution tag equals the build"),
+            _step_index(dist, "Record verified remote publication"),
+        )
+
     def test_only_finalize_creates_a_github_release(self) -> None:
         for name, job in self.jobs.items():
             blob = yaml.safe_dump(job)
@@ -500,6 +529,16 @@ class FinalizationGateTests(unittest.TestCase):
         self.assertIn("independently re-observes the remote", gate_section)
         self.assertIn("reachable from remote", gate_section)
         self.assertIn("silently failed to land", gate_section)
+
+    def test_release_doc_documents_the_named_verified_output(self) -> None:
+        """#559: the gate must be documented as an explicit, named output
+        -- not only inferable from `distribute`'s internal step order."""
+        doc = RELEASE_DOC.read_text(encoding="utf-8")
+        gate_start = doc.index("### Finalization gate")
+        gate_section = doc[gate_start : doc.index("### Skill archive version")]
+        self.assertIn("named `verified`", gate_section)
+        self.assertIn("Record verified remote", gate_section)
+        self.assertIn("needs.distribute.outputs.verified == 'true'", gate_section)
 
     def test_recovery_hands_the_verified_rebuild_to_finalize(self) -> None:
         upload = _step(self.jobs["distribute"]["steps"], "Hand the recovery rebuild")
