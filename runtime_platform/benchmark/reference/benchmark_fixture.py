@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Sequence
 
 from runtime_platform.benchmark.reference import benchmark_taxonomy as tax
 
@@ -77,8 +77,15 @@ if METADATA_TAGS | {tax.UNCLASSIFIED} != tax.RISK_MODE_VALUES:
 _TOP_LEVEL_KEYS: frozenset[str] = frozenset(
     {"format", "id", "title", "input", "expected", "metadata"}
 )
-_INPUT_KEYS: frozenset[str] = frozenset({"patch", "repo_ref", "base", "context"})
+_INPUT_KEYS: frozenset[str] = frozenset(
+    {"patch", "repo_ref", "base", "context", "repositories", "unadmitted_repositories"}
+)
 _REPO_REF_KEYS: frozenset[str] = frozenset({"repo", "pr", "commit", "base"})
+# Issue #558: one entry of `input.repositories` / `input.unadmitted_repositories`
+# — a member's own patch/base, same sub-schema as the single-repo `patch`
+# input kind. No `repo_ref` per member: reuses the existing conventions
+# narrowly rather than inventing a second materialization path per member.
+_REPO_ENTRY_KEYS: frozenset[str] = frozenset({"patch", "base"})
 _EXPECTED_KEYS: frozenset[str] = frozenset(
     {"decision", "findings", "findings_completeness"}
 )
@@ -87,7 +94,7 @@ _FINDING_KEYS: frozenset[str] = frozenset(
 )
 _ALT_KEYS: frozenset[str] = frozenset({"location", "claim", "defect_kind"})
 _LOCATION_KEYS: frozenset[str] = frozenset(
-    {"location_intent", "path", "symbol", "anchor", "lines"}
+    {"location_intent", "path", "symbol", "anchor", "lines", "repo_alias"}
 )
 
 
@@ -143,7 +150,15 @@ class BenchmarkCase:
 
     @property
     def input_kind(self) -> str:
+        if "repositories" in self.input:
+            return "multi_repo"
         return "patch" if "patch" in self.input else "repo_ref"
+
+    @property
+    def repository_aliases(self) -> tuple[str, ...]:
+        """The admitted `input.repositories` aliases, empty for a
+        single-repository case."""
+        return tuple(self.input.get("repositories", {}))
 
     @property
     def derived_decision(self) -> str:
@@ -215,7 +230,7 @@ def _parse_location(raw: Any, where: str) -> dict[str, Any]:
             and 1 <= lines["start"] <= lines["end"],
             f"{where}.location.lines: start/end must be ints with 1 <= start <= end",
         )
-    for opt in ("symbol", "anchor"):
+    for opt in ("symbol", "anchor", "repo_alias"):
         if opt in raw:
             _require(
                 isinstance(raw[opt], str) and raw[opt].strip() != "",
@@ -326,15 +341,75 @@ def _parse_finding(raw: Any, where: str, *, nested: bool = False) -> ExpectedFin
     )
 
 
+def _parse_repo_entry(raw: Any, alias: str, where: str) -> dict[str, Any]:
+    """One member of `input.repositories` / `input.unadmitted_repositories`
+    (issue #558): the same `patch`/`base` sub-schema a single-repo `patch`
+    input uses, scoped to that one repository alone."""
+    _require(isinstance(raw, dict), f"{where}[{alias}]: must be a mapping")
+    _no_unknown_keys(raw, _REPO_ENTRY_KEYS, f"{where}[{alias}]")
+    _require(
+        isinstance(raw.get("patch"), str) and raw["patch"].strip() != "",
+        f"{where}[{alias}].patch: must be a non-empty unified-diff string",
+    )
+    if "base" in raw:
+        base = raw["base"]
+        _require(
+            isinstance(base, dict)
+            and all(isinstance(k, str) and isinstance(v, str) for k, v in base.items()),
+            f"{where}[{alias}].base: must be a mapping of repo-relative path -> file contents",
+        )
+    return raw
+
+
+def _parse_repositories(raw: Any, where: str) -> dict[str, dict[str, Any]]:
+    _require(isinstance(raw, dict), f"input.{where}: must be a mapping")
+    _require(
+        len(raw) >= 2 if where == "repositories" else len(raw) >= 1,
+        f"input.{where}: must declare at least "
+        f"{'2 repository aliases' if where == 'repositories' else '1 repository alias'}",
+    )
+    for alias in raw:
+        _require(
+            isinstance(alias, str) and bool(_SLUG_RE.match(alias)),
+            f"input.{where}: alias {alias!r} must be a kebab-case slug",
+        )
+    return {alias: _parse_repo_entry(entry, alias, f"input.{where}") for alias, entry in raw.items()}
+
+
 def _parse_input(raw: Any) -> dict[str, Any]:
     _require(isinstance(raw, dict), "input: must be a mapping")
     _no_unknown_keys(raw, _INPUT_KEYS, "input")
     has_patch = "patch" in raw
     has_ref = "repo_ref" in raw
+    has_repos = "repositories" in raw
     _require(
-        has_patch != has_ref,
-        "input: exactly one of 'patch' or 'repo_ref' must be present",
+        sum((has_patch, has_ref, has_repos)) == 1,
+        "input: exactly one of 'patch', 'repo_ref', or 'repositories' must be present",
     )
+    if has_repos:
+        # Issue #558: an explicit, multi-repository Review Target — mirrors
+        # skills/local-code-review/policies/multi-repository-review-target.md's
+        # explicit-root-list input contract. `unadmitted_repositories` (also
+        # only valid here) is materialized alongside the admitted members as
+        # a real local sibling repository that is never part of the input
+        # handed to the reviewer — the isolation/authorization negative case.
+        _require("base" not in raw, "input.base: only valid alongside 'patch'")
+        repositories = _parse_repositories(raw["repositories"], "repositories")
+        if "unadmitted_repositories" in raw:
+            unadmitted = _parse_repositories(raw["unadmitted_repositories"], "unadmitted_repositories")
+            clash = sorted(set(unadmitted) & set(repositories))
+            _require(
+                not clash,
+                f"input.unadmitted_repositories: alias(es) {clash} collide with 'repositories'",
+            )
+        if "context" in raw:
+            _require(
+                isinstance(raw["context"], str) and raw["context"].strip() != "",
+                "input.context: must be a non-empty string when present",
+            )
+        return raw
+    if "unadmitted_repositories" in raw:
+        _require(False, "input.unadmitted_repositories: only valid alongside 'repositories'")
     if has_patch:
         _require(
             isinstance(raw["patch"], str) and raw["patch"].strip() != "",
@@ -417,6 +492,22 @@ def _parse_metadata(raw: Any) -> dict[str, Any]:
     return raw
 
 
+def _all_locations(findings: Sequence["ExpectedFinding"]) -> list[dict[str, Any]]:
+    """Every location dict a case's findings carry — primary specs, their
+    `alternatives`, and `any_of` members' own primaries/alternatives — so a
+    cross-check (e.g. `repo_alias` validity) sees every one of them."""
+    locs: list[dict[str, Any]] = []
+    for f in findings:
+        candidates = f.members if f.is_any_of else (f,)
+        for spec in candidates:
+            if spec.location is not None:
+                locs.append(spec.location)
+            for alt in spec.alternatives:
+                if "location" in alt:
+                    locs.append(alt["location"])
+    return locs
+
+
 def parse_case(data: Any) -> BenchmarkCase:
     """Validate ``data`` (already YAML/JSON-decoded) as one benchmark case.
 
@@ -487,6 +578,29 @@ def parse_case(data: Any) -> BenchmarkCase:
             decision in DECISIONS,
             f"expected.decision: must be one of {sorted(DECISIONS)} when present",
         )
+
+    is_multi_repo = "repositories" in parsed_input
+    if is_multi_repo:
+        valid_aliases = frozenset(parsed_input["repositories"])
+        for loc in _all_locations(findings):
+            alias = loc.get("repo_alias")
+            _require(
+                isinstance(alias, str) and alias.strip() != "",
+                "expected.findings: a multi-repository case's finding location "
+                "requires 'repo_alias' naming the member repository it belongs to",
+            )
+            _require(
+                alias in valid_aliases,
+                f"expected.findings: location.repo_alias {alias!r} is not one of "
+                f"input.repositories' aliases {sorted(valid_aliases)}",
+            )
+    else:
+        for loc in _all_locations(findings):
+            _require(
+                "repo_alias" not in loc,
+                "expected.findings: 'repo_alias' is only valid for a multi-repository "
+                "('input.repositories') case",
+            )
 
     _require(
         "metadata" in data,

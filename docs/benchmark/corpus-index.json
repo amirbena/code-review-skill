@@ -87,6 +87,14 @@
       "finding-placement-preexisting-callee-bug-exposed",
       "finding-placement-test-reveals-production-defect"
     ],
+    "multi-repository-review-target": [
+      "cross-repo-contract-mismatch",
+      "isolation-unadmitted-sibling",
+      "repository-local-correct-combined-defect",
+      "single-repository-regression",
+      "three-repo-coordinated-correct",
+      "three-repo-coordinated-incorrect"
+    ],
     "null-absence-risk": [
       "null-absence-go-unchecked-map-lookup",
       "null-absence-java-guarded-and-unguarded-combined",
@@ -192,6 +200,14 @@
     "evidence": [
       "finding-placement-context-expansion-drift"
     ],
+    "multi-repository-review-target": [
+      "cross-repo-contract-mismatch",
+      "isolation-unadmitted-sibling",
+      "repository-local-correct-combined-defect",
+      "single-repository-regression",
+      "three-repo-coordinated-correct",
+      "three-repo-coordinated-incorrect"
+    ],
     "null-absence-risk": [
       "null-absence-go-unchecked-map-lookup",
       "null-absence-java-guarded-and-unguarded-combined",
@@ -293,6 +309,7 @@
       "distributed-systems-deepening-ownership-assumption-violated",
       "distributed-systems-deepening-retry-idempotency-guarded-clean",
       "distributed-systems-deepening-retry-interaction-missing-idempotency",
+      "repository-local-correct-combined-defect",
       "risk-depth-concurrency-signal-deep"
     ],
     "correctness": [
@@ -313,6 +330,7 @@
       "consolidation-shared-validator-many-call-paths",
       "consolidation-similar-but-independent-defects",
       "correctness-off-by-one-pagination",
+      "cross-repo-contract-mismatch",
       "database-migration-deepening-additive-nullable-column-clean",
       "database-migration-deepening-comment-only-edit-not-implicated-clean",
       "database-migration-deepening-destructive-drop-column",
@@ -340,6 +358,7 @@
       "finding-placement-precedent-trap",
       "finding-placement-preexisting-callee-bug-exposed",
       "finding-placement-test-reveals-production-defect",
+      "isolation-unadmitted-sibling",
       "null-absence-go-unchecked-map-lookup",
       "null-absence-java-guarded-and-unguarded-combined",
       "null-absence-java-guarded-clean",
@@ -358,6 +377,7 @@
       "repo-intel-python-control-compatible-caller-no-finding",
       "repo-intel-python-dynamic-dispatch-safe-failure",
       "repo-intel-typescript-interface-contract-implementer-break",
+      "repository-local-correct-combined-defect",
       "risk-depth-concurrency-signal-deep",
       "risk-depth-diffsize-elevated-refactor",
       "risk-depth-large-multiarea-partitioning",
@@ -365,12 +385,15 @@
       "semantic-implication-insufficient-evidence-stop",
       "semantic-implication-multi-dimension-webhook-xss",
       "semantic-implication-single-dimension-persistence",
+      "single-repository-regression",
       "specialist-depth-composition-case-a-zero-capabilities-base-reasoning-complete",
       "specialist-depth-composition-case-c-multiple-capabilities-database-and-performance",
       "specialist-depth-composition-case-d-superficial-signal-suppressed-clean",
       "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type",
       "specialist-depth-composition-case-f-cascading-activation-bounded",
-      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth"
+      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth",
+      "three-repo-coordinated-correct",
+      "three-repo-coordinated-incorrect"
     ],
     "no-op": [
       "dd-zero-findings-clean",
@@ -411,7 +434,10 @@
       "api-compat-remove-enum-member-breaking",
       "api-compat-remove-field-breaking",
       "api-compat-rename-response-property-breaking",
-      "cfv-unproven-regression-not-asserted"
+      "cfv-unproven-regression-not-asserted",
+      "cross-repo-contract-mismatch",
+      "three-repo-coordinated-correct",
+      "three-repo-coordinated-incorrect"
     ],
     "security": [
       "cfv-disconfirmed-severe-candidate-dropped",
@@ -419,6 +445,7 @@
       "consolidation-rereview-reconciles-to-authoritative",
       "consolidation-shared-validator-many-call-paths",
       "dd-blocking-p0-sql-injection",
+      "isolation-unadmitted-sibling",
       "risk-depth-auth-signal-deep",
       "risk-depth-elevated-escalation-deep",
       "risk-depth-large-multiarea-partitioning",
@@ -434,6 +461,14 @@
     ]
   },
   "affected_surface": {
+    "benchmark-corpus-or-tooling": [
+      "cross-repo-contract-mismatch",
+      "isolation-unadmitted-sibling",
+      "repository-local-correct-combined-defect",
+      "single-repository-regression",
+      "three-repo-coordinated-correct",
+      "three-repo-coordinated-incorrect"
+    ],
     "unclassified": [
       "analogue-placement-distinct-boundaries-not-consolidated",
       "analogue-placement-status-label-duplication-consolidated",

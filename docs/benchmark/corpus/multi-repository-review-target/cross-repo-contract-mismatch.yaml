@@ -1,0 +1,136 @@
+# Multi-repository Review Target corpus case (Issue #558, epic #555,
+# impl #556). Format: ../../fixture-format.md's `input.repositories`
+# extension. See ./README.md for the cluster.
+#
+# Scope scenario 1: repo-a (api-service) changes a producer contract field
+# name; repo-b (billing-worker) adds a new call site that still reads the
+# old field name. Each repository's own diff is unremarkable reviewed
+# alone — api-service's rename is internally consistent, and
+# billing-worker's new reconciliation code reads a field that, as far as
+# billing-worker's own repository is concerned, has always existed on the
+# API response. The mismatch is only visible when both repositories'
+# deltas are reasoned about together as one combined Review Target.
+
+format: benchmark-case/v2
+
+id: cross-repo-contract-mismatch
+title: "api-service renames order_id owner field; billing-worker's new reconciliation code still reads the old name"
+
+input:
+  repositories:
+    api-service:
+      patch: |
+        diff --git a/schemas/order.schema.json b/schemas/order.schema.json
+        --- a/schemas/order.schema.json
+        +++ b/schemas/order.schema.json
+        @@ -4,8 +4,8 @@
+           "type": "object",
+           "properties": {
+             "order_id": { "type": "string" },
+        -    "user_id": { "type": "string" },
+        +    "account_id": { "type": "string" },
+             "total_cents": { "type": "integer" }
+           },
+        -  "required": ["order_id", "user_id", "total_cents"]
+        +  "required": ["order_id", "account_id", "total_cents"]
+         }
+        diff --git a/api/serializers.py b/api/serializers.py
+        --- a/api/serializers.py
+        +++ b/api/serializers.py
+        @@ -1,6 +1,6 @@
+         def serialize_order(order):
+             return {
+                 "order_id": order.id,
+        -        "user_id": order.user_id,
+        +        "account_id": order.user_id,
+                 "total_cents": order.total_cents,
+             }
+      base:
+        schemas/order.schema.json: |
+          {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "OrderResponse",
+            "type": "object",
+            "properties": {
+              "order_id": { "type": "string" },
+              "user_id": { "type": "string" },
+              "total_cents": { "type": "integer" }
+            },
+            "required": ["order_id", "user_id", "total_cents"]
+          }
+        api/serializers.py: |
+          def serialize_order(order):
+              return {
+                  "order_id": order.id,
+                  "user_id": order.user_id,
+                  "total_cents": order.total_cents,
+              }
+    billing-worker:
+      patch: |
+        diff --git a/billing/reconcile.py b/billing/reconcile.py
+        --- a/billing/reconcile.py
+        +++ b/billing/reconcile.py
+        @@ -3,3 +3,10 @@
+
+         def fetch_order(order_id):
+             return requests.get(f"https://api.example.internal/orders/{order_id}").json()
+        +
+        +
+        +def reconcile_order_owner(order_id, ledger):
+        +    """New reconciliation entry point: attribute the order to its account
+        +    in the billing ledger."""
+        +    order = fetch_order(order_id)
+        +    ledger.record_owner(order["order_id"], order["user_id"])
+      base:
+        billing/reconcile.py: |
+          import requests
+
+
+          def fetch_order(order_id):
+              return requests.get(f"https://api.example.internal/orders/{order_id}").json()
+  context: >-
+    api-service and billing-worker are reviewed together as one explicit
+    multi-repository Review Target (skills/local-code-review/policies/
+    multi-repository-review-target.md); no other local repository is
+    admitted.
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: reconcile-reads-renamed-order-owner-field
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        repo_alias: billing-worker
+        path: billing/reconcile.py
+        symbol: reconcile_order_owner
+        anchor: 'order["user_id"]'
+      claim: >-
+        billing-worker's new reconcile_order_owner reads order["user_id"]
+        from api-service's OrderResponse, but api-service's own patch in
+        this same Review Target renames that field to account_id in both
+        the schema and the serializer. Once deployed, reconcile_order_owner
+        raises a KeyError (or silently records a missing owner if it
+        degrades to .get) for every order, because the field it reads no
+        longer exists on the response — a defect neither repository's own
+        diff shows in isolation.
+      defect_kind: cross-repository-contract-mismatch
+
+metadata:
+  source: crafted
+  tags: [correctness, regression]
+  rationale: >-
+    Issue #558 scenario 1 (cross-repo contract mismatch): a producer
+    contract rename and a new consumer call site are each internally
+    consistent reviewed alone; only the combined multi-repository Review
+    Target's cross-file reasoning can catch the resulting defect. Proves
+    the delivered composition (#556) actually gives the reviewer the
+    combined delta needed to catch this, since no synthetic shared base is
+    invented and each member's real delta is preserved.
+  taxonomy:
+    capability: [multi-repository-review-target]
+    policy_contract: [multi-repository-review-target]
+    risk_mode: [correctness, regression]
+    affected_surface: [benchmark-corpus-or-tooling]

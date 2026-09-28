@@ -111,9 +111,18 @@ For every case, before the reviewer adapter is invoked:
      clone, a local mirror, an adapter-provided checkout) is an
      implementation choice; that it is disposable and separate from every
      protected source checkout is not.
+   - **`repositories` input** (Issue #558, `fixture-format.md` §6.4) — the
+     same `patch`/`base` materialization above, run once per member,
+     each into its **own** subdirectory of the case's workspace — never a
+     shared working tree, and never a synthetic shared base/SHA invented
+     across members. `unadmitted_repositories` members materialize the
+     same way, as real sibling repositories alongside the admitted ones,
+     for the isolation/authorization negative case.
 3. The reviewer adapter receives **only the workspace path** as its
-   review target. It is given no path to, and no handle on, any protected
-   source checkout.
+   review target — or, for a `repositories` case, only the mapping of
+   admitted member alias → that member's own workspace path (never the
+   unadmitted members' paths, and never a path outside the workspace). It
+   is given no path to, and no handle on, any protected source checkout.
 
 The workspace is single-use. A second case never runs in a workspace a
 previous case used.
@@ -232,7 +241,14 @@ A concrete production adapter now exists:
 ([#250](https://github.com/amirbena/code-review-skill/issues/250)) drives
 the Claude Code CLI non-interactively against a case's isolated workspace
 to actually invoke the packaged `local-code-review` Skill, and normalizes
-its Markdown report back into `ProducedFinding` objects; the CLI
+its Markdown report back into `ProducedFinding` objects. For a
+`repositories` case (Issue #558), the same adapter is instead called with
+the admitted member alias → workspace mapping and drives the Skill with an
+explicit multi-repository Review Target naming exactly those members —
+never the unadmitted ones — mirroring
+[`multi-repository-review-target.md`](../../skills/local-code-review/policies/multi-repository-review-target.md)'s
+own input contract; this is a second call shape on the same adapter type,
+not a second adapter. The CLI
 entrypoint at
 [`scripts/run_benchmark.py`](scripts/run_benchmark.py) wires it
 to `run_corpus`/`run_selected` and the existing metrics

@@ -98,7 +98,16 @@ class ProducedFinding:
 # A reviewer adapter: given the isolated workspace path, return produced
 # findings. The runner owns everything else; the adapter owns how a review
 # is performed (a runtime reading a Skill in production, a stub in tests).
+#
+# Issue #558 extends the call signature (never the type name or the
+# single-repository contract) for the "multi_repo" input kind only: a
+# multi-repository-aware adapter is called with the ``admitted`` mapping of
+# ``MultiRepoWorkspaces`` (alias -> workspace path) instead of one ``Path``,
+# mirroring the delivered capability's own explicit-root-list input
+# contract (skills/local-code-review/policies/multi-repository-review-target.md).
+# A single-repository case never changes this call shape at all.
 ReviewerAdapter = Callable[[Path], Sequence[ProducedFinding]]
+MultiRepoReviewerAdapter = Callable[[Mapping[str, Path]], Sequence[ProducedFinding]]
 
 # For repo_ref inputs: resolve the fixture's repo_ref mapping to a local
 # path the runner can clone from a disposable copy. Keeps the isolation
@@ -246,12 +255,15 @@ class _WorkspaceSetupFailed(Exception):
     pass
 
 
-def materialize_patch(case: bf.BenchmarkCase, workspace: Path) -> None:
-    """Build the pre-image tree in ``workspace`` and apply ``input.patch``
-    there — and only there (contract §3)."""
+def _materialize_patch_into(workspace: Path, patch: str, base: Mapping[str, str]) -> None:
+    """Build the pre-image tree in ``workspace`` and apply ``patch`` there —
+    and only there (contract §3). Shared by :func:`materialize_patch` (the
+    single-repository ``patch`` input kind) and :func:`materialize_multi_repo`
+    (issue #558's ``input.repositories``/``input.unadmitted_repositories``
+    entries, one independent repository per member) so both exercise the
+    identical git plumbing."""
     _git(workspace, "init", "-q", "-b", "main", ".")
     _git(workspace, "config", "commit.gpgsign", "false")
-    base = case.input.get("base", {}) or {}
     for rel, content in base.items():
         dest = workspace / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -260,11 +272,64 @@ def materialize_patch(case: bf.BenchmarkCase, workspace: Path) -> None:
     _git(workspace, "commit", "-q", "--allow-empty", "-m", "pre-image")
 
     patch_file = workspace / ".benchmark-input.patch"
-    patch_file.write_text(case.input["patch"], encoding="utf-8")
+    patch_file.write_text(patch, encoding="utf-8")
     applied = _git(workspace, "apply", "--whitespace=nowarn", str(patch_file), check=False)
     patch_file.unlink()
     if applied.returncode != 0:
         raise PatchDidNotApply(applied.stderr.strip() or "git apply failed")
+
+
+def materialize_patch(case: bf.BenchmarkCase, workspace: Path) -> None:
+    """Build the pre-image tree in ``workspace`` and apply ``input.patch``
+    there — and only there (contract §3)."""
+    _materialize_patch_into(workspace, case.input["patch"], case.input.get("base", {}) or {})
+
+
+@dataclass(frozen=True)
+class MultiRepoWorkspaces:
+    """The disposable workspaces a multi-repository case (issue #558)
+    materializes: one real, isolated Git repository per
+    ``input.repositories`` alias (``admitted`` — exactly what a
+    :data:`MultiRepoReviewerAdapter` receives), plus one per
+    ``input.unadmitted_repositories`` alias (``unadmitted`` — a real local
+    sibling repository materialized on disk right alongside the admitted
+    ones, but never part of what the reviewer is called with). Proving the
+    isolation/authorization negative case (#558 scenario 4) requires the
+    unadmitted repository to genuinely exist as a plausible local sibling,
+    not merely be absent."""
+
+    admitted: Mapping[str, Path]
+    unadmitted: Mapping[str, Path]
+
+
+def materialize_multi_repo(case: bf.BenchmarkCase, workspace_root: Path) -> MultiRepoWorkspaces:
+    """Materialize every ``input.repositories`` / ``input.unadmitted_repositories``
+    member as its own independent repository directly under ``workspace_root``
+    (contract §3's isolation guarantee extended per-member: each member's
+    materialization touches only its own subdirectory). Raises
+    :class:`PatchDidNotApply` (prefixed with the failing alias) exactly like
+    the single-repository path on a bad patch."""
+    admitted: dict[str, Path] = {}
+    for alias, entry in case.input["repositories"].items():
+        repo_dir = workspace_root / alias
+        repo_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            _materialize_patch_into(repo_dir, entry["patch"], entry.get("base", {}) or {})
+        except PatchDidNotApply as exc:
+            raise PatchDidNotApply(f"{alias}: {exc}") from exc
+        admitted[alias] = repo_dir
+
+    unadmitted: dict[str, Path] = {}
+    for alias, entry in (case.input.get("unadmitted_repositories") or {}).items():
+        repo_dir = workspace_root / alias
+        repo_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            _materialize_patch_into(repo_dir, entry["patch"], entry.get("base", {}) or {})
+        except PatchDidNotApply as exc:
+            raise PatchDidNotApply(f"{alias}: {exc}") from exc
+        unadmitted[alias] = repo_dir
+
+    return MultiRepoWorkspaces(admitted=admitted, unadmitted=unadmitted)
 
 
 def _materialize_repo_ref(
@@ -399,9 +464,12 @@ def run_case(
     )
     result: CaseResult
     try:
+        multi_repo: MultiRepoWorkspaces | None = None
         try:
             if kind == "patch":
                 materialize_patch(case, workspace)
+            elif kind == "multi_repo":
+                multi_repo = materialize_multi_repo(case, workspace)
             else:
                 _materialize_repo_ref(case, workspace, repo_ref_resolver)
         except PatchDidNotApply:
@@ -411,14 +479,25 @@ def run_case(
         except Exception:  # noqa: BLE001 - any setup failure is a per-case error
             return CaseResult(case.id, kind, _ERROR, error="workspace-setup-failed")
 
-        post_image = _capture_post_image(case, workspace)
+        # Best-effort post-image capture (matcher anchor-proximity, #342) is
+        # only ever meaningful for a single reviewed file in one workspace
+        # (see `_capture_post_image`'s own docstring) — a multi-repository
+        # case has no single such file, so it stays None here too.
+        post_image = None if kind == "multi_repo" else _capture_post_image(case, workspace)
 
         try:
-            produced = tuple(reviewer(workspace))
+            produced = tuple(reviewer(multi_repo.admitted if multi_repo is not None else workspace))
         except Exception:  # noqa: BLE001 - adapter failure is a per-case error, not a crash
             return CaseResult(case.id, kind, _ERROR, error="reviewer-adapter-raised")
 
-        cited_sources = _capture_cited_sources(produced, workspace)
+        # Citation-existence capture (#349) resolves a produced location's
+        # `path` against one single workspace root; a multi-repository
+        # case's members each have their own root (disambiguated only by
+        # `repo_alias`), so — like `post_image` above — this capture is out
+        # of scope here rather than silently resolved against the wrong
+        # member. Left for a follow-up if per-member citation checking is
+        # wanted; #558 does not require it.
+        cited_sources = {} if kind == "multi_repo" else _capture_cited_sources(produced, workspace)
         result = CaseResult(
             case.id,
             kind,

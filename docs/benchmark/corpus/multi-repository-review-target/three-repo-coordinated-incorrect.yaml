@@ -1,0 +1,154 @@
+# Multi-repository Review Target corpus case (Issue #558, epic #555,
+# impl #556). Format: ../../fixture-format.md's `input.repositories`
+# extension. See ./README.md for the cluster.
+#
+# Scope scenario 2 (incorrect variant): identical api-gateway and
+# orchestration-service changes to three-repo-coordinated-correct.yaml —
+# both individually correct and, reviewed on their own, indistinguishable
+# from the clean pair. downstream-consumer's own patch is the only
+# difference, and reviewed alone it looks like a plausible continuation of
+# the same rename (it reads a field named the same shape as before) — the
+# mismatch (reading "request_id" instead of the "idempotency_key" the
+# other two repositories now actually send) is only visible against the
+# other two members' deltas.
+
+format: benchmark-case/v2
+
+id: three-repo-coordinated-incorrect
+title: "downstream-consumer reads the wrong field name for the idempotency_key api-gateway and orchestration-service now send"
+
+input:
+  repositories:
+    api-gateway:
+      patch: |
+        diff --git a/schemas/payment_request.schema.json b/schemas/payment_request.schema.json
+        --- a/schemas/payment_request.schema.json
+        +++ b/schemas/payment_request.schema.json
+        @@ -4,7 +4,8 @@
+           "type": "object",
+           "properties": {
+             "amount_cents": { "type": "integer" },
+        -    "currency": { "type": "string" }
+        +    "currency": { "type": "string" },
+        +    "idempotency_key": { "type": "string" }
+           },
+        -  "required": ["amount_cents", "currency"]
+        +  "required": ["amount_cents", "currency", "idempotency_key"]
+         }
+        diff --git a/gateway/validator.py b/gateway/validator.py
+        --- a/gateway/validator.py
+        +++ b/gateway/validator.py
+        @@ -1,2 +1,2 @@
+         def validate_create_payment_request(body):
+        -    require_fields(body, ["amount_cents", "currency"])
+        +    require_fields(body, ["amount_cents", "currency", "idempotency_key"])
+      base:
+        schemas/payment_request.schema.json: |
+          {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CreatePaymentRequest",
+            "type": "object",
+            "properties": {
+              "amount_cents": { "type": "integer" },
+              "currency": { "type": "string" }
+            },
+            "required": ["amount_cents", "currency"]
+          }
+        gateway/validator.py: |
+          def validate_create_payment_request(body):
+              require_fields(body, ["amount_cents", "currency"])
+    orchestration-service:
+      patch: |
+        diff --git a/orchestration/payment_flow.py b/orchestration/payment_flow.py
+        --- a/orchestration/payment_flow.py
+        +++ b/orchestration/payment_flow.py
+        @@ -2,6 +2,7 @@
+             return {
+                 "amount_cents": order.total_cents,
+                 "currency": order.currency,
+        +        "idempotency_key": order.id,
+             }
+
+
+        @@ -9,4 +10,5 @@
+             return {
+                 "order_id": order.id,
+                 "payment_id": payment.id,
+        +        "idempotency_key": order.id,
+             }
+      base:
+        orchestration/payment_flow.py: |
+          def build_payment_request(order):
+              return {
+                  "amount_cents": order.total_cents,
+                  "currency": order.currency,
+              }
+
+
+          def build_payment_event(order, payment):
+              return {
+                  "order_id": order.id,
+                  "payment_id": payment.id,
+              }
+    downstream-consumer:
+      patch: |
+        diff --git a/consumer/payment_events.py b/consumer/payment_events.py
+        --- a/consumer/payment_events.py
+        +++ b/consumer/payment_events.py
+        @@ -1,2 +1,6 @@
+         def handle_payment_event(event, store):
+        -    store.record_payment(order_id=event["order_id"], payment_id=event["payment_id"])
+        +    store.record_payment(
+        +        order_id=event["order_id"],
+        +        payment_id=event["payment_id"],
+        +        idempotency_key=event["request_id"],
+        +    )
+      base:
+        consumer/payment_events.py: |
+          def handle_payment_event(event, store):
+              store.record_payment(order_id=event["order_id"], payment_id=event["payment_id"])
+  context: >-
+    api-gateway, orchestration-service, and downstream-consumer are
+    reviewed together as one explicit three-repository Review Target; no
+    other local repository is admitted.
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: consumer-reads-wrong-idempotency-key-field-name
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        repo_alias: downstream-consumer
+        path: consumer/payment_events.py
+        symbol: handle_payment_event
+        anchor: 'event["request_id"]'
+      claim: >-
+        downstream-consumer reads event["request_id"] for the
+        idempotency_key it forwards to record_payment, but
+        orchestration-service's build_payment_event (this same Review
+        Target) sends the field as "idempotency_key", and api-gateway's
+        schema (also this Review Target) never defines a "request_id"
+        field at all. record_payment always receives a KeyError-triggering
+        lookup (or None if event.get is used instead), so idempotency is
+        never actually enforced — a defect invisible from
+        downstream-consumer's own repository alone, since nothing in it
+        shows what field name the other two members actually send.
+      defect_kind: cross-repository-contract-mismatch
+
+metadata:
+  source: crafted
+  tags: [correctness, regression]
+  rationale: >-
+    Issue #558 scenario 2's incorrect variant: identical api-gateway/
+    orchestration-service changes to the correct-variant control, so the
+    combined review's finding is attributable specifically to
+    downstream-consumer's own field-name defect, not to noise from the
+    other two members.
+  taxonomy:
+    capability: [multi-repository-review-target]
+    policy_contract: [multi-repository-review-target]
+    risk_mode: [correctness, regression]
+    affected_surface: [benchmark-corpus-or-tooling]

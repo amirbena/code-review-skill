@@ -75,7 +75,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Collection, Mapping, Sequence
 
 from runtime_platform.benchmark.reference.benchmark_runner import ProducedFinding
 
@@ -224,6 +224,43 @@ _REVIEW_PROMPT = (
     "restatement of the title."
 )
 
+# Issue #558: a multi-repository Review Target — mirrors
+# skills/local-code-review/policies/multi-repository-review-target.md's own
+# input contract exactly: an explicit, caller-supplied list of 2+ local
+# repository roots, supplied in the current invocation, never inferred.
+# `{roots}` is filled with one `- <alias>: <absolute path>` line per admitted
+# member (see `ProductionReviewerAdapter.__call__`); no unadmitted sibling
+# repository is ever named here.
+_MULTI_REPO_REVIEW_PROMPT_TEMPLATE = (
+    "This is an explicit, single-purpose, repository-development benchmark "
+    "invocation (see runtime_platform/benchmark/runner-contract.md) of the packaged "
+    "local-code-review Skill, freshly authorized right now and scoped to "
+    "this one run only — this message itself is that explicit approval, "
+    "satisfying local-code-review's SKILL.md 'Safety boundaries' opt-in "
+    "requirement. It is not an automatic or hidden invocation.\n\n"
+    "Invoke the local-code-review Skill now with an explicit, multi-"
+    "repository Review Target composed of exactly these local repository "
+    "roots (per skills/local-code-review/policies/multi-repository-review-"
+    "target.md) — no other local repository is part of this Review Target, "
+    "however plausible one might look:\n\n"
+    "{roots}\n\n"
+    "Review the current Git delta (committed, staged, unstaged, and "
+    "untracked changes) present in each of those roots, reasoned about "
+    "together as one combined Review Target. Reply with only the Skill's "
+    "finished Markdown review report and nothing else: no preamble, no "
+    "commentary before or after it. The report must use the canonical full "
+    "finding rendering for every finding — a `#### <id> [<severity>] "
+    "<title>` heading immediately followed by a `- **Location:** "
+    "`<repo-alias>:<path>:<line-or-range>`` line, prefixing the path with "
+    "the repository alias exactly as given above — and must end with the "
+    "report's `**Result: ...**` verdict line. Per shared/templates/"
+    "finding.md's 'Defect classification', also render a `- **Defect "
+    "kind:** `<kebab-case-slug>`` line right after `Evidence` for every "
+    "finding whose narrow defect class/mechanism is identifiable, a short, "
+    "machine-readable slug naming the defect class, never a restatement of "
+    "the title."
+)
+
 # Appended only for the structured-result measurement (issue #529,
 # runtime_platform/benchmark/structured-result-runtime-properties.md): the
 # canonical assignment turns the option on; the ordinary benchmark keeps it off.
@@ -295,28 +332,47 @@ _DECISION_HEADING_RE = re.compile(r"^#{2,4}\s+Decision\s*$", re.IGNORECASE)
 _LINE_TAIL_RE = re.compile(r"^L?(?P<start>\d+)(?:\s*-\s*L?(?P<end>\d+))?$")
 
 
-def _parse_location(raw: str) -> dict:
+def _split_repo_alias(raw: str, known_aliases: Collection[str]) -> tuple[str | None, str]:
+    """Issue #558: split a leading `<alias>:` prefix off a multi-repository
+    location string, matched only against the admitted aliases the caller
+    actually supplied for this review — never guessed, so a single-
+    repository review (``known_aliases`` empty) is entirely unaffected and
+    a path that merely contains a colon is never misread as an alias."""
+    for alias in known_aliases:
+        prefix = f"{alias}:"
+        if raw.startswith(prefix):
+            return alias, raw[len(prefix) :]
+    return None, raw
+
+
+def _parse_location(raw: str, known_aliases: Collection[str] = ()) -> dict:
     raw = raw.strip()
+    repo_alias, raw = _split_repo_alias(raw, known_aliases)
     if ":" not in raw:
-        return {"path": raw}
-    path, _, tail = raw.rpartition(":")
-    tail = tail.strip()
-    coordinate = _LINE_TAIL_RE.match(tail)
-    if coordinate and coordinate["end"]:
-        return {"path": path, "lines": {"start": int(coordinate["start"]), "end": int(coordinate["end"])}}
-    if coordinate:
-        return {"path": path, "line": int(coordinate["start"])}
-    if "-" in tail:
-        return {"path": raw}
-    if tail and path:
-        # A non-numeric `<line-or-range>` is the finding's enclosing
-        # symbol/function name (finding.md, "location": "... symbol/function,
-        # or narrow section") rather than a line coordinate — carry it as
-        # `symbol` instead of collapsing the whole `path:tail` string into
-        # `path` (issue #342: this previously discarded the split entirely,
-        # so `location.symbol` could never be populated from real output).
-        return {"path": path, "symbol": tail}
-    return {"path": raw}
+        location = {"path": raw}
+    else:
+        path, _, tail = raw.rpartition(":")
+        tail = tail.strip()
+        coordinate = _LINE_TAIL_RE.match(tail)
+        if coordinate and coordinate["end"]:
+            location = {"path": path, "lines": {"start": int(coordinate["start"]), "end": int(coordinate["end"])}}
+        elif coordinate:
+            location = {"path": path, "line": int(coordinate["start"])}
+        elif "-" in tail:
+            location = {"path": raw}
+        elif tail and path:
+            # A non-numeric `<line-or-range>` is the finding's enclosing
+            # symbol/function name (finding.md, "location": "... symbol/function,
+            # or narrow section") rather than a line coordinate — carry it as
+            # `symbol` instead of collapsing the whole `path:tail` string into
+            # `path` (issue #342: this previously discarded the split entirely,
+            # so `location.symbol` could never be populated from real output).
+            location = {"path": path, "symbol": tail}
+        else:
+            location = {"path": raw}
+    if repo_alias is not None:
+        location["repo_alias"] = repo_alias
+    return location
 
 
 def _build_claim(title: str, fields: Mapping[str, str]) -> str:
@@ -333,7 +389,7 @@ def _build_claim(title: str, fields: Mapping[str, str]) -> str:
     return " ".join(parts)
 
 
-def parse_review_output(text: str) -> list[ProducedFinding]:
+def parse_review_output(text: str, known_aliases: Collection[str] = ()) -> list[ProducedFinding]:
     """Pure normalizer: a review report's Markdown text -> ``ProducedFinding``
     objects.
 
@@ -378,7 +434,7 @@ def parse_review_output(text: str) -> list[ProducedFinding]:
                 if location is None:
                     loc_match = _LOCATION_RE.match(stripped)
                     if loc_match:
-                        location = _parse_location(loc_match.group("loc"))
+                        location = _parse_location(loc_match.group("loc"), known_aliases)
                         j += 1
                         continue
                 if defect_kind is None:
@@ -448,13 +504,24 @@ def parse_rendered_outcome(text: str) -> RenderedOutcome:
 
 
 class ProductionReviewerAdapter:
-    """A ``ReviewerAdapter`` that drives a real runtime reading the packaged
-    ``local-code-review`` Skill.
+    """A ``ReviewerAdapter`` (and, for a multi-repository case, a
+    ``MultiRepoReviewerAdapter``) that drives a real runtime reading the
+    packaged ``local-code-review`` Skill.
 
     Constructed with the executable, extra CLI args, timeout, and
     environment so all of them are injectable (a fake stub executable in
     tests, the real ``claude`` binary in production). Calling an instance
-    with a workspace ``Path`` matches ``ReviewerAdapter`` exactly.
+    with a single workspace ``Path`` matches ``ReviewerAdapter`` exactly.
+
+    Issue #558: calling an instance with a ``Mapping[str, Path]`` instead
+    (the ``admitted`` member of ``benchmark_runner.MultiRepoWorkspaces``)
+    drives the same Skill with an explicit multi-repository Review Target —
+    the alias -> absolute-path list is named verbatim in the prompt, exactly
+    the explicit-root-list input contract
+    ``skills/local-code-review/policies/multi-repository-review-target.md``
+    documents. No unadmitted sibling repository is ever named in the
+    prompt, matching the runner's own isolation contract: this adapter is
+    handed only ``MultiRepoWorkspaces.admitted``, never ``.unadmitted``.
     """
 
     def __init__(
@@ -477,12 +544,16 @@ class ProductionReviewerAdapter:
         # can inspect the rendered verdict the findings list drops.
         self.last_report: str | None = None
 
-    def __call__(self, workspace: Path) -> list[ProducedFinding]:
-        self.last_report = None
+    def __call__(self, workspace: Path | Mapping[str, Path]) -> list[ProducedFinding]:
+        if isinstance(workspace, Mapping):
+            return self._call_multi_repo(workspace)
+        return self._call_single_repo(workspace)
+
+    def _run(self, prompt: str, *, cwd: Path) -> str:
         command = [
             self.executable,
             "-p",
-            _REVIEW_PROMPT + (_STRUCTURED_RESULT_PROMPT if self.structured_review_result else ""),
+            prompt + (_STRUCTURED_RESULT_PROMPT if self.structured_review_result else ""),
             "--output-format",
             "text",
             "--plugin-dir",
@@ -493,7 +564,7 @@ class ProductionReviewerAdapter:
         ]
         completed = subprocess.run(
             command,
-            cwd=str(workspace),
+            cwd=str(cwd),
             capture_output=True,
             text=True,
             timeout=self.timeout,
@@ -505,7 +576,25 @@ class ProductionReviewerAdapter:
                 f"{completed.stderr.strip()[:2000]}"
             )
         self.last_report = completed.stdout
-        return parse_review_output(completed.stdout)
+        return completed.stdout
+
+    def _call_single_repo(self, workspace: Path) -> list[ProducedFinding]:
+        self.last_report = None
+        stdout = self._run(_REVIEW_PROMPT, cwd=workspace)
+        return parse_review_output(stdout)
+
+    def _call_multi_repo(self, workspaces: Mapping[str, Path]) -> list[ProducedFinding]:
+        self.last_report = None
+        aliases = sorted(workspaces)
+        roots_block = "\n".join(f"- {alias}: {Path(workspaces[alias]).resolve()}" for alias in aliases)
+        prompt = _MULTI_REPO_REVIEW_PROMPT_TEMPLATE.format(roots=roots_block)
+        # The shared parent of every admitted workspace — never a path
+        # outside it — so a relative navigation inside the Skill's own
+        # invocation still lands somewhere real; the prompt's absolute
+        # paths are what actually scopes the Review Target.
+        common_parent = Path(os.path.commonpath([str(Path(p).resolve()) for p in workspaces.values()]))
+        stdout = self._run(prompt, cwd=common_parent)
+        return parse_review_output(stdout, known_aliases=aliases)
 
 
 def make_production_adapter(

@@ -119,7 +119,7 @@ format: benchmark-case/v2
 | Version | Status | What changed |
 |---|---|---|
 | `v1` | Superseded | The original schema (#50). `metadata` was optional; no taxonomy classification existed. |
-| `v2` | Current | [#333](https://github.com/amirbena/code-review-skill/issues/333): `metadata` became **required**, and `metadata.taxonomy` became a **required** field within it (§10.1) — a breaking change to a field's requiredness under the rule above, hence the major-version increment. Every corpus fixture and the worked example were migrated to `v2` in the same change that introduced the requirement, so no `v1` fixture was left behind. |
+| `v2` | Current | [#333](https://github.com/amirbena/code-review-skill/issues/333): `metadata` became **required**, and `metadata.taxonomy` became a **required** field within it (§10.1) — a breaking change to a field's requiredness under the rule above, hence the major-version increment. Every corpus fixture and the worked example were migrated to `v2` in the same change that introduced the requirement, so no `v1` fixture was left behind. [#558](https://github.com/amirbena/code-review-skill/issues/558) later added `input.repositories` / `input.unadmitted_repositories` (§6.4) and `location.repo_alias` (§8.3) as a purely additive extension within `v2`: every fixture valid before #558 stays valid and unchanged, since the new input kind and location field are both optional and mutually exclusive with the pre-existing shapes. |
 
 The reference validator
 ([`reference/benchmark_fixture.py`](reference/benchmark_fixture.py))
@@ -162,6 +162,7 @@ within the corpus.
 |---|---|---|
 | `patch` | string | A self-contained unified diff (`git apply`-compatible), with enough context lines to be reviewed on its own. |
 | `repo_ref` | mapping | A reference to real external state (§6.2). |
+| `repositories` | mapping | An explicit multi-repository Review Target: 2+ independent member repositories, each its own `patch`/`base` (§6.4). |
 
 ### 6.1 Inline patch (`patch`)
 
@@ -193,6 +194,39 @@ Optional free-form string passed to the reviewer as review context
 (requirements, ticket text, an ADR excerpt), mirroring
 [`../../shared/policies/review-context.md`](../../shared/policies/review-context.md).
 Present only for cases that deliberately test context-aware review.
+
+### 6.4 Multi-repository Review Target (`repositories`) — Issue #558
+
+A mapping of `<alias>` (kebab-case, like `id`) to that member's own entry:
+
+| Field | Required | Meaning |
+|---|---|---|
+| `patch` | yes | Same shape as §6.1's `patch`, scoped to this one member. |
+| `base` | no | Same shape as §6.1's `base`, scoped to this one member. |
+
+- At least **2** entries. A single entry is rejected (§11) — one
+  repository is the ordinary `patch` input kind, not this one.
+- `repo_ref` is not a valid per-member shape; a member entry that is not
+  exactly `{patch, base?}` is rejected. This deliberately narrows scope to
+  the fixture conventions this contract already has, rather than adding a
+  second per-member materialization path.
+- `repositories` is mutually exclusive with the top-level `patch` and
+  `repo_ref` keys, and with a top-level `base` (a member's own `base`
+  belongs inside its own entry, never beside `repositories`).
+- Mirrors
+  [`../../skills/local-code-review/policies/multi-repository-review-target.md`](../../skills/local-code-review/policies/multi-repository-review-target.md)'s
+  explicit-root-list input contract: each alias materializes as its own
+  independent Git repository (a runner never invents a synthetic shared
+  base/SHA across members — see [`runner-contract.md`](runner-contract.md)),
+  and every member's delta is preserved and reasoned about together as one
+  combined Review Target.
+
+`input.unadmitted_repositories` (optional, only valid alongside
+`repositories`) — same per-entry shape as `repositories`, for the
+isolation/authorization negative case: a runner materializes these as real
+local sibling repositories, but they are never part of what the reviewer
+is invoked with. An alias here MUST NOT collide with a `repositories`
+alias.
 
 ## 7. Expected outcome (`expected`)
 
@@ -255,6 +289,7 @@ carries its own `match` (§8.4).
 | `symbol` | no | Enclosing qualified symbol, when known. |
 | `anchor` | no | A short verbatim substring of the post-image at/near the defect site. This is the measurable hook: the benchmark expected-vs-produced matcher ([`match-criteria.md`](match-criteria.md), #54) checks that a reviewer's reported location resolves to code containing `anchor` within the proximity window, **without** this contract implementing matching. |
 | `lines` | no | `{ start, end }` (1-based, `start ≤ end`) in the **post-image**. **Advisory only** — never the binding identity, because line numbers move (see [`../../docs/findings/finding-identity-requirements.md`](../../docs/findings/finding-identity-requirements.md) §4.3). |
+| `repo_alias` | required iff `input.repositories` is present, forbidden otherwise | Which `input.repositories` member this finding belongs to (Issue #558). Cross-checked against the case's own `repositories` aliases — a `repo_alias` naming an unadmitted or nonexistent alias is a rejection (§11), which is itself part of the isolation/authorization negative case's structural proof: an unadmitted sibling's alias can never even be written into an expected finding. |
 
 ### 8.4 `any_of` group — genuinely alternative acceptable findings
 
@@ -388,10 +423,13 @@ authoritative; this list is not exhaustive.
    `input`, `expected`; per finding `key`, `claim`, `location`, and
    `severity` (or, for a group, `any_of`); per `location` its
    `location_intent`, and `path` unless `location_intent` is `repository`.
-4. `input` does not contain exactly one of `patch` / `repo_ref`; or
-   `base` appears without `patch`; or `repo_ref` lacks `repo`, does not
-   have exactly one of `pr` / `commit`, or carries a present-but-empty or
-   non-string `base`.
+4. `input` does not contain exactly one of `patch` / `repo_ref` /
+   `repositories`; or `base` appears without `patch`; or `repo_ref` lacks
+   `repo`, does not have exactly one of `pr` / `commit`, or carries a
+   present-but-empty or non-string `base`; or `repositories` has fewer than
+   2 entries, a non-kebab-case alias, or a member entry other than
+   `{patch, base?}`; or `unadmitted_repositories` is present without
+   `repositories`, or shares an alias with `repositories` (§6.4).
 5. `id`, a finding `key`, or a `defect_kind` is not a kebab-case slug; or
    two findings (including `any_of` members) share a `key`; or a `key` is
    used both as a standalone entry and inside an `any_of` group.
@@ -411,6 +449,11 @@ authoritative; this list is not exhaustive.
     unknown value, or carries a duplicate value (§10.1).
 11. `decision` is present and contradicts the decision mechanically
     derived from the required findings' severities (§7).
+12. A finding's `location.repo_alias` is present but does not name one of
+    `input.repositories`' own aliases; or `input.repositories` is present
+    and a finding's `location` carries no `repo_alias` at all; or
+    `input.repositories` is absent and a finding's `location` carries a
+    `repo_alias` (§8.3).
 
 A validator that implements `v2` and is handed a `v1` fixture rejects it
 under rule 1 — it never falls back to `v1` parsing (see "Version history"

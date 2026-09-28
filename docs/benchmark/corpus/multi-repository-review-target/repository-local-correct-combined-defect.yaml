@@ -1,0 +1,103 @@
+# Multi-repository Review Target corpus case (Issue #558, epic #555,
+# impl #556). Format: ../../fixture-format.md's `input.repositories`
+# extension. See ./README.md for the cluster.
+#
+# Scope scenario 3 (repository-local-correctness-vs-combined-defect):
+# queue-producer's patch is a plain, unremarkable throughput tuning change
+# (bump a batch-size constant) with nothing wrong reviewed alone.
+# queue-consumer's patch only adds an unrelated metrics counter — its own
+# diff never touches the fixed-size buffer at all. Only reasoning about
+# queue-producer's new batch size *together with* queue-consumer's
+# existing (unchanged) hardcoded buffer size — visible in `base`, not in
+# either patch — reveals that queue-consumer will silently overflow/drop
+# messages once queue-producer starts sending larger batches.
+
+format: benchmark-case/v2
+
+id: repository-local-correct-combined-defect
+title: "queue-producer's batch-size increase silently overflows queue-consumer's untouched fixed-size buffer"
+
+input:
+  repositories:
+    queue-producer:
+      patch: |
+        diff --git a/queue/config.py b/queue/config.py
+        --- a/queue/config.py
+        +++ b/queue/config.py
+        @@ -1,2 +1,2 @@
+        -MAX_BATCH_SIZE = 50
+        +MAX_BATCH_SIZE = 500
+         POLL_INTERVAL_SECONDS = 5
+      base:
+        queue/config.py: |
+          MAX_BATCH_SIZE = 50
+          POLL_INTERVAL_SECONDS = 5
+    queue-consumer:
+      patch: |
+        diff --git a/worker/process.py b/worker/process.py
+        --- a/worker/process.py
+        +++ b/worker/process.py
+        @@ -1,7 +1,11 @@
+         BATCH_BUFFER = [None] * 50
+
+        +_PROCESSED_COUNTER = 0
+
+        +
+         def process_batch(messages):
+        +    global _PROCESSED_COUNTER
+             for i, message in enumerate(messages):
+                 BATCH_BUFFER[i] = message
+        +    _PROCESSED_COUNTER += len(messages)
+             return BATCH_BUFFER
+      base:
+        worker/process.py: |
+          BATCH_BUFFER = [None] * 50
+
+
+          def process_batch(messages):
+              for i, message in enumerate(messages):
+                  BATCH_BUFFER[i] = message
+              return BATCH_BUFFER
+  context: >-
+    queue-producer and queue-consumer are reviewed together as one
+    explicit multi-repository Review Target; no other local repository is
+    admitted.
+
+expected:
+  decision: changes-required
+  findings_completeness: at-least
+  findings:
+    - key: consumer-buffer-sized-for-old-batch-limit
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        repo_alias: queue-consumer
+        path: worker/process.py
+        anchor: "BATCH_BUFFER = [None] * 50"
+      claim: >-
+        queue-consumer's BATCH_BUFFER is a fixed-size list of 50 slots,
+        untouched by this patch. queue-producer's patch in this same
+        Review Target raises MAX_BATCH_SIZE to 500, so process_batch's
+        loop (`BATCH_BUFFER[i] = message`) now runs with i up to 499
+        against a 50-slot list — an IndexError, or silent data loss if the
+        real implementation clamps instead of raising. Neither
+        repository's own diff shows this: queue-producer's change is a
+        plain constant bump, and queue-consumer's patch only adds an
+        unrelated metrics counter, never touching the buffer line at all.
+      defect_kind: cross-repository-capacity-mismatch
+
+metadata:
+  source: crafted
+  tags: [correctness, concurrency]
+  rationale: >-
+    Issue #558 scenario 3: each repository's own patch is individually
+    unremarkable — the defect is an existing (unchanged-by-either-patch)
+    invariant that only the combined multi-repository Review Target's
+    reasoning about both deltas together can surface, distinct from
+    scenario 1's explicit producer/consumer contract-file rename.
+  taxonomy:
+    capability: [multi-repository-review-target]
+    policy_contract: [multi-repository-review-target]
+    risk_mode: [correctness, concurrency]
+    affected_surface: [benchmark-corpus-or-tooling]

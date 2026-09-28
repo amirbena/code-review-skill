@@ -120,6 +120,11 @@ class Descriptor:
     lines: tuple[int, int] | None
     defect_kind: str | None
     claim: str | None
+    # Issue #558: the multi-repository member a location belongs to
+    # (`location.repo_alias`). ``None`` for every single-repository case —
+    # entirely unaffected, since `location_match` only compares this field
+    # when *both* sides present one (see below).
+    repo_alias: str | None = None
 
     @staticmethod
     def from_expected(entry_or_spec: Any) -> "Descriptor":
@@ -140,13 +145,14 @@ class Descriptor:
             lines=_line_span(loc.get("lines")),
             defect_kind=defect_kind,
             claim=claim,
+            repo_alias=loc.get("repo_alias"),
         )
 
     @staticmethod
     def from_produced(finding: br.ProducedFinding) -> "Descriptor":
         loc = finding.location
         extra = dict(finding.extra or {})
-        path = symbol = anchor = intent = None
+        path = symbol = anchor = intent = repo_alias = None
         lines = None
         if isinstance(loc, Mapping):
             intent = loc.get("location_intent")
@@ -155,6 +161,7 @@ class Descriptor:
             symbol = loc.get("symbol")
             anchor = loc.get("anchor")
             lines = _line_span(loc.get("lines")) or _line_span(loc.get("line"))
+            repo_alias = loc.get("repo_alias")
         elif isinstance(loc, str) and loc.strip():
             # "path:line" or "path" — best effort, never invents a path
             head = loc.split(":", 1)[0].strip()
@@ -168,6 +175,7 @@ class Descriptor:
             lines=lines or _line_span(extra.get("lines")) or _line_span(extra.get("line")),
             defect_kind=extra.get("defect_kind"),
             claim=finding.claim,
+            repo_alias=repo_alias or extra.get("repo_alias"),
         )
 
 
@@ -183,6 +191,16 @@ def _within_window(a: tuple[int, int], b: tuple[int, int], window: int) -> bool:
 
 
 def location_match(expected: Descriptor, produced: Descriptor, *, post_image: str | None = None) -> LocationMatch:
+    # Issue #558: in a multi-repository case, an expected finding's
+    # `repo_alias` names which member it belongs to; a produced finding
+    # naming a *different* member can never be the same finding, however
+    # identical its relative path/line happen to look (two members can
+    # legitimately share a relative path, e.g. both have `src/client.py`).
+    # A single-repository case never sets `expected.repo_alias`, so this
+    # never narrows anything there.
+    if expected.repo_alias is not None and produced.repo_alias is not None:
+        if expected.repo_alias != produced.repo_alias:
+            return LocationMatch.NONE
     if expected.intent == "repository":
         repo_scoped = produced.intent == "repository" or not produced.path
         return LocationMatch.EXACT if repo_scoped else LocationMatch.NEAR
