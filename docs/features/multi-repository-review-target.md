@@ -125,17 +125,21 @@ from file content, not from a branch or commit message, and not from a
 resolved review-context reference. An unrelated local repository is never
 included merely because something admitted content mentions it.
 
-## Distinction from external review context
+## Distinction from #133
 
 This capability composes 2 or more **already-local, already
 caller-designated, already co-equal** repositories into one Review
 Target — every member is first-class and fully reviewed. This is
-different from the read-only **external compatibility context** capability
-(tracked separately): that capability fetches bounded, informational
+different from
+[#133](https://github.com/amirbena/code-review-skill/issues/133),
+"Evaluate cross-repository context for compatibility review" — an open,
+**not yet implemented** proposal for bounded, read-only, informational
 context about a repository the caller did *not* name as a member, purely
-to inform review of the actual, single Review Target. A repository named
-this way never becomes a Review Target member, never gets its own
-findings, and is never combined into the metadata described above.
+to inform review of the actual, single Review Target. If and when #133
+ships, a repository referenced that way would never become a Review
+Target member, never get its own findings, and never be combined into
+the metadata described above — the two capabilities are complementary,
+not overlapping, and neither subsumes or supersedes the other.
 
 ## Limitations & v1 non-goals
 
