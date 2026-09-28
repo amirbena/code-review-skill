@@ -59,7 +59,10 @@ applies automatically when the repository declares a suitable command and
 the runtime provides a verified isolation boundary. The
 [parallel-review](../../docs/features/parallel-review.md) contract is
 shared, but parallel execution is currently wired into `github-pr-review`,
-not `local-code-review`.
+not `local-code-review`. Naming 2 or more local repository roots composes
+them into one
+[multi-repository Review Target](../../docs/features/multi-repository-review-target.md)
+instead of reviewing a single repository.
 
 ## What a review looks like
 
@@ -112,7 +115,8 @@ These are summaries. The binding text lives in
   [parallel review](../../docs/features/parallel-review.md),
   [human-style output](../../docs/features/human-review-output.md),
   [fix prompt](../../docs/features/fix-prompt.md),
-  [structured result](../../docs/features/structured-review-result.md)
+  [structured result](../../docs/features/structured-review-result.md),
+  [multi-repository Review Target](../../docs/features/multi-repository-review-target.md)
 - [`runbooks/local-review.md`](runbooks/local-review.md) — the full
   numbered procedure
 - [`policies/`](policies/repository-state.md) — the rules this Skill owns

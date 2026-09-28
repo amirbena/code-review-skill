@@ -194,7 +194,11 @@ Resolve External Context
     └── supplied free-form context    (consumed directly, no resolution)
     ↓
 Normalize Inputs
-    ├── Review Target        (local delta | GitHub PR delta — never widened below)
+    ├── Review Target        (local delta | GitHub PR delta — never widened below;
+    │                         `local-code-review` may compose an explicit,
+    │                         caller-named list of 2+ local repositories into
+    │                         one combined Review Target — see
+    │                         `docs/features/multi-repository-review-target.md`)
     ├── Review Context       (optional: user instructions / resolved Jira /
     │                         GitHub Issue / HLD / ADR / plan / PR description)
     ├── Repository Context   (repository snapshot / API-accessible files;
