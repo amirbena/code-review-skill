@@ -38,15 +38,17 @@ committed/staged/unstaged/tracked/untracked category definitions,
 per-category detection commands, push/synchronization status, and the
 staged-delta fingerprint and its re-review comparison contract — this
 runbook's single source for all of that Git-mechanics detail). When the
-caller supplies a repository-roots list (section 1's multi-repository
-input), also
+caller supplies a repository-roots list of **2 or more** roots (section
+1's multi-repository input), also
 [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md)
 (root validation, per-member resolution, combined-target composition,
 unresolved-member narrowing, sibling-member ring expansion, instruction
 isolation, and repository-qualified finding location) — never loaded or
-applied otherwise, in which case steps 1–8e below run exactly once,
-against the single default repository, exactly as before this input
-existed. When the caller supplies review context, also
+applied otherwise (including when the supplied list has fewer than 2
+roots, which is treated identically to no list being supplied), in which
+case steps 1–8e below run exactly once, against the single default
+repository, exactly as before this input existed. When the caller
+supplies review context, also
 [`../policies/review-context.md`](../policies/review-context.md) (this
 Skill's thin local application of the shared model — mapping supplied
 requirements/Jira/GitHub-Issue/HLD/ADR/plan context onto the local delta and
@@ -64,13 +66,14 @@ never loaded or applied otherwise.
 ```text
 normalize current-invocation presentation options
     ↓
-repository-roots list supplied? → yes → validate/normalize each root,
-                                          reject duplicate/alias roots
-                                          (fail closed for the whole
+repository-roots list of 2+ roots supplied? → yes → validate/normalize
+                                          each root, reject duplicate/alias
+                                          roots (fail closed for the whole
                                           input) per
                                           multi-repository-review-target.md
-                                        → no  → unchanged (single default
-                                                 repository)
+                                        → no (omitted, or fewer than 2
+                                          roots) → unchanged (single
+                                          default repository)
     ↓
 resolve local review scope, independently per member when multiple
     ↓
@@ -193,16 +196,19 @@ which a value must be resolved before it is used, or what is reported.
 
 ## Steps
 
-0. **If, and only if, the caller supplied a repository-roots list:**
-   validate and normalize each supplied root, and reject the whole input
-   (fail closed, before any per-member resolution) on a duplicate/alias
-   root, per
+0. **If, and only if, the caller supplied a repository-roots list of 2 or
+   more roots:** validate and normalize each supplied root, and reject
+   the whole input (fail closed, before any per-member resolution) on a
+   duplicate/alias root, per
    [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
    "Validation and normalization of supplied roots." Every surviving,
    normalized root becomes a **member** of the combined Review Target.
    Skip this step entirely, and proceed with the single default
    repository as the sole (and only) member, when no repository-roots
-   list was supplied.
+   list was supplied, or when the supplied list has fewer than 2 roots —
+   the two cases are treated identically, per
+   [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
+   "Default, unchanged behavior."
 1. Verify the target is a valid Git repository; inspect working-tree
    status, current branch, and HEAD. **When step 0 resolved more than one
    member**, run this step, and every step through 8e below,
@@ -469,7 +475,10 @@ which a value must be resolved before it is used, or what is reported.
     `incomplete` with its concrete reason(s) for the report's subordinate
     metadata (step 13), per that policy's "Labeling — incomplete must
     never present as clean" and "Non-goals and ownership boundary" — not
-    restated here.
+    restated here. **With more than one member (step 0):** if narrowing
+    (step 1) left zero resolved members, coverage is `incomplete` per
+    [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
+    "All members unresolved" — never `complete`.
 11. Derive the Decision. When step 10b's coverage is `incomplete`, the
     Decision is the incomplete/ungraded outcome per
     [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),

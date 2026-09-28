@@ -184,6 +184,20 @@ class CombinedReviewTarget:
         return not self.resolved_members
 
 
+def activates_multi_repository_policy(supplied_roots: Sequence[str]) -> bool:
+    """§"Default, unchanged behavior": this policy activates only when 2 or
+    more roots are supplied. No list, or a list of 0 or 1 roots, is treated
+    identically — the single-repository (N=1) path, unchanged."""
+    return len(supplied_roots) >= 2
+
+
+def coverage_for_combined_target(target: CombinedReviewTarget) -> str:
+    """§"All members unresolved": zero resolved members means nothing was
+    actually inspected — coverage is ``incomplete``, never ``complete``,
+    regardless of how many members were supplied or how they failed."""
+    return "incomplete" if target.is_empty else "complete"
+
+
 def compose_review_target(resolutions: Sequence[MemberResolution]) -> CombinedReviewTarget:
     """§"Unresolved-member narrowing": an unresolved member narrows the
     combined target rather than failing it, and contributes no findings."""

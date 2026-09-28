@@ -19,11 +19,15 @@ the composition of N independent results into one combined Review Target,
 and the narrow extensions to ring expansion, instruction isolation, and
 finding location that a combined target requires.
 
-**Default, unchanged behavior.** When no repository-root list is supplied,
-this policy does not apply, is not loaded, and changes nothing: the
-Review Target is the single local repository exactly as today (N=1),
-at identical cost and behavior. Everything below activates only when the
-caller explicitly supplies 2 or more repository roots.
+## Default, unchanged behavior
+
+When no repository-roots list is supplied, **or the supplied list has
+fewer than 2 roots**, this policy does not apply, is not loaded, and
+changes nothing: the Review Target is the single local repository exactly
+as today (N=1), at identical cost and behavior. The two cases — no list
+supplied, and a list of 0 or 1 roots supplied — are treated identically;
+neither activates any part of this policy. Everything below activates
+only when the caller explicitly supplies **2 or more** repository roots.
 
 ## Epic invariant: membership is authorization
 
@@ -149,6 +153,20 @@ This mirrors [`review-base-policy.md`](../../../shared/policies/review-base-poli
 "Fail-closed on an unresolved base" for the single-member case: an
 unresolved signal is a valid, explicitly stated terminal outcome for that
 one member, never a guess and never silence.
+
+### All members unresolved
+
+When narrowing leaves **zero** resolved members — every supplied root
+failed validation or base resolution — the combined Review Target is
+empty: nothing was actually inspected. This is categorically different
+from an ordinary clean review of a non-empty target that happens to carry
+no findings, and it is **never** rendered as `REVIEW CLEAN`. Per
+[`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md)'s
+existing incomplete/ungraded outcome, this case renders `REVIEW
+INCOMPLETE`, naming every unresolved member and its reason — the same
+"incomplete must never present as clean" discipline that already governs
+every other way this Skill's coverage can fail to complete, applied here
+rather than reinvented.
 
 ## Ring expansion into a sibling member
 

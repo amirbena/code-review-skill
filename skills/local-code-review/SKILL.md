@@ -200,7 +200,7 @@ per-invocation explicit-user-approval contract — see section 5) and
 definitions, per-category detection commands, staged-delta fingerprint).
 
 Conditionally, only when the section 1 repository-roots input is
-supplied:
+supplied with 2 or more roots (fewer than 2 is treated as not supplied):
 [`policies/multi-repository-review-target.md`](policies/multi-repository-review-target.md)
 (root validation, per-member resolution, combined-target composition,
 sibling-member ring expansion, instruction isolation, and

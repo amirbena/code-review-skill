@@ -49,6 +49,16 @@ class CanonicalPolicyDefinesTheInvariantTests(unittest.TestCase):
         self.assertIn("membership is authorization", self.text.lower())
         self.assertIn("never add a repository to the target", self.text)
 
+    def test_activation_requires_two_or_more_roots(self) -> None:
+        self.assertIn("fewer than 2 roots", self.text)
+        self.assertIn("activates only when the caller explicitly supplies", self.text)
+        self.assertIn("2 or more", self.text)
+
+    def test_all_members_unresolved_is_incomplete_not_clean(self) -> None:
+        self.assertIn("All members unresolved", self.text)
+        self.assertIn("never rendered as REVIEW CLEAN", self.text.replace("`", ""))
+        self.assertIn("REVIEW INCOMPLETE", self.text)
+
     def test_n_equals_one_default_unchanged(self) -> None:
         self.assertIn("this policy does not apply, is not loaded, and changes nothing", self.text)
 
@@ -92,8 +102,22 @@ class SkillWiringTests(unittest.TestCase):
         text = _text(LOCAL_SKILL_MD)
         self.assertIn("When omitted (the default)", text)
 
+    def test_skill_md_gates_policy_load_on_two_or_more_roots(self) -> None:
+        text = _text(LOCAL_SKILL_MD)
+        self.assertIn("supplied with 2 or more roots", text)
+        self.assertIn("fewer than 2 is treated as not supplied", text)
+
     def test_runbook_references_the_policy(self) -> None:
         self.assertIn("multi-repository-review-target.md", _text(LOCAL_RUNBOOK))
+
+    def test_runbook_gates_activation_on_two_or_more_roots(self) -> None:
+        text = _text(LOCAL_RUNBOOK)
+        self.assertIn("repository-roots list of 2 or more roots", text)
+        self.assertIn("fewer than 2 roots", text)
+
+    def test_runbook_wires_all_unresolved_into_coverage(self) -> None:
+        text = _text(LOCAL_RUNBOOK)
+        self.assertIn("if narrowing (step 1) left zero resolved members, coverage is incomplete", text)
 
     def test_runbook_step_zero_precedes_step_one(self) -> None:
         text = _text(LOCAL_RUNBOOK)

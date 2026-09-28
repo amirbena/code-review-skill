@@ -20,7 +20,9 @@ from tests.reference.review.multi_repository_review_target import (
     MemberUnresolvedReason,
     RootFact,
     RootRejectionReason,
+    activates_multi_repository_policy,
     compose_review_target,
+    coverage_for_combined_target,
     derive_aliases,
     instruction_applies_to_file,
     render_location,
@@ -178,6 +180,52 @@ class ComposeReviewTargetTests(unittest.TestCase):
         combined = compose_review_target(resolutions)
         self.assertEqual(len(combined.resolved_members), 1)
         self.assertEqual(combined.unresolved_members, ())
+
+    def test_all_members_unresolved_coverage_is_incomplete_never_clean(self) -> None:
+        # §"All members unresolved": a zero-resolved-member combined
+        # target must never be reported as a clean review of "nothing
+        # changed" — it inspected nothing, which is incomplete coverage.
+        resolutions = [
+            MemberResolution(
+                "/repos/a", resolved=False, unresolved_reason=MemberUnresolvedReason.BASE_UNRESOLVED
+            ),
+            MemberResolution(
+                "/repos/b", resolved=False, unresolved_reason=MemberUnresolvedReason.BASE_UNRESOLVED
+            ),
+        ]
+        combined = compose_review_target(resolutions)
+        self.assertTrue(combined.is_empty)
+        self.assertEqual(coverage_for_combined_target(combined), "incomplete")
+
+    def test_at_least_one_resolved_member_is_complete_coverage(self) -> None:
+        combined = compose_review_target(
+            [
+                MemberResolution("/repos/a", resolved=True, base="main"),
+                MemberResolution(
+                    "/repos/b", resolved=False, unresolved_reason=MemberUnresolvedReason.BASE_UNRESOLVED
+                ),
+            ]
+        )
+        self.assertFalse(combined.is_empty)
+        self.assertEqual(coverage_for_combined_target(combined), "complete")
+
+
+class ActivationGateTests(unittest.TestCase):
+    """§"Default, unchanged behavior": activation requires 2+ supplied roots."""
+
+    def test_no_roots_does_not_activate(self) -> None:
+        self.assertFalse(activates_multi_repository_policy([]))
+
+    def test_one_root_does_not_activate(self) -> None:
+        # A single-element list is treated identically to no list at all —
+        # it must never silently trigger the multi-repository machinery.
+        self.assertFalse(activates_multi_repository_policy(["/repos/only"]))
+
+    def test_two_roots_activates(self) -> None:
+        self.assertTrue(activates_multi_repository_policy(["/repos/a", "/repos/b"]))
+
+    def test_more_than_two_roots_activates(self) -> None:
+        self.assertTrue(activates_multi_repository_policy(["/repos/a", "/repos/b", "/repos/c"]))
 
 
 class InstructionIsolationTests(unittest.TestCase):
