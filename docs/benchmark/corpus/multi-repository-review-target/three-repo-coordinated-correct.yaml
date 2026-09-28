@@ -1,0 +1,132 @@
+# Multi-repository Review Target corpus case (Issue #558, epic #555,
+# impl #556). Format: ../../fixture-format.md's `input.repositories`
+# extension. See ./README.md for the cluster.
+#
+# Scope scenario 2 (correct variant): a three-repository coordinated
+# change — api-gateway (the contract), orchestration-service (the
+# caller), downstream-consumer — each updated consistently to thread a
+# new idempotency_key through the whole flow. Paired with
+# three-repo-coordinated-incorrect.yaml, which reuses the identical
+# api-gateway and orchestration-service changes and differs only in
+# downstream-consumer.
+
+format: benchmark-case/v2
+
+id: three-repo-coordinated-correct
+title: "idempotency_key threaded correctly through api-gateway, orchestration-service, and downstream-consumer"
+
+input:
+  repositories:
+    api-gateway:
+      patch: |
+        diff --git a/schemas/payment_request.schema.json b/schemas/payment_request.schema.json
+        --- a/schemas/payment_request.schema.json
+        +++ b/schemas/payment_request.schema.json
+        @@ -4,7 +4,8 @@
+           "type": "object",
+           "properties": {
+             "amount_cents": { "type": "integer" },
+        -    "currency": { "type": "string" }
+        +    "currency": { "type": "string" },
+        +    "idempotency_key": { "type": "string" }
+           },
+        -  "required": ["amount_cents", "currency"]
+        +  "required": ["amount_cents", "currency", "idempotency_key"]
+         }
+        diff --git a/gateway/validator.py b/gateway/validator.py
+        --- a/gateway/validator.py
+        +++ b/gateway/validator.py
+        @@ -1,2 +1,2 @@
+         def validate_create_payment_request(body):
+        -    require_fields(body, ["amount_cents", "currency"])
+        +    require_fields(body, ["amount_cents", "currency", "idempotency_key"])
+      base:
+        schemas/payment_request.schema.json: |
+          {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "CreatePaymentRequest",
+            "type": "object",
+            "properties": {
+              "amount_cents": { "type": "integer" },
+              "currency": { "type": "string" }
+            },
+            "required": ["amount_cents", "currency"]
+          }
+        gateway/validator.py: |
+          def validate_create_payment_request(body):
+              require_fields(body, ["amount_cents", "currency"])
+    orchestration-service:
+      patch: |
+        diff --git a/orchestration/payment_flow.py b/orchestration/payment_flow.py
+        --- a/orchestration/payment_flow.py
+        +++ b/orchestration/payment_flow.py
+        @@ -2,6 +2,7 @@
+             return {
+                 "amount_cents": order.total_cents,
+                 "currency": order.currency,
+        +        "idempotency_key": order.id,
+             }
+
+
+        @@ -9,4 +10,5 @@
+             return {
+                 "order_id": order.id,
+                 "payment_id": payment.id,
+        +        "idempotency_key": order.id,
+             }
+      base:
+        orchestration/payment_flow.py: |
+          def build_payment_request(order):
+              return {
+                  "amount_cents": order.total_cents,
+                  "currency": order.currency,
+              }
+
+
+          def build_payment_event(order, payment):
+              return {
+                  "order_id": order.id,
+                  "payment_id": payment.id,
+              }
+    downstream-consumer:
+      patch: |
+        diff --git a/consumer/payment_events.py b/consumer/payment_events.py
+        --- a/consumer/payment_events.py
+        +++ b/consumer/payment_events.py
+        @@ -1,2 +1,6 @@
+         def handle_payment_event(event, store):
+        -    store.record_payment(order_id=event["order_id"], payment_id=event["payment_id"])
+        +    store.record_payment(
+        +        order_id=event["order_id"],
+        +        payment_id=event["payment_id"],
+        +        idempotency_key=event["idempotency_key"],
+        +    )
+      base:
+        consumer/payment_events.py: |
+          def handle_payment_event(event, store):
+              store.record_payment(order_id=event["order_id"], payment_id=event["payment_id"])
+  context: >-
+    api-gateway, orchestration-service, and downstream-consumer are
+    reviewed together as one explicit three-repository Review Target; no
+    other local repository is admitted.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness, regression]
+  rationale: >-
+    Issue #558 scenario 2's correct-variant control: a three-repository
+    coordinated change threaded consistently end to end must review clean.
+    Paired with three-repo-coordinated-incorrect.yaml (identical
+    api-gateway/orchestration-service changes) so the only variable
+    between the two cases is downstream-consumer's own correctness,
+    isolating what the combined review is actually catching.
+  taxonomy:
+    capability: [multi-repository-review-target]
+    policy_contract: [multi-repository-review-target]
+    risk_mode: [correctness, regression]
+    affected_surface: [benchmark-corpus-or-tooling]

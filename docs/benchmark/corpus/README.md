@@ -261,6 +261,21 @@ see [`../taxonomy.md`](../../../runtime_platform/benchmark/taxonomy.md) and
   [`../../../skills/github-pr-review/policies/finding-placement.md`](../../../skills/github-pr-review/policies/finding-placement.md)'s
   (#164) existing anchor-selection/transport fixtures.
 
+- [`multi-repository-review-target/`](multi-repository-review-target/README.md) —
+  a `benchmark-case/v2` sub-corpus (extended with an additive
+  `input.repositories` / `input.unadmitted_repositories` input kind and
+  `location.repo_alias` field — see
+  [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
+  §6.4/§8.3) proving the explicit multi-repository Review Target
+  composition (Issue
+  [#558](https://github.com/amirbena/code-review-skill/issues/558), parent
+  [#555](https://github.com/amirbena/code-review-skill/issues/555),
+  implementation [#556](https://github.com/amirbena/code-review-skill/issues/556))
+  actually detects the cross-repository defects that motivated it and
+  that its membership-is-authorization boundary holds. Its own README,
+  cases, and unit test
+  ([`../../../tests/unit/benchmark/test_multi_repository_review_target_corpus.py`](../../../tests/unit/benchmark/test_multi_repository_review_target_corpus.py)).
+
 ## Validation
 
 [`../../../tests/unit/benchmark/test_benchmark_corpus.py`](../../../tests/unit/benchmark/test_benchmark_corpus.py)
