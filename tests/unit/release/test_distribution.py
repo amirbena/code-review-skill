@@ -143,6 +143,40 @@ class DistributionTests(unittest.TestCase):
         self.assertIn("rejected", out)
         self.assertEqual(self._tags(), "")
 
+    def test_tag_push_rejected_after_branch_succeeds_leaves_branch_but_no_tag(self) -> None:
+        # #559 acceptance criterion: branch publication succeeds but
+        # version-tag publication specifically fails -> no tag, and
+        # therefore no `distribution-verify` success and no GitHub Release
+        # is reachable, distinct from `test_rejected_push_leaves_no_tag`
+        # (which rejects everything, so it can't tell branch-only-succeeded
+        # apart from a wholesale rejection).
+        (self.remote / "hooks" / "pre-receive").write_text(
+            "#!/bin/sh\nwhile read old new ref; do case \"$ref\" in refs/tags/*) exit 1;; esac; done\n"
+        )
+        (self.remote / "hooks" / "pre-receive").chmod(0o755)
+        code, out = self._run("distribution-publish")
+        self.assertEqual(code, 1)
+        self.assertIn("tag", out)
+        self.assertIn("could not be created", out)
+        # The branch commit landed -- the failure is specific to the tag.
+        self.assertNotEqual(_git(self.remote, "rev-parse", "main").strip(), "")
+        files = _git(self.remote, "ls-tree", "-r", "--name-only", "main").split()
+        self.assertIn("skills/a/SKILL.md", files)
+        self.assertEqual(self._tags(), "")
+        # Without the tag, verification (and therefore finalization) cannot
+        # succeed for this version.
+        self.assertEqual(self._run("distribution-verify")[0], 1)
+        # Recovery is not a side channel around the gate: a later run with
+        # the hook lifted completes the tag without a second commit, and
+        # then verification succeeds.
+        (self.remote / "hooks" / "pre-receive").unlink()
+        head = _git(self.remote, "rev-parse", "main")
+        code, out = self._run("distribution-publish")
+        self.assertEqual(code, 0, out)
+        self.assertIn("tagged", out)
+        self.assertEqual(_git(self.remote, "rev-parse", "main"), head)
+        self.assertEqual(self._run("distribution-verify")[0], 0)
+
     def test_older_version_is_refused_when_main_carries_a_newer_one(self) -> None:
         self._run("distribution-publish", "1.1.0")
         head = _git(self.remote, "rev-parse", "main")
