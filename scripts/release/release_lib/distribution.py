@@ -7,13 +7,8 @@ distribution repository's default branch plus an annotated ``vX.Y.Z`` tag,
 never a force push. Every mutation is preceded by a full comparison, so a
 re-run is a no-op when the content matches and fails closed when it differs.
 
-``verify()`` (#559) is a read-after-write check: it never reuses ``publish``'s
-local checkout, minting its own fresh clone and independently re-fetching the
-tag and the ``main`` branch straight from ``remote``. A ``git push`` return
-code proves only that this run's own client believed the push landed;
-``verify`` proves the remote's own state — tag content, provenance trailers,
-and that the tag's commit is actually reachable from remote ``main`` — before
-the caller (``finalize``) may treat the release as published.
+``verify()`` independently re-observes the remote (#559); see
+docs/RELEASE.md, "Finalization gate".
 """
 
 from __future__ import annotations
@@ -312,12 +307,8 @@ def publish(build: Build, remote: str, version: str, source_repository: str, ide
 
 
 def verify(build: Build, remote: str, version: str, source_repository: str) -> None:
-    """Independently re-observe the distribution repository's remote state
-    (never the local checkout `publish` used) and prove the intended
-    release is actually there: the tag exists, its content and provenance
-    equal the build, and its commit is actually reachable from remote
-    ``main`` — not merely an object `publish`'s own `git push` claimed to
-    land, but a ref state this call freshly fetches and checks itself."""
+    """The distribution tag's content, provenance, and main-reachability
+    equal the build, read back independently from a fresh clone."""
     tag = f"v{version}"
     work = _new_workdir()
     try:

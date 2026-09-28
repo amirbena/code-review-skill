@@ -366,11 +366,7 @@ class FinalizationGateTests(unittest.TestCase):
         self.assertNotIn("||", cond)
 
     def test_finalize_gate_also_names_the_verified_output_explicitly(self) -> None:
-        # #559: generic job success alone is only an *inferred* consequence
-        # of step order; the gate must also name the exact claim it depends
-        # on (independent remote verification) as its own output, so a
-        # reader — and this test — can see the dependency without reading
-        # `distribute`'s internal step sequence.
+        # The gate must name the verification claim, not just imply it.
         cond = str(self.finalize["if"])
         self.assertIn("needs.distribute.outputs.verified == 'true'", cond)
         self.assertIn("&&", cond)  # both the generic result and the named output are required
@@ -415,20 +411,13 @@ class FinalizationGateTests(unittest.TestCase):
         )
 
     def test_distribute_uses_the_authoritative_publish_and_verify_subcommands(self) -> None:
-        # Step *names* are cosmetic; the contract this gate depends on is
-        # that these two steps actually invoke the distribution.py commands
-        # that mutate and then independently re-fetch-and-diff the
-        # distribution repository (release_lib/commands/distribution.py). A
-        # renamed or gutted step would still pass a name-only ordering
-        # check, so assert the real subcommand wiring directly.
+        # Step names are cosmetic; assert the real subcommand wiring.
         dist = self.jobs["distribute"]["steps"]
         publish_run = _step(dist, "Publish the distribution tree")["run"]
         verify_run = _step(dist, "Verify the distribution tag equals the build")["run"]
         self.assertIn("distribution-publish", publish_run)
         self.assertIn("distribution-verify", verify_run)
-        # The verify step must re-derive its own facts from the remote
-        # (same --version/--dist/--source-commit/--remote inputs as
-        # publish), not merely trust that publish succeeded.
+        # Verify must re-derive its own facts from the remote, not publish's.
         for run in (publish_run, verify_run):
             self.assertIn('--version "${VERSION}"', run)
             self.assertIn("--dist release-source/dist", run)
@@ -436,13 +425,8 @@ class FinalizationGateTests(unittest.TestCase):
             self.assertIn("--remote \"https://github.com/amirbena/code-review-skills\"", run)
 
     def test_distribution_publish_and_verify_cannot_silently_pass_a_failure(self) -> None:
-        # `distribute` "fails the run (never skips) when publication or
-        # verification fails" (job comment) is only true if these two steps
-        # cannot swallow their own failure and cannot be skipped out from
-        # under a prior failure. Assert both structurally: neither step
-        # declares `continue-on-error`, and neither carries its own `if:`
-        # (an `if: always()` on either would let it run — and let the job
-        # report success — even after an earlier step in this job failed).
+        # Neither step may swallow (continue-on-error) or skip (its own
+        # `if:`) out from under a prior failure in this job.
         dist = self.jobs["distribute"]["steps"]
         for needle in ("Publish the distribution tree", "Verify the distribution tag equals the build"):
             step = _step(dist, needle)
@@ -452,24 +436,13 @@ class FinalizationGateTests(unittest.TestCase):
         self.assertNotIn("continue-on-error", yaml.safe_dump(self.finalize))
 
     def test_distribution_publish_and_verify_run_unconditionally_in_recovery_too(self) -> None:
-        # The recovery path (workflow_dispatch, `needs.publish.result !=
-        # 'success'`) only preserves the publish -> verify -> finalize
-        # invariant if these two steps are not conditioned away for that
-        # branch. The previous test already proves neither carries an
-        # `if:` at all; this test pins that absence specifically to the
-        # recovery contract so a future `if: needs.publish.result ==
-        # 'success'` added to either step (which would make finalize
-        # depend on a distribute run that never actually re-verified a
-        # recovered version) fails loudly here.
+        # Recovery must not condition either step on `needs.publish.result`.
         dist = self.jobs["distribute"]["steps"]
         for needle in ("Publish the distribution tree", "Verify the distribution tag equals the build"):
             self.assertNotIn("needs.publish.result", str(_step(dist, needle).get("if", "")), needle)
 
     def test_no_workflow_creates_a_github_release_outside_finalize(self) -> None:
-        # Belt-and-braces beyond `test_only_finalize_creates_a_github_release`
-        # (which only checks jobs inside this one workflow file): no other
-        # workflow under .github/workflows could reintroduce an
-        # unfinalized-release path.
+        # Belt-and-braces: check every workflow file, not just this one's jobs.
         workflows_dir = REPO_ROOT / ".github" / "workflows"
         for path in sorted(workflows_dir.glob("*.yml")):
             if path == WORKFLOW:
@@ -503,14 +476,8 @@ class FinalizationGateTests(unittest.TestCase):
         self.assertEqual(env["VERSION"], "${{ needs.distribute.outputs.version }}")
 
     def test_release_doc_documents_the_skills_sh_boundary(self) -> None:
-        """#559: the finalize gate's scope must be self-contained in the doc.
-
-        `docs/RELEASE.md`'s "Finalization gate" section states the
-        invariant but must also say what counts as "required" — otherwise a
-        reader cannot tell whether skills.sh's install-telemetry-driven
-        listing is in scope. It is explicitly excluded: there is no
-        authoritative, callable verification mechanism for it.
-        """
+        """#559: skills.sh listing must be documented as explicitly excluded
+        from the finalize gate's scope (no authoritative check exists)."""
         doc = RELEASE_DOC.read_text(encoding="utf-8")
         gate_start = doc.index("### Finalization gate")
         gate_section = doc[gate_start : doc.index("### Skill archive version")]
@@ -520,9 +487,7 @@ class FinalizationGateTests(unittest.TestCase):
 
     def test_release_doc_documents_independent_remote_verification(self) -> None:
         """#559: "verified" must be documented as an independent remote
-        read-after-write (fresh clone, not `publish()`'s own local state),
-        covering both the tag and remote `main`'s reachability — not just
-        a successful local `git push`."""
+        read-after-write covering both the tag and remote `main`."""
         doc = RELEASE_DOC.read_text(encoding="utf-8")
         gate_start = doc.index("### Finalization gate")
         gate_section = doc[gate_start : doc.index("### Skill archive version")]
