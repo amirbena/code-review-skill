@@ -476,7 +476,8 @@ which a value must be resolved before it is used, or what is reported.
     metadata (step 13), per that policy's "Labeling — incomplete must
     never present as clean" and "Non-goals and ownership boundary" — not
     restated here. **With more than one member (step 0):** if narrowing
-    (step 1) left zero resolved members, coverage is `incomplete` per
+    (step 0's validation, or steps 1–8e's per-member resolution) left zero
+    resolved members, coverage is `incomplete` per
     [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
     "All members unresolved" — never `complete`.
 11. Derive the Decision. When step 10b's coverage is `incomplete`, the

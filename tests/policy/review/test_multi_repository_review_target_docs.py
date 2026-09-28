@@ -117,7 +117,8 @@ class SkillWiringTests(unittest.TestCase):
 
     def test_runbook_wires_all_unresolved_into_coverage(self) -> None:
         text = _text(LOCAL_RUNBOOK)
-        self.assertIn("if narrowing (step 1) left zero resolved members, coverage is incomplete", text)
+        self.assertIn("if narrowing", text)
+        self.assertIn("left zero resolved members, coverage is incomplete", text)
 
     def test_runbook_step_zero_precedes_step_one(self) -> None:
         text = _text(LOCAL_RUNBOOK)
