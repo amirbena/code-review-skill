@@ -418,6 +418,19 @@ its `main`/tag, so `distribution-verify` succeeding is a deterministic,
 authoritative proof that every one of those install paths can already see
 the release.
 
+"Verified" here means `distribution.verify()` (`release_lib/distribution.py`)
+independently re-observes the remote — a fresh clone, never `publish()`'s
+own local checkout — and proves three things by reading the remote back,
+not by trusting that an earlier local `git push` returned success: the
+`vX.Y.Z` tag exists on `amirbena/code-review-skills` with content that
+hashes identically to the build; the tag's commit carries the expected
+`Source-Repository`/`Source-Commit`/`Source-Tag` provenance; and that
+commit is actually reachable from remote `main`'s current tip (not merely
+an object the tag push happened to deliver while the branch update
+silently failed to land). Any of these failing — including remote `main`
+never actually advancing to the published commit — fails `distribute`
+closed, so `finalize` never runs.
+
 **Explicitly out of scope: the skills.sh directory listing.** Whether a
 Skill shows up in `skills.sh`'s search/browse pages depends on install
 telemetry accumulated after people install it — there is no callable,

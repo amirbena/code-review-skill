@@ -173,6 +173,38 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("differs from the build", out)
 
+    def test_verify_fails_closed_when_the_tag_is_not_reachable_from_remote_main(self) -> None:
+        # #559: `publish`'s own `git push` return code proves only that the
+        # local client believed the push landed. Simulate the exact case
+        # that local signal cannot rule out: the tag object reached the
+        # remote (so a tag-only check would pass) but `main`'s ref was
+        # never actually advanced to it (reverted, rejected by a ruleset
+        # after the fact, or a torn write) — `verify` must independently
+        # observe this and fail closed rather than trust the earlier push.
+        self._run("distribution-publish")
+        tag_commit = _git(self.remote, "rev-parse", "v1.0.0").strip()
+        _git(self.remote, "update-ref", "refs/heads/main", tag_commit + "^")
+        code, out = self._run("distribution-verify")
+        self.assertEqual(code, 1)
+        self.assertIn("not reachable from remote 'main'", out)
+
+    def test_verify_reads_the_remote_afresh_not_a_cached_local_checkout(self) -> None:
+        # A prior `distribution-publish` in this same process must not let
+        # `verify` pass by reusing that call's now-deleted local workdir or
+        # its in-memory result; `verify` is invoked here as a fully separate
+        # CLI call (its own `rw.main`), and must independently refetch.
+        self._run("distribution-publish")
+        # Advance the fake remote's main branch by an unrelated, unrepresented
+        # commit after publish — a bare "local success" signal from the
+        # earlier publish call could never detect this since it never runs
+        # again; only a fresh read-after-write check inside `verify` can.
+        clone = self.tmp / "post-publish-clone"
+        _git(self.tmp, "clone", "-q", str(self.remote), str(clone))
+        _git(clone, "-c", "user.name=h", "-c", "user.email=h@x", "commit", "--allow-empty", "-m", "unrelated")
+        _git(clone, "push", "-q", "origin", "main")
+        code, out = self._run("distribution-verify")
+        self.assertEqual(code, 0, out)  # the tag is still an ancestor of the advanced tip: still valid
+
     def test_zip_not_built_from_tree_is_refused(self) -> None:
         with zipfile.ZipFile(self.dist / "a-skill.zip", "w") as zf:
             zf.writestr("SKILL.md", "other")

@@ -489,6 +489,18 @@ class FinalizationGateTests(unittest.TestCase):
         self.assertIn("telemetry", gate_section)
         self.assertIn("amirbena/code-review-skills", gate_section)
 
+    def test_release_doc_documents_independent_remote_verification(self) -> None:
+        """#559: "verified" must be documented as an independent remote
+        read-after-write (fresh clone, not `publish()`'s own local state),
+        covering both the tag and remote `main`'s reachability — not just
+        a successful local `git push`."""
+        doc = RELEASE_DOC.read_text(encoding="utf-8")
+        gate_start = doc.index("### Finalization gate")
+        gate_section = doc[gate_start : doc.index("### Skill archive version")]
+        self.assertIn("independently re-observes the remote", gate_section)
+        self.assertIn("reachable from remote", gate_section)
+        self.assertIn("silently failed to land", gate_section)
+
     def test_recovery_hands_the_verified_rebuild_to_finalize(self) -> None:
         upload = _step(self.jobs["distribute"]["steps"], "Hand the recovery rebuild")
         self.assertEqual(upload["if"], "needs.publish.result != 'success'")
