@@ -70,7 +70,8 @@ class CanonicalPolicyDefinesTheInvariantTests(unittest.TestCase):
         )
 
     def test_repo_qualified_location_reuses_existing_identity_field(self) -> None:
-        self.assertIn("finding-stable-identity.md", self.text)
+        self.assertIn("stable finding identity derivation record", self.text)
+        self.assertIn("not a packaged resource, so it is named here, not linked", self.text)
         self.assertIn("repo-alias", self.text)
 
     def test_non_goals_match_issue_556(self) -> None:

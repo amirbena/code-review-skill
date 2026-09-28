@@ -190,11 +190,11 @@ never merges them into one instruction context.
 
 A finding produced from a combined Review Target carries structural
 repository identity, reusing the existing repository-qualified finding
-identity digest —
-[`finding-stable-identity.md`](../../../docs/findings/finding-stable-identity.md)
-already carries `repository` as its first discriminating digest field, so
-no new identity model or field is introduced. Human rendering of the
-finding's `location`
+identity digest — the stable finding identity derivation record (a
+repository-development document, not a packaged resource, so it is named
+here, not linked) already carries `repository` as its first
+discriminating digest field, so no new identity model or field is
+introduced. Human rendering of the finding's `location`
 (per [`finding.md`](../../../shared/templates/finding.md) and
 [`finding-rendering.md`](../../../shared/templates/finding-rendering.md))
 may use a compact `<repo-alias>:<path>` form so the reader can tell which

@@ -83,16 +83,12 @@ is resolved against the branch's configured upstream, never the review
 base. The full implementation state is reviewed; no category is silently
 skipped without saying so in the report.
 
-**Optional — repository roots (multi-repository Review Target).** An
-explicit, caller-supplied list of 2 or more local repository roots,
-reviewed as **one combined local Review Target** composed from N
-independent, unchanged single-repository resolutions — never invented
-discovery, never a synthetic shared base across members. Governed in full
-by
+**Optional — repository roots (multi-repository Review Target):** an
+explicit list of 2+ local repository roots, composed into one combined
+Review Target from N unchanged single-repository resolutions — never
+invented discovery or a synthetic shared base. Governed in full by
 [`policies/multi-repository-review-target.md`](policies/multi-repository-review-target.md).
-When omitted (the default), this Skill's Review Target is the single
-local repository exactly as it has always been — behavior and cost are
-identical to before this input existed.
+When omitted (the default), behavior and cost are unchanged.
 
 **Optional — review context** describing the intended change, per
 [`review-context.md`](../../shared/policies/review-context.md), "Input
@@ -206,11 +202,9 @@ definitions, per-category detection commands, staged-delta fingerprint).
 Conditionally, only when the section 1 repository-roots input is
 supplied:
 [`policies/multi-repository-review-target.md`](policies/multi-repository-review-target.md)
-(root validation/normalization, per-member resolution, combined-target
-composition, sibling-member ring expansion, instruction isolation, and
-repository-qualified finding location). **Never loaded or applied when
-only the single default repository root is in play** — that case remains
-exactly the pre-existing single-repository behavior.
+(root validation, per-member resolution, combined-target composition,
+sibling-member ring expansion, instruction isolation, and
+repository-qualified finding location) — never loaded otherwise.
 
 Conditionally, only when its own input is supplied per section 1: the
 shared `review-context.md` requirement-context / scope-boundary sections
