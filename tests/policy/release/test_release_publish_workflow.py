@@ -409,6 +409,22 @@ class FinalizationGateTests(unittest.TestCase):
         self.assertEqual(env["SHA"], "${{ needs.distribute.outputs.sha }}")
         self.assertEqual(env["VERSION"], "${{ needs.distribute.outputs.version }}")
 
+    def test_release_doc_documents_the_skills_sh_boundary(self) -> None:
+        """#559: the finalize gate's scope must be self-contained in the doc.
+
+        `docs/RELEASE.md`'s "Finalization gate" section states the
+        invariant but must also say what counts as "required" — otherwise a
+        reader cannot tell whether skills.sh's install-telemetry-driven
+        listing is in scope. It is explicitly excluded: there is no
+        authoritative, callable verification mechanism for it.
+        """
+        doc = RELEASE_DOC.read_text(encoding="utf-8")
+        gate_start = doc.index("### Finalization gate")
+        gate_section = doc[gate_start : doc.index("### Skill archive version")]
+        self.assertIn("skills.sh", gate_section)
+        self.assertIn("telemetry", gate_section)
+        self.assertIn("amirbena/code-review-skills", gate_section)
+
     def test_recovery_hands_the_verified_rebuild_to_finalize(self) -> None:
         upload = _step(self.jobs["distribute"]["steps"], "Hand the recovery rebuild")
         self.assertEqual(upload["if"], "needs.publish.result != 'success'")
