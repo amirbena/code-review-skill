@@ -97,6 +97,17 @@ committed, staged, unstaged, or untracked — so the report can say
 precisely where it originated, not merely that "something changed." See
 [`../templates/local-review-report.md`](../templates/local-review-report.md).
 
+## Multi-repository Review Target
+
+Everything in this policy is defined, and resolved, per single
+repository. When the caller supplies a repository-roots list per
+[`multi-repository-review-target.md`](multi-repository-review-target.md),
+that policy runs this entire policy **independently, unchanged, once per
+member repository** — it never redefines a category, a detection command,
+or the fingerprint algorithm for the multi-repository case. This file
+remains the single canonical owner of all of that regardless of how many
+members are in play.
+
 ## Staged delta fingerprint
 
 For the **staged** category specifically, this Skill computes a stable,

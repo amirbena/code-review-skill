@@ -38,7 +38,15 @@ committed/staged/unstaged/tracked/untracked category definitions,
 per-category detection commands, push/synchronization status, and the
 staged-delta fingerprint and its re-review comparison contract — this
 runbook's single source for all of that Git-mechanics detail). When the
-caller supplies review context, also
+caller supplies a repository-roots list (section 1's multi-repository
+input), also
+[`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md)
+(root validation, per-member resolution, combined-target composition,
+unresolved-member narrowing, sibling-member ring expansion, instruction
+isolation, and repository-qualified finding location) — never loaded or
+applied otherwise, in which case steps 1–8e below run exactly once,
+against the single default repository, exactly as before this input
+existed. When the caller supplies review context, also
 [`../policies/review-context.md`](../policies/review-context.md) (this
 Skill's thin local application of the shared model — mapping supplied
 requirements/Jira/GitHub-Issue/HLD/ADR/plan context onto the local delta and
@@ -56,9 +64,18 @@ never loaded or applied otherwise.
 ```text
 normalize current-invocation presentation options
     ↓
-resolve local review scope
+repository-roots list supplied? → yes → validate/normalize each root,
+                                          reject duplicate/alias roots
+                                          (fail closed for the whole
+                                          input) per
+                                          multi-repository-review-target.md
+                                        → no  → unchanged (single default
+                                                 repository)
     ↓
-discover applicable AGENTS.md / CLAUDE.md
+resolve local review scope, independently per member when multiple
+    ↓
+discover applicable AGENTS.md / CLAUDE.md, independently per member —
+never applied across a member boundary
     ↓
 detect each category separately: committed, staged, unstaged, untracked
     ↓
@@ -176,8 +193,27 @@ which a value must be resolved before it is used, or what is reported.
 
 ## Steps
 
+0. **If, and only if, the caller supplied a repository-roots list:**
+   validate and normalize each supplied root, and reject the whole input
+   (fail closed, before any per-member resolution) on a duplicate/alias
+   root, per
+   [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
+   "Validation and normalization of supplied roots." Every surviving,
+   normalized root becomes a **member** of the combined Review Target.
+   Skip this step entirely, and proceed with the single default
+   repository as the sole (and only) member, when no repository-roots
+   list was supplied.
 1. Verify the target is a valid Git repository; inspect working-tree
-   status, current branch, and HEAD.
+   status, current branch, and HEAD. **When step 0 resolved more than one
+   member**, run this step, and every step through 8e below,
+   **independently and completely unchanged for each member** per
+   [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
+   "Per-member resolution — unchanged, run independently"; a member whose
+   base cannot be reliably resolved is narrowed out per that policy's
+   "Unresolved-member narrowing" rather than failing the whole review.
+   Steps 9 onward then run **exactly once**, over the union of every
+   resolved member's delta, per that policy's "Composition into one
+   combined Review Target."
 2. Resolve the base branch and base SHA. Verify the implementation scope
    is not accidentally being reviewed directly on a protected/default
    branch unless the target repository's own rules explicitly permit it.
@@ -215,7 +251,12 @@ which a value must be resolved before it is used, or what is reported.
    directory or an installed Skill location; unrelated subtrees are not
    scanned and the local delta remains the Review Target. Do this before
    reviewing so discovered conventions inform the review itself, not just a
-   post-hoc check.
+   post-hoc check. **With more than one member (step 0):** resolve each
+   member's instruction chain independently, anchored to that member's own
+   root; a member's instructions never apply to a sibling member's files,
+   per
+   [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
+   "Instruction isolation."
 7. **If, and only if, the caller supplied review context:** apply the
    shared [`review-context.md`](../../../shared/policies/review-context.md)
    and this Skill's thin
@@ -478,7 +519,13 @@ which a value must be resolved before it is used, or what is reported.
     re-review, and, per that template's own "Relevance-aware metadata
     rendering," the staged fingerprint and whether previously reviewed
     state changed) — and return it, together with the step 13b section when
-    that step applies. **Stop.**
+    that step applies. **With more than one member (step 0):** also render
+    the combined-scope metadata (member roots/aliases, each member's own
+    base/branch, and any unresolved member with its reason) per
+    [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
+    "Reporting combined review scope," and render each finding's
+    `Location` with its member's repository qualifier per that policy's
+    "Finding location with structural repository identity." **Stop.**
 13b. **If, and only if, the current invocation normalized
     `structured_review_result` to `true`:** load
     [`structured-output.md`](../../../shared/policies/structured-output.md)

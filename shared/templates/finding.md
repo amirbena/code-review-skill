@@ -79,7 +79,13 @@ human-facing review a machine-only format.
   An unqualified `Location` means this actionable location is resolved
   (the backward-compatible default). It is a semantic property of the
   finding and is never set from where a review platform happens to allow
-  a comment — see "Fix/action location, evidence location, publication";
+  a comment — see "Fix/action location, evidence location, publication".
+  For a Skill reviewing a multi-repository Review Target, `location` may
+  carry a leading `<repo-alias>:` qualifier identifying the member
+  repository the location belongs to — see
+  [`finding-rendering.md`](finding-rendering.md), "Location source
+  annotation." This reuses the finding-identity model's existing
+  `repository` discriminating field; it is not a new finding field;
 - **evidence location** — optional: where the reviewer observed evidence
   of the problem, when that differs from the resolved fix/action
   location. Rendered only when it adds information (see "Optional and

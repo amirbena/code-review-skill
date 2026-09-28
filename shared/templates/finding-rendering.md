@@ -238,6 +238,24 @@ render the source-state annotation first, then the unresolved marker;
 neither replaces, reorders, or hides the `` `<path>:<line-or-range>` ``
 value.
 
+A repository qualifier is a distinct, **leading** addition, not a
+trailing one: for `local-code-review`'s explicit, user-authorized
+multi-repository Review Target (see that Skill's own
+`policies/multi-repository-review-target.md`, not linked from here for
+the same standalone-packaging reason as above), the `` `<path>` `` value
+itself carries a leading `<repo-alias>:` qualifier —
+`` `<repo-alias>:<path>:<line-or-range>` `` — so a reader can tell which
+member repository a location belongs to at a glance. It combines with
+the trailing annotations above without conflict:
+
+```markdown
+- **Location:** `<repo-alias>:<path>:<line-or-range>` _(<annotation>)_
+```
+
+A single-repository review (no multi-repository input supplied) never
+renders this qualifier — `location` stays exactly `` `<path>:<line-or-range>` ``,
+unchanged from before this convention existed.
+
 ## Canonical inline rendering
 
 Used for a GitHub inline review comment, where the platform supplies the

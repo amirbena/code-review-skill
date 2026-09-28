@@ -121,13 +121,20 @@ SEVERITY_LEGEND = {
 # re-captured again on 2026-09-24 after Issue #535 (step 8a also resolves the
 # repository test sandbox request; the in-place-working-tree paragraph carves
 # out admitted repository test commands) — also deliberate and unrelated to #223.
+# LOCAL_REPORT, LOCAL_RUNBOOK, LOCAL_SKILL, and repository-state.md were
+# re-captured again after Issue #556 (epic #555: the optional, explicit
+# multi-repository Review Target input -- a new step 0 and per-member
+# annotations in the runbook, a new section 1 input/section 2 conditional
+# policy load in SKILL.md, and a new "Multi-repository Review Target"
+# cross-reference section in repository-state.md) -- also deliberate and
+# unrelated to #223.
 LOCAL_BASELINE_HASHES = {
-    LOCAL_REPORT: "605fa1af75319e224140caa15c80f8e2448622a3",
-    LOCAL_RUNBOOK: "afe6cb196631deb4835b75409bdb12276b8eac8f",
-    LOCAL_SKILL: "f46c252519f80d00a4f4cb9b2f06f510b14b96df",
+    LOCAL_REPORT: "481bc268a7876c023b6a62eb2547ff797f24d780",
+    LOCAL_RUNBOOK: "6c724819c76a726b50f228e9e442005dcfa9b226",
+    LOCAL_SKILL: "8c2c272f943c39a922a14e8ab40c2dca7359fcc0",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
-    LOCAL_POLICY_DIR / "repository-state.md": "6792d7e3f7ae1ad0214fff2e85db5e28ac6fb108",
+    LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",
     LOCAL_POLICY_DIR / "review-context.md": "ea16e2e8425e8c85f83ba5588d0e8aee94bd495e",
 }
 
