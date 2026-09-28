@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.60.0 — 2026-09-28
+
+### Added
+
+- `local-code-review` can review an explicit list of 2+ local repository roots as one combined Review Target (#561).
+
 ## v1.59.0 — 2026-09-24
 
 ### Changed
