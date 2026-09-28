@@ -6,6 +6,9 @@ both consume that single build. Publication is a fast-forward commit on the
 distribution repository's default branch plus an annotated ``vX.Y.Z`` tag,
 never a force push. Every mutation is preceded by a full comparison, so a
 re-run is a no-op when the content matches and fails closed when it differs.
+
+``verify()`` independently re-observes the remote (#559); see
+docs/RELEASE.md, "Finalization gate".
 """
 
 from __future__ import annotations
@@ -164,6 +167,23 @@ def _remote_tag_sha(work: Path, remote: str, tag: str) -> str | None:
     return refs.get(f"refs/tags/{tag}^{{}}") or refs.get(f"refs/tags/{tag}")
 
 
+def _remote_branch_sha(work: Path, remote: str, branch: str) -> str | None:
+    out = _git(["ls-remote", remote, f"refs/heads/{branch}"], work, remote)
+    line = out.strip()
+    return line.split("\t")[0] if line else None
+
+
+def _is_ancestor(work: Path, commit: str, of: str) -> bool:
+    """True when ``commit`` is ``of`` or an ancestor of it. Both objects must
+    already be present in ``work``'s object store (fetched beforehand)."""
+    result = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", commit, of], cwd=work, capture_output=True, text=True
+    )
+    if result.returncode not in (0, 1):
+        raise DistributionError(f"git merge-base --is-ancestor failed: {(result.stderr or result.stdout).strip()}")
+    return result.returncode == 0
+
+
 def _checkout_hashes(work: Path, ref: str) -> dict[str, str]:
     _git(["checkout", "--detach", "--force", ref], work)
     return {p: _sha(b) for p, b in _read_tree(work).items()}
@@ -287,13 +307,22 @@ def publish(build: Build, remote: str, version: str, source_repository: str, ide
 
 
 def verify(build: Build, remote: str, version: str, source_repository: str) -> None:
-    """The distribution tag's content and provenance equal the build."""
+    """The distribution tag's content, provenance, and main-reachability
+    equal the build, read back independently from a fresh clone."""
     tag = f"v{version}"
     work = _new_workdir()
     try:
-        if _remote_tag_sha(work, remote, tag) is None:
+        tag_sha = _remote_tag_sha(work, remote, tag)
+        if tag_sha is None:
             raise DistributionError(f"tag {tag} does not exist in the distribution repository")
-        _fetch(work, remote, f"refs/tags/{tag}:refs/tags/{tag}")
+        branch_sha = _remote_branch_sha(work, remote, BRANCH)
+        if branch_sha is None:
+            raise DistributionError(f"remote {BRANCH!r} does not exist in the distribution repository")
+        _fetch(
+            work, remote,
+            f"refs/tags/{tag}:refs/tags/{tag}",
+            f"refs/heads/{BRANCH}:refs/remotes/origin/{BRANCH}",
+        )
         have = _checkout_hashes(work, tag)
         want = build.hashes()
         if have != want:
@@ -302,5 +331,10 @@ def verify(build: Build, remote: str, version: str, source_repository: str) -> N
         expected = _expected_trailers(build, tag, source_repository)
         if got != expected:
             raise DistributionError(f"distribution {tag} commit trailers {got} differ from expected {expected}")
+        if not _is_ancestor(work, f"{tag}^{{commit}}", branch_sha):
+            raise DistributionError(
+                f"distribution {tag} exists but is not reachable from remote {BRANCH!r} (tip {branch_sha}); "
+                f"the branch update did not actually reach the remote"
+            )
     finally:
         shutil.rmtree(work, ignore_errors=True)

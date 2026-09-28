@@ -382,6 +382,13 @@ jobs:
     outputs:
       version: ${{ steps.source.outputs.version }}
       sha: ${{ steps.source.outputs.sha }}
+      # #559: an explicit, named signal that `distribution-verify` actually
+      # ran and passed -- independent remote read-back of the tag's content,
+      # provenance, and main-reachability -- not merely that this job
+      # reported success (which `finalize` still also checks, defense in
+      # depth). This step can only run if every prior step, including
+      # verification, succeeded; there is no other way this output is set.
+      verified: ${{ steps.verified.outputs.verified }}
     steps:
       - name: Require distribution publisher App credentials
         env:
@@ -534,6 +541,16 @@ jobs:
             --source-repository "${SOURCE_REPOSITORY}" \
             --remote "https://github.com/amirbena/code-review-skills"
 
+      - name: Record verified remote publication
+        # #559: this step, and therefore this output, can only run if every
+        # prior step -- publish and, critically, the independent remote
+        # verify above -- already succeeded (the job's default per-step
+        # `if: success()`). It exists so `finalize`'s gate names the exact
+        # claim it depends on instead of inferring it from generic job
+        # success, and so that claim is directly assertable in a test.
+        id: verified
+        run: echo "verified=true" >> "$GITHUB_OUTPUT"
+
       - name: Distribution summary
         run: |
           {
@@ -554,8 +571,17 @@ jobs:
     # existing Release's tag, target, or asset digests differ from the
     # build. Its main check is ancestry, because main may have advanced
     # while distribution ran.
+    #
+    # #559: the gate is both `distribute`'s generic job result AND its
+    # explicit, named `verified` output -- an independent remote read-back
+    # of the tag's content/provenance and of main-reachability, not an
+    # inferred side effect of step order. Either condition alone would
+    # already be sufficient (the output can only be set after a successful
+    # verify step); both are required so the dependency is unambiguous to a
+    # reader and directly assertable by a test, and so a future edit that
+    # weakens one of them without the other still fails closed.
     needs: [plan, publish, distribute]
-    if: ${{ always() && needs.distribute.result == 'success' }}
+    if: ${{ always() && needs.distribute.result == 'success' && needs.distribute.outputs.verified == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

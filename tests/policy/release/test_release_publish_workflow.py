@@ -365,6 +365,31 @@ class FinalizationGateTests(unittest.TestCase):
         self.assertIn("needs.distribute.result == 'success'", cond)
         self.assertNotIn("||", cond)
 
+    def test_finalize_gate_also_names_the_verified_output_explicitly(self) -> None:
+        # The gate must name the verification claim, not just imply it.
+        cond = str(self.finalize["if"])
+        self.assertIn("needs.distribute.outputs.verified == 'true'", cond)
+        self.assertIn("&&", cond)  # both the generic result and the named output are required
+
+    def test_distribute_declares_the_verified_output_from_its_own_dedicated_step(self) -> None:
+        dist_job = self.jobs["distribute"]
+        self.assertEqual(dist_job["outputs"]["verified"], "${{ steps.verified.outputs.verified }}")
+        step = _step(dist_job["steps"], "Record verified remote publication")
+        self.assertEqual(step.get("id"), "verified")
+        self.assertIn("verified=true", step["run"])
+        # No `if:`/`continue-on-error` on this step: it can only run — and
+        # therefore the output can only be set — after every prior step,
+        # including the independent remote verify, already succeeded.
+        self.assertNotIn("if", step)
+        self.assertNotIn("continue-on-error", step)
+
+    def test_verified_output_step_runs_only_after_remote_verification(self) -> None:
+        dist = self.jobs["distribute"]["steps"]
+        self.assertLess(
+            _step_index(dist, "Verify the distribution tag equals the build"),
+            _step_index(dist, "Record verified remote publication"),
+        )
+
     def test_only_finalize_creates_a_github_release(self) -> None:
         for name, job in self.jobs.items():
             blob = yaml.safe_dump(job)
@@ -384,6 +409,47 @@ class FinalizationGateTests(unittest.TestCase):
             _step_index(dist, "Publish the distribution tree"),
             _step_index(dist, "Verify the distribution tag equals the build"),
         )
+
+    def test_distribute_uses_the_authoritative_publish_and_verify_subcommands(self) -> None:
+        # Step names are cosmetic; assert the real subcommand wiring.
+        dist = self.jobs["distribute"]["steps"]
+        publish_run = _step(dist, "Publish the distribution tree")["run"]
+        verify_run = _step(dist, "Verify the distribution tag equals the build")["run"]
+        self.assertIn("distribution-publish", publish_run)
+        self.assertIn("distribution-verify", verify_run)
+        # Verify must re-derive its own facts from the remote, not publish's.
+        for run in (publish_run, verify_run):
+            self.assertIn('--version "${VERSION}"', run)
+            self.assertIn("--dist release-source/dist", run)
+            self.assertIn('--source-commit "${SHA}"', run)
+            self.assertIn("--remote \"https://github.com/amirbena/code-review-skills\"", run)
+
+    def test_distribution_publish_and_verify_cannot_silently_pass_a_failure(self) -> None:
+        # Neither step may swallow (continue-on-error) or skip (its own
+        # `if:`) out from under a prior failure in this job.
+        dist = self.jobs["distribute"]["steps"]
+        for needle in ("Publish the distribution tree", "Verify the distribution tag equals the build"):
+            step = _step(dist, needle)
+            self.assertNotIn("continue-on-error", step, needle)
+            self.assertNotIn("if", step, needle)
+        self.assertNotIn("continue-on-error", yaml.safe_dump(self.jobs["distribute"]))
+        self.assertNotIn("continue-on-error", yaml.safe_dump(self.finalize))
+
+    def test_distribution_publish_and_verify_run_unconditionally_in_recovery_too(self) -> None:
+        # Recovery must not condition either step on `needs.publish.result`.
+        dist = self.jobs["distribute"]["steps"]
+        for needle in ("Publish the distribution tree", "Verify the distribution tag equals the build"):
+            self.assertNotIn("needs.publish.result", str(_step(dist, needle).get("if", "")), needle)
+
+    def test_no_workflow_creates_a_github_release_outside_finalize(self) -> None:
+        # Belt-and-braces: check every workflow file, not just this one's jobs.
+        workflows_dir = REPO_ROOT / ".github" / "workflows"
+        for path in sorted(workflows_dir.glob("*.yml")):
+            if path == WORKFLOW:
+                continue
+            raw = path.read_text(encoding="utf-8")
+            self.assertNotIn("gh release", raw, path.name)
+            self.assertNotIn("release-finalize", raw, path.name)
 
     def test_finalize_step_order(self) -> None:
         order = [
@@ -408,6 +474,36 @@ class FinalizationGateTests(unittest.TestCase):
         env = _step(self.steps, "Create or complete the GitHub Release")["env"]
         self.assertEqual(env["SHA"], "${{ needs.distribute.outputs.sha }}")
         self.assertEqual(env["VERSION"], "${{ needs.distribute.outputs.version }}")
+
+    def test_release_doc_documents_the_skills_sh_boundary(self) -> None:
+        """#559: skills.sh listing must be documented as explicitly excluded
+        from the finalize gate's scope (no authoritative check exists)."""
+        doc = RELEASE_DOC.read_text(encoding="utf-8")
+        gate_start = doc.index("### Finalization gate")
+        gate_section = doc[gate_start : doc.index("### Skill archive version")]
+        self.assertIn("skills.sh", gate_section)
+        self.assertIn("telemetry", gate_section)
+        self.assertIn("amirbena/code-review-skills", gate_section)
+
+    def test_release_doc_documents_independent_remote_verification(self) -> None:
+        """#559: "verified" must be documented as an independent remote
+        read-after-write covering both the tag and remote `main`."""
+        doc = RELEASE_DOC.read_text(encoding="utf-8")
+        gate_start = doc.index("### Finalization gate")
+        gate_section = doc[gate_start : doc.index("### Skill archive version")]
+        self.assertIn("independently re-observes the remote", gate_section)
+        self.assertIn("reachable from remote", gate_section)
+        self.assertIn("silently failed to land", gate_section)
+
+    def test_release_doc_documents_the_named_verified_output(self) -> None:
+        """#559: the gate must be documented as an explicit, named output
+        -- not only inferable from `distribute`'s internal step order."""
+        doc = RELEASE_DOC.read_text(encoding="utf-8")
+        gate_start = doc.index("### Finalization gate")
+        gate_section = doc[gate_start : doc.index("### Skill archive version")]
+        self.assertIn("named `verified`", gate_section)
+        self.assertIn("Record verified remote", gate_section)
+        self.assertIn("needs.distribute.outputs.verified == 'true'", gate_section)
 
     def test_recovery_hands_the_verified_rebuild_to_finalize(self) -> None:
         upload = _step(self.jobs["distribute"]["steps"], "Hand the recovery rebuild")

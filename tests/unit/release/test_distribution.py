@@ -143,6 +143,35 @@ class DistributionTests(unittest.TestCase):
         self.assertIn("rejected", out)
         self.assertEqual(self._tags(), "")
 
+    def test_tag_push_rejected_after_branch_succeeds_leaves_branch_but_no_tag(self) -> None:
+        # #559: branch push succeeds, tag push specifically fails -> no tag.
+        (self.remote / "hooks" / "pre-receive").write_text(
+            "#!/bin/sh\nwhile read old new ref; do case \"$ref\" in refs/tags/*) exit 1;; esac; done\n"
+        )
+        (self.remote / "hooks" / "pre-receive").chmod(0o755)
+        code, out = self._run("distribution-publish")
+        self.assertEqual(code, 1)
+        self.assertIn("tag", out)
+        self.assertIn("could not be created", out)
+        # The branch commit landed -- the failure is specific to the tag.
+        self.assertNotEqual(_git(self.remote, "rev-parse", "main").strip(), "")
+        files = _git(self.remote, "ls-tree", "-r", "--name-only", "main").split()
+        self.assertIn("skills/a/SKILL.md", files)
+        self.assertEqual(self._tags(), "")
+        # Without the tag, verification (and therefore finalization) cannot
+        # succeed for this version.
+        self.assertEqual(self._run("distribution-verify")[0], 1)
+        # Recovery is not a side channel around the gate: a later run with
+        # the hook lifted completes the tag without a second commit, and
+        # then verification succeeds.
+        (self.remote / "hooks" / "pre-receive").unlink()
+        head = _git(self.remote, "rev-parse", "main")
+        code, out = self._run("distribution-publish")
+        self.assertEqual(code, 0, out)
+        self.assertIn("tagged", out)
+        self.assertEqual(_git(self.remote, "rev-parse", "main"), head)
+        self.assertEqual(self._run("distribution-verify")[0], 0)
+
     def test_older_version_is_refused_when_main_carries_a_newer_one(self) -> None:
         self._run("distribution-publish", "1.1.0")
         head = _git(self.remote, "rev-parse", "main")
@@ -172,6 +201,26 @@ class DistributionTests(unittest.TestCase):
         code, out = self._run("distribution-verify")
         self.assertEqual(code, 1)
         self.assertIn("differs from the build", out)
+
+    def test_verify_fails_closed_when_the_tag_is_not_reachable_from_remote_main(self) -> None:
+        # #559: tag object reached the remote but main's ref never advanced.
+        self._run("distribution-publish")
+        tag_commit = _git(self.remote, "rev-parse", "v1.0.0").strip()
+        _git(self.remote, "update-ref", "refs/heads/main", tag_commit + "^")
+        code, out = self._run("distribution-verify")
+        self.assertEqual(code, 1)
+        self.assertIn("not reachable from remote 'main'", out)
+
+    def test_verify_reads_the_remote_afresh_not_a_cached_local_checkout(self) -> None:
+        # `verify` runs as a separate CLI call and must independently refetch.
+        self._run("distribution-publish")
+        # Advance the fake remote's main after publish, unrelated to it.
+        clone = self.tmp / "post-publish-clone"
+        _git(self.tmp, "clone", "-q", str(self.remote), str(clone))
+        _git(clone, "-c", "user.name=h", "-c", "user.email=h@x", "commit", "--allow-empty", "-m", "unrelated")
+        _git(clone, "push", "-q", "origin", "main")
+        code, out = self._run("distribution-verify")
+        self.assertEqual(code, 0, out)  # the tag is still an ancestor of the advanced tip: still valid
 
     def test_zip_not_built_from_tree_is_refused(self) -> None:
         with zipfile.ZipFile(self.dist / "a-skill.zip", "w") as zf:

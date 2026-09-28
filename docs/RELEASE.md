@@ -404,6 +404,58 @@ missing assets are uploaded, then it is published); a Release with a
 different target, an unexpected or mismatching asset, or prerelease status
 fails closed with nothing changed.
 
+#### What "required" covers (#559)
+
+The invariant above gates on the **distribution repository**
+(`amirbena/code-review-skills`) `main` branch and its `vX.Y.Z` tag —
+`distribute`'s own push, verified content-and-trailer-for-content-and-trailer
+against the build before `finalize` can start (see "Publishing each
+release to the distribution repository" below). That repository has no
+workflows of its own, and it is what every documented installer actually
+reads: `npx skills add`, `/plugin marketplace add`, and the Codex/Copilot
+equivalents in [`distribution.md`](distribution.md) all pull directly from
+its `main`/tag, so `distribution-verify` succeeding is a deterministic,
+authoritative proof that every one of those install paths can already see
+the release.
+
+"Verified" here means `distribution.verify()` (`release_lib/distribution.py`)
+independently re-observes the remote — a fresh clone, never `publish()`'s
+own local checkout — and proves three things by reading the remote back,
+not by trusting that an earlier local `git push` returned success: the
+`vX.Y.Z` tag exists on `amirbena/code-review-skills` with content that
+hashes identically to the build; the tag's commit carries the expected
+`Source-Repository`/`Source-Commit`/`Source-Tag` provenance; and that
+commit is actually reachable from remote `main`'s current tip (not merely
+an object the tag push happened to deliver while the branch update
+silently failed to land). Any of these failing — including remote `main`
+never actually advancing to the published commit — fails `distribute`
+closed, so `finalize` never runs.
+
+This gate is not left as an inferred side effect of `distribute`'s
+internal step order. `distribute` exposes an explicit, named `verified`
+job output, set by a dedicated step (`Record verified remote
+publication`) that runs immediately after `distribution-verify` and can
+only succeed if every step before it — including that independent remote
+observation — already did. `finalize`'s own condition requires both
+`needs.distribute.result == 'success'` **and**
+`needs.distribute.outputs.verified == 'true'`: either alone already
+implies the other today, but naming the claim explicitly means a reader
+(or a future edit) sees exactly what `finalize` depends on instead of
+having to trace `distribute`'s step sequence, and a change that weakens
+one without the other still fails closed.
+
+**Explicitly out of scope: the skills.sh directory listing.** Whether a
+Skill shows up in `skills.sh`'s search/browse pages depends on install
+telemetry accumulated after people install it — there is no callable,
+authoritative API this workflow can check before or during a release (see
+[`distribution.md`](distribution.md)'s "Compatibility and verification"
+notes). Gating `finalize` on it would either fabricate a check that does
+not actually confirm anything, or block every release indefinitely on a
+signal the release flow does not own. `finalize` therefore never waits on
+it, and a release is complete once the distribution repository is
+published and verified, regardless of whether skills.sh has indexed it
+yet.
+
 ### Skill archive version
 
 The version authority is the newest `## vX.Y.Z` heading in `CHANGELOG.md`,
