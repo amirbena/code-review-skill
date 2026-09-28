@@ -385,6 +385,70 @@ class FinalizationGateTests(unittest.TestCase):
             _step_index(dist, "Verify the distribution tag equals the build"),
         )
 
+    def test_distribute_uses_the_authoritative_publish_and_verify_subcommands(self) -> None:
+        # Step *names* are cosmetic; the contract this gate depends on is
+        # that these two steps actually invoke the distribution.py commands
+        # that mutate and then independently re-fetch-and-diff the
+        # distribution repository (release_lib/commands/distribution.py). A
+        # renamed or gutted step would still pass a name-only ordering
+        # check, so assert the real subcommand wiring directly.
+        dist = self.jobs["distribute"]["steps"]
+        publish_run = _step(dist, "Publish the distribution tree")["run"]
+        verify_run = _step(dist, "Verify the distribution tag equals the build")["run"]
+        self.assertIn("distribution-publish", publish_run)
+        self.assertIn("distribution-verify", verify_run)
+        # The verify step must re-derive its own facts from the remote
+        # (same --version/--dist/--source-commit/--remote inputs as
+        # publish), not merely trust that publish succeeded.
+        for run in (publish_run, verify_run):
+            self.assertIn('--version "${VERSION}"', run)
+            self.assertIn("--dist release-source/dist", run)
+            self.assertIn('--source-commit "${SHA}"', run)
+            self.assertIn("--remote \"https://github.com/amirbena/code-review-skills\"", run)
+
+    def test_distribution_publish_and_verify_cannot_silently_pass_a_failure(self) -> None:
+        # `distribute` "fails the run (never skips) when publication or
+        # verification fails" (job comment) is only true if these two steps
+        # cannot swallow their own failure and cannot be skipped out from
+        # under a prior failure. Assert both structurally: neither step
+        # declares `continue-on-error`, and neither carries its own `if:`
+        # (an `if: always()` on either would let it run — and let the job
+        # report success — even after an earlier step in this job failed).
+        dist = self.jobs["distribute"]["steps"]
+        for needle in ("Publish the distribution tree", "Verify the distribution tag equals the build"):
+            step = _step(dist, needle)
+            self.assertNotIn("continue-on-error", step, needle)
+            self.assertNotIn("if", step, needle)
+        self.assertNotIn("continue-on-error", yaml.safe_dump(self.jobs["distribute"]))
+        self.assertNotIn("continue-on-error", yaml.safe_dump(self.finalize))
+
+    def test_distribution_publish_and_verify_run_unconditionally_in_recovery_too(self) -> None:
+        # The recovery path (workflow_dispatch, `needs.publish.result !=
+        # 'success'`) only preserves the publish -> verify -> finalize
+        # invariant if these two steps are not conditioned away for that
+        # branch. The previous test already proves neither carries an
+        # `if:` at all; this test pins that absence specifically to the
+        # recovery contract so a future `if: needs.publish.result ==
+        # 'success'` added to either step (which would make finalize
+        # depend on a distribute run that never actually re-verified a
+        # recovered version) fails loudly here.
+        dist = self.jobs["distribute"]["steps"]
+        for needle in ("Publish the distribution tree", "Verify the distribution tag equals the build"):
+            self.assertNotIn("needs.publish.result", str(_step(dist, needle).get("if", "")), needle)
+
+    def test_no_workflow_creates_a_github_release_outside_finalize(self) -> None:
+        # Belt-and-braces beyond `test_only_finalize_creates_a_github_release`
+        # (which only checks jobs inside this one workflow file): no other
+        # workflow under .github/workflows could reintroduce an
+        # unfinalized-release path.
+        workflows_dir = REPO_ROOT / ".github" / "workflows"
+        for path in sorted(workflows_dir.glob("*.yml")):
+            if path == WORKFLOW:
+                continue
+            raw = path.read_text(encoding="utf-8")
+            self.assertNotIn("gh release", raw, path.name)
+            self.assertNotIn("release-finalize", raw, path.name)
+
     def test_finalize_step_order(self) -> None:
         order = [
             "Require trusted release App credentials",
