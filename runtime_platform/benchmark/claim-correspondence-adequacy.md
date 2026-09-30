@@ -423,3 +423,24 @@ Issue #355 implemented this record's §6 recommendation and closed the §6
   resolved to `MATCH` (3/3). This is a benchmark-harness-level prompt
   detail, not a packaged-Skill change: the field stays optional in
   `finding.md` for real (non-benchmark) usage.
+
+## 10. Follow-up: compatible free-form slugs (issue #570)
+
+§9 resolved slug-vocabulary stability as a naming convention, not a closed
+taxonomy, and left the residual risk of independently chosen slugs for one
+defect. A scheduled sentinel run realised it: `quality-duplicated-branch-logic`
+produced a correct P2 finding labelled `duplicated-branch-logic` against the
+fixture's `duplicated-logic`; `match-criteria.md` §4.1 then forced `UNRELATED`
+(one false positive plus one miss, reported as #570 and #571). Options
+evaluated against that recorded finding:
+
+| Option | Verdict |
+|---|---|
+| Closed canonical taxonomy | Rejected: `finding.md` and §9 define an open convention, the corpus already holds 89 distinct slugs, and #355 excluded rewriting fixtures. |
+| Alias / synonym table | Rejected: no principled taxonomy source; it would grow per fixture. |
+| Demote the slug veto to the claim comparison | Rejected: the recorded claim scores Jaccard 0.16 against the fixture (below the 0.25 `RELATED` floor), while row 5 of `match-criteria.md` §8, a genuinely different defect, scores 0.22, so the claim measure cannot separate them; demoting the veto either leaves this case failing or collapses row 5. |
+| **Compatible-slug rule** (adopted) | Slug token subset (smaller slug ≥ 2 tokens) is a compatibility signal, corroborated by claim overlap over the smaller claim (≥ 0.5) for `CORRESPONDS`, else `RELATED`. Deterministic, generic, no fixture-specific case. |
+
+The recorded finding now resolves to `MATCH` (0 false negatives, 0 false
+positives); the same finding with an unrelated slug still scores one of each.
+Comparability and the revision boundary are in `match-criteria.md` §10.
