@@ -36,6 +36,14 @@ PROXIMITY_LINES = 3
 # depends on binary-float representation (match-criteria.md §7).
 CLAIM_CORRESPONDS_SIM = Fraction(1, 2)
 CLAIM_RELATED_SIM = Fraction(1, 4)
+# Differing-`defect_kind` compatibility (match-criteria.md §4.1): the smaller
+# slug must name at least this many tokens, and the claims must share at
+# least this fraction of the smaller claim's content tokens, and at least
+# SLUG_CLAIM_MIN_SHARED of them in absolute terms (a tiny claim cannot pass
+# on one shared word).
+SLUG_MIN_TOKENS = 2
+SLUG_CLAIM_SUPPORT = Fraction(1, 2)
+SLUG_CLAIM_MIN_SHARED = 2
 
 _STOPWORDS = frozenset(
     {"the", "and", "that", "this", "from", "with", "into", "for", "not", "are", "was", "its", "has"}
@@ -230,13 +238,36 @@ def _anchor_near(anchor: str, post_image: str, produced_lines: tuple[int, int]) 
     return any(anchor in rows[i - 1] for i in range(lo, hi + 1))
 
 
+def _slug_tokens(slug: str) -> frozenset[str]:
+    return frozenset(t for t in slug.split("-") if t)
+
+
+def _slugs_compatible(a: str, b: str) -> bool:
+    """One differing kebab slug is the other plus extra qualifier tokens."""
+    ta, tb = _slug_tokens(a), _slug_tokens(b)
+    small, large = (ta, tb) if len(ta) <= len(tb) else (tb, ta)
+    return len(small) >= SLUG_MIN_TOKENS and small <= large
+
+
+def _claims_support(expected_claim: str | None, produced_claim: str | None) -> bool:
+    e, p = _claim_tokens(expected_claim), _claim_tokens(produced_claim)
+    if not e or not p:
+        return False
+    shared = len(e & p)
+    return shared >= SLUG_CLAIM_MIN_SHARED and Fraction(shared, min(len(e), len(p))) >= SLUG_CLAIM_SUPPORT
+
+
 def defect_match(expected: Descriptor, produced: Descriptor) -> DefectMatch:
     if expected.defect_kind and produced.defect_kind:
-        return (
-            DefectMatch.CORRESPONDS
-            if expected.defect_kind == produced.defect_kind
-            else DefectMatch.UNRELATED
-        )
+        if expected.defect_kind == produced.defect_kind:
+            return DefectMatch.CORRESPONDS
+        if _slugs_compatible(expected.defect_kind, produced.defect_kind):
+            return (
+                DefectMatch.CORRESPONDS
+                if _claims_support(expected.claim, produced.claim)
+                else DefectMatch.RELATED
+            )
+        return DefectMatch.UNRELATED
     e, p = _claim_tokens(expected.claim), _claim_tokens(produced.claim)
     if not e or not p:
         return DefectMatch.UNRELATED

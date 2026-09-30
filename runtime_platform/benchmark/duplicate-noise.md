@@ -89,7 +89,8 @@ a same-root-cause edge **iff that result is `MATCH`**.
 - **No new axis, no new tolerance.** The ± 3-line proximity window and the
   two claim-overlap thresholds are exactly the ones
   [`match-criteria.md`](match-criteria.md) §3–§4, §7 fixed; this document
-  adds none and loosens none. Severity is not consulted (it is not a #54
+  adds none and loosens none (it inherits the matcher's current
+  revision, [`match-criteria.md`](match-criteria.md) §10). Severity is not consulted (it is not a #54
   axis, and it is [#56](https://github.com/amirbena/code-review-skill/issues/56)).
 - **Symmetrized.** [`match-criteria.md`](match-criteria.md) location
   correspondence has a few order-sensitive branches for a degenerate
