@@ -426,9 +426,9 @@ enforce it in the controller.
 ```markdown
 ### Reasoning check
 Questions for you — not findings; they do not change the decision.
-1. Authorization for `Order` is enforced in the controller in `RefundController`
-   and `ExportController`; the sibling flows will bypass the service check —
-   was moving it to the service intended for all order entry points?
+1. `RefundController` and `ExportController` enforce `Order` authorization in
+   the controller; is the new service-level check meant to cover those entry
+   points too?
 ```
 
 No finding is raised because the evidence did not establish a consequence
@@ -451,10 +451,12 @@ diff alone gives no strong content signal. Any question would be generic
 
 ### E. Bug fix, no context (fail-closed, partial)
 
-The same change as A with an empty PR description. Signal 3 fires (regression
-test) but the reviewer can still name the unverified link, so **one** question
-activates: "What evidence tied the duplicate charges to timeout retries?" —
-hypothesis-unverifiable case (§5.5), not a finding.
+The same change as A with an empty PR description. No symptom or hypothesis is
+supplied, so this is not the §5.5 unverifiable-hypothesis case. Signal 3
+(regression test) alone activates, and the reviewer can name the unverified
+link, so **one** missing-context question is asked, without presupposing a
+cause: "What observed behavior and cause does `testDuplicateChargeOnTimeout`
+correspond to?" Not a finding.
 
 ## 11. Non-effects, and benchmark representability (input to #567)
 
