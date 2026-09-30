@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.61.0 — 2026-09-30
+
+### Added
+
+- Reviews can end with an optional, evidence-anchored "Reasoning check" of questions for the engineer, in both local and GitHub reviews (#573).
+
 ## v1.60.0 — 2026-09-28
 
 ### Added

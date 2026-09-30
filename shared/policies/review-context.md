@@ -142,7 +142,43 @@ ReviewContext
 - acceptance_criteria: explicit pass/fail conditions, if stated
 - constraints / invariants: things that must remain true
 - explicit_non_goals: what the context says is out of scope
+- problem_context: optional; see "Problem context and epistemic classes"
 ```
+
+## Problem context and epistemic classes
+
+For a bug fix, regression fix, incident follow-up, or behavior correction,
+`bug-description` and `incident-followup` context may carry an optional
+**problem_context** grouping: observed and expected behavior, where it was
+observed, the suspected root cause, evidence for or against it, a failing
+example or reproduction conditions, logs/traces/metrics/persisted state/error
+text, affected and known non-affected flows, the lifecycle assumptions behind
+the correction, why the change addresses the problem, and any stated
+unavailable evidence or access constraint. It is an **input convention on this
+model**, not a schema, template, or gate: nothing is ever requested of the
+caller, unstructured prose is normalized by the reviewer, and no element is
+required to run a review — "required" for an element means only required to
+raise one specific question in the
+[`reasoning-checkpoint.md`](reasoning-checkpoint.md) section.
+
+Supplied tracker/Issue/PR text is *evidence about the problem to be
+classified*, not the problem context itself; a description is usually an
+observed fact as reported or an engineer hypothesis, never reviewer-inspected
+runtime evidence. Problem context is `informational` unless it is an explicit
+requirement or acceptance criterion: it focuses attention and anchors a
+question, never establishes a finding, and never outranks code (see "Evidence
+hierarchy").
+
+Every problem-context item and every question premise carries exactly one
+class, and the reviewer never promotes a class silently:
+
+| Class | Tag | Rule |
+| --- | --- | --- |
+| Observed fact | *(reported)* | Stated as seen by the engineer or a tracker; the reviewer did not observe it. |
+| Engineer hypothesis | *(hypothesis)* | A proposed cause or mechanism; never becomes fact because the diff implements it. |
+| Repository evidence | *(reviewed)* | Read by the reviewer in the diff or repository this session. |
+| Runtime / higher-environment evidence | *(reported)* or *(reviewed)* | Logs, traces, metrics, persisted state; *(reviewed)* only if actually supplied and read in-session. |
+| Unknown / unavailable | *(not available)* | Named explicitly when it is what blocks a link. |
 
 ## Evidence hierarchy
 

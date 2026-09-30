@@ -236,6 +236,15 @@ closing disclosure line in
 "Self-review (informational COMMENT)" — not by a separate, heavier
 format.
 
+When the shared
+[`reasoning-checkpoint.md`](../../../shared/policies/reasoning-checkpoint.md)
+activates, the body also carries its `Reasoning check` section after the
+`Decision` block, rendered per
+[`../templates/external-review-summary.md`](../templates/external-review-summary.md),
+"Reasoning check (conditional)" — in the body only, never an inline
+comment, identically in every publication mode, and never affecting the
+decision or the GitHub review state.
+
 This review body **is** the final human-facing summary comment for the
 run: `final review comment == last publication event` (see "Submission
 ordering"). Nothing this review owns — an inline comment, the review

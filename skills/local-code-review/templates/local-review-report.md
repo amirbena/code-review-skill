@@ -130,6 +130,10 @@ Validation.>
 1 P1 finding must be addressed before this implementation should
 proceed.
 
+### Reasoning check
+<only when the shared reasoning checkpoint activated — see "Rules" below;
+omitted entirely otherwise>
+
 ### Review Metadata
 
 <Single-repository review (no multi-repository input supplied) — the
@@ -223,6 +227,37 @@ a non-blocking recommendation and does not change this decision, however
 strongly it is recommended before commit.
 ```
 
+or, clean with an active reasoning checkpoint — the section follows
+Decision and precedes Review Metadata (the same placement applies after a
+`CHANGES REQUIRED` or P2-only Decision), and the opening assessment is
+scoped when the checkpoint's runtime-dependent condition holds, per
+[`../../../shared/policies/reasoning-checkpoint.md`](../../../shared/policies/reasoning-checkpoint.md),
+"Readiness language":
+
+```markdown
+**Result: ✅ Review Clean**
+
+No blocking issue found in the change as reviewed; whether it resolves the
+reported problem depends on evidence not established here — see Reasoning
+check.
+
+### Decision
+**REVIEW CLEAN**
+
+No P0, P1, or P2 findings were identified in the reviewed implementation
+state.
+
+### Reasoning check
+Questions for you — not findings; they do not change the decision.
+1. <question anchored to evidence the review already holds, with its
+   provenance tag where it mentions an evidence item>
+2. <question>
+
+### Review Metadata
+
+- ...
+```
+
 or, when coverage is incomplete (per
 [`../../../shared/policies/review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md)
 — shown here with no findings gathered before the interruption; any
@@ -257,8 +292,8 @@ These are the report's **rendering** rules; the review semantics they
 serve are owned by the linked policies and are not restated here.
 
 - The human-facing body (Result → What changed → What was done well →
-  [Context] → [PR Context] → [Findings] → Validation → Decision) is
-  primary and always appears first — see
+  [Context] → [PR Context] → [Findings] → Validation → Decision →
+  [Reasoning check]) is primary and always appears first — see
   [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md).
 - **Unresolved supplied Jira reference** — the report is not graded: it
   leads with `**Result: ⚠️ Jira context unresolved**`, names the
@@ -277,6 +312,20 @@ serve are owned by the linked policies and are not restated here.
   Canonical: [`../policies/review-context.md`](../policies/review-context.md),
   "Output"; [`../policies/pr-context.md`](../policies/pr-context.md),
   "Output".
+- **Reasoning check** is an optional, conditional section rendered in the
+  returned report directly after Decision and before "Review Metadata",
+  exactly as
+  [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+  "Reasoning check" shapes it, and only when
+  [`../../../shared/policies/reasoning-checkpoint.md`](../../../shared/policies/reasoning-checkpoint.md)
+  activates. It is omitted completely otherwise — no heading, no
+  placeholder. This Skill adds no delivery difference: the section is a
+  body section like any other (no inline surface exists here), it renders
+  identically in the structured and `human_review_output` forms, it is
+  never a finding, carries no severity or ID, and changes no finding,
+  severity, coverage, or Decision. It is not part of the opt-in
+  `structured_review_result` (see below); the checkpoint semantics live
+  only in the shared policy and are not restated here.
 - **Decision** is exactly `REVIEW CLEAN` or `CHANGES REQUIRED`, derived
   mechanically per
   [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
@@ -330,6 +379,7 @@ serve are owned by the linked policies and are not restated here.
   human-facing body in the concise senior-engineer voice from
   [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
   "Concise human-style summary (opt-in)". It re-renders only that body —
+  the shared reasoning-check section (when active) closes the summary,
   the trailing "Review Metadata" and "Review scope contract" sections
   still follow it, subordinate and unchanged, and nothing else is
   appended after the summary. The option is output-only: findings,

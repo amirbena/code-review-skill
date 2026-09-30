@@ -426,6 +426,12 @@ finally: remove the temporary checkout (success, any failure, interruption)
    [`../policies/review-output.md`](../policies/review-output.md), "Final
    decision," names the resulting `Approve` / `Request Changes` wording
    but does not re-derive it.
+   **With findings and the decision final, evaluate the shared
+   [`reasoning-checkpoint.md`](../../../shared/policies/reasoning-checkpoint.md)
+   activation once;** when it activates, the returned report carries its
+   `Reasoning check` section after `Decision` per
+   [`../templates/external-review-summary.md`](../templates/external-review-summary.md),
+   "Reasoning check (conditional)" — no effect on the decision.
 8d. **Compose the private Reviewer Brief** per
    [`../policies/reviewer-brief.md`](../policies/reviewer-brief.md), now
    that findings, severity, coverage, and the decision derived in step 8c

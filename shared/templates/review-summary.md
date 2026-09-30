@@ -66,6 +66,11 @@ important concern or attention point; include scope only when useful>
 **<decision label>**
 
 <one-sentence rationale tied to the findings above>
+
+### Reasoning check
+<only when [`../policies/reasoning-checkpoint.md`](../policies/reasoning-checkpoint.md)
+  activates: 1-4 numbered questions to the engineer — never findings, never
+  affecting the decision; omitted entirely otherwise, with no placeholder>
 ```
 
 ### Heading is a per-Skill override point
@@ -106,7 +111,12 @@ additive documentation and changes no Skill's rendered output by itself.
 - **Opening assessment** — immediately says whether the change is safe to
   merge/proceed and names the highest-priority concern or reviewer attention
   point. Avoid mechanical “reviewed N files” boilerplate when it adds no
-  useful context.
+  useful context. The merge/proceed statement answers only whether the diff
+  carries a blocking defect — what the mechanical Decision already answers;
+  when the reasoning checkpoint's runtime-dependent condition holds it is
+  scoped accordingly, per
+  [`../policies/reasoning-checkpoint.md`](../policies/reasoning-checkpoint.md),
+  "Readiness language" (one Decision value, no second grade).
 - **What changed** — a concrete implementation summary, not a diff dump.
 - **What was done well** — only concrete, evidence-backed strengths.
   Omit the section (or keep it to one line) rather than invent generic
@@ -167,6 +177,43 @@ additive documentation and changes no Skill's rendered output by itself.
   this label and the matching Result render the incomplete/ungraded
   outcome instead — the one case where the primary body's outcome is not
   the plain clean/blocking derivation above.
+- **Reasoning check** — conditional and distinct from Findings. It is
+  absent unless [`../policies/reasoning-checkpoint.md`](../policies/reasoning-checkpoint.md)
+  activates, and then holds 1–4 numbered questions to the engineer, each
+  anchored to evidence the review already gathered. Its rules — activation,
+  the anchor rule, the access/provenance boundary, the readiness-language
+  rule, and its explicit non-effects — are owned once by that policy and are
+  not restated here; this template owns only its position and shape:
+  - **Placement.** Immediately after Decision, and before the subordinate
+    machine metadata, so it is the last thing read of the human-facing body
+    while metadata stays always last. A closing line a Skill attaches to the
+    Decision block (e.g. a self-review disclosure) stays with Decision; the
+    section follows it. No consumer may assume Decision is the final element
+    of the human-facing body.
+  - **Shape.** A `### Reasoning check` heading, one fixed lead-in line, then
+    the numbered questions:
+
+    ```markdown
+    ### Reasoning check
+    Questions for you — not findings; they do not change the decision.
+    1. <question, with its provenance tag where it mentions an evidence item>
+    2. <question>
+    ```
+
+  - **Inert.** When the policy's activation criteria are not met, the section
+    is omitted completely — no heading, no lead-in, no placeholder,
+    no "no questions" line. The review is then byte-identical to a review
+    that never had this capability.
+  - **Never a finding.** No severity, ID, `confidence`, validation state, or
+    blocking meaning; not counted with findings; never rendered inline; never
+    a Decision or Result token. It changes no finding, severity, coverage, or
+    Decision, and (for a Skill that has one) no publication event or review
+    state.
+  - **Same in every mode.** Identical text, count, anchors, and position in
+    the structured and `human_review_output` renderings, in clean, findings,
+    fallback, and self-review bodies, and in every publication mode — a
+    delivery surface changes only how the section is carried, never what it
+    says.
 
 ## Concise human-style summary (opt-in)
 
@@ -207,6 +254,14 @@ this section states only the summary's own shape:
 - an apparently intentional trade-off may be raised as a question
   ("was returning `null` to the caller here deliberate?") rather than
   asserted as a defect.
+- **reasoning check** — when the checkpoint activated, its same 1–4
+  questions close the summary, after the decision, as a short
+  senior-voice lead-in sentence followed by the questions in prose (or a
+  short list). Count, anchors, and provenance tags are identical to the
+  structured form; only the voice differs, per
+  [`finding-rendering.md`](finding-rendering.md), "Senior voice contract".
+  Omit it entirely when the checkpoint was inert. `human_inline_findings` is
+  irrelevant: the section has no inline form.
 
 It **excludes** internal review-process language and investigation
 metadata entirely — review mode, base/head SHAs, file or finding counts,
@@ -314,7 +369,7 @@ or other automation state) is never part of the primary human-facing body
 above. Where publishing it is genuinely useful to a
 caller or automation, append it after the human-facing body, clearly
 subordinate — always last, always visually secondary to the Result →
-... → Decision body above it.
+... → Decision (→ Reasoning check, when active) body above it.
 
 The **one exception to consumer-gating** below is the trio of always-on
 process classifications: the change-risk depth per

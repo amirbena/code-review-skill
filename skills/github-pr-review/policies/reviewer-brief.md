@@ -82,6 +82,12 @@ ever happens.
   genuinely remains; omit the field entirely when there is nothing
   useful to say, never render it as an empty or placeholder line.
 
+A question rendered in the public `Reasoning check` section (per the
+shared
+[`reasoning-checkpoint.md`](../../../shared/policies/reasoning-checkpoint.md))
+is never repeated in this brief, and this brief's `Open questions /
+assumptions` field never substitutes for that public section.
+
 Keep it compact — a handoff, not a second report. Do not duplicate full
 finding evidence/impact/fix blocks, and do not introduce `P0`/`P1`/`P2`
 labels in this section unless referring to an actual finalized finding
