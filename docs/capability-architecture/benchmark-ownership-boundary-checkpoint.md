@@ -18,7 +18,8 @@ selector, and does not open the relocation issue itself.
 > "rather than any new topology") is superseded by the root `benchmark/`
 > topology recorded in
 > [`benchmark-root-ownership-decision.md`](benchmark-root-ownership-decision.md).
-> The per-capability corpus split is deferred, not blocked. The rest of this
+> The per-capability corpus split is deferred, not blocked, and §7 item 3
+> (README and research records) now resolves to `benchmark/`. The rest of this
 > record, including the "infrastructure, not `docs/`" boundary in §3, stands.
 
 Like the rest of [`./`](README.md), this is a repository-development doc:

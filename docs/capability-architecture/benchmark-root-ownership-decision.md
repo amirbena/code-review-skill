@@ -84,8 +84,10 @@ those bytes. It is therefore **operational, executable benchmark content**:
 
 - it is not generic documentation and does not stay under `docs/`;
 - it is not a contract doc, so it does not move to `runtime_platform/benchmark/`;
-- it moves with `benchmark/`, byte-for-byte, with the routine prompt block
-  unchanged so `spec_sha256` stays stable.
+- it moves with `benchmark/`, with the §9 routine prompt block bytes
+  unchanged so `spec_sha256` stays stable. `spec_sha256` hashes only that
+  block and the manifest, so the rest of the file may have its relative
+  links rewritten by the move.
 
 The other four remaining files are reference/example material and are not
 read by harness code. The README claim is corrected by the child that
