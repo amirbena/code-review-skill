@@ -136,10 +136,12 @@ Evaluated from the expected `defect_kind` / `claim` against the produced
 **UNRELATED**.
 
 1. **`defect_kind` decides when both sides have one.** Equal slugs →
-   **CORRESPONDS**. Different slugs → **UNRELATED** — a distinct defect
-   class, even at the same line, is a different finding. A missing
-   `defect_kind` on either side is not a wildcard; fall through to the
-   claim comparison. **Production status (issue #355, following up on the
+   **CORRESPONDS**. Different slugs are compared by the compatibility
+   rule below; slugs that are not compatible → **UNRELATED** — a distinct
+   defect class, even at the same line, is a different finding. A
+   missing `defect_kind` on either side is not a wildcard; fall through
+   to the claim comparison. **Production status (issue #355, following
+   up on the
    [claim-correspondence-adequacy.md](claim-correspondence-adequacy.md)
    research record):** this branch is now genuinely exercised in
    production, not only designed-for. `shared/templates/finding.md`
@@ -158,6 +160,30 @@ Evaluated from the expected `defect_kind` / `claim` against the produced
    record's §9. The free-text claim comparison (rule 2) remains the
    fallback it was always designed to be, for a finding that renders no
    `defect_kind`.
+
+   **Compatible free-form slugs (issue #570).** The slug set is a naming
+   convention, not a closed vocabulary (`finding.md`, "Defect
+   classification"), so two independently chosen slugs for the same
+   defect can differ (`duplicated-logic` vs `duplicated-branch-logic`).
+   Two different slugs are **compatible** when their kebab-case token
+   sets are in a subset relation — one slug is the other plus extra
+   qualifier tokens — and the smaller slug has **at least two tokens**
+   (a one-word slug such as `injection` is never compatible with
+   anything but itself). Compatible slugs never decide alone:
+   - the two `claim`s **support** each other — both non-empty and the
+     content tokens they share (the §4.2 normalization) are **≥ 0.5** of
+     the smaller claim's content-token count → **CORRESPONDS**;
+   - otherwise (weak or missing claim on either side) → **RELATED**,
+     which §5 turns into `NEAR_MISS` at an `EXACT` location, never a
+     `MATCH`.
+
+   The support measure is deliberately overlap over the *smaller* claim,
+   not Jaccard: a reviewer's evidenced claim is much longer than a
+   fixture's one-sentence claim, and Jaccard scored the same-defect pair
+   in row 7 at 0.16. Slugs that are not compatible (`sql-injection` vs
+   `command-injection`, `path-traversal` vs `missing-input-validation`)
+   stay **UNRELATED** whatever the claims say; no synonym table, fixture
+   id, or slug is special-cased.
 2. **`claim` comparison** uses the `behavioral_claim` shape of
    [`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md)
    §2: a cause → faulty-behavior sentence. Each claim is reduced to a
@@ -172,7 +198,8 @@ Evaluated from the expected `defect_kind` / `claim` against the produced
    - Otherwise, or when a produced finding carries no assessable
      `defect_kind` *and* no `claim` → **UNRELATED**.
 3. The two thresholds (0.5, 0.25) are fixed by this document and never
-   tuned per run. No free-text or model judgement enters the decision: an
+   tuned per run; so are the compatible-slug constants of rule 1 (two
+   tokens, 0.5 claim support). No free-text or model judgement enters the decision: an
    LLM may *explain* a borderline pair for a human reading the benchmark
    report, but its opinion is never sufficient for a `CORRESPONDS`.
 
@@ -237,8 +264,9 @@ sub-spec or `any_of` member, and whether the entry was `required`.
   on the other axis's result.
 - **No scores.** There is no weighted confidence total and no verdict
   that changes between runs. The only tolerances are the fixed ± 3-line
-  proximity window (§3) and the two fixed claim-overlap thresholds
-  (0.5 / 0.25, §4) — all three stated in this document, none tunable, and
+  proximity window (§3), the two fixed claim-overlap thresholds
+  (0.5 / 0.25, §4), and the two compatible-slug constants (§4.1) —
+  all stated in this document, none tunable, and
   the token overlap is exact rational arithmetic, not a
   platform-dependent float.
 - **Ties resolve deterministically.** When several produced findings tie
@@ -254,7 +282,7 @@ sub-spec or `any_of` member, and whether the entry was `required`.
 ## 8. Worked examples
 
 Each row compares **one** produced finding to **one** expected spec. All
-six are encoded verbatim as data-driven cases in
+eight are encoded verbatim as data-driven cases in
 [`../../tests/unit/benchmark/test_benchmark_match.py`](../../tests/unit/benchmark/test_benchmark_match.py);
 two readers applying §3–§6 must reach the `Result` column for every row.
 
@@ -266,6 +294,8 @@ two readers applying §3–§6 must reach the `Result` column for every row.
 | 4 | as #1 | `auth/login.py`, symbol `build_login_command`; —; `command-injection` | NEAR — same path, different symbol, no rename | CORRESPONDS | **`NEAR_MISS`** |
 | 5 | `report/export.py` line 88; "user controlled export path escapes the export directory path traversal"; `path-traversal` | `report/export.py` line 88; "export path argument is not validated"; `missing-input-validation` | EXACT | UNRELATED — contradictory `defect_kind` slugs | **`NO_MATCH`** |
 | 6 | `pagination.py` line 15; "slice end off by one page repeats one row from the next page"; *(no `defect_kind`)* | `pagination.py` line 15; "off by one in pagination page bounds"; *(no `defect_kind`)* | EXACT | RELATED — token overlap ≥ 0.25 and < 0.5 | **`NEAR_MISS`** |
+| 7 | `app/notify.py` line 5; "the sms branch repeats msg = format_message(user) verbatim from the email branch instead of computing msg once before the dispatch"; `duplicated-logic` | `app/notify.py` line 6; the reviewer's long evidenced claim about the same duplicated `format_message(user)`; `duplicated-branch-logic` | EXACT | CORRESPONDS — compatible slugs (`duplicated-logic` ⊂ `duplicated-branch-logic`), claim support ≥ 0.5 | **`MATCH`** |
+| 8 | as #7 | `app/notify.py` line 5; "rate limiter uses a wall clock so dst shifts skew windows"; `duplicated-branch-logic` | EXACT | RELATED — compatible slugs, no claim support | **`NEAR_MISS`** |
 
 **Row 5, entry outcome.** The fixture author encodes "either
 `path-traversal` or `missing-input-validation` is a correct read of this
@@ -287,6 +317,39 @@ the **entry outcome** is `MATCH`.
 | Capturing produced findings; the per-case result shape | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
 | The P0/P1/P2 definitions | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
 | The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
+
+## 10. Contract revisions and metric comparability
+
+The match relation feeds the #55/#56/#57 metrics, so a change to it is a
+**measurement-definition change**, recorded here rather than inferred from
+a diff.
+
+- **Issue [#570](https://github.com/amirbena/code-review-skill/issues/570)
+  — compatible free-form slugs (§4.1).** Before: any two different
+  non-empty `defect_kind` slugs were `UNRELATED`. After: slugs whose
+  token sets are in a subset relation (smaller slug ≥ 2 tokens) are
+  `CORRESPONDS` when the claims support each other and `RELATED`
+  otherwise; every other differing pair is still `UNRELATED`. Equal
+  slugs, missing slugs, and the claim fallback are unchanged. Found
+  when a scheduled sentinel run scored a correct `duplicated-branch-logic`
+  finding against an expected `duplicated-logic` as one false positive
+  plus one miss (#570 and its derived report #571).
+- **Direction of the change.** Only pairs that were `NO_MATCH` because of
+  a slug difference alone can change, and only toward `NEAR_MISS` or
+  `MATCH`. No previously matched pair changes; identical produced output
+  therefore never scores worse than before.
+- **Historical records are not reinterpreted.** Sealed records store each
+  case's metrics verbatim and are never recomputed
+  ([`nightly-history-and-baseline.md`](nightly-history-and-baseline.md)),
+  so a record sealed before #570 keeps its pre-#570 numbers. The existing
+  comparability mechanism (`fixture_digest`) keys on fixture content and
+  does not observe matcher revisions, and this revision does not extend
+  the sealed `benchmark-result/v1` schema. Consequence: a candidate run
+  scored under this revision may be compared with a baseline scored
+  before it. That comparison can hide, at most, a regression whose only
+  visible symptom is a differing-but-compatible slug for the same defect;
+  it cannot manufacture drift. A baseline is not re-promoted for this
+  change; it is replaced by the normal baseline lifecycle.
 
 ## Status and canonical home
 

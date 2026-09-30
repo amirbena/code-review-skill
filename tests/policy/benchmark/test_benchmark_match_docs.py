@@ -67,6 +67,14 @@ class MatchCriteriaContractTests(unittest.TestCase):
         self.assertIn("thresholds (0.5, 0.25) are fixed by this document", self.text)
         self.assertIn("never sufficient for a `CORRESPONDS`", self.text)
 
+    def test_compatible_slug_rule_and_revision_boundary_are_documented(self) -> None:
+        self.assertIn("**Compatible free-form slugs (issue #570).**", self.text)
+        self.assertIn("at least two tokens", self.text)
+        self.assertIn("never a `MATCH`", self.text)
+        self.assertIn("## 10. Contract revisions and metric comparability", self.raw)
+        self.assertIn("Historical records are not reinterpreted.", self.text)
+        self.assertIn("does not extend the sealed `benchmark-result/v1` schema", self.text)
+
     def test_combination_table_is_present(self) -> None:
         self.assertIn("## 5. Combining the axes", self.raw)
         self.assertIn("| Location \\ Defect | CORRESPONDS | RELATED | UNRELATED |", self.raw)

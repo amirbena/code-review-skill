@@ -24,8 +24,11 @@ from __future__ import annotations
 
 import unittest
 
+import yaml
+
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from runtime_platform.benchmark.reference import benchmark_match as bm
+from runtime_platform.benchmark.reference import benchmark_metrics as bmx
 from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.support.paths import REPO_ROOT
 
@@ -100,6 +103,23 @@ def _prod(
 
 _CMD_CLAIM = "unsanitized name reaches a shell true command injection"
 
+_DUP_CLAIM = (
+    "the sms branch repeats msg = format_message(user) verbatim from the "
+    "email branch instead of computing msg once before the dispatch."
+)
+# The verbose claim a real reviewer run recorded for the same defect
+# (scheduled run sentinel-20260929T220530Z-70e519b7d76c, Issue #570).
+_DUP_PRODUCED_CLAIM = (
+    "`sms` branch duplicates the `email` branch's message-formatting logic the "
+    "new `elif kind == \"sms\":` branch repeats `msg = format_message(user)` from "
+    "the `email` branch at lines 3-4. The two branches differ only in the send "
+    "function and the contact field (`send_email(user.email, \u2026)` vs "
+    "`send_sms(user.phone, \u2026)`). each additional channel copies the same "
+    "formatting step, so a change to how the message is built has to be made in "
+    "every branch and can drift between them. Consistency and maintainability "
+    "suffer. This is not a correctness defect today."
+)
+
 WORKED_EXAMPLES = [
     (
         "1 exact match",
@@ -148,6 +168,23 @@ WORKED_EXAMPLES = [
              claim="slice end off by one page repeats one row from the next page"),
         _prod(path="pagination.py", line=15,
               claim="off by one in pagination page bounds"),
+        bm.MatchResult.NEAR_MISS,
+    ),
+    (
+        "7 compatible defect_kind slugs, claims support each other",
+        _exp(path="app/notify.py", lines=(5, 5),
+             claim=_DUP_CLAIM, defect_kind="duplicated-logic"),
+        _prod(path="app/notify.py", line=6,
+              claim=_DUP_PRODUCED_CLAIM, defect_kind="duplicated-branch-logic"),
+        bm.MatchResult.MATCH,
+    ),
+    (
+        "8 compatible defect_kind slugs, claims do not support each other",
+        _exp(path="app/notify.py", lines=(5, 5),
+             claim=_DUP_CLAIM, defect_kind="duplicated-logic"),
+        _prod(path="app/notify.py", line=5,
+              claim="rate limiter uses a wall clock so dst shifts skew windows",
+              defect_kind="duplicated-branch-logic"),
         bm.MatchResult.NEAR_MISS,
     ),
 ]
@@ -278,6 +315,66 @@ class DefectAxisTests(unittest.TestCase):
             bm.DefectMatch.UNRELATED,
         )
 
+    def _defect(self, exp_kind, prod_kind, exp_claim, prod_claim):
+        return bm.defect_match(
+            bm.Descriptor.from_expected(_exp(defect_kind=exp_kind, claim=exp_claim)),
+            bm.Descriptor.from_produced(_prod(defect_kind=prod_kind, claim=prod_claim)),
+        )
+
+    def test_compatible_slug_with_supporting_claim_corresponds(self) -> None:
+        self.assertEqual(
+            self._defect("duplicated-logic", "duplicated-branch-logic", _DUP_CLAIM, _DUP_PRODUCED_CLAIM),
+            bm.DefectMatch.CORRESPONDS,
+        )
+        # symmetric in which side carries the longer slug
+        self.assertEqual(
+            self._defect("duplicated-branch-logic", "duplicated-logic", _DUP_CLAIM, _DUP_PRODUCED_CLAIM),
+            bm.DefectMatch.CORRESPONDS,
+        )
+
+    def test_compatible_slug_without_claim_support_is_only_related(self) -> None:
+        for claim in ("rate limiter uses a wall clock so dst shifts skew windows", None):
+            with self.subTest(claim=claim):
+                self.assertEqual(
+                    self._defect("duplicated-logic", "duplicated-branch-logic", _DUP_CLAIM, claim),
+                    bm.DefectMatch.RELATED,
+                )
+
+    def test_single_token_slug_is_never_compatible(self) -> None:
+        self.assertEqual(
+            self._defect("injection", "sql-injection", _DUP_CLAIM, _DUP_CLAIM),
+            bm.DefectMatch.UNRELATED,
+        )
+
+    def test_disjoint_or_partially_overlapping_slugs_stay_unrelated_even_with_identical_claims(self) -> None:
+        for a, b in (
+            ("sql-injection", "command-injection"),
+            ("path-traversal", "missing-input-validation"),
+            ("missing-security-test", "missing-migration-test"),
+        ):
+            with self.subTest(pair=(a, b)):
+                self.assertEqual(self._defect(a, b, _DUP_CLAIM, _DUP_CLAIM), bm.DefectMatch.UNRELATED)
+
+    def test_equal_defect_kind_ignores_claim_wording(self) -> None:
+        self.assertEqual(
+            self._defect("duplicated-logic", "duplicated-logic", _DUP_CLAIM, "unrelated wording entirely"),
+            bm.DefectMatch.CORRESPONDS,
+        )
+
+    def test_same_location_different_defect_is_no_match(self) -> None:
+        outcome = bm.match_pair(
+            _exp(path="app/notify.py", lines=(5, 5), claim=_DUP_CLAIM, defect_kind="duplicated-logic"),
+            _prod(path="app/notify.py", line=5, claim=_DUP_CLAIM, defect_kind="missing-input-validation"),
+        )
+        self.assertEqual((outcome.location, outcome.result), (bm.LocationMatch.EXACT, bm.MatchResult.NO_MATCH))
+
+    def test_compatible_slug_at_the_wrong_location_is_no_match(self) -> None:
+        outcome = bm.match_pair(
+            _exp(path="app/notify.py", lines=(5, 5), claim=_DUP_CLAIM, defect_kind="duplicated-logic"),
+            _prod(path="app/other.py", line=5, claim=_DUP_PRODUCED_CLAIM, defect_kind="duplicated-branch-logic"),
+        )
+        self.assertEqual(outcome.result, bm.MatchResult.NO_MATCH)
+
     def test_claim_subset_corresponds_when_no_defect_kind(self) -> None:
         self.assertEqual(
             bm.defect_match(
@@ -307,6 +404,56 @@ class DefectAxisTests(unittest.TestCase):
             ),
             bm.DefectMatch.UNRELATED,
         )
+
+
+class DuplicatedBranchLogicRegressionTests(unittest.TestCase):
+    """Issue #570: the recorded candidate finding no longer scores FP+FN
+    solely because its free-form slug differs from the fixture's."""
+
+    _POST_IMAGE = (
+        "def notify(user, kind):\n"
+        '    if kind == "email":\n'
+        "        msg = format_message(user)\n"
+        "        send_email(user.email, msg)\n"
+        '    elif kind == "sms":\n'
+        "        msg = format_message(user)\n"
+        "        send_sms(user.phone, msg)\n"
+        "    else:\n"
+        "        raise ValueError(kind)\n"
+    )
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        path = REPO_ROOT / "docs" / "benchmark" / "corpus" / "quality-duplicated-branch-logic.yaml"
+        cls.case = bf.parse_case(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+    def _metrics(self, defect_kind: str, claim: str = _DUP_PRODUCED_CLAIM):
+        finding = br.ProducedFinding(
+            severity="P2",
+            location={"path": "app/notify.py", "lines": {"start": 5, "end": 7}},
+            claim=claim,
+            extra={"defect_kind": defect_kind},
+        )
+        result = br.CaseResult(
+            id=self.case.id, input_kind="patch", status="executed", produced_findings=(finding,)
+        )
+        return bmx.compute_case_metrics(self.case, result, post_image=self._POST_IMAGE)
+
+    def test_recorded_slug_variant_is_a_clean_match(self) -> None:
+        m = self._metrics("duplicated-branch-logic")
+        self.assertEqual((m.false_negatives, m.false_positives, m.near_misses), (0, 0, 0))
+
+    def test_exact_slug_is_unchanged(self) -> None:
+        m = self._metrics("duplicated-logic")
+        self.assertEqual((m.false_negatives, m.false_positives, m.near_misses), (0, 0, 0))
+
+    def test_unrelated_slug_remains_a_miss_and_a_false_positive(self) -> None:
+        m = self._metrics("null-dereference")
+        self.assertEqual((m.false_negatives, m.false_positives), (1, 1))
+
+    def test_compatible_slug_with_unrelated_claim_is_not_a_match(self) -> None:
+        m = self._metrics("duplicated-branch-logic", claim="rate limiter uses a wall clock so dst shifts skew windows")
+        self.assertEqual((m.false_negatives, m.near_misses), (1, 1))
 
 
 class EntryResolutionTests(unittest.TestCase):
