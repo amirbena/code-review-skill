@@ -58,8 +58,9 @@ It stays **inert** for formatting, renames, dependency bumps, test-only or
 doc-only changes, mechanical refactors, and any change whose only possible
 question would be generic ("did you test this?"). It is also inert when the
 review is `REVIEW INCOMPLETE` — that outcome already says the review is not
-to be trusted — and a bare `fix:` commit prefix or bug-shaped branch name
-is not a signal on its own.
+to be trusted — or when a supplied Jira reference could not be resolved
+(`JIRA CONTEXT UNRESOLVED`, an ungraded report). A bare `fix:` commit
+prefix or bug-shaped branch name is not a signal on its own.
 
 ## Examples
 
