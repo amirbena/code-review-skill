@@ -868,6 +868,11 @@ that makes a later split possible.**
 
 ### E.2 Recommended topology — one repository
 
+> **Amended by [#578](https://github.com/amirbena/code-review-skill/issues/578):**
+> the corpus now lands in a root `benchmark/` (see
+> [`benchmark-root-ownership-decision.md`](benchmark-root-ownership-decision.md)),
+> not `capabilities/<name>/corpus/`; the per-capability split below is deferred.
+
 ```text
 code-review-skill/                       (unchanged repository, restructured internals)
 │
@@ -1272,6 +1277,11 @@ the repository's real boundaries rather than an imposed taxonomy.
 ---
 
 ## H. Benchmark architecture
+
+> **Amended by [#578](https://github.com/amirbena/code-review-skill/issues/578):**
+> the corpus now lands in a root `benchmark/` (see
+> [`benchmark-root-ownership-decision.md`](benchmark-root-ownership-decision.md)),
+> not `capabilities/<name>/corpus/`; the per-capability split in this section is deferred.
 
 ### H.1 The corpus is already capability-shaped
 
