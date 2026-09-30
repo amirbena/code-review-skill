@@ -17,6 +17,10 @@ normative rules live in the packaged shared policy and template it names.
 | --- | --- | --- |
 | [`reasoning-checkpoint-contract.md`](reasoning-checkpoint-contract.md) | Activation, the `Reasoning check` section (shape, bounds, placement), question derivation and the anchor rule, the Problem Context Contract and its five epistemic classes, the bug-investigation evidence boundary, readiness language, interactions with every output mode, non-effects, benchmark representability, canonical homes, and scope for the children. | [#565](https://github.com/amirbena/code-review-skill/issues/565) (Epic [#564](https://github.com/amirbena/code-review-skill/issues/564)) |
 
+The delivered behavior is proven by the test-only corpus in
+[`../benchmark/corpus/reasoning-checkpoint/README.md`](../benchmark/corpus/reasoning-checkpoint/README.md)
+([#567](https://github.com/amirbena/code-review-skill/issues/567)).
+
 Implementation, benchmark, and documentation follow in
 [#566](https://github.com/amirbena/code-review-skill/issues/566),
 [#567](https://github.com/amirbena/code-review-skill/issues/567), and

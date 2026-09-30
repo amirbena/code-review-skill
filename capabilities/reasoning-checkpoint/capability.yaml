@@ -18,4 +18,4 @@ never:
   - changing a finding, severity, coverage, or the mechanical Decision
   - rendering a question as an inline comment or as a finding
   - claiming access to, or contents of, a runtime system the review did not read
-benchmark: docs/reasoning-checkpoint/reasoning-checkpoint-contract.md
+benchmark: docs/benchmark/corpus/reasoning-checkpoint
