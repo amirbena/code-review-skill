@@ -13,6 +13,15 @@ ownership boundary and the scheduling decision only. It does not move a
 file, does not rewrite corpus content, does not redesign the taxonomy or
 selector, and does not open the relocation issue itself.
 
+> **Amended by [#578](https://github.com/amirbena/code-review-skill/issues/578).**
+> The corpus-ownership direction in §4 and §7 (`capabilities/<name>/corpus/`,
+> "rather than any new topology") is superseded by the root `benchmark/`
+> topology recorded in
+> [`benchmark-root-ownership-decision.md`](benchmark-root-ownership-decision.md).
+> The per-capability corpus split is deferred, not blocked, and §7 item 3
+> (README and research records) now resolves to `benchmark/`. The rest of this
+> record, including the "infrastructure, not `docs/`" boundary in §3, stands.
+
 Like the rest of [`./`](README.md), this is a repository-development doc:
 **not** packaged into either Skill archive, and no packaged Skill resource
 depends on it. It applies
