@@ -127,15 +127,16 @@ SEVERITY_LEGEND = {
 # annotations in the runbook, a new section 1 input/section 2 conditional
 # policy load in SKILL.md, and a new "Multi-repository Review Target"
 # cross-reference section in repository-state.md) -- also deliberate and
-# unrelated to #223. LOCAL_REPORT and LOCAL_RUNBOOK were re-captured again
+# unrelated to #223. LOCAL_REPORT, LOCAL_RUNBOOK, and LOCAL_SKILL were re-captured again
 # after Issue #566 (epic #564: the optional human reasoning checkpoint -- a
 # conditional `Reasoning check` section after Decision in the report template,
-# and a runbook step-12 pointer to the shared reasoning-checkpoint.md) --
+# a runbook step-12 pointer and flow-diagram line, and a SKILL.md output-contract
+# pointer to the shared reasoning-checkpoint.md) --
 # also deliberate and unrelated to #223.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "a39b755ffa21d2c1fa67f8692ce1a46905983779",
-    LOCAL_RUNBOOK: "df5eafc63c48058c1dd6f2030197c2b508bc74f8",
-    LOCAL_SKILL: "b839c96e98624800c26a831b6cae76713a3cb18c",
+    LOCAL_RUNBOOK: "deb7d65646ac17d0e4049828a2b078314096c2e0",
+    LOCAL_SKILL: "eaf79d0d35eb81108e27683d171da37b2a772645",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",

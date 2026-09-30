@@ -137,6 +137,9 @@ coverage complete? → yes → derive decision mechanically by tallying
                     → no  → render the incomplete/ungraded outcome instead,
                               never a clean/approved result
     ↓
+evaluate the reasoning-checkpoint activation (after findings and decision
+are final; renders a Reasoning check section only when it activates)
+    ↓
 check verdict consistency: derived decision vs. the REVIEW CLEAN/
 CHANGES REQUIRED/REVIEW INCOMPLETE signal about to be rendered —
 mismatch → withhold and report, never render the report
