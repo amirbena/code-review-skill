@@ -38,9 +38,12 @@ CLAIM_CORRESPONDS_SIM = Fraction(1, 2)
 CLAIM_RELATED_SIM = Fraction(1, 4)
 # Differing-`defect_kind` compatibility (match-criteria.md §4.1): the smaller
 # slug must name at least this many tokens, and the claims must share at
-# least this fraction of the smaller claim's content tokens.
+# least this fraction of the smaller claim's content tokens, and at least
+# SLUG_CLAIM_MIN_SHARED of them in absolute terms (a tiny claim cannot pass
+# on one shared word).
 SLUG_MIN_TOKENS = 2
 SLUG_CLAIM_SUPPORT = Fraction(1, 2)
+SLUG_CLAIM_MIN_SHARED = 2
 
 _STOPWORDS = frozenset(
     {"the", "and", "that", "this", "from", "with", "into", "for", "not", "are", "was", "its", "has"}
@@ -250,7 +253,8 @@ def _claims_support(expected_claim: str | None, produced_claim: str | None) -> b
     e, p = _claim_tokens(expected_claim), _claim_tokens(produced_claim)
     if not e or not p:
         return False
-    return Fraction(len(e & p), min(len(e), len(p))) >= SLUG_CLAIM_SUPPORT
+    shared = len(e & p)
+    return shared >= SLUG_CLAIM_MIN_SHARED and Fraction(shared, min(len(e), len(p))) >= SLUG_CLAIM_SUPPORT
 
 
 def defect_match(expected: Descriptor, produced: Descriptor) -> DefectMatch:

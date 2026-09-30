@@ -70,6 +70,8 @@ class MatchCriteriaContractTests(unittest.TestCase):
     def test_compatible_slug_rule_and_revision_boundary_are_documented(self) -> None:
         self.assertIn("**Compatible free-form slugs (issue #570).**", self.text)
         self.assertIn("at least two tokens", self.text)
+        self.assertIn("at least two** and are **≥ 0.5**", self.text)
+        self.assertIn("pairing is greedy in fixture order", self.text)
         self.assertIn("never a `MATCH`", self.text)
         self.assertIn("## 10. Contract revisions and metric comparability", self.raw)
         self.assertIn("Historical records are not reinterpreted.", self.text)

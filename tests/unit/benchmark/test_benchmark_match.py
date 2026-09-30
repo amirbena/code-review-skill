@@ -340,6 +340,17 @@ class DefectAxisTests(unittest.TestCase):
                     bm.DefectMatch.RELATED,
                 )
 
+    def test_a_tiny_claim_cannot_support_on_one_shared_word(self) -> None:
+        # 1 of 2 tokens shared is 0.5 of the smaller claim, but only one word.
+        self.assertEqual(
+            self._defect("duplicated-logic", "duplicated-branch-logic", _DUP_CLAIM, "sms branch"),
+            bm.DefectMatch.CORRESPONDS,  # two shared tokens: allowed
+        )
+        self.assertEqual(
+            self._defect("duplicated-logic", "duplicated-branch-logic", _DUP_CLAIM, "sms wallclock"),
+            bm.DefectMatch.RELATED,
+        )
+
     def test_single_token_slug_is_never_compatible(self) -> None:
         self.assertEqual(
             self._defect("injection", "sql-injection", _DUP_CLAIM, _DUP_CLAIM),

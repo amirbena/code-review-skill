@@ -171,8 +171,9 @@ Evaluated from the expected `defect_kind` / `claim` against the produced
    (a one-word slug such as `injection` is never compatible with
    anything but itself). Compatible slugs never decide alone:
    - the two `claim`s **support** each other — both non-empty and the
-     content tokens they share (the §4.2 normalization) are **≥ 0.5** of
-     the smaller claim's content-token count → **CORRESPONDS**;
+     content tokens they share (the §4.2 normalization) number **at
+     least two** and are **≥ 0.5** of the smaller claim's content-token
+     count → **CORRESPONDS**;
    - otherwise (weak or missing claim on either side) → **RELATED**,
      which §5 turns into `NEAR_MISS` at an `EXACT` location, never a
      `MATCH`.
@@ -199,7 +200,7 @@ Evaluated from the expected `defect_kind` / `claim` against the produced
      `defect_kind` *and* no `claim` → **UNRELATED**.
 3. The two thresholds (0.5, 0.25) are fixed by this document and never
    tuned per run; so are the compatible-slug constants of rule 1 (two
-   tokens, 0.5 claim support). No free-text or model judgement enters the decision: an
+   slug tokens, 0.5 claim support, two shared claim tokens). No free-text or model judgement enters the decision: an
    LLM may *explain* a borderline pair for a human reading the benchmark
    report, but its opinion is never sufficient for a `CORRESPONDS`.
 
@@ -334,10 +335,14 @@ a diff.
   when a scheduled sentinel run scored a correct `duplicated-branch-logic`
   finding against an expected `duplicated-logic` as one false positive
   plus one miss (#570 and its derived report #571).
-- **Direction of the change.** Only pairs that were `NO_MATCH` because of
-  a slug difference alone can change, and only toward `NEAR_MISS` or
-  `MATCH`. No previously matched pair changes; identical produced output
-  therefore never scores worse than before.
+- **Direction of the change.** Pairwise, only pairs that were `NO_MATCH`
+  because of a slug difference alone can change, and only toward
+  `NEAR_MISS` or `MATCH`; no previously matched pair changes. Case-level
+  counts can still shift in one situation: pairing is greedy in fixture
+  order ([`missed-and-incorrect-findings.md`](missed-and-incorrect-findings.md)
+  §2), so if one case lists two entries with compatible slugs, an earlier
+  entry may newly consume a produced finding that a later entry used to
+  match by equal slug. No current corpus case lists such a pair.
 - **Historical records are not reinterpreted.** Sealed records store each
   case's metrics verbatim and are never recomputed
   ([`nightly-history-and-baseline.md`](nightly-history-and-baseline.md)),
