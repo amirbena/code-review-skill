@@ -493,6 +493,16 @@ and no packaged Skill resource depends on them.
   field — its cross-links into
   [`shared/policies/review-scope.md`](../shared/policies/review-scope.md),
   `evidence.md`, and `severity.md` are its only packaged touch-points.
+- **Human reasoning checkpoint** — an optional, evidence-anchored
+  `Reasoning check` (1–4 questions to the engineer) rendered after the
+  Decision; contract-first design record
+  [`reasoning-checkpoint/README.md`](reasoning-checkpoint/README.md) (#565),
+  implemented once in
+  [`reasoning-checkpoint.md`](../shared/policies/reasoning-checkpoint.md)
+  (activation, anchoring, provenance, readiness language, non-effects), with
+  section placement in
+  [`review-summary.md`](../shared/templates/review-summary.md) and rendered by
+  both delivery templates (#566). It is not a finding and changes no Decision.
 - **Cross-review finding-identity contracts** — the requirements
   ([`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md),
   #58), the precision-first matching strategy

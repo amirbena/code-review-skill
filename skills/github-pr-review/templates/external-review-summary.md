@@ -276,6 +276,52 @@ authorization and is never a route to any of them — see
 [`../policies/review-authority.md`](../policies/review-authority.md),
 "Self-review capability."
 
+## Reasoning check (conditional)
+
+When the shared
+[`reasoning-checkpoint.md`](../../../shared/policies/reasoning-checkpoint.md)
+activates, the review body gains the shared `### Reasoning check` section
+exactly as
+[`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+"Reasoning check" shapes it — 1–4 numbered questions, placed **after the
+`Decision` block (and after a self-review's closing disclosure line) and
+before the subordinate metadata block**. It is **always in the review body,
+never an inline comment**, whatever the publication mode; an inline
+surface being present changes nothing. The `## Review Summary` heading is
+unchanged.
+
+```markdown
+## Review Summary
+
+**Result: ✅ REVIEW CLEAN**
+
+No blocking issue found in the change as reviewed; whether it resolves the
+reported problem depends on evidence not established here — see Reasoning
+check.
+
+### Decision
+**APPROVE**
+
+### Reasoning check
+Questions for you — not findings; they do not change the decision.
+1. <question anchored to evidence the review already holds, with its
+   provenance tag where it mentions an evidence item>
+2. <question>
+```
+
+The same section, same text, and same position render in every case above
+— clean, findings (the questions never restate a finding or its pointer
+line), fallback body findings, the self-review informational `COMMENT`
+(after the closing disclosure line), and the `human_review_output` body
+(where the questions close the summary as short senior-voice prose, with
+identical count, anchors, and provenance) — and in every publication mode
+(passive, semi, active, and withheld approval). With the checkpoint
+inactive the section is omitted completely: no heading, no placeholder.
+It is published exactly once, as part of the one batched review, and is
+never a separate comment, status, or check. It has no severity, ID, or
+blocking meaning and changes no finding, decision, or GitHub review
+state.
+
 ## Stacked-PR context
 
 Per [`../policies/review-output.md`](../policies/review-output.md),
@@ -492,6 +538,14 @@ are owned by the linked policies and are not restated here.
   identically under `human_review_output`. Canonical:
   [`../policies/review-output.md`](../policies/review-output.md), "Stable
   review-body heading".
+- **Reasoning check.** Optional and conditional; rendered in the body only
+  (never inline), after `Decision` and before the subordinate metadata
+  block, identically in every body form and publication mode, and omitted
+  completely when inactive. Semantics — activation, anchoring,
+  provenance, readiness language, non-effects — are owned by
+  [`../../../shared/policies/reasoning-checkpoint.md`](../../../shared/policies/reasoning-checkpoint.md)
+  and are not restated here; the private Reviewer Brief never repeats a
+  question rendered here.
 - **Severity legend.** Every finding heading shows the bare severity code
   by default; when `include_severity_description` is on, it shows the
   code with its compact canonical parenthetical (`P0 (Critical)` /

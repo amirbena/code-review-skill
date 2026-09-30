@@ -627,7 +627,15 @@ stop
     canonical fix/action anchors, `#164` / `#165` inline→body fallback,
     and decision; only the inline wording differs. An explicit
     `human_inline_findings=false` keeps the structured
-    `[<severity>] / Evidence / Impact / Fix` inline block. Do not submit
+    `[<severity>] / Evidence / Impact / Fix` inline block. **Evaluate the
+    shared
+    [`reasoning-checkpoint.md`](../../../shared/policies/reasoning-checkpoint.md)
+    activation once, after findings and the decision are final;** when it
+    activates, the body carries its `Reasoning check` section after
+    `Decision` per
+    [`../templates/external-review-summary.md`](../templates/external-review-summary.md),
+    "Reasoning check (conditional)" — body only, never an inline comment,
+    no effect on the decision or review event. Do not submit
     anything yet.
 13a. **Compose the private Reviewer Brief** per
     [`../policies/reviewer-brief.md`](../policies/reviewer-brief.md), from
