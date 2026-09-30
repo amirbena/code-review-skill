@@ -502,7 +502,9 @@ and no packaged Skill resource depends on them.
   (activation, anchoring, provenance, readiness language, non-effects), with
   section placement in
   [`review-summary.md`](../shared/templates/review-summary.md) and rendered by
-  both delivery templates (#566). It is not a finding and changes no Decision.
+  both delivery templates (#566); user-facing explanation in the
+  [feature guide](features/reasoning-checkpoint.md). It is not a finding and
+  changes no Decision.
 - **Cross-review finding-identity contracts** — the requirements
   ([`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md),
   #58), the precision-first matching strategy
