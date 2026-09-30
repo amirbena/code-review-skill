@@ -613,6 +613,24 @@ counts as a finding, its evidence label, or its severity — it only states
 plainly whether the review that produced those findings actually finished,
 and ensures an unfinished review is never mistaken for a clean one.
 
+## Human reasoning checkpoint
+
+After findings and the Decision are final, a review evaluates once whether
+it holds evidence that makes a short set of questions to the engineer
+*specific* — a bug-fix/regression/incident/behavior-correction whose
+root-cause claim rests on evidence the reviewer did not establish, or an
+architectural-placement result that reached beyond the changed method. When
+it does, the human-facing report ends with a `Reasoning check` section; when
+it does not, nothing is rendered. Activation, the anchor rule, the
+access/provenance boundary, the readiness-language rule, and the explicit
+non-effects are owned by [`reasoning-checkpoint.md`](reasoning-checkpoint.md)
+and are not restated here.
+
+This is not a second review pass and not a scope model: it reads results the
+review already produced, adds no finding, severity, ring, or evidence label,
+and never changes the Decision. Its own
+"Conditional loading: fail-closed" section governs when the policy is opened.
+
 ## Technology neutrality
 
 Every Skill built on this policy must remain technology-neutral. It must

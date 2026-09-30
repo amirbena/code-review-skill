@@ -1,0 +1,21 @@
+capability: reasoning-checkpoint
+summary: >-
+  The human reasoning checkpoint: an optional, evidence-anchored set of 1-4
+  questions to the engineer rendered after the Decision, so a deep review is
+  not mistaken for the engineer's own root-cause or design validation.
+loads: on-activation
+activation:
+  - the change is a bug fix, regression fix, incident follow-up, or behavior
+    correction whose root-cause claim depends on evidence the reviewer did not
+    establish, or the architectural-placement pass reached beyond the changed
+    method
+adapters: [local, github]
+files:
+  - shared/policies/reasoning-checkpoint.md
+requires: [review-kernel, finding-contract]
+never:
+  - rendering a placeholder or a generic question when no anchored question exists
+  - changing a finding, severity, coverage, or the mechanical Decision
+  - rendering a question as an inline comment or as a finding
+  - claiming access to, or contents of, a runtime system the review did not read
+benchmark: docs/reasoning-checkpoint/reasoning-checkpoint-contract.md

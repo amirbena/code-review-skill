@@ -522,6 +522,13 @@ which a value must be resolved before it is used, or what is reported.
     `include_fix_prompt=true`, append a full implementation prompt where the
     local template calls for one; otherwise render concise directions only.
     This output step must not alter the finalized findings or Decision.
+    **After findings and the Decision are final,** evaluate the shared
+    [`reasoning-checkpoint.md`](../../../shared/policies/reasoning-checkpoint.md)
+    activation once; when it activates, render its `Reasoning check` section
+    directly after Decision per
+    [`../templates/local-review-report.md`](../templates/local-review-report.md),
+    and omit it entirely otherwise. It changes no finding, severity, or
+    Decision.
 13. Render
     [`../templates/local-review-report.md`](../templates/local-review-report.md)
     as one complete report — including the review scope contract fields

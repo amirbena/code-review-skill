@@ -127,10 +127,14 @@ SEVERITY_LEGEND = {
 # annotations in the runbook, a new section 1 input/section 2 conditional
 # policy load in SKILL.md, and a new "Multi-repository Review Target"
 # cross-reference section in repository-state.md) -- also deliberate and
-# unrelated to #223.
+# unrelated to #223. LOCAL_REPORT and LOCAL_RUNBOOK were re-captured again
+# after Issue #566 (epic #564: the optional human reasoning checkpoint -- a
+# conditional `Reasoning check` section after Decision in the report template,
+# and a runbook step-12 pointer to the shared reasoning-checkpoint.md) --
+# also deliberate and unrelated to #223.
 LOCAL_BASELINE_HASHES = {
-    LOCAL_REPORT: "481bc268a7876c023b6a62eb2547ff797f24d780",
-    LOCAL_RUNBOOK: "cfe651a7fe3fd922b5a3b92800d9d34b2aa8a305",
+    LOCAL_REPORT: "a39b755ffa21d2c1fa67f8692ce1a46905983779",
+    LOCAL_RUNBOOK: "df5eafc63c48058c1dd6f2030197c2b508bc74f8",
     LOCAL_SKILL: "b839c96e98624800c26a831b6cae76713a3cb18c",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
