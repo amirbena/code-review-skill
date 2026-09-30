@@ -11,7 +11,9 @@ docs/benchmark/corpus/reasoning-checkpoint/README.md.
 
 from __future__ import annotations
 
+import re
 import unittest
+from pathlib import Path
 
 from runtime_platform.benchmark.reference import reasoning_checkpoint_fixtures as fx
 from runtime_platform.benchmark.reference.reasoning_checkpoint_fixtures import (
@@ -228,7 +230,7 @@ class RuntimeBoundaryTests(unittest.TestCase):
                 body = fx.render_review(case, surface).body.lower()
                 for pattern in fx.ACCESS_CLAIM_PATTERNS:
                     with self.subTest(case=case.case_id, surface=surface, pattern=pattern):
-                        self.assertIsNone(__import__("re").search(pattern, body))
+                        self.assertIsNone(re.search(pattern, body))
 
     def test_readiness_language_under_condition_r(self) -> None:
         r_cases = [c for c in _active() if c.runtime_dependent]
@@ -261,9 +263,9 @@ class QuestionsAreNotFindingsTests(unittest.TestCase):
                 with self.subTest(case=case.case_id, surface=surface):
                     self.assertIsNotNone(questions)
                     for text in questions:
-                        self.assertIsNone(fx._SEVERITY_LABEL.search(text))
-                        self.assertIsNone(fx._DECISION_TOKEN.search(text))
-                        self.assertIsNone(fx._FINDING_ID.search(text))
+                        self.assertIsNone(fx.SEVERITY_LABEL.search(text))
+                        self.assertIsNone(fx.DECISION_TOKEN.search(text))
+                        self.assertIsNone(fx.FINDING_ID.search(text))
 
     def test_questions_never_appear_inline_or_in_structured_result(self) -> None:
         for case in _active():
@@ -336,7 +338,7 @@ class InvarianceTests(unittest.TestCase):
                 continue
             on = fx.render_review(case, "local").body
             off = fx.render_review(case, "local", checkpoint=False).body
-            restored = fx.strip_section(on).replace(fx.SCOPED_OPENING_ASSESSMENT, fx._opening_assessment(case, False))
+            restored = fx.strip_section(on).replace(fx.SCOPED_OPENING_ASSESSMENT, fx.opening_assessment(case, False))
             with self.subTest(case=case.case_id):
                 self.assertEqual(restored, off)
 
@@ -346,7 +348,7 @@ class InvarianceTests(unittest.TestCase):
 
     @staticmethod
     def _finding_lines(body: str) -> list[str]:
-        return [ln for ln in body.splitlines() if fx._SEVERITY_LABEL.search(ln)]
+        return [ln for ln in body.splitlines() if fx.SEVERITY_LABEL.search(ln)]
 
 
 class RenderingParityTests(unittest.TestCase):
@@ -381,6 +383,81 @@ class RenderingParityTests(unittest.TestCase):
         self.assertTrue(local.startswith("## Code Review"))
         self.assertTrue(github.startswith("## Review Summary"))
         self.assertEqual(fx.extract_section(local), fx.extract_section(github))
+
+
+class FallbackSurfaceTests(unittest.TestCase):
+    def test_fallback_carries_findings_in_body_and_questions_stay_separate(self) -> None:
+        case = next(c for c in ALL_CASES if c.case_id == "findings-p0-with-checkpoint-stays-changes-required")
+        rendered = fx.render_review(case, "github-fallback")
+        self.assertEqual(rendered.inline_comments, ())
+        self.assertIn("are given here in the body", rendered.body)
+        self.assertIn(fx.SECTION_HEADING, rendered.body)
+        for text in fx.extract_section(rendered.body):
+            self.assertNotIn("given here in the body", text)
+            self.assertIsNone(fx.FINDING_ID.search(text))
+        self.assertEqual(
+            fx.extract_section(rendered.body),
+            fx.extract_section(fx.render_review(case, "github-active").body),
+        )
+
+
+class PackagedContractPinTests(unittest.TestCase):
+    """The reference model's constants must match the delivered packaged text
+    (#566), so a change to the contract cannot leave the corpus green against
+    a stale copy."""
+
+    ROOT = Path(__file__).resolve().parents[3]
+
+    def _read(self, relative: str) -> str:
+        return " ".join((self.ROOT / relative).read_text(encoding="utf-8").split())
+
+    def test_section_shape_matches_the_shared_and_delivery_templates(self) -> None:
+        for relative in (
+            "shared/templates/review-summary.md",
+            "skills/local-code-review/templates/local-review-report.md",
+            "skills/github-pr-review/templates/external-review-summary.md",
+        ):
+            text = self._read(relative)
+            with self.subTest(file=relative):
+                self.assertIn(fx.SECTION_HEADING, text)
+                self.assertIn(fx.SECTION_LEAD_IN, text)
+
+    def test_scoped_opening_assessment_matches_policy_and_both_templates(self) -> None:
+        sentence = " ".join(fx.SCOPED_OPENING_ASSESSMENT.split())
+        for relative in (
+            "shared/policies/reasoning-checkpoint.md",
+            "skills/local-code-review/templates/local-review-report.md",
+            "skills/github-pr-review/templates/external-review-summary.md",
+        ):
+            with self.subTest(file=relative):
+                self.assertIn(sentence, self._read(relative).replace("> ", ""))
+
+    def test_policy_states_the_bound_readiness_phrases_and_inert_kinds(self) -> None:
+        policy = self._read("shared/policies/reasoning-checkpoint.md")
+        self.assertIn(f"**{fx.MIN_QUESTIONS}\u2013{fx.MAX_QUESTIONS} numbered questions**", policy)
+        for phrase in ("ready to push", "fully verified", "safe to deploy"):
+            self.assertIn(phrase, fx.FORBIDDEN_READINESS_PHRASES)
+            self.assertIn(phrase, policy)
+        for phrase in fx.PERMITTED_READINESS_PHRASES:
+            self.assertIn(phrase, policy.lower())
+        for facet in ("Investigation facet", "Design facet", "Always inert"):
+            self.assertIn(facet, policy)
+        inert_sentence = policy.split("**Always inert:**", 1)[1].split("Also inert:", 1)[0]
+        policy_phrase = {
+            "formatting": "formatting",
+            "rename": "rename",
+            "dependency-bump-no-behavior": "dependency bump with no behavior change",
+            "test-only": "test-only",
+            "doc-only": "doc-only",
+            "config-value-no-lifecycle-effect": "config value change with no lifecycle effect",
+            "mechanical-refactor-unchanged-behavior": "mechanical refactor with unchanged behavior",
+        }
+        self.assertEqual(set(policy_phrase), set(fx.INERT_CHANGE_KINDS))
+        for kind, phrase in policy_phrase.items():
+            with self.subTest(kind=kind):
+                self.assertIn(phrase, inert_sentence)
+        for label in fx.VALID_PROVENANCE:
+            self.assertIn(label, policy)
 
 
 class NoiseAndBoundTests(unittest.TestCase):

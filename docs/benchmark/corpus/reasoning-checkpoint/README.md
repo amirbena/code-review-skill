@@ -75,7 +75,9 @@ assertion; none is an LLM or rubric score.
 This corpus is a **reference model** of the delivered contract, like every
 sibling test-only corpus: it proves the contract's observable rules hold in a
 deterministic model and that the delivered packaged text states them (the
-packaged wording is pinned separately by
+model's constants — heading, lead-in, scoped opening sentence, readiness
+phrases, 1–4 bound — are pinned to the packaged policy and templates by
+`PackagedContractPinTests`, and the packaged wording itself separately by
 [`test_reasoning_checkpoint_docs.py`](../../../../tests/policy/review/presentation/test_reasoning_checkpoint_docs.py)).
 It does not drive a live model: the existing adapter
 ([`benchmark_review_adapter.py`](../../../../runtime_platform/benchmark/scripts/benchmark_review_adapter.py))

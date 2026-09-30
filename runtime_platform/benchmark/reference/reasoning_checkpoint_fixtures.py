@@ -188,9 +188,9 @@ PLACEHOLDER_PHRASES = (
     "n/a",
 )
 
-_SEVERITY_LABEL = re.compile(r"\bP[0-2]\b")
-_FINDING_ID = re.compile(r"\b(?:F|finding[- ]?)\d+\b", re.IGNORECASE)
-_DECISION_TOKEN = re.compile(r"REVIEW CLEAN|CHANGES REQUIRED|REVIEW INCOMPLETE")
+SEVERITY_LABEL = re.compile(r"\bP[0-2]\b")
+FINDING_ID = re.compile(r"\b(?:F|finding[- ]?)\d+\b", re.IGNORECASE)
+DECISION_TOKEN = re.compile(r"REVIEW CLEAN|CHANGES REQUIRED|REVIEW INCOMPLETE")
 
 
 class ReasoningCheckpointFixtureError(ValueError):
@@ -332,7 +332,7 @@ def _heading(surface: str) -> str:
     return "## Code Review" if surface == "local" else "## Review Summary"
 
 
-def _opening_assessment(case: ReasoningCheckpointCase, checkpoint: bool) -> str:
+def opening_assessment(case: ReasoningCheckpointCase, checkpoint: bool) -> str:
     if checkpoint and case.runtime_dependent and evaluate_activation(case):
         return SCOPED_OPENING_ASSESSMENT
     if case.decision is ds.Decision.CLEAN:
@@ -351,6 +351,9 @@ def _findings_block(case: ReasoningCheckpointCase, surface: str) -> tuple[str, t
         if surface in ("github-active", "github-withheld", "github-passive"):
             inline.append(f"{title} inline comment")
             lines.append(f"See inline comment for {finding.id}.")
+        elif surface == "github-fallback":
+            # No inline surface: the finding's detail lives in the body itself.
+            lines.append(f"Details for {finding.id} are given here in the body.")
     return "\n".join(lines), tuple(inline)
 
 
@@ -370,7 +373,7 @@ def render_review(
     parts = [
         _heading(surface),
         f"**Result: {ds.render_result_label(decision)}**",
-        _opening_assessment(case, checkpoint),
+        opening_assessment(case, checkpoint),
     ]
     if human_review_output:
         parts.append(f"{case.what_changed}")
@@ -441,11 +444,11 @@ def question_violations(question: Question, case: ReasoningCheckpointCase) -> li
     lowered = text.lower()
     if not text.endswith("?") or text.count("?") != 1:
         problems.append("not one sentence ending in '?'")
-    if _SEVERITY_LABEL.search(text):
+    if SEVERITY_LABEL.search(text):
         problems.append("contains a P0/P1/P2 label")
-    if _DECISION_TOKEN.search(text):
+    if DECISION_TOKEN.search(text):
         problems.append("contains a Decision/Result token")
-    if _FINDING_ID.search(text):
+    if FINDING_ID.search(text):
         problems.append("contains a finding ID")
     if any(re.search(p, lowered) for p in GENERIC_QUESTION_PATTERNS):
         problems.append("generic question true of any change")
