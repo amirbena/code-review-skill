@@ -102,6 +102,12 @@ criteria activate
 When active, include every requirement before Validation. Its completeness
 signal never changes finding severity or the mechanically derived Decision.
 
+Include a `Context gaps` section before Validation only when a repository
+relationship is `unresolved` per
+[`../../../shared/policies/repository-expansion.md`](../../../shared/policies/repository-expansion.md),
+"Relationship outcomes and unresolved relationships"; omit it otherwise. It
+never changes finding severity, coverage, or the Decision.
+
 Do **not** repeat `Evidence` / `Impact` / `Fix` / `Details` /
 multi-paragraph reasoning in the body for a finding that was published
 inline — that content lives in the inline comment.
@@ -411,6 +417,7 @@ human-facing review and clearly subordinate, per
 - change_risk_depth: `standard` | `elevated` | `deep`
 - change_risk_signals: `none` | `<signal (tier) — evidence>` per resolved occurrence
 - repository_expansion_triggers: `none` | `<trigger (ring N) — locations>` per fired trigger
+- repository_relationship_outcomes: `none` | `<class — subject — resolved_relevant|resolved_none|unresolved (reason)>` per relationship
 - large_pr_partitioning: `<n> partitions, <capped/dedup note>` — omitted entirely when inactive
 - coverage: `complete` | `incomplete — <reason(s)>`
 - P0: <n>

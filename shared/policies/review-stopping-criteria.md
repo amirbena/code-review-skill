@@ -91,6 +91,20 @@ counts as incomplete:
    validation that was optional does not trigger this; only one the
    review had no alternative path to complete.
 
+An **unresolved relationship** — outcome `unresolved` in
+[`repository-expansion.md`](repository-expansion.md), "Relationship
+outcomes and unresolved relationships" — is likewise not a fifth trigger.
+The closed set above is deliberately unchanged: the pass that raised it
+reached its own stop condition, and the gap is disclosed by the **Context
+gaps** section instead of by coverage. The rejected alternative — adding an
+incomplete trigger for unresolved relationships — would turn routine
+reviews of dynamic or unsupported code into `REVIEW INCOMPLETE`, which
+status enforcement can treat as non-passing, and would reverse the
+"insufficient evidence is a valid terminal outcome" rule that
+`repository-expansion.md` and this policy establish. The trade-off is
+accepted: `complete` coverage never asserts that every relationship was
+resolved, and a reader learns of gaps from the Context gaps section.
+
 An **optional** step that failed but was itself recoverable by the
 reviewer, or a dimension whose absence does not change what depth
 requires (for example a `standard`-depth change with no `elevated`/`deep`

@@ -132,9 +132,12 @@ SEVERITY_LEGEND = {
 # conditional `Reasoning check` section after Decision in the report template,
 # a runbook step-12 pointer and flow-diagram line, and a SKILL.md output-contract
 # pointer to the shared reasoning-checkpoint.md) --
-# also deliberate and unrelated to #223.
+# also deliberate and unrelated to #223. LOCAL_REPORT was re-captured again
+# after Issue #601 (a subordinate `Relationship outcomes` metadata line and a
+# conditional Context gaps note, per repository-expansion.md) -- also
+# deliberate and unrelated to #223.
 LOCAL_BASELINE_HASHES = {
-    LOCAL_REPORT: "a39b755ffa21d2c1fa67f8692ce1a46905983779",
+    LOCAL_REPORT: "48a153c1bb8f0d5111969692b167968778e667ba",
     LOCAL_RUNBOOK: "deb7d65646ac17d0e4049828a2b078314096c2e0",
     LOCAL_SKILL: "eaf79d0d35eb81108e27683d171da37b2a772645",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",

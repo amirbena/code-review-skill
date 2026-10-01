@@ -159,6 +159,7 @@ replaces the single set of fields above with one entry per member, per
 - Change-risk depth: <standard | elevated | deep>
 - Change-risk signals: <none | comma-separated `signal (tier) — evidence` entries, one per resolved occurrence>
 - Repository expansion: <none | comma-separated `trigger (ring N) — locations` entries, one per fired trigger>
+- Relationship outcomes: <none | comma-separated `class — subject — outcome` entries per [`repository-expansion.md`](../../../shared/policies/repository-expansion.md); an `unresolved` entry also renders in the Context gaps section>
 - Large-PR partitioning: `<n> partitions` plus any `capped` or cross-partition de-duplication note — shown only when partitioning activated; omitted entirely otherwise
 - Coverage: <complete | incomplete — reason(s)>
 
@@ -189,7 +190,10 @@ Safe to proceed: no blocking or non-blocking findings were identified.
 
 <optional concise What changed and Validation sections; omit Findings when
 empty. When requirement coverage was active, include the full conditional
-Requirement coverage section before Validation; omit it only when inert.>
+Requirement coverage section before Validation; omit it only when inert.
+When any repository relationship is `unresolved`, include the Context gaps
+section per [`review-summary.md`](../../../shared/templates/review-summary.md)
+before Validation; omit it otherwise.>
 
 ### Decision
 **REVIEW CLEAN**
