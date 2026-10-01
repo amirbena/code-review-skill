@@ -40,7 +40,9 @@ class AuthorizationRequiredError(GitHubBoundaryError):
 
 
 class GitHubCallError(GitHubBoundaryError):
-    pass
+    def __init__(self, message: str, status: int | None = None):
+        super().__init__(message)
+        self.status = status
 
 
 @dataclass(frozen=True)
@@ -120,7 +122,7 @@ class GitHubClient:
         detail = _redact(resp.body, token)[:300]
         where = f"{method} {endpoint}"
         if resp.status == 0:
-            raise GitHubCallError(f"{where}: gh unavailable or unreachable: {detail}")
+            raise GitHubCallError(f"{where}: gh unavailable or unreachable: {detail}", 0)
         if resp.status == 401:
             raise AuthenticationError(
                 f"{where}: not authenticated. Run `gh auth login` or set GH_TOKEN."
@@ -132,7 +134,7 @@ class GitHubClient:
                 f"{where}: HTTP {resp.status}; token lacks access or resource not visible."
                 f"{hint} {detail}".strip()
             )
-        raise GitHubCallError(f"{where}: HTTP {resp.status}: {detail}")
+        raise GitHubCallError(f"{where}: HTTP {resp.status}: {detail}", resp.status)
 
     def preflight(self, required_scopes: Sequence[str] = ()) -> None:
         """Verify authentication and, for classic tokens, required scopes."""
