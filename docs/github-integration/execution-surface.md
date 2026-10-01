@@ -44,3 +44,4 @@ place that talks to GitHub (through `gh api`).
   persisted.
 - **Mock seam.** The `transport` constructor argument replaces `gh`;
   tests use it and never touch the network.
+- **Consumers.** [Status publisher](status-publisher.md) (#548).
