@@ -44,6 +44,7 @@ place that talks to GitHub (through `gh api`).
   persisted.
 - **Mock seam.** The `transport` constructor argument replaces `gh`;
   tests use it and never touch the network.
+- **Consumers.** [Status publisher](status-publisher.md) (#548).
 
 ## Enforcement detection
 
@@ -54,4 +55,3 @@ base branch. It accepts only an object with `read()`, so it cannot reach
 `python3 -m scripts.github_integration.enforcement OWNER/REPO BRANCH [--context C]`.
 Rules and open questions are recorded in
 [`ruleset-vs-branch-protection-research.md`](ruleset-vs-branch-protection-research.md).
-
