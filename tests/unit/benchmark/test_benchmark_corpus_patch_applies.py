@@ -20,7 +20,7 @@ from runtime_platform.benchmark.reference import benchmark_runner as runner
 from runtime_platform.benchmark.scripts import benchmark_corpus_membership as membership
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus"
 
 
 def _patch_fixtures() -> list[Path]:

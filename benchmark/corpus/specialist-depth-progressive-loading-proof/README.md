@@ -6,21 +6,21 @@ epic [#403](https://github.com/amirbena/code-review-skill/issues/403).
 Issue [#410](https://github.com/amirbena/code-review-skill/issues/410)
 made `specialist-depth`'s loading conditional on its declared activation
 predicate and proved the fail-closed contract at the **text/manifest**
-level ([`test_specialist_depth_410.py`](../../../../tests/policy/review/specialist_depth/test_specialist_depth_410.py)).
+level ([`test_specialist_depth_410.py`](../../../tests/policy/review/specialist_depth/test_specialist_depth_410.py)).
 This corpus supplies the one thing that proof does not: a
 **behavioral** fixture pinning what a correct review must actually
 *produce* when predicate evaluation is genuinely ambiguous — the shape
 [`specialist-depth-composition/`](../specialist-depth-composition/README.md)
 does not cover.
 
-Every case conforms to [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)
+Every case conforms to [`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of [`../`](../README.md)
-and [`../../`](../../../../runtime_platform/benchmark/README.md) this is **not** packaged into either Skill
+and [`../../`](../../../runtime_platform/benchmark/README.md) this is **not** packaged into either Skill
 archive and no packaged Skill resource depends on it — it is consumed
 only by this repository's own test suite, through the single reference
 validator
-[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle: one net-new case, everything else reused
@@ -41,15 +41,15 @@ expectation. Concretely, of #411's four required cases:
    [`specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load.yaml`](specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load.yaml).
 4. **A direct before/after surface-reduction comparison against #408's
    baseline** — the static word-count comparison recorded in
-   [`../../../capability-architecture/specialist-depth-progressive-loading-proof.md`](../../../capability-architecture/specialist-depth-progressive-loading-proof.md),
+   [`../../../capability-architecture/specialist-depth-progressive-loading-proof.md`](../../../docs/capability-architecture/specialist-depth-progressive-loading-proof.md),
    reusing
-   [`capability_loading_baseline.py`](../../../../scripts/capability_architecture/capability_loading_baseline.py)'s
+   [`capability_loading_baseline.py`](../../../scripts/capability_architecture/capability_loading_baseline.py)'s
    existing static-surface measurement rather than a new evaluator; no
    fixture of its own.
 
 Cases 1 and 2 are exercised here only by reference (this directory does
 not re-declare them); the proof script
-([`specialist_depth_progressive_loading_proof.py`](../../../../scripts/capability_architecture/specialist_depth_progressive_loading_proof.py))
+([`specialist_depth_progressive_loading_proof.py`](../../../scripts/capability_architecture/specialist_depth_progressive_loading_proof.py))
 loads them directly from `specialist-depth-composition/` by id.
 
 ### Why the ambiguous case needs its own fixture
@@ -74,7 +74,7 @@ evidence does not support, but it does not dictate exactly how
 conservatively that ambiguity is scored. Because not every value in a
 `P1`/`P2` severity range is blocking, this required finding never forces
 `changes-required` on its own
-([`severity.md`](../../../../shared/policies/severity.md), "Decision
+([`severity.md`](../../../shared/policies/severity.md), "Decision
 derivation"), which is what makes this case's `decision: clean` +
 non-empty `findings` combination the deliberate contrast with Case D's
 `decision: clean` + **empty** `findings`: the same mechanical decision,
@@ -90,7 +90,7 @@ exact severity turns out to be.
 
 ## Validation
 
-[`../../../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py`](../../../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py)
+[`../../../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py`](../../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py)
 loads this directory's fixture through the same single reference
 validator used everywhere else in this corpus tree (it never defines a
 second one), and asserts: the directory holds exactly the one case; it
@@ -102,7 +102,7 @@ is distinct from `specialist-depth-composition`'s Case D by actually
 carrying a finding. Live execution proof — running this fixture plus the
 reused Case A/B and the #408 regression set through
 `ProductionReviewerAdapter` and recording the result — is
-[`specialist-depth-progressive-loading-proof.md`](../../../capability-architecture/specialist-depth-progressive-loading-proof.md),
+[`specialist-depth-progressive-loading-proof.md`](../../../docs/capability-architecture/specialist-depth-progressive-loading-proof.md),
 not this test file; matching a reviewer's output to this fixture's
 expectations and scoring it are out of scope here (Issues #41/#52/#54),
 same as every other corpus in this tree.

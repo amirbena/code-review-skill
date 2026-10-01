@@ -12,7 +12,7 @@ examples. [`review-scope.md`](../../shared/policies/review-scope.md) owns
 base review scope and routes to that packaged policy.
 
 The fixture corpus exercising the six change shapes below is
-[`../benchmark/corpus/api-compatibility/`](../benchmark/corpus/api-compatibility/README.md)
+[`../benchmark/corpus/api-compatibility/`](../../benchmark/corpus/api-compatibility/README.md)
 ([#184](https://github.com/amirbena/code-review-skill/issues/184)),
 validated by
 [`../../tests/unit/benchmark/test_api_compatibility_corpus.py`](../../tests/unit/benchmark/test_api_compatibility_corpus.py)
@@ -84,9 +84,9 @@ depending on its own default case, while a consumer that reads the field
 permissively is unaffected. A correct review's behavior turns on which
 change shape occurred, not on "an enum changed" alone. This pair is
 pinned exactly as
-[`api-compat-add-enum-member-context-dependent.yaml`](../benchmark/corpus/api-compatibility/api-compat-add-enum-member-context-dependent.yaml)
+[`api-compat-add-enum-member-context-dependent.yaml`](../../benchmark/corpus/api-compatibility/api-compat-add-enum-member-context-dependent.yaml)
 and
-[`api-compat-remove-enum-member-breaking.yaml`](../benchmark/corpus/api-compatibility/api-compat-remove-enum-member-breaking.yaml).
+[`api-compat-remove-enum-member-breaking.yaml`](../../benchmark/corpus/api-compatibility/api-compat-remove-enum-member-breaking.yaml).
 
 ## 4. Fail-closed on unresolvable consumer intent
 

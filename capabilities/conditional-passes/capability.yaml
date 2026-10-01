@@ -24,4 +24,4 @@ never:
   - degrading review depth to avoid running a triggered pass
   - treating consolidation as a substitute for a separately evidenced fix
     when the same root cause still requires two fixes
-benchmark: docs/benchmark/corpus/null-absence-risk, docs/benchmark/corpus/api-compatibility, docs/benchmark/corpus/analogue-placement-pattern, docs/benchmark/corpus/consolidation
+benchmark: benchmark/corpus/null-absence-risk, benchmark/corpus/api-compatibility, benchmark/corpus/analogue-placement-pattern, benchmark/corpus/consolidation

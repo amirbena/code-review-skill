@@ -6,7 +6,7 @@ A documented reference set for Issue
 [#229](https://github.com/amirbena/code-review-skill/issues/229)): eight
 findings, each rendered as the structured field-oriented block and as the
 senior/human voice from
-[`../../shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),
+[`../../shared/templates/finding-rendering.md`](../shared/templates/finding-rendering.md),
 "Senior voice contract", side by side.
 
 This is a **documented reference set, not a CI gate** — unlike
@@ -15,13 +15,13 @@ This is a **documented reference set, not a CI gate** — unlike
 consumed by a test or a runner. It exists so a reviewer of a future voice
 change has worked examples to compare against, and so the rubric in #229
 ("Quality eval") has a concrete corpus to point at. Like the rest of
-[`docs/benchmark/`](../../runtime_platform/benchmark/README.md), it is a repository-development document:
+[`benchmark/`](../runtime_platform/benchmark/README.md), it is a repository-development document:
 not packaged into either Skill archive, and no packaged Skill resource
 depends on it.
 
 ## How to read each pair
 
-- The **structured** rendering is [`finding-rendering.md`](../../shared/templates/finding-rendering.md),
+- The **structured** rendering is [`finding-rendering.md`](../shared/templates/finding-rendering.md),
   "Canonical full rendering" — the default, always-available form.
 - The **senior** rendering applies the "Senior voice contract" the same
   rendering file owns.
@@ -313,6 +313,6 @@ a required slot on a review that also has a blocking finding.
 ## Related
 
 The voice contract these pairs render is owned by
-[`../../shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),
+[`../../shared/templates/finding-rendering.md`](../shared/templates/finding-rendering.md),
 "Senior voice contract". The #40/#41 finding-detection benchmark corpus is
 [`corpus/`](corpus/README.md) and is unrelated to presentation quality.

@@ -3,8 +3,8 @@
 Repository-development doc for GitHub Issue
 [#415](https://github.com/amirbena/code-review-skill/issues/415), the
 implementation issue
-[`runtime-execution-contract.md`](../../runtime_platform/benchmark/runtime-execution-contract.md) §2.2/§8
-scopes but does not itself implement. Like the rest of [`./`](../../runtime_platform/benchmark/README.md),
+[`runtime-execution-contract.md`](../runtime_platform/benchmark/runtime-execution-contract.md) §2.2/§8
+scopes but does not itself implement. Like the rest of [`./`](../runtime_platform/benchmark/README.md),
 this is **not packaged into either Skill archive**, and no packaged Skill
 resource depends on it.
 
@@ -18,9 +18,9 @@ document or in code.
 > **Amended by [#467](https://github.com/amirbena/code-review-skill/issues/467)**
 > (Epic [#466](https://github.com/amirbena/code-review-skill/issues/466); design
 > record [#464](https://github.com/amirbena/code-review-skill/issues/464),
-> [`scheduled-operations/`](../../runtime_platform/benchmark/scheduled-operations/README.md),
+> [`scheduled-operations/`](../runtime_platform/benchmark/scheduled-operations/README.md),
 > amendments A1–A13 in
-> [`contract-reconciliation.md`](../../runtime_platform/benchmark/scheduled-operations/contract-reconciliation.md)).
+> [`contract-reconciliation.md`](../runtime_platform/benchmark/scheduled-operations/contract-reconciliation.md)).
 > Amended sections carry their IDs. Unchanged: the modes, positive completion
 > verification, explicit metadata, non-reachability, and fail-closed behavior.
 > `run_benchmark_routine.py` implements this text since [#470](https://github.com/amirbena/code-review-skill/issues/470); the publication
@@ -92,7 +92,7 @@ discovery added by #431
 | `auth-check` | none — no benchmark run | handoff smoke test (§5) |
 
 `sentinel` and `comprehensive` are the two-tier scheduled execution lanes
-`docs/benchmark/corpus/README.md` and
+`benchmark/corpus/README.md` and
 `runtime_platform/benchmark/nightly-history-and-baseline.md` §2 define; `full`'s
 pre-#431 ambiguity (it happened to only ever resolve to the 4 top-level
 cases, because `--corpus-dir`'s glob is non-recursive) is resolved by this
@@ -119,7 +119,7 @@ entrypoint:
    `systemic-cap`. When `--confirmation-budget-s` (seconds from run start) is
    exhausted the rest is `unconfirmed-timeout`. Parameters come from the
    manifest, and an unverified rerun fails the run closed
-   ([`drift-issue-lifecycle-and-recovery.md`](../../runtime_platform/benchmark/scheduled-operations/drift-issue-lifecycle-and-recovery.md)
+   ([`drift-issue-lifecycle-and-recovery.md`](../runtime_platform/benchmark/scheduled-operations/drift-issue-lifecycle-and-recovery.md)
    §2);
 4. builds the `benchmark-result/v1` record and validates it; a record that does
    not validate is never sealed;
@@ -152,7 +152,7 @@ stdout, a missing/malformed per-case result shape
 not `"executed"` as passing evidence — including the
 `check_runtime_available` preflight-failure path, which exits non-zero
 with no stdout JSON at all. Unit-tested fail-closed in
-[`../../tests/unit/benchmark/test_benchmark_routine_verify.py`](../../tests/unit/benchmark/test_benchmark_routine_verify.py):
+[`../../tests/unit/benchmark/test_benchmark_routine_verify.py`](../tests/unit/benchmark/test_benchmark_routine_verify.py):
 a forced `error`/`runtime-unavailable` case is proven to flag, not
 silently pass.
 
@@ -166,7 +166,7 @@ anything — the first unverified invocation fails the run closed.
 The authoritative store for a scheduled run is a compact, content-hashed
 **record on the isolated `benchmark-history` branch**, written by the
 `benchmark-publication` App through the publication step — the store
-[`nightly-history-and-baseline.md`](../../runtime_platform/benchmark/nightly-history-and-baseline.md)
+[`nightly-history-and-baseline.md`](../runtime_platform/benchmark/nightly-history-and-baseline.md)
 §3 defines. This resolves the pre-amendment contradiction between that document
 (a history branch) and this one (issue comments only). Evidence comments on a
 maintainer-owned per-lane **tracking GitHub Issue** are the **human index and
@@ -185,7 +185,7 @@ transcript/run history:
   tracking issue are written only by the publisher. The tracking issues are not
   locked (the App's installation token cannot comment on a locked issue); only
   comments authored by the publisher identity count
-  ([`drift-issue-lifecycle-and-recovery.md`](../../runtime_platform/benchmark/scheduled-operations/drift-issue-lifecycle-and-recovery.md)
+  ([`drift-issue-lifecycle-and-recovery.md`](../runtime_platform/benchmark/scheduled-operations/drift-issue-lifecycle-and-recovery.md)
   §3, A14).
 
 Each **evidence comment**, one per published run, begins with the per-run
@@ -204,12 +204,12 @@ schedule spec, and a Routine no longer passes an evidence-issue argument.
 Pushing evidence JSON directly into `main`, a pull-request branch, or any other
 reviewed branch or Skill source from an unattended run was considered and
 rejected: it would bypass this repository's own PR-review workflow
-([`../../policies/git-pr-merge-policy.md`](../../policies/git-pr-merge-policy.md))
+([`../../policies/git-pr-merge-policy.md`](../policies/git-pr-merge-policy.md))
 for every scheduled run, which is a larger, harder-to-audit surface than the
 alternatives. **This rejection is narrowed (A1)**: it does not cover the
 isolated `benchmark-history` branch, which is neither a reviewed branch nor
 Skill source — the argument
-[`nightly-history-and-baseline.md`](../../runtime_platform/benchmark/nightly-history-and-baseline.md)
+[`nightly-history-and-baseline.md`](../runtime_platform/benchmark/nightly-history-and-baseline.md)
 §3.1 already makes — and that branch is written by the publication App, not by
 the Routine.
 
@@ -241,7 +241,7 @@ repository cannot show what scope that proxy credential has. The seal is
 confined by the provider to `claude/`-prefixed refs, and an observed check —
 attempt a non-`claude/` push and an issue create from a Routine smoke run — is
 recorded at provisioning rather than assumed
-([`scheduled-operations/execution-publication-boundary.md`](../../runtime_platform/benchmark/scheduled-operations/execution-publication-boundary.md)
+([`scheduled-operations/execution-publication-boundary.md`](../runtime_platform/benchmark/scheduled-operations/execution-publication-boundary.md)
 §4).
 
 ## 6. Metadata: explicit, not auto-detected
@@ -299,7 +299,7 @@ written about benchmark scheduling and execution. It does not forbid a
 holds no model or provider credential, imports nothing from the benchmark, and
 judges nothing. That workflow is permitted and is a different thing; its
 triggers, credentials, and imports are enforced by a policy test
-([`scheduled-operations/publication-architecture.md`](../../runtime_platform/benchmark/scheduled-operations/publication-architecture.md)
+([`scheduled-operations/publication-architecture.md`](../runtime_platform/benchmark/scheduled-operations/publication-architecture.md)
 §5).
 
 ## 9. Routine prompt template
@@ -327,7 +327,7 @@ provider-side prompt drift cannot change behavior:
 
 The tracking-issue numbers, cadence text, `max_gap_hours`, and confirmation
 parameters are not Routine arguments: they live in the repository-owned
-schedule spec ([`schedule-spec.md`](../../runtime_platform/benchmark/schedule-spec.md)),
+schedule spec ([`schedule-spec.md`](../runtime_platform/benchmark/schedule-spec.md)),
 which binds this template to each lane.
 
 ### 9.1 Two lanes, two Cloud Routine schedules (#431)
@@ -385,7 +385,7 @@ run exited non-zero) never ran for a run that had already verified. Under the
 amended order there is no in-run GitHub post at all: the run evaluates drift,
 then **seals** the canonical result (the commit point), and history is written
 by the publication step from the sealed result
-([`nightly-history-and-baseline.md`](../../runtime_platform/benchmark/nightly-history-and-baseline.md)
+([`nightly-history-and-baseline.md`](../runtime_platform/benchmark/nightly-history-and-baseline.md)
 §2–§3). `--results-out` is therefore a local output, not the hand-off to
 persistence, and a publication failure never needs or causes a benchmark
 re-run.

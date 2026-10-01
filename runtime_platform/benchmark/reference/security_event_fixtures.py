@@ -23,7 +23,7 @@ schema's `expected` block is findings/decision-shaped and has no field
 for an event schema, a classification, or a redaction assertion. This
 module follows the same test-only, hand-authored, data-driven fixture
 pattern documented in
-docs/benchmark/corpus/security-events/README.md.
+benchmark/corpus/security-events/README.md.
 
 Every case's denial classification and event-type vocabulary is drawn
 from -- never re-derived independently of -- the single reference model
@@ -41,7 +41,7 @@ already owning its domain's denial:
   the `SecurityEvent` a real `DENIED_SANDBOX_*`/`DENIED_GIT_*` denial
   reports directly from the `SBOX-###` scenario's own declared
   `expected_security_event`, exactly as
-  `docs/benchmark/corpus/sandbox-adversarial/README.md` already
+  `benchmark/corpus/sandbox-adversarial/README.md` already
   identifies each real adversarial test method as one case.
 
 This module defines no capability boundary, grants no capability, and

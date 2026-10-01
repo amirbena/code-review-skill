@@ -5,9 +5,9 @@ Repository-development artifact for GitHub Issue
 [#564](https://github.com/amirbena/code-review-skill/issues/564)), which proves
 the behavior of the human reasoning checkpoint delivered by
 [#566](https://github.com/amirbena/code-review-skill/issues/566)
-([`shared/policies/reasoning-checkpoint.md`](../../../../shared/policies/reasoning-checkpoint.md),
+([`shared/policies/reasoning-checkpoint.md`](../../../shared/policies/reasoning-checkpoint.md),
 the `Reasoning check` section of
-[`shared/templates/review-summary.md`](../../../../shared/templates/review-summary.md),
+[`shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
 and both delivery templates). The contract itself is unchanged here; this
 corpus only pins that the delivered behavior activates when warranted, stays
 inert otherwise, invents no evidence, and never reaches a finding, a severity,
@@ -16,10 +16,10 @@ or the Decision.
 ## Why this corpus is not `benchmark-case/v2` fixtures
 
 The #565 design record
-([`../../../reasoning-checkpoint/reasoning-checkpoint-contract.md`](../../../reasoning-checkpoint/reasoning-checkpoint-contract.md),
+([`../../../reasoning-checkpoint/reasoning-checkpoint-contract.md`](../../../docs/reasoning-checkpoint/reasoning-checkpoint-contract.md),
 section 11) decided this before implementation: `benchmark-case/v2`'s
 `expected` block is a patch plus expected review findings
-([`fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)), a closed
+([`fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)), a closed
 findings/Decision-shaped schema, and the checkpoint is by contract *not* a
 finding. There is no field for "a question section is present/absent" or for
 "questions never change the Decision". Extending that schema would weaken its
@@ -29,15 +29,15 @@ reference-fixture pattern**
 ([`verdict-consistency`](../verdict-consistency/README.md),
 [`reviewer-brief`](../reviewer-brief/README.md)): one module of declarative,
 metadata-bearing cases —
-[`runtime_platform/benchmark/reference/reasoning_checkpoint_fixtures.py`](../../../../runtime_platform/benchmark/reference/reasoning_checkpoint_fixtures.py)
+[`runtime_platform/benchmark/reference/reasoning_checkpoint_fixtures.py`](../../../runtime_platform/benchmark/reference/reasoning_checkpoint_fixtures.py)
 — exercised by
-[`tests/unit/benchmark/test_reasoning_checkpoint_corpus.py`](../../../../tests/unit/benchmark/test_reasoning_checkpoint_corpus.py).
+[`tests/unit/benchmark/test_reasoning_checkpoint_corpus.py`](../../../tests/unit/benchmark/test_reasoning_checkpoint_corpus.py).
 Nothing is packaged, and like the other README-only sub-corpus directories it
 is excluded from the comprehensive lane by construction (no `benchmark-case/v2`
 YAML to discover).
 
 Decision derivation reuses
-[`tests/reference/review/decision_semantics.py`](../../../../tests/reference/review/decision_semantics.py),
+[`tests/reference/review/decision_semantics.py`](../../../tests/reference/review/decision_semantics.py),
 the single mechanical source, so invariance is measured against the real
 derivation, never a second one. Every check is a deterministic structural
 assertion; none is an LLM or rubric score.
@@ -78,9 +78,9 @@ deterministic model and that the delivered packaged text states them (the
 model's constants — heading, lead-in, scoped opening sentence, readiness
 phrases, 1–4 bound — are pinned to the packaged policy and templates by
 `PackagedContractPinTests`, and the packaged wording itself separately by
-[`test_reasoning_checkpoint_docs.py`](../../../../tests/policy/review/presentation/test_reasoning_checkpoint_docs.py)).
+[`test_reasoning_checkpoint_docs.py`](../../../tests/policy/review/presentation/test_reasoning_checkpoint_docs.py)).
 It does not drive a live model: the existing adapter
-([`benchmark_review_adapter.py`](../../../../runtime_platform/benchmark/scripts/benchmark_review_adapter.py))
+([`benchmark_review_adapter.py`](../../../runtime_platform/benchmark/scripts/benchmark_review_adapter.py))
 parses only the single-surface finding format, so a live activation measurement
 of the section would be new adapter infrastructure, out of #567's scope.
 The fixtures are shaped to drive such an adapter if one is added later.

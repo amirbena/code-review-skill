@@ -16,25 +16,25 @@ Unlike the corpora under [`../`](../README.md) (each a self-contained
 inline patch plus expected findings), this boundary's inputs and
 expectations are not a diff and a set of review findings — they are a
 capability grant, a spawn-depth/agent-count budget, and a structural
-allow/deny result. [`fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)'s
+allow/deny result. [`fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)'s
 `expected` block has no field for any of that. Rather than stretch that
 closed schema, this corpus follows the same test-only, data-driven
 reference-fixture pattern
 [`../reviewer-brief/README.md`](../reviewer-brief/README.md) already
 established for a domain the schema does not fit:
 
-- [`../../../../runtime_platform/benchmark/reference/delegation_fixtures.py`](../../../../runtime_platform/benchmark/reference/delegation_fixtures.py) —
+- [`../../../../runtime_platform/benchmark/reference/delegation_fixtures.py`](../../../runtime_platform/benchmark/reference/delegation_fixtures.py) —
   one `DelegationCase` per required outcome shape, each a zero-argument
   `run()` closure that exercises the *single* reference model,
-  [`../../../../tests/reference/review/agent_delegation.py`](../../../../tests/reference/review/agent_delegation.py)
+  [`../../../../tests/reference/review/agent_delegation.py`](../../../tests/reference/review/agent_delegation.py)
   (composing with
-  [`review_action_authorization.py`](../../../../tests/reference/review/review_action_authorization.py)
+  [`review_action_authorization.py`](../../../tests/reference/review/review_action_authorization.py)
   for provenance/scope), plus the declarative metadata #307 requires:
   parent capability set, explicit delegated capability set, requested
   child capability, spawn depth, invocation agent-count budget, expected
   allow/deny result, linked `DELEG-###`/`DOS-###` threat-scenario id(s),
   and (for a denied case) the provisional denial classification.
-- [`../../../../tests/unit/benchmark/test_delegation_spawn_corpus.py`](../../../../tests/unit/benchmark/test_delegation_spawn_corpus.py) —
+- [`../../../../tests/unit/benchmark/test_delegation_spawn_corpus.py`](../../../tests/unit/benchmark/test_delegation_spawn_corpus.py) —
   runs every case's `run()` and asserts its actual outcome matches the
   declared expectation, plus corpus-completeness checks (every required
   category, every catalog `DELEG-###`/tagged `DOS-###` id, every
@@ -43,7 +43,7 @@ established for a domain the schema does not fit:
   fixture cannot capture alone.
 
 This corpus is **not** a duplicate of
-[`../../../../tests/unit/review/delegation/test_agent_delegation_authorization.py`](../../../../tests/unit/review/delegation/test_agent_delegation_authorization.py),
+[`../../../../tests/unit/review/delegation/test_agent_delegation_authorization.py`](../../../tests/unit/review/delegation/test_agent_delegation_authorization.py),
 which #303 already landed as hand-written regression tests, one per
 `DELEG-###` scenario, against the same reference model. That suite is
 *why* the boundary holds; this corpus is the declarative, metadata-bearing
@@ -106,7 +106,7 @@ or string rename was required.
 ## Threat-scenario traceability
 
 This corpus covers every `DELEG-###` scenario in
-[`../../../threat-model/catalog/spawn-delegation.yaml`](../../../threat-model/catalog/spawn-delegation.yaml)
+[`../../../threat-model/catalog/spawn-delegation.yaml`](../../../docs/threat-model/catalog/spawn-delegation.yaml)
 (11 scenarios, issue [#300](https://github.com/amirbena/code-review-skill/issues/300))
 plus the two `resource-abuse.yaml` scenarios that declare
 `benchmark_family: delegation/#307` (`DOS-006`, `DOS-007`). Those catalog
@@ -124,7 +124,7 @@ python3 -m unittest tests.unit.benchmark.test_delegation_spawn_corpus
 ```
 
 exactly like every other `test_*_corpus.py` module under
-[`../../../../tests/unit/benchmark/`](../../../../tests/unit/benchmark/)
+[`../../../../tests/unit/benchmark/`](../../../tests/unit/benchmark/)
 (e.g. `test_security_deepening_corpus.py`) — no other benchmark case
 needs to run first.
 

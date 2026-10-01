@@ -18,7 +18,7 @@ concern lives in the file named for it.
 | [`fixture-format.md`](fixture-format.md) | The canonical machine-readable format for a single benchmark case — case identity, input (inline patch or repository reference), expected findings, expected severity, expected location detail, the four typed variance constructs (same-defect alternatives, alternative findings, optional findings, permitted severity variance), required metadata including its mandatory canonical taxonomy classification, schema/versioning, and fail-closed validation. | [#50](https://github.com/amirbena/code-review-skill/issues/50) |
 | [`taxonomy.md`](taxonomy.md) | The canonical, closed, alias-free benchmark candidate taxonomy — four dimensions (`capability`, `policy_contract`, `risk_mode`, `affected_surface`) each with an explicit `unclassified` member, corpus case classification metadata and its fail-closed validation, the one bounded schema-constrained PR-diff classification model call, and the deterministic non-LLM inverted index (`corpus-index.json`) that lets PR-time candidate selection narrow the corpus by lookup instead of a full scan. | [#333](https://github.com/amirbena/code-review-skill/issues/333) |
 | [`selection.md`](selection.md) | The deterministic Top-K benchmark selector over #333's candidate pool — the weighted Case Relevance Score and its `primary`/`secondary`/`not-eligible` bands, the distinct Selection Coverage Score and its 60% golden threshold, the greedy coverage-maximizing bounded Top-K algorithm (`K_DEFAULT`/`K_MAX`), the explicit non-silent `insufficient-coverage` outcome, and the machine-readable explainability object published per run. Ships informational-only. | [#334](https://github.com/amirbena/code-review-skill/issues/334) |
-| [`corpus/README.md`](../../docs/benchmark/corpus/README.md) | The initial benchmark corpus — a small set of `benchmark-case/v2` fixtures, one per review category (correctness, security, quality, no-op), with the case-selection rationale recorded per case and in the directory README. | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
+| [`corpus/README.md`](../../benchmark/corpus/README.md) | The initial benchmark corpus — a small set of `benchmark-case/v2` fixtures, one per review category (correctness, security, quality, no-op), with the case-selection rationale recorded per case and in the directory README. | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | [`runner-contract.md`](runner-contract.md) | How a benchmark run executes the reviewer over the corpus — per-case isolation into a disposable workspace, the repository-safety invariants for every protected source checkout, cleanup on success and failure, the machine-readable per-case result shape, single-case vs. whole-corpus runs, and the exit-status rule. | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
 | [`regression-report.md`](regression-report.md) | How a candidate run is compared against a stored baseline — the baseline result artifact, the corpus-identity guard, the per-case and aggregate deltas, the metric-free rule that separates a regression from an improvement, deterministic output, and the deliberate baseline-refresh step. | [#53](https://github.com/amirbena/code-review-skill/issues/53) |
 | [`match-criteria.md`](match-criteria.md) | When a produced review finding matches an expected benchmark finding — the two match axes (location, defect), the three-valued `MATCH` / `NEAR_MISS` / `NO_MATCH` result, the fixed tolerances, and how `alternatives` / `any_of` / `match: optional` resolve. The pairing relation the [#41](https://github.com/amirbena/code-review-skill/issues/41) quality metrics are built on. | [#54](https://github.com/amirbena/code-review-skill/issues/54) |
@@ -29,7 +29,7 @@ concern lives in the file named for it.
 | [`claim-correspondence-adequacy.md`](claim-correspondence-adequacy.md) | Research recommendation (not a contract change): whether `match-criteria.md`'s lexical claim-correspondence check can recognize an independently-phrased-but-correct finding, measured with real harness-fidelity-corrected benchmark reruns. Finds the free-text Jaccard/subset path is, in practice, the *only* path that ever decides the defect axis in production because a produced `defect_kind` is never populated, and recommends evaluating `defect_kind` population first per the deterministic-options-first guardrail. | [#343](https://github.com/amirbena/code-review-skill/issues/343) |
 | [`runtime-execution-contract.md`](runtime-execution-contract.md) | The vendor-neutral runtime execution contract any benchmark runtime must satisfy — split into Class 1 (automatic/repository-triggered, untrusted-input, the original non-personal-machine trust boundary; currently unprovisioned, not further pursued) and Class 2 (maintainer-controlled, optional quality observability, never a contributor/merge prerequisite, Claude Cloud Routines as the sole selected scheduled-integration target); the shared `run_benchmark.py` → `ReviewerAdapter` → agent CLI/runtime → unmodified Skill → model backend execution chain; the runtime viability criteria per class; the required runtime/model/Skill-SHA metadata; the historical Class 1 candidate classes A–D; and the rejected approaches for both classes. | [#330](https://github.com/amirbena/code-review-skill/issues/330), revised by [#391](https://github.com/amirbena/code-review-skill/issues/391) |
 | [`runtime-candidate-decision.md`](runtime-candidate-decision.md) | The empirical spike's decision record — the real candidates actually run against a small corpus subset, their results scored against `runtime-execution-contract.md`'s viability criteria and an added economic-sustainability constraint. Historical record: its conditional execution path for #337 is superseded by #391. | [#336](https://github.com/amirbena/code-review-skill/issues/336) |
-| [`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md) | The concrete Class 2 (maintainer-controlled) Claude Cloud Routine vehicle `runtime-execution-contract.md` §2.2/§8 scopes but does not implement: the `run_benchmark_routine.py` entrypoint and its smoke/selected/**sentinel**/**comprehensive**/full(deprecated)/auth-check modes, positive completion verification that never trusts a Routine's own "green" status, explicit runtime/model/SHA metadata, in-run drift confirmation and the seal to the handoff ref (no GitHub write from execution), the handoff smoke test, and why nothing in this vehicle is reachable from contributor PR automation. | [#415](https://github.com/amirbena/code-review-skill/issues/415), [#431](https://github.com/amirbena/code-review-skill/issues/431), [#470](https://github.com/amirbena/code-review-skill/issues/470) |
+| [`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md) | The concrete Class 2 (maintainer-controlled) Claude Cloud Routine vehicle `runtime-execution-contract.md` §2.2/§8 scopes but does not implement: the `run_benchmark_routine.py` entrypoint and its smoke/selected/**sentinel**/**comprehensive**/full(deprecated)/auth-check modes, positive completion verification that never trusts a Routine's own "green" status, explicit runtime/model/SHA metadata, in-run drift confirmation and the seal to the handoff ref (no GitHub write from execution), the handoff smoke test, and why nothing in this vehicle is reachable from contributor PR automation. | [#415](https://github.com/amirbena/code-review-skill/issues/415), [#431](https://github.com/amirbena/code-review-skill/issues/431), [#470](https://github.com/amirbena/code-review-skill/issues/470) |
 | [`nightly-history-and-baseline.md`](nightly-history-and-baseline.md) | Scheduling the #415 vehicle's **sentinel** (maximum gap ≤ 96 h) and **comprehensive** (maximum gap ≤ 8 d) modes as two maintainer-configured Cloud Routines; run identity, the `benchmark-history`-branch record shape (per lane, never pruned), and first-run bootstrap (amended by #467); and the chosen baseline policy (a pinned, deliberately-refreshed reference, keyed independently per lane) with the rationale for why a naive last-known-good or rolling baseline was set aside. | [#338](https://github.com/amirbena/code-review-skill/issues/338), [#431](https://github.com/amirbena/code-review-skill/issues/431) |
 | [`drift-detection-and-regression-lifecycle.md`](drift-detection-and-regression-lifecycle.md) | Turning a #338 baseline-vs-candidate comparison into meaningful drift versus noise (three closed drift types over the unmodified #55/#56 metrics), a stable `{case_id, drift_type, expected_finding_key}` fingerprint, and the GitHub issue lifecycle (open once per fingerprint via a hidden marker, comment on recurrence, auto-close on resolution, a `keep-open` maintainer override) plus the machine-readable metadata every issue carries. | [#339](https://github.com/amirbena/code-review-skill/issues/339) |
 | [`schedule-spec.md`](schedule-spec.md) | The repository-owned schedule spec for the scheduled sentinel/comprehensive lanes: the versioned expected-run manifest (per-lane `max_gap_hours`, the named comprehensive weekday, confirmation parameters, the origin-attestation pusher allowlist, tracking-issue slots, the `expected_from` activation instant), the thin Routine prompt spec, and the four-label set. Definitions only — provisioning, execution, and publication are separate issues. | [#469](https://github.com/amirbena/code-review-skill/issues/469) |
@@ -54,7 +54,7 @@ set — and [`duplicate-noise.md`](duplicate-noise.md)
 third — the same-root-cause clustering of produced findings and the
 redundant-finding count. The corpus and its case-selection rationale
 ([#51](https://github.com/amirbena/code-review-skill/issues/51)) live in
-[`corpus/`](../../docs/benchmark/corpus/README.md); the runner contract
+[`corpus/`](../../benchmark/corpus/README.md); the runner contract
 ([#52](https://github.com/amirbena/code-review-skill/issues/52)) is
 [`runner-contract.md`](runner-contract.md); the run-to-run regression
 report ([#53](https://github.com/amirbena/code-review-skill/issues/53)) is
@@ -62,7 +62,7 @@ report ([#53](https://github.com/amirbena/code-review-skill/issues/53)) is
 
 ## Worked example
 
-[`examples/example-case.yaml`](../../docs/benchmark/examples/example-case.yaml) is one complete,
+[`examples/example-case.yaml`](../../benchmark/examples/example-case.yaml) is one complete,
 validated `benchmark-case/v2` fixture referenced by `fixture-format.md`
 §12. It is an illustrative reference for the format, **not** a corpus case
 (the corpus is #51). Its automated validation and the negative tests for
@@ -71,7 +71,7 @@ the format's rejection rules live in
 
 ## Corpus
 
-[`corpus/`](../../docs/benchmark/corpus/README.md) holds the initial benchmark corpus (#51):
+[`corpus/`](../../benchmark/corpus/README.md) holds the initial benchmark corpus (#51):
 one crafted `benchmark-case/v2` fixture per review category, each a
 self-contained inline patch with its pre-image and expected findings. The
 corpus is validated by
@@ -218,7 +218,7 @@ including every §7 worked example).
 
 ## Senior voice examples
 
-[`senior-voice-examples.md`](../../docs/benchmark/senior-voice-examples.md) (issue
+[`senior-voice-examples.md`](../../benchmark/senior-voice-examples.md) (issue
 [#231](https://github.com/amirbena/code-review-skill/issues/231), design
 record [#229](https://github.com/amirbena/code-review-skill/issues/229))
 is a **documented reference set, not a CI gate**, unlike everything above:
@@ -230,7 +230,7 @@ demonstrating the voice principles owned by
 
 ## Reviewer Brief benchmark
 
-[`corpus/reviewer-brief/README.md`](../../docs/benchmark/corpus/reviewer-brief/README.md)
+[`corpus/reviewer-brief/README.md`](../../benchmark/corpus/reviewer-brief/README.md)
 (issue [#309](https://github.com/amirbena/code-review-skill/issues/309),
 depends on [#304](https://github.com/amirbena/code-review-skill/issues/304))
 pins the semantic quality and publication isolation of the private,
@@ -248,12 +248,12 @@ exercised by
 a negative canary proving the check can catch a real leak). The
 semantic-quality properties whose wording is intentionally flexible are a
 documented, non-CI-gated reference set,
-[`reviewer-brief-examples.md`](../../docs/benchmark/reviewer-brief-examples.md), exactly like
+[`reviewer-brief-examples.md`](../../benchmark/reviewer-brief-examples.md), exactly like
 the senior voice examples below.
 
 ## Agent-spawn / delegation benchmark
 
-[`corpus/delegation-spawn/README.md`](../../docs/benchmark/corpus/delegation-spawn/README.md)
+[`corpus/delegation-spawn/README.md`](../../benchmark/corpus/delegation-spawn/README.md)
 (issue [#307](https://github.com/amirbena/code-review-skill/issues/307),
 depends on [#303](https://github.com/amirbena/code-review-skill/issues/303))
 proves the agent-spawn and delegated-authority capability boundary stays
@@ -277,7 +277,7 @@ metrics above and from ordinary code-review quality fixtures.
 
 ## Trusted-host natural-language authorization benchmark
 
-[`corpus/trusted-host-nl-authorization/README.md`](../../docs/benchmark/corpus/trusted-host-nl-authorization/README.md)
+[`corpus/trusted-host-nl-authorization/README.md`](../../benchmark/corpus/trusted-host-nl-authorization/README.md)
 (issue [#370](https://github.com/amirbena/code-review-skill/issues/370),
 depends on [#369](https://github.com/amirbena/code-review-skill/issues/369))
 proves natural-language `allow_trusted_host_execution` authorization
@@ -310,7 +310,7 @@ which already have their own coverage.
 
 ## Publication-mode benchmark
 
-[`corpus/publication-mode/README.md`](../../docs/benchmark/corpus/publication-mode/README.md)
+[`corpus/publication-mode/README.md`](../../benchmark/corpus/publication-mode/README.md)
 (issue [#316](https://github.com/amirbena/code-review-skill/issues/316),
 depends on [#314](https://github.com/amirbena/code-review-skill/issues/314))
 proves the passive/semi/active review-publication boundary #314
@@ -341,7 +341,7 @@ code-review quality fixtures.
 
 ## Mutation-capability-boundary benchmark
 
-[`corpus/mutation-boundary/README.md`](../../docs/benchmark/corpus/mutation-boundary/README.md)
+[`corpus/mutation-boundary/README.md`](../../benchmark/corpus/mutation-boundary/README.md)
 (issue [#305](https://github.com/amirbena/code-review-skill/issues/305),
 depends on [#301](https://github.com/amirbena/code-review-skill/issues/301))
 proves code mutation never occurs without the exact required user
@@ -371,7 +371,7 @@ above and from ordinary code-review quality fixtures.
 
 ## Denied-capability security-event benchmark
 
-[`corpus/security-events/README.md`](../../docs/benchmark/corpus/security-events/README.md)
+[`corpus/security-events/README.md`](../../benchmark/corpus/security-events/README.md)
 (issue [#308](https://github.com/amirbena/code-review-skill/issues/308),
 depends on [#299](https://github.com/amirbena/code-review-skill/issues/299)
 and the relevant enforced denial from
@@ -404,7 +404,7 @@ above and from ordinary code-review quality fixtures.
 
 ## Verdict-consistency benchmark
 
-[`corpus/verdict-consistency/README.md`](../../docs/benchmark/corpus/verdict-consistency/README.md)
+[`corpus/verdict-consistency/README.md`](../../benchmark/corpus/verdict-consistency/README.md)
 (issue [#378](https://github.com/amirbena/code-review-skill/issues/378),
 depends on [#377](https://github.com/amirbena/code-review-skill/issues/377))
 proves the shared verdict-consistency comparator #377 built from #351's

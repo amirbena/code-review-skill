@@ -5,7 +5,7 @@ the initial benchmark corpus (#51).
 Pins runtime_platform/benchmark/fixture-format.md and its directory README so the
 canonical invariant, the schema/versioning fail-closed rule, the four typed
 variance constructs, the reused shared vocabulary, and the deferred-scope
-boundaries cannot drift silently. Also pins docs/benchmark/corpus/README.md
+boundaries cannot drift silently. Also pins benchmark/corpus/README.md
 as the case-selection rationale record. Prose assertions are
 whitespace-normalized; structural ones target headings and literal terms.
 """
@@ -16,11 +16,11 @@ from tests.support.paths import REPO_ROOT
 
 DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "fixture-format.md"
 README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
-EXAMPLE = REPO_ROOT / "docs" / "benchmark" / "examples" / "example-case.yaml"
+EXAMPLE = REPO_ROOT / "benchmark" / "examples" / "example-case.yaml"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
 REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_fixture.py"
 UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_fixture.py"
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus"
 CORPUS_README = CORPUS_DIR / "README.md"
 CORPUS_UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_corpus.py"
 
@@ -165,7 +165,7 @@ class FixtureFormatContractTests(unittest.TestCase):
 
     def test_worked_example_is_linked_and_described(self) -> None:
         self.assertIn("## 12. Worked example", self.raw)
-        self.assertIn("](../../docs/benchmark/examples/example-case.yaml)", self.raw)
+        self.assertIn("](../../benchmark/examples/example-case.yaml)", self.raw)
         self.assertIn("](../../tests/unit/benchmark/test_benchmark_fixture.py)", self.raw)
         self.assertIn("](reference/benchmark_fixture.py)", self.raw)
 
@@ -187,8 +187,8 @@ class DirectoryNavigationTests(unittest.TestCase):
     def test_readme_is_navigational_and_maps_the_contract(self) -> None:
         raw = README.read_text(encoding="utf-8")
         self.assertIn("](fixture-format.md)", raw)
-        self.assertIn("](../../docs/benchmark/examples/example-case.yaml)", raw)
-        self.assertIn("](../../docs/benchmark/corpus/README.md)", raw)
+        self.assertIn("](../../benchmark/examples/example-case.yaml)", raw)
+        self.assertIn("](../../benchmark/corpus/README.md)", raw)
         self.assertIn("not** packaged", raw)
         self.assertIn("#50", raw)
         self.assertIn("#51", raw)
@@ -250,10 +250,10 @@ class CorpusDirectoryTests(unittest.TestCase):
     def test_readme_links_every_fixture_and_the_validator(self) -> None:
         for path in self.fixtures:
             self.assertIn(f"]({path.name})", self.readme_raw, f"README omits {path.name}")
-        self.assertIn("](../../../runtime_platform/benchmark/fixture-format.md)", self.readme_raw)
-        self.assertIn("](../../../tests/unit/benchmark/test_benchmark_corpus.py)", self.readme_raw)
+        self.assertIn("](../../runtime_platform/benchmark/fixture-format.md)", self.readme_raw)
+        self.assertIn("](../../tests/unit/benchmark/test_benchmark_corpus.py)", self.readme_raw)
         self.assertIn(
-            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.readme_raw
+            "](../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.readme_raw
         )
 
     def test_corpus_covers_the_four_named_categories(self) -> None:

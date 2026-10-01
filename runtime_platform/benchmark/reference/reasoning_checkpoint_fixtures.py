@@ -12,7 +12,7 @@ Per the #565 design record (section 11) this module therefore follows the
 existing test-only reference-fixture pattern of
 `verdict_consistency_fixtures.py` / `reviewer_brief_fixtures.py`: declarative,
 metadata-bearing cases over a rendered review, documented in
-docs/benchmark/corpus/reasoning-checkpoint/README.md. No second fixture
+benchmark/corpus/reasoning-checkpoint/README.md. No second fixture
 framework, no new benchmark mechanism.
 
 Each `ReasoningCheckpointCase` carries the *activation evidence* the review

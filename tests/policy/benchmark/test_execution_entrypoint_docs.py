@@ -12,7 +12,7 @@ from runtime_platform.benchmark.scripts import benchmark_schedule_manifest as sm
 from runtime_platform.benchmark.scripts import run_benchmark_routine as routine
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "docs" / "benchmark" / "cloud-routine-integration.md"
+DOC = REPO_ROOT / "benchmark" / "cloud-routine-integration.md"
 
 
 def _section_2_2() -> str:

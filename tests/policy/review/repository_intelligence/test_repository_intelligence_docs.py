@@ -32,7 +32,6 @@ REFERENCE = REPO_ROOT / "tests" / "reference" / "review" / "repository_intellige
 BOUNDARY = REPO_ROOT / "tests" / "integration" / "packaging" / "_shared.py"
 CORPUS_README = (
     REPO_ROOT
-    / "docs"
     / "benchmark"
     / "corpus"
     / "repository-intelligence"

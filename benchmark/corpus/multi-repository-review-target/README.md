@@ -13,7 +13,7 @@ its membership-is-authorization boundary holds.
 ## `input.repositories` — a `benchmark-case/v2` extension, not a new format
 
 Every case here is still a `benchmark-case/v2` fixture
-([`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)),
+([`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)),
 parsed and validated by the same single reference validator
 (`runtime_platform/benchmark/reference/benchmark_fixture.py`) every other corpus uses — this
 sub-corpus never forks it. Issue #558 added one small, additive extension
@@ -60,7 +60,7 @@ single repository. Reusing that same mechanism, extended to N repository
 roots, keeps this sub-corpus inside the ordinary finding-precision/recall
 pipeline ([#41](https://github.com/amirbena/code-review-skill/issues/41))
 instead of introducing a parallel, disjoint evaluation style for what is,
-functionally, the same kind of claim the rest of `docs/benchmark/corpus/`
+functionally, the same kind of claim the rest of `benchmark/corpus/`
 already makes. Scenario 4 (isolation/authorization) is additionally backed
 by the deterministic reference-model security suite
 (`tests/unit/security/test_multi_repository_membership.py`, issue #556) —
@@ -117,7 +117,7 @@ this same corpus so the "N=1 is entirely unchanged" claim
 `activates_multi_repository_policy`, `tests/reference/review/
 multi_repository_review_target.py`) is a benchmark case here too, not only
 asserted in prose or exercised only by the pre-existing single-repository
-corpora elsewhere in `docs/benchmark/corpus/`.
+corpora elsewhere in `benchmark/corpus/`.
 
 ## Isolation is proven twice, at two different layers
 
@@ -151,7 +151,7 @@ corpus uses:
 
 ```bash
 python3 runtime_platform/benchmark/scripts/run_benchmark.py \
-  --corpus-dir docs/benchmark/corpus/multi-repository-review-target
+  --corpus-dir benchmark/corpus/multi-repository-review-target
 ```
 
 ## Non-goals

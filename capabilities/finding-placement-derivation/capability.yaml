@@ -15,4 +15,4 @@ never:
   - dropping a finding because no valid inline anchor exists
   - treating "not visible in the GitHub diff" as evidence that a finding
     is invalid
-benchmark: docs/benchmark/corpus/analogue-placement-pattern
+benchmark: benchmark/corpus/analogue-placement-pattern

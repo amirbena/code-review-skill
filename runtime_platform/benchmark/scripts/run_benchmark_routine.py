@@ -5,7 +5,7 @@ Runs a lane through `run_benchmark.py`, verifies every invocation, evaluates dri
 in-run confirmation, and seals the canonical result to the handoff. It performs no GitHub
 write other than the seal; publication is the publisher's (Issue #471).
 
-Contract: `docs/benchmark/cloud-routine-integration.md`. Modes: `smoke` / `selected` (verified
+Contract: `benchmark/cloud-routine-integration.md`. Modes: `smoke` / `selected` (verified
 output only, never sealed), `sentinel` / `comprehensive` (sealed lanes), `full` (deprecated
 synonym for `sentinel`), `auth-check` (handoff smoke test, no benchmark).
 

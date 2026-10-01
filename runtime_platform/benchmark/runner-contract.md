@@ -8,7 +8,7 @@ run must hold, and the machine-readable per-case result shape a regression
 report ([#53](https://github.com/amirbena/code-review-skill/issues/53))
 later consumes. It builds on the fixture format
 ([`fixture-format.md`](fixture-format.md), #50) and the corpus
-([`corpus/README.md`](../../docs/benchmark/corpus/README.md), #51). Parent capability:
+([`corpus/README.md`](../../benchmark/corpus/README.md), #51). Parent capability:
 [#40](https://github.com/amirbena/code-review-skill/issues/40).
 
 Like [`fixture-format.md`](fixture-format.md) and the rest of
@@ -79,7 +79,7 @@ A run executes **either the whole corpus or one selected case**, chosen by
 `id` ([`fixture-format.md`](fixture-format.md) §5):
 
 - **Whole-corpus run** — every `*.yaml` under
-  [`corpus/`](../../docs/benchmark/corpus/README.md) is parsed and executed. A parse failure
+  [`corpus/`](../../benchmark/corpus/README.md) is parsed and executed. A parse failure
   in any fixture fails the run before any case executes (fail-closed: a
   malformed corpus is not silently partially run).
 - **Single-case run** — exactly the case whose `id` is given executes.

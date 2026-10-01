@@ -15,7 +15,7 @@ inline patch plus expected findings), this boundary's inputs and
 expectations are not a diff and a set of review findings — they are a
 requested capability, an authorization scope/state, a structural
 allow/deny result, and an expected repository/Git state after the action.
-[`fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)'s `expected` block has no
+[`fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)'s `expected` block has no
 field for any of that. This corpus follows the same test-only,
 data-driven reference-fixture pattern
 [`../delegation-spawn/README.md`](../delegation-spawn/README.md)
@@ -23,17 +23,17 @@ data-driven reference-fixture pattern
 and [`../reviewer-brief/README.md`](../reviewer-brief/README.md) already
 established for domains the schema does not fit:
 
-- [`../../../../runtime_platform/benchmark/reference/mutation_fixtures.py`](../../../../runtime_platform/benchmark/reference/mutation_fixtures.py) —
+- [`../../../../runtime_platform/benchmark/reference/mutation_fixtures.py`](../../../runtime_platform/benchmark/reference/mutation_fixtures.py) —
   one `MutationCase` per required outcome shape, each a zero-argument
   `run()` closure that exercises the *single* reference model,
-  [`../../../../tests/reference/review/mutation_authority.py`](../../../../tests/reference/review/mutation_authority.py),
+  [`../../../../tests/reference/review/mutation_authority.py`](../../../tests/reference/review/mutation_authority.py),
   against a real, disposable temporary Git repository — never a mock or a
   stubbed filesystem — plus the declarative metadata #305 requires:
   requested capability/action, authorization scope/state, expected
   allow/deny result, expected repository/Git state after the case, linked
   `AUTH-###` threat-scenario id(s), and (for a denied case) the
   provisional denial classification.
-- [`../../../../tests/unit/benchmark/test_mutation_boundary_corpus.py`](../../../../tests/unit/benchmark/test_mutation_boundary_corpus.py) —
+- [`../../../../tests/unit/benchmark/test_mutation_boundary_corpus.py`](../../../tests/unit/benchmark/test_mutation_boundary_corpus.py) —
   runs every case's `run()` and asserts its actual outcome matches the
   declared expectation, plus corpus-completeness checks (every required
   category, every catalog `AUTH-###` id excluding `AUTH-014`, every
@@ -42,7 +42,7 @@ established for domains the schema does not fit:
   dedicated "allowed apply changes only the authorized scope" check.
 
 This corpus is **not** a duplicate of
-[`../../../../tests/unit/security/test_mutation_authority.py`](../../../../tests/unit/security/test_mutation_authority.py),
+[`../../../../tests/unit/security/test_mutation_authority.py`](../../../tests/unit/security/test_mutation_authority.py),
 which #301 already landed as hand-written regression tests, one per
 `AUTH-###` scenario, against the same reference model. That suite is *why*
 the boundary holds; this corpus is the declarative, metadata-bearing
@@ -57,7 +57,7 @@ same single implementation; neither ever forks it.
 
 Like the delegation-spawn corpus, every case here yields a **capability-
 boundary pass/fail outcome**, never a P0/P1/P2 finding match. This module
-lives entirely outside `docs/benchmark/corpus/*.yaml`
+lives entirely outside `benchmark/corpus/*.yaml`
 (`benchmark-case/v2` fixtures) and `runtime_platform/benchmark/reference/
 benchmark_metrics.py`/`benchmark_match.py` (finding precision/recall/
 severity scoring): it is executed by its own dedicated test module,
@@ -143,7 +143,7 @@ in the unit-test module).
 ## Threat-scenario traceability
 
 This corpus covers every `AUTH-###` scenario in
-[`../../../threat-model/catalog/mutation-authority.yaml`](../../../threat-model/catalog/mutation-authority.yaml)
+[`../../../threat-model/catalog/mutation-authority.yaml`](../../../docs/threat-model/catalog/mutation-authority.yaml)
 (16 scenarios, issue [#300](https://github.com/amirbena/code-review-skill/issues/300)),
 excluding `AUTH-014` — a distinct, already-covered GitHub formal
 review-action authority domain
@@ -163,7 +163,7 @@ python3 -m unittest tests.unit.benchmark.test_mutation_boundary_corpus
 ```
 
 exactly like every other `test_*_corpus.py` module under
-[`../../../../tests/unit/benchmark/`](../../../../tests/unit/benchmark/)
+[`../../../../tests/unit/benchmark/`](../../../tests/unit/benchmark/)
 (e.g. `test_delegation_spawn_corpus.py`) — no other benchmark case needs
 to run first.
 

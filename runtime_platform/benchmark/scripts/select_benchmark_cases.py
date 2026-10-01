@@ -47,7 +47,7 @@ if str(_REPO_ROOT) not in sys.path:
 from runtime_platform.benchmark.reference import benchmark_selection as sel  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_taxonomy as tax  # noqa: E402
 
-DEFAULT_INDEX_PATH = _REPO_ROOT / "docs" / "benchmark" / "corpus-index.json"
+DEFAULT_INDEX_PATH = _REPO_ROOT / "benchmark" / "corpus-index.json"
 
 
 def load_pr_classification(path: Path) -> dict[str, tuple[str, ...]]:

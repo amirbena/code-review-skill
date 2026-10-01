@@ -38,7 +38,7 @@ Per #447/#451:
 - Reuses `repository-intelligence`'s existing corpus (#129) for the
   "not needed" and "must activate" activation-correctness roles, and adds
   exactly one net-new fixture
-  ([`docs/benchmark/corpus/scale-progressive-loading-proof/`](../benchmark/corpus/scale-progressive-loading-proof/README.md))
+  ([`benchmark/corpus/scale-progressive-loading-proof/`](../../benchmark/corpus/scale-progressive-loading-proof/README.md))
   for the one required shape neither existing corpus covers: an ambiguous
   trigger-evaluation that must still load (fail-closed) rather than skip.
 - Does **not** rewrite any existing *pinned* benchmark expectation (§4
@@ -102,7 +102,7 @@ Reproducible with:
 python3 scripts/capability_architecture/scale_progressive_loading_proof.py behavioral
 ```
 
-Re-runs #408's own 4-case corpus (`docs/benchmark/corpus/*.yaml`) through
+Re-runs #408's own 4-case corpus (`benchmark/corpus/*.yaml`) through
 the same `ProductionReviewerAdapter` + `benchmark_metrics.compute_run_metrics`
 #408 used, live, at the commit above:
 
@@ -139,9 +139,9 @@ defect was found.
 What the first completed run *did* surface, independent of the earlier
 hang, is a genuine pre-existing defect in the two reused
 `repository-intelligence` fixtures: both
-[`repo-intel-python-control-compatible-caller-no-finding.yaml`](../benchmark/corpus/repository-intelligence/repo-intel-python-control-compatible-caller-no-finding.yaml)
+[`repo-intel-python-control-compatible-caller-no-finding.yaml`](../../benchmark/corpus/repository-intelligence/repo-intel-python-control-compatible-caller-no-finding.yaml)
 and
-[`repo-intel-python-call-site-caller-null-deref.yaml`](../benchmark/corpus/repository-intelligence/repo-intel-python-call-site-caller-null-deref.yaml)
+[`repo-intel-python-call-site-caller-null-deref.yaml`](../../benchmark/corpus/repository-intelligence/repo-intel-python-call-site-caller-null-deref.yaml)
 carried a corrupt patch hunk header (`@@ -1,3 +1,3 @@` against a 2-line
 base; `@@ -1,10 +1,6 @@` against a 9-line/5-line base respectively) —
 the same class of bug #411 §4 found and fixed in 1 fixture and flagged
@@ -189,7 +189,7 @@ this fixture is left as a follow-up against #129's corpus.
 ## 5. Ambiguous predicate evaluation forces fail-closed load (required case 3)
 
 This issue's one net-new fixture:
-[`scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion.yaml`](../benchmark/corpus/scale-progressive-loading-proof/scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion.yaml).
+[`scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion.yaml`](../../benchmark/corpus/scale-progressive-loading-proof/scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion.yaml).
 `apply_discount`'s rounding direction flips; whether it has an external
 caller is not resolvable from the diff alone (it is merely re-exported
 through `__all__`), exercising #447's fail-closed clause directly. Live

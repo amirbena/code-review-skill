@@ -4,7 +4,7 @@ sub-corpus (Issue #186, extended by Issue #279, parent #179, grandparent
 #82).
 
 The sub-corpus is
-``docs/benchmark/corpus/database-migration-deepening/*.yaml``: a small,
+``benchmark/corpus/database-migration-deepening/*.yaml``: a small,
 focused set of ``benchmark-case/v2`` fixtures pinning representative
 Database / Migration deepening outcomes as follow-up quality hardening for
 the capability #179 already defines — it validates domain correctness
@@ -31,7 +31,7 @@ from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = (
-    REPO_ROOT / "docs" / "benchmark" / "corpus" / "database-migration-deepening"
+    REPO_ROOT / "benchmark" / "corpus" / "database-migration-deepening"
 )
 
 MIN_CASES = 9
@@ -294,7 +294,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never a second one", self.raw)
 

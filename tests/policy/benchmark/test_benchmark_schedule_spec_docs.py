@@ -13,7 +13,7 @@ from tests.support.paths import REPO_ROOT
 BENCHMARK = REPO_ROOT / "runtime_platform" / "benchmark"
 SPEC = BENCHMARK / "schedule-spec.md"
 README = BENCHMARK / "README.md"
-ROUTINE_DOC = REPO_ROOT / "docs" / "benchmark" / "cloud-routine-integration.md"
+ROUTINE_DOC = REPO_ROOT / "benchmark" / "cloud-routine-integration.md"
 RUNBOOK = BENCHMARK / "scheduled-operations" / "provisioning-runbook.md"
 
 

@@ -86,7 +86,7 @@ those same 15 `AUTH-###` scenarios, all now pointing at
 `runtime_platform/benchmark/reference/mutation_fixtures.py` instead of
 `COVERAGE_GAP`; `#306`, which fills in `benchmark_reference` for those
 same 13 `SBOX-###` scenarios, pointing at
-`docs/benchmark/corpus/sandbox-adversarial/README.md` (the real-runner
+`benchmark/corpus/sandbox-adversarial/README.md` (the real-runner
 adversarial suite in `tests/integration/sandbox/test_adversarial_containment.py`,
 never a fake/reference model) instead of `COVERAGE_GAP`; and `#307`, which
 fills in `benchmark_reference` for those same 11 `DELEG-###` scenarios
@@ -159,7 +159,7 @@ that family's benchmark issue owns
 `runtime_platform/benchmark/reference/delegation_fixtures.py` for `delegation/#307`,
 `runtime_platform/benchmark/reference/security_event_fixtures.py` for
 `security-event/#308`, and the `## Coverage` table in
-`docs/benchmark/corpus/sandbox-adversarial/README.md` for `sandbox/#306`,
+`benchmark/corpus/sandbox-adversarial/README.md` for `sandbox/#306`,
 since #306 has no data-driven fixture module), derives a per-scenario
 `covered` / `partial` / `not-applicable-to-benchmark` / `gap` rollup from
 the fields above, and fails when a corpus cites a scenario id absent from

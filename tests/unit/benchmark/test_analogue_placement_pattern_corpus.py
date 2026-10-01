@@ -13,7 +13,7 @@ from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = (
-    REPO_ROOT / "docs" / "benchmark" / "corpus" / "analogue-placement-pattern"
+    REPO_ROOT / "benchmark" / "corpus" / "analogue-placement-pattern"
 )
 
 MIN_CASES = 4
@@ -226,7 +226,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never a second one", self.raw)
 

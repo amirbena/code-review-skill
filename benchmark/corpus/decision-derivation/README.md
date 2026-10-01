@@ -2,10 +2,10 @@
 
 Repository-development artifact for GitHub Issue
 [#450](https://github.com/amirbena/code-review-skill/issues/450). This is
-a focused [`benchmark-case/v2`](../../../../runtime_platform/benchmark/fixture-format.md) sub-corpus that
+a focused [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md) sub-corpus that
 proves both directions of the mechanical severity → decision path defined
 in
-[`../../../../shared/policies/severity.md`](../../../../shared/policies/severity.md),
+[`../../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
 "Decision derivation (mechanical)":
 
 - **reverse direction (#450):** a P2-only, or empty, finding set must
@@ -23,7 +23,7 @@ the normal-path (forward) direction end-to-end against the real packaged
 Skill: a real P0/P1 finding must never render a clean verdict. It is the
 cheapest, highest-signal check for the verdict-drift failure mode raised
 by the review-reliability audit in
-[`../../../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](../../../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md)
+[`../../../benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](../../../docs/benchmark-measurement-architecture/benchmark-measurement-architecture-model.md)
 §12.4 ("Benchmark proof"). It is proof only: it builds no enforcement
 mechanism and changes nothing in a live review (the runtime boundary is
 [`../verdict-consistency/`](../verdict-consistency/README.md)'s concern).
@@ -56,7 +56,7 @@ change* end-to-end through the packaged Skill produce the right findings
 and the right mechanically-derived decision? That is exactly what
 `benchmark-case/v2` (self-contained inline patch + expected findings +
 expected decision) is for, per
-[`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) — the same format
+[`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) — the same format
 [`../candidate-finding-validation/`](../candidate-finding-validation/README.md)
 and the root corpus use.
 
@@ -82,7 +82,7 @@ and the root corpus use.
   `changes-required`.** The point of the corpus is that severity, not
   wording or finding count, is the only thing that can move the decision —
   see
-  [`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §7's mechanical
+  [`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §7's mechanical
   derivation and §11 rule 11's fail-closed check that a fixture's own
   `decision` is consistent with it.
 - **Deliberately reuses one small fictional domain** (a `reports/` export
@@ -131,7 +131,7 @@ block (`source`, `tags`, `rationale`).
 ## Running just this benchmark
 
 ```sh
-python3 runtime_platform/benchmark/scripts/run_benchmark.py --corpus-dir docs/benchmark/corpus/decision-derivation
+python3 runtime_platform/benchmark/scripts/run_benchmark.py --corpus-dir benchmark/corpus/decision-derivation
 python3 -m unittest tests.unit.benchmark.test_decision_derivation_corpus
 python3 -m unittest tests.unit.benchmark.test_blocking_verdict_corpus
 ```
@@ -147,10 +147,10 @@ tests' equivalent.
 
 `benchmark-case/v2`'s `expected.decision` vocabulary is deliberately
 Skill-neutral (`clean` / `changes-required` — see
-[`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md) §1): `clean` is
+[`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §1): `clean` is
 `local-code-review`'s `REVIEW CLEAN` **and** `github-pr-review`'s
 `Approve` event, per
-[`../../../../shared/policies/severity.md`](../../../../shared/policies/severity.md),
+[`../../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
 "Decision derivation (mechanical)". Every fixture here is written against
 that shared vocabulary, not against either Skill's surface wording, so it
 states the same expectation for both Skills by construction.
@@ -181,9 +181,9 @@ paired with an `Approve`/`APPROVE` signal is a violation. A live
 
 ## Validation
 
-[`../../../../tests/unit/benchmark/test_decision_derivation_corpus.py`](../../../../tests/unit/benchmark/test_decision_derivation_corpus.py)
+[`../../../../tests/unit/benchmark/test_decision_derivation_corpus.py`](../../../tests/unit/benchmark/test_decision_derivation_corpus.py)
 loads every fixture here through the single reference validator
-[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
+[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 — it never defines a second one — and asserts, for the `dd-*` fixtures
 that are not `dd-blocking-*`: the three named outcome
 shapes are present; every fixture's required findings are `P2` only (the
@@ -201,14 +201,14 @@ themselves happens on the pull request.
 
 ### Blocking-verdict validation (#350)
 
-[`../../../../tests/unit/benchmark/test_blocking_verdict_corpus.py`](../../../../tests/unit/benchmark/test_blocking_verdict_corpus.py)
+[`../../../../tests/unit/benchmark/test_blocking_verdict_corpus.py`](../../../tests/unit/benchmark/test_blocking_verdict_corpus.py)
 covers the `dd-blocking-*` fixtures through the same single validator. It
 asserts each expects `changes-required` with a required P0/P1 finding,
 that both severities are represented, that anchors occur in the patch, and
 that each patch applies in an isolated workspace.
 
 The rendered-verdict assertion is
-[`../../../../runtime_platform/benchmark/reference/benchmark_blocking_verdict.py`](../../../../runtime_platform/benchmark/reference/benchmark_blocking_verdict.py)'s
+[`../../../../runtime_platform/benchmark/reference/benchmark_blocking_verdict.py`](../../../runtime_platform/benchmark/reference/benchmark_blocking_verdict.py)'s
 `check_blocking_verdict`: when any produced finding is P0/P1, **both** the
 report's `**Result:**` label and its `### Decision` label (extracted by
 `benchmark_review_adapter.parse_rendered_outcome` from the adapter's

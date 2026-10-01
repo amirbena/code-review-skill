@@ -41,7 +41,7 @@ from runtime_platform.benchmark.scripts.benchmark_review_adapter import (  # noq
     resolve_cli_executable,
 )
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus"
 DEFAULT_RUNS = 3
 DEFAULT_TIMEOUT_SECONDS = 600.0
 

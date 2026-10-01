@@ -177,7 +177,7 @@ being on or awake, which is why they are the selected target.
 
 **Two scheduled lanes (#431).** The concrete Routine integration below
 (#338/#415, later refined into two lanes by #431 —
-[`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md) §2.1,
+[`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md) §2.1,
 [`nightly-history-and-baseline.md`](nightly-history-and-baseline.md) §2)
 runs as **two** maintainer-configured Cloud Routine schedules, not one: a
 **sentinel** lane (the 4 permanent canonical cases, maximum gap ≤ 96 h) and a

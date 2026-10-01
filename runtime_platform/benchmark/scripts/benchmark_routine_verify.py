@@ -4,7 +4,7 @@
 Never trusts a Routine's own "green" session status: parses
 ``run_benchmark.py``'s own JSON stdout and confirms it carries the stable
 per-case result shape (``runtime_platform/benchmark/runner-contract.md`` §6) before a
-run may be treated as evidence. Contract: `docs/benchmark/cloud-routine-integration.md`.
+run may be treated as evidence. Contract: `benchmark/cloud-routine-integration.md`.
 """
 
 from __future__ import annotations

@@ -4,7 +4,7 @@ Repository-development artifact for Issue
 [#308](https://github.com/amirbena/code-review-skill/issues/308), depends
 on [#299](https://github.com/amirbena/code-review-skill/issues/299) (the
 authoritative denied-capability security-event taxonomy,
-[`../../../security-events/security-event-model.md`](../../../security-events/security-event-model.md))
+[`../../../security-events/security-event-model.md`](../../../docs/security-events/security-event-model.md))
 and the relevant enforced denial from
 [#301](https://github.com/amirbena/code-review-skill/issues/301) /
 [#302](https://github.com/amirbena/code-review-skill/issues/302) /
@@ -36,14 +36,14 @@ LLM/rubric score, exactly like the three corpora above.
 ## Why this isn't a `benchmark-case/v2` corpus
 
 Like the three corpora above, this domain has no representation in
-[`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md): that schema's
+[`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md): that schema's
 `expected` block is findings/decision-shaped and has no field for an
 event schema, a classification, or a redaction assertion. This corpus
 follows the same test-only, data-driven reference-fixture pattern:
 
-- [`../../../../runtime_platform/benchmark/reference/security_event_fixtures.py`](../../../../runtime_platform/benchmark/reference/security_event_fixtures.py) —
+- [`../../../../runtime_platform/benchmark/reference/security_event_fixtures.py`](../../../runtime_platform/benchmark/reference/security_event_fixtures.py) —
   the `SecurityEvent` dataclass (mirroring
-  [security-event-model.md](../../../security-events/security-event-model.md)
+  [security-event-model.md](../../../docs/security-events/security-event-model.md)
   §3's field schema field-for-field — a field is simply absent, never
   padded, when not applicable to a domain, and there is deliberately no
   field capable of holding a secret, token, credential value, raw
@@ -54,11 +54,11 @@ follows the same test-only, data-driven reference-fixture pattern:
   `SecurityEventCase` per representative enforced denial, each a
   zero-argument `build()` closure returning the event a real denial in
   that family reports.
-- [`../../../../tests/unit/benchmark/test_security_event_corpus.py`](../../../../tests/unit/benchmark/test_security_event_corpus.py) —
+- [`../../../../tests/unit/benchmark/test_security_event_corpus.py`](../../../tests/unit/benchmark/test_security_event_corpus.py) —
   runs every case's `build()` and checks it against its declared
   expectation, plus corpus-completeness (every required family), a
   closed-vocabulary drift check against
-  [`../../../../scripts/security/validate_threat_model.py`](../../../../scripts/security/validate_threat_model.py)'s
+  [`../../../../scripts/security/validate_threat_model.py`](../../../scripts/security/validate_threat_model.py)'s
   `PROVISIONAL_EVENT_CLASSES`, determinism (building a case twice, or in
   reversed corpus order, is byte-for-byte identical), redaction, the
   observational-only invariant, threat-scenario/enforcement-owner
@@ -109,7 +109,7 @@ Per case, `test_security_event_corpus.py` asserts:
   order;
 - **`expected_denial` vs. `boundary_violation_attempt` classification** —
   matching the case's declared expectation, derived per
-  [security-event-model.md](../../../security-events/security-event-model.md)
+  [security-event-model.md](../../../docs/security-events/security-event-model.md)
   §4's rule (a case is `boundary_violation_attempt` only when a concrete
   invocation of the gated operation was actually constructed and
   submitted by an actor whose capability set could never satisfy it —
@@ -125,7 +125,7 @@ Per case, `test_security_event_corpus.py` asserts:
   neither (a family that legitimately has no cross-agent boundary must
   not fabricate one);
 - **target/scope identifiers** — the fields
-  [security-event-model.md](../../../security-events/security-event-model.md)
+  [security-event-model.md](../../../docs/security-events/security-event-model.md)
   §3 defines for the domain (e.g. `expected_scope_identifier` for a
   scope-escape case, `pr_identity`/`reviewed_head` for the GitHub domain,
   `requested_delegation` for a capability-escalation case) are present
@@ -144,13 +144,13 @@ Per case, `test_security_event_corpus.py` asserts:
 
 Every case cites at least one `AUTH-###`/`SBOX-###`/`DELEG-###`
 threat-scenario id from
-[`../../../threat-model/catalog/`](../../../threat-model/catalog/README.md)
+[`../../../threat-model/catalog/`](../../../docs/threat-model/catalog/README.md)
 (issue #300) and one of `#301`/`#302`/`#303` as its `enforcement_owner` —
 checked by `ThreatScenarioAndEnforcementOwnerTraceabilityTests`. This
 corpus does not itself change any catalog scenario's `enforcement_owner`,
 `enforcement_point`, `benchmark_reference`, or `regression_evidence` —
 those stay owned by #301/#302/#303/#305/#306/#307 exactly as
-[security-event-model.md](../../../security-events/security-event-model.md)
+[security-event-model.md](../../../docs/security-events/security-event-model.md)
 §7 describes; a handful of catalog scenarios this corpus directly
 exercises now also list `security-event/#308` in their `benchmark_family`
 alongside their existing family, pointing at this corpus in addition to
@@ -165,7 +165,7 @@ python3 -m unittest tests.unit.benchmark.test_security_event_corpus
 ```
 
 exactly like every other `test_*_corpus.py` module under
-[`../../../../tests/unit/benchmark/`](../../../../tests/unit/benchmark/).
+[`../../../../tests/unit/benchmark/`](../../../tests/unit/benchmark/).
 
 ## Corpus validation
 

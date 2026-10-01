@@ -3,7 +3,7 @@
 
 Contract: runtime_platform/benchmark/fixture-format.md. Two things are proven here:
 
-1. the worked example (docs/benchmark/examples/example-case.yaml) decodes,
+1. the worked example (benchmark/examples/example-case.yaml) decodes,
    parses, and validates, and its structure carries every §9 variance
    construct;
 2. each fail-closed rejection rule in §11 actually rejects — a malformed
@@ -26,7 +26,7 @@ import yaml
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
-EXAMPLE_PATH = REPO_ROOT / "docs" / "benchmark" / "examples" / "example-case.yaml"
+EXAMPLE_PATH = REPO_ROOT / "benchmark" / "examples" / "example-case.yaml"
 
 
 def _example_data() -> dict:

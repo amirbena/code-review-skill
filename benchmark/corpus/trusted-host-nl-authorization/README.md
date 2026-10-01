@@ -18,7 +18,7 @@ behavior.
 Every corpus under [`../`](../README.md) that reviews a code change
 (each a self-contained inline patch plus expected review *findings*) uses
 the `benchmark-case/v2` fixture format
-([`../../fixture-format.md`](../../../../runtime_platform/benchmark/fixture-format.md)). This domain has no
+([`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)). This domain has no
 patch and no finding: its input is a piece of trusted-invocation text (or
 a structured boolean) and its expectation is a resolved
 `allow_trusted_host_execution` boolean plus an execution-backend
@@ -29,16 +29,16 @@ test-only, data-driven reference-fixture pattern
 established for the structurally analogous agent-spawn/delegated-
 authority domain:
 
-- [`../../../../runtime_platform/benchmark/reference/trusted_host_nl_fixtures.py`](../../../../runtime_platform/benchmark/reference/trusted_host_nl_fixtures.py) —
+- [`../../../../runtime_platform/benchmark/reference/trusted_host_nl_fixtures.py`](../../../runtime_platform/benchmark/reference/trusted_host_nl_fixtures.py) —
   one `TrustedHostNLCase` per required outcome shape, each a
   zero-argument `run()` closure that exercises the *single* reference
   model,
-  [`../../../../tests/reference/review/runtime_validation.py`](../../../../tests/reference/review/runtime_validation.py)
+  [`../../../../tests/reference/review/runtime_validation.py`](../../../tests/reference/review/runtime_validation.py)
   (`resolve_allow_trusted_host_execution` and `select_backend`), plus the
   declarative metadata #370 requires: category, covered Scope tags, the
   Skills it applies to, expected resolved `allow_trusted_host_execution`
   boolean, and expected execution-backend provenance.
-- [`../../../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py`](../../../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py) —
+- [`../../../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py`](../../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py) —
   runs every case's `run()` and asserts its actual outcome matches the
   declared expectation, plus corpus-completeness checks (every required
   category, every required coverage tag, every phrase in the reference
@@ -47,7 +47,7 @@ authority domain:
   rejection suite.
 
 This corpus is **not** a duplicate of
-[`../../../../tests/unit/review/test_runtime_validation.py`](../../../../tests/unit/review/test_runtime_validation.py)'s
+[`../../../../tests/unit/review/test_runtime_validation.py`](../../../tests/unit/review/test_runtime_validation.py)'s
 `NaturalLanguageAuthorizationResolution` and `TrustedHostExecutionBackend`
 classes, which #367/#369 already landed as hand-written regression tests
 against the same reference model. That suite is *why* the boundary holds;
@@ -72,7 +72,7 @@ review *quality* — only authorization-resolution correctness.
 
 ## Why every case covers both Skills
 
-[`shared/policies/trusted-host-execution.md`](../../../../shared/policies/trusted-host-execution.md)
+[`shared/policies/trusted-host-execution.md`](../../../shared/policies/trusted-host-execution.md)
 states it "applies identically to `local-code-review` and
 `github-pr-review`," and both Skills' runbooks consult the one reference
 model this corpus benchmarks — there is no Skill-specific branch in
@@ -121,7 +121,7 @@ and `StructuralOutcomeAssertionTests.test_no_denial_required_case_ever_actually_
 [#535](https://github.com/amirbena/code-review-skill/issues/535) adds a
 second, separate case set, `SANDBOX_REQUEST_CASES`, for the repository
 test sandbox request in
-[`trusted-host-execution.md`](../../../../shared/policies/trusted-host-execution.md),
+[`trusted-host-execution.md`](../../../shared/policies/trusted-host-execution.md),
 "Repository test sandbox request". It sits beside `ALL_CASES`, which is
 unchanged, because its expected shape differs: `resolved` means "the
 sandbox was requested", and an admitted repository test command's backend
@@ -164,7 +164,7 @@ python3 -m unittest tests.unit.benchmark.test_trusted_host_nl_authorization_corp
 ```
 
 exactly like every other `test_*_corpus.py` module under
-[`../../../../tests/unit/benchmark/`](../../../../tests/unit/benchmark/)
+[`../../../../tests/unit/benchmark/`](../../../tests/unit/benchmark/)
 (e.g. `test_delegation_spawn_corpus.py`) — no other benchmark case needs
 to run first.
 
@@ -193,5 +193,5 @@ data schema, matching #370's own benchmark-layer scope.
   [`../sandbox-adversarial/README.md`](../sandbox-adversarial/README.md)
   respectively).
 - Any change to the review-quality metrics under
-  [`../../match-criteria.md`](../../../../runtime_platform/benchmark/match-criteria.md) and its siblings —
+  [`../../match-criteria.md`](../../../runtime_platform/benchmark/match-criteria.md) and its siblings —
   this is a security-semantics benchmark, not a finding-quality one.

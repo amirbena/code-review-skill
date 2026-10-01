@@ -13,7 +13,7 @@ state. Rather than stretch that closed schema, this module follows the
 same test-only, data-driven reference-fixture pattern
 `delegation_fixtures.py` and `reviewer_brief_fixtures.py` already
 established for domains the schema does not fit, documented in
-docs/benchmark/corpus/mutation-boundary/README.md.
+benchmark/corpus/mutation-boundary/README.md.
 
 This is deliberately **not** a duplicate of
 tests/unit/security/test_mutation_authority.py, which already hand-writes

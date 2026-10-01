@@ -33,7 +33,7 @@ from runtime_platform.benchmark.scripts.benchmark_corpus_membership import (  # 
     discover_comprehensive_fixtures,
 )
 
-DEFAULT_CORPUS_ROOT = REPO_ROOT / "docs" / "benchmark" / "corpus"
+DEFAULT_CORPUS_ROOT = REPO_ROOT / "benchmark" / "corpus"
 _CASE_KEYS_LIFTED = ("id", "status")
 
 

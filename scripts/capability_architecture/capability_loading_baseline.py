@@ -161,8 +161,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("mode", choices=("static", "quality", "all"))
     parser.add_argument(
         "--corpus-dir",
-        default=str(REPO_ROOT / "docs" / "benchmark" / "corpus"),
-        help="Corpus directory for the quality-metrics baseline (default: docs/benchmark/corpus).",
+        default=str(REPO_ROOT / "benchmark" / "corpus"),
+        help="Corpus directory for the quality-metrics baseline (default: benchmark/corpus).",
     )
     parser.add_argument("--cli", default=None, help="Override the review CLI executable.")
     parser.add_argument("--timeout", type=float, default=300.0)

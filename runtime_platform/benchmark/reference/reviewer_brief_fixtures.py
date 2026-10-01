@@ -3,7 +3,7 @@
 skills/github-pr-review/policies/reviewer-brief.md and
 skills/github-pr-review/templates/reviewer-brief.md).
 
-Unlike the domain corpora under docs/benchmark/corpus/, the Reviewer
+Unlike the domain corpora under benchmark/corpus/, the Reviewer
 Brief has no representation in the `benchmark-case/v2` schema
 (runtime_platform/benchmark/fixture-format.md): that schema's `expected` block is
 findings/decision-shaped and has no field for a private prose artifact or
@@ -12,7 +12,7 @@ than extend that closed schema for a single caller-facing artifact (or
 build a second, parallel fixture framework), this module follows the same
 pattern as `benchmark_fixture.py` and friends in this directory: a
 test-only, hand-authored reference model, documented in
-docs/benchmark/corpus/reviewer-brief/README.md.
+benchmark/corpus/reviewer-brief/README.md.
 
 Each `ReviewerBriefCase` models one correct Reviewer Brief a real
 `github-pr-review` invocation must be able to produce, *and* the

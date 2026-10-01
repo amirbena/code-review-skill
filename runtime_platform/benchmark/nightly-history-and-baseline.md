@@ -16,7 +16,7 @@ doc: not packaged into either Skill archive**, and no packaged Skill
 resource depends on it.
 
 This document builds the **vehicle #415 already shipped**
-([`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md),
+([`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md),
 `runtime_platform/benchmark/scripts/run_benchmark_routine.py`) into a **scheduling policy,
 a durable history store, and an explicit baseline policy**. It does not
 redefine #415's own execution/verification/evidence-issue mechanics, and
@@ -61,7 +61,7 @@ lifecycle (Non-goals, below).
   owns all of it, consuming this document's history/baseline as input.
 - The Cloud Routine's own checkout/SHA-pinning/completion-verification
   mechanics — [#415](https://github.com/amirbena/code-review-skill/issues/415)/
-  [`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md) own all
+  [`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md) own all
   of it, unchanged. Its evidence persistence and credential bounding are
   amended (A1, A2) in that document (§4, §7).
 - Re-deriving match/metrics logic already owned by
@@ -198,7 +198,7 @@ is inspectable with ordinary `git`/GitHub tooling, needs no separate
 retention configuration, and keeps evidence inside the same repository #339
 already has issue access to. Evidence-issue comments are the **human index and
 notification** for each published run, never the store
-([`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md)
+([`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md)
 §4). Raw per-case output is not stored in git (§3.3).
 
 The branch is written by the `benchmark-publication` GitHub App, through the

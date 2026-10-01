@@ -2,7 +2,7 @@
 """Contract coverage for the multi-repository Review Target benchmark
 sub-corpus (Issue #558, parent #555, impl #556).
 
-The sub-corpus is ``docs/benchmark/corpus/multi-repository-review-target/
+The sub-corpus is ``benchmark/corpus/multi-repository-review-target/
 *.yaml``: five scenarios proving the delivered explicit multi-repository
 Review Target composition detects the cross-repository defects that
 motivated it, and that its membership-is-authorization boundary holds.
@@ -28,7 +28,7 @@ from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "multi-repository-review-target"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "multi-repository-review-target"
 
 CROSS_REPO_MISMATCH = "cross-repo-contract-mismatch"
 THREE_REPO_CORRECT = "three-repo-coordinated-correct"
