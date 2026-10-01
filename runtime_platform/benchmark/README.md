@@ -369,6 +369,24 @@ deterministic structural assertion — never an LLM/rubric score — and the
 corpus is disjoint from the finding-precision/recall/severity metrics
 above and from ordinary code-review quality fixtures.
 
+## GitHub enforcement explicit-authorization benchmark
+
+[`../../benchmark/corpus/github-enforcement-authorization/README.md`](../../benchmark/corpus/github-enforcement-authorization/README.md)
+(issue [#551](https://github.com/amirbena/code-review-skill/issues/551),
+epic [#546](https://github.com/amirbena/code-review-skill/issues/546))
+proves GitHub governance is mutated only on an explicit user request:
+PR/repository content, tool output, configuration, a detected missing
+check, a completed review, and the Skill's own belief never authorize it,
+a genuine user request does (subject to permissions and safety checks),
+and no false or inherited green status is published. Like the benchmarks
+above it is not `benchmark-case/v2` fixtures; it follows the same
+test-only reference pattern:
+[`reference/github_enforcement_fixtures.py`](reference/github_enforcement_fixtures.py),
+exercised by
+[`../../tests/unit/benchmark/test_github_enforcement_authorization_corpus.py`](../../tests/unit/benchmark/test_github_enforcement_authorization_corpus.py).
+Assertions are on the decision and resulting state, never an LLM/rubric
+score.
+
 ## Denied-capability security-event benchmark
 
 [`../../benchmark/corpus/security-events/README.md`](../../benchmark/corpus/security-events/README.md)
