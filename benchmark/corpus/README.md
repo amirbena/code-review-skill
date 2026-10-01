@@ -41,7 +41,7 @@ A sub-corpus directory that holds only a `README.md` and no `benchmark-
 case/v2` fixture YAML (e.g. `mutation-boundary/`, `reviewer-brief/`,
 `delegation-spawn/`, `sandbox-adversarial/`,
 `trusted-host-nl-authorization/`, `security-events/`,
-`publication-mode/`, `verdict-consistency/`, `reasoning-checkpoint/`) is a specialized test-only or
+`publication-mode/`, `github-enforcement-authorization/`, `verdict-consistency/`, `reasoning-checkpoint/`) is a specialized test-only or
 real-runner suite consumed directly by `tests/` rather than through
 `ProductionReviewerAdapter` — it is excluded from the comprehensive lane
 by construction (the membership scan finds no fixture to include), never

@@ -16,4 +16,4 @@ never:
     reviewer's own work
   - weakening review quality because the reviewer is also the author
   - counting informational publication as a governance decision
-benchmark: benchmark/corpus/publication-mode, benchmark/corpus/mutation-boundary
+benchmark: benchmark/corpus/publication-mode, benchmark/corpus/mutation-boundary, benchmark/corpus/github-enforcement-authorization
