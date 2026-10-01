@@ -84,6 +84,11 @@ class UnknownTests(unittest.TestCase):
         self.assertEqual(r.classic.state, e.UNKNOWN)
         self.assertEqual(r.state, e.UNKNOWN)
 
+    def test_protection_without_required_checks_is_not_enforced(self):
+        resp = b.RawResponse(404, '{"message": "Required status checks not enabled"}')
+        r, _ = detect(ruleset(), resp)
+        self.assertEqual((r.classic.state, r.state), (e.NOT_ENFORCED, e.NOT_ENFORCED))
+
     def test_both_unreadable(self):
         r, _ = detect(b.RawResponse(500, "x"), b.RawResponse(0, "gh missing"))
         self.assertEqual(r.state, e.UNKNOWN)

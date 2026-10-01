@@ -64,7 +64,8 @@ the policy is load-bearing for rulesets in a way it is not for classic
 `POST .../contexts`. Per-endpoint permission details were not stated in the
 cited REST page. **Update (#549):** still open for fine-grained tokens. The
 read-only detector was exercised only with a classic `gh` OAuth token on a
-public repository, where both reads succeeded; fine-grained permission names
+public repository: the rules read succeeded and the classic read returned
+404 `Branch not protected`; fine-grained permission names
 were not tested. Detection treats any 403/404 as `UNKNOWN`, so a missing
 permission can never produce a false `NOT ENFORCED`.
 
@@ -103,7 +104,10 @@ forced migration exists. Practical considerations:
 - **Observed (#549):** classic `.../protection/required_status_checks` on an
   unprotected branch returns 404 with message `Branch not protected`. Detection
   treats only that exact message as "readable, absent"; any other 403/404 is
-  `UNKNOWN`. The rules endpoint returns `[]` for a nonexistent branch, so it
+  `UNKNOWN`. A protected branch without required checks is expected to answer
+  `Required status checks not enabled` (*unverified*; accepted as absent on that
+  expectation, and verifying it needs a protected test branch). Matching is by
+  context name only; `integration_id` / `app_id` pinning is ignored. The rules endpoint returns `[]` for a nonexistent branch, so it
   cannot distinguish "no rules" from "no such branch".
 - `do_not_enforce_on_create` exists only for rulesets; classic protection has
   no equivalent.

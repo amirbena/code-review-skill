@@ -20,7 +20,9 @@ ENFORCED = "ENFORCED"
 NOT_ENFORCED = "NOT ENFORCED"
 UNKNOWN = "UNKNOWN"
 PAGE_SIZE = 100
-CLASSIC_UNPROTECTED = "branch not protected"
+# GitHub's English 404 messages for readable-but-absent classic required checks. Coupled to
+# the message text: if GitHub rewords them, detection degrades to UNKNOWN, never to a guess.
+CLASSIC_ABSENT_MESSAGES = ("branch not protected", "required status checks not enabled")
 
 
 class Reader(Protocol):
@@ -75,7 +77,7 @@ def _read_classic(reader: Reader, repo: str, branch: str, context: str) -> Mecha
     except GitHubPermissionError as exc:
         # GitHub answers 404 "Branch not protected" for readable-but-absent protection;
         # any other 403/404 is an unreadable configuration, never an absence.
-        if exc.status == 404 and CLASSIC_UNPROTECTED in exc.detail.lower():
+        if exc.status == 404 and any(m in exc.detail.lower() for m in CLASSIC_ABSENT_MESSAGES):
             return MechanismReading(NOT_ENFORCED, "branch has no classic required status checks")
         return MechanismReading(UNKNOWN, f"classic protection unreadable: {exc}")
     except GitHubBoundaryError as exc:
@@ -92,7 +94,11 @@ def _read_classic(reader: Reader, repo: str, branch: str, context: str) -> Mecha
 def detect_enforcement(
     reader: Reader, repo: str, branch: str, context: str = DEFAULT_CONTEXT
 ) -> EnforcementResult:
-    """Return the enforcement state of `context` on `branch`; reads only."""
+    """Return the enforcement state of `context` on `branch`; reads only.
+
+    Matching is by context name only; `integration_id` / `app_id` source pinning is ignored,
+    so a check pinned to a different app still reports ENFORCED.
+    """
     ruleset = _read_rulesets(reader, repo, branch, context)
     classic = _read_classic(reader, repo, branch, context)
     on = [n for n, r in (("ruleset", ruleset), ("classic", classic)) if r.state == ENFORCED]
