@@ -90,7 +90,9 @@ trigger raised. Do not default to repository-wide exploration.
 "Insufficient evidence" is a valid terminal outcome, exactly as
 [`review-scope.md`](review-scope.md), "Architectural placement and
 execution-lifecycle fidelity," "Stop conditions" already establishes for
-placement questions.
+placement questions — but it is never reported as if the relationship had
+been checked: see "Relationship outcomes and unresolved relationships"
+below.
 
 ### Expansion bound scales with change-risk depth
 
@@ -119,6 +121,59 @@ case." Reviewer judgement applies only *within* a ring (for example, which
 of several sibling call sites to read first), never to whether a trigger
 fires or how far its ceiling reaches.
 
+## Relationship outcomes and unresolved relationships
+
+Every relationship question a fired trigger raises ends in exactly one of
+three outcomes. This section is the single definition; other policies and
+templates name these values and do not restate them.
+
+| Outcome | Meaning |
+| --- | --- |
+| `resolved_relevant` | The relationship was established inside the authorized ring and carries relevant evidence (a concrete `path:line`). |
+| `resolved_none` | The search was actually performed, with a capability able to answer the question inside the authorized ring, and no relevant repository-local relationship exists. |
+| `unresolved` | The question could not be established — ambiguous resolution (dynamic dispatch, reflection, string-keyed lookup), an unsupported language shape, missing or unavailable capability, or evidence that was not obtainable inside the authorized ring. |
+
+- **Absence is established, never inferred.** `resolved_none` requires that
+  the search ran and could have found the relationship. A search that
+  returned nothing because it could not look (no capability, unreadable
+  path, ambiguous dispatch) is `unresolved`, not `resolved_none`.
+- **The ring ceiling is not a verdict.** When the ceiling for the change's
+  depth is reached with the question still open, the outcome is
+  `unresolved`. An `affected_test` question has no ring: it is `unresolved`
+  when [`affected-test-analysis.md`](affected-test-analysis.md)'s own
+  tracing could not link the change to tests. Stop-at-first-ring and the ceiling table are unchanged.
+- **Initial relationship classes.** `caller_consumer` (callers of a changed
+  symbol; consumers of a changed config key or contract),
+  `implementation_interface` (implementers of a changed interface, or the
+  interface a changed implementer must still satisfy), and `affected_test`
+  (tests that depend on the changed behavior, per
+  [`affected-test-analysis.md`](affected-test-analysis.md)). The classes
+  are demonstrated review needs, not an ontology; an unlisted class —
+  including architectural analogue and relevant dependency — is out of
+  scope until a later contract adds it explicitly.
+- **Coverage is unchanged.** An `unresolved` relationship is a
+  visibility-only disclosure: it is not an incomplete trigger in
+  [`review-stopping-criteria.md`](review-stopping-criteria.md), never turns
+  coverage to `incomplete`, and never alters the Decision, a finding's
+  severity, identity, or evidence bar. `coverage: complete` keeps its
+  existing meaning — every required pass reached its own stop condition —
+  and does not assert that every relationship was resolved.
+- **Never presents as complete context.** A review with at least one
+  `unresolved` relationship renders the optional **Context gaps** section
+  of [`../templates/review-summary.md`](../templates/review-summary.md):
+  one bullet per unresolved relationship naming its class, subject, reason,
+  and, for expansion-trigger classes, ring reached. The review must not describe an unresolved relationship
+  with wording that claims it was checked ("no callers", "all consumers
+  verified"). The section is omitted entirely when nothing is unresolved,
+  and it is never a finding.
+- **No second evidence-state model.** The outcome vocabulary applies to
+  relationships only. It adds no `confidence` value: a finding's
+  `confidence` (`insufficient-context` included) is derived exactly as
+  [`../templates/finding.md`](../templates/finding.md), "Confidence and
+  evidence state," defines, and an unresolved relationship that bears on a
+  finding is cross-referenced by that finding's id rather than restated.
+  An unresolved relationship cannot support a finding.
+
 ## Expansion decisions are reported
 
 Every review emits, alongside the change-risk classification, which
@@ -127,7 +182,9 @@ and the concrete locations inspected. It is rendered in the review's
 subordinate metadata (see
 [`../templates/review-summary.md`](../templates/review-summary.md),
 "Machine metadata is subordinate") — never in the primary human-facing
-body, never as a finding, and never in a way that implies a verdict. A
+body, never as a finding, and never in a way that implies a verdict. The
+one human-visible exception is the **Context gaps** disclosure above, which
+carries only `unresolved` relationships. A
 review with no fired trigger still emits the classification, as "none";
 it is not silently dropped.
 
@@ -195,9 +252,20 @@ repository_expansion:
       source: <the observed diff fact that activated it>
       ring_reached: 1 | 2 | 3
       locations: [<path:symbol or path:line inspected>, ...]
+  relationships:
+    - class: caller_consumer | implementation_interface | affected_test
+      subject: <changed symbol, key, or interface>
+      outcome: resolved_relevant | resolved_none | unresolved
+      ring_reached: 1 | 2 | 3   # expansion-trigger classes only
+      reason: <present only when outcome is unresolved>
 ```
 
 `triggers` is empty when no expansion trigger fired on the current change.
+`relationships` is a sibling list, one entry per relationship question
+asked, and is empty when none was asked. It is not nested under `triggers`
+because `affected_test` comes from the signal-triggered
+[`affected-test-analysis.md`](affected-test-analysis.md) pass, which is not
+an expansion trigger and has no ring.
 
 ## Relationship to the repository-intelligence model
 

@@ -47,6 +47,14 @@ important concern or attention point; include scope only when useful>
   `complete` / `incomplete`, followed by every requirement's identifier,
   status, source citation, concrete evidence, and explanation>
 
+### Context gaps
+<only when at least one repository relationship is `unresolved` per
+  [`../policies/repository-expansion.md`](../policies/repository-expansion.md),
+  "Relationship outcomes and unresolved relationships": one bullet per
+  unresolved relationship — class, subject, reason, ring reached where one applies; never a
+  finding, never affecting coverage or the decision; omitted entirely
+  otherwise>
+
 ### Validation
 - <one entry per selected command, or an explicit no-command entry, using
   exactly `executed`, `skipped`, `failed`, or `unavailable`; include the exact
@@ -134,6 +142,11 @@ additive documentation and changes no Skill's rendered output by itself.
   section does not repeat implementation detail already covered under
   "What changed." Omit the section completely on a clean review; the opening
   assessment and Decision already communicate that result.
+- **Context gaps** — makes an `unresolved` relationship visible so the
+  review never reads as full-context. Rendered only when one exists; a
+  `resolved_none` relationship is not a gap and is not listed. It never
+  changes severity, the Decision, or coverage, and it uses no wording that
+  claims the relationship was checked.
 - **Validation** — reports only what was actually observed (tests run,
   packaging performed, links checked, etc.). Runtime validation uses the
   shared [`runtime-validation.md`](../policies/runtime-validation.md)
