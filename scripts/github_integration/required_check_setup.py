@@ -246,6 +246,8 @@ def _edit_classic(client, req: SetupRequest) -> SetupOutcome:
         after = client.read(base)
     except GitHubBoundaryError as exc:
         return _unverified("classic", before, f"read-back failed: {exc}")
+    if not isinstance(after, dict):
+        return _unverified("classic", before, "read-back returned an unexpected shape")
     rest = lambda p: _canon({k: v for k, v in p.items() if k != "required_status_checks"})
     old, new = before["required_status_checks"], after.get("required_status_checks") or {}
     listed = lambda r: set(_check_contexts(r.get("checks"))) | set(r.get("contexts") or [])

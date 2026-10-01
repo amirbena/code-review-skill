@@ -51,7 +51,8 @@ class FakeGitHub:
 
     def __init__(self, rulesets=(), protection=None, perm_fail_write=False, readback_drift=False,
                  write_status=None, fail_reads_after_write=False, concurrent_edit=False,
-                 classic_drift=False, org_source=False):
+                 classic_drift=False, org_source=False, empty_readback=False):
+        self.empty_readback = empty_readback
         self.write_status, self.fail_reads_after_write = write_status, fail_reads_after_write
         self.concurrent_edit, self.classic_drift, self.org_source = (
             concurrent_edit, classic_drift, org_source)
@@ -69,6 +70,8 @@ class FakeGitHub:
         body = json.loads(stdin) if stdin else None
         self.calls.append((method, endpoint, body))
         ok = lambda data: b.RawResponse(200, json.dumps(data))
+        if method == "GET" and self.wrote and self.empty_readback:
+            return b.RawResponse(200, "")
         if method == "GET" and self.wrote and self.fail_reads_after_write:
             return b.RawResponse(500, "boom")
         if method != "GET" and self.write_status:
@@ -216,6 +219,9 @@ class UnverifiedWriteTests(unittest.TestCase):
         out = run(FakeGitHub([make_ruleset("test")], write_status=422))
         self.assertEqual(out.action, "failed")
         self.assertIn("No change was applied", out.message)
+
+    def test_empty_classic_readback_is_unverified_not_a_crash(self):
+        self.assert_unverified(run(FakeGitHub(protection=make_protection("test"), empty_readback=True)))
 
     def test_classic_readback_drift_is_failed(self):
         out = run(FakeGitHub(protection=make_protection("test"), classic_drift=True))
