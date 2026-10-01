@@ -55,3 +55,15 @@ base branch. It accepts only an object with `read()`, so it cannot reach
 `python3 -m scripts.github_integration.enforcement OWNER/REPO BRANCH [--context C]`.
 Rules and open questions are recorded in
 [`ruleset-vs-branch-protection-research.md`](ruleset-vs-branch-protection-research.md).
+
+## Required-check setup
+
+[`required_check_setup.py`](../../scripts/github_integration/required_check_setup.py)
+(#550) adds or removes the one context on the mechanism that already carries
+required checks, only for an explicit user request (a valid
+`GovernanceAuthorization`) plus `ACTIVE` mode and reviewer independence.
+Rulesets use a full-object `PUT` with order-insensitive read-back
+verification; classic protection uses the additive `.../contexts` call. It
+refuses, without mutating, on unreadable, conflicting, organization-only, or
+absent configuration. Run it with
+`python3 -m scripts.github_integration.required_check_setup OWNER/REPO BRANCH --user-request "..." --active-mode --reviewer-independent [--remove]`.
