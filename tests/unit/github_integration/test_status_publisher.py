@@ -49,6 +49,7 @@ class FakeGitHub:
 
 
 def run(fake, reasoning=rse.Reasoning.CLEAN, *, head=SHA_A, **kw):
+    kw.setdefault("is_aggregator", True)
     kw.setdefault("active_mode", True)
     kw.setdefault("reviewer_independent", True)
     req = sp.PublishRequest(
@@ -101,6 +102,18 @@ class ReferenceModelParity(unittest.TestCase):
             ref = rse.map_verdict_to_status(r)
             got = sp.map_state(sp.Reasoning(r.value))
             self.assertEqual(got, None if ref is rse.StatusState.NONE else ref.value)
+
+
+class AggregatorDefaultTests(unittest.TestCase):
+    def test_request_is_not_aggregator_unless_declared(self):
+        fake = FakeGitHub()
+        req = sp.PublishRequest(
+            sp.Reasoning.CHANGES_REQUIRED, REPO, PR, SHA_A,
+            active_mode=True, reviewer_independent=True,
+        )
+        out = sp.publish_status(b.GitHubClient(fake, {}), req, sleep=lambda _s: None)
+        self.assertEqual(out.action, "withheld")
+        self.assertEqual(fake.calls, [])
 
 
 class UpsertTests(unittest.TestCase):
