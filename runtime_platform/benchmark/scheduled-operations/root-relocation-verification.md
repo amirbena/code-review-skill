@@ -41,7 +41,7 @@ constants moved to root `benchmark/`, and doc references updated. No argparse
 definition, mode handling, exit-code path, seal, or publisher logic changed.
 `runtime_platform/benchmark/benchmark-result-schema.md` changed only two relative
 links. Fixture bytes are unchanged: the only edits under the moved tree are corpus
-and benchmark READMEs/doc links, and the 34 fixture header comments that still
+and benchmark READMEs/doc links, and the 33 corpus fixture header comments (plus `examples/example-case.yaml`) that still
 carry the pre-move path are frozen deliberately because their bytes feed
 `corpus_id` and `fixture_digest` (see `FROZEN_FIXTURE_HEADERS` in
 `tests/policy/benchmark/test_benchmark_root_migration.py`).
