@@ -27,7 +27,7 @@ patch plus expected review findings, with no field for a publication mode,
 a "would publish" preview, or a GitHub-bound artifact's shape. Rather than
 stretch that closed schema, this module follows the same test-only,
 data-driven reference-fixture pattern, documented in
-`docs/benchmark/corpus/publication-mode/README.md`.
+`benchmark/corpus/publication-mode/README.md`.
 
 Evaluation style (runtime_platform/benchmark/README.md convention): every comparison
 here is a deterministic structural assertion -- resolved mode, formal

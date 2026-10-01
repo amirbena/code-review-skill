@@ -41,7 +41,7 @@ schema's `expected` block is a patch plus expected review findings, with
 no field for a finalized decision, a rendered/submitted signal, or a
 withheld-artifact outcome. Rather than stretch that closed schema, this
 module follows the same test-only, data-driven reference-fixture pattern,
-documented in `docs/benchmark/corpus/verdict-consistency/README.md`.
+documented in `benchmark/corpus/verdict-consistency/README.md`.
 
 Evaluation style (runtime_platform/benchmark/README.md convention): every comparison
 here is a deterministic structural assertion -- never an LLM/rubric

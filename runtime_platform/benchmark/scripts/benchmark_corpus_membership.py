@@ -2,13 +2,13 @@
 """Execution-mode/lane contract and comprehensive corpus membership (Issue #431).
 
 Single canonical home for two small, closely-related things the two-tier
-scheduled benchmark execution model (`docs/benchmark/corpus/README.md`,
+scheduled benchmark execution model (`benchmark/corpus/README.md`,
 `runtime_platform/benchmark/nightly-history-and-baseline.md` §2) needs on both the
 execution side (`run_benchmark_routine.py`) and the storage side
 (`benchmark_history.py`):
 
 1. The **lane** identity — `sentinel` (the 4 permanent canonical cases,
-   `docs/benchmark/corpus/*.yaml`, every 3 days) vs. `comprehensive`
+   `benchmark/corpus/*.yaml`, every 3 days) vs. `comprehensive`
    (every `benchmark-case/v2` fixture in the corpus tree, weekly) — and
    `full`'s resolution as a deprecated, fixed synonym for `sentinel`
    (never a second live meaning).

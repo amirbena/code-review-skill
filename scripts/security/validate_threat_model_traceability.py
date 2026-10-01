@@ -8,7 +8,7 @@ against the benchmark corpora that claim to exercise it —
 `runtime_platform/benchmark/reference/delegation_fixtures.py` (#307),
 `runtime_platform/benchmark/reference/security_event_fixtures.py` (#308), and the
 `## Coverage` table in
-`docs/benchmark/corpus/sandbox-adversarial/README.md` (#306, a real-runner
+`benchmark/corpus/sandbox-adversarial/README.md` (#306, a real-runner
 suite with no data-driven fixture module) — and reports a compact
 per-scenario coverage-state rollup: `covered`, `partial`,
 `not-applicable-to-benchmark`, or `gap`.
@@ -80,7 +80,7 @@ COVERAGE_STATES: frozenset[str] = frozenset(
 _RATIONALE_REQUIRED_SEVERITIES: frozenset[str] = frozenset({"CRITICAL", "HIGH"})
 
 _DEFAULT_SANDBOX_README = (
-    REPO_ROOT / "docs" / "benchmark" / "corpus" / "sandbox-adversarial" / "README.md"
+    REPO_ROOT / "benchmark" / "corpus" / "sandbox-adversarial" / "README.md"
 )
 _SBOX_ID_RE = re.compile(r"\bSBOX-\d{3}\b")
 

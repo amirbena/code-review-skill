@@ -13,7 +13,7 @@ Usage::
 
     python3 runtime_platform/benchmark/scripts/run_benchmark.py
     python3 runtime_platform/benchmark/scripts/run_benchmark.py --case-id correctness-off-by-one-pagination
-    python3 runtime_platform/benchmark/scripts/run_benchmark.py --corpus-dir docs/benchmark/corpus --cli claude --timeout 600
+    python3 runtime_platform/benchmark/scripts/run_benchmark.py --corpus-dir benchmark/corpus --cli claude --timeout 600
 
 Environment variables:
 
@@ -61,7 +61,7 @@ from runtime_platform.benchmark.reference import benchmark_metrics as bm  # noqa
 from runtime_platform.benchmark.reference import benchmark_runner as br  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_severity as bsev  # noqa: E402
 
-DEFAULT_CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
+DEFAULT_CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus"
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

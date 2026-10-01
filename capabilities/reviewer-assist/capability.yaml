@@ -18,4 +18,4 @@ never:
   - influencing findings, severity, coverage, or the verdict
   - reaching any publication surface
   - asserting a severity without a finalized finding
-benchmark: docs/benchmark/corpus/reviewer-brief
+benchmark: benchmark/corpus/reviewer-brief

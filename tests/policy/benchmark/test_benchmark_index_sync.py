@@ -2,7 +2,7 @@
 """Policy guard: the committed inverted index stays in sync with the live
 corpus (Issue #333). Contract: runtime_platform/benchmark/taxonomy.md §5.
 
-The index (docs/benchmark/corpus-index.json) is a build artifact, never
+The index (benchmark/corpus-index.json) is a build artifact, never
 hand-edited: this test regenerates it in memory from the live corpus and
 fails if the committed file diverges, exactly the way
 runtime_platform/benchmark/scripts/build_benchmark_index.py --check does for local/CI use.
@@ -15,7 +15,7 @@ import unittest
 from runtime_platform.benchmark.scripts import build_benchmark_index as idx
 from tests.support.paths import REPO_ROOT
 
-INDEX_PATH = REPO_ROOT / "docs" / "benchmark" / "corpus-index.json"
+INDEX_PATH = REPO_ROOT / "benchmark" / "corpus-index.json"
 
 
 class IndexSyncTests(unittest.TestCase):
@@ -28,7 +28,7 @@ class IndexSyncTests(unittest.TestCase):
         self.assertEqual(
             committed,
             fresh,
-            "docs/benchmark/corpus-index.json is out of sync with the live "
+            "benchmark/corpus-index.json is out of sync with the live "
             "corpus — run runtime_platform/benchmark/scripts/build_benchmark_index.py to "
             "regenerate it",
         )

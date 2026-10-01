@@ -52,7 +52,7 @@ corpus asset"), the model's single-owner table for corpus ownership. Its
 `benchmark` field names exactly the four domain corpora §H.3 assigns to
 `specialist-depth` (`security-deepening`, `performance-deepening`,
 `database-migration-deepening`, `distributed-systems-deepening`).
-`docs/benchmark/corpus/specialist-depth-composition` is deliberately not
+`benchmark/corpus/specialist-depth-composition` is deliberately not
 claimed here: §H.3 assigns it solely to `review-router`, not yet
 manifested (§B.3's routing layer is out of this issue's scope). This step
 changes no file, activation predicate, or load behavior (that is §J.2

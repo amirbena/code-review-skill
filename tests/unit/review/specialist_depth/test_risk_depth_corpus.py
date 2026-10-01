@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Contract coverage for the risk-depth benchmark sub-corpus (Issue #90).
 
-The sub-corpus is ``docs/benchmark/corpus/risk-depth/*.yaml``: a small,
+The sub-corpus is ``benchmark/corpus/risk-depth/*.yaml``: a small,
 focused set of ``benchmark-case/v2`` fixtures demonstrating that
 change-risk-signals.md's catalog signals and diff-size boundary drive
 review depth in realistic changes, and that a large multi-area change
@@ -45,7 +45,7 @@ from tests.reference.review import change_risk_signals as crs
 from tests.reference.review.change_risk_signals import Depth
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "risk-depth"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "risk-depth"
 
 MIN_CASES = 4
 MAX_CASES = 10
@@ -228,7 +228,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never defines a second", self.raw)
 

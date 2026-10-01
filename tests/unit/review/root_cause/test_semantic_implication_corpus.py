@@ -2,7 +2,7 @@
 """Contract coverage for the semantic-implication benchmark sub-corpus
 (Issue #211).
 
-The sub-corpus is ``docs/benchmark/corpus/semantic-implication/*.yaml``: a
+The sub-corpus is ``benchmark/corpus/semantic-implication/*.yaml``: a
 small, focused set of ``benchmark-case/v2`` fixtures demonstrating
 shared/policies/review-scope.md's "Semantic change-implication reasoning"
 base pass — a single dimension activating alone, one change materially
@@ -30,7 +30,7 @@ import yaml
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "semantic-implication"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "semantic-implication"
 
 MIN_CASES = 4
 MAX_CASES = 10
@@ -183,7 +183,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never defines a second", self.raw)
 

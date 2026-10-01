@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Contract coverage for the initial benchmark corpus (Issue #51).
 
-The corpus is ``docs/benchmark/corpus/*.yaml``: a small, deliberately
+The corpus is ``benchmark/corpus/*.yaml``: a small, deliberately
 minimal set of ``benchmark-case/v2`` fixtures, one per review category, with
 a case-selection rationale recorded in each fixture's ``metadata`` block and
-in ``docs/benchmark/corpus/README.md``.
+in ``benchmark/corpus/README.md``.
 
 What is proven here:
 
@@ -31,7 +31,7 @@ import yaml
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus"
 EXAMPLE_ID = "example-sqli-and-unsafe-path"
 
 # #51 non-goal: "Hundreds of fixtures." The initial corpus is one case per

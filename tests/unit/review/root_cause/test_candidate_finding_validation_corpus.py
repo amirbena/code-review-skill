@@ -2,7 +2,7 @@
 """Contract coverage for the candidate-finding-validation precision
 sub-corpus (Issue #383, parent #382/#381).
 
-The sub-corpus is ``docs/benchmark/corpus/candidate-finding-validation/*.yaml``:
+The sub-corpus is ``benchmark/corpus/candidate-finding-validation/*.yaml``:
 a small, focused set of ``benchmark-case/v2`` fixtures that pin the
 outcomes ``docs/candidate-finding-validation/candidate-finding-validation-model.md``
 names — semantic-role no-inference (§4), unproven-regression
@@ -48,7 +48,7 @@ import yaml
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "candidate-finding-validation"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "candidate-finding-validation"
 
 # #383 asks for "the smallest representative fixture set" — ten named
 # synthetic outcome shapes plus one required real-world scenario. This
@@ -319,7 +319,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         text = " ".join(self.raw.split())
         self.assertIn("never defines a second", text)

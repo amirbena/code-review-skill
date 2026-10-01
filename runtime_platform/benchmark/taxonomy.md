@@ -68,7 +68,7 @@ for the exact current value list.
 ### 2.1 `capability`
 
 Canonical name per existing corpus domain directory
-(`docs/benchmark/corpus/<directory>/`), plus `core` for the four
+(`benchmark/corpus/<directory>/`), plus `core` for the four
 loose root-level cases that predate sub-directory organization.
 
 A directory name carrying a `-deepening` suffix (a naming convention from
@@ -128,7 +128,7 @@ applicability check that used to live in the now-retired #255
 | `shared-policy` | `shared/` |
 | `skill-instructions` | `skills/` |
 | `runtime-adapter` | `runtime_platform/benchmark/scripts/run_benchmark.py`, `runtime_platform/benchmark/scripts/benchmark_review_adapter.py` |
-| `benchmark-corpus-or-tooling` | `docs/benchmark/`, the rest of `runtime_platform/benchmark/` (contract docs, `reference/`, and `scripts/`), `tests/unit/benchmark/`, `tests/policy/benchmark/` |
+| `benchmark-corpus-or-tooling` | `benchmark/`, the rest of `runtime_platform/benchmark/` (contract docs, `reference/`, and `scripts/`), `tests/unit/benchmark/`, `tests/policy/benchmark/` |
 
 Unlike `capability`/`policy_contract`/`risk_mode`, `affected_surface` is
 **fully deterministic** — `classify_affected_surfaces()` in
@@ -234,7 +234,7 @@ benchmark — producing:
 ```
 
 serialized as
-[`corpus-index.json`](../../docs/benchmark/corpus-index.json), built by
+[`corpus-index.json`](../../benchmark/corpus-index.json), built by
 [`scripts/build_benchmark_index.py`](scripts/build_benchmark_index.py)
 from every corpus case's `metadata.taxonomy`. The index is **committed**
 and regenerated whenever the corpus changes; a policy test

@@ -2,7 +2,7 @@
 """Contract coverage for the API / contract compatibility benchmark
 sub-corpus (Issue #184, parent #175).
 
-The sub-corpus is ``docs/benchmark/corpus/api-compatibility/*.yaml``: a
+The sub-corpus is ``benchmark/corpus/api-compatibility/*.yaml``: a
 small, focused set of ``benchmark-case/v2`` fixtures pinning the expected
 compatible / breaking / context-dependent classification for the change
 shapes #175's scope lists — add optional field, remove field, optional to
@@ -24,7 +24,7 @@ import yaml
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "api-compatibility"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "api-compatibility"
 
 MIN_CASES = 6
 MAX_CASES = 10
@@ -228,7 +228,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never a second one", self.raw)
 

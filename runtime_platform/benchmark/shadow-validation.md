@@ -172,7 +172,7 @@ level.** The issue's own acceptance criteria require the bar to be "a
 decision made from actual observed burn-in data, not asserted in
 advance," and no live burn-in window exists yet — the Class 2 nightly
 Routine target
-([`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md),
+([`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md),
 [`nightly-history-and-baseline.md`](nightly-history-and-baseline.md)) is
 maintainer-triggered, not yet accumulating a real schedule of paired
 PR/nightly evidence. Hard-coding a threshold today would be exactly the
@@ -183,7 +183,7 @@ issue's own Validation section, reconstructed) burn-in evidence exists:
 
 1. **Minimum window size before judging anything.** A burn-in report
    built from a handful of samples is noise, not signal —
-   [`shadow-validation-burn-in-report.md`](../../docs/benchmark/shadow-validation-burn-in-report.md)'s
+   [`shadow-validation-burn-in-report.md`](../../benchmark/shadow-validation-burn-in-report.md)'s
    worked example is explicitly a methodology demonstration, not an
    evidence-bar-setting data point, for exactly this reason. A maintainer
    should not draw a bar from a window smaller than the sample count
@@ -274,7 +274,7 @@ schema in another canonical home, exactly as
 `runtime_platform/benchmark/reference/benchmark_shadow_validation.py` implements it;
 `runtime_platform/benchmark/scripts/shadow_validate.py` is the offline, GitHub-mutation-
 free CLI that renders a burn-in window into the §5 report; the see
-[`shadow-validation-burn-in-report.md`](../../docs/benchmark/shadow-validation-burn-in-report.md)
+[`shadow-validation-burn-in-report.md`](../../benchmark/shadow-validation-burn-in-report.md)
 worked example satisfies the issue's Validation section with reconstructed
 data. `tests/unit/benchmark/test_benchmark_shadow_validation.py` and
 `tests/unit/benchmark/test_shadow_validate_cli.py` prove the miss-rate/

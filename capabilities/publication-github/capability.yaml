@@ -18,4 +18,4 @@ never:
   - publishing finding-by-finding
   - publishing anything review-owned after the final summary
   - publishing the Reviewer Brief
-benchmark: docs/benchmark/corpus/publication-mode, docs/benchmark/corpus/verdict-consistency
+benchmark: benchmark/corpus/publication-mode, benchmark/corpus/verdict-consistency

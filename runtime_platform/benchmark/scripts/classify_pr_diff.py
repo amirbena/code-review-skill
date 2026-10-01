@@ -91,7 +91,7 @@ def classify_pr_diff(
 
     ``affected_surface`` is always computed deterministically from
     ``changed_paths``. The other three dimensions come from ``invoke`` — a
-    Class 2 runtime/credential-path callable (docs/benchmark/
+    Class 2 runtime/credential-path callable (benchmark/
     runtime-execution-contract.md) that takes the built prompt and returns
     the model's raw text response. When ``invoke`` is ``None`` (runtime
     unavailable — a distinct, explicit outcome per the runtime contract,

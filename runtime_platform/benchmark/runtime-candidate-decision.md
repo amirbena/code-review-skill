@@ -29,9 +29,9 @@ Per #336 and #330 §8, this is a small, time-boxed comparison — not a
 tuning exercise and not a re-run of the full corpus. Two corpus cases were
 run through each candidate:
 
-- [`correctness-off-by-one-pagination`](../../docs/benchmark/corpus/correctness-off-by-one-pagination.yaml)
+- [`correctness-off-by-one-pagination`](../../benchmark/corpus/correctness-off-by-one-pagination.yaml)
   — a finding-expected case (one required P1 finding).
-- [`no-op-comment-and-rename`](../../docs/benchmark/corpus/no-op-comment-and-rename.yaml) — the
+- [`no-op-comment-and-rename`](../../benchmark/corpus/no-op-comment-and-rename.yaml) — the
   corpus's one clean/no-findings case.
 
 Both candidates below were pointed at this checkout's unmodified

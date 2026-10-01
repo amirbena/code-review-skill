@@ -11,7 +11,7 @@ this security-boundary domain has no representation in the
 resolved authorization state or an execution-backend provenance value.
 Rather than stretch that closed schema, this module follows the same
 test-only, data-driven reference-fixture pattern documented in
-docs/benchmark/corpus/trusted-host-nl-authorization/README.md.
+benchmark/corpus/trusted-host-nl-authorization/README.md.
 
 This is deliberately **not** a duplicate of
 tests/unit/review/test_runtime_validation.py's `NaturalLanguageAuthorization

@@ -36,7 +36,7 @@ Per #408:
   token consumption (`model.md` §I.2's runtime-execution-dependent rows)
   — those need `#330`'s Class 2 runtime, out of scope here.
 - Does **not** measure `verdict-consistency` — its corpus
-  (`docs/benchmark/corpus/verdict-consistency/`) sits below the same
+  (`benchmark/corpus/verdict-consistency/`) sits below the same
   non-recursive glob and is a separate, larger measurement this issue does
   not extend to.
 
@@ -117,7 +117,7 @@ availability check):
 python3 scripts/capability_architecture/capability_loading_baseline.py quality
 ```
 
-This runs `docs/benchmark/corpus`'s reachable cases (today's 4 top-level
+This runs `benchmark/corpus`'s reachable cases (today's 4 top-level
 fixtures — §1's stated non-goal) through
 `runtime_platform/benchmark/scripts/benchmark_review_adapter.ProductionReviewerAdapter`
 against a real `claude` CLI reading the packaged `local-code-review`

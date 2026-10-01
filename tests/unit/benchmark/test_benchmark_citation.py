@@ -43,7 +43,7 @@ from runtime_platform.benchmark.reference import benchmark_runner as br
 from runtime_platform.benchmark.scripts.benchmark_review_adapter import parse_review_output
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus"
 PAGINATION = CORPUS_DIR / "correctness-off-by-one-pagination.yaml"
 
 

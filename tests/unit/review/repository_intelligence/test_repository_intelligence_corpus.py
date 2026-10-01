@@ -3,7 +3,7 @@
 (Issue #129).
 
 The sub-corpus is
-``docs/benchmark/corpus/repository-intelligence/*.yaml``: a small, focused
+``benchmark/corpus/repository-intelligence/*.yaml``: a small, focused
 set of ``benchmark-case/v2`` fixtures demonstrating relationship-aware
 review catching defects a diff-only read of the same patch cannot show, a
 safe-failure (ambiguity) case, and a negative/control case proving
@@ -45,7 +45,7 @@ import yaml
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "repository-intelligence"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "repository-intelligence"
 
 MIN_CASES = 5
 MAX_CASES = 10
@@ -261,7 +261,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never defines a second", self.raw)
 

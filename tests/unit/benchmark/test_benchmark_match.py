@@ -435,7 +435,7 @@ class DuplicatedBranchLogicRegressionTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        path = REPO_ROOT / "docs" / "benchmark" / "corpus" / "quality-duplicated-branch-logic.yaml"
+        path = REPO_ROOT / "benchmark" / "corpus" / "quality-duplicated-branch-logic.yaml"
         cls.case = bf.parse_case(yaml.safe_load(path.read_text(encoding="utf-8")))
 
     def _metrics(self, defect_kind: str, claim: str = _DUP_PRODUCED_CLAIM):

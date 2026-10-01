@@ -40,7 +40,7 @@ UNCLASSIFIED = "unclassified"
 
 # --------------------------------------------------------------------------
 # capability — canonical name per existing corpus domain directory
-# (docs/benchmark/corpus/*/), plus "core" for the four loose root-level
+# (benchmark/corpus/*/), plus "core" for the four loose root-level
 # cases that predate sub-directory organization. Directory names carrying a
 # "-deepening" suffix are normalized to their bare capability (e.g.
 # "database-migration-deepening" -> "database-migration") so the taxonomy
@@ -83,7 +83,7 @@ CAPABILITY_VALUES: frozenset[str] = frozenset(
     }
 )
 
-# Maps each real corpus domain directory (docs/benchmark/corpus/<dir>/) and
+# Maps each real corpus domain directory (benchmark/corpus/<dir>/) and
 # the loose root-level cases to its canonical capability value. Single
 # source of truth for the normalization described above; the inverted-index
 # builder and the backfill of existing corpus metadata both key off this.
@@ -219,7 +219,7 @@ _RUNTIME_ADAPTER_EXACT_FILES: frozenset[str] = frozenset(
 _SURFACE_PREFIXES: tuple[tuple[str, str], ...] = (
     ("shared/", "shared-policy"),
     ("skills/", "skill-instructions"),
-    ("docs/benchmark/", "benchmark-corpus-or-tooling"),
+    ("benchmark/", "benchmark-corpus-or-tooling"),
     ("runtime_platform/benchmark/", "benchmark-corpus-or-tooling"),
     ("tests/unit/benchmark/", "benchmark-corpus-or-tooling"),
     ("tests/policy/benchmark/", "benchmark-corpus-or-tooling"),

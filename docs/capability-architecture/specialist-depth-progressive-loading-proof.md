@@ -33,7 +33,7 @@ Per #411:
 - Reuses `specialist-depth-composition`'s existing corpus (#409) and
   #408's own 4-case regression set rather than duplicating them; adds
   exactly one net-new fixture
-  ([`docs/benchmark/corpus/specialist-depth-progressive-loading-proof/`](../benchmark/corpus/specialist-depth-progressive-loading-proof/README.md))
+  ([`benchmark/corpus/specialist-depth-progressive-loading-proof/`](../../benchmark/corpus/specialist-depth-progressive-loading-proof/README.md))
   for the one required shape neither existing corpus covers (ambiguous
   predicate evaluation).
 - Does **not** rewrite any existing *pinned* benchmark expectation
@@ -91,7 +91,7 @@ Reproducible with:
 python3 scripts/capability_architecture/specialist_depth_progressive_loading_proof.py behavioral
 ```
 
-Re-runs #408's own 4-case corpus (`docs/benchmark/corpus/*.yaml`) through
+Re-runs #408's own 4-case corpus (`benchmark/corpus/*.yaml`) through
 the same `ProductionReviewerAdapter` + `benchmark_metrics.compute_run_metrics`
 #408 used, live, at the commit above:
 
@@ -170,7 +170,7 @@ of #411's scope and tracked as its own follow-up.
 ## 5. Ambiguous predicate evaluation forces fail-closed load (required case 3)
 
 This issue's one net-new fixture:
-[`docs/benchmark/corpus/specialist-depth-progressive-loading-proof/specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load.yaml`](../benchmark/corpus/specialist-depth-progressive-loading-proof/README.md).
+[`benchmark/corpus/specialist-depth-progressive-loading-proof/specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load.yaml`](../../benchmark/corpus/specialist-depth-progressive-loading-proof/README.md).
 A materially implicated performance signal (a new per-order query) whose
 cardinality is genuinely undocumented in either direction — unlike
 `specialist-depth-composition`'s Case D (a superficial signal with *no*

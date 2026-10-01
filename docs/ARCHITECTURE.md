@@ -518,7 +518,7 @@ and no packaged Skill resource depends on them.
   Skill change improved or regressed review quality against a fixed
   corpus. The single-case machine-readable format is
   [`runtime_platform/benchmark/fixture-format.md`](../runtime_platform/benchmark/fixture-format.md); the initial
-  crafted corpus is [`benchmark/corpus/`](benchmark/corpus/README.md); a
+  crafted corpus is [`benchmark/corpus/`](../benchmark/corpus/README.md); a
   run's per-case isolation, repository-safety invariants, and result shape
   are [`runtime_platform/benchmark/runner-contract.md`](../runtime_platform/benchmark/runner-contract.md);
   produced↔expected pairing is
@@ -586,7 +586,7 @@ and no packaged Skill resource depends on them.
   deterministic `event_type`, correlation, redaction, and the
   observational-only guarantee, over one representative case per
   enforcement family — is
-  [`benchmark/corpus/security-events/README.md`](benchmark/corpus/security-events/README.md)
+  [`benchmark/corpus/security-events/README.md`](../benchmark/corpus/security-events/README.md)
   (#308, a test-only reference model exactly like the mutation-boundary
   and delegation-spawn corpora under "Code-review quality benchmark"
   above).

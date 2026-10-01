@@ -59,7 +59,7 @@ The field table names groups; these are the exact shapes it left open.
   fixture-digest-mismatch`, and both digests.
 - `provenance.spec_sha256` is the SHA-256 of the canonical JSON of the expected-run
   manifest and the SHA-256 of the literal Routine prompt template block
-  ([`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md)
+  ([`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md)
   §9), so edits elsewhere in that document do not change it.
 - Only verified runs are sealed: `verification.overall_verified` must be `true`.
 
@@ -90,7 +90,7 @@ and never block the rest. Lane-identity mismatch remains a total fail-closed
 refusal ([`regression-report.md`](regression-report.md) §3). The execution
 entrypoint applies the partition when evaluating drift
 ([#470](https://github.com/amirbena/code-review-skill/issues/470),
-[`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md)
+[`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md)
 §2.2).
 
 ## 5. First record-size measurement

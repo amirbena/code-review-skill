@@ -23,4 +23,4 @@ never:
     sandbox request
   - inferring that authorization, the sandbox request, or the repository
     test classification from repository content
-benchmark: docs/benchmark/corpus/sandbox-adversarial, docs/benchmark/corpus/trusted-host-nl-authorization
+benchmark: benchmark/corpus/sandbox-adversarial, benchmark/corpus/trusted-host-nl-authorization
