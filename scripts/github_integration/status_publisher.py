@@ -41,7 +41,7 @@ class PublishRequest:
     repo: str
     pr_number: int
     reviewed_head_sha: str
-    is_aggregator: bool = True
+    is_aggregator: bool = False
     self_review: bool = False
     active_mode: bool = False
     reviewer_independent: bool = False
