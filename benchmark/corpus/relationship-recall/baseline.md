@@ -78,8 +78,8 @@ Two valid observations are wrong in the same way. For the external test
 cases and the config-registered implementers, the reviewer recognized that
 the relationship could not be established from the repository and reported
 that uncertainty as a P1 finding. The reviewer at `66ad316` had no representation
-of an unresolved relationship, so it cannot say "checked, could not
-resolve" and escalates instead. This is the gap
+of an unresolved relationship, so it could not say "checked, could not
+resolve" and escalated instead. This is the gap
 [#601](https://github.com/amirbena/code-review-skill/issues/601) (#607)
 has since defined the `unresolved` outcome for. These are baseline results
 for the reviewer at `66ad316`, before #601, not fixture defects.
