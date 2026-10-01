@@ -23,6 +23,7 @@ reference this document by name.
 | Document | Owns | Issue |
 | --- | --- | --- |
 | [`repository-intelligence-model.md`](repository-intelligence-model.md) | The candidate-architecture comparison and the recommended minimal model: the typed entity/relationship model, retrieval bounds inside an already-authorized ring, provenance, snapshot identity and staleness (reject-and-rebuild), relationship-influence attribution, and safe behavior for ambiguity, missing data, and unsupported languages. | [#129](https://github.com/amirbena/code-review-skill/issues/129) |
+| [`relationship-coverage-semantics.md`](relationship-coverage-semantics.md) | The decision that an unresolved relationship is a visibility-only disclosure (Context gaps) rather than a new incomplete trigger, the rejected alternative, the initial relationship classes, and a worked example per class and outcome. | [#601](https://github.com/amirbena/code-review-skill/issues/601) |
 
 ## Architectural boundary
 
