@@ -208,9 +208,10 @@ def run_lifecycle(
                 teardown_governance(client, repo, pull["base"]["ref"], mechanism,
                                     seeded["rid"], auth)
                 steps.append(Step("Teardown: seeded governance removed", "removed", "removed", True))
-            except GitHubBoundaryError as exc:
+            except Exception as exc:  # noqa: BLE001 - must not mask the original error
                 steps.append(Step("Teardown: seeded governance removed", "removed",
-                                  f"FAILED ({exc}); remove it by hand", False))
+                                  f"FAILED ({type(exc).__name__}: {exc}); remove it by hand",
+                                  False))
     return steps
 
 
@@ -282,6 +283,8 @@ def _run(client, repo, pr, mechanism, sleep, advance_head, env, steps, seeded) -
            review_status(client, repo, sha_b))
     own = publish(Reasoning.CLEAN, sha_b, active_mode=True, reviewer_independent=True)
     record("New HEAD's own authorized review publishes success", "published", own.action)
+    record("New HEAD satisfied by its own review", "clean",
+           merge_state(client, repo, pr, "clean", sleep))
     record("Prior SHA status unchanged", "success", review_status(client, repo, sha_a))
 
     removed = setup(authorization=auth, remove=True)

@@ -114,6 +114,23 @@ class LifecycleTests(unittest.TestCase):
         self.assertTrue(by_point["New HEAD's own authorized review publishes success"].passed)
         self.assertTrue(by_point["New HEAD inherits no authorization (success withheld)"].passed)
         self.assertEqual(fake.statuses[SHA_A][lp.DEFAULT_CONTEXT], "success")
+        self.assertTrue(by_point["New HEAD satisfied by its own review"].passed)
+
+    def test_teardown_failure_is_recorded_and_does_not_mask_the_original_error(self):
+        fake = LifecycleFake()
+        boom = lambda repo, branch: (_ for _ in ()).throw(b.GitHubCallError("push failed", 500))
+        steps: list[lp.Step] = []
+        client = b.GitHubClient(transport=fake, env={})
+        real = lp.teardown_governance
+        lp.teardown_governance = lambda *a, **k: (_ for _ in ()).throw(KeyError("base"))
+        try:
+            with self.assertRaises(b.GitHubCallError):
+                lp.run_lifecycle(client, REPO, 9, "ruleset", sleep=lambda s: None,
+                                 advance_head=boom, env={}, steps=steps)
+        finally:
+            lp.teardown_governance = real
+        self.assertFalse(steps[-1].passed)
+        self.assertIn("remove it by hand", steps[-1].observed)
 
     def test_failure_midway_keeps_partial_evidence_and_tears_down(self):
         fake = LifecycleFake()

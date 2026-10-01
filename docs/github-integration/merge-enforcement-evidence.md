@@ -46,7 +46,7 @@ refuses to create governance from nothing by design (#550).
 | Status published on reviewed SHA | `failure` / `success published on reviewed SHA` |
 | Setup only with explicit authorization; same run without it does not mutate | `Setup without explicit authorization refuses`, `No mutation without authorization` |
 | `failure` blocks, `success` satisfies | `blocks merge on failure`, `satisfied on success` (GitHub `mergeable_state`) |
-| New HEAD inherits no status or authorization | `PR HEAD advanced`, `New HEAD inherits no status`, `…is merge-blocked`, `…success withheld`, `…own authorized review publishes success`, `Prior SHA status unchanged` |
+| New HEAD inherits no status or authorization | `PR HEAD advanced`, `New HEAD inherits no status`, `…is merge-blocked`, `…success withheld`, `…own authorized review publishes success`, `New HEAD satisfied by its own review`, `Prior SHA status unchanged` |
 | Unrelated governance intact after setup and removal | `intact after setup`, `restored after removal` |
 
 ## Evidence
