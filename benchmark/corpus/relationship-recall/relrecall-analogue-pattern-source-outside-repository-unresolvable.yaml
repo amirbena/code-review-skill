@@ -1,0 +1,63 @@
+# Relationship-recall corpus case (Issue #602, parent #600). Format:
+# runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Architectural-analogue class, UNRESOLVABLE (the positive and control cases
+# are the analogue-placement-* fixtures in ../analogue-placement-pattern/).
+# The new connector defines its status labels inline. The repository's
+# integrations/README.md says the connector layout follows a template kept
+# in a separate repository, and this repository contains no sibling
+# connector to compare against. No analogue can be found, so no local
+# placement pattern can be inferred. The inline table is complete and
+# correct, so the correct output is no finding.
+
+format: benchmark-case/v2
+
+id: relrecall-analogue-pattern-source-outside-repository-unresolvable
+title: "New connector defines status labels inline; the layout it should follow lives in another repository"
+
+input:
+  patch: |
+    diff --git a/integrations/webhook/cli.py b/integrations/webhook/cli.py
+    new file mode 100644
+    index 0000000..1a2b3c4
+    --- /dev/null
+    +++ b/integrations/webhook/cli.py
+    @@ -0,0 +1,11 @@
+    +STATUS_LABELS = {
+    +    "queued": "Queued",
+    +    "sending": "Sending",
+    +    "retrying": "Retrying",
+    +    "delivered": "Delivered",
+    +    "failed": "Failed",
+    +}
+    +
+    +
+    +def render_status(status):
+    +    return STATUS_LABELS.get(status, str(status).title())
+  base:
+    integrations/README.md: |
+      # Integrations
+
+      Each connector follows the layout of the connector template maintained
+      in the separate `platform-connectors` repository. This repository holds
+      only the webhook connector.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    The analogue the placement rule would compare against is outside the
+    repository, so no pattern can be inferred locally. The inline table
+    covers every delivery status, so there is no concrete consequence to
+    report. A placement finding would assert a pattern the review cannot
+    establish.
+  taxonomy:
+    capability: [relationship-recall]
+    policy_contract: [architectural-placement]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

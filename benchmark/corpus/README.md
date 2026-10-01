@@ -105,6 +105,14 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   [#129](https://github.com/amirbena/code-review-skill/issues/129)). Same
   format and reference validator; its own README, cases, and unit test
   ([`../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py`](../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py)).
+- [`relationship-recall/`](relationship-recall/README.md) — a focused
+  `benchmark-case/v2` sub-corpus and recorded pre-enrichment baseline for
+  relationship-dependent review conclusions of the current search-only
+  reviewer (Issue
+  [#602](https://github.com/amirbena/code-review-skill/issues/602), parent
+  [#600](https://github.com/amirbena/code-review-skill/issues/600)). Same
+  format and reference validator; its own README, cases, baseline and unit test
+  ([`../../tests/unit/benchmark/test_relationship_recall_corpus.py`](../../tests/unit/benchmark/test_relationship_recall_corpus.py)).
 - [`risk-depth/`](risk-depth/README.md) — a focused `benchmark-case/v2`
   sub-corpus for risk-based review depth and large-PR handling (Issue
   [#90](https://github.com/amirbena/code-review-skill/issues/90), parent
