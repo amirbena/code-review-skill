@@ -13,14 +13,14 @@ This corpus supplies the one thing that proof does not: a
 [`specialist-depth-composition/`](../specialist-depth-composition/README.md)
 does not cover.
 
-Every case conforms to [`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
+Every case conforms to [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of [`../`](../README.md)
 and [`../../`](../../../runtime_platform/benchmark/README.md) this is **not** packaged into either Skill
 archive and no packaged Skill resource depends on it — it is consumed
 only by this repository's own test suite, through the single reference
 validator
-[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
+[`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle: one net-new case, everything else reused
@@ -41,7 +41,7 @@ expectation. Concretely, of #411's four required cases:
    [`specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load.yaml`](specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load.yaml).
 4. **A direct before/after surface-reduction comparison against #408's
    baseline** — the static word-count comparison recorded in
-   [`../../../capability-architecture/specialist-depth-progressive-loading-proof.md`](../../../docs/capability-architecture/specialist-depth-progressive-loading-proof.md),
+   [`../../../docs/capability-architecture/specialist-depth-progressive-loading-proof.md`](../../../docs/capability-architecture/specialist-depth-progressive-loading-proof.md),
    reusing
    [`capability_loading_baseline.py`](../../../scripts/capability_architecture/capability_loading_baseline.py)'s
    existing static-surface measurement rather than a new evaluator; no
@@ -90,7 +90,7 @@ exact severity turns out to be.
 
 ## Validation
 
-[`../../../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py`](../../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py)
+[`../../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py`](../../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py)
 loads this directory's fixture through the same single reference
 validator used everywhere else in this corpus tree (it never defines a
 second one), and asserts: the directory holds exactly the one case; it

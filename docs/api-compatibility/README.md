@@ -31,7 +31,7 @@ a packaged resource).
   "Semantic change-implication reasoning" — "API / integration contracts."
 - The fixture corpus pinning the expected classification for each change
   shape before and after this design record:
-  [`../benchmark/corpus/api-compatibility/README.md`](../../benchmark/corpus/api-compatibility/README.md)
+  [`../../benchmark/corpus/api-compatibility/README.md`](../../benchmark/corpus/api-compatibility/README.md)
   ([#184](https://github.com/amirbena/code-review-skill/issues/184)).
 - The code-evidence bar every reported finding still meets:
   [`../../shared/policies/evidence.md`](../../shared/policies/evidence.md).

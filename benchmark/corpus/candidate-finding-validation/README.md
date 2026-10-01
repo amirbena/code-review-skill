@@ -5,7 +5,7 @@ Repository-development artifact for GitHub Issue
 capability: [#382](https://github.com/amirbena/code-review-skill/issues/382)
 (child of the [#381](https://github.com/amirbena/code-review-skill/issues/381)
 epic), which defines
-[`../../../candidate-finding-validation/candidate-finding-validation-model.md`](../../../docs/candidate-finding-validation/candidate-finding-validation-model.md),
+[`../../../docs/candidate-finding-validation/candidate-finding-validation-model.md`](../../../docs/candidate-finding-validation/candidate-finding-validation-model.md),
 the `observation → candidate claim → validated finding → severity`
 reasoning contract: what a candidate must prove before it is promoted to a
 severity-bearing finding. This is a **focused sub-corpus** of
@@ -17,14 +17,14 @@ protections (a technically-grounded blocking finding with no Jira, a
 proven defect that is not demoted merely because its impact is
 non-blocking) from regressing.
 
-Every case conforms to [`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
+Every case conforms to [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
 [`../`](../README.md) and [`../../`](../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py).
+[`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py).
 
 This corpus **consumes** the canonical contract in
 `candidate-finding-validation-model.md`; it does not redefine it. Every
@@ -120,9 +120,9 @@ fixture's `metadata` block (`source`, `tags`, `rationale`).
 
 ## Validation
 
-[`../../../../tests/unit/review/root_cause/test_candidate_finding_validation_corpus.py`](../../../tests/unit/review/root_cause/test_candidate_finding_validation_corpus.py)
+[`../../../tests/unit/review/root_cause/test_candidate_finding_validation_corpus.py`](../../../tests/unit/review/root_cause/test_candidate_finding_validation_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
+[`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and every other corpus — it never defines a
 second one — and asserts: the sub-corpus stays small and documented; every
 required outcome shape (including the real-world scenario) is present;

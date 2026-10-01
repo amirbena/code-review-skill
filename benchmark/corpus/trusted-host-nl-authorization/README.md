@@ -18,7 +18,7 @@ behavior.
 Every corpus under [`../`](../README.md) that reviews a code change
 (each a self-contained inline patch plus expected review *findings*) uses
 the `benchmark-case/v2` fixture format
-([`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)). This domain has no
+([`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)). This domain has no
 patch and no finding: its input is a piece of trusted-invocation text (or
 a structured boolean) and its expectation is a resolved
 `allow_trusted_host_execution` boolean plus an execution-backend
@@ -29,16 +29,16 @@ test-only, data-driven reference-fixture pattern
 established for the structurally analogous agent-spawn/delegated-
 authority domain:
 
-- [`../../../../runtime_platform/benchmark/reference/trusted_host_nl_fixtures.py`](../../../runtime_platform/benchmark/reference/trusted_host_nl_fixtures.py) —
+- [`../../../runtime_platform/benchmark/reference/trusted_host_nl_fixtures.py`](../../../runtime_platform/benchmark/reference/trusted_host_nl_fixtures.py) —
   one `TrustedHostNLCase` per required outcome shape, each a
   zero-argument `run()` closure that exercises the *single* reference
   model,
-  [`../../../../tests/reference/review/runtime_validation.py`](../../../tests/reference/review/runtime_validation.py)
+  [`../../../tests/reference/review/runtime_validation.py`](../../../tests/reference/review/runtime_validation.py)
   (`resolve_allow_trusted_host_execution` and `select_backend`), plus the
   declarative metadata #370 requires: category, covered Scope tags, the
   Skills it applies to, expected resolved `allow_trusted_host_execution`
   boolean, and expected execution-backend provenance.
-- [`../../../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py`](../../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py) —
+- [`../../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py`](../../../tests/unit/benchmark/test_trusted_host_nl_authorization_corpus.py) —
   runs every case's `run()` and asserts its actual outcome matches the
   declared expectation, plus corpus-completeness checks (every required
   category, every required coverage tag, every phrase in the reference
@@ -47,7 +47,7 @@ authority domain:
   rejection suite.
 
 This corpus is **not** a duplicate of
-[`../../../../tests/unit/review/test_runtime_validation.py`](../../../tests/unit/review/test_runtime_validation.py)'s
+[`../../../tests/unit/review/test_runtime_validation.py`](../../../tests/unit/review/test_runtime_validation.py)'s
 `NaturalLanguageAuthorizationResolution` and `TrustedHostExecutionBackend`
 classes, which #367/#369 already landed as hand-written regression tests
 against the same reference model. That suite is *why* the boundary holds;
@@ -193,5 +193,5 @@ data schema, matching #370's own benchmark-layer scope.
   [`../sandbox-adversarial/README.md`](../sandbox-adversarial/README.md)
   respectively).
 - Any change to the review-quality metrics under
-  [`../../match-criteria.md`](../../../runtime_platform/benchmark/match-criteria.md) and its siblings —
+  [`../../../runtime_platform/benchmark/match-criteria.md`](../../../runtime_platform/benchmark/match-criteria.md) and its siblings —
   this is a security-semantics benchmark, not a finding-quality one.

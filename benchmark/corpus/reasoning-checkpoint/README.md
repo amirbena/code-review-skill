@@ -16,7 +16,7 @@ or the Decision.
 ## Why this corpus is not `benchmark-case/v2` fixtures
 
 The #565 design record
-([`../../../reasoning-checkpoint/reasoning-checkpoint-contract.md`](../../../docs/reasoning-checkpoint/reasoning-checkpoint-contract.md),
+([`../../../docs/reasoning-checkpoint/reasoning-checkpoint-contract.md`](../../../docs/reasoning-checkpoint/reasoning-checkpoint-contract.md),
 section 11) decided this before implementation: `benchmark-case/v2`'s
 `expected` block is a patch plus expected review findings
 ([`fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)), a closed

@@ -82,7 +82,7 @@ less precisely, what #333/#334 now compute deterministically, and #391
 had already made its non-blocking contributor-path status permanent
 rather than a stepping stone to a provisioned Class 1 runtime. #420
 removed that workflow and classifier, and the doc that specified them
-(`benchmark/ci-integration.md`), completely. This does not change
+(the retired `docs/benchmark/ci-integration.md`), completely. This does not change
 §2's DAG or §4's two-class split — it removes a workflow that was never
 part of either — but it does correct §5's promotion-mechanism bullet
 (previously naming `benchmark-check.yml` as the eventual required-gate
@@ -150,7 +150,7 @@ today, and they are easy to conflate:
    `.github/workflows/*.yml` provisions a runtime capable of actually
    invoking the packaged `local-code-review` Skill's semantics. The
    original PR-level benchmark check this problem statement was written
-   against (`benchmark/ci-integration.md` §4, retired by
+   against (the retired `docs/benchmark/ci-integration.md` §4, deleted by
    [#420](https://github.com/amirbena/code-review-skill/issues/420))
    already documented that such a runtime is "almost certainly"
    unavailable on a bare GitHub-hosted runner, so that check could
@@ -567,7 +567,7 @@ Principles that hold regardless of the exact numbers chosen:
 
 Stable principles drawn from #332/#338/#339, refined into **two**
 independently-scheduled, independently-baselined lanes by #431 — see
-[`../benchmark/corpus/README.md`](../../benchmark/corpus/README.md) and
+[`../../benchmark/corpus/README.md`](../../benchmark/corpus/README.md) and
 [`../../runtime_platform/benchmark/nightly-history-and-baseline.md`](../../runtime_platform/benchmark/nightly-history-and-baseline.md)
 §2 for the operational contract. "Nightly" in the rest of this document
 and in #338/#339 is the historical name for this scheduled path; it is not

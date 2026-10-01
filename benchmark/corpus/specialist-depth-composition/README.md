@@ -10,14 +10,14 @@ contract [`specialist-depth.md`](../../../shared/policies/specialist-depth.md)
 capability's reasoning, which the domain fixture corpora below already
 own.
 
-Every case conforms to [`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
+Every case conforms to [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
 [`../`](../README.md) and [`../../`](../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
+[`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle
@@ -53,7 +53,7 @@ the single reference validator
 Exactly as [`../risk-depth/README.md`](../risk-depth/README.md) and
 [`../repository-intelligence/README.md`](../repository-intelligence/README.md)
 already establish for their own mechanisms: `benchmark-case/v2`'s schema
-is closed (see [`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §2)
+is closed (see [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §2)
 and has no field for "which capabilities engaged" — only
 `expected.findings` and `expected.decision`. Unlike risk-based review
 depth (a deterministic catalog computed from concrete signals, see
@@ -101,9 +101,9 @@ explicitly defer to it (see, for example, each domain corpus's
 
 ## Validation
 
-[`../../../../tests/unit/benchmark/test_specialist_depth_composition_corpus.py`](../../../tests/unit/benchmark/test_specialist_depth_composition_corpus.py)
+[`../../../tests/unit/benchmark/test_specialist_depth_composition_corpus.py`](../../../tests/unit/benchmark/test_specialist_depth_composition_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
+[`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used everywhere else in this corpus (it never defines a second one), and
 asserts: the sub-corpus stays small and documented; all seven required
 cases are present; every case pins an explicit `decision` consistent with

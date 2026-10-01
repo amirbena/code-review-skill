@@ -14,7 +14,7 @@ isolation** of the private, caller-facing `Reviewer Brief` every
 Unlike every sibling directory here (`security-deepening/`,
 `api-compatibility/`, `specialist-depth-composition/`, …), this corpus
 does **not** ship `benchmark-case/v2` YAML fixtures. That format
-([`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)) is closed and
+([`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)) is closed and
 findings/decision-shaped: `expected.findings` and `expected.decision` are
 the only outcome it can pin. The Reviewer Brief is a different kind of
 artifact entirely — private prose, synthesized *after* findings/decision
@@ -34,7 +34,7 @@ Instead, this corpus follows the same **test-only reference model**
 pattern the rest of `benchmark/` already uses for machinery that has
 no packaged production twin (`runtime_platform/benchmark/reference/benchmark_fixture.py`,
 `benchmark_match.py`, `benchmark_runner.py`, …):
-[`../../../../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py`](../../../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py)
+[`../../../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py`](../../../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py)
 defines one `ReviewerBriefCase` per required scenario, carrying **both**
 the private brief's field values **and** the GitHub-bound review
 body/inline comments the same invocation would publish, so isolation is
@@ -53,9 +53,9 @@ ordinary finding precision/recall (`match-criteria.md`,
    `P0`/`P1`/`P2` label without a finalized-finding reference, no
    `Evidence:`/`Impact:`/`Fix:` duplication, delta/stacked/partition scope
    discipline, and zero publication leakage. Machine-checked in
-   [`../../../../tests/unit/benchmark/test_reviewer_brief_structural.py`](../../../tests/unit/benchmark/test_reviewer_brief_structural.py)
+   [`../../../tests/unit/benchmark/test_reviewer_brief_structural.py`](../../../tests/unit/benchmark/test_reviewer_brief_structural.py)
    and
-   [`../../../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py`](../../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py).
+   [`../../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py`](../../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py).
 2. **Rubric/reference layer** — properties where wording is intentionally
    flexible and no single correct string exists: whether the independently
    derived focus item is genuinely *useful* to a human reviewer, whether
@@ -95,7 +95,7 @@ claim:
 
 Issue #309 asks to run the focused fixture set through the real reviewer
 adapter "where available."
-[`../../../../runtime_platform/benchmark/scripts/benchmark_review_adapter.py`](../../../runtime_platform/benchmark/scripts/benchmark_review_adapter.py)
+[`../../../runtime_platform/benchmark/scripts/benchmark_review_adapter.py`](../../../runtime_platform/benchmark/scripts/benchmark_review_adapter.py)
 (`ProductionReviewerAdapter`, #250) only drives `local-code-review` — its
 fixed CLI prompt invokes that Skill by name, and its output parser
 recognizes only that Skill's single-surface Markdown finding format.

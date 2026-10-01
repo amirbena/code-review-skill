@@ -18,7 +18,7 @@ concern lives in the file named for it.
 | [`fixture-format.md`](fixture-format.md) | The canonical machine-readable format for a single benchmark case — case identity, input (inline patch or repository reference), expected findings, expected severity, expected location detail, the four typed variance constructs (same-defect alternatives, alternative findings, optional findings, permitted severity variance), required metadata including its mandatory canonical taxonomy classification, schema/versioning, and fail-closed validation. | [#50](https://github.com/amirbena/code-review-skill/issues/50) |
 | [`taxonomy.md`](taxonomy.md) | The canonical, closed, alias-free benchmark candidate taxonomy — four dimensions (`capability`, `policy_contract`, `risk_mode`, `affected_surface`) each with an explicit `unclassified` member, corpus case classification metadata and its fail-closed validation, the one bounded schema-constrained PR-diff classification model call, and the deterministic non-LLM inverted index (`corpus-index.json`) that lets PR-time candidate selection narrow the corpus by lookup instead of a full scan. | [#333](https://github.com/amirbena/code-review-skill/issues/333) |
 | [`selection.md`](selection.md) | The deterministic Top-K benchmark selector over #333's candidate pool — the weighted Case Relevance Score and its `primary`/`secondary`/`not-eligible` bands, the distinct Selection Coverage Score and its 60% golden threshold, the greedy coverage-maximizing bounded Top-K algorithm (`K_DEFAULT`/`K_MAX`), the explicit non-silent `insufficient-coverage` outcome, and the machine-readable explainability object published per run. Ships informational-only. | [#334](https://github.com/amirbena/code-review-skill/issues/334) |
-| [`corpus/README.md`](../../benchmark/corpus/README.md) | The initial benchmark corpus — a small set of `benchmark-case/v2` fixtures, one per review category (correctness, security, quality, no-op), with the case-selection rationale recorded per case and in the directory README. | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
+| [`../../benchmark/corpus/README.md`](../../benchmark/corpus/README.md) | The initial benchmark corpus — a small set of `benchmark-case/v2` fixtures, one per review category (correctness, security, quality, no-op), with the case-selection rationale recorded per case and in the directory README. | [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | [`runner-contract.md`](runner-contract.md) | How a benchmark run executes the reviewer over the corpus — per-case isolation into a disposable workspace, the repository-safety invariants for every protected source checkout, cleanup on success and failure, the machine-readable per-case result shape, single-case vs. whole-corpus runs, and the exit-status rule. | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
 | [`regression-report.md`](regression-report.md) | How a candidate run is compared against a stored baseline — the baseline result artifact, the corpus-identity guard, the per-case and aggregate deltas, the metric-free rule that separates a regression from an improvement, deterministic output, and the deliberate baseline-refresh step. | [#53](https://github.com/amirbena/code-review-skill/issues/53) |
 | [`match-criteria.md`](match-criteria.md) | When a produced review finding matches an expected benchmark finding — the two match axes (location, defect), the three-valued `MATCH` / `NEAR_MISS` / `NO_MATCH` result, the fixed tolerances, and how `alternatives` / `any_of` / `match: optional` resolve. The pairing relation the [#41](https://github.com/amirbena/code-review-skill/issues/41) quality metrics are built on. | [#54](https://github.com/amirbena/code-review-skill/issues/54) |
@@ -62,7 +62,7 @@ report ([#53](https://github.com/amirbena/code-review-skill/issues/53)) is
 
 ## Worked example
 
-[`examples/example-case.yaml`](../../benchmark/examples/example-case.yaml) is one complete,
+[`../../benchmark/examples/example-case.yaml`](../../benchmark/examples/example-case.yaml) is one complete,
 validated `benchmark-case/v2` fixture referenced by `fixture-format.md`
 §12. It is an illustrative reference for the format, **not** a corpus case
 (the corpus is #51). Its automated validation and the negative tests for
@@ -230,7 +230,7 @@ demonstrating the voice principles owned by
 
 ## Reviewer Brief benchmark
 
-[`corpus/reviewer-brief/README.md`](../../benchmark/corpus/reviewer-brief/README.md)
+[`../../benchmark/corpus/reviewer-brief/README.md`](../../benchmark/corpus/reviewer-brief/README.md)
 (issue [#309](https://github.com/amirbena/code-review-skill/issues/309),
 depends on [#304](https://github.com/amirbena/code-review-skill/issues/304))
 pins the semantic quality and publication isolation of the private,
@@ -253,7 +253,7 @@ the senior voice examples below.
 
 ## Agent-spawn / delegation benchmark
 
-[`corpus/delegation-spawn/README.md`](../../benchmark/corpus/delegation-spawn/README.md)
+[`../../benchmark/corpus/delegation-spawn/README.md`](../../benchmark/corpus/delegation-spawn/README.md)
 (issue [#307](https://github.com/amirbena/code-review-skill/issues/307),
 depends on [#303](https://github.com/amirbena/code-review-skill/issues/303))
 proves the agent-spawn and delegated-authority capability boundary stays
@@ -277,7 +277,7 @@ metrics above and from ordinary code-review quality fixtures.
 
 ## Trusted-host natural-language authorization benchmark
 
-[`corpus/trusted-host-nl-authorization/README.md`](../../benchmark/corpus/trusted-host-nl-authorization/README.md)
+[`../../benchmark/corpus/trusted-host-nl-authorization/README.md`](../../benchmark/corpus/trusted-host-nl-authorization/README.md)
 (issue [#370](https://github.com/amirbena/code-review-skill/issues/370),
 depends on [#369](https://github.com/amirbena/code-review-skill/issues/369))
 proves natural-language `allow_trusted_host_execution` authorization
@@ -310,7 +310,7 @@ which already have their own coverage.
 
 ## Publication-mode benchmark
 
-[`corpus/publication-mode/README.md`](../../benchmark/corpus/publication-mode/README.md)
+[`../../benchmark/corpus/publication-mode/README.md`](../../benchmark/corpus/publication-mode/README.md)
 (issue [#316](https://github.com/amirbena/code-review-skill/issues/316),
 depends on [#314](https://github.com/amirbena/code-review-skill/issues/314))
 proves the passive/semi/active review-publication boundary #314
@@ -341,7 +341,7 @@ code-review quality fixtures.
 
 ## Mutation-capability-boundary benchmark
 
-[`corpus/mutation-boundary/README.md`](../../benchmark/corpus/mutation-boundary/README.md)
+[`../../benchmark/corpus/mutation-boundary/README.md`](../../benchmark/corpus/mutation-boundary/README.md)
 (issue [#305](https://github.com/amirbena/code-review-skill/issues/305),
 depends on [#301](https://github.com/amirbena/code-review-skill/issues/301))
 proves code mutation never occurs without the exact required user
@@ -371,7 +371,7 @@ above and from ordinary code-review quality fixtures.
 
 ## Denied-capability security-event benchmark
 
-[`corpus/security-events/README.md`](../../benchmark/corpus/security-events/README.md)
+[`../../benchmark/corpus/security-events/README.md`](../../benchmark/corpus/security-events/README.md)
 (issue [#308](https://github.com/amirbena/code-review-skill/issues/308),
 depends on [#299](https://github.com/amirbena/code-review-skill/issues/299)
 and the relevant enforced denial from
@@ -404,7 +404,7 @@ above and from ordinary code-review quality fixtures.
 
 ## Verdict-consistency benchmark
 
-[`corpus/verdict-consistency/README.md`](../../benchmark/corpus/verdict-consistency/README.md)
+[`../../benchmark/corpus/verdict-consistency/README.md`](../../benchmark/corpus/verdict-consistency/README.md)
 (issue [#378](https://github.com/amirbena/code-review-skill/issues/378),
 depends on [#377](https://github.com/amirbena/code-review-skill/issues/377))
 proves the shared verdict-consistency comparator #377 built from #351's

@@ -267,7 +267,7 @@ prefix allowlist (`shared/`, `skills/`, `benchmark/`,
 `runtime_platform/benchmark/reference/`, plus the runtime-adapter exact files) that
 is pinned by prose in that doc. (This section originally described
 `scripts/benchmark/benchmark_ci_classifier.py`'s equivalent allowlist (at
-that file's pre-#457 location), pinned by `benchmark/ci-integration.md`; that CI workflow and
+that file's pre-#457 location), pinned by the since-retired `docs/benchmark/ci-integration.md`; that CI workflow and
 classifier were retired by
 [#420](https://github.com/amirbena/code-review-skill/issues/420), and
 the taxonomy's own allowlist is the analogous hardcoded surface today.)

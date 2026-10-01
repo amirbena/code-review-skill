@@ -23,17 +23,17 @@ data-driven reference-fixture pattern
 and [`../reviewer-brief/README.md`](../reviewer-brief/README.md) already
 established for domains the schema does not fit:
 
-- [`../../../../runtime_platform/benchmark/reference/mutation_fixtures.py`](../../../runtime_platform/benchmark/reference/mutation_fixtures.py) —
+- [`../../../runtime_platform/benchmark/reference/mutation_fixtures.py`](../../../runtime_platform/benchmark/reference/mutation_fixtures.py) —
   one `MutationCase` per required outcome shape, each a zero-argument
   `run()` closure that exercises the *single* reference model,
-  [`../../../../tests/reference/review/mutation_authority.py`](../../../tests/reference/review/mutation_authority.py),
+  [`../../../tests/reference/review/mutation_authority.py`](../../../tests/reference/review/mutation_authority.py),
   against a real, disposable temporary Git repository — never a mock or a
   stubbed filesystem — plus the declarative metadata #305 requires:
   requested capability/action, authorization scope/state, expected
   allow/deny result, expected repository/Git state after the case, linked
   `AUTH-###` threat-scenario id(s), and (for a denied case) the
   provisional denial classification.
-- [`../../../../tests/unit/benchmark/test_mutation_boundary_corpus.py`](../../../tests/unit/benchmark/test_mutation_boundary_corpus.py) —
+- [`../../../tests/unit/benchmark/test_mutation_boundary_corpus.py`](../../../tests/unit/benchmark/test_mutation_boundary_corpus.py) —
   runs every case's `run()` and asserts its actual outcome matches the
   declared expectation, plus corpus-completeness checks (every required
   category, every catalog `AUTH-###` id excluding `AUTH-014`, every
@@ -42,7 +42,7 @@ established for domains the schema does not fit:
   dedicated "allowed apply changes only the authorized scope" check.
 
 This corpus is **not** a duplicate of
-[`../../../../tests/unit/security/test_mutation_authority.py`](../../../tests/unit/security/test_mutation_authority.py),
+[`../../../tests/unit/security/test_mutation_authority.py`](../../../tests/unit/security/test_mutation_authority.py),
 which #301 already landed as hand-written regression tests, one per
 `AUTH-###` scenario, against the same reference model. That suite is *why*
 the boundary holds; this corpus is the declarative, metadata-bearing
@@ -143,7 +143,7 @@ in the unit-test module).
 ## Threat-scenario traceability
 
 This corpus covers every `AUTH-###` scenario in
-[`../../../threat-model/catalog/mutation-authority.yaml`](../../../docs/threat-model/catalog/mutation-authority.yaml)
+[`../../../docs/threat-model/catalog/mutation-authority.yaml`](../../../docs/threat-model/catalog/mutation-authority.yaml)
 (16 scenarios, issue [#300](https://github.com/amirbena/code-review-skill/issues/300)),
 excluding `AUTH-014` — a distinct, already-covered GitHub formal
 review-action authority domain

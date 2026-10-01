@@ -16,7 +16,7 @@ its behavior is exercised by
 and [`../../tests/policy/review/repository_intelligence/test_repository_intelligence_docs.py`](../../tests/policy/review/repository_intelligence/test_repository_intelligence_docs.py).
 The benchmark evidence for the acceptance criterion "measurable gains over
 diff-only review" is
-[`../benchmark/corpus/repository-intelligence/README.md`](../../benchmark/corpus/repository-intelligence/README.md),
+[`../../benchmark/corpus/repository-intelligence/README.md`](../../benchmark/corpus/repository-intelligence/README.md),
 exercised by
 [`../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py`](../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py).
 

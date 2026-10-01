@@ -4,10 +4,10 @@ Repository-development artifact for GitHub Issue
 [#378](https://github.com/amirbena/code-review-skill/issues/378), depends
 on [#377](https://github.com/amirbena/code-review-skill/issues/377) (the
 shared verdict-consistency comparator,
-[`../../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md)),
+[`../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md)),
 which in turn implements the design record for
 [#351](https://github.com/amirbena/code-review-skill/issues/351)
-([`../../../benchmark-measurement-architecture/verdict-consistency-boundary-research.md`](../../../docs/benchmark-measurement-architecture/verdict-consistency-boundary-research.md)).
+([`../../../docs/benchmark-measurement-architecture/verdict-consistency-boundary-research.md`](../../../docs/benchmark-measurement-architecture/verdict-consistency-boundary-research.md)).
 
 [#350](https://github.com/amirbena/code-review-skill/issues/350) proves
 the normal mechanical severity → decision path: when a real review
@@ -29,7 +29,7 @@ duplicate #377's own unit suite (see "Why this isn't a
 Every corpus under [`../`](../README.md) that reviews a code change (each
 a self-contained inline patch plus expected review *findings*) uses the
 `benchmark-case/v2` fixture format
-([`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)). This domain has no
+([`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)). This domain has no
 patch and no finding: its input is an already-finalized mechanical
 decision plus a deliberately drifted rendered/submitted signal, and its
 expectation is a withhold-and-report outcome (or, for the control cases, a
@@ -39,11 +39,11 @@ the same test-only, data-driven reference-fixture pattern
 [`../publication-mode/README.md`](../publication-mode/README.md) already
 established for the structurally analogous publication-boundary domain:
 
-- [`../../../../runtime_platform/benchmark/reference/verdict_consistency_fixtures.py`](../../../runtime_platform/benchmark/reference/verdict_consistency_fixtures.py) —
+- [`../../../runtime_platform/benchmark/reference/verdict_consistency_fixtures.py`](../../../runtime_platform/benchmark/reference/verdict_consistency_fixtures.py) —
   one `VerdictConsistencyCase` per required outcome shape, each a
   zero-argument `run()` closure that exercises the *single* real
   comparator,
-  [`../../../../tests/reference/review/verdict_consistency.py`](../../../tests/reference/review/verdict_consistency.py)
+  [`../../../tests/reference/review/verdict_consistency.py`](../../../tests/reference/review/verdict_consistency.py)
   (`check_rendered_signal` / `check_submitted_event`), through the
   runbook-shaped wrappers `render_or_withhold` / `publish_or_withhold`,
   which mirror each Skill's actual reconciliation step: construct the
@@ -51,7 +51,7 @@ established for the structurally analogous publication-boundary domain:
   and report an internal-consistency failure in its place — never both,
   mirroring `verdict-consistency.md`'s own "On a detected mismatch:
   withhold-and-report".
-- [`../../../../tests/unit/benchmark/test_verdict_consistency_corpus.py`](../../../tests/unit/benchmark/test_verdict_consistency_corpus.py) —
+- [`../../../tests/unit/benchmark/test_verdict_consistency_corpus.py`](../../../tests/unit/benchmark/test_verdict_consistency_corpus.py) —
   runs every case's `run()`, validates the returned `Observed` shape
   (exactly one of a rendered artifact, a published artifact, or a
   withheld artifact — never two at once, which would mean a self-
@@ -60,10 +60,10 @@ established for the structurally analogous publication-boundary domain:
   plus corpus-completeness checks (every reconciliation point, the
   required highest-risk shape, malformed-fixture rejection, and
   governance-vocabulary checks reused from
-  [`../../../../tests/reference/review/decision_semantics.py`](../../../tests/reference/review/decision_semantics.py)).
+  [`../../../tests/reference/review/decision_semantics.py`](../../../tests/reference/review/decision_semantics.py)).
 
 This corpus is **not** a duplicate of
-[`../../../../tests/unit/review/test_verdict_consistency.py`](../../../tests/unit/review/test_verdict_consistency.py),
+[`../../../tests/unit/review/test_verdict_consistency.py`](../../../tests/unit/review/test_verdict_consistency.py),
 which #377 already landed as an extensive unit suite proving the raw
 comparator functions mechanically, in isolation, returning only a
 `Verdict` enum member. That suite is *why* the boundary holds; this

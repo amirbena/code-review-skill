@@ -4,14 +4,14 @@ Repository-development artifact for Issue
 [#306](https://github.com/amirbena/code-review-skill/issues/306),
 depends on [#302](https://github.com/amirbena/code-review-skill/issues/302)
 (the real sandbox runner) and maps to the `SBOX-###` scenarios in
-[`../../../threat-model/catalog/sandbox-runtime-validation.yaml`](../../../docs/threat-model/catalog/sandbox-runtime-validation.yaml)
+[`../../../docs/threat-model/catalog/sandbox-runtime-validation.yaml`](../../../docs/threat-model/catalog/sandbox-runtime-validation.yaml)
 (Issue [#300](https://github.com/amirbena/code-review-skill/issues/300)).
 
 ## Why this isn't a `benchmark-case/v2` corpus
 
 Every other sub-corpus under [`../`](../README.md) uses the
 `benchmark-case/v2` fixture format
-([`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)): a code patch plus
+([`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)): a code patch plus
 an expected set of review *findings*, scored for finding
 precision/recall. That schema has no field for a capability boundary, a
 resource ceiling, or a contained/denied/unavailable outcome, and — more
@@ -26,7 +26,7 @@ semantics would blur exactly the line #306 asks to keep sharp:
 So this corpus is not a set of fixture files at all. It **is** the real,
 executable adversarial suite already required to exist for #302's own
 "structural security proof":
-[`../../../../tests/integration/sandbox/test_adversarial_containment.py`](../../../tests/integration/sandbox/test_adversarial_containment.py).
+[`../../../tests/integration/sandbox/test_adversarial_containment.py`](../../../tests/integration/sandbox/test_adversarial_containment.py).
 Each test method there fires one real hostile payload (real subprocess,
 real Docker container or real macOS Seatbelt profile — no mocked
 isolation) and is a single case in this benchmark. A payload that
@@ -86,7 +86,7 @@ python3 -m pytest tests/integration/sandbox/test_adversarial_containment.py -v
 
 A primitive genuinely absent from the host (no Docker, no Seatbelt, no
 bwrap) skips the whole suite rather than silently passing — see
-[`../../../../tests/integration/sandbox/_harness.py`](../../../tests/integration/sandbox/_harness.py).
+[`../../../tests/integration/sandbox/_harness.py`](../../../tests/integration/sandbox/_harness.py).
 
 ## Validation
 
