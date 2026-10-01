@@ -52,6 +52,13 @@ class LifecycleFake(FakeGitHub):
             sha = endpoint.split("/commits/")[1].split("/")[0]
             return ok({"statuses": [{"context": c, "state": s}
                                     for c, s in self.statuses.get(sha, {}).items()]})
+        if method == "DELETE" and (endpoint.endswith("/protection") or "/rulesets/" in endpoint):
+            self.calls.append((method, endpoint, body))
+            if endpoint.endswith("/protection"):
+                self.protection = None
+            else:
+                self.rulesets.pop(int(endpoint.rsplit("/", 1)[1]))
+            return b.RawResponse(204, "")
         if method != "GET" and (endpoint.endswith("/rulesets") or "/statuses/" in endpoint
                                 or endpoint.endswith("/protection")):
             self.calls.append((method, endpoint, body))
@@ -91,16 +98,40 @@ class LifecycleTests(unittest.TestCase):
     def test_unauthorized_setup_does_not_mutate(self):
         fake, _ = run("ruleset")
         unauthorized = [c for c in fake.calls if c[0] != "GET" and "/statuses/" not in c[1]]
-        # fixture seed POST + authorized add PUT + authorized remove PUT only
-        self.assertEqual([c[0] for c in unauthorized], ["POST", "PUT", "PUT"])
+        # fixture seed POST + authorized add PUT + authorized remove PUT + teardown DELETE only
+        self.assertEqual([c[0] for c in unauthorized], ["POST", "PUT", "PUT", "DELETE"])
+
+    def test_teardown_leaves_no_governance(self):
+        for mechanism in lp.MECHANISMS:
+            fake, steps = run(mechanism)
+            self.assertFalse(fake.rulesets)
+            self.assertIsNone(fake.protection)
+            self.assertEqual(steps[-1].point, "Teardown: seeded governance removed")
+
+    def test_new_head_publishes_only_on_its_own_authorized_review(self):
+        fake, steps = run("ruleset")
+        by_point = {s.point: s for s in steps}
+        self.assertTrue(by_point["New HEAD's own authorized review publishes success"].passed)
+        self.assertTrue(by_point["New HEAD inherits no authorization (success withheld)"].passed)
+        self.assertEqual(fake.statuses[SHA_A][lp.DEFAULT_CONTEXT], "success")
+
+    def test_failure_midway_keeps_partial_evidence_and_tears_down(self):
+        fake = LifecycleFake()
+        boom = lambda repo, branch: (_ for _ in ()).throw(b.GitHubCallError("push failed", 500))
+        steps: list[lp.Step] = []
+        client = b.GitHubClient(transport=fake, env={})
+        with self.assertRaises(b.GitHubCallError):
+            lp.run_lifecycle(client, REPO, 9, "classic", sleep=lambda s: None,
+                             advance_head=boom, env={}, steps=steps)
+        self.assertGreater(len(steps), 8)
+        self.assertEqual(steps[-1].point, "Teardown: seeded governance removed")
+        self.assertIsNone(fake.protection)
 
     def test_failed_point_is_reported_as_fail(self):
         fake = LifecycleFake()
-        original = fake.required
         fake.required = lambda: set()  # merge never blocked -> blocking points must FAIL
         _, steps = run("classic", fake)
         self.assertTrue(any(not s.passed for s in steps))
-        fake.required = original
 
 
 class GuardTests(unittest.TestCase):

@@ -27,7 +27,9 @@ canonical repository, and any repository whose name lacks `disposable`,
    python3 -m scripts.github_integration.lifecycle_proof OWNER/REPO PR_NUMBER --mechanism ruleset --confirm-disposable
    ```
 
-   Then delete the ruleset, and repeat with `--mechanism classic`.
+   The driver removes the governance it seeded when it finishes, even on
+   failure (partial evidence is still printed), so repeat with
+   `--mechanism classic` on the same repository.
 3. Paste each run's output (already sanitized: tokens, repository slug, and
    full SHAs are stripped) into the matching section below.
 4. Tear down: `gh repo delete OWNER/REPO --yes`, or reset by removing the
@@ -44,7 +46,7 @@ refuses to create governance from nothing by design (#550).
 | Status published on reviewed SHA | `failure` / `success published on reviewed SHA` |
 | Setup only with explicit authorization; same run without it does not mutate | `Setup without explicit authorization refuses`, `No mutation without authorization` |
 | `failure` blocks, `success` satisfies | `blocks merge on failure`, `satisfied on success` (GitHub `mergeable_state`) |
-| New HEAD inherits no status or authorization | `New HEAD inherits no status`, `…is merge-blocked`, `…success withheld` |
+| New HEAD inherits no status or authorization | `PR HEAD advanced`, `New HEAD inherits no status`, `…is merge-blocked`, `…success withheld`, `…own authorized review publishes success`, `Prior SHA status unchanged` |
 | Unrelated governance intact after setup and removal | `intact after setup`, `restored after removal` |
 
 ## Evidence

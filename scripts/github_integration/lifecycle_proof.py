@@ -166,19 +166,61 @@ def gh_advance_head(repo: str, branch: str, env: Mapping[str, str]) -> str:
     return out.stdout.strip()
 
 
+def wait_for_head(client, repo, pr, sha, sleep, attempts: int = 12) -> str:
+    """Poll until the PR's live HEAD equals `sha`; GitHub updates it asynchronously."""
+    live = ""
+    for _ in range(attempts):
+        live = ((client.read(f"repos/{repo}/pulls/{pr}") or {}).get("head") or {}).get("sha", "")
+        if live == sha:
+            break
+        sleep(2)
+    return live
+
+
+def teardown_governance(client, repo, branch, mechanism, rid, auth) -> None:
+    """Remove the seeded governance so the repository is left as it started."""
+    if mechanism == "ruleset":
+        client.mutate_governance("DELETE", f"repos/{repo}/rulesets/{rid}", None, authorization=auth)
+    else:
+        client.mutate_governance(
+            "DELETE", f"repos/{repo}/branches/{quote(branch, safe='/')}/protection", None,
+            authorization=auth)
+
+
 def run_lifecycle(
     client: GitHubClient, repo: str, pr: int, mechanism: str, *,
     sleep: Callable[[float], None] = time.sleep,
     advance_head: Callable[[str, str], str] | None = None,
     env: Mapping[str, str] | None = None,
+    steps: list[Step] | None = None,
 ) -> list[Step]:
+    """Run the lifecycle; `steps` keeps partial evidence if a call raises, and seeded
+    governance is always torn down."""
+    steps = [] if steps is None else steps
+    seeded: dict[str, Any] = {}
+    try:
+        _run(client, repo, pr, mechanism, sleep, advance_head, env, steps, seeded)
+    finally:
+        if seeded:
+            auth = GovernanceAuthorization(True, USER_REQUEST)
+            try:
+                pull = client.read(f"repos/{repo}/pulls/{pr}")
+                teardown_governance(client, repo, pull["base"]["ref"], mechanism,
+                                    seeded["rid"], auth)
+                steps.append(Step("Teardown: seeded governance removed", "removed", "removed", True))
+            except GitHubBoundaryError as exc:
+                steps.append(Step("Teardown: seeded governance removed", "removed",
+                                  f"FAILED ({exc}); remove it by hand", False))
+    return steps
+
+
+def _run(client, repo, pr, mechanism, sleep, advance_head, env, steps, seeded) -> None:
     env = os.environ if env is None else env
     advance_head = advance_head or (lambda r, b: gh_advance_head(r, b, env))
     pull = client.read(f"repos/{repo}/pulls/{pr}")
     branch, sha_a = pull["base"]["ref"], pull["head"]["sha"]
     head_branch = pull["head"]["ref"]
     auth = GovernanceAuthorization(True, USER_REQUEST)
-    steps: list[Step] = []
 
     def record(point, expected, observed, passed=None):
         steps.append(Step(point, str(expected), str(observed),
@@ -197,6 +239,7 @@ def run_lifecycle(
             reasoning, repo, pr, sha, is_aggregator=True, **kw), sleep=sleep)
 
     rid = seed_governance(client, repo, branch, mechanism, auth)
+    seeded["rid"] = rid
     base = snapshot(client, repo, branch, mechanism, rid)
     record("Fixture: unrelated governance seeded", UNRELATED_CONTEXT in repr(base), True)
     record("Detection before setup", NOT_ENFORCED,
@@ -230,12 +273,16 @@ def run_lifecycle(
     sha_b = advance_head(repo, head_branch)
     post_unrelated(sha_b)
     record("New HEAD differs from prior SHA", True, sha_b != sha_a)
+    record("PR HEAD advanced to the new SHA", sha_b, wait_for_head(client, repo, pr, sha_b, sleep))
     record("New HEAD inherits no status", "None", review_status(client, repo, sha_b))
     record("New HEAD is merge-blocked", "blocked", merge_state(client, repo, pr, "blocked", sleep))
     withheld = publish(Reasoning.CLEAN, sha_b)
     record("New HEAD inherits no authorization (success withheld)", "withheld", withheld.action)
     record("New HEAD still has no status after withheld publish", "None",
            review_status(client, repo, sha_b))
+    own = publish(Reasoning.CLEAN, sha_b, active_mode=True, reviewer_independent=True)
+    record("New HEAD's own authorized review publishes success", "published", own.action)
+    record("Prior SHA status unchanged", "success", review_status(client, repo, sha_a))
 
     removed = setup(authorization=auth, remove=True)
     record("Removal with explicit authorization", "removed", removed.action)
@@ -245,7 +292,6 @@ def run_lifecycle(
     record("Detection after removal", NOT_ENFORCED, detect_enforcement(client, repo, branch).state)
     record("Merge no longer gated by the review context", "clean",
            merge_state(client, repo, pr, "clean", sleep))
-    return steps
 
 
 def render_evidence(steps: list[Step], mechanism: str, env=None, repo: str = "") -> str:
@@ -265,13 +311,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--confirm-disposable", action="store_true",
                         help="acknowledge that governance on REPO will be mutated")
     args = parser.parse_args(argv)
+    steps: list[Step] = []
     try:
         guard(args.repo, os.environ)
         if not args.confirm_disposable:
             raise GuardError("Refused: pass --confirm-disposable to mutate governance on REPO.")
-        steps = run_lifecycle(GitHubClient(), args.repo, args.pr, args.mechanism)
+        run_lifecycle(GitHubClient(), args.repo, args.pr, args.mechanism, steps=steps)
     except (GuardError, GitHubBoundaryError) as exc:
         print(sanitize(str(exc), os.environ, args.repo), file=sys.stderr)
+        if steps:
+            print(render_evidence(steps, args.mechanism, os.environ, args.repo))
         return 2
     print(render_evidence(steps, args.mechanism, os.environ, args.repo))
     return 0 if all(s.passed for s in steps) else 1
