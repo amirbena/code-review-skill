@@ -20,7 +20,8 @@ execution side (`run_benchmark_routine.py`) and the storage side
    `runtime_platform/benchmark/reference/*` (e.g. `mutation-boundary`,
    `reviewer-brief`, `delegation-spawn`, `sandbox-adversarial`,
    `trusted-host-nl-authorization`, `security-events`,
-   `publication-mode`, `verdict-consistency`) and never a valid
+   `publication-mode`, `github-enforcement-authorization`,
+   `verdict-consistency`) and never a valid
    `ProductionReviewerAdapter` input — is excluded by construction: it
    contributes nothing to the scan, so there is no denylist to keep in
    sync as those suites grow.
