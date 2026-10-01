@@ -62,8 +62,12 @@ context means reading the ruleset, appending to `required_status_checks`, and
 writing the whole ruleset back, so the read-normalize-diff-verify procedure in
 the policy is load-bearing for rulesets in a way it is not for classic
 `POST .../contexts`. Per-endpoint permission details were not stated in the
-cited REST page (*unverified*; check the fine-grained token permission before
-implementing).
+cited REST page. **Update (#549):** still open for fine-grained tokens. The
+read-only detector was exercised only with a classic `gh` OAuth token on a
+public repository: the rules read succeeded and the classic read returned
+404 `Branch not protected`; fine-grained permission names
+were not tested. Detection treats any 403/404 as `UNKNOWN`, so a missing
+permission can never produce a false `NOT ENFORCED`.
 
 ## Precedence when both exist on one branch
 
@@ -92,8 +96,19 @@ forced migration exists. Practical considerations:
   versa. Detection needs both reads.
 - Org-level rulesets can require the context for a repository without any
   repository-local configuration, so a repo-only read can yield a false
-  `NOT ENFORCED`. The branch rules endpoint above is expected to include them
-  (*unverified*; confirm before relying on it).
+  `NOT ENFORCED`. **Update (#549):** `GET .../rules/branches/{branch}` returns
+  each rule with `ruleset_source_type` (`Repository` observed on a real repo),
+  which indicates it is designed to carry `Organization` rules too, but no
+  org-level ruleset was available to confirm (the test repository is
+  user-owned). Still open; an org-owned repository is needed.
+- **Observed (#549):** classic `.../protection/required_status_checks` on an
+  unprotected branch returns 404 with message `Branch not protected`. Detection
+  treats only that exact message as "readable, absent"; any other 403/404 is
+  `UNKNOWN`. A protected branch without required checks is expected to answer
+  `Required status checks not enabled` (*unverified*; accepted as absent on that
+  expectation, and verifying it needs a protected test branch). Matching is by
+  context name only; `integration_id` / `app_id` pinning is ignored. The rules endpoint returns `[]` for a nonexistent branch, so it
+  cannot distinguish "no rules" from "no such branch".
 - `do_not_enforce_on_create` exists only for rulesets; classic protection has
   no equivalent.
 

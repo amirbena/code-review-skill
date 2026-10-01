@@ -32,7 +32,12 @@ class AuthenticationError(GitHubBoundaryError):
 
 
 class GitHubPermissionError(GitHubBoundaryError):
-    pass
+    """403/404 (or missing scope); `status` and redacted `detail` let callers tell apart."""
+
+    def __init__(self, message: str, status: int | None = None, detail: str = ""):
+        super().__init__(message)
+        self.status = status
+        self.detail = detail
 
 
 class AuthorizationRequiredError(GitHubBoundaryError):
@@ -132,7 +137,9 @@ class GitHubClient:
             hint = f" Token needs: {needed}." if needed else ""
             raise GitHubPermissionError(
                 f"{where}: HTTP {resp.status}; token lacks access or resource not visible."
-                f"{hint} {detail}".strip()
+                f"{hint} {detail}".strip(),
+                status=resp.status,
+                detail=detail,
             )
         raise GitHubCallError(f"{where}: HTTP {resp.status}: {detail}", resp.status)
 
