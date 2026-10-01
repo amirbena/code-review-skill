@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.62.0 — 2026-10-01
+
+### Added
+
+- Explicit opt-in setup and removal of the code-review status as a required check on Rulesets or classic Branch Protection (#597).
+
 ## v1.61.0 — 2026-09-30
 
 ### Added
