@@ -36,7 +36,9 @@ status needs the same `ACTIVE` publication mode + reviewer independence as
 green. The Skill can also report, read-only, whether that context is
 `ENFORCED` / `NOT ENFORCED` / `UNKNOWN`, and — only as a separate,
 explicitly requested, minimal, preserving setup action — add that one
-context to a base branch's required checks.
+context to a base branch's required checks. See
+[GitHub-native merge enforcement](github-merge-enforcement.md) for the full
+guide.
 
 ## When it is useful
 
