@@ -139,7 +139,9 @@ templates name these values and do not restate them.
   path, ambiguous dispatch) is `unresolved`, not `resolved_none`.
 - **The ring ceiling is not a verdict.** When the ceiling for the change's
   depth is reached with the question still open, the outcome is
-  `unresolved`. Stop-at-first-ring and the ceiling table are unchanged.
+  `unresolved`. An `affected_test` question has no ring: it is `unresolved`
+  when [`affected-test-analysis.md`](affected-test-analysis.md)'s own
+  tracing could not link the change to tests. Stop-at-first-ring and the ceiling table are unchanged.
 - **Initial relationship classes.** `caller_consumer` (callers of a changed
   symbol; consumers of a changed config key or contract),
   `implementation_interface` (implementers of a changed interface, or the
@@ -160,7 +162,7 @@ templates name these values and do not restate them.
   `unresolved` relationship renders the optional **Context gaps** section
   of [`../templates/review-summary.md`](../templates/review-summary.md):
   one bullet per unresolved relationship naming its class, subject, reason,
-  and ring reached. The review must not describe an unresolved relationship
+  and, for expansion-trigger classes, ring reached. The review must not describe an unresolved relationship
   with wording that claims it was checked ("no callers", "all consumers
   verified"). The section is omitted entirely when nothing is unresolved,
   and it is never a finding.
@@ -250,16 +252,20 @@ repository_expansion:
       source: <the observed diff fact that activated it>
       ring_reached: 1 | 2 | 3
       locations: [<path:symbol or path:line inspected>, ...]
-      relationships:
-        - class: caller_consumer | implementation_interface | affected_test
-          subject: <changed symbol, key, or interface>
-          outcome: resolved_relevant | resolved_none | unresolved
-          reason: <present only when outcome is unresolved>
+  relationships:
+    - class: caller_consumer | implementation_interface | affected_test
+      subject: <changed symbol, key, or interface>
+      outcome: resolved_relevant | resolved_none | unresolved
+      ring_reached: 1 | 2 | 3   # expansion-trigger classes only
+      reason: <present only when outcome is unresolved>
 ```
 
 `triggers` is empty when no expansion trigger fired on the current change.
-`relationships` lists one entry per relationship question the trigger
-raised.
+`relationships` is a sibling list, one entry per relationship question
+asked, and is empty when none was asked. It is not nested under `triggers`
+because `affected_test` comes from the signal-triggered
+[`affected-test-analysis.md`](affected-test-analysis.md) pass, which is not
+an expansion trigger and has no ring.
 
 ## Relationship to the repository-intelligence model
 

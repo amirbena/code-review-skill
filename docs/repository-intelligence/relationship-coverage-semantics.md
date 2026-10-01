@@ -46,8 +46,10 @@ shows readers missing the disclosure. This path needs maintainer sign-off.
 - **Human surface:** optional Context gaps section in
   [`review-summary.md`](../../shared/templates/review-summary.md), omitted when
   nothing is unresolved, never a finding.
-- **Machine surface:** per-relationship `outcome` inside the existing
-  `repository_expansion` subordinate metadata; no new top-level model.
+- **Machine surface:** a sibling `relationships` list with a per-relationship
+  `outcome` inside the existing `repository_expansion` subordinate metadata;
+  not nested under `triggers`, since `affected_test` is not an expansion
+  trigger and has no ring. No new top-level model.
 - **`confidence` (#178):** unchanged, no new value. `insufficient-context`
   remains the per-finding signal; Context gaps is the review-level signal and
   also covers relationships that produced no finding.
@@ -75,7 +77,7 @@ Each class walks every outcome.
 | --- | --- | --- | --- |
 | `caller_consumer` | `get_user` now returns `None`; `charge_user` still assumes it raises → finding, edge carries `path:line`. | Public helper renamed; direct ring-1 search ran over the repo and finds no references → listed nowhere, not a gap. | `BaseHandler.process` is reached through `HANDLERS[kind]()`; `kind` is request data → Context gap, reason `ambiguous dispatch`. |
 | `implementation_interface` | `Cache.get` narrowed; untouched `InMemoryCache` still returns `null` → finding. | Interface changed; ring 2–3 search lists the implementers and all already updated → no gap. | Interface implemented in a language the host search cannot parse → Context gap, reason `unsupported language shape`. |
-| `affected_test` | Changed rounding rule; `test_totals.py` asserts the old value → finding. | Changed behavior; test search ran and no test references the symbol → no gap. | `standard`-depth change, ring 1 ceiling reached before the test-to-symbol link could be traced → Context gap, reason `ring ceiling reached`. |
+| `affected_test` | Changed rounding rule; `test_totals.py` asserts the old value → finding. | Changed behavior; test search ran and no test references the symbol → no gap. | Changed behavior reached only through a fixture factory the test search cannot follow → Context gap, reason `test-to-symbol link not traceable`. |
 
 In every `unresolved` cell, coverage stays `complete`, severity and the Decision
 are unchanged, and the review does not say the relationship was checked.

@@ -51,7 +51,7 @@ important concern or attention point; include scope only when useful>
 <only when at least one repository relationship is `unresolved` per
   [`../policies/repository-expansion.md`](../policies/repository-expansion.md),
   "Relationship outcomes and unresolved relationships": one bullet per
-  unresolved relationship — class, subject, reason, ring reached; never a
+  unresolved relationship — class, subject, reason, ring reached where one applies; never a
   finding, never affecting coverage or the decision; omitted entirely
   otherwise>
 
