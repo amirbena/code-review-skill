@@ -29,6 +29,7 @@ workflow using a publication-only GitHub App persists it and manages issues.
 | [`contract-reconciliation.md`](contract-reconciliation.md) | How #338, #339, #415, #431, and `runtime-execution-contract.md` §2.2 are reconciled, and the amendment list A1–A14 (A1–A13 landed via #467, A14 via #489). |
 | [`provisioning-runbook.md`](provisioning-runbook.md) | The maintainer-only F7 procedure (#473): register the `benchmark-publication` App, environment, secrets, rulesets, labels, and tracking/health issues, each with its expected result and an observed-evidence log. |
 | [`follow-up-plan.md`](follow-up-plan.md) | The listed (not created) follow-up issues F1–F12 (plus four conditional ones), their order and ownership class, and the documentation work for both surfaces: the canonical repository specification and the GitHub Wiki page. |
+| [`root-relocation-verification.md`](root-relocation-verification.md) | The #582 verification that the Sentinel and Comprehensive lanes resolve and behave identically after the move to root `benchmark/`: corpus identity, digests, `spec_sha256`, unchanged schedule/publisher/seal files, and the external Cloud Routine contract comparison. |
 
 The existing contracts this record builds on and proposes to amend are
 [`../runtime-execution-contract.md`](../runtime-execution-contract.md),
