@@ -67,3 +67,11 @@ verification; classic protection uses the additive `.../contexts` call. It
 refuses, without mutating, on unreadable, conflicting, organization-only, or
 absent configuration. Run it with
 `python3 -m scripts.github_integration.required_check_setup OWNER/REPO BRANCH --user-request "..." --active-mode --reviewer-independent [--remove]`.
+
+## End-to-end proof
+
+[`lifecycle_proof.py`](../../scripts/github_integration/lifecycle_proof.py)
+(#553) is an operator-run driver that exercises the lifecycle above on a
+disposable repository under a Ruleset and under classic protection. It is
+never run by CI; procedure and evidence live in
+[`merge-enforcement-evidence.md`](merge-enforcement-evidence.md).
