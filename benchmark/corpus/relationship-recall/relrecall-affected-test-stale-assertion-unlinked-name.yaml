@@ -1,0 +1,96 @@
+# Relationship-recall corpus case (Issue #602, parent #600). Format:
+# runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Affected-test class, POSITIVE. The free-shipping threshold moves from
+# 5000 to 7500 cents. The only test that encodes the old threshold is
+# tests/test_order_summary.py -- it exercises build_summary(), never names
+# `rates` or `shipping_cost_cents`, and shares no filename stem with the
+# changed module, so it cannot be found by naming convention. It is only
+# reachable by following shipping_cost_cents to its consumer build_summary
+# and then to the test that calls that consumer.
+
+format: benchmark-case/v2
+
+id: relrecall-affected-test-stale-assertion-unlinked-name
+title: "Free-shipping threshold raised; an unrelated-named order-summary test still asserts the old threshold"
+
+input:
+  patch: |
+    diff --git a/app/shipping/rates.py b/app/shipping/rates.py
+    index 1111111..2222222 100644
+    --- a/app/shipping/rates.py
+    +++ b/app/shipping/rates.py
+    @@ -1,4 +1,4 @@
+     def shipping_cost_cents(subtotal_cents):
+    -    if subtotal_cents >= 5000:
+    +    if subtotal_cents >= 7500:
+             return 0
+         return 599
+  base:
+    app/shipping/rates.py: |
+      def shipping_cost_cents(subtotal_cents):
+          if subtotal_cents >= 5000:
+              return 0
+          return 599
+    app/orders/summary.py: |
+      from app.shipping.rates import shipping_cost_cents
+
+
+      def build_summary(subtotal_cents):
+          shipping = shipping_cost_cents(subtotal_cents)
+          return {
+              "subtotal": subtotal_cents,
+              "shipping": shipping,
+              "total": subtotal_cents + shipping,
+          }
+    tests/test_order_summary.py: |
+      from app.orders.summary import build_summary
+
+
+      def test_free_shipping_at_fifty_dollars():
+          summary = build_summary(5000)
+          assert summary["shipping"] == 0
+          assert summary["total"] == 5000
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: order-summary-test-asserts-old-free-shipping-threshold
+      match: required
+      severity: P1
+      location:
+        location_intent: cross-file
+        path: tests/test_order_summary.py
+        symbol: test_free_shipping_at_fifty_dollars
+        anchor: 'assert summary["shipping"] == 0'
+      claim: >-
+        The free-shipping threshold was raised from 5000 to 7500 cents, but
+        test_free_shipping_at_fifty_dollars still builds a summary for a
+        5000-cent subtotal and asserts shipping is 0; it now gets 599 and
+        fails, so the existing test encodes the old threshold.
+      defect_kind: stale-test-assertion
+      # The same defect may be reported at the changed production line that
+      # invalidates the test. Both anchors name the relationship-dependent
+      # finding; an unrelated finding at either location does not match
+      # because the claim must still correspond.
+      alternatives:
+        - location:
+            location_intent: line
+            path: app/shipping/rates.py
+            symbol: shipping_cost_cents
+            anchor: "if subtotal_cents >= 7500:"
+
+metadata:
+  source: crafted
+  tags: [regression]
+  rationale: >-
+    The diff is a one-line constant change that reads as intentional. The
+    defect is a stale assertion in a test whose name and path give no link
+    to the changed module; only tracing the changed callable through its
+    consumer to the test that exercises that consumer finds it.
+  taxonomy:
+    capability: [relationship-recall]
+    policy_contract: [affected-test-analysis]
+    risk_mode: [regression]
+    affected_surface: [unclassified]

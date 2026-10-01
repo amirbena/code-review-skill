@@ -1,0 +1,101 @@
+# Relationship-recall corpus case (Issue #602, parent #600). Format:
+# runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Implementation/interface class, UNRESOLVABLE. The internal Cache
+# interface is narrowed and the one implementer the repository contains is
+# updated to match. The remaining implementers are registered from
+# cache-plugins.json, which is not in the repository, so which classes
+# implement Cache cannot be established. The correct output does not guess
+# an implementer. The baseline reviewer (before #601) had no way to express
+# the unresolved relationship; see ./README.md "What the baseline can and
+# cannot express".
+
+format: benchmark-case/v2
+
+id: relrecall-interface-config-registered-implementers-unresolvable
+title: "Internal Cache contract narrowed; other implementers are registered from a config file outside the repository"
+
+input:
+  patch: |
+    diff --git a/src/internal/cache/Cache.ts b/src/internal/cache/Cache.ts
+    index 1111111..2222222 100644
+    --- a/src/internal/cache/Cache.ts
+    +++ b/src/internal/cache/Cache.ts
+    @@ -1,3 +1,3 @@
+     export interface Cache {
+    -  get(key: string): Promise<string | null>;
+    +  get(key: string): Promise<string>;
+     }
+    diff --git a/src/internal/cache/RedisCache.ts b/src/internal/cache/RedisCache.ts
+    index 3333333..4444444 100644
+    --- a/src/internal/cache/RedisCache.ts
+    +++ b/src/internal/cache/RedisCache.ts
+    @@ -1,11 +1,12 @@
+     import { Cache } from "./Cache";
+    +import { CacheMiss } from "./errors";
+
+     export class RedisCache implements Cache {
+       async get(key: string): Promise<string> {
+         const value = await this.client.get(key);
+    -    if (value === null) {
+    -      return null as unknown as string;
+    -    }
+    +    if (value === null) {
+    +      throw new CacheMiss(key);
+    +    }
+         return value;
+       }
+     }
+  base:
+    src/internal/cache/Cache.ts: |
+      export interface Cache {
+        get(key: string): Promise<string | null>;
+      }
+    src/internal/cache/RedisCache.ts: |
+      import { Cache } from "./Cache";
+
+      export class RedisCache implements Cache {
+        async get(key: string): Promise<string> {
+          const value = await this.client.get(key);
+          if (value === null) {
+            return null as unknown as string;
+          }
+          return value;
+        }
+      }
+    src/internal/cache/errors.ts: |
+      export class CacheMiss extends Error {
+        constructor(key: string) {
+          super(`cache miss: ${key}`);
+        }
+      }
+    src/internal/cache/registry.ts: |
+      import { readFileSync } from "node:fs";
+      import { Cache } from "./Cache";
+
+      // Internal to this package: not re-exported from the package entrypoint.
+      // Implementers are listed by module path in cache-plugins.json, which is
+      // deployed with the service and is not part of this repository.
+      export async function loadCaches(): Promise<Cache[]> {
+        const paths: string[] = JSON.parse(readFileSync("cache-plugins.json", "utf8"));
+        return Promise.all(paths.map(async (p) => new (await import(p)).default()));
+      }
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    The in-repo implementer is updated consistently and the others cannot be
+    resolved from the repository. Pins that an unresolvable implementer
+    relationship does not manufacture a finding against an implementer the
+    review cannot name.
+  taxonomy:
+    capability: [relationship-recall]
+    policy_contract: [repository-expansion]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

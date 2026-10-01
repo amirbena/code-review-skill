@@ -1,0 +1,117 @@
+{
+  "schema": "relationship-recall-baseline-observations/v1",
+  "issue": 602,
+  "repo_sha": "66ad316315db6b581f27e312e595b415d38bcd47",
+  "fixtures_uncommitted_at_run": true,
+  "runner": "python3 runtime_platform/benchmark/scripts/run_benchmark.py --corpus-dir benchmark/corpus/relationship-recall [--case-id <id>] --timeout 600",
+  "review_cli": "claude 2.1.281 (Claude Code), runner default model/effort (not pinned)",
+  "fixture_sha256": {
+    "relrecall-affected-test-external-cases-unresolvable": "7270205dc1033d294e28e4532a960caf58621f3da3184dbcdc44f86fbf28c813",
+    "relrecall-affected-test-stale-assertion-unlinked-name": "12d7dc7a20fd80a0306ab51505d4410e3e9032abc6a4ac3a823ed1b737c6361d",
+    "relrecall-affected-test-still-holds-control": "2e7e88b9fe113876f7bab00ebcb2aa4f0d4682c8ffe7eb215f0d40b22f169322",
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": "bd4611ab7d5902fe805e336d8912a61c10d74c6d0c723e9967aa63176e824d6c",
+    "relrecall-interface-config-registered-implementers-unresolvable": "a4783367014aa6cb4788c6e51e7772d0d2948a0f4005092b7b9634490071393d",
+    "relrecall-interface-optional-member-implementers-compatible-control": "bdfed271d7099402e1a057ddf9ddbc9083f120396b82c4ccb2d372a63a3d92d3"
+  },
+  "cases": {
+    "relrecall-affected-test-stale-assertion-unlinked-name": {
+      "observation_status": "observed",
+      "canonical_source": "initial run, offline re-score after alternatives correction",
+      "produced_findings": [
+        {
+          "severity": "P1",
+          "path": "app/shipping/rates.py",
+          "defect_kind": "stale-assertion",
+          "claim_head": "Existing test asserts the old $50 free-shipping threshold `tests/test_order_summary.py:4-7` (`test_free_shipping_at_fifty_dollars`) calls `build_summary(5000)` "
+        }
+      ],
+      "scoring": {
+        "as_run": {
+          "false_negatives": 1,
+          "false_positives": 1,
+          "missed_keys": [
+            "order-summary-test-asserts-old-free-shipping-threshold"
+          ]
+        },
+        "after_location_alternative_rescore": {
+          "false_negatives": 0,
+          "false_positives": 0,
+          "missed_keys": []
+        }
+      },
+      "note": "Matcher-location correction: finding anchored at the changed line, not the test file."
+    },
+    "relrecall-affected-test-still-holds-control": {
+      "observation_status": "observed",
+      "canonical_source": "initial run",
+      "produced_findings": [
+        {
+          "severity": "P2",
+          "path": "app/shipping/rates.py",
+          "defect_kind": "missing-test-coverage",
+          "claim_head": "New `express` shipping path has no test coverage and no caller `shipping_cost_cents` gained an `express` parameter that returns a flat `1299` when truthy, but `"
+        }
+      ],
+      "scoring": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missed_keys": []
+      },
+      "note": "Only the optional missing-test note was produced."
+    },
+    "relrecall-affected-test-external-cases-unresolvable": {
+      "observation_status": "observed",
+      "canonical_source": "initial run",
+      "produced_findings": [
+        {
+          "severity": "P1",
+          "path": "app/shipping/rates.py",
+          "defect_kind": "external-contract-drift",
+          "claim_head": "Free-shipping threshold change is unvalidated against the external contract fixtures it's tested by `shipping_cost_cents`'s free-shipping cutoff moved from `>= "
+        }
+      ],
+      "scoring": {
+        "false_negatives": 0,
+        "false_positives": 1,
+        "missed_keys": []
+      },
+      "note": "Genuine limitation: unresolved relationship surfaced as a finding."
+    },
+    "relrecall-interface-optional-member-implementers-compatible-control": {
+      "observation_status": "observed",
+      "canonical_source": "initial run",
+      "produced_findings": [],
+      "scoring": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missed_keys": []
+      },
+      "note": "No findings."
+    },
+    "relrecall-interface-config-registered-implementers-unresolvable": {
+      "observation_status": "observed",
+      "canonical_source": "re-run after adding errors.ts to the fixture base",
+      "produced_findings": [
+        {
+          "severity": "P1",
+          "path": "src/internal/cache/Cache.ts",
+          "defect_kind": "external-contract-unvalidated",
+          "claim_head": "Interface contract change cannot be validated against dynamically-registered implementers `Cache.get`'s signature and semantics changed from \"may resolve `null`"
+        }
+      ],
+      "scoring": {
+        "false_negatives": 0,
+        "false_positives": 1,
+        "missed_keys": []
+      },
+      "note": "Genuine limitation. The initial run (also a P0 for the missing errors.ts import) is contaminated and non-canonical."
+    },
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": {
+      "observation_status": "not-observed",
+      "canonical_source": "corrected-fixture run raised reviewer-adapter-raised",
+      "produced_findings": [],
+      "scoring": null,
+      "note": "Execution error; no evidence about reviewer behavior. Not scored. The pre-correction run (P2 on STATUS_LABELS vs DELIVERY_STATUSES) is contaminated and non-canonical."
+    }
+  }
+}

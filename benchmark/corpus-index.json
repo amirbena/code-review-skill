@@ -111,6 +111,14 @@
       "performance-deepening-nested-unbounded-scan-quadratic",
       "performance-deepening-non-executed-config-constant-not-implicated-clean"
     ],
+    "relationship-recall": [
+      "relrecall-affected-test-external-cases-unresolvable",
+      "relrecall-affected-test-stale-assertion-unlinked-name",
+      "relrecall-affected-test-still-holds-control",
+      "relrecall-analogue-pattern-source-outside-repository-unresolvable",
+      "relrecall-interface-config-registered-implementers-unresolvable",
+      "relrecall-interface-optional-member-implementers-compatible-control"
+    ],
     "repository-intelligence": [
       "repo-intel-python-call-site-caller-null-deref",
       "repo-intel-python-config-consumer-stale-import",
@@ -152,6 +160,11 @@
     ]
   },
   "policy_contract": {
+    "affected-test-analysis": [
+      "relrecall-affected-test-external-cases-unresolvable",
+      "relrecall-affected-test-stale-assertion-unlinked-name",
+      "relrecall-affected-test-still-holds-control"
+    ],
     "api-contract-compatibility": [
       "api-compat-add-enum-member-context-dependent",
       "api-compat-add-optional-field-compatible",
@@ -163,7 +176,8 @@
     "architectural-placement": [
       "finding-placement-callee-contract-violation",
       "finding-placement-caller-precondition-violation",
-      "finding-placement-preexisting-callee-bug-exposed"
+      "finding-placement-preexisting-callee-bug-exposed",
+      "relrecall-analogue-pattern-source-outside-repository-unresolvable"
     ],
     "change-risk-signals": [
       "dependency-supply-chain-deepening-major-version-breaking-api-change",
@@ -226,6 +240,8 @@
     ],
     "repository-expansion": [
       "finding-placement-context-expansion-drift",
+      "relrecall-interface-config-registered-implementers-unresolvable",
+      "relrecall-interface-optional-member-implementers-compatible-control",
       "repo-intel-python-call-site-caller-null-deref",
       "repo-intel-python-config-consumer-stale-import",
       "repo-intel-python-control-compatible-caller-no-finding",
@@ -372,6 +388,8 @@
       "performance-deepening-nested-unbounded-scan-quadratic",
       "performance-deepening-non-executed-config-constant-not-implicated-clean",
       "real-world-semantic-consistency-trap-pr-390",
+      "relrecall-interface-config-registered-implementers-unresolvable",
+      "relrecall-interface-optional-member-implementers-compatible-control",
       "repo-intel-python-call-site-caller-null-deref",
       "repo-intel-python-config-consumer-stale-import",
       "repo-intel-python-control-compatible-caller-no-finding",
@@ -425,6 +443,7 @@
       "finding-placement-defective-test-not-production",
       "quality-duplicated-branch-logic",
       "real-world-semantic-consistency-trap-pr-390",
+      "relrecall-analogue-pattern-source-outside-repository-unresolvable",
       "semantic-implication-insufficient-evidence-stop",
       "semantic-implication-no-signal-clean-extraction",
       "semantic-implication-single-dimension-persistence"
@@ -436,6 +455,9 @@
       "api-compat-rename-response-property-breaking",
       "cfv-unproven-regression-not-asserted",
       "cross-repo-contract-mismatch",
+      "relrecall-affected-test-external-cases-unresolvable",
+      "relrecall-affected-test-stale-assertion-unlinked-name",
+      "relrecall-affected-test-still-holds-control",
       "three-repo-coordinated-correct",
       "three-repo-coordinated-incorrect"
     ],
@@ -548,6 +570,12 @@
       "performance-deepening-non-executed-config-constant-not-implicated-clean",
       "quality-duplicated-branch-logic",
       "real-world-semantic-consistency-trap-pr-390",
+      "relrecall-affected-test-external-cases-unresolvable",
+      "relrecall-affected-test-stale-assertion-unlinked-name",
+      "relrecall-affected-test-still-holds-control",
+      "relrecall-analogue-pattern-source-outside-repository-unresolvable",
+      "relrecall-interface-config-registered-implementers-unresolvable",
+      "relrecall-interface-optional-member-implementers-compatible-control",
       "repo-intel-python-call-site-caller-null-deref",
       "repo-intel-python-config-consumer-stale-import",
       "repo-intel-python-control-compatible-caller-no-finding",

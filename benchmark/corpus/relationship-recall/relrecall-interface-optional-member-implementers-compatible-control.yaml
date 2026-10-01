@@ -1,0 +1,68 @@
+# Relationship-recall corpus case (Issue #602, parent #600). Format:
+# runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Implementation/interface class, CONTROL (the positive case is
+# repo-intel-typescript-interface-contract-implementer-break in
+# ../repository-intelligence/). The Cache interface gains an OPTIONAL
+# member. Both implementers resolve and neither needs to change. Resolving
+# the implementer relationship changes nothing, so the correct conclusion
+# is no finding.
+
+format: benchmark-case/v2
+
+id: relrecall-interface-optional-member-implementers-compatible-control
+title: "Cache interface gains an optional has() member; both implementers remain compatible"
+
+input:
+  patch: |
+    diff --git a/src/cache/Cache.ts b/src/cache/Cache.ts
+    index 1111111..2222222 100644
+    --- a/src/cache/Cache.ts
+    +++ b/src/cache/Cache.ts
+    @@ -1,3 +1,4 @@
+     export interface Cache {
+       get(key: string): Promise<string | null>;
+    +  has?(key: string): Promise<boolean>;
+     }
+  base:
+    src/cache/Cache.ts: |
+      export interface Cache {
+        get(key: string): Promise<string | null>;
+      }
+    src/cache/RedisCache.ts: |
+      import { Cache } from "./Cache";
+
+      export class RedisCache implements Cache {
+        async get(key: string): Promise<string | null> {
+          return this.client.get(key);
+        }
+      }
+    src/cache/InMemoryCache.ts: |
+      import { Cache } from "./Cache";
+
+      export class InMemoryCache implements Cache {
+        private store = new Map<string, string>();
+
+        async get(key: string): Promise<string | null> {
+          return this.store.has(key) ? this.store.get(key)! : null;
+        }
+      }
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Control for the implementation/interface class: the sibling
+    implementers are found and checked against the changed contract and are
+    unaffected, because the new member is optional. A finding on either
+    implementer would be a false positive.
+  taxonomy:
+    capability: [relationship-recall]
+    policy_contract: [repository-expansion]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

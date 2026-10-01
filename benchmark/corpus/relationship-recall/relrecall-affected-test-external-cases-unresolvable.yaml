@@ -1,0 +1,76 @@
+# Relationship-recall corpus case (Issue #602, parent #600). Format:
+# runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Affected-test class, UNRESOLVABLE. The free-shipping threshold moves from
+# 5000 to 7500 cents. The only test that protects shipping behavior is a
+# parametrized contract test whose cases are loaded from a directory named
+# by the SHIPPING_CONTRACT_CASES environment variable. That directory is
+# not in the repository, so whether any case encodes the old threshold
+# cannot be established from the repository. The correct output asserts
+# nothing about a test that cannot be named. The baseline reviewer (before
+# #601) had no way to report "this relationship could not be established",
+# so a correct review of this case was indistinguishable from one that
+# found no relevant test; see ./README.md "What the baseline can and cannot
+# express".
+
+format: benchmark-case/v2
+
+id: relrecall-affected-test-external-cases-unresolvable
+title: "Free-shipping threshold raised; the contract test's cases come from a directory outside the repository"
+
+input:
+  patch: |
+    diff --git a/app/shipping/rates.py b/app/shipping/rates.py
+    index 1111111..2222222 100644
+    --- a/app/shipping/rates.py
+    +++ b/app/shipping/rates.py
+    @@ -1,4 +1,4 @@
+     def shipping_cost_cents(subtotal_cents):
+    -    if subtotal_cents >= 5000:
+    +    if subtotal_cents >= 7500:
+             return 0
+         return 599
+  base:
+    app/shipping/rates.py: |
+      def shipping_cost_cents(subtotal_cents):
+          if subtotal_cents >= 5000:
+              return 0
+          return 599
+    tests/test_shipping_contract.py: |
+      import json
+      import os
+      from pathlib import Path
+
+      import pytest
+
+      from app.shipping.rates import shipping_cost_cents
+
+      CASES_DIR = Path(os.environ["SHIPPING_CONTRACT_CASES"])
+
+
+      def _load_cases():
+          return [json.loads(p.read_text()) for p in sorted(CASES_DIR.glob("*.json"))]
+
+
+      @pytest.mark.parametrize("case", _load_cases())
+      def test_shipping_contract(case):
+          assert shipping_cost_cents(case["subtotal_cents"]) == case["expected_cents"]
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [regression]
+  rationale: >-
+    The affected tests exist but are unreachable from the repository: their
+    inputs live outside it. A finding naming a stale case would be invented.
+    Pins that an unresolvable test relationship does not manufacture a
+    finding.
+  taxonomy:
+    capability: [relationship-recall]
+    policy_contract: [affected-test-analysis]
+    risk_mode: [regression]
+    affected_surface: [unclassified]
