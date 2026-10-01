@@ -160,9 +160,10 @@ settings, and bypass actors are never changed.
   protection. Which exact fine-grained permission names GitHub requires for
   these reads has not been verified; a refusal is reported as `UNKNOWN`,
   never as "not enforced".
-- **Setup / removal:** changing branch protection requires repository admin
-  (owner) permission; a ruleset edit needs equivalent rights to manage
-  rulesets. Without them, setup fails safely and changes nothing.
+- **Setup / removal:** changing classic branch protection requires
+  repository admin (owner) permission. The permission a ruleset edit needs
+  has not been verified for fine-grained tokens. Without the required
+  permission, setup fails safely and changes nothing.
 
 ## `UNKNOWN` and failure behavior
 
@@ -186,8 +187,9 @@ settings, and bypass actors are never changed.
   bypass actors or unrelated settings.
 - Setup adds this one context; it does not create a ruleset or branch
   protection where none exists.
-- Pagination: very large rule sets are reported `UNKNOWN` rather than
-  partially read.
+- Pagination: rules are read one page at a time. When the list could be
+  truncated and the context is not found in it, enforcement is reported
+  `UNKNOWN` (and setup refuses) rather than guessed.
 - GitHub's own stale-review settings are neither read nor changed by this
   capability.
 
