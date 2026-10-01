@@ -67,6 +67,10 @@ Consequences:
 
 ## 4. Final ownership table
 
+The canonical, maintained copy of this table is in
+[`benchmark/README.md`](../../benchmark/README.md); this one is the
+record as ratified.
+
 | Location | Owns |
 | --- | --- |
 | `benchmark/` | `corpus/` fixtures, `corpus-index.json`, `examples/`, operator/routine/reference docs (`README.md`, `cloud-routine-integration.md`, `reviewer-brief-examples.md`, `senior-voice-examples.md`, `shadow-validation-burn-in-report.md`) |

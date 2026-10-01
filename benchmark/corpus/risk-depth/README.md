@@ -14,14 +14,14 @@ already established:
 and
 [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md).
 
-Every case conforms to [`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
+Every case conforms to [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
 [`../`](../README.md) and [`../../`](../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
+[`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle
@@ -47,7 +47,7 @@ the single reference validator
 ## Fixture-level scope: what a `benchmark-case/v2` fixture cannot pin
 
 `benchmark-case/v2`'s schema is closed (see
-[`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §2, "an unknown key
+[`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §2, "an unknown key
 anywhere is a rejection") and has no field for an expected `depth`,
 expansion `ring`, partition assignment, or `coverage` label — only
 `expected.findings` and `expected.decision`. So, exactly as
@@ -55,7 +55,7 @@ expansion `ring`, partition assignment, or `coverage` label — only
 already establishes for its own mechanism: **the corpus fixture pins the
 expected finding outcome; the reference-model case pins the mechanism.**
 Every case below has a matching scenario in
-[`../../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py`](../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py)
+[`../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py`](../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py)
 that constructs the same signal/trigger/partition shape the fixture's
 rationale describes and asserts the `depth`/`ring`/`capped`/`coverage`
 value directly against
@@ -69,7 +69,7 @@ up to literally cross `large-pr-partitioning.md`'s `>=1200`-line /
 `>=60`-file activation threshold — hand-authoring a genuinely large diff
 would add bulk without adding coverage; that literal threshold arithmetic
 is already exhaustively pinned in
-[`../../../../tests/unit/review/test_large_pr_partitioning.py`](../../../tests/unit/review/test_large_pr_partitioning.py)
+[`../../../tests/unit/review/test_large_pr_partitioning.py`](../../../tests/unit/review/test_large_pr_partitioning.py)
 and re-exercised at realistic scale in
 `test_risk_based_review_scenarios.py`. This fixture instead pins the
 **multi-area finding-retention** property: three unrelated areas, each
@@ -101,16 +101,16 @@ corpus is scoped to `change-risk-signals.md`'s depth vocabulary and
 
 ## Validation
 
-[`../../../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py`](../../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py)
+[`../../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py`](../../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
+[`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second
 one), and asserts: the sub-corpus stays small and documented; every
 required case is present; every case pins an explicit `decision`
 consistent with its required findings; and every case's rationale is
 reflected by an equivalent depth/expansion/partitioning assertion against
 the reference models in
-[`../../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py`](../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py).
+[`../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py`](../../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py).
 Matching a reviewer's output to these expectations and scoring it are out
 of scope here (Issues #41 / #52 / #54). Peer review of the expected
 findings themselves happens on the pull request.

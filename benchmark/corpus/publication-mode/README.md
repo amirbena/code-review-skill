@@ -23,18 +23,18 @@ expectations are not a diff and a set of findings — they are a publication
 mode, a reviewed HEAD/independence/permission fact set, and a structural
 publication outcome (a resolved mode, a formal event, a "would publish"
 preview, and the GitHub-bound artifact — or its absence).
-[`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)'s `expected` block has
+[`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)'s `expected` block has
 no field for any of that. Rather than stretch that closed schema, this
 corpus follows the same test-only, data-driven reference-fixture pattern
 [`../delegation-spawn/README.md`](../delegation-spawn/README.md) and
 [`../reviewer-brief/README.md`](../reviewer-brief/README.md) already
 established for domains the schema does not fit:
 
-- [`../../../../runtime_platform/benchmark/reference/publication_mode_fixtures.py`](../../../runtime_platform/benchmark/reference/publication_mode_fixtures.py) —
+- [`../../../runtime_platform/benchmark/reference/publication_mode_fixtures.py`](../../../runtime_platform/benchmark/reference/publication_mode_fixtures.py) —
   one `PublicationModeCase` per required outcome shape, each a
   zero-argument `run()` closure that exercises the *single* reference
   model,
-  [`../../../../tests/reference/review/review_action_authorization.py`](../../../tests/reference/review/review_action_authorization.py)
+  [`../../../tests/reference/review/review_action_authorization.py`](../../../tests/reference/review/review_action_authorization.py)
   (`resolve_mutation_outcome` / `normalize_intent`), plus
   `emit_publication_artifact`, which constructs the actual GitHub-bound
   publication artifact a submitted or withheld outcome would produce (or
@@ -43,7 +43,7 @@ established for domains the schema does not fit:
   "Batched review construction and submission" (one review submission of
   `body` + inline comments + `event`, or the narrower self-review
   informational `COMMENT`).
-- [`../../../../tests/unit/benchmark/test_publication_mode_corpus.py`](../../../tests/unit/benchmark/test_publication_mode_corpus.py) —
+- [`../../../tests/unit/benchmark/test_publication_mode_corpus.py`](../../../tests/unit/benchmark/test_publication_mode_corpus.py) —
   runs every case's `run()` and asserts its actual outcome matches the
   declared expectation, plus corpus-completeness checks (every required
   category), the malformed-fixture rejection suite, and dedicated
@@ -51,7 +51,7 @@ established for domains the schema does not fit:
   shape, the artifact-level authority boundary, phrasing robustness).
 
 This corpus is **not** a duplicate of
-[`../../../../tests/unit/review/test_review_action_authorization.py`](../../../tests/unit/review/test_review_action_authorization.py),
+[`../../../tests/unit/review/test_review_action_authorization.py`](../../../tests/unit/review/test_review_action_authorization.py),
 which #314 already landed as an extensive unit suite against the same
 reference model, including its own PR #297-style regression test
 (`ActiveRequestIsSufficientAuthorization`). That suite is *why* the

@@ -152,7 +152,7 @@ stdout, a missing/malformed per-case result shape
 not `"executed"` as passing evidence — including the
 `check_runtime_available` preflight-failure path, which exits non-zero
 with no stdout JSON at all. Unit-tested fail-closed in
-[`../../tests/unit/benchmark/test_benchmark_routine_verify.py`](../tests/unit/benchmark/test_benchmark_routine_verify.py):
+[`../tests/unit/benchmark/test_benchmark_routine_verify.py`](../tests/unit/benchmark/test_benchmark_routine_verify.py):
 a forced `error`/`runtime-unavailable` case is proven to flag, not
 silently pass.
 
@@ -204,7 +204,7 @@ schedule spec, and a Routine no longer passes an evidence-issue argument.
 Pushing evidence JSON directly into `main`, a pull-request branch, or any other
 reviewed branch or Skill source from an unattended run was considered and
 rejected: it would bypass this repository's own PR-review workflow
-([`../../policies/git-pr-merge-policy.md`](../policies/git-pr-merge-policy.md))
+([`../policies/git-pr-merge-policy.md`](../policies/git-pr-merge-policy.md))
 for every scheduled run, which is a larger, harder-to-audit surface than the
 alternatives. **This rejection is narrowed (A1)**: it does not cover the
 isolated `benchmark-history` branch, which is neither a reviewed branch nor
@@ -241,7 +241,7 @@ repository cannot show what scope that proxy credential has. The seal is
 confined by the provider to `claude/`-prefixed refs, and an observed check —
 attempt a non-`claude/` push and an issue create from a Routine smoke run — is
 recorded at provisioning rather than assumed
-([`scheduled-operations/execution-publication-boundary.md`](../runtime_platform/benchmark/scheduled-operations/execution-publication-boundary.md)
+([`../runtime_platform/benchmark/scheduled-operations/execution-publication-boundary.md`](../runtime_platform/benchmark/scheduled-operations/execution-publication-boundary.md)
 §4).
 
 ## 6. Metadata: explicit, not auto-detected
@@ -299,7 +299,7 @@ written about benchmark scheduling and execution. It does not forbid a
 holds no model or provider credential, imports nothing from the benchmark, and
 judges nothing. That workflow is permitted and is a different thing; its
 triggers, credentials, and imports are enforced by a policy test
-([`scheduled-operations/publication-architecture.md`](../runtime_platform/benchmark/scheduled-operations/publication-architecture.md)
+([`../runtime_platform/benchmark/scheduled-operations/publication-architecture.md`](../runtime_platform/benchmark/scheduled-operations/publication-architecture.md)
 §5).
 
 ## 9. Routine prompt template

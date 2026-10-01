@@ -95,6 +95,9 @@ HISTORICAL_RECORDS = {
     "docs/capability-architecture/benchmark-ownership-boundary-checkpoint.md": 21,
     "docs/capability-architecture/benchmark-root-ownership-decision.md": 5,
     "runtime_platform/benchmark/scheduled-operations/decision-record.md": 1,
+    # The retired ci-integration.md (deleted by #420) lived under the old tree.
+    "docs/benchmark-measurement-architecture/benchmark-measurement-architecture-model.md": 2,
+    "docs/capability-architecture/capability-architecture-model.md": 1,
 }
 OLD_PATH_ALLOWLIST = {
     **{p: 1 for p in FROZEN_FIXTURE_HEADERS},

@@ -4,9 +4,9 @@ A documented reference set for Issue
 [#309](https://github.com/amirbena/code-review-skill/issues/309)
 (benchmarking the private `Reviewer Brief` contract from
 [#304](https://github.com/amirbena/code-review-skill/issues/304):
-[`../../skills/github-pr-review/policies/reviewer-brief.md`](../skills/github-pr-review/policies/reviewer-brief.md)
+[`../skills/github-pr-review/policies/reviewer-brief.md`](../skills/github-pr-review/policies/reviewer-brief.md)
 and
-[`../../skills/github-pr-review/templates/reviewer-brief.md`](../skills/github-pr-review/templates/reviewer-brief.md)).
+[`../skills/github-pr-review/templates/reviewer-brief.md`](../skills/github-pr-review/templates/reviewer-brief.md)).
 
 Like [`senior-voice-examples.md`](senior-voice-examples.md), this is a
 **documented reference set, not a CI gate** — unlike
@@ -29,14 +29,14 @@ where the scenario is an active review, the **GitHub-bound payload**
 so the isolation between them is visible, not just asserted in a test.
 The underlying field values for every example are the same ones encoded
 in
-[`../../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py`](../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py) —
+[`../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py`](../runtime_platform/benchmark/reference/reviewer_brief_fixtures.py) —
 this document is the human-readable rendering of that reference model,
 not an independent source of truth.
 
 ## How to read each example
 
 - **Reviewer Brief (private, caller-facing only)** is the rendering per
-  [`../../skills/github-pr-review/templates/reviewer-brief.md`](../skills/github-pr-review/templates/reviewer-brief.md).
+  [`../skills/github-pr-review/templates/reviewer-brief.md`](../skills/github-pr-review/templates/reviewer-brief.md).
 - **GitHub-bound payload (published)**, when present, is what a correct
   implementation submits — it never contains the brief.
 - Each example is annotated with which of #309's required scenarios it
@@ -325,9 +325,9 @@ other? (Here: yes — three items, same substance, either voice.)
 
 The deterministic structural and publication-isolation assertions these
 examples' underlying field values satisfy live in
-[`../../tests/unit/benchmark/test_reviewer_brief_structural.py`](../tests/unit/benchmark/test_reviewer_brief_structural.py)
+[`../tests/unit/benchmark/test_reviewer_brief_structural.py`](../tests/unit/benchmark/test_reviewer_brief_structural.py)
 and
-[`../../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py`](../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py).
+[`../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py`](../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py).
 The corpus-level rationale for why this is a reference set rather than
 `benchmark-case/v2` fixtures is
 [`corpus/reviewer-brief/README.md`](corpus/reviewer-brief/README.md).

@@ -12,14 +12,14 @@ taxonomy, the no-signal non-analysis rule, and the bounded-expansion /
 insufficient-evidence-stop model reused from "Architectural placement and
 execution-lifecycle fidelity" (#153).
 
-Every case conforms to [`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
+Every case conforms to [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
 and is a self-contained inline `patch` plus its `base` pre-image, so the
 corpus runs without network access. Like the rest of
 [`../`](../README.md) and [`../../`](../../../runtime_platform/benchmark/README.md) this is **not**
 packaged into either Skill archive and no packaged Skill resource depends
 on it — it is consumed only by this repository's own test suite, through
 the single reference validator
-[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
+[`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 (never a second one).
 
 ## Selection principle
@@ -58,15 +58,15 @@ mechanical reference model or benchmark corpus of its own. There is no
 closed-form function from a diff's shape to "which dimensions are
 implicated," so this corpus is validated only by prose-contract tests
 against the policy text (see
-[`../../../../tests/policy/review/root_cause/test_semantic_implication_and_null_absence.py`](../../../tests/policy/review/root_cause/test_semantic_implication_and_null_absence.py))
+[`../../../tests/policy/review/root_cause/test_semantic_implication_and_null_absence.py`](../../../tests/policy/review/root_cause/test_semantic_implication_and_null_absence.py))
 and by the structural fixture checks below — never by a second,
 hand-maintained implementation of the dimension taxonomy.
 
 ## Validation
 
-[`../../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py`](../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py)
+[`../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py`](../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py)
 loads every `*.yaml` here through the same single reference validator
-[`../../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
+[`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second
 one), and asserts: the sub-corpus stays small and documented; every
 required case is present; every case pins an explicit `decision`

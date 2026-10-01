@@ -4,7 +4,7 @@ Repository-development artifact for Issue
 [#308](https://github.com/amirbena/code-review-skill/issues/308), depends
 on [#299](https://github.com/amirbena/code-review-skill/issues/299) (the
 authoritative denied-capability security-event taxonomy,
-[`../../../security-events/security-event-model.md`](../../../docs/security-events/security-event-model.md))
+[`../../../docs/security-events/security-event-model.md`](../../../docs/security-events/security-event-model.md))
 and the relevant enforced denial from
 [#301](https://github.com/amirbena/code-review-skill/issues/301) /
 [#302](https://github.com/amirbena/code-review-skill/issues/302) /
@@ -36,12 +36,12 @@ LLM/rubric score, exactly like the three corpora above.
 ## Why this isn't a `benchmark-case/v2` corpus
 
 Like the three corpora above, this domain has no representation in
-[`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md): that schema's
+[`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md): that schema's
 `expected` block is findings/decision-shaped and has no field for an
 event schema, a classification, or a redaction assertion. This corpus
 follows the same test-only, data-driven reference-fixture pattern:
 
-- [`../../../../runtime_platform/benchmark/reference/security_event_fixtures.py`](../../../runtime_platform/benchmark/reference/security_event_fixtures.py) —
+- [`../../../runtime_platform/benchmark/reference/security_event_fixtures.py`](../../../runtime_platform/benchmark/reference/security_event_fixtures.py) —
   the `SecurityEvent` dataclass (mirroring
   [security-event-model.md](../../../docs/security-events/security-event-model.md)
   §3's field schema field-for-field — a field is simply absent, never
@@ -54,11 +54,11 @@ follows the same test-only, data-driven reference-fixture pattern:
   `SecurityEventCase` per representative enforced denial, each a
   zero-argument `build()` closure returning the event a real denial in
   that family reports.
-- [`../../../../tests/unit/benchmark/test_security_event_corpus.py`](../../../tests/unit/benchmark/test_security_event_corpus.py) —
+- [`../../../tests/unit/benchmark/test_security_event_corpus.py`](../../../tests/unit/benchmark/test_security_event_corpus.py) —
   runs every case's `build()` and checks it against its declared
   expectation, plus corpus-completeness (every required family), a
   closed-vocabulary drift check against
-  [`../../../../scripts/security/validate_threat_model.py`](../../../scripts/security/validate_threat_model.py)'s
+  [`../../../scripts/security/validate_threat_model.py`](../../../scripts/security/validate_threat_model.py)'s
   `PROVISIONAL_EVENT_CLASSES`, determinism (building a case twice, or in
   reversed corpus order, is byte-for-byte identical), redaction, the
   observational-only invariant, threat-scenario/enforcement-owner

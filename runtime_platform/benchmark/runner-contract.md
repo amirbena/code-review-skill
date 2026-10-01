@@ -8,7 +8,7 @@ run must hold, and the machine-readable per-case result shape a regression
 report ([#53](https://github.com/amirbena/code-review-skill/issues/53))
 later consumes. It builds on the fixture format
 ([`fixture-format.md`](fixture-format.md), #50) and the corpus
-([`corpus/README.md`](../../benchmark/corpus/README.md), #51). Parent capability:
+([`../../benchmark/corpus/README.md`](../../benchmark/corpus/README.md), #51). Parent capability:
 [#40](https://github.com/amirbena/code-review-skill/issues/40).
 
 Like [`fixture-format.md`](fixture-format.md) and the rest of

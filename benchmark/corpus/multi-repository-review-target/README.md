@@ -13,7 +13,7 @@ its membership-is-authorization boundary holds.
 ## `input.repositories` — a `benchmark-case/v2` extension, not a new format
 
 Every case here is still a `benchmark-case/v2` fixture
-([`../../fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)),
+([`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)),
 parsed and validated by the same single reference validator
 (`runtime_platform/benchmark/reference/benchmark_fixture.py`) every other corpus uses — this
 sub-corpus never forks it. Issue #558 added one small, additive extension

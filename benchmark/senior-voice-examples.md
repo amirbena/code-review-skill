@@ -6,7 +6,7 @@ A documented reference set for Issue
 [#229](https://github.com/amirbena/code-review-skill/issues/229)): eight
 findings, each rendered as the structured field-oriented block and as the
 senior/human voice from
-[`../../shared/templates/finding-rendering.md`](../shared/templates/finding-rendering.md),
+[`../shared/templates/finding-rendering.md`](../shared/templates/finding-rendering.md),
 "Senior voice contract", side by side.
 
 This is a **documented reference set, not a CI gate** — unlike
@@ -313,6 +313,6 @@ a required slot on a review that also has a blocking finding.
 ## Related
 
 The voice contract these pairs render is owned by
-[`../../shared/templates/finding-rendering.md`](../shared/templates/finding-rendering.md),
+[`../shared/templates/finding-rendering.md`](../shared/templates/finding-rendering.md),
 "Senior voice contract". The #40/#41 finding-detection benchmark corpus is
 [`corpus/`](corpus/README.md) and is unrelated to presentation quality.
