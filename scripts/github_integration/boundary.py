@@ -111,7 +111,9 @@ class GitHubClient:
         token = self._token()
         return {"GH_TOKEN": token} if token else {}
 
-    def _call(self, method: str, endpoint: str, payload: Mapping[str, Any] | None) -> Any:
+    def _call(
+        self, method: str, endpoint: str, payload: Mapping[str, Any] | Sequence[Any] | None
+    ) -> Any:
         token = self._token()
         args = ["-X", method, endpoint] + (["--input", "-"] if payload is not None else [])
         body = json.dumps(payload) if payload is not None else None
@@ -178,7 +180,7 @@ class GitHubClient:
         self,
         method: str,
         endpoint: str,
-        payload: Mapping[str, Any] | None,
+        payload: Mapping[str, Any] | Sequence[Any] | None,
         *,
         authorization: GovernanceAuthorization | None,
     ) -> Any:
