@@ -49,7 +49,13 @@ def make_protection(*contexts):
 class FakeGitHub:
     """Stateful transport: PUT/POST/DELETE mutate the held configuration."""
 
-    def __init__(self, rulesets=(), protection=None, perm_fail_write=False, readback_drift=False):
+    def __init__(self, rulesets=(), protection=None, perm_fail_write=False, readback_drift=False,
+                 write_status=None, fail_reads_after_write=False, concurrent_edit=False,
+                 classic_drift=False, org_source=False):
+        self.write_status, self.fail_reads_after_write = write_status, fail_reads_after_write
+        self.concurrent_edit, self.classic_drift, self.org_source = (
+            concurrent_edit, classic_drift, org_source)
+        self.wrote = False
         self.rulesets = {r["id"]: copy.deepcopy(r) for r in rulesets}
         self.protection = copy.deepcopy(protection)
         self.perm_fail_write, self.readback_drift = perm_fail_write, readback_drift
@@ -63,16 +69,30 @@ class FakeGitHub:
         body = json.loads(stdin) if stdin else None
         self.calls.append((method, endpoint, body))
         ok = lambda data: b.RawResponse(200, json.dumps(data))
+        if method == "GET" and self.wrote and self.fail_reads_after_write:
+            return b.RawResponse(500, "boom")
+        if method != "GET" and self.write_status:
+            self.wrote = True
+            return b.RawResponse(self.write_status, "boom")
+        if method != "GET":
+            self.wrote = True
         if method != "GET" and self.perm_fail_write:
             return b.RawResponse(403, '{"message": "Resource not accessible by integration"}')
         if "/rules/branches/" in endpoint:
             rules = []
             for r in self.rulesets.values():
+                if r["enforcement"] != "active":
+                    continue
                 for rule in r["rules"]:
-                    rules.append({**rule, "ruleset_id": r["id"], "ruleset_source_type": "Repository"})
+                    source = "Organization" if self.org_source else "Repository"
+                    rules.append({**rule, "ruleset_id": r["id"], "ruleset_source_type": source})
             return ok(rules)
         if "/rulesets/" in endpoint:
             rid = int(endpoint.rsplit("/", 1)[1])
+            if method == "GET" and self.concurrent_edit and not self.wrote:
+                self.concurrent_edit = False
+                self.rulesets[rid]["bypass_actors"] = []
+                return ok(make_ruleset("test"))
             if method == "PUT":
                 self.rulesets[rid] = {**self.rulesets[rid], **body}
                 if self.readback_drift:
@@ -88,6 +108,8 @@ class FakeGitHub:
             ctxs = ctxs + body if method == "POST" else [c for c in ctxs if c not in body]
             rsc["checks"] = [{"context": c, "app_id": -1} for c in ctxs]
             rsc["contexts"] = ctxs
+            if self.classic_drift:
+                self.protection["enforce_admins"] = {"enabled": False}
             return ok(ctxs)
         if endpoint.endswith("/protection"):
             return ok(self.protection)
@@ -175,7 +197,49 @@ class ClassicTests(unittest.TestCase):
         self.assertEqual(run(fake, remove=True).action, "noop")
 
 
+class UnverifiedWriteTests(unittest.TestCase):
+    def assert_unverified(self, out):
+        self.assertEqual(out.action, "failed")
+        self.assertNotIn("No change was applied", out.message)
+        self.assertIn("could not be verified", out.message)
+        self.assertIsNotNone(out.before)
+
+    def test_readback_failure_is_not_reported_as_unchanged(self):
+        for kw in ({"rulesets": [make_ruleset("test")]}, {"protection": make_protection("test")}):
+            self.assert_unverified(run(FakeGitHub(fail_reads_after_write=True, **kw)))
+
+    def test_ambiguous_write_failure_is_not_reported_as_unchanged(self):
+        for kw in ({"rulesets": [make_ruleset("test")]}, {"protection": make_protection("test")}):
+            self.assert_unverified(run(FakeGitHub(write_status=502, **kw)))
+
+    def test_rejected_write_is_reported_unchanged(self):
+        out = run(FakeGitHub([make_ruleset("test")], write_status=422))
+        self.assertEqual(out.action, "failed")
+        self.assertIn("No change was applied", out.message)
+
+    def test_classic_readback_drift_is_failed(self):
+        out = run(FakeGitHub(protection=make_protection("test"), classic_drift=True))
+        self.assertEqual(out.action, "failed")
+        self.assertIsNotNone(out.before)
+
+    def test_concurrent_ruleset_change_refuses_before_writing(self):
+        fake = FakeGitHub([make_ruleset("test")], concurrent_edit=True)
+        self.assertEqual(run(fake).action, "refused")
+        self.assertEqual(fake.writes(), [])
+
+
 class FailSafeTests(unittest.TestCase):
+    def test_organization_only_ruleset_refuses(self):
+        fake = FakeGitHub([make_ruleset("test")], org_source=True)
+        self.assertEqual(run(fake).action, "refused")
+        self.assertEqual(fake.writes(), [])
+
+    def test_inactive_ruleset_is_not_edited(self):
+        inactive = {**make_ruleset("test"), "enforcement": "disabled"}
+        fake = FakeGitHub([inactive])
+        self.assertEqual(run(fake).action, "refused")
+        self.assertEqual(fake.writes(), [])
+
     def test_permission_failure_on_write_changes_nothing(self):
         for fake in (FakeGitHub([make_ruleset("test")], perm_fail_write=True),
                      FakeGitHub(protection=make_protection("test"), perm_fail_write=True)):

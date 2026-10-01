@@ -12,6 +12,7 @@ from urllib.parse import quote
 
 from scripts.github_integration.boundary import (
     GitHubBoundaryError,
+    GitHubCallError,
     GitHubClient,
     GovernanceAuthorization,
 )
@@ -68,6 +69,27 @@ def _canon(value: Any) -> Any:
     if isinstance(value, list):
         return sorted((_canon(v) for v in value), key=lambda v: json.dumps(v, sort_keys=True))
     return value
+
+
+def _unverified(mechanism: str, before: Any, why: str) -> SetupOutcome:
+    return SetupOutcome(
+        "failed", mechanism,
+        f"The write may have been applied but could not be verified ({why}). Inspect the "
+        "governance configuration; the pre-change configuration is attached.",
+        before,
+    )
+
+
+def _write(client: GitHubClient, req: SetupRequest, mechanism: str, before: Any,
+           method: str, endpoint: str, payload: Any) -> SetupOutcome | None:
+    """Issue the governance write; return an outcome only when its result is unknown."""
+    try:
+        client.mutate_governance(method, endpoint, payload, authorization=req.authorization)
+    except GitHubCallError as exc:
+        if exc.status == 0 or (exc.status or 0) >= 500:
+            return _unverified(mechanism, before, str(exc))
+        raise
+    return None
 
 
 def _gates(req: SetupRequest) -> None:
@@ -188,10 +210,18 @@ def _edit_ruleset(client, req: SetupRequest, rid: int) -> SetupOutcome:
         rule["parameters"]["required_status_checks"] = kept
     else:
         checks.append({"context": req.context})
-    client.mutate_governance("PUT", endpoint, desired, authorization=req.authorization)
-    after = client.read(endpoint)
-    after_writable = {k: after[k] for k in RULESET_WRITABLE if k in after}
-    if _canon(after_writable) != _canon(desired):
+    fresh = client.read(endpoint)
+    writable = lambda r: _canon({k: r[k] for k in RULESET_WRITABLE if k in r})
+    if not isinstance(fresh, dict) or writable(fresh) != writable(current):
+        raise _Refuse("Refused: the ruleset changed while it was being edited; re-run to retry.")
+    unknown = _write(client, req, "ruleset", current, "PUT", endpoint, desired)
+    if unknown:
+        return unknown
+    try:
+        after = client.read(endpoint)
+    except GitHubBoundaryError as exc:
+        return _unverified("ruleset", current, f"read-back failed: {exc}")
+    if not isinstance(after, dict) or writable(after) != writable(desired):
         return SetupOutcome(
             "failed", "ruleset",
             f"Read-back of ruleset {rid} differs from the intended change; inspect it. "
@@ -208,13 +238,14 @@ def _edit_classic(client, req: SetupRequest) -> SetupOutcome:
     before = client.read(base)
     if not isinstance(before, dict) or not isinstance(before.get("required_status_checks"), dict):
         raise _Refuse("Refused: branch protection has an unexpected shape.", "failed")
-    client.mutate_governance(
-        "DELETE" if req.remove else "POST",
-        f"{base}/required_status_checks/contexts",
-        [req.context],
-        authorization=req.authorization,
-    )
-    after = client.read(base)
+    unknown = _write(client, req, "classic", before, "DELETE" if req.remove else "POST",
+                     f"{base}/required_status_checks/contexts", [req.context])
+    if unknown:
+        return unknown
+    try:
+        after = client.read(base)
+    except GitHubBoundaryError as exc:
+        return _unverified("classic", before, f"read-back failed: {exc}")
     rest = lambda p: _canon({k: v for k, v in p.items() if k != "required_status_checks"})
     old, new = before["required_status_checks"], after.get("required_status_checks") or {}
     listed = lambda r: set(_check_contexts(r.get("checks"))) | set(r.get("contexts") or [])
