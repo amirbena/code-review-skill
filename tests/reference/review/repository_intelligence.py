@@ -67,6 +67,11 @@ class RelationshipKind(Enum):
     IMPLEMENTS = "implements"
     REFERENCES = "references"
     IMPORTS = "imports"
+    # Extension for the #601 classes (relationship-capability contract,
+    # docs/repository-intelligence/relationship-capability-contract.md §6).
+    # Neither is surfaced by a #87 expansion trigger, so neither has a ring.
+    TESTED_BY = "tested_by"
+    ANALOGUE_OF = "analogue_of"
 
 
 class Trigger(Enum):
@@ -82,13 +87,15 @@ class Trigger(Enum):
 
 # Which (relationship kind, trigger) pairings are meaningful. Closed set —
 # an edge outside this set is a modeling error, not a permissive default.
-ALLOWED_KIND_TRIGGER_PAIRS: FrozenSet[tuple[RelationshipKind, Trigger]] = frozenset(
+ALLOWED_KIND_TRIGGER_PAIRS: FrozenSet[tuple[RelationshipKind, Trigger | None]] = frozenset(
     {
         (RelationshipKind.CALLS, Trigger.CALL_SITE),
         (RelationshipKind.IMPORTS, Trigger.CALL_SITE),
         (RelationshipKind.IMPLEMENTS, Trigger.INTERFACE_CONTRACT),
         (RelationshipKind.REFERENCES, Trigger.MIGRATION_SCHEMA),
         (RelationshipKind.REFERENCES, Trigger.CONFIG_CONSUMER),
+        (RelationshipKind.TESTED_BY, None),
+        (RelationshipKind.ANALOGUE_OF, None),
     }
 )
 
@@ -120,10 +127,10 @@ class Relationship:
     be represented, let alone retrieved."""
 
     kind: RelationshipKind
-    trigger: Trigger
+    trigger: Trigger | None  # None only for the ring-less #601 extension kinds
     source: Entity
     target: Entity
-    ring: int  # the ring (1..3) at which this edge was resolved
+    ring: int | None  # the ring (1..3) at which this edge was resolved
     provenance: Provenance
 
     def __post_init__(self) -> None:
@@ -131,7 +138,10 @@ class Relationship:
             raise ValueError(
                 f"relationship kind {self.kind} is not modeled for trigger {self.trigger}"
             )
-        if self.ring not in (1, 2, 3):
+        if self.trigger is None:
+            if self.ring is not None:
+                raise ValueError("a relationship with no trigger has no ring")
+        elif self.ring not in (1, 2, 3):
             raise ValueError(f"ring must be 1, 2, or 3, got {self.ring}")
 
 
@@ -218,7 +228,9 @@ def retrieve(
     if ring_ceiling not in (1, 2, 3):
         raise ValueError(f"ring_ceiling must be 1, 2, or 3, got {ring_ceiling}")
 
-    resolved = tuple(e for e in index.edges if e.ring <= ring_ceiling)
+    resolved = tuple(
+        e for e in index.edges if e.ring is None or e.ring <= ring_ceiling
+    )
 
     for edge in influential:
         if edge not in resolved:
