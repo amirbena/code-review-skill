@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.63.0 — 2026-10-01
+
+### Changed
+
+- Reviews now distinguish unresolved repository relationships from checked-and-absent ones through a Context gaps disclosure, without changing coverage or the Decision (#607).
+
 ## v1.62.0 — 2026-10-01
 
 ### Added
