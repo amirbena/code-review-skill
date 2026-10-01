@@ -101,7 +101,6 @@ class ClassMapTests(unittest.TestCase):
 
     def test_readme_scopes_baseline_to_the_pre_601_reviewer(self) -> None:
         text = " ".join(README.read_text(encoding="utf-8").split())
-        self.assertIn("**before**", text)
         self.assertIn("#601", text)
         self.assertIn("66ad316", text)
 

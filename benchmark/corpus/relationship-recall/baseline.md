@@ -77,7 +77,7 @@ Five valid observations and one unobserved case. No case was missed.
 Two valid observations are wrong in the same way. For the external test
 cases and the config-registered implementers, the reviewer recognized that
 the relationship could not be established from the repository and reported
-that uncertainty as a P1 finding. The current system has no representation
+that uncertainty as a P1 finding. The reviewer at `66ad316` had no representation
 of an unresolved relationship, so it cannot say "checked, could not
 resolve" and escalates instead. This is the gap
 [#601](https://github.com/amirbena/code-review-skill/issues/601) (#607)
