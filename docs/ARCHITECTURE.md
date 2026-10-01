@@ -548,8 +548,10 @@ and no packaged Skill resource depends on them.
   has been retired (#420) — there is no independent GitHub Actions
   benchmark execution path outside the maintainer-controlled Class 2
   Cloud Routine (`benchmark/cloud-routine-integration.md`, #415).
-  Repository-development docs live in the
-  [`runtime_platform/benchmark/`](../runtime_platform/benchmark/README.md) directory.
+  Corpus, examples, and the routine runbook live under the root
+  [`benchmark/`](../benchmark/README.md), which owns the benchmark ownership
+  table; repository-development contracts live in
+  [`runtime_platform/benchmark/`](../runtime_platform/benchmark/README.md).
 - **Repository-intelligence model** — the candidate-architecture
   comparison and recommended minimal model for what a fired
   [`repository-expansion.md`](../shared/policies/repository-expansion.md)
