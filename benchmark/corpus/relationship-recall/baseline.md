@@ -80,8 +80,9 @@ the relationship could not be established from the repository and reported
 that uncertainty as a P1 finding. The current system has no representation
 of an unresolved relationship, so it cannot say "checked, could not
 resolve" and escalates instead. This is the gap
-[#601](https://github.com/amirbena/code-review-skill/issues/601) defines
-the vocabulary for. These are baseline results, not fixture defects.
+[#601](https://github.com/amirbena/code-review-skill/issues/601) (#607)
+has since defined the `unresolved` outcome for. These are baseline results
+for the reviewer at `66ad316`, before #601, not fixture defects.
 
 ## Limitations
 
@@ -92,10 +93,15 @@ the vocabulary for. These are baseline results, not fixture defects.
   research context only and are reused later by #605.
 - **Cross-partition: not measurable here.** See the
   [class map](README.md#cross-partition-not-measurable).
-- **Unresolved relationships are inexpressible.** See
+- **Pre-#601 reviewer.** The observations describe the reviewer at
+  `66ad316`, which could not express an unresolved relationship. See
   [what the baseline can and cannot express](README.md#what-the-baseline-can-and-cannot-express).
-  Assertions about unresolved-relationship visibility are added once #601
-  lands.
+  #601 has since landed; assertions about unresolved-relationship visibility
+  are now unblocked and are not part of this baseline.
+- **Fixture hashes are run-time records.** `baseline-observations.json`
+  stores each fixture's SHA-256 at run time. Fixture header comments and
+  rationale text were reworded afterward (metadata only; no `input` or
+  `expected` change), so the hashes are provenance, not a live pin.
 - **Six cases, one observation each.** No rate, per-class rate or general
   relationship-recall claim.
 - **Control cases show no discovery evidence.** A case with no findings

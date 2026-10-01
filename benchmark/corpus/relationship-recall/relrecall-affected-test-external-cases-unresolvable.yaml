@@ -7,10 +7,11 @@
 # by the SHIPPING_CONTRACT_CASES environment variable. That directory is
 # not in the repository, so whether any case encodes the old threshold
 # cannot be established from the repository. The correct output asserts
-# nothing about a test that cannot be named. The current system has no way
-# to report "this relationship could not be established", so a correct
-# review of this case is indistinguishable from one that found no relevant
-# test; see ./README.md "What the baseline can and cannot express".
+# nothing about a test that cannot be named. The baseline reviewer (before
+# #601) had no way to report "this relationship could not be established",
+# so a correct review of this case was indistinguishable from one that
+# found no relevant test; see ./README.md "What the baseline can and cannot
+# express".
 
 format: benchmark-case/v2
 

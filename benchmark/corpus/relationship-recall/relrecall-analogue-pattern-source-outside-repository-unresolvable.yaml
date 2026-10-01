@@ -53,7 +53,8 @@ metadata:
   rationale: >-
     The analogue the placement rule would compare against is outside the
     repository, so no pattern can be inferred locally. The inline table
-    covers every delivery status, so there is no concrete consequence to
+    defines a label for each status it lists and nothing else in the
+    repository contradicts it, so there is no concrete consequence to
     report. A placement finding would assert a pattern the review cannot
     establish.
   taxonomy:

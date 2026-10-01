@@ -6,8 +6,9 @@
 # updated to match. The remaining implementers are registered from
 # cache-plugins.json, which is not in the repository, so which classes
 # implement Cache cannot be established. The correct output does not guess
-# an implementer. The current system cannot express the unresolved
-# relationship; see ./README.md "What the baseline can and cannot express".
+# an implementer. The baseline reviewer (before #601) had no way to express
+# the unresolved relationship; see ./README.md "What the baseline can and
+# cannot express".
 
 format: benchmark-case/v2
 

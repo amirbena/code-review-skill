@@ -70,18 +70,21 @@ statistical sample, and one case is explicitly **not observed**.
 
 ## What the baseline can and cannot express
 
-The current system has three terminal outcomes for a case: a finding, no
-finding, or an error. It has **no way to express an unresolved relationship**.
-`repository-expansion.md` and `review-stopping-criteria.md` treat
-"insufficient evidence" as a complete outcome, so a relationship that was
-checked and found absent and one that could not be established both end as
-"no finding". An unresolvable case is therefore scored as a correct
-no-finding when the review reports nothing, and that score cannot tell a
-review that looked and could not resolve from one that never looked. The
-fixtures pin the correct *conclusion*; whether the gap was *visible* is not
-asserted here and is added once
-[#601](https://github.com/amirbena/code-review-skill/issues/601) defines the
-vocabulary.
+The baseline reviewer was run at `66ad316`, **before**
+[#601](https://github.com/amirbena/code-review-skill/issues/601) (#607) added
+the `unresolved` relationship outcome and its Context gaps disclosure to
+[`repository-expansion.md`](../../../shared/policies/repository-expansion.md).
+At that commit a case had three terminal outcomes: a finding, no finding, or
+an error. The reviewer **had no representation for an unresolved
+relationship**, so a relationship that was checked and found absent and one
+that could not be established both ended as "no finding" — or, as two
+observations show, as an escalated finding. The fixtures pin the correct
+*conclusion* for each unresolvable case; they do not assert that the gap was
+*visible*.
+
+Visibility assertions are now unblocked by #601 and are not part of this
+baseline or this change. The baseline is not a measurement of the reviewer
+that carries #601.
 
 ## Validation
 

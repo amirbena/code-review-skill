@@ -99,9 +99,11 @@ class ClassMapTests(unittest.TestCase):
         self.assertIn("Cross-partition: not measurable", text)
         self.assertIn("1200", text)
 
-    def test_readme_states_unresolved_relationships_are_inexpressible(self) -> None:
-        text = README.read_text(encoding="utf-8")
-        self.assertIn("no way to express an unresolved relationship", text)
+    def test_readme_scopes_baseline_to_the_pre_601_reviewer(self) -> None:
+        text = " ".join(README.read_text(encoding="utf-8").split())
+        self.assertIn("**before**", text)
+        self.assertIn("#601", text)
+        self.assertIn("66ad316", text)
 
 
 class BaselineRecordTests(unittest.TestCase):
@@ -129,14 +131,13 @@ class BaselineRecordTests(unittest.TestCase):
             self.assertIn(f"`{cid}`", self.baseline_md)
 
     def test_baseline_disclaims_statistical_claims(self) -> None:
-        self.assertIn("not a\nstatistical sample", self.baseline_md)
+        self.assertIn("not a statistical sample", " ".join(self.baseline_md.split()))
 
-    def test_recorded_fixture_hashes_match_current_fixtures(self) -> None:
-        import hashlib
-
-        for cid, digest in self.record["fixture_sha256"].items():
-            actual = hashlib.sha256((CORPUS_DIR / f"{cid}.yaml").read_bytes()).hexdigest()
-            self.assertEqual(actual, digest, cid)
+    def test_recorded_fixture_hashes_cover_every_case(self) -> None:
+        hashes = self.record["fixture_sha256"]
+        self.assertEqual(set(hashes), set(self.record["cases"]))
+        for cid, digest in hashes.items():
+            self.assertRegex(digest, r"^[0-9a-f]{64}$", cid)
 
 
 if __name__ == "__main__":
