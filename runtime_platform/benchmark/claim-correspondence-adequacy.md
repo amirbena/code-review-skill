@@ -54,9 +54,9 @@ of design question a follow-up issue must resolve.
 
 Reran the exact three corpus cases #342's own investigation named as its
 motivating, non-trivial cases —
-[`correctness-off-by-one-pagination`](../../docs/benchmark/corpus/correctness-off-by-one-pagination.yaml),
-[`quality-duplicated-branch-logic`](../../docs/benchmark/corpus/quality-duplicated-branch-logic.yaml),
-[`security-command-injection`](../../docs/benchmark/corpus/security-command-injection.yaml) — as
+[`correctness-off-by-one-pagination`](../../benchmark/corpus/correctness-off-by-one-pagination.yaml),
+[`quality-duplicated-branch-logic`](../../benchmark/corpus/quality-duplicated-branch-logic.yaml),
+[`security-command-injection`](../../benchmark/corpus/security-command-injection.yaml) — as
 the representative sample (#343 scope explicitly permits "a representative
 corpus/sample ... or a defined representative subset"; these three are the
 only non-trivial, non-clean corpus cases and are the cases the open question
@@ -80,7 +80,7 @@ adapter, no matcher call constructed manually.
   #342's merge, PR [#347](https://github.com/amirbena/code-review-skill/pull/347))
 - Review CLI: `claude` (Claude Code) version `2.1.272`
 - Run date: 2026-09-15 (UTC)
-- Corpus dir: `docs/benchmark/corpus` (unmodified)
+- Corpus dir: `benchmark/corpus` (unmodified)
 - `correctness-off-by-one-pagination` was run **twice** through the full
   production path (Runs A and B below) to observe run-to-run
   reviewer-verbosity variance (the CLI is not deterministic); the other two
@@ -397,7 +397,7 @@ Issue #355 implemented this record's §6 recommendation and closed the §6
   so independently authored slugs for the same defect class tend to
   converge. This matches how the existing fixture corpus's own
   `defect_kind` vocabulary was already organically freeform (dozens of
-  distinct slugs across `docs/benchmark/corpus/`, no enumerated set) —
+  distinct slugs across `benchmark/corpus/`, no enumerated set) —
   an enforced closed enum would have required rewriting fixtures, which
   is out of scope (#355 non-goals).
 - A real, non-hand-replayed rerun of this record's three reproduction

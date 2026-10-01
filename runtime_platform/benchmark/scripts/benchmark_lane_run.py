@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executes one scheduled lane and assembles its sealed result (no hand-off, no GitHub).
 
-Contract: `docs/benchmark/cloud-routine-integration.md` §2-§3. Order: verify every invocation,
+Contract: `benchmark/cloud-routine-integration.md` §2-§3. Order: verify every invocation,
 evaluate drift with in-run confirmation, assemble and validate the record.
 """
 
@@ -42,7 +42,7 @@ from runtime_platform.benchmark.scripts.benchmark_run_record import (  # noqa: E
     cases_from_output,
 )
 
-ROUTINE_DOC = REPO_ROOT / "docs" / "benchmark" / "cloud-routine-integration.md"
+ROUTINE_DOC = REPO_ROOT / "benchmark" / "cloud-routine-integration.md"
 RUN_BENCHMARK = REPO_ROOT / "runtime_platform" / "benchmark" / "scripts" / "run_benchmark.py"
 NONDETERMINISM = "Model output is nondeterministic; a rerun may differ."
 PROMPT_SECTION = "## 9. Routine prompt template"

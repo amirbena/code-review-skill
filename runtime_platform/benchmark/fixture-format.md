@@ -461,7 +461,7 @@ in §3).
 
 ## 12. Worked example
 
-[`examples/example-case.yaml`](../../docs/benchmark/examples/example-case.yaml) is a complete,
+[`examples/example-case.yaml`](../../benchmark/examples/example-case.yaml) is a complete,
 validated `benchmark-case/v2` fixture. It is a crafted single-file Python
 patch that introduces a SQL-injection sink and a user-controlled
 filesystem path and adds no tests. It exercises every §9 construct:

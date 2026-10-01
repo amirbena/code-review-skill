@@ -84,7 +84,7 @@ health" are written only after they have been exercised against real runs.
 - **Documentation-impact check** (per
   [`../../../policies/documentation-policy.md`](../../../policies/documentation-policy.md)):
   amend the four contract documents (F1), the measurement-architecture §6,
-  [`../../../docs/benchmark/README.md`](../../../docs/benchmark/README.md),
+  [`../../../benchmark/README.md`](../../../benchmark/README.md),
   and [`../../../docs/ARCHITECTURE.md`](../../../docs/ARCHITECTURE.md) only where their
   component/boundary statements changed; link down rather than restate.
 

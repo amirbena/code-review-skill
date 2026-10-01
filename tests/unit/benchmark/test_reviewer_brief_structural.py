@@ -4,7 +4,7 @@ exactly, per skills/github-pr-review/policies/reviewer-brief.md and its
 template. Semantic-quality properties whose wording is intentionally
 flexible (independent focus value, focus usefulness/specificity for a
 human reviewer) are the rubric/reference layer instead:
-docs/benchmark/reviewer-brief-examples.md. This module is the
+benchmark/reviewer-brief-examples.md. This module is the
 deterministic layer the issue asks for; publication-isolation lives in
 test_reviewer_brief_publication_isolation.py so leakage assertions never
 share a module with content-shape assertions.

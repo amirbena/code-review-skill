@@ -28,7 +28,7 @@ from runtime_platform.benchmark.reference import benchmark_runner as br
 from tests.support.benchmark_runtime import LiveRuntimeTestCase
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus"
 REAL_CASE_ID = "correctness-off-by-one-pagination"
 
 

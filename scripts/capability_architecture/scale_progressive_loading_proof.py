@@ -26,7 +26,7 @@ existing corpus and evaluator rather than introducing a new one:
   ``repository-intelligence``'s control case ("not needed" — a resolved,
   compatible caller produces no finding) and its call-site positive case
   ("must activate" — an unresolved caller-side defect), plus this issue's
-  own one net-new fixture (``docs/benchmark/corpus/
+  own one net-new fixture (``benchmark/corpus/
   scale-progressive-loading-proof/``) pinning an ambiguous
   trigger-evaluation that must still load (fail-closed) rather than skip.
 
@@ -60,10 +60,10 @@ from scripts.capability_architecture.capability_loading_baseline import (  # noq
 SCALE = "scale"
 
 # The 4 top-level corpus cases #408's quality-metrics baseline already
-# covers (docs/benchmark/corpus/*.yaml, the known non-recursive-glob
+# covers (benchmark/corpus/*.yaml, the known non-recursive-glob
 # reach) -- re-run here as the regression set required cases 1/2 must
 # match.
-ROOT_CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
+ROOT_CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus"
 
 # The reused repository-intelligence cases (#129): the control case
 # ("resolved, compatible caller" -- no escalation needed) and the

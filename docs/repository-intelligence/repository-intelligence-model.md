@@ -16,7 +16,7 @@ its behavior is exercised by
 and [`../../tests/policy/review/repository_intelligence/test_repository_intelligence_docs.py`](../../tests/policy/review/repository_intelligence/test_repository_intelligence_docs.py).
 The benchmark evidence for the acceptance criterion "measurable gains over
 diff-only review" is
-[`../benchmark/corpus/repository-intelligence/README.md`](../benchmark/corpus/repository-intelligence/README.md),
+[`../benchmark/corpus/repository-intelligence/README.md`](../../benchmark/corpus/repository-intelligence/README.md),
 exercised by
 [`../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py`](../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py).
 
@@ -213,7 +213,7 @@ reaches; it says the dispatch is ambiguous and stops there.
 ## 10. Worked examples
 
 Each example is also a benchmark fixture in
-[`../benchmark/corpus/repository-intelligence/`](../benchmark/corpus/repository-intelligence/README.md)
+[`../benchmark/corpus/repository-intelligence/`](../../benchmark/corpus/repository-intelligence/README.md)
 and a case in the reference corpus
 ([`../../tests/unit/review/repository_intelligence/test_repository_intelligence.py`](../../tests/unit/review/repository_intelligence/test_repository_intelligence.py)),
 asserted to resolve exactly as documented here. Three positive examples
@@ -332,7 +332,7 @@ lands with #129:
    attribution (§8) — consumed as a **design record and a test-only
    reference model**, not as new runtime behavior.
 2. **Benchmark evidence** — the fixtures in
-   [`../benchmark/corpus/repository-intelligence/`](../benchmark/corpus/repository-intelligence/README.md)
+   [`../benchmark/corpus/repository-intelligence/`](../../benchmark/corpus/repository-intelligence/README.md)
    demonstrate the mechanism on representative cases across two language
    shapes; they are illustrative, not a measured hit-rate (§10 note; the
    corpus README states this explicitly — no statistical-significance

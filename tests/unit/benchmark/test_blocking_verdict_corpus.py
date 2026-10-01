@@ -24,7 +24,7 @@ from tests.support import benchmark_runtime as brt
 from tests.support.benchmark_runtime import REQUIRE_RUNTIME_ENV_VAR, LiveRuntimeTestCase
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "decision-derivation"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "decision-derivation"
 
 P0_CASE = "dd-blocking-p0-sql-injection"
 P1_CASE = "dd-blocking-p1-inverted-error-rate"

@@ -50,5 +50,5 @@ attribution. See
 - The benchmark evidence demonstrating relationship-aware context catching
   defects diff-only review misses, without unacceptable false-positive
   growth:
-  [`../benchmark/corpus/repository-intelligence/README.md`](../benchmark/corpus/repository-intelligence/README.md).
+  [`../benchmark/corpus/repository-intelligence/README.md`](../../benchmark/corpus/repository-intelligence/README.md).
 - The architecture map: [`../ARCHITECTURE.md`](../ARCHITECTURE.md).

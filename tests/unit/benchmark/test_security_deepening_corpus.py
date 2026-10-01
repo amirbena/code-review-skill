@@ -2,7 +2,7 @@
 """Contract coverage for the Security deepening benchmark sub-corpus
 (Issue #271, parent #83, grandparent #82).
 
-The sub-corpus is ``docs/benchmark/corpus/security-deepening/*.yaml``: a
+The sub-corpus is ``benchmark/corpus/security-deepening/*.yaml``: a
 small, focused set of ``benchmark-case/v2`` fixtures pinning representative
 Security deepening outcomes as follow-up quality hardening for the
 capability #83 already defines — it validates domain correctness after the
@@ -23,7 +23,7 @@ import yaml
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "security-deepening"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "security-deepening"
 
 MIN_CASES = 6
 MAX_CASES = 10
@@ -215,7 +215,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never a second one", self.raw)
 

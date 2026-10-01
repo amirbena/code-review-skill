@@ -2,7 +2,7 @@
 """Contract coverage for the null-like absence-risk benchmark sub-corpus
 (Issue #121).
 
-The sub-corpus is ``docs/benchmark/corpus/null-absence-risk/*.yaml``: a
+The sub-corpus is ``benchmark/corpus/null-absence-risk/*.yaml``: a
 small, focused set of ``benchmark-case/v2`` fixtures demonstrating
 shared/policies/review-scope.md's "Null-like absence-risk review"
 requirement — a real null/undefined/nil dereference risk surfaced, its
@@ -26,7 +26,7 @@ import yaml
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "null-absence-risk"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "null-absence-risk"
 
 MIN_CASES = 6
 MAX_CASES = 10
@@ -231,7 +231,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never defines a second", self.raw)
 

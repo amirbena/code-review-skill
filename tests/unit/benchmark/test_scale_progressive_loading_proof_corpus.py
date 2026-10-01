@@ -12,7 +12,7 @@ from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
 CORPUS_DIR = (
-    REPO_ROOT / "docs" / "benchmark" / "corpus" / "scale-progressive-loading-proof"
+    REPO_ROOT / "benchmark" / "corpus" / "scale-progressive-loading-proof"
 )
 
 REQUIRED_CASES = 1
@@ -204,7 +204,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
 
 

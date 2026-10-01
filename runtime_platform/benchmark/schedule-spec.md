@@ -33,7 +33,7 @@ which is the executable schema.
 
 | Field | Meaning |
 | --- | --- |
-| `repository`, `entrypoint` | The repository the Routine checks out and the entrypoint it invokes ([`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md) §2). |
+| `repository`, `entrypoint` | The repository the Routine checks out and the entrypoint it invokes ([`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md) §2). |
 | `lanes.<lane>.mode` | The `--mode` for the lane; must equal the lane name (`sentinel`, `comprehensive`). The deprecated `full` alias is never scheduled. |
 | `lanes.<lane>.intended_cadence` | Cadence as **text** (A11). Never an exact interval and never enforced. |
 | `lanes.<lane>.intended_start` | Declarative local start: `weekday` (comprehensive only; `null` for sentinel), `local_time`, `timezone`. **No repository code computes with it** — timezone and DST stay a Routine-configuration responsibility, and the watchdog is gap-based. |
@@ -70,7 +70,7 @@ before any GitHub write; the default mode is for CI and the execution side.
 ## 2. Thin Routine prompt spec
 
 The Routine prompt is exactly the literal template in
-[`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md)
+[`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md)
 §9 (A12), bound per lane to the manifest:
 
 - `--mode` is the lane's `mode`;
@@ -124,6 +124,6 @@ expected to change them; consumers that write to GitHub must use
 The seal and handoff, drift evaluation, publication, and the watchdog's
 behavior are owned by their own documents
 ([`scheduled-operations/`](scheduled-operations/README.md)); the modes and
-verification are [`cloud-routine-integration.md`](../../docs/benchmark/cloud-routine-integration.md);
+verification are [`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md);
 the baseline policy is [`nightly-history-and-baseline.md`](nightly-history-and-baseline.md).
 This document owns only the values and shapes above.

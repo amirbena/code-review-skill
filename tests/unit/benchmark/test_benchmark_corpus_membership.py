@@ -106,7 +106,7 @@ class DiscoverComprehensiveFixturesTest(unittest.TestCase):
         # Sanity check against the real repository corpus tree (Issue #431
         # states "~89" fixtures) — proves this is a live scan, not a stub.
         repo_root = Path(__file__).resolve().parents[3]
-        corpus_root = repo_root / "docs" / "benchmark" / "corpus"
+        corpus_root = repo_root / "benchmark" / "corpus"
         if not corpus_root.exists():
             self.skipTest("real corpus tree not present in this checkout")
         ids = membership.comprehensive_case_ids(corpus_root)

@@ -34,7 +34,7 @@ The existing contracts this record builds on and proposes to amend are
 [`../runtime-execution-contract.md`](../runtime-execution-contract.md),
 [`../nightly-history-and-baseline.md`](../nightly-history-and-baseline.md),
 [`../drift-detection-and-regression-lifecycle.md`](../drift-detection-and-regression-lifecycle.md),
-[`../../../docs/benchmark/cloud-routine-integration.md`](../../../docs/benchmark/cloud-routine-integration.md),
+[`../../../benchmark/cloud-routine-integration.md`](../../../benchmark/cloud-routine-integration.md),
 and the cross-component architecture in
 [`../../../docs/benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](../../../docs/benchmark-measurement-architecture/benchmark-measurement-architecture-model.md)
 §6.

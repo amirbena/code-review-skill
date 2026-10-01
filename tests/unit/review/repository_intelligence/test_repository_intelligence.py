@@ -12,7 +12,7 @@ compatible relationship successfully does not by itself create influence.
 
 Five worked examples mirror "Worked example 1-5" in the design record and
 the five corresponding fixtures in
-docs/benchmark/corpus/repository-intelligence/.
+benchmark/corpus/repository-intelligence/.
 """
 
 from __future__ import annotations
@@ -217,7 +217,7 @@ class InfluentialRelationshipsTests(unittest.TestCase):
 class WorkedExampleTests(unittest.TestCase):
     """Each case mirrors a "Worked example N" block in the design record and
     the matching fixture in
-    docs/benchmark/corpus/repository-intelligence/."""
+    benchmark/corpus/repository-intelligence/."""
 
     def test_example_1_call_site_caller_null_deref(self) -> None:
         get_user = _entity(ri.EntityKind.FUNCTION, "get_user", "app/users/lookup.py")

@@ -3,7 +3,7 @@
 (Issue #450, regression guard for the closed Issue #449 / PR #452).
 
 The sub-corpus is
-``docs/benchmark/corpus/decision-derivation/*.yaml``: a small,
+``benchmark/corpus/decision-derivation/*.yaml``: a small,
 focused set of ``benchmark-case/v2`` fixtures pinning the *reverse*
 direction of ``shared/policies/severity.md``'s mechanical severity →
 decision derivation — a P2-only, or empty, finding set must always render
@@ -36,7 +36,7 @@ from tests.reference.review import decision_semantics as ds
 from tests.support.benchmark_runtime import LiveRuntimeTestCase
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "decision-derivation"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "decision-derivation"
 
 MILD_WORDING = "dd-p2-only-mild-wording"
 URGENT_WORDING = "dd-p2-only-urgent-wording"
@@ -217,7 +217,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
 
 

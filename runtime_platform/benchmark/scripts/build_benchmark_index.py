@@ -4,7 +4,7 @@ taxonomy (Issue #333). Contract: runtime_platform/benchmark/taxonomy.md §5.
 
 Parses every corpus case's already-validated ``metadata.taxonomy`` and
 produces ``{ (dimension, value) -> [case_id, ...] }``, serialized as
-docs/benchmark/corpus-index.json. This is deliberately the only way the
+benchmark/corpus-index.json. This is deliberately the only way the
 index is produced: never hand-edited, always regenerated from the corpus.
 
 Usage::
@@ -35,8 +35,8 @@ if str(_REPO_ROOT) not in sys.path:
 from runtime_platform.benchmark.reference import benchmark_fixture as bf  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_taxonomy as tax  # noqa: E402
 
-DEFAULT_CORPUS_DIR = _REPO_ROOT / "docs" / "benchmark" / "corpus"
-DEFAULT_INDEX_PATH = _REPO_ROOT / "docs" / "benchmark" / "corpus-index.json"
+DEFAULT_CORPUS_DIR = _REPO_ROOT / "benchmark" / "corpus"
+DEFAULT_INDEX_PATH = _REPO_ROOT / "benchmark" / "corpus-index.json"
 
 
 def _corpus_files(corpus_dir: Path) -> list[Path]:

@@ -2,7 +2,7 @@
 """Contract coverage for the root-cause / duplicate consolidation sub-corpus
 (Issue #185, parent #177).
 
-The sub-corpus is ``docs/benchmark/corpus/consolidation/*.yaml``: a small,
+The sub-corpus is ``benchmark/corpus/consolidation/*.yaml``: a small,
 focused set of ``benchmark-case/v2`` fixtures that pin the consolidation
 outcomes #177 names — shared cause consolidates to one authoritative
 finding; look-alike but independent defects stay separate; a shared cause
@@ -34,7 +34,7 @@ import yaml
 from runtime_platform.benchmark.reference import benchmark_fixture as bf
 from tests.support.paths import REPO_ROOT
 
-CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus" / "consolidation"
+CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "consolidation"
 
 # #185 asks for "a focused, representative set only" — the four named
 # outcomes. This band lets it grow deliberately without becoming a bulk
@@ -211,7 +211,7 @@ class SubCorpusReadmeTests(unittest.TestCase):
 
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
-            "](../../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
+            "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw
         )
         self.assertIn("never defines a second", self.raw)
 

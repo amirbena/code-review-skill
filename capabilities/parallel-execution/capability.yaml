@@ -17,4 +17,4 @@ never:
     runtime sandboxing)
   - changing review reasoning because parallel execution is available
   - skipping the sequential fallback when the spawn probe is unavailable
-benchmark: docs/benchmark/corpus/delegation-spawn
+benchmark: benchmark/corpus/delegation-spawn

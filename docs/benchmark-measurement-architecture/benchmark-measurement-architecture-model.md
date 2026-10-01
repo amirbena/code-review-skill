@@ -82,7 +82,7 @@ less precisely, what #333/#334 now compute deterministically, and #391
 had already made its non-blocking contributor-path status permanent
 rather than a stepping stone to a provisioned Class 1 runtime. #420
 removed that workflow and classifier, and the doc that specified them
-(`docs/benchmark/ci-integration.md`), completely. This does not change
+(`benchmark/ci-integration.md`), completely. This does not change
 §2's DAG or §4's two-class split — it removes a workflow that was never
 part of either — but it does correct §5's promotion-mechanism bullet
 (previously naming `benchmark-check.yml` as the eventual required-gate
@@ -141,7 +141,7 @@ today, and they are easy to conflate:
    Skills' *deterministic* logic (matching, scoring, fixture validation,
    identity derivation) behaves correctly. They do not exercise the
    Skills' actual multi-step, tool-using review *behavior*.
-2. **A benchmark corpus exists.** `docs/benchmark/` ([`../../runtime_platform/benchmark/README.md`](../../runtime_platform/benchmark/README.md))
+2. **A benchmark corpus exists.** `benchmark/` ([`../../runtime_platform/benchmark/README.md`](../../runtime_platform/benchmark/README.md))
    already defines a fixture format, a growing corpus, match criteria, and
    three quality metrics (missed/incorrect findings, severity accuracy,
    duplicate noise) that *would* measure real reviewer behavior against
@@ -150,7 +150,7 @@ today, and they are easy to conflate:
    `.github/workflows/*.yml` provisions a runtime capable of actually
    invoking the packaged `local-code-review` Skill's semantics. The
    original PR-level benchmark check this problem statement was written
-   against (`docs/benchmark/ci-integration.md` §4, retired by
+   against (`benchmark/ci-integration.md` §4, retired by
    [#420](https://github.com/amirbena/code-review-skill/issues/420))
    already documented that such a runtime is "almost certainly"
    unavailable on a bare GitHub-hosted runner, so that check could
@@ -567,7 +567,7 @@ Principles that hold regardless of the exact numbers chosen:
 
 Stable principles drawn from #332/#338/#339, refined into **two**
 independently-scheduled, independently-baselined lanes by #431 — see
-[`../benchmark/corpus/README.md`](../benchmark/corpus/README.md) and
+[`../benchmark/corpus/README.md`](../../benchmark/corpus/README.md) and
 [`../../runtime_platform/benchmark/nightly-history-and-baseline.md`](../../runtime_platform/benchmark/nightly-history-and-baseline.md)
 §2 for the operational contract. "Nightly" in the rest of this document
 and in #338/#339 is the historical name for this scheduled path; it is not
@@ -584,7 +584,7 @@ scheduled trusted execution       (#338/#431, via a Claude Cloud Routine per
                                     §4.1's Class 2 target, or maintainer-
                                     triggered; main only)
   → sentinel lane                 (#431: the 4 fixed canonical cases,
-                                    docs/benchmark/corpus/*.yaml, max gap ≤ 96 h)
+                                    benchmark/corpus/*.yaml, max gap ≤ 96 h)
   → comprehensive lane             (#431: every benchmark-case/v2 fixture in
                                     the corpus tree, derived programmatically,
                                     max gap ≤ 8 d)
@@ -689,7 +689,7 @@ cannot casually conflate them:
   #131's `not planned` status.
 - **Benchmark ground truth ≠ live workflow analytics.** #329's tree only
   ever runs against the fixed, versioned corpus under
-  `docs/benchmark/corpus/`, in CI, never against a real user's PR.
+  `benchmark/corpus/`, in CI, never against a real user's PR.
   `runtime_platform/benchmark/regression-report.md` already disclaims live-workflow
   analytics for exactly this reason.
 - **Analytics ≠ learning (historical rationale, product layer).** Had
@@ -884,7 +884,7 @@ review-reliability audit of this repository's own Skills, spanning both
 Neither failure mode requires redesigning anything §1–§11 already
 establish. Both are new *consumers of*, or *deterministic checks over*,
 existing layers this document already governs: the telemetry layer (§7,
-#182), the benchmark tree (§2/§5/§6, `docs/benchmark/`), and the
+#182), the benchmark tree (§2/§5/§6, `benchmark/`), and the
 mechanical severity → decision contract (`shared/policies/severity.md`,
 unchanged, §11). This section exists so that the same conflation §7
 already warns against for the original four capabilities — telemetry
@@ -1033,7 +1033,7 @@ pattern:
   cannot yet make progress.
 - **Explicitly not redefined by this section**: #182's observational
   boundary (§7, unchanged); the benchmark match/fixture/runner contracts
-  (`docs/benchmark/`, unchanged); and `shared/policies/severity.md`'s
+  (`benchmark/`, unchanged); and `shared/policies/severity.md`'s
   mechanical derivation (unchanged). Every item above is a consumer of,
   or a check over, these existing contracts — never a replacement for one
   of them.

@@ -28,7 +28,7 @@ introducing a new one:
 - **Activation correctness and fail-closed loading** (#411 required
   cases 1-3): reuses ``specialist-depth-composition``'s Case A ("not
   needed") and Case B ("must activate") by id from #409's corpus, plus
-  this issue's own one net-new fixture (``docs/benchmark/corpus/
+  this issue's own one net-new fixture (``benchmark/corpus/
   specialist-depth-progressive-loading-proof/``) pinning an ambiguous
   predicate evaluation that must still load (fail-closed) rather than
   skip.
@@ -63,10 +63,10 @@ from scripts.capability_architecture.capability_loading_baseline import (  # noq
 SPECIALIST_DEPTH = "specialist-depth"
 
 # The 4 top-level corpus cases #408's quality-metrics baseline already
-# covers (docs/benchmark/corpus/*.yaml, the known non-recursive-glob
+# covers (benchmark/corpus/*.yaml, the known non-recursive-glob
 # reach) -- re-run here as the regression set required cases 1/2 must
 # match.
-ROOT_CORPUS_DIR = REPO_ROOT / "docs" / "benchmark" / "corpus"
+ROOT_CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus"
 
 # The reused specialist-depth-composition cases (#409): Case A ("zero
 # capabilities engage" -- specialist-depth not needed) and Case B ("one

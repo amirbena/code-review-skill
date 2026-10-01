@@ -6,7 +6,7 @@ Every test loads the single reference fixture module
 `runtime_platform/benchmark/reference/reasoning_checkpoint_fixtures.py` and is
 independent of the `benchmark-case/v2` runner/matcher/metrics stack. The
 corpus and its mechanism choice are documented in
-docs/benchmark/corpus/reasoning-checkpoint/README.md.
+benchmark/corpus/reasoning-checkpoint/README.md.
 """
 
 from __future__ import annotations

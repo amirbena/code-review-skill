@@ -10,7 +10,7 @@ step. It consumes the machine-readable per-case result shape fixed by the
 runner contract ([`runner-contract.md`](runner-contract.md) §6, #52),
 which in turn builds on the fixture format
 ([`fixture-format.md`](fixture-format.md), #50) and the corpus
-([`corpus/README.md`](../../docs/benchmark/corpus/README.md), #51). Parent capability:
+([`corpus/README.md`](../../benchmark/corpus/README.md), #51). Parent capability:
 [#40](https://github.com/amirbena/code-review-skill/issues/40).
 
 Like [`runner-contract.md`](runner-contract.md) and the rest of

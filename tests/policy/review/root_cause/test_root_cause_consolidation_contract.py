@@ -40,7 +40,7 @@ LIFECYCLE = REPO_ROOT / "docs/findings/finding-lifecycle-contract.md"
 MATCHING = REPO_ROOT / "docs/findings/finding-matching-strategy.md"
 DELTA = REPO_ROOT / "docs/findings/delta-re-review-contract.md"
 STATEFUL = REPO_ROOT / "skills/github-pr-review/policies/stateful-delta-rereview.md"
-CORPUS = REPO_ROOT / "docs/benchmark/corpus/consolidation"
+CORPUS = REPO_ROOT / "benchmark/corpus/consolidation"
 
 ALL_OWNERS = (REVIEW_SCOPE, IDENTITY, LIFECYCLE, MATCHING, DELTA, STATEFUL)
 
