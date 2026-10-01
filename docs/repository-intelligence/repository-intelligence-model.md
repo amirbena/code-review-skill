@@ -101,6 +101,11 @@ that surfaces it:
 | `references` | migration/schema | A query, ORM model, or sibling migration references a changed table or column. |
 | `references` | config-consumer | Code reads or otherwise consumes a changed configuration key, feature flag, or environment variable. |
 
+The #603 relationship capability contract extends the relationship set with
+`tested_by` and `analogue_of` (neither surfaced by a trigger, so neither has a
+ring); see [`relationship-capability-contract.md`](relationship-capability-contract.md),
+§6. Nothing else in this table changes.
+
 The set is closed on both axes: an entity or relationship outside this
 table is not modeled, and a reviewer does not invent a new kind. This
 mirrors [`repository-expansion.md`](../../shared/policies/repository-expansion.md),

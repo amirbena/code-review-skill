@@ -53,6 +53,7 @@ REFERENCE_TEST_MODULES = (
     "context_evidence.py",
     "candidate_finding_validation.py",
     "repository_intelligence.py",
+    "relationship_capability.py",
     "pr_checkout.py",
     "pr_simulation.py",
     "parallel_review.py",
