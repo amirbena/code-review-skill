@@ -142,12 +142,14 @@ SEVERITY_LEGEND = {
 # optional rendered-UI inspection capability -- a conditional `Rendered
 # observations` rule in the report template and a rendered-inspection pointer
 # beside runtime validation in the runbook) -- also deliberate and unrelated
-# to #223. LOCAL_RUNBOOK was re-captured once more after Issue #620 (one
-# sentence pointing the design-reference context at its shared policy) --
-# likewise deliberate and unrelated to #223; LOCAL_SKILL was re-captured for
-# #620's design-reference input pointer in SKILL.md.
+# to #223. LOCAL_REPORT was re-captured once more after Issue #618 (one
+# conditional `Browser setup note` line for the rendered-inspection
+# acquisition question) -- likewise deliberate and unrelated to #223.
+# LOCAL_RUNBOOK was re-captured after Issue #620 (one sentence pointing the
+# design-reference context at its shared policy) and LOCAL_SKILL for #620's
+# design-reference input pointer in SKILL.md -- likewise deliberate.
 LOCAL_BASELINE_HASHES = {
-    LOCAL_REPORT: "26a1801011fa558e2e9d20992ec25fc11f0b2d87",
+    LOCAL_REPORT: "7917d7e46079c95cb77d1a6b3c81cb52e2c8c354",
     LOCAL_RUNBOOK: "882bebb4f0af2450cd98387094e334745f433475",
     LOCAL_SKILL: "af13dca64e67bd6738cb86caf7140cff0d3dba43",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
