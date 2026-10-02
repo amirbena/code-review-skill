@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Route tests (DOCS/FAST/FULL)
+      - name: Route tests (DOCS/PARTIAL/FAST/FULL)
         id: route
         # The router is trusted from the base, never the head: a PR that
         # introduces or edits it is FULL (#533). A separate blobless clone keeps
@@ -37,12 +37,15 @@ jobs:
           route_repo="$RUNNER_TEMP/ci-route"
           router="$RUNNER_TEMP/ci_test_route.py"
           # Defensive: only pull_request triggers this workflow, but any other
-          # event would still resolve to FULL.
+          # event would still resolve to FULL. The sparse checkout fetches the
+          # base's test blobs in one batch for the router's base graph;
+          # best-effort, since the router reads any missing blob lazily.
           if [ "$EVENT_NAME" != "pull_request" ]; then
             reason="non-pull_request event ($EVENT_NAME)"
           elif git init -q "$route_repo" \
             && git -C "$route_repo" remote add origin "$REPO_URL" \
             && git -C "$route_repo" fetch -q --no-tags --filter=blob:none origin "$BASE_SHA" "$HEAD_SHA" \
+            && { git -C "$route_repo" sparse-checkout set tests && git -C "$route_repo" checkout -q --detach "$BASE_SHA" || true; } \
             && git -C "$route_repo" show "$BASE_SHA:scripts/validation/ci_test_route.py" > "$router"; then
             exec python "$router" route --event-name "$EVENT_NAME" --base "$BASE_SHA" --head "$HEAD_SHA" --repo "$route_repo" --tree "$GITHUB_WORKSPACE"
           else
@@ -80,8 +83,8 @@ jobs:
           for tree in dist/skills/*/; do agentskills validate "$tree"; done
 
       - name: Run repository tests
-        # FULL unless the router positively selected DOCS or FAST.
-        if: ${{ steps.route.outputs.tier != 'fast' && steps.route.outputs.tier != 'docs' }}
+        # FULL unless the router positively selected DOCS, PARTIAL, or FAST.
+        if: ${{ steps.route.outputs.tier != 'fast' && steps.route.outputs.tier != 'docs' && steps.route.outputs.tier != 'partial' }}
         env:
           DISTRIBUTION_INSTALL_CHECK: "1"
         run: python -m unittest discover -s tests -t .
@@ -90,8 +93,19 @@ jobs:
         if: ${{ steps.route.outputs.tier == 'fast' }}
         env:
           DISTRIBUTION_INSTALL_CHECK: "1"
+          # Integration modules the change affects, which FAST alone would drop; empty when none.
+          ROUTE_MODULES: ${{ steps.route.outputs.modules }}
         # The base's router, extracted by the route step, selects the tests.
-        run: python "$RUNNER_TEMP/ci_test_route.py" run-fast
+        run: python "$RUNNER_TEMP/ci_test_route.py" run-fast ${ROUTE_MODULES:+--modules $ROUTE_MODULES}
+
+      - name: Run the selected test modules (PARTIAL tier)
+        if: ${{ steps.route.outputs.tier == 'partial' }}
+        env:
+          DISTRIBUTION_INSTALL_CHECK: "1"
+          ROUTE_MODULES: ${{ steps.route.outputs.modules }}
+          ROUTE_DOCS_LINKS: ${{ steps.route.outputs.docs_links }}
+        # The base's router names the modules and validates every ID before running any.
+        run: python "$RUNNER_TEMP/ci_test_route.py" run-partial ${ROUTE_DOCS_LINKS:+--with-docs-links} --modules $ROUTE_MODULES
 
       - name: Run documentation validations only (DOCS tier)
         if: ${{ steps.route.outputs.tier == 'docs' }}

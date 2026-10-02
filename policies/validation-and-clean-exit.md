@@ -102,6 +102,12 @@ tier. **FULL is the default**:
   (`ci_test_route.py run-docs`); metadata validation, the canonical build, and
   spec validation are skipped because nothing in a pure-docs change can
   affect them. The shell/PowerShell parity jobs are unchanged.
+- **PARTIAL** runs an explicit set of test modules, not discovery: the
+  affected test surface of a bounded test-only change plus the mandatory
+  companions (`ci_test_route.py run-partial`). It runs between DOCS and FAST
+  in the tier order (`DOCS < PARTIAL < FAST < FULL`); metadata validation,
+  the canonical build, spec validation, and the parity jobs run as on FAST.
+  See [PARTIAL: affected-scope selection](#partial-affected-scope-selection).
 
 Each changed path is classified, and a change set takes the highest tier of
 its paths (renames counted as both paths):
@@ -111,7 +117,8 @@ its paths (renames counted as both paths):
 | `PURE_DOCS` | every path is a normalized `docs/**/*.md` file that no file under `tests/`, `scripts/`, `runtime_platform/`, `benchmark/`, `capabilities/`, `distribution/`, or `.github/` can read | DOCS |
 | `CONSUMED_DOCS` | a `docs/**/*.md` file that one of those roots references (literal, joined, or directory path) | FAST |
 | `FAST_ALLOWLIST` | every path is on the allowlist in [`ci_test_route.py`](../scripts/validation/ci_test_route.py) | FAST |
-| `MIXED` | docs plus other paths: tiered by the non-doc paths; docs never lower the tier | FAST or FULL |
+| `PARTIAL_TESTS` | every path is a tracked file under `tests/` with a derived, non-empty affected set (alone or with pure docs) | PARTIAL |
+| `MIXED` | docs plus other paths: tiered by the non-doc paths; docs never lower the tier. Test paths with a FAST path give FAST plus the affected `tests.integration.*` modules | PARTIAL, FAST or FULL |
 | `UNKNOWN` | anything else: any other path, non-`.md` or unnormalized `docs/` path, empty change set | FULL |
 
 Consumers are derived from the tracked files under the checkout, not listed
@@ -131,6 +138,72 @@ runs a suite, the network, a model, or benchmarks, and never sets the opt-in
 gates (`BENCHMARK_REQUIRE_RUNTIME`, `DISTRIBUTION_INSTALL_CHECK`,
 `BENCHMARK_MIGRATION_BASE`).
 
+#### PARTIAL: affected-scope selection
+
+PARTIAL is selected only when every changed path is a documentation path or
+a path under `tests/` that the router positively resolves. Principle: select
+the smallest validation surface that can prove the affected contract;
+unknown or ambiguous impact fails upward, never downward.
+
+- **Derived graph.** `ci_test_route.py` statically scans the tracked files
+  under `tests/` (never a hand-kept per-directory or per-helper list). A
+  consumer is a test file that imports another (`import`/`from`, relative
+  imports, and the implicit package `__init__.py` chain) or reads it by a
+  literal or directory path (`"tests/…"` strings, `REPO_ROOT / "tests" / …`,
+  `Path`/`joinpath`/`os.path.join` chains, `__file__`-relative paths).
+  Docstrings are prose, not reads, and a directory named only by a string counts only as a filesystem- or subprocess-call argument. The closure uses the union of the base
+  (merge-base) and head graphs, so a removed edge and a newly added edge are
+  both covered, and a deleted or renamed helper selects its former consumers.
+- **Path to surface.** A changed `tests/**/test_*.py` module selects itself,
+  every module that imports it, and every module that reads it. Any other
+  `tests/**/*.py` helper (`support/`, `reference/`, `_shared.py`,
+  `__init__.py`) selects the transitive closure of its importers and
+  readers: all known consumers, never a cap, and no escalation to the whole
+  suite unless the closure is the whole suite (then FULL). A non-Python file
+  under `tests/` selects the modules that reference it by literal or
+  directory path; none found is FULL, not "no tests".
+- **Union and monotonicity.** A change set's surface is the union of its
+  paths' surfaces, with companions de-duplicated. Tier is the maximum over
+  paths, a FULL path makes the whole change FULL, and adding a path never
+  removes a module or lowers the tier. Renames and deletions count as both
+  the old and the new path.
+- **Companions.** `TREE_GUARD_MODULES` (the layout and routing tripwires over
+  `tests/`) are added to every PARTIAL set. A change that also touches
+  documentation adds `DOCS_SCANNER_MODULES` and the Markdown link validator.
+  An allowlisted FAST path or consumed docs with a test change is FAST plus
+  the affected `tests.integration.*` modules (`run-fast --modules …`), since
+  FAST alone would drop them.
+- **Fail upward to FULL** on: a path outside the known `tests/` kinds
+  (including a new top-level `tests/` directory); a file in the graph that
+  fails to parse or read; a closure that includes a module that loads code
+  or reads `tests/` in a form the scan cannot resolve (an unknown
+  `importlib`/`sys.path` target, a computed or f-string `tests/` path); a
+  missing, empty, or erroring graph; an empty affected set; a missing
+  registered companion; a module ID that is not a well-formed, resolvable
+  `tests.…` name at run time (`run-partial` validates every ID first and
+  fails if zero tests ran). Any unrecognized access form is reported with
+  its file and line.
+- **FULL by rule.** The router, classifier, graph builder, the scanner and
+  enumerator registries, `.github/workflows/**`, and their tests are always
+  FULL: the router is trusted from the base commit, so it cannot vouch for a
+  head version of itself, and FULL is the only run that exercises a new
+  router independently of its own routing decision. Their tests are always
+  companions of a PARTIAL set but never replace FULL for such a change.
+  Production and shared semantic paths stay FULL; mapping production source
+  to tests is out of scope.
+- **Invariants.** One module owns classification, the graph, tier ordering,
+  and summaries; the workflow only invokes it and runs the tier it names,
+  forwarding the module list (validated by `run-partial`). No label, flag,
+  or environment input selects a tier, and selection never runs the suites it
+  selects, touches the network, models, or benchmarks, or sets the opt-in
+  gates.
+
+**Per-issue validation.** A bounded test-only change may state its
+validation as "the tier `classify` selects for the change"
+(`python3 scripts/validation/ci_test_route.py classify`) instead of an
+unconditional full-suite run; FULL stays required whenever `classify` says
+FULL, and an issue that states its own full-suite requirement keeps it.
+
 Every path on the FAST allowlist must have positive, repository-backed
 evidence that no integration test copies, reads, or packages it; anything
 unknown, mixed, empty, or erroring is FULL, and there is no label or flag
@@ -144,6 +217,12 @@ pre-merge boundary; a push to `main` does not re-run it, and is reserved
 for the release lifecycle in `release-publish.yml`, whose own build,
 provenance, distribution, tag, and release verification are unaffected
 ([#538](https://github.com/amirbena/code-review-skill/issues/538)).
+
+`tests/unit/governance/test_partial_routing.py` holds the PARTIAL contract
+tests: path-to-surface cases, monotonicity (generated pairs of change sets),
+exhaustiveness (every tracked path classifies deterministically; an unruled
+path is FULL), and a differential check that the static graph is a superset
+of the imports the test modules actually perform.
 
 `tests/policy/governance/test_ci_test_routing.py` is a narrow tripwire,
 not proof that an allowlisted path is inert. On every PR it fails if the
