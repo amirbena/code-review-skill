@@ -3,6 +3,7 @@ execution boundary (#617). Test-only; models no browser."""
 
 from __future__ import annotations
 
+import re
 import unittest
 
 from tests.reference.review import rendered_inspection as ri
@@ -140,6 +141,7 @@ class IsolationAndAuthTests(unittest.TestCase):
             "downloads and permission prompts denied",
             "confined to the chosen target's origin",
             "never the user's own signed-in browser sessions",
+            "redirects and requests the page makes to any origin other than the chosen one",
             "unauthenticated pages only",
             "No secret, token, or real credential is injected",
         ):
@@ -158,10 +160,19 @@ class HardBoundTests(unittest.TestCase):
         text = _text(POLICY)
         for phrase in ("30 seconds", "15 seconds", "exactly one attempt", "torn down", "Git state"):
             self.assertIn(phrase, text)
-        self.assertEqual(
-            (ri.SERVER_START_TIMEOUT_SECONDS, ri.NAVIGATION_TIMEOUT_SECONDS, ri.MAX_ATTEMPTS),
-            (30, 15, 1),
-        )
+
+    def test_model_constants_match_the_policy_text(self) -> None:
+        text = _text(POLICY)
+        start = re.search(r"server start is bounded to (\d+) seconds", text)
+        nav = re.search(r"each navigation to (\d+) seconds", text)
+        total = re.search(r"wall-clock bound is (\d+) seconds", text)
+        self.assertIsNotNone(start)
+        self.assertIsNotNone(nav)
+        self.assertIsNotNone(total)
+        self.assertEqual(int(start.group(1)), ri.SERVER_START_TIMEOUT_SECONDS)
+        self.assertEqual(int(nav.group(1)), ri.NAVIGATION_TIMEOUT_SECONDS)
+        self.assertEqual(int(total.group(1)), ri.WALL_CLOCK_SECONDS)
+        self.assertEqual(ri.MAX_ATTEMPTS, 1)
 
     def test_each_bound_violation_is_inconclusive(self) -> None:
         for run in (

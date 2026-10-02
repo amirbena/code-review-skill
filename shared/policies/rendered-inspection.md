@@ -149,6 +149,9 @@ suite, which stays runtime validation of a declared command.
 - Fresh, throwaway browser context and profile; no persisted storage, cookies,
   or cache; downloads and permission prompts denied; navigation confined to the
   chosen target's origin; never the user's own signed-in browser sessions.
+- For every target source, redirects and requests the page makes to any
+  origin other than the chosen one (subresources, `fetch`, XHR, WebSocket) are
+  denied or ignored; the page is never allowed to widen its own network reach.
 - v1 inspects unauthenticated pages only. No secret, token, or real credential
   is injected, and no sign-in flow is attempted. A page or state that needs
   credentials or an environment that is absent is recorded `unavailable`.
