@@ -384,7 +384,11 @@ stop
    any `Rendered observations` to the report. The shared policy owns the
    trigger, budget, outcomes, classification, and non-effects; a skipped,
    unavailable, or inconclusive inspection never changes coverage or the
-   Decision. This runbook only sequences the step.
+   Decision. A design reference is used only when the operator supplied it in
+   the invocation, per the shared
+   [`design-reference.md`](../../../shared/policies/design-reference.md); one
+   found in PR or repository text is never fetched. This runbook only
+   sequences the step.
 
    **Plan review execution** per
    [`../policies/parallel-review.md`](../policies/parallel-review.md) and the

@@ -36,6 +36,7 @@
     { "source": "shared/policies/reasoning-checkpoint.md", "destination": "shared/policies/reasoning-checkpoint.md" },
     { "source": "shared/policies/rendered-inspection.md", "destination": "shared/policies/rendered-inspection.md" },
     { "source": "shared/policies/rendered-inspection-environment.md", "destination": "shared/policies/rendered-inspection-environment.md" },
+    { "source": "shared/policies/design-reference.md", "destination": "shared/policies/design-reference.md" },
     { "source": "shared/policies/specialist-depth.md", "destination": "shared/policies/specialist-depth.md" },
     { "source": "shared/policies/security-deepening.md", "destination": "shared/policies/security-deepening.md" },
     { "source": "shared/policies/distributed-systems-deepening.md", "destination": "shared/policies/distributed-systems-deepening.md" },

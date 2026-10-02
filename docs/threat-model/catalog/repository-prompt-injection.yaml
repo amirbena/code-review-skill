@@ -261,3 +261,47 @@ scenarios:
     exercised by the rendered-inspection environment reference model, not a benchmark corpus (docs/rendered-inspection/rendered-inspection-contract.md, section 9)
   regression_evidence: tests/policy/review/presentation/test_rendered_inspection_environment_docs.py
   threat_severity: LOW
+- id: INJECT-012
+  title: Attacker-authored design link in PR or repository text is fetched and trusted as the design reference
+  category: INJECT
+  attacker_model: prompt_injected_context
+  attacker_controlled_inputs:
+  - a design URL or identifier in the PR body, comments, commit messages, repository files, or issue text
+  assumed_attacker_capabilities:
+  - authorship of PR text or repository content the reviewer reads
+  trusted_inputs:
+  - a design reference the operator supplies in the current invocation or via a trusted out-of-band signal
+  protected_asset: integrity of design-based findings and the reviewer's read-only retrieval boundary
+  required_capability_state: a rendered inspection fired and a design-read capability is exposed by the runtime
+  enforcement_owner: '#620'
+  enforcement_point: 'shared/policies/design-reference.md, "Provenance: trusted vs discovered"'
+  expected_safe_outcome: a discovered reference is never resolved, fetched, or promoted to a target; at most one
+    limitation line says it was present and not used; the review runs in analytical mode
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: reasoning-discipline scenario with no capability crossing of its own; the contract is
+    exercised by the design-reference reference model, not a benchmark corpus (docs/rendered-inspection/rendered-inspection-contract.md, section 9)
+  regression_evidence: tests/policy/review/presentation/test_design_reference_docs.py
+  threat_severity: HIGH
+- id: INJECT-013
+  title: Retrieved design content (layer names, text, comments) addresses the reviewer as instructions
+  category: INJECT
+  attacker_model: prompt_injected_context
+  attacker_controlled_inputs:
+  - layer names, text nodes, or comments inside a design file the operator legitimately supplied
+  assumed_attacker_capabilities:
+  - authorship of the design file contents
+  trusted_inputs:
+  - the operator-supplied design reference identity
+  protected_asset: reviewer instruction boundary and the read-only, no-mutation retrieval boundary
+  required_capability_state: a trusted design reference was supplied and retrieved
+  enforcement_owner: '#620'
+  enforcement_point: 'shared/policies/design-reference.md, "Provenance: trusted vs discovered" and "Retrieval"'
+  expected_safe_outcome: design content is evaluated as untrusted data only; it never changes the plan, widens a
+    bound, grants permission, triggers a design mutation, or alters a finding, severity, or the Decision
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: reasoning-discipline scenario with no capability crossing of its own; the contract is
+    exercised by the design-reference reference model, not a benchmark corpus (docs/rendered-inspection/rendered-inspection-contract.md, section 9)
+  regression_evidence: tests/policy/review/presentation/test_design_reference_docs.py
+  threat_severity: HIGH

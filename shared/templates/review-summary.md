@@ -79,6 +79,8 @@ important concern or attention point; include scope only when useful>
 - <one entry per rendered inspection, only when
   [`../policies/rendered-inspection.md`](../policies/rendered-inspection.md)'s
   trigger fired, with the fields and format that policy's "Evidence record"
+  defines; in design-reference mode it carries the design-reference line that
+  [`../policies/design-reference.md`](../policies/design-reference.md)
   defines>
 
 ### Decision
@@ -180,7 +182,11 @@ additive documentation and changes no Skill's rendered output by itself.
   [`../policies/rendered-inspection.md`](../policies/rendered-inspection.md),
   "Evidence record", with the outcome vocabulary that policy defines; a
   `skipped`, `unavailable`, or `attempted-inconclusive` inspection is never
-  shown as a pass and never changes coverage or the Decision.
+  shown as a pass and never changes coverage or the Decision. The optional
+  design-reference line, its uncertainty lines, and their absence in
+  analytical mode follow
+  [`../policies/design-reference.md`](../policies/design-reference.md),
+  "Applicability and the evidence record".
   Targeted validation state never changes a finding's severity or the
   Decision. It rolls up, together with any contextual-evidence provenance,
   into the finding's single `confidence` value per

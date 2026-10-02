@@ -189,8 +189,8 @@ Every inspection records exactly one mode and a one-line reason for it:
   change and the stated requirements.
 - **`design-reference`** — a trusted reference was supplied, retrieved, and
   found applicable to an inspected target. Provenance, retrieval,
-  applicability, and design-mismatch classification are owned by the
-  design-reference contract that plugs in here; this policy only fixes that the
+  applicability, and design-mismatch classification are owned by
+  [`design-reference.md`](design-reference.md), which plugs in here; this policy only fixes that the
   mode exists, is recorded, and that any other case is `analytical`.
 
 A design reference never triggers an inspection and never widens its targets
@@ -286,7 +286,7 @@ where it sits in the report:
   published.
 - **Optional design-reference line.** In `design-reference` mode the entry also
   carries one line naming the reference actually used and the applicability
-  facts the design-reference contract defines. In `analytical` mode that line is
+  facts [`design-reference.md`](design-reference.md) defines. In `analytical` mode that line is
   **absent** — only the single mode-reason line remains. The line's content is
   not defined here.
 - A `skipped`, `unavailable`, or `attempted-inconclusive` inspection is still

@@ -145,10 +145,13 @@ SEVERITY_LEGEND = {
 # to #223. LOCAL_REPORT was re-captured once more after Issue #618 (one
 # conditional `Browser setup note` line for the rendered-inspection
 # acquisition question) -- likewise deliberate and unrelated to #223.
+# LOCAL_RUNBOOK was re-captured after Issue #620 (one sentence pointing the
+# design-reference context at its shared policy) and LOCAL_SKILL for #620's
+# design-reference input pointer in SKILL.md -- likewise deliberate.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "7917d7e46079c95cb77d1a6b3c81cb52e2c8c354",
-    LOCAL_RUNBOOK: "7b899aed8e36c9112a5ce5a518bb9e14d484a5a6",
-    LOCAL_SKILL: "b474c75309cce7323afcfa99207b079c574ee268",
+    LOCAL_RUNBOOK: "882bebb4f0af2450cd98387094e334745f433475",
+    LOCAL_SKILL: "af13dca64e67bd6738cb86caf7140cff0d3dba43",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",
