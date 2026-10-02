@@ -12,39 +12,58 @@ target headings and literal terms.
 
 import unittest
 
+from tests.support.benchmark_doc_contract import (
+    README,
+    BenchmarkDocContractMixin,
+    BenchmarkDocNavigationMixin,
+    BenchmarkDocSpec,
+    Section,
+)
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "regression-report.md"
-README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
-ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
-REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_report.py"
-UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_report.py"
+BENCH = REPO_ROOT / "runtime_platform" / "benchmark"
+DOC = BENCH / "regression-report.md"
+
+SPEC = BenchmarkDocSpec(
+    doc=DOC,
+    issue_tokens=("#53", "#52", "#51", "#50", "#41", "#40"),
+    invariant=(
+        "A regression report joins a candidate run to a stored baseline "
+        "run by case `id`, reports every per-case and aggregate delta "
+        "between them, and calls out cases that got worse distinctly from "
+        "cases that got better — without deciding whether a produced "
+        "finding is *correct*, which is a quality metric (#41), and "
+        "without ever writing the baseline itself."
+    ),
+    sections=(
+        Section(
+            "## 10. Explicitly out of scope",
+            body=(
+                "match relation",
+                "issues/41",
+                "Automatic baseline promotion",
+                "per-case result shape this report consumes",
+            ),
+        ),
+    ),
+    status_body=("becomes the design record", "MUST NOT keep evolving the reporting behavior independently"),
+    status_raw=(
+        "](reference/benchmark_report.py)",
+        "](../../tests/unit/benchmark/test_benchmark_report.py)",
+    ),
+    readme_link="](regression-report.md)",
+    readme_issue="#53",
+    architecture_name="regression-report.md",
+    reference=BENCH / "reference" / "benchmark_report.py",
+    reference_head_chars=600,
+    unit_test=REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_report.py",
+    unit_import="from runtime_platform.benchmark.reference import benchmark_report as brp",
+    unit_phrase="never defines a second one",
+)
 
 
-class RegressionReportContractTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.raw = DOC.read_text(encoding="utf-8")
-        cls.text = " ".join(cls.raw.split())
-
-    def test_is_repository_development_only_not_packaged(self) -> None:
-        self.assertIn("repository-development doc: not packaged", self.text)
-        self.assertIn("no packaged Skill resource depends on it", self.text)
-
-    def test_names_issue_53_and_its_neighbours(self) -> None:
-        for token in ("#53", "#52", "#51", "#50", "#41", "#40"):
-            self.assertIn(token, self.raw)
-
-    def test_canonical_invariant_is_stated_verbatim(self) -> None:
-        self.assertIn(
-            "A regression report joins a candidate run to a stored baseline "
-            "run by case `id`, reports every per-case and aggregate delta "
-            "between them, and calls out cases that got worse distinctly from "
-            "cases that got better — without deciding whether a produced "
-            "finding is *correct*, which is a quality metric (#41), and "
-            "without ever writing the baseline itself.",
-            self.text,
-        )
+class RegressionReportContractTests(BenchmarkDocContractMixin, unittest.TestCase):
+    spec = SPEC
 
     def test_report_is_external_infra_never_launched_by_a_skill(self) -> None:
         self.assertIn("is **not** a Skill and is never packaged; no Skill launches it", self.text)
@@ -110,14 +129,6 @@ class RegressionReportContractTests(unittest.TestCase):
         self.assertIn("Finding regressions is not a report failure.", self.raw)
         self.assertIn("mirrors [`runner-contract.md`](runner-contract.md) §7", self.raw)
 
-    def test_scope_boundaries_defer_metrics_and_auto_baseline(self) -> None:
-        self.assertIn("## 10. Explicitly out of scope", self.raw)
-        boundary = " ".join(self.raw.split("## 10. Explicitly out of scope", 1)[1].split())
-        self.assertIn("match relation", boundary)
-        self.assertIn("issues/41", boundary)
-        self.assertIn("Automatic baseline promotion", boundary)
-        self.assertIn("per-case result shape this report consumes", boundary)
-
     def test_not_a_scorer_section_keeps_the_run_to_run_diff_independent_of_41(self) -> None:
         self.assertIn("## 11. On not being a scorer", self.raw)
         self.assertIn("needs **only** what the runner already recorded", self.text)
@@ -125,36 +136,13 @@ class RegressionReportContractTests(unittest.TestCase):
         self.assertIn("before the quality-metric layer (#41) exists", self.text)
         self.assertIn("does not have to change when #41 lands", self.text)
 
-    def test_status_defers_to_an_eventual_canonical_home(self) -> None:
-        tail = " ".join(self.raw.split("## Status and canonical home", 1)[1].split())
-        self.assertIn("becomes the design record", tail)
-        self.assertIn("MUST NOT keep evolving the reporting behavior independently", tail)
-        self.assertIn("](reference/benchmark_report.py)", self.raw)
-        self.assertIn("](../../tests/unit/benchmark/test_benchmark_report.py)", self.raw)
 
+class DirectoryNavigationTests(BenchmarkDocNavigationMixin, unittest.TestCase):
+    spec = SPEC
 
-class DirectoryNavigationTests(unittest.TestCase):
-    def test_readme_maps_the_regression_report(self) -> None:
+    def test_readme_drops_the_not_yet_written_placeholder(self) -> None:
         raw = README.read_text(encoding="utf-8")
-        self.assertIn("](regression-report.md)", raw)
-        self.assertIn("#53", raw)
-        # the "not yet written" placeholder for #53 must be gone
         self.assertNotIn("Not yet written (tracked on #40): regression reporting", raw)
-
-    def test_architecture_mentions_the_report_is_built(self) -> None:
-        text = " ".join(ARCHITECTURE.read_text(encoding="utf-8").split())
-        self.assertIn("regression-report.md", text)
-        self.assertIn("nothing benchmark", text)
-
-    def test_reference_module_is_declared_test_only(self) -> None:
-        head = REFERENCE.read_text(encoding="utf-8")[:600]
-        self.assertIn("Test-only", head)
-        self.assertIn("not runtime logic, not packaged", head.lower())
-
-    def test_unit_test_consumes_the_single_reference_report(self) -> None:
-        raw = UNIT_TEST.read_text(encoding="utf-8")
-        self.assertIn("from runtime_platform.benchmark.reference import benchmark_report as brp", raw)
-        self.assertIn("never defines a second one", raw)
 
 
 if __name__ == "__main__":
