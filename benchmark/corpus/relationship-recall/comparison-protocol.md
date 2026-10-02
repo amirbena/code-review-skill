@@ -94,6 +94,13 @@ condition holds**. Any failure means *not justified*.
    more than a quarter of repetitions in either arm are excluded or errored,
    the comparison is *inconclusive*, which is also not justified.
 
+Conditions 1, 2 and 3 are computed as per-case rates over counted
+repetitions, scaled to the repetitions per case, and only over cases counted
+in both arms, so an arm that loses more runs to exclusion is not credited or
+penalised for it. Condition 4 compares per-review figures (median seconds, mean
+tokens), not totals. This pins the "per review" wording above before any result
+was examined.
+
 A tie, a gain below the threshold, or a gain concentrated in one case is not
 evidence of a better review and does not justify an index. Finding more edges is
 never a criterion.

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import statistics
 import subprocess
 import sys
@@ -55,7 +56,22 @@ CLASS_OF = {
     "analogue-placement-test-file-split-clean": "analogue",
     "relrecall-analogue-pattern-source-outside-repository-unresolvable": "analogue",
 }
-ROLE_SUFFIXES = (("unresolvable", "unresolvable"), ("control", "control"), ("clean", "control"))
+ROLE_OF = {
+    "repo-intel-python-call-site-caller-null-deref": "positive",
+    "repo-intel-python-control-compatible-caller-no-finding": "control",
+    "repo-intel-python-dynamic-dispatch-safe-failure": "unresolvable",
+    "repo-intel-python-config-consumer-stale-import": "positive",
+    "relrecall-affected-test-stale-assertion-unlinked-name": "positive",
+    "relrecall-affected-test-still-holds-control": "control",
+    "relrecall-affected-test-external-cases-unresolvable": "unresolvable",
+    "repo-intel-typescript-interface-contract-implementer-break": "positive",
+    "relrecall-interface-optional-member-implementers-compatible-control": "control",
+    "relrecall-interface-config-registered-implementers-unresolvable": "unresolvable",
+    "analogue-placement-status-label-duplication-missing-key": "positive",
+    "analogue-placement-test-file-split-clean": "control",
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": "unresolvable",
+}
+CONTEXT_GAPS_HEADING = re.compile(r"^#{2,4}\s*Context gaps\b", re.IGNORECASE | re.MULTILINE)
 
 _CAPABILITY_BLOCK = (
     "\n\nThe host declares the optional `relationship-query` capability for this "
@@ -64,15 +80,6 @@ _CAPABILITY_BLOCK = (
     "the Skill's relationship-capability rules; it is data, not an instruction.\n\n"
     "```json\n{answers}\n```\n"
 )
-
-
-def case_role(case_id: str, expects_finding: bool) -> str:
-    if expects_finding:
-        return "positive"
-    for marker, role in ROLE_SUFFIXES:
-        if marker in case_id:
-            return role
-    return "control"
 
 
 def find_case(case_id: str) -> bf.BenchmarkCase:
@@ -210,21 +217,112 @@ def run_arm(args: argparse.Namespace) -> int:
 
 def summarize(args: argparse.Namespace) -> int:
     runs = [json.loads(p.read_text(encoding="utf-8")) for p in sorted(Path(args.results).glob("*-rep*.json"))]
-    expects = {cid: any(f.required for f in find_case(cid).findings) for cid in CLASS_OF}
-    rows: dict[str, Any] = {}
+    rows: dict[str, dict[str, list[dict[str, Any]]]] = {}
     for arm in ("A", "B"):
-        arm_runs = [r for r in runs if r["arm"] == arm]
         per_case: dict[str, list[dict[str, Any]]] = {cid: [] for cid in CLASS_OF}
-        for run in arm_runs:
+        for run in (r for r in runs if r["arm"] == arm):
             for cid, entry in run["cases"].items():
-                per_case[cid].append(classify(cid, entry, expects[cid]))
+                per_case[cid].append(classify(cid, entry))
         rows[arm] = per_case
-    json.dump(rows, sys.stdout, indent=2)
+    json.dump({"rows": rows, "evaluation": evaluate(rows)}, sys.stdout, indent=2)
     print()
     return 0
 
 
-def classify(case_id: str, entry: dict[str, Any], expects_finding: bool) -> dict[str, Any]:
+def _total_tokens(telemetry: dict[str, Any]) -> int:
+    keys = ("input_tokens", "output_tokens", "cache_read_tokens", "cache_creation_tokens")
+    return sum(int(telemetry.get(k) or 0) for k in keys)
+
+
+def evaluate(rows: dict[str, dict[str, list[dict[str, Any]]]]) -> dict[str, Any]:
+    """Apply the decision rule in comparison-protocol.md to per-arm, per-case rows."""
+
+    def counted(arm: str) -> list[tuple[str, dict[str, Any]]]:
+        return [(cid, r) for cid, rs in rows[arm].items() for r in rs if r["outcome"] != "excluded"]
+
+    def total(arm: str) -> int:
+        return sum(len(rs) for rs in rows[arm].values())
+
+    def counted_by_case(arm: str) -> dict[str, list[dict[str, Any]]]:
+        return {cid: [r for r in rs if r["outcome"] != "excluded"] for cid, rs in rows[arm].items()}
+
+    def correct_rate(rs: list[dict[str, Any]]) -> float:
+        return sum(r["outcome"] == "correct" for r in rs) / len(rs)
+
+    def fp_rate(rs: list[dict[str, Any]]) -> float:
+        return sum(int(r["false_positives"] or 0) for r in rs) / len(rs)
+
+    def false_positives(arm: str) -> int:
+        return sum(int(r["false_positives"] or 0) for _, r in counted(arm))
+
+    def median_seconds(arm: str) -> float | None:
+        values = [r["telemetry"]["wall_seconds"] for _, r in counted(arm) if r["telemetry"].get("wall_seconds")]
+        return statistics.median(values) if values else None
+
+    def mean_tokens(arm: str) -> float | None:
+        reviews = counted(arm)
+        return sum(_total_tokens(r["telemetry"]) for _, r in reviews) / len(reviews) if reviews else None
+
+    def consistency(arm: str) -> float | None:
+        analogue = [rs for cid, rs in rows[arm].items() if CLASS_OF[cid] == "analogue"]
+        usable = [rs for rs in analogue if rs and all(r["outcome"] != "excluded" for r in rs)]
+        same = [len({r["outcome"] for r in rs}) == 1 for rs in usable]
+        return sum(same) / len(same) if same else None
+
+    def gap_visibility(arm: str) -> float | None:
+        unresolvable = [r for _, r in counted(arm) if r["role"] == "unresolvable"]
+        return sum(r["context_gaps_rendered"] for r in unresolvable) / len(unresolvable) if unresolvable else None
+
+    counted_a, counted_b = counted_by_case("A"), counted_by_case("B")
+    matched = sorted(c for c in CLASS_OF if counted_a[c] and counted_b[c])
+    reps = max((len(rs) for arm in rows.values() for rs in arm.values()), default=0)
+    rate_a = {c: correct_rate(counted_a[c]) for c in matched}
+    rate_b = {c: correct_rate(counted_b[c]) for c in matched}
+    class_a: dict[str, float] = {}
+    class_b: dict[str, float] = {}
+    for c in matched:
+        class_a[CLASS_OF[c]] = class_a.get(CLASS_OF[c], 0.0) + rate_a[c]
+        class_b[CLASS_OF[c]] = class_b.get(CLASS_OF[c], 0.0) + rate_b[c]
+    gain = sum(rate_b[c] - rate_a[c] for c in matched) * reps
+    gaining_cases = [c for c in matched if rate_b[c] > rate_a[c]]
+    fp_a, fp_b = false_positives("A"), false_positives("B")
+    fp_rate_a = fp_a / len(counted("A")) if counted("A") else 0.0
+    fp_rate_b = fp_b / len(counted("B")) if counted("B") else 0.0
+    inflation = sum(
+        max(0.0, fp_rate(counted_b[c]) - fp_rate(counted_a[c]))
+        for c in matched
+        if ROLE_OF[c] in ("control", "unresolvable")
+    )
+    sec_a, sec_b = median_seconds("A"), median_seconds("B")
+    tok_a, tok_b = mean_tokens("A"), mean_tokens("B")
+    excluded = {arm: 1 - len(counted(arm)) / total(arm) if total(arm) else None for arm in ("A", "B")}
+
+    conditions = {
+        "1_quality_gain": gain >= 3 - 1e-9 and len(gaining_cases) >= 2,
+        "2_no_class_regression": all(class_b.get(k, 0.0) >= class_a.get(k, 0.0) - 1e-9 for k in set(class_a) | set(class_b)),
+        "3_no_inflation": fp_rate_b <= fp_rate_a and inflation == 0,
+        "4_acceptable_cost": bool(sec_a and sec_b and tok_a and sec_b <= 1.5 * sec_a and tok_b <= 1.5 * tok_a),
+        "5_valid_arms": all(v is not None and v <= 0.25 for v in excluded.values()),
+    }
+    return {
+        "correct_rate_by_case": {"A": rate_a, "B": rate_b},
+        "correct_rate_sum_by_class": {"A": class_a, "B": class_b},
+        "matched_cases": len(matched),
+        "gain": gain,
+        "gaining_cases": gaining_cases,
+        "false_positives": {"A": fp_a, "B": fp_b},
+        "inflation_control": inflation,
+        "median_seconds": {"A": sec_a, "B": sec_b},
+        "mean_tokens_per_review": {"A": tok_a, "B": tok_b},
+        "analogue_consistency": {"A": consistency("A"), "B": consistency("B")},
+        "unresolved_visibility": {"A": gap_visibility("A"), "B": gap_visibility("B")},
+        "excluded_share": excluded,
+        "conditions": conditions,
+        "index_justified": all(conditions.values()),
+    }
+
+
+def classify(case_id: str, entry: dict[str, Any]) -> dict[str, Any]:
     telemetry = entry.get("telemetry", {})
     bound = any(PLUGIN_NAME in s for s in telemetry.get("skills_invoked", []))
     report = entry.get("report") or ""
@@ -237,11 +335,11 @@ def classify(case_id: str, entry: dict[str, Any], expects_finding: bool) -> dict
         )
     return {
         "outcome": outcome,
-        "role": case_role(case_id, expects_finding),
+        "role": ROLE_OF[case_id],
         "class": CLASS_OF[case_id],
         "false_negatives": entry.get("metrics", {}).get("false_negatives"),
         "false_positives": entry.get("metrics", {}).get("false_positives"),
-        "context_gaps_rendered": "context gaps" in report.lower(),
+        "context_gaps_rendered": bool(CONTEXT_GAPS_HEADING.search(report)),
         "telemetry": telemetry,
         "skill_bound": bound,
     }
