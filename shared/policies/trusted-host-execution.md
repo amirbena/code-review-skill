@@ -263,6 +263,13 @@ the user's request, nor make a command count as a repository test
 command. The request is invocation-scoped and non-persistent exactly as
 "Scope and non-persistence" above describes.
 
+The same flag, unchanged, also selects the backend for a rendered-inspection
+start command and its browser process (see
+[`rendered-inspection.md`](rendered-inspection.md), "Target sourcing and
+execution boundary"). It stays invocation-scoped, never covers installing a
+browser or dependencies, and creates no new command-discovery path; without it
+and without a sandbox, that target source is `unavailable`.
+
 ## What trusted-host execution still requires
 
 Every existing `runtime-validation.md` admission and evidence rule

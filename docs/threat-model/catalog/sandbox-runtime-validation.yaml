@@ -336,3 +336,26 @@ scenarios:
     sandbox-runner unit regression tests rather than the #306 adversarial corpus.'
   regression_evidence: tests/unit/review/test_runtime_validation.py::RepositoryTestExplicitSandbox, tests/unit/sandbox/test_runner.py::SandboxRunnerTests::test_payload_launch_failure_maps_to_unavailable_not_failed
   threat_severity: HIGH
+- id: SBOX-016
+  title: A rendered-inspection start command or browser would run without isolation or authorization
+  category: SBOX
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - the repository's declared start command and the code it runs
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository content, including the declared start command
+  trusted_inputs:
+  - the trusted invoking user's explicit per-invocation allow_trusted_host_execution authorization
+  protected_asset: reviewer host filesystem, credentials, and network
+  required_capability_state: neither a verified sandbox boundary nor trusted-host authorization is present
+  enforcement_owner: '#302 (sandbox boundary), #617 (rendered-inspection start-command gate)'
+  enforcement_point: 'shared/policies/rendered-inspection.md ("Start-command path") and shared/policies/runtime-validation.md ("Purpose and boundary")'
+  expected_safe_outcome: the start-command target source is `unavailable`; no process is started and there is
+    no fallback to unsandboxed host execution; with authorization, only loopback to the one started target is
+    allowed and the process is torn down with the tree and Git state verified unchanged
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: 'Fail-closed selection behavior, not containment: covered by the rendered-inspection
+    reference model rather than the #306 adversarial corpus.'
+  regression_evidence: tests/policy/review/presentation/test_rendered_inspection_target_sourcing.py
+  threat_severity: HIGH

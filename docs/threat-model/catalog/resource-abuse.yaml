@@ -159,3 +159,24 @@ scenarios:
   threat_severity: MEDIUM
   notes: 'shared/policies/parallel-review.md defines worker/ownership semantics for parallel review but
     documents no adversarial fan-out budget; the runtime enforcement is still #303''s to build.'
+- id: DOS-008
+  title: A rendered-inspection server start or navigation hangs or is retried without bound
+  category: DOS
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - a start command or page that never becomes ready, never finishes loading, or spawns children
+  assumed_attacker_capabilities:
+  - authorship of the start command and of the rendered page's code
+  trusted_inputs: []
+  protected_asset: reviewer wall-clock time and host processes
+  required_capability_state: server-start, per-navigation, and whole-step timeouts apply with one attempt
+  enforcement_owner: '#617'
+  enforcement_point: 'shared/policies/rendered-inspection.md, "Hard bounds"'
+  expected_safe_outcome: the step ends `attempted-inconclusive` within the bound, every started process is torn
+    down, nothing is retried, and review completion is not blocked
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: 'Bound semantics only, not containment: covered by the rendered-inspection reference
+    model rather than a benchmark corpus.'
+  regression_evidence: tests/policy/review/presentation/test_rendered_inspection_target_sourcing.py
+  threat_severity: MEDIUM
