@@ -69,7 +69,7 @@ class ValidateWorkflowRoutingTests(unittest.TestCase):
     def test_router_runs_from_the_base_sha_outside_the_checkout(self) -> None:
         test = self.jobs["test"]
         self.assertEqual(test["steps"][0]["with"], {"persist-credentials": False})
-        route = _step(test, "Route tests (FAST/FULL)")
+        route = _step(test, "Route tests (DOCS/FAST/FULL)")
         self.assertEqual(route["id"], "route")
         self.assertIs(route["continue-on-error"], True)
         run = route["run"]
@@ -77,28 +77,41 @@ class ValidateWorkflowRoutingTests(unittest.TestCase):
         self.assertIn('fetch -q --no-tags --filter=blob:none origin "$BASE_SHA" "$HEAD_SHA"', run)
         self.assertIn('show "$BASE_SHA:scripts/validation/ci_test_route.py" > "$router"', run)
         self.assertIn('--repo "$route_repo"', run)
+        self.assertIn('--tree "$GITHUB_WORKSPACE"', run)
         self.assertIn('echo "tier=full"', run)
         self.assertNotIn("HEAD_SHA:scripts", run)
         steps = [step.get("name") for step in test["steps"]]
-        self.assertLess(steps.index("Route tests (FAST/FULL)"), steps.index("Run repository tests"))
+        self.assertLess(steps.index("Route tests (DOCS/FAST/FULL)"), steps.index("Run repository tests"))
 
-    def test_integration_runs_unless_tier_is_exactly_fast(self) -> None:
+    def test_integration_runs_unless_tier_is_exactly_fast_or_docs(self) -> None:
         test = self.jobs["test"]
         full = _step(test, "Run repository tests")
-        self.assertEqual(full["if"], "${{ steps.route.outputs.tier != 'fast' }}")
+        self.assertEqual(
+            full["if"], "${{ steps.route.outputs.tier != 'fast' && steps.route.outputs.tier != 'docs' }}"
+        )
         self.assertEqual(full["run"], FULL_COMMAND)
         self.assertEqual(full["env"], {"DISTRIBUTION_INSTALL_CHECK": "1"})
         fast = _step(test, "Run repository tests except tests.integration (FAST tier)")
         self.assertEqual(fast["if"], "${{ steps.route.outputs.tier == 'fast' }}")
         self.assertEqual(fast["run"], 'python "$RUNNER_TEMP/ci_test_route.py" run-fast')
 
-    def test_non_test_validation_runs_on_both_tiers(self) -> None:
+    def test_docs_tier_runs_only_the_static_documentation_validations(self) -> None:
+        docs = _step(self.jobs["test"], "Run documentation validations only (DOCS tier)")
+        self.assertEqual(docs["if"], "${{ steps.route.outputs.tier == 'docs' }}")
+        self.assertEqual(docs["run"], 'python "$RUNNER_TEMP/ci_test_route.py" run-docs')
+        self.assertNotIn("env", docs)
+
+    def test_build_and_metadata_validation_skip_only_the_docs_tier(self) -> None:
         test = self.jobs["test"]
         for name in (
+            "Set up Node.js",
             "Validate Skill metadata",
             "Build the canonical Skill trees",
             "Validate the built Skill trees against the Agent Skills spec",
         ):
+            with self.subTest(step=name):
+                self.assertEqual(_step(test, name)["if"], "${{ steps.route.outputs.tier != 'docs' }}")
+        for name in ("Set up Python", "Install test dependencies"):
             with self.subTest(step=name):
                 self.assertNotIn("if", _step(test, name))
         for job in ("skill-tree-parity", "skill-tree-hash-equality"):

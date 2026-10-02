@@ -190,15 +190,15 @@ suite below is **not** required locally before every push or PR — CI runs
 it in [`.github/workflows/validate.yml`](.github/workflows/validate.yml),
 which remains the authoritative regression gate before merge
 (see [`policies/git-pr-merge-policy.md`](policies/git-pr-merge-policy.md)).
-CI routes each PR to FULL (the default) or to FAST, which omits only
-`tests/integration/` when every changed path is provably not an
-integration input. It runs on pull requests only — a push to `main`
+CI routes each PR to FULL (the default), FAST (omits only
+`tests/integration/`), or DOCS (static documentation validation only, for
+pure `docs/` changes nothing consumes). It runs on pull requests only — a push to `main`
 triggers the release lifecycle, not repository validation again
 (see [`policies/validation-and-clean-exit.md`](policies/validation-and-clean-exit.md#routed-ci-tests)).
 
 | Change | Run |
 | --- | --- |
-| Docs-only (`docs/`, root `*.md`, `policies/*.md`) | `python3 scripts/validation/validate-markdown-links.py`, plus `python3 -m unittest discover -s tests/policy/governance` for a `policies/*.md` or `AGENTS.md` change |
+| Docs-only (`docs/`, root `*.md`, `policies/*.md`) | `python3 scripts/validation/ci_test_route.py classify` prints the class, tier, and command CI would use; a pure `docs/` change needs only `ci_test_route.py run-docs`, while a `policies/*.md` or `AGENTS.md` change also needs `python3 -m unittest discover -s tests/policy/governance` |
 | Benchmark-related (`runtime_platform/benchmark/` harness/contracts, `benchmark/corpus/` corpus data, benchmark tooling/tests) | the benchmark test package, e.g. `python3 -m unittest discover -s tests/policy/benchmark` and/or `tests/unit/benchmark` |
 | Skill metadata (`skills/<name>/SKILL.md`, `metadata/skill.yaml`, `package-manifest.json`) | `python3 scripts/validation/validate-skill-metadata.py skills/<name> --containment-root .` for the affected Skill, plus `python3 -m unittest tests.policy.governance.test_skill_entrypoint_guards` for a `SKILL.md` change |
 | Packaging (`scripts/packaging/**`) | `./scripts/packaging/package-skills.sh <local\|github\|all>` for the affected target, plus `python3 -m unittest discover -s tests/integration/packaging` |

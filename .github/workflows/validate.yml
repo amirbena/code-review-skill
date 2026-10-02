@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Route tests (FAST/FULL)
+      - name: Route tests (DOCS/FAST/FULL)
         id: route
         # The router is trusted from the base, never the head: a PR that
         # introduces or edits it is FULL (#533). A separate blobless clone keeps
@@ -44,7 +44,7 @@ jobs:
             && git -C "$route_repo" remote add origin "$REPO_URL" \
             && git -C "$route_repo" fetch -q --no-tags --filter=blob:none origin "$BASE_SHA" "$HEAD_SHA" \
             && git -C "$route_repo" show "$BASE_SHA:scripts/validation/ci_test_route.py" > "$router"; then
-            exec python "$router" route --event-name "$EVENT_NAME" --base "$BASE_SHA" --head "$HEAD_SHA" --repo "$route_repo"
+            exec python "$router" route --event-name "$EVENT_NAME" --base "$BASE_SHA" --head "$HEAD_SHA" --repo "$route_repo" --tree "$GITHUB_WORKSPACE"
           else
             reason="no router at the base commit, or the base/head could not be fetched"
           fi
@@ -52,6 +52,7 @@ jobs:
           echo "tier=full" >> "$GITHUB_OUTPUT"
 
       - name: Set up Node.js
+        if: ${{ steps.route.outputs.tier != 'docs' }}
         # The distribution consumer check drives the pinned `skills` CLI (#511).
         uses: actions/setup-node@v4
         with:
@@ -61,14 +62,17 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
 
       - name: Validate Skill metadata
+        if: ${{ steps.route.outputs.tier != 'docs' }}
         run: |
           python scripts/validation/validate-skill-metadata.py skills/local-code-review --containment-root .
           python scripts/validation/validate-skill-metadata.py skills/github-pr-review --containment-root .
 
       - name: Build the canonical Skill trees
+        if: ${{ steps.route.outputs.tier != 'docs' }}
         run: ./scripts/packaging/package-skills.sh all
 
       - name: Validate the built Skill trees against the Agent Skills spec
+        if: ${{ steps.route.outputs.tier != 'docs' }}
         # The reference validator (recorded result in #507: it rejects a
         # top-level `version`, which the build moves to metadata.version).
         run: |
@@ -76,8 +80,8 @@ jobs:
           for tree in dist/skills/*/; do agentskills validate "$tree"; done
 
       - name: Run repository tests
-        # FULL unless the router positively selected FAST.
-        if: ${{ steps.route.outputs.tier != 'fast' }}
+        # FULL unless the router positively selected DOCS or FAST.
+        if: ${{ steps.route.outputs.tier != 'fast' && steps.route.outputs.tier != 'docs' }}
         env:
           DISTRIBUTION_INSTALL_CHECK: "1"
         run: python -m unittest discover -s tests -t .
@@ -88,6 +92,11 @@ jobs:
           DISTRIBUTION_INSTALL_CHECK: "1"
         # The base's router, extracted by the route step, selects the tests.
         run: python "$RUNNER_TEMP/ci_test_route.py" run-fast
+
+      - name: Run documentation validations only (DOCS tier)
+        if: ${{ steps.route.outputs.tier == 'docs' }}
+        # Link validation and the content-agnostic docs scanners; no test suite.
+        run: python "$RUNNER_TEMP/ci_test_route.py" run-docs
 
   skill-tree-parity:
     name: Skill tree (${{ matrix.shell }} on ${{ matrix.os }})
