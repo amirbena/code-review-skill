@@ -19,7 +19,7 @@ CONSUMERS = {
     "tests/test_literal.py": 'P = REPO_ROOT / "docs/literal/a.md"\n',
     "tests/test_joined.py": 'P = REPO_ROOT / "docs" / "joined" / "b.md"\n',
     "tests/test_multiline.py": 'P = (\n    REPO_ROOT\n    / "docs"\n    / "multi"\n    / "c.md"\n)\n',
-    "tests/test_directory.py": 'D = REPO_ROOT / "docs" / "whole"\nfor p in D.iterdir():\n    pass\n',
+    "tests/test_directory.py": 'D = REPO_ROOT / "docs" / "whole"\ntext = (D / name).read_text()\n',
     "scripts/tool.py": 'CATALOG = "docs/data/catalog"\n',
     "tests/test_dynamic.py": 'name = "x"\nP = f"docs/dyn/{name}.md"\n',
     "tests/test_noise.py": 'assert "docs/" not in text\n',
@@ -139,6 +139,15 @@ class ConsumerIndexTests(FixtureRepo):
             "ls-files": 'out = run(["git", "ls-files"])\n',
             "tracked helper": "files = tracked_markdown_files(root)\n",
             "glob double star": 'list(base.glob("**/*.md"))\n',
+            "git grep": 'out = subprocess.run(["git", "grep", "-n", "TODO"])\n',
+            "git ls-tree": 'out = run(["git", "ls-tree", "-r", "HEAD"])\n',
+            "lowercase root rglob": 'for p in repo_root.rglob("*"):\n    pass\n',
+            "parents rglob": 'for p in Path(__file__).parents[2].rglob("*"):\n    pass\n',
+            "os.walk": "for d, _, fs in os.walk(root):\n    pass\n",
+            "recursive glob.glob": 'glob.glob(str(root / "**" / "*.md"), recursive=True)\n',
+            "Path.walk": "for r_, d, f in repo.walk():\n    pass\n",
+            "variable glob pattern": "list(base.glob(pattern))\n",
+            "iterdir": "for d in ROOT.iterdir():\n    pass\n",
         }
         for name, code in scanners.items():
             with self.subTest(scanner=name):
@@ -147,6 +156,11 @@ class ConsumerIndexTests(FixtureRepo):
                 index = self.index()
                 self.assertEqual(index.wildcard_files, ("tests/test_scan.py",))
                 self.assertEqual(router.classify(["docs/pure/x.md"], index).tier, router.FULL)
+
+    def test_enumerations_that_cannot_reach_markdown_are_not_scanners(self) -> None:
+        self.write("tests/test_safe.py", 'list(CORPUS.glob("*.yaml"))\nfor n in ast.walk(tree):\n    pass\n')
+        self.commit("safe enumerations")
+        self.assertEqual(self.index().wildcard_files, ())
 
     def test_reviewed_enumerators_and_registered_scanners_are_tolerated(self) -> None:
         reviewed = sorted(router.REVIEWED_NON_DOCS_ENUMERATORS)[0]

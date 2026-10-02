@@ -65,7 +65,7 @@ ROUTER_FILES = (
     "tests/policy/governance/test_ci_test_routing.py",
 )
 LINK_VALIDATOR = "scripts/validation/validate-markdown-links.py"
-# Files that enumerate tracked or Markdown trees but were reviewed as never reading docs/ content.
+# Files that enumerate trees but were reviewed: they enumerate non-docs roots, or only docs dirs already indexed by a literal ref.
 # Any other tree enumerator makes every docs path unverified until it is registered or listed here.
 REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
     {
@@ -84,6 +84,26 @@ REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
         "tests/policy/review/stacked_pr/test_stacked_pr_review_docs.py",
         "tests/policy/review/stateful_review/test_reviewed_sha_state_docs.py",
         "tests/integration/packaging/test_distribution_consumer_install.py",
+        "scripts/release/release_lib/distribution.py",
+        "scripts/sandbox/process_exec.py",
+        "scripts/sandbox/workspace.py",
+        "tests/integration/packaging/_shared.py",
+        "tests/integration/packaging/test_hidden_runtime_dependency.py",
+        "tests/integration/packaging/test_ordinary_packaging_version.py",
+        "tests/integration/packaging/test_skill_tree_output.py",
+        "tests/policy/benchmark/test_benchmark_publish_workflow.py",
+        "tests/policy/benchmark/test_execution_no_github_writes.py",
+        "tests/policy/review/findings/test_review_result_docs.py",
+        "tests/policy/review/presentation/test_severity_description_option_275.py",
+        "tests/policy/review/test_review_base_policy_wiring.py",
+        "tests/policy/review/test_review_scope_core_wiring.py",
+        "tests/repository/test_review_bucket_layout.py",
+        "tests/repository/test_scripts_layout.py",
+        "tests/unit/benchmark/test_benchmark_runner.py",
+        "tests/unit/benchmark/test_benchmark_runner_multi_repo.py",
+        "tests/unit/benchmark/test_benchmark_seal.py",
+        "tests/unit/benchmark/test_run_benchmark_routine.py",
+        "tests/unit/release/test_distribution.py",
     }
 )
 
@@ -92,8 +112,8 @@ _JOINED_REF = re.compile(
     r"""(?:/\s*|(?<![=!<>])=\s*|(?:Path|joinpath|join)\((?:[^()]*,)?\s*)["']docs["']((?:\s*[/,]\s*["'][^"']*["'])*)"""
 )
 _TREE_READER = re.compile(
-    r"""\bREPO_ROOT\.(?:rglob|glob|iterdir)\(|ls-files|tracked_markdown_files|os\.walk\(\s*REPO_ROOT"""
-    r"""|\.rglob\(\s*["'][^"']*\.md["']|\.glob\(\s*["']\*\*"""
+    r"""\b(?:r|i)?glob\(\s*(?!["'][^"']*\.(?:ya?ml|json|py|sh|ps1|toml|txt|csv)["'])"""
+    r"""|iterdir|(?<!ast)\.walk\(|os\.walk|scandir|listdir|ls-files|ls-tree|git["',\s]+grep|tracked_markdown_files"""
 )
 _QUOTED = re.compile(r"""["']([^"']*)["']""")
 _DYNAMIC = re.compile(r"[*{}$<>]")
