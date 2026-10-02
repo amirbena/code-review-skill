@@ -135,9 +135,11 @@ SEVERITY_LEGEND = {
 # also deliberate and unrelated to #223. LOCAL_REPORT was re-captured again
 # after Issue #601 (a subordinate `Relationship outcomes` metadata line and a
 # conditional Context gaps note, per repository-expansion.md) -- also
-# deliberate and unrelated to #223.
+# deliberate and unrelated to #223. LOCAL_REPORT was re-captured again
+# after Issue #604 (the `Relationship outcomes` line now marks answers a host
+# relationship capability supplied) -- also deliberate and unrelated to #223.
 LOCAL_BASELINE_HASHES = {
-    LOCAL_REPORT: "48a153c1bb8f0d5111969692b167968778e667ba",
+    LOCAL_REPORT: "88f9968094585d238ba25a2eaf186e38fee9dfb3",
     LOCAL_RUNBOOK: "deb7d65646ac17d0e4049828a2b078314096c2e0",
     LOCAL_SKILL: "eaf79d0d35eb81108e27683d171da37b2a772645",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",

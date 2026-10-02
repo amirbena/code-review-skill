@@ -159,7 +159,7 @@ replaces the single set of fields above with one entry per member, per
 - Change-risk depth: <standard | elevated | deep>
 - Change-risk signals: <none | comma-separated `signal (tier) — evidence` entries, one per resolved occurrence>
 - Repository expansion: <none | comma-separated `trigger (ring N) — locations` entries, one per fired trigger>
-- Relationship outcomes: <none | comma-separated `class — subject — outcome` entries per [`repository-expansion.md`](../../../shared/policies/repository-expansion.md); an `unresolved` entry also renders in the Context gaps section>
+- Relationship outcomes: <none | comma-separated `class — subject — outcome` entries, plus `(via capability)` when a host relationship capability supplied the answer, per [`repository-expansion.md`](../../../shared/policies/repository-expansion.md); an `unresolved` entry also renders in the Context gaps section>
 - Large-PR partitioning: `<n> partitions` plus any `capped` or cross-partition de-duplication note — shown only when partitioning activated; omitted entirely otherwise
 - Coverage: <complete | incomplete — reason(s)>
 

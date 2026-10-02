@@ -70,6 +70,14 @@ runner:
   branch, error path, or edge case, determine whether an existing test
   meaningfully exercises it or whether the new behavior is now unprotected.
 
+When the host declares the optional `relationship-query` capability, the
+`tests_exercising` question may be put to it first and its answer consumed as
+a claim, per [`repository-expansion.md`](repository-expansion.md), "Optional
+relationship capability." Anything the capability cannot answer, or an answer
+that is rejected, falls back to the repository search above, and an
+untraceable link stays `unresolved`. Nothing else in this procedure changes
+when the capability is absent.
+
 ### Findings
 
 Raise a finding only on concrete evidence of a meaningful test/regression

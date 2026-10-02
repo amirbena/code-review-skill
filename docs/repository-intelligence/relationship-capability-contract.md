@@ -216,5 +216,7 @@ Choosing or building a provider, parser, or index; requiring the capability;
 persisting relationship data across reviews; cross-repository relationships
 (#133); changing finding severity, identity, or the Decision rules; any
 packaged policy, template, or manifest change. The #87 trigger catalog, ring
-ceiling, and #601 coverage decision are unchanged. A future consumer that
-actually calls a provider is a separate, separately-scoped issue.
+ceiling, and #601 coverage decision are unchanged. The packaged consumer is
+[#604](https://github.com/amirbena/code-review-skill/issues/604): it lives in
+[`repository-expansion.md`](../../shared/policies/repository-expansion.md),
+"Optional relationship capability", adds no manifest file, and ships no provider.

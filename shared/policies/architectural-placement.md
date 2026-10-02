@@ -122,6 +122,14 @@ already-admitted member set, per
 [`repository-expansion.md`](repository-expansion.md), "No
 cross-repository expansion."
 
+When the host declares the optional `relationship-query` capability, a
+caller, implementer, or analogue question this section raises may be put to
+it as one bounded question per subject, consumed as a claim and falling back
+to the ring above, per [`repository-expansion.md`](repository-expansion.md),
+"Optional relationship capability." An `analogues_of` answer is advisory
+evidence only and never replaces inspecting the analogue; the ring bound and
+stop conditions below are unchanged.
+
 ### Stop conditions
 
 Stop expanding as soon as any of these holds:
