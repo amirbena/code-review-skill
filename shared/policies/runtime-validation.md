@@ -32,6 +32,13 @@ the smallest targeted reproduction for a single suspected finding, under
 "Targeted validation of a suspected finding" below — and that path is
 disposable, boundary-bound, and can never become a repository change.
 
+The one narrow exception to the service-startup prohibition is the declared
+start command of a rendered-inspection target, which
+[`rendered-inspection.md`](rendered-inspection.md), "Target sourcing and
+execution boundary", admits only inside this policy's isolation boundary or
+under trusted-host authorization, with no dependency install and no additional
+services. It changes nothing for any declared command or generated reproduction.
+
 ## Trust model and execution boundary
 
 Runtime validation executes target-repository-controlled code. A command is

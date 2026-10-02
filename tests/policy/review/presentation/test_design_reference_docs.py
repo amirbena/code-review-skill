@@ -259,7 +259,7 @@ class NoMutationOrPermissionTests(unittest.TestCase):
         catalog = (REPO_ROOT / "docs/threat-model/catalog/repository-prompt-injection.yaml").read_text(
             encoding="utf-8"
         )
-        for scenario in ("INJECT-009", "INJECT-010"):
+        for scenario in ("INJECT-010", "INJECT-011"):
             self.assertIn(scenario, catalog)
         self.assertIn("shared/policies/design-reference.md", catalog)
 
