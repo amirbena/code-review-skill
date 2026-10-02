@@ -15,53 +15,55 @@ import unittest
 
 from runtime_platform.benchmark.reference import benchmark_citation as bc
 from runtime_platform.benchmark.reference import benchmark_runner as br
+from tests.support.benchmark_doc_contract import (
+    README,
+    BenchmarkDocContractMixin,
+    BenchmarkDocNavigationMixin,
+    BenchmarkDocSpec,
+)
 from tests.support.paths import REPO_ROOT
 
 BENCH = REPO_ROOT / "runtime_platform" / "benchmark"
 DOC = BENCH / "citation-fidelity.md"
-README = BENCH / "README.md"
-ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
+UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_citation.py"
 DESIGN = (
     REPO_ROOT
     / "docs"
     / "benchmark-measurement-architecture"
     / "benchmark-measurement-architecture-model.md"
 )
-REFERENCE = BENCH / "reference" / "benchmark_citation.py"
-UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_citation.py"
 
 
-class CitationFidelityContractTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.raw = DOC.read_text(encoding="utf-8")
-        cls.text = " ".join(cls.raw.split())
+SPEC = BenchmarkDocSpec(
+    doc=DOC,
+    issue_tokens=("#349", "#342", "#54", "#55", "#56", "#57", "#348", "§12.3", "§12.2"),
+    invariant=(
+        "A benchmark run's citation fidelity is, per produced finding, one "
+        "of three statuses — `verified`, `fabricated`, or `unverifiable` — "
+        "decided only from the produced finding's own cited path, line "
+        "span, symbol, and quoted evidence against the text of the files "
+        "in the reviewed tree that the runner captured before cleanup: a "
+        "finding is `fabricated` exactly when a check that could be run "
+        "positively fails (the file is not in the tree, the line span is "
+        "outside the file, the symbol is absent, or none of its quoted "
+        "evidence is present near the cited location), `unverifiable` "
+        "when nothing could be checked or existence could not be decided, "
+        "and `verified` otherwise. The check proves existence only — "
+        "never that the citation was inspected — and no expected finding, "
+        "no match result, no severity, and no confidence enters it."
+    ),
+    status_body=(),
+    readme_link="[`citation-fidelity.md`](citation-fidelity.md)",
+    readme_issue="#349",
+    architecture_name="runtime_platform/benchmark/citation-fidelity.md",
+    reference=BENCH / "reference" / "benchmark_citation.py",
+    unit_test=UNIT_TEST,
+    unit_import="from runtime_platform.benchmark.reference import benchmark_citation as bc",
+)
 
-    def test_is_repository_development_only_not_packaged(self) -> None:
-        self.assertIn("repository-development doc: not packaged", self.text)
-        self.assertIn("no packaged Skill resource depends on it", self.text)
 
-    def test_names_issue_349_its_dependency_and_neighbours(self) -> None:
-        for token in ("#349", "#342", "#54", "#55", "#56", "#57", "#348", "§12.3", "§12.2"):
-            self.assertIn(token, self.raw)
-
-    def test_canonical_invariant_is_stated_verbatim(self) -> None:
-        self.assertIn(
-            "A benchmark run's citation fidelity is, per produced finding, one "
-            "of three statuses — `verified`, `fabricated`, or `unverifiable` — "
-            "decided only from the produced finding's own cited path, line "
-            "span, symbol, and quoted evidence against the text of the files "
-            "in the reviewed tree that the runner captured before cleanup: a "
-            "finding is `fabricated` exactly when a check that could be run "
-            "positively fails (the file is not in the tree, the line span is "
-            "outside the file, the symbol is absent, or none of its quoted "
-            "evidence is present near the cited location), `unverifiable` "
-            "when nothing could be checked or existence could not be decided, "
-            "and `verified` otherwise. The check proves existence only — "
-            "never that the citation was inspected — and no expected finding, "
-            "no match result, no severity, and no confidence enters it.",
-            self.text,
-        )
+class CitationFidelityContractTests(BenchmarkDocContractMixin, unittest.TestCase):
+    spec = SPEC
 
     def test_capture_rules(self) -> None:
         self.assertIn("## 2. Capturing the reviewed tree", self.raw)
@@ -131,21 +133,13 @@ class CitationFidelityContractTests(unittest.TestCase):
         self.assertIn("provenance / citation grounding", self.text)
         self.assertIn("## Status and canonical home", self.raw)
 
-    def test_reference_module_and_tests_exist(self) -> None:
-        self.assertTrue(REFERENCE.is_file())
-        self.assertTrue(UNIT_TEST.is_file())
 
+class CitationFidelityRoutingTests(BenchmarkDocNavigationMixin, unittest.TestCase):
+    spec = SPEC
 
-class CitationFidelityRoutingTests(unittest.TestCase):
-    def test_readme_routes_to_the_contract_and_reference(self) -> None:
+    def test_readme_routes_to_the_reference_module(self) -> None:
         text = " ".join(README.read_text(encoding="utf-8").split())
-        self.assertIn("[`citation-fidelity.md`](citation-fidelity.md)", text)
         self.assertIn("reference/benchmark_citation.py", text)
-        self.assertIn("#349", text)
-
-    def test_architecture_routes_to_the_contract(self) -> None:
-        text = " ".join(ARCHITECTURE.read_text(encoding="utf-8").split())
-        self.assertIn("runtime_platform/benchmark/citation-fidelity.md", text)
 
     def test_design_model_points_at_the_contract_and_no_longer_calls_342_open(self) -> None:
         text = " ".join(DESIGN.read_text(encoding="utf-8").split())

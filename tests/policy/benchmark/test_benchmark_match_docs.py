@@ -11,40 +11,74 @@ headings and literal terms.
 
 import unittest
 
+from tests.support.benchmark_doc_contract import (
+    BenchmarkDocContractMixin,
+    BenchmarkDocNavigationMixin,
+    BenchmarkDocSpec,
+    Section,
+)
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "match-criteria.md"
-README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
-ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
-REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_match.py"
-UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_match.py"
+BENCH = REPO_ROOT / "runtime_platform" / "benchmark"
+DOC = BENCH / "match-criteria.md"
+
+SPEC = BenchmarkDocSpec(
+    doc=DOC,
+    issue_tokens=("#54", "#50", "#52", "#55", "#56", "#57", "#41", "#42", "#59"),
+    invariant=(
+        "A produced finding MATCHES an expected benchmark finding only "
+        "when it corresponds on both axes — the same defect, at the same "
+        "location — judged by deterministic criteria over the fixture's "
+        "structured fields. Corresponding on one axis while falling short "
+        "on the other is a NEAR-MISS; anything else is NO-MATCH. This "
+        "relation decides pairing only: it never counts findings, computes "
+        "a score, or judges severity."
+    ),
+    sections=(
+        Section(
+            "## 7. Determinism and two-reader consistency",
+            raw=("Fixed evaluation order.", "No scores.", "Ties resolve deterministically."),
+            text=("two people applying §3–§6 to them must reach the same",),
+        ),
+        Section(
+            "## 8. Worked examples",
+            raw=(
+                "](../../tests/unit/benchmark/test_benchmark_match.py)",
+                "**`MATCH`**",
+                "**`NEAR_MISS`**",
+                "**`NO_MATCH`**",
+            ),
+            text=("encoded verbatim as data-driven cases", "the **entry outcome** is `MATCH`"),
+        ),
+        Section(
+            "## 9. Explicitly out of scope",
+            body=(
+                "issues/55",
+                "issues/56",
+                "issues/57",
+                "cross-revision stable finding identity",
+                "issues/42",
+            ),
+        ),
+    ),
+    status_body=("becomes the design record", "MUST NOT keep evolving the criteria independently"),
+    status_raw=(
+        "](reference/benchmark_match.py)",
+        "](../../tests/unit/benchmark/test_benchmark_match.py)",
+    ),
+    readme_link="](match-criteria.md)",
+    readme_issue="#54",
+    architecture_name="match-criteria.md",
+    reference=BENCH / "reference" / "benchmark_match.py",
+    reference_head_chars=600,
+    unit_test=REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_match.py",
+    unit_import="from runtime_platform.benchmark.reference import benchmark_match as bm",
+    unit_phrase="never defines a second one",
+)
 
 
-class MatchCriteriaContractTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.raw = DOC.read_text(encoding="utf-8")
-        cls.text = " ".join(cls.raw.split())
-
-    def test_is_repository_development_only_not_packaged(self) -> None:
-        self.assertIn("repository-development doc: not packaged", self.text)
-        self.assertIn("no packaged Skill resource depends on it", self.text)
-
-    def test_names_issue_54_and_its_neighbours(self) -> None:
-        for token in ("#54", "#50", "#52", "#55", "#56", "#57", "#41", "#42", "#59"):
-            self.assertIn(token, self.raw)
-
-    def test_canonical_invariant_is_stated_verbatim(self) -> None:
-        self.assertIn(
-            "A produced finding MATCHES an expected benchmark finding only "
-            "when it corresponds on both axes — the same defect, at the same "
-            "location — judged by deterministic criteria over the fixture's "
-            "structured fields. Corresponding on one axis while falling short "
-            "on the other is a NEAR-MISS; anything else is NO-MATCH. This "
-            "relation decides pairing only: it never counts findings, computes "
-            "a score, or judges severity.",
-            self.text,
-        )
+class MatchCriteriaContractTests(BenchmarkDocContractMixin, unittest.TestCase):
+    spec = SPEC
 
     def test_two_axes_borrow_the_finding_matching_discipline(self) -> None:
         self.assertIn("## 2. The two match axes", self.raw)
@@ -91,58 +125,9 @@ class MatchCriteriaContractTests(unittest.TestCase):
             self.assertIn(construct, self.raw)
         self.assertIn("Ignored here entirely — matching is severity-independent", self.text)
 
-    def test_determinism_rules_are_explicit(self) -> None:
-        self.assertIn("## 7. Determinism and two-reader consistency", self.raw)
-        self.assertIn("Fixed evaluation order.", self.raw)
-        self.assertIn("No scores.", self.raw)
-        self.assertIn("Ties resolve deterministically.", self.raw)
-        self.assertIn("two people applying §3–§6 to them must reach the same", self.text)
 
-    def test_worked_examples_are_the_conformance_bar(self) -> None:
-        self.assertIn("## 8. Worked examples", self.raw)
-        self.assertIn("encoded verbatim as data-driven cases", self.text)
-        self.assertIn("](../../tests/unit/benchmark/test_benchmark_match.py)", self.raw)
-        for result in ("**`MATCH`**", "**`NEAR_MISS`**", "**`NO_MATCH`**"):
-            self.assertIn(result, self.raw)
-        self.assertIn("the **entry outcome** is `MATCH`", self.text)
-
-    def test_scope_boundaries_defer_metrics_and_identity(self) -> None:
-        self.assertIn("## 9. Explicitly out of scope", self.raw)
-        boundary = " ".join(self.raw.split("## 9. Explicitly out of scope", 1)[1].split())
-        self.assertIn("issues/55", boundary)
-        self.assertIn("issues/56", boundary)
-        self.assertIn("issues/57", boundary)
-        self.assertIn("cross-revision stable finding identity", boundary)
-        self.assertIn("issues/42", boundary)
-
-    def test_status_defers_to_an_eventual_canonical_home(self) -> None:
-        tail = " ".join(self.raw.split("## Status and canonical home", 1)[1].split())
-        self.assertIn("becomes the design record", tail)
-        self.assertIn("MUST NOT keep evolving the criteria independently", tail)
-        self.assertIn("](reference/benchmark_match.py)", self.raw)
-        self.assertIn("](../../tests/unit/benchmark/test_benchmark_match.py)", self.raw)
-
-
-class DirectoryNavigationTests(unittest.TestCase):
-    def test_readme_maps_the_match_criteria(self) -> None:
-        raw = README.read_text(encoding="utf-8")
-        self.assertIn("](match-criteria.md)", raw)
-        self.assertIn("#54", raw)
-
-    def test_architecture_mentions_the_match_criteria(self) -> None:
-        text = " ".join(ARCHITECTURE.read_text(encoding="utf-8").split())
-        self.assertIn("match-criteria.md", text)
-        self.assertIn("nothing benchmark", text)
-
-    def test_reference_module_is_declared_test_only(self) -> None:
-        head = REFERENCE.read_text(encoding="utf-8")[:600]
-        self.assertIn("Test-only", head)
-        self.assertIn("not runtime logic, not packaged", head.lower())
-
-    def test_unit_test_consumes_the_single_reference_matcher(self) -> None:
-        raw = UNIT_TEST.read_text(encoding="utf-8")
-        self.assertIn("from runtime_platform.benchmark.reference import benchmark_match as bm", raw)
-        self.assertIn("never defines a second one", raw)
+class DirectoryNavigationTests(BenchmarkDocNavigationMixin, unittest.TestCase):
+    spec = SPEC
 
 
 if __name__ == "__main__":

@@ -13,44 +13,71 @@ whitespace-normalized; structural ones target headings and literal terms.
 
 import unittest
 
+from tests.support.benchmark_doc_contract import (
+    BenchmarkDocContractMixin,
+    BenchmarkDocNavigationMixin,
+    BenchmarkDocSpec,
+    Section,
+)
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "missed-and-incorrect-findings.md"
-README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
-ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
-REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_metrics.py"
-UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_metrics.py"
+BENCH = REPO_ROOT / "runtime_platform" / "benchmark"
+DOC = BENCH / "missed-and-incorrect-findings.md"
+
+SPEC = BenchmarkDocSpec(
+    doc=DOC,
+    issue_tokens=("#55", "#54", "#53", "#52", "#50", "#51", "#56", "#57", "#41", "#42"),
+    invariant=(
+        "A benchmark run's quality, on this axis, is two counts per case "
+        "— how many expected findings the reviewer missed (false "
+        "negatives) and how many findings it produced that correspond to "
+        "no expected finding (false positives) — computed by first "
+        "resolving a one-to-one pairing between produced findings and "
+        "expected entries using only the #54 `MATCH` relation, then "
+        "counting what is left unpaired on each side, gated by the "
+        "fixture's `match` flags and `findings_completeness`. The counts "
+        "derive entirely from the documented match criteria and the "
+        "fixture's structured fields; no score, ratio, severity "
+        "judgement, or duplicate-clustering enters them."
+    ),
+    sections=(
+        Section(
+            "## 7. Determinism and two-reader consistency",
+            raw=("Fixed computation order.", "Only `MATCH` counts.", "No scores."),
+            text=("two people applying §2–§5 to them must reach the same",),
+        ),
+        Section(
+            "## 8. Worked examples",
+            raw=("](../../tests/unit/benchmark/test_benchmark_metrics.py)",),
+            text=("encoded verbatim as data-driven cases", "anti-double-count rule"),
+        ),
+        Section(
+            "## 9. Explicitly out of scope",
+            body=(
+                "issues/56",
+                "issues/57",
+                "blended quality score",
+                "cross-revision stable finding identity",
+            ),
+        ),
+    ),
+    status_body=("becomes the design record", "MUST NOT keep evolving the accounting independently"),
+    status_raw=(
+        "](reference/benchmark_metrics.py)",
+        "](../../tests/unit/benchmark/test_benchmark_metrics.py)",
+    ),
+    readme_link="](missed-and-incorrect-findings.md)",
+    readme_issue="#55",
+    architecture_name="missed-and-incorrect-findings.md",
+    reference=BENCH / "reference" / "benchmark_metrics.py",
+    unit_test=REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_metrics.py",
+    unit_import="from runtime_platform.benchmark.reference import benchmark_metrics as bmet",
+    unit_phrase="never defines a second match relation",
+)
 
 
-class QualityMetricsContractTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.raw = DOC.read_text(encoding="utf-8")
-        cls.text = " ".join(cls.raw.split())
-
-    def test_is_repository_development_only_not_packaged(self) -> None:
-        self.assertIn("repository-development doc: not packaged", self.text)
-        self.assertIn("no packaged Skill resource depends on it", self.text)
-
-    def test_names_issue_55_and_its_neighbours(self) -> None:
-        for token in ("#55", "#54", "#53", "#52", "#50", "#51", "#56", "#57", "#41", "#42"):
-            self.assertIn(token, self.raw)
-
-    def test_canonical_invariant_is_stated_verbatim(self) -> None:
-        self.assertIn(
-            "A benchmark run's quality, on this axis, is two counts per case "
-            "— how many expected findings the reviewer missed (false "
-            "negatives) and how many findings it produced that correspond to "
-            "no expected finding (false positives) — computed by first "
-            "resolving a one-to-one pairing between produced findings and "
-            "expected entries using only the #54 `MATCH` relation, then "
-            "counting what is left unpaired on each side, gated by the "
-            "fixture's `match` flags and `findings_completeness`. The counts "
-            "derive entirely from the documented match criteria and the "
-            "fixture's structured fields; no score, ratio, severity "
-            "judgement, or duplicate-clustering enters them.",
-            self.text,
-        )
+class QualityMetricsContractTests(BenchmarkDocContractMixin, unittest.TestCase):
+    spec = SPEC
 
     def test_pairing_is_greedy_document_order_and_one_to_one(self) -> None:
         self.assertIn("## 2. The produced↔expected pairing", self.raw)
@@ -106,55 +133,9 @@ class QualityMetricsContractTests(unittest.TestCase):
         self.assertIn("**never changes** `has_regressions`", self.text)
         self.assertIn("`corpus_id` guard still applies", self.text)
 
-    def test_determinism_rules_are_explicit(self) -> None:
-        self.assertIn("## 7. Determinism and two-reader consistency", self.raw)
-        self.assertIn("Fixed computation order.", self.raw)
-        self.assertIn("Only `MATCH` counts.", self.raw)
-        self.assertIn("No scores.", self.raw)
-        self.assertIn("two people applying §2–§5 to them must reach the same", self.text)
 
-    def test_worked_examples_are_the_conformance_bar(self) -> None:
-        self.assertIn("## 8. Worked examples", self.raw)
-        self.assertIn("encoded verbatim as data-driven cases", self.text)
-        self.assertIn("](../../tests/unit/benchmark/test_benchmark_metrics.py)", self.raw)
-        self.assertIn("anti-double-count rule", self.text)
-
-    def test_scope_boundaries_defer_neighbours(self) -> None:
-        self.assertIn("## 9. Explicitly out of scope", self.raw)
-        boundary = " ".join(self.raw.split("## 9. Explicitly out of scope", 1)[1].split())
-        self.assertIn("issues/56", boundary)
-        self.assertIn("issues/57", boundary)
-        self.assertIn("blended quality score", boundary)
-        self.assertIn("cross-revision stable finding identity", boundary)
-
-    def test_status_defers_to_an_eventual_canonical_home(self) -> None:
-        tail = " ".join(self.raw.split("## Status and canonical home", 1)[1].split())
-        self.assertIn("becomes the design record", tail)
-        self.assertIn("MUST NOT keep evolving the accounting independently", tail)
-        self.assertIn("](reference/benchmark_metrics.py)", self.raw)
-        self.assertIn("](../../tests/unit/benchmark/test_benchmark_metrics.py)", self.raw)
-
-
-class DirectoryNavigationTests(unittest.TestCase):
-    def test_readme_maps_the_quality_metrics(self) -> None:
-        raw = README.read_text(encoding="utf-8")
-        self.assertIn("](missed-and-incorrect-findings.md)", raw)
-        self.assertIn("#55", raw)
-
-    def test_architecture_mentions_the_quality_metrics(self) -> None:
-        text = " ".join(ARCHITECTURE.read_text(encoding="utf-8").split())
-        self.assertIn("missed-and-incorrect-findings.md", text)
-        self.assertIn("nothing benchmark", text)
-
-    def test_reference_module_is_declared_test_only(self) -> None:
-        head = REFERENCE.read_text(encoding="utf-8")[:700]
-        self.assertIn("Test-only", head)
-        self.assertIn("not runtime logic, not packaged", head.lower())
-
-    def test_unit_test_consumes_the_single_reference_matcher(self) -> None:
-        raw = " ".join(UNIT_TEST.read_text(encoding="utf-8").split())
-        self.assertIn("from runtime_platform.benchmark.reference import benchmark_metrics as bmet", raw)
-        self.assertIn("never defines a second match relation", raw)
+class DirectoryNavigationTests(BenchmarkDocNavigationMixin, unittest.TestCase):
+    spec = SPEC
 
 
 if __name__ == "__main__":
