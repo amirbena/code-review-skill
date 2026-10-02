@@ -136,7 +136,10 @@ Source 3 is the one class for which the "no service startup" prohibition in
 - the command is the exact declared command and passes that policy's safety
   gate; no dependency install, no database or other service, no second process
   beyond the declared server;
-- the only network traffic is loopback to that one started target.
+- the started server is bound to loopback and the browser context reaches only
+  that one target. Network isolation exists only under the sandbox backend;
+  under trusted-host authorization none is provided, and the evidence says so
+  as [`trusted-host-execution.md`](trusted-host-execution.md) requires.
 
 Without the boundary or the authorization the source is `unavailable`. It never
 silently falls back to unsandboxed host execution. Existing browser-test
@@ -159,11 +162,12 @@ suite, which stays runtime validation of a declared command.
 ### Hard bounds
 
 Within the 120-second wall-clock bound above, a server start is bounded to 30
-seconds and each navigation to 15 seconds. There is exactly one attempt; nothing is retried or widened. Any process the step
-started is torn down on every path, success or failure. After the run the
-reviewed working tree and Git state are verified unchanged; a change discards
-the result and records `attempted-inconclusive`. A failure of any kind is a
-recorded outcome and never blocks review completion.
+seconds and each navigation to 15 seconds. There is exactly one attempt;
+nothing is retried or widened. Any process the step started is torn down on
+every path, success or failure. After the run the reviewed working tree and
+Git state are verified unchanged; a change discards the result and records
+`attempted-inconclusive`. A failure of any kind is a recorded outcome and never
+blocks review completion.
 
 ### Local and GitHub adapters
 

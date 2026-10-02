@@ -107,6 +107,8 @@ class StartCommandAuthorizationTests(unittest.TestCase):
         self.assertIn("is not a new grant", text)
         self.assertIn("never silently falls back to unsandboxed host execution", text)
         self.assertIn("no dependency install", text)
+        self.assertIn("Network isolation exists only under the sandbox backend", text)
+        self.assertNotIn("the only network traffic is loopback", text)
 
 
 class CrossReferenceAndNonRelaxationTests(unittest.TestCase):
