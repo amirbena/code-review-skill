@@ -3,20 +3,22 @@
 
 from __future__ import annotations
 
-import json
 import re
 import unittest
 from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
+from tests.support.shared_policy_wiring import (
+    ChangelogRecordsPolicyMixin,
+    SharedPolicyWiring,
+    SharedPolicyWiringMixin,
+)
 
 POLICY = REPO_ROOT / "shared" / "policies" / "review-stopping-criteria.md"
 REVIEW_SCOPE = REPO_ROOT / "shared" / "policies" / "review-scope.md"
 EVIDENCE = REPO_ROOT / "shared" / "policies" / "evidence.md"
 SEVERITY = REPO_ROOT / "shared" / "policies" / "severity.md"
-SHARED_README = REPO_ROOT / "shared" / "policies" / "README.md"
 REVIEW_SUMMARY = REPO_ROOT / "shared" / "templates" / "review-summary.md"
-MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
 
 
 def _norm(path: Path) -> str:
@@ -90,7 +92,25 @@ class ReviewStoppingCriteriaPolicyContentTests(unittest.TestCase):
         self.assertIn("## Not a second scope or evidence model", self.text)
 
 
-class ReviewStoppingCriteriaWiringTests(unittest.TestCase):
+class ReviewStoppingCriteriaWiringTests(
+    SharedPolicyWiringMixin, unittest.TestCase
+):
+    wiring = SharedPolicyWiring(
+        basename="review-stopping-criteria.md",
+        issue="#89",
+        runbook_markers=(
+            "Evaluate review coverage",
+        ),
+        local_template_markers=(
+            "Coverage:",
+            "REVIEW INCOMPLETE",
+        ),
+        github_template_markers=(
+            "coverage:",
+            "REVIEW INCOMPLETE",
+        ),
+    )
+
     def test_review_scope_has_a_stopping_criteria_section(self) -> None:
         text = REVIEW_SCOPE.read_text(encoding="utf-8")
         self.assertIn("## Review stopping criteria", text)
@@ -106,65 +126,10 @@ class ReviewStoppingCriteriaWiringTests(unittest.TestCase):
         self.assertIn("review-stopping-criteria.md", SEVERITY.read_text(encoding="utf-8"))
         self.assertIn("assumes the review that produced the finding set actually", norm)
 
-    def test_shared_readme_has_a_policy_map_row(self) -> None:
-        self.assertIn("review-stopping-criteria.md", SHARED_README.read_text(encoding="utf-8"))
-
     def test_review_summary_documents_the_decision_overriding_field(self) -> None:
         norm = _norm(REVIEW_SUMMARY)
         self.assertIn("review-stopping-criteria.md", REVIEW_SUMMARY.read_text(encoding="utf-8"))
         self.assertIn("is the one field in this block that is not merely", norm)
-
-    def test_packaged_in_the_one_shared_manifest(self) -> None:
-        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-        destinations = [entry["destination"] for entry in manifest["shared_files"]]
-        self.assertIn("shared/policies/review-stopping-criteria.md", destinations)
-
-    def test_both_skills_load_and_list_the_policy(self) -> None:
-        for path in (
-            REPO_ROOT / "skills" / "local-code-review" / "SKILL.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "SKILL.md",
-            REPO_ROOT / "skills" / "local-code-review" / "metadata" / "skill.yaml",
-            REPO_ROOT / "skills" / "github-pr-review" / "metadata" / "skill.yaml",
-            REPO_ROOT / "skills" / "local-code-review" / "runbooks" / "local-review.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "runbooks" / "active-pr-review.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "runbooks" / "passive-pr-review.md",
-            REPO_ROOT / "skills" / "local-code-review" / "templates" / "local-review-report.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "templates" / "external-review-summary.md",
-        ):
-            with self.subTest(path=path):
-                self.assertIn("review-stopping-criteria.md", path.read_text(encoding="utf-8"))
-
-    def test_all_three_runbooks_have_a_dedicated_coverage_step(self) -> None:
-        for path in (
-            REPO_ROOT / "skills" / "local-code-review" / "runbooks" / "local-review.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "runbooks" / "active-pr-review.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "runbooks" / "passive-pr-review.md",
-        ):
-            with self.subTest(path=path):
-                norm = _norm(path)
-                self.assertIn("Evaluate review coverage", norm)
-
-    def test_local_report_renders_coverage_and_incomplete_decision(self) -> None:
-        text = (
-            REPO_ROOT
-            / "skills"
-            / "local-code-review"
-            / "templates"
-            / "local-review-report.md"
-        ).read_text(encoding="utf-8")
-        self.assertIn("Coverage:", text)
-        self.assertIn("REVIEW INCOMPLETE", text)
-
-    def test_github_template_renders_coverage_and_incomplete_decision(self) -> None:
-        text = (
-            REPO_ROOT
-            / "skills"
-            / "github-pr-review"
-            / "templates"
-            / "external-review-summary.md"
-        ).read_text(encoding="utf-8")
-        self.assertIn("coverage:", text)
-        self.assertIn("REVIEW INCOMPLETE", text)
 
     def test_skill_entrypoint_line_ceilings_account_for_the_new_policy_line(self) -> None:
         guard_test = (
@@ -174,20 +139,6 @@ class ReviewStoppingCriteriaWiringTests(unittest.TestCase):
 
 
 class ReviewStoppingCriteriaDocsTests(unittest.TestCase):
-    def test_architecture_and_comparison_and_feature_index_mention_it(self) -> None:
-        for path in (
-            REPO_ROOT / "docs" / "ARCHITECTURE.md",
-            REPO_ROOT / "docs" / "CODE_REVIEW_COMPARISON.md",
-            REPO_ROOT / "docs" / "features" / "README.md",
-        ):
-            with self.subTest(path=path):
-                self.assertIn("review-stopping-criteria.md", path.read_text(encoding="utf-8"))
-
-    def test_feature_index_lists_it_as_not_a_feature_guide(self) -> None:
-        text = (REPO_ROOT / "docs" / "features" / "README.md").read_text(encoding="utf-8")
-        not_a_guide = text.split("## Not a feature guide", 1)[1]
-        self.assertIn("review-stopping-criteria.md", not_a_guide)
-
     def test_architecture_no_longer_calls_it_still_open(self) -> None:
         text = (REPO_ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
         self.assertNotIn("still-open concern", text)

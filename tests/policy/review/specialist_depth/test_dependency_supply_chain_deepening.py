@@ -15,17 +15,10 @@ from __future__ import annotations
 
 import unittest
 
-from tests.support.policy_docs import (
-    GITHUB_ACTIVE_RUNBOOK,
-    GITHUB_PASSIVE_RUNBOOK,
-    GITHUB_REASONING,
-    GITHUB_REVIEW_INDEX,
-    LOCAL_RUNBOOK,
-    PARALLEL_REVIEW,
-    REVIEW_SCOPE,
-)
+from tests.support.policy_docs import REVIEW_SCOPE
 from tests.support.policy_docs import extract_section as _section
 from tests.support.policy_docs import load_normalized_text as _text
+from tests.support.shared_policy_wiring import SectionForwarding, SectionForwardingMixin
 
 
 class DependencySupplyChainDeepeningSectionTests(unittest.TestCase):
@@ -150,38 +143,15 @@ class DependencySupplyChainDeepeningSectionTests(unittest.TestCase):
         )
 
 
-class DependencySupplyChainDeepeningWiredIntoBothSkillsTests(unittest.TestCase):
-    def test_github_review_reasoning_forwards_to_the_shared_section(self) -> None:
-        text = _text(GITHUB_REASONING)
-        self.assertIn("## Dependency / Supply-Chain Deepening Review", text)
-        self.assertIn("Dependency / supply-chain deepening review", text)
-        self.assertIn("this PR-specific policy does not restate them", text)
-
-    def test_github_review_index_lists_dependency_supply_chain(self) -> None:
-        text = _text(GITHUB_REVIEW_INDEX)
-        self.assertIn("dependency / supply-chain", text)
-
-    def test_both_github_runbooks_name_the_forwarding_subsection(self) -> None:
-        for runbook in (GITHUB_ACTIVE_RUNBOOK, GITHUB_PASSIVE_RUNBOOK):
-            text = _text(runbook)
-            self.assertIn("Dependency / Supply-Chain Deepening Review", text)
-
-    def test_local_runbook_marks_the_section_signal_triggered(self) -> None:
-        text = _text(LOCAL_RUNBOOK)
-        window = _section(
-            text,
-            "Dependency / supply-chain deepening review",
-            "Classify findings per",
-        )
-        self.assertIn(
-            "signal-triggered per that policy's own gating conditions", window
-        )
-        self.assertIn("not applied", window)
-        self.assertIn("unconditionally to every diff", window)
-
-    def test_parallel_review_cites_the_shared_section(self) -> None:
-        text = _text(PARALLEL_REVIEW)
-        self.assertIn("Dependency / supply-chain deepening review", text)
+class DependencySupplyChainDeepeningWiredIntoBothSkillsTests(SectionForwardingMixin, unittest.TestCase):
+    forwarding = SectionForwarding(
+        name="dependency-supply-chain-deepening",
+        reasoning_heading="## Dependency / Supply-Chain Deepening Review",
+        shared_phrase="Dependency / supply-chain deepening review",
+        index_phrase="dependency / supply-chain",
+        runbook_heading="Dependency / Supply-Chain Deepening Review",
+        local_window_start="Dependency / supply-chain deepening review",
+    )
 
 
 if __name__ == "__main__":
