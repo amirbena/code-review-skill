@@ -55,6 +55,13 @@ important concern or attention point; include scope only when useful>
   finding, never affecting coverage or the decision; omitted entirely
   otherwise>
 
+### Rendered observations
+<only when [`../policies/rendered-inspection.md`](../policies/rendered-inspection.md)
+  inspected a rendered page and at least one purely subjective polish
+  observation qualifies: at most 3 numbered, severity-less observations, each
+  naming the page/state actually rendered — never findings, never affecting the
+  decision; omitted entirely otherwise>
+
 ### Validation
 - <one entry per selected command, or an explicit no-command entry, using
   exactly `executed`, `skipped`, `failed`, or `unavailable`; include the exact
@@ -69,6 +76,10 @@ important concern or attention point; include scope only when useful>
   with the same provenance dimension when executed or failed,
   the resulting finding validation state, and bounded run evidence; a
   disproving run is recorded here even though it raises no finding>
+- <one entry per rendered inspection, only when
+  [`../policies/rendered-inspection.md`](../policies/rendered-inspection.md)'s
+  trigger fired, with the fields and format that policy's "Evidence record"
+  defines>
 
 ### Decision
 **<decision label>**
@@ -165,12 +176,32 @@ additive documentation and changes no Skill's rendered output by itself.
   same provenance dimension when executed or failed), and the
   resulting finding validation state (`runtime-confirmed` /
   `attempted-inconclusive`, or a disproving run that raised no finding).
+  A **rendered inspection** is recorded here too, one compact entry per
+  [`../policies/rendered-inspection.md`](../policies/rendered-inspection.md),
+  "Evidence record", with the outcome vocabulary that policy defines; a
+  `skipped`, `unavailable`, or `attempted-inconclusive` inspection is never
+  shown as a pass and never changes coverage or the Decision.
   Targeted validation state never changes a finding's severity or the
   Decision. It rolls up, together with any contextual-evidence provenance,
   into the finding's single `confidence` value per
   [`finding.md`](finding.md), "Confidence and evidence state" — which is
   likewise presentation/provenance only and never changes severity or the
   Decision.
+- **Rendered observations** — conditional and distinct from Findings. It is
+  absent unless [`../policies/rendered-inspection.md`](../policies/rendered-inspection.md)
+  inspected a rendered page and a purely subjective polish observation
+  qualifies; the policy owns what qualifies, the cap of 3 shared by every
+  observation source, and the boundary that promotes a concern with concrete
+  cost to a normal finding. This template owns only position and shape:
+  - **Placement.** After Findings, Requirement coverage, and Context gaps,
+    immediately before Validation.
+  - **Shape.** A `### Rendered observations` heading, then numbered entries,
+    each naming the target and state it was observed on. No severity, ID,
+    `confidence`, or blocking meaning; not counted with findings, never fed to
+    the Decision tally, never rendered inline, never published as a review
+    event.
+  - **Inert.** When nothing was rendered or nothing qualifies, the section is
+    omitted completely — no heading, no placeholder, no "none" line.
 - **Requirement coverage** — conditional and distinct from Findings. It is
   absent when no authoritative task contract was supplied. When present it
   follows [`requirement-coverage.md`](../policies/requirement-coverage.md),
@@ -267,6 +298,12 @@ this section states only the summary's own shape:
 - an apparently intentional trade-off may be raised as a question
   ("was returning `null` to the caller here deliberate?") rather than
   asserted as a defect.
+- **rendered observations and inspection record** — when
+  [`../policies/rendered-inspection.md`](../policies/rendered-inspection.md)
+  qualified observations, they appear in concise prose before the decision with
+  the same count and rendered-page grounding as the structured form, and the
+  inspection outcome stays visible in one line; omit both entirely when the
+  capability was inert. Neither is ever an inline comment or a finding.
 - **reasoning check** — when the checkpoint activated, its same 1–4
   questions close the summary, after the decision, as a short
   senior-voice lead-in sentence followed by the questions in prose (or a

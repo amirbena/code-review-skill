@@ -282,6 +282,20 @@ authorization and is never a route to any of them — see
 [`../policies/review-authority.md`](../policies/review-authority.md),
 "Self-review capability."
 
+## Rendered observations (conditional)
+
+When the shared
+[`rendered-inspection.md`](../../../shared/policies/rendered-inspection.md)
+qualifies a purely subjective observation, the review body gains the shared
+`### Rendered observations` section exactly as
+[`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+"Rendered observations" shapes it — placed before `Validation`, in the body
+only, never an inline comment or a review event, identically in every
+publication mode. A rendered-inspection `Validation` entry follows the same
+shared shape. Both are omitted completely when the capability is inert. The
+section has no severity, ID, or blocking meaning and changes no finding,
+decision, or GitHub review state.
+
 ## Reasoning check (conditional)
 
 When the shared

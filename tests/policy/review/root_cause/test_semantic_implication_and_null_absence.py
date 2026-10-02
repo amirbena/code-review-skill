@@ -105,12 +105,19 @@ class SemanticImplicationSectionTests(unittest.TestCase):
             self.assertIn(dimension, self.section)
         self.assertEqual(self.section.count("Depth owner:"), 8)
 
-    def test_one_dimension_has_no_dedicated_owner_yet(self) -> None:
+    def test_every_dimension_has_a_depth_owner(self) -> None:
         self.assertEqual(
             self.section.count(
                 "no dedicated owner contract exists yet in this repository"
             ),
-            1,
+            0,
+        )
+
+    def test_user_facing_dimension_owner_is_rendered_inspection(self) -> None:
+        self.assertIn(
+            "Depth owner: [rendered-inspection.md](rendered-inspection.md) for the "
+            "*rendered* aspect",
+            self.section,
         )
 
     def test_infrastructure_dimension_depth_owner_names_dependency_supply_chain(

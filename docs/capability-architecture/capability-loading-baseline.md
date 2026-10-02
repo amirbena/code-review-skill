@@ -176,6 +176,20 @@ maintainer updates them by hand when re-measuring, the same convention
 `regression-report.md` §8 uses for its own baseline refresh ("an explicit
 human action ... only when the deltas are understood and accepted").
 
+## 5. Post-baseline addition: `rendered-inspection` (#616)
+
+This section records one later capability's loading impact; it does not
+re-measure §2 or §3. `capabilities/rendered-inspection/` adds one
+`on-activation` policy, `shared/policies/rendered-inspection.md`
+(1,746 words by the same `wc -w` method), attributed to that capability for
+both adapters. A review whose change does not trip its UI-impact trigger never
+opens it, so the loaded surface of such a review grows only by the short
+pointer sentences added to the always-resident files
+(`review-scope.md`, `review-stopping-criteria.md`, `runtime-validation.md`,
+`review-summary.md`, and the runbooks). Re-running
+`capability_loading_baseline.py static` shows the capability in
+`by_capability_words`.
+
 ## Status and canonical home
 
 This document and

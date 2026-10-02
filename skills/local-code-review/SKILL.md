@@ -231,7 +231,7 @@ per invocation, rendering the shared shape in
 Result, What changed, optional What was done well, an optional Context
 section (only when review context materially shaped the review), an
 optional PR Context section (only when a PR reference materially shaped
-it), Findings (omitted when empty), conditional Requirement coverage, Validation,
+it), Findings (omitted when empty), conditional Requirement coverage, conditional [`Rendered observations`](../../shared/policies/rendered-inspection.md), Validation,
 a Decision of `REVIEW CLEAN` or `CHANGES REQUIRED` derived mechanically from blocking
 (P0/P1) severities, and a conditional [`Reasoning check`](../../shared/policies/reasoning-checkpoint.md).
 
