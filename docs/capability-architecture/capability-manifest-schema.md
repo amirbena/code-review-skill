@@ -1,13 +1,17 @@
 # Capability manifest schema (`capability.yaml`)
 
-Status: Step 1 of the migration in
+Status: introduced as Step 1 of the migration in
 [`capability-architecture-model.md`](capability-architecture-model.md)
-(§J.2, §M.4, §M.5) — issue #404. Purely additive: this document and the
-`capabilities/<name>/capability.yaml` files it describes are declarative
-records only. **No review-time consumer reads them yet** — nothing here
-changes what either Skill loads or how a review is conducted.
+(§J.2, §M.4, §M.5) — issue #404 — and since extended. The manifests are
+declarative records with **build-time and CI consumers**, listed below;
+they have **no mechanical review-time consumer**. At review time only
+`specialist-depth` and `scale` change behavior, and they do so through
+fail-closed conditional-loading text in their canonical policies (issues
+#410, #447), not because anything loads the manifest. See
+[`README.md`](README.md#current-shipped-state) for the full split and for
+the `requires:` targets that have no manifest yet.
 
-Two consumers exist now. Issue #405:
+Consumers. Issue #405:
 [`scripts/packaging/generate_package_manifest.py`](../../scripts/packaging/generate_package_manifest.py)
 generates `scripts/packaging/package-manifest.json`'s `shared_files` and
 `skills.*.files` entries that are owned by an on-activation capability
@@ -168,7 +172,7 @@ the review standard" language) rather than inventing new ones — the
 manifest's `never` clauses are a projection of the owning policy's
 existing non-goals, not a new source of truth.
 
-## What this step does not do
+## What the manifests still do not do
 
 Per issue #404's non-goals and §J.2 Step 1 (issues #405, #406, and #407
 lifted the first two bullets below — see the Status note above):
@@ -180,8 +184,10 @@ lifted the first two bullets below — see the Status note above):
 - It does not add any lazy-loading behavior — establishing the
   capability/adapter boundary lazy loading will later rely on is as far
   as #407 goes (see its issue's Non-Goals).
-- It does not change any runtime loading behavior — nothing reads these
-  manifests at review time.
+- It does not read manifests at review time: there is no runtime loader.
+  The `specialist-depth` and `scale` conditional loading is enforced by
+  policy text (issues #410, #447); every other capability's `activation:`
+  is declarative only.
 
 `files:` is whole-file granularity — it cannot express that a single file
 is split in substance between two capabilities. One case exists today:

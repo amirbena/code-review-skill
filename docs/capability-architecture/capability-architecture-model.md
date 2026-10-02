@@ -1,7 +1,9 @@
 # Capability Architecture — Model and Recommendation
 
-Research record. **Not a contract change**, not an implementation, and not
-a rewrite proposal. Every conclusion below is derived from the repository
+Research record. **Not a contract change** and not a rewrite proposal. It
+is preserved as written; parts have since shipped (manifests, generated
+packaging, conditional loading for `specialist-depth` and `scale`) — see
+[`README.md`](README.md#current-shipped-state) for the current state. Every conclusion below is derived from the repository
 at commit `14650f9` (254 commits of history, `main` synchronized).
 
 Measurements are reproducible: word counts are `wc -w` over the named

@@ -10,12 +10,43 @@ and [`../repository-intelligence/README.md`](../repository-intelligence/README.m
 this is a repository-development doc: **not** packaged into either Skill
 archive, and no packaged Skill resource depends on it.
 
-It is a **research recommendation, not a contract change.** Nothing here
-has been implemented: no file has moved, no repository has been created,
-no policy's canonical ownership has changed. Every canonical rule named
-below still lives exactly where [`../ARCHITECTURE.md`](../ARCHITECTURE.md)
-and [`../../shared/policies/README.md`](../../shared/policies/README.md)
-say it lives.
+It began as a **research recommendation, not a contract change**, and
+part of it has since shipped. Every canonical rule named below still lives
+exactly where [`../ARCHITECTURE.md`](../ARCHITECTURE.md) and
+[`../../shared/policies/README.md`](../../shared/policies/README.md) say it
+lives: no policy's canonical ownership has changed, no repository has been
+created, and the model doc's recommended topology (a modular monorepo) is
+what exists.
+
+## Current shipped state
+
+What exists on `main` today, split by where it takes effect:
+
+- **Declarative and build-time (CI-checked).** 17 manifests,
+  `capabilities/*/capability.yaml`, declare each capability's files,
+  activation, adapters, `requires:` and `never:` clauses. They drive the
+  generated `scripts/packaging/package-manifest.json` and each Skill's
+  `metadata/skill.yaml` `shared:` lists, plus per-adapter subset checks;
+  CI fails when a committed generated file diverges. Field-level detail:
+  [`capability-manifest-schema.md`](capability-manifest-schema.md).
+- **Enforced at review time, by policy text only.** Conditional,
+  fail-closed loading is stated in canonical policy text for exactly two
+  capabilities, `specialist-depth` and `scale`, with proof records below.
+  The model reads and follows that text; **no mechanical runtime loader**
+  reads the manifests or decides what a review loads. Every other
+  capability's `activation:` is a declaration, not an enforced load gate.
+- **Not built.** A runtime routing projection generated from the
+  manifests, per-adapter shared packaging (both archives still ship the
+  whole `shared/` tree), per-capability file relocation under
+  `capabilities/`, and manifests for the always-resident tiers.
+
+**Unmanifested `requires:` targets.** These names appear in manifests'
+`requires:` lists but have no `capabilities/<name>/capability.yaml` yet:
+`capability-posture`, `review-router`, `review-kernel`, `finding-contract`,
+and `review-context-core`. This is an intentional gap: they are the
+always-resident tiers and routing layer, deferred in the migration
+sequence, so today those `requires:` entries are documentation of intent
+that no check resolves.
 
 ## Document map
 
