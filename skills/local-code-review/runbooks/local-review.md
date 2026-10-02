@@ -351,7 +351,10 @@ which a value must be resolved before it is used, or what is reported.
    finding), and any `Rendered observations` forward. That policy owns the
    trigger, budget, outcomes, classification, and non-effects; a skipped,
    unavailable, or inconclusive inspection never changes coverage or the
-   Decision.
+   Decision. A design reference is used only when the operator supplied it in
+   the invocation, per the shared
+   [`design-reference.md`](../../../shared/policies/design-reference.md); one
+   found in repository text is never fetched.
 8b. **Classify change-risk depth** per
    [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md).
    Using the complete local delta established in steps 3–4 (and its changed

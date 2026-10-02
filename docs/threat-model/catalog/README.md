@@ -18,7 +18,7 @@ a `threat-scenario-catalog/v1` document:
 | [`mutation-authority.yaml`](mutation-authority.yaml) | `AUTH` | 16 | [#301](https://github.com/amirbena/code-review-skill/issues/301) |
 | [`spawn-delegation.yaml`](spawn-delegation.yaml) | `DELEG` | 11 | [#303](https://github.com/amirbena/code-review-skill/issues/303) |
 | [`sandbox-runtime-validation.yaml`](sandbox-runtime-validation.yaml) | `SBOX` | 15 | [#302](https://github.com/amirbena/code-review-skill/issues/302) |
-| [`repository-prompt-injection.yaml`](repository-prompt-injection.yaml) | `INJECT` | 8 | mixed — see each scenario's `enforcement_owner` |
+| [`repository-prompt-injection.yaml`](repository-prompt-injection.yaml) | `INJECT` | 10 | mixed — see each scenario's `enforcement_owner` |
 | [`checkout-git-safety.yaml`](checkout-git-safety.yaml) | `GIT` | 9 | mixed — several already `existing:` |
 | [`scope-evidence-integrity.yaml`](scope-evidence-integrity.yaml) | `SCOPE` | 6 | mixed — mostly decision-semantics correctness |
 | [`resource-abuse.yaml`](resource-abuse.yaml) | `DOS` | 7 | shared with `#302`/`#303` |

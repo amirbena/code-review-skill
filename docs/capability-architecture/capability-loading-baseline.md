@@ -190,6 +190,15 @@ pointer sentences added to the always-resident files
 `capability_loading_baseline.py static` shows the capability in
 `by_capability_words`.
 
+## 6. Post-baseline addition: `design-reference` (#620)
+
+`capabilities/design-reference/` adds one `on-activation` policy,
+`shared/policies/design-reference.md` (1364 words by the same `wc -w`
+method), attributed to that capability for both adapters and requiring
+`rendered-inspection`. It loads only when an inspection fired and a design
+reference was supplied or discovered, so other reviews grow only by the short
+pointer sentences in the runbooks and `review-summary.md`.
+
 ## Status and canonical home
 
 This document and

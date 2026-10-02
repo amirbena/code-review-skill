@@ -70,6 +70,7 @@ shared:
     - ../../../shared/policies/structured-output.md
     - ../../../shared/policies/reasoning-checkpoint.md
     - ../../../shared/policies/rendered-inspection.md
+    - ../../../shared/policies/design-reference.md
     - ../../../shared/policies/specialist-depth.md
     - ../../../shared/policies/security-deepening.md
     - ../../../shared/policies/distributed-systems-deepening.md

@@ -142,10 +142,12 @@ SEVERITY_LEGEND = {
 # optional rendered-UI inspection capability -- a conditional `Rendered
 # observations` rule in the report template and a rendered-inspection pointer
 # beside runtime validation in the runbook) -- also deliberate and unrelated
-# to #223.
+# to #223. LOCAL_RUNBOOK was re-captured once more after Issue #620 (one
+# sentence pointing the design-reference context at its shared policy) --
+# likewise deliberate and unrelated to #223.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "26a1801011fa558e2e9d20992ec25fc11f0b2d87",
-    LOCAL_RUNBOOK: "7b899aed8e36c9112a5ce5a518bb9e14d484a5a6",
+    LOCAL_RUNBOOK: "882bebb4f0af2450cd98387094e334745f433475",
     LOCAL_SKILL: "b474c75309cce7323afcfa99207b079c574ee268",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
