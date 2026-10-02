@@ -173,7 +173,7 @@ scenarios:
   benchmark_family: none
   benchmark_reference: reasoning-discipline scenario with no capability crossing of its own; the contract is
     exercised by the rendered-inspection reference model, not a benchmark corpus (docs/rendered-inspection/rendered-inspection-contract.md, section 9)
-  regression_evidence: tests/policy/review/test_rendered_inspection_docs.py
+  regression_evidence: tests/policy/review/presentation/test_rendered_inspection_docs.py
   threat_severity: HIGH
 - id: INJECT-008
   title: Rendered page exposes a secret or personal data that is copied into review output
@@ -194,5 +194,5 @@ scenarios:
   benchmark_family: none
   benchmark_reference: reasoning-discipline scenario with no capability crossing of its own; the contract is
     exercised by the rendered-inspection reference model, not a benchmark corpus (docs/rendered-inspection/rendered-inspection-contract.md, section 9)
-  regression_evidence: tests/policy/review/test_rendered_inspection_docs.py
+  regression_evidence: tests/policy/review/presentation/test_rendered_inspection_docs.py
   threat_severity: MEDIUM
