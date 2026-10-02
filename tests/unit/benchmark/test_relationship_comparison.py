@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import unittest
+from pathlib import Path
+from unittest import mock
 
 from runtime_platform.benchmark.scripts import run_relationship_comparison as rc
 from tests.support.paths import REPO_ROOT
@@ -152,6 +155,17 @@ class DecisionRuleTests(unittest.TestCase):
         for cid in rows["B"]:
             rows["B"][cid] = [_row("excluded")]
         self.assertFalse(rc.evaluate(rows)["conditions"]["5_valid_arms"])
+
+
+class AdapterTelemetryTests(unittest.TestCase):
+    def test_a_failed_review_keeps_partial_telemetry(self) -> None:
+        adapter = rc.ComparisonAdapter(plugin_dir=Path("."), answers=None, timeout=1.0)
+        timeout = subprocess.TimeoutExpired(cmd="claude", timeout=1.0)
+        with mock.patch.object(rc.subprocess, "run", side_effect=timeout):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                adapter._run("prompt", cwd=Path("."))
+        self.assertEqual(adapter.telemetry["prompt_chars"], len("prompt"))
+        self.assertIn("wall_seconds", adapter.telemetry)
 
 
 class ProtocolTests(unittest.TestCase):

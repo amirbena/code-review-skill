@@ -61,11 +61,14 @@ Per-case, per-repetition outcomes are in the observations file.
 
 - **Both arms mostly miss the same positives.** Consumer, interface and
   analogue positives were missed or wrong in nearly every run of both arms,
-  with or without the answers. Where the reviewer reported the right defect,
-  the matcher often scored it as missed plus a false positive because the
-  finding was anchored at a different location than the fixture expects. That
-  is a scoring-strictness effect, not a relationship-discovery effect, and it
-  dominates the comparison.
+  with or without the answers. In several of those runs the reviewer reported
+  what reads as the expected defect, yet the matcher scored it as missed plus a
+  false positive. For the call-site case the finding sits in a different file
+  than the fixture expects (`app/users/lookup.py`, not `app/billing/charge.py`).
+  For the config-consumer and analogue cases it names the expected file and was
+  still not matched; the cause (anchor proximity or claim correspondence) was
+  not diagnosed. Matching strictness, not relationship discovery, therefore
+  plausibly dominates the comparison, but this was checked for three cases only.
 - **One fixture is contaminated.** The interface positive's base lacks
   `errors.ts`, so both arms reported a non-existent-import P0 instead of, or
   beside, the expected finding. This is the same defect the

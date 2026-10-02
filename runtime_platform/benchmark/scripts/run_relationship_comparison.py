@@ -141,23 +141,26 @@ class ComparisonAdapter(bra.ProductionReviewerAdapter):
             "--settings", json.dumps({"enabledPlugins": {AMBIENT_PLUGIN: False}}),
         ]
         began = time.monotonic()
-        completed = subprocess.run(
-            command, cwd=str(cwd), capture_output=True, text=True, timeout=self.timeout, env=self.env
-        )
-        wall = time.monotonic() - began
+        self.telemetry = {"prompt_chars": len(prompt)}
+        try:
+            completed = subprocess.run(
+                command, cwd=str(cwd), capture_output=True, text=True, timeout=self.timeout, env=self.env
+            )
+        finally:
+            self.telemetry["wall_seconds"] = round(time.monotonic() - began, 1)
         parsed = parse_stream(completed.stdout)
         result = parsed["result"]
         usage = result.get("usage", {})
-        self.telemetry = {
-            "wall_seconds": round(wall, 1),
-            "prompt_chars": len(prompt),
-            "input_tokens": usage.get("input_tokens", 0),
-            "output_tokens": usage.get("output_tokens", 0),
-            "cache_read_tokens": usage.get("cache_read_input_tokens", 0),
-            "cache_creation_tokens": usage.get("cache_creation_input_tokens", 0),
-            "cost_usd": result.get("total_cost_usd"),
-            "skills_invoked": parsed["skills"],
-        }
+        self.telemetry.update(
+            {
+                "input_tokens": usage.get("input_tokens", 0),
+                "output_tokens": usage.get("output_tokens", 0),
+                "cache_read_tokens": usage.get("cache_read_input_tokens", 0),
+                "cache_creation_tokens": usage.get("cache_creation_input_tokens", 0),
+                "cost_usd": result.get("total_cost_usd"),
+                "skills_invoked": parsed["skills"],
+            }
+        )
         if completed.returncode != 0 or not result:
             raise RuntimeError(f"review CLI exited {completed.returncode}: {completed.stderr.strip()[:500]}")
         text = result.get("result", "")
@@ -167,7 +170,6 @@ class ComparisonAdapter(bra.ProductionReviewerAdapter):
     def _call_single_repo(self, workspace: Path) -> list[br.ProducedFinding]:
         self.last_report = None
         prompt = bra._REVIEW_PROMPT
-        self.telemetry = {}
         if self.answers is not None:
             snapshot = subprocess.run(
                 ["git", "rev-parse", "HEAD"], cwd=workspace, capture_output=True, text=True, check=True
