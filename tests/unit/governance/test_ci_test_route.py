@@ -194,7 +194,7 @@ class CliTests(unittest.TestCase):
                     ["route", "--event-name", "push", "--github-output", str(output), "--step-summary", str(summary)]
                 )
             self.assertEqual(code, 0)
-            self.assertEqual(output.read_text(encoding="utf-8"), "tier=full\n")
+            self.assertEqual(output.read_text(encoding="utf-8"), "tier=full\nclass=UNKNOWN\n")
             text = summary.read_text(encoding="utf-8")
         self.assertIn("Tier: **FULL**", text)
         self.assertIn("Reason: non-pull_request event (push)", text)

@@ -96,17 +96,41 @@ tier. **FULL is the default**:
   validation, the canonical build, Agent Skills spec validation, and the
   shell/PowerShell parity jobs. FAST never removes a contract or
   correctness test.
+- **DOCS** runs no test suite. It runs only
+  `scripts/validation/validate-markdown-links.py` and the content-agnostic
+  documentation scanners listed in `DOCS_SCANNER_MODULES`
+  (`ci_test_route.py run-docs`); metadata validation, the canonical build, and
+  spec validation are skipped because nothing in a pure-docs change can
+  affect them. The shell/PowerShell parity jobs are unchanged.
 
-A PR is FAST only when **every** changed path (a three-dot merge-base
-diff, renames counted as both paths) is on the allowlist in
-[`../scripts/validation/ci_test_route.py`](../scripts/validation/ci_test_route.py),
-the single canonical home of that list. Every entry must have positive,
-repository-backed evidence that no integration test copies, reads, or
-packages it; anything unknown, mixed, empty, or erroring is FULL, and
-there is no label or flag that selects FAST. The `test` job extracts the
-router from the PR's base commit (via a separate blobless clone, so the
-checkout under test is unchanged), so a PR that edits it (or
-`validate.yml`) is FULL.
+Each changed path is classified, and a change set takes the highest tier of
+its paths (renames counted as both paths):
+
+| Class | Rule | Tier |
+| --- | --- | --- |
+| `PURE_DOCS` | every path is a normalized `docs/**/*.md` file that no file under `tests/`, `scripts/`, `runtime_platform/`, `benchmark/`, `capabilities/`, `distribution/`, or `.github/` can read | DOCS |
+| `CONSUMED_DOCS` | a `docs/**/*.md` file that one of those roots references (literal, joined, or directory path) | FAST |
+| `FAST_ALLOWLIST` | every path is on the allowlist in [`ci_test_route.py`](../scripts/validation/ci_test_route.py) | FAST |
+| `MIXED` | docs plus other paths: tiered by the non-doc paths; docs never lower the tier | FAST or FULL |
+| `UNKNOWN` | anything else: any other path, non-`.md` or unnormalized `docs/` path, empty change set | FULL |
+
+Consumers are derived from the tracked files under the checkout, not listed
+by hand, so a new `docs/<dir>/` needs no edit and a new consumer reclassifies
+its doc. A docs path is never pure when the scan is missing or empty, or when a
+file outside `DOCS_SCANNER_MODULES` enumerates `docs/`. Run
+`python3 scripts/validation/ci_test_route.py classify` locally to print the
+same class, tier, reason, and command CI would use; classification never
+runs a suite, the network, a model, or benchmarks, and never sets the opt-in
+gates (`BENCHMARK_REQUIRE_RUNTIME`, `DISTRIBUTION_INSTALL_CHECK`,
+`BENCHMARK_MIGRATION_BASE`).
+
+Every path on the FAST allowlist must have positive, repository-backed
+evidence that no integration test copies, reads, or packages it; anything
+unknown, mixed, empty, or erroring is FULL, and there is no label or flag
+that selects a tier. The `test` job extracts the router from the PR's base
+commit (via a separate blobless clone, so the checkout under test is
+unchanged), so a PR that edits it (or `validate.yml`) is FULL. The design
+record is [`../docs/validation-routing/`](../docs/validation-routing/README.md).
 
 `validate.yml` runs on `pull_request` only. Repository validation is the
 pre-merge boundary; a push to `main` does not re-run it, and is reserved

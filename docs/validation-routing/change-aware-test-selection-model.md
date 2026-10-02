@@ -1,9 +1,32 @@
 # Change-Aware Test Selection — Model
 
-Contract-first design for [#624](https://github.com/amirbena/code-review-skill/issues/624).
-Navigation: [`README.md`](README.md). Nothing here is implemented; every
-"proposed" item needs maintainer agreement before an implementation issue is
-opened (see [Proposed implementation issues](#proposed-implementation-issues)).
+Design and first implementation for [#624](https://github.com/amirbena/code-review-skill/issues/624).
+Navigation: [`README.md`](README.md).
+
+## Implemented in the first iteration
+
+The smallest end-to-end slice is live in
+[`ci_test_route.py`](../../scripts/validation/ci_test_route.py) and
+`validate.yml`; the rest of this record is the design it was cut from and
+stays guidance for later iterations. Where the two differ, this section and
+[`policies/validation-and-clean-exit.md`](../../policies/validation-and-clean-exit.md)
+win.
+
+| Design element | First iteration |
+| --- | --- |
+| Tiers | `DOCS < FAST < FULL`; no TARGETED tier |
+| Class → tier | `PURE_DOCS`→DOCS, `CONSUMED_DOCS`→FAST, `MIXED`→by the non-doc paths, `UNKNOWN`→FULL |
+| Consumer index (§3) | Scan of tracked non-Markdown files under `tests/`, `scripts/`, `runtime_platform/`, `benchmark/`, `capabilities/`, `distribution/`, `.github/` for literal, joined, and directory `docs/` references; rules fail toward "consumed" |
+| Tree-enumerating readers | Any file outside the scanner registry that enumerates `docs/` makes every docs path unverified, so FULL |
+| Scanner registry (§3.3) | `DOCS_SCANNER_MODULES` + `validate-markdown-links.py` are the entire DOCS-tier validation (`run-docs`) |
+| Non-test steps on DOCS (Q2) | Skipped: metadata validation, canonical build, spec validation, Node setup. Python setup and dependency install stay because the scanners need them. The parity jobs are unchanged |
+| Shared local/CI (§5) | One module; CI `route` and local `classify` print the same summary; `route` also emits `class=` |
+| Drift guard (§4) | Tests in `tests/unit/governance/test_change_aware_routing.py` and `tests/policy/governance/test_ci_test_routing.py`: unregistered enumerators fail, unresolved scans fail safe, new consumers reclassify |
+
+Deferred: TARGETED tier (Q3), moving root docs and `policies/**` from the
+allowlist into the index (Q4), gating the parity jobs on the DOCS tier,
+and wiring [#183](https://github.com/amirbena/code-review-skill/issues/183)
+preflight to `classify`.
 
 ## 1. Evidence: what the current router does and why `docs/**` is FULL
 
@@ -67,14 +90,13 @@ most likely hidden inputs.
 
 | Tier | Runs | Does not run |
 | --- | --- | --- |
-| **DOCS** | `validate-markdown-links.py`; the registered static scanners (§3.3: forbidden-terms and benchmark-root-migration reference scans); the cheap non-test steps `validate.yml` runs on every tier today (metadata validation, canonical build, spec validation, parity jobs) | `tests.unit.*`, `tests.policy.*` (other than registered scanners), `tests.repository.*`, `tests.integration.*`, benchmark, live-model |
+| **DOCS** | `validate-markdown-links.py`; the registered static scanners (§3.3: forbidden-terms and benchmark-root-migration reference scans) (first iteration: no other validation step; see the table at the top) | `tests.unit.*`, `tests.policy.*` (other than registered scanners), `tests.repository.*`, `tests.integration.*`, benchmark, live-model |
 | **TARGETED** (phase 2) | Indexed consumer modules + registered scanners + non-test steps | Everything else |
 | **FAST** | Unchanged from #533: full discovery minus `tests.integration.*` | `tests.integration.*` |
 | **FULL** | Unchanged: `python -m unittest discover -s tests -t .` | nothing |
 
 The `test` job and its required-check name are unchanged; tiers only change
-which step body runs inside it. The cheap non-test steps are kept on every
-tier so the workflow diff stays minimal (open question Q2).
+which step body runs inside it. (Superseded: the first iteration skips the build and metadata steps on DOCS; see the table above.)
 
 ### 2.3 Never small (always FULL, never DOCS/TARGETED/FAST)
 
@@ -242,7 +264,7 @@ is not reduced: `scripts/sandbox/**`, `docs/threat-model/**` consumers, and
   removes contract tests", or should class 1 also run FAST (still cheaper than
   FULL and trivially within #533)? Recommendation: start with DOCS gated on
   the guard; fall back to FAST if the guard's first iteration is contested.
-- **Q2.** Keep metadata validation, canonical build, spec validation, and
+- **Q2 (resolved: no, skipped on DOCS).** Keep metadata validation, canonical build, spec validation, and
   parity jobs on the DOCS tier? Recommendation: yes (≈20–35 s, no workflow
   restructuring, no required-check change).
 - **Q3.** Phase 2 TARGETED worth the complexity, given class 2 → FAST already
@@ -253,10 +275,9 @@ is not reduced: `scripts/sandbox/**`, `docs/threat-model/**` consumers, and
 - **Q5.** Location of this record: proposed `docs/validation-routing/`; move
   if the maintainer prefers another home.
 
-## Proposed implementation issues
+## Remaining work
 
-Proposed to the maintainer only; none is opened by this record. All
-`maintainer-led` (they change validation policy and a required-check input).
+Items 1–4 below landed together in #624 (first iteration); item 5 and the deferrals above are future work.
 
 1. **Shared change classifier + consumer index** — `change_classifier.py`
    (classes, tiers, §2.3 floor, §3 index), pure unit tests per §7, no

@@ -6,9 +6,10 @@ changes ([#624](https://github.com/amirbena/code-review-skill/issues/624)).
 
 Like [`../rendered-inspection/README.md`](../rendered-inspection/README.md),
 this is a repository-development doc: **not** packaged into either Skill
-archive, and no packaged Skill resource depends on it. It is research and
-design only — no selector, workflow, script, or test changes. The routing
-mechanics that exist today stay owned by
+archive, and no packaged Skill resource depends on it. It records the
+research and design, and the first iteration of it is implemented in the same
+issue (see "Implemented in the first iteration" in the model). The routing
+mechanics stay owned by
 [`../../policies/validation-and-clean-exit.md`](../../policies/validation-and-clean-exit.md)
 ("Routed CI tests") and
 [`../../scripts/validation/ci_test_route.py`](../../scripts/validation/ci_test_route.py).
@@ -17,7 +18,7 @@ mechanics that exist today stay owned by
 
 | Document | Owns |
 | --- | --- |
-| [`change-aware-test-selection-model.md`](change-aware-test-selection-model.md) | Evidence about what consumes `docs/`, the four classes and what runs for each, the shared classifier, the drift guard, the no-live-execution invariant, the deterministic selector test plan, and the proposed implementation issues. |
+| [`change-aware-test-selection-model.md`](change-aware-test-selection-model.md) | What was implemented, evidence about what consumes `docs/`, the four classes and what runs for each, the shared classifier, the drift guard, the no-live-execution invariant, the deterministic selector test plan, and the proposed implementation issues. |
 
 ## Summary
 
