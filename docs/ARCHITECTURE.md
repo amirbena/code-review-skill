@@ -635,8 +635,8 @@ and no packaged Skill resource depends on them.
   the twelve active issues retains its own local scope and implements its
   own slice; this document owns only the order and boundaries between
   them, including the boundary that keeps #131/#130 out of scope.
-- **Capability architecture** — a research recommendation for decomposing
-  both Skills into independently loadable capabilities behind declared
+- **Capability architecture** — a research record and partly shipped
+  design for decomposing both Skills into independently loadable capabilities behind declared
   activation predicates: the current-state diagnosis (the always-loaded
   instruction surface, the single 35-node link cycle in `shared/`, and the
   three divergent declarations of each Skill's dependency set), the
@@ -647,9 +647,13 @@ and no packaged Skill resource depends on them.
   migration sequence
   ([`capability-architecture/README.md`](capability-architecture/README.md) →
   [`capability-architecture/capability-architecture-model.md`](capability-architecture/capability-architecture-model.md)).
-  It is a **proposal only** and has no packaged touch-point: nothing has
-  moved, no canonical ownership has changed, and every rule it maps still
-  lives exactly where the sections above say it lives.
+  Shipped so far: declarative `capabilities/*/capability.yaml` manifests
+  that drive CI-checked generated packaging and metadata, and fail-closed
+  conditional-loading policy text for `specialist-depth` and `scale`;
+  there is no mechanical runtime loader. No canonical ownership has
+  changed, and every rule it maps still lives exactly where the sections
+  above say it lives (see
+  [`capability-architecture/README.md`](capability-architecture/README.md#current-shipped-state)).
 
 ### Future work (not implemented)
 
