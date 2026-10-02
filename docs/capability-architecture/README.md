@@ -38,15 +38,13 @@ What exists on `main` today, split by where it takes effect:
 - **Not built.** A runtime routing projection generated from the
   manifests, per-adapter shared packaging (both archives still ship the
   whole `shared/` tree), per-capability file relocation under
-  `capabilities/`, and manifests for the always-resident tiers.
+  `capabilities/`, and manifests for the targets listed below.
 
 **Unmanifested `requires:` targets.** These names appear in manifests'
 `requires:` lists but have no `capabilities/<name>/capability.yaml` yet:
 `capability-posture`, `review-router`, `review-kernel`, `finding-contract`,
-and `review-context-core`. This is an intentional gap: they are the
-always-resident tiers and routing layer, deferred in the migration
-sequence, so today those `requires:` entries are documentation of intent
-that no check resolves.
+and `review-context-core`. No check resolves these `requires:` entries
+against a manifest today.
 
 ## Document map
 
