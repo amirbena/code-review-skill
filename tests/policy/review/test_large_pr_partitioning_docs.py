@@ -2,19 +2,21 @@
 
 from __future__ import annotations
 
-import json
 import re
 import unittest
 from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
+from tests.support.shared_policy_wiring import (
+    ChangelogRecordsPolicyMixin,
+    SharedPolicyWiring,
+    SharedPolicyWiringMixin,
+)
 
 POLICY = REPO_ROOT / "shared" / "policies" / "large-pr-partitioning.md"
 REVIEW_SCOPE = REPO_ROOT / "shared" / "policies" / "review-scope.md"
 EVIDENCE = REPO_ROOT / "shared" / "policies" / "evidence.md"
-SHARED_README = REPO_ROOT / "shared" / "policies" / "README.md"
 REVIEW_SUMMARY = REPO_ROOT / "shared" / "templates" / "review-summary.md"
-MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
 
 
 def _norm(path: Path) -> str:
@@ -95,7 +97,25 @@ class LargePrPartitioningPolicyContentTests(unittest.TestCase):
         self.assertIn("never lowers the evidence bar", self.norm)
 
 
-class LargePrPartitioningWiringTests(unittest.TestCase):
+class LargePrPartitioningWiringTests(
+    ChangelogRecordsPolicyMixin, SharedPolicyWiringMixin, unittest.TestCase
+):
+    wiring = SharedPolicyWiring(
+        basename="large-pr-partitioning.md",
+        issue="#88",
+        runbook_markers=(
+            "Partition large changes",
+            "never changes",
+        ),
+        local_template_markers=(
+            "Large-PR partitioning:",
+        ),
+        github_template_markers=(
+            "large_pr_partitioning:",
+            "omitted entirely when inactive",
+        ),
+    )
+
     def test_review_scope_has_a_partitioning_section(self) -> None:
         text = REVIEW_SCOPE.read_text(encoding="utf-8")
         self.assertIn("## Large-change partitioning", text)
@@ -106,65 +126,10 @@ class LargePrPartitioningWiringTests(unittest.TestCase):
         self.assertIn("large-pr-partitioning.md", EVIDENCE.read_text(encoding="utf-8"))
         self.assertIn("coherent review units", norm)
 
-    def test_shared_readme_has_a_policy_map_row(self) -> None:
-        self.assertIn("large-pr-partitioning.md", SHARED_README.read_text(encoding="utf-8"))
-
     def test_review_summary_documents_the_conditional_field(self) -> None:
         norm = _norm(REVIEW_SUMMARY)
         self.assertIn("large-pr-partitioning.md", REVIEW_SUMMARY.read_text(encoding="utf-8"))
         self.assertIn("conditional on activation rather than consumer-gated", norm)
-
-    def test_packaged_in_the_one_shared_manifest(self) -> None:
-        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-        destinations = [entry["destination"] for entry in manifest["shared_files"]]
-        self.assertIn("shared/policies/large-pr-partitioning.md", destinations)
-
-    def test_both_skills_load_and_list_the_policy(self) -> None:
-        for path in (
-            REPO_ROOT / "skills" / "local-code-review" / "SKILL.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "SKILL.md",
-            REPO_ROOT / "skills" / "local-code-review" / "metadata" / "skill.yaml",
-            REPO_ROOT / "skills" / "github-pr-review" / "metadata" / "skill.yaml",
-            REPO_ROOT / "skills" / "local-code-review" / "runbooks" / "local-review.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "runbooks" / "active-pr-review.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "runbooks" / "passive-pr-review.md",
-            REPO_ROOT / "skills" / "local-code-review" / "templates" / "local-review-report.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "templates" / "external-review-summary.md",
-        ):
-            with self.subTest(path=path):
-                self.assertIn("large-pr-partitioning.md", path.read_text(encoding="utf-8"))
-
-    def test_all_three_runbooks_have_a_dedicated_partitioning_step(self) -> None:
-        for path in (
-            REPO_ROOT / "skills" / "local-code-review" / "runbooks" / "local-review.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "runbooks" / "active-pr-review.md",
-            REPO_ROOT / "skills" / "github-pr-review" / "runbooks" / "passive-pr-review.md",
-        ):
-            with self.subTest(path=path):
-                norm = _norm(path)
-                self.assertIn("Partition large changes", norm)
-                self.assertIn("never changes", norm)
-
-    def test_local_report_renders_partitioning_conditionally(self) -> None:
-        text = (
-            REPO_ROOT
-            / "skills"
-            / "local-code-review"
-            / "templates"
-            / "local-review-report.md"
-        ).read_text(encoding="utf-8")
-        self.assertIn("Large-PR partitioning:", text)
-
-    def test_github_template_renders_partitioning_conditionally(self) -> None:
-        text = (
-            REPO_ROOT
-            / "skills"
-            / "github-pr-review"
-            / "templates"
-            / "external-review-summary.md"
-        ).read_text(encoding="utf-8")
-        self.assertIn("large_pr_partitioning:", text)
-        self.assertIn("omitted entirely when inactive", text)
 
     def test_skill_entrypoint_line_ceilings_account_for_the_new_policy_line(self) -> None:
         guard_test = (
@@ -174,34 +139,9 @@ class LargePrPartitioningWiringTests(unittest.TestCase):
 
 
 class LargePrPartitioningDocsTests(unittest.TestCase):
-    def test_architecture_and_comparison_and_feature_index_mention_it(self) -> None:
-        for path in (
-            REPO_ROOT / "docs" / "ARCHITECTURE.md",
-            REPO_ROOT / "docs" / "CODE_REVIEW_COMPARISON.md",
-            REPO_ROOT / "docs" / "features" / "README.md",
-        ):
-            with self.subTest(path=path):
-                self.assertIn("large-pr-partitioning.md", path.read_text(encoding="utf-8"))
-
-    def test_feature_index_lists_it_as_not_a_feature_guide(self) -> None:
-        text = (REPO_ROOT / "docs" / "features" / "README.md").read_text(encoding="utf-8")
-        not_a_guide = text.split("## Not a feature guide", 1)[1]
-        self.assertIn("large-pr-partitioning.md", not_a_guide)
-
     def test_architecture_no_longer_calls_partitioning_still_open(self) -> None:
         text = (REPO_ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
         self.assertNotIn("large-change partitioning and\nreview stopping criteria", text)
-
-    def test_changelog_records_the_added_shared_policy(self) -> None:
-        # The entry may still be under "## Unreleased" or may have already
-        # moved under a released version heading (see CHANGELOG.md's own
-        # "move under a version heading at release time" convention) — this
-        # only pins that the changelog records it *somewhere*, in an
-        # "### Added" section, not which release it landed in.
-        text = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("### Added", text)
-        self.assertIn("large-pr-partitioning.md", text)
-        self.assertIn("(#88)", text)
 
 
 if __name__ == "__main__":
