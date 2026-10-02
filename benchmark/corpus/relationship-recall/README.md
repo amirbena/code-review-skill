@@ -86,6 +86,16 @@ Visibility assertions are now unblocked by #601 and are not part of this
 baseline or this change. The baseline is not a measurement of the reviewer
 that carries #601.
 
+## Comparison with relationship-enriched review
+
+[#605](https://github.com/amirbena/code-review-skill/issues/605) runs this
+corpus with and without host-supplied relationship answers. The rule is
+pre-registered in [`comparison-protocol.md`](comparison-protocol.md); results
+and the decision (an index is not justified by this evidence) are in
+[`comparison.md`](comparison.md) and
+[`comparison-observations.json`](comparison-observations.json). The harness is
+[`run_relationship_comparison.py`](../../../runtime_platform/benchmark/scripts/run_relationship_comparison.py).
+
 ## Validation
 
 [`test_relationship_recall_corpus.py`](../../../tests/unit/benchmark/test_relationship_recall_corpus.py)

@@ -1,0 +1,2205 @@
+{
+ "schema": "relationship-comparison-observations/v1",
+ "issue": 605,
+ "protocol_commit": "72b05fdea57d83a50440f66513a5ce3f3a901270",
+ "harness": "python3 runtime_platform/benchmark/scripts/run_relationship_comparison.py run --arm {A|B} --rep {1|2} --plugin-dir <packaged skill 1.63.0 bundle> --out <dir>",
+ "skill_under_test": "packaged local-code-review 1.63.0 built from 5e8533d (carries #601/#604), loaded via --plugin-dir; ambient plugin disabled via --settings",
+ "review_cli": "claude 2.1.281, runner-default model/effort (not pinned)",
+ "answers_sha256": "a3eaf88e60c668617c353778d1dfe2629cd41bef245c9431c86f112c87255316",
+ "scoring_note": "Scored with the harness evaluate() at 4b571f7 (per-review normalization added after launch, before results were read). total_cost_usd is Claude Code telemetry, not a verified charge.",
+ "evaluation": {
+  "correct_rate_by_case": {
+   "A": {
+    "analogue-placement-status-label-duplication-missing-key": 0.0,
+    "analogue-placement-test-file-split-clean": 0.0,
+    "relrecall-affected-test-external-cases-unresolvable": 0.5,
+    "relrecall-affected-test-stale-assertion-unlinked-name": 0.5,
+    "relrecall-affected-test-still-holds-control": 0.5,
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": 0.5,
+    "relrecall-interface-config-registered-implementers-unresolvable": 0.0,
+    "relrecall-interface-optional-member-implementers-compatible-control": 1.0,
+    "repo-intel-python-call-site-caller-null-deref": 0.0,
+    "repo-intel-python-config-consumer-stale-import": 0.0,
+    "repo-intel-python-control-compatible-caller-no-finding": 1.0,
+    "repo-intel-python-dynamic-dispatch-safe-failure": 0.0,
+    "repo-intel-typescript-interface-contract-implementer-break": 0.0
+   },
+   "B": {
+    "analogue-placement-status-label-duplication-missing-key": 0.0,
+    "analogue-placement-test-file-split-clean": 0.5,
+    "relrecall-affected-test-external-cases-unresolvable": 0.5,
+    "relrecall-affected-test-stale-assertion-unlinked-name": 1.0,
+    "relrecall-affected-test-still-holds-control": 0.5,
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": 0.5,
+    "relrecall-interface-config-registered-implementers-unresolvable": 0.0,
+    "relrecall-interface-optional-member-implementers-compatible-control": 1.0,
+    "repo-intel-python-call-site-caller-null-deref": 0.0,
+    "repo-intel-python-config-consumer-stale-import": 0.0,
+    "repo-intel-python-control-compatible-caller-no-finding": 1.0,
+    "repo-intel-python-dynamic-dispatch-safe-failure": 0.0,
+    "repo-intel-typescript-interface-contract-implementer-break": 0.0
+   }
+  },
+  "correct_rate_sum_by_class": {
+   "A": {
+    "analogue": 0.5,
+    "affected-test": 1.5,
+    "interface": 1.0,
+    "consumer": 1.0
+   },
+   "B": {
+    "analogue": 1.0,
+    "affected-test": 2.0,
+    "interface": 1.0,
+    "consumer": 1.0
+   }
+  },
+  "matched_cases": 13,
+  "gain": 2.0,
+  "gaining_cases": [
+   "analogue-placement-test-file-split-clean",
+   "relrecall-affected-test-stale-assertion-unlinked-name"
+  ],
+  "false_positives": {
+   "A": 22,
+   "B": 15
+  },
+  "inflation_control": 0.0,
+  "median_seconds": {
+   "A": 83.4,
+   "B": 109.3
+  },
+  "mean_tokens_per_review": {
+   "A": 981790.0769230769,
+   "B": 1144906.125
+  },
+  "analogue_consistency": {
+   "A": 0.6666666666666666,
+   "B": 0.3333333333333333
+  },
+  "unresolved_visibility": {
+   "A": 0.125,
+   "B": 0.42857142857142855
+  },
+  "excluded_share": {
+   "A": 0.0,
+   "B": 0.07692307692307687
+  },
+  "conditions": {
+   "1_quality_gain": false,
+   "2_no_class_regression": true,
+   "3_no_inflation": true,
+   "4_acceptable_cost": true,
+   "5_valid_arms": true
+  },
+  "index_justified": false
+ },
+ "usage_telemetry": {
+  "per_run": {
+   "A1": {
+    "reviews": 13,
+    "failed": 0,
+    "total_cost_usd": 8.8405,
+    "wall_seconds_sum": 1357.0,
+    "input_tokens": 282,
+    "output_tokens": 91484,
+    "cache_read_tokens": 13713186,
+    "cache_creation_tokens": 1295619
+   },
+   "A2": {
+    "reviews": 13,
+    "failed": 0,
+    "total_cost_usd": 7.8219,
+    "wall_seconds_sum": 1210.4,
+    "input_tokens": 226,
+    "output_tokens": 71587,
+    "cache_read_tokens": 9281407,
+    "cache_creation_tokens": 1072751
+   },
+   "B1": {
+    "reviews": 13,
+    "failed": 2,
+    "total_cost_usd": 8.1402,
+    "wall_seconds_sum": 1813.6,
+    "input_tokens": 220,
+    "output_tokens": 92614,
+    "cache_read_tokens": 11205472,
+    "cache_creation_tokens": 1243130
+   },
+   "B2": {
+    "reviews": 13,
+    "failed": 0,
+    "total_cost_usd": 9.9997,
+    "wall_seconds_sum": 1980.5,
+    "input_tokens": 256,
+    "output_tokens": 102894,
+    "cache_read_tokens": 13692238,
+    "cache_creation_tokens": 1557944
+   }
+  },
+  "total": {
+   "reviews": 52,
+   "failed": 2,
+   "total_cost_usd": 34.8023,
+   "wall_seconds_sum": 6361.5,
+   "input_tokens": 984,
+   "output_tokens": 358579,
+   "cache_read_tokens": 47892303,
+   "cache_creation_tokens": 5169444
+  }
+ },
+ "runs": [
+  {
+   "run": "A1",
+   "arm": "A",
+   "rep": 1,
+   "repo_sha": "72b05fdea57d83a50440f66513a5ce3f3a901270",
+   "cases": {
+    "analogue-placement-status-label-duplication-missing-key": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "analogue-placement-status-label-duplication-missing-key",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 2,
+      "missed_keys": [
+       "webhook-cli-inline-status-labels-missing-failed"
+      ],
+      "incorrect_indices": [
+       0,
+       1
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "integrations/webhook/cli.py",
+        "line": 1
+       },
+       "claim_head": "`webhook` status-label map omits `\"failed\"`, causing a `KeyError` on failed deliveries `integrations/dispatcher.py:4` declares `DELIVERY_STATUSES = (\"queued\", \""
+      },
+      {
+       "severity": "P2",
+       "location": {
+        "path": "integrations/webhook/cli.py",
+        "lines": {
+         "start": 1,
+         "end": 6
+        }
+       },
+       "claim_head": "`webhook/cli.py` inlines the status map instead of following the sibling `mapping.py` pattern `pagerduty`, `slack`, and `teams` each split `STATUS_LABELS` into "
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 101.1,
+      "prompt_chars": 1331,
+      "input_tokens": 24,
+      "output_tokens": 8030,
+      "cache_read_tokens": 1010254,
+      "cache_creation_tokens": 103439,
+      "cost_usd": 0.6961548000000001,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "analogue-placement-test-file-split-clean": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "analogue-placement-test-file-split-clean",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P2",
+       "location": {
+        "path": "tests/integrations/test_webhook_auth.py",
+        "line": 1
+       },
+       "claim_head": "Webhook tests are split across two files, diverging from the established per-integration convention Every sibling integration (`test_pagerduty.py`, `test_slack."
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 113.4,
+      "prompt_chars": 1331,
+      "input_tokens": 22,
+      "output_tokens": 10140,
+      "cache_read_tokens": 1635336,
+      "cache_creation_tokens": 169418,
+      "cost_usd": 1.1061832,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-external-cases-unresolvable": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-external-cases-unresolvable",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P2",
+       "location": {
+        "path": "tests/test_shipping_contract.py",
+        "line": 9
+       },
+       "claim_head": "Threshold change cannot be verified against its own contract test `CASES_DIR = Path(os.environ[\"SHIPPING_CONTRACT_CASES\"])` loads the only test coverage for `sh"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 74.5,
+      "prompt_chars": 1331,
+      "input_tokens": 18,
+      "output_tokens": 4791,
+      "cache_read_tokens": 517651,
+      "cache_creation_tokens": 32598,
+      "cost_usd": 0.2818682,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-stale-assertion-unlinked-name": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-stale-assertion-unlinked-name",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "tests/test_order_summary.py",
+        "line": 4
+       },
+       "claim_head": "Existing free-shipping test now fails against the new threshold `shipping_cost_cents` (`app/shipping/rates.py:2`) was changed from `subtotal_cents >= 5000` to `"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 146.2,
+      "prompt_chars": 1331,
+      "input_tokens": 28,
+      "output_tokens": 11541,
+      "cache_read_tokens": 2290734,
+      "cache_creation_tokens": 197863,
+      "cost_usd": 1.3650648,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-still-holds-control": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-still-holds-control",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P2",
+       "location": {
+        "path": "app/shipping/rates.py",
+        "lines": {
+         "start": 2,
+         "end": 3
+        }
+       },
+       "claim_head": "New `express` shipping branch has no test coverage `shipping_cost_cents` now has an `express=True` branch returning a flat `1299`, but `tests/test_order_summary"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 204.1,
+      "prompt_chars": 1331,
+      "input_tokens": 20,
+      "output_tokens": 10192,
+      "cache_read_tokens": 1126178,
+      "cache_creation_tokens": 158325,
+      "cost_usd": 0.9604956,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-analogue-pattern-source-outside-repository-unresolvable",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 151.1,
+      "prompt_chars": 1331,
+      "input_tokens": 30,
+      "output_tokens": 10778,
+      "cache_read_tokens": 1464822,
+      "cache_creation_tokens": 123869,
+      "cost_usd": 0.8962804,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-interface-config-registered-implementers-unresolvable": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-interface-config-registered-implementers-unresolvable",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "src/internal/cache/Cache.ts",
+        "line": 2
+       },
+       "claim_head": "Breaking interface contract change affects unresolvable external Cache implementers `Cache.get()`'s return type was narrowed from `Promise<string | null>` to `P"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 54.8,
+      "prompt_chars": 1331,
+      "input_tokens": 20,
+      "output_tokens": 4442,
+      "cache_read_tokens": 583219,
+      "cache_creation_tokens": 33304,
+      "cost_usd": 0.2943198,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-interface-optional-member-implementers-compatible-control": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-interface-optional-member-implementers-compatible-control",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 157.7,
+      "prompt_chars": 1331,
+      "input_tokens": 28,
+      "output_tokens": 10289,
+      "cache_read_tokens": 1714845,
+      "cache_creation_tokens": 151157,
+      "cost_usd": 1.050543,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-call-site-caller-null-deref": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-call-site-caller-null-deref",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 1,
+      "missed_keys": [
+       "charge-user-null-deref-after-get-user-contract-change"
+      ],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "app/users/lookup.py",
+        "lines": {
+         "start": 4,
+         "end": 5
+        }
+       },
+       "claim_head": "`get_user` no longer raises `UserNotFound`, letting `None` reach callers that dereference it The pre-image explicitly checked `find_user(user_id)` for `None` an"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 37.4,
+      "prompt_chars": 1331,
+      "input_tokens": 14,
+      "output_tokens": 2365,
+      "cache_read_tokens": 441997,
+      "cache_creation_tokens": 44186,
+      "cost_usd": 0.2888214,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-config-consumer-stale-import": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-config-consumer-stale-import",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 1,
+      "missed_keys": [
+       "uploads-imports-removed-config-key"
+      ],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "app/uploads.py",
+        "line": 1
+       },
+       "claim_head": "Stale import of renamed config constant crashes `app/uploads.py` `app/uploads.py:1` still does `from app.settings import MAX_UPLOAD_MB` and uses it at `app/uplo"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 62.8,
+      "prompt_chars": 1331,
+      "input_tokens": 16,
+      "output_tokens": 4252,
+      "cache_read_tokens": 591301,
+      "cache_creation_tokens": 59792,
+      "cost_usd": 0.39998020000000006,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-control-compatible-caller-no-finding": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-control-compatible-caller-no-finding",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 66.5,
+      "prompt_chars": 1331,
+      "input_tokens": 24,
+      "output_tokens": 4311,
+      "cache_read_tokens": 914345,
+      "cache_creation_tokens": 65660,
+      "cost_usd": 0.48866699999999996,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-dynamic-dispatch-safe-failure": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-dynamic-dispatch-safe-failure",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "app/handlers/base.py",
+        "lines": {
+         "start": 2,
+         "end": 5
+        }
+       },
+       "claim_head": "`process()` drops payload validation with no caller performing it instead The diff removes `self.validate(payload)` from `BaseHandler.process`, replacing it wit"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 110.2,
+      "prompt_chars": 1331,
+      "input_tokens": 18,
+      "output_tokens": 4708,
+      "cache_read_tokens": 746959,
+      "cache_creation_tokens": 78437,
+      "cost_usd": 0.5102558,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-typescript-interface-contract-implementer-break": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-typescript-interface-contract-implementer-break",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 2,
+      "missed_keys": [
+       "in-memory-cache-still-returns-null-after-contract-narrowed"
+      ],
+      "incorrect_indices": [
+       0,
+       1
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "src/cache/Cache.ts",
+        "line": 2
+       },
+       "claim_head": "`InMemoryCache` no longer satisfies the narrowed `Cache` interface `Cache.get` is now declared `Promise<string>`, but `src/cache/InMemoryCache.ts:6` still imple"
+      },
+      {
+       "severity": "P0",
+       "location": {
+        "path": "src/cache/RedisCache.ts",
+        "line": 2
+       },
+       "claim_head": "`RedisCache` imports a non-existent `./errors` module `import { CacheMiss } from \"./errors\";` is added, but no `src/cache/errors.ts` (or any `errors` module) ex"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 77.2,
+      "prompt_chars": 1331,
+      "input_tokens": 20,
+      "output_tokens": 5645,
+      "cache_read_tokens": 675545,
+      "cache_creation_tokens": 77571,
+      "cost_usd": 0.5018830000000001,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "run": "A2",
+   "arm": "A",
+   "rep": 2,
+   "repo_sha": "72b05fdea57d83a50440f66513a5ce3f3a901270",
+   "cases": {
+    "analogue-placement-status-label-duplication-missing-key": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "analogue-placement-status-label-duplication-missing-key",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 2,
+      "missed_keys": [
+       "webhook-cli-inline-status-labels-missing-failed"
+      ],
+      "incorrect_indices": [
+       0,
+       1
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "integrations/webhook/cli.py",
+        "lines": {
+         "start": 1,
+         "end": 10
+        }
+       },
+       "claim_head": "`webhook` connector's status map is missing the `\"failed\"` key `integrations/dispatcher.py:4` defines `DELIVERY_STATUSES = (\"queued\", \"sending\", \"retrying\", \"de"
+      },
+      {
+       "severity": "P2",
+       "location": {
+        "path": "integrations/webhook/cli.py",
+        "lines": {
+         "start": 1,
+         "end": 10
+        }
+       },
+       "claim_head": "`webhook` connector breaks the established module split `pagerduty`, `slack`, and `teams` each keep `STATUS_LABELS` in a dedicated `mapping.py` imported by `cli"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 95.7,
+      "prompt_chars": 1331,
+      "input_tokens": 24,
+      "output_tokens": 7631,
+      "cache_read_tokens": 1026089,
+      "cache_creation_tokens": 72154,
+      "cost_usd": 0.5701918,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "analogue-placement-test-file-split-clean": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "analogue-placement-test-file-split-clean",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P2",
+       "location": {
+        "path": "tests/integrations/test_webhook_auth.py",
+        "line": 1
+       },
+       "claim_head": "Webhook test split diverges from sibling integration test organization Every other integration under `tests/integrations/` (`test_pagerduty.py`, `test_slack.py`"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 75.3,
+      "prompt_chars": 1331,
+      "input_tokens": 16,
+      "output_tokens": 5559,
+      "cache_read_tokens": 454590,
+      "cache_creation_tokens": 32825,
+      "cost_usd": 0.27784,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-external-cases-unresolvable": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-external-cases-unresolvable",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 183.6,
+      "prompt_chars": 1331,
+      "input_tokens": 10,
+      "output_tokens": 3192,
+      "cache_read_tokens": 270296,
+      "cache_creation_tokens": 37348,
+      "cost_usd": 1.1936524,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-stale-assertion-unlinked-name": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-stale-assertion-unlinked-name",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       1
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "tests/test_order_summary.py",
+        "lines": {
+         "start": 4,
+         "end": 7
+        }
+       },
+       "claim_head": "Stale test assertion after shipping threshold change `app/shipping/rates.py:2` was changed from `subtotal_cents >= 5000` to `subtotal_cents >= 7500`, raising th"
+      },
+      {
+       "severity": "P2",
+       "location": {
+        "path": "tests/test_order_summary.py",
+        "line": 4
+       },
+       "claim_head": "Test name no longer matches the threshold it exercises `test_free_shipping_at_fifty_dollars` encodes the old $50 free-shipping threshold in its name, which is n"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 53.1,
+      "prompt_chars": 1331,
+      "input_tokens": 18,
+      "output_tokens": 3725,
+      "cache_read_tokens": 523966,
+      "cache_creation_tokens": 32786,
+      "cost_usd": 0.2732232,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-still-holds-control": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-still-holds-control",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P2",
+       "location": {
+        "path": "app/shipping/rates.py",
+        "lines": {
+         "start": 2,
+         "end": 3
+        }
+       },
+       "claim_head": "New `express` branch has no test coverage `shipping_cost_cents` now branches on `express` (returning `1299` unconditionally, bypassing the `subtotal_cents >= 50"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 70.4,
+      "prompt_chars": 1331,
+      "input_tokens": 20,
+      "output_tokens": 3867,
+      "cache_read_tokens": 635415,
+      "cache_creation_tokens": 61752,
+      "cost_usd": 0.412801,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-analogue-pattern-source-outside-repository-unresolvable",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P2",
+       "location": {
+        "path": "integrations/webhook/cli.py",
+        "line": 11
+       },
+       "claim_head": "Fallback label formatting mangles multi-word unknown statuses `render_status` falls back to `str(status).title()` for any status not already in `STATUS_LABELS`."
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 127.4,
+      "prompt_chars": 1331,
+      "input_tokens": 22,
+      "output_tokens": 9981,
+      "cache_read_tokens": 1085489,
+      "cache_creation_tokens": 121724,
+      "cost_usd": 0.8038477999999999,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-interface-config-registered-implementers-unresolvable": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-interface-config-registered-implementers-unresolvable",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "src/internal/cache/Cache.ts",
+        "line": 2
+       },
+       "claim_head": "Cache contract narrowed while other implementers are unresolvable `Cache.get`'s signature changed from `Promise<string | null>` to `Promise<string>`, and `Redis"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 78.7,
+      "prompt_chars": 1331,
+      "input_tokens": 14,
+      "output_tokens": 6161,
+      "cache_read_tokens": 578573,
+      "cache_creation_tokens": 79921,
+      "cost_usd": 0.4970366000000001,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-interface-optional-member-implementers-compatible-control": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-interface-optional-member-implementers-compatible-control",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 88.1,
+      "prompt_chars": 1331,
+      "input_tokens": 16,
+      "output_tokens": 8037,
+      "cache_read_tokens": 947065,
+      "cache_creation_tokens": 196645,
+      "cost_usd": 1.0563950000000002,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-call-site-caller-null-deref": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-call-site-caller-null-deref",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 1,
+      "missed_keys": [
+       "charge-user-null-deref-after-get-user-contract-change"
+      ],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "app/users/lookup.py",
+        "line": 4
+       },
+       "claim_head": "`charge_user` dereferences `None` after `get_user`'s contract change `get_user` used to call `find_user(user_id)` and raise `UserNotFound(user_id)` when the res"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 65.1,
+      "prompt_chars": 1331,
+      "input_tokens": 18,
+      "output_tokens": 3979,
+      "cache_read_tokens": 679658,
+      "cache_creation_tokens": 87719,
+      "cost_usd": 0.5266336,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-config-consumer-stale-import": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-config-consumer-stale-import",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 1,
+      "missed_keys": [
+       "uploads-imports-removed-config-key"
+      ],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "app/uploads.py",
+        "line": 1
+       },
+       "claim_head": "Stale import of removed `MAX_UPLOAD_MB` setting breaks module import `app/settings.py:2` now defines `MAX_UPLOAD_BYTES = 25 * 1024 * 1024`, but `MAX_UPLOAD_MB` "
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 135.6,
+      "prompt_chars": 1331,
+      "input_tokens": 10,
+      "output_tokens": 1591,
+      "cache_read_tokens": 292765,
+      "cache_creation_tokens": 43233,
+      "cost_usd": 0.24741499999999997,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-control-compatible-caller-no-finding": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-control-compatible-caller-no-finding",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 102.5,
+      "prompt_chars": 1331,
+      "input_tokens": 20,
+      "output_tokens": 8660,
+      "cache_read_tokens": 1316409,
+      "cache_creation_tokens": 179091,
+      "cost_usd": 1.0662858,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-dynamic-dispatch-safe-failure": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-dynamic-dispatch-safe-failure",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "app/handlers/base.py",
+        "lines": {
+         "start": 2,
+         "end": 4
+        }
+       },
+       "claim_head": "`process()` no longer validates payload, and no caller does it instead `BaseHandler.process()` used to call `self.validate(payload)` before `self.run(payload)`;"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 69.6,
+      "prompt_chars": 1331,
+      "input_tokens": 22,
+      "output_tokens": 4931,
+      "cache_read_tokens": 1012204,
+      "cache_creation_tokens": 93698,
+      "cost_usd": 0.6265867999999999,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-typescript-interface-contract-implementer-break": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-typescript-interface-contract-implementer-break",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 2,
+      "missed_keys": [
+       "in-memory-cache-still-returns-null-after-contract-narrowed"
+      ],
+      "incorrect_indices": [
+       0,
+       1
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "src/cache/Cache.ts",
+        "line": 2
+       },
+       "claim_head": "Cache interface contract change breaks InMemoryCache implementer The diff narrows `Cache.get()`'s return type from `Promise<string | null>` to `Promise<string>`"
+      },
+      {
+       "severity": "P0",
+       "location": {
+        "path": "src/cache/RedisCache.ts",
+        "line": 2
+       },
+       "claim_head": "`CacheMiss` imported from a nonexistent module `RedisCache.ts` now does `import { CacheMiss } from \"./errors\";` and throws `new CacheMiss(key)` on a cache miss "
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 65.3,
+      "prompt_chars": 1331,
+      "input_tokens": 16,
+      "output_tokens": 4273,
+      "cache_read_tokens": 458888,
+      "cache_creation_tokens": 33855,
+      "cost_usd": 0.26995959999999997,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "run": "B1",
+   "arm": "B",
+   "rep": 1,
+   "repo_sha": "72b05fdea57d83a50440f66513a5ce3f3a901270",
+   "cases": {
+    "analogue-placement-status-label-duplication-missing-key": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "analogue-placement-status-label-duplication-missing-key",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 1,
+      "missed_keys": [
+       "webhook-cli-inline-status-labels-missing-failed"
+      ],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "integrations/webhook/cli.py",
+        "lines": {
+         "start": 1,
+         "end": 10
+        }
+       },
+       "claim_head": "`webhook` status renderer crashes on `failed` deliveries due to a duplicated, incomplete label mapping `integrations/webhook/cli.py` inlines its own `STATUS_LAB"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 198.8,
+      "prompt_chars": 2536,
+      "input_tokens": 22,
+      "output_tokens": 17254,
+      "cache_read_tokens": 1572900,
+      "cache_creation_tokens": 198313,
+      "cost_usd": 1.280416,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "analogue-placement-test-file-split-clean": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "analogue-placement-test-file-split-clean",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 123.1,
+      "prompt_chars": 2602,
+      "input_tokens": 24,
+      "output_tokens": 9133,
+      "cache_read_tokens": 1013924,
+      "cache_creation_tokens": 123217,
+      "cost_usd": 0.7870308,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-external-cases-unresolvable": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-external-cases-unresolvable",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 167.3,
+      "prompt_chars": 2197,
+      "input_tokens": 22,
+      "output_tokens": 13695,
+      "cache_read_tokens": 1334534,
+      "cache_creation_tokens": 143196,
+      "cost_usd": 0.9766848,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-stale-assertion-unlinked-name": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-stale-assertion-unlinked-name",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "tests/test_order_summary.py",
+        "line": 4
+       },
+       "claim_head": "Existing free-shipping test now fails against the new threshold `shipping_cost_cents` now returns `0` only when `subtotal_cents >= 7500` (`app/shipping/rates.py"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 79.6,
+      "prompt_chars": 2138,
+      "input_tokens": 20,
+      "output_tokens": 5954,
+      "cache_read_tokens": 967060,
+      "cache_creation_tokens": 110482,
+      "cost_usd": 0.6949200000000001,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-still-holds-control": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-still-holds-control",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P2",
+       "location": {
+        "path": "app/shipping/rates.py",
+        "lines": {
+         "start": 2,
+         "end": 3
+        }
+       },
+       "claim_head": "No test coverage for the new `express` shipping branch `shipping_cost_cents` gained an `express` parameter and a new `if express: return 1299` branch. No caller"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 67.5,
+      "prompt_chars": 2138,
+      "input_tokens": 20,
+      "output_tokens": 4724,
+      "cache_read_tokens": 590071,
+      "cache_creation_tokens": 33577,
+      "cost_usd": 0.2996022,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-analogue-pattern-source-outside-repository-unresolvable",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P2",
+       "location": {
+        "path": "integrations/webhook/cli.py",
+        "line": 11
+       },
+       "claim_head": "Unknown status values are rendered inconsistently with the mapped labels `render_status` maps five known statuses to clean, space-separated display labels (`\"qu"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 435.3,
+      "prompt_chars": 1880,
+      "input_tokens": 14,
+      "output_tokens": 6959,
+      "cache_read_tokens": 528128,
+      "cache_creation_tokens": 85702,
+      "cost_usd": 0.5180516,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-interface-config-registered-implementers-unresolvable": {
+     "status": "error",
+     "error": "reviewer-adapter-raised",
+     "metrics": null,
+     "produced": null,
+     "telemetry": {}
+    },
+    "relrecall-interface-optional-member-implementers-compatible-control": {
+     "status": "error",
+     "error": "reviewer-adapter-raised",
+     "metrics": null,
+     "produced": null,
+     "telemetry": {
+      "wall_seconds": 44.8,
+      "prompt_chars": 2331,
+      "input_tokens": 12,
+      "output_tokens": 2646,
+      "cache_read_tokens": 369953,
+      "cache_creation_tokens": 44410,
+      "cost_usd": 0.27811460000000005,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-call-site-caller-null-deref": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-call-site-caller-null-deref",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 0,
+      "missed_keys": [
+       "charge-user-null-deref-after-get-user-contract-change"
+      ],
+      "incorrect_indices": [],
+      "near_misses": 1,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "app/billing/charge.py",
+        "line": 10
+       },
+       "claim_head": "`get_user` no longer raises `UserNotFound`, causing a null-pointer dereference in `charge_user` `app/users/lookup.py` was changed from raising `UserNotFound` wh"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 43.8,
+      "prompt_chars": 2089,
+      "input_tokens": 14,
+      "output_tokens": 2744,
+      "cache_read_tokens": 391111,
+      "cache_creation_tokens": 31146,
+      "cost_usd": 0.2302742,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-config-consumer-stale-import": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-config-consumer-stale-import",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 1,
+      "missed_keys": [
+       "uploads-imports-removed-config-key"
+      ],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "app/settings.py",
+        "line": 2
+       },
+       "claim_head": "`app.uploads` crashes with `ImportError` due to a stale reference to the renamed `MAX_UPLOAD_MB` The unstaged change renames `MAX_UPLOAD_MB` to `MAX_UPLOAD_BYTE"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 111.3,
+      "prompt_chars": 2071,
+      "input_tokens": 18,
+      "output_tokens": 10312,
+      "cache_read_tokens": 1168757,
+      "cache_creation_tokens": 196353,
+      "cost_usd": 1.1223193999999999,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-control-compatible-caller-no-finding": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-control-compatible-caller-no-finding",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 27.7,
+      "prompt_chars": 2109,
+      "input_tokens": 10,
+      "output_tokens": 1519,
+      "cache_read_tokens": 266720,
+      "cache_creation_tokens": 29886,
+      "cost_usd": 0.18809800000000004,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-dynamic-dispatch-safe-failure": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-dynamic-dispatch-safe-failure",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "app/handlers/base.py",
+        "line": 3
+       },
+       "claim_head": "`process()` drops validation with no caller enforcing it `BaseHandler.process` no longer calls `self.validate(payload)`; a comment asserts \"callers are now expe"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 439.9,
+      "prompt_chars": 1934,
+      "input_tokens": 32,
+      "output_tokens": 12904,
+      "cache_read_tokens": 2599674,
+      "cache_creation_tokens": 191297,
+      "cost_usd": 1.4142268000000002,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-typescript-interface-contract-implementer-break": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-typescript-interface-contract-implementer-break",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "src/cache/RedisCache.ts",
+        "line": 2
+       },
+       "claim_head": "`RedisCache.ts` imports `CacheMiss` from a non-existent module `import { CacheMiss } from \"./errors\";` but `src/cache/errors.ts` does not exist anywhere in the "
+      },
+      {
+       "severity": "P0",
+       "location": {
+        "path": "src/cache/InMemoryCache.ts",
+        "line": 6
+       },
+       "claim_head": "`InMemoryCache` no longer satisfies the narrowed `Cache` contract `Cache.get` was narrowed to `Promise<string>` (`src/cache/Cache.ts:2`), but `InMemoryCache.get"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 74.5,
+      "prompt_chars": 2331,
+      "input_tokens": 12,
+      "output_tokens": 4770,
+      "cache_read_tokens": 402640,
+      "cache_creation_tokens": 55551,
+      "cost_usd": 0.350456,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "run": "B2",
+   "arm": "B",
+   "rep": 2,
+   "repo_sha": "72b05fdea57d83a50440f66513a5ce3f3a901270",
+   "cases": {
+    "analogue-placement-status-label-duplication-missing-key": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "analogue-placement-status-label-duplication-missing-key",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 1,
+      "missed_keys": [
+       "webhook-cli-inline-status-labels-missing-failed"
+      ],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "integrations/webhook/cli.py",
+        "lines": {
+         "start": 1,
+         "end": 10
+        }
+       },
+       "claim_head": "`webhook` status mapping is missing the `failed` key, unlike every sibling connector `webhook/cli.py` inlines `STATUS_LABELS = {\"queued\", \"sending\", \"retrying\","
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 517.5,
+      "prompt_chars": 2536,
+      "input_tokens": 26,
+      "output_tokens": 9807,
+      "cache_read_tokens": 1563953,
+      "cache_creation_tokens": 164679,
+      "cost_usd": 1.0696286,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "analogue-placement-test-file-split-clean": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "analogue-placement-test-file-split-clean",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P2",
+       "location": {
+        "path": "tests/integrations/test_webhook_send.py",
+        "line": 1
+       },
+       "claim_head": "Webhook test coverage is split across two files, unlike every analogous integration Every existing integration test suite (`tests/integrations/test_slack.py`, `"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 118.7,
+      "prompt_chars": 2602,
+      "input_tokens": 24,
+      "output_tokens": 9902,
+      "cache_read_tokens": 1733227,
+      "cache_creation_tokens": 188953,
+      "cost_usd": 1.2015254,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-external-cases-unresolvable": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-external-cases-unresolvable",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "app/shipping/rates.py",
+        "line": 2
+       },
+       "claim_head": "Free-shipping threshold change cannot be verified against its own contract test The diff changes the free-shipping cutoff in `shipping_cost_cents` from `subtota"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 67.7,
+      "prompt_chars": 2197,
+      "input_tokens": 16,
+      "output_tokens": 4100,
+      "cache_read_tokens": 453931,
+      "cache_creation_tokens": 31595,
+      "cost_usd": 0.2581982,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-stale-assertion-unlinked-name": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-stale-assertion-unlinked-name",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "app/shipping/rates.py",
+        "line": 2
+       },
+       "claim_head": "Free-shipping threshold change breaks `test_free_shipping_at_fifty_dollars` `tests/test_order_summary.py:4` calls `build_summary(5000)` and asserts `summary[\"sh"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 107.3,
+      "prompt_chars": 2138,
+      "input_tokens": 26,
+      "output_tokens": 8949,
+      "cache_read_tokens": 1480843,
+      "cache_creation_tokens": 149783,
+      "cost_usd": 0.9848425999999999,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-affected-test-still-holds-control": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-affected-test-still-holds-control",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P2",
+       "location": {
+        "path": "app/shipping/rates.py",
+        "lines": {
+         "start": 2,
+         "end": 3
+        }
+       },
+       "claim_head": "New `express` shipping branch is unreachable from any caller and untested The sole caller, `app/orders/summary.py:5` (`build_summary`), invokes `shipping_cost_c"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 87.7,
+      "prompt_chars": 2138,
+      "input_tokens": 16,
+      "output_tokens": 6885,
+      "cache_read_tokens": 632898,
+      "cache_creation_tokens": 117030,
+      "cost_usd": 0.6635816,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-analogue-pattern-source-outside-repository-unresolvable",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 106.5,
+      "prompt_chars": 1880,
+      "input_tokens": 24,
+      "output_tokens": 8111,
+      "cache_read_tokens": 1115408,
+      "cache_creation_tokens": 124618,
+      "cost_usd": 0.8027116000000001,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-interface-config-registered-implementers-unresolvable": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-interface-config-registered-implementers-unresolvable",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "src/internal/cache/Cache.ts",
+        "line": 2
+       },
+       "claim_head": "`Cache.get()` contract narrowing can be silently violated by out-of-repo implementers `Cache.get()` is retyped from `Promise<string | null>` to `Promise<string>"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 138.4,
+      "prompt_chars": 2183,
+      "input_tokens": 20,
+      "output_tokens": 10794,
+      "cache_read_tokens": 919666,
+      "cache_creation_tokens": 127277,
+      "cost_usd": 0.8010211999999999,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "relrecall-interface-optional-member-implementers-compatible-control": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "relrecall-interface-optional-member-implementers-compatible-control",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 393.8,
+      "prompt_chars": 2331,
+      "input_tokens": 22,
+      "output_tokens": 10281,
+      "cache_read_tokens": 1490155,
+      "cache_creation_tokens": 183773,
+      "cost_usd": 1.135977,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-call-site-caller-null-deref": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-call-site-caller-null-deref",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 1,
+      "missed_keys": [
+       "charge-user-null-deref-after-get-user-contract-change"
+      ],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "app/users/lookup.py",
+        "line": 5
+       },
+       "claim_head": "`get_user` silently returns `None` instead of raising `UserNotFound`, crashing its only caller The diff deletes the `if user is None: raise UserNotFound(user_id"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 69.3,
+      "prompt_chars": 2089,
+      "input_tokens": 14,
+      "output_tokens": 4730,
+      "cache_read_tokens": 546793,
+      "cache_creation_tokens": 70561,
+      "cost_usd": 0.43893060000000006,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-config-consumer-stale-import": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-config-consumer-stale-import",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 1,
+      "false_positives": 2,
+      "missed_keys": [
+       "uploads-imports-removed-config-key"
+      ],
+      "incorrect_indices": [
+       0,
+       1
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "app/settings.py",
+        "line": 2
+       },
+       "claim_head": "Renaming `MAX_UPLOAD_MB` to `MAX_UPLOAD_BYTES` breaks its only consumer, causing an ImportError `app/settings.py` previously defined `MAX_UPLOAD_MB = 25` and no"
+      },
+      {
+       "severity": "P1",
+       "location": {
+        "path": "app/uploads.py",
+        "line": 5
+       },
+       "claim_head": "Upload size limit silently changes semantics from megabytes to bytes without updating the comparison logic The old constant held a limit expressed in megabytes "
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 46.9,
+      "prompt_chars": 2071,
+      "input_tokens": 10,
+      "output_tokens": 2063,
+      "cache_read_tokens": 293633,
+      "cache_creation_tokens": 43484,
+      "cost_usd": 0.2533126,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-control-compatible-caller-no-finding": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-control-compatible-caller-no-finding",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 0,
+      "missed_keys": [],
+      "incorrect_indices": [],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [],
+     "telemetry": {
+      "wall_seconds": 20.9,
+      "prompt_chars": 2109,
+      "input_tokens": 10,
+      "output_tokens": 1300,
+      "cache_read_tokens": 266161,
+      "cache_creation_tokens": 29713,
+      "cost_usd": 0.1851042,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-python-dynamic-dispatch-safe-failure": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-python-dynamic-dispatch-safe-failure",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P1",
+       "location": {
+        "path": "app/handlers/base.py",
+        "lines": {
+         "start": 2,
+         "end": 4
+        }
+       },
+       "claim_head": "`BaseHandler.process` drops payload validation but its only known caller still doesn't validate The unstaged diff removes the `self.validate(payload)` call from"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 147.8,
+      "prompt_chars": 1934,
+      "input_tokens": 20,
+      "output_tokens": 13151,
+      "cache_read_tokens": 1132290,
+      "cache_creation_tokens": 149271,
+      "cost_usd": 0.9550919999999999,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    },
+    "repo-intel-typescript-interface-contract-implementer-break": {
+     "status": "executed",
+     "error": null,
+     "metrics": {
+      "id": "repo-intel-typescript-interface-contract-implementer-break",
+      "status": "executed",
+      "findings_completeness": "exhaustive",
+      "false_negatives": 0,
+      "false_positives": 1,
+      "missed_keys": [],
+      "incorrect_indices": [
+       0
+      ],
+      "near_misses": 0,
+      "absorbed_extra_match": 0,
+      "tolerated_unexpected": 0
+     },
+     "produced": [
+      {
+       "severity": "P0",
+       "location": {
+        "path": "src/cache/RedisCache.ts",
+        "line": 2
+       },
+       "claim_head": "`RedisCache` imports a `CacheMiss` module that does not exist `RedisCache.ts` adds `import { CacheMiss } from \"./errors\";`, but there is no `src/cache/errors.ts"
+      },
+      {
+       "severity": "P1",
+       "location": {
+        "path": "src/cache/InMemoryCache.ts",
+        "line": 6
+       },
+       "claim_head": "`InMemoryCache` no longer satisfies the updated `Cache` contract `Cache.get` is now typed `Promise<string>` (`src/cache/Cache.ts:2`), but `InMemoryCache.get` st"
+      }
+     ],
+     "telemetry": {
+      "wall_seconds": 158.0,
+      "prompt_chars": 2331,
+      "input_tokens": 28,
+      "output_tokens": 12821,
+      "cache_read_tokens": 2063280,
+      "cache_creation_tokens": 177207,
+      "cost_usd": 1.24975,
+      "skills_invoked": [
+       "relationship-comparison-under-test:local-code-review"
+      ]
+     }
+    }
+   }
+  }
+ ]
+}
