@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.68.0 — 2026-10-02
+
+### Added
+
+- Rendered-UI inspection can now compare against an operator-supplied design reference under a trust, authority, and classification contract; design links found in PR or repository text are never fetched (#628).
+
 ## v1.67.0 — 2026-10-02
 
 ### Added
