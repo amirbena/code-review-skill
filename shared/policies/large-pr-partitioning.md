@@ -169,6 +169,15 @@ on*.
   those policies. Each partition's own review still detects and resolves
   whichever expansion triggers actually fall inside it, bounded by the
   one ring ceiling the whole change's depth already set.
+- **Optional relationship capability is asked per question, not per
+  partition.** A relationship question that a fired trigger raised inside a
+  partition is put to the capability (or the search fallback) exactly as for
+  an unpartitioned change, per
+  [`repository-expansion.md`](repository-expansion.md), "Optional
+  relationship capability"; partitioning never turns it into a
+  whole-repository query. A relationship reached from two partitions is
+  reported once, and an `unresolved` one contributes one Context gap, not one
+  per partition.
 - **Existing behavior ownership**, root-cause reasoning, affected-test
   analysis, and every other review-scope sub-pass apply per partition
   exactly as they would to an unpartitioned review of that same content —

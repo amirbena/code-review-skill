@@ -685,7 +685,9 @@ or runbook implements them today:
   repository graph; no runtime retrieves entities or relationships during a
   review; [`repository-expansion.md`](../shared/policies/repository-expansion.md)
   (#87)'s trigger catalog, ring ceiling, and reporting contract are
-  unchanged. There is no packaged finding field carrying
+  unchanged. A host may optionally declare a `relationship-query` capability that
+  the packaged policies consume as a verifiable claim with search fallback
+  (#604); this repository still ships no provider. There is no packaged finding field carrying
   `influential_relationships` — that representation is left to a later,
   separately-scoped implementation issue once the model is validated.
 - **Denied capability-boundary event emission** — #299 (see

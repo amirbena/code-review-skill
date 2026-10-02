@@ -7,6 +7,9 @@ activation:
   - a change carries an evidenced consumer beyond the changed file that
     the fixed expansion list points toward
   - the diff size crosses the large-change partitioning threshold
+  - the host declares the optional relationship-query capability and a
+    relationship question is open for a fired trigger or a signal-triggered
+    pass
   - (fail-closed) ambiguous or failed evaluation of the above loads this
     capability rather than skipping it
 adapters: [local, github]
@@ -21,4 +24,6 @@ never:
   - letting directory distance alone block a merge the evidence supports
   - treating ambiguous or failed predicate evaluation as a reason to skip
     activation
-benchmark: benchmark/corpus/risk-depth, benchmark/corpus/repository-intelligence, benchmark/corpus/scale-progressive-loading-proof
+  - requiring an optional host relationship capability, or believing one of
+    its answers without checking it against the reviewed snapshot
+benchmark: benchmark/corpus/risk-depth, benchmark/corpus/repository-intelligence, benchmark/corpus/scale-progressive-loading-proof, benchmark/corpus/relationship-recall

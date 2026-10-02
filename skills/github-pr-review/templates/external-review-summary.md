@@ -417,7 +417,7 @@ human-facing review and clearly subordinate, per
 - change_risk_depth: `standard` | `elevated` | `deep`
 - change_risk_signals: `none` | `<signal (tier) — evidence>` per resolved occurrence
 - repository_expansion_triggers: `none` | `<trigger (ring N) — locations>` per fired trigger
-- repository_relationship_outcomes: `none` | `<class — subject — resolved_relevant|resolved_none|unresolved (reason)>` per relationship
+- repository_relationship_outcomes: `none` | `<class — subject — resolved_relevant|resolved_none|unresolved (reason)>` per relationship, suffixed `via capability` when a host relationship capability supplied the answer
 - large_pr_partitioning: `<n> partitions, <capped/dedup note>` — omitted entirely when inactive
 - coverage: `complete` | `incomplete — <reason(s)>`
 - P0: <n>
