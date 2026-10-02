@@ -8,6 +8,7 @@ evaluate drift with in-run confirmation, assemble and validate the record.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import platform
 import re
@@ -24,6 +25,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from runtime_platform.benchmark.scripts import benchmark_result as res  # noqa: E402
+from runtime_platform.benchmark.scripts.benchmark_progress import ProgressLog, parse_child_timing  # noqa: E402
 from runtime_platform.benchmark.scripts import benchmark_seal as seal  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_baseline import HistorySource, load_baseline  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_corpus_membership import (  # noqa: E402
@@ -45,6 +47,7 @@ from runtime_platform.benchmark.scripts.benchmark_run_record import (  # noqa: E
 ROUTINE_DOC = REPO_ROOT / "benchmark" / "cloud-routine-integration.md"
 RUN_BENCHMARK = REPO_ROOT / "runtime_platform" / "benchmark" / "scripts" / "run_benchmark.py"
 NONDETERMINISM = "Model output is nondeterministic; a rerun may differ."
+STDERR_TAIL_CHARS = 400
 PROMPT_SECTION = "## 9. Routine prompt template"
 
 
@@ -66,6 +69,7 @@ class Invocation:
     verification: dict
     output: dict
     duration_s: float
+    timing: dict[str, float] | None = None
 
 
 @dataclass(frozen=True)
@@ -108,10 +112,12 @@ def invoke(executable: str, timeout: float, case_id: str | None, corpus_dir: str
     duration = round(time.monotonic() - started, 3)
     verification = verify_benchmark_output(proc.stdout, proc.returncode)
     if not verification.passed:
+        tail = " ".join((proc.stderr or "").split())[-STDERR_TAIL_CHARS:]
         raise RoutineExecutionError(
             f"fail-closed: an invocation did not pass positive completion verification: {verification.reason}"
+            + (f" (child stderr tail: {tail})" if tail else "")
         )
-    return Invocation(verification.as_dict(), json.loads(proc.stdout), duration)
+    return Invocation(verification.as_dict(), json.loads(proc.stdout), duration, parse_child_timing(proc.stderr))
 
 
 def _yaml_case_paths(corpus_dir: Path) -> dict[str, Path]:
@@ -165,6 +171,7 @@ def build_sealed_run(
     history: HistorySource,
     *,
     now: Callable[[], str] = utc_now,
+    progress: ProgressLog | None = None,
 ) -> SealedRun:
     """Evaluate drift (re-running drifting cases to confirm them) and build the sealed record."""
     if run.lane not in manifest["lanes"]:
@@ -177,21 +184,30 @@ def build_sealed_run(
         raise RoutineExecutionError("fail-closed: the run did not cover exactly the lane's membership")
 
     confirmation_raw: list[dict] = []
+    progress = progress or ProgressLog(stream=io.StringIO())
 
     def observe(case_id: str) -> Mapping[str, Any]:
-        inv = invoke(run.executable, run.timeout, case_id, corpus.case_dirs[case_id])
+        rerun = len(confirmation_raw) + 1
+        inv = progress.item(
+            f"[confirm #{rerun}]",
+            case_id,
+            lambda: invoke(run.executable, run.timeout, case_id, corpus.case_dirs[case_id]),
+            counted=False,
+        )
         confirmation_raw.append({"case_id": case_id, "run": inv.output["run"]})
         return cases_from_output(inv.output, corpus.digests, inv.duration_s)[0]
 
     deadline = None if run.confirmation_budget_s is None else run.started_mono + run.confirmation_budget_s
-    evaluation = evaluate_drift(
-        cases,
-        load_baseline(history, run.lane),
-        ConfirmationPolicy(**manifest["confirmation"]),
-        run.runtime,
-        observe,
-        deadline=deadline,
-    )
+    with progress.phase("drift-confirmation"):
+        evaluation = evaluate_drift(
+            cases,
+            load_baseline(history, run.lane),
+            ConfirmationPolicy(**manifest["confirmation"]),
+            run.runtime,
+            observe,
+            deadline=deadline,
+        )
+    progress.log(f"[drift-confirmation] reruns_performed={evaluation.reruns_performed}")
     raw_by_case = {c["id"]: c for inv in invocations for c in inv.output["run"]["cases"]}
     drift = {
         **evaluation.drift,

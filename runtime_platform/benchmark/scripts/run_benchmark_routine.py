@@ -54,6 +54,7 @@ from runtime_platform.benchmark.scripts.benchmark_lane_run import (  # noqa: E40
     spec_sha256,
     utc_now,
 )
+from runtime_platform.benchmark.scripts.benchmark_progress import ProgressLog  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_review_adapter import resolve_cli_executable  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_schedule_manifest import (  # noqa: E402
     MANIFEST_PATH,
@@ -234,8 +235,12 @@ def run_handoff_check(args: argparse.Namespace) -> int:
     return 0
 
 
-def run_benchmark_mode(args: argparse.Namespace) -> int:
-    plan = _plan(args)
+def run_benchmark_mode(args: argparse.Namespace, progress: ProgressLog | None = None) -> int:
+    progress = progress or ProgressLog()
+    with progress.phase("planning"):
+        plan = _plan(args)
+    progress.total = len(plan.invocations)
+    progress.log(f"[{plan.mode}] discovered {progress.total} fixtures" if plan.corpus is not None else f"[{plan.mode}] {progress.total} invocations")
     manifest = _load_manifest(args.manifest) if plan.corpus is not None else None
     spec = spec_sha256(manifest) if manifest is not None else None  # fail before any invocation
     executable = args.cli or resolve_cli_executable()
@@ -246,7 +251,12 @@ def run_benchmark_mode(args: argparse.Namespace) -> int:
     }
     repo_sha, started_at, started_mono = _git_sha(REPO_ROOT), utc_now(), time.monotonic()
 
-    invocations: list[Invocation] = [invoke(executable, args.timeout, cid, where) for cid, where in plan.invocations]
+    invocations: list[Invocation] = []
+    with progress.phase("fixtures"):
+        for position, (cid, where) in enumerate(plan.invocations, start=1):
+            invocations.append(
+                progress.item(f"[{position}/{progress.total}]", cid or "<whole-corpus>", lambda: invoke(executable, args.timeout, cid, where))
+            )
     raw_invocations = [
         {"case_id": cid, "run": inv.output["run"]} for (cid, _), inv in zip(plan.invocations, invocations)
     ]
@@ -272,9 +282,10 @@ def run_benchmark_mode(args: argparse.Namespace) -> int:
         confirmation_budget_s=args.confirmation_budget_s,
     )
     sealed = build_sealed_run(
-        run, plan.corpus, invocations, raw_invocations, manifest, _history_source(args)
+        run, plan.corpus, invocations, raw_invocations, manifest, _history_source(args), progress=progress
     )
-    where = _hand_off(args, sealed.ref, sealed.files, seal.RECORD_FILE, f"benchmark result {sealed.run_id}")
+    with progress.phase("seal-handoff"):
+        where = _hand_off(args, sealed.ref, sealed.files, seal.RECORD_FILE, f"benchmark result {sealed.run_id}")
     record = sealed.record
     print(
         json.dumps(

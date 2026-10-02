@@ -98,6 +98,14 @@ pre-#431 ambiguity (it happened to only ever resolve to the 4 top-level
 cases, because `--corpus-dir`'s glob is non-recursive) is resolved by this
 table, not left as a second live meaning.
 
+**Progress diagnostics (#611).** Every mode logs flushed, timestamped progress
+to stderr only: discovered fixture count, per-fixture `START` / `PASS` / `FAIL`
+with `N/total`, phase durations (`planning`, `fixtures`, `drift-confirmation`,
+`seal-handoff`), confirmation reruns, a 60 s heartbeat naming the running
+fixture, and each child's probe / review / other timing split. This lets a run
+killed at the Routine limit still show where it stopped. It changes no
+execution, scoring, timeout, sealing, or stdout behavior.
+
 ### 2.2 Evaluation, confirmation, and the seal (A2, A8)
 
 For `sentinel` and `comprehensive`, once every invocation verifies, the
