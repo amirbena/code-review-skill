@@ -11,36 +11,44 @@ headings and literal terms.
 
 import unittest
 
+from tests.support.benchmark_doc_contract import (
+    BenchmarkDocContractMixin,
+    BenchmarkDocNavigationMixin,
+    BenchmarkDocSpec,
+    Section,
+)
 from tests.support.paths import REPO_ROOT
 
-DOC = REPO_ROOT / "runtime_platform" / "benchmark" / "selection.md"
-README = REPO_ROOT / "runtime_platform" / "benchmark" / "README.md"
-REFERENCE = REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / "benchmark_selection.py"
-UNIT_TEST = REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_selection.py"
-CLI_SCRIPT = REPO_ROOT / "runtime_platform" / "benchmark" / "scripts" / "select_benchmark_cases.py"
+BENCH = REPO_ROOT / "runtime_platform" / "benchmark"
+DOC = BENCH / "selection.md"
+CLI_SCRIPT = BENCH / "scripts" / "select_benchmark_cases.py"
+
+SPEC = BenchmarkDocSpec(
+    doc=DOC,
+    issue_tokens=("#334", "#333", "#330", "#331", "#335"),
+    invariant=(
+        "A selector that cannot explain, deterministically, why it "
+        "picked what it picked is not trustworthy enough to inform a "
+        "merge decision"
+    ),
+    not_packaged="repository-development doc",
+    status_heading="## 6. Status and canonical home",
+    status_body=(
+        "informational-only",
+        "never become a required contributor/merge check",
+    ),
+    status_raw=("](reference/benchmark_selection.py)",),
+    readme_link="](selection.md)",
+    readme_issue="#334",
+    reference=BENCH / "reference" / "benchmark_selection.py",
+    reference_head_chars=800,
+    unit_test=REPO_ROOT / "tests" / "unit" / "benchmark" / "test_benchmark_selection.py",
+    unit_import="from runtime_platform.benchmark.reference import benchmark_selection as sel",
+)
 
 
-class SelectionContractTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.raw = DOC.read_text(encoding="utf-8")
-        cls.text = " ".join(cls.raw.split())
-
-    def test_is_repository_development_only_not_packaged(self) -> None:
-        self.assertIn("repository-development doc", self.text)
-        self.assertIn("no packaged Skill resource depends on it", self.text)
-
-    def test_names_issue_334_and_its_neighbours(self) -> None:
-        for token in ("#334", "#333", "#330", "#331", "#335"):
-            self.assertIn(token, self.raw)
-
-    def test_canonical_invariant_is_stated(self) -> None:
-        self.assertIn(
-            "A selector that cannot explain, deterministically, why it "
-            "picked what it picked is not trustworthy enough to inform a "
-            "merge decision",
-            self.text,
-        )
+class SelectionContractTests(BenchmarkDocContractMixin, unittest.TestCase):
+    spec = SPEC
 
     def test_case_relevance_weights_are_documented(self) -> None:
         self.assertIn("## 2. Case Relevance Score", self.raw)
@@ -104,29 +112,11 @@ class SelectionContractTests(unittest.TestCase):
         self.assertIn("issues/335", boundary)
         self.assertIn("informational-only", boundary)
 
-    def test_status_defers_to_an_eventual_canonical_home(self) -> None:
-        tail = " ".join(self.raw.split("## 6. Status and canonical home", 1)[1].split())
-        self.assertIn("informational-only", tail)
-        self.assertIn("never become a required contributor/merge check", tail)
-        self.assertIn(
-            "](reference/benchmark_selection.py)", self.raw
-        )
 
+class DirectoryNavigationTests(BenchmarkDocNavigationMixin, unittest.TestCase):
+    spec = SPEC
 
-class DirectoryNavigationTests(unittest.TestCase):
-    def test_readme_maps_the_selection_contract(self) -> None:
-        raw = README.read_text(encoding="utf-8")
-        self.assertIn("](selection.md)", raw)
-        self.assertIn("#334", raw)
-
-    def test_reference_module_is_declared_test_only(self) -> None:
-        head = " ".join(REFERENCE.read_text(encoding="utf-8")[:800].split())
-        self.assertIn("Test-only", head)
-        self.assertIn("not runtime logic, not packaged", head.lower())
-
-    def test_unit_test_consumes_the_single_reference_selector(self) -> None:
-        raw = UNIT_TEST.read_text(encoding="utf-8")
-        self.assertIn("from runtime_platform.benchmark.reference import benchmark_selection as sel", raw)
+    test_architecture_mentions_the_contract = None
 
     def test_cli_script_reimplements_no_scoring_logic(self) -> None:
         raw = CLI_SCRIPT.read_text(encoding="utf-8")
