@@ -112,6 +112,7 @@ These are summaries. The binding text lives in
 - Feature guides — how to use the optional capabilities:
   [review context](../../docs/features/review-context.md),
   [runtime validation](../../docs/features/runtime-validation.md),
+  [rendered-UI inspection](../../docs/features/rendered-inspection.md),
   [parallel review](../../docs/features/parallel-review.md),
   [human-style output](../../docs/features/human-review-output.md),
   [fix prompt](../../docs/features/fix-prompt.md),

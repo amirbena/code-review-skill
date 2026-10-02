@@ -112,6 +112,7 @@ machine-readable status/check:
   capabilities:
   [review context](../../docs/features/review-context.md),
   [runtime validation](../../docs/features/runtime-validation.md),
+  [rendered-UI inspection](../../docs/features/rendered-inspection.md),
   [parallel review](../../docs/features/parallel-review.md),
   [human-style output](../../docs/features/human-review-output.md),
   [delta re-review](../../docs/features/delta-re-review.md),
