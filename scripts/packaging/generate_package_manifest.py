@@ -103,6 +103,7 @@ _SHARED_ORDER: tuple[Entry, ...] = (
     Entry("shared/policies/structured-output.md", "structured-output"),
     Entry("shared/policies/reasoning-checkpoint.md", "reasoning-checkpoint"),
     Entry("shared/policies/rendered-inspection.md", "rendered-inspection"),
+    Entry("shared/policies/rendered-inspection-environment.md", "rendered-inspection"),
     Entry("shared/policies/specialist-depth.md", "specialist-depth"),
     Entry("shared/policies/security-deepening.md", "specialist-depth"),
     Entry("shared/policies/distributed-systems-deepening.md", "specialist-depth"),

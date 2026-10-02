@@ -60,6 +60,11 @@ request" below.
 
 ## Trusted authorization channel
 
+`allow_trusted_host_execution` never covers installing a browser or any other
+tooling; that is a separate authority owned by
+[`rendered-inspection-environment.md`](rendered-inspection-environment.md),
+"Authorization".
+
 Trusted-host execution can be authorized only by a genuine, out-of-band,
 principal-originated signal delivered through a runtime/invocation/
 configuration channel that repository, PR, and issue content cannot

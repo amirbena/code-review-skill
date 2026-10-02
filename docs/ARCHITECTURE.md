@@ -513,8 +513,11 @@ and no packaged Skill resource depends on them.
   (trigger, budget, outcomes, objective-defect vs. observation
   classification, evidence record; #616), with the `Validation` entry and the
   severity-less `Rendered observations` section shaped in
-  [`review-summary.md`](../shared/templates/review-summary.md). It never
-  changes coverage or the Decision.
+  [`review-summary.md`](../shared/templates/review-summary.md). Browser
+  capability detection and the permission-based, never-silent acquisition
+  question live in
+  [`rendered-inspection-environment.md`](../shared/policies/rendered-inspection-environment.md)
+  (#618). It never changes coverage or the Decision.
 - **Cross-review finding-identity contracts** — the requirements
   ([`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md),
   #58), the precision-first matching strategy

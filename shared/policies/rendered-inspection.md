@@ -31,12 +31,13 @@ any depth (see [`review-stopping-criteria.md`](review-stopping-criteria.md),
 "Coverage"). The step runs once, in the slot beside runtime validation, before
 the finding set is finalized — never after the Decision is derived.
 
-Environment detection, installation, and the permission question for a browser
-capability, and design-reference handling are owned elsewhere and are not
-defined here. This policy owns the contract those steps plug into: the trigger,
-the plan and budget, target sourcing and the execution boundary, the outcome
-vocabulary, the classification of what is found, the evidence record, and the
-extension points below.
+Browser capability detection, installation, and the permission question are
+owned by [`rendered-inspection-environment.md`](rendered-inspection-environment.md);
+design-reference handling is owned elsewhere. Neither is defined here. This
+policy owns the contract those steps plug into: the trigger, the plan and
+budget, target sourcing and the execution boundary, the outcome vocabulary, the
+classification of what is found, the evidence record, and the extension points
+below.
 
 ## Activation: the UI-impact trigger
 
