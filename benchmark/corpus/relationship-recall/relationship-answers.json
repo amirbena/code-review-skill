@@ -1,0 +1,46 @@
+{
+  "schema": "relationship-enrichment-answers/v1",
+  "issue": 605,
+  "note": "Ideal-provider answers for arm B of the #605 comparison, authored from each fixture's ground truth. snapshot_id is bound at run time to the workspace pre-image commit. Shape: docs/repository-intelligence/relationship-capability-contract.md section 4.",
+  "cases": {
+    "repo-intel-python-call-site-caller-null-deref": [
+      {"question": "consumers_of", "subject": "get_user", "edges": [{"kind": "calls", "source": "app/billing/charge.py:charge_user", "target": "app/users/lookup.py:get_user", "path": "app/billing/charge.py", "line": 7, "ring": 1}], "candidates": 0, "complete": true}
+    ],
+    "repo-intel-python-control-compatible-caller-no-finding": [
+      {"question": "consumers_of", "subject": "normalize_whitespace", "edges": [{"kind": "calls", "source": "app/text/slugify.py:make_slug", "target": "app/text/normalize.py:normalize_whitespace", "path": "app/text/slugify.py", "line": 5, "ring": 1}], "candidates": 0, "complete": true}
+    ],
+    "repo-intel-python-dynamic-dispatch-safe-failure": [
+      {"question": "consumers_of", "subject": "BaseHandler.process", "edges": [], "candidates": 1, "complete": false}
+    ],
+    "repo-intel-python-config-consumer-stale-import": [
+      {"question": "consumers_of", "subject": "MAX_UPLOAD_MB", "edges": [{"kind": "imports", "source": "app/uploads.py", "target": "app/settings.py:MAX_UPLOAD_MB", "path": "app/uploads.py", "line": 1, "ring": 1}], "candidates": 0, "complete": true}
+    ],
+    "relrecall-affected-test-stale-assertion-unlinked-name": [
+      {"question": "tests_exercising", "subject": "shipping_cost_cents", "edges": [{"kind": "tested_by", "source": "app/shipping/rates.py:shipping_cost_cents", "target": "tests/test_order_summary.py:test_free_shipping_at_fifty_dollars", "path": "tests/test_order_summary.py", "line": 4}], "candidates": 0, "complete": true}
+    ],
+    "relrecall-affected-test-still-holds-control": [
+      {"question": "tests_exercising", "subject": "shipping_cost_cents", "edges": [{"kind": "tested_by", "source": "app/shipping/rates.py:shipping_cost_cents", "target": "tests/test_order_summary.py:test_free_shipping_at_fifty_dollars", "path": "tests/test_order_summary.py", "line": 4}], "candidates": 0, "complete": true}
+    ],
+    "relrecall-affected-test-external-cases-unresolvable": [
+      {"question": "tests_exercising", "subject": "shipping_cost_cents", "edges": [{"kind": "tested_by", "source": "app/shipping/rates.py:shipping_cost_cents", "target": "tests/test_shipping_contract.py:test_shipping_contract", "path": "tests/test_shipping_contract.py", "line": 18}], "candidates": 1, "complete": false}
+    ],
+    "repo-intel-typescript-interface-contract-implementer-break": [
+      {"question": "implementers_of", "subject": "Cache", "edges": [{"kind": "implements", "source": "src/cache/RedisCache.ts:RedisCache", "target": "src/cache/Cache.ts:Cache", "path": "src/cache/RedisCache.ts", "line": 3, "ring": 1}, {"kind": "implements", "source": "src/cache/InMemoryCache.ts:InMemoryCache", "target": "src/cache/Cache.ts:Cache", "path": "src/cache/InMemoryCache.ts", "line": 3, "ring": 1}], "candidates": 0, "complete": true}
+    ],
+    "relrecall-interface-optional-member-implementers-compatible-control": [
+      {"question": "implementers_of", "subject": "Cache", "edges": [{"kind": "implements", "source": "src/cache/RedisCache.ts:RedisCache", "target": "src/cache/Cache.ts:Cache", "path": "src/cache/RedisCache.ts", "line": 3, "ring": 1}, {"kind": "implements", "source": "src/cache/InMemoryCache.ts:InMemoryCache", "target": "src/cache/Cache.ts:Cache", "path": "src/cache/InMemoryCache.ts", "line": 3, "ring": 1}], "candidates": 0, "complete": true}
+    ],
+    "relrecall-interface-config-registered-implementers-unresolvable": [
+      {"question": "implementers_of", "subject": "Cache", "edges": [{"kind": "implements", "source": "src/internal/cache/RedisCache.ts:RedisCache", "target": "src/internal/cache/Cache.ts:Cache", "path": "src/internal/cache/RedisCache.ts", "line": 3, "ring": 1}], "candidates": 1, "complete": false}
+    ],
+    "analogue-placement-status-label-duplication-missing-key": [
+      {"question": "analogues_of", "subject": "integrations/webhook/cli.py", "edges": [{"kind": "analogue_of", "source": "integrations/webhook/cli.py", "target": "integrations/slack/mapping.py", "path": "integrations/slack/mapping.py", "line": 1}, {"kind": "analogue_of", "source": "integrations/webhook/cli.py", "target": "integrations/teams/mapping.py", "path": "integrations/teams/mapping.py", "line": 1}, {"kind": "analogue_of", "source": "integrations/webhook/cli.py", "target": "integrations/pagerduty/mapping.py", "path": "integrations/pagerduty/mapping.py", "line": 1}], "candidates": 0, "complete": true}
+    ],
+    "analogue-placement-test-file-split-clean": [
+      {"question": "analogues_of", "subject": "tests/integrations/test_webhook_send.py", "edges": [{"kind": "analogue_of", "source": "tests/integrations/test_webhook_send.py", "target": "tests/integrations/test_slack.py", "path": "tests/integrations/test_slack.py", "line": 1}, {"kind": "analogue_of", "source": "tests/integrations/test_webhook_send.py", "target": "tests/integrations/test_teams.py", "path": "tests/integrations/test_teams.py", "line": 1}, {"kind": "analogue_of", "source": "tests/integrations/test_webhook_send.py", "target": "tests/integrations/test_pagerduty.py", "path": "tests/integrations/test_pagerduty.py", "line": 1}], "candidates": 0, "complete": true}
+    ],
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": [
+      {"question": "analogues_of", "subject": "integrations/webhook/cli.py", "edges": [], "candidates": 0, "complete": false}
+    ]
+  }
+}
