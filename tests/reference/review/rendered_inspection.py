@@ -207,3 +207,96 @@ def output_for(facts: ChangeFacts) -> str | None:
     if not trigger_fires(facts):
         return None
     return "active"
+
+
+class TargetSource(Enum):
+    DECLARED_SERVER = "declared-running-server"
+    TRUSTED_PREVIEW = "sha-matched-trusted-preview"
+    START_COMMAND = "declared-start-command"
+    NONE = "none"
+
+
+@dataclass(frozen=True)
+class Candidate:
+    source: TargetSource
+    from_trusted_channel: bool = True
+    bound_sha: str | None = None
+    introduced_by_content: bool = False
+
+
+@dataclass(frozen=True)
+class Selection:
+    source: TargetSource
+    outcome: Outcome | None
+    reason: str
+
+
+def can_start_command(*, sandbox_established: bool, trusted_host_authorized: bool) -> bool:
+    """Source 3 needs the verified boundary or explicit trusted-host
+    authorization; absence never falls back to host execution."""
+    return sandbox_established or trusted_host_authorized
+
+
+def select_target(
+    candidates: Sequence[Candidate],
+    reviewed_sha: str,
+    *,
+    sandbox_established: bool = False,
+    trusted_host_authorized: bool = False,
+) -> Selection:
+    """First available source in priority order that passes its gate.
+
+    Content-introduced candidates are never considered; a SHA-mismatched one
+    is recorded inconclusive and is not evidence; no fallback past a gate.
+    """
+    order = (TargetSource.DECLARED_SERVER, TargetSource.TRUSTED_PREVIEW, TargetSource.START_COMMAND)
+    usable = {c.source: c for c in candidates if not c.introduced_by_content}
+    for source in order:
+        cand = usable.get(source)
+        if cand is None:
+            continue
+        if source is not TargetSource.START_COMMAND:
+            if not cand.from_trusted_channel:
+                continue
+            if cand.bound_sha != reviewed_sha:
+                return Selection(source, Outcome.ATTEMPTED_INCONCLUSIVE, "sha-mismatch")
+            return Selection(source, None, "selected")
+        if not can_start_command(
+            sandbox_established=sandbox_established,
+            trusted_host_authorized=trusted_host_authorized,
+        ):
+            return Selection(source, Outcome.UNAVAILABLE, "no-boundary-or-authorization")
+        return Selection(source, None, "selected")
+    return Selection(TargetSource.NONE, Outcome.UNAVAILABLE, "no-target")
+
+
+SERVER_START_TIMEOUT_SECONDS = 30
+NAVIGATION_TIMEOUT_SECONDS = 15
+MAX_ATTEMPTS = 1
+
+
+@dataclass(frozen=True)
+class StepRun:
+    server_start_seconds: float = 0
+    navigation_seconds: float = 0
+    total_seconds: float = 0
+    attempts: int = 1
+    needs_credentials: bool = False
+    tree_changed: bool = False
+    process_torn_down: bool = True
+
+
+def map_step(run: StepRun) -> Outcome:
+    """Bounds, one attempt, credential need, and post-run tree check."""
+    if run.needs_credentials:
+        return Outcome.UNAVAILABLE
+    if (
+        run.attempts > MAX_ATTEMPTS
+        or run.server_start_seconds > SERVER_START_TIMEOUT_SECONDS
+        or run.navigation_seconds > NAVIGATION_TIMEOUT_SECONDS
+        or run.total_seconds > WALL_CLOCK_SECONDS
+        or run.tree_changed
+        or not run.process_torn_down
+    ):
+        return Outcome.ATTEMPTED_INCONCLUSIVE
+    return Outcome.INSPECTED

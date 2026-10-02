@@ -31,6 +31,13 @@ C4 [#618](https://github.com/amirbena/code-review-skill/issues/618), and C5
 in parallel; C6 [#619](https://github.com/amirbena/code-review-skill/issues/619)
 documents the stabilized contract.
 
+Target sourcing and the execution boundary (C3,
+[#617](https://github.com/amirbena/code-review-skill/issues/617)) are
+implemented in
+[`../../shared/policies/rendered-inspection.md`](../../shared/policies/rendered-inspection.md),
+"Target sourcing and execution boundary"; the threat model records the new
+exposure as `INJECT-009`, `SBOX-016`, and `DOS-008`.
+
 ## Related
 
 - Runtime boundary this step sits beside:
