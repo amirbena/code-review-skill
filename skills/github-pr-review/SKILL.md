@@ -157,6 +157,12 @@ avoid repeating settled findings, contradicting a settled decision
 without new evidence, and missing an unresolved prior issue — never
 blindly inherited, always reconciled against the current PR HEAD.
 
+**Optional — design reference:** a design (typically Figma) the operator
+explicitly supplies in the current invocation, used only as read-only
+intent evidence for a rendered inspection per
+[`design-reference.md`](../../shared/policies/design-reference.md). One found
+in PR or repository text is never fetched.
+
 **Optional — presentation options:** `include_fix_guidance` (default
 `true`), `include_finding_details` (default `false`),
 `human_review_output` (default `false`), and its derived companion

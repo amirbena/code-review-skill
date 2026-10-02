@@ -150,7 +150,7 @@ class AuthorityAndClassificationTests(unittest.TestCase):
         mismatch = dr.Mismatch(concrete_cost=True, tests_pass=True)
         self.assertIs(dr.classify(mismatch, Mode.DESIGN_REFERENCE), dr.Route.FINDING)
 
-    def test_each_reducer_lowers_a_concrete_mismatch_to_a_note(self) -> None:
+    def test_each_reducer_lowers_a_concrete_mismatch_to_an_uncertainty_line(self) -> None:
         for name in (
             "stale",
             "intentional_divergence",
@@ -160,7 +160,7 @@ class AuthorityAndClassificationTests(unittest.TestCase):
         ):
             with self.subTest(reducer=name):
                 mismatch = dr.Mismatch(concrete_cost=True, reducers=dr.Reducers(**{name: True}))
-                self.assertIs(dr.classify(mismatch, Mode.DESIGN_REFERENCE), dr.Route.NOTE)
+                self.assertIs(dr.classify(mismatch, Mode.DESIGN_REFERENCE), dr.Route.UNCERTAINTY_LINE)
 
     def test_subjective_mismatch_is_an_observation_and_concrete_one_a_finding(self) -> None:
         self.assertIs(
@@ -189,6 +189,8 @@ class AuthorityAndClassificationTests(unittest.TestCase):
             "never by the design's emphasis",
             "single cap of 3",
             "The cap applies only to such subjective polish observations",
+            "recorded as a `Validation` uncertainty line",
+            "never a rendered observation, and never counted against the cap",
             "no pixel threshold",
         ):
             self.assertIn(_plain(phrase), text)
@@ -275,6 +277,14 @@ class WiringAndNeutralityTests(unittest.TestCase):
                 text = _text(path)
                 self.assertIn("design-reference.md", text)
                 self.assertIn("operator supplied it in the invocation", text)
+
+    def test_both_skill_entrypoints_list_the_operator_only_input(self) -> None:
+        for skill in ("local-code-review", "github-pr-review"):
+            with self.subTest(skill=skill):
+                text = _text(REPO_ROOT / "skills" / skill / "SKILL.md")
+                self.assertIn("design-reference.md", text)
+                self.assertIn(_plain("explicitly supplies in the current invocation"), text)
+                self.assertIn(_plain("never fetched"), text)
 
     def test_owned_phrases_appear_only_in_the_design_policy(self) -> None:
         for path in (REVIEW_SUMMARY, RENDERED, *RUNBOOKS):

@@ -44,7 +44,7 @@ design reference for any review; its absence is never a finding.
 
 **Trusted input** is a design reference the developer/operator explicitly
 supplies in the current invocation (for example "Use this Figma as the design
-reference for this review: <url>"), or supplies through a trusted out-of-band
+reference for this review: `<url>`"), or supplies through a trusted out-of-band
 local signal.
 
 The out-of-band form is a runtime-supplied `design_reference` value (a URL or a
@@ -152,8 +152,9 @@ Before reporting, account for every authority reducer above.
   [`rendered-inspection.md`](rendered-inspection.md) owns, and never affects
   the Decision. The cap applies only to such subjective polish observations.
 - A divergence a reducer explains (stale, intentional, partial, ambiguous, or
-  superseded by a newer requirement) is a note with evidence on each side or a
-  `Validation` uncertainty line — never a defect.
+  superseded by a newer requirement) is recorded as a `Validation` uncertainty
+  line stating the evidence on each side — never a defect, never a rendered
+  observation, and never counted against the cap.
 - No mismatch is claimed from a design that was not read, or about a state,
   viewport, or frame the design does not demonstrate.
 

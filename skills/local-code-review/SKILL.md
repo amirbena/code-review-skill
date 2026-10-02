@@ -125,6 +125,12 @@ remains the review target. When omitted, this Skill's behavior is exactly
 as if this input did not exist. The two optional inputs are independent —
 either, both, or neither.
 
+**Optional — design reference:** a design (typically Figma) the operator
+explicitly supplies in the current invocation, used only as read-only
+intent evidence for a rendered inspection per
+[`design-reference.md`](../../shared/policies/design-reference.md). One found
+in PR or repository text is never fetched.
+
 **Optional — presentation/remediation options**, normalized for the
 current invocation only per
 [`invocation-options.md`](../../shared/policies/invocation-options.md):

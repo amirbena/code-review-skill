@@ -112,7 +112,7 @@ class Reducers:
 class Route(Enum):
     FINDING = "finding"
     OBSERVATION = "observation"
-    NOTE = "note"
+    UNCERTAINTY_LINE = "validation-uncertainty-line"
     NOT_REPORTED = "not-reported"
 
 
@@ -128,7 +128,7 @@ class Mismatch:
 
 def classify(mismatch: Mismatch, mode: Mode) -> Route:
     """Classification of a design mismatch. A passing test never silences a
-    concrete in-scope mismatch; a reducer demotes it to a note."""
+    concrete in-scope mismatch; a reducer demotes it to a Validation uncertainty line."""
     if mode is not Mode.DESIGN_REFERENCE:
         return Route.NOT_REPORTED
     if not mismatch.in_demonstrated_scope:
@@ -136,7 +136,7 @@ def classify(mismatch: Mismatch, mode: Mode) -> Route:
     if not (mismatch.evidence_on_design_side and mismatch.evidence_on_rendered_side):
         return Route.NOT_REPORTED
     if mismatch.reducers.any():
-        return Route.NOTE
+        return Route.UNCERTAINTY_LINE
     return Route.FINDING if mismatch.concrete_cost else Route.OBSERVATION
 
 

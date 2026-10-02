@@ -81,8 +81,11 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # skills/local-code-review/policies/multi-repository-review-target.md)
 # raised local 274 -> 288. github is unaffected (local-code-review only,
 # an explicit non-goal for github-pr-review) and stays 401.
-LOCAL_MAX_LINES = 288
-GITHUB_MAX_LINES = 401
+# Issue #620 (the operator-supplied design-reference input) added one thin
+# pointer paragraph to each SKILL.md, raising local 288 -> 294 and github
+# 401 -> 407.
+LOCAL_MAX_LINES = 294
+GITHUB_MAX_LINES = 407
 
 
 def _norm(path) -> str:
