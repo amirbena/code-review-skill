@@ -47,7 +47,7 @@ them.
 | 21 | Design reference — evidence record | ratified | See §5. |
 | 22 | Out of scope v1 | ratified | See the README Non-goals. |
 | 23 | Capability manifest placement | decided | `capabilities/rendered-inspection/capability.yaml`, `loads: on-activation`, `adapters: [local, github]`, `requires: [capability-posture]`, activation signals = the §2 row 2 trigger; `never:` lists install-without-authorization, repository mutation, post-Decision execution, and `REVIEW INCOMPLETE` from any inspection outcome. Owner: C2. |
-| 24 | `benchmark` field value | decided | `tests/reference/review/rendered_inspection.py` — the test-only reference model path, following the existing precedent of `finding-confidence`-style capabilities whose `benchmark:` names a reference model rather than a corpus directory (e.g. `capabilities/structured-output/capability.yaml`). No corpus path. See §9. |
+| 24 | `benchmark` field value | decided | `tests/reference/review/rendered_inspection.py` — the test-only reference model path, following the existing precedent of capabilities whose `benchmark:` names a reference model rather than a corpus directory (`capabilities/structured-output/capability.yaml`, `capabilities/repository-checkout/capability.yaml`). C2 creates that file in the same PR as the capability manifest. No corpus path. See §9. |
 
 ## 3. Conflict resolutions
 
