@@ -1,12 +1,4 @@
-"""Shared wiring-contract skeletons for policy documentation tests.
-
-``SharedPolicyWiringMixin`` verifies a shared policy's generic wiring
-(README row, manifest, Skills, runbooks, templates, docs, changelog) from one
-``SharedPolicyWiring`` declaration; ``SectionForwardingMixin`` does the same
-for a review-scope section forwarded into the GitHub Skill and parallel
-review. Each module keeps its own TestCase classes, so a failure names the
-policy and the wiring point. Semantic assertions stay in the owning module.
-"""
+"""Parametrized wiring-contract mixins shared by the shared-policy doc tests."""
 
 from __future__ import annotations
 
