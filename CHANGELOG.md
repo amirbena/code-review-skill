@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.64.0 — 2026-10-02
+
+### Added
+
+- Reviews can consume an optional host relationship capability for caller, implementer, and test questions, falling back to repository search when it is absent (#613).
+
 ## v1.63.0 — 2026-10-01
 
 ### Changed
