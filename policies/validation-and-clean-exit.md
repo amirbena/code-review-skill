@@ -116,8 +116,15 @@ its paths (renames counted as both paths):
 
 Consumers are derived from the tracked files under the checkout, not listed
 by hand, so a new `docs/<dir>/` needs no edit and a new consumer reclassifies
-its doc. A docs path is never pure when the scan is missing or empty, or when a
-file outside `DOCS_SCANNER_MODULES` enumerates `docs/`. Run
+its doc. A docs path is never pure when the scan is missing, empty, or could not read a
+consumer file, when any file reads `docs/` in a way the scan cannot resolve
+(a variable or dynamic component, a bare `docs` root, a `"docs"` constant), or
+when a file enumerates the repository or Markdown trees without being a
+registered scanner (`DOCS_SCANNER_MODULES`) or a reviewed non-docs enumerator
+(`REVIEWED_NON_DOCS_ENUMERATORS`). A new such file therefore fails
+`tests/unit/governance/test_change_aware_routing.py` until it is registered.
+The scan is static and cannot see a path assembled by string arithmetic.
+Run
 `python3 scripts/validation/ci_test_route.py classify` locally to print the
 same class, tier, reason, and command CI would use; classification never
 runs a suite, the network, a model, or benchmarks, and never sets the opt-in

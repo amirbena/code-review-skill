@@ -17,7 +17,7 @@ win.
 | Tiers | `DOCS < FAST < FULL`; no TARGETED tier |
 | Class → tier | `PURE_DOCS`→DOCS, `CONSUMED_DOCS`→FAST, `MIXED`→by the non-doc paths, `UNKNOWN`→FULL |
 | Consumer index (§3) | Scan of tracked non-Markdown files under `tests/`, `scripts/`, `runtime_platform/`, `benchmark/`, `capabilities/`, `distribution/`, `.github/` for literal, joined, and directory `docs/` references; rules fail toward "consumed" |
-| Tree-enumerating readers | Any file outside the scanner registry that enumerates `docs/` makes every docs path unverified, so FULL |
+| Unresolvable readers and tree enumerators | A file with an unresolvable `docs/` access, or an unregistered repo/Markdown tree enumerator (`REVIEWED_NON_DOCS_ENUMERATORS` lists reviewed benign ones), makes every docs path unverified, so FULL; so does an unreadable consumer file |
 | Scanner registry (§3.3) | `DOCS_SCANNER_MODULES` + `validate-markdown-links.py` are the entire DOCS-tier validation (`run-docs`) |
 | Non-test steps on DOCS (Q2) | Skipped: metadata validation, canonical build, spec validation, Node setup. Python setup and dependency install stay because the scanners need them. The parity jobs are unchanged |
 | Shared local/CI (§5) | One module; CI `route` and local `classify` print the same summary; `route` also emits `class=` |

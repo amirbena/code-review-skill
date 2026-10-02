@@ -65,12 +65,38 @@ ROUTER_FILES = (
     "tests/policy/governance/test_ci_test_routing.py",
 )
 LINK_VALIDATOR = "scripts/validation/validate-markdown-links.py"
+# Files that enumerate tracked or Markdown trees but were reviewed as never reading docs/ content.
+# Any other tree enumerator makes every docs path unverified until it is registered or listed here.
+REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
+    {
+        "scripts/release/release_lib/gitgh.py",
+        "runtime_platform/benchmark/reference/benchmark_runner.py",
+        "runtime_platform/benchmark/scripts/build_benchmark_index.py",
+        "scripts/packaging/package_domain/tree.py",
+        "scripts/skill_metadata/links.py",
+        LINK_VALIDATOR,
+        "tests/unit/governance/test_validate_markdown_links.py",
+        "tests/repository/test_gitignore.py",
+        "tests/unit/review/test_staged_fingerprint.py",
+        "tests/policy/review/test_latency_optimizations_docs.py",
+        "tests/unit/review/findings/test_structured_output_contract.py",
+        "tests/policy/review/presentation/test_github_pr_review_output_tightening_223.py",
+        "tests/policy/review/stacked_pr/test_stacked_pr_review_docs.py",
+        "tests/policy/review/stateful_review/test_reviewed_sha_state_docs.py",
+        "tests/integration/packaging/test_distribution_consumer_install.py",
+    }
+)
 
 _LITERAL_REF = re.compile(r"(?<!\w)docs/([A-Za-z0-9_.\-/*{}$<>]*)")
-_JOINED_REF = re.compile(r"""(?:/\s*|(?:Path|joinpath|join)\(\s*)["']docs["']((?:\s*[/,]\s*["'][^"']*["'])*)""")
+_JOINED_REF = re.compile(
+    r"""(?:/\s*|(?<![=!<>])=\s*|(?:Path|joinpath|join)\((?:[^()]*,)?\s*)["']docs["']((?:\s*[/,]\s*["'][^"']*["'])*)"""
+)
+_TREE_READER = re.compile(
+    r"""\bREPO_ROOT\.(?:rglob|glob|iterdir)\(|ls-files|tracked_markdown_files|os\.walk\(\s*REPO_ROOT"""
+    r"""|\.rglob\(\s*["'][^"']*\.md["']|\.glob\(\s*["']\*\*"""
+)
 _QUOTED = re.compile(r"""["']([^"']*)["']""")
 _DYNAMIC = re.compile(r"[*{}$<>]")
-_ENUMERATES = re.compile(r"rglob|glob\(|iterdir|os\.walk|ls-files|listdir|scandir")
 
 
 @dataclass(frozen=True)
@@ -86,6 +112,7 @@ class ConsumerIndex:
     refs: frozenset[tuple[str, ...]]
     wildcard_files: tuple[str, ...]
     scanned: int
+    unreadable: tuple[str, ...] = ()
 
 
 def is_fast_path(path: str) -> bool:
@@ -103,14 +130,14 @@ def is_doc_candidate(path: str) -> bool:
     )
 
 
-def _scan_text(text: str) -> tuple[set[tuple[str, ...]], bool]:
+def _scan_text(text: str) -> tuple[set[tuple[str, ...]], bool, bool]:
+    """Return (resolved docs refs, unresolvable docs access, repo-tree enumeration)."""
     refs: set[tuple[str, ...]] = set()
-    wildcard = False
+    unresolved = False
     for match in _LITERAL_REF.finditer(text):
-        parts = match.group(1).split("/")
         kept: list[str] = []
         dynamic = False
-        for part in parts:
+        for part in match.group(1).split("/"):
             if part and _DYNAMIC.search(part):
                 dynamic = True
                 break
@@ -119,7 +146,7 @@ def _scan_text(text: str) -> tuple[set[tuple[str, ...]], bool]:
         if kept:
             refs.add(tuple(kept))
         elif dynamic:
-            wildcard = True
+            unresolved = True
     for match in _JOINED_REF.finditer(text):
         kept = []
         for part in _QUOTED.findall(match.group(1)):
@@ -129,8 +156,8 @@ def _scan_text(text: str) -> tuple[set[tuple[str, ...]], bool]:
         if kept:
             refs.add(tuple(kept))
         else:
-            wildcard = True
-    return refs, wildcard and bool(_ENUMERATES.search(text))
+            unresolved = True
+    return refs, unresolved, bool(_TREE_READER.search(text))
 
 
 def _module_path(module: str) -> str:
@@ -143,7 +170,8 @@ def consumer_index(tree: Path) -> ConsumerIndex:
     ).stdout
     refs: set[tuple[str, ...]] = set()
     wildcard_files: list[str] = []
-    exempt = {_module_path(m) for m in DOCS_SCANNER_MODULES}
+    unreadable: list[str] = []
+    scanners = {_module_path(m) for m in DOCS_SCANNER_MODULES}
     scanned = 0
     for rel in out.decode("utf-8", "surrogateescape").split("\0"):
         if not rel or rel.endswith(".md") or rel in ROUTER_FILES:
@@ -151,13 +179,16 @@ def consumer_index(tree: Path) -> ConsumerIndex:
         try:
             text = (tree / rel).read_text(encoding="utf-8", errors="ignore")
         except OSError:
+            unreadable.append(rel)
             continue
         scanned += 1
-        found, wildcard = _scan_text(text)
+        found, unresolved, tree_reader = _scan_text(text)
         refs |= found
-        if wildcard and rel not in exempt:
+        if rel in scanners:
+            continue
+        if unresolved or (tree_reader and rel not in REVIEWED_NON_DOCS_ENUMERATORS):
             wildcard_files.append(rel)
-    return ConsumerIndex(frozenset(refs), tuple(sorted(wildcard_files)), scanned)
+    return ConsumerIndex(frozenset(refs), tuple(sorted(wildcard_files)), scanned, tuple(sorted(unreadable)))
 
 
 def is_consumed(path: str, index: ConsumerIndex) -> bool:
@@ -170,8 +201,10 @@ def _index_problem(index: ConsumerIndex | None) -> str | None:
         return "no consumer scan available"
     if index.scanned == 0:
         return "consumer scan found no files"
+    if index.unreadable:
+        return f"a consumer file could not be read ({index.unreadable[0]})"
     if index.wildcard_files:
-        return f"a non-scanner file enumerates docs/ ({index.wildcard_files[0]})"
+        return f"a file reads docs/ in a way the scan cannot resolve ({index.wildcard_files[0]})"
     return None
 
 

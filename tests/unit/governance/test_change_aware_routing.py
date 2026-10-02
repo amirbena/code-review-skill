@@ -19,7 +19,7 @@ CONSUMERS = {
     "tests/test_literal.py": 'P = REPO_ROOT / "docs/literal/a.md"\n',
     "tests/test_joined.py": 'P = REPO_ROOT / "docs" / "joined" / "b.md"\n',
     "tests/test_multiline.py": 'P = (\n    REPO_ROOT\n    / "docs"\n    / "multi"\n    / "c.md"\n)\n',
-    "tests/test_directory.py": 'D = REPO_ROOT / "docs" / "whole"\nfor p in D.rglob("*.md"):\n    pass\n',
+    "tests/test_directory.py": 'D = REPO_ROOT / "docs" / "whole"\nfor p in D.iterdir():\n    pass\n',
     "scripts/tool.py": 'CATALOG = "docs/data/catalog"\n',
     "tests/test_dynamic.py": 'name = "x"\nP = f"docs/dyn/{name}.md"\n',
     "tests/test_noise.py": 'assert "docs/" not in text\n',
@@ -103,6 +103,72 @@ class ConsumerIndexTests(FixtureRepo):
         self.write(router.ROUTER_FILES[1], 'P = "docs/pure/x.md"\n')
         self.commit("router fixture")
         self.assertEqual(router.classify(["docs/pure/x.md"], self.index()).tier, router.DOCS)
+
+    def test_unresolvable_docs_access_forms_are_never_pure(self) -> None:
+        forms = {
+            "variable component": 'P = REPO_ROOT / "docs" / slug / "README.md"\n',
+            "dynamic first component": 'P = REPO_ROOT / f"docs/{area}/README.md"\n',
+            "variable root": 'DOCS = REPO_ROOT / "docs"\ntext = (DOCS / "pure" / "x.md").read_text()\n',
+            "Path root": 'DOCS = Path("docs")\n',
+            "os.path.join": 'p = os.path.join(REPO_ROOT, "docs", name)\n',
+            "Path with root arg": 'p = Path(REPO_ROOT, "docs", name)\n',
+            "walk": 'for _r, _d, fs in (REPO_ROOT / "docs").walk():\n    pass\n',
+            "copytree": 'shutil.copytree(REPO_ROOT / "docs", tmp)\n',
+            "name constant": 'DOCS_DIRNAME = "docs"\n',
+            "glob pattern": 'list(ROOT.glob("docs/*/x.md"))\n',
+        }
+        for name, code in forms.items():
+            with self.subTest(form=name):
+                self.write("tests/test_form.py", code)
+                self.commit(name)
+                index = self.index()
+                self.assertEqual(index.wildcard_files, ("tests/test_form.py",))
+                self.assertEqual(router.classify(["docs/pure/x.md"], index).tier, router.FULL)
+
+    def test_resolved_forms_stay_precise(self) -> None:
+        self.write("tests/test_ok.py", 'a = os.path.join(ROOT, "docs", "literal", "a.md")\nb = x == "docs"\n')
+        self.commit("resolved")
+        index = self.index()
+        self.assertEqual(index.wildcard_files, ())
+        self.assertEqual(router.classify(["docs/pure/x.md"], index).tier, router.DOCS)
+
+    def test_repo_wide_tree_scanners_without_a_docs_token_are_caught(self) -> None:
+        scanners = {
+            "rglob": 'for md in REPO_ROOT.rglob("*.md"):\n    pass\n',
+            "markdown rglob on any root": 'for md in root.rglob("*.md"):\n    pass\n',
+            "ls-files": 'out = run(["git", "ls-files"])\n',
+            "tracked helper": "files = tracked_markdown_files(root)\n",
+            "glob double star": 'list(base.glob("**/*.md"))\n',
+        }
+        for name, code in scanners.items():
+            with self.subTest(scanner=name):
+                self.write("tests/test_scan.py", code)
+                self.commit(name)
+                index = self.index()
+                self.assertEqual(index.wildcard_files, ("tests/test_scan.py",))
+                self.assertEqual(router.classify(["docs/pure/x.md"], index).tier, router.FULL)
+
+    def test_reviewed_enumerators_and_registered_scanners_are_tolerated(self) -> None:
+        reviewed = sorted(router.REVIEWED_NON_DOCS_ENUMERATORS)[0]
+        scanner = router._module_path(router.DOCS_SCANNER_MODULES[0])
+        self.write(reviewed, 'for md in REPO_ROOT.rglob("*.md"):\n    pass\n')
+        self.write(scanner, 'for md in REPO_ROOT.rglob("*.md"):\n    pass\nP = REPO_ROOT / "docs"\n')
+        self.commit("tolerated")
+        self.assertEqual(self.index().wildcard_files, ())
+
+    def test_a_reviewed_enumerator_that_reads_docs_unresolvably_is_still_flagged(self) -> None:
+        reviewed = sorted(router.REVIEWED_NON_DOCS_ENUMERATORS)[0]
+        self.write(reviewed, 'P = REPO_ROOT / "docs" / slug\n')
+        self.commit("reviewed file reads docs")
+        self.assertEqual(self.index().wildcard_files, (reviewed,))
+
+    def test_an_unreadable_consumer_file_makes_docs_unverified(self) -> None:
+        (self.repo / "tests/test_literal.py").unlink()
+        index = self.index()
+        self.assertEqual(index.unreadable, ("tests/test_literal.py",))
+        result = router.classify(["docs/pure/x.md"], index)
+        self.assertEqual(result.tier, router.FULL)
+        self.assertIn("could not be read", result.reason)
 
     def test_markdown_files_are_not_consumers(self) -> None:
         self.write("tests/notes.md", "see docs/pure/x.md\n")
@@ -214,9 +280,16 @@ class RealRepositoryTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(router.classify([path], self.index).change_class, router.CONSUMED_DOCS)
 
-    def test_no_unregistered_file_enumerates_the_docs_tree(self) -> None:
-        # Register a content-agnostic docs scanner in DOCS_SCANNER_MODULES or stop enumerating docs/.
+    def test_no_unregistered_docs_reader_or_tree_enumerator_exists(self) -> None:
+        # Register a content-agnostic scanner in DOCS_SCANNER_MODULES, list a reviewed non-docs
+        # enumerator in REVIEWED_NON_DOCS_ENUMERATORS, or stop reading docs/ in an unresolvable way.
         self.assertEqual(self.index.wildcard_files, ())
+        self.assertEqual(self.index.unreadable, ())
+
+    def test_reviewed_enumerators_exist(self) -> None:
+        for rel in router.REVIEWED_NON_DOCS_ENUMERATORS:
+            with self.subTest(rel=rel):
+                self.assertTrue((REPO_ROOT / rel).is_file())
 
     def test_docs_scanners_exist_and_cover_every_tracked_text_scanner(self) -> None:
         for module in router.DOCS_SCANNER_MODULES:
