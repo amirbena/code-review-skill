@@ -343,7 +343,15 @@ which a value must be resolved before it is used, or what is reported.
    policy owns eligibility, generation limits, the no-leak-into-the-tree
    guarantee, budget/fail-safe behavior, execution-boundary gating, and all
    safety semantics; this runbook only sequences the step and carries its
-   records forward.
+   records forward. Beside it, evaluate **rendered inspection** per the
+   shared
+   [`rendered-inspection.md`](../../../shared/policies/rendered-inspection.md)
+   policy — loaded only when its UI-impact trigger fires, silent otherwise —
+   and carry its `Validation` record, any objective rendered defect (a normal
+   finding), and any `Rendered observations` forward. That policy owns the
+   trigger, budget, outcomes, classification, and non-effects; a skipped,
+   unavailable, or inconclusive inspection never changes coverage or the
+   Decision.
 8b. **Classify change-risk depth** per
    [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md).
    Using the complete local delta established in steps 3–4 (and its changed

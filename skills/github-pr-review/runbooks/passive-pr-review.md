@@ -245,6 +245,16 @@ finally: remove the temporary checkout (success, any failure, interruption)
    execution-boundary gating, and all safety semantics; this runbook only
    sequences the step and carries its records forward.
 
+   **Evaluate rendered inspection** beside runtime validation, per the shared
+   [`rendered-inspection.md`](../../../shared/policies/rendered-inspection.md)
+   policy, loaded only when its UI-impact trigger fires and silent otherwise.
+   When it fires, carry its `Validation` record and any objective rendered
+   defect (a normal finding) forward before findings are finalized, and carry
+   any `Rendered observations` to the report. The shared policy owns the
+   trigger, budget, outcomes, classification, and non-effects; a skipped,
+   unavailable, or inconclusive inspection never changes coverage or the
+   Decision. This runbook only sequences the step.
+
    **Plan review execution** per
    [`../policies/parallel-review.md`](../policies/parallel-review.md) and the
    shared [`parallel-review.md`](../../../shared/policies/parallel-review.md):

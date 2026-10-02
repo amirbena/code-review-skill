@@ -549,7 +549,8 @@ an "AI confidence %".
 
 - **The closed value set.** `confirmed` (the evidence directly demonstrates
   the incorrect behavior — a `runtime-confirmed` targeted run, direct static
-  proof, or an authoritative context source that proves a violation the code
+  proof, a bounded rendered observation on a SHA-matched target that directly
+  demonstrates the defect, or an authoritative context source that proves a violation the code
   exhibits); `credible` (a plausible failure mode with concrete evidence but
   not directly demonstrated — the default and the floor); `runtime-validation-unavailable`
   (an eligible targeted run was attempted and came back `attempted-inconclusive`);

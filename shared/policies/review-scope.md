@@ -121,10 +121,10 @@ deliberately not an eight-dimension checklist run on every diff.
   changed behavior remain correct and safe across the states a real user can
   reach (loading, error, empty, partial, repeated interaction), and does any
   user-controlled or externally-sourced value reach rendered output or a
-  client-visible decision without the handling that context requires. Depth
-  owner: no dedicated owner contract exists yet in this repository; this
-  base obligation is currently the full extent of review for this
-  dimension.
+  client-visible decision without the handling that context requires.
+  Depth owner: [`rendered-inspection.md`](rendered-inspection.md) for the
+  *rendered* aspect, as supplementary evidence only — it never gates or
+  replaces this base obligation, which stays unconditional and unchanged.
 - **Concurrency / distributed-system semantics** — signal: shared mutable
   state read and later acted on, more than one process or thread able to
   observe or mutate the same state, or a message/event that can be

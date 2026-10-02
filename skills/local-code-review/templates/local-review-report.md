@@ -316,6 +316,16 @@ serve are owned by the linked policies and are not restated here.
   Canonical: [`../policies/review-context.md`](../policies/review-context.md),
   "Output"; [`../policies/pr-context.md`](../policies/pr-context.md),
   "Output".
+- **Rendered observations** is an optional, conditional section rendered
+  before Validation, exactly as
+  [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+  "Rendered observations" shapes it, and only when
+  [`../../../shared/policies/rendered-inspection.md`](../../../shared/policies/rendered-inspection.md)
+  qualifies an observation; the rendered-inspection `Validation` entry follows
+  the same shared shape. Both are omitted completely when the capability is
+  inert — no heading, no placeholder — and neither is a finding or changes a
+  severity, coverage, or the Decision. The semantics live only in the shared
+  policy.
 - **Reasoning check** is an optional, conditional section rendered in the
   returned report directly after Decision and before "Review Metadata",
   exactly as

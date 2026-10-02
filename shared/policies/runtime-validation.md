@@ -463,3 +463,8 @@ validation, and carries its outcome records into the shared
 Targeted validation runs against suspected findings as they are formed and
 before the finding set is finalized, so each finding carries its validation
 state into the finalized set; it never runs after the decision is derived.
+
+[`rendered-inspection.md`](rendered-inspection.md) is a second optional
+evidence step in this same slot, with its own trigger, budget, and outcome
+vocabulary; its record enters the same `Validation` section and, like
+targeted validation, it never runs after the decision is derived.

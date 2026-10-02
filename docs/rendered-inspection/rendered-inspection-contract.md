@@ -78,10 +78,12 @@ them.
 
 `Validation` gains one compact text entry per inspection:
 
-`Rendered inspection: <mode> · target source <order #/kind> · SHA <sha> · viewports <list> · states <list> · outcome <executed|failed|skipped|unavailable> · observed <facts>`
+`Rendered inspection: <mode> · target source <order #/kind> · SHA <sha> · viewports <list> · states <list> · outcome <inspected|skipped|unavailable|attempted-inconclusive> · observed <facts>`
 
-- Outcome uses the existing runtime-validation vocabulary, so `skipped` and
-  `unavailable` are never shown as passing and never dropped.
+- Outcome mirrors the runtime-validation vocabulary (`inspected` in place of
+  `executed`, `attempted-inconclusive` in place of `failed`, as ratified for
+  implementation in #616), so `skipped`, `unavailable`, and
+  `attempted-inconclusive` are never shown as passing and never dropped.
 - Screenshots stay ephemeral, outside the working tree, never uploaded or
   published; the record carries observed facts, not images.
 - In design-reference mode the entry also names the reference/frame actually

@@ -46,6 +46,10 @@ passes of its own and removes none:
 | `elevated` | Everything `standard` requires, plus every signal-triggered sub-pass that this change's own facts activated — [`affected-test-analysis.md`](affected-test-analysis.md) when signal-triggered, "Architectural placement and execution-lifecycle fidelity" when its own semantic-risk triggers fired, and every expansion ring [`repository-expansion.md`](repository-expansion.md) scales to this depth — actually reached its own stop condition, not merely attempted. |
 | `deep` | Everything `elevated` requires, at `deep`'s wider expansion ring ceiling and diff-size-scaled scope. |
 
+[`rendered-inspection.md`](rendered-inspection.md) is never a required pass at
+any depth: a skipped, unavailable, or inconclusive rendered inspection is a
+`Validation` outcome only and never makes coverage `incomplete`.
+
 When [`large-pr-partitioning.md`](large-pr-partitioning.md) activated,
 coverage requires the above to hold **for every partition individually**,
 plus that the aggregation stage in that policy's "Aggregation and
