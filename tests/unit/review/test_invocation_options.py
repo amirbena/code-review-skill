@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import unittest
+from typing import Any
 
 from tests.reference.review.invocation_options import normalize
 
@@ -30,45 +31,390 @@ GITHUB_DEFAULTS = {
 }
 
 
-class InvocationNormalizationTests(unittest.TestCase):
-    def test_canonical_and_natural_fix_prompt_forms_are_equivalent(self) -> None:
-        forms = (
-            "include_fix_prompt=true",
-            "include_fix_prompt",
-            "include fix prompt",
-            "include-fix-prompt",
-            "give me a fix prompt",
-        )
-        self.assertTrue(all(normalize(f, defaults=LOCAL_DEFAULTS)["include_fix_prompt"] for f in forms))
+def _on(defaults: dict[str, bool], key: str) -> dict[str, bool]:
+    return {**defaults, key: True}
 
-    def test_fix_guidance_equivalents_are_supported(self) -> None:
-        forms = (
-            "include_fix_guidance=true",
-            "include_fix_guidance",
-            "include fix guidance",
-            "give me fix guidance",
-        )
-        self.assertTrue(all(normalize(f, defaults={**LOCAL_DEFAULTS, "include_fix_guidance": False})["include_fix_guidance"] for f in forms))
 
-    def test_canonical_false_beats_every_affirmative_form(self) -> None:
-        result = normalize(
-            "give me a fix prompt; include_fix_prompt=true; include_fix_prompt=false",
-            defaults=LOCAL_DEFAULTS,
-        )
-        self.assertFalse(result["include_fix_prompt"])
+def _off(defaults: dict[str, bool], key: str) -> dict[str, bool]:
+    return {**defaults, key: False}
 
-    def test_explicit_natural_negative_is_respected(self) -> None:
-        defaults = {**LOCAL_DEFAULTS, "include_fix_prompt": True}
-        result = normalize("do not include a fix prompt", defaults=defaults)
-        self.assertFalse(result["include_fix_prompt"])
+
+# Per-option contract table: axis -> case data. An axis an option omits was
+# never asserted for it. `conflict` holds (text, defaults, expected) triples;
+# `extra` pins other options' values alongside the target option.
+CONTRACTS: dict[str, dict[str, Any]] = {
+    "include_fix_prompt": {
+        "enables": {
+            "phrases": (
+                "include_fix_prompt=true",
+                "include_fix_prompt",
+                "include fix prompt",
+                "include-fix-prompt",
+                "give me a fix prompt",
+            ),
+            "defaults": LOCAL_DEFAULTS,
+        },
+        "forces_off": {
+            "phrases": ("do not include a fix prompt",),
+            "defaults": _on(LOCAL_DEFAULTS, "include_fix_prompt"),
+        },
+        "unset": {
+            "phrases": ("Be detailed and helpful.", "What does include_fix_prompt do?"),
+            "defaults": (LOCAL_DEFAULTS,),
+        },
+        "canonical_false": {
+            "text": "give me a fix prompt; include_fix_prompt=true; include_fix_prompt=false",
+            "defaults": LOCAL_DEFAULTS,
+        },
+        "conflict": (
+            (
+                "include fix prompt, but do not include a fix prompt",
+                LOCAL_DEFAULTS,
+                False,
+            ),
+            (
+                "include fix prompt, but do not include a fix prompt",
+                _on(LOCAL_DEFAULTS, "include_fix_prompt"),
+                True,
+            ),
+        ),
+        "parity": {
+            "direct": "give me a fix prompt",
+            "mediated": "include_fix_prompt=true",
+            "defaults": LOCAL_DEFAULTS,
+        },
+    },
+    "include_fix_guidance": {
+        "enables": {
+            "phrases": (
+                "include_fix_guidance=true",
+                "include_fix_guidance",
+                "include fix guidance",
+                "give me fix guidance",
+            ),
+            "defaults": _off(LOCAL_DEFAULTS, "include_fix_guidance"),
+        },
+    },
+    "include_finding_details": {
+        "no_leak": {
+            "first": "include finding details",
+            "second": "review this PR",
+            "defaults": GITHUB_DEFAULTS,
+        },
+    },
+    "human_review_output": {
+        "enables": {
+            "phrases": (
+                "make the review shorter and more human",
+                "publish this like a senior engineer reviewing the PR",
+                "review it as a senior engineer",
+                "use concise review comments",
+                "human review output",
+                "human-review-output",
+                "human_review_output=true",
+            ),
+            "defaults": GITHUB_DEFAULTS,
+        },
+        "forces_off": {
+            "phrases": (
+                "no, keep the full summary",
+                "keep the default summary",
+                "do not shorten the review",
+                "don't shorten the review",
+                "no human review output",
+                "human_review_output=false",
+            ),
+            "defaults": _on(GITHUB_DEFAULTS, "human_review_output"),
+        },
+        "unset": {
+            "phrases": (
+                "make it nicer",
+                "be brief",
+                "tighten it up",
+                "be more thorough",
+                "What does human_review_output do?",
+            ),
+            "defaults": (
+                _on(GITHUB_DEFAULTS, "human_review_output"),
+                GITHUB_DEFAULTS,
+            ),
+        },
+        "canonical_false": {
+            "text": "review it like a senior engineer; human_review_output=false",
+            "defaults": GITHUB_DEFAULTS,
+        },
+        "conflict": (
+            (
+                "review it like a senior engineer but keep the full summary",
+                GITHUB_DEFAULTS,
+                False,
+            ),
+            (
+                "review it like a senior engineer but keep the full summary",
+                _on(GITHUB_DEFAULTS, "human_review_output"),
+                True,
+            ),
+        ),
+        "parity": {
+            "direct": "make the review shorter and more human",
+            "mediated": "human_review_output=true",
+            "defaults": GITHUB_DEFAULTS,
+        },
+        "no_leak": {
+            "first": "review like a senior engineer",
+            "second": "review this PR",
+            "defaults": GITHUB_DEFAULTS,
+        },
+    },
+    # Issue #166: the derived default is `explicit ?? human_review_output`, so
+    # "explicit true/false wins" also pins what the summary option stays at.
+    "human_inline_findings": {
+        "enables": {
+            "phrases": (
+                "human_inline_findings=true",
+                "review this PR and use human inline findings",
+                "give me human inline comments",
+            ),
+            "defaults": GITHUB_DEFAULTS,
+            "extra": {"human_review_output": False},
+        },
+        "forces_off": {
+            "phrases": (
+                "review it like a senior engineer; human_inline_findings=false",
+                "make the review shorter and more human, but keep the structured inline comments",
+                "review like a senior engineer and keep the inline comment template",
+            ),
+            "defaults": GITHUB_DEFAULTS,
+            "extra": {"human_review_output": True},
+        },
+        "unset": {
+            "phrases": ("make it nicer", "be brief", "tighten the comments up"),
+            "defaults": (GITHUB_DEFAULTS,),
+        },
+        "canonical_false": {
+            "text": "use human inline findings; human_inline_findings=false",
+            "defaults": GITHUB_DEFAULTS,
+        },
+        # ambiguous -> derived default -> follows human_review_output
+        "conflict": (
+            (
+                "use human inline findings but keep the structured inline comments",
+                GITHUB_DEFAULTS,
+                False,
+            ),
+            (
+                "review like a senior engineer; "
+                "use human inline findings but keep the structured inline comments",
+                GITHUB_DEFAULTS,
+                True,
+            ),
+        ),
+        "parity": {
+            "direct": "use human inline findings",
+            "mediated": "human_inline_findings=true",
+            "defaults": GITHUB_DEFAULTS,
+        },
+        "no_leak": {
+            "first": "review like a senior engineer",
+            "second": "review this PR",
+            "defaults": GITHUB_DEFAULTS,
+        },
+    },
+    # Issue #275
+    "include_severity_description": {
+        "enables": {
+            "phrases": (
+                "include severity descriptions",
+                "show severity descriptions",
+                "show blocking/non-blocking labels",
+                "include_severity_description",
+                "include severity description",
+                "include-severity-description",
+                "include_severity_description=true",
+            ),
+            "defaults": GITHUB_DEFAULTS,
+        },
+        "forces_off": {
+            "phrases": (
+                "keep severity compact",
+                "do not include severity descriptions",
+                "don't include severity descriptions",
+                "show only p0/p1/p2",
+                "include_severity_description=false",
+            ),
+            "defaults": _on(GITHUB_DEFAULTS, "include_severity_description"),
+        },
+        "unset": {
+            "phrases": (
+                "be more detailed",
+                "what does include_severity_description do?",
+                "severity matters here",
+            ),
+            "defaults": (
+                _on(GITHUB_DEFAULTS, "include_severity_description"),
+                GITHUB_DEFAULTS,
+            ),
+        },
+        "canonical_false": {
+            "text": "show severity descriptions; include_severity_description=false",
+            "defaults": GITHUB_DEFAULTS,
+        },
+        "conflict": (
+            (
+                "show severity descriptions but keep severity compact",
+                GITHUB_DEFAULTS,
+                False,
+            ),
+            (
+                "show severity descriptions but keep severity compact",
+                _on(GITHUB_DEFAULTS, "include_severity_description"),
+                True,
+            ),
+        ),
+        "parity": {
+            "direct": "show severity descriptions",
+            "mediated": "include_severity_description=true",
+            "defaults": GITHUB_DEFAULTS,
+        },
+        "no_leak": {
+            "first": "show severity descriptions",
+            "second": "review this PR",
+            "defaults": GITHUB_DEFAULTS,
+        },
+    },
+    "structured_review_result": {
+        "enables": {
+            "phrases": (
+                "structured_review_result=true",
+                "structured review result",
+                "include a structured review result",
+                "give me a machine-readable review result",
+                "emit the review result as JSON",
+            ),
+            "defaults": LOCAL_DEFAULTS,
+        },
+        "forces_off": {
+            "phrases": (
+                "structured_review_result=false",
+                "no machine-readable review result",
+                "human report only",
+            ),
+            "defaults": LOCAL_DEFAULTS,
+        },
+        "unset": {
+            "phrases": (
+                "give me json",
+                "make it parseable",
+                "What does structured_review_result do?",
+            ),
+            "defaults": (LOCAL_DEFAULTS,),
+        },
+        "conflict": (
+            (
+                "machine-readable review result but human report only",
+                LOCAL_DEFAULTS,
+                False,
+            ),
+        ),
+    },
+}
+
+
+class _ContractAxes:
+    """Axis assertions shared by every option; `OPTION`/`CASES` come from the
+    generated subclass, so a failure names the option (class) and axis (method)."""
+
+    OPTION: str
+    CASES: dict[str, Any]
+
+    def _case(self, axis: str) -> dict[str, Any]:
+        return self.CASES[axis]
+
+    def _check_phrases(self, axis: str, expected: bool) -> None:
+        case = self._case(axis)
+        for text in case["phrases"]:
+            with self.subTest(text=text):
+                result = normalize(text, defaults=case["defaults"])
+                self.assertEqual(result[self.OPTION], expected)
+                for key, value in case.get("extra", {}).items():
+                    self.assertEqual(result[key], value)
+
+    def test_natural_affirmative_phrasings_enable_it(self) -> None:
+        self._check_phrases("enables", True)
+
+    def test_explicit_negatives_force_it_off(self) -> None:
+        self._check_phrases("forces_off", False)
+
+    def test_ambiguous_or_vague_language_does_not_set_it(self) -> None:
+        # Neither default is flipped: the option is simply not set.
+        case = self._case("unset")
+        for text in case["phrases"]:
+            for defaults in case["defaults"]:
+                with self.subTest(text=text, default=defaults[self.OPTION]):
+                    self.assertEqual(
+                        normalize(text, defaults=defaults)[self.OPTION],
+                        defaults[self.OPTION],
+                    )
+
+    def test_canonical_false_beats_a_natural_affirmative_phrasing(self) -> None:
+        case = self._case("canonical_false")
+        result = normalize(case["text"], defaults=case["defaults"])
+        self.assertFalse(result[self.OPTION])
 
     def test_conflicting_natural_values_fall_back_to_default(self) -> None:
-        text = "include fix prompt, but do not include a fix prompt"
-        self.assertFalse(normalize(text, defaults=LOCAL_DEFAULTS)["include_fix_prompt"])
-        defaults_true = {**LOCAL_DEFAULTS, "include_fix_prompt": True}
-        self.assertTrue(normalize(text, defaults=defaults_true)["include_fix_prompt"])
+        for text, defaults, expected in self._case("conflict"):
+            with self.subTest(text=text, expected=expected):
+                self.assertEqual(
+                    normalize(text, defaults=defaults)[self.OPTION], expected
+                )
 
-    def test_ambiguous_language_does_not_set_options(self) -> None:
+    def test_direct_and_mediated_forms_have_parity(self) -> None:
+        case = self._case("parity")
+        direct = normalize(case["direct"], defaults=case["defaults"])
+        mediated = normalize(case["mediated"], defaults=case["defaults"])
+        self.assertEqual(direct, mediated)
+
+    def test_the_option_does_not_leak_between_invocations(self) -> None:
+        case = self._case("no_leak")
+        first = normalize(case["first"], defaults=case["defaults"])
+        second = normalize(case["second"], defaults=case["defaults"])
+        self.assertTrue(first[self.OPTION])
+        self.assertFalse(second[self.OPTION])
+
+
+_AXIS_TESTS = {
+    "enables": "test_natural_affirmative_phrasings_enable_it",
+    "forces_off": "test_explicit_negatives_force_it_off",
+    "unset": "test_ambiguous_or_vague_language_does_not_set_it",
+    "canonical_false": "test_canonical_false_beats_a_natural_affirmative_phrasing",
+    "conflict": "test_conflicting_natural_values_fall_back_to_default",
+    "parity": "test_direct_and_mediated_forms_have_parity",
+    "no_leak": "test_the_option_does_not_leak_between_invocations",
+}
+
+
+def _build_contract_class(option: str, cases: dict[str, Any]) -> type:
+    """One TestCase per option holding only the axes that option declares."""
+
+    namespace: dict[str, Any] = {"OPTION": option, "CASES": cases}
+    # Axes the option does not declare are masked so they are never collected.
+    for axis, test_name in _AXIS_TESTS.items():
+        if axis not in cases:
+            namespace[test_name] = None
+    name = "InvocationOptionContract_" + option
+    return type(name, (_ContractAxes, unittest.TestCase), namespace)
+
+
+for _option, _cases in CONTRACTS.items():
+    _cls = _build_contract_class(_option, _cases)
+    globals()[_cls.__name__] = _cls
+del _option, _cases, _cls
+
+
+class OptionSpecificTests(unittest.TestCase):
+    """Behavior that is not part of the shared per-option contract."""
+
+    def test_ambiguous_language_leaves_every_option_untouched(self) -> None:
         self.assertEqual(
             normalize("Be detailed and helpful.", defaults=GITHUB_DEFAULTS),
             GITHUB_DEFAULTS,
@@ -82,89 +428,6 @@ class InvocationNormalizationTests(unittest.TestCase):
             defaults=LOCAL_DEFAULTS,
         )
         self.assertTrue(mixed["include_fix_prompt"])
-
-    def test_invocations_do_not_leak(self) -> None:
-        first = normalize("include finding details", defaults=GITHUB_DEFAULTS)
-        second = normalize("review this PR", defaults=GITHUB_DEFAULTS)
-        self.assertTrue(first["include_finding_details"])
-        self.assertFalse(second["include_finding_details"])
-
-    def test_direct_and_agent_mediated_forms_have_parity(self) -> None:
-        direct = normalize("give me a fix prompt", defaults=LOCAL_DEFAULTS)
-        mediated = normalize("include_fix_prompt=true", defaults=LOCAL_DEFAULTS)
-        self.assertEqual(direct, mediated)
-
-
-class HumanReviewOutputOptionTests(unittest.TestCase):
-    """Issue #140: the opt-in concise senior-engineer summary mode, requested
-    in natural language (no CLI-style flag required)."""
-
-    def test_natural_affirmative_phrasings_enable_it(self) -> None:
-        for text in (
-            "make the review shorter and more human",
-            "publish this like a senior engineer reviewing the PR",
-            "review it as a senior engineer",
-            "use concise review comments",
-            "human review output",
-            "human-review-output",
-            "human_review_output=true",
-        ):
-            with self.subTest(text=text):
-                self.assertTrue(
-                    normalize(text, defaults=GITHUB_DEFAULTS)["human_review_output"]
-                )
-
-    def test_explicit_negatives_force_it_off(self) -> None:
-        on = {**GITHUB_DEFAULTS, "human_review_output": True}
-        for text in (
-            "no, keep the full summary",
-            "keep the default summary",
-            "do not shorten the review",
-            "don't shorten the review",
-            "no human review output",
-            "human_review_output=false",
-        ):
-            with self.subTest(text=text):
-                self.assertFalse(normalize(text, defaults=on)["human_review_output"])
-
-    def test_ambiguous_or_vague_language_does_not_set_it(self) -> None:
-        on = {**GITHUB_DEFAULTS, "human_review_output": True}
-        off = dict(GITHUB_DEFAULTS)
-        for text in (
-            "make it nicer",
-            "be brief",
-            "tighten it up",
-            "be more thorough",
-            "What does human_review_output do?",
-        ):
-            with self.subTest(text=text):
-                # Neither default is flipped: the option is simply not set.
-                self.assertTrue(normalize(text, defaults=on)["human_review_output"])
-                self.assertFalse(normalize(text, defaults=off)["human_review_output"])
-
-    def test_canonical_false_beats_a_natural_affirmative_phrasing(self) -> None:
-        result = normalize(
-            "review it like a senior engineer; human_review_output=false",
-            defaults=GITHUB_DEFAULTS,
-        )
-        self.assertFalse(result["human_review_output"])
-
-    def test_conflicting_natural_values_fall_back_to_default(self) -> None:
-        text = "review it like a senior engineer but keep the full summary"
-        self.assertFalse(normalize(text, defaults=GITHUB_DEFAULTS)["human_review_output"])
-        on = {**GITHUB_DEFAULTS, "human_review_output": True}
-        self.assertTrue(normalize(text, defaults=on)["human_review_output"])
-
-    def test_direct_and_mediated_forms_have_parity(self) -> None:
-        direct = normalize("make the review shorter and more human", defaults=GITHUB_DEFAULTS)
-        mediated = normalize("human_review_output=true", defaults=GITHUB_DEFAULTS)
-        self.assertEqual(direct, mediated)
-
-    def test_the_option_does_not_leak_between_invocations(self) -> None:
-        first = normalize("review like a senior engineer", defaults=GITHUB_DEFAULTS)
-        second = normalize("review this PR", defaults=GITHUB_DEFAULTS)
-        self.assertTrue(first["human_review_output"])
-        self.assertFalse(second["human_review_output"])
 
     def test_both_skills_share_one_default_off(self) -> None:
         # The option is defined once in shared policy with the same default for
@@ -188,6 +451,89 @@ class HumanReviewOutputOptionTests(unittest.TestCase):
         self.assertTrue(on.pop("human_inline_findings"))
         off.pop("human_review_output", None)
         off.pop("human_inline_findings", None)
+        self.assertEqual(on, off)
+
+    def test_derived_inline_default_follows_human_review_output(self) -> None:
+        # unset: inherits whatever human_review_output resolved to
+        self.assertFalse(
+            normalize("review this PR", defaults=GITHUB_DEFAULTS)["human_inline_findings"]
+        )
+        on = normalize("review it like a senior engineer", defaults=GITHUB_DEFAULTS)
+        self.assertTrue(on["human_review_output"])
+        self.assertTrue(on["human_inline_findings"])
+        canonical = normalize("human_review_output=true", defaults=GITHUB_DEFAULTS)
+        self.assertTrue(canonical["human_inline_findings"])
+
+    def test_local_defaults_also_carry_the_derived_inline_value(self) -> None:
+        # normalized for parity; the Skill simply has no inline surface to act on
+        self.assertFalse(
+            normalize("review this", defaults=LOCAL_DEFAULTS)["human_inline_findings"]
+        )
+        self.assertTrue(
+            normalize("review like a senior engineer", defaults=LOCAL_DEFAULTS)[
+                "human_inline_findings"
+            ]
+        )
+
+    def test_severity_description_default_is_compact_for_both_skills(self) -> None:
+        for defaults in (LOCAL_DEFAULTS, GITHUB_DEFAULTS):
+            self.assertFalse(defaults["include_severity_description"])
+            self.assertFalse(
+                normalize("review this PR", defaults=defaults)[
+                    "include_severity_description"
+                ]
+            )
+
+    def test_severity_description_does_not_change_any_other_option(self) -> None:
+        off = normalize("review this PR", defaults=GITHUB_DEFAULTS)
+        on = normalize(
+            "review this PR and show severity descriptions",
+            defaults=GITHUB_DEFAULTS,
+        )
+        self.assertTrue(on.pop("include_severity_description"))
+        off.pop("include_severity_description", None)
+        self.assertEqual(on, off)
+
+    def test_severity_description_local_defaults_normalize_for_parity_only(self) -> None:
+        # local-code-review has no severity legend at all; the option
+        # still normalizes deterministically for cross-Skill parity even
+        # though the Skill has nothing to act on.
+        self.assertTrue(
+            normalize("show severity descriptions", defaults=LOCAL_DEFAULTS)[
+                "include_severity_description"
+            ]
+        )
+        self.assertFalse(
+            normalize("review this", defaults=LOCAL_DEFAULTS)[
+                "include_severity_description"
+            ]
+        )
+
+    def test_structured_result_defaults_false(self) -> None:
+        self.assertFalse(
+            normalize("review this", defaults=LOCAL_DEFAULTS)["structured_review_result"]
+        )
+
+    def test_structured_result_name_is_not_read_as_human_output_negative_phrase(
+        self,
+    ) -> None:
+        result = normalize(
+            "review like a senior engineer and include a structured review result",
+            defaults=LOCAL_DEFAULTS,
+        )
+        self.assertTrue(result["human_review_output"])
+        self.assertTrue(result["structured_review_result"])
+        self.assertFalse(
+            normalize("structured review", defaults={**LOCAL_DEFAULTS, "human_review_output": True})[
+                "human_review_output"
+            ]
+        )
+
+    def test_structured_result_does_not_change_any_other_option(self) -> None:
+        off = normalize("review this", defaults=LOCAL_DEFAULTS)
+        on = normalize("review this, structured_review_result=true", defaults=LOCAL_DEFAULTS)
+        self.assertTrue(on.pop("structured_review_result"))
+        off.pop("structured_review_result")
         self.assertEqual(on, off)
 
 
@@ -242,262 +588,6 @@ class SeniorPhraseExpansionTests(unittest.TestCase):
         # invocation with no recognized phrase.
         result = normalize("publish it", defaults=GITHUB_DEFAULTS)
         self.assertFalse(result["human_review_output"])
-
-
-class HumanInlineFindingsOptionTests(unittest.TestCase):
-    """Issue #166: the companion inline-rendering option whose default is
-    derived — `human_inline_findings = explicit_value ?? human_review_output`
-    — and which acts only on `github-pr-review`'s inline-comment surface."""
-
-    def test_derived_default_follows_human_review_output(self) -> None:
-        # unset: inherits whatever human_review_output resolved to
-        self.assertFalse(
-            normalize("review this PR", defaults=GITHUB_DEFAULTS)["human_inline_findings"]
-        )
-        on = normalize("review it like a senior engineer", defaults=GITHUB_DEFAULTS)
-        self.assertTrue(on["human_review_output"])
-        self.assertTrue(on["human_inline_findings"])
-        canonical = normalize("human_review_output=true", defaults=GITHUB_DEFAULTS)
-        self.assertTrue(canonical["human_inline_findings"])
-
-    def test_explicit_false_wins_while_summary_stays_human(self) -> None:
-        for text in (
-            "review it like a senior engineer; human_inline_findings=false",
-            "make the review shorter and more human, but keep the structured inline comments",
-            "review like a senior engineer and keep the inline comment template",
-        ):
-            with self.subTest(text=text):
-                result = normalize(text, defaults=GITHUB_DEFAULTS)
-                self.assertTrue(result["human_review_output"])
-                self.assertFalse(result["human_inline_findings"])
-
-    def test_explicit_true_wins_while_summary_stays_structured(self) -> None:
-        for text in (
-            "human_inline_findings=true",
-            "review this PR and use human inline findings",
-            "give me human inline comments",
-        ):
-            with self.subTest(text=text):
-                result = normalize(text, defaults=GITHUB_DEFAULTS)
-                self.assertFalse(result["human_review_output"])
-                self.assertTrue(result["human_inline_findings"])
-
-    def test_canonical_false_beats_a_natural_affirmative(self) -> None:
-        result = normalize(
-            "use human inline findings; human_inline_findings=false",
-            defaults=GITHUB_DEFAULTS,
-        )
-        self.assertFalse(result["human_inline_findings"])
-
-    def test_conflicting_natural_values_fall_back_to_the_derived_default(self) -> None:
-        text = "use human inline findings but keep the structured inline comments"
-        # ambiguous -> derived default -> follows human_review_output (off here)
-        self.assertFalse(normalize(text, defaults=GITHUB_DEFAULTS)["human_inline_findings"])
-        on = "review like a senior engineer; " + text
-        self.assertTrue(normalize(on, defaults=GITHUB_DEFAULTS)["human_inline_findings"])
-
-    def test_vague_language_does_not_set_it(self) -> None:
-        for text in ("make it nicer", "be brief", "tighten the comments up"):
-            with self.subTest(text=text):
-                self.assertFalse(
-                    normalize(text, defaults=GITHUB_DEFAULTS)["human_inline_findings"]
-                )
-
-    def test_direct_and_mediated_forms_have_parity(self) -> None:
-        direct = normalize("use human inline findings", defaults=GITHUB_DEFAULTS)
-        mediated = normalize("human_inline_findings=true", defaults=GITHUB_DEFAULTS)
-        self.assertEqual(direct, mediated)
-
-    def test_it_does_not_leak_between_invocations(self) -> None:
-        first = normalize("review like a senior engineer", defaults=GITHUB_DEFAULTS)
-        second = normalize("review this PR", defaults=GITHUB_DEFAULTS)
-        self.assertTrue(first["human_inline_findings"])
-        self.assertFalse(second["human_inline_findings"])
-
-    def test_local_defaults_also_carry_the_derived_value(self) -> None:
-        # normalized for parity; the Skill simply has no inline surface to act on
-        self.assertFalse(
-            normalize("review this", defaults=LOCAL_DEFAULTS)["human_inline_findings"]
-        )
-        self.assertTrue(
-            normalize("review like a senior engineer", defaults=LOCAL_DEFAULTS)[
-                "human_inline_findings"
-            ]
-        )
-
-
-class SeverityDescriptionOptionTests(unittest.TestCase):
-    """Issue #275: the opt-in expanded severity-legend parenthetical on
-    `github-pr-review`'s finding-headline surfaces, default off (compact)."""
-
-    def test_default_is_compact_for_both_skills(self) -> None:
-        for defaults in (LOCAL_DEFAULTS, GITHUB_DEFAULTS):
-            self.assertFalse(defaults["include_severity_description"])
-            self.assertFalse(
-                normalize("review this PR", defaults=defaults)[
-                    "include_severity_description"
-                ]
-            )
-
-    def test_natural_affirmative_phrasings_enable_it(self) -> None:
-        for text in (
-            "include severity descriptions",
-            "show severity descriptions",
-            "show blocking/non-blocking labels",
-            "include_severity_description",
-            "include severity description",
-            "include-severity-description",
-            "include_severity_description=true",
-        ):
-            with self.subTest(text=text):
-                self.assertTrue(
-                    normalize(text, defaults=GITHUB_DEFAULTS)[
-                        "include_severity_description"
-                    ]
-                )
-
-    def test_explicit_negatives_force_it_off(self) -> None:
-        on = {**GITHUB_DEFAULTS, "include_severity_description": True}
-        for text in (
-            "keep severity compact",
-            "do not include severity descriptions",
-            "don't include severity descriptions",
-            "show only p0/p1/p2",
-            "include_severity_description=false",
-        ):
-            with self.subTest(text=text):
-                self.assertFalse(
-                    normalize(text, defaults=on)["include_severity_description"]
-                )
-
-    def test_ambiguous_or_vague_language_does_not_set_it(self) -> None:
-        on = {**GITHUB_DEFAULTS, "include_severity_description": True}
-        off = dict(GITHUB_DEFAULTS)
-        for text in (
-            "be more detailed",
-            "what does include_severity_description do?",
-            "severity matters here",
-        ):
-            with self.subTest(text=text):
-                self.assertTrue(
-                    normalize(text, defaults=on)["include_severity_description"]
-                )
-                self.assertFalse(
-                    normalize(text, defaults=off)["include_severity_description"]
-                )
-
-    def test_canonical_false_beats_a_natural_affirmative_phrasing(self) -> None:
-        result = normalize(
-            "show severity descriptions; include_severity_description=false",
-            defaults=GITHUB_DEFAULTS,
-        )
-        self.assertFalse(result["include_severity_description"])
-
-    def test_conflicting_natural_values_fall_back_to_default(self) -> None:
-        text = "show severity descriptions but keep severity compact"
-        self.assertFalse(
-            normalize(text, defaults=GITHUB_DEFAULTS)["include_severity_description"]
-        )
-        on = {**GITHUB_DEFAULTS, "include_severity_description": True}
-        self.assertTrue(normalize(text, defaults=on)["include_severity_description"])
-
-    def test_direct_and_mediated_forms_have_parity(self) -> None:
-        direct = normalize("show severity descriptions", defaults=GITHUB_DEFAULTS)
-        mediated = normalize(
-            "include_severity_description=true", defaults=GITHUB_DEFAULTS
-        )
-        self.assertEqual(direct, mediated)
-
-    def test_it_does_not_leak_between_invocations(self) -> None:
-        first = normalize("show severity descriptions", defaults=GITHUB_DEFAULTS)
-        second = normalize("review this PR", defaults=GITHUB_DEFAULTS)
-        self.assertTrue(first["include_severity_description"])
-        self.assertFalse(second["include_severity_description"])
-
-    def test_it_does_not_change_any_other_option(self) -> None:
-        off = normalize("review this PR", defaults=GITHUB_DEFAULTS)
-        on = normalize(
-            "review this PR and show severity descriptions",
-            defaults=GITHUB_DEFAULTS,
-        )
-        self.assertTrue(on.pop("include_severity_description"))
-        off.pop("include_severity_description", None)
-        self.assertEqual(on, off)
-
-    def test_local_defaults_normalize_for_parity_only(self) -> None:
-        # local-code-review has no severity legend at all; the option
-        # still normalizes deterministically for cross-Skill parity even
-        # though the Skill has nothing to act on.
-        self.assertTrue(
-            normalize("show severity descriptions", defaults=LOCAL_DEFAULTS)[
-                "include_severity_description"
-            ]
-        )
-        self.assertFalse(
-            normalize("review this", defaults=LOCAL_DEFAULTS)[
-                "include_severity_description"
-            ]
-        )
-
-
-class StructuredReviewResultOptionTests(unittest.TestCase):
-    def test_defaults_false(self) -> None:
-        self.assertFalse(
-            normalize("review this", defaults=LOCAL_DEFAULTS)["structured_review_result"]
-        )
-
-    def test_canonical_and_natural_forms_enable_it(self) -> None:
-        for text in (
-            "structured_review_result=true",
-            "structured review result",
-            "include a structured review result",
-            "give me a machine-readable review result",
-            "emit the review result as JSON",
-        ):
-            with self.subTest(text=text):
-                self.assertTrue(
-                    normalize(text, defaults=LOCAL_DEFAULTS)["structured_review_result"]
-                )
-
-    def test_negative_and_ambiguous_forms_stay_off(self) -> None:
-        for text in (
-            "structured_review_result=false",
-            "no machine-readable review result",
-            "human report only",
-            "give me json",
-            "make it parseable",
-            "What does structured_review_result do?",
-        ):
-            with self.subTest(text=text):
-                self.assertFalse(
-                    normalize(text, defaults=LOCAL_DEFAULTS)["structured_review_result"]
-                )
-
-    def test_conflict_falls_through_to_default(self) -> None:
-        text = "machine-readable review result but human report only"
-        self.assertFalse(
-            normalize(text, defaults=LOCAL_DEFAULTS)["structured_review_result"]
-        )
-
-    def test_name_is_not_read_as_human_output_negative_phrase(self) -> None:
-        result = normalize(
-            "review like a senior engineer and include a structured review result",
-            defaults=LOCAL_DEFAULTS,
-        )
-        self.assertTrue(result["human_review_output"])
-        self.assertTrue(result["structured_review_result"])
-        self.assertFalse(
-            normalize("structured review", defaults={**LOCAL_DEFAULTS, "human_review_output": True})[
-                "human_review_output"
-            ]
-        )
-
-    def test_it_does_not_change_any_other_option(self) -> None:
-        off = normalize("review this", defaults=LOCAL_DEFAULTS)
-        on = normalize("review this, structured_review_result=true", defaults=LOCAL_DEFAULTS)
-        self.assertTrue(on.pop("structured_review_result"))
-        off.pop("structured_review_result")
-        self.assertEqual(on, off)
 
 
 if __name__ == "__main__":
