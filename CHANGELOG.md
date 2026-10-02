@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.67.0 — 2026-10-02
+
+### Added
+
+- Add browser capability detection and a permission-based, never-silent acquisition flow for rendered-UI inspection (#627).
+
 ## v1.66.0 — 2026-10-02
 
 ### Changed
