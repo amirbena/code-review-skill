@@ -1,0 +1,40 @@
+# Change-Aware Test Selection — Design Record
+
+Repository-development design record for a **safe, shared, change-aware
+rule** that avoids unnecessarily broad validation for small and docs-only
+changes ([#624](https://github.com/amirbena/code-review-skill/issues/624)).
+
+Like [`../rendered-inspection/README.md`](../rendered-inspection/README.md),
+this is a repository-development doc: **not** packaged into either Skill
+archive, and no packaged Skill resource depends on it. It is research and
+design only — no selector, workflow, script, or test changes. The routing
+mechanics that exist today stay owned by
+[`../../policies/validation-and-clean-exit.md`](../../policies/validation-and-clean-exit.md)
+("Routed CI tests") and
+[`../../scripts/validation/ci_test_route.py`](../../scripts/validation/ci_test_route.py).
+
+## Document map
+
+| Document | Owns |
+| --- | --- |
+| [`change-aware-test-selection-model.md`](change-aware-test-selection-model.md) | Evidence about what consumes `docs/`, the four classes and what runs for each, the shared classifier, the drift guard, the no-live-execution invariant, the deterministic selector test plan, and the proposed implementation issues. |
+
+## Summary
+
+- A `.md` file is **not** inert: tests pin docs, global scanners read every
+  tracked file, and integration temp roots copy `docs/`. Classification is by
+  **derived consumer evidence**, never by extension or a hand-kept path list.
+- Four classes: pure documentation → static docs validation only;
+  consumed documentation → only what its consumers need; mixed → classified
+  by the non-doc paths; unknown / high-risk → FULL.
+- One classifier module serves CI and local validation, so both report the
+  same class, tier, reason, and path that forced a broader tier.
+- #533 invariants are unchanged: FULL stays the default, FAST never removes a
+  contract or correctness test, and no label or flag selects a tier.
+
+Related: [#623](https://github.com/amirbena/code-review-skill/issues/623),
+[#533](https://github.com/amirbena/code-review-skill/issues/533),
+[#535](https://github.com/amirbena/code-review-skill/issues/535),
+[#538](https://github.com/amirbena/code-review-skill/issues/538),
+[#183](https://github.com/amirbena/code-review-skill/issues/183). Parent:
+[#395](https://github.com/amirbena/code-review-skill/issues/395).
