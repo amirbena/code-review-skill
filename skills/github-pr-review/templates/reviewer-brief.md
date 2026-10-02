@@ -21,7 +21,10 @@ is never rendered into it).
 ```
 
 `Open questions / assumptions` is omitted entirely, not rendered empty,
-when nothing unresolved remains.
+when nothing unresolved remains. It also carries the single browser-setup
+question when
+[`../../../shared/policies/rendered-inspection-environment.md`](../../../shared/policies/rendered-inspection-environment.md)
+requires it; the question's content is owned there.
 
 ## Clean review
 

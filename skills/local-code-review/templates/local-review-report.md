@@ -326,6 +326,13 @@ serve are owned by the linked policies and are not restated here.
   inert — no heading, no placeholder — and neither is a finding or changes a
   severity, coverage, or the Decision. The semantics live only in the shared
   policy.
+- **Browser setup note** — when
+  [`../../../shared/policies/rendered-inspection-environment.md`](../../../shared/policies/rendered-inspection-environment.md)
+  requires its browser-setup question, it is one note line in this returned
+  report, outside the finding set, never a finding, severity, or Decision input.
+  That policy owns when it is asked and what it states; this template owns only
+  that it is one line, placed directly after Decision (after any Reasoning
+  check) and before Review Metadata.
 - **Reasoning check** is an optional, conditional section rendered in the
   returned report directly after Decision and before "Review Metadata",
   exactly as

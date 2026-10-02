@@ -82,6 +82,12 @@ ever happens.
   genuinely remains; omit the field entirely when there is nothing
   useful to say, never render it as an empty or placeholder line.
 
+The one-line browser-setup question for rendered inspection, when the shared
+[`rendered-inspection-environment.md`](../../../shared/policies/rendered-inspection-environment.md)
+gates hold, is carried here as an `Open questions / assumptions` entry — this
+brief is its only GitHub surface, never a PR comment or the review body. The
+shared policy owns when and how it is asked.
+
 A question rendered in the public `Reasoning check` section (per the
 shared
 [`reasoning-checkpoint.md`](../../../shared/policies/reasoning-checkpoint.md))

@@ -151,6 +151,12 @@ browser capability exists; and no durable opt-out is present.
   Like trusted-host authorization, it is not an
   `invocation-options.md` presentation option and does not use that policy's
   natural-language vocabulary.
+- **Install authorization (C4, #618):** the install permission is the separate
+  runtime-supplied boolean `allow_browser_tooling_install` (default `false`),
+  structured-only (no natural-language recognition layer), on the same trusted
+  channel. The Skill never installs; it emits the exact command for the operator
+  or a supplying runtime. The full flow is owned by
+  `shared/policies/rendered-inspection-environment.md`.
 
 ### 6.3 Design reference
 
