@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.66.0 — 2026-10-02
+
+### Changed
+
+- Rendered-UI inspection now has a bounded target-sourcing and execution-boundary contract (no content-supplied targets, fail-closed start command, SHA binding, hard timeouts) (#626).
+
 ## v1.65.0 — 2026-10-02
 
 ### Added
