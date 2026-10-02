@@ -69,7 +69,7 @@ class ValidateWorkflowRoutingTests(unittest.TestCase):
     def test_router_runs_from_the_base_sha_outside_the_checkout(self) -> None:
         test = self.jobs["test"]
         self.assertEqual(test["steps"][0]["with"], {"persist-credentials": False})
-        route = _step(test, "Route tests (DOCS/FAST/FULL)")
+        route = _step(test, "Route tests (DOCS/PARTIAL/FAST/FULL)")
         self.assertEqual(route["id"], "route")
         self.assertIs(route["continue-on-error"], True)
         run = route["run"]
@@ -81,19 +81,55 @@ class ValidateWorkflowRoutingTests(unittest.TestCase):
         self.assertIn('echo "tier=full"', run)
         self.assertNotIn("HEAD_SHA:scripts", run)
         steps = [step.get("name") for step in test["steps"]]
-        self.assertLess(steps.index("Route tests (DOCS/FAST/FULL)"), steps.index("Run repository tests"))
+        self.assertLess(steps.index("Route tests (DOCS/PARTIAL/FAST/FULL)"), steps.index("Run repository tests"))
 
-    def test_integration_runs_unless_tier_is_exactly_fast_or_docs(self) -> None:
+    def test_integration_runs_unless_tier_is_exactly_partial_fast_or_docs(self) -> None:
         test = self.jobs["test"]
         full = _step(test, "Run repository tests")
         self.assertEqual(
-            full["if"], "${{ steps.route.outputs.tier != 'fast' && steps.route.outputs.tier != 'docs' }}"
+            full["if"],
+            "${{ steps.route.outputs.tier != 'fast' && steps.route.outputs.tier != 'docs' "
+            "&& steps.route.outputs.tier != 'partial' }}",
         )
         self.assertEqual(full["run"], FULL_COMMAND)
         self.assertEqual(full["env"], {"DISTRIBUTION_INSTALL_CHECK": "1"})
         fast = _step(test, "Run repository tests except tests.integration (FAST tier)")
         self.assertEqual(fast["if"], "${{ steps.route.outputs.tier == 'fast' }}")
-        self.assertEqual(fast["run"], 'python "$RUNNER_TEMP/ci_test_route.py" run-fast')
+        # The base's router names any extra integration modules; the workflow only forwards them.
+        self.assertEqual(fast["run"], 'python "$RUNNER_TEMP/ci_test_route.py" run-fast ${ROUTE_MODULES:+--modules $ROUTE_MODULES}')
+        self.assertEqual(fast["env"]["ROUTE_MODULES"], "${{ steps.route.outputs.modules }}")
+        self.assertEqual(fast["env"]["DISTRIBUTION_INSTALL_CHECK"], "1")
+
+    def test_partial_tier_runs_only_the_modules_the_base_router_names(self) -> None:
+        partial = _step(self.jobs["test"], "Run the selected test modules (PARTIAL tier)")
+        self.assertEqual(partial["if"], "${{ steps.route.outputs.tier == 'partial' }}")
+        self.assertEqual(
+            partial["run"],
+            'python "$RUNNER_TEMP/ci_test_route.py" run-partial ${ROUTE_DOCS_LINKS:+--with-docs-links} --modules $ROUTE_MODULES',
+        )
+        self.assertEqual(
+            partial["env"],
+            {
+                "DISTRIBUTION_INSTALL_CHECK": "1",
+                "ROUTE_MODULES": "${{ steps.route.outputs.modules }}",
+                "ROUTE_DOCS_LINKS": "${{ steps.route.outputs.docs_links }}",
+            },
+        )
+
+    def test_workflow_holds_no_path_logic(self) -> None:
+        # Path logic stays in the router: the workflow never diffs, matches, or names a path to select tests.
+        text = WORKFLOW.read_text(encoding="utf-8")
+        route_run = _step(self.jobs["test"], "Route tests (DOCS/PARTIAL/FAST/FULL)")["run"]
+        self.assertNotIn("diff", route_run)
+        for step in self.jobs["test"]["steps"]:
+            run = step.get("run", "")
+            with self.subTest(step=step.get("name")):
+                self.assertNotIn("git diff", run)
+                self.assertNotIn("tests/", run)
+                self.assertNotIn("changed_files", run)
+        self.assertNotIn("changed-files", text)
+        self.assertNotIn("github.event.pull_request.labels", text)
+        self.assertNotIn("inputs.", text)
 
     def test_docs_tier_runs_only_the_static_documentation_validations(self) -> None:
         docs = _step(self.jobs["test"], "Run documentation validations only (DOCS tier)")

@@ -14,7 +14,7 @@ win.
 
 | Design element | First iteration |
 | --- | --- |
-| Tiers | `DOCS < FAST < FULL`; no TARGETED tier |
+| Tiers | `DOCS < FAST < FULL`; the deferred TARGETED tier is now PARTIAL ([`partial-tier-model.md`](partial-tier-model.md), #634) |
 | Class → tier | `PURE_DOCS`→DOCS, `CONSUMED_DOCS`→FAST, `MIXED`→by the non-doc paths, `UNKNOWN`→FULL |
 | Consumer index (§3) | Scan of tracked non-Markdown files under `tests/`, `scripts/`, `runtime_platform/`, `benchmark/`, `capabilities/`, `distribution/`, `.github/` for literal, joined, and directory `docs/` references; rules fail toward "consumed" |
 | Unresolvable readers and tree enumerators | A file with an unresolvable `docs/` access, or an unregistered repo/Markdown tree enumerator (`REVIEWED_NON_DOCS_ENUMERATORS` lists reviewed benign ones), makes every docs path unverified, so FULL; so does an unreadable consumer file |
@@ -23,7 +23,7 @@ win.
 | Shared local/CI (§5) | One module; CI `route` and local `classify` print the same summary; `route` also emits `class=` |
 | Drift guard (§4) | Tests in `tests/unit/governance/test_change_aware_routing.py` and `tests/policy/governance/test_ci_test_routing.py`: unregistered enumerators fail, unresolved scans fail safe, new consumers reclassify |
 
-Deferred: TARGETED tier (Q3), moving root docs and `policies/**` from the
+Superseded by #634: the TARGETED tier (Q3) is implemented as PARTIAL and specified in [`partial-tier-model.md`](partial-tier-model.md); the tier order is now `DOCS < PARTIAL < FAST < FULL`. Still deferred: moving root docs and `policies/**` from the
 allowlist into the index (Q4), gating the parity jobs on the DOCS tier,
 and wiring [#183](https://github.com/amirbena/code-review-skill/issues/183)
 preflight to `classify`.
@@ -69,11 +69,11 @@ it only narrows the candidate set (§2.1).
 | # | Class | Definition | Outcome |
 | --- | --- | --- | --- |
 | 1 | **Pure documentation** | Every changed path is a tracked Markdown file under `docs/` that the consumer index (§3) shows has **no** consumer other than the registered static scanners | Tier **DOCS**: static documentation validation only (§2.2); zero unit, integration, benchmark, or live suites |
-| 2 | **Consumed / behaviorally significant documentation** | A docs path (or a root/`policies/` doc) with at least one consumer, or a non-Markdown file under `docs/` (JSON/YAML are data) | Only the validation its consumers require. **Phase 1: FAST** (all non-integration tests run); **phase 2 (optional): TARGETED** = the indexed consumer modules + static scanners |
+| 2 | **Consumed / behaviorally significant documentation** | A docs path (or a root/`policies/` doc) with at least one consumer, or a non-Markdown file under `docs/` (JSON/YAML are data) | Only the validation its consumers require. **Phase 1: FAST** (all non-integration tests run); **phase 2: PARTIAL** (#634; named TARGETED in this record's original design) = the affected test modules + static scanners |
 | 3 | **Mixed docs + code/infrastructure** | Any non-doc path is present | Classified from the non-doc paths alone; docs contribute at most "at least FAST", never a lower tier |
 | 4 | **Unknown / high-risk** | Empty, renamed-to/from an unindexed path, router/index error, unrecognized path, or a high-risk path (§2.3) | **FULL** |
 
-Tier order is `DOCS < TARGETED < FAST < FULL`; a change set takes the
+Tier order is `DOCS < PARTIAL < FAST < FULL`; a change set takes the
 **maximum** tier of its paths. Any exception, timeout, or unrecognized state
 resolves to FULL, exactly as `safe_route` does today.
 
@@ -91,14 +91,14 @@ most likely hidden inputs.
 | Tier | Runs | Does not run |
 | --- | --- | --- |
 | **DOCS** | `validate-markdown-links.py`; the registered static scanners (§3.3: forbidden-terms and benchmark-root-migration reference scans) (first iteration: no other validation step; see the table at the top) | `tests.unit.*`, `tests.policy.*` (other than registered scanners), `tests.repository.*`, `tests.integration.*`, benchmark, live-model |
-| **TARGETED** (phase 2) | Indexed consumer modules + registered scanners + non-test steps | Everything else |
+| **PARTIAL** (#634) | An explicit module set: the affected test surface + registered companions (and, with docs, the registered scanners and link validation) + non-test steps | Everything else |
 | **FAST** | Unchanged from #533: full discovery minus `tests.integration.*` | `tests.integration.*` |
 | **FULL** | Unchanged: `python -m unittest discover -s tests -t .` | nothing |
 
 The `test` job and its required-check name are unchanged; tiers only change
 which step body runs inside it. (Superseded: the first iteration skips the build and metadata steps on DOCS; see the table above.)
 
-### 2.3 Never small (always FULL, never DOCS/TARGETED/FAST)
+### 2.3 Never small (always FULL, never DOCS/PARTIAL/FAST; #634 narrows the `tests/**` entry: a bounded test-only change may be PARTIAL, see [`partial-tier-model.md`](partial-tier-model.md))
 
 Shared test infrastructure (`tests/support/**`, `tests/reference/**`, any
 `tests/**` change), manifests (`package-manifest.json`, `capability.yaml`),
@@ -267,7 +267,7 @@ is not reduced: `scripts/sandbox/**`, `docs/threat-model/**` consumers, and
 - **Q2 (resolved: no, skipped on DOCS).** Keep metadata validation, canonical build, spec validation, and
   parity jobs on the DOCS tier? Recommendation: yes (≈20–35 s, no workflow
   restructuring, no required-check change).
-- **Q3.** Phase 2 TARGETED worth the complexity, given class 2 → FAST already
+- **Q3 (resolved by #634: implemented as PARTIAL).** Phase 2 TARGETED worth the complexity, given class 2 → FAST already
   removes the ~73% integration cost? Recommendation: defer until measured.
 - **Q4.** Should root docs (`README.md`, `AGENTS.md`, …) and `policies/**`
   migrate from the allowlist into the index later? Recommendation: leave
@@ -291,4 +291,4 @@ Items 1–4 below landed together in #624 (first iteration); item 5 and the defe
    README targeted-validation table with a pointer; align
    [#183](https://github.com/amirbena/code-review-skill/issues/183)
    preflight afterwards. Depends on 1.
-5. *(optional)* **TARGETED tier** — only if measurement after 3 justifies it.
+5. **PARTIAL tier** (formerly the optional TARGETED tier) — landed in #634; see [`partial-tier-model.md`](partial-tier-model.md).

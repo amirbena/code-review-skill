@@ -191,8 +191,10 @@ it in [`.github/workflows/validate.yml`](.github/workflows/validate.yml),
 which remains the authoritative regression gate before merge
 (see [`policies/git-pr-merge-policy.md`](policies/git-pr-merge-policy.md)).
 CI routes each PR to FULL (the default), FAST (omits only
-`tests/integration/`), or DOCS (static documentation validation only, for
-pure `docs/` changes nothing consumes). It runs on pull requests only — a push to `main`
+`tests/integration/`), PARTIAL (only the test modules a bounded test-only
+change can affect, derived from the `tests/` import and read graph), or DOCS
+(static documentation validation only, for pure `docs/` changes nothing
+consumes). It runs on pull requests only — a push to `main`
 triggers the release lifecycle, not repository validation again
 (see [`policies/validation-and-clean-exit.md`](policies/validation-and-clean-exit.md#routed-ci-tests)).
 
@@ -202,7 +204,7 @@ triggers the release lifecycle, not repository validation again
 | Benchmark-related (`runtime_platform/benchmark/` harness/contracts, `benchmark/corpus/` corpus data, benchmark tooling/tests) | the benchmark test package, e.g. `python3 -m unittest discover -s tests/policy/benchmark` and/or `tests/unit/benchmark` |
 | Skill metadata (`skills/<name>/SKILL.md`, `metadata/skill.yaml`, `package-manifest.json`) | `python3 scripts/validation/validate-skill-metadata.py skills/<name> --containment-root .` for the affected Skill, plus `python3 -m unittest tests.policy.governance.test_skill_entrypoint_guards` for a `SKILL.md` change |
 | Packaging (`scripts/packaging/**`) | `./scripts/packaging/package-skills.sh <local\|github\|all>` for the affected target, plus `python3 -m unittest discover -s tests/integration/packaging` |
-| Focused code/test change (`shared/**`, `scripts/**`, `tests/**`) | the directly affected module(s), e.g. `python3 -m unittest tests.unit.review.test_reviewer_ownership` |
+| Focused code/test change (`shared/**`, `scripts/**`, `tests/**`) | the directly affected module(s), e.g. `python3 -m unittest tests.unit.review.test_reviewer_ownership`; for a test-only change `python3 scripts/validation/ci_test_route.py classify` prints the PARTIAL module list and the exact command |
 
 If a change doesn't map cleanly to one of these, run a broader targeted
 subset instead — for example every test module under the top-level
