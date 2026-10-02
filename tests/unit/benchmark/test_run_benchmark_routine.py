@@ -279,6 +279,20 @@ class DriftConfirmationTests(EntrypointTestCase):
         bundle = json.loads((self.seal_dir / seal.RAW_FILE).read_text(encoding="utf-8"))
         self.assertEqual(len(bundle["confirmation_reruns"]), 2)
 
+    def test_confirmation_reruns_are_logged_to_stderr(self) -> None:
+        out, err = io.StringIO(), io.StringIO()
+        runner = FakeRunner(lambda cid, n: ["k"] if cid == "a" else [])
+        with mock.patch.object(routine, "invoke", runner), mock.patch.object(lane_run, "invoke", runner):
+            with redirect_stdout(out), redirect_stderr(err):
+                routine.main(
+                    ["--cli", "stub", "--runtime-version", "cli-1", "--mode", "sentinel", "--corpus-dir", str(self.corpus),
+                     "--history-root", str(self.history), "--seal-dir", str(self.seal_dir)]
+                )
+        log = err.getvalue()
+        for line in ("[confirm #1] START a", "[confirm #1] PASS a", "[confirm #2] PASS a", "reruns_performed=2"):
+            self.assertIn(line, log)
+        self.assertLess(log.index("[phase] drift-confirmation START"), log.index("[confirm #1] START a"))
+
     def test_a_flake_is_recorded_unconfirmed_and_not_drift(self) -> None:
         runner = FakeRunner(lambda cid, n: ["k"] if cid == "a" and n == 0 else [])
         record = self.second_run(runner)

@@ -41,6 +41,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -54,6 +55,7 @@ from runtime_platform.benchmark.scripts.benchmark_review_adapter import (  # noq
     resolve_cli_executable,
     resolve_cli_extra_args,
 )
+from runtime_platform.benchmark.scripts.benchmark_progress import child_timing_line  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_citation as bc  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_dupes as bdup  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_fixture as bf  # noqa: E402
@@ -111,10 +113,12 @@ def _load_cases_for_metrics(corpus_dir: Path, case_id: str | None) -> list[bf.Be
 def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
     corpus_dir = Path(args.corpus_dir)
+    began = time.monotonic()
 
     executable = args.cli or resolve_cli_executable()
     try:
         check_runtime_available(executable)
+        probe_s = time.monotonic() - began
     except RuntimeUnavailableError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -125,10 +129,20 @@ def main(argv: list[str] | None = None) -> int:
         timeout=args.timeout,
     )
 
+    review_s = 0.0
+
+    def timed_adapter(workspace):  # forwards both single- and multi-repository calls
+        nonlocal review_s
+        review_began = time.monotonic()
+        try:
+            return adapter(workspace)
+        finally:
+            review_s += time.monotonic() - review_began
+
     if args.case_id:
-        run_result = br.run_selected(corpus_dir, args.case_id, adapter)
+        run_result = br.run_selected(corpus_dir, args.case_id, timed_adapter)
     else:
-        run_result = br.run_corpus(corpus_dir, adapter)
+        run_result = br.run_corpus(corpus_dir, timed_adapter)
 
     output: dict = {"run": run_result.as_dict()}
     try:
@@ -152,6 +166,7 @@ def main(argv: list[str] | None = None) -> int:
         output["metrics_error"] = str(exc)
 
     print(json.dumps(output, indent=2))
+    print(child_timing_line(probe_s, review_s, time.monotonic() - began), file=sys.stderr, flush=True)
     return run_result.exit_code
 
 
