@@ -520,8 +520,10 @@ and no packaged Skill resource depends on them.
   (#618). The design-reference context that plugs into it (trusted vs
   discovered provenance, read-only retrieval, evidence authority,
   applicability record, mismatch classification) is owned once by
-  [`design-reference.md`](../shared/policies/design-reference.md) (#620). It
-  never changes coverage or the Decision.
+  [`design-reference.md`](../shared/policies/design-reference.md) (#620);
+  user-facing explanation in the
+  [feature guide](features/rendered-inspection.md). It never changes coverage
+  or the Decision.
 - **Cross-review finding-identity contracts** — the requirements
   ([`findings/finding-identity-requirements.md`](findings/finding-identity-requirements.md),
   #58), the precision-first matching strategy
