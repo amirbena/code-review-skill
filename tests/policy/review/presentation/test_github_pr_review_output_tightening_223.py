@@ -138,7 +138,7 @@ SEVERITY_LEGEND = {
 # deliberate and unrelated to #223. LOCAL_REPORT was re-captured again
 # after Issue #604 (the `Relationship outcomes` line now marks answers a host
 # relationship capability supplied) -- also deliberate and unrelated to #223.
-# LOCAL_REPORT and LOCAL_RUNBOOK were re-captured again after Issue #616 (the
+# LOCAL_REPORT, LOCAL_RUNBOOK, and LOCAL_SKILL were re-captured again after Issue #616 (the
 # optional rendered-UI inspection capability -- a conditional `Rendered
 # observations` rule in the report template and a rendered-inspection pointer
 # beside runtime validation in the runbook) -- also deliberate and unrelated
@@ -146,7 +146,7 @@ SEVERITY_LEGEND = {
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "26a1801011fa558e2e9d20992ec25fc11f0b2d87",
     LOCAL_RUNBOOK: "7b899aed8e36c9112a5ce5a518bb9e14d484a5a6",
-    LOCAL_SKILL: "eaf79d0d35eb81108e27683d171da37b2a772645",
+    LOCAL_SKILL: "b474c75309cce7323afcfa99207b079c574ee268",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",

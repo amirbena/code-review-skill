@@ -78,10 +78,8 @@ important concern or attention point; include scope only when useful>
   disproving run is recorded here even though it raises no finding>
 - <one entry per rendered inspection, only when
   [`../policies/rendered-inspection.md`](../policies/rendered-inspection.md)'s
-  trigger fired: mode, target source, SHA, viewports, states, outcome
-  (`inspected` / `skipped` / `unavailable` / `attempted-inconclusive`), and
-  observed facts; plus one design-reference line in `design-reference` mode,
-  absent in `analytical` mode>
+  trigger fired, with the fields and format that policy's "Evidence record"
+  defines>
 
 ### Decision
 **<decision label>**
@@ -300,6 +298,12 @@ this section states only the summary's own shape:
 - an apparently intentional trade-off may be raised as a question
   ("was returning `null` to the caller here deliberate?") rather than
   asserted as a defect.
+- **rendered observations and inspection record** — when
+  [`../policies/rendered-inspection.md`](../policies/rendered-inspection.md)
+  qualified observations, they appear in concise prose before the decision with
+  the same count and rendered-page grounding as the structured form, and the
+  inspection outcome stays visible in one line; omit both entirely when the
+  capability was inert. Neither is ever an inline comment or a finding.
 - **reasoning check** — when the checkpoint activated, its same 1–4
   questions close the summary, after the decision, as a short
   senior-voice lead-in sentence followed by the questions in prose (or a

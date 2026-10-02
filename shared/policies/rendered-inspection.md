@@ -175,8 +175,9 @@ outcome; if none can be named, it is subjective.
 ## Evidence record
 
 Each inspection adds one compact text entry to the shared `Validation`
-section, in the shape owned by
-[`../templates/review-summary.md`](../templates/review-summary.md):
+section. This policy owns the entry's fields and format;
+[`../templates/review-summary.md`](../templates/review-summary.md) owns only
+where it sits in the report:
 
 `Rendered inspection: <mode> · target source <kind> · SHA <sha> · viewports <list> · states <list> · outcome <inspected|skipped|unavailable|attempted-inconclusive> · observed <facts>`
 
