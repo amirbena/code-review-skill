@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.69.0 — 2026-10-03
+
+### Added
+
+- Add a canonical-home registry with a blocking guard against restating owned normative rules (#642).
+
 ## v1.68.0 — 2026-10-02
 
 ### Added

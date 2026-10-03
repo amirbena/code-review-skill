@@ -1,6 +1,6 @@
 ---
 name: local-code-review
-version: 1.68.0
+version: 1.69.0
 description: Review local Git changes and return evidence-backed P0/P1/P2 code-review findings.
 ---
 
