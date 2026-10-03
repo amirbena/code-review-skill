@@ -421,11 +421,16 @@ stop
    reported" and "Non-goals and ownership boundary" — not restated here.
 8c. **Partition large changes** per
    [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md):
-   when the established PR delta's diff-size measurement (same exclusion of
-   non-reviewable files as step 8a) reaches that policy's partitioning
-   threshold, build coherent review units by its deterministic
-   directory-seed / coherence-merge / size-cap procedure; otherwise review
-   the delta as a single unit as before. When partitioned, apply step 9
+   when the scope this invocation reviews — the full PR change, or in
+   delta re-review only the bounded delta, per that policy's "Activation"
+   (same exclusion of non-reviewable files as step 8a) — reaches that
+   policy's partitioning threshold, build coherent review units by its
+   deterministic directory-seed / coherence-merge / size-cap procedure
+   (over the delta's files only, in delta mode); otherwise review that
+   scope as a single unit as before. Size never selects delta mode or
+   escalates a delta to a full review
+   ([`reviewer-delta-review.md`](../policies/reviewer-delta-review.md),
+   "Oversized delta"). When partitioned, apply step 9
    separately to each unit, then fold every unit's findings into step 10's
    aggregation — extended here to also reconcile and de-duplicate **across
    partitions** (including cross-partition consolidation per
