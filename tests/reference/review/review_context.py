@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Test-only reference for review-context normalization semantics.
 
-Mirrors skills/local-code-review/policies/review-context.md.
+Contract: shared/policies/review-context.md, shared by both Skills.
 Not runtime logic, not packaged.
 """
 
@@ -12,7 +12,7 @@ from enum import Enum
 from typing import FrozenSet, Optional, Sequence
 
 
-# --- Evidence hierarchy (review-context.md, "Evidence hierarchy") ---------
+# --- Evidence hierarchy (shared review-context.md, "Evidence hierarchy") ---------
 
 
 class EvidenceSource(Enum):
@@ -46,13 +46,19 @@ def context_outranks_code(source: EvidenceSource) -> bool:
     )
 
 
-# --- Normalization (review-context.md, "Recommended internal
+# --- Normalization (shared review-context.md, "Recommended internal
 # normalization") --------------------------------------------------------
 
 
 @dataclass(frozen=True)
 class ReviewContext:
-    """Illustrative normalized shape; only `raw_context` is required."""
+    """Illustrative normalized shape; only `raw_context` is required.
+
+    `source_type` is a free string: the shared policy lists its values as
+    illustrative, so they are not validated. `problem_context` is
+    intentionally not modelled — the policy calls it an input convention,
+    not a schema, so it stays prose inside `raw_context`.
+    """
 
     raw_context: str
     source_type: Optional[str] = None
@@ -68,11 +74,14 @@ class ReviewContextAvailability(Enum):
     SUPPLIED = "supplied"
 
 
-def should_block_local_review(availability: ReviewContextAvailability) -> bool:
-    """Review context never blocks the local review — every state maps to
-    the same answer."""
+def should_block_review(availability: ReviewContextAvailability) -> bool:
+    """Review context never blocks a review — every state maps to the same
+    answer."""
     del availability
     return False
+
+
+should_block_local_review = should_block_review
 
 
 def should_prompt_user_for_context(context_supplied: bool) -> bool:
@@ -81,18 +90,19 @@ def should_prompt_user_for_context(context_supplied: bool) -> bool:
     return False
 
 
-# --- Scope discipline (review-context.md, "Scope discipline: no scope
+# --- Scope discipline (shared review-context.md, "Scope discipline: no scope
 # explosion" / "Using context to focus review attention") ------------------
 
 
 def is_within_current_delta_scope(
-    focus_area_touches: FrozenSet[str], local_delta_touches: FrozenSet[str]
+    focus_area_touches: FrozenSet[str], review_target_touches: FrozenSet[str]
 ) -> bool:
-    """Exact overlap with the current local delta. An empty touch set is
-    never in scope; context never expands scope beyond the delta."""
+    """Exact overlap with the current review target (local delta or PR
+    delta). An empty touch set is never in scope; context never expands
+    scope beyond the target."""
     if not focus_area_touches:
         return False
-    return bool(focus_area_touches & local_delta_touches)
+    return bool(focus_area_touches & review_target_touches)
 
 
 class NonGoalEffect(Enum):
