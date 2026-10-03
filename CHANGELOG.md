@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.70.0 — 2026-10-03
+
+### Changed
+
+- Define how a reviewed-SHA delta re-review handles a delta that exceeds the partitioning threshold (#644).
+
 ## v1.69.0 — 2026-10-03
 
 ### Added
