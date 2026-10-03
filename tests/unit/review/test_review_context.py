@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """Coverage for optional review-context handling (review_context.py).
 
-Contract: skills/local-code-review/policies/review-context.md.
+Contract: shared/policies/review-context.md (both Skills).
 """
 
 from __future__ import annotations
 
 import inspect
 import unittest
+from pathlib import Path
 
 from tests.reference.review import review_context as rc
 
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 LOCAL_DELTA_TOUCHES = frozenset({"src/payments/charge.py", "src/payments/charge_test.py"})
 UNRELATED_TOUCHES = frozenset({"docs/marketing/landing-page-copy.md"})
@@ -23,7 +26,10 @@ class NoContextTests(unittest.TestCase):
     def test_no_context_never_blocks_the_review(self) -> None:
         for state in rc.ReviewContextAvailability:
             with self.subTest(state=state):
-                self.assertFalse(rc.should_block_local_review(state))
+                self.assertFalse(rc.should_block_review(state))
+
+    def test_local_named_helper_remains_an_alias(self) -> None:
+        self.assertIs(rc.should_block_local_review, rc.should_block_review)
 
     def test_never_prompts_the_user_for_context(self) -> None:
         self.assertFalse(rc.should_prompt_user_for_context(context_supplied=False))
@@ -38,6 +44,70 @@ class NoContextTests(unittest.TestCase):
                 non_goal_prevented_a_false_gap=True,
             )
         )
+
+
+class GitHubSourcedContextTests(unittest.TestCase):
+    """GitHub-sourced context reuses the one shared ReviewContext shape —
+    no GitHub-specific schema (shared review-context.md, "Input form")."""
+
+    def test_pr_description_normalizes_as_pr_description(self) -> None:
+        ctx = rc.ReviewContext(
+            raw_context="Reject writes to a locked record. Not in scope: shard failover.",
+            source_type="pr-description",
+            source_name="#412",
+            intended_behavior="reject writes to a locked record",
+            explicit_non_goals=("shard failover",),
+        )
+        self.assertEqual(ctx.source_type, "pr-description")
+        self.assertEqual(ctx.source_name, "#412")
+        self.assertEqual(ctx.explicit_non_goals, ("shard failover",))
+
+    def test_github_issue_with_acceptance_criteria_normalizes_fully(self) -> None:
+        ctx = rc.ReviewContext(
+            raw_context="Locked records must not be writable.",
+            source_type="github-issue",
+            source_name="#73",
+            acceptance_criteria=(
+                "writes to a locked record are rejected",
+                "the lock owner is preserved",
+            ),
+        )
+        self.assertEqual(ctx.source_type, "github-issue")
+        self.assertEqual(len(ctx.acceptance_criteria), 2)
+
+    def test_source_type_is_not_validated_against_the_illustrative_list(self) -> None:
+        # The shared policy marks its source_type values as illustrative.
+        ctx = rc.ReviewContext(raw_context="x", source_type="design-review-notes")
+        self.assertEqual(ctx.source_type, "design-review-notes")
+
+    def test_problem_context_is_intentionally_not_a_field(self) -> None:
+        # Shared policy: an input convention, not a schema; stays in raw_context.
+        self.assertNotIn("problem_context", rc.ReviewContext.__dataclass_fields__)
+
+    def test_shape_has_no_github_specific_fields(self) -> None:
+        self.assertEqual(
+            set(rc.ReviewContext.__dataclass_fields__),
+            {
+                "raw_context",
+                "source_type",
+                "source_name",
+                "intended_behavior",
+                "acceptance_criteria",
+                "constraints",
+                "explicit_non_goals",
+            },
+        )
+
+    def test_shape_matches_the_shared_policy_normalization_block(self) -> None:
+        text = (REPO_ROOT / "shared/policies/review-context.md").read_text(encoding="utf-8")
+        start = text.index("## Recommended internal normalization")
+        block = text[start : text.index("\n## ", start + 1)]
+        documented = {
+            line[2:].split(":")[0].split(" / ")[0].strip()
+            for line in block.splitlines()
+            if line.startswith("- ")
+        }
+        self.assertEqual(set(rc.ReviewContext.__dataclass_fields__) | {"problem_context"}, documented)
 
 
 class FreeFormContextTests(unittest.TestCase):
