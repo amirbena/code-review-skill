@@ -248,7 +248,11 @@ full review of the current PR state, superseding the delta boundary
 entirely — whenever the delta materially invalidates enough of the
 following that reconciliation can no longer produce a trustworthy
 result. These are the four semantic triggers #64 §7 defines; this policy
-invents no numeric threshold (file/line/finding counts) beyond them:
+invents no numeric threshold (file/line/finding counts) beyond them. In
+particular, a delta that reaches the large-PR partitioning threshold is
+not a trigger: it is partitioned and reviewed as a delta per
+[`reviewer-delta-review.md`](reviewer-delta-review.md), "Oversized delta".
+The triggers:
 
 - **Prior assumptions invalidated** — the delta changes an architectural
   or behavioral premise multiple settled conclusions (§5) or prior

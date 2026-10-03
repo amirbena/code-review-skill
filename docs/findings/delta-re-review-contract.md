@@ -298,7 +298,9 @@ This contract deliberately does **not** invent a numeric threshold (a
 count of changed files, lines, or findings) for escalation, because
 neither Issue #64 nor an existing canonical policy defines one. The
 trigger is semantic: *bounded delta re-review can no longer produce a
-trustworthy result*, judged against the four bullets above. When in
+trustworthy result*, judged against the four bullets above. A delta that
+reaches the large-PR partitioning threshold is partitioned and reviewed as
+a delta, not escalated: size alone is never an escalation input. When in
 doubt, escalate — the same "when in doubt, it escalates" default already
 stated for SHA-bound delta re-review in
 [`../features/delta-re-review.md`](../features/delta-re-review.md).

@@ -47,6 +47,17 @@ that stays under the threshold is reviewed as a single unit exactly as it
 always has been — that is the normal, complete outcome, and this policy
 contributes nothing further to it.
 
+**Measurement scope.** The threshold is measured on the scope the current
+invocation actually reviews, after the review mode is selected — never
+before it, and never as an input to selecting it. In a normal or full
+review that scope is the whole in-scope change. In a reviewed-SHA delta
+re-review (previously reviewed SHA → current HEAD) it is the bounded delta
+alone, with the same non-reviewable exclusion: unchanged, previously
+reviewed code does not count toward the threshold and is not
+re-partitioned, and an oversized delta is partitioned by the procedure
+below over the delta's files only. A runbook's "established PR delta"
+refers to this scope when it measures size for this policy.
+
 ## Conditional loading: fail-closed
 
 `capabilities/scale/capability.yaml` declares this file `on-activation`,

@@ -95,6 +95,33 @@ NEW DELTA` outcome in [`review-output.md`](review-output.md), "Final
 decision" — this Skill does not resubmit a duplicate review for a HEAD
 this same reviewer already completed.
 
+## Oversized delta
+
+Review mode is selected first, by the reviewer-identity and reviewed-SHA
+rules above; the delta's size never selects or deselects delta mode. The
+partitioning threshold is then measured on the scope this invocation
+reviews, per
+[`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
+"Activation" — in delta mode, the bounded delta (same non-reviewable
+exclusion), not the full PR.
+
+When the delta reaches that threshold:
+
+- partition the delta's files with the existing procedure; unchanged
+  reviewed code is not re-partitioned;
+- aggregate and de-duplicate across partitions first, then reconcile once
+  against prior findings per
+  [`stateful-delta-rereview.md`](stateful-delta-rereview.md), then apply
+  severity and derive one decision;
+- if a partition cannot be completed, the outcome is `REVIEW INCOMPLETE`
+  per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
+  and the reviewed state does not advance to this HEAD.
+
+Size alone never escalates a delta to a full review: the only escalation
+causes remain those in the next section and in
+[`stateful-delta-rereview.md`](stateful-delta-rereview.md), §6. A delta
+below the threshold, and every full review, behave exactly as before.
+
 ## Escalating from delta to full review
 
 A delta re-review is not automatically the complete review. Escalate to
