@@ -11,13 +11,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from runtime_platform.benchmark.reference.reasoning_checkpoint_fixtures import SCOPED_OPENING_ASSESSMENT
 from scripts.governance.canonical_homes import (
     GROUPS,
     anchors_in_group,
     capability_double_claims,
     load_registry,
-    normalize,
+    parity_violations,
     violations,
 )
 from tests.support.paths import REPO_ROOT
@@ -50,9 +49,16 @@ class RealTreeTests(unittest.TestCase):
     def test_no_file_is_claimed_by_two_capabilities(self) -> None:
         self.assertEqual(capability_double_claims(REPO_ROOT), {})
 
-    def test_reasoning_checkpoint_fixture_matches_the_registered_wording(self) -> None:
-        registered = {a["text"] for a in load_registry()["anchors"] if a["group"] == "exact-string"}
-        self.assertIn(normalize(SCOPED_OPENING_ASSESSMENT), {normalize(t) for t in registered})
+    def test_code_constant_mirrors_match_their_anchors(self) -> None:
+        registry = load_registry()
+        self.assertTrue([a for a in registry["anchors"] if a.get("parity")])
+        self.assertEqual(parity_violations(registry), [])
+
+    def test_drifted_code_constant_fails(self) -> None:
+        registry = _registry(parity={"module": "tests.policy.governance.test_canonical_homes", "constant": "ANCHOR_TEXT"})
+        self.assertEqual(parity_violations(registry), [])
+        registry["anchors"][0]["text"] = "reworded"
+        self.assertTrue(any("drifted" in p for p in parity_violations(registry)))
 
 
 class SeededTreeTests(unittest.TestCase):

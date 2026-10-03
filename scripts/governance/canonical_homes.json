@@ -626,7 +626,11 @@
           "path": "skills/github-pr-review/templates/external-review-summary.md",
           "reason": "template-rendering"
         }
-      ]
+      ],
+      "parity": {
+        "module": "runtime_platform.benchmark.reference.reasoning_checkpoint_fixtures",
+        "constant": "SCOPED_OPENING_ASSESSMENT"
+      }
     }
   ]
 }

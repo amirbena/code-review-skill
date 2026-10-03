@@ -8,6 +8,7 @@ the reason vocabulary live in ``docs/canonical-homes/canonical-homes-model.md``.
 from __future__ import annotations
 
 import fnmatch
+import importlib
 import json
 import os
 import re
@@ -102,3 +103,16 @@ def capability_double_claims(root: Path) -> dict[str, list[str]]:
         for path in data.get("files", []):
             claims.setdefault(path, []).append(manifest.parent.name)
     return {path: owners for path, owners in claims.items() if len(owners) > 1}
+
+
+def parity_violations(registry: dict) -> list[str]:
+    """Check each anchor's optional code-constant mirror, which the text scan cannot see."""
+    problems: list[str] = []
+    for anchor in registry["anchors"]:
+        parity = anchor.get("parity")
+        if not parity:
+            continue
+        value = getattr(importlib.import_module(parity["module"]), parity["constant"], None)
+        if not isinstance(value, str) or normalize(value) != normalize(anchor["text"]):
+            problems.append(f"{anchor['id']}: {parity['module']}.{parity['constant']} drifted from the anchor")
+    return problems

@@ -40,6 +40,17 @@ are now derived views of the registry.
 - No file is listed in the `files:` of more than one
   `capabilities/*/capability.yaml`.
 
+- An anchor whose wording is also held in a code constant (a string split
+  across Python literals escapes the text scan) may declare an optional
+  `parity` entry (`module`, `constant`); the constant must normalize equal
+  to the anchor.
+
+## Known limit
+
+The scan matches normalized text only. A restatement split across adjacent
+string literals in code is invisible to it; register a `parity` entry for
+any such mirror.
+
 ## Allowlist reason vocabulary
 
 - `design-record-mirror` — a `docs/` design record mirrors the owner's
