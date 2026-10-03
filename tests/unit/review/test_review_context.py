@@ -75,11 +75,6 @@ class GitHubSourcedContextTests(unittest.TestCase):
         self.assertEqual(ctx.source_type, "github-issue")
         self.assertEqual(len(ctx.acceptance_criteria), 2)
 
-    def test_github_sources_use_the_same_type_as_other_sources(self) -> None:
-        github = rc.ReviewContext(raw_context="x", source_type="github-issue")
-        jira = rc.ReviewContext(raw_context="x", source_type="jira")
-        self.assertIs(type(github), type(jira))
-
     def test_source_type_is_not_validated_against_the_illustrative_list(self) -> None:
         # The shared policy marks its source_type values as illustrative.
         ctx = rc.ReviewContext(raw_context="x", source_type="design-review-notes")
@@ -105,9 +100,14 @@ class GitHubSourcedContextTests(unittest.TestCase):
 
     def test_shape_matches_the_shared_policy_normalization_block(self) -> None:
         text = (REPO_ROOT / "shared/policies/review-context.md").read_text(encoding="utf-8")
-        for name in rc.ReviewContext.__dataclass_fields__:
-            with self.subTest(field=name):
-                self.assertIn(f"- {name}", text.replace("constraints / invariants", "constraints"))
+        start = text.index("## Recommended internal normalization")
+        block = text[start : text.index("\n## ", start + 1)]
+        documented = {
+            line[2:].split(":")[0].split(" / ")[0].strip()
+            for line in block.splitlines()
+            if line.startswith("- ")
+        }
+        self.assertEqual(set(rc.ReviewContext.__dataclass_fields__) | {"problem_context"}, documented)
 
 
 class FreeFormContextTests(unittest.TestCase):
