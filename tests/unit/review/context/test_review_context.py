@@ -13,7 +13,7 @@ from pathlib import Path
 from tests.reference.review import review_context as rc
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+REPO_ROOT = Path(__file__).resolve().parents[4]
 
 LOCAL_DELTA_TOUCHES = frozenset({"src/payments/charge.py", "src/payments/charge_test.py"})
 UNRELATED_TOUCHES = frozenset({"docs/marketing/landing-page-copy.md"})

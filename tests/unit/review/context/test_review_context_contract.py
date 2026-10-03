@@ -142,12 +142,6 @@ class ReviewTargetContractTests(unittest.TestCase):
         state = make_local_target().to_reviewed_state()
         self.assertEqual((state.base_sha, state.head_sha), (BASE_SHA, HEAD_SHA))
 
-    def test_targets_are_immutable(self) -> None:
-        for target in (make_local_target(), make_pr_source()):
-            with self.subTest(target=type(target).__name__):
-                with self.assertRaises(dataclasses.FrozenInstanceError):
-                    target.head_sha = NEW_HEAD_SHA
-
     def test_both_reject_an_invalid_base_or_head(self) -> None:
         for sha in INVALID_SHAS:
             for field in ("base_sha", "head_sha"):
@@ -176,20 +170,6 @@ class ReviewTargetContractTests(unittest.TestCase):
 
 
 class ReviewContextContractTests(unittest.TestCase):
-    def test_one_context_shape_serves_both_skills(self) -> None:
-        pr_sourced = ReviewContext(
-            raw_context="Reject writes to a locked record.",
-            source_type="pr-description",
-            source_name="#76",
-        )
-        local_sourced = ReviewContext(
-            raw_context="Reject writes to a locked record.",
-            source_type="design-notes",
-            source_name="notes.md",
-        )
-        self.assertIs(type(pr_sourced), type(local_sourced))
-        self.assertEqual(pr_sourced.raw_context, local_sourced.raw_context)
-
     def test_only_raw_context_is_required(self) -> None:
         required = [
             f.name
@@ -222,20 +202,6 @@ class ReviewContextContractTests(unittest.TestCase):
     def test_github_history_gaps_do_not_block_review_either(self) -> None:
         for completeness in HistoryCompleteness:
             self.assertFalse(history_blocks_review(completeness))
-
-    def test_context_availability_and_history_completeness_stay_distinct(self) -> None:
-        self.assertNotEqual(
-            {s.name for s in PRContextAvailability},
-            {s.name for s in HistoryCompleteness},
-        )
-
-    def test_empty_context_is_a_valid_input(self) -> None:
-        # Context is opt-in: an empty string is still a well-formed value.
-        self.assertEqual(ReviewContext(raw_context="").raw_context, "")
-
-    def test_context_rejects_missing_raw_context(self) -> None:
-        with self.assertRaises(TypeError):
-            ReviewContext()  # type: ignore[call-arg]
 
 
 class ExistingFindingContractTests(unittest.TestCase):

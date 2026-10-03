@@ -198,7 +198,7 @@ class SharedPolicyFilesTests(unittest.TestCase):
     def test_behavioral_reference_model_exists_for_github_evidence(self) -> None:
         # The contract must be proven behaviorally, not only in prose.
         mod = REPO_ROOT / "tests" / "reference" / "review" / "pr_review_evidence.py"
-        test = REPO_ROOT / "tests" / "unit" / "review" / "test_pr_review_evidence.py"
+        test = REPO_ROOT / "tests" / "unit" / "review" / "context" / "test_pr_review_evidence.py"
         self.assertTrue(mod.is_file())
         self.assertTrue(test.is_file())
         head = mod.read_text(encoding="utf-8")[:600]

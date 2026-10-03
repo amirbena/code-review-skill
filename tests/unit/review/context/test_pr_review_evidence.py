@@ -3,7 +3,7 @@
 
 Contract: shared/policies/review-evidence.md and
 skills/github-pr-review/policies/{review-evidence,pr-scope}.md.
-Analogous in spirit to tests/unit/review/test_pr_context_reconciliation.py, but the
+Analogous in spirit to tests/unit/review/context/test_pr_context_reconciliation.py, but the
 review target is the current PR HEAD rather than a local delta.
 """
 
@@ -826,7 +826,7 @@ class CurrentEvidenceValidationOrderingTests(unittest.TestCase):
                 raise SystemExit("malformed evidence was not rejected")
             """
         )
-        repo_root = pathlib.Path(__file__).resolve().parents[3]
+        repo_root = pathlib.Path(__file__).resolve().parents[4]
         for seed in ("0", "1", "42", "12345"):
             with self.subTest(seed=seed):
                 env = dict(os.environ, PYTHONHASHSEED=seed)
