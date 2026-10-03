@@ -1,0 +1,636 @@
+{
+  "reasons": {
+    "design-record-mirror": "A docs/ design record mirrors the owner's exact wording to specify the contract it motivates; the policy wins any conflict.",
+    "template-rendering": "An output template must render the anchor verbatim so reviewers emit it; the template cannot link instead.",
+    "packaged-independence": "A packaged Skill resource must stay self-contained and cannot link to the repository-only owner."
+  },
+  "anchors": [
+    {
+      "id": "routed:repository-workflow",
+      "group": "routed-policy",
+      "text": "Preserving local changes when switching (stash discipline)",
+      "owner": "policies/repository-workflow.md",
+      "scope": [
+        "AGENTS.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "routed:git-pr-merge-policy",
+      "group": "routed-policy",
+      "text": "Squash Cleanup Safety",
+      "owner": "policies/git-pr-merge-policy.md",
+      "scope": [
+        "AGENTS.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "routed:validation-and-clean-exit",
+      "group": "routed-policy",
+      "text": "Python cache/bytecode cleanup around commits",
+      "owner": "policies/validation-and-clean-exit.md",
+      "scope": [
+        "AGENTS.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "routed:documentation-policy",
+      "group": "routed-policy",
+      "text": "User journey first.",
+      "owner": "policies/documentation-policy.md",
+      "scope": [
+        "AGENTS.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "routed:github-issue-pr-authoring",
+      "group": "routed-policy",
+      "text": "Agent-complete internally, human-scannable externally",
+      "owner": "policies/github-issue-pr-authoring.md",
+      "scope": [
+        "AGENTS.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "routed:contribution-ownership-policy",
+      "group": "routed-policy",
+      "text": "Blast radius, coupling to review semantics, and validation difficulty decide contributor suitability",
+      "owner": "policies/contribution-ownership-policy.md",
+      "scope": [
+        "AGENTS.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "routed:release-changelog-policy",
+      "group": "routed-policy",
+      "text": "Decision rule:",
+      "owner": "policies/release-changelog-policy.md",
+      "scope": [
+        "AGENTS.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "routed:skill-development-policy",
+      "group": "routed-policy",
+      "text": "Portable Core, Optional Runtime Adapters",
+      "owner": "policies/skill-development-policy.md",
+      "scope": [
+        "AGENTS.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "routed:review-orchestration-policy",
+      "group": "routed-policy",
+      "text": "One review scope → one Code Review Agent owner",
+      "owner": "policies/review-orchestration-policy.md",
+      "scope": [
+        "AGENTS.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "routed:python_scripts_coding_policy",
+      "group": "routed-policy",
+      "text": "Remove or shorten a comment that mainly explains",
+      "owner": "policies/python_scripts_coding_policy.md",
+      "scope": [
+        "AGENTS.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-authority:self-review-capability",
+      "group": "github-index-owned",
+      "text": "## Self-review capability",
+      "owner": "skills/github-pr-review/policies/review-authority.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-authority:review-repository-access-prerequisite",
+      "group": "github-index-owned",
+      "text": "## Review/repository access prerequisite",
+      "owner": "skills/github-pr-review/policies/review-authority.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-authority:capability-matrix",
+      "group": "github-index-owned",
+      "text": "## Capability matrix",
+      "owner": "skills/github-pr-review/policies/review-authority.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-action-authorization:security-principles",
+      "group": "github-index-owned",
+      "text": "## Security principles",
+      "owner": "skills/github-pr-review/policies/review-action-authorization.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-action-authorization:self-review-is-allowed-self-approval-is-",
+      "group": "github-index-owned",
+      "text": "## Self-review is allowed; self-approval is not",
+      "owner": "skills/github-pr-review/policies/review-action-authorization.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-action-authorization:publication-modes-canonical",
+      "group": "github-index-owned",
+      "text": "## Publication modes (canonical)",
+      "owner": "skills/github-pr-review/policies/review-action-authorization.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-action-authorization:core-invariant-an-explicit-active-reques",
+      "group": "github-index-owned",
+      "text": "## Core invariant: an explicit ACTIVE request is its own authorization",
+      "owner": "skills/github-pr-review/policies/review-action-authorization.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-action-authorization:safe-default-and-fail-closed",
+      "group": "github-index-owned",
+      "text": "## Safe default and fail-closed",
+      "owner": "skills/github-pr-review/policies/review-action-authorization.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-action-authorization:trusted-reviewer-independence",
+      "group": "github-index-owned",
+      "text": "## Trusted reviewer independence",
+      "owner": "skills/github-pr-review/policies/review-action-authorization.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-action-authorization:natural-language-publication-intent",
+      "group": "github-index-owned",
+      "text": "## Natural-language publication intent",
+      "owner": "skills/github-pr-review/policies/review-action-authorization.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-action-authorization:authority-boundary",
+      "group": "github-index-owned",
+      "text": "## Authority boundary",
+      "owner": "skills/github-pr-review/policies/review-action-authorization.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-action-authorization:merge-boundary",
+      "group": "github-index-owned",
+      "text": "## Merge boundary",
+      "owner": "skills/github-pr-review/policies/review-action-authorization.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-action-authorization:composition-with-existing-guarantees",
+      "group": "github-index-owned",
+      "text": "## Composition with existing guarantees",
+      "owner": "skills/github-pr-review/policies/review-action-authorization.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:reviewer-delta-review:reviewer-identity",
+      "group": "github-index-owned",
+      "text": "## Reviewer identity",
+      "owner": "skills/github-pr-review/policies/reviewer-delta-review.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:reviewer-delta-review:same-reviewer-delta-boundary-and-scope",
+      "group": "github-index-owned",
+      "text": "## Same reviewer: delta boundary and scope",
+      "owner": "skills/github-pr-review/policies/reviewer-delta-review.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:reviewer-delta-review:escalating-from-delta-to-full-review",
+      "group": "github-index-owned",
+      "text": "## Escalating from delta to full review",
+      "owner": "skills/github-pr-review/policies/reviewer-delta-review.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:pr-scope:complete-pr-scope-and-pagination",
+      "group": "github-index-owned",
+      "text": "## Complete PR scope and pagination",
+      "owner": "skills/github-pr-review/policies/pr-scope.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:pr-scope:existing-review-awareness",
+      "group": "github-index-owned",
+      "text": "## Existing review awareness",
+      "owner": "skills/github-pr-review/policies/pr-scope.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:repository-checkout:lifecycle",
+      "group": "github-index-owned",
+      "text": "## Lifecycle",
+      "owner": "skills/github-pr-review/policies/repository-checkout.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:repository-checkout:base-head-fidelity",
+      "group": "github-index-owned",
+      "text": "## Base / head fidelity",
+      "owner": "skills/github-pr-review/policies/repository-checkout.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:repository-checkout:security-pr-contents-are-untrusted",
+      "group": "github-index-owned",
+      "text": "## Security (PR contents are untrusted)",
+      "owner": "skills/github-pr-review/policies/repository-checkout.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:parallel-review:shared-checkout-vs-worker-copies",
+      "group": "github-index-owned",
+      "text": "## Shared checkout vs. worker copies",
+      "owner": "skills/github-pr-review/policies/parallel-review.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:parallel-review:runtime-realisation",
+      "group": "github-index-owned",
+      "text": "## Runtime realisation",
+      "owner": "skills/github-pr-review/policies/parallel-review.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-context:scope-boundary-reasoning-for-a-pr",
+      "group": "github-index-owned",
+      "text": "## Scope-boundary reasoning for a PR",
+      "owner": "skills/github-pr-review/policies/review-context.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-context:the-pr-remains-the-review-target",
+      "group": "github-index-owned",
+      "text": "## The PR remains the review target",
+      "owner": "skills/github-pr-review/policies/review-context.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-evidence:use-it-to-avoid-three-failures",
+      "group": "github-index-owned",
+      "text": "## Use it to avoid three failures",
+      "owner": "skills/github-pr-review/policies/review-evidence.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-evidence:head-changes-reset-applicability",
+      "group": "github-index-owned",
+      "text": "## HEAD changes reset applicability",
+      "owner": "skills/github-pr-review/policies/review-evidence.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-reasoning:semantic-implication-review",
+      "group": "github-index-owned",
+      "text": "## Semantic Implication Review",
+      "owner": "skills/github-pr-review/policies/review-reasoning.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-reasoning:null-like-absence-risk-review",
+      "group": "github-index-owned",
+      "text": "## Null-Like Absence-Risk Review",
+      "owner": "skills/github-pr-review/policies/review-reasoning.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-reasoning:logical-cohort-review",
+      "group": "github-index-owned",
+      "text": "## Logical Cohort Review",
+      "owner": "skills/github-pr-review/policies/review-reasoning.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-reasoning:architectural-placement-review",
+      "group": "github-index-owned",
+      "text": "## Architectural Placement Review",
+      "owner": "skills/github-pr-review/policies/review-reasoning.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-reasoning:code-impact-dependency-analysis",
+      "group": "github-index-owned",
+      "text": "## Code Impact / Dependency Analysis",
+      "owner": "skills/github-pr-review/policies/review-reasoning.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-reasoning:affected-test-impact-review",
+      "group": "github-index-owned",
+      "text": "## Affected-Test Impact Review",
+      "owner": "skills/github-pr-review/policies/review-reasoning.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-reasoning:api-contract-compatibility-review",
+      "group": "github-index-owned",
+      "text": "## API / Contract Compatibility Review",
+      "owner": "skills/github-pr-review/policies/review-reasoning.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-reasoning:dependency-supply-chain-deepening-review",
+      "group": "github-index-owned",
+      "text": "## Dependency / Supply-Chain Deepening Review",
+      "owner": "skills/github-pr-review/policies/review-reasoning.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:finding-placement:inline-comment-eligibility",
+      "group": "github-index-owned",
+      "text": "## Inline comment eligibility",
+      "owner": "skills/github-pr-review/policies/finding-placement.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:finding-placement:anchor-at-the-fix-action-location",
+      "group": "github-index-owned",
+      "text": "## Anchor at the fix/action location",
+      "owner": "skills/github-pr-review/policies/finding-placement.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:finding-placement:no-duplicate-findings",
+      "group": "github-index-owned",
+      "text": "## No duplicate findings",
+      "owner": "skills/github-pr-review/policies/finding-placement.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:finding-placement:rejected-inline-location-fallback",
+      "group": "github-index-owned",
+      "text": "## Rejected inline location fallback",
+      "owner": "skills/github-pr-review/policies/finding-placement.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-output:analysis-phase-vs-publication-phase",
+      "group": "github-index-owned",
+      "text": "## Analysis phase vs. publication phase",
+      "owner": "skills/github-pr-review/policies/review-output.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-output:batched-review-construction-and-submissi",
+      "group": "github-index-owned",
+      "text": "## Batched review construction and submission",
+      "owner": "skills/github-pr-review/policies/review-output.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-output:final-summary",
+      "group": "github-index-owned",
+      "text": "## Final summary",
+      "owner": "skills/github-pr-review/policies/review-output.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-output:final-decision",
+      "group": "github-index-owned",
+      "text": "## Final decision",
+      "owner": "skills/github-pr-review/policies/review-output.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-output:head-revalidation",
+      "group": "github-index-owned",
+      "text": "## HEAD revalidation",
+      "owner": "skills/github-pr-review/policies/review-output.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-output:submission-ordering",
+      "group": "github-index-owned",
+      "text": "## Submission ordering",
+      "owner": "skills/github-pr-review/policies/review-output.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-status-enforcement:exact-reviewed-head-binding",
+      "group": "github-index-owned",
+      "text": "## Exact reviewed-HEAD binding",
+      "owner": "skills/github-pr-review/policies/review-status-enforcement.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-status-enforcement:verdict-status-state-no-second-engine",
+      "group": "github-index-owned",
+      "text": "## Verdict → status state (no second engine)",
+      "owner": "skills/github-pr-review/policies/review-status-enforcement.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-status-enforcement:authorization-blocking-authority-vs-posi",
+      "group": "github-index-owned",
+      "text": "## Authorization: blocking authority vs. positive authority",
+      "owner": "skills/github-pr-review/policies/review-status-enforcement.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-status-enforcement:enforcement-state-detection-read-only",
+      "group": "github-index-owned",
+      "text": "## Enforcement-state detection (read-only)",
+      "owner": "skills/github-pr-review/policies/review-status-enforcement.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "github-index:review-status-enforcement:explicit-opt-in-required-check-setup",
+      "group": "github-index-owned",
+      "text": "## Explicit opt-in required-check setup",
+      "owner": "skills/github-pr-review/policies/review-status-enforcement.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
+      "id": "exact:reasoning-checkpoint:scoped-opening-assessment",
+      "group": "exact-string",
+      "text": "No blocking issue found in the change as reviewed; whether it resolves the reported problem depends on evidence not established here — see Reasoning check.",
+      "owner": "shared/policies/reasoning-checkpoint.md",
+      "scope": [
+        "*"
+      ],
+      "allow": [
+        {
+          "path": "docs/reasoning-checkpoint/reasoning-checkpoint-contract.md",
+          "reason": "design-record-mirror"
+        },
+        {
+          "path": "skills/local-code-review/templates/local-review-report.md",
+          "reason": "template-rendering"
+        },
+        {
+          "path": "skills/github-pr-review/templates/external-review-summary.md",
+          "reason": "template-rendering"
+        }
+      ],
+      "parity": {
+        "module": "runtime_platform.benchmark.reference.reasoning_checkpoint_fixtures",
+        "constant": "SCOPED_OPENING_ASSESSMENT"
+      }
+    }
+  ]
+}

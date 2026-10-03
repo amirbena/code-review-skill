@@ -59,6 +59,7 @@ CONSUMER_ROOTS = ("tests", "scripts", "runtime_platform", "benchmark", "capabili
 # enumerate docs/ without making every doc "consumed".
 DOCS_SCANNER_MODULES = (
     "tests.policy.governance.test_forbidden_repository_terms",
+    "tests.policy.governance.test_canonical_homes",
     "tests.policy.governance.test_instruction_architecture",
     "tests.policy.benchmark.test_benchmark_root_migration",
     "tests.policy.review.test_shared_review_context",
@@ -92,6 +93,7 @@ REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
         "runtime_platform/benchmark/scripts/build_benchmark_index.py",
         "scripts/packaging/package_domain/tree.py",
         "scripts/skill_metadata/links.py",
+        "scripts/governance/canonical_homes.py",
         LINK_VALIDATOR,
         "tests/unit/governance/test_validate_markdown_links.py",
         "tests/repository/test_gitignore.py",

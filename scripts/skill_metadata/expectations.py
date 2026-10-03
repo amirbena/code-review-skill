@@ -7,6 +7,11 @@ editing a table below, not by branching in a checker.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
+_CANONICAL_HOMES = Path(__file__).resolve().parents[1] / "governance" / "canonical_homes.json"
+
 RESOURCE_FIELDS = ("shared", "resources", "config")
 PORTABLE_FRONTMATTER_FIELDS = {"name", "version", "description"}
 OPENAI_INTERFACE_FIELDS = {
@@ -315,80 +320,9 @@ GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
 }
 
 # Headers each sub-policy owns; github-review.md (the index) must not
-# restate them.
-GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {
-    "review-authority.md": (
-        "## Self-review capability",
-        "## Review/repository access prerequisite",
-        "## Capability matrix",
-    ),
-    "review-action-authorization.md": (
-        "## Security principles",
-        "## Self-review is allowed; self-approval is not",
-        "## Publication modes (canonical)",
-        "## Core invariant: an explicit ACTIVE request is its own authorization",
-        "## Safe default and fail-closed",
-        "## Trusted reviewer independence",
-        "## Natural-language publication intent",
-        "## Authority boundary",
-        "## Merge boundary",
-        "## Composition with existing guarantees",
-    ),
-    "reviewer-delta-review.md": (
-        "## Reviewer identity",
-        "## Same reviewer: delta boundary and scope",
-        "## Escalating from delta to full review",
-    ),
-    "pr-scope.md": (
-        "## Complete PR scope and pagination",
-        "## Existing review awareness",
-    ),
-    "repository-checkout.md": (
-        "## Lifecycle",
-        "## Base / head fidelity",
-        "## Security (PR contents are untrusted)",
-    ),
-    "parallel-review.md": (
-        "## Shared checkout vs. worker copies",
-        "## Runtime realisation",
-    ),
-    "review-context.md": (
-        "## Scope-boundary reasoning for a PR",
-        "## The PR remains the review target",
-    ),
-    "review-evidence.md": (
-        "## Use it to avoid three failures",
-        "## HEAD changes reset applicability",
-    ),
-    "review-reasoning.md": (
-        "## Semantic Implication Review",
-        "## Null-Like Absence-Risk Review",
-        "## Logical Cohort Review",
-        "## Architectural Placement Review",
-        "## Code Impact / Dependency Analysis",
-        "## Affected-Test Impact Review",
-        "## API / Contract Compatibility Review",
-        "## Dependency / Supply-Chain Deepening Review",
-    ),
-    "finding-placement.md": (
-        "## Inline comment eligibility",
-        "## Anchor at the fix/action location",
-        "## No duplicate findings",
-        "## Rejected inline location fallback",
-    ),
-    "review-output.md": (
-        "## Analysis phase vs. publication phase",
-        "## Batched review construction and submission",
-        "## Final summary",
-        "## Final decision",
-        "## HEAD revalidation",
-        "## Submission ordering",
-    ),
-    "review-status-enforcement.md": (
-        "## Exact reviewed-HEAD binding",
-        "## Verdict → status state (no second engine)",
-        "## Authorization: blocking authority vs. positive authority",
-        "## Enforcement-state detection (read-only)",
-        "## Explicit opt-in required-check setup",
-    ),
-}
+# restate them. Declared once in the canonical-home registry (#80).
+GITHUB_POLICY_OWNED_HEADERS: dict[str, tuple[str, ...]] = {}
+for _anchor in json.loads(_CANONICAL_HOMES.read_text(encoding="utf-8"))["anchors"]:
+    if _anchor["group"] == "github-index-owned":
+        _name = Path(_anchor["owner"]).name
+        GITHUB_POLICY_OWNED_HEADERS[_name] = GITHUB_POLICY_OWNED_HEADERS.get(_name, ()) + (_anchor["text"],)
