@@ -12,6 +12,7 @@ import re
 import unittest
 from pathlib import Path
 
+from scripts.governance.canonical_homes import anchors_in_group, load_registry
 from tests.support.paths import REPO_ROOT
 
 AGENTS = REPO_ROOT / "AGENTS.md"
@@ -41,21 +42,11 @@ SKILL_DIRS = (
 LINK_RE = re.compile(r"\]\(([^)]+)\)")
 
 # Every policy AGENTS.md routes to, and a phrase each one canonically owns
-# that must therefore NOT be inlined in AGENTS.md anymore.
+# that must therefore NOT be inlined in AGENTS.md. Declared in the
+# canonical-home registry (#80), which also enforces the absence.
 ROUTED_POLICIES = {
-    "repository-workflow.md": "Preserving local changes when switching (stash discipline)",
-    "git-pr-merge-policy.md": "Squash Cleanup Safety",
-    "validation-and-clean-exit.md": "Python cache/bytecode cleanup around commits",
-    "documentation-policy.md": "User journey first.",
-    "github-issue-pr-authoring.md": "Agent-complete internally, human-scannable externally",
-    "contribution-ownership-policy.md": (
-        "Blast radius, coupling to review semantics, and validation difficulty "
-        "decide contributor suitability"
-    ),
-    "release-changelog-policy.md": "Decision rule:",
-    "skill-development-policy.md": "Portable Core, Optional Runtime Adapters",
-    "review-orchestration-policy.md": "One review scope → one Code Review Agent owner",
-    "python_scripts_coding_policy.md": "Remove or shorten a comment that mainly explains",
+    Path(a["owner"]).name: a["text"]
+    for a in anchors_in_group(load_registry(), "routed-policy")
 }
 
 

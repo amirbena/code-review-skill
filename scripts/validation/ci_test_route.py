@@ -59,6 +59,7 @@ CONSUMER_ROOTS = ("tests", "scripts", "runtime_platform", "benchmark", "capabili
 # enumerate docs/ without making every doc "consumed".
 DOCS_SCANNER_MODULES = (
     "tests.policy.governance.test_forbidden_repository_terms",
+    "tests.policy.governance.test_canonical_homes",
     "tests.policy.governance.test_instruction_architecture",
     "tests.policy.benchmark.test_benchmark_root_migration",
     "tests.policy.review.test_shared_review_context",
