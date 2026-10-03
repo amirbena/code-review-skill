@@ -93,6 +93,7 @@ REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
         "runtime_platform/benchmark/scripts/build_benchmark_index.py",
         "scripts/packaging/package_domain/tree.py",
         "scripts/skill_metadata/links.py",
+        "scripts/governance/canonical_homes.py",
         LINK_VALIDATOR,
         "tests/unit/governance/test_validate_markdown_links.py",
         "tests/repository/test_gitignore.py",
