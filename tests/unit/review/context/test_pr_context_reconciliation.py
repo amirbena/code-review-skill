@@ -731,7 +731,7 @@ class CurrentEvidenceValidationOrderingTests(unittest.TestCase):
                 raise SystemExit("malformed evidence was not rejected")
             """
         )
-        repo_root = pathlib.Path(__file__).resolve().parents[3]
+        repo_root = pathlib.Path(__file__).resolve().parents[4]
         for seed in ("0", "1", "42", "12345"):
             with self.subTest(seed=seed):
                 env = dict(os.environ, PYTHONHASHSEED=seed)
