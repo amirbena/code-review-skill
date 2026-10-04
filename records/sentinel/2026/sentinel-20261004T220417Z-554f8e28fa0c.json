@@ -1,0 +1,284 @@
+{
+  "aggregate": {
+    "duplicate_noise": {
+      "cases_with_duplication": 0,
+      "duplicate_rate": "0",
+      "total_duplicate_clusters": 0,
+      "total_produced": 3,
+      "total_redundant_findings": 0
+    },
+    "metrics": {
+      "cases_with_false_negatives": 0,
+      "cases_with_false_positives": 0,
+      "errored_cases": 0,
+      "total_false_negatives": 0,
+      "total_false_positives": 0,
+      "total_near_misses": 0
+    },
+    "severity": {
+      "cases_with_severity_mismatch": 1,
+      "exact_rate": "2/3",
+      "total_matched": 3,
+      "total_over_severity": 1,
+      "total_severity_exact": 2,
+      "total_under_severity": 0
+    }
+  },
+  "baseline": {
+    "comparable_case_ids": [
+      "correctness-off-by-one-pagination",
+      "no-op-comment-and-rename",
+      "quality-duplicated-branch-logic",
+      "security-command-injection"
+    ],
+    "incomparable_cases": [],
+    "record_sha256": "5254f837cd91e87d9aec305a34e7245aad48698d1d9b00957238c1b4db39d82c",
+    "run_id": "sentinel-20260924T220515Z-bf01aff11010",
+    "state": "compared"
+  },
+  "cases": [
+    {
+      "duplicate_noise": {
+        "cluster_members": [],
+        "clusters": 1,
+        "duplicate_clusters": 0,
+        "duplicate_rate": "0",
+        "produced": 1,
+        "redundant_findings": 0
+      },
+      "duration_s": 13.916,
+      "fixture_digest": "f9a3d58d4032fa5a77ff05362f499587013b48c8cd463859a7bc845f611df5d2",
+      "id": "correctness-off-by-one-pagination",
+      "metrics": {
+        "absorbed_extra_match": 0,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "findings_completeness": "exhaustive",
+        "incorrect_indices": [],
+        "missed_keys": [],
+        "near_misses": 0,
+        "tolerated_unexpected": 0
+      },
+      "severity": {
+        "exact_rate": "0",
+        "matched": 1,
+        "mismatches": [
+          {
+            "direction": "over",
+            "expected": [
+              "P1"
+            ],
+            "key": "page-end-off-by-one",
+            "produced": "P0",
+            "produced_index": 0
+          }
+        ],
+        "over_severity": 1,
+        "severity_exact": 0,
+        "under_severity": 0
+      },
+      "status": "executed"
+    },
+    {
+      "duplicate_noise": {
+        "cluster_members": [],
+        "clusters": 0,
+        "duplicate_clusters": 0,
+        "duplicate_rate": null,
+        "produced": 0,
+        "redundant_findings": 0
+      },
+      "duration_s": 13.916,
+      "fixture_digest": "30e77dbb7cf37a63cfc707970f4fcdbb6299c80740baf64a836d1ac1e96bc012",
+      "id": "no-op-comment-and-rename",
+      "metrics": {
+        "absorbed_extra_match": 0,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "findings_completeness": "exhaustive",
+        "incorrect_indices": [],
+        "missed_keys": [],
+        "near_misses": 0,
+        "tolerated_unexpected": 0
+      },
+      "severity": {
+        "exact_rate": null,
+        "matched": 0,
+        "mismatches": [],
+        "over_severity": 0,
+        "severity_exact": 0,
+        "under_severity": 0
+      },
+      "status": "executed"
+    },
+    {
+      "duplicate_noise": {
+        "cluster_members": [],
+        "clusters": 1,
+        "duplicate_clusters": 0,
+        "duplicate_rate": "0",
+        "produced": 1,
+        "redundant_findings": 0
+      },
+      "duration_s": 13.916,
+      "fixture_digest": "08c162bf00c415a22a70ab358f9a729a5f0a1e61e1e05d4e62bd63f2896c1319",
+      "id": "quality-duplicated-branch-logic",
+      "metrics": {
+        "absorbed_extra_match": 0,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "findings_completeness": "exhaustive",
+        "incorrect_indices": [],
+        "missed_keys": [],
+        "near_misses": 0,
+        "tolerated_unexpected": 0
+      },
+      "severity": {
+        "exact_rate": "1",
+        "matched": 1,
+        "mismatches": [],
+        "over_severity": 0,
+        "severity_exact": 1,
+        "under_severity": 0
+      },
+      "status": "executed"
+    },
+    {
+      "duplicate_noise": {
+        "cluster_members": [],
+        "clusters": 1,
+        "duplicate_clusters": 0,
+        "duplicate_rate": "0",
+        "produced": 1,
+        "redundant_findings": 0
+      },
+      "duration_s": 13.916,
+      "fixture_digest": "5a2dc39cab5c008eac70ebe91ee336957248287e001058a68d9d8b989eee0a82",
+      "id": "security-command-injection",
+      "metrics": {
+        "absorbed_extra_match": 0,
+        "false_negatives": 0,
+        "false_positives": 0,
+        "findings_completeness": "exhaustive",
+        "incorrect_indices": [],
+        "missed_keys": [],
+        "near_misses": 0,
+        "tolerated_unexpected": 0
+      },
+      "severity": {
+        "exact_rate": "1",
+        "matched": 1,
+        "mismatches": [],
+        "over_severity": 0,
+        "severity_exact": 1,
+        "under_severity": 0
+      },
+      "status": "executed"
+    }
+  ],
+  "content_sha256": "77cc0524a1bc75f0e0f97bbbfca7a0cc081ac0195c308c7e70cd5215f40cae05",
+  "corpus": {
+    "case_count": 4,
+    "corpus_id": "39fa0e1a40b1acbe94f40d84d90adec2c79a9ff1bc4cb068b92f6f9fb8ab2b97",
+    "membership_digest": "96f4622d88d141011f9569478821a9e92a8798f8f7b5774adc7080fecd6d7499"
+  },
+  "drift": {
+    "attribution": "runtime-changed",
+    "confirmation": {
+      "max_cases": 10,
+      "reruns": 2,
+      "threshold": 2
+    },
+    "confirmed": [
+      {
+        "case_id": "correctness-off-by-one-pagination",
+        "detail": "severity exact-match rate dropped from 1 to 0",
+        "drift_type": "severity-accuracy-drop",
+        "expected_finding_key": "-",
+        "fingerprint": "95204433e8ae9042cc91906618576f519611ec4999789d2168c5c39dcb41509e"
+      }
+    ],
+    "evaluated_scope": [
+      "correctness-off-by-one-pagination",
+      "no-op-comment-and-rename",
+      "quality-duplicated-branch-logic",
+      "security-command-injection"
+    ],
+    "evidence": {
+      "correctness-off-by-one-pagination": "{\n  \"id\": \"correctness-off-by-one-pagination\",\n  \"input_kind\": \"patch\",\n  \"produced_findings\": [\n    {\n      \"claim\": \"Off-by-one in page slice returns one extra item per page `end = offset + page_size + 1` makes the slice `items[offset : offset + page_size + 1]`, which holds `page_size + 1` elements whenever enough items remain. For `items=[0..9]`, `page_number=1`, `page_size=3`, it returns `[0,1,2,3]` instead of `[0,1,2]`. Page 2 starts at offset 3 and returns `[3,4,5,6]`, so item 3 appears on both pages. The removed line, `items[offset : offset + page_size]`, was correct. Every page returns more items than requested and repeats the first item of the next page. Callers that rely on `page_size` for layout, limits or total-page maths get wrong results. Clients that page through a collection see duplicate records.\",\n      \"extra\": {\n        \"defect_kind\": \"off-by-one\",\n        \"evidence_quotes\": [\n          \"end = offset + page_size + 1\",\n          \"items[offset : offset + page_size + 1]\",\n          \"page_size + 1\",\n          \"items=[0..9]\",\n          \"page_number=1\",\n          \"page_size=3\",\n          \"[0,1,2,3]\",\n          \"[0,1,2]\",\n          \"[3,4,5,6]\",\n          \"items[offset : offset + page_size]\"\n        ]\n      },\n      \"location\": {\n        \"line\": 3,\n        \"path\": \"app/pagination.py\"\n      },\n      \"severity\": \"P0\"\n    }\n  ],\n  \"status\": \"executed\"\n}"
+    },
+    "observations": [
+      {
+        "case_id": "correctness-off-by-one-pagination",
+        "detail": "severity exact-match rate dropped from 1 to 0",
+        "drift_type": "severity-accuracy-drop",
+        "expected_finding_key": "-",
+        "fingerprint": "95204433e8ae9042cc91906618576f519611ec4999789d2168c5c39dcb41509e"
+      }
+    ],
+    "outcome": {
+      "reason": null,
+      "status": "drift"
+    },
+    "systemic": false,
+    "unconfirmed": []
+  },
+  "execution": {
+    "confirmation_reruns": 2,
+    "duration_s": 88.537,
+    "session_ref": null,
+    "warnings": []
+  },
+  "finished_at": "2026-10-04T22:05:46Z",
+  "lane": "sentinel",
+  "mode": "sentinel",
+  "provenance": {
+    "entrypoint_version": "run_benchmark_routine.py@554f8e28fa0c",
+    "ref": "refs/heads/claude/clever-thompson-ix6b5i",
+    "repo": "amirbena/code-review-skill",
+    "repo_sha": "554f8e28fa0c497560c1c18b48002dfcdb2e00d8",
+    "spec_sha256": "dc3bebf42aea7b5ef0bfd287b6fa27055383587e0f4d6a99be5acd0ce3785f76"
+  },
+  "raw": {
+    "bundle_sha256": "01c3ca08001e354927eee2a9a81a8d7280788ffc6b20f8b4df4448c34f4be7ed",
+    "location": "claude/benchmark-result-sentinel-20261004T220417Z-554f8e28fa0c:raw-bundle.json"
+  },
+  "reproduction": {
+    "case_ids": [
+      "correctness-off-by-one-pagination",
+      "no-op-comment-and-rename",
+      "quality-duplicated-branch-logic",
+      "security-command-injection"
+    ],
+    "command": "python3 runtime_platform/benchmark/scripts/run_benchmark_routine.py --mode sentinel",
+    "nondeterminism": "Model output is nondeterministic; a rerun may differ.",
+    "python_version": "3.11.15"
+  },
+  "run_id": "sentinel-20261004T220417Z-554f8e28fa0c",
+  "runtime": {
+    "adapter_id": "production-review-adapter@554f8e28fa0c",
+    "model_id": "claude-sonnet-5",
+    "runtime_name": "claude",
+    "runtime_version": "2.1.289 (Claude Code)"
+  },
+  "schema": "benchmark-result/v1",
+  "sealed_at": "2026-10-04T22:05:46Z",
+  "started_at": "2026-10-04T22:04:17Z",
+  "trigger": "scheduled",
+  "verification": {
+    "overall_verified": true,
+    "runs": [
+      {
+        "case_count": 4,
+        "case_ids": [
+          "correctness-off-by-one-pagination",
+          "no-op-comment-and-rename",
+          "quality-duplicated-branch-logic",
+          "security-command-injection"
+        ],
+        "passed": true,
+        "reason": "verified"
+      }
+    ]
+  }
+}
