@@ -1,0 +1,23 @@
+{
+  "schema": "severity-observation-spec/v1",
+  "temporary": true,
+  "issue": 652,
+  "repository": "amirbena/code-review-skill",
+  "entrypoint": "runtime_platform/benchmark/scripts/run_severity_observation.py",
+  "case_id": "correctness-off-by-one-pagination",
+  "intended_cadence": "Once per day, starting at 05:00 Israel local time (after the 01:00 lane window's 04:00 completion target).",
+  "intended_start": {
+    "local_time": "05:00",
+    "timezone": "Asia/Jerusalem"
+  },
+  "stop_condition": {
+    "target_observations": 14,
+    "action": "The entrypoint stops without running once 14 observation refs exist; the maintainer then disables the Routine."
+  },
+  "storage": {
+    "ref_prefix": "claude/severity-observation-",
+    "trial_ref_prefix": "claude/severity-trial-",
+    "files": ["severity-observation.json", "raw-output.json"]
+  },
+  "removal_path": "Disable the Routine, delete this spec, run_severity_observation.py, severity-observation.md and their tests; keep the claude/severity-observation-* refs until #653 has read them."
+}

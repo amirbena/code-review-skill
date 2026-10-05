@@ -49,8 +49,11 @@ from runtime_platform.benchmark.scripts.benchmark_lane_run import (  # noqa: E40
     LaneRun,
     RoutineExecutionError,
     build_sealed_run,
+    git_ref as _git_ref,
+    git_sha as _git_sha,
     invoke,
     lane_corpus,
+    runtime_version as _runtime_version,
     spec_sha256,
     utc_now,
 )
@@ -89,27 +92,6 @@ class Plan:
     mode: str
     invocations: list[tuple[str | None, str]]
     corpus: LaneCorpus | None
-
-
-def _git_sha(repo_root: Path) -> str:
-    proc = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=str(repo_root), capture_output=True, text=True, check=True
-    )
-    return proc.stdout.strip()
-
-
-def _git_ref() -> str:
-    proc = subprocess.run(["git", "symbolic-ref", "-q", "HEAD"], cwd=str(REPO_ROOT), capture_output=True, text=True)
-    return proc.stdout.strip() if proc.returncode == 0 and proc.stdout.strip() else "HEAD"
-
-
-def _runtime_version(executable: str) -> str:
-    """Best-effort CLI version probe; the Routine prompt may override it."""
-    try:
-        proc = subprocess.run([executable, "--version"], capture_output=True, text=True, timeout=30)
-        return proc.stdout.strip() or proc.stderr.strip() or "unknown"
-    except (OSError, subprocess.TimeoutExpired):
-        return "unknown"
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
