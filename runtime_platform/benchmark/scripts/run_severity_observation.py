@@ -32,15 +32,18 @@ from runtime_platform.benchmark.scripts import benchmark_seal as seal  # noqa: E
 from runtime_platform.benchmark.scripts import run_benchmark as rb  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_lane_run import (  # noqa: E402
     RoutineExecutionError,
+    git_ref,
+    git_sha,
     invoke,
+    runtime_version,
     utc_now,
 )
 from runtime_platform.benchmark.scripts.benchmark_review_adapter import resolve_cli_executable  # noqa: E402
-from runtime_platform.benchmark.scripts.run_benchmark_routine import _git_ref, _git_sha, _runtime_version  # noqa: E402
 
 SPEC_PATH = REPO_ROOT / "runtime_platform" / "benchmark" / "schedule" / "severity-observation-spec.json"
 OBSERVATION_SCHEMA = "severity-observation/v1"
 OBSERVATION_REF_PREFIX = "claude/severity-observation-"
+TRIAL_REF_PREFIX = "claude/severity-trial-"  # not matched by the observation prefix: never counted
 OBSERVATION_FILE = "severity-observation.json"
 RAW_FILE = "raw-output.json"
 GIT_TIMEOUT_S = 60
@@ -50,8 +53,9 @@ def load_spec(path: Path = SPEC_PATH) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def observation_ref(run_id: str) -> str:
-    return f"{OBSERVATION_REF_PREFIX}{run_id}"
+def observation_ref(run_id: str, trigger: str = "scheduled") -> str:
+    """Only a scheduled run is an observation; anything else is a trial that is never counted."""
+    return f"{OBSERVATION_REF_PREFIX if trigger == 'scheduled' else TRIAL_REF_PREFIX}{run_id}"
 
 
 def make_run_id(timestamp: str, repo_sha: str) -> str:
@@ -84,7 +88,9 @@ def resolved_severity(case_id: str, output: Mapping[str, Any], corpus_dir: str) 
     by_id = {sec: {r["id"]: r for r in output[sec]["cases"]} for sec in ("metrics", "severity")}
     if case_id not in by_id["metrics"] or case_id not in by_id["severity"]:
         raise RoutineExecutionError(f"fail-closed: the run output has no metric or severity row for {case_id!r}")
-    raw_case = next(c for c in output["run"]["cases"] if c["id"] == case_id)
+    raw_case = next((c for c in output["run"]["cases"] if c["id"] == case_id), None)
+    if raw_case is None:
+        raise RoutineExecutionError(f"fail-closed: the run output has no raw case for {case_id!r}")
     raw_severities = {f["severity"] for f in raw_case.get("produced_findings", [])}
     mismatches = by_id["severity"][case_id]["mismatches"]
     if key in by_id["metrics"][case_id]["missed_keys"]:
@@ -124,7 +130,7 @@ def build_observation(
         "schema": OBSERVATION_SCHEMA,
         "temporary": True,
         "run_id": run_id,
-        "ref": observation_ref(run_id),
+        "ref": observation_ref(run_id, trigger),
         "case_id": case_id,
         "trigger": trigger,
         "started_at": started_at,
@@ -138,18 +144,30 @@ def build_observation(
     }
 
 
-def prior_observation_count(remote: str) -> int:
-    """Observation refs already on `remote` (read-only `ls-remote`); the stop condition's input."""
-    proc = subprocess.run(
-        ["git", "ls-remote", "--heads", remote, f"refs/heads/{OBSERVATION_REF_PREFIX}*"],
-        cwd=str(REPO_ROOT),
-        capture_output=True,
-        text=True,
-        timeout=GIT_TIMEOUT_S,
-    )
+def prior_observation_refs(remote: str) -> list[str]:
+    """Observation ref names already on `remote` (read-only `ls-remote`); the stop condition's input."""
+    try:
+        proc = subprocess.run(
+            ["git", "ls-remote", "--heads", remote, f"refs/heads/{OBSERVATION_REF_PREFIX}*"],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=GIT_TIMEOUT_S,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RoutineExecutionError(f"cannot list prior observations on {remote}: {exc}") from exc
     if proc.returncode != 0:
-        raise RoutineExecutionError(f"cannot count prior observations on {remote}: {proc.stderr.strip()}")
-    return len([line for line in proc.stdout.splitlines() if line.strip()])
+        raise RoutineExecutionError(f"cannot list prior observations on {remote}: {proc.stderr.strip()}")
+    return [line.split()[1].removeprefix("refs/heads/") for line in proc.stdout.splitlines() if line.strip()]
+
+
+def skip_reason(refs: list[str], target: int, today: str) -> str | None:
+    """Why this scheduled run must not record: the target is reached, or tonight's observation exists."""
+    if len(refs) >= target:
+        return "stop-condition-reached"
+    if any(r.startswith(f"{OBSERVATION_REF_PREFIX}{today}") for r in refs):
+        return "already-observed-today"
+    return None
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -169,18 +187,20 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 def run(args: argparse.Namespace) -> int:
     spec = load_spec(args.spec)
-    if args.seal_dir is None:
-        done = prior_observation_count(args.seal_remote)
-        if done >= spec["stop_condition"]["target_observations"]:
-            print(json.dumps({"stopped": True, "observations": done, "action": "disable the Routine (see the spec's removal path)"}, indent=2))
+    if args.seal_dir is None and args.trigger == "scheduled":
+        refs = prior_observation_refs(args.seal_remote)
+        reason = skip_reason(refs, spec["stop_condition"]["target_observations"], utc_now()[:10].replace("-", ""))
+        if reason is not None:
+            note = "disable the Routine (see the spec's removal path)" if reason == "stop-condition-reached" else "one observation per day"
+            print(json.dumps({"skipped": reason, "observations": len(refs), "action": note}, indent=2))
             return 0
     executable = args.cli or resolve_cli_executable()
     runtime = {
         "runtime_name": args.runtime_name or executable,
-        "runtime_version": args.runtime_version or _runtime_version(executable),
+        "runtime_version": args.runtime_version or runtime_version(executable),
         "model_id": args.model_id,
     }
-    repo_sha, started_at = _git_sha(REPO_ROOT), utc_now()
+    repo_sha, started_at = git_sha(REPO_ROOT), utc_now()
     inv = invoke(executable, args.timeout, spec["case_id"], args.corpus_dir)
     observation = build_observation(
         spec,
@@ -189,7 +209,7 @@ def run(args: argparse.Namespace) -> int:
         trigger=args.trigger,
         runtime=runtime,
         repo_sha=repo_sha,
-        repo_ref=_git_ref(),
+        repo_ref=git_ref(),
         started_at=started_at,
         finished_at=utc_now(),
         duration_s=inv.duration_s,

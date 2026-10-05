@@ -45,7 +45,7 @@ TEMPORARY (#652): collects 14 nightly severity observations of one case, then is
 
 ## 4. Evidence format
 
-Each run pushes one orphan commit to `claude/severity-observation-<run_id>` (never `claude/benchmark-result-*`),
+Each `--trigger scheduled` run pushes one orphan commit to `claude/severity-observation-<run_id>` (never `claude/benchmark-result-*`),
 holding two files; `run_id` is `<UTC timestamp>-<repo sha[:12]>`, so an observation is addressable by ref.
 
 `severity-observation.json` (`schema: severity-observation/v1`, `temporary: true`):
@@ -63,6 +63,8 @@ holding two files; `run_id` is `<UTC timestamp>-<repo sha[:12]>`, so an observat
 
 `raw-output.json` is the raw review output (`run_benchmark.py`'s `run` block).
 
+A run with any other trigger (a manual trial) pushes to `claude/severity-trial-<run_id>` instead. That prefix is not matched by the observation prefix, so a trial is never counted toward the stop condition or the once-per-day check, and #653 reads only `claude/severity-observation-*`.
+
 ## 5. Isolation guarantees
 
 The entrypoint has no lane, baseline, drift or publication code path: it writes only through
@@ -72,8 +74,9 @@ tracking / health issue changes. `tests/unit/benchmark/test_run_severity_observa
 
 ## 6. Stop condition and removal
 
-Target: 14 observations. Once 14 `claude/severity-observation-*` refs exist the entrypoint prints
-`"stopped": true`, runs nothing and exits 0; the maintainer then disables the Routine. To remove the
+Target: 14 observations. A scheduled run first lists `claude/severity-observation-*` refs (read-only). If 14 exist it prints
+`"skipped": "stop-condition-reached"`, runs nothing and exits 0; if one already exists for today's UTC date it
+prints `"skipped": "already-observed-today"` the same way, which keeps a retried Routine from adding a same-night duplicate. After the stop condition the maintainer disables the Routine. To remove the
 infrastructure, follow the spec's `removal_path`; keep the refs until #653 has read them.
 
 ## 7. Maintainer step

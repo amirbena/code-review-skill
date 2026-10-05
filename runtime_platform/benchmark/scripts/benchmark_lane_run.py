@@ -102,6 +102,27 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def git_sha(repo_root: Path) -> str:
+    proc = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=str(repo_root), capture_output=True, text=True, check=True
+    )
+    return proc.stdout.strip()
+
+
+def git_ref() -> str:
+    proc = subprocess.run(["git", "symbolic-ref", "-q", "HEAD"], cwd=str(REPO_ROOT), capture_output=True, text=True)
+    return proc.stdout.strip() if proc.returncode == 0 and proc.stdout.strip() else "HEAD"
+
+
+def runtime_version(executable: str) -> str:
+    """Best-effort CLI version probe; the Routine prompt may override it."""
+    try:
+        proc = subprocess.run([executable, "--version"], capture_output=True, text=True, timeout=30)
+        return proc.stdout.strip() or proc.stderr.strip() or "unknown"
+    except (OSError, subprocess.TimeoutExpired):
+        return "unknown"
+
+
 def invoke(executable: str, timeout: float, case_id: str | None, corpus_dir: str) -> Invocation:
     """One `run_benchmark.py` invocation, positively verified; anything else raises."""
     argv = ["--corpus-dir", corpus_dir, "--cli", executable, "--timeout", str(timeout)]

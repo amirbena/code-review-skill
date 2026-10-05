@@ -16,6 +16,7 @@
   },
   "storage": {
     "ref_prefix": "claude/severity-observation-",
+    "trial_ref_prefix": "claude/severity-trial-",
     "files": ["severity-observation.json", "raw-output.json"]
   },
   "removal_path": "Disable the Routine, delete this spec, run_severity_observation.py, severity-observation.md and their tests; keep the claude/severity-observation-* refs until #653 has read them."

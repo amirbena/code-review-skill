@@ -55,7 +55,7 @@ class IsolationTest(unittest.TestCase):
 
     def test_dry_run_writes_only_observation_files(self):
         with tempfile.TemporaryDirectory() as t, mock.patch.object(obs, "invoke", return_value=_invocation()), mock.patch.object(
-            obs, "_git_sha", return_value="b" * 40
+            obs, "git_sha", return_value="b" * 40
         ), mock.patch.object(obs, "seal") as sealed:
             sealed.encode_json = seal.encode_json
             sealed.seal_to_directory = seal.seal_to_directory
@@ -64,19 +64,55 @@ class IsolationTest(unittest.TestCase):
             self.assertEqual({p.name for p in Path(t).iterdir()}, {obs.OBSERVATION_FILE, obs.RAW_FILE})
 
     def test_push_targets_only_observation_ref(self):
-        with mock.patch.object(obs, "invoke", return_value=_invocation()), mock.patch.object(obs, "_git_sha", return_value="b" * 40), mock.patch.object(
-            obs, "prior_observation_count", return_value=0
+        with mock.patch.object(obs, "invoke", return_value=_invocation()), mock.patch.object(obs, "git_sha", return_value="b" * 40), mock.patch.object(
+            obs, "prior_observation_refs", return_value=[]
         ), mock.patch.object(obs.seal, "seal_to_ref", return_value="c" * 40) as push:
-            self.assertEqual(obs.main(["--cli", "fake", "--runtime-version", "v1"]), 0)
+            self.assertEqual(obs.main(["--cli", "fake", "--runtime-version", "v1", "--trigger", "scheduled"]), 0)
         ref = push.call_args.args[2]
         self.assertTrue(ref.startswith(obs.OBSERVATION_REF_PREFIX))
         self.assertEqual(set(push.call_args.args[3]), {obs.OBSERVATION_FILE, obs.RAW_FILE})
+
+    def test_every_process_and_push_is_confined_end_to_end(self):
+        """Run `main` with only `invoke` faked: every subprocess is plain git, and the only push is the observation ref."""
+        calls: list[list[str]] = []
+
+        def recorder(argv, **kwargs):
+            calls.append([str(a) for a in argv])
+            out = {"hash-object": "a" * 40, "mktree": "b" * 40, "commit-tree": "c" * 40, "rev-parse": "d" * 40}.get(argv[1], "")
+            if argv[1] == "ls-remote" and argv[3].startswith("refs/heads/claude/severity-observation-") is False:
+                out = f"{'c' * 40}\t{argv[3]}\n"
+            return mock.Mock(returncode=0, stdout=out.encode() if kwargs.get("input") is not None or not kwargs.get("text") else out, stderr=b"")
+
+        with mock.patch.object(obs, "invoke", return_value=_invocation()), mock.patch("subprocess.run", side_effect=recorder):
+            obs.main(["--cli", "fake", "--runtime-version", "v1", "--trigger", "scheduled"])
+        self.assertTrue(calls and all(c[0] == "git" for c in calls), calls)
+        pushes = [c for c in calls if c[1] == "push"]
+        self.assertEqual(len(pushes), 1)
+        self.assertTrue(pushes[0][3].split(":", 1)[1].startswith(f"refs/heads/{obs.OBSERVATION_REF_PREFIX}"))
+        for forbidden in ("gh", "issue", "comment", "benchmark-history", "benchmark-result"):
+            self.assertFalse([c for c in calls if forbidden in " ".join(c)], forbidden)
+
+    def test_non_scheduled_run_pushes_an_uncounted_trial_ref_and_skips_the_count(self):
+        with mock.patch.object(obs, "invoke", return_value=_invocation()), mock.patch.object(obs, "git_sha", return_value="b" * 40), mock.patch.object(
+            obs, "prior_observation_refs"
+        ) as listing, mock.patch.object(obs.seal, "seal_to_ref", return_value="c" * 40) as push:
+            obs.main(["--cli", "fake", "--runtime-version", "v1"])
+        listing.assert_not_called()
+        ref = push.call_args.args[2]
+        self.assertTrue(ref.startswith(obs.TRIAL_REF_PREFIX))
+        self.assertFalse(ref.startswith(obs.OBSERVATION_REF_PREFIX))
+
+    def test_skip_reason_covers_target_and_same_day(self):
+        pre = obs.OBSERVATION_REF_PREFIX
+        self.assertEqual(obs.skip_reason([f"{pre}2026100{i}T010000Z-x" for i in range(1, 10)] + [f"{pre}2026101{i}T010000Z-x" for i in range(5)], 14, "20261101"), "stop-condition-reached")
+        self.assertEqual(obs.skip_reason([f"{pre}20261005T050000Z-x"], 14, "20261005"), "already-observed-today")
+        self.assertIsNone(obs.skip_reason([f"{pre}20261004T050000Z-x"], 14, "20261005"))
 
 
 class EvidenceTest(unittest.TestCase):
     def test_observation_has_required_fields_and_is_addressable_by_run_id(self):
         with tempfile.TemporaryDirectory() as t, mock.patch.object(obs, "invoke", return_value=_invocation()), mock.patch.object(
-            obs, "_git_sha", return_value="b" * 40
+            obs, "git_sha", return_value="b" * 40
         ):
             obs.main(_args(Path(t)))
             record = json.loads((Path(t) / obs.OBSERVATION_FILE).read_text())
@@ -118,9 +154,20 @@ class EvidenceTest(unittest.TestCase):
             self._resolve(["P2"])  # claims exact P1 but the raw run produced only P2
 
     def test_stop_condition_runs_nothing(self):
-        with mock.patch.object(obs, "prior_observation_count", return_value=14), mock.patch.object(obs, "invoke") as inv:
-            self.assertEqual(obs.main(["--cli", "fake"]), 0)
+        refs = [f"{obs.OBSERVATION_REF_PREFIX}202610{d:02d}T050000Z-x" for d in range(1, 15)]
+        with mock.patch.object(obs, "prior_observation_refs", return_value=refs), mock.patch.object(obs, "invoke") as inv:
+            self.assertEqual(obs.main(["--cli", "fake", "--trigger", "scheduled"]), 0)
         inv.assert_not_called()
+
+    def test_failures_are_reported_as_errors_not_tracebacks(self):
+        import subprocess
+
+        with mock.patch("subprocess.run", side_effect=subprocess.TimeoutExpired("git", 1)):
+            self.assertEqual(obs.main(["--cli", "fake", "--trigger", "scheduled"]), 1)
+        out = run_output([make_case(CASE)])
+        out["run"]["cases"] = []
+        with self.assertRaises(lane_run.RoutineExecutionError):
+            obs.resolved_severity(CASE, out, str(obs.rb.DEFAULT_CORPUS_DIR))
 
     def test_spec_marks_temporary_with_stop_and_removal(self):
         spec = obs.load_spec()
