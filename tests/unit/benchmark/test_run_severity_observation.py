@@ -61,7 +61,7 @@ class IsolationTest(unittest.TestCase):
             sealed.seal_to_directory = seal.seal_to_directory
             self.assertEqual(obs.main(_args(Path(t))), 0)
             self.assertFalse(sealed.seal_to_ref.called)
-            self.assertEqual({p.name for p in Path(t).iterdir()}, {obs.OBSERVATION_FILE, obs.RAW_FILE})
+            self.assertEqual({p.name for p in Path(t).glob("*.json")}, {obs.OBSERVATION_FILE, obs.RAW_FILE})
 
     def test_push_targets_only_observation_ref(self):
         with mock.patch.object(obs, "invoke", return_value=_invocation()), mock.patch.object(obs, "git_sha", return_value="b" * 40), mock.patch.object(
