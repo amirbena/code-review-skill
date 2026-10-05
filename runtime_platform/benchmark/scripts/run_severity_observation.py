@@ -58,26 +58,47 @@ def make_run_id(timestamp: str, repo_sha: str) -> str:
     return f"{timestamp.replace('-', '').replace(':', '')}-{repo_sha[:12]}"
 
 
-def resolved_severity(case_id: str, output: Mapping[str, Any], corpus_dir: str) -> dict[str, Any]:
-    """The severity the reviewer gave the required finding, from the verified run output.
-
-    `matched == 0` means the finding was not produced (`severity` is null). A mismatch row carries
-    the produced severity; an exact match carries the fixture's single permitted severity.
-    """
+def _required_entry(case_id: str, corpus_dir: str) -> tuple[str, str]:
+    """(key, severity) of the fixture's single required finding; the observation is undefined otherwise."""
     import yaml
 
-    rows = {r["id"]: r for r in output["severity"]["cases"]}
-    if case_id not in rows:
-        raise RoutineExecutionError(f"fail-closed: the run output has no severity row for {case_id!r}")
-    row = rows[case_id]
-    if row["matched"] == 0:
-        return {"severity": None, "state": "not-produced", "mismatches": row["mismatches"]}
-    if row["mismatches"]:
-        return {"severity": row["mismatches"][0]["produced"], "state": "mismatch", "mismatches": row["mismatches"]}
     fixture = yaml.safe_load((Path(corpus_dir) / f"{case_id}.yaml").read_text(encoding="utf-8"))
-    permitted = [f["severity"] for f in fixture["expected"]["findings"] if f.get("match") == "required"]
-    severity = permitted[0] if len(permitted) == 1 and isinstance(permitted[0], str) else None
-    return {"severity": severity, "state": "exact", "mismatches": []}
+    required = [f for f in fixture["expected"]["findings"] if f.get("match") == "required"]
+    if len(required) != 1 or not isinstance(required[0]["severity"], str):
+        raise RoutineExecutionError(f"fail-closed: {case_id} must have exactly one required finding with one severity")
+    return required[0]["key"], required[0]["severity"]
+
+
+def resolved_severity(case_id: str, output: Mapping[str, Any], corpus_dir: str) -> dict[str, Any]:
+    """The severity the reviewer produced for the required finding.
+
+    The result does not expose the pairing's produced severity directly: the severity row lists
+    only *mismatches* (each with the produced severity), and `matched` also counts optional
+    entries. So the required entry's own state is read from `metrics.missed_keys` and the
+    mismatch row for its key. When neither applies the comparison was exact, and the contract
+    (`severity-accuracy.md` §3: exact iff produced is in the permitted set) makes produced equal
+    the required entry's single severity. That invariant is cross-checked against the raw
+    produced findings, and the run fails closed if it does not hold.
+    """
+    key, expected = _required_entry(case_id, corpus_dir)
+    by_id = {sec: {r["id"]: r for r in output[sec]["cases"]} for sec in ("metrics", "severity")}
+    if case_id not in by_id["metrics"] or case_id not in by_id["severity"]:
+        raise RoutineExecutionError(f"fail-closed: the run output has no metric or severity row for {case_id!r}")
+    raw_case = next(c for c in output["run"]["cases"] if c["id"] == case_id)
+    raw_severities = {f["severity"] for f in raw_case.get("produced_findings", [])}
+    mismatches = by_id["severity"][case_id]["mismatches"]
+    if key in by_id["metrics"][case_id]["missed_keys"]:
+        return {"severity": None, "state": "not-produced", "expected": expected, "mismatches": mismatches}
+    mismatch = next((m for m in mismatches if m["key"] == key), None)
+    if mismatch is not None:
+        produced, state = mismatch["produced"], mismatch["direction"]
+    else:
+        produced, state = expected, "exact"
+    if produced not in raw_severities:
+        raise RoutineExecutionError(
+            f"fail-closed: recorded severity {produced} is not among the raw produced findings {sorted(raw_severities)}"
+        )
+    return {"severity": produced, "state": state, "expected": expected, "mismatches": mismatches}
 
 
 def build_observation(

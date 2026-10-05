@@ -54,10 +54,12 @@ holding two files; `run_id` is `<UTC timestamp>-<repo sha[:12]>`, so an observat
 | --- | --- |
 | `run_id`, `ref`, `case_id`, `trigger` | Identity; `trigger` is `scheduled` only from the Routine prompt. |
 | `started_at`, `finished_at`, `duration_s` | Timestamps (UTC) and invocation wall time. |
-| `resolved` | `severity` (the produced severity, or `null`), `state` (`exact` / `mismatch` / `not-produced`), `mismatches`. |
+| `resolved` | `severity` (the produced severity, or `null`), `state` (`exact` / `over` / `under` / `not-produced`), `expected`, `mismatches`. |
 | `runtime` | `runtime_name`, `runtime_version`, `model_id`, `adapter_id`; same fields as a lane record's `runtime`. |
 | `provenance` | `repo`, `repo_sha`, `ref`; same as a lane record's `provenance` subset. |
 | `evidence` | The case's normal per-case `metrics`, `severity` and `duplicate_noise` rows. |
+
+`resolved.severity` is the produced severity of the required finding. The benchmark result does not expose it directly (the severity row lists only mismatches), so it is read from the mismatch row, or, for an exact comparison, taken as the required entry's single severity (exact means produced is in the permitted set) and cross-checked against the raw produced findings; the run fails closed if they disagree. An optional entry matching alone is recorded as `not-produced`.
 
 `raw-output.json` is the raw review output (`run_benchmark.py`'s `run` block).
 
@@ -79,3 +81,9 @@ infrastructure, follow the spec's `removal_path`; keep the refs until #653 has r
 Register the daily Routine on the provider side with §3's prompt at 05:00 `Asia/Jerusalem`, confirm it fits
 the account's daily run cap alongside the two lane Routines, and confirm the first run produced a
 `claude/severity-observation-*` ref. The repository cannot check provider state.
+
+The repository states no numeric daily run cap; it lives with the provider account. Load added: one
+Routine run per day. With the sentinel (about every 3 days) and comprehensive (weekly) lanes that is at
+most three runs on a night where all collide, usually one or two. The 05:00 start is after the lanes'
+04:00 *target*, which is measured in #475 and not yet a guarantee; if the comprehensive lane is observed to
+overrun 05:00, move this schedule later rather than letting runs overlap.

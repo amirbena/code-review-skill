@@ -16,12 +16,15 @@ from runtime_platform.benchmark.scripts import run_severity_observation as obs
 from tests.support.benchmark_records import make_case, run_output
 
 CASE = "correctness-off-by-one-pagination"
+KEY = "page-end-off-by-one"
 SCRIPT = Path(obs.__file__)
 
 
 def _invocation(**case_kwargs) -> lane_run.Invocation:
     case = make_case(CASE, matched=1, exact=1, **case_kwargs)
-    return lane_run.Invocation({"passed": True}, run_output([case]), 3.0)
+    output = run_output([case])
+    output["run"]["cases"][0]["produced_findings"] = [{"severity": "P1"}]
+    return lane_run.Invocation({"passed": True}, output, 3.0)
 
 
 def _args(tmp: Path) -> list[str]:
@@ -88,13 +91,31 @@ class EvidenceTest(unittest.TestCase):
             self.assertEqual(record["evidence"][section]["id"], CASE)
         self.assertTrue(record["started_at"] and record["finished_at"])
 
-    def test_mismatch_and_not_produced_states(self):
-        out = run_output([make_case(CASE, matched=1, exact=0)])
-        out["severity"]["cases"][0]["mismatches"] = [{"key": "k", "produced": "P2", "expected": ["P1"], "direction": "under"}]
-        corpus = str(obs.rb.DEFAULT_CORPUS_DIR)
-        self.assertEqual(obs.resolved_severity(CASE, out, corpus)["severity"], "P2")
-        none = run_output([make_case(CASE)])
-        self.assertEqual(obs.resolved_severity(CASE, none, corpus)["state"], "not-produced")
+    def _resolve(self, produced, *, missed=(), mismatch=None, matched=1):
+        out = run_output([make_case(CASE, missed=missed, matched=matched, exact=0 if mismatch else matched)])
+        out["run"]["cases"][0]["produced_findings"] = [{"severity": s} for s in produced]
+        if mismatch:
+            out["severity"]["cases"][0]["mismatches"] = [{"key": KEY, "produced": mismatch[0], "expected": ["P1"], "direction": mismatch[1]}]
+        return obs.resolved_severity(CASE, out, str(obs.rb.DEFAULT_CORPUS_DIR))
+
+    def test_recorded_severity_is_the_produced_severity(self):
+        exact = self._resolve(["P1"])
+        self.assertEqual((exact["severity"], exact["state"]), ("P1", "exact"))
+        over = self._resolve(["P0"], mismatch=("P0", "over"))
+        self.assertEqual((over["severity"], over["state"]), ("P0", "over"))
+        under = self._resolve(["P2"], mismatch=("P2", "under"))
+        self.assertEqual((under["severity"], under["state"]), ("P2", "under"))
+        missing = self._resolve([], missed=[KEY], matched=0)
+        self.assertEqual((missing["severity"], missing["state"]), (None, "not-produced"))
+
+    def test_optional_only_match_is_not_reported_as_the_required_severity(self):
+        # matched == 1 can be the optional entry alone; the required finding is still missed.
+        result = self._resolve(["P2"], missed=[KEY], matched=1)
+        self.assertEqual((result["severity"], result["state"]), (None, "not-produced"))
+
+    def test_exact_invariant_is_cross_checked_against_raw_output(self):
+        with self.assertRaises(lane_run.RoutineExecutionError):
+            self._resolve(["P2"])  # claims exact P1 but the raw run produced only P2
 
     def test_stop_condition_runs_nothing(self):
         with mock.patch.object(obs, "prior_observation_count", return_value=14), mock.patch.object(obs, "invoke") as inv:
