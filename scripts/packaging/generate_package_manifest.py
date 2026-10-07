@@ -116,8 +116,8 @@ _SHARED_ORDER: tuple[Entry, ...] = (
     Entry("LICENSE", None),
 )
 
-# Core local-code-review files: no capability.yaml owns any
-# skills/local-code-review/* file yet.
+# Core local-code-review files: not owned by any capability.yaml (the
+# on-activation `external-contract-context` policy is listed in _LOCAL_ORDER).
 _CORE_LOCAL = (
     "skills/local-code-review/SKILL.md",
     "skills/local-code-review/agents/openai.yaml",
@@ -131,7 +131,22 @@ _CORE_LOCAL = (
     "skills/local-code-review/templates/local-review-report.md",
 )
 
-_LOCAL_ORDER: tuple[Entry, ...] = tuple(Entry(source, None) for source in _CORE_LOCAL)
+_LOCAL_ORDER: tuple[Entry, ...] = (
+    Entry("skills/local-code-review/SKILL.md", None),
+    Entry("skills/local-code-review/agents/openai.yaml", None),
+    Entry("skills/local-code-review/metadata/skill.yaml", None),
+    Entry("skills/local-code-review/policies/invocation-approval.md", None),
+    Entry("skills/local-code-review/policies/multi-repository-review-target.md", None),
+    Entry(
+        "skills/local-code-review/policies/external-contract-context.md",
+        "external-contract-context",
+    ),
+    Entry("skills/local-code-review/policies/repository-state.md", None),
+    Entry("skills/local-code-review/policies/review-context.md", None),
+    Entry("skills/local-code-review/policies/pr-context.md", None),
+    Entry("skills/local-code-review/runbooks/local-review.md", None),
+    Entry("skills/local-code-review/templates/local-review-report.md", None),
+)
 
 _CORE_GITHUB = (
     "skills/github-pr-review/SKILL.md",

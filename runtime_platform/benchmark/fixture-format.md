@@ -228,6 +228,25 @@ local sibling repositories, but they are never part of what the reviewer
 is invoked with. An alias here MUST NOT collide with a `repositories`
 alias.
 
+### 6.5 External contract context (`external_contexts`) — Issue #133
+
+Optional, valid alongside `patch` or `repositories` (never `repo_ref`). A
+mapping of `<alias>` (kebab-case, not colliding with a `repositories` or
+`unadmitted_repositories` alias) to a **non-member** local repository that
+is read-only compatibility evidence, never a Review Target member:
+
+| Field | Required | Meaning |
+|---|---|---|
+| `files` | yes | Mapping of repo-relative path to contents committed as the **pinned** revision. |
+| `head_files` | no | A later commit on top of the pinned one; it becomes the repository's HEAD, so a pinned revision that differs from HEAD can be tested. |
+| `revision` | no | `pinned` (default) or `absent` (the revision handed to the reviewer is a syntactically valid SHA no repository contains). |
+| `designated` | no | `true` (default): the reviewer is handed the path and revision. `false`: the repository exists on disk as a decoy and is never handed to the reviewer. |
+
+A runner materializes each entry as its own Git repository outside the
+Review Target workspace and passes only designated entries to the reviewer
+adapter, as `(path, revision)` and nothing else. See
+[`../../skills/local-code-review/policies/external-contract-context.md`](../../skills/local-code-review/policies/external-contract-context.md).
+
 ## 7. Expected outcome (`expected`)
 
 `expected` is a mapping with:

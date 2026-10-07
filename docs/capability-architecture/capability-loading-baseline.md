@@ -200,6 +200,24 @@ method), attributed to that capability for both adapters and requiring
 reference was supplied or discovered, so other reviews grow only by the short
 pointer sentences in the runbooks and `review-summary.md`.
 
+## 7. Post-baseline addition: `external-contract-context` (#133)
+
+`capabilities/external-contract-context/` adds one `on-activation` policy,
+`skills/local-code-review/policies/external-contract-context.md` (1,571 words
+by the same `wc -w` method), attributed to that capability for the `local`
+adapter only; the `github` archive does not ship it. It loads only when the
+API/contract compatibility pass recognizes a contract change, its
+consumer/producer surface is unresolved in the target, and the caller supplied
+both a local path and a pinned revision. Re-measured with
+`capability_loading_baseline.py static`: the capability appears in the `local`
+`by_capability_words` at 1,571 words and not in `github`. A review without the
+caller's input grows only by the thin pointers in always-resident files: about
+274 words for `local` (`SKILL.md` +43, `local-review.md` +35, `finding.md` +66,
+`api-contract-compatibility.md` +41, `multi-repository-review-target.md` +23,
+`metadata/skill.yaml` +66) and about 107 for `github` (the two shared files).
+The quality-metric half was not re-run; no review-behavior contract it
+measures changed.
+
 ## Status and canonical home
 
 This document and

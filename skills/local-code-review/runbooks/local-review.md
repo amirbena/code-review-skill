@@ -377,7 +377,12 @@ which a value must be resolved before it is used, or what is reported.
    inspected for the report's subordinate metadata (step 13). A change
    with no fired trigger still records that outcome as "none," per that
    policy's "Expansion decisions are reported" and "Non-goals and
-   ownership boundary" — not restated here.
+   ownership boundary" — not restated here. When the API/contract
+   compatibility pass left its consumer or producer surface unresolved
+   inside the target and the caller supplied an external repository path
+   and pinned revision, apply
+   [`external-contract-context.md`](../policies/external-contract-context.md);
+   a review without that input skips it.
 8d. **Partition large changes** per
    [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md).
    When the complete local delta's diff-size measurement (the same

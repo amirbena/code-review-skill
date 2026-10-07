@@ -199,6 +199,11 @@ Normalize Inputs
     │                         caller-named list of 2+ local repositories into
     │                         one combined Review Target — see
     │                         `docs/features/multi-repository-review-target.md`)
+    ├── External Contract Context (optional, `local-code-review` only: one
+    │                         caller-supplied local repository read-only at a
+    │                         pinned revision as compatibility evidence, never a
+    │                         Review Target member — see
+    │                         `docs/features/external-contract-context.md`)
     ├── Review Context       (optional: user instructions / resolved Jira /
     │                         GitHub Issue / HLD / ADR / plan / PR description)
     ├── Repository Context   (repository snapshot / API-accessible files;

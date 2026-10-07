@@ -176,6 +176,20 @@ never as a second, duplicate listing of the finding (this is the existing
 [`review-context.md`](../../shared/policies/review-context.md), given one
 stable field).
 
+### External contract provenance extension (#133)
+
+`local-code-review` may read one caller-supplied local repository at a
+pinned revision as compatibility evidence. When a finding uses it, its
+contextual-evidence entry carries five extra provenance fields —
+`repository`, `resolved SHA`, `selection basis`, `retrieval time`, `trust` —
+defined by
+[`external-contract-context.md`](../../skills/local-code-review/policies/external-contract-context.md).
+This adds no evidence type, authority, or resolution outcome: a pinned
+external source that contradicts in-target evidence on the same point is the
+existing `REPORT_CONFLICT` outcome (§7), an unresolved question is
+`REPORT_AMBIGUITY`, and the finding's `confidence` is derived per the
+finding-confidence model unchanged.
+
 ### Severity and provenance are distinct
 
 - **Authoritative contextual evidence may supply the evidence needed to

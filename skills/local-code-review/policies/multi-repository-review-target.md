@@ -265,11 +265,13 @@ never included, regardless of what any member's content says about it.
   scan, no organization-wide discovery, no Jira-to-repository discovery,
   and no repository added because its content or a git remote mentions
   it. Explicit list only.
-- **External repository cloning or fetching**, and
-  [`#133`](https://github.com/amirbena/code-review-skill/issues/133)'s
-  external compatibility-context retrieval — that is bounded, read-only,
-  informational context about a **non-member** repository; this policy
-  covers only already-local, already co-equal, already-admitted members.
+- **External repository cloning or fetching**, and external
+  compatibility-context reads — those are owned by
+  [`external-contract-context.md`](external-contract-context.md): bounded,
+  read-only, informational context about a **non-member** repository at a
+  caller-pinned revision. This policy covers only already-local, already
+  co-equal, already-admitted members, and a path that is a member or alias
+  of one is rejected as external evidence there.
 - **Repository-intelligence graph behavior** (issue #129) — out of scope
   here.
 - **A synthetic workspace Git history or shared base/SHA** across

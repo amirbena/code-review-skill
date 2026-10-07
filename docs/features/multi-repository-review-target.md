@@ -132,12 +132,11 @@ caller-designated, already co-equal** repositories into one Review
 Target — every member is first-class and fully reviewed. This is
 different from
 [#133](https://github.com/amirbena/code-review-skill/issues/133),
-"Evaluate cross-repository context for compatibility review" — an open,
-**not yet implemented** proposal for bounded, read-only, informational
-context about a repository the caller did *not* name as a member, purely
-to inform review of the actual, single Review Target. If and when #133
-ships, a repository referenced that way would never become a Review
-Target member, never get its own findings, and never be combined into
+[external contract context](external-contract-context.md) — bounded,
+read-only, informational context about a repository the caller did *not*
+name as a member, read at a pinned revision purely to inform review of the
+actual, single Review Target. A repository referenced that way never
+becomes a Review Target member, never get its own findings, and never be combined into
 the metadata described above — the two capabilities are complementary,
 not overlapping, and neither subsumes or supersedes the other.
 

@@ -1,0 +1,86 @@
+# External contract context corpus case (Issue #133). Format:
+# ../../../runtime_platform/benchmark/fixture-format.md `input.external_contexts`.
+# See ./README.md for the cluster.
+#
+# payment-service adds a refunded member to the PaymentStatus enum. Alone, the
+# diff is context-dependent (additive for a permissive consumer, breaking for an
+# exhaustive one). The caller supplies ledger-consumer at a pinned revision, and
+# its exhaustive switch raises on any unknown status, so the incompatibility is
+# proven by the pinned external contract.
+
+format: benchmark-case/v2
+
+id: external-pinned-contract-proves-incompatibility
+title: "PaymentStatus gains refunded; the caller-pinned ledger-consumer switch rejects unknown statuses"
+
+input:
+  patch: |
+    diff --git a/schemas/payment_status.schema.json b/schemas/payment_status.schema.json
+    --- a/schemas/payment_status.schema.json
+    +++ b/schemas/payment_status.schema.json
+    @@ -2,5 +2,5 @@
+       "$schema": "http://json-schema.org/draft-07/schema#",
+       "title": "PaymentStatus",
+       "type": "string",
+    -  "enum": ["pending", "completed", "failed"]
+    +  "enum": ["pending", "completed", "failed", "refunded"]
+     }
+  base:
+    schemas/payment_status.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "PaymentStatus",
+        "type": "string",
+        "enum": ["pending", "completed", "failed"]
+      }
+  external_contexts:
+    ledger-consumer:
+      files:
+        ledger/apply_status.py: |
+          def apply_status(entry, status):
+              if status == "pending":
+                  entry.hold()
+              elif status == "completed":
+                  entry.settle()
+              elif status == "failed":
+                  entry.release()
+              else:
+                  raise ValueError(f"unknown payment status: {status}")
+  context: >-
+    ledger-consumer is supplied by the caller as read-only external contract
+    context at a pinned revision; it is not part of the Review Target.
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: payment-status-refunded-breaks-pinned-ledger-consumer
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: schemas/payment_status.schema.json
+        symbol: PaymentStatus
+        anchor: '"enum": ["pending", "completed", "failed", "refunded"]'
+      claim: >-
+        PaymentStatus gains a refunded member, and the caller-pinned
+        ledger-consumer's apply_status handles only pending, completed, and
+        failed and raises ValueError for any other status. Once refunded is
+        produced, that consumer fails on it, so the additive enum change is
+        breaking for this consumer. The finding is located at the schema
+        change, with ledger/apply_status.py cited only as evidence.
+      defect_kind: breaking-contract-enum-member-added-exhaustive-consumer
+
+metadata:
+  source: crafted
+  tags: [correctness, regression]
+  rationale: >-
+    Issue #133 scenario 1: a pinned external contract proving incompatibility
+    that the diff alone leaves context-dependent. Proves the caller-supplied
+    path and pinned revision are actually read and turned into a located,
+    evidence-backed finding in the Review Target.
+  taxonomy:
+    capability: [external-contract-context]
+    policy_contract: [external-contract-context]
+    risk_mode: [correctness, regression]
+    affected_surface: [benchmark-corpus-or-tooling]

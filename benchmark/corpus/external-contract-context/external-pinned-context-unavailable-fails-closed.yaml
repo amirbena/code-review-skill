@@ -1,0 +1,83 @@
+# External contract context corpus case (Issue #133). Format:
+# ../../../runtime_platform/benchmark/fixture-format.md `input.external_contexts`.
+#
+# Same enum change as the proving case, but the caller's pinned revision does
+# not exist in the supplied repository (`revision: absent`). The compatibility
+# claim fails closed: no breakage is invented, no "no consumers" statement is
+# made, and the review still completes cleanly.
+
+format: benchmark-case/v2
+
+id: external-pinned-context-unavailable-fails-closed
+title: "PaymentStatus gains refunded; the pinned ledger-consumer revision is absent locally"
+
+input:
+  patch: |
+    diff --git a/schemas/payment_status.schema.json b/schemas/payment_status.schema.json
+    --- a/schemas/payment_status.schema.json
+    +++ b/schemas/payment_status.schema.json
+    @@ -2,5 +2,5 @@
+       "$schema": "http://json-schema.org/draft-07/schema#",
+       "title": "PaymentStatus",
+       "type": "string",
+    -  "enum": ["pending", "completed", "failed"]
+    +  "enum": ["pending", "completed", "failed", "refunded"]
+     }
+  base:
+    schemas/payment_status.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "PaymentStatus",
+        "type": "string",
+        "enum": ["pending", "completed", "failed"]
+      }
+  external_contexts:
+    ledger-consumer:
+      revision: absent
+      files:
+        ledger/apply_status.py: |
+          def apply_status(entry, status):
+              if status == "pending":
+                  entry.hold()
+              elif status == "completed":
+                  entry.settle()
+              elif status == "failed":
+                  entry.release()
+              else:
+                  raise ValueError(f"unknown payment status: {status}")
+  context: >-
+    The caller supplied ledger-consumer and a pinned revision that does not
+    exist in that repository.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: payment-status-new-enum-member-context-unavailable
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: line
+        path: schemas/payment_status.schema.json
+        symbol: PaymentStatus
+        anchor: '"enum": ["pending", "completed", "failed", "refunded"]'
+      claim: >-
+        PaymentStatus gains a new enum member, refunded. Whether this breaks a
+        consumer is context-dependent, and the caller-supplied external
+        context could not be read because the pinned revision does not exist
+        locally, so no breakage is claimed and the compatibility question
+        stays unvalidated.
+      defect_kind: enum-member-added-context-dependent
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Issue #133 scenario 2: unavailable pinned context fails closed for the
+    compatibility claim only. No required breaking finding is invented and the
+    unreadable context is never reported as "no consumers".
+  taxonomy:
+    capability: [external-contract-context]
+    policy_contract: [external-contract-context]
+    risk_mode: [correctness]
+    affected_surface: [benchmark-corpus-or-tooling]

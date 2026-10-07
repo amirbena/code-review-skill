@@ -332,6 +332,53 @@ def materialize_multi_repo(case: bf.BenchmarkCase, workspace_root: Path) -> Mult
     return MultiRepoWorkspaces(admitted=admitted, unadmitted=unadmitted)
 
 
+# A syntactically valid SHA no repository contains (`revision: absent`).
+ABSENT_EXTERNAL_REVISION = "0123456789abcdef0123456789abcdef01234567"
+
+
+@dataclass(frozen=True)
+class ExternalContextRef:
+    """What the reviewer is handed for one designated external context
+    (issue #133): the local path and the pinned revision, nothing else."""
+
+    alias: str
+    path: Path
+    revision: str
+
+
+def materialize_external_contexts(
+    case: bf.BenchmarkCase, external_root: Path
+) -> dict[str, ExternalContextRef]:
+    """Materialize each ``input.external_contexts`` repository under
+    ``external_root``: ``files`` is the pinned commit, ``head_files`` an
+    optional later commit that becomes HEAD. Only designated entries are
+    returned; a ``designated: false`` decoy exists on disk but is never
+    handed to the reviewer."""
+    refs: dict[str, ExternalContextRef] = {}
+    for alias, entry in (case.input.get("external_contexts") or {}).items():
+        repo_dir = external_root / alias
+        repo_dir.mkdir(parents=True, exist_ok=True)
+        _git(repo_dir, "init", "-q", "-b", "main", ".")
+        _git(repo_dir, "config", "commit.gpgsign", "false")
+        pinned = ""
+        for stage, files in (("pinned", entry["files"]), ("head", entry.get("head_files"))):
+            if not files:
+                continue
+            for rel, content in files.items():
+                dest = repo_dir / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_text(content, encoding="utf-8")
+            _git(repo_dir, "add", "-A")
+            _git(repo_dir, "commit", "-q", "--allow-empty", "-m", stage)
+            if stage == "pinned":
+                pinned = _git(repo_dir, "rev-parse", "HEAD").stdout.strip()
+        if not entry.get("designated", True):
+            continue
+        revision = ABSENT_EXTERNAL_REVISION if entry.get("revision") == "absent" else pinned
+        refs[alias] = ExternalContextRef(alias=alias, path=repo_dir, revision=revision)
+    return refs
+
+
 def _materialize_repo_ref(
     case: bf.BenchmarkCase, workspace: Path, resolver: RepoRefResolver | None
 ) -> None:
@@ -463,8 +510,10 @@ def run_case(
         tempfile.mkdtemp(prefix=f"benchmark-{case.id}-", dir=str(workspace_parent) if workspace_parent else None)
     )
     result: CaseResult
+    external_root: Path | None = None
     try:
         multi_repo: MultiRepoWorkspaces | None = None
+        external: dict[str, ExternalContextRef] = {}
         try:
             if kind == "patch":
                 materialize_patch(case, workspace)
@@ -472,6 +521,11 @@ def run_case(
                 multi_repo = materialize_multi_repo(case, workspace)
             else:
                 _materialize_repo_ref(case, workspace, repo_ref_resolver)
+            if case.input.get("external_contexts"):
+                external_root = Path(
+                    tempfile.mkdtemp(prefix=f"benchmark-{case.id}-external-", dir=str(workspace.parent))
+                )
+                external = materialize_external_contexts(case, external_root)
         except PatchDidNotApply:
             return CaseResult(case.id, kind, _ERROR, error="patch-did-not-apply")
         except _WorkspaceSetupFailed:
@@ -486,7 +540,10 @@ def run_case(
         post_image = None if kind == "multi_repo" else _capture_post_image(case, workspace)
 
         try:
-            produced = tuple(reviewer(multi_repo.admitted if multi_repo is not None else workspace))
+            target = multi_repo.admitted if multi_repo is not None else workspace
+            # Only a case that declares external contexts sees the extra
+            # keyword, so every other reviewer keeps its original signature.
+            produced = tuple(reviewer(target, external_contexts=external) if external else reviewer(target))
         except Exception:  # noqa: BLE001 - adapter failure is a per-case error, not a crash
             return CaseResult(case.id, kind, _ERROR, error="reviewer-adapter-raised")
 
@@ -509,10 +566,16 @@ def run_case(
         )
         return result
     finally:
-        try:
-            _cleanup(workspace)
-        except Exception as exc:  # noqa: BLE001
-            raise RunnerSafetyError(f"cleanup failed for {case.id}: {exc}") from exc
+        failure: Exception | None = None
+        for directory in (workspace, external_root):
+            if directory is None:
+                continue
+            try:
+                _cleanup(directory)
+            except Exception as exc:  # noqa: BLE001
+                failure = failure or exc
+        if failure is not None:
+            raise RunnerSafetyError(f"cleanup failed for {case.id}: {failure}") from failure
 
 
 # --------------------------------------------------------------------------

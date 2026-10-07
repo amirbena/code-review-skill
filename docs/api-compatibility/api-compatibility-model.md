@@ -145,8 +145,10 @@ runs exactly once, over the finalized findings.
 
 **Deferred** (named here so scope stays fixed):
 
-- cross-repository contract retrieval to resolve an ambiguous consumer
-  surface ([#133](https://github.com/amirbena/code-review-skill/issues/133));
+- autonomous cross-repository contract retrieval to resolve an ambiguous
+  consumer surface; the caller-supplied, pinned, read-only local read landed
+  as [#133](https://github.com/amirbena/code-review-skill/issues/133)
+  (`local-code-review` only);
 - a dedicated schema-linter or SAST-style structural validator — this
   capability is semantic reasoning layered on the existing evidence model,
   never a second, competing tool;

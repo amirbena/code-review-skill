@@ -131,11 +131,11 @@ def main(argv: list[str] | None = None) -> int:
 
     review_s = 0.0
 
-    def timed_adapter(workspace):  # forwards both single- and multi-repository calls
+    def timed_adapter(workspace, **kwargs):  # forwards single-, multi-repository, and external-context calls
         nonlocal review_s
         review_began = time.monotonic()
         try:
-            return adapter(workspace)
+            return adapter(workspace, **kwargs)
         finally:
             review_s += time.monotonic() - review_began
 

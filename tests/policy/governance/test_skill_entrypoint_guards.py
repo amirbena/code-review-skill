@@ -84,7 +84,10 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # Issue #620 (the operator-supplied design-reference input) added one thin
 # pointer paragraph to each SKILL.md, raising local 288 -> 294 and github
 # 401 -> 407.
-LOCAL_MAX_LINES = 294
+# Issue #133 (the operator-supplied external contract context input) added
+# one thin pointer paragraph to the local SKILL.md only, raising local
+# 294 -> 301. github is unaffected (local-code-review only).
+LOCAL_MAX_LINES = 301
 GITHUB_MAX_LINES = 407
 
 
