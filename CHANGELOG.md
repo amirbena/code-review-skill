@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.72.0 — 2026-10-07
+
+### Added
+
+- Define the adapter-neutral contract, authorization model and threat model for caller-authorized workspace sibling context (contract only; no behavior change) (#669).
+
 ## v1.71.0 — 2026-10-07
 
 ### Added
