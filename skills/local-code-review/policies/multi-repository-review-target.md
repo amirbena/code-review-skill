@@ -47,7 +47,7 @@ current working directory, a workspace file, a Jira/GitHub Issue
 reference, or repository content. These sentences concern **membership**
 only: no directory is scanned for repositories to admit, and a caller-granted
 workspace root used for non-member evidence
-([`workspace-sibling-context.md`](workspace-sibling-context.md)) never
+([`workspace-sibling-context.md`](../../../shared/policies/workspace-sibling-context.md)) never
 admits, adds, or reorders a member. Absent this input, this Skill's Review
 Target is the single local repository exactly as
 [`repository-state.md`](repository-state.md) and the runbook already
@@ -288,7 +288,7 @@ never included, regardless of what any member's content says about it.
   membership** — considered and rejected for v1; only the explicit list in
   "Input" above admits members. Bounded discovery of non-member evidence
   is a separate contract
-  ([`workspace-sibling-context.md`](workspace-sibling-context.md)) and
+  ([`workspace-sibling-context.md`](../../../shared/policies/workspace-sibling-context.md)) and
   never affects membership.
 
 ## Relationship to existing policies

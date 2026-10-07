@@ -14,7 +14,7 @@ implementation #663, benchmark #664, Wiki #665).
 
 | Document | Owns |
 | --- | --- |
-| [`../../skills/local-code-review/policies/workspace-sibling-context.md`](../../skills/local-code-review/policies/workspace-sibling-context.md) | The **normative contract** — grant, discovery, nomination, selection basis, trust, failure, privacy. Canonical. |
+| [`../../shared/policies/workspace-sibling-context.md`](../../shared/policies/workspace-sibling-context.md) | The **normative contract** — grant, discovery, nomination, selection basis, trust, failure, privacy. Canonical. |
 | [`workspace-sibling-context-design.md`](workspace-sibling-context-design.md) | Why the contract is shaped this way: alternatives rejected, authorization-model reconciliation, threat-model mapping, what #663 must implement. Explanatory. |
 
 ## Core invariant
@@ -27,5 +27,5 @@ workspace determines where the reviewer is allowed to look.**
 - Explicit external-repository channel (unchanged, takes precedence):
   [`../../skills/local-code-review/policies/external-contract-context.md`](../../skills/local-code-review/policies/external-contract-context.md).
 - Membership (unchanged): [`../../skills/local-code-review/policies/multi-repository-review-target.md`](../../skills/local-code-review/policies/multi-repository-review-target.md).
-- Threat scenarios: INJECT-015–018, DELEG-012 in [`../threat-model/catalog/`](../threat-model/catalog/README.md).
+- Threat scenarios: INJECT-015–020 in [`../threat-model/catalog/`](../threat-model/catalog/README.md).
 - Evidence model: [`../review-context/contextual-evidence-model.md`](../review-context/contextual-evidence-model.md).

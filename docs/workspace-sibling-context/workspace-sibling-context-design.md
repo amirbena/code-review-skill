@@ -1,8 +1,26 @@
 # Workspace Sibling Context — Design
 
 Explanatory companion to the canonical policy
-[`workspace-sibling-context.md`](../../skills/local-code-review/policies/workspace-sibling-context.md).
+[`workspace-sibling-context.md`](../../shared/policies/workspace-sibling-context.md).
 If this page and the policy disagree, the policy wins.
+
+## 0. Placement and adapters
+
+The contract is adapter-neutral, so it lives in `shared/policies/` and is a
+core shared file in both archives. It is **packaged but inactive**: no
+`SKILL.md`, runbook, or capability references it. #663 activates it for
+**both** `local-code-review` and `github-pr-review` through thin adapter
+wiring.
+
+The grant is always a local directory, so neither adapter clones, fetches
+or uses credentials. `github-pr-review` is available only where its runtime
+has local filesystem access to the root (API-only mode: unavailable,
+behavior unchanged). That is an environment limit, **not** a dependency on
+#645, which owns remote, credentialed second-repository access and is
+unchanged. Two GitHub-specific consequences: the PR checkout sits outside
+the workspace, so exclusion also matches the PR's own repository identity;
+and published surfaces carry reference-only provenance, never sibling
+content.
 
 ## 1. Problem and shape
 
@@ -56,7 +74,8 @@ relevant* is judgment over untrusted content, bounded by the first.
 | INJECT-016 | A nomination, symlink, or relative path escapes the granted root | #663 |
 | INJECT-017 | Content forges the workspace grant itself | #663 |
 | INJECT-018 | A sibling excerpt exposes a secret into the report | #663 |
-| DELEG-012 | A parallel worker inherits or exercises the grant | #303 (delegation non-transferability), #663 |
+| INJECT-020 | A parallel worker or parallel-review copy inherits or exercises the grant | #663 (reconciles with AUTH-013 / DELEG-007) |
+| INJECT-019 | Sibling content leaks through a published GitHub review surface | #663 |
 
 All are `COVERAGE_GAP` for regression evidence until #663/#664 land; the
 catalog entries record the enforcement point and expected safe outcome.
@@ -73,12 +92,11 @@ catalog entries record the enforcement point and expected safe outcome.
 4. HEAD → full SHA resolution, object-database read via the shared
    external-contract mechanism with `workspace-resolved` as an accepted
    label, dirty flag, provenance and trust label.
-5. Deny-list, excerpt minimization, no-execution, no-instruction-following.
+5. Deny-list, excerpt minimization, no-execution, no-instruction-following; reference-only provenance on published surfaces.
 6. Primary-reviewer-only: workers receive nothing.
-7. Wiring: capability declaration, activation, SKILL.md input line,
+7. Wiring (`adapters: [local, github]`): capability declaration, activation, GitHub PR-repository-identity exclusion, SKILL.md input line,
    manifest, finding-template provenance wording.
 
 ## 6. Non-goals
 
-See the policy's "Non-goals". In short: no implementation, no GitHub mode
-(#645), no change to #133 or membership.
+See the policy's "Non-goals". In short: no implementation, no remote access (#645), no change to #133 or membership.
