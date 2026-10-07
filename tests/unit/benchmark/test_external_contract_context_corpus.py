@@ -169,7 +169,7 @@ class RunnerMaterializationTests(unittest.TestCase):
         def reviewer(workspace, external_contexts=None):
             seen["workspace"] = workspace
             seen["external"] = dict(external_contexts or {})
-            seen["listing"] = sorted(p.name for p in Path(workspace).iterdir() if p.name != ".git")
+            seen["inside_workspace"] = (Path(workspace) / "ledger-consumer").exists()
             return []
 
         with tempfile.TemporaryDirectory() as parent:
@@ -177,8 +177,9 @@ class RunnerMaterializationTests(unittest.TestCase):
             self.assertEqual(result.status, "executed")
             ref = seen["external"]["ledger-consumer"]
             self.assertNotIn(Path(seen["workspace"]).resolve(), Path(ref.path).resolve().parents)
-            self.assertNotIn("ledger-consumer", seen["listing"])
-            self.assertEqual(list(Path(parent).iterdir()), [])
+            self.assertFalse(seen["inside_workspace"])
+            self.assertFalse(Path(seen["workspace"]).exists())
+            self.assertFalse(Path(ref.path).parent.exists())
 
     def test_external_directory_is_cleaned_even_if_workspace_cleanup_fails(self) -> None:
         import shutil
@@ -228,7 +229,7 @@ class RunBenchmarkForwardingTests(unittest.TestCase):
             received["external"] = external_contexts
             return []
 
-        def run_corpus(_corpus_dir, wrapped):
+        def run_corpus(_corpus_dir, wrapped, **_kwargs):
             result = br.run_case(_load(PROVES), wrapped)
             received["status"] = result.status
             return mock.Mock(exit_code=0, as_dict=lambda: {"cases": []}, case_results=[])
