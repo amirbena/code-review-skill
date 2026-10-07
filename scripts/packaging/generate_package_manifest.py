@@ -124,6 +124,7 @@ _CORE_LOCAL = (
     "skills/local-code-review/metadata/skill.yaml",
     "skills/local-code-review/policies/invocation-approval.md",
     "skills/local-code-review/policies/multi-repository-review-target.md",
+    "skills/local-code-review/policies/workspace-sibling-context.md",
     "skills/local-code-review/policies/repository-state.md",
     "skills/local-code-review/policies/review-context.md",
     "skills/local-code-review/policies/pr-context.md",
