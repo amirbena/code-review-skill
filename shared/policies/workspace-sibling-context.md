@@ -339,10 +339,14 @@ was searched, in which repository, at which SHA, with the dirty flag.
   (a GitHub review, an inline comment, a PR summary, or any other surface
   people without access to the sibling can read) carries **reference-only
   provenance** — repository identity, short SHA, and path — and **never
-  sibling file content or excerpts**, paraphrased or quoted. The private
-  or local report returned to the caller may carry minimal excerpts. A
-  claim on a published surface that depends on sibling content states only
-  what was checked and where, never the content.
+  sibling file content or excerpts**, quoted or reproduced in substance.
+  The private or local report returned to the caller may carry minimal
+  excerpts. A published claim that depends on sibling content may state a
+  **conclusion plus a reference** — for example, that the change is
+  incompatible with the contract at `<repo>@<short-sha>:<path>` — but not
+  the contract text, field names or values, or code that supports it. When
+  the conclusion cannot be stated without disclosing the content, the
+  published surface states only what was checked and where.
 - **Minimal excerpts.** Read only the lines needed for the question, quote
   the least that supports the statement, and redact anything secret-shaped
   that appears despite the list; a report never contains a sibling's secrets.

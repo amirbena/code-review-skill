@@ -52,6 +52,7 @@ class WorkspaceSiblingContractTests(unittest.TestCase):
             "local filesystem access to the granted root",
             "PR's own repository identity",
             "reference-only provenance",
+            "conclusion plus a reference",
             "never\n  sibling file content or excerpts".replace("\n  ", " "),
         ):
             self.assertIn(phrase, self.text)
