@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.71.0 — 2026-10-07
+
+### Added
+
+- `local-code-review` can read a caller-supplied local repository at a pinned revision as read-only evidence for cross-repository API/contract compatibility, failing closed when it is unavailable (#667).
+
 ## v1.70.0 — 2026-10-03
 
 ### Changed
