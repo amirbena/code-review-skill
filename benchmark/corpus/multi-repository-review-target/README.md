@@ -159,7 +159,9 @@ python3 runtime_platform/benchmark/scripts/run_benchmark.py \
 Per issue #558's own scope: this sub-corpus proves the *delivered*
 capability, not a hypothetical one, and does not redefine
 `multi-repository-review-target.md`'s semantics. It does not add
-`#133`-style external-context fixtures, and it does not invent a second
+`#133`-style external-context fixtures (those live in
+[`../external-contract-context/`](../external-contract-context/README.md)),
+and it does not invent a second
 benchmark mechanism — every extension here (`input.repositories`, the
 runner's `materialize_multi_repo`, the adapter's multi-repository prompt)
 is additive to the one existing fixture format, runner, and adapter.

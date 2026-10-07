@@ -496,6 +496,14 @@ named here rather than linked because it is not a packaged resource).
   GitHub inline surface it folds into `evidence` prose (the same treatment
   as `evidence location`). See
   [`finding-rendering.md`](finding-rendering.md).
+- **External contract provenance (local only, optional).** When a
+  `local-code-review` finding used caller-supplied external contract
+  context, its entry additionally records `repository`, `resolved SHA`,
+  `selection basis`, `retrieval time`, and `trust`, as defined by that
+  Skill's `external-contract-context.md`. The entry is evidence provenance
+  only: the finding's `location` stays in the Review Target, and the
+  extension is absent and inert whenever no such context was used,
+  including every `github-pr-review` finding.
 
 ## Runtime validation state and provenance
 

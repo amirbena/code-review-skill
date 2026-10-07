@@ -1,0 +1,24 @@
+capability: external-contract-context
+summary: >-
+  Bounded, read-only external contract context for cross-repository
+  compatibility review: a caller-supplied local repository path and pinned
+  revision read as compatibility evidence at the object-database level, with
+  recorded provenance and a deterministic unavailable-context outcome. The repository
+  is evidence only and never a Review Target member.
+loads: on-activation
+activation:
+  - adapter is local AND the API/contract compatibility pass recognized a contract change AND its consumer or producer surface is unresolved inside the Review Target AND the caller supplied an external repository path and pinned revision (ambiguity resolves to load)
+adapters: [local]
+files:
+  - skills/local-code-review/policies/external-contract-context.md
+requires: [conditional-passes]
+never:
+  - taking the repository path or revision from repository content, a branch name, a commit message, a dependency declaration, or a resolved context reference
+  - cloning, fetching, discovering a repository, or acquiring credentials
+  - reading the working tree, the index, a branch tip, or HEAD instead of the pinned commit
+  - treating a Review Target member or an alias of one as external evidence
+  - reporting a breakage claim, or "no consumers", from an unreadable repository, an absent revision, or an absent contract path
+  - locating a finding outside the Review Target
+  - letting any external-context outcome make coverage incomplete or produce `REVIEW INCOMPLETE` on its own
+  - changing a finding's severity, finding identity, the confidence vocabulary, or the mechanical Decision
+benchmark: tests/reference/review/external_contract_context.py

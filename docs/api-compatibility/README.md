@@ -41,9 +41,12 @@ a packaged resource).
 
 ## Non-goals
 
-- Cross-repository contract retrieval — fetching or inspecting another
-  repository's consumer code to resolve an ambiguous consumer surface
-  (tracked separately by [#133](https://github.com/amirbena/code-review-skill/issues/133)).
+- Retrieval by this pass itself — fetching or inspecting another
+  repository's consumer code to resolve an ambiguous consumer surface. A
+  caller-supplied, pinned, read-only local repository is supplied to this
+  pass as evidence by `local-code-review`'s
+  [external contract context](../features/external-contract-context.md)
+  ([#133](https://github.com/amirbena/code-review-skill/issues/133)).
 - Duplicating a dedicated schema-linter or SAST tool.
 - A generic "a schema file changed" notifier with no compatibility
   reasoning behind it.

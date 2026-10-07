@@ -89,4 +89,9 @@ that need never appear as a call site at all — an external API client, an
 event subscriber, or a configuration reader outside the diff's own
 repository. It never fetches or retrieves another repository's consumer
 code to resolve that ambiguity; an unresolved consumer surface is exactly
-the fail-closed case above, not a reason to expand retrieval.
+the fail-closed case above, not a reason to expand retrieval. Where an
+adapter offers a caller-supplied, read-only evidence channel for this
+case, it is that adapter's own policy and only supplies evidence to this
+rule's unresolved case; without it the fail-closed rule applies unchanged
+(`local-code-review`'s is `external-contract-context.md` in its own
+`policies/`).

@@ -118,6 +118,10 @@ For every case, before the reviewer adapter is invoked:
      across members. `unadmitted_repositories` members materialize the
      same way, as real sibling repositories alongside the admitted ones,
      for the isolation/authorization negative case.
+   - **`external_contexts` input** (Issue #133, `fixture-format.md` §6.5)
+     — each entry is materialized as its own Git repository in a separate
+     disposable directory beside the workspace (never inside it) and is
+     removed with it. Only `designated` entries are handed to the adapter.
 3. The reviewer adapter receives **only the workspace path** as its
    review target — or, for a `repositories` case, only the mapping of
    admitted member alias → that member's own workspace path (never the

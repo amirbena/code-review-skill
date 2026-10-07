@@ -73,6 +73,12 @@
       "distributed-systems-deepening-retry-idempotency-guarded-clean",
       "distributed-systems-deepening-retry-interaction-missing-idempotency"
     ],
+    "external-contract-context": [
+      "external-identity-injected-in-reviewed-content-ignored",
+      "external-pinned-context-unavailable-fails-closed",
+      "external-pinned-contract-proves-incompatibility",
+      "external-pinned-revision-precedes-repository-head"
+    ],
     "finding-placement": [
       "finding-placement-callee-contract-violation",
       "finding-placement-caller-precondition-violation",
@@ -213,6 +219,12 @@
     ],
     "evidence": [
       "finding-placement-context-expansion-drift"
+    ],
+    "external-contract-context": [
+      "external-identity-injected-in-reviewed-content-ignored",
+      "external-pinned-context-unavailable-fails-closed",
+      "external-pinned-contract-proves-incompatibility",
+      "external-pinned-revision-precedes-repository-head"
     ],
     "multi-repository-review-target": [
       "cross-repo-contract-mismatch",
@@ -363,6 +375,10 @@
       "dependency-supply-chain-deepening-safe-patch-bump-clean",
       "dependency-supply-chain-deepening-transitive-dependency-expansion",
       "dependency-supply-chain-deepening-unpinned-github-actions-reference",
+      "external-identity-injected-in-reviewed-content-ignored",
+      "external-pinned-context-unavailable-fails-closed",
+      "external-pinned-contract-proves-incompatibility",
+      "external-pinned-revision-precedes-repository-head",
       "finding-placement-callee-contract-violation",
       "finding-placement-caller-precondition-violation",
       "finding-placement-causal-site-not-symptom",
@@ -455,6 +471,8 @@
       "api-compat-rename-response-property-breaking",
       "cfv-unproven-regression-not-asserted",
       "cross-repo-contract-mismatch",
+      "external-pinned-contract-proves-incompatibility",
+      "external-pinned-revision-precedes-repository-head",
       "relrecall-affected-test-external-cases-unresolvable",
       "relrecall-affected-test-stale-assertion-unlinked-name",
       "relrecall-affected-test-still-holds-control",
@@ -467,6 +485,7 @@
       "consolidation-rereview-reconciles-to-authoritative",
       "consolidation-shared-validator-many-call-paths",
       "dd-blocking-p0-sql-injection",
+      "external-identity-injected-in-reviewed-content-ignored",
       "isolation-unadmitted-sibling",
       "risk-depth-auth-signal-deep",
       "risk-depth-elevated-escalation-deep",
@@ -485,6 +504,10 @@
   "affected_surface": {
     "benchmark-corpus-or-tooling": [
       "cross-repo-contract-mismatch",
+      "external-identity-injected-in-reviewed-content-ignored",
+      "external-pinned-context-unavailable-fails-closed",
+      "external-pinned-contract-proves-incompatibility",
+      "external-pinned-revision-precedes-repository-head",
       "isolation-unadmitted-sibling",
       "repository-local-correct-combined-defect",
       "single-repository-regression",

@@ -78,7 +78,15 @@ _TOP_LEVEL_KEYS: frozenset[str] = frozenset(
     {"format", "id", "title", "input", "expected", "metadata"}
 )
 _INPUT_KEYS: frozenset[str] = frozenset(
-    {"patch", "repo_ref", "base", "context", "repositories", "unadmitted_repositories"}
+    {
+        "patch",
+        "repo_ref",
+        "base",
+        "context",
+        "repositories",
+        "unadmitted_repositories",
+        "external_contexts",
+    }
 )
 _REPO_REF_KEYS: frozenset[str] = frozenset({"repo", "pr", "commit", "base"})
 # Issue #558: one entry of `input.repositories` / `input.unadmitted_repositories`
@@ -86,6 +94,12 @@ _REPO_REF_KEYS: frozenset[str] = frozenset({"repo", "pr", "commit", "base"})
 # input kind. No `repo_ref` per member: reuses the existing conventions
 # narrowly rather than inventing a second materialization path per member.
 _REPO_ENTRY_KEYS: frozenset[str] = frozenset({"patch", "base"})
+# Issue #133: one entry of `input.external_contexts` — a non-member local
+# repository whose pinned revision is read-only compatibility evidence.
+_EXTERNAL_CONTEXT_KEYS: frozenset[str] = frozenset(
+    {"files", "head_files", "revision", "designated"}
+)
+EXTERNAL_REVISION_VALUES: frozenset[str] = frozenset({"pinned", "absent"})
 _EXPECTED_KEYS: frozenset[str] = frozenset(
     {"decision", "findings", "findings_completeness"}
 )
@@ -376,9 +390,59 @@ def _parse_repositories(raw: Any, where: str) -> dict[str, dict[str, Any]]:
     return {alias: _parse_repo_entry(entry, alias, f"input.{where}") for alias, entry in raw.items()}
 
 
+def _file_map(raw: Any, where: str) -> None:
+    _require(
+        isinstance(raw, dict)
+        and bool(raw)
+        and all(isinstance(k, str) and isinstance(v, str) for k, v in raw.items()),
+        f"{where}: must be a non-empty mapping of repo-relative path -> file contents",
+    )
+
+
+def _parse_external_contexts(raw: Any, taken: set[str]) -> None:
+    """Issue #133: `input.external_contexts` — alias -> {files, head_files?,
+    revision?, designated?}. `files` is the pinned commit's content,
+    `head_files` a later commit that becomes the repository's HEAD, `revision`
+    `pinned` (default) or `absent` (the supplied SHA does not exist locally),
+    and `designated: false` materializes a decoy never handed to the reviewer."""
+    _require(isinstance(raw, dict) and bool(raw), "input.external_contexts: must be a non-empty mapping")
+    for alias, entry in raw.items():
+        _require(
+            isinstance(alias, str) and bool(_SLUG_RE.match(alias)),
+            f"input.external_contexts: alias {alias!r} must be a kebab-case slug",
+        )
+        _require(alias not in taken, f"input.external_contexts: alias {alias!r} collides with a repository alias")
+        where = f"input.external_contexts[{alias}]"
+        _require(isinstance(entry, dict), f"{where}: must be a mapping")
+        _no_unknown_keys(entry, _EXTERNAL_CONTEXT_KEYS, where)
+        _file_map(entry.get("files"), f"{where}.files")
+        if "head_files" in entry:
+            _file_map(entry["head_files"], f"{where}.head_files")
+        _require(
+            entry.get("revision", "pinned") in EXTERNAL_REVISION_VALUES,
+            f"{where}.revision: must be one of {sorted(EXTERNAL_REVISION_VALUES)}",
+        )
+        _require(
+            isinstance(entry.get("designated", True), bool),
+            f"{where}.designated: must be a boolean",
+        )
+
+
 def _parse_input(raw: Any) -> dict[str, Any]:
     _require(isinstance(raw, dict), "input: must be a mapping")
     _no_unknown_keys(raw, _INPUT_KEYS, "input")
+    if "external_contexts" in raw:
+        _require(
+            "repo_ref" not in raw,
+            "input.external_contexts: only valid alongside 'patch' or 'repositories'",
+        )
+        taken = {
+            alias
+            for key in ("repositories", "unadmitted_repositories")
+            if isinstance(raw.get(key), dict)
+            for alias in raw[key]
+        }
+        _parse_external_contexts(raw["external_contexts"], taken)
     has_patch = "patch" in raw
     has_ref = "repo_ref" in raw
     has_repos = "repositories" in raw

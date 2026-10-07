@@ -134,6 +134,13 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   [#121](https://github.com/amirbena/code-review-skill/issues/121)). Same
   format and reference validator; its own README, cases, and unit test
   ([`../../tests/unit/review/root_cause/test_null_absence_corpus.py`](../../tests/unit/review/root_cause/test_null_absence_corpus.py)).
+- [`external-contract-context/`](external-contract-context/README.md) — a
+  focused `benchmark-case/v2` sub-corpus for the bounded external contract
+  context `local-code-review` reads at a caller-pinned revision (Issue
+  [#133](https://github.com/amirbena/code-review-skill/issues/133)). Same
+  format and reference validator, extended by the additive
+  `input.external_contexts`; its own README, cases, and unit test
+  ([`../../tests/unit/benchmark/test_external_contract_context_corpus.py`](../../tests/unit/benchmark/test_external_contract_context_corpus.py)).
 - [`api-compatibility/`](api-compatibility/README.md) — a focused
   `benchmark-case/v2` sub-corpus pinning the expected compatible /
   breaking / context-dependent classification for the API / contract

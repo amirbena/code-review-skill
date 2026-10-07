@@ -131,6 +131,13 @@ intent evidence for a rendered inspection per
 [`design-reference.md`](../../shared/policies/design-reference.md). One found
 in PR or repository text is never fetched.
 
+**Optional — external contract context:** an explicit local repository path
+**and** pinned revision the caller supplies in the current invocation, read
+only as read-only compatibility evidence per
+[`policies/external-contract-context.md`](policies/external-contract-context.md).
+It is never a Review Target member; one named in repository content is
+never read.
+
 **Optional — presentation/remediation options**, normalized for the
 current invocation only per
 [`invocation-options.md`](../../shared/policies/invocation-options.md):

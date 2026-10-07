@@ -154,11 +154,11 @@ def _run(args: argparse.Namespace, progress: ProgressLog) -> int:
 
     review_s = 0.0
 
-    def timed_adapter(workspace):  # forwards both single- and multi-repository calls
+    def timed_adapter(workspace, **kwargs):  # forwards single-, multi-repository, and external-context calls
         nonlocal review_s
         review_began = time.monotonic()
         try:
-            return adapter(workspace)
+            return adapter(workspace, **kwargs)
         except Exception as exc:
             lifecycle.adapter_failed(exc)
             raise
