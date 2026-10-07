@@ -98,6 +98,7 @@ REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
         "tests/unit/governance/test_validate_markdown_links.py",
         "tests/repository/test_gitignore.py",
         "tests/unit/review/test_staged_fingerprint.py",
+        "tests/reference/review/workspace_sibling_context.py",
         "tests/policy/review/test_latency_optimizations_docs.py",
         "tests/unit/review/findings/test_structured_output_contract.py",
         "tests/policy/review/presentation/test_github_pr_review_output_tightening_223.py",
