@@ -382,7 +382,11 @@ which a value must be resolved before it is used, or what is reported.
    inside the target and the caller supplied an external repository path
    and pinned revision, apply
    [`external-contract-context.md`](../policies/external-contract-context.md);
-   a review without that input skips it.
+   a review without that input skips it. Before recording a Context gap
+   or a Reasoning check question for an unresolved question, and when the
+   caller granted a workspace root, apply
+   [`workspace-sibling-context.md`](../policies/workspace-sibling-context.md);
+   a review without a grant skips it.
 8d. **Partition large changes** per
    [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md).
    When the complete local delta's diff-size measurement (the same

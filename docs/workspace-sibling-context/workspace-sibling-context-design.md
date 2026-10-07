@@ -7,10 +7,11 @@ If this page and the policy disagree, the policy wins.
 ## 0. Placement and adapters
 
 The contract is adapter-neutral, so it lives in `shared/policies/` and is a
-core shared file in both archives. It is **packaged but inactive**: no
-`SKILL.md`, runbook, or capability references it. #663 activates it for
-**both** `local-code-review` and `github-pr-review` through thin adapter
-wiring.
+core shared file in both archives. #663 activates it for **both** `local-code-review` and
+`github-pr-review` through the `workspace-sibling-context` capability and one
+thin adapter policy per Skill; it loads only when a grant and an eligible
+unresolved question exist. The deterministic reference model is
+`tests/reference/review/workspace_sibling_context.py`.
 
 The grant is always a local directory, so neither adapter clones, fetches
 or uses credentials. `github-pr-review` is available only where its runtime
@@ -77,8 +78,8 @@ relevant* is judgment over untrusted content, bounded by the first.
 | INJECT-020 | A parallel worker or parallel-review copy inherits or exercises the grant | #663 (reconciles with AUTH-013 / DELEG-007) |
 | INJECT-019 | Sibling content leaks through a published GitHub review surface | #663 |
 
-All are `COVERAGE_GAP` for regression evidence until #663/#664 land; the
-catalog entries record the enforcement point and expected safe outcome.
+The catalog entries cite `tests/unit/security/test_workspace_sibling_context_security.py`
+as regression evidence for both adapters; the benchmark corpus is #664.
 
 ## 5. What #663 must implement
 

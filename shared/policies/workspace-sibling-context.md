@@ -8,13 +8,16 @@ it, how a sibling is nominated, discovered, confirmed and read, how the
 evidence is recorded, trusted and bounded, and how every failure maps onto
 outcomes the reviewing adapter already has. Defined by GitHub Issue #662 (parent #661).
 
-**Status: contract only, inactive.** This policy is packaged with both
-Skills so the contract is available where an adapter later wires it, but it
-is not loaded by any `SKILL.md`, is not a declared capability, and ships no
-behavior. Packaging it is not activation. Both `local-code-review` and
-`github-pr-review` activate it through thin adapter wiring in #663 (see
-"Adapter applicability"). Until an adapter does, a workspace root a caller
-supplies has no effect and every review behaves exactly as it does today.
+**Status: active, conditionally loaded.** This policy is the shared contract
+for the `workspace-sibling-context` capability (`adapters: [local, github]`).
+It is loaded only when a workspace grant exists **and** an eligible unresolved
+question arises; absent a grant nothing loads, is listed, or is read, and every
+review behaves exactly as it does without the capability. Each adapter wires it
+through a thin policy of its own
+(`local-code-review`'s `policies/workspace-sibling-context.md` and
+`github-pr-review`'s `policies/workspace-sibling-context.md`) that adds only the
+availability, exclusion, and publication rules in "Adapter applicability".
+Implemented by GitHub Issue #663; contract defined by #662.
 Reading a *remote*, credentialed second repository in GitHub mode is a
 different capability owned by #645; this contract neither requires nor
 changes it.
@@ -41,6 +44,31 @@ question.
   explicit channel").
 - **Not a new severity, finding category, confidence value, or Decision
   rule.** Not remote or credentialed access (#645).
+
+## Activation and resolution order
+
+Loads only when **both** hold: a workspace grant was supplied in the current
+invocation, and an **eligible unresolved question** exists. Ambiguity about
+whether either holds resolves to **load** only when a grant is present; with no
+grant nothing loads, is listed, or is read.
+
+An eligible question is an existing one, never a new category: an unresolved
+consumer or producer surface from the API/contract compatibility pass, an
+architectural-placement "insufficient evidence", an `unresolved` relationship,
+or a contradiction between review context and the repository. The reviewer
+evaluates it **before** recording a Context gap or putting a Reasoning check
+question to the engineer, in this order:
+
+1. the explicit channel, when it names a repository for the question;
+2. discovery, nomination, and confirmation (below), at most once per review
+   for discovery and at most 1 sibling per question;
+3. the bounded `workspace-resolved` read;
+4. **re-evaluation of that one question only** against the evidence read;
+5. otherwise the question falls through to Context gaps / the Reasoning check
+   exactly as it would have without this capability.
+
+Nothing else is re-evaluated, no finding is added because a sibling was read,
+and no finding is located outside the Review Target.
 
 ## The workspace grant
 
@@ -362,7 +390,7 @@ was searched, in which repository, at which SHA, with the dirty flag.
 
 ## Non-goals
 
-- Implementation, runtime tests, or benchmark fixtures (#663, #664).
+- The benchmark corpus for this capability (#664).
 - Any change to the explicit-path / pinned-revision contract or to Review
   Target membership.
 - Default-on behavior, per-sibling or per-question approval, recursive or
@@ -370,7 +398,6 @@ was searched, in which repository, at which SHA, with the dirty flag.
   clone/fetch/credentials, executing sibling code.
 - Reading a remote or credentialed second repository in GitHub mode (#645,
   unchanged).
-- Activating either adapter (#663).
 - Any new severity, finding category, confidence value, or Decision rule.
 
 ## Relationship to existing policies

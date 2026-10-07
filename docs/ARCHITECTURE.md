@@ -204,6 +204,12 @@ Normalize Inputs
     │                         pinned revision as compatibility evidence, never a
     │                         Review Target member — see
     │                         `docs/features/external-contract-context.md`)
+    ├── Workspace Sibling Context (optional, both Skills: a caller-granted
+    │                         workspace root lets the primary reviewer resolve
+    │                         one unresolved question from a sibling
+    │                         repository's committed HEAD, never a Review
+    │                         Target member — see
+    │                         `docs/features/workspace-sibling-context.md`)
     ├── Review Context       (optional: user instructions / resolved Jira /
     │                         GitHub Issue / HLD / ADR / plan / PR description)
     ├── Repository Context   (repository snapshot / API-accessible files;

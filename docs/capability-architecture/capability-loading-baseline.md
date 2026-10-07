@@ -218,6 +218,27 @@ caller's input grows only by the thin pointers in always-resident files: about
 The quality-metric half was not re-run; no review-behavior contract it
 measures changed.
 
+## 8. Post-baseline addition: `workspace-sibling-context` (#663)
+
+`capabilities/workspace-sibling-context/` declares the #662 shared contract
+(`shared/policies/workspace-sibling-context.md`, 3,319 words by the same
+`wc -w` method) plus one thin adapter policy per Skill (295 words local, 332
+github) as `on-activation` files for both adapters. Before #663 the contract
+was packaged but inactive and counted as core unattributed; it is now
+attributed to the capability, so it leaves the always-resident total in both
+archives. Re-measured with `capability_loading_baseline.py static`: the
+capability appears in `by_capability_words` at 3,614 words for `local` and
+3,651 for `github`. It loads only when the caller granted a workspace root
+and an eligible unresolved question arises; a review without a grant grows
+only by the thin pointers in always-resident files: about 220 words for
+`local` (`SKILL.md` +40, `local-review.md` +31, `skill.yaml` +63, shared
+`finding.md` +86) and about 236 for `github` (`SKILL.md` +47,
+`passive-pr-review.md` +36, `skill.yaml` +67, shared `finding.md` +86). The
+`external-contract-context.md` label note (+23) is on-activation and not
+counted.
+The quality-metric half was not re-run; no review-behavior contract it
+measures changed for reviews without a grant.
+
 ## Status and canonical home
 
 This document and

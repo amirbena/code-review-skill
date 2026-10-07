@@ -87,8 +87,11 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # Issue #133 (the operator-supplied external contract context input) added
 # one thin pointer paragraph to the local SKILL.md only, raising local
 # 294 -> 301. github is unaffected (local-code-review only).
-LOCAL_MAX_LINES = 301
-GITHUB_MAX_LINES = 407
+# Issue #663 (the operator-granted workspace root input for
+# workspace-sibling-context) added one thin pointer paragraph to each
+# SKILL.md, raising local 301 -> 307 and github 407 -> 408.
+LOCAL_MAX_LINES = 307
+GITHUB_MAX_LINES = 408
 
 
 def _norm(path) -> str:

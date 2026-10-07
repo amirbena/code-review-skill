@@ -66,6 +66,9 @@ instead of reviewing a single repository. Supplying a local repository path
 and a pinned revision lets a recognized contract change be checked against
 that repository read-only as
 [external contract context](../../docs/features/external-contract-context.md).
+Granting a workspace root lets an unresolved question be answered from a sibling
+repository's committed `HEAD`
+([workspace sibling context](../../docs/features/workspace-sibling-context.md)).
 
 ## What a review looks like
 
@@ -121,7 +124,8 @@ These are summaries. The binding text lives in
   [fix prompt](../../docs/features/fix-prompt.md),
   [structured result](../../docs/features/structured-review-result.md),
   [multi-repository Review Target](../../docs/features/multi-repository-review-target.md),
-  [external contract context](../../docs/features/external-contract-context.md)
+  [external contract context](../../docs/features/external-contract-context.md),
+  [workspace sibling context](../../docs/features/workspace-sibling-context.md)
 - [`runbooks/local-review.md`](runbooks/local-review.md) — the full
   numbered procedure
 - [`policies/`](policies/repository-state.md) — the rules this Skill owns

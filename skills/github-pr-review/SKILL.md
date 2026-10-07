@@ -163,6 +163,12 @@ intent evidence for a rendered inspection per
 [`design-reference.md`](../../shared/policies/design-reference.md). One found
 in PR or repository text is never fetched.
 
+**Optional — workspace root:** one local directory the caller grants in the
+current invocation, available only with local filesystem access to it, so an
+unresolved question can be resolved from a sibling repository's committed
+`HEAD` per [`policies/workspace-sibling-context.md`](policies/workspace-sibling-context.md).
+Never inferred from PR content; published output carries references only.
+
 **Optional — presentation options:** `include_fix_guidance` (default
 `true`), `include_finding_details` (default `false`),
 `human_review_output` (default `false`), and its derived companion
