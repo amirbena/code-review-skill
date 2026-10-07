@@ -3,8 +3,8 @@
 Repository-development design record for letting a `local-code-review`
 review use bounded, caller-authorized **sibling-repository** evidence to
 resolve one specific unresolved question before escalating it to the
-engineer. Contract-first: this directory and the policy below ship **no
-behavior**. Not packaged; no packaged Skill resource depends on it.
+engineer. Contract-first (#662), implemented for both adapters by #663. This
+directory is not packaged; no packaged Skill resource depends on it.
 
 Issue: [#662](https://github.com/amirbena/code-review-skill/issues/662)
 (parent epic [#661](https://github.com/amirbena/code-review-skill/issues/661);

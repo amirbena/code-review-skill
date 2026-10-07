@@ -136,7 +136,7 @@ Every use of external evidence records, once per repository per review:
 | --- | --- |
 | repository identity | the repository root's directory basename as `repo` plus the supplied normalized root path |
 | resolved SHA | the full resolved commit SHA |
-| selection basis | closed set for this channel: `caller-pinned-sha` or `caller-pinned-tag` |
+| selection basis | closed set for this channel: `caller-pinned-sha` or `caller-pinned-tag`; the shared mechanism also records `workspace-resolved` when the workspace-sibling channel supplies an already-resolved full SHA (that label is never produced by this channel) |
 | retrieval time | UTC, ISO-8601, second precision, taken when the read happened |
 | trust | `caller-supplied-read-only` — authorized by the caller, read-only, unreviewed by this change |
 

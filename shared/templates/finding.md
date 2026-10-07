@@ -504,6 +504,16 @@ named here rather than linked because it is not a packaged resource).
   only: the finding's `location` stays in the Review Target, and the
   extension is absent and inert whenever no such context was used,
   including every `github-pr-review` finding.
+- **Workspace sibling provenance (optional).** When a finding used evidence
+  resolved from a sibling repository under a caller-granted workspace root, its
+  entry records `repository`, `resolved SHA`, `selection basis`
+  (`workspace-resolved`), `retrieval time`, `trust`
+  (`workspace-granted-read-only`), and a `dirty` flag, as defined by
+  [`workspace-sibling-context.md`](../policies/workspace-sibling-context.md).
+  It is evidence provenance only (the `location` stays in the Review Target),
+  is corroboration that cannot alone make a finding `confirmed`, and on a
+  published surface is reference-only (repository, short SHA, path) with no
+  sibling content. Absent and inert when no such evidence was used.
 
 ## Runtime validation state and provenance
 

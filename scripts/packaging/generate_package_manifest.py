@@ -59,7 +59,6 @@ _CORE_SHARED = (
     "shared/policies/git-safety.md",
     "shared/policies/mutation-authority.md",
     "shared/policies/review-ownership.md",
-    "shared/policies/workspace-sibling-context.md",
     "shared/policies/file-reviewability.md",
     "shared/policies/review-context.md",
     "shared/policies/invocation-options.md",
@@ -91,7 +90,7 @@ _SHARED_ORDER: tuple[Entry, ...] = (
     Entry("shared/policies/git-safety.md", None),
     Entry("shared/policies/mutation-authority.md", None),
     Entry("shared/policies/review-ownership.md", None),
-    Entry("shared/policies/workspace-sibling-context.md", None),
+    Entry("shared/policies/workspace-sibling-context.md", "workspace-sibling-context"),
     Entry("shared/policies/file-reviewability.md", None),
     Entry("shared/policies/review-context.md", None),
     Entry("shared/policies/requirement-coverage.md", "context-resolution"),
@@ -119,7 +118,8 @@ _SHARED_ORDER: tuple[Entry, ...] = (
 )
 
 # Core local-code-review files: not owned by any capability.yaml (the
-# on-activation `external-contract-context` policy is listed in _LOCAL_ORDER).
+# on-activation `external-contract-context` and `workspace-sibling-context`
+# policies are listed in _LOCAL_ORDER).
 _CORE_LOCAL = (
     "skills/local-code-review/SKILL.md",
     "skills/local-code-review/agents/openai.yaml",
@@ -142,6 +142,10 @@ _LOCAL_ORDER: tuple[Entry, ...] = (
     Entry(
         "skills/local-code-review/policies/external-contract-context.md",
         "external-contract-context",
+    ),
+    Entry(
+        "skills/local-code-review/policies/workspace-sibling-context.md",
+        "workspace-sibling-context",
     ),
     Entry("skills/local-code-review/policies/repository-state.md", None),
     Entry("skills/local-code-review/policies/review-context.md", None),
@@ -174,6 +178,10 @@ _GITHUB_ORDER: tuple[Entry, ...] = (
     Entry("skills/github-pr-review/policies/reviewer-delta-review.md", "stateful-review"),
     Entry("skills/github-pr-review/policies/stateful-delta-rereview.md", "stateful-review"),
     Entry("skills/github-pr-review/policies/stacked-pr-review.md", "stateful-review"),
+    Entry(
+        "skills/github-pr-review/policies/workspace-sibling-context.md",
+        "workspace-sibling-context",
+    ),
     Entry("skills/github-pr-review/policies/pr-scope.md", None),
     Entry("skills/github-pr-review/policies/repository-checkout.md", "repository-checkout"),
     Entry("skills/github-pr-review/policies/review-context.md", None),

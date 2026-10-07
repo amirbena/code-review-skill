@@ -347,7 +347,11 @@ finally: remove the temporary checkout (success, any failure, interruption)
    tests that depend on it per "Affected-Test Impact Review" in the same
    file. When the diff changes a repository contract another component
    consumes, also apply "API / Contract Compatibility Review" in the same
-   file. When the diff changes a dependency manifest, lockfile, container
+   file. Before recording a Context gap or a Reasoning check question for
+   an unresolved question, and when the caller granted a workspace root
+   the runtime can read locally, apply
+   [`../policies/workspace-sibling-context.md`](../policies/workspace-sibling-context.md);
+   a review without a grant skips it. When the diff changes a dependency manifest, lockfile, container
    base-image reference, or CI/automation action reference, also apply
    "Dependency / Supply-Chain Deepening Review" in the same file.
    Target-repository

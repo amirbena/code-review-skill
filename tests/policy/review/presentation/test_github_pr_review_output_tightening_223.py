@@ -151,10 +151,12 @@ SEVERITY_LEGEND = {
 # LOCAL_RUNBOOK and LOCAL_SKILL were re-captured again after Issue #133 (the
 # external contract context pointers in the runbook and SKILL.md) -- likewise
 # deliberate.
+# LOCAL_RUNBOOK and LOCAL_SKILL were re-captured again after Issue #663 (the
+# workspace-sibling-context pointers) -- likewise deliberate.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "7917d7e46079c95cb77d1a6b3c81cb52e2c8c354",
-    LOCAL_RUNBOOK: "726f2fc1088eb1c3641968c8177946ed43becdbf",
-    LOCAL_SKILL: "0f973b0e7513943caa187d9248d0965e70bbdc2b",
+    LOCAL_RUNBOOK: "e61672010a8519bed278757bd90ef2208cf7ebc5",
+    LOCAL_SKILL: "1b74e41a642970a8ca0dbbb7678da4205574a221",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",

@@ -190,6 +190,18 @@ existing `REPORT_CONFLICT` outcome (§7), an unresolved question is
 `REPORT_AMBIGUITY`, and the finding's `confidence` is derived per the
 finding-confidence model unchanged.
 
+### Workspace sibling provenance extension (#663)
+
+Both Skills may resolve one unresolved question from a sibling repository under
+a caller-granted workspace root. The contextual-evidence entry then carries the
+same five provenance fields plus a `dirty` flag, with selection basis
+`workspace-resolved` and trust `workspace-granted-read-only`, defined by
+[`workspace-sibling-context.md`](../../shared/policies/workspace-sibling-context.md).
+This adds no evidence type, authority, or resolution outcome: contradiction
+with in-target evidence is the existing `REPORT_CONFLICT`, an unresolved
+question stays `REPORT_AMBIGUITY`, and the evidence is corroboration that
+cannot alone raise a finding to `confirmed`.
+
 ### Severity and provenance are distinct
 
 - **Authoritative contextual evidence may supply the evidence needed to
