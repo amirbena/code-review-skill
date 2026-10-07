@@ -133,7 +133,7 @@ class DiagnosticsAreIsolatedTests(unittest.TestCase):
 
         adapter = adapter_mod.ProductionReviewerAdapter(executable="x", extra_args=[], timeout=1)
         adapter.stage_hook = boom
-        with mock.patch.object(adapter_mod.subprocess, "run", return_value=mock.Mock(returncode=0, stdout="**Result:** clean", stderr="")):
+        with mock.patch.object(adapter_mod, "run_in_own_group", return_value=mock.Mock(returncode=0, stdout="**Result:** clean", stderr="")):
             self.assertEqual(adapter(Path(".")), [])
 
     def test_a_closed_stderr_does_not_stall_the_child_stream(self) -> None:

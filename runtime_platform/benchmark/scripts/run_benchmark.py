@@ -57,6 +57,11 @@ from runtime_platform.benchmark.scripts.benchmark_review_adapter import (  # noq
     resolve_cli_extra_args,
 )
 from runtime_platform.benchmark.scripts.benchmark_progress import CaseLifecycle, ProgressLog, child_timing_line  # noqa: E402
+from runtime_platform.benchmark.scripts.benchmark_termination import (  # noqa: E402
+    Terminated,
+    terminate_on_signal,
+    terminated_line,
+)
 from runtime_platform.benchmark.reference import benchmark_citation as bc  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_dupes as bdup  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_fixture as bf  # noqa: E402
@@ -113,12 +118,22 @@ def _load_cases_for_metrics(corpus_dir: Path, case_id: str | None) -> list[bf.Be
 
 def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
+    progress = ProgressLog(stream=sys.stderr)
+    try:
+        with terminate_on_signal(lambda: (progress.phase_name, progress.current_case)):
+            return _run(args, progress)
+    except Terminated as exc:  # fail closed: no stdout result, non-zero exit (Issue #660)
+        progress.log(terminated_line(exc))
+        return exc.exit_code
+
+
+def _run(args: argparse.Namespace, progress: ProgressLog) -> int:
     corpus_dir = Path(args.corpus_dir)
     began = time.monotonic()
 
     executable = args.cli or resolve_cli_executable()
-    progress = ProgressLog(stream=sys.stderr)
     lifecycle = CaseLifecycle(progress, failure_category)
+    progress.phase_name = "probe"
     progress.log("[run] stage=probe START")
     try:
         check_runtime_available(executable)
@@ -129,6 +144,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     progress.log(f"[run] stage=probe DONE {probe_s:.1f}s")
 
+    progress.phase_name = "cases"
     adapter = ProductionReviewerAdapter(
         executable=executable,
         extra_args=resolve_cli_extra_args(),
@@ -155,6 +171,7 @@ def main(argv: list[str] | None = None) -> int:
         run_result = br.run_corpus(corpus_dir, timed_adapter, observer=lifecycle.observe)
 
     output: dict = {"run": run_result.as_dict()}
+    progress.phase_name = "metrics"
     progress.log("[run] stage=metrics START")
     try:
         cases = _load_cases_for_metrics(corpus_dir, args.case_id)

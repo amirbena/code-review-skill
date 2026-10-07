@@ -28,6 +28,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from runtime_platform.benchmark.scripts import benchmark_result as res  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_progress import ProgressLog, parse_child_timing  # noqa: E402
+from runtime_platform.benchmark.scripts.benchmark_termination import PARENT_GRACE_S, stop_process_tree  # noqa: E402
 from runtime_platform.benchmark.scripts import benchmark_seal as seal  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_baseline import HistorySource, load_baseline  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_corpus_membership import (  # noqa: E402
@@ -140,6 +141,7 @@ def invoke(executable: str, timeout: float, case_id: str | None, corpus_dir: str
         stderr=subprocess.PIPE,
         text=True,
         bufsize=1,
+        start_new_session=True,  # own process group: termination of this process stops the whole child tree (Issue #660)
     )
     tail_lines: collections.deque[str] = collections.deque(maxlen=STDERR_TAIL_LINES)
 
@@ -153,8 +155,13 @@ def invoke(executable: str, timeout: float, case_id: str | None, corpus_dir: str
 
     forwarder = threading.Thread(target=_forward_stderr, daemon=True)
     forwarder.start()
-    stdout = proc.stdout.read()
-    returncode = proc.wait()
+    try:
+        stdout = proc.stdout.read()
+        returncode = proc.wait()
+    except BaseException:
+        stop_process_tree(proc, PARENT_GRACE_S)
+        forwarder.join(timeout=2.0)
+        raise
     forwarder.join()
     stderr = "".join(tail_lines)
     duration = round(time.monotonic() - started, 3)

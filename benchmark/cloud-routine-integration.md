@@ -117,6 +117,26 @@ only `reviewer-adapter-raised`. A run killed at the Routine limit therefore
 still shows which case and stage it reached. It changes no execution, scoring,
 timeout, sealing, or stdout behavior, and adds no retry.
 
+**Termination (#660).** On SIGTERM or SIGHUP the entrypoint stops the process tree it
+started: `run_benchmark.py` runs in its own process group and the review CLI in another,
+each is sent SIGTERM and then SIGKILL after a bounded grace (15 s parent, 5 s child), so no
+`run_benchmark.py` or `claude` process is left behind. Each level flushes a best-effort
+`[terminated] signal=<name> phase=<phase> case=<id|unknown>` stderr line, exits
+`128 + signal` (non-zero), prints no stdout result, writes no seal and no `--results-out`
+file, and makes no GitHub write beyond a seal already completed before the signal. SIGKILL
+cannot be caught, so a SIGKILLed parent leaves no `[terminated]` line and may leave its
+children to exit on their own. No retry, resume or partial seal.
+
+**Termination (#660).** On SIGTERM or SIGHUP the entrypoint stops the process tree it
+started: `run_benchmark.py` runs in its own process group and the review CLI in another,
+each is sent SIGTERM and then SIGKILL after a bounded grace (15 s parent, 5 s child), so no
+`run_benchmark.py` or `claude` process is left behind. Each level flushes a best-effort
+`[terminated] signal=<name> phase=<phase> case=<id|unknown>` stderr line, exits
+`128 + signal` (non-zero), prints no stdout result, writes no seal and no `--results-out`
+file, and makes no GitHub write beyond a seal already completed before the signal. SIGKILL
+cannot be caught, so a SIGKILLed parent leaves no `[terminated]` line and may leave its
+children to exit on their own. No retry, resume or partial seal.
+
 ### 2.2 Evaluation, confirmation, and the seal (A2, A8)
 
 For `sentinel` and `comprehensive`, once every invocation verifies, the
