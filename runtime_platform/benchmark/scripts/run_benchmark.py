@@ -52,10 +52,11 @@ from runtime_platform.benchmark.scripts.benchmark_review_adapter import (  # noq
     ProductionReviewerAdapter,
     RuntimeUnavailableError,
     check_runtime_available,
+    failure_category,
     resolve_cli_executable,
     resolve_cli_extra_args,
 )
-from runtime_platform.benchmark.scripts.benchmark_progress import child_timing_line  # noqa: E402
+from runtime_platform.benchmark.scripts.benchmark_progress import CaseLifecycle, ProgressLog, child_timing_line  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_citation as bc  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_dupes as bdup  # noqa: E402
 from runtime_platform.benchmark.reference import benchmark_fixture as bf  # noqa: E402
@@ -116,18 +117,24 @@ def main(argv: list[str] | None = None) -> int:
     began = time.monotonic()
 
     executable = args.cli or resolve_cli_executable()
+    progress = ProgressLog(stream=sys.stderr)
+    lifecycle = CaseLifecycle(progress, failure_category)
+    progress.log("[run] stage=probe START")
     try:
         check_runtime_available(executable)
         probe_s = time.monotonic() - began
     except RuntimeUnavailableError as exc:
+        progress.log("[run] stage=probe ERROR category=runtime-unavailable")
         print(f"error: {exc}", file=sys.stderr)
         return 1
+    progress.log(f"[run] stage=probe DONE {probe_s:.1f}s")
 
     adapter = ProductionReviewerAdapter(
         executable=executable,
         extra_args=resolve_cli_extra_args(),
         timeout=args.timeout,
     )
+    adapter.stage_hook = lifecycle.stage
 
     review_s = 0.0
 
@@ -136,15 +143,19 @@ def main(argv: list[str] | None = None) -> int:
         review_began = time.monotonic()
         try:
             return adapter(workspace, **kwargs)
+        except Exception as exc:
+            lifecycle.adapter_failed(exc)
+            raise
         finally:
             review_s += time.monotonic() - review_began
 
     if args.case_id:
-        run_result = br.run_selected(corpus_dir, args.case_id, timed_adapter)
+        run_result = br.run_selected(corpus_dir, args.case_id, timed_adapter, observer=lifecycle.observe)
     else:
-        run_result = br.run_corpus(corpus_dir, timed_adapter)
+        run_result = br.run_corpus(corpus_dir, timed_adapter, observer=lifecycle.observe)
 
     output: dict = {"run": run_result.as_dict()}
+    progress.log("[run] stage=metrics START")
     try:
         cases = _load_cases_for_metrics(corpus_dir, args.case_id)
         if cases:
@@ -165,8 +176,12 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:  # noqa: BLE001 - metrics are a convenience, never hide the run result
         output["metrics_error"] = str(exc)
 
+    progress.log("[run] stage=metrics " + ("ERROR category=metrics-error" if "metrics_error" in output else "DONE"))
     print(json.dumps(output, indent=2))
-    print(child_timing_line(probe_s, review_s, time.monotonic() - began), file=sys.stderr, flush=True)
+    try:
+        print(child_timing_line(probe_s, review_s, time.monotonic() - began), file=sys.stderr, flush=True)
+    except Exception:  # noqa: BLE001 - diagnostics only (#659)
+        pass
     return run_result.exit_code
 
 

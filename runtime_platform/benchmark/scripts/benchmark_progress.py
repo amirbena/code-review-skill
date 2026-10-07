@@ -72,7 +72,10 @@ class ProgressLog:
     def log(self, message: str) -> None:
         stream = self._stream if self._stream is not None else sys.stderr
         with self._lock:
-            print(f"[+{format_clock(self.elapsed())}] {message}", file=stream, flush=True)
+            try:
+                print(f"[+{format_clock(self.elapsed())}] {message}", file=stream, flush=True)
+            except Exception:  # noqa: BLE001 - progress is diagnostics; a failed write must not fail the run (#659)
+                pass
 
     @contextmanager
     def phase(self, name: str) -> Iterator[None]:
@@ -121,3 +124,41 @@ class ProgressLog:
 
 def _one_line(exc: BaseException) -> str:
     return " ".join(str(exc).split()) or type(exc).__name__
+
+
+class CaseLifecycle:
+    """Per-case stage/terminal lines for one ``run_benchmark.py`` invocation (Issue #659).
+
+    stderr diagnostics only. Lines carry the case id, ``i/n``, the stage and a bounded category;
+    never model output, prompt text or child stderr bodies.
+    """
+
+    def __init__(self, log: ProgressLog, categorize: Callable[[BaseException], str]) -> None:
+        self._log = log
+        self._categorize = categorize
+        self._began = 0.0
+        self._tag = ""
+        self._case = ""
+        self._stage = "setup"
+        self._category: str | None = None
+
+    def observe(self, event: str, case_id: str, index: int, total: int, result: object) -> None:
+        if event == "start":
+            self._tag, self._case, self._stage, self._category = f"[case {index}/{total}]", case_id, "setup", None
+            self._began = self._log._clock()
+            self._log.log(f"{self._tag} START {case_id}")
+            return
+        took = f"{self._log._clock() - self._began:.1f}s"
+        if getattr(result, "status", None) == "executed":
+            count = len(getattr(result, "produced_findings", ()))
+            self._log.log(f"{self._tag} DONE {case_id} {took} findings={count}")
+        else:
+            category = self._category or str(getattr(result, "error", None) or "unknown")
+            self._log.log(f"{self._tag} ERROR {case_id} {took} stage={self._stage} category={category}")
+
+    def stage(self, name: str) -> None:
+        self._stage = name
+        self._log.log(f"{self._tag} stage={name} START {self._case}")
+
+    def adapter_failed(self, exc: BaseException) -> None:
+        self._category = self._categorize(exc)

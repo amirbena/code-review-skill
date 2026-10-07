@@ -76,6 +76,10 @@ class RunnerSafetyError(RuntimeError):
     """
 
 
+# (event, case_id, index, total, result-or-None); event is "start" or "done". Issue #659 diagnostics only.
+CaseObserver = Callable[[str, str, int, int, "CaseResult | None"], None]
+
+
 @dataclass(frozen=True)
 class ProducedFinding:
     """One reviewer result, recorded verbatim. The runner never inspects
@@ -493,7 +497,17 @@ def _capture_pre_images(case: bf.BenchmarkCase, cited: Iterable[str]) -> dict[st
     return {rel: base[rel] for rel in cited if rel in base}
 
 
-def run_case(
+def _notify(observer: CaseObserver | None, event: str, case_id: str, position: tuple[int, int], result: Any) -> None:
+    """Deliver a diagnostics event; an observer failure never affects the run (Issue #659)."""
+    if observer is None:
+        return
+    try:
+        observer(event, case_id, *position, result)
+    except Exception:  # noqa: BLE001 - diagnostics only
+        pass
+
+
+def _run_case(
     case: bf.BenchmarkCase,
     reviewer: ReviewerAdapter,
     *,
@@ -578,6 +592,36 @@ def run_case(
             raise RunnerSafetyError(f"cleanup failed for {case.id}: {failure}") from failure
 
 
+def run_case(
+    case: bf.BenchmarkCase,
+    reviewer: ReviewerAdapter,
+    *,
+    workspace_parent: Path | None = None,
+    repo_ref_resolver: RepoRefResolver | None = None,
+    _cleanup: Callable[[Path], None] = lambda p: shutil.rmtree(p, ignore_errors=False),
+    observer: CaseObserver | None = None,
+    position: tuple[int, int] = (1, 1),
+) -> CaseResult:
+    """Execute one case (see :func:`_run_case`). ``observer`` (Issue #659) gets a ``start`` and
+    exactly one terminal ``done`` event, stderr diagnostics only: its failures are swallowed and
+    it cannot change the result. A cleanup failure reports ``done`` with a ``cleanup-failed`` error
+    result before :class:`RunnerSafetyError` propagates."""
+    _notify(observer, "start", case.id, position, None)
+    try:
+        result = _run_case(
+            case,
+            reviewer,
+            workspace_parent=workspace_parent,
+            repo_ref_resolver=repo_ref_resolver,
+            _cleanup=_cleanup,
+        )
+    except RunnerSafetyError:
+        _notify(observer, "done", case.id, position, CaseResult(case.id, case.input_kind, _ERROR, error="cleanup-failed"))
+        raise
+    _notify(observer, "done", case.id, position, result)
+    return result
+
+
 # --------------------------------------------------------------------------
 # Run modes (contract §2) with the source-repo safety wrapper (§4).
 # --------------------------------------------------------------------------
@@ -609,6 +653,7 @@ def _execute(
     workspace_parent: Path | None,
     repo_ref_resolver: RepoRefResolver | None,
     cleanup: Callable[[Path], None] | None,
+    observer: CaseObserver | None = None,
 ) -> RunResult:
     before = capture_repo_state(source_repo) if source_repo else None
 
@@ -620,9 +665,13 @@ def _execute(
     }
     if cleanup is not None:
         kwargs["_cleanup"] = cleanup
+    ordered = list(cases)
     try:
-        for case in cases:
-            case_results.append(run_case(case, reviewer, **kwargs))
+        for index, case in enumerate(ordered, start=1):
+            case_kwargs = dict(kwargs)
+            if observer is not None:
+                case_kwargs.update(observer=observer, position=(index, len(ordered)))
+            case_results.append(run_case(case, reviewer, **case_kwargs))
     except RunnerSafetyError:
         # A failed cleanup is a run-level execution failure
         # (runtime_platform/benchmark/runner-contract.md §5).
@@ -644,6 +693,7 @@ def run_corpus(
     workspace_parent: Path | None = None,
     repo_ref_resolver: RepoRefResolver | None = None,
     cleanup: Callable[[Path], None] | None = None,
+    observer: CaseObserver | None = None,
 ) -> RunResult:
     """Execute the whole corpus (contract §2). Every ``*.yaml`` is parsed
     up front; a malformed corpus fails the run before any case executes."""
@@ -658,6 +708,7 @@ def run_corpus(
         workspace_parent=workspace_parent,
         repo_ref_resolver=repo_ref_resolver,
         cleanup=cleanup,
+        observer=observer,
     )
 
 
@@ -670,6 +721,7 @@ def run_selected(
     workspace_parent: Path | None = None,
     repo_ref_resolver: RepoRefResolver | None = None,
     cleanup: Callable[[Path], None] | None = None,
+    observer: CaseObserver | None = None,
 ) -> RunResult:
     """Execute exactly the case named by ``case_id`` (contract §2). An
     unknown id is a run-level failure, never a silent no-op."""
@@ -687,6 +739,7 @@ def run_selected(
         workspace_parent=workspace_parent,
         repo_ref_resolver=repo_ref_resolver,
         cleanup=cleanup,
+        observer=observer,
     )
 
 
@@ -698,6 +751,7 @@ def run_cases(
     workspace_parent: Path | None = None,
     repo_ref_resolver: RepoRefResolver | None = None,
     cleanup: Callable[[Path], None] | None = None,
+    observer: CaseObserver | None = None,
 ) -> RunResult:
     """Execute an explicit list of already-parsed cases — the seam tests
     use to run synthetic ``repo_ref`` / failing cases that are not in the
@@ -709,4 +763,5 @@ def run_cases(
         workspace_parent=workspace_parent,
         repo_ref_resolver=repo_ref_resolver,
         cleanup=cleanup,
+        observer=observer,
     )

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import tempfile
 import unittest
@@ -12,12 +14,13 @@ from runtime_platform.benchmark.scripts import benchmark_lane_run as lane_run
 from tests.support.benchmark_records import make_case, run_output
 
 
-def _completed(stdout: str, returncode: int = 0) -> mock.Mock:
-    return mock.Mock(stdout=stdout, stderr="", returncode=returncode)
+def _completed(stdout: str, returncode: int = 0, stderr: str = "") -> mock.Mock:
+    """A fake `Popen` child: stdout/stderr are readable streams (the live-forwarding shape, #659)."""
+    return mock.Mock(stdout=io.StringIO(stdout), stderr=io.StringIO(stderr), wait=lambda: returncode)
 
 
 def _invoke(completed: mock.Mock, case_id: str | None = None):
-    with mock.patch.object(lane_run.subprocess, "run", return_value=completed) as run:
+    with mock.patch.object(lane_run.subprocess, "Popen", return_value=completed) as run:
         return run, lane_run.invoke("stub-cli", 12.5, case_id, "/corpus/dir")
 
 
@@ -54,6 +57,39 @@ class InvokeTests(unittest.TestCase):
     def test_unparseable_output_fails_closed(self) -> None:
         with self.assertRaises(lane_run.RoutineExecutionError):
             _invoke(_completed("not json"))
+
+
+class InvokeStreamingTests(unittest.TestCase):
+    def test_child_stderr_is_forwarded_live_and_stdout_stays_captured(self) -> None:
+        err = io.StringIO()
+        output = run_output([make_case("a")])
+        with contextlib.redirect_stderr(err):
+            _, inv = _invoke(_completed(json.dumps(output), stderr="[case 1/1] START a\n[case 1/1] DONE a\n"))
+        self.assertEqual(err.getvalue(), "[case 1/1] START a\n[case 1/1] DONE a\n")
+        self.assertEqual(inv.output, output)
+
+    def test_forwarding_happens_while_the_child_is_still_running(self) -> None:
+        seen: list[str] = []
+
+        class Stream:
+            def __iter__(self):
+                yield "[case 1/1] START a\n"
+                seen.append(err.getvalue())  # read before the child "exits"
+                yield "[case 1/1] stage=review START a\n"
+
+        err = io.StringIO()
+        child = mock.Mock(stdout=io.StringIO(json.dumps(run_output([make_case("a")]))), stderr=Stream(), wait=lambda: 0)
+        with contextlib.redirect_stderr(err):
+            _invoke(child)
+        self.assertEqual(seen, ["[case 1/1] START a\n"])
+
+    def test_failure_message_keeps_only_a_bounded_stderr_tail(self) -> None:
+        noisy = "".join(f"line {i}\n" for i in range(lane_run.STDERR_TAIL_LINES * 3))
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(lane_run.RoutineExecutionError) as ctx:
+                _invoke(_completed("", returncode=1, stderr=noisy))
+        self.assertIn(f"line {lane_run.STDERR_TAIL_LINES * 3 - 1}", str(ctx.exception))
+        self.assertNotIn("line 0 ", str(ctx.exception))
 
 
 class SpecDigestTests(unittest.TestCase):
