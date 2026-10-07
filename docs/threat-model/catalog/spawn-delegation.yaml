@@ -242,3 +242,25 @@ scenarios:
   benchmark_reference: runtime_platform/benchmark/reference/delegation_fixtures.py (see benchmark/corpus/delegation-spawn/README.md)
   regression_evidence: tests/unit/review/delegation/test_agent_delegation_authorization.py
   threat_severity: MEDIUM
+- id: DELEG-012
+  title: Parallel worker inherits or exercises the primary reviewer's workspace grant
+  category: DELEG
+  attacker_model: confused_deputy
+  attacker_controlled_inputs:
+  - child-spawn request parameters
+  - the primary reviewer's workspace root, listing, or sibling evidence
+  assumed_attacker_capabilities:
+  - spawn capability; ability to pass state to a worker
+  trusted_inputs:
+  - the caller-granted workspace root supplied in the current invocation to the primary reviewer only
+  protected_asset: non-transferability of the workspace grant
+  required_capability_state: the grant is scoped to the primary reviewer of the invocation, never propagated to a worker
+  enforcement_owner: '#303 (spawn/delegation non-transferability); #663 (workspace grant enforcement)'
+  enforcement_point: 'skills/local-code-review/policies/workspace-sibling-context.md, "Primary-reviewer-only authority"'
+  expected_safe_outcome: a worker receives no root, listing, or sibling evidence and cannot read any sibling; it reports the unresolved question to the primary reviewer
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: workspace sibling benchmark is tracked by #664; contract-only until #663 lands
+  regression_evidence: COVERAGE_GAP
+  threat_severity: HIGH
+  notes: Contract defined by #662 in skills/local-code-review/policies/workspace-sibling-context.md; enforcement lands with #663.

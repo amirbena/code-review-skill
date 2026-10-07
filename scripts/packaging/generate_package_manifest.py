@@ -141,6 +141,7 @@ _LOCAL_ORDER: tuple[Entry, ...] = (
         "skills/local-code-review/policies/external-contract-context.md",
         "external-contract-context",
     ),
+    Entry("skills/local-code-review/policies/workspace-sibling-context.md", None),
     Entry("skills/local-code-review/policies/repository-state.md", None),
     Entry("skills/local-code-review/policies/review-context.md", None),
     Entry("skills/local-code-review/policies/pr-context.md", None),

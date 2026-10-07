@@ -198,6 +198,11 @@ reason to add a file to the reviewed delta.
   evidence for that rule's unresolved case.
 - [`multi-repository-review-target.md`](multi-repository-review-target.md)
   owns co-equal members; this policy's repository is never one.
+- [`workspace-sibling-context.md`](workspace-sibling-context.md) defines a
+  separate, weaker `workspace-resolved` channel over a caller-granted
+  workspace root. It reuses this policy's read mechanism, but this
+  policy's explicit path-plus-pinned-revision channel is unchanged and
+  takes precedence for any repository it names.
 - Outcome vocabulary is owned by the finding-confidence and
   contextual-evidence contracts
   ([`finding.md`](../../../shared/templates/finding.md)); nothing here adds
