@@ -70,6 +70,7 @@ shared:
     - ../../../shared/policies/git-safety.md
     - ../../../shared/policies/mutation-authority.md
     - ../../../shared/policies/review-ownership.md
+    - ../../../shared/policies/workspace-sibling-context.md
     - ../../../shared/policies/file-reviewability.md
     - ../../../shared/policies/review-context.md
     - ../../../shared/policies/requirement-coverage.md

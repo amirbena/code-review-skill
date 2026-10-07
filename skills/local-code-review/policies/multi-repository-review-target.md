@@ -44,7 +44,11 @@ expanded from inside" for its concrete tests.
 repository root paths, supplied the same way any other invocation input is
 — by the caller, in the current invocation, never inferred from the
 current working directory, a workspace file, a Jira/GitHub Issue
-reference, or repository content. Absent this input, this Skill's Review
+reference, or repository content. These sentences concern **membership**
+only: no directory is scanned for repositories to admit, and a caller-granted
+workspace root used for non-member evidence
+([`workspace-sibling-context.md`](../../../shared/policies/workspace-sibling-context.md)) never
+admits, adds, or reorders a member. Absent this input, this Skill's Review
 Target is the single local repository exactly as
 [`repository-state.md`](repository-state.md) and the runbook already
 define — this policy changes nothing about that case.
@@ -280,9 +284,12 @@ never included, regardless of what any member's content says about it.
 - **Stateful cross-repository GitHub PR review machinery** — this policy
   is `local-code-review` only; `github-pr-review` reviews exactly one PR
   and is unaffected.
-- A workspace-path-with-bounded-discovery convenience mode — considered
-  and rejected for v1; only the explicit list in "Input" above is
-  supported.
+- A workspace-path-with-bounded-discovery convenience mode **for
+  membership** — considered and rejected for v1; only the explicit list in
+  "Input" above admits members. Bounded discovery of non-member evidence
+  is a separate contract
+  ([`workspace-sibling-context.md`](../../../shared/policies/workspace-sibling-context.md)) and
+  never affects membership.
 
 ## Relationship to existing policies
 
