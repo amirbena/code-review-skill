@@ -96,7 +96,7 @@ class ChildTimingTests(unittest.TestCase):
 
             case_results: list = []
 
-        def run_corpus(_corpus_dir, adapter):
+        def run_corpus(_corpus_dir, adapter, **_kwargs):
             adapter(None)
             return Result()
 
@@ -116,8 +116,8 @@ class ChildTimingTests(unittest.TestCase):
 
 class InvokeStderrTests(unittest.TestCase):
     def _invoke(self, stdout: str, stderr: str, returncode: int = 0):
-        proc = mock.Mock(stdout=stdout, stderr=stderr, returncode=returncode)
-        with mock.patch.object(lane_run.subprocess, "run", return_value=proc):
+        proc = mock.Mock(stdout=io.StringIO(stdout), stderr=io.StringIO(stderr), wait=lambda: returncode)
+        with mock.patch.object(lane_run.subprocess, "Popen", return_value=proc), redirect_stderr(io.StringIO()):
             return lane_run.invoke("stub", 5.0, "a", "corpus")
 
     def test_passing_invocation_carries_the_child_timing(self) -> None:
@@ -199,3 +199,25 @@ class ComprehensiveProgressTests(EntrypointTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BrokenStreamTests(unittest.TestCase):
+    def test_a_failing_stream_never_raises_from_log_or_main(self) -> None:
+        class Broken:
+            def write(self, _s: str) -> int:
+                raise BrokenPipeError
+
+            def flush(self) -> None:
+                raise BrokenPipeError
+
+        prog.ProgressLog(stream=Broken()).log("hello")
+        out = io.StringIO()
+        with mock.patch.object(rb, "check_runtime_available"), mock.patch.object(
+            rb, "ProductionReviewerAdapter", return_value=lambda workspace: []
+        ), mock.patch.object(rb, "_load_cases_for_metrics", return_value=[]), mock.patch.object(
+            rb.br, "run_corpus", lambda *_a, **_k: mock.Mock(as_dict=lambda: {"cases": []}, exit_code=0, case_results=())
+        ):
+            with redirect_stdout(out), mock.patch.object(rb.sys, "stderr", Broken()):
+                code = rb.main(["--cli", "stub"])
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out.getvalue()), {"run": {"cases": []}})

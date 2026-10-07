@@ -75,7 +75,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Collection, Mapping, Sequence
+from typing import Callable, Collection, Mapping, Sequence
 
 from runtime_platform.benchmark.reference.benchmark_runner import ProducedFinding
 
@@ -124,6 +124,29 @@ class RuntimeUnavailableError(RuntimeError):
     work happens — never raised mid-run and never caught by
     ``run_case``'s per-case ``reviewer-adapter-raised`` handling.
     """
+
+
+class ReviewCliExitError(RuntimeError):
+    """The review CLI exited non-zero (Issue #659: a distinct per-case failure category)."""
+
+    def __init__(self, message: str, returncode: int) -> None:
+        super().__init__(message)
+        self.returncode = returncode
+
+
+class ReviewParseError(ValueError):
+    """The review CLI's stdout was not a parseable review report (Issue #659 category)."""
+
+
+def failure_category(exc: BaseException) -> str:
+    """Short, non-sensitive category for a failed adapter call; never includes message text."""
+    if isinstance(exc, subprocess.TimeoutExpired):
+        return "timeout"
+    if isinstance(exc, ReviewCliExitError):
+        return f"cli-exit-{exc.returncode}"
+    if isinstance(exc, ReviewParseError):
+        return "parse-failure"
+    return "adapter-error"
 
 
 def resolve_cli_executable(env: Mapping[str, str] | None = None) -> str:
@@ -461,7 +484,7 @@ def parse_review_output(text: str, known_aliases: Collection[str] = ()) -> list[
         i += 1
 
     if not findings and not has_result_line:
-        raise ValueError(
+        raise ReviewParseError(
             "could not parse a review report from the review CLI's output: "
             "no '**Result:**' line and no finding headings were found"
         )
@@ -543,6 +566,16 @@ class ProductionReviewerAdapter:
         # Raw stdout of the latest invocation (None if it failed), so a caller
         # can inspect the rendered verdict the findings list drops.
         self.last_report: str | None = None
+        # Optional diagnostics hook (Issue #659): called with "review" before the CLI
+        # runs and "parse" before its output is normalized. Never affects results.
+        self.stage_hook: Callable[[str], None] | None = None
+
+    def _stage(self, name: str) -> None:
+        if self.stage_hook is not None:
+            try:
+                self.stage_hook(name)
+            except Exception:  # noqa: BLE001 - diagnostics must never fail a review
+                pass
 
     def __call__(self, workspace: Path | Mapping[str, Path]) -> list[ProducedFinding]:
         if isinstance(workspace, Mapping):
@@ -550,6 +583,7 @@ class ProductionReviewerAdapter:
         return self._call_single_repo(workspace)
 
     def _run(self, prompt: str, *, cwd: Path) -> str:
+        self._stage("review")
         command = [
             self.executable,
             "-p",
@@ -571,9 +605,10 @@ class ProductionReviewerAdapter:
             env=self.env,
         )
         if completed.returncode != 0:
-            raise RuntimeError(
+            raise ReviewCliExitError(
                 f"review CLI {self.executable!r} exited {completed.returncode}: "
-                f"{completed.stderr.strip()[:2000]}"
+                f"{completed.stderr.strip()[:2000]}",
+                completed.returncode,
             )
         self.last_report = completed.stdout
         return completed.stdout
@@ -581,6 +616,7 @@ class ProductionReviewerAdapter:
     def _call_single_repo(self, workspace: Path) -> list[ProducedFinding]:
         self.last_report = None
         stdout = self._run(_REVIEW_PROMPT, cwd=workspace)
+        self._stage("parse")
         return parse_review_output(stdout)
 
     def _call_multi_repo(self, workspaces: Mapping[str, Path]) -> list[ProducedFinding]:
@@ -594,6 +630,7 @@ class ProductionReviewerAdapter:
         # paths are what actually scopes the Review Target.
         common_parent = Path(os.path.commonpath([str(Path(p).resolve()) for p in workspaces.values()]))
         stdout = self._run(prompt, cwd=common_parent)
+        self._stage("parse")
         return parse_review_output(stdout, known_aliases=aliases)
 
 

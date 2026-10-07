@@ -7,6 +7,7 @@ evaluate drift with in-run confirmation, assemble and validate the record.
 
 from __future__ import annotations
 
+import collections
 import hashlib
 import io
 import json
@@ -14,6 +15,7 @@ import platform
 import re
 import subprocess
 import sys
+import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -48,6 +50,7 @@ ROUTINE_DOC = REPO_ROOT / "benchmark" / "cloud-routine-integration.md"
 RUN_BENCHMARK = REPO_ROOT / "runtime_platform" / "benchmark" / "scripts" / "run_benchmark.py"
 NONDETERMINISM = "Model output is nondeterministic; a rerun may differ."
 STDERR_TAIL_CHARS = 400
+STDERR_TAIL_LINES = 200
 PROMPT_SECTION = "## 9. Routine prompt template"
 
 
@@ -129,16 +132,40 @@ def invoke(executable: str, timeout: float, case_id: str | None, corpus_dir: str
     if case_id is not None:
         argv += ["--case-id", case_id]
     started = time.monotonic()
-    proc = subprocess.run([sys.executable, str(RUN_BENCHMARK), *argv], capture_output=True, text=True)
+    # The child's stderr is forwarded live (Issue #659) while a bounded tail is kept for the failure
+    # message and timing parse; stdout stays captured because it is the verified JSON.
+    proc = subprocess.Popen(
+        [sys.executable, str(RUN_BENCHMARK), *argv],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+    )
+    tail_lines: collections.deque[str] = collections.deque(maxlen=STDERR_TAIL_LINES)
+
+    def _forward_stderr() -> None:
+        for line in proc.stderr:
+            tail_lines.append(line)
+            try:
+                print(line, end="", file=sys.stderr, flush=True)
+            except Exception:  # noqa: BLE001 - forwarding is diagnostics; keep draining so the child never blocks
+                pass
+
+    forwarder = threading.Thread(target=_forward_stderr, daemon=True)
+    forwarder.start()
+    stdout = proc.stdout.read()
+    returncode = proc.wait()
+    forwarder.join()
+    stderr = "".join(tail_lines)
     duration = round(time.monotonic() - started, 3)
-    verification = verify_benchmark_output(proc.stdout, proc.returncode)
+    verification = verify_benchmark_output(stdout, returncode)
     if not verification.passed:
-        tail = " ".join((proc.stderr or "").split())[-STDERR_TAIL_CHARS:]
+        tail = " ".join(stderr.split())[-STDERR_TAIL_CHARS:]
         raise RoutineExecutionError(
             f"fail-closed: an invocation did not pass positive completion verification: {verification.reason}"
             + (f" (child stderr tail: {tail})" if tail else "")
         )
-    return Invocation(verification.as_dict(), json.loads(proc.stdout), duration, parse_child_timing(proc.stderr))
+    return Invocation(verification.as_dict(), json.loads(stdout), duration, parse_child_timing(stderr))
 
 
 def _yaml_case_paths(corpus_dir: Path) -> dict[str, Path]:
