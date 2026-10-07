@@ -98,13 +98,24 @@ pre-#431 ambiguity (it happened to only ever resolve to the 4 top-level
 cases, because `--corpus-dir`'s glob is non-recursive) is resolved by this
 table, not left as a second live meaning.
 
-**Progress diagnostics (#611).** Every mode logs flushed, timestamped progress
-to stderr only: discovered fixture count, per-fixture `START` / `PASS` / `FAIL`
+**Progress diagnostics (#611, #659).** Every mode logs flushed, timestamped progress
+to stderr only: discovered fixture count, per-invocation `START` / `PASS` / `FAIL`
 with `N/total`, phase durations (`planning`, `fixtures`, `drift-confirmation`,
 `seal-handoff`), confirmation reruns, a 60 s heartbeat naming the running
-fixture, and each child's probe / review / other timing split. This lets a run
-killed at the Routine limit still show where it stopped. It changes no
-execution, scoring, timeout, sealing, or stdout behavior.
+invocation, and each child's probe / review / other timing split. The `N/total`
+counts *invocations*, not cases: the `sentinel` lane runs its whole corpus as a
+single `run_benchmark.py` invocation, so the parent alone logs one `[1/1]` line
+for it. Case-level detail comes from the child (#659), whose stderr is forwarded
+live (stdout stays captured, it is the verified JSON): a `[run] stage=probe`
+line, then per case `[case i/n] START <id>`, `stage=review` and `stage=parse`
+lines, and a terminal `DONE <id> … findings=N` or
+`ERROR <id> … stage=<stage> category=<category>` line, then `[run] stage=metrics`.
+Categories are bounded and carry no model output, prompt text or stderr body:
+`timeout`, `cli-exit-<code>`, `parse-failure`, `adapter-error`, or the runner's
+own setup marker (e.g. `patch-did-not-apply`); the sealed record still carries
+only `reviewer-adapter-raised`. A run killed at the Routine limit therefore
+still shows which case and stage it reached. It changes no execution, scoring,
+timeout, sealing, or stdout behavior, and adds no retry.
 
 ### 2.2 Evaluation, confirmation, and the seal (A2, A8)
 
