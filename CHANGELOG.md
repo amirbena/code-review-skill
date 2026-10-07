@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.73.0 — 2026-10-07
+
+### Added
+
+- Add bounded workspace sibling resolution to local-code-review and github-pr-review, activated only by a caller-granted workspace root (#670).
+
 ## v1.72.0 — 2026-10-07
 
 ### Added
