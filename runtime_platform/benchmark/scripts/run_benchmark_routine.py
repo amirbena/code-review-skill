@@ -59,6 +59,11 @@ from runtime_platform.benchmark.scripts.benchmark_lane_run import (  # noqa: E40
 )
 from runtime_platform.benchmark.scripts.benchmark_progress import ProgressLog  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_review_adapter import resolve_cli_executable  # noqa: E402
+from runtime_platform.benchmark.scripts.benchmark_termination import (  # noqa: E402
+    Terminated,
+    terminate_on_signal,
+    terminated_line,
+)
 from runtime_platform.benchmark.scripts.benchmark_schedule_manifest import (  # noqa: E402
     MANIFEST_PATH,
     ManifestError,
@@ -219,6 +224,17 @@ def run_handoff_check(args: argparse.Namespace) -> int:
 
 def run_benchmark_mode(args: argparse.Namespace, progress: ProgressLog | None = None) -> int:
     progress = progress or ProgressLog()
+    written: list[Path] = []
+    try:
+        return _run_benchmark_mode(args, progress, written)
+    except Terminated:
+        # A terminated run leaves no results file either (Issue #660); only a file this run wrote is removed.
+        for path in written:
+            path.unlink(missing_ok=True)
+        raise
+
+
+def _run_benchmark_mode(args: argparse.Namespace, progress: ProgressLog, written: list[Path]) -> int:
     with progress.phase("planning"):
         plan = _plan(args)
     progress.total = len(plan.invocations)
@@ -243,6 +259,8 @@ def run_benchmark_mode(args: argparse.Namespace, progress: ProgressLog | None = 
         {"case_id": cid, "run": inv.output["run"]} for (cid, _), inv in zip(plan.invocations, invocations)
     ]
     _write_results_out(args.results_out, raw_invocations)
+    if args.results_out is not None:
+        written.append(args.results_out)
 
     if plan.corpus is None:
         metadata = RunMetadata(plan.mode, repo_sha, *(runtime[k] for k in ("runtime_name", "runtime_version", "model_id")), started_at)
@@ -288,10 +306,15 @@ def run_benchmark_mode(args: argparse.Namespace, progress: ProgressLog | None = 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
+    progress = ProgressLog()
     try:
-        if args.mode == "auth-check":
-            return run_handoff_check(args)
-        return run_benchmark_mode(args)
+        with terminate_on_signal(lambda: (progress.phase_name, progress.current_case)):
+            if args.mode == "auth-check":
+                return run_handoff_check(args)
+            return run_benchmark_mode(args, progress)
+    except Terminated as exc:  # fail closed: non-zero, never a success line (Issue #660)
+        progress.log(terminated_line(exc))
+        return exc.exit_code
     except (RoutineExecutionError, seal.SealError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

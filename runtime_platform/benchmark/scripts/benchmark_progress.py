@@ -65,6 +65,7 @@ class ProgressLog:
         self.completed = 0
         self.total: int | None = None
         self.phase_name = "init"
+        self.current_case: str | None = None
 
     def elapsed(self) -> float:
         return self._clock() - self._start
@@ -95,6 +96,7 @@ class ProgressLog:
     def item(self, tag: str, case_id: str, run: Callable[[], T], *, counted: bool = True) -> T:
         """Run one fixture invocation with START, heartbeat, and PASS/FAIL lines; re-raises failures."""
         began = self._clock()
+        self.current_case = case_id
         self.log(f"{tag} START {case_id}")
         stop = threading.Event()
         beat = threading.Thread(target=self._heartbeat, args=(stop, case_id, began), daemon=True)
@@ -107,6 +109,7 @@ class ProgressLog:
         finally:
             stop.set()
             beat.join()
+            self.current_case = None
         if counted:
             self.completed += 1
         timing = getattr(result, "timing", None)
@@ -146,6 +149,7 @@ class CaseLifecycle:
         if event == "start":
             self._tag, self._case, self._stage, self._category = f"[case {index}/{total}]", case_id, "setup", None
             self._began = self._log._clock()
+            self._log.current_case = case_id
             self._log.log(f"{self._tag} START {case_id}")
             return
         took = f"{self._log._clock() - self._began:.1f}s"
@@ -158,6 +162,7 @@ class CaseLifecycle:
 
     def stage(self, name: str) -> None:
         self._stage = name
+        self._log.phase_name = f"case-{name}"
         self._log.log(f"{self._tag} stage={name} START {self._case}")
 
     def adapter_failed(self, exc: BaseException) -> None:

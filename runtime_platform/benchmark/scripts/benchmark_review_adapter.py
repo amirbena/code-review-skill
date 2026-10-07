@@ -78,6 +78,7 @@ from pathlib import Path
 from typing import Callable, Collection, Mapping, Sequence
 
 from runtime_platform.benchmark.reference.benchmark_runner import ProducedFinding
+from runtime_platform.benchmark.scripts.benchmark_termination import run_in_own_group
 
 # --------------------------------------------------------------------------
 # Configuration (environment-overridable so this works across environments,
@@ -596,14 +597,8 @@ class ProductionReviewerAdapter:
             self.allowed_tools,
             *self.extra_args,
         ]
-        completed = subprocess.run(
-            command,
-            cwd=str(cwd),
-            capture_output=True,
-            text=True,
-            timeout=self.timeout,
-            env=self.env,
-        )
+        # Own process group, so a timeout or termination (Issue #660) also stops the CLI's descendants.
+        completed = run_in_own_group(command, cwd=str(cwd), timeout=self.timeout, env=self.env)
         if completed.returncode != 0:
             raise ReviewCliExitError(
                 f"review CLI {self.executable!r} exited {completed.returncode}: "
