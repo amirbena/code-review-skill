@@ -119,6 +119,23 @@ class TerminationTreeTests(unittest.TestCase):
 
 
 class TerminationHelperTests(unittest.TestCase):
+    def test_a_signal_the_launcher_ignores_stays_ignored(self) -> None:
+        previous = signal.signal(signal.SIGHUP, signal.SIG_IGN)
+        self.addCleanup(signal.signal, signal.SIGHUP, previous)
+        with term.terminate_on_signal():
+            self.assertIs(signal.getsignal(signal.SIGHUP), signal.SIG_IGN)
+            self.assertIsNot(signal.getsignal(signal.SIGTERM), signal.SIG_IGN)
+        self.assertIs(signal.getsignal(signal.SIGHUP), signal.SIG_IGN)
+
+    def test_terminated_reads_as_a_signal_name(self) -> None:
+        self.assertEqual(str(term.Terminated(signal.SIGTERM)), "terminated by SIGTERM")
+
+    def test_run_in_own_group_gives_the_cli_no_stdin(self) -> None:
+        done = term.run_in_own_group(
+            [sys.executable, "-c", "import sys; print(repr(sys.stdin.read()))"], cwd=".", timeout=20, env=None
+        )
+        self.assertEqual(done.stdout.strip(), "''")
+
     def test_handler_is_restored_and_second_signal_is_ignored(self) -> None:
         before = signal.getsignal(signal.SIGTERM)
         with self.assertRaises(term.Terminated) as ctx:
@@ -151,6 +168,38 @@ class TerminationHelperTests(unittest.TestCase):
                 break
             time.sleep(0.1)
         self.assertNotIn(marker, listing)
+
+
+class TerminationAfterFixturesTests(unittest.TestCase):
+    """A signal after the fixtures finished (drift, confirmation, seal) must leave neither results nor seal."""
+
+    def test_results_out_and_seal_are_absent_when_terminated_before_the_seal(self) -> None:
+        from unittest import mock
+
+        from runtime_platform.benchmark.scripts import run_benchmark_routine as routine
+
+        with tempfile.TemporaryDirectory() as tmp:
+            results, seal_dir = Path(tmp) / "results.json", Path(tmp) / "sealed"
+            args = routine.build_arg_parser().parse_args(
+                ["--mode", "sentinel", "--cli", "stub", "--runtime-version", "v", "--results-out", str(results), "--seal-dir", str(seal_dir)]
+            )
+            inv = mock.Mock(output={"run": {}}, verification={}, timing=None)
+            plan = routine.Plan("sentinel", [(None, tmp)], mock.Mock())
+            with (
+                mock.patch.object(routine, "_plan", return_value=plan),
+                mock.patch.object(routine, "_load_manifest", return_value={}),
+                mock.patch.object(routine, "spec_sha256", return_value="x"),
+                mock.patch.object(routine, "_git_sha", return_value="sha"),
+                mock.patch.object(routine, "_git_ref", return_value="HEAD"),
+                mock.patch.object(routine, "invoke", return_value=inv),
+                mock.patch.object(routine, "build_sealed_run", side_effect=term.Terminated(signal.SIGTERM, "drift-confirmation", None)),
+                mock.patch.object(routine, "_hand_off") as hand_off,
+            ):
+                with self.assertRaises(term.Terminated):
+                    routine.run_benchmark_mode(args)
+            self.assertFalse(results.exists())
+            self.assertFalse(seal_dir.exists())
+            hand_off.assert_not_called()
 
 
 if __name__ == "__main__":

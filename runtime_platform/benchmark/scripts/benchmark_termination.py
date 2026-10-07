@@ -31,6 +31,9 @@ class Terminated(BaseException):
         self.phase = phase  # snapshotted when the signal arrived, before unwinding restores outer state
         self.case = case
 
+    def __str__(self) -> str:
+        return f"terminated by {self.signal_name}"
+
     @property
     def signal_name(self) -> str:
         try:
@@ -62,7 +65,9 @@ def terminate_on_signal(where: Callable[[], tuple[str, str | None]] | None = Non
         phase, case = where() if where is not None else ("unknown", None)
         raise Terminated(signum, phase, case)  # no logging here: the handler may interrupt a held logging lock
 
-    previous = {sig: signal.signal(sig, handler) for sig in HANDLED_SIGNALS}
+    # A signal the launcher deliberately ignores (e.g. SIGHUP under nohup) stays ignored.
+    managed = [sig for sig in HANDLED_SIGNALS if signal.getsignal(sig) is not signal.SIG_IGN]
+    previous = {sig: signal.signal(sig, handler) for sig in managed}
     try:
         yield
     finally:
@@ -125,6 +130,7 @@ def run_in_own_group(
         list(command),
         cwd=cwd,
         env=None if env is None else dict(env),
+        stdin=subprocess.DEVNULL,  # the new session has no controlling terminal to read from
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
