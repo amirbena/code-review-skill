@@ -141,6 +141,15 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   format and reference validator, extended by the additive
   `input.external_contexts`; its own README, cases, and unit test
   ([`../../tests/unit/benchmark/test_external_contract_context_corpus.py`](../../tests/unit/benchmark/test_external_contract_context_corpus.py)).
+- [`workspace-sibling-context/`](workspace-sibling-context/README.md) — a
+  focused `benchmark-case/v2` sub-corpus for the caller-granted workspace
+  sibling evidence both review adapters may use before escalating an
+  unresolved question (Issue
+  [#664](https://github.com/amirbena/code-review-skill/issues/664), parent
+  [#661](https://github.com/amirbena/code-review-skill/issues/661)). Same
+  format and reference validator, extended by the additive
+  `input.workspace_siblings`; its own README, cases, and unit test
+  ([`../../tests/unit/benchmark/test_workspace_sibling_corpus.py`](../../tests/unit/benchmark/test_workspace_sibling_corpus.py)).
 - [`api-compatibility/`](api-compatibility/README.md) — a focused
   `benchmark-case/v2` sub-corpus pinning the expected compatible /
   breaking / context-dependent classification for the API / contract

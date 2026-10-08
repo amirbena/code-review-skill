@@ -1,0 +1,85 @@
+# Workspace sibling context corpus case (Issue #664). Format:
+# ../../../runtime_platform/benchmark/fixture-format.md `input.workspace_siblings`.
+# See ./README.md for the cluster.
+#
+# Same enum change, but the workspace holds only docs-site and design-tokens,
+# and nothing in the Review Target names or shares a contract with either. No
+# candidate is nominated, so the question falls through to the existing
+# Context gaps / Reasoning check behaviour.
+
+format: benchmark-case/v2
+
+id: wsib-no-relevant-sibling-fallback
+title: "PaymentStatus gains refunded; no workspace sibling bears on the question"
+
+input:
+  patch: |
+    diff --git a/schemas/payment_status.schema.json b/schemas/payment_status.schema.json
+    --- a/schemas/payment_status.schema.json
+    +++ b/schemas/payment_status.schema.json
+    @@ -2,5 +2,5 @@
+       "$schema": "http://json-schema.org/draft-07/schema#",
+       "title": "PaymentStatus",
+       "type": "string",
+    -  "enum": ["pending", "completed", "failed"]
+    +  "enum": ["pending", "completed", "failed", "refunded"]
+     }
+  base:
+    schemas/payment_status.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "PaymentStatus",
+        "type": "string",
+        "enum": ["pending", "completed", "failed"]
+      }
+    docs/consumers.md: |
+      # Payment service
+
+      Owns the PaymentStatus schema.
+  workspace_siblings:
+    docs-site:
+      files:
+        README.md: |
+          # Docs site
+
+          Static documentation for the public website.
+    design-tokens:
+      files:
+        tokens/colors.json: |
+          {"brand": "#0a5"}
+  context: >-
+    The caller grants a workspace root once. Sibling repositories under it
+    are read-only evidence for an unresolved question, never part of the
+    Review Target.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: payment-status-new-enum-member-no-sibling-evidence
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: line
+        path: schemas/payment_status.schema.json
+        symbol: PaymentStatus
+        anchor: '"enum": ["pending", "completed", "failed", "refunded"]'
+      claim: >-
+        PaymentStatus gains a new enum member, refunded. Whether this
+        breaks a consumer is context-dependent and the available evidence
+        does not decide it, so no breakage is claimed and the
+        compatibility question stays open for the engineer.
+      defect_kind: enum-member-added-context-dependent
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Issue #664 class 2: no relevant sibling. Unchanged fallback: no
+    breakage is invented and the open question is still put to the
+    engineer.
+  taxonomy:
+    capability: [workspace-sibling-context]
+    policy_contract: [workspace-sibling-context]
+    risk_mode: [correctness]
+    affected_surface: [benchmark-corpus-or-tooling]

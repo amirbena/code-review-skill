@@ -340,6 +340,11 @@ def materialize_multi_repo(case: bf.BenchmarkCase, workspace_root: Path) -> Mult
 ABSENT_EXTERNAL_REVISION = "0123456789abcdef0123456789abcdef01234567"
 
 
+# Issue #664: the one repository identity a mirrored sibling and the review
+# workspace share (fixture-format.md section 6.6).
+WORKSPACE_MIRROR_ORIGIN = "https://github.com/example/benchmark-target.git"
+
+
 @dataclass(frozen=True)
 class ExternalContextRef:
     """What the reviewer is handed for one designated external context
@@ -381,6 +386,38 @@ def materialize_external_contexts(
         revision = ABSENT_EXTERNAL_REVISION if entry.get("revision") == "absent" else pinned
         refs[alias] = ExternalContextRef(alias=alias, path=repo_dir, revision=revision)
     return refs
+
+
+def materialize_workspace_siblings(
+    case: bf.BenchmarkCase, workspace_root: Path, review_target: Path
+) -> Path | None:
+    """Issue #664: materialize each ``input.workspace_siblings`` repository as an
+    immediate child of ``workspace_root`` (its ``files`` committed as HEAD) and
+    return the root. The root is always materialized, so a capability-on and a
+    capability-off arm see identical disk state; whether the reviewer is *handed*
+    the root is the caller's decision, never the fixture's. A ``mirrors_review_target``
+    entry shares the review workspace's repository identity (``origin``), the
+    case a PR checkout must exclude by identity rather than by path."""
+    siblings = case.input.get("workspace_siblings") or {}
+    if not siblings:
+        return None
+    mirrored = any(entry.get("mirrors_review_target") for entry in siblings.values())
+    if mirrored:
+        _git(review_target, "remote", "add", "origin", WORKSPACE_MIRROR_ORIGIN)
+    for alias, entry in siblings.items():
+        repo_dir = workspace_root / alias
+        repo_dir.mkdir(parents=True, exist_ok=True)
+        _git(repo_dir, "init", "-q", "-b", "main", ".")
+        _git(repo_dir, "config", "commit.gpgsign", "false")
+        for rel, content in entry["files"].items():
+            dest = repo_dir / rel
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(content, encoding="utf-8")
+        if entry.get("mirrors_review_target"):
+            _git(repo_dir, "remote", "add", "origin", WORKSPACE_MIRROR_ORIGIN)
+        _git(repo_dir, "add", "-A")
+        _git(repo_dir, "commit", "-q", "--allow-empty", "-m", "sibling")
+    return workspace_root
 
 
 def _materialize_repo_ref(
@@ -525,6 +562,7 @@ def _run_case(
     )
     result: CaseResult
     external_root: Path | None = None
+    workspace_grant: Path | None = None
     try:
         multi_repo: MultiRepoWorkspaces | None = None
         external: dict[str, ExternalContextRef] = {}
@@ -540,6 +578,11 @@ def _run_case(
                     tempfile.mkdtemp(prefix=f"benchmark-{case.id}-external-", dir=str(workspace.parent))
                 )
                 external = materialize_external_contexts(case, external_root)
+            if case.input.get("workspace_siblings"):
+                workspace_grant = Path(
+                    tempfile.mkdtemp(prefix=f"benchmark-{case.id}-workspace-", dir=str(workspace.parent))
+                )
+                materialize_workspace_siblings(case, workspace_grant, workspace)
         except PatchDidNotApply:
             return CaseResult(case.id, kind, _ERROR, error="patch-did-not-apply")
         except _WorkspaceSetupFailed:
@@ -557,7 +600,12 @@ def _run_case(
             target = multi_repo.admitted if multi_repo is not None else workspace
             # Only a case that declares external contexts sees the extra
             # keyword, so every other reviewer keeps its original signature.
-            produced = tuple(reviewer(target, external_contexts=external) if external else reviewer(target))
+            extras: dict[str, Any] = {}
+            if external:
+                extras["external_contexts"] = external
+            if workspace_grant is not None:
+                extras["workspace_root"] = workspace_grant
+            produced = tuple(reviewer(target, **extras))
         except Exception:  # noqa: BLE001 - adapter failure is a per-case error, not a crash
             return CaseResult(case.id, kind, _ERROR, error="reviewer-adapter-raised")
 
@@ -581,7 +629,7 @@ def _run_case(
         return result
     finally:
         failure: Exception | None = None
-        for directory in (workspace, external_root):
+        for directory in (workspace, external_root, workspace_grant):
             if directory is None:
                 continue
             try:

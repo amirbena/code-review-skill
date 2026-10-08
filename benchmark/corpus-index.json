@@ -163,6 +163,17 @@
       "specialist-depth-composition-case-f-cascading-activation-bounded",
       "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth",
       "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load"
+    ],
+    "workspace-sibling-context": [
+      "wsib-absence-in-inspected-sibling-no-claim",
+      "wsib-ambiguous-siblings-no-overreach",
+      "wsib-gh-api-only-grant-unavailable",
+      "wsib-gh-pr-repository-excluded-by-identity",
+      "wsib-gh-published-output-reference-only",
+      "wsib-insufficient-evidence-question-preserved",
+      "wsib-no-relevant-sibling-fallback",
+      "wsib-resolves-from-relevant-sibling",
+      "wsib-unrelated-sibling-no-pollution"
     ]
   },
   "policy_contract": {
@@ -326,6 +337,17 @@
       "quality-duplicated-branch-logic",
       "real-world-semantic-consistency-trap-pr-390",
       "security-command-injection"
+    ],
+    "workspace-sibling-context": [
+      "wsib-absence-in-inspected-sibling-no-claim",
+      "wsib-ambiguous-siblings-no-overreach",
+      "wsib-gh-api-only-grant-unavailable",
+      "wsib-gh-pr-repository-excluded-by-identity",
+      "wsib-gh-published-output-reference-only",
+      "wsib-insufficient-evidence-question-preserved",
+      "wsib-no-relevant-sibling-fallback",
+      "wsib-resolves-from-relevant-sibling",
+      "wsib-unrelated-sibling-no-pollution"
     ]
   },
   "risk_mode": {
@@ -427,13 +449,22 @@
       "specialist-depth-composition-case-f-cascading-activation-bounded",
       "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth",
       "three-repo-coordinated-correct",
-      "three-repo-coordinated-incorrect"
+      "three-repo-coordinated-incorrect",
+      "wsib-absence-in-inspected-sibling-no-claim",
+      "wsib-ambiguous-siblings-no-overreach",
+      "wsib-gh-api-only-grant-unavailable",
+      "wsib-gh-pr-repository-excluded-by-identity",
+      "wsib-gh-published-output-reference-only",
+      "wsib-insufficient-evidence-question-preserved",
+      "wsib-no-relevant-sibling-fallback",
+      "wsib-resolves-from-relevant-sibling"
     ],
     "no-op": [
       "dd-zero-findings-clean",
       "no-op-comment-and-rename",
       "null-absence-java-guarded-clean",
-      "semantic-implication-no-signal-clean-extraction"
+      "semantic-implication-no-signal-clean-extraction",
+      "wsib-unrelated-sibling-no-pollution"
     ],
     "performance": [
       "performance-deepening-batched-fix-bounded-clean",
@@ -477,7 +508,9 @@
       "relrecall-affected-test-stale-assertion-unlinked-name",
       "relrecall-affected-test-still-holds-control",
       "three-repo-coordinated-correct",
-      "three-repo-coordinated-incorrect"
+      "three-repo-coordinated-incorrect",
+      "wsib-gh-published-output-reference-only",
+      "wsib-resolves-from-relevant-sibling"
     ],
     "security": [
       "cfv-disconfirmed-severe-candidate-dropped",
@@ -512,7 +545,16 @@
       "repository-local-correct-combined-defect",
       "single-repository-regression",
       "three-repo-coordinated-correct",
-      "three-repo-coordinated-incorrect"
+      "three-repo-coordinated-incorrect",
+      "wsib-absence-in-inspected-sibling-no-claim",
+      "wsib-ambiguous-siblings-no-overreach",
+      "wsib-gh-api-only-grant-unavailable",
+      "wsib-gh-pr-repository-excluded-by-identity",
+      "wsib-gh-published-output-reference-only",
+      "wsib-insufficient-evidence-question-preserved",
+      "wsib-no-relevant-sibling-fallback",
+      "wsib-resolves-from-relevant-sibling",
+      "wsib-unrelated-sibling-no-pollution"
     ],
     "unclassified": [
       "analogue-placement-distinct-boundaries-not-consolidated",

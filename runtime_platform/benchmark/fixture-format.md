@@ -247,6 +247,26 @@ Review Target workspace and passes only designated entries to the reviewer
 adapter, as `(path, revision)` and nothing else. See
 [`../../skills/local-code-review/policies/external-contract-context.md`](../../skills/local-code-review/policies/external-contract-context.md).
 
+### 6.6 Workspace siblings (`workspace_siblings`) — Issue #664
+
+Optional, valid only alongside `patch`. A mapping of `<alias>` (kebab-case)
+to a repository that is an **immediate child of a caller-granted workspace
+root**, read-only evidence and never a Review Target member:
+
+| Field | Required | Meaning |
+|---|---|---|
+| `files` | yes | Mapping of repo-relative path to contents committed as the sibling's HEAD. |
+| `mirrors_review_target` | no | `true` gives the sibling the review workspace's repository identity (the same `origin`), the case a GitHub PR checkout must exclude by identity rather than by path. Default `false`. |
+
+A runner materializes every entry as its own Git repository under one
+workspace root, outside the Review Target, and passes that root to the
+reviewer adapter as `workspace_root`. Whether the adapter *forwards* the
+root is the caller's choice, never the fixture's, so a capability-on and a
+capability-off arm see identical disk state. See
+[`workspace-sibling-context-measurement.md`](workspace-sibling-context-measurement.md)
+and
+[`../../shared/policies/workspace-sibling-context.md`](../../shared/policies/workspace-sibling-context.md).
+
 ## 7. Expected outcome (`expected`)
 
 `expected` is a mapping with:

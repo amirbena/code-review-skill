@@ -1,0 +1,90 @@
+# Workspace sibling context corpus case (Issue #664). Format:
+# ../../../runtime_platform/benchmark/fixture-format.md `input.workspace_siblings`.
+# See ./README.md for the cluster.
+#
+# Same enum change. ledger-consumer is the single nominated sibling, but its
+# apply_status delegates to a vendored library that is not in the repository,
+# so the evidence cannot decide the question. The developer question must be
+# preserved and no breakage claimed.
+
+format: benchmark-case/v2
+
+id: wsib-insufficient-evidence-question-preserved
+title: "PaymentStatus gains refunded; the one relevant sibling delegates to code that is not in it"
+
+input:
+  patch: |
+    diff --git a/schemas/payment_status.schema.json b/schemas/payment_status.schema.json
+    --- a/schemas/payment_status.schema.json
+    +++ b/schemas/payment_status.schema.json
+    @@ -2,5 +2,5 @@
+       "$schema": "http://json-schema.org/draft-07/schema#",
+       "title": "PaymentStatus",
+       "type": "string",
+    -  "enum": ["pending", "completed", "failed"]
+    +  "enum": ["pending", "completed", "failed", "refunded"]
+     }
+  base:
+    schemas/payment_status.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "PaymentStatus",
+        "type": "string",
+        "enum": ["pending", "completed", "failed"]
+      }
+    docs/consumers.md: |
+      # Consumers
+
+      - ledger-consumer: applies payment statuses to ledger entries.
+  workspace_siblings:
+    ledger-consumer:
+      files:
+        ledger/apply_status.py: |
+          import ledger_core  # vendored at deploy time; not part of this repository
+
+
+          def apply_status(entry, status):
+              return ledger_core.apply(entry, status)
+        contracts/payment_status.schema.json: |
+          {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "PaymentStatus",
+            "type": "string",
+            "enum": ["pending", "completed", "failed"]
+          }
+  context: >-
+    The caller grants a workspace root once. Sibling repositories under it
+    are read-only evidence for an unresolved question, never part of the
+    Review Target.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: payment-status-new-enum-member-sibling-evidence-insufficient
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: line
+        path: schemas/payment_status.schema.json
+        symbol: PaymentStatus
+        anchor: '"enum": ["pending", "completed", "failed", "refunded"]'
+      claim: >-
+        PaymentStatus gains a new enum member, refunded. Whether this
+        breaks a consumer is context-dependent and the available evidence
+        does not decide it, so no breakage is claimed and the
+        compatibility question stays open for the engineer.
+      defect_kind: enum-member-added-context-dependent
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Issue #664 class 4: relevant but insufficient evidence. The sibling is
+    read yet cannot decide, so the Context gaps / Reasoning check entry
+    must survive.
+  taxonomy:
+    capability: [workspace-sibling-context]
+    policy_contract: [workspace-sibling-context]
+    risk_mode: [correctness]
+    affected_surface: [benchmark-corpus-or-tooling]

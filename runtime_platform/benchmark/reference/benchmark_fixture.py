@@ -86,6 +86,7 @@ _INPUT_KEYS: frozenset[str] = frozenset(
         "repositories",
         "unadmitted_repositories",
         "external_contexts",
+        "workspace_siblings",
     }
 )
 _REPO_REF_KEYS: frozenset[str] = frozenset({"repo", "pr", "commit", "base"})
@@ -99,6 +100,9 @@ _REPO_ENTRY_KEYS: frozenset[str] = frozenset({"patch", "base"})
 _EXTERNAL_CONTEXT_KEYS: frozenset[str] = frozenset(
     {"files", "head_files", "revision", "designated"}
 )
+# Issue #664: one entry of `input.workspace_siblings` — an immediate-child
+# repository of a caller-granted workspace root.
+_WORKSPACE_SIBLING_KEYS: frozenset[str] = frozenset({"files", "mirrors_review_target"})
 EXTERNAL_REVISION_VALUES: frozenset[str] = frozenset({"pinned", "absent"})
 _EXPECTED_KEYS: frozenset[str] = frozenset(
     {"decision", "findings", "findings_completeness"}
@@ -428,9 +432,34 @@ def _parse_external_contexts(raw: Any, taken: set[str]) -> None:
         )
 
 
+def _parse_workspace_siblings(raw: Any) -> None:
+    """Issue #664: `input.workspace_siblings` — alias -> {files,
+    mirrors_review_target?}. `files` is the sibling's committed HEAD content;
+    `mirrors_review_target: true` gives it the review workspace's repository
+    identity. Whether the reviewer is handed the workspace root is the
+    caller's choice, never the fixture's."""
+    _require(isinstance(raw, dict) and bool(raw), "input.workspace_siblings: must be a non-empty mapping")
+    for alias, entry in raw.items():
+        _require(
+            isinstance(alias, str) and bool(_SLUG_RE.match(alias)),
+            f"input.workspace_siblings: alias {alias!r} must be a kebab-case slug",
+        )
+        where = f"input.workspace_siblings[{alias}]"
+        _require(isinstance(entry, dict), f"{where}: must be a mapping")
+        _no_unknown_keys(entry, _WORKSPACE_SIBLING_KEYS, where)
+        _file_map(entry.get("files"), f"{where}.files")
+        _require(
+            isinstance(entry.get("mirrors_review_target", False), bool),
+            f"{where}.mirrors_review_target: must be a boolean",
+        )
+
+
 def _parse_input(raw: Any) -> dict[str, Any]:
     _require(isinstance(raw, dict), "input: must be a mapping")
     _no_unknown_keys(raw, _INPUT_KEYS, "input")
+    if "workspace_siblings" in raw:
+        _require("patch" in raw, "input.workspace_siblings: only valid alongside 'patch'")
+        _parse_workspace_siblings(raw["workspace_siblings"])
     if "external_contexts" in raw:
         _require(
             "repo_ref" not in raw,
