@@ -123,7 +123,9 @@ class RunnerMaterializationTests(unittest.TestCase):
             target.mkdir()
             subprocess.run(["git", "-C", str(target), "init", "-q"], check=True)
             self.assertEqual(br.materialize_workspace_siblings(case, root, target), root)
-            self.assertEqual({p.name for p in root.iterdir()}, {"ledger-consumer", "docs-site"})
+            for alias in ("ledger-consumer", "docs-site"):
+                self.assertTrue((root / alias / ".git").exists(), alias)
+            self.assertFalse((root / "payment-service" / ".git").exists())
             shown = _git(root / "ledger-consumer", "show", "HEAD:ledger/apply_status.py")
             self.assertIn("unknown payment status", shown)
 
