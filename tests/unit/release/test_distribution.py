@@ -204,6 +204,32 @@ class DistributionTests(unittest.TestCase):
         other = dist._tag_push_diagnostics(self.tmp, str(self.remote), "v1.0.0", "b" * 40, exc, "bot")
         self.assertIn("DIFFERENT commit", other)
 
+    def test_unreadable_remote_is_unknown_not_a_different_commit(self) -> None:
+        from release_lib import distribution as dist
+
+        exc = dist.GitCommandError("git push failed", 1, "boom")
+        text = dist._tag_push_diagnostics(self.tmp, str(self.tmp / "nope.git"), "v1.0.0", "a" * 40, exc, "bot")
+        self.assertIn("unknown: the remote could not be read", text)
+        self.assertNotIn("DIFFERENT commit", text)
+
+    def test_ruleset_note_does_not_overclaim(self) -> None:
+        from release_lib import distribution as dist
+
+        self.assertIn("not proof", dist._ruleset_note("Bypassed rule violations ... protected"))
+        self.assertIn("enforced", dist._ruleset_note("remote: error: GH013: Repository rule violations found"))
+        self.assertIn("no ruleset wording", dist._ruleset_note("remote: this branch is protected by hooks"))
+
+    def test_git_failures_are_sanitized_at_the_source(self) -> None:
+        import os
+        from unittest import mock
+
+        from release_lib import distribution as dist
+
+        with mock.patch.dict(os.environ, {dist.TOKEN_ENV: "s3cr3tvalue"}):
+            with self.assertRaises(dist.GitCommandError) as ctx:
+                dist._git(["ls-remote", "https://x-access-token:s3cr3tvalue@invalid.invalid/o/r.git"], self.tmp)
+        self.assertNotIn("s3cr3tvalue", str(ctx.exception))
+
     def test_sanitize_output_redacts_credentials(self) -> None:
         import os
         from unittest import mock

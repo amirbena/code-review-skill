@@ -80,7 +80,7 @@ def _ruleset_note(stderr: str) -> str:
             "ruleset: stderr carries a 'Bypassed rule violations' notice -- a bypass observation, "
             "not proof that a ruleset enforced this rejection; the cause is unconfirmed"
         )
-    if "rule violations" in lowered or "gh013" in lowered or "protected" in lowered:
+    if "gh013" in lowered or "repository rule violations found" in lowered:
         return "ruleset: stderr reports an enforced rule/protection rejection"
     return "ruleset: no ruleset wording in stderr"
 
@@ -91,25 +91,34 @@ def _tag_push_diagnostics(
     """Safe, read-only evidence for a failed tag push. Never raises."""
     returncode = getattr(exc, "returncode", None)
     stderr = sanitize_output((getattr(exc, "output", None) or str(exc)).strip())
+    tag_error = main_error = None
+    observed_tag = observed_main = None
     try:
         observed_tag = _remote_tag_sha(work, remote, tag)
     except Exception as err:  # noqa: BLE001 - diagnostics must not mask the push failure
-        observed_tag = f"unreadable ({sanitize_output(str(err))})"
+        tag_error = sanitize_output(str(err))
     try:
         observed_main = _remote_branch_sha(work, remote, BRANCH)
     except Exception as err:  # noqa: BLE001
-        observed_main = f"unreadable ({sanitize_output(str(err))})"
-    if observed_tag is None:
+        main_error = sanitize_output(str(err))
+    if tag_error is not None:
+        tag_state = "unknown: the remote could not be read, so tag state is unconfirmed; retry the check before recovering"
+        shown_tag = f"unreadable ({tag_error})"
+    elif observed_tag is None:
         tag_state = "missing: the tag push did not land"
+        shown_tag = "absent"
     elif observed_tag == expected:
         tag_state = "present at the expected commit: the ref already exists, recovery will be a no-op"
+        shown_tag = observed_tag
     else:
         tag_state = "present at a DIFFERENT commit: do not recover; investigate"
+        shown_tag = observed_tag
+    shown_main = f"unreadable ({main_error})" if main_error is not None else (observed_main or "absent")
     return (
         f"git push exit status: {returncode if returncode is not None else 'unknown'}; "
         f"stderr: {stderr or '(empty)'}; "
-        f"expected {tag} -> {expected}, observed remote {tag} -> {observed_tag or 'absent'} ({tag_state}); "
-        f"expected {BRANCH} to contain {expected}, observed remote {BRANCH} -> {observed_main or 'absent'}; "
+        f"expected {tag} -> {expected}, observed remote {tag} -> {shown_tag} ({tag_state}); "
+        f"expected {BRANCH} to contain {expected}, observed remote {BRANCH} -> {shown_main}; "
         f"publisher identity: {publisher}; {_ruleset_note(stderr)}"
     )
 
@@ -227,7 +236,7 @@ def _git(args: list[str], cwd: Path, remote_url: str | None = None, check: bool 
     env["GIT_TERMINAL_PROMPT"] = "0"
     result = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, env=env)
     if check and result.returncode != 0:
-        output = (result.stderr or result.stdout).strip()
+        output = sanitize_output((result.stderr or result.stdout).strip())
         raise GitCommandError(f"git {args[0]} failed: {output}", result.returncode, output)
     return result.stdout
 
