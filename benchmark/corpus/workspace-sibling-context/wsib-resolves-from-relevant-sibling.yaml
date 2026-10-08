@@ -89,6 +89,13 @@ expected:
         at the schema change, with the sibling file cited only as
         evidence.
       defect_kind: breaking-contract-enum-member-added-exhaustive-consumer
+      alternatives:
+        # Amendment after the first C3 smoke (#664): a real, correct finding of this
+        # defect (same location, same exhaustive-consumer ValueError, sibling cited
+        # as evidence) named the class `breaking-enum-extension`, which the slug
+        # compatibility rule cannot relate to the long primary slug. Same defect,
+        # restated; the matcher and every threshold are unchanged.
+        - defect_kind: breaking-enum-extension
 
 metadata:
   source: crafted

@@ -185,7 +185,7 @@ class AdapterGrantTests(unittest.TestCase):
 
 
 def _obs(case_id: str, arm: str, **kw) -> bws.RunObservation:
-    base = dict(required=0, found=0, wrong=0, escalated=False, absence_claim=False, leaked=False, seconds=10.0, tokens=None)
+    base = dict(required=0, found=0, wrong=0, escalated=False, absence_claim=False, leaked=False, seconds=10.0, tokens=100)
     base.update(kw)
     return bws.RunObservation(case_id, arm, "executed", **base)
 
@@ -217,10 +217,36 @@ class GateRuleTests(unittest.TestCase):
     def outcome(self, runs, ids=LOCAL_IDS) -> dict:
         return bws.evaluate_adapter(runs, ids)
 
-    def test_clean_gain_passes_with_cost_unevaluated_by_tokens(self) -> None:
+    def test_clean_gain_with_reported_cost_passes(self) -> None:
         result = self.outcome(_runs(3))
         self.assertEqual(result["outcome"], bws.PASS, result)
+        self.assertTrue(result["criteria"]["acceptable_cost"]["tokens_reported"])
+
+    def test_missing_token_data_is_not_evaluated_never_a_pass(self) -> None:
+        runs = [_obs(r.case_id, r.arm, required=r.required, found=r.found, escalated=r.escalated, tokens=None) for r in _runs(3)]
+        result = self.outcome(runs)
+        self.assertEqual(result["outcome"], bws.NOT_EVALUATED, result)
+        self.assertEqual(result["not_evaluated"], ["acceptable_cost"])
         self.assertFalse(result["criteria"]["acceptable_cost"]["tokens_reported"])
+
+    def test_one_run_without_tokens_makes_the_ratio_unknown(self) -> None:
+        runs = _runs(3)
+        runs[0] = _obs(runs[0].case_id, runs[0].arm, required=runs[0].required, found=runs[0].found,
+                       escalated=runs[0].escalated, tokens=None)
+        result = self.outcome(runs)
+        self.assertEqual(result["outcome"], bws.NOT_EVALUATED, result)
+        self.assertIsNone(result["criteria"]["acceptable_cost"]["token_ratio"])
+
+    def test_a_time_failure_is_not_hidden_by_missing_tokens(self) -> None:
+        runs = [
+            _obs(r.case_id, r.arm, required=r.required, found=r.found, escalated=r.escalated,
+                 seconds=30.0 if r.arm == "on" else 10.0, tokens=None)
+            for r in _runs(3)
+        ]
+        self.assertEqual(self.outcome(runs)["outcome"], bws.FAIL)
+
+    def test_cost_thresholds_are_preserved(self) -> None:
+        self.assertEqual((bws.MAX_WALL_TIME_RATIO, bws.MAX_TOKEN_RATIO), (2.0, 2.0))
 
     def test_no_gain_fails(self) -> None:
         runs = _runs(3, {(RESOLVES, "on"): {"found": 0}})
@@ -329,3 +355,45 @@ class AbsenceClaimScopeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FixtureAmendmentTests(unittest.TestCase):
+    """The resolving finding's expected defect kind has one documented alternative
+    (#664). It must accept the restated defect and nothing weaker."""
+
+    RESOLVING_FILE = REPO_ROOT / "benchmark/corpus/workspace-sibling-context/wsib-resolves-from-relevant-sibling.yaml"
+    KEY = "payment-status-refunded-breaks-workspace-ledger-consumer"
+    RESOLVED = (
+        "New refunded status breaks the documented ledger-consumer. apply_status handles only pending, "
+        "completed and failed and raises ValueError for an unknown payment status, so once refunded is "
+        "produced the consumer fails on it."
+    )
+
+    def paired(self, slug: str, claim: str) -> bool:
+        from runtime_platform.benchmark.reference import benchmark_metrics as bmx
+
+        case = bf.parse_case(yaml.safe_load(self.RESOLVING_FILE.read_text(encoding="utf-8")))
+        produced = br.ProducedFinding(
+            severity="P1",
+            location={"path": "schemas/payment_status.schema.json", "line": 5},
+            claim=claim,
+            extra={"defect_kind": slug},
+        )
+        return self.KEY in bmx.resolve_pairing(case, (produced,), post_image=None).paired
+
+    def test_the_restated_defect_now_pairs(self) -> None:
+        self.assertTrue(self.paired("breaking-enum-extension", self.RESOLVED))
+
+    def test_the_original_primary_slug_still_pairs(self) -> None:
+        self.assertTrue(self.paired("breaking-contract-enum-member-added-exhaustive-consumer", self.RESOLVED))
+
+    def test_an_unverified_consumer_claim_still_does_not_pair(self) -> None:
+        unverified = "PaymentStatus gains refunded; there is no evidence the ledger consumer handles it."
+        for slug in ("unverified-contract-compatibility", "incompatible-schema-change"):
+            with self.subTest(slug=slug):
+                self.assertFalse(self.paired(slug, unverified))
+
+    def test_the_primary_spec_is_untouched(self) -> None:
+        finding = yaml.safe_load(self.RESOLVING_FILE.read_text(encoding="utf-8"))["expected"]["findings"][0]
+        self.assertEqual(finding["defect_kind"], "breaking-contract-enum-member-added-exhaustive-consumer")
+        self.assertEqual(finding["alternatives"], [{"defect_kind": "breaking-enum-extension"}])

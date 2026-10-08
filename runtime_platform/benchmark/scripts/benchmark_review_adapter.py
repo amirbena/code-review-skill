@@ -64,6 +64,11 @@ explicitly deferred to a future CI-gate issue):
   requirement of the later benchmark CI/gating work
   ([#255](https://github.com/amirbena/code-review-skill/issues/255)), not
   of this manual developer tool.
+
+``verified_isolation=True`` (Issue #664) is the opt-in exception for the
+workspace sibling measurement: it loads only the skill under test, reads the
+CLI's event stream, and fails closed unless the skill that ran is identified.
+The default mode is unchanged and still the best-effort hint described above.
 """
 
 from __future__ import annotations
@@ -73,11 +78,13 @@ import re
 import shlex
 import shutil
 import subprocess
-from dataclasses import dataclass
+import time
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, Collection, Mapping, Sequence
 
 from runtime_platform.benchmark.reference.benchmark_runner import ProducedFinding
+from runtime_platform.benchmark.scripts import benchmark_run_evidence as bre
 from runtime_platform.benchmark.scripts.benchmark_termination import run_in_own_group
 
 # --------------------------------------------------------------------------
@@ -139,6 +146,10 @@ class ReviewParseError(ValueError):
     """The review CLI's stdout was not a parseable review report (Issue #659 category)."""
 
 
+class ReviewRuntimeError(RuntimeError):
+    """The CLI exited 0 but its result event reported an error (Issue #664, isolated mode)."""
+
+
 def failure_category(exc: BaseException) -> str:
     """Short, non-sensitive category for a failed adapter call; never includes message text."""
     if isinstance(exc, subprocess.TimeoutExpired):
@@ -147,6 +158,12 @@ def failure_category(exc: BaseException) -> str:
         return f"cli-exit-{exc.returncode}"
     if isinstance(exc, ReviewParseError):
         return "parse-failure"
+    if isinstance(exc, bre.IsolationError):
+        return "isolation-failed"
+    if isinstance(exc, bre.StreamParseError):
+        return "stream-parse-failure"
+    if isinstance(exc, ReviewRuntimeError):
+        return "runtime-reported-error"
     return "adapter-error"
 
 
@@ -588,6 +605,7 @@ class ProductionReviewerAdapter:
         env: Mapping[str, str] | None = None,
         structured_review_result: bool = False,
         allowed_tools: str = DEFAULT_ALLOWED_TOOLS,
+        verified_isolation: bool = False,
     ) -> None:
         self.executable = executable or resolve_cli_executable(env)
         self.structured_review_result = structured_review_result
@@ -601,6 +619,16 @@ class ProductionReviewerAdapter:
         # Optional diagnostics hook (Issue #659): called with "review" before the CLI
         # runs and "parse" before its output is normalized. Never affects results.
         self.stage_hook: Callable[[str], None] | None = None
+        # Issue #664. Off by default so every existing caller is unchanged. When
+        # on, the run loads only the skill under test (no user-level settings,
+        # hence no installed plugins), reads the CLI's stream-json events, and
+        # fails closed unless the skill that ran can be identified. Evidence for
+        # the latest invocation, success or failure, is kept on ``last_evidence``
+        # and token usage the CLI reported on ``last_usage``.
+        self.verified_isolation = verified_isolation
+        self.last_evidence: bre.RunEvidence | None = None
+        self.last_usage: dict[str, int] | None = None
+        self._grant_root: Path | None = None
 
     def _stage(self, name: str) -> None:
         if self.stage_hook is not None:
@@ -616,6 +644,8 @@ class ProductionReviewerAdapter:
         workspace_root: Path | None = None,
     ) -> list[ProducedFinding]:
         suffix = _external_context_block(external_contexts) if external_contexts else ""
+        self._grant_root = workspace_root
+        self.last_evidence = None
         if workspace_root is not None:
             suffix += _workspace_grant_block(workspace_root)
         if isinstance(workspace, Mapping):
@@ -624,28 +654,87 @@ class ProductionReviewerAdapter:
 
     def _run(self, prompt: str, *, cwd: Path) -> str:
         self._stage("review")
+        isolated = self.verified_isolation
+        full_prompt = prompt + (_STRUCTURED_RESULT_PROMPT if self.structured_review_result else "")
+        grant = self._grant_root
         command = [
             self.executable,
             "-p",
-            prompt + (_STRUCTURED_RESULT_PROMPT if self.structured_review_result else ""),
+            full_prompt,
             "--output-format",
-            "text",
+            "stream-json" if isolated else "text",
+            *(["--verbose"] if isolated else []),
             "--plugin-dir",
             str(SKILL_PLUGIN_DIR),
+            # No user-level settings means no user-installed plugin can shadow the skill under test.
+            *(["--setting-sources", "project,local"] if isolated else []),
+            # The grant is a permission as well as a path: without it the CLI blocks reads outside the workspace.
+            *(["--add-dir", str(Path(grant).resolve())] if isolated and grant is not None else []),
             "--allowedTools",
             self.allowed_tools,
             *self.extra_args,
         ]
-        # Own process group, so a timeout or termination (Issue #660) also stops the CLI's descendants.
-        completed = run_in_own_group(command, cwd=str(cwd), timeout=self.timeout, env=self.env)
-        if completed.returncode != 0:
-            raise ReviewCliExitError(
-                f"review CLI {self.executable!r} exited {completed.returncode}: "
-                f"{completed.stderr.strip()[:2000]}",
-                completed.returncode,
-            )
-        self.last_report = completed.stdout
-        return completed.stdout
+        argv, digest = bre.redact_argv(command, full_prompt)
+        evidence = bre.RunEvidence(
+            argv_redacted=argv, prompt_sha256=digest, cwd=str(cwd), isolation="verified" if isolated else "none"
+        )
+        self.last_evidence, self.last_usage = evidence, None
+        started = time.monotonic()
+        try:
+            # Own process group, so a timeout or termination (Issue #660) also stops the CLI's descendants.
+            completed = run_in_own_group(command, cwd=str(cwd), timeout=self.timeout, env=self.env)
+            evidence.exit_code, evidence.stdout, evidence.stderr = completed.returncode, completed.stdout, completed.stderr
+            if completed.returncode != 0:
+                if isolated:
+                    self._absorb_stream(completed.stdout, evidence)
+                raise ReviewCliExitError(
+                    f"review CLI {self.executable!r} exited {completed.returncode}: "
+                    f"{completed.stderr.strip()[:2000]}",
+                    completed.returncode,
+                )
+            report = self._verify_stream(completed.stdout, evidence) if isolated else completed.stdout
+            self.last_report = report
+            return report
+        except BaseException as exc:
+            evidence.error_category = failure_category(exc)
+            evidence.error_message = str(exc)[:2000]
+            raise
+        finally:
+            evidence.seconds = round(time.monotonic() - started, 3)
+
+    def _absorb_stream(self, stdout: str, evidence: bre.RunEvidence) -> bre.StreamSummary | None:
+        """Copy what a stream shows into the evidence; never raises, so a failed run keeps what it has."""
+        try:
+            summary = bre.parse_stream(stdout)
+        except bre.StreamParseError:
+            return None
+        grant = self._grant_root
+        evidence.tool_trace = bre.trace_of(summary.tool_calls)
+        evidence.usage = bre.usage_totals(summary.result)
+        evidence.session_id = ((summary.result or {}).get("session_id")) or ((summary.init or {}).get("session_id"))
+        if summary.result is not None:
+            evidence.result_is_error = bool(summary.result.get("is_error"))
+        evidence.activation = bre.classify_activation(
+            summary.tool_calls,
+            workspace_root=grant,
+            sibling_names=bre.sibling_names_of(grant) if grant is not None else [],
+        )
+        return summary
+
+    def _verify_stream(self, stdout: str, evidence: bre.RunEvidence) -> str:
+        summary = self._absorb_stream(stdout, evidence)
+        if summary is None:
+            raise bre.StreamParseError("no stream-json events in the review CLI output")
+        identity = bre.verify_isolation(summary, expected_root=SKILL_PLUGIN_DIR)  # fails closed
+        evidence.skill = asdict(identity)
+        result = summary.result
+        if result is None:
+            raise bre.StreamParseError("the stream has no result event")
+        if result.get("is_error"):
+            raise ReviewRuntimeError(f"the review CLI reported an error result: {str(result.get('result'))[:500]}")
+        if evidence.usage:
+            self.last_usage = {k: evidence.usage[k] for k in ("input_tokens", "output_tokens")}
+        return str(result.get("result") or "")
 
     def _call_single_repo(self, workspace: Path, suffix: str = "") -> list[ProducedFinding]:
         self.last_report = None
