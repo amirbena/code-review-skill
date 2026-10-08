@@ -17,6 +17,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -42,6 +43,84 @@ _TRAILER_KEYS = ("Source-Repository", "Source-Commit", "Source-Tag")
 
 class DistributionError(Exception):
     """A publication or verification failure with an actionable message."""
+
+
+class GitCommandError(DistributionError):
+    """A failed git command, keeping its exit status and raw stderr for diagnostics (#673)."""
+
+    def __init__(self, message: str, returncode: int, output: str) -> None:
+        super().__init__(message)
+        self.returncode = returncode
+        self.output = output
+
+
+_URL_USERINFO_RE = re.compile(r"(?P<scheme>[A-Za-z][A-Za-z0-9+.-]*://)[^/\s@]+@")
+_AUTH_HEADER_RE = re.compile(r"(?i)(authorization\s*[:=]\s*)(?:basic|bearer|token)?\s*[A-Za-z0-9+/=_.-]+")
+_TOKEN_SHAPE_RE = re.compile(r"\b(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]+|x-access-token:[^\s@/]+")
+
+
+def sanitize_output(text: str) -> str:
+    """Strip credentials from git output before it reaches a log: the publisher
+    token's value, URL userinfo, Authorization headers, and token-shaped strings."""
+    token = os.environ.get(TOKEN_ENV)
+    if token:
+        text = text.replace(token, "***")
+        text = text.replace(base64.b64encode(f"x-access-token:{token}".encode()).decode(), "***")
+    text = _URL_USERINFO_RE.sub(r"\g<scheme>***@", text)
+    text = _AUTH_HEADER_RE.sub(r"\1***", text)
+    return _TOKEN_SHAPE_RE.sub("***", text)
+
+
+def _ruleset_note(stderr: str) -> str:
+    """Classify ruleset wording without over-claiming: a ``Bypassed rule violations``
+    notice records that a rule was bypassed, not that the push was blocked by one."""
+    lowered = stderr.lower()
+    if "bypassed rule violations" in lowered:
+        return (
+            "ruleset: stderr carries a 'Bypassed rule violations' notice -- a bypass observation, "
+            "not proof that a ruleset enforced this rejection; the cause is unconfirmed"
+        )
+    if "gh013" in lowered or "repository rule violations found" in lowered:
+        return "ruleset: stderr reports an enforced rule/protection rejection"
+    return "ruleset: no ruleset wording in stderr"
+
+
+def _tag_push_diagnostics(
+    work: Path, remote: str, tag: str, expected: str, exc: DistributionError, publisher: str
+) -> str:
+    """Safe, read-only evidence for a failed tag push. Never raises."""
+    returncode = getattr(exc, "returncode", None)
+    stderr = sanitize_output((getattr(exc, "output", None) or str(exc)).strip())
+    tag_error = main_error = None
+    observed_tag = observed_main = None
+    try:
+        observed_tag = _remote_tag_sha(work, remote, tag)
+    except Exception as err:  # noqa: BLE001 - diagnostics must not mask the push failure
+        tag_error = sanitize_output(str(err))
+    try:
+        observed_main = _remote_branch_sha(work, remote, BRANCH)
+    except Exception as err:  # noqa: BLE001
+        main_error = sanitize_output(str(err))
+    if tag_error is not None:
+        tag_state = "unknown: the remote could not be read, so tag state is unconfirmed; retry the check before recovering"
+        shown_tag = f"unreadable ({tag_error})"
+    elif observed_tag is None:
+        tag_state = "missing: the tag push did not land"
+        shown_tag = "absent"
+    elif observed_tag == expected:
+        tag_state = "present at the expected commit: the ref already exists, recovery will be a no-op"
+        shown_tag = observed_tag
+    else:
+        tag_state = "present at a DIFFERENT commit: do not recover; investigate"
+        shown_tag = observed_tag
+    shown_main = f"unreadable ({main_error})" if main_error is not None else (observed_main or "absent")
+    return (
+        f"git push exit status: {returncode if returncode is not None else 'unknown'}; "
+        f"stderr: {stderr or '(empty)'}; "
+        f"expected {tag} -> {expected}, observed remote {tag} -> {shown_tag} ({tag_state}); "
+        f"expected {BRANCH} to contain {expected}, observed remote {BRANCH} -> {shown_main}; "
+        f"publisher identity: {publisher}; {_ruleset_note(stderr)}"
+    )
 
 
 @dataclass(frozen=True)
@@ -157,7 +236,8 @@ def _git(args: list[str], cwd: Path, remote_url: str | None = None, check: bool 
     env["GIT_TERMINAL_PROMPT"] = "0"
     result = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, env=env)
     if check and result.returncode != 0:
-        raise DistributionError(f"git {args[0]} failed: {(result.stderr or result.stdout).strip()}")
+        output = sanitize_output((result.stderr or result.stdout).strip())
+        raise GitCommandError(f"git {args[0]} failed: {output}", result.returncode, output)
     return result.stdout
 
 
@@ -297,10 +377,13 @@ def publish(build: Build, remote: str, version: str, source_repository: str, ide
         try:
             _git(["push", "--quiet", remote, f"refs/tags/{tag}"], work, remote)
         except DistributionError as exc:
+            expected = _git(["rev-parse", "HEAD"], work).strip()
+            details = _tag_push_diagnostics(work, remote, tag, expected, exc, f"{identity[0]} <{identity[1]}>")
             raise DistributionError(
                 f"the distribution commit is on {BRANCH} but tag {tag} could not be created "
-                f"({exc}); re-run (workflow_dispatch) to finish tagging, nothing was force-pushed"
-            ) from exc
+                f"({details}); re-run (workflow_dispatch) to finish tagging if the tag is missing, "
+                f"nothing was force-pushed and nothing was retried"
+            ) from None
         return outcome
     finally:
         shutil.rmtree(work, ignore_errors=True)

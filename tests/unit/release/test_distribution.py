@@ -172,6 +172,79 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual(_git(self.remote, "rev-parse", "main"), head)
         self.assertEqual(self._run("distribution-verify")[0], 0)
 
+    def _reject_tags_hook(self, message: str) -> None:
+        hook = self.remote / "hooks" / "pre-receive"
+        hook.write_text(
+            "#!/bin/sh\nwhile read old new ref; do case \"$ref\" in refs/tags/*) "
+            f"echo '{message}' >&2; exit 1;; esac; done\n"
+        )
+        hook.chmod(0o755)
+
+    def test_tag_push_failure_reports_status_stderr_and_remote_state(self) -> None:
+        self._reject_tags_hook("remote: Bypassed rule violations for refs/tags/v1.0.0")
+        code, out = self._run("distribution-publish")
+        self.assertEqual(code, 1)
+        self.assertIn("git push exit status: 1", out)
+        self.assertIn("Bypassed rule violations", out)
+        self.assertIn("not proof that a ruleset enforced", out)
+        self.assertIn("missing: the tag push did not land", out)
+        head = _git(self.remote, "rev-parse", "main").strip()
+        self.assertIn(f"expected v1.0.0 -> {head}", out)
+        self.assertIn("publisher identity: bot <bot@example.com>", out)
+        self.assertEqual(self._tags(), "")  # fail closed, nothing retried or forced
+
+    def test_tag_push_failure_with_ref_already_present_is_distinguished(self) -> None:
+        from release_lib import distribution as dist
+
+        head = _git(self.remote, "rev-parse", "main").strip()
+        _git(self.remote, "tag", "v1.0.0", head)
+        exc = dist.GitCommandError("git push failed: boom", 1, "boom")
+        text = dist._tag_push_diagnostics(self.tmp, str(self.remote), "v1.0.0", head, exc, "bot")
+        self.assertIn("present at the expected commit", text)
+        other = dist._tag_push_diagnostics(self.tmp, str(self.remote), "v1.0.0", "b" * 40, exc, "bot")
+        self.assertIn("DIFFERENT commit", other)
+
+    def test_unreadable_remote_is_unknown_not_a_different_commit(self) -> None:
+        from release_lib import distribution as dist
+
+        exc = dist.GitCommandError("git push failed", 1, "boom")
+        text = dist._tag_push_diagnostics(self.tmp, str(self.tmp / "nope.git"), "v1.0.0", "a" * 40, exc, "bot")
+        self.assertIn("unknown: the remote could not be read", text)
+        self.assertNotIn("DIFFERENT commit", text)
+
+    def test_ruleset_note_does_not_overclaim(self) -> None:
+        from release_lib import distribution as dist
+
+        self.assertIn("not proof", dist._ruleset_note("Bypassed rule violations ... protected"))
+        self.assertIn("enforced", dist._ruleset_note("remote: error: GH013: Repository rule violations found"))
+        self.assertIn("no ruleset wording", dist._ruleset_note("remote: this branch is protected by hooks"))
+
+    def test_git_failures_are_sanitized_at_the_source(self) -> None:
+        import os
+        from unittest import mock
+
+        from release_lib import distribution as dist
+
+        with mock.patch.dict(os.environ, {dist.TOKEN_ENV: "s3cr3tvalue"}):
+            with self.assertRaises(dist.GitCommandError) as ctx:
+                dist._git(["ls-remote", "https://x-access-token:s3cr3tvalue@invalid.invalid/o/r.git"], self.tmp)
+        self.assertNotIn("s3cr3tvalue", str(ctx.exception))
+
+    def test_sanitize_output_redacts_credentials(self) -> None:
+        import os
+        from unittest import mock
+
+        from release_lib import distribution as dist
+
+        with mock.patch.dict(os.environ, {dist.TOKEN_ENV: "s3cr3tvalue"}):
+            raw = (
+                "fatal: https://x-access-token:ghs_abc123@github.com/o/r.git s3cr3tvalue "
+                "AUTHORIZATION: basic eC1hY2Nlc3M6dG9r"
+            )
+            clean = dist.sanitize_output(raw)
+        for leaked in ("s3cr3tvalue", "ghs_abc123", "eC1hY2Nlc3M6dG9r", "x-access-token:"):
+            self.assertNotIn(leaked, clean)
+
     def test_older_version_is_refused_when_main_carries_a_newer_one(self) -> None:
         self._run("distribution-publish", "1.1.0")
         head = _git(self.remote, "rev-parse", "main")

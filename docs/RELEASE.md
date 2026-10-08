@@ -431,6 +431,15 @@ silently failed to land). Any of these failing — including remote `main`
 never actually advancing to the published commit — fails `distribute`
 closed, so `finalize` never runs.
 
+When the distribution tag push itself fails, the error carries credential-safe
+diagnostics (#673): the `git push` exit status, sanitized stderr (token, URL
+userinfo, and Authorization values redacted), the expected versus observed
+remote tag and `main` SHAs (tag missing, present at the expected commit, or
+present at a different commit), the publisher identity, and a ruleset note
+that treats a `Bypassed rule violations` notice as a bypass observation, not
+proof of enforcement. It never retries or force-pushes; if the tag is missing,
+re-run via `workflow_dispatch` to finish tagging.
+
 This gate is not left as an inferred side effect of `distribute`'s
 internal step order. `distribute` exposes an explicit, named `verified`
 job output, set by a dedicated step (`Record verified remote
