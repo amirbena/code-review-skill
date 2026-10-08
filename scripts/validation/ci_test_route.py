@@ -91,6 +91,8 @@ REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
         "scripts/release/release_lib/gitgh.py",
         "runtime_platform/benchmark/reference/benchmark_runner.py",
         "runtime_platform/benchmark/scripts/build_benchmark_index.py",
+        "runtime_platform/benchmark/scripts/benchmark_run_evidence.py",
+        "runtime_platform/benchmark/scripts/measure_workspace_sibling.py",
         "scripts/packaging/package_domain/tree.py",
         "scripts/skill_metadata/links.py",
         "scripts/governance/canonical_homes.py",
@@ -123,6 +125,7 @@ REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
         "tests/unit/benchmark/test_benchmark_runner.py",
         "tests/unit/benchmark/test_benchmark_runner_multi_repo.py",
         "tests/unit/benchmark/test_benchmark_seal.py",
+        "tests/unit/benchmark/test_workspace_sibling_harness.py",
         "tests/unit/benchmark/test_run_benchmark_routine.py",
         "tests/unit/release/test_distribution.py",
     }
