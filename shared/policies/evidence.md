@@ -81,7 +81,9 @@ two extracted sub-policies —
 and model-completeness pass," and
 [`affected-test-analysis.md`](affected-test-analysis.md), "Affected-test /
 test-impact analysis" (tracing a behavioral change into the existing tests
-that depend on it) — identically to
+that depend on it) — and by [`code-hygiene.md`](code-hygiene.md), "Scope
+and trigger" (bounded to the changed delta; a pattern match is only a
+candidate) — identically to
 any other cross-file reasoning: none is a license for a repository-wide
 audit, and a finding under any of them still requires the same
 confirmed-defect / credible-risk / optional-improvement evidence labeling

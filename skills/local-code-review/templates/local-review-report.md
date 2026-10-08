@@ -326,6 +326,16 @@ serve are owned by the linked policies and are not restated here.
   inert — no heading, no placeholder — and neither is a finding or changes a
   severity, coverage, or the Decision. The semantics live only in the shared
   policy.
+- **Code hygiene observations** is an optional, conditional section rendered
+  before Validation (after Rendered observations when both are present),
+  exactly as
+  [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+  "Code hygiene observations" shapes it, and only when
+  [`../../../shared/policies/code-hygiene.md`](../../../shared/policies/code-hygiene.md)
+  qualifies a default-tier observation. It is omitted completely otherwise —
+  no heading, no placeholder — and is never a finding or an input to a
+  severity, coverage, or the Decision. The semantics live only in the shared
+  policy.
 - **Browser setup note** — when
   [`../../../shared/policies/rendered-inspection-environment.md`](../../../shared/policies/rendered-inspection-environment.md)
   requires its browser-setup question, it is one note line in this returned

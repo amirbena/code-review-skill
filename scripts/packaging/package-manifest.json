@@ -12,6 +12,7 @@
     { "source": "shared/policies/failure-retry-recovery.md", "destination": "shared/policies/failure-retry-recovery.md" },
     { "source": "shared/policies/architectural-placement.md", "destination": "shared/policies/architectural-placement.md" },
     { "source": "shared/policies/api-contract-compatibility.md", "destination": "shared/policies/api-contract-compatibility.md" },
+    { "source": "shared/policies/code-hygiene.md", "destination": "shared/policies/code-hygiene.md" },
     { "source": "shared/policies/severity.md", "destination": "shared/policies/severity.md" },
     { "source": "shared/policies/verdict-consistency.md", "destination": "shared/policies/verdict-consistency.md" },
     { "source": "shared/policies/evidence.md", "destination": "shared/policies/evidence.md" },

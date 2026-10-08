@@ -153,9 +153,12 @@ SEVERITY_LEGEND = {
 # deliberate.
 # LOCAL_RUNBOOK and LOCAL_SKILL were re-captured again after Issue #663 (the
 # workspace-sibling-context pointers) -- likewise deliberate.
+# LOCAL_RUNBOOK was re-captured after Issue #676 (the "Code hygiene review"
+# step-9 enumeration entry) and LOCAL_REPORT (the conditional "Code hygiene
+# observations" bullet) -- likewise deliberate.
 LOCAL_BASELINE_HASHES = {
-    LOCAL_REPORT: "7917d7e46079c95cb77d1a6b3c81cb52e2c8c354",
-    LOCAL_RUNBOOK: "e61672010a8519bed278757bd90ef2208cf7ebc5",
+    LOCAL_REPORT: "c3e3e07b0368c861a4a34b110c9a7305425ea679",
+    LOCAL_RUNBOOK: "061bdabdfad78deda77424ef15a2cbf00eff8168",
     LOCAL_SKILL: "1b74e41a642970a8ca0dbbb7678da4205574a221",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",

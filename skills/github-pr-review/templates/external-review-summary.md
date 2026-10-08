@@ -296,6 +296,18 @@ shared shape. Both are omitted completely when the capability is inert. The
 section has no severity, ID, or blocking meaning and changes no finding,
 decision, or GitHub review state.
 
+## Code hygiene observations (conditional)
+
+When the shared
+[`code-hygiene.md`](../../../shared/policies/code-hygiene.md) qualifies a
+default-tier observation, the review body gains the shared
+`### Code hygiene observations` section exactly as
+[`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
+"Code hygiene observations" shapes it — placed before `Validation`, in the
+body only, never an inline comment or a review event, identically in every
+publication mode. It has no severity, ID, or blocking meaning and is
+omitted completely when nothing qualifies.
+
 ## Reasoning check (conditional)
 
 When the shared

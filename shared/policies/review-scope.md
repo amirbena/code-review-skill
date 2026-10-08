@@ -522,6 +522,22 @@ the dependency/supply-chain deepening model design record (a
 repository-development document, named here, not linked because it is not
 a packaged resource).
 
+## Code hygiene review
+
+Signal: the change adds or modifies a comment that cites an issue-tracker
+reference, or introduces or renames a variable whose name may hide its
+intent. A matching pattern is only a candidate for this pass, never a
+finding. The trigger, how each category is evaluated, the evidence bar,
+the severity representation (severity-less observations by default; P2
+only with causal maintainability evidence; never P0/P1), and the
+false-positive exclusions are owned by
+[`code-hygiene.md`](code-hygiene.md) and are not restated here.
+
+This section adds no finding category and no new severity. It is not a
+second scope model, performs no issue-tracker lookup, and is not a
+linter-like pass: it covers exactly two categories, only on the changed
+delta, and changes no correctness or security behavior.
+
 ## Change-risk signals and review depth
 
 Every review classifies its change into a deterministic review-depth
