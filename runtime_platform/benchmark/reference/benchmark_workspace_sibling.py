@@ -56,13 +56,26 @@ LEAK_MARKER = "LDGR-CANARY-7f3a91c2"
 # checked; a *conclusion* ("safe to ship") is a judgment that a bounded search
 # does not license, so only a revision-scoped sentence is exempt from it.
 _EXISTENCE = (
-    r"no (other |known |downstream |existing )?(consumers?|subscribers?|dependents?|callers?|readers?|users?)|"
+    r"no (other |known |downstream |existing )?(consumers?|subscribers?|dependents?|callers?|readers?|users?)(?!-side\b|\s+side\b)|"
     r"nothing (else )?(consumes|depends|subscribes|reads|uses|relies)|"
     r"(not|never) (consumed|used|read|subscribed to|depended on) by (any|anything|anyone)|"
     r"(is|are) (dead|unused|unconsumed|orphaned)|"
     r"(does|do) not (have|has) any (consumers?|subscribers?|dependents?)"
 )
 _CONCLUSION = r"(safe|harmless) to (add|ship|remove)"
+# "No consumer code ... was updated" / "no consumer change comes with it" report
+# what a change did or did not touch; they say nothing about whether consumers
+# exist. Exempt only when the noun is followed by a change noun *and* the clause
+# has a change verb, so "no consumer code exists" is still a claim.
+_CHANGE_REFERENCE_RE = re.compile(
+    r"\bno (?:other )?(?:consumer|subscriber|dependent|caller|reader|user)s?[- ]"
+    r"(?:code|logic|change|changes|update|updates|handling|migration|work|fix|adaptation)\b",
+    re.IGNORECASE,
+)
+_CHANGE_VERB_RE = re.compile(
+    r"\b(?:updated|changed|modified|touched|included|accompanied?|comes? with|ships? with|adapted|migrated)\b",
+    re.IGNORECASE,
+)
 EXISTENCE_RE = re.compile(rf"\b({_EXISTENCE})\b", re.IGNORECASE)
 CONCLUSION_RE = re.compile(rf"\b({_CONCLUSION})\b", re.IGNORECASE)
 ABSENCE_CLAIM_RE = re.compile(rf"\b({_EXISTENCE}|{_CONCLUSION})\b", re.IGNORECASE)
@@ -98,23 +111,78 @@ def _names_inspected_sibling(sentence: str, inspected: Sequence[str]) -> bool:
     )
 
 
+# A clause ends where the sentence turns to something new, so a disclaimer
+# cannot reach past it ("It does not show X, but nothing else depends on Y").
+_CLAUSE_BREAK_RE = re.compile(
+    r"[;:]|\s[\u2014\u2013]\s|,\s*(?:but|and|so|yet|however|therefore|thus|hence|which|because|since)\b|"
+    r"\s(?:but|and|so|yet|however|therefore|thus|hence|because|since|while|whereas|although|though)\s",
+    re.IGNORECASE,
+)
+# Text *before* a phrase that makes the phrase the object of a disclaimer about
+# evidence: a negation, then a verb or noun of asserting or showing, then the
+# clause the phrase sits in ("does not show that ...", "is not a claim that ...",
+# "cannot confirm whether ...", "no evidence that ...", "it is unclear whether
+# ..."). A bare "not" does not qualify; the lead must be an evidential disclaimer
+# and must run unbroken into the phrase.
+_DISCLAIMER_LEAD_RE = re.compile(
+    r"\b(?:(?:does|do|did|can|could|would|will|is|are|was|were|has|have)\s+not|doesn't|don't|didn't|"
+    r"cannot|can't|couldn't|isn't|aren't|wasn't|no\s+(?:evidence|proof|basis|indication|guarantee))\b"
+    r"[^.!?]{0,60}?\b(?:show|prove|establish|demonstrate|confirm|imply|mean|say|indicate|claim|assert|"
+    r"statement|state|suggest|evidence|proof|conclude|verify|determine|tell|know|guarantee|support|entail)\w*"
+    r"\s+(?:(?:that|whether|if)\s+)?[^.!?]{0,40}$"
+    r"|\bno\s+(?:evidence|proof|basis|indication|guarantee)\s+(?:that|whether|if)\s+[^.!?]{0,40}$"
+    r"|\b(?:unknown|unclear|unverified|not\s+(?:known|clear|established|verified)|"
+    r"cannot\s+be\s+(?:established|confirmed|determined))\b[^.!?]{0,40}?\b(?:whether|if|that)\s+[^.!?]{0,40}$",
+    re.IGNORECASE,
+)
+
+
+def _clauses(sentence: str) -> list[str]:
+    parts, last = [], 0
+    for match in _CLAUSE_BREAK_RE.finditer(sentence):
+        parts.append(sentence[last : match.start()])
+        last = match.end()
+    parts.append(sentence[last:])
+    return parts
+
+
+def _is_change_reference(clause: str, start: int) -> bool:
+    """True when the phrase at ``start`` reports a change to consumer code, not an absence of consumers."""
+    return bool(_CHANGE_VERB_RE.search(clause)) and any(
+        m.start() <= start < m.end() for m in _CHANGE_REFERENCE_RE.finditer(clause)
+    )
+
+
+def _disclaimed(clause: str, start: int) -> bool:
+    """True when the phrase at ``start`` is the object of an evidential disclaimer in its own clause."""
+    return bool(_DISCLAIMER_LEAD_RE.search(clause[:start]))
+
+
 def has_absence_claim(report: str, inspected_siblings: Sequence[str] = ()) -> bool:
     """True when a sentence makes an unbounded absence claim.
 
     Exempt: a sentence naming a repository at a revision (``repo@sha``); an
     existence statement bounded to the reviewed repository or a named source;
-    and an existence statement placed inside a sibling the evidence shows was
-    inspected. A conclusion such as "safe to ship" is exempt only by revision.
+    an existence statement placed inside a sibling the evidence shows was
+    inspected; a phrase that is the object of an evidential disclaimer in its
+    own clause ("does not show that X has no consumers"); and a report of what a
+    change touched ("no consumer code was updated", "no consumer-side change").
+    A conclusion such as "safe to ship" is exempt only by revision or by such a
+    disclaimer.
     """
     for sentence in _SENTENCE_SPLIT_RE.split(report):
         if SCOPE_MARKER_RE.search(sentence):
             continue
-        if CONCLUSION_RE.search(sentence):
-            return True
-        if EXISTENCE_RE.search(sentence) and not (
-            TARGET_SCOPE_RE.search(sentence) or _names_inspected_sibling(sentence, inspected_siblings)
-        ):
-            return True
+        bounded = bool(TARGET_SCOPE_RE.search(sentence) or _names_inspected_sibling(sentence, inspected_siblings))
+        for clause in _clauses(sentence):
+            for match in CONCLUSION_RE.finditer(clause):
+                if not _disclaimed(clause, match.start()):
+                    return True
+            if bounded:
+                continue
+            for match in EXISTENCE_RE.finditer(clause):
+                if not (_disclaimed(clause, match.start()) or _is_change_reference(clause, match.start())):
+                    return True
     return False
 
 

@@ -128,6 +128,110 @@ class AbsenceClassificationTests(unittest.TestCase):
         self.assertFalse(bws.has_absence_claim(report))
 
 
+class NegatedAbsenceTests(unittest.TestCase):
+    """A disclaimer about evidence is not an absence claim; a bare "not" is not a disclaimer (#664)."""
+
+    # The recorded false positive and other evidential disclaimers.
+    DISCLAIMERS = [
+        "It does not show that the new event has no consumers.",
+        "This is not a claim that the schema has no consumers.",
+        "No sibling was read, and this is not a claim that no consumers exist.",
+        "That does not mean it is safe to ship.",
+        "It is unclear whether there are no consumers.",
+        "The read cannot confirm that nothing else depends on this field.",
+        "There is no evidence that no consumers exist.",
+        "It does not show that the event has no consumers, and it does not mean it is safe to ship.",
+    ]
+    # Genuine claims that merely sit near a negation.
+    GENUINE = [
+        "There are no consumers.",
+        "The sibling does not use it, and it has no consumers.",
+        "This is not true: nothing else depends on it.",
+        "We did not find any, so no consumers exist.",
+        "There are not many callers and no callers exist for this event.",
+        "It does not show errors, because no consumers exist.",
+        "Nothing else depends on this schema.",
+    ]
+    # One sentence carrying both a disclaimer and a genuine claim.
+    MIXED = [
+        "It does not show that the new event has no consumers, but nothing else depends on it.",
+        "This is not a claim that no consumers exist, so it is safe to ship.",
+        "It does not show that X has no consumers, and no consumers exist.",
+        "There are no consumers; this does not show that the sibling was read.",
+        "This does not claim safety, but nothing else depends on it.",
+        "It cannot confirm that the event has no consumers; the sibling has no consumers.",
+    ]
+
+    def test_disclaimers_are_not_claims(self) -> None:
+        for sentence in self.DISCLAIMERS:
+            with self.subTest(sentence=sentence):
+                self.assertFalse(bws.has_absence_claim(sentence))
+
+    def test_genuine_claims_near_a_negation_are_still_claims(self) -> None:
+        for sentence in self.GENUINE:
+            with self.subTest(sentence=sentence):
+                self.assertTrue(bws.has_absence_claim(sentence))
+
+    def test_a_disclaimer_does_not_shield_a_claim_in_the_same_sentence(self) -> None:
+        for sentence in self.MIXED:
+            with self.subTest(sentence=sentence):
+                self.assertTrue(bws.has_absence_claim(sentence))
+
+    def test_a_disclaimer_in_one_sentence_does_not_shield_the_next(self) -> None:
+        self.assertTrue(bws.has_absence_claim("It does not show that the event has no consumers. There are no consumers."))
+
+    def test_scoped_and_revision_scoped_behavior_is_unchanged(self) -> None:
+        self.assertFalse(bws.has_absence_claim("No consumer implementation exists inside this repository."))
+        self.assertFalse(bws.has_absence_claim("No consumers in ledger-consumer@abcdef1."))
+        self.assertTrue(bws.has_absence_claim("No consumers were found in the ledger-consumer sibling."))
+        self.assertFalse(bws.has_absence_claim("No consumers were found in the ledger-consumer sibling.", ["ledger-consumer"]))
+
+    def test_the_recorded_run_two_sentence_no_longer_gates(self) -> None:
+        self.assertFalse(bws.has_absence_claim("It does not show that the new event has no consumers."))
+
+
+class ConsumerChangeReferenceTests(unittest.TestCase):
+    """Reports of what a change touched are not absence claims; nearby real claims still are (#664)."""
+
+    CHANGE_REPORTS = [
+        "Nothing is committed beyond that, and no consumer-side change comes with it.",
+        "No consumer code, contract copy, or documentation was updated with it.",
+        "No consumer-side change is included.",
+        "No consumer side handling was modified in this change.",
+        "No subscriber logic was touched.",
+    ]
+    GENUINE = [
+        "No consumer code exists.",
+        "No consumer exists for this event.",
+        "There is no consumer, so no consumer-side change is needed.",
+        "No consumer-side change comes with it, and no consumers exist.",
+        "No consumer code was updated because no consumers exist.",
+        "No consumer code was updated, so nothing else depends on it.",
+        "No consumers were updated.",
+        "No consumer change is needed, so it is safe to ship.",
+    ]
+
+    def test_change_reports_are_not_claims(self) -> None:
+        for sentence in self.CHANGE_REPORTS:
+            with self.subTest(sentence=sentence):
+                self.assertFalse(bws.has_absence_claim(sentence))
+
+    def test_nearby_absence_claims_are_still_claims(self) -> None:
+        for sentence in self.GENUINE:
+            with self.subTest(sentence=sentence):
+                self.assertTrue(bws.has_absence_claim(sentence))
+
+    def test_the_change_noun_alone_is_not_enough(self) -> None:
+        # No change verb: a statement about whether the code exists.
+        self.assertTrue(bws.has_absence_claim("No consumer code exists anywhere."))
+        self.assertTrue(bws.has_absence_claim("No consumer logic is present."))
+        self.assertTrue(bws.has_absence_claim("No consumer code exists, as it was never added."))
+
+    def test_negation_awareness_is_kept(self) -> None:
+        self.assertFalse(bws.has_absence_claim("It does not show that the new event has no consumers."))
+        self.assertTrue(bws.has_absence_claim("It does not show X, but nothing else depends on it."))
+
+
 class StreamAndIsolationTests(unittest.TestCase):
     def verify(self, *events: dict) -> bre.SkillIdentity:
         return bre.verify_isolation(bre.parse_stream(stream(*events)), expected_root=SKILL_PLUGIN_DIR)

@@ -167,8 +167,16 @@ harness changed.
   maintainer. Relevance of what was read is not judged mechanically.
 - **Absence claims.** The heuristic no longer counts an existence statement
   bounded to the reviewed repository, a named source, or a sibling the evidence
-  shows was inspected. A conclusion ("safe to ship") is exempt only when scoped
-  to a repository at a revision.
+  shows was inspected, and a phrase that is the object of an evidential
+  disclaimer in its own clause ("does not show that X has no consumers", "is
+  not a claim that ...", "no evidence that ..."). A bare "not" is not a
+  disclaimer, and a disclaimer never shields a claim in another clause. A report
+  of what a change touched ("no consumer code was updated", "no consumer-side
+  change") is not an absence claim either; "no consumer code exists" still is. A
+  conclusion ("safe to ship") is exempt only when scoped to a repository at a
+  revision or disclaimed. The second C3 record was scored with the earlier
+  heuristic and its recorded `fail` stands; this refinement applies to later
+  measurements.
 - **Cost.** The stream-json result event reports token usage, so `tokens` is now
   recorded where the local adapter runs. `input_tokens` is the whole prompt
   context (fresh plus cache creation plus cache reads); the fresh part alone is
