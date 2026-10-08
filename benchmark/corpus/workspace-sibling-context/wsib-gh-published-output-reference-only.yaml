@@ -1,0 +1,103 @@
+# Workspace sibling context corpus case (Issue #664). Format:
+# ../../../runtime_platform/benchmark/fixture-format.md `input.workspace_siblings`.
+# See ./README.md for the cluster.
+#
+# GitHub mode only. Inputs match the resolving case, with a distinctive marker
+# in the sibling's error message. The finding is the resolving case's, but a
+# published surface carries a conclusion plus a repository@sha:path reference,
+# never the sibling's content, so the marker must not appear in it.
+
+format: benchmark-case/v2
+
+id: wsib-gh-published-output-reference-only
+title: "PaymentStatus gains refunded; published GitHub output must not carry sibling content"
+
+input:
+  patch: |
+    diff --git a/schemas/payment_status.schema.json b/schemas/payment_status.schema.json
+    --- a/schemas/payment_status.schema.json
+    +++ b/schemas/payment_status.schema.json
+    @@ -2,5 +2,5 @@
+       "$schema": "http://json-schema.org/draft-07/schema#",
+       "title": "PaymentStatus",
+       "type": "string",
+    -  "enum": ["pending", "completed", "failed"]
+    +  "enum": ["pending", "completed", "failed", "refunded"]
+     }
+  base:
+    schemas/payment_status.schema.json: |
+      {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "PaymentStatus",
+        "type": "string",
+        "enum": ["pending", "completed", "failed"]
+      }
+    docs/consumers.md: |
+      # Consumers
+
+      - ledger-consumer: applies payment statuses to ledger entries.
+  workspace_siblings:
+    ledger-consumer:
+      files:
+        ledger/apply_status.py: |
+          def apply_status(entry, status):
+              if status == "pending":
+                  entry.hold()
+              elif status == "completed":
+                  entry.settle()
+              elif status == "failed":
+                  entry.release()
+              else:
+                  raise ValueError(f"LDGR-CANARY-7f3a91c2 unknown payment status: {status}")
+        contracts/payment_status.schema.json: |
+          {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "PaymentStatus",
+            "type": "string",
+            "enum": ["pending", "completed", "failed"]
+          }
+    docs-site:
+      files:
+        README.md: |
+          # Docs site
+
+          Static documentation for the public website.
+  context: >-
+    The caller grants a workspace root once. Sibling repositories under it
+    are read-only evidence for an unresolved question, never part of the
+    Review Target.
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: payment-status-refunded-breaks-workspace-ledger-consumer-published
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: schemas/payment_status.schema.json
+        symbol: PaymentStatus
+        anchor: '"enum": ["pending", "completed", "failed", "refunded"]'
+      claim: >-
+        PaymentStatus gains a refunded member, and the ledger-consumer
+        sibling in the granted workspace handles only pending, completed,
+        and failed and raises ValueError for any other status. Once
+        refunded is produced that consumer fails on it, so the additive
+        enum change is breaking for this consumer. The finding is located
+        at the schema change, with the sibling file cited only as
+        evidence.
+      defect_kind: breaking-contract-enum-member-added-exhaustive-consumer
+
+metadata:
+  source: crafted
+  tags: [correctness, regression]
+  rationale: >-
+    Issue #664 GitHub-mode case: no sibling content in published output.
+    The finding is the resolving case's; the measured property is the
+    absence of the sibling marker from the output.
+  taxonomy:
+    capability: [workspace-sibling-context]
+    policy_contract: [workspace-sibling-context]
+    risk_mode: [correctness, regression]
+    affected_surface: [benchmark-corpus-or-tooling]

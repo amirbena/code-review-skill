@@ -82,6 +82,7 @@ CAPABILITY_VALUES: frozenset[str] = frozenset(
         "specialist-depth-composition",
         "trusted-host-nl-authorization",
         "verdict-consistency",
+        "workspace-sibling-context",
         UNCLASSIFIED,
     }
 )
@@ -119,6 +120,7 @@ CAPABILITY_BY_CORPUS_DIRECTORY: dict[str, str] = {
     "specialist-depth-composition": "specialist-depth-composition",
     "trusted-host-nl-authorization": "trusted-host-nl-authorization",
     "verdict-consistency": "verdict-consistency",
+    "workspace-sibling-context": "workspace-sibling-context",
 }
 
 # --------------------------------------------------------------------------
@@ -167,6 +169,7 @@ POLICY_CONTRACT_VALUES: frozenset[str] = frozenset(
         "specialist-depth",
         "trusted-host-execution",
         "verdict-consistency",
+        "workspace-sibling-context",
         UNCLASSIFIED,
     }
 )

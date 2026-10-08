@@ -122,6 +122,12 @@ For every case, before the reviewer adapter is invoked:
      — each entry is materialized as its own Git repository in a separate
      disposable directory beside the workspace (never inside it) and is
      removed with it. Only `designated` entries are handed to the adapter.
+   - **`workspace_siblings` input** (Issue #664, `fixture-format.md`
+     §6.6) — each entry is materialized as its own Git repository, an
+     immediate child of one workspace root in a separate disposable
+     directory beside the workspace, removed with it. The root is handed
+     to the adapter as `workspace_root`; an arm that withholds the grant
+     simply does not forward it.
 3. The reviewer adapter receives **only the workspace path** as its
    review target — or, for a `repositories` case, only the mapping of
    admitted member alias → that member's own workspace path (never the
