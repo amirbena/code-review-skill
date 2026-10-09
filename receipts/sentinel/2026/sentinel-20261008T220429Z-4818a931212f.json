@@ -1,0 +1,25 @@
+{
+  "evidence_comment_url": "https://github.com/amirbena/code-review-skill/issues/486#issuecomment-6071748251",
+  "issue_links": [
+    {
+      "action": "kept-open",
+      "fingerprint": "95204433e8ae9042cc91906618576f519611ec4999789d2168c5c39dcb41509e",
+      "issue": 650
+    }
+  ],
+  "published_at": "2026-10-09T00:28:02Z",
+  "publisher_identity": "benchmark-publication[bot]",
+  "publisher_run_url": "https://github.com/amirbena/code-review-skill/actions/runs/37864893656",
+  "record_commit": "90a9ca48654e90d430bf64976d2311bfa934c2bb",
+  "record_permalink": "https://github.com/amirbena/code-review-skill/blob/90a9ca48654e90d430bf64976d2311bfa934c2bb/records/sentinel/2026/sentinel-20261008T220429Z-4818a931212f.json",
+  "record_sha256": "a413f1b66ad0cd150c6cb63f4bb2dc946c5fd3b431ec8256e2ffd44ad7385b37",
+  "run_id": "sentinel-20261008T220429Z-4818a931212f",
+  "schema": "benchmark-receipt/v1",
+  "steps_done": [
+    "validate",
+    "persist",
+    "reconcile",
+    "announce",
+    "receipt"
+  ]
+}
