@@ -133,7 +133,7 @@
         "reported_precision_s": 0.05,
         "max_cleanup_after_signal_s": 20.0,
         "derivation": "floor_0.1(reported_phase_duration_s - reported_precision_s - max_cleanup_after_signal_s)",
-        "measures": "process lifetime of the fixtures phase only, from phase entry to the end of signal unwinding; the bound removes the maximum verified unwinding time (15 s grace + 3 s kill wait + 2 s stderr forwarder join) so it does not exceed the time before the signal; excludes session start, setup and planning",
+        "measures": "process lifetime of the fixtures phase only, from phase entry to the end of signal unwinding; the bound removes the maximum verified unwinding time (15 s grace + 3 s kill wait + 2 s stderr forwarder join) so it does not exceed the time before the signal, assuming the handler runs promptly after delivery; excludes session start, setup and planning",
         "provider_sla": false
       },
       "worst_case_confirmation_invocations": 20
