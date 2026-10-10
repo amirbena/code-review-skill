@@ -4,6 +4,12 @@ Part of the [scheduled benchmark operations decision record](decision-record.md)
 (GitHub Issue [#464](https://github.com/amirbena/code-review-skill/issues/464)).
 Research / design only; not packaged into either Skill archive.
 
+> **Evidence location (#687).** Which repository the artifacts below live in is
+> fixed by [`private-evidence-repository.md`](private-evidence-repository.md):
+> after the #690 cutover, this workflow stays here but every read and write
+> (and every App token's `repositories:` scope) targets the private evidence
+> repository. The decisions in this document are otherwise unchanged.
+
 This is the final refinement pass on one question the earlier record answered
 circularly: **who runs publication once a sealed result exists?** It replaces
 the earlier reasoning that rejected GitHub Actions as publisher "by
