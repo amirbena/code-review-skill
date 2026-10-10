@@ -49,7 +49,7 @@ expected:
         location_intent: line
         path: app/jobs/scheduler.py
         symbol: retry_export
-        anchor: "delay = 5"
+        anchor: "def retry_export(queue, job)"
       claim: >-
         Two existing queue.schedule call sites pass a `delay` measured in
         milliseconds (250, 500), and retry_export adds a third that passes 5
