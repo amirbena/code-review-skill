@@ -66,7 +66,7 @@ replaced (§10).
 | # | Decision |
 | --- | --- |
 | E1 | **Two stores, one owner per artifact** (§3). The public repository owns source; the private repository owns all execution evidence, `benchmark-history` (including the baseline pointers) and every automated benchmark issue. |
-| E2 | **An explicit evidence destination**, declared in a repository-owned `evidence` block (repository identity and namespace allow-list, no credential). It is resolved at run time to a git remote that must be proven to be that repository and not the source (§4). There is no default and no fallback to `origin`. |
+| E2 | **An explicit evidence destination**, declared in a repository-owned `evidence` block (repository identity and namespace allow-list, no credential). It is resolved at run time to a git remote that must be proven to be that repository. After cutover, that repository may not be the source. Before cutover, the source is allowed only through an explicit pre-cutover opt-in (§4.1). There is no default and no implicit fallback to `origin`. |
 | E3 | **The publisher stays the publication-only workflow in the public repository.** It uses the same `benchmark-publication` App, installed on the evidence repository, and every token is scoped to the evidence repository only. Actions is disabled in the evidence repository (§6, Q1). |
 | E4 | **`baselines/<lane>.json` is evidence** and moves with `benchmark-history`. Expected baselines in fixtures stay public (§8, Q2). |
 | E5 | **Automated tracking, health, drift and missed-run issues move to the evidence repository.** After cutover the public repository receives no automated issue, comment or log content derived from evidence (§8, Q3). |
@@ -119,8 +119,11 @@ grep -rnE "claude/[a-z]" runtime_platform/benchmark .github/workflows --include=
 
 On `main` at `613fa43` it yields `claude/benchmark-result-`,
 `claude/benchmark-handoff-check-`, `claude/severity-observation-` and
-`claude/severity-trial-` (plus the generic confinement prefix `claude/` in
-`benchmark_seal.py`, and test-only names). With #681's branch it adds
+`claude/severity-trial-`. It also yields two concrete
+`claude/benchmark-result-sentinel-…` names, which come from
+`schemas/examples/*.record.json` and are instances of
+`claude/benchmark-result-`. The pattern skips the bare confinement prefix
+`claude/` in `benchmark_seal.py`, and `tests/` is outside its scope. With #681's branch it adds
 `claude/concurrency-experiment-` and `claude/concurrency-trial-`. Every other
 `claude/` string in the repository is a path (`.claude/skills/`,
 `.claude/agents/`, `distribution/claude/`), not a ref. All six prefixes are in
@@ -150,8 +153,17 @@ The expected-run manifest gains one block, and each temporary spec
 ```
 
 - `repository` is an **identity** (`owner/name`), never a URL with
-  credentials, a token, or a key. It must differ from the manifest's top-level
-  `repository`, which keeps naming the source.
+  credentials, a token, or a key. After cutover it must differ from the
+  manifest's top-level `repository`, which keeps naming the source.
+- **Pre-cutover state.** Until #690 cuts over, the only evidence store is the
+  source repository. During that period the block names the source and carries
+  an explicit opt-in such as `"pre_cutover_same_repository": true`. While the
+  opt-in is present, the destination may be the source repository: the
+  same-repository refusal (§4.2 step 3), F9 and the public creation ruleset
+  (Q4) do not apply, and every other rule does. Removing the opt-in and naming
+  the private repository happen in one commit, and that commit *is* the cutover
+  (§10 step 4). The opt-in can never be combined with a non-source
+  `repository`.
 - `namespaces` is the **allow-list** (the namespace registry). A producer may
   write only refs that start with a registered prefix. A new evidence namespace
   is added here in the same PR that introduces it (Q4).
@@ -170,7 +182,7 @@ any fixture runs, the entrypoint must:
    credentials (`user:token@`). The URL is never printed unredacted;
 3. prove identity: the URL's path must end in `evidence.repository`
    (optionally followed by `.git`). If it names the source repository, it is
-   refused. A test-only override for a local bare repository is allowed, and it
+   refused, unless the pre-cutover opt-in (§4.1) is present. A test-only override for a local bare repository is allowed, and it
    must be impossible to enable from a Routine prompt (for example, an
    environment variable that the test harness sets);
 4. run a **preflight read** (`ls-remote` of `evidence.history_branch`). If
@@ -204,8 +216,9 @@ that one value.
 | --- | --- | --- | --- |
 | 0 | `ok` / `skipped` | sealed, or an intentional skip (stop condition, same day) | JSON summary on stdout |
 | 1 | `run-failed` | benchmark or verification failure, as today | stderr |
-| 2 | `evidence-destination-misconfigured` | missing value, credentials in the URL, identity mismatch, source repository named, or a ref outside the allow-list | stderr names the rule broken. The URL is redacted |
-| 3 | `evidence-store-unavailable` | preflight, stop-condition read, push or read-back failed (unreachable, unauthorized, rejected) | The would-be sealed files are written to a local diagnostics directory (`--seal-dir` semantics). stdout carries a JSON status with `run_id`, the destination identity and the git error class, and the run counts as **unsealed** |
+| 2 | `evidence-destination-misconfigured` | missing value, credentials in the URL, identity mismatch, source repository named without the pre-cutover opt-in, or a ref outside the allow-list | stderr names the rule broken. The URL is redacted |
+| 3 | `evidence-store-unavailable` | preflight, stop-condition read, or push failed (unreachable, unauthorized, rejected) | The would-be sealed files are written to a local diagnostics directory (`--seal-dir` semantics). stdout carries a JSON status with `run_id`, the destination identity and the git error class, and the run counts as **unsealed** |
+| 3 | `seal-unconfirmed` | the push succeeded but the read-back failed or did not match | Same diagnostics as above. The ref may exist on the evidence destination only, and the publisher treats it like any other sealed ref (F4a) |
 
 A non-zero exit never falls back to another destination and never claims
 publication. The Routine prompt keeps its rule: on a non-zero exit, stop, do
@@ -280,7 +293,9 @@ Rules:
 - The **receipt** may name the store (`record_permalink` is a URL into it).
   Receipts written before cutover keep their public URLs; they are immutable
   history, not rewritten.
-- `provenance.repo` must never equal `evidence.repository` (F9).
+- `provenance.repo` always names the source repository. After cutover it
+  never equals `evidence.repository`. While the pre-cutover opt-in is present,
+  the two are equal by design (F9).
 
 ## 8. Decisions on the open questions
 
@@ -380,13 +395,19 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 
 - F1. A non-dry-run entrypoint invoked without an evidence remote exits 2 and
   pushes nothing.
-- F2. An evidence remote that names the source repository, or that has
+- F2. An evidence remote that names the source repository without the
+  pre-cutover opt-in, or that has
   embedded credentials, exits 2 before any fixture runs.
 - F3. An unreachable or unauthorized evidence remote exits 3 before any
   fixture runs (preflight), and no ref is created on any remote.
-- F4. A push or read-back failure exits 3, writes the would-be sealed files to
+- F4. A rejected or failed push exits 3, writes the would-be sealed files to
   the diagnostics directory, and leaves no ref on any remote, `origin`
   included.
+- F4a. If the push succeeds but the read-back fails, the run exits 3 with
+  status `seal-unconfirmed`. The ref may exist on the evidence destination,
+  and only there. If it does, the publisher treats it like any other sealed
+  ref: it validates the ref and publishes it if valid. The executor never
+  claims publication.
 - F5. A stop-condition read failure exits 3 and runs nothing; it is never
   treated as "zero prior refs".
 - F6. The publisher never sends a request to any repository other than
@@ -408,9 +429,11 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 
 **Provenance**
 
-- P1. `provenance.repo` equals the manifest's top-level `repository` and never
-  `evidence.repository`.
-- P2. No sealed artifact contains the evidence repository's identity or URL.
+- P1. `provenance.repo` equals the manifest's top-level `repository` (the
+  source). After cutover it never equals `evidence.repository`.
+- P2. After cutover, no sealed artifact contains the evidence repository's
+  identity or URL. Before cutover the evidence repository *is* the source, so
+  its identity appears only as `provenance.repo`.
 - P3. `run_id`, `repo_sha`, `model_id`, `runtime_version`, `spec_sha256` and
   the timestamps are present and unchanged in meaning (existing schema
   validation).
@@ -418,7 +441,12 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 **Namespaces and scope**
 
 - F8. A write to a ref outside `evidence.namespaces` is refused (exit 2).
-- F9. The manifest validator rejects `evidence.repository == repository`.
+- F9. The manifest validator rejects `evidence.repository == repository`
+  unless the pre-cutover opt-in is present. It also rejects the opt-in
+  combined with any other `evidence.repository`.
+- F9a. With the pre-cutover opt-in present, a correctly configured run seals
+  to the source repository and exits 0. #688 merging before #690 therefore
+  breaks no Routine.
 - F10. Every `claude/<prefix>` constant in benchmark code is a registered
   namespace (the §3.3 grep as a policy test).
 - F11. The publication workflow mints tokens only with
@@ -449,7 +477,8 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 2. Drain the old store, so that every staging ref there has a receipt.
 3. Copy whatever evidence refs exist at that moment, and `benchmark-history`,
    by SHA (I4). Verify each copy.
-4. Merge the manifest change.
+4. Merge the cutover commit: name the private repository and remove the
+   pre-cutover opt-in (§4.1). Then apply the public creation ruleset (Q4).
 5. Run one `auth-check` against the new store.
 6. Re-enable the paused Routines.
 7. Delete refs from the old store only with recorded approval (R4).
@@ -472,8 +501,10 @@ a reset may restart a count.
 
 - **R-a, pause (preferred):** disable the Routines and fix forward. Nothing is
   published and no store changes.
-- **R-b, revert the destination:** paused as in R-a, copy post-cutover
-  evidence back by SHA, then revert the manifest commit. R-b republishes
+- **R-b, revert the destination:** paused as in R-a, first disable the
+  public creation ruleset (Q4), because its empty bypass list blocks the
+  copy. Then copy post-cutover evidence back by SHA, and revert the cutover
+  commit, which restores the pre-cutover opt-in. R-b republishes
   private evidence in the public repository, so it needs explicit maintainer
   approval recorded in an issue.
 
