@@ -33,14 +33,14 @@ export SRC=amirbena/code-review-skill EVD=amirbena/code-review-skill-evidence
 | --- | --- | --- |
 | `PASS` | Empirically verified: a provider-created checkout was observed fetching a non-default branch that existed at its provisioning time. | proceed |
 | `INCONCLUSIVE — ACCEPTED` | Not empirically verified, and the maintainer explicitly approved the ADR §12.2 disposition on #690 (link recorded in §6). | proceed |
-| `INCONCLUSIVE — BLOCKED` | Not verified and not approved, or the §12.2 controls are not in place. | stop |
+| `INCONCLUSIVE — BLOCKED` | Not verified and not approved, or controls 1–5 of ADR §12.2 are not in place. The baseline (control 6) is recorded at cutover; it gates reassessment, not this state. | stop |
 | `FAIL` | A demonstrated failure. | stop |
 
 **Current state: `INCONCLUSIVE — BLOCKED` until the approval is recorded.** The documentation PR does not itself accept X4.
 
 **Evidence limitation.** The provider checkout was provisioned before the X1 probe branch existed and is reused across sessions, so no provider fetch of a pre-existing non-default branch was observed. The wildcard refspec and non-shallow configuration, and the explicit clone that fetched the X1 branch, are not direct proof. Do not rerun the same experiment.
 
-**Required safeguards (ADR §12.2).** Minimal default branch; no unnecessary long-lived temporary branches; evidence refs kept under the existing retention contract; provider checkouts treated as possibly stale and local refs as non-authoritative; baseline measurement (ref count, packed size, cold full-clone time) recorded at cutover as the reassessment reference. The numeric threshold is a follow-up set by the maintainer from that baseline (#710). X1, X2 and X3 are unchanged.
+**Required safeguards (ADR §12.2).** Minimal default branch; no unnecessary long-lived temporary branches; evidence refs kept under the existing retention contract; provider checkouts treated as possibly stale and local refs as non-authoritative; baseline measurement (ref count, packed size, cold full-clone time) recorded at cutover (§4 step 5) as the reassessment reference. The numeric threshold is a follow-up set by the maintainer from that baseline ([#712](https://github.com/amirbena/code-review-skill/issues/712)). X1, X2 and X3 are unchanged.
 
 ## 1. Preparation (ADR §10 pre-steps)
 
@@ -92,6 +92,7 @@ or access error. Refs removed by a maintainer-authorized reset (O2) are not inpu
 2. Update every evidence-producing Routine's prompt with the private remote (V6); run one `auth-check` against `$EVD`.
 3. Re-enable the Routines. Verify once per Routine (record in §6): a run publishes privately; a repeated trigger is a no-op (duplicate protection); stop conditions count the private store; the publisher sweep and watchdog read `$EVD`.
 4. Confirm no new evidence refs reached the source: re-run `inventory` on `$SRC`, reconcile the old against the new source inventory with `--forbid-extra`; exit 0 means no evidence ref was written to the public repository after the cutover.
+5. Record the X4 baseline (ADR §12.2 item 6): the evidence repository's ref count (`git ls-remote --heads`), packed size (`git count-objects -vH` on a fresh full clone) and the wall-clock time of that cold full clone. Attach it to #690 and to #712.
 
 ## 5. Cleanup and rollback
 

@@ -895,7 +895,7 @@ suggests, what the operation assumes, and what risk is accepted.
 
 **Configuration evidence** (not behavior): the provider-created checkout has a wildcard fetch refspec and is non-shallow. That excludes single-branch and shallow configuration. It does not show what the provider fetches, and it must not be read as a direct observation of provider fetch behavior.
 
-**Evidence limitation.** No provider-created checkout was observed fetching a non-default branch that already existed at its provisioning time. The explicit clone is a different object and does not answer X4. Repeating the same session cannot answer it either, because the checkout is pre-provisioned and reused. **X4 is empirically INCONCLUSIVE.** This section claims no empirical PASS.
+**Evidence limitation.** No provider-created checkout was observed fetching a non-default branch that already existed at its provisioning time. The explicit clone is a different object and does not answer X4. Repeating a session against the *same* pre-provisioned, reused checkout cannot answer it either; only a checkout provisioned after a non-default branch exists could. **X4 is empirically INCONCLUSIVE.** This section claims no empirical PASS.
 
 **Operational assumption.** Provider checkout cost (clone time and size) may grow with evidence refs and history. This is the branch X4's own "if it does" clause already covers, so it needs no new decision.
 
@@ -911,11 +911,11 @@ suggests, what the operation assumes, and what risk is accepted.
 4. Provider-created checkouts can be stale relative to the remote: a checkout is provisioned ahead of a session and reused by later ones.
 5. Local checkout refs are never authoritative evidence of the current remote state. Destination and history reads use `ls-remote` and `fetch` against the proven destination (§4.3, §5.1), as they do today.
 6. **Reassessment trigger.** No reliable baseline exists, so no numeric threshold is set here. The measurement procedure is:
-   - at the cutover, after reconciliation, record the evidence repository's ref count (`git ls-remote --heads`), packed size (`git count-objects -vH` on a fresh full clone) and the wall-clock time of that cold full clone;
+   - at the cutover, after reconciliation (runbook §4 step 5), record the evidence repository's ref count (`git ls-remote --heads`), packed size (`git count-objects -vH` on a fresh full clone) and the wall-clock time of that cold full clone;
    - repeat at each later maintainer review of the retention contract and whenever a new evidence namespace is registered;
    - reassess when a repeat measurement shows growth against that recorded baseline that the maintainer judges material, or when a provider checkout failure or timeout is traced to checkout size.
 
-   The numeric growth threshold is a **follow-up requirement**, to be set by the maintainer from the recorded baseline ([#710](https://github.com/amirbena/code-review-skill/issues/710)). It must not be guessed before then.
+   The baseline gates reassessment, not the `INCONCLUSIVE — ACCEPTED` state. The numeric growth threshold is a **follow-up requirement**, to be set by the maintainer from the recorded baseline ([#712](https://github.com/amirbena/code-review-skill/issues/712)). It must not be guessed before then.
 
 **Not changed.** X1, X2 and X3 and every other §12.1 condition. No setting, Ruleset, Routine, ref or data is changed by this record.
 
