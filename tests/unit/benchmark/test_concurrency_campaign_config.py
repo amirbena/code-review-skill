@@ -265,6 +265,30 @@ class ThresholdConfigurationTest(unittest.TestCase):
             with self.assertRaises(decision.SpecError, msg=name):
                 decision.validate_thresholds(spec["decision"], spec["allowed_workers"])
 
+    def test_the_recorded_window_is_an_observed_lower_bound_not_a_provider_sla(self):
+        window = committed()["decision"]["window"]
+        self.assertEqual(window["evidenced_window_s"], 2399.4)
+        self.assertEqual(window["max_fraction_of_window"], 0.6)
+        self.assertAlmostEqual(window["evidenced_window_s"] * window["max_fraction_of_window"], 1439.64)
+        evidence = window["evidence"]
+        self.assertEqual(evidence["kind"], "observed-lower-bound")
+        self.assertIs(evidence["provider_sla"], False)
+        self.assertEqual(evidence["issue"], 696)
+        self.assertIn("fixtures phase only", evidence["measures"])
+
+    def test_recording_the_window_leaves_the_other_thresholds_unchanged(self):
+        decision_spec = committed()["decision"]
+        self.assertEqual(decision_spec["hard_safety_gates"]["max_isolation_violations"], 0)
+        self.assertEqual(decision_spec["hard_safety_gates"]["min_valid_result_rate"], 1.0)
+        self.assertEqual(decision_spec["performance_thresholds"], {
+            "min_scaling_efficiency": {"2": 0.6, "4": 0.45},
+            "no_meaningful_speedup_below": 1.15,
+            "max_same_config_wall_cv": 0.25,
+            "max_outcome_disagreement_excess": 0.0,
+            "max_rate_limited_fixture_fraction": 0.05,
+        })
+        self.assertEqual(decision_spec["window"]["worst_case_confirmation_invocations"], 20)
+
     def test_a_run_with_invalid_thresholds_starts_nothing(self):
         spec = committed()
         spec["decision"]["window"]["max_fraction_of_window"] = 0.95

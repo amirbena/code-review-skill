@@ -16,8 +16,7 @@ changed afterwards. Repository-development document; not packaged into either Sk
 | Subset | 24 fixtures, `subset_id` `fa240faf…310c45`, listed as `subset.case_ids` and verified on every run |
 | Workers | 24 fixtures leave 6 per worker at 4 workers and 12 at 2 |
 
-**Timing evidence is insufficient.** No per-fixture duration, interrupted-run elapsed time or provider window is stored in the
-repository. The only latency figures are the 26–35 s of a 2-case spike (#680) and the maintainer's unconfirmed "30 minutes" wording
+**Timing evidence is insufficient.** No per-fixture duration or provider window is stored in the repository, and the only interrupted-run figure is the maintainer-reported phase duration recorded in section 2. The only latency figures are the 26–35 s of a 2-case spike (#680) and the maintainer's unconfirmed "30 minutes" wording
 (#611). The subset is therefore stratified on structural proxies, not measured cost, and "historically slow" is not claimed.
 
 **Method.** Strata are filled in this order, each taking the fixtures not yet chosen, ranked by `sha256("concurrency-campaign-682-v1:" + case_id)`:
@@ -38,7 +37,7 @@ The result mixes 12 `clean` and 12 `changes-required` expectations across 15 of 
 
 **Expected sequential cost (not measured).** At the 26–35 s spike rate one arm costs 24 × 26–35 s ≈ 10–14 min, so Tuesday's `[1,2]` experiment
 is about 16–21 min and Thursday's `[2,4]` about 9–12 min. This is an extrapolation from two cases. If the expensive strata
-cost several times more, the `1`-worker arm may exceed an unknown window; the first Tuesday result is the first real evidence.
+cost several times more, the `1`-worker arm may exceed the evidenced window; the first Tuesday result is the first real evidence.
 
 **Coverage limitations.** The subset cannot show how a full run behaves: 24 of 144 fixtures is a short sample, contention may grow with a longer run,
 9 sub-corpus directories (for example `api-compatibility`, `database-migration-deepening` and `dependency-supply-chain-deepening`) have no fixture in it, and token cost is not measured.
@@ -69,7 +68,16 @@ Classes decide what a failure means. Defaults were proposed in #682 and are fixe
 
 *Outcome* is the number of findings a fixture produced. Disagreement is the share of fixtures whose count differs between two arms, and the baseline is the largest disagreement between two 2-worker arms.
 
-**The window is not assumed.** `window.evidenced_window_s` is `null`. Until a real elapsed-at-SIGTERM figure is recorded, the window check is unmeasured and the decision cannot be GO. Setting it is a decision change and needs a new spec before the first run, never after.
+**The window is an observed lower bound, not a provider limit.** `window.evidenced_window_s` is `2399.4` and the window budget stays `2399.4 × 0.60 = 1439.64 s`. Evidence recorded in [#696](https://github.com/amirbena/code-review-skill/issues/696):
+
+| Item | Value |
+| --- | --- |
+| Source | A maintainer-reported Comprehensive run: 133 fixtures discovered, 105 completed, fixture 106 interrupted during review, `[phase] fixtures FAILED after 2399.4s`, no seal, no heartbeat lines captured. The log is not stored in the repository |
+| Measures | `ProgressLog.phase("fixtures")` times the phase from entry until the `Terminated` exception has unwound through `stop_process_tree`, which can wait up to about 18 s (15 s grace plus 3 s kill wait) after the signal (`benchmark_progress.py`, `benchmark_termination.py`). It excludes session start, checkout, planning and anything before the phase. It is process lifetime inside the phase, neither wall time since session start nor exact elapsed-at-SIGTERM |
+| Meaning | The environment let the process run for **at least** 2399.4 s inside the phase. That holds whatever sent the SIGTERM, so the figure is a lower bound on the window, and a smaller window makes the 60 % budget stricter, never looser |
+| Not claimed | A provider timeout, a 40-minute guarantee, a service level, or that the SIGTERM came from the execution window (the cause is unverified) |
+
+Limits: one observation, taken by someone else and not reproducible from stored data; the corpus then had 133 fixtures and now has 144; the clock is the runner's monotonic clock. Setting or changing this value is a decision change and needs a new spec before the first run, never after.
 
 **Diagnostic indicators** (reported, never gating): per-fixture median and maximum time, peak 1-minute load and child CPU, raw rate-limit hit and timeout counts, and the review CLI state fingerprint. `rate_limit_hits` counts only what the child surfaces; zero is not proof of no throttling.
 
