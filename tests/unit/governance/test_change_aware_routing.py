@@ -8,6 +8,7 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from unittest import mock
 
 from scripts.validation import ci_test_route as router
 from tests.support.paths import REPO_ROOT
@@ -381,3 +382,112 @@ class SharedSurfaceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+GENERAL_FILES = {
+    "ops/adr/unused.md": "adr\n",
+    "ops/read/runbook.md": "r\n",
+    "ops/pinned/pinned-name.md": "p\n",
+    "ops/enum/a.md": "a\n",
+    "ops/cited/adr.md": "c\n",
+    "ops/joined/j.md": "j\n",
+    "weird_dir/deep/note.md": "n\n",
+    "tests/test_runbook.py": 'P = REPO_ROOT / "ops/read/runbook.md"\n',
+    "tests/test_pinned.py": 'NAME = "pinned-name.md"\n',
+    "scripts/joined.py": 'D = ROOT / "ops" / "joined"\ntext = (D / name).read_text()\n',
+    "scripts/named.py": 'D = ROOT / "ops" / "named"\ntext = (D / "x.md").read_text()\n',
+    "ops/named/other.md": "o\n",
+    "scripts/cited.py": '"""See ops/cited/adr.md."""\n# also ops/cited/adr.md\nX = 1\n',
+    ".github/workflows/w.yml": "# ops/cited/adr.md is described here\njobs: {}\n",
+}
+
+
+class GeneralDocumentationTests(FixtureRepo):
+    def setUp(self) -> None:
+        super().setUp()
+        # The docs/ fixture's dynamic consumers would (correctly) route every doc FULL; start clean.
+        for rel in ("tests/test_dynamic.py", "tests/test_directory.py", "tests/test_joined.py"):
+            (self.repo / rel).unlink()
+        for rel, text in GENERAL_FILES.items():
+            self.write(rel, text)
+        self.commit("general fixtures")
+
+    def tier(self, *paths: str) -> router.Route:
+        return router.classify(list(paths), self.index())
+
+    def test_shell_directory_reader_and_packaged_resource_consume_documents(self) -> None:
+        self.write("scripts/read.sh", "cat ops/adr/*.md\n")
+        self.write("skills/pkg/manifest.json", '{"include": ["ops/cited/adr.md"]}\n')
+        self.commit("non-python consumers")
+        self.assertEqual(self.tier("ops/adr/unused.md").tier, router.FAST)
+        self.assertEqual(self.tier("ops/cited/adr.md").tier, router.FAST)
+        self.assertEqual(self.tier("weird_dir/deep/note.md").tier, router.DOCS)
+
+    def test_named_sibling_read_does_not_consume_other_documents_in_the_directory(self) -> None:
+        self.assertEqual(self.tier("ops/named/other.md").tier, router.DOCS)
+
+    def test_directory_enumeration_is_full_unless_reviewed(self) -> None:
+        self.write("scripts/enum.py", 'files = sorted(Path("ops/enum").glob("*.md"))\n')
+        self.commit("enumerator")
+        self.assertEqual(self.tier("ops/enum/a.md").tier, router.FULL)
+        self.assertEqual(self.tier("ops/adr/unused.md").tier, router.FULL)
+        with mock.patch.object(router, "REVIEWED_NON_DOCS_ENUMERATORS", router.REVIEWED_NON_DOCS_ENUMERATORS | {"scripts/enum.py"}):
+            self.assertEqual(self.tier("ops/enum/a.md").tier, router.FAST)
+            self.assertEqual(self.tier("ops/adr/unused.md").tier, router.DOCS)
+
+    def test_new_and_existing_unconsumed_documentation_anywhere_is_docs(self) -> None:
+        self.write("brand/new/adr.md", "new\n")
+        index = self.index()
+        for path in ("brand/new/adr.md", "ops/adr/unused.md", "weird_dir/deep/note.md", "ops/cited/adr.md"):
+            with self.subTest(path=path):
+                result = router.classify([path], index)
+                self.assertEqual((result.tier, result.change_class), (router.DOCS, router.PURE_DOCS))
+                self.assertIn("PURE_DOCS", result.reason)
+
+    def test_every_consumer_form_keeps_documentation_out_of_docs(self) -> None:
+        for path in ("ops/read/runbook.md", "ops/pinned/pinned-name.md", "ops/joined/j.md"):
+            with self.subTest(path=path):
+                self.assertEqual(self.tier(path).tier, router.FAST)
+
+    def test_protected_and_format_failures_never_qualify(self) -> None:
+        for path in ("ops/SKILL.md", "ops/AGENTS.md", "ops/CLAUDE.md", "skills/x/a.md", "shared/a.md", "distribution/a.md", "ops/x.txt"):
+            with self.subTest(path=path):
+                self.assertNotEqual(self.tier(path).tier, router.DOCS)
+
+    def test_symlink_executable_and_shebang_documents_do_not_qualify(self) -> None:
+        (self.repo / "ops/link.md").symlink_to("adr/unused.md")
+        self.write("ops/shebang.md", "#!/bin/sh\n")
+        self.write("ops/exec.md", "x\n")
+        (self.repo / "ops/exec.md").chmod(0o755)
+        self.commit("odd modes")
+        index = self.index()
+        for path in ("ops/link.md", "ops/shebang.md", "ops/exec.md"):
+            with self.subTest(path=path):
+                self.assertEqual(router.classify([path], index).tier, router.FULL)
+
+    def test_mixed_sets_take_the_stricter_tier_of_the_non_documentation_path(self) -> None:
+        for other in ("scripts/x.py", "ops/manifest.json", "scripts/validation/ci_test_route.py", ".github/workflows/validate.yml"):
+            with self.subTest(other=other):
+                self.assertEqual(self.tier("ops/adr/unused.md", other).tier, router.FULL)
+
+    def test_new_consumer_reclassifies_documentation_stricter(self) -> None:
+        self.assertEqual(self.tier("ops/adr/unused.md").tier, router.DOCS)
+        self.write("scripts/late.py", 'DOC = "ops/adr/unused.md"\n')
+        self.commit("consumer")
+        self.assertEqual(self.tier("ops/adr/unused.md").tier, router.FAST)
+
+    def test_unreviewed_tree_enumeration_and_scan_failures_route_full(self) -> None:
+        self.write("tests/test_walk.py", "import os\nlist(os.walk('.'))\n")
+        self.commit("walker")
+        route = self.tier("ops/adr/unused.md")
+        self.assertEqual(route.tier, router.FULL)
+        self.assertEqual(router.classify(["ops/adr/unused.md"], None).tier, router.FULL)
+        self.assertEqual(router.classify(["ops/adr/unused.md"], router.ConsumerIndex(frozenset(), (), 0, (), True)).tier, router.FULL)
+
+    def test_deleted_unconsumed_documentation_is_docs(self) -> None:
+        (self.repo / "ops/adr/unused.md").unlink()
+        self.assertEqual(self.tier("ops/adr/unused.md").tier, router.DOCS)
+
+    def test_hand_built_index_keeps_the_docs_only_rule(self) -> None:
+        index = router.ConsumerIndex(frozenset(), (), 5)
+        self.assertEqual(router.classify(["ops/adr/unused.md"], index).tier, router.FULL)

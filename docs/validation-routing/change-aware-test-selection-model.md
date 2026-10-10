@@ -258,6 +258,23 @@ review/benchmark semantics. Security-adjacent coverage ("Cluster 7" of #395)
 is not reduced: `scripts/sandbox/**`, `docs/threat-model/**` consumers, and
 `tests/integration/sandbox/**` stay FULL / consumed.
 
+## 9.1 Documentation outside `docs/` (#701)
+
+Class 1 is no longer limited to `docs/`. The same derived consumer scan, run
+by the base-SHA router over the head tree, qualifies any regular, non-executable
+`.md` file that is not a protected surface, so a new ADR or runbook is `DOCS`
+in the PR that adds it, with no registry. Consumers are proven, not assumed:
+a literal naming the file name or stem, a computed tail joined to its
+directory, a glob/enumeration of its directory or an ancestor (unless the
+enumerator is a registered scanner or a reviewed non-docs enumerator), or any
+mention in a non-Python consumer fail toward `FAST`/`FULL`. Docstring and
+comment citations are excluded. The router, its tests, and workflows stay
+`FULL`, so the classifier only ever runs from the base SHA. Siblings read by
+tests (for example `provisioning-runbook.md`) are consumed by name and stay
+`FAST`; unread siblings in the same directory stay `DOCS`. Residual blind
+spot: a directory held in a variable and joined with a computed name in
+another module is not traced.
+
 ## 10. Open questions for the maintainer
 
 - **Q1.** Is a distinct DOCS tier acceptable alongside #533's "FAST never
