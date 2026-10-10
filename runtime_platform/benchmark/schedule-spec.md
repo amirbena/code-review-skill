@@ -34,6 +34,7 @@ which is the executable schema.
 | Field | Meaning |
 | --- | --- |
 | `repository`, `entrypoint` | The repository the Routine checks out and the entrypoint it invokes ([`cloud-routine-integration.md`](../../benchmark/cloud-routine-integration.md) §2). |
+| `evidence` | The evidence destination ([`scheduled-operations/private-evidence-repository.md`](scheduled-operations/private-evidence-repository.md) §4): `phase` (`pre_cutover` — `repository` must equal the source — or `private` — it must differ), `repository` (an `owner/name` identity, never a URL or credential), `namespaces` (the registry of writable `claude/<name>-` prefixes), and `history_branch`. Execution, the stop-condition reads and the publisher all resolve through it; there is no fallback to another repository. |
 | `lanes.<lane>.mode` | The `--mode` for the lane; must equal the lane name (`sentinel`, `comprehensive`). The deprecated `full` alias is never scheduled. |
 | `lanes.<lane>.intended_cadence` | Cadence as **text** (A11). Never an exact interval and never enforced. |
 | `lanes.<lane>.intended_start` | Declarative local start: `weekday` (comprehensive only; `null` for sentinel), `local_time`, `timezone`. **No repository code computes with it** — timezone and DST stay a Routine-configuration responsibility, and the watchdog is gap-based. |

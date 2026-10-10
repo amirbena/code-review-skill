@@ -25,7 +25,7 @@ APP_TOKEN_ACTION = "actions/create-github-app-token"
 ALLOWED_ACTIONS = {"actions/checkout", "actions/setup-python", APP_TOKEN_ACTION}
 STEP_ENV = {
     "BENCHMARK_CONTENTS_TOKEN", "BENCHMARK_ISSUES_TOKEN", "BENCHMARK_READ_TOKEN",
-    "RUN_ID", "ACCEPT_UNATTRIBUTED", "DRY_RUN", "SWEEP_REPORT", "CONTENTS_SLUG", "ISSUES_SLUG",
+    "RUN_ID", "ACCEPT_UNATTRIBUTED", "DRY_RUN", "SWEEP_REPORT", "CONTENTS_SLUG", "ISSUES_SLUG", "READ_SLUG", "OWNER",
 }
 MODEL_CREDENTIAL = re.compile(r"anthropic|openai|claude|gemini|model|api[_-]?key|oauth", re.IGNORECASE)
 EXECUTION_MODULES = {
@@ -95,7 +95,7 @@ class CredentialTests(unittest.TestCase):
             if path != WORKFLOW:
                 self.assertIsNone(re.search(r"BENCHMARK_APP|publish_benchmark", path.read_text(encoding="utf-8")), path.name)
 
-    def test_two_app_tokens_each_one_permission_and_this_repository(self) -> None:
+    def test_three_app_tokens_each_one_permission_and_only_the_evidence_repository(self) -> None:
         mints = [s for s in self.steps if s.get("uses", "").startswith(APP_TOKEN_ACTION + "@")]
         granted = []
         for step in mints:
@@ -103,9 +103,18 @@ class CredentialTests(unittest.TestCase):
             permissions = {k: v for k, v in inputs.items() if k.startswith("permission-")}
             self.assertEqual(len(permissions), 1, step["name"])
             granted += [f"{k}:{v}" for k, v in permissions.items()]
-            self.assertEqual(inputs["repositories"], "code-review-skill")
+            # F11: the repository comes from the manifest's evidence block, never a literal or the source by default
+            self.assertEqual(inputs["repositories"], "${{ steps.evidence.outputs.name }}")
             self.assertEqual(inputs["app-id"], "${{ secrets.BENCHMARK_APP_ID }}")
-        self.assertEqual(granted, ["permission-contents:write", "permission-issues:write"])
+        self.assertEqual(granted, ["permission-contents:write", "permission-issues:write", "permission-contents:read"])
+        for forbidden in ("actions", "workflows", "administration", "pull-requests", "secrets", "environments"):
+            self.assertNotIn(f"permission-{forbidden}", _uncommented())
+
+    def test_the_evidence_repository_is_resolved_before_any_token_is_minted(self) -> None:
+        names = [s["name"] for s in self.steps]
+        resolve = names.index("Resolve the evidence repository")
+        self.assertTrue(all(resolve < i for i, s in enumerate(self.steps) if s.get("uses", "").startswith(APP_TOKEN_ACTION + "@")))
+        self.assertNotIn("GITHUB_REPOSITORY", _uncommented())
 
     def test_no_model_or_provider_credential(self) -> None:
         for step in self.steps:
@@ -128,7 +137,9 @@ class CredentialTests(unittest.TestCase):
     def test_the_watchdog_never_receives_the_contents_write_token(self) -> None:
         watchdog = self._step("Watchdog")
         self.assertNotIn("BENCHMARK_CONTENTS_TOKEN", watchdog["env"])
-        self.assertEqual(watchdog["env"]["BENCHMARK_READ_TOKEN"], "${{ github.token }}")
+        # a private evidence repository cannot be read with the job's own token (§5.3)
+        self.assertEqual(watchdog["env"]["BENCHMARK_READ_TOKEN"], "${{ steps.read-token.outputs.token }}")
+        self.assertNotIn("github.token", _uncommented())
 
     def test_actions_are_first_party_and_pinned_to_a_commit(self) -> None:
         for step in self.steps:
@@ -155,7 +166,7 @@ class CommandTests(unittest.TestCase):
 
     def test_only_the_publication_cli_runs_and_nothing_is_installed(self) -> None:
         commands = [line.strip() for s in self.runs for line in s["run"].splitlines() if line.strip().startswith("python")]
-        self.assertEqual([c.split()[1:3] for c in commands], [[CLI, "sweep"], [CLI, "watchdog"]])
+        self.assertEqual([c.split()[1:3] for c in commands], [[CLI, "resolve-evidence"], [CLI, "sweep"], [CLI, "watchdog"]])
         for step in self.runs:
             self.assertNotRegex(step["run"], r"\bpip\b|\bcurl\b|\bgh\b|\bgit\b")
 

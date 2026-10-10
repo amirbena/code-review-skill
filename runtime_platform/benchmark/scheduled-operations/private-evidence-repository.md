@@ -7,7 +7,7 @@ Architecture decision record for GitHub Issue
 of [`./`](README.md), this is a **repository-development record, not packaged
 into either Skill archive**.
 
-**Status: proposed — awaiting maintainer review.** Docs only. No code, Routine,
+**Status: proposed — awaiting maintainer review; the destination contract is implemented by [#688](https://github.com/amirbena/code-review-skill/issues/688) (§14).** This ADR itself is docs only. No code, Routine,
 workflow, repository, ruleset, App installation or ref was created or changed
 while producing it. Where this ADR changes an earlier decision, the earlier
 document carries a pointer to this one. The earlier text stays in force until
@@ -650,3 +650,41 @@ This ADR is consistent with, and narrows, the following:
 
 No contradiction was found that requires changing those documents' decisions.
 Each carries a pointer to this ADR for the parts that change at cutover.
+
+## 14. Implementation of the destination contract (#688)
+
+Implemented under `pre_cutover`: the manifest block of §4.2 is committed with
+`phase: pre_cutover` and `repository` equal to the source, so every existing
+Routine prompt keeps working (F9a). Nothing here creates the private repository,
+activates a Routine or migrates data (#690).
+
+| Concern | Where it lives |
+| --- | --- |
+| Block validation (V2, V4, V5, V7), namespaces, `history_branch` | `scripts/benchmark_evidence_config.py`, enforced statically by `benchmark_schedule_manifest.py` and again at run time |
+| Resolution, identity proof (V1, V3, V6, V8, V9), preflight (V10), allow-listed seal, stop-condition reads, baseline history | `scripts/benchmark_evidence_destination.py` (`Destination`); `GitRefHistory` has no remote default |
+| Entrypoints | `run_benchmark_routine.py`, `run_severity_observation.py`, `run_concurrency_experiment.py`: one `--evidence-remote` (alias `--seal-remote`); exit 2 `evidence-destination-misconfigured`, exit 3 `evidence-store-unavailable` / `seal-unconfirmed` with the would-be files kept in a local `benchmark-unsealed-<run_id>` directory and a JSON status on stdout |
+| Publisher | `publisher/cli.py` addresses `manifest["evidence"]["repository"]` only; `resolve-evidence` feeds token minting; refusal detail is not logged |
+| Workflow | `benchmark-publish.yml` mints three single-permission App tokens (`contents: write`, `issues: write`, `contents: read`) for the resolved evidence repository only, pinned by `test_benchmark_publish_workflow.py` |
+
+Identity is proven from the remote's URL path (a remote name is resolved with
+`git remote get-url`); a URL with embedded credentials is refused and never
+printed. A local path or `file://` remote is accepted only when the test harness
+sets `BENCHMARK_EVIDENCE_TEST_LOCAL_REMOTES=1`, which a Routine prompt cannot do.
+In `pre_cutover`, an omitted remote resolves the checkout's own `origin`, and only
+after the same proof; in `private` it is refused (V6).
+
+### 14.1 How the provider-side Routine authenticates to the private repository
+
+Unchanged in principle from §6, and still to be observed (X1) rather than
+assumed: the Routine **selects both repositories** in the provider's own product
+surface, and the provider mediates every clone and push through the maintainer's
+connected GitHub access. Nothing in this repository stores, prints or passes a
+GitHub credential: the prompt carries only a remote name or a credential-free URL,
+the entrypoints never read a token variable, and a URL with `user:token@` is
+rejected (V9). Least privilege is therefore bounded by (a) the provider's grant
+being limited to the two repositories, (b) the allow-list that restricts every
+write to registered `claude/` prefixes, and (c) the public repository's no-bypass
+creation ruleset of Q4 once the phase is `private`. If X1 shows the provider's
+access to a private repository needs the Claude GitHub App installed there, that
+installation is granted to the evidence repository only and carries no workflow
+or administration permission.

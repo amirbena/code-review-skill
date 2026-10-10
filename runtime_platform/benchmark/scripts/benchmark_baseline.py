@@ -48,9 +48,9 @@ class DirectoryHistory:
 
 
 class GitRefHistory:
-    """`benchmark-history` on a remote, fetched read-only through the checkout's own git."""
+    """`benchmark-history` on the resolved evidence remote (never defaulted), fetched read-only through git."""
 
-    def __init__(self, repo_root: Path, remote: str = "origin", branch: str = HISTORY_BRANCH) -> None:
+    def __init__(self, repo_root: Path, remote: str, branch: str = HISTORY_BRANCH) -> None:
         self.repo_root, self.remote, self.branch = repo_root, remote, branch
         self._tip: str | None | bool = False  # False = not resolved yet
 

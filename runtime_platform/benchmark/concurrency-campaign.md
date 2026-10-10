@@ -112,4 +112,6 @@ TEMPORARY (#681): four two-week concurrency measurement experiments, then is dis
    post or push anything else to GitHub. Keep the command's stdout and stderr in the transcript.
 ```
 
+The evidence destination is the manifest's `evidence` block ([`private-evidence-repository.md`](scheduled-operations/private-evidence-repository.md) §4, §14). Under `pre_cutover` the prompt above is unchanged; once the phase is `private` the prompt must also pass `--evidence-remote <evidence-repository-remote>` (a credential-free remote), and a run without it exits 2 and writes nothing. An unreachable store exits 3, and the stop condition counts only that store.
+
 Routine: Tuesday and Thursday 12:00 `Asia/Jerusalem`, ending after 2026-10-22; cron `0 12 * * 2,4`. Registering it is a maintainer-only provider-side step, not part of this change.

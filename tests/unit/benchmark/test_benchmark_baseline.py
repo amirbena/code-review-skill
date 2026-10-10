@@ -110,17 +110,17 @@ class GitRefBaselineTests(unittest.TestCase):
         _git(self.publisher, "push", "-q", "origin", "benchmark-history")
 
     def test_absent_branch_is_bootstrap(self) -> None:
-        self.assertEqual(load_baseline(GitRefHistory(self.work), "sentinel").state, "bootstrap")
+        self.assertEqual(load_baseline(GitRefHistory(self.work, "origin"), "sentinel").state, "bootstrap")
 
     def test_published_baseline_is_read_from_the_remote_ref(self) -> None:
         record = sealed_record("sentinel", [make_case("a")])
         self.publish(record)
-        found = load_baseline(GitRefHistory(self.work), "sentinel")
+        found = load_baseline(GitRefHistory(self.work, "origin"), "sentinel")
         self.assertEqual((found.state, found.record["content_sha256"]), ("compared", record["content_sha256"]))
 
     def test_branch_without_this_lane_is_bootstrap(self) -> None:
         self.publish(sealed_record("sentinel", [make_case("a")]))
-        self.assertEqual(load_baseline(GitRefHistory(self.work), "comprehensive").state, "bootstrap")
+        self.assertEqual(load_baseline(GitRefHistory(self.work, "origin"), "comprehensive").state, "bootstrap")
 
     def test_unreachable_remote_is_incomparable_never_bootstrap(self) -> None:
         found = load_baseline(GitRefHistory(self.work, remote="nowhere"), "sentinel")
@@ -129,7 +129,7 @@ class GitRefBaselineTests(unittest.TestCase):
 
     def test_a_stalled_git_call_is_incomparable_never_bootstrap(self) -> None:
         with mock.patch("runtime_platform.benchmark.scripts.benchmark_baseline.subprocess.run", side_effect=subprocess.TimeoutExpired("git", 1)):
-            found = load_baseline(GitRefHistory(self.work), "sentinel")
+            found = load_baseline(GitRefHistory(self.work, "origin"), "sentinel")
         self.assertEqual(found.state, "incomparable")
         self.assertIn("timed out", found.reason)
 

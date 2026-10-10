@@ -27,7 +27,7 @@ class ExecutionEntrypointDocTests(unittest.TestCase):
         cls.options = {a.dest: a.option_strings[0] for a in routine.build_arg_parser()._actions if a.option_strings}
 
     def test_every_seal_and_evaluation_option_is_documented(self) -> None:
-        for dest in ("trigger", "seal_dir", "seal_remote", "history_root", "confirmation_budget_s"):
+        for dest in ("trigger", "seal_dir", "evidence_remote", "history_root", "confirmation_budget_s"):
             self.assertIn(f"`{self.options[dest]}", self.section, dest)
 
     def test_confirmation_parameters_are_the_manifests(self) -> None:

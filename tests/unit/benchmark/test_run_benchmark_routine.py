@@ -20,6 +20,7 @@ from runtime_platform.benchmark.scripts import benchmark_result as res
 from runtime_platform.benchmark.scripts import benchmark_seal as seal
 from runtime_platform.benchmark.scripts import run_benchmark_routine as routine
 from tests.support.benchmark_records import make_case, run_output, write_history
+from tests.support.evidence_destination import patch_resolution
 
 NOW = "2026-09-20T01:00:00Z"
 
@@ -63,6 +64,7 @@ class EntrypointTestCase(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
         self.tmp = Path(self._tmp.name)
         self.seal_dir = self.tmp / "sealed"
+        self.resolution = patch_resolution(self, routine)
         for target, value in (
             (routine, {"_git_sha": "a" * 40, "_git_ref": "refs/heads/main", "utc_now": NOW}),
             (lane_run, {"utc_now": NOW}),
@@ -96,9 +98,12 @@ class FailClosedTests(EntrypointTestCase):
     def test_seal_failure_is_a_failed_run(self) -> None:
         corpus = _corpus(self.tmp / "corpus", ["a"])
         with mock.patch.object(seal, "seal_to_ref", side_effect=seal.SealError("push refused")):
-            code, _, err = self.run_main(FakeRunner(), "--mode", "sentinel", "--corpus-dir", str(corpus))
-        self.assertEqual(code, 1)
-        self.assertIn("push refused", err)
+            code, out, err = self.run_main(FakeRunner(), "--mode", "sentinel", "--corpus-dir", str(corpus))
+        self.assertEqual(code, 3)
+        self.assertIn("evidence-store-unavailable", err)
+        status = json.loads(out)
+        self.assertFalse(status["sealed"])
+        self.assertTrue((Path(status["diagnostics"]) / seal.RECORD_FILE).is_file())  # the unsealed record stays local
 
     def test_partial_coverage_is_never_sealed(self) -> None:
         corpus = _corpus(self.tmp / "corpus", ["a", "b"])
@@ -179,7 +184,7 @@ class NonLaneModeTests(EntrypointTestCase):
             code, _, _ = self.run_main(FakeRunner(), "--mode", "auth-check")
         self.assertEqual(code, 0)
         _, remote, ref, files, _ = push.call_args.args
-        self.assertEqual(remote, "origin")
+        self.assertEqual(remote, self.resolution.return_value.remote)
         self.assertTrue(ref.startswith("claude/"))
         self.assertEqual(list(files), [seal.HANDOFF_CHECK_FILE])
 
@@ -237,10 +242,10 @@ class SealedLaneTests(EntrypointTestCase):
             code, out, _ = self.run_main(FakeRunner(), "--mode", "sentinel", "--corpus-dir", str(corpus), "--history-root", str(self.tmp))
         self.assertEqual(code, 0)
         _, remote, ref, files, _ = push.call_args.args
-        self.assertEqual(remote, "origin")
+        self.assertEqual(remote, self.resolution.return_value.remote)
         self.assertRegex(ref, r"^claude/benchmark-result-sentinel-\d{8}T\d{6}Z-[0-9a-f]{12}$")
         self.assertEqual(sorted(files), sorted([seal.RAW_FILE, seal.RECORD_FILE]))
-        self.assertIn(f"origin:{ref}@c0ffee", json.loads(out)["handoff"])
+        self.assertIn(f"{self.resolution.return_value.repository}:{ref}@c0ffee", json.loads(out)["handoff"])
 
 
 class DriftConfirmationTests(EntrypointTestCase):

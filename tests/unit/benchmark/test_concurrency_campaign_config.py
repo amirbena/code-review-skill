@@ -16,6 +16,20 @@ import yaml
 from runtime_platform.benchmark.scripts import benchmark_concurrency_decision as decision
 from runtime_platform.benchmark.scripts import run_concurrency_experiment as exp
 from runtime_platform.benchmark.scripts.benchmark_corpus_membership import discover_comprehensive_fixtures
+from tests.support.evidence_destination import offline_destination
+from runtime_platform.benchmark.scripts.benchmark_evidence_destination import StoreUnavailable
+from runtime_platform.benchmark.scripts.benchmark_evidence_destination import StoreUnavailable
+
+_RESOLUTION = mock.patch.object(exp, "resolve_destination", side_effect=lambda *_a, **_k: offline_destination())
+
+
+def setUpModule() -> None:
+    _RESOLUTION.start()  # no test here contacts a real evidence store
+
+
+def tearDownModule() -> None:
+    _RESOLUTION.stop()
+
 
 SHA = "a" * 40
 DATES = ("2026-10-13", "2026-10-15", "2026-10-20", "2026-10-22")
@@ -228,10 +242,10 @@ class DuplicateAndStopTest(unittest.TestCase):
         arm.assert_not_called()
 
     def test_an_unlistable_ref_set_refuses_to_run(self):
-        with mock.patch.object(exp, "prior_experiment_refs", side_effect=exp.RoutineExecutionError("offline")), mock.patch.object(
+        with mock.patch.object(exp, "prior_experiment_refs", side_effect=StoreUnavailable("offline")), mock.patch.object(
             exp, "local_today", return_value=DATES[0]
         ), mock.patch.object(exp.workers_mod, "run_arm") as arm:
-            self.assertEqual(exp.main(["--cli", "fake", "--trigger", "scheduled", "--pinned-sha", SHA]), 1)
+            self.assertEqual(exp.main(["--cli", "fake", "--trigger", "scheduled", "--pinned-sha", SHA]), 3)
         arm.assert_not_called()
 
 

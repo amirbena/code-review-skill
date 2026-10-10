@@ -188,6 +188,8 @@ class TerminationAfterFixturesTests(unittest.TestCase):
             with (
                 mock.patch.object(routine, "_plan", return_value=plan),
                 mock.patch.object(routine, "_load_manifest", return_value={}),
+                mock.patch.object(routine, "_destination", return_value=None),
+                mock.patch.object(routine, "_history_source", return_value=mock.Mock()),
                 mock.patch.object(routine, "spec_sha256", return_value="x"),
                 mock.patch.object(routine, "_git_sha", return_value="sha"),
                 mock.patch.object(routine, "_git_ref", return_value="HEAD"),
