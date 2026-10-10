@@ -57,6 +57,7 @@ class FixtureOutcome:
     rate_limit_hits: int = 0
     adapter_category: str | None = None  # the child's own bounded failure category, e.g. timeout or cli-exit-1
     timing: dict[str, float] | None = None  # the child's probe/review/total split, None when it emitted none
+    produced_finding_count: int | None = None  # the case's own review outcome, for cross-worker-count comparison
     stderr_tail: str = ""
     run: dict[str, Any] | None = None
 
@@ -76,6 +77,7 @@ class FixtureOutcome:
             "adapter_category": self.adapter_category,
             "probe_s": None if self.timing is None else self.timing["probe"],
             "review_s": None if self.timing is None else self.timing["review"],
+            "produced_finding_count": self.produced_finding_count,
         }
 
 
@@ -214,6 +216,7 @@ def run_fixture_child(
     verification = verify_benchmark_output(stdout, proc.returncode)
     run = _run_block(stdout)
     base["run"] = run
+    base["produced_finding_count"] = _produced_finding_count(run)
     if verification.passed:
         if verification.case_ids != (fixture.case_id,):
             return FixtureOutcome(
@@ -224,6 +227,12 @@ def run_fixture_child(
     failure_class = BENCHMARK if run is not None and verification.case_count else INFRASTRUCTURE
     base["rate_limit_hits"] += len(RATE_LIMIT_RE.findall(verification.reason))
     return FixtureOutcome(**base, status="failed", failure_class=failure_class, failure_reason=verification.reason)
+
+
+def _produced_finding_count(run: dict[str, Any] | None) -> int | None:
+    cases = run.get("cases") if isinstance(run, dict) else None
+    findings = cases[0].get("produced_findings") if isinstance(cases, list) and len(cases) == 1 and isinstance(cases[0], dict) else None
+    return len(findings) if isinstance(findings, list) else None
 
 
 def _run_block(stdout: str) -> dict[str, Any] | None:

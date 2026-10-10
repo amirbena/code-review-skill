@@ -37,6 +37,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from runtime_platform.benchmark.reference.benchmark_runner import capture_repo_state  # noqa: E402
 from runtime_platform.benchmark.scripts import benchmark_concurrency_workers as workers_mod  # noqa: E402
+from runtime_platform.benchmark.scripts import benchmark_concurrency_decision as decision  # noqa: E402
 from runtime_platform.benchmark.scripts import benchmark_seal as seal  # noqa: E402
 from runtime_platform.benchmark.scripts import run_benchmark as rb  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_concurrency_workers import (  # noqa: E402
@@ -109,6 +110,8 @@ def select_subset(spec: Mapping[str, Any], corpus_dir: str) -> tuple[list[Fixtur
         chosen = sorted(ranked[: subset["size"]])
     entries = [{"case_id": c, "fixture_digest": corpus.digests[c]} for c in chosen]
     identity = hashlib.sha256(json.dumps(entries, sort_keys=True).encode()).hexdigest()
+    if subset.get("subset_id") is not None and subset["subset_id"] != identity:
+        raise RoutineExecutionError("fail-closed: the subset's fixtures differ from the committed subset_id")
     manifest = {"corpus_id": corpus.corpus_id, "subset_id": identity, "method": subset["method"], "fixtures": entries}
     return [Fixture(c, corpus.case_dirs[c]) for c in chosen], manifest
 
@@ -128,6 +131,16 @@ def prior_experiment_refs(remote: str) -> list[str]:
     if proc.returncode != 0:
         raise RoutineExecutionError(f"cannot list prior experiments on {remote}: {proc.stderr.strip()}")
     return [line.split()[1].removeprefix("refs/heads/") for line in proc.stdout.splitlines() if line.strip()]
+
+
+def checkout_is_clean() -> bool:
+    try:
+        proc = subprocess.run(["git", "status", "--porcelain"], cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=GIT_TIMEOUT_S)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RoutineExecutionError(f"cannot read the checkout state: {exc}") from exc
+    if proc.returncode != 0:
+        raise RoutineExecutionError(f"cannot read the checkout state: {proc.stderr.strip()}")
+    return not proc.stdout.strip()
 
 
 def local_today(spec: Mapping[str, Any], now: datetime | None = None) -> str:
@@ -153,7 +166,8 @@ def skip_reason(spec: Mapping[str, Any], refs: list[str], local_date: str, utc_d
 
 
 def scheduled_arms(spec: Mapping[str, Any], local_date: str) -> list[int]:
-    return next(e["arms"] for e in spec["stop_condition"]["experiments"] if e["date"] == local_date)
+    arms = next(e["arms"] for e in spec["stop_condition"]["experiments"] if e["date"] == local_date)
+    return parse_arms(",".join(str(a) for a in arms), spec["allowed_workers"])
 
 
 def parse_arms(text: str, allowed: list[int]) -> list[int]:
@@ -239,6 +253,7 @@ def build_experiment(
     started_at: str,
     finished_at: str,
     planned_arms: list[int],
+    pinned_sha: str | None = None,
 ) -> dict[str, Any]:
     run_id = make_run_id(started_at, repo_sha)
     complete = status_hint is None and len(arms) == len(planned_arms) and all(a.complete for a in arms) and audit["passed"]
@@ -260,7 +275,7 @@ def build_experiment(
         "finished_at": finished_at,
         "planned_arms": planned_arms,
         "runtime": {**runtime, "adapter_id": f"production-review-adapter@{repo_sha[:12]}"},
-        "provenance": {"repo": spec["repository"], "repo_sha": repo_sha, "ref": repo_ref, "spec_issue": spec["issue"]},
+        "provenance": {"repo": spec["repository"], "repo_sha": repo_sha, "ref": repo_ref, "spec_issue": spec["issue"], "pinned_sha": pinned_sha},
         "manifest": manifest,
         "isolation": audit,
         "diagnostics": {
@@ -290,6 +305,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--trigger", choices=["scheduled", "manual", "api"], default="manual")
     parser.add_argument("--arms", default=None, help="Worker counts to run in order, e.g. 1,2; scheduled runs take them from the spec.")
     parser.add_argument("--spec", type=Path, default=SPEC_PATH)
+    parser.add_argument("--pinned-sha", default=None, help="Full commit SHA the checkout must equal; required for a scheduled run.")
     parser.add_argument("--seal-remote", default="origin", help="Git remote the evidence is pushed to.")
     parser.add_argument("--seal-dir", type=Path, default=None, help="Dry run: write the files here; push nothing.")
     return parser
@@ -297,6 +313,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 def run(args: argparse.Namespace) -> int:
     spec = load_spec(args.spec)
+    decision.validate_spec(spec)
     dry = args.seal_dir is not None
     arms_planned: list[int]
     if args.trigger == "scheduled" and not dry:
@@ -308,6 +325,7 @@ def run(args: argparse.Namespace) -> int:
         if reason is not None:
             print(json.dumps({"skipped": reason, "experiments": len(refs), "action": "disable the Routine (see the spec's removal path)"}, indent=2))
             return 0
+        decision.check_pinned_sha(args.pinned_sha, git_sha(REPO_ROOT), checkout_is_clean())
         arms_planned = scheduled_arms(spec, local)
     elif args.arms is None:
         raise RoutineExecutionError("--arms is required outside a scheduled run")
@@ -364,6 +382,7 @@ def run(args: argparse.Namespace) -> int:
     experiment = build_experiment(
         spec, arms, manifest, audit, status_hint=status_hint, abort=abort, trigger=args.trigger, runtime=runtime,
         repo_sha=repo_sha, repo_ref=git_ref(), started_at=started_at, finished_at=utc_now(), planned_arms=arms_planned,
+        pinned_sha=args.pinned_sha if args.trigger == "scheduled" else None,
     )
     files = {RAW_FILE: seal.encode_json(raw_evidence(arms)), EXPERIMENT_FILE: seal.encode_json(experiment)}
     try:
@@ -384,7 +403,7 @@ def run(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     try:
         return run(build_arg_parser().parse_args(argv))
-    except (RoutineExecutionError, seal.SealError) as exc:
+    except (RoutineExecutionError, seal.SealError, decision.SpecError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
