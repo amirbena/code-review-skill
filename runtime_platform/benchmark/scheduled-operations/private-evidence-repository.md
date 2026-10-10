@@ -7,13 +7,24 @@ Architecture decision record for GitHub Issue
 of [`./`](README.md), this is a **repository-development record, not packaged
 into either Skill archive**.
 
-**Status: proposed — awaiting maintainer review; the destination contract is implemented by [#688](https://github.com/amirbena/code-review-skill/issues/688) (§14).** This ADR itself is docs only. No code, Routine,
+**Status: accepted (architecture only).** Docs only. No code, Routine,
 workflow, repository, ruleset, App installation or ref was created or changed
-while producing it. Where this ADR changes an earlier decision, the earlier
-document carries a pointer to this one. The earlier text stays in force until
-[#688](https://github.com/amirbena/code-review-skill/issues/688) implements the
-change and [#690](https://github.com/amirbena/code-review-skill/issues/690)
-cuts over.
+while producing it.
+
+| Aspect | State |
+| --- | --- |
+| Architecture (Fully Private evidence, §2) | **Accepted.** The maintainer merged [PR #693](https://github.com/amirbena/code-review-skill/pull/693) (`6c82239`, 2026-10-10) and closed #687 as completed. The ADR named maintainer review as its gate. The maintainer confirmed on PR #700 that the merge and the closure are sufficient evidence of acceptance. |
+| Implementation | **Destination contract delivered under `pre_cutover`** by [#688](https://github.com/amirbena/code-review-skill/issues/688) ([PR #698](https://github.com/amirbena/code-review-skill/pull/698), `71acb33`; §14). **Still pending:** the private-phase public-log field policy (§5.4, F12/F13), which that PR does not implement, and validation by [#689](https://github.com/amirbena/code-review-skill/issues/689). |
+| Cutover | **Pending**, owned by [#690](https://github.com/amirbena/code-review-skill/issues/690). The manifest is still `pre_cutover` and no private repository exists. |
+
+Clarified by [#699](https://github.com/amirbena/code-review-skill/issues/699):
+the disposition of existing public automated issues (Q3, §10) and the public log
+allowlist (§5.4). That clarification adds no decision to §2 and changes nothing
+accepted.
+
+Where this ADR changes an earlier decision, the earlier document carries a
+pointer to this one. The earlier text stays in force until #688 implements the
+change and #690 cuts over.
 
 ## 1. Context
 
@@ -69,7 +80,7 @@ replaced (§10).
 | E2 | **An explicit evidence destination in one of two declared phases** (§4). A repository-owned `evidence` block declares `phase`, `repository`, the namespace allow-list and no credential. In `pre_cutover` the evidence repository must equal the source. In `private` it must differ. Every run proves that its git remote is the declared repository. There is no implicit fallback to `origin`, or to any other repository, in either phase. |
 | E3 | **The publisher stays the publication-only workflow in the public repository.** It uses the same `benchmark-publication` App, installed on the evidence repository, and every token is scoped to the evidence repository only. Actions is disabled in the evidence repository (§6, Q1). |
 | E4 | **`baselines/<lane>.json` is evidence** and moves with `benchmark-history`. Expected baselines in fixtures stay public (§8, Q2). |
-| E5 | **Automated tracking, health, drift and missed-run issues move to the evidence repository.** In the `private` phase the public repository receives no automated issue, comment or log content derived from evidence (§8, Q3). |
+| E5 | **Automated tracking, health, drift and missed-run issues move to the evidence repository.** In the `private` phase the public repository receives no automated issue, comment or log content derived from evidence. Existing public automated issues have a stated disposition (§8, Q3), and public logs are limited to the allowlist (§5.4). |
 | E6 | **One namespace registry, one ruleset over `claude/**`** in the evidence repository. In the `private` phase, the public repository gets a no-bypass ruleset that blocks creating evidence-namespace refs (§8, Q4). |
 | E7 | **An explicit remote is sufficient.** No storage abstraction or new backend is added. Git refs stay the storage, and ref names stay unchanged (§8, Q5). |
 | E8 | **Records do not depend on where they are stored.** No sealed field names the storage destination, so a migrated copy keeps its `content_sha256` and commit SHA. `provenance.repo` always names the source repository, never the storage destination, in both phases (§7). |
@@ -96,7 +107,7 @@ code is marked *new*.
 | `benchmark-history` → `records/<lane>/<yyyy>/<run_id>.json` | publisher App, create-only | execution (baseline record), publisher, watchdog | Never pruned. |
 | `benchmark-history` → `receipts/<lane>/<yyyy>/<run_id>.json` | publisher App, create-only | publisher (already-published check), watchdog | Never pruned. |
 | `benchmark-history` → `baselines/<lane>.json` | publisher App (bootstrap); maintainer (promotion) | execution (`GitRefHistory`), publisher | One pointer per lane; replaced only by explicit maintainer promotion. |
-| Lane tracking issues (today #486, #487), health issue (#488), `benchmark-regression` drift issues, `benchmark-missed-run` issues, evidence and status comments | publisher App (`issues: write`) | maintainer; publisher (markers) | Issues are never deleted; they close under the existing lifecycle rules. |
+| Lane tracking issues (today #486, #487), health issue (#488), `benchmark-regression` drift issues, `benchmark-missed-run` issues, evidence and status comments | publisher App (`issues: write`) | maintainer; publisher (markers) | Issues are never deleted; they close under the existing lifecycle rules. The public issues that exist today are not copied here; Q3 gives each one's disposition. |
 | Labels `benchmark-regression`, `keep-open`, `benchmark-missed-run`, `benchmark-tracking` | maintainer (provisioning) | publisher | Provisioned in the evidence repository. The publisher still cannot create labels. |
 
 ### 3.2 Source (public: `amirbena/code-review-skill`)
@@ -106,7 +117,7 @@ code is marked *new*.
 | Entrypoints, publisher code, schemas, `benchmark-publish.yml` | code reviewed on `main` |
 | `schedule/expected-run-manifest.json`, `schedule/*-spec.json` (including the new `evidence` block) | repository-owned configuration; identities only, no credentials |
 | Fixtures and their **expected** findings (the "expected baselines"), corpus membership | the benchmark's definition, not an observation of a run |
-| Development issues and PRs, docs, Wiki | development record. A maintainer may cite a private `run_id` in a development issue in their own words; nothing automated writes there (E5) |
+| Development issues and PRs, docs, Wiki | development record. A maintainer may cite a private `run_id` in a development issue in their own words; nothing automated writes there (E5). #650 and the closed #569–#571 are of this kind after cutover (Q3) |
 | `main`, tags, release refs, harness development branches (`claude/issue-<n>-<hash>`) | source and release history. These `claude/` refs are agent working branches, not evidence |
 
 ### 3.3 Inventory check
@@ -287,13 +298,112 @@ stdout is the durable trace, and an unsealed run is still not evidence.
 | Watchdog history read | an App token with `contents: read` on `evidence.repository`. The job's `GITHUB_TOKEN` cannot read a private repository, so the current `BENCHMARK_READ_TOKEN=github.token` mapping must change no later than the cutover commit |
 | Failure | An invalid `evidence` block (V2, V4, V5, V7), a token mint failure, a 401/403/404 on `evidence.repository`, or an App-slug mismatch fails the job, with no write to any repository. There is no override that points the publisher at any repository other than `evidence.repository` |
 
-**Log hygiene** (*new*, because the workflow's logs are public): stdout and
-stderr of `benchmark-publish.yml` may contain only run IDs, lane names, ref
-names, counts, status and gate codes, and the acting identity. They must never
-contain record fields, case results, drift observations, raw output, issue
-bodies, or refusal `detail` text that quotes record content. Today the sweep
-report goes to a runner temp file and the watchdog prints its report JSON to
-stdout. #688 must make both satisfy this rule (F12).
+**Log hygiene** (*new*, because the workflow's logs are public): in the `private`
+phase, everything `benchmark-publish.yml` writes to a public surface (step
+stdout and stderr, `::error::`/`::warning::` annotations, `GITHUB_STEP_SUMMARY`,
+job outputs, uploaded artifacts) is limited to the allowlist in §5.4. The sweep and the watchdog must
+satisfy it (F12, F13) no later than the cutover commit. #688 as merged does not
+yet (§14).
+
+### 5.4 Public log allowlist (private phase)
+
+**What is emitted today** (on `main` at `71acb33`; re-check: `grep -nE "print\(" runtime_platform/benchmark/publisher/cli.py`;
+the `Watchdog` and `Sweep` steps of the workflow):
+
+| Surface | Content today | Public? |
+| --- | --- | --- |
+| `sweep` stdout | the full sweep report JSON (per run: `ref`, `run_id`, `status`, `detail`, `gate`, `commit`, `actions`, `deferred`) | No: the workflow redirects it to `$SWEEP_REPORT` in the runner temp directory. It is read only by the watchdog step |
+| `sweep` stderr | one line per refused or failed run: `<status>: <ref>: [<gate>]` (#688 removed the `detail` text), plus `aborted: <reason>` | **Yes** |
+| `watchdog` stdout | the report JSON: per lane `lane`, `action`, `overdue`, `missed_run_issue`, `expected_from`, `latest_run_id`, `finished_at`; and `health` with `action`, the open drift and missed-run issue counts, `pending_handoffs`, `last_successful_sweep` | **Yes** |
+| `watchdog` stderr | `aborted: <reason>`, `acting identity: …` | **Yes** |
+| `error: <message>` and uncaught tracebacks | arbitrary exception text. API errors are formatted as `<METHOD> <path>: <message>`, so a private API path and the GitHub response message can reach the log | **Yes** |
+
+**Rule.** A value may appear on a public surface only if its class is allowed
+below, **and** it is validated against that class's fixed form immediately
+before it is written. A value that is not on the list, or that fails validation,
+is dropped or replaced by a fixed placeholder, and the run still reports its
+status through the allowed codes. Nothing is allowed because it is "probably
+harmless". The exact mechanism (one writer, a schema, or a test double) is
+the implementation's choice. The contract is that no code path writes to a public surface
+without passing through the allowlist.
+
+**Allowed.** Each class derives only from the committed manifest, from ref
+names and ref metadata, or from codes the publisher itself defines. None
+derives from a record's content or from an issue's state. **Everything else is
+prohibited**, including every field named in the field policy below.
+
+| Class | Allowed form | Why it is allowed |
+| --- | --- | --- |
+| Acting identity | the App slug | already printed; not secret |
+| Lane identifier | a lane named in the manifest | public configuration, and never read from a record |
+| Run identifier | the lane or temporary `run_id` form of §7 (fixed pattern) | it is in the ref name, and it is already allowed here |
+| Ref name | a registered namespace prefix plus a valid `run_id` (§3.1) | derived from the two rows above |
+| Repository identity | `owner/name` exactly as in the manifest | public configuration; never a URL |
+| Status and gate codes | a member of a closed set defined in code (the outcome statuses, the gate identifiers, `aborted` reason codes) | the publisher defines them, so they carry no run content |
+| Pipeline counts | non-negative integers counting refs, pending handoffs or run outcomes **by publisher status code**. Never a count of drift or missed-run issues | derived from refs and from the codes above |
+| `expected_from` | a UTC instant taken from the manifest | public schedule configuration |
+| Booleans | `ok`, `dry_run`, and `scope` as a code | publisher-defined |
+
+**Not allowed, in any form.** Raw model output; review findings and their
+text; evidence excerpts or record fields; case results or drift observations;
+private repository, issue, record or commit **URLs**, including API URLs; Routine provider session URLs; credentials, tokens and
+authentication detail; arbitrary exception messages and tracebacks; refusal or
+error `detail` text; and any other unbounded free text. In the `private` phase,
+`detail` and an exception message are not written to a public surface at all. A
+failure reports only its status and gate code (and its `run_id`), and the full
+diagnosis is read from the private evidence repository or from the maintainer's
+local run (§5.2). Whether the detail is persisted privately is the implementation's choice;
+the contract only forbids a public write.
+
+**Public surfaces beyond stdout and stderr.** `$SWEEP_REPORT` stays on the
+runner, is passed only to the watchdog step, and is never printed, appended to
+`GITHUB_STEP_SUMMARY`, or uploaded as an artifact. The workflow adds no step
+summary, annotation or artifact that carries content outside the allowlist. A
+`::error::` annotation follows the same rule.
+
+**Failure behavior.** The log boundary is fail-closed in one direction: an
+unvalidated or unknown value is withheld, never printed "as is". It must not
+turn a publication failure into a success, so a withheld value never changes an
+exit status. An uncaught exception must reach the public log only as a fixed
+code, not as its message.
+
+**Field policy (decided on PR #700).** The stricter fail-closed policy applies.
+Each field below is emitted today. Each is derived from a record's content, from
+schedule state or from an issue's state, so each stays **private** and must not
+appear on any public surface in the `private` phase, whatever its value. There
+is no "safe value" exception.
+
+| Field (today's name) | Public in `private` phase? | Where it may be read instead |
+| --- | --- | --- |
+| `finished_at` | **No** | the private record, and the private health issue |
+| `overdue`, and the watchdog's per-lane and `health` `action` | **No** | the private health and missed-run issues |
+| `last_successful_sweep` | **No** | the private health issue |
+| `missed_run_issue`, and every other issue number (private or public), however obtained | **No** | the private evidence repository |
+| `open_drift_issues`, `open_missed_run_issues` and any other count of drift or missed-run items | **No** | the private health issue |
+| `commit` (the persisted evidence commit SHA) and every other git object id from the evidence repository | **No** | the private repository |
+| `detail`, `aborted` reason text, `error:` text, tracebacks | **No** (§5.4 "Not allowed") | local diagnostics, or the private repository |
+| `identity`, `ok`, `scope`, `dry_run`, lane and run identifiers, `ref`, status and gate codes, pipeline counts, `expected_from` | Yes, as defined in "Allowed" | n/a |
+
+A field that is not in either list is prohibited. This is **testable** as a
+closed set: a test collects every key and every line that the sweep and the
+watchdog write to stdout, stderr, annotations and the step summary, and asserts
+that each belongs to the "Allowed" classes and none to the table above.
+
+**What public CI communicates.** The workflow's own conclusion (success or
+failure, from the exit code) is the primary signal. On top of that, each run may
+print only fixed-form lines made of allowed values, for example
+`sweep: ok=<bool> scope=<code>`, `<status-code>: <ref>: [<gate-code>]` for a
+refused or failed run, `watchdog: ok=<bool>`, and `aborted: <reason-code>`.
+Whether a lane is overdue, or a drift exists, is never printed. A maintainer
+learns that from the private health issue. A failed watchdog or sweep step
+fails the job, so operators see that something needs attention without seeing
+what.
+
+**Consistency.** The allowlist and its test (F12, F13) are not delivered by #688 as
+merged, and the owner of that work is a maintainer decision. #689 checks it
+against a run that uses fixture records and issue bodies carrying sentinel
+strings. Neither may widen it. A widening is an edit to this section, in a PR
+that links its own issue.
 
 ## 6. Authentication boundaries
 
@@ -399,12 +509,56 @@ remains an explicit maintainer action, now in the evidence repository.
 ### Q3 — What tracking, health and drift issues may expose publicly
 
 **Decision: nothing, automatically.** All automated benchmark issues and
-comments move to the evidence repository. At cutover, #690 has the maintainer
-post a closing pointer on #486, #487 and #488 ("moved to the private evidence
-store"), with no evidence content, and then close them. Public exposure after
-that is limited to development issues a maintainer writes by hand, which may
-cite a `run_id` and describe a regression in their own words. Public Actions
-logs are bounded by the log-hygiene rule (§5.3).
+comments move to the evidence repository. This ADR separates two things:
+
+- **Public development discussion** (allowed). An issue or comment that a
+  maintainer or contributor writes about the benchmark, in their own words.
+  It may cite a `run_id` and describe a regression.
+- **Automated publication of operational evidence** (prohibited in the
+  `private` phase). Any issue, comment, label, edit or log line that the
+  publication workflow, the App or any other automation writes from benchmark
+  records, drift, schedule state or health.
+
+The prohibition follows the writer and the source, not the topic. In the
+`private` phase the publisher addresses only `evidence.repository` (§4.5, F6),
+so it cannot update a public issue even by mistake. No public status
+projection or sanitized public summary is introduced. The rejection below
+stands.
+
+**Disposition of the public issues that exist today.** Checked against the
+repository on 2026-10-10. A pointer comment states only that the topic "moved to
+the private evidence store". It names no run, lane, drift case or count and has
+no link into the private repository. The maintainer posts it (#690 owns the
+action). Nothing here is deleted or edited, and no automated comment is copied
+to the private repository.
+
+| Public issue | State on 2026-10-10 | Disposition |
+| --- | --- | --- |
+| #486 sentinel tracking | open | Content-free pointer, then close, **after the cutover has succeeded** (§10 step 8) |
+| #487 comprehensive tracking | open | Same |
+| #488 health status | open | Same |
+| #621 missed run, comprehensive lane | open (automated, `benchmark-missed-run`) | Content-free pointer, then close, **after the private watchdog has run successfully against the private store**. If the lane is still overdue, the private watchdog opens its own issue there |
+| #650 drift, with a maintainer analysis | open (automated body, `keep-open`, maintainer comment) | **Preserved** as an existing manually maintained development issue. The maintainer's decision: it is **not** edited, closed, sanitized or migrated, and its historical content stays as it is. After cutover the private publisher must not update it (see the rule below) |
+| #569, #570, #571 historical drift | closed (`not planned`, `completed`, `duplicate`) | **Preserved** as closed history. No migration, no reopening |
+
+Rules that apply to every row:
+
+- Historical content stays where it is, including the automated links in those
+  issues to records on the public `benchmark-history` branch. Removing it, or
+  moving it, is not part of this decision and would need its own maintainer
+  decision.
+- **After cutover the private publisher must not update #650, or any other
+  public evidence-derived issue.** That means no edit, comment, label change,
+  close or reopen. In the `private` phase it has no route to the public
+  repository (§4.5, F6), and the App is removed from that installation (§6).
+  New automated drift reporting belongs exclusively in the private evidence
+  repository, where it opens its own issues. It does not adopt a public one.
+- Public development issues remain allowed. A maintainer may open, write on or
+  close them by hand at any time.
+- Until cutover (`pre_cutover`), the publisher keeps managing these issues as it
+  does today.
+
+Public Actions logs are bounded by the allowlist (§5.4).
 
 **Rejected:** *public issues with redacted summaries.* Every redaction rule is
 another contract to keep correct, and drift fingerprints and case IDs already
@@ -515,8 +669,18 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
   `evidence.repository` (the source in `pre_cutover`,
   `code-review-skill-evidence` in `private`), and never grants
   the permissions listed as "never" in §6.
-- F12. Publisher stdout and stderr contain no record or issue-body content
-  (asserted on fixture records containing sentinel strings).
+- F12. In the `private` phase, every public surface of the publication
+  workflow (§5.4) carries only allowlisted values. A test feeds fixture records,
+  issue bodies and exception messages that contain sentinel strings and asserts
+  that none appears, and that none of the private fields of the §5.4 field policy
+  appears for any input (`finished_at`, `overdue`, watchdog `action`,
+  `last_successful_sweep`, issue numbers, drift and missed-run counts, evidence
+  commit SHAs). The test fails if the sweep or the watchdog emits a key or line
+  outside the allowed classes.
+- F13. In the `private` phase, a failure reports a status code and a gate code
+  without `detail` text, an uncaught exception reaches the public log only as a
+  fixed code, and the job's success or failure is carried by its exit status.
+  Withholding a value never changes that status.
 
 **Rollback / migration**
 
@@ -551,6 +715,10 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
    (V6) and writes nothing. It never writes to the source repository.
 6. Re-enable the paused Routines.
 7. Delete refs from the old store only with recorded approval (R4).
+8. Dispose of the public automated issues as Q3 lists, each one only after its
+   condition holds: #486–#488 after the cutover verification of steps 4–5, and
+   #621 after the private watchdog has run successfully. Leave #650 and
+   #569–#571 as they are. The maintainer posts the content-free pointers.
 
 Step 3 copies whatever exists at cutover. Refs removed by a maintainer-authorized
 reset (O2) are not inputs and are not restored. Copied staging refs that already
