@@ -23,8 +23,24 @@ export SRC=amirbena/code-review-skill EVD=amirbena/code-review-skill-evidence
 | --- | --- |
 | Gate passes on the commit being cut over from | the command block in the [validation gate](private-evidence-validation-gate.md) |
 | G-open-1 closed (§5.4 allowlist, F12/F13 tests pass) | the gate's §6; tracked by [#704](https://github.com/amirbena/code-review-skill/issues/704) — **blocks the operational cutover, not this PR** |
-| X1–X4 maintainer experiments observed | ADR §12; record outcomes in §6 below |
+| X1–X3 maintainer experiments observed | ADR §12; record outcomes in §6 below |
+| X4 is `PASS` or `INCONCLUSIVE — ACCEPTED` (maintainer-approved) | ADR §12.2; states in the table below. `INCONCLUSIVE — BLOCKED` and `FAIL` stop the cutover |
 | No campaign run is due during the window | ADR §10 "Counted refs" |
+
+### X4 readiness states
+
+| State | Meaning | Cutover |
+| --- | --- | --- |
+| `PASS` | Empirically verified: a provider-created checkout was observed fetching a non-default branch that existed at its provisioning time. | proceed |
+| `INCONCLUSIVE — ACCEPTED` | Not empirically verified, and the maintainer explicitly approved the ADR §12.2 disposition on #690 (link recorded in §6). | proceed |
+| `INCONCLUSIVE — BLOCKED` | Not verified and not approved, or the §12.2 controls are not in place. | stop |
+| `FAIL` | A demonstrated failure. | stop |
+
+**Current state: `INCONCLUSIVE — BLOCKED` until the approval is recorded.** The documentation PR does not itself accept X4.
+
+**Evidence limitation.** The provider checkout was provisioned before the X1 probe branch existed and is reused across sessions, so no provider fetch of a pre-existing non-default branch was observed. The wildcard refspec and non-shallow configuration, and the explicit clone that fetched the X1 branch, are not direct proof. Do not rerun the same experiment.
+
+**Required safeguards (ADR §12.2).** Minimal default branch; no unnecessary long-lived temporary branches; evidence refs kept under the existing retention contract; provider checkouts treated as possibly stale and local refs as non-authoritative; baseline measurement (ref count, packed size, cold full-clone time) recorded at cutover as the reassessment reference. The numeric threshold is a follow-up set by the maintainer from that baseline (#710). X1, X2 and X3 are unchanged.
 
 ## 1. Preparation (ADR §10 pre-steps)
 
@@ -90,7 +106,8 @@ or access error. Refs removed by a maintainer-authorized reset (O2) are not inpu
 | Record | Content | Status |
 | --- | --- | --- |
 | Visibility and access | `private: true`; App installation ID; ruleset IDs | pending |
-| Experiments X1–X4 | observed outcomes | pending |
+| Experiments X1–X3 | observed outcomes | pending |
+| Experiment X4 | state (below), maintainer approval link, baseline measurement (ADR §12.2 item 6) | pending |
 | Reconciliation report | `reconciliation-report.json` summary: counts, `reconciled`, date | pending |
 | Cutover record | cutover commit SHA, window start/end, Routine prompt updates | pending |
 | Per-Routine verification | run IDs for sentinel / comprehensive / severity / concurrency; duplicate, stop-condition, sweep results | pending |

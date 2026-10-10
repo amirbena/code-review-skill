@@ -15,7 +15,7 @@ while producing it.
 | --- | --- |
 | Architecture (Fully Private evidence, §2) | **Accepted.** The maintainer merged [PR #693](https://github.com/amirbena/code-review-skill/pull/693) (`6c82239`, 2026-10-10) and closed #687 as completed. The ADR named maintainer review as its gate. The maintainer confirmed on PR #700 that the merge and the closure are sufficient evidence of acceptance. |
 | Implementation | **Destination contract delivered under `pre_cutover`** by [#688](https://github.com/amirbena/code-review-skill/issues/688) ([PR #698](https://github.com/amirbena/code-review-skill/pull/698), `71acb33`; §14). The private-phase public-log allowlist (§5.4, F12/F13), which that PR did not implement, is delivered by [#704](https://github.com/amirbena/code-review-skill/issues/704), closing the cutover precondition G-open-1. Validation by [#689](https://github.com/amirbena/code-review-skill/issues/689) is recorded in the [validation gate](private-evidence-validation-gate.md). |
-| Q4 amendment | **Accepted risk recorded** by [#706](https://github.com/amirbena/code-review-skill/issues/706): the private repository runs without Rulesets (Q4 "Amendment"). Public-source protections are unchanged. X2 is resolved; X1, X3 and X4 remain open. |
+| Q4 amendment | **Accepted risk recorded** by [#706](https://github.com/amirbena/code-review-skill/issues/706): the private repository runs without Rulesets (Q4 "Amendment"). Public-source protections are unchanged. X2 is resolved; X1 and X3 remain open. X4 is empirically inconclusive and has a conservative disposition awaiting maintainer approval (§12.2, [#710](https://github.com/amirbena/code-review-skill/issues/710)). |
 | Cutover | **Pending**, owned by [#690](https://github.com/amirbena/code-review-skill/issues/690). The manifest is still `pre_cutover` and no private repository exists. |
 
 Clarified by [#699](https://github.com/amirbena/code-review-skill/issues/699):
@@ -864,7 +864,7 @@ runs (§10).
 | X2 | **Resolved by the Q4 amendment.** Rulesets are unavailable on the private repository (observed: 403), and the maintainer accepted operating without them. Environment and deployment-branch availability need not be observed, because Q1 stays closed on this plan. | Nothing. Reopened only by the Q4 reopen conditions. |
 | X1 | Open, independent. | A Routine selecting both repositories pushes one `claude/x1-*` ref to the evidence repository from the source checkout, then a non-`claude/` branch attempt. It must also show that the public creation ruleset (no bypass) blocks a Routine push to a registered evidence prefix in the **source** repository. The accepted risk does not waive any part of it. |
 | X3 | Open, independent. | After a real push, `GET /repos/{evidence}/activity` with an App installation token records it. The endpoint answers `[]` on the empty repository today, which is not the observation. |
-| X4 | Open, independent. | The provider's clone fetches every branch or not. The evidence repository has no commit yet, so a default branch must exist first. |
+| X4 | **Empirically inconclusive.** Conservative disposition in §12.2, pending maintainer approval ([#710](https://github.com/amirbena/code-review-skill/issues/710)). | Direct observation of a provider-created checkout fetching a non-default branch that existed at its provisioning time, or the maintainer's explicit approval of §12.2. |
 
 ### 12.1 Readiness gate for #690 (changes from the Q4 amendment)
 
@@ -874,9 +874,50 @@ runs (§10).
 | Q4 accepted risk is recorded in the ADR | **Added**, satisfied once #706 merges. |
 | Application-level controls pass in the validation gate (F1–F11, I1–I4, P1–P3, R1, R3) | **Kept**, now load-bearing for the evidence repository. |
 | Public creation ruleset, no bypass, over every registered prefix | **Kept, mandatory**, applied with the cutover commit. |
-| X1, X3, X4 observed and recorded | **Kept**, each independent. |
+| X1 and X3 observed and recorded | **Kept**, each independent. |
+| X4 is `PASS`, or `INCONCLUSIVE — ACCEPTED` with the §12.2 controls and a recorded maintainer approval | **Replaced** (from "X4 observed and recorded"). `INCONCLUSIVE — BLOCKED` and `FAIL` block the cutover. Merging §12.2 is not the approval. Runbook §0 and §6 define the four states. |
 | G-open-1 (F12/F13) implemented and passing | **Kept, blocking.** |
 | Actions disabled and the App installed on the evidence repository only | **Kept** (Q1, §6). |
+
+### 12.2 X4 — evidence, limitation and conservative disposition ([#710](https://github.com/amirbena/code-review-skill/issues/710))
+
+X4 asks whether the **provider-created** checkout fetches every branch. This
+section keeps four things apart: what was observed, what the configuration
+suggests, what the operation assumes, and what risk is accepted.
+
+**Observed behavior** (maintainer-run Cloud sessions, 2026-10-10):
+
+- Claude Cloud accessed both repositories and cloned the private evidence repository.
+- The evidence repository's `main` commit was verified.
+- The X1 private-side write test succeeded.
+- A later **explicit** clone from the Cloud environment fetched the X1 probe branch.
+- The provider-created checkout was provisioned (about 15:14 UTC) before the X1 probe branch existed (15:20:46 UTC), and repeated Cloud sessions reused that checkout.
+
+**Configuration evidence** (not behavior): the provider-created checkout has a wildcard fetch refspec and is non-shallow. That excludes single-branch and shallow configuration. It does not show what the provider fetches, and it must not be read as a direct observation of provider fetch behavior.
+
+**Evidence limitation.** No provider-created checkout was observed fetching a non-default branch that already existed at its provisioning time. The explicit clone is a different object and does not answer X4. Repeating the same session cannot answer it either, because the checkout is pre-provisioned and reused. **X4 is empirically INCONCLUSIVE.** This section claims no empirical PASS.
+
+**Operational assumption.** Provider checkout cost (clone time and size) may grow with evidence refs and history. This is the branch X4's own "if it does" clause already covers, so it needs no new decision.
+
+**Proposed disposition (subject to maintainer approval).** `INCONCLUSIVE — ACCEPTED`: X4 is inconclusive, and it is accepted for cutover readiness with the controls below. Until the maintainer approves it on [#690](https://github.com/amirbena/code-review-skill/issues/690), X4 is `INCONCLUSIVE — BLOCKED` for the §12.1 gate.
+
+**Accepted risk (on approval).** The provider checkout may fetch every ref, so its cost may grow, and it may be stale relative to the remote. The risk is bounded by the controls and the reassessment trigger, and does not alter the §2 architecture.
+
+**Clone-growth controls.**
+
+1. Keep the evidence repository's default branch minimal.
+2. Avoid unnecessary long-lived temporary branches.
+3. Preserve legitimate evidence refs under the existing retention contract. This section adds no automatic deletion and changes no retention policy.
+4. Provider-created checkouts can be stale relative to the remote: a checkout is provisioned ahead of a session and reused by later ones.
+5. Local checkout refs are never authoritative evidence of the current remote state. Destination and history reads use `ls-remote` and `fetch` against the proven destination (§4.3, §5.1), as they do today.
+6. **Reassessment trigger.** No reliable baseline exists, so no numeric threshold is set here. The measurement procedure is:
+   - at the cutover, after reconciliation, record the evidence repository's ref count (`git ls-remote --heads`), packed size (`git count-objects -vH` on a fresh full clone) and the wall-clock time of that cold full clone;
+   - repeat at each later maintainer review of the retention contract and whenever a new evidence namespace is registered;
+   - reassess when a repeat measurement shows growth against that recorded baseline that the maintainer judges material, or when a provider checkout failure or timeout is traced to checkout size.
+
+   The numeric growth threshold is a **follow-up requirement**, to be set by the maintainer from the recorded baseline ([#710](https://github.com/amirbena/code-review-skill/issues/710)). It must not be guessed before then.
+
+**Not changed.** X1, X2 and X3 and every other §12.1 condition. No setting, Ruleset, Routine, ref or data is changed by this record.
 
 ## 13. Relationship to existing contracts
 
