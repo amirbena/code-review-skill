@@ -1,0 +1,49 @@
+# Code-hygiene benchmark corpus case (Issue #677, parent #675, policy #676).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Flagged shape, default tier: a name that hides intent where the
+# surrounding code supports exactly one better name. The assigned value is a
+# per-line price times quantity, so `line_totals` is the single concrete
+# suggestion.
+
+format: benchmark-case/v2
+
+id: code-hygiene-poor-variable-name-observation
+title: "A new local named tmp holds per-line totals"
+
+input:
+  patch: |
+    diff --git a/app/billing/totals.py b/app/billing/totals.py
+    index 1111111..2222222 100644
+    --- a/app/billing/totals.py
+    +++ b/app/billing/totals.py
+    @@ -1,2 +1,3 @@
+     def order_total(order):
+    -    return sum(line.price * line.quantity for line in order.lines)
+    +    tmp = [line.price * line.quantity for line in order.lines]
+    +    return sum(tmp)
+  base:
+    app/billing/totals.py: |
+      def order_total(order):
+          return sum(line.price * line.quantity for line in order.lines)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    `tmp` is a hygiene candidate, confirmed because the comprehension makes
+    `line_totals` the one clear rename. The default tier is a severity-less
+    observation, which is outside the finding set, so a correct review keeps
+    `decision: clean` with no findings. The matcher cannot see observations;
+    the empty exhaustive expectation proves hygiene alone never becomes a
+    finding of any severity.
+  taxonomy:
+    capability: [code-hygiene]
+    policy_contract: [code-hygiene]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

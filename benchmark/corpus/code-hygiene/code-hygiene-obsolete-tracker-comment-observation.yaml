@@ -1,0 +1,56 @@
+# Code-hygiene benchmark corpus case (Issue #677, parent #675, policy #676).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Flagged shape, default tier: an obsolete tracker comment. The change
+# deletes the manual retry the comment describes but leaves the comment on
+# the now-plain call. Staleness is proven from the diff alone, never from a
+# tracker lookup.
+
+format: benchmark-case/v2
+
+id: code-hygiene-obsolete-tracker-comment-observation
+title: "A workaround comment survives the change that removes the workaround"
+
+input:
+  patch: |
+    diff --git a/app/sync/client.py b/app/sync/client.py
+    index 1111111..2222222 100644
+    --- a/app/sync/client.py
+    +++ b/app/sync/client.py
+    @@ -1,6 +1,3 @@
+     def pull(client, repo_id):
+         # Workaround for #310: retry once on timeout.
+    -    try:
+    -        return client.fetch(repo_id)
+    -    except TimeoutError:
+    -        return client.fetch(repo_id)
+    +    return client.fetch(repo_id)
+  base:
+    app/sync/client.py: |
+      def pull(client, repo_id):
+          # Workaround for #310: retry once on timeout.
+          try:
+              return client.fetch(repo_id)
+          except TimeoutError:
+              return client.fetch(repo_id)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    The retry code the comment documents is removed in the same delta, so the
+    reference is demonstrably obsolete from local evidence. The default tier
+    is a severity-less observation, which is outside the finding set, so a
+    correct review keeps `decision: clean` with no findings. The matcher
+    cannot see observations; the empty exhaustive expectation proves hygiene
+    alone never becomes a finding of any severity.
+  taxonomy:
+    capability: [code-hygiene]
+    policy_contract: [code-hygiene]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

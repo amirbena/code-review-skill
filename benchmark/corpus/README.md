@@ -300,6 +300,15 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   cases, and unit test
   ([`../../tests/unit/benchmark/test_multi_repository_review_target_corpus.py`](../../tests/unit/benchmark/test_multi_repository_review_target_corpus.py)).
 
+- [`code-hygiene/`](code-hygiene/README.md) — a focused `benchmark-case/v2`
+  sub-corpus proving the shared code hygiene policy: flagged shapes,
+  legitimate-code controls (false-positive measurement), and the P2 severity
+  boundary (Issue
+  [#677](https://github.com/amirbena/code-review-skill/issues/677), parent
+  [#675](https://github.com/amirbena/code-review-skill/issues/675)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../tests/unit/benchmark/test_code_hygiene_corpus.py`](../../tests/unit/benchmark/test_code_hygiene_corpus.py)).
+
 ## Validation
 
 [`../../tests/unit/benchmark/test_benchmark_corpus.py`](../../tests/unit/benchmark/test_benchmark_corpus.py)
