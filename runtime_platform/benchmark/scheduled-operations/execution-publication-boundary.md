@@ -4,6 +4,11 @@ Part of the [scheduled benchmark operations decision record](decision-record.md)
 (GitHub Issue [#464](https://github.com/amirbena/code-review-skill/issues/464)).
 Research / design only; not packaged into either Skill archive.
 
+> **Evidence location (#687).** Which repository the artifacts below live in is
+> fixed by [`private-evidence-repository.md`](private-evidence-repository.md):
+> after the #690 cutover, the handoff refs, `benchmark-history` and every automated benchmark issue live in the private evidence repository.
+> The decisions in this document are otherwise unchanged.
+
 This file fixes where benchmark execution ends and GitHub publication
 begins, who holds which credential on each side, and what GitHub Actions
 may and may not do.
