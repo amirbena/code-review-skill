@@ -16,8 +16,7 @@ changed afterwards. Repository-development document; not packaged into either Sk
 | Subset | 24 fixtures, `subset_id` `fa240faf…310c45`, listed as `subset.case_ids` and verified on every run |
 | Workers | 24 fixtures leave 6 per worker at 4 workers and 12 at 2 |
 
-**Timing evidence is insufficient.** No per-fixture duration, interrupted-run elapsed time or provider window is stored in the
-repository. The only latency figures are the 26–35 s of a 2-case spike (#680) and the maintainer's unconfirmed "30 minutes" wording
+**Timing evidence is insufficient.** No per-fixture duration or provider window is stored in the repository, and the only interrupted-run figure is the maintainer-reported phase duration and the bound derived from it in section 2. The only latency figures are the 26–35 s of a 2-case spike (#680) and the maintainer's unconfirmed "30 minutes" wording
 (#611). The subset is therefore stratified on structural proxies, not measured cost, and "historically slow" is not claimed.
 
 **Method.** Strata are filled in this order, each taking the fixtures not yet chosen, ranked by `sha256("concurrency-campaign-682-v1:" + case_id)`:
@@ -38,7 +37,7 @@ The result mixes 12 `clean` and 12 `changes-required` expectations across 15 of 
 
 **Expected sequential cost (not measured).** At the 26–35 s spike rate one arm costs 24 × 26–35 s ≈ 10–14 min, so Tuesday's `[1,2]` experiment
 is about 16–21 min and Thursday's `[2,4]` about 9–12 min. This is an extrapolation from two cases. If the expensive strata
-cost several times more, the `1`-worker arm may exceed an unknown window; the first Tuesday result is the first real evidence.
+cost several times more, the `1`-worker arm may exceed the evidenced window; the first Tuesday result is the first real evidence.
 
 **Coverage limitations.** The subset cannot show how a full run behaves: 24 of 144 fixtures is a short sample, contention may grow with a longer run,
 9 sub-corpus directories (for example `api-compatibility`, `database-migration-deepening` and `dependency-supply-chain-deepening`) have no fixture in it, and token cost is not measured.
@@ -69,7 +68,18 @@ Classes decide what a failure means. Defaults were proposed in #682 and are fixe
 
 *Outcome* is the number of findings a fixture produced. Disagreement is the share of fixtures whose count differs between two arms, and the baseline is the largest disagreement between two 2-worker arms.
 
-**The window is not assumed.** `window.evidenced_window_s` is `null`. Until a real elapsed-at-SIGTERM figure is recorded, the window check is unmeasured and the decision cannot be GO. Setting it is a decision change and needs a new spec before the first run, never after.
+**The window is a conservative lower bound, not a provider limit.** `window.evidenced_window_s` is `2379.3` and the window budget is `2379.3 × 0.60 = 1427.58 s`; the 0.60 fraction and every other threshold are unchanged. Evidence recorded in [#696](https://github.com/amirbena/code-review-skill/issues/696):
+
+| Item | Value |
+| --- | --- |
+| Source | A maintainer-reported Comprehensive run: 133 fixtures discovered, 105 completed, fixture 106 interrupted during review, `[phase] fixtures FAILED after 2399.4s`, no seal, no heartbeat lines captured. The log is not stored in the repository |
+| Measures | `ProgressLog.phase("fixtures")` logs `FAILED after` only once the `Terminated` exception has unwound, so the figure is process lifetime inside the phase **including cleanup after the signal**. It excludes session start, checkout and planning |
+| Cleanup bound | After the signal, `invoke` runs `stop_process_tree(proc, PARENT_GRACE_S)` (up to 15 s grace, then SIGKILL and up to 3 s wait) and `forwarder.join(timeout=2.0)`: at most **20 s**. This counts from the moment the handler raises `Terminated`; it assumes the handler interrupts the blocking read promptly, which the termination tests exercise but do not time. Heartbeat stop and the log writes take milliseconds and have no code-level bound, so a blocked stderr is the other unquantified delay |
+| Derivation | `floor₀.₁(2399.4 − 0.05 rounding − 20.0 cleanup) = 2379.3 s` |
+| Meaning | Counting the 2399.4 s itself as time before external termination would overstate it by up to 20 s, so it is a lower bound on process lifetime, not on time before the signal. The derived 2379.3 s does not exceed the time before the signal, and any pre-phase time only adds to it. It also holds whatever sent the signal |
+| Not claimed | A provider timeout, a 40-minute guarantee, a service level, or that the SIGTERM came from the execution window (the cause is unverified) |
+
+Limits: one observation, taken by someone else and not reproducible from stored data; the corpus then had 133 fixtures and now has 144; the clock is the runner's monotonic clock. The true window can only be larger than this bound, so the 60 % budget used is stricter than the true one, never looser. Setting or changing this value is a decision change and needs a new spec before the first run, never after.
 
 **Diagnostic indicators** (reported, never gating): per-fixture median and maximum time, peak 1-minute load and child CPU, raw rate-limit hit and timeout counts, and the review CLI state fingerprint. `rate_limit_hits` counts only what the child surfaces; zero is not proof of no throttling.
 
