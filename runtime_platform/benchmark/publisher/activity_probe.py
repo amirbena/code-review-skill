@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import urllib.parse
 from dataclasses import dataclass
 from typing import Callable, Protocol, Sequence
@@ -13,9 +14,13 @@ from runtime_platform.benchmark.publisher.validation import attest_origin
 PROBE_REPOSITORY = "amirbena/code-review-skill-evidence"
 # Built in two parts: the X1 ref is deliberately outside every registered evidence namespace.
 PROBE_REF = "claude/x1" + "-20261010T152046Z"
+# SHA-256 of the X1 probe commit SHA: pins the exact commit without publishing the private SHA.
+PROBE_TIP_SHA256 = "871c14377a9276b918c402601303c0c3a53f11c78d7f0a98cad78bd48d0c02ca"
 
-ATTRIBUTED, REFUSED, REF_UNREADABLE, ACTIVITY_UNAVAILABLE = "attributed", "refused", "ref-unreadable", "activity-unavailable"
-POSITIVE_CODES = frozenset({ATTRIBUTED, REFUSED, REF_UNREADABLE, ACTIVITY_UNAVAILABLE})
+ATTRIBUTED, REFUSED, REF_UNREADABLE, ACTIVITY_UNAVAILABLE, COMMIT_MISMATCH = (
+    "attributed", "refused", "ref-unreadable", "activity-unavailable", "commit-mismatch"
+)
+POSITIVE_CODES = frozenset({ATTRIBUTED, REFUSED, REF_UNREADABLE, ACTIVITY_UNAVAILABLE, COMMIT_MISMATCH})
 REJECTED, ACCEPTED = "rejected", "accepted"
 NEGATIVE_CASES = ("wrong-actor", "missing-activity", "wrong-sha")
 NEGATIVE_CODES = frozenset({REJECTED, ACCEPTED})
@@ -80,10 +85,12 @@ def negative_cases(allowlist: Sequence[str]) -> dict[str, str]:
     }
 
 
-def run_probe(reader: ProbeReader, allowlist: Sequence[str]) -> ProbeResult:
+def run_probe(reader: ProbeReader, allowlist: Sequence[str], *, pinned_sha256: str | None = None) -> ProbeResult:
     tip = reader.ref_tip(PROBE_REF)
     if tip is None:
         positive = REF_UNREADABLE
+    elif hashlib.sha256(tip.encode("utf-8")).hexdigest() != (pinned_sha256 or PROBE_TIP_SHA256):
+        positive = COMMIT_MISMATCH
     else:
         activities = reader.ref_activities(PROBE_REF)
         if activities is None:

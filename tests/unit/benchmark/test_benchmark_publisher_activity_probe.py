@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import io
 import json
 import re
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +22,7 @@ from tests.unit.benchmark.test_benchmark_publisher_github_api import ScriptedOpe
 ALLOW = ["amirbena"]
 WANTED = f"refs/heads/{probe.PROBE_REF}"
 TIP = "c" * 40
+PIN = hashlib.sha256(TIP.encode()).hexdigest()
 ACTOR_SENTINEL = "SENTINEL-actor-7f3a"
 TOKEN = "ghs_SENTINELtokenvalue"
 TIP_PATH = f"/repos/{probe.PROBE_REPOSITORY}/git/ref/heads/{probe.PROBE_REF}"
@@ -28,6 +31,21 @@ ACTIVITY_PATH = f"/repos/{probe.PROBE_REPOSITORY}/activity"
 
 def _creation(actor: str = "amirbena", after: str = TIP) -> RefActivity:
     return RefActivity("branch_creation", WANTED, actor, after)
+
+
+_PATCH = mock.patch.object(probe, "PROBE_TIP_SHA256", PIN)
+
+
+def setUpModule() -> None:
+    _PATCH.start()
+
+
+def tearDownModule() -> None:
+    _PATCH.stop()
+
+
+def _probe(reader: Any, allowlist: list[str]) -> probe.ProbeResult:
+    return probe.run_probe(reader, allowlist)
 
 
 class FakeReader:
@@ -55,38 +73,53 @@ def _run_cli(env: dict[str, str], reader: Any = None, phase: str = "pre_cutover"
 
 class ProbeOutcomeTests(unittest.TestCase):
     def test_an_allowlisted_creation_at_the_tip_is_attributed(self) -> None:
-        result = probe.run_probe(FakeReader(activities=[_creation()]), ALLOW)
+        result = _probe(FakeReader(activities=[_creation()]), ALLOW)
         self.assertEqual(result.positive, probe.ATTRIBUTED)
         self.assertTrue(result.passed)
 
     def test_unavailable_activity_fails_closed(self) -> None:
-        result = probe.run_probe(FakeReader(activities=None), ALLOW)
+        result = _probe(FakeReader(activities=None), ALLOW)
         self.assertEqual(result.positive, probe.ACTIVITY_UNAVAILABLE)
         self.assertFalse(result.passed)
 
     def test_an_unreadable_ref_fails_closed_without_asking_for_activity(self) -> None:
         reader = FakeReader(tip=None, activities=[_creation()])
-        result = probe.run_probe(reader, ALLOW)
+        result = _probe(reader, ALLOW)
         self.assertEqual(result.positive, probe.REF_UNREADABLE)
         self.assertEqual([c[0] for c in reader.calls], ["tip"])
         self.assertFalse(result.passed)
 
     def test_empty_activity_is_refused_never_accepted_as_unattributed(self) -> None:
-        result = probe.run_probe(FakeReader(activities=[]), ALLOW)
+        result = _probe(FakeReader(activities=[]), ALLOW)
         self.assertEqual(result.positive, probe.REFUSED)
         self.assertFalse(result.passed)
 
     def test_the_wrong_actor_is_refused(self) -> None:
-        result = probe.run_probe(FakeReader(activities=[_creation(actor="someone-else")]), ALLOW)
+        result = _probe(FakeReader(activities=[_creation(actor="someone-else")]), ALLOW)
         self.assertEqual(result.positive, probe.REFUSED)
 
     def test_a_creation_at_another_sha_is_refused(self) -> None:
-        result = probe.run_probe(FakeReader(activities=[_creation(after="d" * 40)]), ALLOW)
+        result = _probe(FakeReader(activities=[_creation(after="d" * 40)]), ALLOW)
         self.assertEqual(result.positive, probe.REFUSED)
+
+    def test_a_tip_that_is_not_the_pinned_x1_commit_is_refused_even_when_attributed(self) -> None:
+        other = "d" * 40
+        reader = FakeReader(tip=other, activities=[_creation(after=other)])
+        result = _probe(reader, ALLOW)
+        self.assertEqual(result.positive, probe.COMMIT_MISMATCH)
+        self.assertFalse(result.passed)
+        self.assertEqual([c[0] for c in reader.calls], ["tip"])
+
+    def test_the_committed_pin_is_a_digest_not_a_sha(self) -> None:
+        _PATCH.stop()
+        try:
+            self.assertRegex(probe.PROBE_TIP_SHA256, r"^[0-9a-f]{64}$")
+        finally:
+            _PATCH.start()
 
     def test_only_the_pinned_ref_is_requested(self) -> None:
         reader = FakeReader(activities=[_creation()])
-        probe.run_probe(reader, ALLOW)
+        _probe(reader, ALLOW)
         self.assertEqual({ref for _, ref in reader.calls}, {probe.PROBE_REF})
 
 
@@ -96,7 +129,7 @@ class NegativeCaseTests(unittest.TestCase):
 
     def test_the_negatives_do_not_depend_on_the_live_answer(self) -> None:
         for reader in (FakeReader(activities=None), FakeReader(tip=None), FakeReader(activities=[_creation()])):
-            self.assertEqual(probe.run_probe(reader, ALLOW).negatives, probe.negative_cases(ALLOW))
+            self.assertEqual(_probe(reader, ALLOW).negatives, probe.negative_cases(ALLOW))
 
     def test_the_wrong_sha_case_is_not_vacuous(self) -> None:
         # The same synthetic activity at the matching SHA would be accepted: only the SHA makes it a rejection.
@@ -117,7 +150,7 @@ class PinnedTargetTests(unittest.TestCase):
 
     def test_the_real_reader_only_gets_and_only_from_the_pinned_repository(self) -> None:
         reader, opener = self._reader(self._routes())
-        result = probe.run_probe(reader, ALLOW)
+        result = _probe(reader, ALLOW)
         self.assertTrue(result.passed)
         self.assertEqual(opener.methods(), [f"GET {TIP_PATH}", f"GET {ACTIVITY_PATH}"])
         for method, path, body, headers, _ in opener.requests:
@@ -137,18 +170,18 @@ class PinnedTargetTests(unittest.TestCase):
         for status in (403, 404, 422, 500):
             routes = self._routes() | {("GET", ACTIVITY_PATH): (status, {"message": ACTOR_SENTINEL})}
             reader, _ = self._reader(routes)
-            result = probe.run_probe(reader, ALLOW)
+            result = _probe(reader, ALLOW)
             self.assertEqual(result.positive, probe.ACTIVITY_UNAVAILABLE, status)
         reader, _ = self._reader({})
-        self.assertEqual(probe.run_probe(reader, ALLOW).positive, probe.REF_UNREADABLE)
+        self.assertEqual(_probe(reader, ALLOW).positive, probe.REF_UNREADABLE)
         reader, _ = self._reader(self._routes() | {("GET", TIP_PATH): (403, {"message": "x"})})
-        self.assertEqual(probe.run_probe(reader, ALLOW).positive, probe.REF_UNREADABLE)
+        self.assertEqual(_probe(reader, ALLOW).positive, probe.REF_UNREADABLE)
 
 
 class PublicLogSafetyTests(unittest.TestCase):
     def _assert_fixed(self, text: str) -> None:
         lines = [line for line in text.splitlines() if line]
-        pattern = r"^x3-probe: (positive=(attributed|refused|ref-unreadable|activity-unavailable)|negative-(wrong-actor|missing-activity|wrong-sha)=(rejected|accepted)|verdict=(pass|fail))$"
+        pattern = r"^x3-probe: (positive=(attributed|refused|ref-unreadable|activity-unavailable|commit-mismatch)|negative-(wrong-actor|missing-activity|wrong-sha)=(rejected|accepted)|verdict=(pass|fail))$"
         for line in lines:
             self.assertRegex(line, pattern)
         self.assertEqual(len(lines), 5)
