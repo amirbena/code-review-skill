@@ -144,6 +144,13 @@ _TREE_READER = re.compile(
 )
 _QUOTED = re.compile(r"""["']([^"']*)["']""")
 _DYNAMIC = re.compile(r"[*{}$<>]")
+_GLOBBY = re.compile(r"[*?\[{$<]")
+
+# Generalized documentation (issue #701): closed extension set, and the surfaces that are never plain documentation.
+DOC_EXTENSIONS = (".md",)
+PROTECTED_TOPS = frozenset({"skills", "shared", "policies", ".github", "distribution", "capabilities", "scripts", "tests", "dist"})
+FACT_ONLY_ROOTS = ("skills", "shared", "docs", "policies")
+PROTECTED_NAMES = frozenset({"SKILL.md", "AGENTS.md", "CLAUDE.md", "CHANGELOG.md"})
 
 
 @dataclass(frozen=True)
@@ -163,6 +170,22 @@ class ConsumerIndex:
     wildcard_files: tuple[str, ...]
     scanned: int
     unreadable: tuple[str, ...] = ()
+    # Generalized (non-docs/) documentation facts; `general` is False for hand-built indexes, which keep the docs/-only rule.
+    general: bool = False
+    facts: Mapping[str, "FileFacts"] = field(default_factory=dict)
+    modes: Mapping[str, str] = field(default_factory=dict)  # tracked .md path -> git mode, or "shebang"
+
+
+@dataclass(frozen=True)
+class FileFacts:
+    """What one consumer file can name: non-docstring string literals (Python) or its raw text (anything else)."""
+
+    literals: frozenset[str]
+    raw: str | None
+    reader: bool
+    scanner: bool  # a registered content-agnostic scanner: its tree enumeration never consumes a doc
+    reviewed: bool = False  # a reviewed non-docs enumerator: its enumeration of an ancestor directory is accepted
+    dyn_dirs: frozenset[str] = frozenset()  # directory names this file joins with a non-literal (computed) tail
 
 
 # --- Test-impact graph (PARTIAL tier) -----------------------------------------
@@ -685,6 +708,133 @@ def is_doc_candidate(path: str) -> bool:
     )
 
 
+def is_general_doc_candidate(path: str) -> bool:
+    """Format and protection rules only; consumers and file mode are proven separately."""
+    parts = path.split("/")
+    return (
+        len(parts) > 1
+        and path.endswith(DOC_EXTENSIONS)
+        and parts[0].lower() not in PROTECTED_TOPS | {"docs"}
+        and parts[-1] not in PROTECTED_NAMES
+        and not parts[0].startswith(".")
+        and all(p not in ("", ".", "..") and "\\" not in p for p in parts)
+    )
+
+
+def _py_facts(text: str) -> tuple[frozenset[str], frozenset[str]] | None:
+    """Non-docstring string literals, and directory names joined with a computed tail; None when unparsable."""
+    try:
+        tree = ast.parse(text)
+    except (SyntaxError, ValueError, RecursionError):
+        return None
+    docstrings = {id(n.body[0].value) for n in ast.walk(tree) if _has_docstring(n)}
+    literals = frozenset(
+        n.value for n in ast.walk(tree) if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docstrings
+    )
+    dyn: set[str] = set()
+    dirvars: dict[str, str] = {}
+
+    def comps_of(node: ast.AST) -> list[str | None]:
+        out: list[str | None] = []
+        for part in _parts(node, []):
+            out.extend(part.split("/") if part is not None else [None])
+        return out
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            tail = [c for c in comps_of(node.value) if c != ""]
+            if tail and tail[-1] is not None and not tail[-1].endswith(".md") and "." not in tail[-1]:
+                dirvars[node.targets[0].id] = tail[-1]
+    for node in ast.walk(tree):
+        if _path_children(node) is not None:
+            comps = [c for c in comps_of(node) if c != ""]
+            dyn.update(c for c, nxt in zip(comps, comps[1:]) if c is not None and nxt is None)
+        if isinstance(node, ast.JoinedStr):
+            for part, nxt in zip(node.values, node.values[1:]):
+                if isinstance(part, ast.Constant) and isinstance(part.value, str) and isinstance(nxt, ast.FormattedValue):
+                    stripped = part.value.rstrip("/")
+                    if stripped != part.value and stripped:
+                        dyn.add(stripped.rsplit("/", 1)[-1])
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add) and isinstance(node.left, ast.Constant):
+            left = node.left.value
+            if isinstance(left, str) and left.endswith("/") and not isinstance(node.right, ast.Constant):
+                dyn.add(left.rstrip("/").rsplit("/", 1)[-1])
+        base: ast.AST | None = None
+        operands: list[ast.AST] = []
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+            base, operands = node.left, [node.right]
+        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "joinpath":
+            base, operands = node.func.value, list(node.args)
+        if isinstance(base, ast.Name) and base.id in dirvars:
+            if any(not (isinstance(o, ast.Constant) and isinstance(o.value, str)) for o in operands):
+                dyn.add(dirvars[base.id])
+    return literals, frozenset(dyn)
+
+
+def _literal_reaches(literal: str, path: str, facts: FileFacts) -> bool:
+    """Whether one string literal could name this file, its directory, or enumerate a directory above it."""
+    base = path.rsplit("/", 1)[-1]
+    stem = base[: -len(".md")] if base.endswith(".md") else base
+    if stem and stem in literal:
+        return True
+    parent = path.rsplit("/", 1)[0]
+    cleaned = literal.replace("\\", "/")
+    if _GLOBBY.search(cleaned):
+        cleaned = "/".join(_truncated_prefix(cleaned.split("/")))
+        glob_reach = True
+    else:
+        glob_reach = False
+    norm = cleaned.strip().lstrip("./").rstrip("/")
+    if not norm:
+        return False
+    enumerates = facts.reader and not facts.scanner
+    if norm == parent or norm == parent.rsplit("/", 1)[-1]:
+        return glob_reach or enumerates
+    anchored = parent.startswith(norm + "/")
+    ancestor = anchored or (not glob_reach and "/" not in norm and norm in parent.split("/"))
+    return ancestor and (glob_reach or (enumerates and not facts.reviewed))
+
+
+def _truncated_prefix(comps: list[str]) -> list[str]:
+    kept: list[str] = []
+    for comp in comps:
+        if _GLOBBY.search(comp):
+            break
+        kept.append(comp)
+    return kept
+
+
+def general_consumers(path: str, index: ConsumerIndex) -> str | None:
+    """Return the first consumer file that can name `path`, or None when none can."""
+    for rel in sorted(index.facts):
+        facts = index.facts[rel]
+        if facts.raw is not None:
+            # Non-Python or unparsable file: any mention counts, comments included.
+            base = path.rsplit("/", 1)[-1]
+            parent = path.rsplit("/", 1)[0]
+            if base[: -len(".md")] in facts.raw or (parent in facts.raw and not facts.scanner):
+                return rel
+            if facts.reader and not (facts.scanner or facts.reviewed) and _ancestor_in_text(parent, facts.raw):
+                return rel
+            continue
+        if path.rsplit("/", 2)[-2] in facts.dyn_dirs:
+            return rel
+        for literal in facts.literals:
+            if _literal_reaches(literal, path, facts):
+                return rel
+    return None
+
+
+def _without_comment_lines(text: str) -> str:
+    # Whole-line `#` comments (YAML, shell, TOML, unparsable Python) cite a doc; they never read it.
+    return "\n".join(line for line in text.splitlines() if not line.lstrip().startswith("#"))
+
+
+def _ancestor_in_text(parent: str, text: str) -> bool:
+    comps = parent.split("/")
+    return any("/".join(comps[:n]) in text for n in range(1, len(comps)))
+
+
 def _scan_text(text: str) -> tuple[set[tuple[str, ...]], bool, bool]:
     """Return (resolved docs refs, unresolvable docs access, repo-tree enumeration)."""
     refs: set[tuple[str, ...]] = set()
@@ -728,6 +878,7 @@ def consumer_index(tree: Path) -> ConsumerIndex:
     unreadable: list[str] = []
     scanners = {_module_path(m) for m in DOCS_SCANNER_MODULES}
     scanned = 0
+    facts: dict[str, FileFacts] = {}
     for rel in out.decode("utf-8", "surrogateescape").split("\0"):
         if not rel or rel.endswith(".md") or rel in ROUTER_FILES:
             continue
@@ -739,11 +890,59 @@ def consumer_index(tree: Path) -> ConsumerIndex:
         scanned += 1
         found, unresolved, tree_reader = _scan_text(text)
         refs |= found
+        parsed = _py_facts(text) if rel.endswith(".py") else None
+        facts[rel] = FileFacts(
+            parsed[0] if parsed else frozenset(),
+            None if parsed is not None else _without_comment_lines(text),
+            tree_reader,
+            rel in scanners,
+            rel in REVIEWED_NON_DOCS_ENUMERATORS,
+            parsed[1] if parsed else frozenset(),
+        )
         if rel in scanners:
             continue
         if unresolved or (tree_reader and rel not in REVIEWED_NON_DOCS_ENUMERATORS):
             wildcard_files.append(rel)
-    return ConsumerIndex(frozenset(refs), tuple(sorted(wildcard_files)), scanned, tuple(sorted(unreadable)))
+    # Top-level files (build manifests, requirements, ...) and non-Markdown resources of the packaged and docs
+    # trees can package or read documentation too; they feed the generalized scan only, never the docs/ index.
+    top = subprocess.run(
+        ["git", "-C", str(tree), "ls-files", "-z", "--", ":(glob)*", *FACT_ONLY_ROOTS], capture_output=True, check=True
+    ).stdout
+    for rel in top.decode("utf-8", "surrogateescape").split("\0"):
+        if not rel or rel.endswith(".md") or rel in facts:
+            continue
+        try:
+            text = (tree / rel).read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            unreadable.append(rel)
+            continue
+        scanned += 1
+        facts[rel] = FileFacts(frozenset(), _without_comment_lines(text), bool(_TREE_READER.search(text)), False)
+    return ConsumerIndex(
+        frozenset(refs), tuple(sorted(wildcard_files)), scanned, tuple(sorted(unreadable)), True, facts, _doc_modes(tree)
+    )
+
+
+def _doc_modes(tree: Path) -> dict[str, str]:
+    out = subprocess.run(
+        ["git", "-C", str(tree), "ls-files", "-s", "-z", "--", *("*" + e for e in DOC_EXTENSIONS)], capture_output=True, check=True
+    ).stdout
+    modes: dict[str, str] = {}
+    for entry in out.decode("utf-8", "surrogateescape").split("\0"):
+        meta, _, rel = entry.partition("\t")
+        if not rel:
+            continue
+        mode = meta.split(" ", 1)[0]
+        if mode == "100644":
+            try:
+                with open(tree / rel, "rb") as handle:
+                    mode = "shebang" if handle.read(2) == b"#!" else mode
+            except FileNotFoundError:
+                mode = "missing"  # tracked but absent from the tree: a deletion
+            except OSError:
+                mode = "unreadable"
+        modes[rel] = mode
+    return modes
 
 
 def is_consumed(path: str, index: ConsumerIndex) -> bool:
@@ -769,6 +968,13 @@ def _path_tier(path: str, index: ConsumerIndex | None) -> tuple[str, str]:
         if _index_problem(index) is not None:
             return "unverified", FULL
         return ("consumed", FAST) if is_consumed(path, index) else ("pure", DOCS)
+    if index is not None and index.general and is_general_doc_candidate(path) and not is_fast_path(path):
+        if _index_problem(index) is not None:
+            return "unverified", FULL
+        # A path missing from the tree is a deletion; the head scan below still proves nobody consumes it.
+        if index.modes.get(path, "100644") not in ("100644", "missing"):
+            return "other", FULL
+        return ("consumed", FAST) if general_consumers(path, index) is not None else ("pure", DOCS)
     if is_fast_path(path):
         return "allowlist", FAST
     return "other", FULL
@@ -820,7 +1026,7 @@ def classify(paths: Sequence[str], index: ConsumerIndex | None = None, graph: Im
         if everything <= surface:
             return Route(FULL, "the affected test modules are the whole suite", first_test)
     if present == {"pure"}:
-        return Route(DOCS, "every changed path is a documentation file no test or script consumes", None, PURE_DOCS)
+        return Route(DOCS, "every changed path is non-executable documentation (PURE_DOCS) that no test, script, or workflow consumes", None, PURE_DOCS)
     worst = next((p for p, _, tier in kinds if tier == FAST), None)
     if worst is None:
         modules = tuple(sorted(covered))
