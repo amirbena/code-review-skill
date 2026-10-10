@@ -1,0 +1,71 @@
+# Code-hygiene benchmark corpus case (Issue #677, parent #675, policy #676).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Severity boundary, P2 tier: a misleading name backed by causal evidence in
+# the delta. `delay` is milliseconds at two existing call sites of
+# `schedule`, and the change adds a third that passes seconds under the same
+# name. Required finding is P2 only, never P0/P1, and the decision follows
+# it mechanically.
+
+format: benchmark-case/v2
+
+id: code-hygiene-p2-misleading-name-with-causal-evidence
+title: "A new delay local holds seconds while existing delay locals hold milliseconds"
+
+input:
+  patch: |
+    diff --git a/app/jobs/scheduler.py b/app/jobs/scheduler.py
+    index 1111111..2222222 100644
+    --- a/app/jobs/scheduler.py
+    +++ b/app/jobs/scheduler.py
+    @@ -6,3 +6,8 @@
+     def retry_upload(queue, job):
+         delay = 500
+         queue.schedule(job, delay)
+    +
+    +
+    +def retry_export(queue, job):
+    +    delay = 5
+    +    queue.schedule(job, delay)
+  base:
+    app/jobs/scheduler.py: |
+      def retry_login(queue, job):
+          delay = 250
+          queue.schedule(job, delay)
+
+
+      def retry_upload(queue, job):
+          delay = 500
+          queue.schedule(job, delay)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: delay-name-reused-with-opposite-unit
+      match: required
+      severity: P2
+      location:
+        location_intent: line
+        path: app/jobs/scheduler.py
+        symbol: retry_export
+        anchor: "delay = 5"
+      claim: >-
+        Two existing queue.schedule call sites pass a `delay` measured in
+        milliseconds (250, 500), and retry_export adds a third that passes 5
+        meaning seconds under the same name, so the export retry fires 5 ms
+        after failure and a reader trusting the shared name will misread it.
+      defect_kind: misleading-name-opposite-meaning
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    A name-quality problem that reaches P2 only because the delta itself shows
+    the same name used with the opposite unit by neighbouring call sites. Pins
+    the upper bound: P2, never P0/P1.
+  taxonomy:
+    capability: [code-hygiene]
+    policy_contract: [code-hygiene]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

@@ -1,0 +1,72 @@
+# Code-hygiene benchmark corpus case (Issue #677, parent #675, policy #676).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Severity boundary, P2 tier: a tracker reference that sends a maintainer to
+# the wrong place for a still-live constraint, with the correct reference
+# visible in the same file. Required finding is P2 only, never P0/P1.
+
+format: benchmark-case/v2
+
+id: code-hygiene-p2-reference-to-wrong-place-for-live-constraint
+title: "A new comment cites a closed duplicate for a constraint that is still live"
+
+input:
+  patch: |
+    diff --git a/app/ingest/batch.py b/app/ingest/batch.py
+    index 1111111..2222222 100644
+    --- a/app/ingest/batch.py
+    +++ b/app/ingest/batch.py
+    @@ -4,6 +4,7 @@
+     #455, which supersedes #310 (closed as a duplicate).
+     """
+     
+    +# Batch size is capped by the upstream API, see #310.
+     MAX_BATCH = 100
+     
+     
+  base:
+    app/ingest/batch.py: |
+      """Batch ingest.
+
+      The upstream API rejects batches over 100 items. That limit is tracked in
+      #455, which supersedes #310 (closed as a duplicate).
+      """
+
+      MAX_BATCH = 100
+
+
+      def chunks(items):
+          return [items[i:i + MAX_BATCH] for i in range(0, len(items), MAX_BATCH)]
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: comment-cites-closed-duplicate-for-live-limit
+      match: required
+      severity: P2
+      location:
+        location_intent: line
+        path: app/ingest/batch.py
+        symbol: MAX_BATCH
+        anchor: "see #310"
+      claim: >-
+        The new comment points maintainers at #310 for the upstream batch
+        limit, but the module docstring says #310 is a closed duplicate
+        superseded by #455 and the limit is still enforced by MAX_BATCH, so
+        a maintainer following the comment lands on a closed issue and may
+        conclude the constraint is gone.
+      defect_kind: tracker-reference-wrong-place-live-constraint
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    A tracker-reference problem that reaches P2 only because local evidence
+    shows the cited issue is a closed duplicate of the live one. Pins the
+    upper bound: P2, never P0/P1.
+  taxonomy:
+    capability: [code-hygiene]
+    policy_contract: [code-hygiene]
+    risk_mode: [quality]
+    affected_surface: [unclassified]
