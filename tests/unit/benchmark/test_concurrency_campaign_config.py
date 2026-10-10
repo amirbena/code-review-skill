@@ -7,6 +7,8 @@ no live model call is made.
 from __future__ import annotations
 
 import copy
+import inspect
+import math
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -14,6 +16,8 @@ from unittest import mock
 import yaml
 
 from runtime_platform.benchmark.scripts import benchmark_concurrency_decision as decision
+from runtime_platform.benchmark.scripts import benchmark_lane_run as lane_run
+from runtime_platform.benchmark.scripts import benchmark_termination as termination
 from runtime_platform.benchmark.scripts import run_concurrency_experiment as exp
 from runtime_platform.benchmark.scripts.benchmark_corpus_membership import discover_comprehensive_fixtures
 
@@ -265,16 +269,27 @@ class ThresholdConfigurationTest(unittest.TestCase):
             with self.assertRaises(decision.SpecError, msg=name):
                 decision.validate_thresholds(spec["decision"], spec["allowed_workers"])
 
-    def test_the_recorded_window_is_an_observed_lower_bound_not_a_provider_sla(self):
+    def test_the_recorded_window_is_a_conservative_bound_not_a_provider_sla(self):
         window = committed()["decision"]["window"]
-        self.assertEqual(window["evidenced_window_s"], 2399.4)
-        self.assertEqual(window["max_fraction_of_window"], 0.6)
-        self.assertAlmostEqual(window["evidenced_window_s"] * window["max_fraction_of_window"], 1439.64)
         evidence = window["evidence"]
-        self.assertEqual(evidence["kind"], "observed-lower-bound")
+        self.assertEqual(evidence["reported_phase_duration_s"], 2399.4)
+        self.assertEqual(evidence["kind"], "conservative-lower-bound")
         self.assertIs(evidence["provider_sla"], False)
         self.assertEqual(evidence["issue"], 696)
         self.assertIn("fixtures phase only", evidence["measures"])
+        derived = math.floor((evidence["reported_phase_duration_s"] - evidence["reported_precision_s"] - evidence["max_cleanup_after_signal_s"]) * 10 + 1e-6) / 10
+        self.assertEqual(window["evidenced_window_s"], derived)
+        self.assertEqual(window["evidenced_window_s"], 2379.3)
+        self.assertLess(window["evidenced_window_s"], evidence["reported_phase_duration_s"])
+        self.assertEqual(window["max_fraction_of_window"], 0.6)
+        self.assertAlmostEqual(window["evidenced_window_s"] * window["max_fraction_of_window"], 1427.58)
+
+    def test_the_cleanup_allowance_covers_the_verified_unwinding_path(self):
+        cleanup = committed()["decision"]["window"]["evidence"]["max_cleanup_after_signal_s"]
+        source = inspect.getsource(lane_run.invoke)
+        self.assertIn("stop_process_tree(proc, PARENT_GRACE_S)", source)
+        self.assertIn("forwarder.join(timeout=2.0)", source)
+        self.assertGreaterEqual(cleanup, termination.PARENT_GRACE_S + termination.KILL_WAIT_S + 2.0)
 
     def test_recording_the_window_leaves_the_other_thresholds_unchanged(self):
         decision_spec = committed()["decision"]

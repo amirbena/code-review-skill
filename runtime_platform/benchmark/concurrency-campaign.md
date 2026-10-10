@@ -16,7 +16,7 @@ changed afterwards. Repository-development document; not packaged into either Sk
 | Subset | 24 fixtures, `subset_id` `fa240faf…310c45`, listed as `subset.case_ids` and verified on every run |
 | Workers | 24 fixtures leave 6 per worker at 4 workers and 12 at 2 |
 
-**Timing evidence is insufficient.** No per-fixture duration or provider window is stored in the repository, and the only interrupted-run figure is the maintainer-reported phase duration recorded in section 2. The only latency figures are the 26–35 s of a 2-case spike (#680) and the maintainer's unconfirmed "30 minutes" wording
+**Timing evidence is insufficient.** No per-fixture duration or provider window is stored in the repository, and the only interrupted-run figure is the maintainer-reported phase duration and the bound derived from it in section 2. The only latency figures are the 26–35 s of a 2-case spike (#680) and the maintainer's unconfirmed "30 minutes" wording
 (#611). The subset is therefore stratified on structural proxies, not measured cost, and "historically slow" is not claimed.
 
 **Method.** Strata are filled in this order, each taking the fixtures not yet chosen, ranked by `sha256("concurrency-campaign-682-v1:" + case_id)`:
@@ -68,16 +68,18 @@ Classes decide what a failure means. Defaults were proposed in #682 and are fixe
 
 *Outcome* is the number of findings a fixture produced. Disagreement is the share of fixtures whose count differs between two arms, and the baseline is the largest disagreement between two 2-worker arms.
 
-**The window is an observed lower bound, not a provider limit.** `window.evidenced_window_s` is `2399.4` and the window budget stays `2399.4 × 0.60 = 1439.64 s`. Evidence recorded in [#696](https://github.com/amirbena/code-review-skill/issues/696):
+**The window is a conservative lower bound, not a provider limit.** `window.evidenced_window_s` is `2379.3` and the window budget is `2379.3 × 0.60 = 1427.58 s`; the 0.60 fraction and every other threshold are unchanged. Evidence recorded in [#696](https://github.com/amirbena/code-review-skill/issues/696):
 
 | Item | Value |
 | --- | --- |
 | Source | A maintainer-reported Comprehensive run: 133 fixtures discovered, 105 completed, fixture 106 interrupted during review, `[phase] fixtures FAILED after 2399.4s`, no seal, no heartbeat lines captured. The log is not stored in the repository |
-| Measures | `ProgressLog.phase("fixtures")` times the phase from entry until the `Terminated` exception has unwound through `stop_process_tree`, which can wait up to about 18 s (15 s grace plus 3 s kill wait) after the signal (`benchmark_progress.py`, `benchmark_termination.py`). It excludes session start, checkout, planning and anything before the phase. It is process lifetime inside the phase, neither wall time since session start nor exact elapsed-at-SIGTERM |
-| Meaning | The environment let the process run for **at least** 2399.4 s inside the phase. That holds whatever sent the SIGTERM, so the figure is a lower bound on the window, and a smaller window makes the 60 % budget stricter, never looser |
+| Measures | `ProgressLog.phase("fixtures")` logs `FAILED after` only once the `Terminated` exception has unwound, so the figure is process lifetime inside the phase **including cleanup after the signal**. It excludes session start, checkout and planning |
+| Cleanup bound | After the signal, `invoke` runs `stop_process_tree(proc, PARENT_GRACE_S)` (up to 15 s grace, then SIGKILL and up to 3 s wait) and `forwarder.join(timeout=2.0)`: at most **20 s**. Heartbeat stop and the log writes take milliseconds and have no code-level bound, so a blocked stderr is the one unquantified delay |
+| Derivation | `floor₀.₁(2399.4 − 0.05 rounding − 20.0 cleanup) = 2379.3 s` |
+| Meaning | Counting the 2399.4 s itself as time before external termination would overstate it by up to 20 s, so it is a lower bound on process lifetime, not on time before the signal. The derived 2379.3 s does not exceed the time before the signal, and any pre-phase time only adds to it. It also holds whatever sent the signal |
 | Not claimed | A provider timeout, a 40-minute guarantee, a service level, or that the SIGTERM came from the execution window (the cause is unverified) |
 
-Limits: one observation, taken by someone else and not reproducible from stored data; the corpus then had 133 fixtures and now has 144; the clock is the runner's monotonic clock. Setting or changing this value is a decision change and needs a new spec before the first run, never after.
+Limits: one observation, taken by someone else and not reproducible from stored data; the corpus then had 133 fixtures and now has 144; the clock is the runner's monotonic clock. A smaller true window only makes the 60 % budget stricter, never looser. Setting or changing this value is a decision change and needs a new spec before the first run, never after.
 
 **Diagnostic indicators** (reported, never gating): per-fixture median and maximum time, peak 1-minute load and child CPU, raw rate-limit hit and timeout counts, and the review CLI state fingerprint. `rate_limit_hits` counts only what the child surfaces; zero is not proof of no throttling.
 

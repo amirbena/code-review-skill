@@ -124,12 +124,16 @@
     },
     "window": {
       "max_fraction_of_window": 0.6,
-      "evidenced_window_s": 2399.4,
+      "evidenced_window_s": 2379.3,
       "evidence": {
         "issue": 696,
-        "kind": "observed-lower-bound",
+        "kind": "conservative-lower-bound",
         "source": "maintainer-reported interrupted Comprehensive run: '[phase] fixtures FAILED after 2399.4s' after SIGTERM in fixture 106 of 133; log not stored in the repository",
-        "measures": "process lifetime of the fixtures phase only, from phase entry to the end of signal unwinding (includes up to about 18 s of child-process cleanup after the signal); excludes session start, setup and planning",
+        "reported_phase_duration_s": 2399.4,
+        "reported_precision_s": 0.05,
+        "max_cleanup_after_signal_s": 20.0,
+        "derivation": "floor_0.1(reported_phase_duration_s - reported_precision_s - max_cleanup_after_signal_s)",
+        "measures": "process lifetime of the fixtures phase only, from phase entry to the end of signal unwinding; the bound removes the maximum verified unwinding time (15 s grace + 3 s kill wait + 2 s stderr forwarder join) so it does not exceed the time before the signal; excludes session start, setup and planning",
         "provider_sla": false
       },
       "worst_case_confirmation_invocations": 20
