@@ -1,6 +1,19 @@
 {
   "schema": "benchmark-schedule/v1",
   "repository": "amirbena/code-review-skill",
+  "evidence": {
+    "phase": "pre_cutover",
+    "repository": "amirbena/code-review-skill",
+    "namespaces": [
+      "claude/benchmark-result-",
+      "claude/benchmark-handoff-check-",
+      "claude/severity-observation-",
+      "claude/severity-trial-",
+      "claude/concurrency-experiment-",
+      "claude/concurrency-trial-"
+    ],
+    "history_branch": "benchmark-history"
+  },
   "entrypoint": "runtime_platform/benchmark/scripts/run_benchmark_routine.py",
   "lanes": {
     "sentinel": {

@@ -34,10 +34,14 @@ if str(REPO_ROOT) not in sys.path:
 
 from runtime_platform.benchmark.scripts import benchmark_seal as seal  # noqa: E402
 from runtime_platform.benchmark.scripts import run_benchmark as rb  # noqa: E402
-from runtime_platform.benchmark.scripts.benchmark_baseline import (  # noqa: E402
-    DirectoryHistory,
-    GitRefHistory,
-    HistorySource,
+from runtime_platform.benchmark.scripts.benchmark_baseline import DirectoryHistory, HistorySource  # noqa: E402
+from runtime_platform.benchmark.scripts.benchmark_evidence_destination import (  # noqa: E402
+    Destination,
+    DestinationMisconfigured,
+    StoreUnavailable,
+    add_remote_argument,
+    exit_for,
+    resolve_destination,
 )
 from runtime_platform.benchmark.scripts.benchmark_corpus_membership import (  # noqa: E402
     SENTINEL_LANE,
@@ -135,7 +139,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Local benchmark-history checkout to read the baseline from (else the remote ref, read-only).",
     )
-    parser.add_argument("--seal-remote", default="origin", help="Git remote the seal is pushed to.")
+    add_remote_argument(parser)
     parser.add_argument(
         "--seal-dir",
         type=Path,
@@ -187,15 +191,31 @@ def _load_manifest(path: Path) -> dict[str, Any]:
     except ManifestError as exc:
         raise RoutineExecutionError(str(exc)) from exc
     errors = validate_manifest(manifest)
+    if errors and errors[0].startswith("evidence"):
+        raise DestinationMisconfigured(f"invalid manifest {path}: {errors[0]}")
     if errors:
         raise RoutineExecutionError(f"invalid manifest {path}: {errors[0]}")
     return manifest
 
 
-def _history_source(args: argparse.Namespace) -> HistorySource:
+def _destination(args: argparse.Namespace, manifest: dict[str, Any]) -> Destination | None:
+    """The proven evidence destination, preflighted; `None` only for a fully local dry run."""
+    if args.seal_dir is not None and args.history_root is not None:
+        return None
+    dest = resolve_destination(manifest, evidence_remote=args.evidence_remote, repo_root=REPO_ROOT)
+    dest.preflight()
+    return dest
+
+
+def _destination_or_none(args: argparse.Namespace) -> Destination | None:
+    return None if args.seal_dir is not None else _destination(args, _load_manifest(args.manifest))
+
+
+def _history_source(args: argparse.Namespace, dest: Destination | None) -> HistorySource:
     if args.history_root is not None:
         return DirectoryHistory(args.history_root)
-    return GitRefHistory(REPO_ROOT, remote=args.seal_remote)
+    assert dest is not None
+    return dest.history()
 
 
 def _write_results_out(path: Path | None, raw_invocations: list[dict]) -> None:
@@ -204,20 +224,22 @@ def _write_results_out(path: Path | None, raw_invocations: list[dict]) -> None:
         path.write_text(json.dumps(raw_invocations, indent=2), encoding="utf-8")
 
 
-def _hand_off(args: argparse.Namespace, ref: str, files: Mapping[str, bytes], commit_file: str, message: str) -> str:
+def _hand_off(args: argparse.Namespace, dest: Destination | None, ref: str, files: Mapping[str, bytes], commit_file: str, message: str) -> str:
     if args.seal_dir is not None:
         return str(seal.seal_to_directory(args.seal_dir, files, commit_file))
-    return f"{args.seal_remote}:{ref}@{seal.seal_to_ref(REPO_ROOT, args.seal_remote, ref, files, message)}"
+    assert dest is not None
+    return dest.location(ref, dest.seal(ref, files, message))
 
 
 def run_handoff_check(args: argparse.Namespace) -> int:
     """Smoke-test that this runtime can seal (contract §5); runs no benchmark."""
+    dest = _destination_or_none(args)
     repo_sha = _git_sha(REPO_ROOT)
     stamp = utc_now()
     ref = f"{seal.HANDOFF_CHECK_REF_PREFIX}{stamp.replace('-', '').replace(':', '')}-{repo_sha[:12]}"
     payload = {"purpose": "handoff smoke test; not a benchmark result", "repo_sha": repo_sha, "at": stamp}
     files = {seal.HANDOFF_CHECK_FILE: seal.encode_json(payload)}
-    where = _hand_off(args, ref, files, seal.HANDOFF_CHECK_FILE, f"benchmark handoff check {stamp}")
+    where = _hand_off(args, dest, ref, files, seal.HANDOFF_CHECK_FILE, f"benchmark handoff check {stamp}")
     print(json.dumps({"passed": True, "handoff": where, "ref": ref, "timestamp": stamp}, indent=2))
     return 0
 
@@ -241,6 +263,7 @@ def _run_benchmark_mode(args: argparse.Namespace, progress: ProgressLog, written
     progress.log(f"[{plan.mode}] discovered {progress.total} fixtures" if plan.corpus is not None else f"[{plan.mode}] {progress.total} invocations")
     manifest = _load_manifest(args.manifest) if plan.corpus is not None else None
     spec = spec_sha256(manifest) if manifest is not None else None  # fail before any invocation
+    dest = _destination(args, manifest) if manifest is not None else None  # proven and preflighted before any model cost
     executable = args.cli or resolve_cli_executable()
     runtime = {
         "runtime_name": args.runtime_name or executable,
@@ -282,10 +305,13 @@ def _run_benchmark_mode(args: argparse.Namespace, progress: ProgressLog, written
         confirmation_budget_s=args.confirmation_budget_s,
     )
     sealed = build_sealed_run(
-        run, plan.corpus, invocations, raw_invocations, manifest, _history_source(args), progress=progress
+        run, plan.corpus, invocations, raw_invocations, manifest, _history_source(args, dest), progress=progress
     )
-    with progress.phase("seal-handoff"):
-        where = _hand_off(args, sealed.ref, sealed.files, seal.RECORD_FILE, f"benchmark result {sealed.run_id}")
+    try:
+        with progress.phase("seal-handoff"):
+            where = _hand_off(args, dest, sealed.ref, sealed.files, seal.RECORD_FILE, f"benchmark result {sealed.run_id}")
+    except StoreUnavailable as exc:  # the run stays unsealed; its files are kept locally for diagnosis
+        return exit_for(exc, run_id=sealed.run_id, destination=dest, files=sealed.files, commit_file=seal.RECORD_FILE)
     record = sealed.record
     print(
         json.dumps(
@@ -315,6 +341,8 @@ def main(argv: list[str] | None = None) -> int:
     except Terminated as exc:  # fail closed: non-zero, never a success line (Issue #660)
         progress.log(terminated_line(exc))
         return exc.exit_code
+    except (DestinationMisconfigured, StoreUnavailable) as exc:
+        return exit_for(exc)
     except (RoutineExecutionError, seal.SealError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

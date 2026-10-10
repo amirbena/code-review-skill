@@ -48,7 +48,7 @@ python3 runtime_platform/benchmark/scripts/publish_benchmark.py sweep [--once] [
   (`contents: write`) and `BENCHMARK_ISSUES_TOKEN` (`issues: write`) are the
   publication App's; optional `BENCHMARK_READ_TOKEN` (`contents: read`, else the
   contents token) carries reads only and may be any read-only installation token —
-  the workflow passes the job's `GITHUB_TOKEN` (§8). Every write is made with an App
+  the workflow passes a third App token, `contents: read` (§8); the job's own `GITHUB_TOKEN` cannot read a private evidence repository. Every request addresses `evidence.repository` of the manifest ([`scheduled-operations/private-evidence-repository.md`](scheduled-operations/private-evidence-repository.md) §4.5, §5.3) and no other repository. Every write is made with an App
   token. A token that is not an installation token (`ghs_…`) is refused. No other variable is read —
   the CLI never reads `GH_TOKEN`, `GITHUB_TOKEN`, or a `gh` login itself — so there is **no
   personal-identity fallback path**; a missing token stops the run before any call.
@@ -246,16 +246,21 @@ workflow of [`publication-architecture.md`](scheduled-operations/publication-arc
   also applies to `watchdog`). The job runs only for `refs/heads/main`, in the
   `benchmark-publication` environment, and one run at a time (`concurrency: benchmark-publish`,
   never cancelled).
-- **Credentials.** The job's `GITHUB_TOKEN` is `contents: read`. Two tokens are minted from
+- **Credentials.** The job's `GITHUB_TOKEN` is `contents: read` on the workflow's own repository and is used for
+  checkout only. The `resolve-evidence` subcommand prints the manifest's `evidence.repository` name (refusing an invalid
+  block or another owner), and three tokens are minted from
   `BENCHMARK_APP_ID` / `BENCHMARK_APP_PRIVATE_KEY` with `actions/create-github-app-token`,
-  each for this repository and one permission. Unless both belong to the App
+  each for **that evidence repository only** and one permission. Unless all three belong to the App
   `BENCHMARK_APP_SLUG` names (`benchmark-publication`), the job stops and neither
   `sweep` nor `watchdog` runs:
 
   | Step | `BENCHMARK_CONTENTS_TOKEN` | `BENCHMARK_ISSUES_TOKEN` | `BENCHMARK_READ_TOKEN` |
   | --- | --- | --- | --- |
   | `sweep` | App, `contents: write` (also its reads) | App, `issues: write` | — |
-  | `watchdog` | — | App, `issues: write` | the job's `GITHUB_TOKEN` |
+
+The workflow log is public, so `sweep` prints only status, ref and gate for a refused run, never the refusal detail.
+
+  | `watchdog` | — | App, `issues: write` | App, `contents: read` (evidence repository) |
 
 - **Sweep → watchdog.** `sweep`'s stdout report is written to a file that `watchdog` reads
   as `--sweep-report` (§7). `watchdog` also runs when `sweep` fails, so a stalled publication

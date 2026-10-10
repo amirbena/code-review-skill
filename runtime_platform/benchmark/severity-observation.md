@@ -43,6 +43,8 @@ TEMPORARY (#652): collects 14 nightly severity observations of one case, then is
    post or push anything else to GitHub.
 ```
 
+The evidence destination is the manifest's `evidence` block ([`private-evidence-repository.md`](scheduled-operations/private-evidence-repository.md) §4, §14). Under `pre_cutover` the prompt above is unchanged; once the phase is `private` the prompt must also pass `--evidence-remote <evidence-repository-remote>` (a credential-free remote), and a run without it exits 2 and writes nothing. An unreachable store exits 3, and the stop condition counts only that store.
+
 ## 4. Evidence format
 
 Each `--trigger scheduled` run pushes one orphan commit to `claude/severity-observation-<run_id>` (never `claude/benchmark-result-*`),

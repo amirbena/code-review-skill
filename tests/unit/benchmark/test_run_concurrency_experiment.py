@@ -20,6 +20,18 @@ from runtime_platform.benchmark.scripts import benchmark_schedule_manifest as ma
 from runtime_platform.benchmark.scripts import benchmark_seal as seal
 from runtime_platform.benchmark.scripts import run_concurrency_experiment as exp
 from runtime_platform.benchmark.scripts.benchmark_lane_run import RoutineExecutionError
+from tests.support.evidence_destination import offline_destination, real_destination
+
+_RESOLUTION = mock.patch.object(exp, "resolve_destination", side_effect=lambda *_a, **_k: offline_destination())
+
+
+def setUpModule() -> None:
+    _RESOLUTION.start()  # no test here contacts a real evidence store
+
+
+def tearDownModule() -> None:
+    _RESOLUTION.stop()
+
 
 SCRIPT = Path(exp.__file__)
 WORKERS_SCRIPT = Path(workers.__file__)
@@ -178,8 +190,10 @@ class StopConditionTest(unittest.TestCase):
         arm.assert_not_called()
 
     def test_main_runs_nothing_when_listing_refs_fails(self):
-        with mock.patch("subprocess.run", side_effect=subprocess.TimeoutExpired("git", 1)), mock.patch.object(exp.workers_mod, "run_arm") as arm:
-            self.assertEqual(exp.main(["--cli", "fake", "--trigger", "scheduled"]), 1)
+        with mock.patch.object(exp, "resolve_destination", return_value=real_destination()), mock.patch(
+            "subprocess.run", side_effect=subprocess.TimeoutExpired("git", 1)
+        ), mock.patch.object(exp.workers_mod, "run_arm") as arm:
+            self.assertEqual(exp.main(["--cli", "fake", "--trigger", "scheduled"]), 3)  # unreadable store: no run
         arm.assert_not_called()
 
     def test_scheduled_run_refuses_cli_arms(self):

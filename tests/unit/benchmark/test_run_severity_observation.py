@@ -14,6 +14,18 @@ from runtime_platform.benchmark.scripts import benchmark_schedule_manifest as ma
 from runtime_platform.benchmark.scripts import benchmark_seal as seal
 from runtime_platform.benchmark.scripts import run_severity_observation as obs
 from tests.support.benchmark_records import make_case, run_output
+from tests.support.evidence_destination import offline_destination, real_destination
+
+_RESOLUTION = mock.patch.object(obs, "resolve_destination", side_effect=lambda *_a, **_k: offline_destination())
+
+
+def setUpModule() -> None:
+    _RESOLUTION.start()  # no test here contacts a real evidence store
+
+
+def tearDownModule() -> None:
+    _RESOLUTION.stop()
+
 
 CASE = "correctness-off-by-one-pagination"
 KEY = "page-end-off-by-one"
@@ -162,8 +174,10 @@ class EvidenceTest(unittest.TestCase):
     def test_failures_are_reported_as_errors_not_tracebacks(self):
         import subprocess
 
-        with mock.patch("subprocess.run", side_effect=subprocess.TimeoutExpired("git", 1)):
-            self.assertEqual(obs.main(["--cli", "fake", "--trigger", "scheduled"]), 1)
+        with mock.patch.object(obs, "resolve_destination", return_value=real_destination()), mock.patch(
+            "subprocess.run", side_effect=subprocess.TimeoutExpired("git", 1)
+        ):
+            self.assertEqual(obs.main(["--cli", "fake", "--trigger", "scheduled"]), 3)  # unreadable store: no run, never "zero refs"
         out = run_output([make_case(CASE)])
         out["run"]["cases"] = []
         with self.assertRaises(lane_run.RoutineExecutionError):
