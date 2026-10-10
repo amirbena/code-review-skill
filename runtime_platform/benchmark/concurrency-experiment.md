@@ -65,8 +65,9 @@ Unavailable measurements are `null` or marked `available: false`, never estimate
 (`run_benchmark.py` does not surface it). Rate-limit evidence counts only what the child surfaces, so zero is not
 proof that nothing was throttled.
 
-`status` is `complete` only when every arm completed every fixture and the audit passed; otherwise `incomplete` or
-`terminated`. `failure_classes` separates `infrastructure` (child crash, no usable output, hard timeout, runtime
+`status` is `complete` only when every arm completed every fixture and the audit passed; otherwise `incomplete`,
+`terminated` (a signal stopped the run) or `aborted` (an unexpected fault; `abort` holds the error type and message,
+the faulting fixture is recorded as a failed `infrastructure` fixture, and the evidence so far is still sealed). `failure_classes` separates `infrastructure` (child crash, no usable output, hard timeout, runtime
 unavailable), `benchmark` (the child ran but a case did not execute) and `isolation` (an audit violation).
 
 ## 5. Stop condition and failure policy

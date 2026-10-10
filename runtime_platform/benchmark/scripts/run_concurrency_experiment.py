@@ -344,10 +344,12 @@ def run(args: argparse.Namespace) -> int:
                 progress.log(f"[arm {count}] {'DONE' if arm.complete else 'INCOMPLETE'} {arm.wall_s:.1f}s completed={arm.completed}/{arm.planned}")
     except Terminated as exc:
         progress.log(terminated_line(exc))
-        arms[-1].cancelled = True  # the interrupted arm is partial, not a coverage failure
+        if arms:
+            arms[-1].cancelled = True  # the interrupted arm is partial, not a coverage failure
         status_hint, exit_code = "terminated", exc.exit_code
     except Exception as exc:  # noqa: BLE001 - an unexpected fault is infrastructure; the evidence so far is still sealed
-        arms[-1].cancelled = True if arms else False
+        if arms:
+            arms[-1].cancelled = True
         progress.log(f"[run] aborted: {type(exc).__name__}: {' '.join(str(exc).split())[:300]}")
         status_hint, abort = "aborted", {"error": type(exc).__name__, "message": " ".join(str(exc).split())[:500]}
     finally:

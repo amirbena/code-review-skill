@@ -321,8 +321,16 @@ def run_arm(
                 outcome = run_fixture_child(
                     fixture, worker=slot, scratch=scratch, executable=executable, timeout=timeout, began=began, children=children
                 )
-            except BaseException:
+            except BaseException as exc:
                 cancel.set()  # stop the other workers from starting fixtures the moment one faults
+                now = time.monotonic() - began
+                with lock:  # the faulting fixture stays identifiable in the evidence
+                    result.outcomes.append(
+                        FixtureOutcome(
+                            fixture.case_id, slot, round(now, 3), 0.0, None, "failed", INFRASTRUCTURE,
+                            f"{type(exc).__name__}: {' '.join(str(exc).split())[:300]}",
+                        )
+                    )
                 raise
             leftovers = sorted(p.name for p in scratch.iterdir())
             with lock:

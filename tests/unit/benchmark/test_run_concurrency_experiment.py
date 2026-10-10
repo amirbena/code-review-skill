@@ -361,8 +361,22 @@ class FailureTest(unittest.TestCase):
         self.assertIn("infrastructure", record["failure_classes"])
         self.assertEqual([a["workers"] for a in record["arms"]], [1])  # the second arm never started
         self.assertEqual(record["arms"][0]["completed"], 2)  # what finished before the fault is kept
+        faulted = [f for f in record["arms"][0]["fixtures"] if f["status"] == "failed"]
+        self.assertEqual(len(faulted), 1)
+        self.assertEqual(faulted[0]["failure_class"], "infrastructure")
+        self.assertIn("OSError", faulted[0]["failure_reason"])
+        self.assertEqual(faulted[0]["case_id"], seen[2])
         self.assertEqual(record["arms"][0]["status"], "incomplete")
         self.assertNotIn("coverage", {v["kind"] for v in record["isolation"]["violations"]})
+
+    def test_a_signal_before_any_arm_starts_still_seals(self):
+        with tempfile.TemporaryDirectory() as t:
+            stub, spec, out = write_stub(Path(t)), small_spec(Path(t)), Path(t) / "out"
+            terminated = exp.Terminated(15, "init")
+            with mock.patch.object(exp, "ArmResult", side_effect=terminated):
+                code = exp.main(["--arms", "1", "--cli", str(stub), "--runtime-version", "v1", "--spec", str(spec), "--seal-dir", str(out)])
+            record = json.loads((out / exp.EXPERIMENT_FILE).read_text())
+        self.assertEqual((code, record["status"], record["arms"]), (143, "terminated", []))
 
     def test_termination_stops_children_and_seals_partial_evidence_as_terminated(self):
         with tempfile.TemporaryDirectory() as t:
