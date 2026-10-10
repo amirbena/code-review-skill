@@ -114,8 +114,8 @@ its paths (renames counted as both paths):
 
 | Class | Rule | Tier |
 | --- | --- | --- |
-| `PURE_DOCS` | every path is a normalized `docs/**/*.md` file that no file under `tests/`, `scripts/`, `runtime_platform/`, `benchmark/`, `capabilities/`, `distribution/`, or `.github/` can read | DOCS |
-| `CONSUMED_DOCS` | a `docs/**/*.md` file that one of those roots references (literal, joined, or directory path) | FAST |
+| `PURE_DOCS` | every path is non-executable documentation (a normalized `docs/**/*.md` file, or a regular tracked `.md` file elsewhere that is not a protected surface) that no file under `tests/`, `scripts/`, `runtime_platform/`, `benchmark/`, `capabilities/`, `distribution/`, `.github/`, or the repository root can read | DOCS |
+| `CONSUMED_DOCS` | such a documentation file that one of those roots references (literal, joined, basename, or directory path) | FAST |
 | `FAST_ALLOWLIST` | every path is on the allowlist in [`ci_test_route.py`](../scripts/validation/ci_test_route.py) | FAST |
 | `PARTIAL_TESTS` | every path is a tracked file under `tests/` with a derived, non-empty affected set (alone or with pure docs) | PARTIAL |
 | `MIXED` | docs plus other paths: tiered by the non-doc paths; docs never lower the tier. Test paths with a FAST path give FAST plus the affected `tests.integration.*` modules | PARTIAL, FAST or FULL |
@@ -131,6 +131,19 @@ registered scanner (`DOCS_SCANNER_MODULES`) or a reviewed non-docs enumerator
 (`REVIEWED_NON_DOCS_ENUMERATORS`). A new such file therefore fails
 `tests/unit/governance/test_change_aware_routing.py` until it is registered.
 The scan is static and cannot see a path assembled by string arithmetic.
+
+Documentation outside `docs/` (an ADR or runbook under `runtime_platform/`, a
+new directory, ...) qualifies by the same evidence, including in the PR that
+introduces it, because CI runs the base-SHA router against the head tree. It
+must be a regular, non-executable `.md` file without a shebang, outside the
+protected surfaces (`skills/`, `shared/`, `policies/`, `.github/`,
+`distribution/`, `capabilities/`, `scripts/`, `tests/`, `SKILL.md`, `AGENTS.md`,
+`CLAUDE.md`, `CHANGELOG.md`). A consumer is any non-comment, non-docstring
+string literal naming its file name or stem, a computed tail joined onto its
+directory, a glob or enumeration of its directory or an ancestor, or a mention
+in a non-Python consumer file; the same scan-health rules as `docs/` apply.
+Comment and docstring citations are not consumers. Documentation never lowers
+the tier of a non-documentation path in the same change set.
 Run
 `python3 scripts/validation/ci_test_route.py classify` locally to print the
 same class, tier, reason, and command CI would use; classification never
