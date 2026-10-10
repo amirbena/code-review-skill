@@ -50,7 +50,7 @@ Each row can be re-checked with the command shown.
 | O2 | On 2026-10-10 at 08:27Z, the maintainer deliberately reset historical execution evidence by deleting 7 `claude/benchmark-result-sentinel-*` refs and 5 `claude/severity-observation-*` refs. This was intentional and maintainer-authorized, not an incident or data loss, and the refs are not to be restored. | `gh api "repos/amirbena/code-review-skill/activity?activity_type=branch_deletion"` |
 | O3 | Records published before the reset keep a `raw.location` that names their staging ref. After the reset, that location no longer resolves. This is expected: the record and receipt on `benchmark-history` remain the authoritative evidence. | the records on `benchmark-history`; O2 |
 | O4 | `run_severity_observation.py` computes its stop condition (14 observations) and its one-per-day check from `ls-remote` of `claude/severity-observation-*` on the seal remote. Because of the O2 reset, the count starts again from zero. The maintainer accepts this. It also shows that a stop-condition count is a property of the store it reads, which is why §10 has a counted-refs rule. | [`run_severity_observation.py`](../scripts/run_severity_observation.py) `prior_observation_refs`, `skip_reason` |
-| O5 | #681 is in progress on `origin/feat/concurrency-measurement-routine` (not merged). It adds `claude/concurrency-experiment-*` and `claude/concurrency-trial-*`, with the same `ls-remote` stop-condition pattern and a spec `storage` block. | `git diff origin/main...origin/feat/concurrency-measurement-routine --stat` |
+| O5 | #681 is merged ([#692](https://github.com/amirbena/code-review-skill/pull/692), `d20d21d`). It adds `claude/concurrency-experiment-*` and `claude/concurrency-trial-*` and a spec `storage` block, and it follows the severity pattern: `run_concurrency_experiment.py` defaults `--seal-remote` to `origin` and counts prior experiment refs with `ls-remote` on that remote (`prior_experiment_refs`). Its Routine is not activated. | `git show d20d21d --stat`; `grep -n "seal-remote\|prior_experiment_refs" runtime_platform/benchmark/scripts/run_concurrency_experiment.py` |
 | O6 | Live rulesets: `benchmark-history` (update, deletion and non-fast-forward, bypassed by the Admin role and the App) and `benchmark-staging-refs`, which covers **only** `refs/heads/claude/benchmark-result-*` (deletion and non-fast-forward). No ruleset covers `claude/severity-*` or `claude/benchmark-handoff-check-*`. | `gh api repos/amirbena/code-review-skill/rulesets/<id>` |
 | O7 | `amirbena/code-review-skill-evidence` does not exist yet. The `benchmark-publication` environment exists with a custom deployment-branch policy. | `gh repo view amirbena/code-review-skill-evidence`; `gh api repos/amirbena/code-review-skill/environments` |
 | O8 | Routine documentation (research preview): a routine selects "one or more GitHub repositories", each cloned at the start of a run from its default branch. Pushes go to `claude/`-prefixed branches by default. Rulesets apply to the connected GitHub access, and "a rule that access can bypass doesn't block a run's push". | [Routines](https://code.claude.com/docs/en/routines), "Repositories and branch permissions" |
@@ -599,12 +599,22 @@ runs (§10).
   counted-refs rule (§10), so a cutover during the campaign keeps its count.
   Refs produced in `pre_cutover` are migrated or deleted under the same rules as
   every other namespace.
-- **Interface note for #681:** its `prior_experiment_refs(remote)` and seal
-  call follow the severity pattern. Whichever of #681 and #688 merges second
-  routes them through the shared destination contract (§4.3). If #681 merges
-  first, #688 adds the prefixes and replaces #681's `remote` argument. If #688
-  merges first, #681 adopts the contract before merging. Neither issue waits
-  for the other.
+- **#688 owns the integration.** #681 is merged (O5), so the shared
+  destination contract is applied to its evidence paths by #688, not by #681.
+  #688 must route all three through the contract of §4.3: the `--seal-remote`
+  default, `prior_experiment_refs` (the stop-condition read, which fails closed
+  per F5) and the seal call in `run_concurrency_experiment.py`. #688 also
+  covers the concurrency refs in its stubbed-remote tests (F7, F8) and in the
+  F10 namespace policy test. Until #688 lands, the entrypoint keeps today's
+  behavior, which is exactly what `pre_cutover` (V1) describes, so no compat
+  work is needed in #681's code.
+- **No new dependency.** The campaign (#681–#683) does not wait for #688.
+  Activating the Routine, running experiments and analysis all proceed under
+  `pre_cutover` rules. If #688 lands during the campaign, the entrypoint's
+  `pre_cutover` path (no remote supplied, checkout's own remote proven to be
+  the source) keeps the campaign running unchanged. Only the `private` phase
+  requires the Routine prompt to supply an evidence remote, and that is
+  #690's step 5 (§10).
 - **Sequencing:** #687 (this ADR) → #688 → #689 → #690. The campaign
   (#681 → #682 → #683) runs in parallel, and #690 schedules its cutover around
   the campaign's run dates.
