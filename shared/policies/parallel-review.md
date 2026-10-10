@@ -122,7 +122,8 @@ A reasonable default split (adjust to the change, do not force all five):
   / test-impact analysis"), config/infra/CI changes (read as text only),
   and materially implicated dependency/build/supply-chain semantics (see
   [`review-scope.md`](review-scope.md), "Dependency / supply-chain
-  deepening review").
+  deepening review"), and changed-delta code hygiene candidates (see
+  [`review-scope.md`](review-scope.md), "Code hygiene review").
 - **Existing-review reconciliation** — prior findings / settled decisions
   per [`review-evidence.md`](review-evidence.md).
 

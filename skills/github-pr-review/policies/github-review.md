@@ -56,7 +56,7 @@ review-reasoning.md         semantic implication, null-like absence risk,
                             placement, code impact / dependency analysis,
                             affected-test impact, api / contract
                             compatibility, dependency / supply-chain
-                            deepening
+                            deepening, code hygiene
         ↓
 parallel-review.md          optional parallel workers per review dimension;
                             execution optimisation only; centralized aggregation

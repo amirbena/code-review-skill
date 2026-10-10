@@ -197,6 +197,20 @@ activated by "Semantic Implication Review" above, alongside — never
 replacing — this file's own "Affected-Test Impact Review" and
 "Architectural Placement Review," and it is not a second scope model.
 
+## Code Hygiene Review
+
+When a PR adds or modifies a comment citing an issue-tracker reference, or
+introduces or renames a variable whose name may hide its intent, apply
+[`review-scope.md`](../../../shared/policies/review-scope.md), "Code
+hygiene review" (canonical home:
+[`code-hygiene.md`](../../../shared/policies/code-hygiene.md)). That shared
+section owns the changed-delta trigger, the candidate-not-proof rule, how
+issue-tracker references and variable names are evaluated, the
+severity-less observation tier, the P2 evidence bar, the never-P0/P1 rule,
+and the false-positive exclusions; this PR-specific policy does not
+restate them. It is not a second scope model and performs no
+issue-tracker lookup.
+
 ## Dependency / Supply-Chain Deepening Review
 
 When a PR changes a dependency manifest or lockfile, a container

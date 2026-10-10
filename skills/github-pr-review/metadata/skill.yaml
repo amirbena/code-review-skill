@@ -61,6 +61,7 @@ shared:
     - ../../../shared/policies/failure-retry-recovery.md
     - ../../../shared/policies/architectural-placement.md
     - ../../../shared/policies/api-contract-compatibility.md
+    - ../../../shared/policies/code-hygiene.md
     - ../../../shared/policies/severity.md
     - ../../../shared/policies/verdict-consistency.md
     - ../../../shared/policies/evidence.md

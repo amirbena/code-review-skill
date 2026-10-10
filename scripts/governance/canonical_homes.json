@@ -446,6 +446,16 @@
       "allow": []
     },
     {
+      "id": "github-index:review-reasoning:code-hygiene-review",
+      "group": "github-index-owned",
+      "text": "## Code Hygiene Review",
+      "owner": "skills/github-pr-review/policies/review-reasoning.md",
+      "scope": [
+        "skills/github-pr-review/policies/github-review.md"
+      ],
+      "allow": []
+    },
+    {
       "id": "github-index:review-reasoning:dependency-supply-chain-deepening-review",
       "group": "github-index-owned",
       "text": "## Dependency / Supply-Chain Deepening Review",

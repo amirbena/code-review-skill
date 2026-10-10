@@ -440,7 +440,9 @@ which a value must be resolved before it is used, or what is reported.
    domain-specific reasoning is warranted and how 0..N such capabilities
    compose — never whether a dimension is considered at all),
    "Null-like absence-risk review," "API / contract compatibility
-   review," "Dependency / supply-chain deepening review," "Existing
+   review," "Dependency / supply-chain deepening review," "Code hygiene
+   review" (canonical home:
+   [`code-hygiene.md`](../../../shared/policies/code-hygiene.md)), "Existing
    behavior ownership,"
    "Root-cause and model-completeness pass" (canonical home:
    [`root-cause-consolidation.md`](../../../shared/policies/root-cause-consolidation.md)),

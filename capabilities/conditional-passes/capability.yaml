@@ -2,7 +2,7 @@ capability: conditional-passes
 summary: >-
   The signal-triggered passes: null-like absence risk, API/contract
   compatibility, failure/retry/recovery, affected-test analysis,
-  architectural placement, and root-cause consolidation.
+  architectural placement, root-cause consolidation, and code hygiene.
 loads: on-activation
 activation:
   - the change trips a pass's own signal (a nullable/optional value newly
@@ -18,6 +18,7 @@ files:
   - shared/policies/failure-retry-recovery.md
   - shared/policies/architectural-placement.md
   - shared/policies/api-contract-compatibility.md
+  - shared/policies/code-hygiene.md
 requires: [review-kernel, finding-contract]
 never:
   - merging findings into one root cause the evidence does not prove

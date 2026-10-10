@@ -62,6 +62,13 @@ important concern or attention point; include scope only when useful>
   naming the page/state actually rendered — never findings, never affecting the
   decision; omitted entirely otherwise>
 
+### Code hygiene observations
+<only when [`../policies/code-hygiene.md`](../policies/code-hygiene.md)
+  qualifies at least one default-tier hygiene observation: at most 3
+  numbered, severity-less observations, each naming file and the concrete
+  rewrite or rename — never findings, never affecting the decision; omitted
+  entirely otherwise>
+
 ### Validation
 - <one entry per selected command, or an explicit no-command entry, using
   exactly `executed`, `skipped`, `failed`, or `unavailable`; include the exact
@@ -208,6 +215,21 @@ additive documentation and changes no Skill's rendered output by itself.
     event.
   - **Inert.** When nothing was rendered or nothing qualifies, the section is
     omitted completely — no heading, no placeholder, no "none" line.
+- **Code hygiene observations** — conditional and distinct from Findings.
+  Absent unless [`../policies/code-hygiene.md`](../policies/code-hygiene.md)
+  qualifies a default-tier observation; the policy owns what qualifies, the
+  cap of 3, and when a concern is promoted to a P2 finding. This template
+  owns only position and shape:
+  - **Placement.** After Rendered observations (or, when absent, after
+    Findings, Requirement coverage, and Context gaps), immediately before
+    Validation.
+  - **Shape.** A `### Code hygiene observations` heading, then numbered
+    entries, each naming file and location. No severity, ID, `confidence`,
+    or blocking meaning; not counted with findings, never fed to the
+    Decision tally, never rendered inline, never published as a review
+    event.
+  - **Inert.** When nothing qualifies, the section is omitted completely —
+    no heading, no placeholder, no "none" line.
 - **Requirement coverage** — conditional and distinct from Findings. It is
   absent when no authoritative task contract was supplied. When present it
   follows [`requirement-coverage.md`](../policies/requirement-coverage.md),

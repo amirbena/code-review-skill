@@ -486,7 +486,9 @@ stop
    the same file. When the invocation changes a dependency manifest,
    lockfile, container base-image reference, or CI/automation action
    reference, also apply "Dependency / Supply-Chain Deepening Review" in
-   the same file. Those
+   the same file. When the invocation adds an issue-tracker reference in a
+   comment or introduces a possibly unclear variable name, also apply "Code
+   Hygiene Review" in the same file. Those
    instructions refine evaluation but never override this Skill's own
    safety boundaries (see
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),

@@ -80,6 +80,7 @@ _SHARED_ORDER: tuple[Entry, ...] = (
     Entry("shared/policies/failure-retry-recovery.md", "conditional-passes"),
     Entry("shared/policies/architectural-placement.md", "conditional-passes"),
     Entry("shared/policies/api-contract-compatibility.md", "conditional-passes"),
+    Entry("shared/policies/code-hygiene.md", "conditional-passes"),
     Entry("shared/policies/severity.md", None),
     Entry("shared/policies/verdict-consistency.md", None),
     Entry("shared/policies/evidence.md", None),
