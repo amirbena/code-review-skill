@@ -91,8 +91,8 @@ code is marked *new*.
 | `claude/benchmark-handoff-check-<UTC>-<sha12>` (`handoff-check.json`) | Routine `auth-check` | maintainer only; never swept | The maintainer deletes it after reading the smoke-test result. No automatic deletion. |
 | `claude/severity-observation-<run_id>` | Routine, `--trigger scheduled` | the entrypoint's stop condition and same-day guard (`ls-remote`); #653 analysis | Kept until #653 has read them (spec `removal_path`), unless the maintainer authorizes a reset. A reset restarts the stop-condition count from zero (O4). |
 | `claude/severity-trial-<run_id>` | manual or API runs of the same entrypoint | none (never counted) | Maintainer discretion. |
-| `claude/concurrency-experiment-<run_id>` (planned, #681) | Routine, scheduled | the #681 stop condition (`ls-remote`); #682 analysis | Kept until #682 has read them (#683 removal path). The same reset rule as for severity refs applies. |
-| `claude/concurrency-trial-<run_id>` (planned, #681) | manual or API runs | none (never counted) | Maintainer discretion. |
+| `claude/concurrency-experiment-<run_id>` (#681) | Routine, scheduled | the #681 stop condition (`ls-remote`); #682 analysis | Kept until #682 has read them (#683 removal path). The same reset rule as for severity refs applies. |
+| `claude/concurrency-trial-<run_id>` (#681) | manual or API runs | none (never counted) | Maintainer discretion. |
 | `benchmark-history` → `records/<lane>/<yyyy>/<run_id>.json` | publisher App, create-only | execution (baseline record), publisher, watchdog | Never pruned. |
 | `benchmark-history` → `receipts/<lane>/<yyyy>/<run_id>.json` | publisher App, create-only | publisher (already-published check), watchdog | Never pruned. |
 | `benchmark-history` → `baselines/<lane>.json` | publisher App (bootstrap); maintainer (promotion) | execution (`GitRefHistory`), publisher | One pointer per lane; replaced only by explicit maintainer promotion. |
@@ -118,14 +118,14 @@ benchmark ref prefix that code can write or read:
 grep -rnE "claude/[a-z]" runtime_platform/benchmark .github/workflows --include='*.py' --include='*.json' --include='*.yml'
 ```
 
-On `main` at `613fa43` it yields `claude/benchmark-result-`,
-`claude/benchmark-handoff-check-`, `claude/severity-observation-` and
-`claude/severity-trial-`. It also yields two concrete
-`claude/benchmark-result-sentinel-…` names, which come from
+On `main` at `d20d21d` (which includes #681) it yields six prefixes:
+`claude/benchmark-result-`, `claude/benchmark-handoff-check-`,
+`claude/severity-observation-`, `claude/severity-trial-`,
+`claude/concurrency-experiment-` and `claude/concurrency-trial-`. It also
+yields two concrete `claude/benchmark-result-sentinel-…` names, which come from
 `schemas/examples/*.record.json` and are instances of
 `claude/benchmark-result-`. The pattern skips the bare confinement prefix
-`claude/` in `benchmark_seal.py`, and `tests/` is outside its scope. With #681's branch it adds
-`claude/concurrency-experiment-` and `claude/concurrency-trial-`. Every other
+`claude/` in `benchmark_seal.py`, and `tests/` is outside its scope. Every other
 `claude/` string in the repository is a path (`.claude/skills/`,
 `.claude/agents/`, `distribution/claude/`), not a ref. All six prefixes are in
 §3.1. #688 turns this grep into a policy test against the namespace registry
