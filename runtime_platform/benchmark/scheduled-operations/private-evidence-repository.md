@@ -13,7 +13,7 @@ while producing it.
 
 | Aspect | State |
 | --- | --- |
-| Architecture (Fully Private evidence, §2) | **Accepted.** The maintainer merged [PR #693](https://github.com/amirbena/code-review-skill/pull/693) (`6c82239`, 2026-10-10) and closed #687 as completed. The ADR named maintainer review as its gate, and no separate approval comment exists on #687. |
+| Architecture (Fully Private evidence, §2) | **Accepted.** The maintainer merged [PR #693](https://github.com/amirbena/code-review-skill/pull/693) (`6c82239`, 2026-10-10) and closed #687 as completed. The ADR named maintainer review as its gate. The maintainer confirmed on PR #700 that the merge and the closure are sufficient evidence of acceptance. |
 | Implementation | **Pending**, owned by [#688](https://github.com/amirbena/code-review-skill/issues/688) and validated by [#689](https://github.com/amirbena/code-review-skill/issues/689). |
 | Cutover | **Pending**, owned by [#690](https://github.com/amirbena/code-review-skill/issues/690). The manifest is still `pre_cutover` and no private repository exists. |
 
@@ -302,7 +302,7 @@ stdout is the durable trace, and an unsealed run is still not evidence.
 phase, everything `benchmark-publish.yml` writes to a public surface (step
 stdout and stderr, `::error::`/`::warning::` annotations, `GITHUB_STEP_SUMMARY`,
 job outputs, uploaded artifacts) is limited to the allowlist in §5.4. #688 must
-make the sweep and the watchdog satisfy it (F12).
+make the sweep and the watchdog satisfy it (F12, F13).
 
 ### 5.4 Public log allowlist (private phase)
 
@@ -328,7 +328,8 @@ without passing through the allowlist.
 
 **Allowed.** Each class derives only from the committed manifest, from ref
 names and ref metadata, or from codes the publisher itself defines. None
-derives from a record's content or from an issue's state.
+derives from a record's content or from an issue's state. **Everything else is
+prohibited**, including every field named in the field policy below.
 
 | Class | Allowed form | Why it is allowed |
 | --- | --- | --- |
@@ -338,9 +339,8 @@ derives from a record's content or from an issue's state.
 | Ref name | a registered namespace prefix plus a valid `run_id` (§3.1) | derived from the two rows above |
 | Repository identity | `owner/name` exactly as in the manifest | public configuration; never a URL |
 | Status and gate codes | a member of a closed set defined in code (the outcome statuses, the gate identifiers, `aborted` reason codes) | the publisher defines them, so they carry no run content |
-| Pipeline counts | non-negative integers counting refs, handoffs or outcomes by status | derived from refs and from the codes above |
+| Pipeline counts | non-negative integers counting refs, pending handoffs or run outcomes **by publisher status code**. Never a count of drift or missed-run issues | derived from refs and from the codes above |
 | `expected_from` | a UTC instant taken from the manifest | public schedule configuration |
-| Issue number | only a number declared in the manifest (for example `health_issue`) | public configuration |
 | Booleans | `ok`, `dry_run`, and `scope` as a code | publisher-defined |
 
 **Not allowed, in any form.** Raw model output; review findings and their
@@ -366,18 +366,37 @@ turn a publication failure into a success, so a withheld value never changes an
 exit status. An uncaught exception must reach the public log only as a fixed
 code, not as its message.
 
-**Unresolved: not allowed until the maintainer decides.** These fields are
-emitted today. Each is derived from a record's content or from an issue's
-state, and the existing ADR does not decide whether public exposure is
-acceptable. They stay **excluded** from public logs in the `private` phase
-until a decision is recorded here. This is a limit on what #688 may emit, not
-an instruction to remove anything in `pre_cutover`.
+**Field policy (decided on PR #700).** The stricter fail-closed policy applies.
+Each field below is emitted today. Each is derived from a record's content, from
+schedule state or from an issue's state, so each stays **private** and must not
+appear on any public surface in the `private` phase, whatever its value. There
+is no "safe value" exception.
 
-| # | Fields | Question |
+| Field (today's name) | Public in `private` phase? | Where it may be read instead |
 | --- | --- | --- |
-| L1 | `finished_at`, `overdue`, the watchdog's per-lane `action`, and `last_successful_sweep` | These expose record timing and whether a lane is missing runs. Is that schedule state part of the "operational evidence" that E5 keeps private, or is a public heartbeat acceptable? |
-| L2 | `missed_run_issue`, `open_drift_issues`, `open_missed_run_issues` and any issue number discovered by reading issue state | These reveal that a regression or a missed run exists. Same question, and whether a count alone is acceptable. |
-| L3 | the `commit` SHA of a persisted record | It is only an identifier in a private repository, but it is not in the existing list. Is a `run_id` enough? |
+| `finished_at` | **No** | the private record, and the private health issue |
+| `overdue`, and the watchdog's per-lane and `health` `action` | **No** | the private health and missed-run issues |
+| `last_successful_sweep` | **No** | the private health issue |
+| `missed_run_issue`, and every other issue number (private or public), however obtained | **No** | the private evidence repository |
+| `open_drift_issues`, `open_missed_run_issues` and any other count of drift or missed-run items | **No** | the private health issue |
+| `commit` (the persisted evidence commit SHA) and every other git object id from the evidence repository | **No** | the private repository |
+| `detail`, `aborted` reason text, `error:` text, tracebacks | **No** (§5.4 "Not allowed") | local diagnostics, or the private repository |
+| `identity`, `ok`, `scope`, `dry_run`, lane and run identifiers, `ref`, status and gate codes, pipeline counts, `expected_from` | Yes, as defined in "Allowed" | n/a |
+
+A field that is not in either list is prohibited. This is **testable** as a
+closed set: a test collects every key and every line that the sweep and the
+watchdog write to stdout, stderr, annotations and the step summary, and asserts
+that each belongs to the "Allowed" classes and none to the table above.
+
+**What public CI communicates.** The workflow's own conclusion (success or
+failure, from the exit code) is the primary signal. On top of that, each run may
+print only fixed-form lines made of allowed values, for example
+`sweep: ok=<bool> scope=<code>`, `<status-code>: <ref>: [<gate-code>]` for a
+refused or failed run, `watchdog: ok=<bool>`, and `aborted: <reason-code>`.
+Whether a lane is overdue, or a drift exists, is never printed. A maintainer
+learns that from the private health issue. A failed watchdog or sweep step
+fails the job, so operators see that something needs attention without seeing
+what.
 
 **Consistency.** #688 implements the allowlist and its test (F12). #689 checks it
 against a run that uses fixture records and issue bodies carrying sentinel
@@ -517,7 +536,7 @@ to the private repository.
 | #487 comprehensive tracking | open | Same |
 | #488 health status | open | Same |
 | #621 missed run, comprehensive lane | open (automated, `benchmark-missed-run`) | Content-free pointer, then close, **after the private watchdog has run successfully against the private store**. If the lane is still overdue, the private watchdog opens its own issue there |
-| #650 drift, with a maintainer analysis | open (automated body, `keep-open`, maintainer comment) | **Preserved** as a manually maintained development issue. Not closed automatically. After cutover the publisher no longer owns it: it has no route to it (F6), and private drift tracking opens its own issue in the private repository. Whether to edit its body or labels is the maintainer's decision, outside the ADR |
+| #650 drift, with a maintainer analysis | open (automated body, `keep-open`, maintainer comment) | **Preserved** as an existing manually maintained development issue. The maintainer's decision: it is **not** edited, closed, sanitized or migrated, and its historical content stays as it is. After cutover the private publisher must not update it (see the rule below) |
 | #569, #570, #571 historical drift | closed (`not planned`, `completed`, `duplicate`) | **Preserved** as closed history. No migration, no reopening |
 
 Rules that apply to every row:
@@ -526,8 +545,12 @@ Rules that apply to every row:
   issues to records on the public `benchmark-history` branch. Removing it, or
   moving it, is not part of this decision and would need its own maintainer
   decision.
-- Private automated drift and missed-run tracking uses the private repository
-  only. It does not adopt, edit or comment on a public issue.
+- **After cutover the private publisher must not update #650, or any other
+  public evidence-derived issue.** That means no edit, comment, label change,
+  close or reopen. In the `private` phase it has no route to the public
+  repository (§4.5, F6), and the App is removed from that installation (§6).
+  New automated drift reporting belongs exclusively in the private evidence
+  repository, where it opens its own issues. It does not adopt a public one.
 - Public development issues remain allowed. A maintainer may open, write on or
   close them by hand at any time.
 - Until cutover (`pre_cutover`), the publisher keeps managing these issues as it
@@ -645,12 +668,17 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
   `code-review-skill-evidence` in `private`), and never grants
   the permissions listed as "never" in §6.
 - F12. In the `private` phase, every public surface of the publication
-  workflow (§5.4) carries only allowlisted values: fixture records, issue bodies
-  and exception messages containing sentinel strings never appear, and a value
-  on the unresolved list (L1–L3) is withheld.
+  workflow (§5.4) carries only allowlisted values. A test feeds fixture records,
+  issue bodies and exception messages that contain sentinel strings and asserts
+  that none appears, and that none of the private fields of the §5.4 field policy
+  appears for any input (`finished_at`, `overdue`, watchdog `action`,
+  `last_successful_sweep`, issue numbers, drift and missed-run counts, evidence
+  commit SHAs). The test fails if the sweep or the watchdog emits a key or line
+  outside the allowed classes.
 - F13. In the `private` phase, a failure reports a status code and a gate code
-  without `detail` text, and an uncaught exception reaches the public log only
-  as a fixed code.
+  without `detail` text, an uncaught exception reaches the public log only as a
+  fixed code, and the job's success or failure is carried by its exit status.
+  Withholding a value never changes that status.
 
 **Rollback / migration**
 
