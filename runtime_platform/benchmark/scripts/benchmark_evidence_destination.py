@@ -102,11 +102,20 @@ class Destination:
         try:
             return seal.seal_to_ref(self.repo_root, self.remote, ref, files, message)
         except seal.SealUnconfirmedError as exc:
-            raise StoreUnavailable(str(exc), error_class="read-back", status=STATUS_UNCONFIRMED) from exc
+            raise StoreUnavailable(self._scrub(str(exc)), error_class="read-back", status=STATUS_UNCONFIRMED) from exc
         except seal.SealError as exc:
             raise StoreUnavailable(
-                f"the seal was not written ({classify_git_error(str(exc))}): {_excerpt(str(exc))}", error_class=classify_git_error(str(exc))
+                f"the seal was not written ({classify_git_error(str(exc))}): {self._scrub(str(exc))}", error_class=classify_git_error(str(exc))
             ) from exc
+
+    def _scrub(self, text: str) -> str:
+        """A bounded excerpt of a git error with credentials redacted and the remote named by its repository identity."""
+        text = redact(" ".join(text.split()))
+        if "/" in self.remote or "@" in self.remote:  # a URL or path appears inside longer ones (`<url>/info/refs`), so replace it anywhere
+            text = text.replace(self.remote, self.repository)
+        else:  # a bare remote name is replaced only as a whole word
+            text = re.sub(rf"(?<![\w./:@-]){re.escape(self.remote)}(?![\w./:@-])", self.repository, text)
+        return text[:200]
 
     def history(self) -> Any:
         from runtime_platform.benchmark.scripts.benchmark_baseline import GitRefHistory
@@ -117,17 +126,13 @@ class Destination:
         return f"{self.repository}:{ref}@{commit}"
 
 
-def _excerpt(text: str, limit: int = 200) -> str:
-    """A bounded, single-line, URL-redacted excerpt of a git error for the operator."""
-    return redact(" ".join(text.split()))[:limit]
-
-
 def classify_git_error(text: str) -> str:
     """A coarse, content-free class for a git failure; the raw text may carry URLs."""
     lowered = text.lower()
     for needle, label in (
         ("timed out", "timeout"),
         ("authentication", "unauthorized"), ("permission denied", "unauthorized"), ("403", "unauthorized"),
+        ("terminal prompts disabled", "unauthorized"), ("could not read username", "unauthorized"),
         ("could not read from remote", "unreachable"), ("repository not found", "not-found"),
         ("could not resolve", "unreachable"), ("unable to access", "unreachable"), ("does not appear to be a git", "not-found"),
         ("rejected", "rejected"), ("protected branch", "rejected"), ("declined", "rejected"),

@@ -14,7 +14,7 @@ while producing it.
 | Aspect | State |
 | --- | --- |
 | Architecture (Fully Private evidence, §2) | **Accepted.** The maintainer merged [PR #693](https://github.com/amirbena/code-review-skill/pull/693) (`6c82239`, 2026-10-10) and closed #687 as completed. The ADR named maintainer review as its gate. The maintainer confirmed on PR #700 that the merge and the closure are sufficient evidence of acceptance. |
-| Implementation | **Destination contract delivered under `pre_cutover`** by [#688](https://github.com/amirbena/code-review-skill/issues/688) ([PR #698](https://github.com/amirbena/code-review-skill/pull/698), `71acb33`; §14). **Still pending:** the private-phase public-log field policy (§5.4, F12/F13), which that PR does not implement, and validation by [#689](https://github.com/amirbena/code-review-skill/issues/689). |
+| Implementation | **Destination contract delivered under `pre_cutover`** by [#688](https://github.com/amirbena/code-review-skill/issues/688) ([PR #698](https://github.com/amirbena/code-review-skill/pull/698), `71acb33`; §14). **Still pending:** the private-phase public-log field policy (§5.4, F12/F13), which that PR does not implement, and the cutover precondition G-open-1. Validation by [#689](https://github.com/amirbena/code-review-skill/issues/689) is recorded in the [validation gate](private-evidence-validation-gate.md). |
 | Cutover | **Pending**, owned by [#690](https://github.com/amirbena/code-review-skill/issues/690). The manifest is still `pre_cutover` and no private repository exists. |
 
 Clarified by [#699](https://github.com/amirbena/code-review-skill/issues/699):
@@ -698,6 +698,9 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 
 **Cutover order:**
 
+0. **Gate.** The [validation gate](private-evidence-validation-gate.md) (#689) passes on the commit being
+   cut over from, and its open precondition G-open-1 (the §5.4 public-log allowlist, F12/F13) is closed. The
+   cutover commit of step 4 is not merged before this.
 1. Pause the lane Routines and any other evidence-producing Routine. A
    temporary campaign's Routine stays enabled and is handled by the
    counted-refs rule below.
