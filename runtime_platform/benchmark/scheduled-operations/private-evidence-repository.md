@@ -14,7 +14,7 @@ while producing it.
 | Aspect | State |
 | --- | --- |
 | Architecture (Fully Private evidence, §2) | **Accepted.** The maintainer merged [PR #693](https://github.com/amirbena/code-review-skill/pull/693) (`6c82239`, 2026-10-10) and closed #687 as completed. The ADR named maintainer review as its gate. The maintainer confirmed on PR #700 that the merge and the closure are sufficient evidence of acceptance. |
-| Implementation | **Destination contract delivered under `pre_cutover`** by [#688](https://github.com/amirbena/code-review-skill/issues/688) ([PR #698](https://github.com/amirbena/code-review-skill/pull/698), `71acb33`; §14). **Still pending:** the private-phase public-log field policy (§5.4, F12/F13), which that PR does not implement, and the cutover precondition G-open-1. Validation by [#689](https://github.com/amirbena/code-review-skill/issues/689) is recorded in the [validation gate](private-evidence-validation-gate.md). |
+| Implementation | **Destination contract delivered under `pre_cutover`** by [#688](https://github.com/amirbena/code-review-skill/issues/688) ([PR #698](https://github.com/amirbena/code-review-skill/pull/698), `71acb33`; §14). The private-phase public-log allowlist (§5.4, F12/F13), which that PR did not implement, is delivered by [#704](https://github.com/amirbena/code-review-skill/issues/704), closing the cutover precondition G-open-1. Validation by [#689](https://github.com/amirbena/code-review-skill/issues/689) is recorded in the [validation gate](private-evidence-validation-gate.md). |
 | Q4 amendment | **Accepted risk recorded** by [#706](https://github.com/amirbena/code-review-skill/issues/706): the private repository runs without Rulesets (Q4 "Amendment"). Public-source protections are unchanged. X2 is resolved; X1, X3 and X4 remain open. |
 | Cutover | **Pending**, owned by [#690](https://github.com/amirbena/code-review-skill/issues/690). The manifest is still `pre_cutover` and no private repository exists. |
 
@@ -303,8 +303,8 @@ stdout is the durable trace, and an unsealed run is still not evidence.
 phase, everything `benchmark-publish.yml` writes to a public surface (step
 stdout and stderr, `::error::`/`::warning::` annotations, `GITHUB_STEP_SUMMARY`,
 job outputs, uploaded artifacts) is limited to the allowlist in §5.4. The sweep and the watchdog must
-satisfy it (F12, F13) no later than the cutover commit. #688 as merged does not
-yet (§14).
+satisfy it (F12, F13) no later than the cutover commit. #688 as merged did not;
+[#704](https://github.com/amirbena/code-review-skill/issues/704) implements it (`runtime_platform/benchmark/publisher/public_log.py`).
 
 ### 5.4 Public log allowlist (private phase)
 
@@ -626,7 +626,7 @@ default-branch protection. Nothing else in this ADR is relaxed.
 | Actions disabled in the evidence repository (Q1) | **Mandatory, unchanged** |
 | Public creation ruleset on every registered evidence prefix, no bypass actors | **Mandatory, unchanged; applied at cutover** |
 | No evidence writer targets the public repository; stale Routine configuration fails closed (V6, V8); no fallback to `origin` | **Mandatory, unchanged** |
-| No evidence in public issues, comments or Actions logs beyond the §5.4 allowlist (F12, F13) | **Mandatory, unchanged; not yet implemented (G-open-1)** |
+| No evidence in public issues, comments or Actions logs beyond the §5.4 allowlist (F12, F13) | **Mandatory, unchanged; implemented by [#704](https://github.com/amirbena/code-review-skill/issues/704) (G-open-1 closed)** |
 
 **No compensation.** No infrastructure is added solely to make up for the missing
 Rulesets (no mirror, backup service, or second repository).
@@ -756,7 +756,7 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 **Cutover order:**
 
 0. **Gate.** The [validation gate](private-evidence-validation-gate.md) (#689) passes on the commit being
-   cut over from, and its open precondition G-open-1 (the §5.4 public-log allowlist, F12/F13) is closed. The
+   cut over from, and its precondition G-open-1 (the §5.4 public-log allowlist, F12/F13; closed by [#704](https://github.com/amirbena/code-review-skill/issues/704)) holds. The
    cutover commit of step 4 is not merged before this. The readiness items added by the Q4 amendment are
    listed in §12.1.
 1. Pause the lane Routines and any other evidence-producing Routine. A

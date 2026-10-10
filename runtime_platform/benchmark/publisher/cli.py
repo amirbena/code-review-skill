@@ -5,14 +5,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 from pathlib import Path
 from datetime import datetime
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping, NoReturn, Sequence
 
 from runtime_platform.benchmark.publisher import github_api
 from runtime_platform.benchmark.publisher.memory import dry_run_overlay
 from runtime_platform.benchmark.publisher.ports import FatalPublicationError
+from runtime_platform.benchmark.publisher.public_log import PublicLog
 from runtime_platform.benchmark.publisher.model import SCOPE_ALL, Ports, SweepConfig, WatchdogConfig
 from runtime_platform.benchmark.publisher.sweep import run_sweep
 from runtime_platform.benchmark.publisher.watchdog import run_watchdog
@@ -25,8 +25,16 @@ Clock = Callable[[], datetime]
 EXIT_USAGE = 2
 
 
+class _FixedErrorParser(argparse.ArgumentParser):
+    """A usage error is a fixed code: argparse would echo the offending argument, and the phase is not yet known."""
+
+    def error(self, message: str) -> NoReturn:
+        PublicLog(None).error(message, "usage")
+        raise SystemExit(EXIT_USAGE)
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = _FixedErrorParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     sweep = sub.add_parser("sweep", help="Publish every unpublished sealed result, oldest first.")
     sweep.add_argument("--once", action="store_true", help="A local or disaster-recovery pass outside GitHub Actions.")
@@ -55,8 +63,9 @@ def evidence_repository(manifest: Mapping[str, Any]) -> str:
     return manifest["evidence"]["repository"]
 
 
-def _fail(message: str) -> int:
-    print(f"error: {message}", file=sys.stderr)
+def _fail(message: str, code: str, log: PublicLog | None = None) -> int:
+    """Every error line goes through the public-log writer: the message in `pre_cutover`, only `code` in `private`."""
+    (log or PublicLog(None)).error(message, code)
     return EXIT_USAGE
 
 
@@ -90,7 +99,8 @@ def _real_ports(env: Mapping[str, str], repository: str, *, read_only_history: b
 
 
 def _open_ports(
-    args: argparse.Namespace, env: Mapping[str, str], manifest: Mapping[str, Any], identity: str, ports_factory: PortsFactory | None
+    args: argparse.Namespace, env: Mapping[str, str], manifest: Mapping[str, Any], identity: str, ports_factory: PortsFactory | None,
+    log: PublicLog,
 ) -> Ports | int:
     """The ports for one pass (dry-run overlaid), or the usage-error exit code."""
     repository = evidence_repository(manifest)
@@ -100,30 +110,24 @@ def _open_ports(
         else:
             ports = _real_ports(env, repository, read_only_history=args.command == "watchdog")
     except FatalPublicationError as exc:
-        return _fail(str(exc))
+        return _fail(str(exc), "evidence-unavailable", log)
     if args.dry_run:
         store, tracker = dry_run_overlay(ports.store, ports.tracker, repository, identity)
         ports = Ports(ports.reader, store, tracker)
-        print("dry run: nothing is written to GitHub", file=sys.stderr)
-    print(f"acting identity: {identity} (GitHub App installation tokens only; no personal identity is used)", file=sys.stderr)
+        log.note("dry run: nothing is written to GitHub")
+    log.acting_identity(identity)
     return ports
 
 
 def _sweep(
-    args: argparse.Namespace, manifest: Mapping[str, Any], identity: str, ports: Ports, run_url: str, clock: Clock | None
+    args: argparse.Namespace, manifest: Mapping[str, Any], identity: str, ports: Ports, run_url: str, clock: Clock | None, log: PublicLog
 ) -> int:
     config = SweepConfig(
         manifest=manifest, identity=identity, run_url=run_url, local_once=args.once,
         only_run_id=args.run_id, accept_unattributed=args.accept_unattributed, dry_run=args.dry_run, **({"clock": clock} if clock else {}),
     )
     report = run_sweep(ports, config)
-    for outcome in report.outcomes:
-        if outcome.status in ("refused", "failed"):
-            # the workflow log is public: status, ref and gate only, never the refusal detail (it can quote record content)
-            print(f"{outcome.status}: {outcome.ref}: [{outcome.gate or 'step'}]", file=sys.stderr)
-    if report.aborted:
-        print(f"aborted: {report.aborted}", file=sys.stderr)
-    print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
+    log.sweep(report)
     return 0 if report.ok else 1
 
 
@@ -143,12 +147,10 @@ def _sweep_succeeded(path: Path | None) -> bool | str:
     return report.get("ok") is True and report.get("aborted") is None and report.get("scope") == SCOPE_ALL and report.get("dry_run") is False
 
 
-def _watchdog(manifest: Mapping[str, Any], identity: str, ports: Ports, succeeded: bool, clock: Clock | None) -> int:
+def _watchdog(manifest: Mapping[str, Any], identity: str, ports: Ports, succeeded: bool, clock: Clock | None, log: PublicLog) -> int:
     config = WatchdogConfig(manifest=manifest, identity=identity, sweep_succeeded=succeeded, **({"clock": clock} if clock else {}))
     report = run_watchdog(ports, config)
-    if report.aborted:
-        print(f"aborted: {report.aborted}", file=sys.stderr)
-    print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
+    log.watchdog(report)
     return 0 if report.ok else 1
 
 
@@ -164,40 +166,56 @@ def main(
     try:
         manifest = load_manifest(args.manifest)
     except ManifestError as exc:
-        return _fail(str(exc))
+        return _fail(str(exc), "invalid-manifest")
+    except Exception:  # noqa: BLE001 - no phase is known yet: an unreadable manifest is a fixed code, never a traceback
+        return _fail("the manifest could not be read", "invalid-manifest")
+    log = PublicLog(manifest)
     errors = validate_evidence_block(manifest.get("evidence"), manifest.get("repository"))
     if errors:
-        return _fail(f"invalid evidence destination: {errors[0]}")
+        return _fail(f"invalid evidence destination: {errors[0]}", "invalid-evidence-destination", log)
+    try:
+        return _run(args, env, manifest, log, ports_factory, clock)
+    except Exception:  # noqa: BLE001 - in `private` an uncaught exception reaches the public log only as a fixed code (F13)
+        if not log.private:
+            raise
+        log.internal_error()
+        return 1
+
+
+def _run(
+    args: argparse.Namespace, env: Mapping[str, str], manifest: Mapping[str, Any], log: PublicLog,
+    ports_factory: PortsFactory | None, clock: Clock | None,
+) -> int:
     if args.command == "resolve-evidence":
         owner, name = evidence_repository(manifest).split("/")
         if owner.lower() != args.owner.lower():
-            return _fail("the evidence repository must belong to the workflow's owner")
+            return _fail("the evidence repository must belong to the workflow's owner", "usage", log)
         print(f"name={name}")
         return 0
     slug = args.app_slug or env.get("BENCHMARK_APP_SLUG")
     if not slug:
-        return _fail("the App slug is required (--app-slug or BENCHMARK_APP_SLUG): the acting identity must be known")
+        return _fail("the App slug is required (--app-slug or BENCHMARK_APP_SLUG): the acting identity must be known", "app-slug-required", log)
     succeeded: bool | str = False
     run_url: str | None = None
     if args.command == "sweep":
         if args.accept_unattributed and not args.run_id:
-            return _fail("--accept-unattributed requires --run-id")
+            return _fail("--accept-unattributed requires --run-id", "usage", log)
         if args.run_id and parse_run_id(args.run_id) is None:
-            return _fail(f"--run-id {args.run_id!r} is not a valid run_id")
+            return _fail(f"--run-id {args.run_id!r} is not a valid run_id", "usage", log)
         run_url = _run_url(args, env, manifest.get("repository", ""))
         if run_url is None:
-            return _fail("outside GitHub Actions a pass is a local one: use --once")
+            return _fail("outside GitHub Actions a pass is a local one: use --once", "usage", log)
     else:
         succeeded = _sweep_succeeded(args.sweep_report)
         if isinstance(succeeded, str):
-            return _fail(succeeded)
+            return _fail(succeeded, "invalid-sweep-report", log)
         if not args.once and not _in_actions(env):
-            return _fail("outside GitHub Actions a pass is a local one: use --once")
+            return _fail("outside GitHub Actions a pass is a local one: use --once", "usage", log)
 
     identity = f"{slug}[bot]"
-    ports = _open_ports(args, env, manifest, identity, ports_factory)
+    ports = _open_ports(args, env, manifest, identity, ports_factory, log)
     if isinstance(ports, int):
         return ports
     if run_url is not None:
-        return _sweep(args, manifest, identity, ports, run_url, clock)
-    return _watchdog(manifest, identity, ports, bool(succeeded), clock)
+        return _sweep(args, manifest, identity, ports, run_url, clock, log)
+    return _watchdog(manifest, identity, ports, bool(succeeded), clock, log)

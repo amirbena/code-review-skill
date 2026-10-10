@@ -9,8 +9,7 @@ of the cutover** owned by [#690](https://github.com/amirbena/code-review-skill/i
 (ADR §10, step 0). Like the rest of [`./`](README.md), this is a repository-development record,
 not packaged into either Skill archive.
 
-**Status: the gate passes for everything #689 can validate; two items are carried to #690 as
-open preconditions (G-open-1, G-open-2).** Nothing here creates, reads or writes a real private
+**Status: the gate passes for everything #689 can validate. G-open-1 is closed by [#704](https://github.com/amirbena/code-review-skill/issues/704) (§6); one item, G-open-2, is carried to #690 as an open precondition.** Nothing here creates, reads or writes a real private
 repository, calls a model or activates a Routine: every check runs against stub bare
 repositories, scripted GitHub responses and the in-memory publisher world.
 
@@ -22,7 +21,8 @@ python3 -m unittest tests.unit.benchmark.test_private_evidence_gate \
   tests.unit.benchmark.test_benchmark_publisher_evidence_destination \
   tests.policy.benchmark.test_evidence_destination_wiring \
   tests.policy.benchmark.test_benchmark_publish_workflow \
-  tests.policy.benchmark.test_private_evidence_gate_docs
+  tests.policy.benchmark.test_private_evidence_gate_docs \
+  tests.unit.benchmark.test_benchmark_publisher_public_log
 ```
 
 The affected suites (`tests.unit.benchmark` as a whole) must also pass; the gate adds no
@@ -65,7 +65,7 @@ Test references are `file::test_name`; the docs test checks that each one exists
 | F9, F9a | pass | `test_evidence_destination_wiring.py::test_the_manifest_validator_rejects_the_matrix_rows_statically`; `test_benchmark_evidence_destination.py::test_pre_cutover_without_a_remote_still_seals_to_the_source` |
 | F10 | pass | `test_evidence_destination_wiring.py::test_every_claude_ref_prefix_in_benchmark_code_is_registered` |
 | F11 | pass | `test_benchmark_publish_workflow.py::test_three_app_tokens_each_one_permission_and_only_the_evidence_repository` |
-| F12, F13 | **open (G-open-1)** | Not implemented by #688 (ADR §5.4, §14); nothing in #689 changes the publisher's output. |
+| F12, F13 | pass | `test_benchmark_publisher_public_log.py` (`F12SweepTests`, `F12WatchdogTests`, `F13FailureTests`, `WriterTests`); `test_benchmark_publish_workflow.py::PublicLogSurfaceTests`. Implemented by [#704](https://github.com/amirbena/code-review-skill/issues/704) in `runtime_platform/benchmark/publisher/public_log.py`. |
 | I1 | pass | `test_benchmark_evidence_destination.py::test_an_existing_ref_is_a_refusal_and_the_run_unsealed`; `test_private_evidence_gate.py::test_i1_a_retry_of_a_sealed_ref_is_refused_and_the_first_seal_stays_intact` |
 | I2 | pass | `test_private_evidence_gate.py::test_i2_publishing_the_same_run_again_is_a_no_op` |
 | I3 | pass | `test_benchmark_evidence_destination.py::test_sealed_content_hash_is_the_same_in_either_store` |
@@ -118,7 +118,7 @@ severity field changed.
 
 | Id | What | Why it is not closed here |
 | --- | --- | --- |
-| G-open-1 | The private-phase public-log allowlist (ADR §5.4; F12, F13). | #688 did not implement it and #689's scope is validation. It must be implemented and its F12/F13 tests must pass no later than the cutover commit (ADR §5.3). |
+| G-open-1 | The private-phase public-log allowlist (ADR §5.4; F12, F13). | **Closed by [#704](https://github.com/amirbena/code-review-skill/issues/704).** `public_log.py` is the one writer of every public CLI line; the F12/F13 tests in the row above pass, including the sentinel-string fixtures. #688 had not implemented it and #689's scope was validation. |
 | G-open-2 | R2 (no run crosses a cutover) and R4 (no ref deleted before its verified copy and approval). | They are rules of the cutover procedure; #690 executes them and records the evidence. |
 
 ## 7. Limits of the stubs (what only #690 can show)
@@ -133,4 +133,4 @@ errors beyond the two classes above.
 
 [`#690`](https://github.com/amirbena/code-review-skill/issues/690) must not merge the cutover
 commit until (a) the commands in the header pass on the commit it cuts over from, and
-(b) G-open-1 is closed. ADR §10 states this as step 0.
+(b) G-open-1 is closed (done by [#704](https://github.com/amirbena/code-review-skill/issues/704); re-run the F12/F13 tests above on the commit being cut over from). ADR §10 states this as step 0.

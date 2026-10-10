@@ -12,6 +12,10 @@ name: Benchmark publish
 # default branch only. The job's GITHUB_TOKEN is `contents: read`; three App tokens,
 # each narrowed to the evidence repository and one permission, carry every request to it.
 #
+# Public logs (ADR §5.4, F12/F13): in the `private` phase every line the CLI writes goes through
+# runtime_platform/benchmark/publisher/public_log.py. The workflow adds no step summary, artifact or
+# annotation carrying values; $SWEEP_REPORT stays on the runner.
+#
 # Commands and credentials: runtime_platform/benchmark/publication-cli.md.
 # Guarded by tests/policy/benchmark/test_benchmark_publish_workflow.py.
 
@@ -106,7 +110,7 @@ jobs:
           READ_SLUG: ${{ steps.read-token.outputs.app-slug }}
         run: |
           if [ "$CONTENTS_SLUG" != "$BENCHMARK_APP_SLUG" ] || [ "$ISSUES_SLUG" != "$BENCHMARK_APP_SLUG" ] || [ "$READ_SLUG" != "$BENCHMARK_APP_SLUG" ]; then
-            echo "::error::the minted tokens belong to '$CONTENTS_SLUG'/'$ISSUES_SLUG'/'$READ_SLUG', not '$BENCHMARK_APP_SLUG'"
+            echo "::error::a minted token does not belong to the publication App"
             exit 1
           fi
 

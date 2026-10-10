@@ -260,6 +260,15 @@ workflow of [`publication-architecture.md`](scheduled-operations/publication-arc
 
 The workflow log is public, so `sweep` prints only status, ref and gate for a refused run, never the refusal detail.
 
+In the `private` evidence phase every stdout and stderr line is written by `publisher/public_log.py` under the ADR §5.4 allowlist
+([private-evidence-repository.md](scheduled-operations/private-evidence-repository.md)): values are validated against their class just
+before they are written, and anything else prints as `withheld`. The sweep report keeps only `identity`, `ok`, `aborted` (a fixed code),
+`scope`, `dry_run`, per-run `ref`, `run_id`, `status` and `gate`, and status counts. The watchdog report keeps only `identity`, `ok`,
+`aborted`, per-lane `lane` and `expected_from`, and `pending_handoffs`. `detail`, `commit`, `finished_at`, `overdue`, `action`, issue
+numbers, drift and missed-run counts, `last_successful_sweep`, `latest_run_id` and exception text are never written. Every `error:` line
+is a fixed code (`usage`, `invalid-manifest`, `evidence-unavailable`, `internal-error`, ...), including a usage error or an unreadable
+manifest, whose phase is not yet known. `pre_cutover` keeps the output above unchanged. Exit statuses do not depend on the phase.
+
   | `watchdog` | — | App, `issues: write` | App, `contents: read` (evidence repository) |
 
 - **Sweep → watchdog.** `sweep`'s stdout report is written to a file that `watchdog` reads
