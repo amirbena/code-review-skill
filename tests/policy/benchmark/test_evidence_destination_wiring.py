@@ -18,10 +18,10 @@ class NamespaceRegistryTests(unittest.TestCase):
     def test_every_claude_ref_prefix_in_benchmark_code_is_registered(self) -> None:
         registry = tuple(sm.load_manifest()["evidence"]["namespaces"])
         found: set[str] = set()
-        for path in sorted(BENCHMARK.rglob("*")):
-            if path.suffix in {".py", ".json"} and "__pycache__" not in path.parts and path.name != "benchmark_evidence_config.py":
+        for path in sorted([*BENCHMARK.rglob("*.py"), *BENCHMARK.rglob("*.json")]):
+            if "__pycache__" not in path.parts and path.name != "benchmark_evidence_config.py":
                 found |= {m for m in REF_LITERAL.findall(path.read_text(encoding="utf-8")) if m != "claude/<name>-"}
-        for workflow in (REPO_ROOT / ".github" / "workflows").glob("*.y*ml"):
+        for workflow in [*(REPO_ROOT / ".github" / "workflows").glob("*.yml"), *(REPO_ROOT / ".github" / "workflows").glob("*.yaml")]:
             found |= set(REF_LITERAL.findall(workflow.read_text(encoding="utf-8")))
         unregistered = {p for p in found if not any(p.startswith(ns) for ns in registry)}
         self.assertEqual(unregistered, set(), "add the namespace to evidence.namespaces and to the ADR's retention table")
