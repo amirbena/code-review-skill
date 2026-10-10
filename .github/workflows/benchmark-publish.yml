@@ -36,6 +36,10 @@ on:
         description: "Read and plan only; every write lands in memory"
         type: boolean
         default: false
+      x3_probe:
+        description: "Run only the read-only X3 activity probe (ADR section 12); no publication"
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -45,7 +49,7 @@ concurrency:
 
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && inputs.x3_probe != true
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: benchmark-publication
@@ -146,3 +150,49 @@ jobs:
           if [ -s "$SWEEP_REPORT" ]; then args+=(--sweep-report "$SWEEP_REPORT"); fi
           if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
           python runtime_platform/benchmark/scripts/publish_benchmark.py watchdog "${args[@]}"
+
+  # Issue #714 (X3): a manual, read-only probe of origin attestation on the private evidence repository.
+  # It mints one contents-read token for the pinned repository and prints fixed codes only.
+  x3-probe:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.x3_probe == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: benchmark-publication
+    permissions:
+      contents: read
+    env:
+      BENCHMARK_APP_SLUG: benchmark-publication
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+
+      - name: Mint the probe read token (contents read)
+        id: probe-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
+        with:
+          app-id: ${{ secrets.BENCHMARK_APP_ID }}
+          private-key: ${{ secrets.BENCHMARK_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: code-review-skill-evidence
+          permission-contents: read
+
+      - name: Refuse a token minted for another App
+        env:
+          PROBE_SLUG: ${{ steps.probe-token.outputs.app-slug }}
+        run: |
+          if [ "$PROBE_SLUG" != "$BENCHMARK_APP_SLUG" ]; then
+            echo "::error::the probe token does not belong to the publication App"
+            exit 1
+          fi
+
+      - name: Probe origin attestation
+        env:
+          BENCHMARK_READ_TOKEN: ${{ steps.probe-token.outputs.token }}
+        run: python runtime_platform/benchmark/scripts/publish_benchmark.py probe-activity
