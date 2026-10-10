@@ -15,6 +15,7 @@ while producing it.
 | --- | --- |
 | Architecture (Fully Private evidence, §2) | **Accepted.** The maintainer merged [PR #693](https://github.com/amirbena/code-review-skill/pull/693) (`6c82239`, 2026-10-10) and closed #687 as completed. The ADR named maintainer review as its gate. The maintainer confirmed on PR #700 that the merge and the closure are sufficient evidence of acceptance. |
 | Implementation | **Destination contract delivered under `pre_cutover`** by [#688](https://github.com/amirbena/code-review-skill/issues/688) ([PR #698](https://github.com/amirbena/code-review-skill/pull/698), `71acb33`; §14). **Still pending:** the private-phase public-log field policy (§5.4, F12/F13), which that PR does not implement, and the cutover precondition G-open-1. Validation by [#689](https://github.com/amirbena/code-review-skill/issues/689) is recorded in the [validation gate](private-evidence-validation-gate.md). |
+| Q4 amendment | **Accepted risk recorded** by [#706](https://github.com/amirbena/code-review-skill/issues/706): the private repository runs without Rulesets (Q4 "Amendment"). Public-source protections are unchanged. X2 is resolved; X1, X3 and X4 remain open. |
 | Cutover | **Pending**, owned by [#690](https://github.com/amirbena/code-review-skill/issues/690). The manifest is still `pre_cutover` and no private repository exists. |
 
 Clarified by [#699](https://github.com/amirbena/code-review-skill/issues/699):
@@ -81,7 +82,7 @@ replaced (§10).
 | E3 | **The publisher stays the publication-only workflow in the public repository.** It uses the same `benchmark-publication` App, installed on the evidence repository, and every token is scoped to the evidence repository only. Actions is disabled in the evidence repository (§6, Q1). |
 | E4 | **`baselines/<lane>.json` is evidence** and moves with `benchmark-history`. Expected baselines in fixtures stay public (§8, Q2). |
 | E5 | **Automated tracking, health, drift and missed-run issues move to the evidence repository.** In the `private` phase the public repository receives no automated issue, comment or log content derived from evidence. Existing public automated issues have a stated disposition (§8, Q3), and public logs are limited to the allowlist (§5.4). |
-| E6 | **One namespace registry, one ruleset over `claude/**`** in the evidence repository. In the `private` phase, the public repository gets a no-bypass ruleset that blocks creating evidence-namespace refs (§8, Q4). |
+| E6 | **One namespace registry.** In the `private` phase, the public repository gets a no-bypass ruleset that blocks creating evidence-namespace refs (§8, Q4). The evidence repository's rulesets are **not provisioned**: the maintainer accepted that risk (§8, Q4 "Amendment"). Its integrity rests on application-level controls. |
 | E7 | **An explicit remote is sufficient.** No storage abstraction or new backend is added. Git refs stay the storage, and ref names stay unchanged (§8, Q5). |
 | E8 | **Records do not depend on where they are stored.** No sealed field names the storage destination, so a migrated copy keeps its `content_sha256` and commit SHA. `provenance.repo` always names the source repository, never the storage destination, in both phases (§7). |
 | E9 | **One active store at a time**, selected by `evidence.phase` and `evidence.repository` in the manifest at the SHA a run checks out. Cutover and rollback each change both values in one commit, through drained, paused transitions (§10). |
@@ -422,6 +423,12 @@ constrained by repository code and the allow-list, not by rulesets. On the
 accidental public publication structurally impossible, because a ruleset with
 an empty bypass list binds admins too.
 
+**Accepted residual A1 (Q4 amendment).** The evidence repository has no Rulesets,
+so GitHub does not stop an authorized identity (the maintainer, a Routine acting
+as the maintainer, or the App) from deleting a ref or force-pushing. §8, Q4
+"Amendment" states the scope. Only the evidence repository is affected. The
+public repository's creation block is unchanged and mandatory.
+
 **Why the key stays in the public repository (Q1).** The evidence repository
 receives pushes from an LLM-driven session. If Actions were enabled there, any
 pushed ref could carry a workflow file, and without a deployment-branch policy
@@ -588,6 +595,56 @@ reveal which fixtures regress.
   or accept a weaker guarantee recorded in an issue), not something the
   implementation decides.
 
+#### Amendment — accepted risk: no Rulesets on the evidence repository
+
+**Decision (maintainer, 2026-10-10; [#706](https://github.com/amirbena/code-review-skill/issues/706)).**
+Rulesets are unavailable on the private evidence repository on the maintainer's
+plan (X2: `GET /repos/amirbena/code-review-skill-evidence/rulesets` answers 403,
+"Upgrade to GitHub Pro or make this repository public"). The maintainer will not
+upgrade the plan solely for this. The repository is private, has one maintainer
+and no external contributors, and is written only by the maintainer and
+authorized automation (Claude Routines and the `benchmark-publication` App).
+This resolves the blocking decision of the last bullet above.
+
+**What is accepted.** The residual risk that an authorized identity deletes a
+ref, force-pushes or modifies history in the **evidence repository**, whether by
+mistake or through a defect. It is an accepted risk. It is not a claim that
+application-level protections are equivalent to Rulesets.
+
+**Scope.** Q4 rules (a) and (c) and the evidence-repository half of rule (b) are
+not provisioned: no `benchmark-history` ruleset, no `claude/**` ruleset, no
+default-branch protection. Nothing else in this ADR is relaxed.
+
+| Control | Status |
+| --- | --- |
+| Private visibility; least-privilege App tokens, one permission each, scoped to the evidence repository (§6, F11) | **Mandatory, unchanged** |
+| Non-forced, allow-listed sealing; refusal of an existing ref (F8, I1, I2) | **Mandatory, unchanged** |
+| Create-only publication; fail-closed destination, identity proof and preflight (V1–V10, F1–F7) | **Mandatory, unchanged** |
+| Provenance and content-hash integrity (I3, I4, P1–P3) | **Mandatory, unchanged** |
+| Reconciliation and recovery (§10, R-a, R-b); no ref deleted before a verified copy and recorded approval (R4) | **Mandatory, unchanged** |
+| Explicit recorded maintainer approval for every destructive operation | **Mandatory, unchanged** |
+| Actions disabled in the evidence repository (Q1) | **Mandatory, unchanged** |
+| Public creation ruleset on every registered evidence prefix, no bypass actors | **Mandatory, unchanged; applied at cutover** |
+| No evidence writer targets the public repository; stale Routine configuration fails closed (V6, V8); no fallback to `origin` | **Mandatory, unchanged** |
+| No evidence in public issues, comments or Actions logs beyond the §5.4 allowlist (F12, F13) | **Mandatory, unchanged; not yet implemented (G-open-1)** |
+
+**No compensation.** No infrastructure is added solely to make up for the missing
+Rulesets (no mirror, backup service, or second repository).
+
+**Public-side gaps stay explicit.** The public creation ruleset covers
+registered prefixes only; an unregistered prefix is blocked by the allow-list in
+code (F8), not by GitHub. Whether the ruleset blocks a push from the Routine's
+access is verified by X1. If GitHub cannot enforce a required public-side
+protection, the gap is reported and recorded in an issue, not waived.
+
+**Reopen conditions.** A second writer or collaborator, any external
+contributor, a plan that provides private-repository Rulesets, or an
+unauthorized or accidental ref deletion or rewrite in the evidence repository.
+
+**Not decided here.** The Q1 deployment-branch-policy question stays closed:
+the key stays in the public repository and Actions stays disabled in the
+evidence repository, so no private-repository environment is needed.
+
 ### Q5 — Is an explicit evidence remote sufficient?
 
 **Decision: yes.** Every producer and consumer already speaks git refs
@@ -700,7 +757,8 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 
 0. **Gate.** The [validation gate](private-evidence-validation-gate.md) (#689) passes on the commit being
    cut over from, and its open precondition G-open-1 (the §5.4 public-log allowlist, F12/F13) is closed. The
-   cutover commit of step 4 is not merged before this.
+   cutover commit of step 4 is not merged before this. The readiness items added by the Q4 amendment are
+   listed in §12.1.
 1. Pause the lane Routines and any other evidence-producing Routine. A
    temporary campaign's Routine stays enabled and is handled by the
    counted-refs rule below.
@@ -798,6 +856,27 @@ runs (§10).
 | X2 | In the evidence repository's settings: whether rulesets and environments (with deployment-branch policies) are available on the account's plan. | the Q4 blocking decision; whether Q1 stays closed |
 | X3 | Query `GET /repos/{evidence}/activity` with an App installation token after a Routine push. | whether origin attestation works unchanged in a private repository (fail-closed with dispatch fallback either way) |
 | X4 | Check whether the provider's clone of the evidence repository fetches every branch. | whether clone time grows with evidence refs. If it does, keep the default branch minimal and document a size trigger |
+
+**Status (2026-10-10).**
+
+| # | Status | What remains |
+| --- | --- | --- |
+| X2 | **Resolved by the Q4 amendment.** Rulesets are unavailable on the private repository (observed: 403), and the maintainer accepted operating without them. Environment and deployment-branch availability need not be observed, because Q1 stays closed on this plan. | Nothing. Reopened only by the Q4 reopen conditions. |
+| X1 | Open, independent. | A Routine selecting both repositories pushes one `claude/x1-*` ref to the evidence repository from the source checkout, then a non-`claude/` branch attempt. It must also show that the public creation ruleset (no bypass) blocks a Routine push to a registered evidence prefix in the **source** repository. The accepted risk does not waive any part of it. |
+| X3 | Open, independent. | After a real push, `GET /repos/{evidence}/activity` with an App installation token records it. The endpoint answers `[]` on the empty repository today, which is not the observation. |
+| X4 | Open, independent. | The provider's clone fetches every branch or not. The evidence repository has no commit yet, so a default branch must exist first. |
+
+### 12.1 Readiness gate for #690 (changes from the Q4 amendment)
+
+| Item | Change |
+| --- | --- |
+| Evidence-repository rulesets and default-branch protection exist | **Removed** as a precondition. The accepted risk (Q4 "Amendment", #706) replaces it. |
+| Q4 accepted risk is recorded in the ADR | **Added**, satisfied once #706 merges. |
+| Application-level controls pass in the validation gate (F1–F11, I1–I4, P1–P3, R1, R3) | **Kept**, now load-bearing for the evidence repository. |
+| Public creation ruleset, no bypass, over every registered prefix | **Kept, mandatory**, applied with the cutover commit. |
+| X1, X3, X4 observed and recorded | **Kept**, each independent. |
+| G-open-1 (F12/F13) implemented and passing | **Kept, blocking.** |
+| Actions disabled and the App installed on the evidence repository only | **Kept** (Q1, §6). |
 
 ## 13. Relationship to existing contracts
 

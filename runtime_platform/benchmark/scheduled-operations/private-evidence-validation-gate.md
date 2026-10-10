@@ -125,7 +125,7 @@ severity field changed.
 
 Stubs can diverge from real GitHub. The checks above do **not** show, and #690 and the maintainer
 experiments of ADR §12 must: the activity API on a private repository (X3), the `benchmark-publication` App's installation on the
-evidence repository and token minting, the public creation ruleset (Q4), how the provider-side
+evidence repository and token minting, the public creation ruleset (Q4; the evidence repository runs without Rulesets by the accepted risk in ADR §8, #706, which weakens none of the checks above), how the provider-side
 Routine authenticates to the private repository (X1), and the real wording of git's authentication
 errors beyond the two classes above.
 
