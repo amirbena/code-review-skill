@@ -23,7 +23,7 @@ export SRC=amirbena/code-review-skill EVD=amirbena/code-review-skill-evidence
 | --- | --- |
 | Gate passes on the commit being cut over from | the command block in the [validation gate](private-evidence-validation-gate.md) |
 | G-open-1 closed (§5.4 allowlist, F12/F13 tests pass) | the gate's §6; tracked by [#704](https://github.com/amirbena/code-review-skill/issues/704) — **blocks the operational cutover, not this PR** |
-| X1–X3 maintainer experiments observed | ADR §12; record outcomes in §6 below |
+| X1–X3 maintainer experiments observed | ADR §12; record outcomes in §6 below. X3 is recorded `PASS` (§6); X1 is outstanding |
 | X4 is `PASS` or `INCONCLUSIVE — ACCEPTED` (maintainer-approved) | ADR §12.2; states in the table below. `INCONCLUSIVE — BLOCKED` and `FAIL` stop the cutover |
 | No campaign run is due during the window | ADR §10 "Counted refs" |
 
@@ -107,7 +107,7 @@ or access error. Refs removed by a maintainer-authorized reset (O2) are not inpu
 | Record | Content | Status |
 | --- | --- | --- |
 | Visibility and access | `private: true`; App installation ID; ruleset IDs | pending |
-| Experiments X1–X3 | observed outcomes | pending |
+| Experiments X1–X3 | observed outcomes | X3: **`PASS`** — [run 38066153068](https://github.com/amirbena/code-review-skill/actions/runs/38066153068), job `114254101385` (2026-10-10): private-repository Activity API read with the `benchmark-publication` App token, origin attributed, wrong-actor / missing-activity / wrong-SHA rejected, `publish` skipped; fail-closed policy unchanged; ADR §12.3. This verifies X3 only and does not approve the cutover. X1: pending |
 | Experiment X4 | state (below), maintainer approval link, baseline measurement (ADR §12.2 item 6) | state `INCONCLUSIVE — ACCEPTED`, [approval on #690](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734) (2026-10-10); baseline pending (recorded at cutover) |
 | Reconciliation report | `reconciliation-report.json` summary: counts, `reconciled`, date | pending |
 | Cutover record | cutover commit SHA, window start/end, Routine prompt updates | pending |

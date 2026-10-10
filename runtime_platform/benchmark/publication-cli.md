@@ -283,19 +283,3 @@ enforces the triggers, the environment and branch guard, the token permissions, 
 secrets, no model or provider credential, pinned first-party actions, no expression inside a
 shell step, the step order, and an import closure with no benchmark execution, evaluation,
 or reference module, no drift classification, and no third-party or process-spawning import.
-
-### 8.1 The X3 activity probe ([#714](https://github.com/amirbena/code-review-skill/issues/714))
-
-`probe-activity` is a temporary, read-only check of ADR §12 experiment X3. It never runs on `schedule`: the `x3-probe` job needs a
-`workflow_dispatch` on `main` with `x3_probe` set, and that dispatch skips the `publish` job.
-
-- **Credentials.** One App token, `contents: read`, minted for `code-review-skill-evidence` (a literal, not the manifest's evidence
-  repository) and refused unless it belongs to `benchmark-publication`. The command reads `BENCHMARK_READ_TOKEN` only.
-- **Check.** It reads the tip of `claude/x1-20261010T152046Z`, requires its SHA-256 to equal a pinned digest of the X1 commit (`commit-mismatch` otherwise; the SHA itself is never committed or printed), reads the activity, then runs the real `attest_origin` with
-  `publication.pusher_allowlist` and `accept_unattributed=False`. It also runs three synthetic negative cases through the same gate:
-  wrong actor, missing activity, wrong SHA. Every request is a GET to the pinned repository; nothing is created or changed.
-- **Output.** Fixed codes only, through `public_log.py`: `positive` is `attributed`, `refused`, `ref-unreadable` or
-  `activity-unavailable` or `commit-mismatch`; each negative is `rejected` or `accepted`; `verdict` is `pass` only for `attributed` with every negative
-  `rejected`. A token, actor, SHA, raw response or repository metadata is never printed.
-- **Reading the result.** `pass` shows the App sees the Routine's `branch_creation` in the private repository. `activity-unavailable`
-  or `refused` means attribution does not work there; the publisher already fails closed and the dispatch fallback applies (ADR §12).
