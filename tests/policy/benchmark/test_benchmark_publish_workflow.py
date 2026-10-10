@@ -218,5 +218,28 @@ def _top_level_names(node: ast.AST) -> set[str]:
     return set()
 
 
+class PublicLogSurfaceTests(unittest.TestCase):
+    """ADR §5.4: no step summary, artifact or value-carrying annotation (F12; issue #704)."""
+
+    def setUp(self) -> None:
+        self.text = WORKFLOW.read_text(encoding="utf-8")
+        self.workflow = yaml.safe_load(self.text)
+
+    def test_no_step_summary_and_no_artifact_upload(self) -> None:
+        self.assertNotIn("GITHUB_STEP_SUMMARY", self.text)
+        self.assertNotIn("upload-artifact", self.text)
+        self.assertNotIn("outputs", self.workflow["jobs"]["publish"])  # no job output reaches a public surface
+
+    def test_annotations_carry_fixed_text_only(self) -> None:
+        for line in self.text.splitlines():
+            if "::error::" in line or "::warning::" in line or "::notice::" in line:
+                self.assertNotRegex(line, r"\$|\{\{", line)
+
+    def test_the_sweep_report_is_only_redirected_and_read_by_the_watchdog(self) -> None:
+        for line in self.text.splitlines():
+            if "$SWEEP_REPORT" in line and not line.lstrip().startswith("#"):
+                self.assertRegex(line, r"> \"\$SWEEP_REPORT\"|--sweep-report|-s \"\$SWEEP_REPORT\"")
+
+
 if __name__ == "__main__":
     unittest.main()

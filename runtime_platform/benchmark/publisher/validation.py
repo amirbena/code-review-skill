@@ -20,6 +20,8 @@ from runtime_platform.benchmark.scripts.benchmark_result import (
 
 MAX_HANDOFF_BYTES = 10 * 1024 * 1024
 _MAX_LISTED_ERRORS = 3
+# The closed set of `Refusal.gate` values; the public log (public_log.py) admits only these.
+GATES = frozenset({"schema", "content-hash", "verification", "provenance", "baseline", "conformance", "origin", "conflict"})
 
 
 @dataclass(frozen=True)
