@@ -415,6 +415,14 @@ class GeneralDocumentationTests(FixtureRepo):
     def tier(self, *paths: str) -> router.Route:
         return router.classify(list(paths), self.index())
 
+    def test_shell_directory_reader_and_packaged_resource_consume_documents(self) -> None:
+        self.write("scripts/read.sh", "cat ops/adr/*.md\n")
+        self.write("skills/pkg/manifest.json", '{"include": ["ops/cited/adr.md"]}\n')
+        self.commit("non-python consumers")
+        self.assertEqual(self.tier("ops/adr/unused.md").tier, router.FAST)
+        self.assertEqual(self.tier("ops/cited/adr.md").tier, router.FAST)
+        self.assertEqual(self.tier("weird_dir/deep/note.md").tier, router.DOCS)
+
     def test_named_sibling_read_does_not_consume_other_documents_in_the_directory(self) -> None:
         self.assertEqual(self.tier("ops/named/other.md").tier, router.DOCS)
 

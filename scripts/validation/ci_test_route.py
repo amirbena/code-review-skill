@@ -149,6 +149,7 @@ _GLOBBY = re.compile(r"[*?\[{$<]")
 # Generalized documentation (issue #701): closed extension set, and the surfaces that are never plain documentation.
 DOC_EXTENSIONS = (".md",)
 PROTECTED_TOPS = frozenset({"skills", "shared", "policies", ".github", "distribution", "capabilities", "scripts", "tests", "dist"})
+FACT_ONLY_ROOTS = ("skills", "shared", "docs", "policies")
 PROTECTED_NAMES = frozenset({"SKILL.md", "AGENTS.md", "CLAUDE.md", "CHANGELOG.md"})
 
 
@@ -811,7 +812,7 @@ def general_consumers(path: str, index: ConsumerIndex) -> str | None:
             # Non-Python or unparsable file: any mention counts, comments included.
             base = path.rsplit("/", 1)[-1]
             parent = path.rsplit("/", 1)[0]
-            if base[: -len(".md")] in facts.raw or (parent in facts.raw and facts.reader and not facts.scanner):
+            if base[: -len(".md")] in facts.raw or (parent in facts.raw and not facts.scanner):
                 return rel
             if facts.reader and not (facts.scanner or facts.reviewed) and _ancestor_in_text(parent, facts.raw):
                 return rel
@@ -902,10 +903,13 @@ def consumer_index(tree: Path) -> ConsumerIndex:
             continue
         if unresolved or (tree_reader and rel not in REVIEWED_NON_DOCS_ENUMERATORS):
             wildcard_files.append(rel)
-    # Top-level files (build manifests, requirements, ...) can package or read documentation too.
-    top = subprocess.run(["git", "-C", str(tree), "ls-files", "-z", "--", ":(glob)*"], capture_output=True, check=True).stdout
+    # Top-level files (build manifests, requirements, ...) and non-Markdown resources of the packaged and docs
+    # trees can package or read documentation too; they feed the generalized scan only, never the docs/ index.
+    top = subprocess.run(
+        ["git", "-C", str(tree), "ls-files", "-z", "--", ":(glob)*", *FACT_ONLY_ROOTS], capture_output=True, check=True
+    ).stdout
     for rel in top.decode("utf-8", "surrogateescape").split("\0"):
-        if not rel or rel.endswith(".md"):
+        if not rel or rel.endswith(".md") or rel in facts:
             continue
         try:
             text = (tree / rel).read_text(encoding="utf-8", errors="ignore")
