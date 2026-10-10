@@ -1,0 +1,35 @@
+{
+  "schema": "concurrency-experiment-spec/v1",
+  "temporary": true,
+  "issue": 681,
+  "campaign_issue": 683,
+  "repository": "amirbena/code-review-skill",
+  "entrypoint": "runtime_platform/benchmark/scripts/run_concurrency_experiment.py",
+  "allowed_workers": [1, 2, 4],
+  "subset": {
+    "method": "seeded-rank",
+    "seed": "concurrency-experiment-v1",
+    "size": 16,
+    "case_ids": null,
+    "note": "Placeholder selection so the entrypoint is runnable. #682 commits the sized, stratified subset (case_ids) before activation."
+  },
+  "intended_cadence": "Tuesday and Thursday at 12:00 Israel local time, two weeks, four experiments.",
+  "intended_start": {
+    "local_time": "12:00",
+    "timezone": "Asia/Jerusalem",
+    "weekdays": ["Tuesday", "Thursday"]
+  },
+  "stop_condition": {
+    "max_experiments": 4,
+    "window_end": null,
+    "experiments": [],
+    "action": "Activation (maintainer, after #682 ratifies the subset) writes the four experiment dates, each with its arms, and the window end date. A scheduled run refuses to execute before they are written, on any other date, after window_end, and once max_experiments experiment refs exist, whether or not the Routine is still enabled."
+  },
+  "failure_policy": "A missed or failed experiment is recorded as such and is not made up: it still counts toward max_experiments, the schedule does not shift, and no code path extends the window. Extension needs explicit maintainer authorization recorded in an issue and a new spec.",
+  "storage": {
+    "ref_prefix": "claude/concurrency-experiment-",
+    "trial_ref_prefix": "claude/concurrency-trial-",
+    "files": ["concurrency-experiment.json", "raw-output.json"]
+  },
+  "removal_path": "Disable the Routine (provider side), delete this spec, run_concurrency_experiment.py, benchmark_concurrency_workers.py, concurrency-experiment.md and their tests; keep the claude/concurrency-experiment-* refs until #682 has read them."
+}
