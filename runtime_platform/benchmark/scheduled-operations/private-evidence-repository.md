@@ -66,19 +66,20 @@ replaced (§10).
 | # | Decision |
 | --- | --- |
 | E1 | **Two stores, one owner per artifact** (§3). The public repository owns source; the private repository owns all execution evidence, `benchmark-history` (including the baseline pointers) and every automated benchmark issue. |
-| E2 | **An explicit evidence destination**, declared in a repository-owned `evidence` block (repository identity and namespace allow-list, no credential). It is resolved at run time to a git remote that must be proven to be that repository. After cutover, that repository may not be the source. Before cutover, the source is allowed only through an explicit pre-cutover opt-in (§4.1). There is no default and no implicit fallback to `origin`. |
+| E2 | **An explicit evidence destination in one of two declared phases** (§4). A repository-owned `evidence` block declares `phase`, `repository`, the namespace allow-list and no credential. In `pre_cutover` the evidence repository must equal the source. In `private` it must differ. Every run proves that its git remote is the declared repository. There is no implicit fallback to `origin`, or to any other repository, in either phase. |
 | E3 | **The publisher stays the publication-only workflow in the public repository.** It uses the same `benchmark-publication` App, installed on the evidence repository, and every token is scoped to the evidence repository only. Actions is disabled in the evidence repository (§6, Q1). |
 | E4 | **`baselines/<lane>.json` is evidence** and moves with `benchmark-history`. Expected baselines in fixtures stay public (§8, Q2). |
-| E5 | **Automated tracking, health, drift and missed-run issues move to the evidence repository.** After cutover the public repository receives no automated issue, comment or log content derived from evidence (§8, Q3). |
-| E6 | **One namespace registry, one ruleset over `claude/**`** in the evidence repository. The public repository gets a no-bypass ruleset that blocks creating evidence-namespace refs (§8, Q4). |
+| E5 | **Automated tracking, health, drift and missed-run issues move to the evidence repository.** In the `private` phase the public repository receives no automated issue, comment or log content derived from evidence (§8, Q3). |
+| E6 | **One namespace registry, one ruleset over `claude/**`** in the evidence repository. In the `private` phase, the public repository gets a no-bypass ruleset that blocks creating evidence-namespace refs (§8, Q4). |
 | E7 | **An explicit remote is sufficient.** No storage abstraction or new backend is added. Git refs stay the storage, and ref names stay unchanged (§8, Q5). |
-| E8 | **Records do not depend on where they are stored.** No sealed field names the evidence repository, so a migrated copy keeps its `content_sha256` and commit SHA. `provenance.repo` keeps naming the source (§7). |
-| E9 | **One active store at a time**, selected by the manifest at the SHA a run checks out. Cutover and rollback go through drained, paused transitions (§10). |
+| E8 | **Records do not depend on where they are stored.** No sealed field names the storage destination, so a migrated copy keeps its `content_sha256` and commit SHA. `provenance.repo` always names the source repository, never the storage destination, in both phases (§7). |
+| E9 | **One active store at a time**, selected by `evidence.phase` and `evidence.repository` in the manifest at the SHA a run checks out. Cutover and rollback each change both values in one commit, through drained, paused transitions (§10). |
 | E10 | **The concurrency campaign (#681–#683) is independent of this migration.** Neither blocks the other. Concurrency refs go to whichever store is active at the run's pinned SHA. A cutover must not disturb a campaign that is in progress (§10, §11). |
 
 ## 3. Ownership table
 
-"Owner" is the repository that is authoritative for the artifact after cutover.
+"Owner" is the repository that is authoritative for the artifact in the
+`private` phase. In `pre_cutover` both columns are the source repository.
 "Retention" is the rule the contract requires. A rule that differs from current
 code is marked *new*.
 
@@ -132,14 +133,32 @@ On `main` at `613fa43` it yields `claude/benchmark-result-`,
 
 ## 4. Destination configuration contract
 
-### 4.1 What the repository declares
+### 4.1 Two explicit phases
+
+The destination contract always runs in exactly one of two **phases**,
+declared in configuration. Nothing infers a phase from which remotes exist,
+from the remote name `origin`, or from whether the private repository is
+reachable.
+
+| Phase | `evidence.repository` | Where evidence reads and writes go | Purpose |
+| --- | --- | --- | --- |
+| `pre_cutover` | **must equal** the top-level `repository` (the source) | the source repository, reached through a remote whose identity is proven (§4.3) | Today's behavior, made explicit, so that #688 can land before #690 and existing Routines keep working unchanged |
+| `private` | **must differ** from the top-level `repository` | the private repository only, reached through a remote whose identity is proven | The target state after #690 |
+
+The phase is the only switch. Equality between source and evidence repository
+is allowed **only** in `pre_cutover`, where it is required. In `private` it is
+forbidden. No phase allows a fallback from one repository to another.
+
+### 4.2 What the repository declares
 
 The expected-run manifest gains one block, and each temporary spec
-(severity, concurrency) refers to it rather than copying it:
+(severity, concurrency) refers to it rather than copying it. Before #690
+(`pre_cutover`):
 
 ```json
 "evidence": {
-  "repository": "amirbena/code-review-skill-evidence",
+  "phase": "pre_cutover",
+  "repository": "amirbena/code-review-skill",
   "namespaces": [
     "claude/benchmark-result-",
     "claude/benchmark-handoff-check-",
@@ -152,53 +171,85 @@ The expected-run manifest gains one block, and each temporary spec
 }
 ```
 
-- `repository` is an **identity** (`owner/name`), never a URL with
-  credentials, a token, or a key. After cutover it must differ from the
-  manifest's top-level `repository`, which keeps naming the source.
-- **Pre-cutover state.** Until #690 cuts over, the only evidence store is the
-  source repository. During that period the block names the source and carries
-  an explicit opt-in such as `"pre_cutover_same_repository": true`. While the
-  opt-in is present, the destination may be the source repository: the
-  same-repository refusal (§4.2 step 3), F9 and the public creation ruleset
-  (Q4) do not apply, and every other rule does. Removing the opt-in and naming
-  the private repository happen in one commit, and that commit *is* the cutover
-  (§10 step 4). The opt-in can never be combined with a non-source
-  `repository`.
+After #690 the same block reads `"phase": "private"` and
+`"repository": "amirbena/code-review-skill-evidence"`. The two values change in
+one commit, and that commit **is** the cutover (§10).
+
+- `phase` is required and is one of `pre_cutover` or `private`. A missing or
+  unknown value is a configuration error in the manifest validator and in
+  every entrypoint and publisher run (§4.4).
+- `repository` is required. It is an **identity** (`owner/name`), never a URL,
+  a token or a key. Its relation to the top-level `repository` is fixed by the
+  phase (§4.1).
+- The top-level `repository` (or a temporary spec's own top-level
+  `repository`) always names the source, in both phases. It is the only input
+  to `provenance.repo` (§7).
 - `namespaces` is the **allow-list** (the namespace registry). A producer may
-  write only refs that start with a registered prefix. A new evidence namespace
-  is added here in the same PR that introduces it (Q4).
+  write only refs that start with a registered prefix, in either phase. A new
+  evidence namespace is added here in the same PR that introduces it (Q4).
 - The exact key names are #688's choice. The semantics above are the contract.
 
-### 4.2 What the run supplies
+### 4.3 How a run resolves the destination
 
-The entrypoints replace the defaulted `--seal-remote origin` with a
-**required** evidence remote: a git remote name or URL supplied by the Routine
-prompt for every non-dry run. The prompt template derives it from the evidence
-repository the Routine cloned (O8); the exact form is experiment X1. Before
-any fixture runs, the entrypoint must:
+The destination's **identity** always comes from `evidence.repository`. A run
+only resolves the git remote that reaches that identity. Before any fixture
+runs, every non-dry-run entrypoint must:
 
-1. refuse a missing value. A dry run (`--seal-dir`) needs no remote;
-2. resolve the value to a URL, and refuse it if the URL carries embedded
-   credentials (`user:token@`). The URL is never printed unredacted;
-3. prove identity: the URL's path must end in `evidence.repository`
-   (optionally followed by `.git`). If it names the source repository, it is
-   refused, unless the pre-cutover opt-in (§4.1) is present. A test-only override for a local bare repository is allowed, and it
-   must be impossible to enable from a Routine prompt (for example, an
-   environment variable that the test harness sets);
-4. run a **preflight read** (`ls-remote` of `evidence.history_branch`). If
-   that fails, the run stops with `evidence-store-unavailable` before any model
-   cost is spent.
+1. validate the `evidence` block (phase, repository and their relation, §4.1).
+   On failure, exit 2. A dry run (`--seal-dir`) needs no destination;
+2. pick the transport remote:
+   - if the run supplies an evidence remote (a remote name or URL), use it;
+   - otherwise, in `pre_cutover` only, use the checkout's own remote. This is
+     **not** a fallback. That remote must pass the same identity proof in
+     step 4 and is refused if it does not. This is what keeps existing Routine
+     prompts, which pass no remote, operational;
+   - otherwise, in `private`, exit 2 (missing destination). The private clone
+     is a separate checkout (O8), so its remote must be supplied explicitly.
+     How the prompt supplies it is experiment X1;
+3. refuse a remote URL with embedded credentials (`user:token@`). The URL is
+   never printed unredacted;
+4. **prove identity**: the remote URL's path must end in `evidence.repository`
+   (optionally followed by `.git`). A mismatch exits 2. A test-only override
+   for a local bare repository is allowed, and it must be impossible to enable
+   from a Routine prompt (for example, an environment variable that the test
+   harness sets);
+5. run a **preflight read** (`ls-remote` of `evidence.history_branch`). If
+   that fails, exit 3 (`evidence-store-unavailable`) before any model cost is
+   spent.
 
 `GitRefHistory`, the severity and concurrency stop-condition reads, and the
 seal all take the **same resolved destination**. A producer has no separate
 remote argument that could diverge from the others.
 
-### 4.3 What the publisher uses
+### 4.4 Contract validation matrix
 
-The publisher's target repository is `evidence.repository`. It never comes
-from `GITHUB_REPOSITORY` or from the top-level `repository`. Permalinks,
-activity queries, matching-refs, contents, issues and the health issue all use
-that one value.
+Each row is one test case for #688 (unit or policy test against a stubbed or
+bare-repository remote). "Source" means the top-level `repository`.
+
+| # | Phase | `evidence.repository` | Run-time situation | Outcome |
+| --- | --- | --- | --- | --- |
+| V1 | `pre_cutover` | = source | remote proven to be the source | **accepted**: reads and writes go to the source |
+| V2 | `pre_cutover` | ≠ source | any | **rejected**, exit 2: in `pre_cutover` the repository must be the source |
+| V3 | `private` | ≠ source | remote proven to be `evidence.repository` | **accepted**: reads and writes go to the private repository only |
+| V4 | `private` | = source | any | **rejected**, exit 2: in `private` the repository may not be the source |
+| V5 | either | missing | any | **rejected**, exit 2 (missing destination) |
+| V6 | `private` | ≠ source | no evidence remote supplied | **rejected**, exit 2 (missing destination). The checkout's own remote is not used |
+| V7 | missing or unknown value | any | any | **rejected**, exit 2 (missing or invalid phase) |
+| V8 | either (valid) | valid for phase | supplied or resolved remote does not prove to be `evidence.repository` | **rejected**, exit 2 (identity mismatch). There is no retry against another remote |
+| V9 | either (valid) | valid for phase | remote has embedded credentials | **rejected**, exit 2 |
+| V10 | either (valid) | valid for phase | proven remote is unreachable or unauthorized | **explicit failure**, exit 3 (`evidence-store-unavailable`) before any fixture runs. Nothing is written to any repository |
+
+The manifest validator enforces V2, V4, V5 and V7 statically, so a bad block
+cannot merge. The entrypoints and the publisher enforce them again at run time.
+
+### 4.5 What the publisher uses
+
+The publisher's target repository is `evidence.repository`, in both phases,
+after the same validation (§4.1, V2/V4/V5/V7). It never comes from
+`GITHUB_REPOSITORY` or from the top-level `repository`. Permalinks, activity
+queries, matching-refs, contents, issues and the health issue all use that
+one value. In `pre_cutover` that value is the source, so today's publication
+is unchanged.
 
 ## 5. Read/write contracts and failure semantics
 
@@ -216,12 +267,12 @@ that one value.
 | --- | --- | --- | --- |
 | 0 | `ok` / `skipped` | sealed, or an intentional skip (stop condition, same day) | JSON summary on stdout |
 | 1 | `run-failed` | benchmark or verification failure, as today | stderr |
-| 2 | `evidence-destination-misconfigured` | missing value, credentials in the URL, identity mismatch, source repository named without the pre-cutover opt-in, or a ref outside the allow-list | stderr names the rule broken. The URL is redacted |
+| 2 | `evidence-destination-misconfigured` | missing or invalid phase; missing destination; a repository that breaks its phase's rule (V2, V4); identity mismatch; credentials in the URL; a ref outside the allow-list (matrix §4.4) | stderr names the rule broken. The URL is redacted |
 | 3 | `evidence-store-unavailable` | preflight, stop-condition read, or push failed (unreachable, unauthorized, rejected) | The would-be sealed files are written to a local diagnostics directory (`--seal-dir` semantics). stdout carries a JSON status with `run_id`, the destination identity and the git error class, and the run counts as **unsealed** |
 | 3 | `seal-unconfirmed` | the push succeeded but the read-back failed or did not match | Same diagnostics as above. The ref may exist on the evidence destination only, and the publisher treats it like any other sealed ref (F4a) |
 
-A non-zero exit never falls back to another destination and never claims
-publication. The Routine prompt keeps its rule: on a non-zero exit, stop, do
+In either phase, a non-zero exit never falls back to another destination and
+never claims publication. The Routine prompt keeps its rule: on a non-zero exit, stop, do
 not retry, and push nothing else. Local diagnostics are best-effort, because a
 Routine sandbox does not outlive its session. The session transcript holding
 stdout is the durable trace, and an unsealed run is still not evidence.
@@ -233,8 +284,8 @@ stdout is the durable trace, and an unsealed run is still not evidence.
 | Read handoff | matching-refs and activity on `evidence.repository` with an App token |
 | Persist / receipt / baseline bootstrap | create-only contents writes to `benchmark-history` on `evidence.repository` |
 | Issues and comments | `evidence.repository` only |
-| Watchdog history read | an App token with `contents: read` on `evidence.repository`. The job's `GITHUB_TOKEN` cannot read a private repository, so the current `BENCHMARK_READ_TOKEN=github.token` mapping changes |
-| Failure | Token mint failure, 401/403/404 on the evidence repository, or an App-slug mismatch fails the job, with no write to any repository. There is no `--repository` override that could point at the source |
+| Watchdog history read | an App token with `contents: read` on `evidence.repository`. The job's `GITHUB_TOKEN` cannot read a private repository, so the current `BENCHMARK_READ_TOKEN=github.token` mapping must change no later than the cutover commit |
+| Failure | An invalid `evidence` block (V2, V4, V5, V7), a token mint failure, a 401/403/404 on `evidence.repository`, or an App-slug mismatch fails the job, with no write to any repository. There is no override that points the publisher at any repository other than `evidence.repository` |
 
 **Log hygiene** (*new*, because the workflow's logs are public): stdout and
 stderr of `benchmark-publish.yml` may contain only run IDs, lane names, ref
@@ -246,10 +297,10 @@ stdout. #688 must make both satisfy this rule (F12).
 
 ## 6. Authentication boundaries
 
-| Identity | Scope after cutover | Least-privilege rule | Verified? |
+| Identity | Scope in the `private` phase | Least-privilege rule | Verified? |
 | --- | --- | --- | --- |
 | **Routine** (provider-mediated, acting as the maintainer's connected GitHub access) | reads the source (clone); writes registered `claude/*` refs in the evidence repository; reads `benchmark-history` there | The Routine selects both repositories. No GitHub credential is provisioned into the runtime. The entrypoint writes only allow-listed refs to the proven destination. | **No.** Experiment X1. The docs say multiple repositories are supported. Whether the evidence clone's remote URL is usable from the source checkout, and whether access to a private repository requires the Claude GitHub App installed on it or a `/web-setup` grant, must be observed, not assumed. |
-| **`benchmark-publication` App** | installed on the evidence repository. Tokens: `contents: write` (persist, delete staging), `issues: write`, `contents: read` (watchdog), each with `repositories: code-review-skill-evidence` only | never `actions`, `workflows`, `administration`, `pull-requests`, `secrets`, `environments` (unchanged). After cutover the public repository is removed from the installation. | Installation and minting are checked by #689. Activity-API access on a private repository is experiment X3. |
+| **`benchmark-publication` App** | installed on the evidence repository. Tokens: `contents: write` (persist, delete staging), `issues: write`, `contents: read` (watchdog), each with `repositories: code-review-skill-evidence` only | never `actions`, `workflows`, `administration`, `pull-requests`, `secrets`, `environments` (unchanged). In the `private` phase the public repository is removed from the installation. | Installation and minting are checked by #689. Activity-API access on a private repository is experiment X3. |
 | **Publication job `GITHUB_TOKEN`** | `contents: read` on the **public** repository (checkout only) | never used against the evidence repository | — |
 | **Maintainer** | admin on both | promotion, approved deletions, provisioning, cutover | — |
 
@@ -276,8 +327,9 @@ today:
 
 - `run_id` (the lane form `<lane>-<YYYYMMDDTHHMMSSZ>-<sha12>`, or the
   temporary form `<UTC>-<sha12>`);
-- source identity: `provenance.repo` = **the source repository**,
-  `provenance.repo_sha`, `provenance.ref`, `provenance.entrypoint_version`;
+- source identity: `provenance.repo` = **the source repository** (the
+  manifest's or spec's top-level `repository`), `provenance.repo_sha`,
+  `provenance.ref`, `provenance.entrypoint_version`;
 - manifest or spec identity: `provenance.spec_sha256` for lanes. Observations
   and experiments record their spec identity in the same way;
 - `runtime.model_id`, `runtime.runtime_name`, `runtime.runtime_version`,
@@ -286,16 +338,23 @@ today:
 
 Rules:
 
-- **No storage-location field in the sealed body** (E8). `raw.location` stays
-  repository-relative (`<ref>:<file>`), so it resolves against whichever store
-  holds the record. The evidence repository is implied by the manifest at
-  `provenance.repo_sha`, so a reader can always derive it.
+- **`provenance.repo` identifies the source, never the storage
+  destination**, in both phases. It is computed only from the top-level
+  `repository`, never from `evidence.repository` or from a remote. In
+  `pre_cutover` the two values happen to be equal. That is a property of the
+  phase, not a dependency, and nothing may read `provenance.repo` to find
+  where evidence is stored.
+- **No sealed artifact gains a storage-location field** (E8). The lane record
+  schema (`benchmark-result/v1`) has `additionalProperties: false` on
+  `provenance` and on `raw`, and its only location-like value is `raw.location`.
+  That value is repository-relative (`<ref>:<file>`), so it resolves against
+  whichever store holds the record. Adding a destination field would need a
+  new schema version, and this ADR adds none. Observations and experiments
+  follow the same rule. The storage destination is derivable from the
+  manifest at `provenance.repo_sha`.
 - The **receipt** may name the store (`record_permalink` is a URL into it).
-  Receipts written before cutover keep their public URLs; they are immutable
+  Receipts written in `pre_cutover` keep their public URLs; they are immutable
   history, not rewritten.
-- `provenance.repo` always names the source repository. After cutover it
-  never equals `evidence.repository`. While the pre-cutover opt-in is present,
-  the two are equal by design (F9).
 
 ## 8. Decisions on the open questions
 
@@ -304,9 +363,9 @@ Rules:
 **Decision:** keep `benchmark-publish.yml` in the public repository, with the
 same triggers (`schedule` and `workflow_dispatch`), the same `main`-only
 `benchmark-publication` environment and the same App. Install the App on the
-evidence repository and mint every token with
-`repositories: code-review-skill-evidence`. Disable Actions in the evidence
-repository.
+evidence repository. Tokens are always minted for `evidence.repository`
+(F11): the source in `pre_cutover`, and `repositories: code-review-skill-evidence`
+in `private`. Disable Actions in the evidence repository.
 
 **Rejected:**
 
@@ -317,7 +376,7 @@ repository.
   tests.
 - *A second App for the evidence repository.* Two installations with the same
   blast radius add rotation work and give no isolation, since the public
-  repository receives no writes after cutover.
+  repository receives no writes in the `private` phase.
 - *An external host.* The reasons for rejecting it in
   [`publication-architecture.md`](publication-architecture.md) §7 are
   unchanged.
@@ -361,7 +420,8 @@ reveal which fixtures regress.
   bypassed by the App (staging deletion) and the Admin role (approved
   deletions). This closes the gap in O6, where only
   `claude/benchmark-result-*` was protected; (c) the default branch protected.
-- Public repository after cutover: one ruleset that **restricts creation** of
+- Public repository, applied when the phase becomes `private`: one ruleset
+  that **restricts creation** of
   every registered evidence prefix, with **no bypass actors**, so even an
   admin-identity Routine push to the source fails (§6).
 - Retention per namespace is §3.1. A future namespace becomes writable only by
@@ -379,7 +439,7 @@ reveal which fixtures regress.
 **Decision: yes.** Every producer and consumer already speaks git refs
 (execution) or the GitHub REST API for one repository (publisher). The defect
 is that the destination is implicit, not that the storage model is wrong.
-One declared identity, one required run-time remote that is proven against it,
+One declared phase and identity, one run-time remote that is proven against it,
 and one publisher repository variable remove the defect. A storage abstraction
 would add an interface with a single implementation, and an external store is
 still the escape hatch defined in
@@ -393,13 +453,14 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 
 **Failure**
 
-- F1. A non-dry-run entrypoint invoked without an evidence remote exits 2 and
-  pushes nothing.
-- F2. An evidence remote that names the source repository without the
-  pre-cutover opt-in, or that has
-  embedded credentials, exits 2 before any fixture runs.
-- F3. An unreachable or unauthorized evidence remote exits 3 before any
-  fixture runs (preflight), and no ref is created on any remote.
+- F1. In `private`, a non-dry-run entrypoint invoked without an evidence
+  remote exits 2 and pushes nothing (V6). In `pre_cutover` the same invocation
+  resolves the checkout's own remote, which must pass the identity proof (V1,
+  V8).
+- F2. Every rejected row of the matrix (§4.4: V2, V4–V9) exits 2 before any
+  fixture runs and writes nothing to any repository.
+- F3. An unreachable or unauthorized evidence remote (V10) exits 3 before
+  any fixture runs (preflight), and no ref is created on any remote.
 - F4. A rejected or failed push exits 3, writes the would-be sealed files to
   the diagnostics directory, and leaves no ref on any remote, `origin`
   included.
@@ -429,11 +490,12 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 
 **Provenance**
 
-- P1. `provenance.repo` equals the manifest's top-level `repository` (the
-  source). After cutover it never equals `evidence.repository`.
-- P2. After cutover, no sealed artifact contains the evidence repository's
-  identity or URL. Before cutover the evidence repository *is* the source, so
-  its identity appears only as `provenance.repo`.
+- P1. In both phases, `provenance.repo` equals the top-level `repository`
+  (the source). Changing `evidence.repository` and `evidence.phase` while
+  holding the top-level `repository` fixed does not change `provenance.repo`.
+- P2. No sealed artifact has a field whose value is derived from
+  `evidence.repository` or from the resolved remote (schema check, plus a
+  test that seals the same inputs under both phases).
 - P3. `run_id`, `repo_sha`, `model_id`, `runtime_version`, `spec_sha256` and
   the timestamps are present and unchanged in meaning (existing schema
   validation).
@@ -441,24 +503,25 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 **Namespaces and scope**
 
 - F8. A write to a ref outside `evidence.namespaces` is refused (exit 2).
-- F9. The manifest validator rejects `evidence.repository == repository`
-  unless the pre-cutover opt-in is present. It also rejects the opt-in
-  combined with any other `evidence.repository`.
-- F9a. With the pre-cutover opt-in present, a correctly configured run seals
-  to the source repository and exits 0. #688 merging before #690 therefore
-  breaks no Routine.
+- F9. The manifest validator accepts only the phase rules of §4.1. It rejects
+  V2 (`pre_cutover` with a different repository), V4 (`private` with the
+  source), V5 (missing repository) and V7 (missing or unknown phase).
+- F9a. In `pre_cutover` (V1), a run whose prompt passes no evidence remote
+  seals to the source repository and exits 0. #688 merging before #690
+  therefore breaks no existing Routine.
 - F10. Every `claude/<prefix>` constant in benchmark code is a registered
   namespace (the §3.3 grep as a policy test).
-- F11. The publication workflow mints tokens only with
-  `repositories: code-review-skill-evidence` after cutover, and never grants
+- F11. The publication workflow mints tokens only for
+  `evidence.repository` (the source in `pre_cutover`,
+  `code-review-skill-evidence` in `private`), and never grants
   the permissions listed as "never" in §6.
 - F12. Publisher stdout and stderr contain no record or issue-body content
   (asserted on fixture records containing sentinel strings).
 
 **Rollback / migration**
 
-- R1. At any commit of `main`, exactly one store is active: the manifest's
-  `evidence.repository`.
+- R1. At any commit of `main`, exactly one phase and one store are active:
+  the manifest's `evidence.phase` and `evidence.repository`.
 - R2. No run crosses a cutover. A run's destination is a pure function of the
   manifest at its `repo_sha`.
 - R3. The publisher sweeps exactly one store per pass.
@@ -477,9 +540,15 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 2. Drain the old store, so that every staging ref there has a receipt.
 3. Copy whatever evidence refs exist at that moment, and `benchmark-history`,
    by SHA (I4). Verify each copy.
-4. Merge the cutover commit: name the private repository and remove the
-   pre-cutover opt-in (§4.1). Then apply the public creation ruleset (Q4).
-5. Run one `auth-check` against the new store.
+4. Merge the cutover commit, which changes `evidence.phase` from
+   `pre_cutover` to `private` and `evidence.repository` to the private
+   repository together (§4.2). The workflow's token scope changes in the same
+   commit (F11). Then apply the public creation ruleset (Q4).
+5. Update every evidence-producing Routine's prompt to supply the private
+   evidence remote (V6), including a running campaign's Routine, before that
+   campaign's next scheduled run. Then run one `auth-check` against the new
+   store. A Routine that runs before its prompt is updated fails with exit 2
+   (V6) and writes nothing. It never writes to the source repository.
 6. Re-enable the paused Routines.
 7. Delete refs from the old store only with recorded approval (R4).
 
@@ -499,12 +568,14 @@ a reset may restart a count.
 
 **Rollback** has two forms:
 
-- **R-a, pause (preferred):** disable the Routines and fix forward. Nothing is
+- **R-a, pause (preferred):** disable the affected Routines and fix forward. Nothing is
   published and no store changes.
-- **R-b, revert the destination:** paused as in R-a, first disable the
+- **R-b, return to `pre_cutover`:** paused as in R-a, first disable the
   public creation ruleset (Q4), because its empty bypass list blocks the
   copy. Then copy post-cutover evidence back by SHA, and revert the cutover
-  commit, which restores the pre-cutover opt-in. R-b republishes
+  commit, which restores `phase: pre_cutover` and the source repository
+  together. A prompt that still supplies the private remote then fails the
+  identity proof (V8) instead of writing to the wrong store. R-b republishes
   private evidence in the public repository, so it needs explicit maintainer
   approval recorded in an issue.
 
@@ -520,16 +591,17 @@ runs (§10).
   first run. The maintainer decided it should not be tied to the migration.
   #681–#683 proceed on their own schedule, and no dependency on #688–#690 is
   proposed. Concurrency refs go to whichever store is active at the run's
-  pinned SHA: the public repository before cutover and the private one after.
+  pinned SHA: the source repository in `pre_cutover` and the private one in
+  `private`.
 - **What the migration owes the campaign.** The two concurrency prefixes are in
-  `evidence.namespaces` (§4.1), so #688's allow-list does not break the
+  `evidence.namespaces` (§4.2), so #688's allow-list does not break the
   campaign. #689 validates them like any other namespace. #690 applies the
   counted-refs rule (§10), so a cutover during the campaign keeps its count.
-  Refs produced before cutover are migrated or deleted under the same rules as
+  Refs produced in `pre_cutover` are migrated or deleted under the same rules as
   every other namespace.
 - **Interface note for #681:** its `prior_experiment_refs(remote)` and seal
   call follow the severity pattern. Whichever of #681 and #688 merges second
-  routes them through the shared destination contract (§4.2). If #681 merges
+  routes them through the shared destination contract (§4.3). If #681 merges
   first, #688 adds the prefixes and replaces #681's `remote` argument. If #688
   merges first, #681 adopts the contract before merging. Neither issue waits
   for the other.
@@ -541,7 +613,7 @@ runs (§10).
 
 | # | Experiment | Decides |
 | --- | --- | --- |
-| X1 | A Routine selecting both repositories runs `git remote -v` in each clone and pushes one `claude/x1-*` ref to the private clone's remote from the source checkout. Then try a push to a non-`claude/` branch of the private repository. | the §4.2 supply mechanism; whether private access needs the Claude GitHub App on that repository; R1's real scope |
+| X1 | A Routine selecting both repositories runs `git remote -v` in each clone and pushes one `claude/x1-*` ref to the private clone's remote from the source checkout. Then try a push to a non-`claude/` branch of the private repository. | the §4.3 supply mechanism for the `private` phase; whether private access needs the Claude GitHub App on that repository; R1's real scope |
 | X2 | In the evidence repository's settings: whether rulesets and environments (with deployment-branch policies) are available on the account's plan. | the Q4 blocking decision; whether Q1 stays closed |
 | X3 | Query `GET /repos/{evidence}/activity` with an App installation token after a Routine push. | whether origin attestation works unchanged in a private repository (fail-closed with dispatch fallback either way) |
 | X4 | Check whether the provider's clone of the evidence repository fetches every branch. | whether clone time grows with evidence refs. If it does, keep the default branch minimal and document a size trigger |
