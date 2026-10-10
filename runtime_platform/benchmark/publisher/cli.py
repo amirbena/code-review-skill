@@ -16,6 +16,7 @@ from runtime_platform.benchmark.publisher.ports import FatalPublicationError
 from runtime_platform.benchmark.publisher.model import SCOPE_ALL, Ports, SweepConfig, WatchdogConfig
 from runtime_platform.benchmark.publisher.sweep import run_sweep
 from runtime_platform.benchmark.publisher.watchdog import run_watchdog
+from runtime_platform.benchmark.scripts.benchmark_evidence_config import validate_evidence_block
 from runtime_platform.benchmark.scripts.benchmark_result import parse_run_id
 from runtime_platform.benchmark.scripts.benchmark_schedule_manifest import MANIFEST_PATH, ManifestError, load_manifest
 
@@ -40,10 +41,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
     watchdog.add_argument("--once", action="store_true", help="A local or disaster-recovery pass outside GitHub Actions.")
     watchdog.add_argument("--dry-run", action="store_true", help="Read and plan only: every write lands in memory.")
     watchdog.add_argument("--sweep-report", type=Path, help="The `sweep` report (JSON): an ok report marks the sweep successful now.")
+    resolve = sub.add_parser("resolve-evidence", help="Print `name=<evidence repository name>` for the workflow's token minting.")
+    resolve.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
+    resolve.add_argument("--owner", required=True, help="The workflow's repository owner; the evidence repository must belong to it.")
     for command in (sweep, watchdog):
         command.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
         command.add_argument("--app-slug", help="The publication App's slug (default: BENCHMARK_APP_SLUG).")
     return parser
+
+
+def evidence_repository(manifest: Mapping[str, Any]) -> str:
+    """The one repository every publisher request addresses; never the workflow's repository or an env value."""
+    return manifest["evidence"]["repository"]
 
 
 def _fail(message: str) -> int:
@@ -84,7 +93,7 @@ def _open_ports(
     args: argparse.Namespace, env: Mapping[str, str], manifest: Mapping[str, Any], identity: str, ports_factory: PortsFactory | None
 ) -> Ports | int:
     """The ports for one pass (dry-run overlaid), or the usage-error exit code."""
-    repository = manifest.get("repository", "")
+    repository = evidence_repository(manifest)
     try:
         if ports_factory:
             ports = ports_factory(manifest, identity)
@@ -110,7 +119,8 @@ def _sweep(
     report = run_sweep(ports, config)
     for outcome in report.outcomes:
         if outcome.status in ("refused", "failed"):
-            print(f"{outcome.status}: {outcome.ref}: [{outcome.gate or 'step'}] {outcome.detail}", file=sys.stderr)
+            # the workflow log is public: status, ref and gate only, never the refusal detail (it can quote record content)
+            print(f"{outcome.status}: {outcome.ref}: [{outcome.gate or 'step'}]", file=sys.stderr)
     if report.aborted:
         print(f"aborted: {report.aborted}", file=sys.stderr)
     print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
@@ -155,6 +165,15 @@ def main(
         manifest = load_manifest(args.manifest)
     except ManifestError as exc:
         return _fail(str(exc))
+    errors = validate_evidence_block(manifest.get("evidence"), manifest.get("repository"))
+    if errors:
+        return _fail(f"invalid evidence destination: {errors[0]}")
+    if args.command == "resolve-evidence":
+        owner, name = evidence_repository(manifest).split("/")
+        if owner.lower() != args.owner.lower():
+            return _fail("the evidence repository must belong to the workflow's owner")
+        print(f"name={name}")
+        return 0
     slug = args.app_slug or env.get("BENCHMARK_APP_SLUG")
     if not slug:
         return _fail("the App slug is required (--app-slug or BENCHMARK_APP_SLUG): the acting identity must be known")

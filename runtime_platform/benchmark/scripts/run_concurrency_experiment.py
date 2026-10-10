@@ -40,6 +40,15 @@ from runtime_platform.benchmark.scripts import benchmark_concurrency_workers as 
 from runtime_platform.benchmark.scripts import benchmark_concurrency_decision as decision  # noqa: E402
 from runtime_platform.benchmark.scripts import benchmark_seal as seal  # noqa: E402
 from runtime_platform.benchmark.scripts import run_benchmark as rb  # noqa: E402
+from runtime_platform.benchmark.scripts.benchmark_evidence_destination import (  # noqa: E402
+    Destination,
+    DestinationMisconfigured,
+    StoreUnavailable,
+    add_remote_argument,
+    exit_for,
+    resolve_destination,
+)
+from runtime_platform.benchmark.scripts.benchmark_schedule_manifest import MANIFEST_PATH, load_valid_manifest  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_concurrency_workers import (  # noqa: E402
     ArmResult,
     Fixture,
@@ -116,21 +125,17 @@ def select_subset(spec: Mapping[str, Any], corpus_dir: str) -> tuple[list[Fixtur
     return [Fixture(c, corpus.case_dirs[c]) for c in chosen], manifest
 
 
-def prior_experiment_refs(remote: str) -> list[str]:
-    """Experiment ref names already on `remote` (read-only `ls-remote`); the stop condition's input."""
-    try:
-        proc = subprocess.run(
-            ["git", "ls-remote", "--heads", remote, f"refs/heads/{EXPERIMENT_REF_PREFIX}*"],
-            cwd=str(REPO_ROOT),
-            capture_output=True,
-            text=True,
-            timeout=GIT_TIMEOUT_S,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise RoutineExecutionError(f"cannot list prior experiments on {remote}: {exc}") from exc
-    if proc.returncode != 0:
-        raise RoutineExecutionError(f"cannot list prior experiments on {remote}: {proc.stderr.strip()}")
-    return [line.split()[1].removeprefix("refs/heads/") for line in proc.stdout.splitlines() if line.strip()]
+def prior_experiment_refs(dest: Destination) -> list[str]:
+    """Experiment ref names already on the evidence store; the stop condition's input (a failed read is no run)."""
+    return dest.list_refs(EXPERIMENT_REF_PREFIX)
+
+
+def resolve_evidence_destination(args: argparse.Namespace, spec: Mapping[str, Any]) -> Destination:
+    """The proven, preflighted evidence destination for this run (shared contract, §4.3)."""
+    manifest = load_valid_manifest(args.manifest)
+    dest = resolve_destination(manifest, evidence_remote=args.evidence_remote, repo_root=REPO_ROOT, source_repository=spec["repository"])
+    dest.preflight()
+    return dest
 
 
 def checkout_is_clean() -> bool:
@@ -306,7 +311,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--arms", default=None, help="Worker counts to run in order, e.g. 1,2; scheduled runs take them from the spec.")
     parser.add_argument("--spec", type=Path, default=SPEC_PATH)
     parser.add_argument("--pinned-sha", default=None, help="Full commit SHA the checkout must equal; required for a scheduled run.")
-    parser.add_argument("--seal-remote", default="origin", help="Git remote the evidence is pushed to.")
+    parser.add_argument("--manifest", type=Path, default=MANIFEST_PATH, help="Expected-run manifest holding the evidence block.")
+    add_remote_argument(parser)
     parser.add_argument("--seal-dir", type=Path, default=None, help="Dry run: write the files here; push nothing.")
     return parser
 
@@ -315,11 +321,12 @@ def run(args: argparse.Namespace) -> int:
     spec = load_spec(args.spec)
     decision.validate_spec(spec)
     dry = args.seal_dir is not None
+    dest = None if dry else resolve_evidence_destination(args, spec)  # before any model cost
     arms_planned: list[int]
     if args.trigger == "scheduled" and not dry:
         if args.arms is not None:
             raise RoutineExecutionError("a scheduled run takes its arms from the spec; --arms is for trials and dry runs")
-        refs = prior_experiment_refs(args.seal_remote)
+        refs = prior_experiment_refs(dest)
         local, utc = local_today(spec), utc_now()[:10]
         reason = skip_reason(spec, refs, local, utc)
         if reason is not None:
@@ -390,11 +397,11 @@ def run(args: argparse.Namespace) -> int:
             where = str(seal.seal_to_directory(args.seal_dir, files, EXPERIMENT_FILE))
         else:
             ref = confined_ref(experiment["ref"])
-            commit = seal.seal_to_ref(REPO_ROOT, args.seal_remote, ref, files, f"concurrency experiment {experiment['run_id']}")
-            where = f"{args.seal_remote}:{ref}@{commit}"
-    except seal.SealError:
+            assert dest is not None
+            where = dest.location(ref, dest.seal(ref, files, f"concurrency experiment {experiment['run_id']}"))
+    except StoreUnavailable as exc:
         print(json.dumps(experiment, indent=2))  # the partial evidence survives in the transcript when nothing could be pushed
-        raise
+        return exit_for(exc, run_id=experiment["run_id"], destination=dest, files=files, commit_file=EXPERIMENT_FILE)
     print(json.dumps({"run_id": experiment["run_id"], "handoff": where, "status": experiment["status"],
                       "failure_classes": experiment["failure_classes"], "isolation_passed": audit["passed"]}, indent=2))
     return exit_code or (0 if experiment["status"] == "complete" else 1)
@@ -403,6 +410,8 @@ def run(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     try:
         return run(build_arg_parser().parse_args(argv))
+    except (DestinationMisconfigured, StoreUnavailable) as exc:
+        return exit_for(exc)
     except (RoutineExecutionError, seal.SealError, decision.SpecError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

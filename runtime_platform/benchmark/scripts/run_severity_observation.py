@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Mapping
@@ -30,6 +29,15 @@ if str(REPO_ROOT) not in sys.path:
 
 from runtime_platform.benchmark.scripts import benchmark_seal as seal  # noqa: E402
 from runtime_platform.benchmark.scripts import run_benchmark as rb  # noqa: E402
+from runtime_platform.benchmark.scripts.benchmark_evidence_destination import (  # noqa: E402
+    Destination,
+    DestinationMisconfigured,
+    StoreUnavailable,
+    add_remote_argument,
+    exit_for,
+    resolve_destination,
+)
+from runtime_platform.benchmark.scripts.benchmark_schedule_manifest import MANIFEST_PATH, load_valid_manifest  # noqa: E402
 from runtime_platform.benchmark.scripts.benchmark_lane_run import (  # noqa: E402
     RoutineExecutionError,
     git_ref,
@@ -46,7 +54,6 @@ OBSERVATION_REF_PREFIX = "claude/severity-observation-"
 TRIAL_REF_PREFIX = "claude/severity-trial-"  # not matched by the observation prefix: never counted
 OBSERVATION_FILE = "severity-observation.json"
 RAW_FILE = "raw-output.json"
-GIT_TIMEOUT_S = 60
 
 
 def load_spec(path: Path = SPEC_PATH) -> dict[str, Any]:
@@ -144,21 +151,17 @@ def build_observation(
     }
 
 
-def prior_observation_refs(remote: str) -> list[str]:
-    """Observation ref names already on `remote` (read-only `ls-remote`); the stop condition's input."""
-    try:
-        proc = subprocess.run(
-            ["git", "ls-remote", "--heads", remote, f"refs/heads/{OBSERVATION_REF_PREFIX}*"],
-            cwd=str(REPO_ROOT),
-            capture_output=True,
-            text=True,
-            timeout=GIT_TIMEOUT_S,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise RoutineExecutionError(f"cannot list prior observations on {remote}: {exc}") from exc
-    if proc.returncode != 0:
-        raise RoutineExecutionError(f"cannot list prior observations on {remote}: {proc.stderr.strip()}")
-    return [line.split()[1].removeprefix("refs/heads/") for line in proc.stdout.splitlines() if line.strip()]
+def prior_observation_refs(dest: Destination) -> list[str]:
+    """Observation ref names already on the evidence store; the stop condition's input (a failed read is no run)."""
+    return dest.list_refs(OBSERVATION_REF_PREFIX)
+
+
+def resolve_evidence_destination(args: argparse.Namespace, spec: Mapping[str, Any]) -> Destination:
+    """The proven, preflighted evidence destination for this run (shared contract, §4.3)."""
+    manifest = load_valid_manifest(args.manifest)
+    dest = resolve_destination(manifest, evidence_remote=args.evidence_remote, repo_root=REPO_ROOT, source_repository=spec["repository"])
+    dest.preflight()
+    return dest
 
 
 def skip_reason(refs: list[str], target: int, today: str) -> str | None:
@@ -180,15 +183,17 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model-id", default="unknown", help="Model backend identifier; the Routine prompt sets it.")
     parser.add_argument("--trigger", choices=["scheduled", "manual", "api"], default="manual")
     parser.add_argument("--spec", type=Path, default=SPEC_PATH)
-    parser.add_argument("--seal-remote", default="origin", help="Git remote the observation is pushed to.")
+    parser.add_argument("--manifest", type=Path, default=MANIFEST_PATH, help="Expected-run manifest holding the evidence block.")
+    add_remote_argument(parser)
     parser.add_argument("--seal-dir", type=Path, default=None, help="Dry run: write the files here; push nothing.")
     return parser
 
 
 def run(args: argparse.Namespace) -> int:
     spec = load_spec(args.spec)
-    if args.seal_dir is None and args.trigger == "scheduled":
-        refs = prior_observation_refs(args.seal_remote)
+    dest = resolve_evidence_destination(args, spec) if args.seal_dir is None else None  # before any model cost
+    if dest is not None and args.trigger == "scheduled":
+        refs = prior_observation_refs(dest)
         reason = skip_reason(refs, spec["stop_condition"]["target_observations"], utc_now()[:10].replace("-", ""))
         if reason is not None:
             note = "disable the Routine (see the spec's removal path)" if reason == "stop-condition-reached" else "one observation per day"
@@ -219,8 +224,11 @@ def run(args: argparse.Namespace) -> int:
         where = str(seal.seal_to_directory(args.seal_dir, files, OBSERVATION_FILE))
     else:
         ref, run_id = observation["ref"], observation["run_id"]
-        commit = seal.seal_to_ref(REPO_ROOT, args.seal_remote, ref, files, f"severity observation {run_id}")
-        where = f"{args.seal_remote}:{ref}@{commit}"
+        assert dest is not None
+        try:
+            where = dest.location(ref, dest.seal(ref, files, f"severity observation {run_id}"))
+        except StoreUnavailable as exc:
+            return exit_for(exc, run_id=run_id, destination=dest, files=files, commit_file=OBSERVATION_FILE)
     print(json.dumps({"run_id": observation["run_id"], "handoff": where, "resolved": observation["resolved"]}, indent=2))
     return 0
 
@@ -228,6 +236,8 @@ def run(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     try:
         return run(build_arg_parser().parse_args(argv))
+    except (DestinationMisconfigured, StoreUnavailable) as exc:
+        return exit_for(exc)
     except (RoutineExecutionError, seal.SealError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

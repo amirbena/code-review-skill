@@ -14,7 +14,7 @@ while producing it.
 | Aspect | State |
 | --- | --- |
 | Architecture (Fully Private evidence, §2) | **Accepted.** The maintainer merged [PR #693](https://github.com/amirbena/code-review-skill/pull/693) (`6c82239`, 2026-10-10) and closed #687 as completed. The ADR named maintainer review as its gate. The maintainer confirmed on PR #700 that the merge and the closure are sufficient evidence of acceptance. |
-| Implementation | **Pending**, owned by [#688](https://github.com/amirbena/code-review-skill/issues/688) and validated by [#689](https://github.com/amirbena/code-review-skill/issues/689). |
+| Implementation | **Destination contract delivered under `pre_cutover`** by [#688](https://github.com/amirbena/code-review-skill/issues/688) ([PR #698](https://github.com/amirbena/code-review-skill/pull/698), `71acb33`; §14). **Still pending:** the private-phase public-log field policy (§5.4, F12/F13), which that PR does not implement, and validation by [#689](https://github.com/amirbena/code-review-skill/issues/689). |
 | Cutover | **Pending**, owned by [#690](https://github.com/amirbena/code-review-skill/issues/690). The manifest is still `pre_cutover` and no private repository exists. |
 
 Clarified by [#699](https://github.com/amirbena/code-review-skill/issues/699):
@@ -301,18 +301,19 @@ stdout is the durable trace, and an unsealed run is still not evidence.
 **Log hygiene** (*new*, because the workflow's logs are public): in the `private`
 phase, everything `benchmark-publish.yml` writes to a public surface (step
 stdout and stderr, `::error::`/`::warning::` annotations, `GITHUB_STEP_SUMMARY`,
-job outputs, uploaded artifacts) is limited to the allowlist in §5.4. #688 must
-make the sweep and the watchdog satisfy it (F12, F13).
+job outputs, uploaded artifacts) is limited to the allowlist in §5.4. The sweep and the watchdog must
+satisfy it (F12, F13) no later than the cutover commit. #688 as merged does not
+yet (§14).
 
 ### 5.4 Public log allowlist (private phase)
 
-**What is emitted today** (re-check: `grep -nE "print\(" runtime_platform/benchmark/publisher/cli.py`;
+**What is emitted today** (on `main` at `71acb33`; re-check: `grep -nE "print\(" runtime_platform/benchmark/publisher/cli.py`;
 the `Watchdog` and `Sweep` steps of the workflow):
 
 | Surface | Content today | Public? |
 | --- | --- | --- |
 | `sweep` stdout | the full sweep report JSON (per run: `ref`, `run_id`, `status`, `detail`, `gate`, `commit`, `actions`, `deferred`) | No: the workflow redirects it to `$SWEEP_REPORT` in the runner temp directory. It is read only by the watchdog step |
-| `sweep` stderr | one line per refused or failed run: `<status>: <ref>: [<gate>] <detail>`, plus `aborted: <reason>` | **Yes** |
+| `sweep` stderr | one line per refused or failed run: `<status>: <ref>: [<gate>]` (#688 removed the `detail` text), plus `aborted: <reason>` | **Yes** |
 | `watchdog` stdout | the report JSON: per lane `lane`, `action`, `overdue`, `missed_run_issue`, `expected_from`, `latest_run_id`, `finished_at`; and `health` with `action`, the open drift and missed-run issue counts, `pending_handoffs`, `last_successful_sweep` | **Yes** |
 | `watchdog` stderr | `aborted: <reason>`, `acting identity: …` | **Yes** |
 | `error: <message>` and uncaught tracebacks | arbitrary exception text. API errors are formatted as `<METHOD> <path>: <message>`, so a private API path and the GitHub response message can reach the log | **Yes** |
@@ -323,7 +324,7 @@ before it is written. A value that is not on the list, or that fails validation,
 is dropped or replaced by a fixed placeholder, and the run still reports its
 status through the allowed codes. Nothing is allowed because it is "probably
 harmless". The exact mechanism (one writer, a schema, or a test double) is
-#688's choice. The contract is that no code path writes to a public surface
+the implementation's choice. The contract is that no code path writes to a public surface
 without passing through the allowlist.
 
 **Allowed.** Each class derives only from the committed manifest, from ref
@@ -351,7 +352,7 @@ error `detail` text; and any other unbounded free text. In the `private` phase,
 `detail` and an exception message are not written to a public surface at all. A
 failure reports only its status and gate code (and its `run_id`), and the full
 diagnosis is read from the private evidence repository or from the maintainer's
-local run (§5.2). Whether the detail is persisted privately is #688's choice;
+local run (§5.2). Whether the detail is persisted privately is the implementation's choice;
 the contract only forbids a public write.
 
 **Public surfaces beyond stdout and stderr.** `$SWEEP_REPORT` stays on the
@@ -398,7 +399,8 @@ learns that from the private health issue. A failed watchdog or sweep step
 fails the job, so operators see that something needs attention without seeing
 what.
 
-**Consistency.** #688 implements the allowlist and its test (F12). #689 checks it
+**Consistency.** The allowlist and its test (F12, F13) are not delivered by #688 as
+merged, and the owner of that work is a maintainer decision. #689 checks it
 against a run that uses fixture records and issue bodies carrying sentinel
 strings. Neither may widen it. A widening is an edit to this section, in a PR
 that links its own issue.
@@ -816,3 +818,41 @@ This ADR is consistent with, and narrows, the following:
 
 No contradiction was found that requires changing those documents' decisions.
 Each carries a pointer to this ADR for the parts that change at cutover.
+
+## 14. Implementation of the destination contract (#688)
+
+Implemented under `pre_cutover`: the manifest block of §4.2 is committed with
+`phase: pre_cutover` and `repository` equal to the source, so every existing
+Routine prompt keeps working (F9a). Nothing here creates the private repository,
+activates a Routine or migrates data (#690).
+
+| Concern | Where it lives |
+| --- | --- |
+| Block validation (V2, V4, V5, V7), namespaces, `history_branch` | `scripts/benchmark_evidence_config.py`, enforced statically by `benchmark_schedule_manifest.py` and again at run time |
+| Resolution, identity proof (V1, V3, V6, V8, V9), preflight (V10), allow-listed seal, stop-condition reads, baseline history | `scripts/benchmark_evidence_destination.py` (`Destination`); `GitRefHistory` has no remote default |
+| Entrypoints | `run_benchmark_routine.py`, `run_severity_observation.py`, `run_concurrency_experiment.py`: one `--evidence-remote` (alias `--seal-remote`); exit 2 `evidence-destination-misconfigured`, exit 3 `evidence-store-unavailable` / `seal-unconfirmed` with the would-be files kept in a local `benchmark-unsealed-<run_id>` directory and a JSON status on stdout |
+| Publisher | `publisher/cli.py` addresses `manifest["evidence"]["repository"]` only; `resolve-evidence` feeds token minting; refusal detail is not logged |
+| Workflow | `benchmark-publish.yml` mints three single-permission App tokens (`contents: write`, `issues: write`, `contents: read`) for the resolved evidence repository only, pinned by `test_benchmark_publish_workflow.py` |
+
+Identity is proven from the remote's URL path (a remote name is resolved with
+`git remote get-url`); a URL with embedded credentials is refused and never
+printed. A local path or `file://` remote is accepted only when the test harness
+sets `BENCHMARK_EVIDENCE_TEST_LOCAL_REMOTES=1`, which a Routine prompt cannot do.
+In `pre_cutover`, an omitted remote resolves the checkout's own `origin`, and only
+after the same proof; in `private` it is refused (V6).
+
+### 14.1 How the provider-side Routine authenticates to the private repository
+
+Unchanged in principle from §6, and still to be observed (X1) rather than
+assumed: the Routine **selects both repositories** in the provider's own product
+surface, and the provider mediates every clone and push through the maintainer's
+connected GitHub access. Nothing in this repository stores, prints or passes a
+GitHub credential: the prompt carries only a remote name or a credential-free URL,
+the entrypoints never read a token variable, and a URL with `user:token@` is
+rejected (V9). Least privilege is therefore bounded by (a) the provider's grant
+being limited to the two repositories, (b) the allow-list that restricts every
+write to registered `claude/` prefixes, and (c) the public repository's no-bypass
+creation ruleset of Q4 once the phase is `private`. If X1 shows the provider's
+access to a private repository needs the Claude GitHub App installed there, that
+installation is granted to the evidence repository only and carries no workflow
+or administration permission.

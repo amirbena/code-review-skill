@@ -35,6 +35,10 @@ class SealError(RuntimeError):
     """The handoff was not written; the run stays unsealed and leaves no record."""
 
 
+class SealUnconfirmedError(SealError):
+    """The push was accepted but the read-back failed or disagreed; the ref may exist on the remote."""
+
+
 def staging_ref(run_id: str) -> str:
     return f"{STAGING_REF_PREFIX}{run_id}"
 
@@ -75,9 +79,12 @@ def seal_to_ref(repo_root: Path, remote: str, ref: str, files: Mapping[str, byte
     tree = _git(repo_root, "mktree", stdin="".join(entries).encode("utf-8"))
     commit = _git(repo_root, "commit-tree", tree, "-m", message, env=_COMMIT_IDENTITY)
     _git(repo_root, "push", remote, f"{commit}:refs/heads/{ref}")
-    remote_tip = _git(repo_root, "ls-remote", remote, f"refs/heads/{ref}").split()
+    try:
+        remote_tip = _git(repo_root, "ls-remote", remote, f"refs/heads/{ref}").split()
+    except SealError as exc:
+        raise SealUnconfirmedError(f"{ref} was pushed but could not be read back: {exc}") from exc
     if not remote_tip or remote_tip[0] != commit:
-        raise SealError(f"{remote} does not hold {ref} at {commit} after the push")
+        raise SealUnconfirmedError(f"the remote does not hold {ref} at {commit} after the push")
     return commit
 
 

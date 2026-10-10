@@ -21,6 +21,11 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from runtime_platform.benchmark.scripts.benchmark_evidence_config import DestinationMisconfigured, validate_evidence_block  # noqa: E402
+
 MANIFEST_PATH = REPO_ROOT / "runtime_platform" / "benchmark" / "schedule" / "expected-run-manifest.json"
 
 SCHEMA_VERSION = "benchmark-schedule/v1"
@@ -30,7 +35,7 @@ LABEL_ROLES = ("drift", "keep-open", "missed-run", "tracking")
 STAGING_REF_PREFIX = "claude/benchmark-result-"
 
 _TOP_KEYS = {
-    "schema", "repository", "entrypoint", "lanes", "health_issue",
+    "schema", "repository", "evidence", "entrypoint", "lanes", "health_issue",
     "confirmation", "publication", "watchdog", "labels",
 }
 _LANE_KEYS = {
@@ -64,6 +69,18 @@ def load_manifest(path: Path = MANIFEST_PATH) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ManifestError(f"manifest {path} is not a JSON object")
     return data
+
+
+def load_valid_manifest(path: Path = MANIFEST_PATH) -> dict[str, Any]:
+    """The manifest, valid; an unreadable or invalid one is a misconfigured evidence destination (exit 2)."""
+    try:
+        manifest = load_manifest(path)
+    except ManifestError as exc:
+        raise DestinationMisconfigured(str(exc)) from exc
+    errors = validate_manifest(manifest)
+    if errors:
+        raise DestinationMisconfigured(f"invalid manifest {path}: {errors[0]}")
+    return manifest
 
 
 def _is_int(value: object) -> bool:
@@ -218,6 +235,12 @@ def validate_manifest(manifest: object, *, require_provisioned: bool = False) ->
         errors.append(f"schema: must be {SCHEMA_VERSION!r}")
     if not isinstance(top.get("repository"), str) or not _REPO_RE.match(top["repository"]):
         errors.append("repository: must be 'owner/name'")
+    errors.extend(validate_evidence_block(top.get("evidence"), top.get("repository")))
+    evidence, publication = top.get("evidence"), top.get("publication")
+    if isinstance(evidence, dict) and isinstance(publication, dict) and isinstance(evidence.get("namespaces"), list):
+        pattern = publication.get("staging_ref_pattern")
+        if isinstance(pattern, str) and pattern.rstrip("*") not in evidence["namespaces"]:
+            errors.append("evidence.namespaces: must register the publication staging prefix " + repr(pattern.rstrip("*")))
     entrypoint = top.get("entrypoint")
     if not isinstance(entrypoint, str) or not entrypoint.endswith(".py") or entrypoint.startswith("/") or ".." in entrypoint.split("/"):
         errors.append("entrypoint: must be a repository-relative .py path")

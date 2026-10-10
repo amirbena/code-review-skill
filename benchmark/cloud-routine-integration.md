@@ -165,12 +165,25 @@ entrypoint:
 5. **seals**: one orphan commit holding `benchmark-result.json` and
    `raw-bundle.json` (the raw per-invocation output and the confirmation
    reruns, hashed as `raw.bundle_sha256`), pushed with a plain — never forced —
-   `git push` to `claude/benchmark-result-<run_id>` on `--seal-remote` (default
-   `origin`) and read back with `git ls-remote`. The push goes through the
-   checkout's own remote, so the provider mediates it (§5); the entrypoint holds
+   `git push` to `claude/benchmark-result-<run_id>` on the **evidence destination**
+   (`--evidence-remote`, alias `--seal-remote`; the manifest's `evidence` block
+   declares the repository and phase, and the remote must prove to be that
+   repository, see
+   [`private-evidence-repository.md`](../runtime_platform/benchmark/scheduled-operations/private-evidence-repository.md)
+   §4) and read back with `git ls-remote`. Omitted, only the `pre_cutover` phase
+   uses the checkout's own remote, and only after the same proof; there is no
+   fallback to any other repository. The push goes through the
+   remote the provider mediates (§5); the entrypoint holds
    no token and calls no GitHub API or `gh`, and the seal code refuses any ref
    outside `claude/`. `--seal-dir DIR` writes the same files to a directory
    instead: a local dry run that pushes nothing.
+
+A destination that is missing, unproven or breaks its phase exits **2**
+(`evidence-destination-misconfigured`); an unreachable, unauthorized or rejecting
+store exits **3** (`evidence-store-unavailable`, or `seal-unconfirmed` when only
+the read-back failed), before any fixture runs when the preflight read fails, and
+with the would-be sealed files kept in a local diagnostics directory. Nothing is
+ever pushed to the source repository on those paths.
 
 A failure before the push completes leaves nothing durable. A failure after it
 (a timeout, or a failed read-back) can leave a sealed ref while the run reports
@@ -358,11 +371,23 @@ provider-side prompt drift cannot change behavior:
      --mode <sentinel|comprehensive|smoke|selected|auth-check> \
      [--case-id <id> ...] \
      --trigger scheduled \
-     --model-id <the model backend this Routine session is running as>
+     --model-id <the model backend this Routine session is running as> \
+     [--evidence-remote <evidence-repository-remote>]
 3. If the command exits non-zero, stop — do not report success, do not retry
    silently, and do not post or push anything to GitHub. A run that did not
    seal is not a verified run.
 ```
+
+`--evidence-remote` is omitted while the manifest's `evidence.phase` is
+`pre_cutover` and required once it is `private`; its value is a remote name or
+URL **without credentials** (a URL with embedded credentials is refused). How the
+provider-side Routine reaches the private repository is in
+[`private-evidence-repository.md`](../runtime_platform/benchmark/scheduled-operations/private-evidence-repository.md)
+§6 and
+[`provisioning-runbook.md`](../runtime_platform/benchmark/scheduled-operations/provisioning-runbook.md):
+the Routine selects both repositories, no GitHub credential is placed in the
+prompt or in source, and the entrypoint writes only allow-listed refs to the
+proven destination.
 
 The tracking-issue numbers, cadence text, `max_gap_hours`, and confirmation
 parameters are not Routine arguments: they live in the repository-owned

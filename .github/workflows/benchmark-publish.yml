@@ -9,8 +9,8 @@ name: Benchmark publish
 # definition always runs; no event on `benchmark-history` or a staging ref starts
 # it, so the App's own writes cannot re-trigger it. The App key lives in the
 # `benchmark-publication` environment, whose deployment branch policy is the
-# default branch only. The job's GITHUB_TOKEN is `contents: read`; two App tokens,
-# each narrowed to this repository and one permission, carry every write.
+# default branch only. The job's GITHUB_TOKEN is `contents: read`; three App tokens,
+# each narrowed to the evidence repository and one permission, carry every request to it.
 #
 # Commands and credentials: runtime_platform/benchmark/publication-cli.md.
 # Guarded by tests/policy/benchmark/test_benchmark_publish_workflow.py.
@@ -60,6 +60,14 @@ jobs:
         with:
           python-version: "3.13"
 
+      # Every token is minted for the manifest's evidence.repository and nothing else (F11):
+      # the source in `pre_cutover`, the private evidence repository in `private`.
+      - name: Resolve the evidence repository
+        id: evidence
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: python runtime_platform/benchmark/scripts/publish_benchmark.py resolve-evidence --owner "$OWNER" >> "$GITHUB_OUTPUT"
+
       - name: Mint the contents token (contents write)
         id: contents-token
         uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
@@ -67,7 +75,7 @@ jobs:
           app-id: ${{ secrets.BENCHMARK_APP_ID }}
           private-key: ${{ secrets.BENCHMARK_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          repositories: code-review-skill
+          repositories: ${{ steps.evidence.outputs.name }}
           permission-contents: write
 
       - name: Mint the issues token (issues write)
@@ -77,17 +85,28 @@ jobs:
           app-id: ${{ secrets.BENCHMARK_APP_ID }}
           private-key: ${{ secrets.BENCHMARK_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          repositories: code-review-skill
+          repositories: ${{ steps.evidence.outputs.name }}
           permission-issues: write
+
+      - name: Mint the read token (contents read)
+        id: read-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
+        with:
+          app-id: ${{ secrets.BENCHMARK_APP_ID }}
+          private-key: ${{ secrets.BENCHMARK_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ steps.evidence.outputs.name }}
+          permission-contents: read
 
       - name: Refuse a token minted for another App
         id: identity
         env:
           CONTENTS_SLUG: ${{ steps.contents-token.outputs.app-slug }}
           ISSUES_SLUG: ${{ steps.issues-token.outputs.app-slug }}
+          READ_SLUG: ${{ steps.read-token.outputs.app-slug }}
         run: |
-          if [ "$CONTENTS_SLUG" != "$BENCHMARK_APP_SLUG" ] || [ "$ISSUES_SLUG" != "$BENCHMARK_APP_SLUG" ]; then
-            echo "::error::the minted tokens belong to '$CONTENTS_SLUG'/'$ISSUES_SLUG', not '$BENCHMARK_APP_SLUG'"
+          if [ "$CONTENTS_SLUG" != "$BENCHMARK_APP_SLUG" ] || [ "$ISSUES_SLUG" != "$BENCHMARK_APP_SLUG" ] || [ "$READ_SLUG" != "$BENCHMARK_APP_SLUG" ]; then
+            echo "::error::the minted tokens belong to '$CONTENTS_SLUG'/'$ISSUES_SLUG'/'$READ_SLUG', not '$BENCHMARK_APP_SLUG'"
             exit 1
           fi
 
@@ -110,11 +129,11 @@ jobs:
       # Runs after a failed sweep too, so a stalled publication stays visible, but never
       # with a token minted for another App; only an `ok`, full, non-dry-run report
       # advances "last successful publication sweep". It holds no contents-write token:
-      # history is read with the job's read token.
+      # history is read with a contents-read App token for the evidence repository.
       - name: Watchdog
         if: ${{ !cancelled() && steps.identity.outcome == 'success' }}
         env:
-          BENCHMARK_READ_TOKEN: ${{ github.token }}
+          BENCHMARK_READ_TOKEN: ${{ steps.read-token.outputs.token }}
           BENCHMARK_ISSUES_TOKEN: ${{ steps.issues-token.outputs.token }}
           DRY_RUN: ${{ inputs.dry_run }}
           SWEEP_REPORT: ${{ runner.temp }}/sweep-report.json
