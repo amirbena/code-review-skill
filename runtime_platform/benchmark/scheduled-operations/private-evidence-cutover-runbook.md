@@ -36,7 +36,7 @@ export SRC=amirbena/code-review-skill EVD=amirbena/code-review-skill-evidence
 | `INCONCLUSIVE — BLOCKED` | Not verified and not approved, or controls 1–5 of ADR §12.2 are not in place. The baseline (control 6) is recorded at cutover; it gates reassessment, not this state. | stop |
 | `FAIL` | A demonstrated failure. | stop |
 
-**Current state: `INCONCLUSIVE — BLOCKED` until the approval is recorded.** The documentation PR does not itself accept X4.
+**Current state: `INCONCLUSIVE — ACCEPTED`** ([maintainer approval of ADR §12.2](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734), 2026-10-10). This is not an empirical `PASS`, and it does not authorize the cutover: every other precondition in this section still applies, and the §12.2 controls (including the cutover baseline, §4 step 5) must be in place.
 
 **Evidence limitation.** The provider checkout was provisioned before the X1 probe branch existed and is reused across sessions, so no provider fetch of a pre-existing non-default branch was observed. The wildcard refspec and non-shallow configuration, and the explicit clone that fetched the X1 branch, are not direct proof. Do not rerun the same experiment.
 
@@ -108,7 +108,7 @@ or access error. Refs removed by a maintainer-authorized reset (O2) are not inpu
 | --- | --- | --- |
 | Visibility and access | `private: true`; App installation ID; ruleset IDs | pending |
 | Experiments X1–X3 | observed outcomes | pending |
-| Experiment X4 | state (below), maintainer approval link, baseline measurement (ADR §12.2 item 6) | pending |
+| Experiment X4 | state (below), maintainer approval link, baseline measurement (ADR §12.2 item 6) | state `INCONCLUSIVE — ACCEPTED`, [approval on #690](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734) (2026-10-10); baseline pending (recorded at cutover) |
 | Reconciliation report | `reconciliation-report.json` summary: counts, `reconciled`, date | pending |
 | Cutover record | cutover commit SHA, window start/end, Routine prompt updates | pending |
 | Per-Routine verification | run IDs for sentinel / comprehensive / severity / concurrency; duplicate, stop-condition, sweep results | pending |

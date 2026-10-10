@@ -15,7 +15,7 @@ while producing it.
 | --- | --- |
 | Architecture (Fully Private evidence, §2) | **Accepted.** The maintainer merged [PR #693](https://github.com/amirbena/code-review-skill/pull/693) (`6c82239`, 2026-10-10) and closed #687 as completed. The ADR named maintainer review as its gate. The maintainer confirmed on PR #700 that the merge and the closure are sufficient evidence of acceptance. |
 | Implementation | **Destination contract delivered under `pre_cutover`** by [#688](https://github.com/amirbena/code-review-skill/issues/688) ([PR #698](https://github.com/amirbena/code-review-skill/pull/698), `71acb33`; §14). The private-phase public-log allowlist (§5.4, F12/F13), which that PR did not implement, is delivered by [#704](https://github.com/amirbena/code-review-skill/issues/704), closing the cutover precondition G-open-1. Validation by [#689](https://github.com/amirbena/code-review-skill/issues/689) is recorded in the [validation gate](private-evidence-validation-gate.md). |
-| Q4 amendment | **Accepted risk recorded** by [#706](https://github.com/amirbena/code-review-skill/issues/706): the private repository runs without Rulesets (Q4 "Amendment"). Public-source protections are unchanged. X2 is resolved; X1 and X3 remain open. X4 is empirically inconclusive and has a conservative disposition awaiting maintainer approval (§12.2, [#710](https://github.com/amirbena/code-review-skill/issues/710)). |
+| Q4 amendment | **Accepted risk recorded** by [#706](https://github.com/amirbena/code-review-skill/issues/706): the private repository runs without Rulesets (Q4 "Amendment"). Public-source protections are unchanged. X2 is resolved; X1 and X3 remain open. X4 is empirically inconclusive and recorded `INCONCLUSIVE — ACCEPTED` on the maintainer's approval of the §12.2 disposition ([approval](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734), 2026-10-10; [#710](https://github.com/amirbena/code-review-skill/issues/710)). This does not authorize the cutover. |
 | Cutover | **Pending**, owned by [#690](https://github.com/amirbena/code-review-skill/issues/690). The manifest is still `pre_cutover` and no private repository exists. |
 
 Clarified by [#699](https://github.com/amirbena/code-review-skill/issues/699):
@@ -864,7 +864,7 @@ runs (§10).
 | X2 | **Resolved by the Q4 amendment.** Rulesets are unavailable on the private repository (observed: 403), and the maintainer accepted operating without them. Environment and deployment-branch availability need not be observed, because Q1 stays closed on this plan. | Nothing. Reopened only by the Q4 reopen conditions. |
 | X1 | Open, independent. | A Routine selecting both repositories pushes one `claude/x1-*` ref to the evidence repository from the source checkout, then a non-`claude/` branch attempt. It must also show that the public creation ruleset (no bypass) blocks a Routine push to a registered evidence prefix in the **source** repository. The accepted risk does not waive any part of it. |
 | X3 | Open, independent. | After a real push, `GET /repos/{evidence}/activity` with an App installation token records it. The endpoint answers `[]` on the empty repository today, which is not the observation. |
-| X4 | **Empirically inconclusive.** Conservative disposition in §12.2, pending maintainer approval ([#710](https://github.com/amirbena/code-review-skill/issues/710)). | Direct observation of a provider-created checkout fetching a non-default branch that existed at its provisioning time, or the maintainer's explicit approval of §12.2. |
+| X4 | **Empirically INCONCLUSIVE — ACCEPTED** ([maintainer approval](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734) of §12.2, 2026-10-10; [#710](https://github.com/amirbena/code-review-skill/issues/710)). Not an empirical PASS. | Nothing for the gate. Direct observation of a provider-created checkout fetching a pre-existing non-default branch would upgrade it to `PASS`. |
 
 ### 12.1 Readiness gate for #690 (changes from the Q4 amendment)
 
@@ -899,9 +899,9 @@ suggests, what the operation assumes, and what risk is accepted.
 
 **Operational assumption.** Provider checkout cost (clone time and size) may grow with evidence refs and history. This is the branch X4's own "if it does" clause already covers, so it needs no new decision.
 
-**Proposed disposition (subject to maintainer approval).** `INCONCLUSIVE — ACCEPTED`: X4 is inconclusive, and it is accepted for cutover readiness with the controls below. Until the maintainer approves it on [#690](https://github.com/amirbena/code-review-skill/issues/690), X4 is `INCONCLUSIVE — BLOCKED` for the §12.1 gate.
+**Disposition (approved by the maintainer, 2026-10-10).** `INCONCLUSIVE — ACCEPTED`: X4 remains empirically inconclusive, and it is accepted for cutover readiness with the controls below. The maintainer stated that the approval is not an empirical PASS, accepts the documented clone-growth risk and the associated controls (minimal default-branch content, stale-checkout safeguards, baseline measurement during cutover), leaves all other cutover gates unchanged, and does not authorize the cutover itself. The approval is recorded as [a maintainer comment on #690](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734).
 
-**Accepted risk (on approval).** The provider checkout may fetch every ref, so its cost may grow, and it may be stale relative to the remote. The risk is bounded by the controls and the reassessment trigger, and does not alter the §2 architecture.
+**Accepted risk.** The provider checkout may fetch every ref, so its cost may grow, and it may be stale relative to the remote. The risk is bounded by the controls and the reassessment trigger, and does not alter the §2 architecture.
 
 **Clone-growth controls.**
 
