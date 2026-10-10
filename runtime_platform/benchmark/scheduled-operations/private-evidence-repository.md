@@ -47,18 +47,19 @@ Each row can be re-checked with the command shown.
 | # | Observation | Re-check |
 | --- | --- | --- |
 | O1 | `origin` currently holds **no** `claude/*` evidence refs. `benchmark-history` holds 7 sentinel records and receipts, plus `baselines/sentinel.json` (bootstrap, promoted by `benchmark-publication[bot]`). | `git ls-remote origin 'refs/heads/claude/*' refs/heads/benchmark-history` |
-| O2 | The maintainer deleted 7 `claude/benchmark-result-sentinel-*` and 5 `claude/severity-observation-*` refs at 2026-10-10T08:27Z, between 15 and 1 days after their receipts, so **before** the 30-day `DELETE_STAGING_REF` retention. The deletions used the Admin role's ruleset bypass. | `gh api "repos/amirbena/code-review-skill/activity?activity_type=branch_deletion"` |
-| O3 | The 12 deleted commits still exist as remote-tracking refs in the maintainer's primary clone, and each still has its two files. This is the only known copy of the raw bundles that published records point to through `raw.location`. | `git for-each-ref 'refs/remotes/origin/claude/*'` in the primary clone |
-| O4 | `run_severity_observation.py` computes its stop condition (14 observations) and its one-per-day check from `ls-remote` of `claude/severity-observation-*` on the seal remote. After O2, the next scheduled run counts **0**, so the campaign would collect up to 14 *more* observations, and the same-day guard has lost its input. | [`run_severity_observation.py`](../scripts/run_severity_observation.py) `prior_observation_refs`, `skip_reason` |
+| O2 | On 2026-10-10 at 08:27Z, the maintainer deliberately reset historical execution evidence by deleting 7 `claude/benchmark-result-sentinel-*` refs and 5 `claude/severity-observation-*` refs. This was intentional and maintainer-authorized, not an incident or data loss, and the refs are not to be restored. | `gh api "repos/amirbena/code-review-skill/activity?activity_type=branch_deletion"` |
+| O3 | Records published before the reset keep a `raw.location` that names their staging ref. After the reset, that location no longer resolves. This is expected: the record and receipt on `benchmark-history` remain the authoritative evidence. | the records on `benchmark-history`; O2 |
+| O4 | `run_severity_observation.py` computes its stop condition (14 observations) and its one-per-day check from `ls-remote` of `claude/severity-observation-*` on the seal remote. Because of the O2 reset, the count starts again from zero. The maintainer accepts this. It also shows that a stop-condition count is a property of the store it reads, which is why §10 has a counted-refs rule. | [`run_severity_observation.py`](../scripts/run_severity_observation.py) `prior_observation_refs`, `skip_reason` |
 | O5 | #681 is in progress on `origin/feat/concurrency-measurement-routine` (not merged). It adds `claude/concurrency-experiment-*` and `claude/concurrency-trial-*`, with the same `ls-remote` stop-condition pattern and a spec `storage` block. | `git diff origin/main...origin/feat/concurrency-measurement-routine --stat` |
 | O6 | Live rulesets: `benchmark-history` (update, deletion and non-fast-forward, bypassed by the Admin role and the App) and `benchmark-staging-refs`, which covers **only** `refs/heads/claude/benchmark-result-*` (deletion and non-fast-forward). No ruleset covers `claude/severity-*` or `claude/benchmark-handoff-check-*`. | `gh api repos/amirbena/code-review-skill/rulesets/<id>` |
 | O7 | `amirbena/code-review-skill-evidence` does not exist yet. The `benchmark-publication` environment exists with a custom deployment-branch policy. | `gh repo view amirbena/code-review-skill-evidence`; `gh api repos/amirbena/code-review-skill/environments` |
 | O8 | Routine documentation (research preview): a routine selects "one or more GitHub repositories", each cloned at the start of a run from its default branch. Pushes go to `claude/`-prefixed branches by default. Rulesets apply to the connected GitHub access, and "a rule that access can bypass doesn't block a run's push". | [Routines](https://code.claude.com/docs/en/routines), "Repositories and branch permissions" |
 | O9 | GitHub documents environment secrets and deployment-branch policies in **private** repositories as Pro/Team/Enterprise features. On Free they apply to public repositories only. Ruleset availability for private repositories on the maintainer's plan is unverified (the account's plan is not readable with the current token). | [Deployments and environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments) |
 
-O2–O4 are reported, not judged. They matter here because they show that
-evidence and counted state can already disappear without a contract, and that
-the stop conditions depend on which store they count.
+O2–O4 inform two rules in this ADR. First, a maintainer-authorized reset is a
+legitimate retention action (§3.1). Second, a stop condition counts whatever
+store it reads, so it restarts when that store's counted refs are reset or
+replaced (§10).
 
 ## 2. Decision summary
 
@@ -73,7 +74,7 @@ the stop conditions depend on which store they count.
 | E7 | **An explicit remote is sufficient.** No storage abstraction or new backend is added. Git refs stay the storage, and ref names stay unchanged (§8, Q5). |
 | E8 | **Records do not depend on where they are stored.** No sealed field names the evidence repository, so a migrated copy keeps its `content_sha256` and commit SHA. `provenance.repo` keeps naming the source (§7). |
 | E9 | **One active store at a time**, selected by the manifest at the SHA a run checks out. Cutover and rollback go through drained, paused transitions (§10). |
-| E10 | **#681 can merge, but its Routine is not activated until #688 and #689 land.** This keeps any concurrency evidence out of the public repository from the first run (§11). |
+| E10 | **The concurrency campaign (#681–#683) is independent of this migration.** Neither blocks the other. Concurrency refs go to whichever store is active at the run's pinned SHA. A cutover must not disturb a campaign that is in progress (§10, §11). |
 
 ## 3. Ownership table
 
@@ -85,11 +86,11 @@ code is marked *new*.
 
 | Namespace / artifact | Writer | Readers | Retention |
 | --- | --- | --- | --- |
-| `claude/benchmark-result-<run_id>` (staging seal: `benchmark-result.json`, `raw-bundle.json`) | Routine, through the seal (provider-mediated push) | publisher `sweep` (matching-refs and activity); `raw.location` resolution by a maintainer | Deleted by the publisher 30 days after its receipt (`DELETE_STAGING_REF`), and never before a receipt exists. Any other deletion needs maintainer approval recorded in an issue (*new*: O2 shows manual early deletion leaves `raw.location` dangling). |
+| `claude/benchmark-result-<run_id>` (staging seal: `benchmark-result.json`, `raw-bundle.json`) | Routine, through the seal (provider-mediated push) | publisher `sweep` (matching-refs and activity); `raw.location` resolution by a maintainer | Deleted by the publisher 30 days after its receipt (`DELETE_STAGING_REF`), and never before a receipt exists. Earlier deletion is allowed only as a maintainer-authorized reset (O2). After a reset, `raw.location` in already-published records stops resolving, and the record stays authoritative. |
 | `claude/benchmark-handoff-check-<UTC>-<sha12>` (`handoff-check.json`) | Routine `auth-check` | maintainer only; never swept | The maintainer deletes it after reading the smoke-test result. No automatic deletion. |
-| `claude/severity-observation-<run_id>` | Routine, `--trigger scheduled` | the entrypoint's stop condition and same-day guard (`ls-remote`); #653 analysis | Kept until #653 has read them (spec `removal_path`). Counted refs are never deleted while the Routine is enabled (*new*, invariant F7). |
+| `claude/severity-observation-<run_id>` | Routine, `--trigger scheduled` | the entrypoint's stop condition and same-day guard (`ls-remote`); #653 analysis | Kept until #653 has read them (spec `removal_path`), unless the maintainer authorizes a reset. A reset restarts the stop-condition count from zero (O4). |
 | `claude/severity-trial-<run_id>` | manual or API runs of the same entrypoint | none (never counted) | Maintainer discretion. |
-| `claude/concurrency-experiment-<run_id>` (planned, #681) | Routine, scheduled | the #681 stop condition (`ls-remote`); #682 analysis | Kept until #682 has read them (#683 removal path). The same rule as for severity refs applies. |
+| `claude/concurrency-experiment-<run_id>` (planned, #681) | Routine, scheduled | the #681 stop condition (`ls-remote`); #682 analysis | Kept until #682 has read them (#683 removal path). The same reset rule as for severity refs applies. |
 | `claude/concurrency-trial-<run_id>` (planned, #681) | manual or API runs | none (never counted) | Maintainer discretion. |
 | `benchmark-history` → `records/<lane>/<yyyy>/<run_id>.json` | publisher App, create-only | execution (baseline record), publisher, watchdog | Never pruned. |
 | `benchmark-history` → `receipts/<lane>/<yyyy>/<run_id>.json` | publisher App, create-only | publisher (already-published check), watchdog | Never pruned. |
@@ -433,31 +434,39 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 - R2. No run crosses a cutover. A run's destination is a pure function of the
   manifest at its `repo_sha`.
 - R3. The publisher sweeps exactly one store per pass.
-- R4. No evidence ref is deleted from any store until its copy in the active
-  store is verified (same SHA), and the deletion is approved in an issue.
+- R4. A migration step never deletes an evidence ref from any store until
+  its copy in the active store is verified (same SHA) and the deletion is
+  approved. A maintainer-authorized reset (O2) is a separate retention action:
+  it deletes without copying, by design.
 
 ## 10. Migration and rollback invariants (for #690)
 
 **Cutover order:**
 
-1. Pause every evidence-producing Routine.
-2. Drain the old store: every staging ref there has a receipt.
-3. Copy refs and `benchmark-history` by SHA (I4), and verify them.
+1. Pause the lane Routines and any other evidence-producing Routine. A
+   temporary campaign's Routine stays enabled and is handled by the
+   counted-refs rule below.
+2. Drain the old store, so that every staging ref there has a receipt.
+3. Copy whatever evidence refs exist at that moment, and `benchmark-history`,
+   by SHA (I4). Verify each copy.
 4. Merge the manifest change.
 5. Run one `auth-check` against the new store.
-6. Re-enable the Routines.
-7. Delete public refs only with recorded approval (R4).
+6. Re-enable the paused Routines.
+7. Delete refs from the old store only with recorded approval (R4).
 
-The 12 commits in O3 are the inputs for step 3 for the refs already deleted
-from `origin`. Re-pushing them preserves their SHAs. Copied, already-receipted
-staging refs are recognized as published. Copied unreceipted refs are attested
-by the migrating maintainer, who is in the allowlist, and this is why step 2
-comes first.
+Step 3 copies whatever exists at cutover. Refs removed by a maintainer-authorized
+reset (O2) are not inputs and are not restored. Copied staging refs that already
+have receipts are recognized as published. Copied refs without receipts would
+be attested by the migrating maintainer, who is in the allowlist, which is why
+step 2 comes first.
 
-**Counted refs.** The severity and concurrency stop conditions count the
-active store. Before cutover the count must be equal in both stores, or the
-campaign is paused until #690 copies the counted refs. O4 already violates
-this on `origin`.
+**Counted refs.** A stop condition counts the store that is active at the run's
+pinned SHA. A cutover must not change a running campaign's count. If a
+campaign is in progress, the cutover happens between two of its scheduled runs
+and its counted refs are copied in step 3, so the next run sees the same count
+in the new store. If the old store's counted refs were reset first by a
+maintainer-authorized reset, the count restarts from zero, as in O4. Only such
+a reset may restart a count.
 
 **Rollback** has two forms:
 
@@ -469,30 +478,33 @@ this on `origin`.
   approval recorded in an issue.
 
 In both forms, two stores never accept writes at the same time: a run's
-destination comes from its pinned manifest (R2), and the Routines are paused
-across each transition.
+destination comes from its pinned manifest (R2). The lane Routines are paused
+across each transition, and a running campaign is switched between two of its
+runs (§10).
 
 ## 11. Coordination with #680 (#681–#683)
 
-- **Should `claude/concurrency-*` target the private repository from its
-  first run? Yes.** The campaign is new evidence. Running it publicly would
-  create exactly the evidence #686 sets out to remove, and would then need to
-  be migrated.
-- **Proposed dependency (not applied to the issues):** #681's
-  *implementation* is not blocked and may merge first. Its Routine
-  *activation*, the first step of #682's campaign, should be **blocked by
-  #688 and #689**. #689 must include the two concurrency prefixes in its
-  validation.
+- **The campaign is independent of this migration (E10).** The issue asked
+  whether `claude/concurrency-*` should target the private repository from its
+  first run. The maintainer decided it should not be tied to the migration.
+  #681–#683 proceed on their own schedule, and no dependency on #688–#690 is
+  proposed. Concurrency refs go to whichever store is active at the run's
+  pinned SHA: the public repository before cutover and the private one after.
+- **What the migration owes the campaign.** The two concurrency prefixes are in
+  `evidence.namespaces` (§4.1), so #688's allow-list does not break the
+  campaign. #689 validates them like any other namespace. #690 applies the
+  counted-refs rule (§10), so a cutover during the campaign keeps its count.
+  Refs produced before cutover are migrated or deleted under the same rules as
+  every other namespace.
 - **Interface note for #681:** its `prior_experiment_refs(remote)` and seal
   call follow the severity pattern. Whichever of #681 and #688 merges second
   routes them through the shared destination contract (§4.2). If #681 merges
-  first, #688 adds the two prefixes to `evidence.namespaces` and replaces
-  #681's `remote` argument. If #688 merges first, #681 adopts the contract
-  before merging.
-- **Sequencing:** #687 (this ADR) → #688 → #689 → #681 activation and #682
-  campaign → #690 cutover of the lanes. #690 can run before or after the
-  campaign. If it runs during the campaign, the counted-refs rule in §10
-  applies.
+  first, #688 adds the prefixes and replaces #681's `remote` argument. If #688
+  merges first, #681 adopts the contract before merging. Neither issue waits
+  for the other.
+- **Sequencing:** #687 (this ADR) → #688 → #689 → #690. The campaign
+  (#681 → #682 → #683) runs in parallel, and #690 schedules its cutover around
+  the campaign's run dates.
 
 ## 12. Maintainer experiments (cannot be verified from the repository)
 
