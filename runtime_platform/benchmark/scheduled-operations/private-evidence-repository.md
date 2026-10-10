@@ -15,7 +15,7 @@ while producing it.
 | --- | --- |
 | Architecture (Fully Private evidence, §2) | **Accepted.** The maintainer merged [PR #693](https://github.com/amirbena/code-review-skill/pull/693) (`6c82239`, 2026-10-10) and closed #687 as completed. The ADR named maintainer review as its gate. The maintainer confirmed on PR #700 that the merge and the closure are sufficient evidence of acceptance. |
 | Implementation | **Destination contract delivered under `pre_cutover`** by [#688](https://github.com/amirbena/code-review-skill/issues/688) ([PR #698](https://github.com/amirbena/code-review-skill/pull/698), `71acb33`; §14). The private-phase public-log allowlist (§5.4, F12/F13), which that PR did not implement, is delivered by [#704](https://github.com/amirbena/code-review-skill/issues/704), closing the cutover precondition G-open-1. Validation by [#689](https://github.com/amirbena/code-review-skill/issues/689) is recorded in the [validation gate](private-evidence-validation-gate.md). |
-| Q4 amendment | **Accepted risk recorded** by [#706](https://github.com/amirbena/code-review-skill/issues/706): the private repository runs without Rulesets (Q4 "Amendment"). Public-source protections are unchanged. X2 is resolved; X1 and X3 remain open. X4 is empirically inconclusive and recorded `INCONCLUSIVE — ACCEPTED` on the maintainer's approval of the §12.2 disposition ([approval](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734), 2026-10-10; [#710](https://github.com/amirbena/code-review-skill/issues/710)). This does not authorize the cutover. |
+| Q4 amendment | **Accepted risk recorded** by [#706](https://github.com/amirbena/code-review-skill/issues/706): the private repository runs without Rulesets (Q4 "Amendment"). Public-source protections are unchanged. X2 is resolved and X3 is recorded `PASS` (§12.3); X1 remains open. X4 is empirically inconclusive and recorded `INCONCLUSIVE — ACCEPTED` on the maintainer's approval of the §12.2 disposition ([approval](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734), 2026-10-10; [#710](https://github.com/amirbena/code-review-skill/issues/710)). This does not authorize the cutover. |
 | Cutover | **Pending**, owned by [#690](https://github.com/amirbena/code-review-skill/issues/690). The manifest is still `pre_cutover` and no private repository exists. |
 
 Clarified by [#699](https://github.com/amirbena/code-review-skill/issues/699):
@@ -411,7 +411,7 @@ that links its own issue.
 | Identity | Scope in the `private` phase | Least-privilege rule | Verified? |
 | --- | --- | --- | --- |
 | **Routine** (provider-mediated, acting as the maintainer's connected GitHub access) | reads the source (clone); writes registered `claude/*` refs in the evidence repository; reads `benchmark-history` there | The Routine selects both repositories. No GitHub credential is provisioned into the runtime. The entrypoint writes only allow-listed refs to the proven destination. | **No.** Experiment X1. The docs say multiple repositories are supported. Whether the evidence clone's remote URL is usable from the source checkout, and whether access to a private repository requires the Claude GitHub App installed on it or a `/web-setup` grant, must be observed, not assumed. |
-| **`benchmark-publication` App** | installed on the evidence repository. Tokens: `contents: write` (persist, delete staging), `issues: write`, `contents: read` (watchdog), each with `repositories: code-review-skill-evidence` only | never `actions`, `workflows`, `administration`, `pull-requests`, `secrets`, `environments` (unchanged). In the `private` phase the public repository is removed from the installation. | Installation and minting are checked by #689. Activity-API access on a private repository is experiment X3. |
+| **`benchmark-publication` App** | installed on the evidence repository. Tokens: `contents: write` (persist, delete staging), `issues: write`, `contents: read` (watchdog), each with `repositories: code-review-skill-evidence` only | never `actions`, `workflows`, `administration`, `pull-requests`, `secrets`, `environments` (unchanged). In the `private` phase the public repository is removed from the installation. | Installation and minting are checked by #689. Activity-API access on a private repository is experiment X3, recorded `PASS` in §12.3. |
 | **Publication job `GITHUB_TOKEN`** | `contents: read` on the **public** repository (checkout only) | never used against the evidence repository | — |
 | **Maintainer** | admin on both | promotion, approved deletions, provisioning, cutover | — |
 
@@ -863,7 +863,7 @@ runs (§10).
 | --- | --- | --- |
 | X2 | **Resolved by the Q4 amendment.** Rulesets are unavailable on the private repository (observed: 403), and the maintainer accepted operating without them. Environment and deployment-branch availability need not be observed, because Q1 stays closed on this plan. | Nothing. Reopened only by the Q4 reopen conditions. |
 | X1 | Open, independent. | A Routine selecting both repositories pushes one `claude/x1-*` ref to the evidence repository from the source checkout, then a non-`claude/` branch attempt. It must also show that the public creation ruleset (no bypass) blocks a Routine push to a registered evidence prefix in the **source** repository. The accepted risk does not waive any part of it. |
-| X3 | Open, independent. | After a real push, `GET /repos/{evidence}/activity` with an App installation token records it. The endpoint answers `[]` on the empty repository today, which is not the observation. |
+| X3 | **PASS** ([run](https://github.com/amirbena/code-review-skill/actions/runs/38066153068), job `114254101385`, 2026-10-10; §12.3). Verifies origin attestation only, not the cutover. | Nothing for the gate. |
 | X4 | **Empirically INCONCLUSIVE — ACCEPTED** ([maintainer approval](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734) of §12.2, 2026-10-10; [#710](https://github.com/amirbena/code-review-skill/issues/710)). Not an empirical PASS. | Nothing for the gate. Direct observation of a provider-created checkout fetching a pre-existing non-default branch would upgrade it to `PASS`. |
 
 ### 12.1 Readiness gate for #690 (changes from the Q4 amendment)
@@ -918,6 +918,29 @@ suggests, what the operation assumes, and what risk is accepted.
    The baseline gates reassessment, not the `INCONCLUSIVE — ACCEPTED` state. The numeric growth threshold is a **follow-up requirement**, to be set by the maintainer from the recorded baseline ([#712](https://github.com/amirbena/code-review-skill/issues/712)). It must not be guessed before then.
 
 **Not changed.** X1, X2 and X3 and every other §12.1 condition. No setting, Ruleset, Routine, ref or data is changed by this record.
+
+### 12.3 X3 — result: `PASS` ([#714](https://github.com/amirbena/code-review-skill/issues/714))
+
+X3 asks whether origin attestation works unchanged against the private evidence repository. A temporary, dispatch-only, read-only probe ([#715](https://github.com/amirbena/code-review-skill/pull/715), commit `7ca11e8`) answered it, and has since been removed.
+
+**Evidence.** GitHub Actions run [38066153068](https://github.com/amirbena/code-review-skill/actions/runs/38066153068), job `x3-probe` (job ID `114254101385`), `workflow_dispatch` on `main` at `7ca11e8`, 2026-10-10. The job succeeded and the normal `publish` job was skipped.
+
+- **Identity.** The job minted one `contents: read` installation token for `code-review-skill-evidence` only, and its slug check (the token's App slug must equal `benchmark-publication`) passed before the token was used. The workflow's `GITHUB_TOKEN` was `contents: read`.
+- **Private-repository Activity API.** The existing `benchmark-publication` App's installation token read the activity of the X1 ref (`claude/x1-*`, created by the Routine push) on the private repository. The ref tip was matched against a pinned digest of the X1 commit, so the activity concerned that exact commit.
+- **Origin attribution.** The real `attest_origin`, with `publication.pusher_allowlist` and `accept_unattributed=False`, attributed that push to an allowlisted actor.
+- **Negative cases**, run through the same gate with synthetic inputs, were all rejected: wrong actor, missing activity, wrong SHA.
+
+Public log lines (fixed codes only):
+
+```text
+x3-probe: positive=attributed
+x3-probe: negative-wrong-actor=rejected
+x3-probe: negative-missing-activity=rejected
+x3-probe: negative-wrong-sha=rejected
+x3-probe: verdict=pass
+```
+
+**Scope of the result.** X3 shows that the App can read private-repository activity and that attestation works there. The publisher's fail-closed policy is unchanged: unavailable activity, a refused origin or an unattributed push is still refused, with the dispatch fallback. X3 verifies one experiment; it is not the cutover and does not approve it. X1, X4 (`INCONCLUSIVE — ACCEPTED`) and every other §12.1 condition are unchanged. The probe workflow input, job, subcommand, module and tests were removed in the cleanup PR for #714; the permanent publisher, App-token minting and `attest_origin` are unchanged.
 
 ## 13. Relationship to existing contracts
 

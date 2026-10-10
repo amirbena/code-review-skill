@@ -26,7 +26,6 @@ ALLOWED_ACTIONS = {"actions/checkout", "actions/setup-python", APP_TOKEN_ACTION}
 STEP_ENV = {
     "BENCHMARK_CONTENTS_TOKEN", "BENCHMARK_ISSUES_TOKEN", "BENCHMARK_READ_TOKEN",
     "RUN_ID", "ACCEPT_UNATTRIBUTED", "DRY_RUN", "SWEEP_REPORT", "CONTENTS_SLUG", "ISSUES_SLUG", "READ_SLUG", "OWNER",
-    "PROBE_SLUG",
 }
 MODEL_CREDENTIAL = re.compile(r"anthropic|openai|claude|gemini|model|api[_-]?key|oauth", re.IGNORECASE)
 EXECUTION_MODULES = {
@@ -56,8 +55,8 @@ class TriggerTests(unittest.TestCase):
         self.assertEqual(set(_triggers(_load())), {"schedule", "workflow_dispatch"})
 
     def test_the_job_runs_only_on_the_default_branch(self) -> None:
-        job = _load()["jobs"]["publish"]
-        self.assertEqual(job["if"], "github.ref == 'refs/heads/main' && inputs.x3_probe != true")
+        (job,) = _load()["jobs"].values()
+        self.assertEqual(job["if"], "github.ref == 'refs/heads/main'")
         self.assertEqual(job["environment"], "benchmark-publication")
 
     def test_sweeps_are_serialized(self) -> None:
@@ -80,7 +79,7 @@ class CredentialTests(unittest.TestCase):
     def setUp(self) -> None:
         self.text = WORKFLOW.read_text(encoding="utf-8")
         self.workflow = _load()
-        self.job = self.workflow["jobs"]["publish"]
+        (self.job,) = self.workflow["jobs"].values()
         self.steps = self.job["steps"]
 
     def test_job_token_is_contents_read_and_the_default_is_none(self) -> None:
@@ -157,7 +156,7 @@ class CredentialTests(unittest.TestCase):
 
 class CommandTests(unittest.TestCase):
     def setUp(self) -> None:
-        job = _load()["jobs"]["publish"]
+        (job,) = _load()["jobs"].values()
         self.steps = job["steps"]
         self.runs = [s for s in self.steps if "run" in s]
 
@@ -229,8 +228,7 @@ class PublicLogSurfaceTests(unittest.TestCase):
     def test_no_step_summary_and_no_artifact_upload(self) -> None:
         self.assertNotIn("GITHUB_STEP_SUMMARY", self.text)
         self.assertNotIn("upload-artifact", self.text)
-        for job in self.workflow["jobs"].values():
-            self.assertNotIn("outputs", job)  # no job output reaches a public surface
+        self.assertNotIn("outputs", self.workflow["jobs"]["publish"])  # no job output reaches a public surface
 
     def test_annotations_carry_fixed_text_only(self) -> None:
         for line in self.text.splitlines():
@@ -241,65 +239,6 @@ class PublicLogSurfaceTests(unittest.TestCase):
         for line in self.text.splitlines():
             if "$SWEEP_REPORT" in line and not line.lstrip().startswith("#"):
                 self.assertRegex(line, r"> \"\$SWEEP_REPORT\"|--sweep-report|-s \"\$SWEEP_REPORT\"")
-
-
-PROBE_REPOSITORY_NAME = "code-review-skill-evidence"
-
-
-class X3ProbeJobTests(unittest.TestCase):
-    """Issue #714: the probe is manual, main-only, read-only, pinned and isolated from publication."""
-
-    def setUp(self) -> None:
-        self.workflow = _load()
-        self.job = self.workflow["jobs"]["x3-probe"]
-        self.steps = self.job["steps"]
-
-    def test_the_probe_is_selected_only_by_a_manual_dispatch_on_the_default_branch(self) -> None:
-        self.assertEqual(
-            self.job["if"], "github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.x3_probe == true"
-        )
-        self.assertEqual(self.job["environment"], "benchmark-publication")
-        self.assertEqual(self.workflow["on" if "on" in self.workflow else True]["workflow_dispatch"]["inputs"]["x3_probe"]["default"], False)
-
-    def test_a_probe_dispatch_does_not_run_publication_and_a_schedule_never_probes(self) -> None:
-        self.assertIn("inputs.x3_probe != true", self.workflow["jobs"]["publish"]["if"])
-        self.assertIn("github.event_name == 'workflow_dispatch'", self.job["if"])
-
-    def test_the_probe_mints_one_read_token_for_the_pinned_repository(self) -> None:
-        (mint,) = [s for s in self.steps if s.get("uses", "").startswith(APP_TOKEN_ACTION + "@")]
-        self.assertEqual(mint["with"]["repositories"], PROBE_REPOSITORY_NAME)
-        self.assertEqual({k: v for k, v in mint["with"].items() if k.startswith("permission-")}, {"permission-contents": "read"})
-        self.assertEqual(self.job["permissions"], {"contents": "read"})
-
-    def test_the_probe_checks_the_app_slug_before_the_token_is_used(self) -> None:
-        names = [s["name"] for s in self.steps]
-        check, probe = names.index("Refuse a token minted for another App"), names.index("Probe origin attestation")
-        self.assertLess(check, probe)
-        self.assertEqual(self.steps[check]["env"], {"PROBE_SLUG": "${{ steps.probe-token.outputs.app-slug }}"})
-        self.assertNotIn("${{", self.steps[check]["run"])
-
-    def test_the_probe_runs_only_the_probe_command_with_only_the_read_token(self) -> None:
-        runs = [s for s in self.steps if "run" in s and "python" in s["run"]]
-        self.assertEqual([s["run"].split()[1:] for s in runs], [[CLI, "probe-activity"]])
-        self.assertEqual(set(runs[0]["env"]), {"BENCHMARK_READ_TOKEN"})
-        for step in self.steps:
-            self.assertNotIn("BENCHMARK_CONTENTS_TOKEN", step.get("env", {}))
-            self.assertNotIn("BENCHMARK_ISSUES_TOKEN", step.get("env", {}))
-            self.assertNotRegex(step.get("run", ""), r"\bpip\b|\bcurl\b|\bgh\b|\bgit\b|\$\{\{")
-
-    def test_the_probe_job_uses_pinned_first_party_actions_and_no_checkout_credentials(self) -> None:
-        for step in self.steps:
-            if "uses" in step:
-                action, _, ref = step["uses"].partition("@")
-                self.assertIn(action, ALLOWED_ACTIONS)
-                self.assertRegex(ref, r"^[0-9a-f]{40}$")
-        checkout = next(s for s in self.steps if s["uses"].startswith("actions/checkout@"))
-        self.assertIs(checkout["with"]["persist-credentials"], False)
-
-    def test_the_probe_job_has_no_write_permission_and_no_other_secret(self) -> None:
-        self.assertEqual(self.workflow["permissions"], {})
-        for forbidden in ("permission-issues", "permission-actions", "permission-workflows", "permission-administration"):
-            self.assertNotIn(forbidden, str(self.job))
 
 
 if __name__ == "__main__":

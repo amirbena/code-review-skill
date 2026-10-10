@@ -13,7 +13,6 @@ import re
 import sys
 from typing import Any, Mapping, TextIO
 
-from runtime_platform.benchmark.publisher.activity_probe import NEGATIVE_CASES, NEGATIVE_CODES, POSITIVE_CODES, ProbeResult
 from runtime_platform.benchmark.publisher.layout import STAGING_REF_PREFIX, run_id_from_ref
 from runtime_platform.benchmark.publisher.model import ALREADY_PUBLISHED, FAILED, PUBLISHED, REFUSED, SweepReport, WatchdogReport
 from runtime_platform.benchmark.publisher.validation import GATES
@@ -153,10 +152,3 @@ class PublicLog:
         if view["aborted"]:
             print(f"aborted: {view['aborted']}", file=self.err)
         print(json.dumps(view, indent=2, sort_keys=True), file=self.out)
-
-    def probe(self, result: ProbeResult) -> None:
-        """The X3 probe's fixed-code lines; identical in every phase, since nothing here is a value."""
-        print(f"x3-probe: positive={_code(result.positive, POSITIVE_CODES)}", file=self.out)
-        for case in NEGATIVE_CASES:
-            print(f"x3-probe: negative-{case}={_code(result.negatives.get(case), NEGATIVE_CODES)}", file=self.out)
-        print(f"x3-probe: verdict={'pass' if result.passed else 'fail'}", file=self.out)
