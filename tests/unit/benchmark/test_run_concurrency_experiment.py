@@ -102,11 +102,9 @@ class NamespaceTest(unittest.TestCase):
 
     def test_dry_run_writes_only_experiment_files_and_pushes_nothing(self):
         with tempfile.TemporaryDirectory() as t, mock.patch.object(exp.seal, "seal_to_ref") as push:
-            stub = write_stub(Path(t))
-            spec = small_spec(Path(t))
-            out = Path(t) / "out"
-            proc = run_cli("--arms", "1,2", "--cli", str(stub), "--runtime-version", "v1", "--spec", str(spec), "--seal-dir", str(out))
-            self.assertEqual(proc.returncode, 0, proc.stderr)
+            stub, spec, out = write_stub(Path(t)), small_spec(Path(t)), Path(t) / "out"
+            argv = ["--arms", "1,2", "--cli", str(stub), "--runtime-version", "v1", "--spec", str(spec), "--seal-dir", str(out)]
+            self.assertEqual(exp.main(argv), 0)
             self.assertEqual({p.name for p in out.iterdir()}, {exp.EXPERIMENT_FILE, exp.RAW_FILE})
             push.assert_not_called()
 
@@ -342,6 +340,29 @@ class FailureTest(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
         self.assertEqual(record["status"], "incomplete")
         self.assertEqual(record["failure_classes"], ["infrastructure"])
+
+    def test_an_unexpected_worker_fault_still_seals_the_partial_evidence(self):
+        real = workers.run_fixture_child
+        seen = []
+
+        def flaky(fixture, **kwargs):
+            seen.append(fixture.case_id)
+            if len(seen) == 3:
+                raise OSError("fork failed")
+            return real(fixture, **kwargs)
+
+        with tempfile.TemporaryDirectory() as t, mock.patch.object(workers, "run_fixture_child", side_effect=flaky):
+            stub, spec, out = write_stub(Path(t)), small_spec(Path(t)), Path(t) / "out"
+            code = exp.main(["--arms", "1,2", "--cli", str(stub), "--runtime-version", "v1", "--spec", str(spec), "--seal-dir", str(out)])
+            record = json.loads((out / exp.EXPERIMENT_FILE).read_text())
+        self.assertNotEqual(code, 0)
+        self.assertEqual(record["status"], "aborted")
+        self.assertEqual(record["abort"]["error"], "OSError")
+        self.assertIn("infrastructure", record["failure_classes"])
+        self.assertEqual([a["workers"] for a in record["arms"]], [1])  # the second arm never started
+        self.assertEqual(record["arms"][0]["completed"], 2)  # what finished before the fault is kept
+        self.assertEqual(record["arms"][0]["status"], "incomplete")
+        self.assertNotIn("coverage", {v["kind"] for v in record["isolation"]["violations"]})
 
     def test_termination_stops_children_and_seals_partial_evidence_as_terminated(self):
         with tempfile.TemporaryDirectory() as t:

@@ -231,6 +231,7 @@ def build_experiment(
     audit: dict,
     *,
     status_hint: str | None,
+    abort: dict[str, str] | None = None,
     trigger: str,
     runtime: Mapping[str, str],
     repo_sha: str,
@@ -241,7 +242,11 @@ def build_experiment(
 ) -> dict[str, Any]:
     run_id = make_run_id(started_at, repo_sha)
     complete = status_hint is None and len(arms) == len(planned_arms) and all(a.complete for a in arms) and audit["passed"]
-    classes = sorted({c for a in arms for c in a.failure_classes()} | ({"isolation"} if not audit["passed"] else set()))
+    classes = sorted(
+        {c for a in arms for c in a.failure_classes()}
+        | ({"isolation"} if not audit["passed"] else set())
+        | ({"infrastructure"} if abort else set())
+    )
     return {
         "schema": EXPERIMENT_SCHEMA,
         "temporary": True,
@@ -250,6 +255,7 @@ def build_experiment(
         "trigger": trigger,
         "status": "complete" if complete else (status_hint or "incomplete"),
         "failure_classes": classes,
+        "abort": abort,
         "started_at": started_at,
         "finished_at": finished_at,
         "planned_arms": planned_arms,
@@ -321,6 +327,7 @@ def run(args: argparse.Namespace) -> int:
     repo_before, config_before, cli_before = capture_repo_state(REPO_ROOT), git_config_digests(), cli_state_fingerprint()
     arms: list[ArmResult] = []
     status_hint: str | None = None
+    abort: dict[str, str] | None = None
     exit_code = 0
     cancel, children = threading.Event(), LiveChildren()
     try:
@@ -328,15 +335,21 @@ def run(args: argparse.Namespace) -> int:
             for count in arms_planned:
                 progress.phase_name = f"arm-{count}"
                 progress.log(f"[arm {count}] START {len(fixtures)} fixtures")
-                arm = workers_mod.run_arm(
+                arm = ArmResult(workers=count, planned=len(fixtures), wall_s=0.0)
+                arms.append(arm)  # recorded before it runs, so an abort keeps what finished
+                workers_mod.run_arm(
                     count, fixtures, executable=executable, timeout=args.timeout, scratch_root=scratch_root,
-                    log=progress.log, cancel=cancel, children=children,
+                    log=progress.log, cancel=cancel, children=children, result=arm,
                 )
-                arms.append(arm)
                 progress.log(f"[arm {count}] {'DONE' if arm.complete else 'INCOMPLETE'} {arm.wall_s:.1f}s completed={arm.completed}/{arm.planned}")
     except Terminated as exc:
         progress.log(terminated_line(exc))
+        arms[-1].cancelled = True  # the interrupted arm is partial, not a coverage failure
         status_hint, exit_code = "terminated", exc.exit_code
+    except Exception as exc:  # noqa: BLE001 - an unexpected fault is infrastructure; the evidence so far is still sealed
+        arms[-1].cancelled = True if arms else False
+        progress.log(f"[run] aborted: {type(exc).__name__}: {' '.join(str(exc).split())[:300]}")
+        status_hint, abort = "aborted", {"error": type(exc).__name__, "message": " ".join(str(exc).split())[:500]}
     finally:
         children.stop_all()
         stray = shared_temp_strays(temp_before)
@@ -347,7 +360,7 @@ def run(args: argparse.Namespace) -> int:
         cli_before=cli_before, cli_after=cli_state_fingerprint(),
     )
     experiment = build_experiment(
-        spec, arms, manifest, audit, status_hint=status_hint, trigger=args.trigger, runtime=runtime,
+        spec, arms, manifest, audit, status_hint=status_hint, abort=abort, trigger=args.trigger, runtime=runtime,
         repo_sha=repo_sha, repo_ref=git_ref(), started_at=started_at, finished_at=utc_now(), planned_arms=arms_planned,
     )
     files = {RAW_FILE: seal.encode_json(raw_evidence(arms)), EXPERIMENT_FILE: seal.encode_json(experiment)}

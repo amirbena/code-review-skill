@@ -290,13 +290,17 @@ def run_arm(
     log: Callable[[str], None],
     cancel: threading.Event,
     children: LiveChildren,
+    result: ArmResult | None = None,
 ) -> ArmResult:
-    """Run `fixtures` (in their given order) on `workers` slots; each slot owns one scratch directory."""
+    """Run `fixtures` (in their given order) on `workers` slots; each slot owns one scratch directory.
+
+    A caller that passes `result` keeps whatever finished even when this raises, so an abort never loses evidence.
+    """
     slots: queue.Queue[int] = queue.Queue()
     for slot in range(workers):
         (scratch_root / f"w{workers}-{slot}").mkdir(parents=True, exist_ok=True)
         slots.put(slot)
-    result = ArmResult(workers=workers, planned=len(fixtures), wall_s=0.0)
+    result = result if result is not None else ArmResult(workers=workers, planned=len(fixtures), wall_s=0.0)
     lock = threading.Lock()
     active: set[int] = set()
     began = time.monotonic()
@@ -313,9 +317,13 @@ def run_arm(
             active.add(slot)
         try:
             log(f"[w{slot}] START {fixture.case_id}")
-            outcome = run_fixture_child(
-                fixture, worker=slot, scratch=scratch, executable=executable, timeout=timeout, began=began, children=children
-            )
+            try:
+                outcome = run_fixture_child(
+                    fixture, worker=slot, scratch=scratch, executable=executable, timeout=timeout, began=began, children=children
+                )
+            except BaseException:
+                cancel.set()  # stop the other workers from starting fixtures the moment one faults
+                raise
             leftovers = sorted(p.name for p in scratch.iterdir())
             with lock:
                 result.outcomes.append(outcome)
@@ -332,15 +340,19 @@ def run_arm(
                 active.discard(slot)
             slots.put(slot)
 
-    with ResourceSampler() as sampler, ThreadPoolExecutor(max_workers=workers, thread_name_prefix="fixture") as pool:
-        futures = [pool.submit(task, fixture) for fixture in fixtures]
-        try:
-            for future in futures:
-                future.result()
-        except BaseException:
-            cancel.set()  # no new fixture starts, and the running children are stopped
-            children.stop_all()
-            raise
-    result.wall_s = round(time.monotonic() - began, 3)
-    result.contention = sampler.summary()
+    sampler = ResourceSampler()
+    try:
+        with sampler, ThreadPoolExecutor(max_workers=workers, thread_name_prefix="fixture") as pool:
+            try:
+                futures = [pool.submit(task, fixture) for fixture in fixtures]
+                for future in futures:
+                    future.result()
+            except BaseException:
+                cancel.set()  # no new fixture starts, queued ones are dropped, and the running children are stopped
+                pool.shutdown(wait=False, cancel_futures=True)
+                children.stop_all()
+                raise
+    finally:
+        result.wall_s = round(time.monotonic() - began, 3)
+        result.contention = sampler.summary()
     return result
