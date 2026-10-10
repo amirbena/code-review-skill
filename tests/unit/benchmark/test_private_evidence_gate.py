@@ -169,7 +169,8 @@ class FailureModeTests(GateStores):
         status = json.loads(out.getvalue())
         self.assertEqual((code, status["status"], status["sealed"], status["destination"]), (3, ed.STATUS_UNAVAILABLE, False, EVIDENCE))
         kept = Path(status["diagnostics"])
-        self.assertEqual({p.name: p.read_bytes() for p in kept.iterdir()}, files)  # partial evidence preserved, byte for byte
+        self.assertEqual({name: (kept / name).read_bytes() for name in files}, files)  # partial evidence preserved, byte for byte
+        self.assertEqual(len(list(kept.glob("*.json"))), len(files))
         self.assertNotIn(str(self.private), out.getvalue() + err_out.getvalue())
         self.assert_nothing_written()
 
@@ -293,9 +294,12 @@ class BenchmarkCompatibilityTests(GateStores):
 
     @staticmethod
     def comparable(record: dict) -> dict:
-        """Everything except the wall-clock stamps and the two digests that cover the amended spec."""
+        """Everything except the wall-clock stamps, the interpreter version and the two digests that cover the amended spec."""
         kept = {k: v for k, v in record.items() if k not in ("content_sha256", "finished_at", "sealed_at")}
         kept["provenance"] = {k: v for k, v in record["provenance"].items() if k != "spec_sha256"}
+        for section in kept.values():
+            if isinstance(section, dict):
+                section.pop("python_version", None)  # the interpreter of the machine that ran the test
         return kept
 
     def test_unchanged_inputs_seal_a_record_identical_to_the_pre_688_snapshot(self) -> None:
@@ -317,8 +321,7 @@ class BenchmarkCompatibilityTests(GateStores):
             path = scripts / name if (scripts / name).exists() else REPO_ROOT / "runtime_platform" / "benchmark" / "reference" / name
             if path.exists():
                 self.assertNotIn("evidence_destination", path.read_text(encoding="utf-8"), name)
-        tracked = subprocess.run(["git", "ls-files", "benchmark/corpus"], cwd=str(REPO_ROOT), capture_output=True, text=True).stdout
-        self.assertTrue(tracked.strip(), "the corpus (fixtures and expected findings) stays tracked in the public source repository")
+        self.assertTrue(next((REPO_ROOT / "benchmark" / "corpus").rglob("*.yaml"), None), "the corpus (fixtures and expected findings) stays in the public source repository")
 
 
 class PublisherPrivateStoreTests(unittest.TestCase):

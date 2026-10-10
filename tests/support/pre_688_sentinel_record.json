@@ -210,8 +210,7 @@
    "security-command-injection"
   ],
   "command": "python3 runtime_platform/benchmark/scripts/run_benchmark_routine.py --mode sentinel",
-  "nondeterminism": "Model output is nondeterministic; a rerun may differ.",
-  "python_version": "3.14.6"
+  "nondeterminism": "Model output is nondeterministic; a rerun may differ."
  },
  "run_id": "sentinel-20260920T010000Z-aaaaaaaaaaaa",
  "runtime": {
