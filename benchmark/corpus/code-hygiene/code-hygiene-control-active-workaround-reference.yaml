@@ -1,0 +1,44 @@
+# Code-hygiene benchmark corpus case (Issue #677, parent #675, policy #676).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Control: the reference documents an active workaround with its reason and
+# removal condition. Nothing may be reported, not even an observation.
+
+format: benchmark-case/v2
+
+id: code-hygiene-control-active-workaround-reference
+title: "A reference documents a still-needed workaround and says when to remove it"
+
+input:
+  patch: |
+    diff --git a/app/schedule/times.py b/app/schedule/times.py
+    index 1111111..2222222 100644
+    --- a/app/schedule/times.py
+    +++ b/app/schedule/times.py
+    @@ -1,2 +1,4 @@
+     def to_utc(client, stamp):
+    -    return client.localize(stamp).astimezone(UTC)
+    +    # Workaround for #1203: client < 4.2 returns naive datetimes for DST-ambiguous
+    +    # stamps, so attach the zone explicitly. Remove once client >= 4.2 is required.
+    +    return client.localize(stamp).replace(tzinfo=client.zone).astimezone(UTC)
+  base:
+    app/schedule/times.py: |
+      def to_utc(client, stamp):
+          return client.localize(stamp).astimezone(UTC)
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    The tracker reference explains an active workaround and its removal
+    condition, which policy says to keep. Any finding is a false positive.
+  taxonomy:
+    capability: [code-hygiene]
+    policy_contract: [code-hygiene]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

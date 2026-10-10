@@ -1,0 +1,44 @@
+# Code-hygiene benchmark corpus case (Issue #677, parent #675, policy #676).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Control: one comment cites an external partner contract and another a
+# compatibility constraint, each with its reason. Nothing may be reported.
+
+format: benchmark-case/v2
+
+id: code-hygiene-control-external-contract-and-compat-reference
+title: "References document an external contract and a compatibility constraint"
+
+input:
+  patch: |
+    diff --git a/app/partners/payload.py b/app/partners/payload.py
+    index 1111111..2222222 100644
+    --- a/app/partners/payload.py
+    +++ b/app/partners/payload.py
+    @@ -1,2 +1,4 @@
+     def build(order):
+    +    # Partner contract (PARTNER-88): field names are fixed by their v1 schema.
+    +    # Compatibility (#640): keep `amt`/`ccy` until all consumers move to v2.
+         return {"id": order.id, "amt": order.amount, "ccy": order.currency}
+  base:
+    app/partners/payload.py: |
+      def build(order):
+          return {"id": order.id, "amt": order.amount, "ccy": order.currency}
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Both references document constraints policy says to keep, and the short
+    field names are dictated by the external schema. Any finding is a false
+    positive.
+  taxonomy:
+    capability: [code-hygiene]
+    policy_contract: [code-hygiene]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

@@ -1,0 +1,46 @@
+# Code-hygiene benchmark corpus case (Issue #677, parent #675, policy #676).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Flagged shape, default tier: a TODO plus ticket key with no actionable
+# content. It names no defect and no follow-up, so it is not a real-defect
+# TODO reviewed under the normal rules.
+
+format: benchmark-case/v2
+
+id: code-hygiene-todo-ticket-without-content-observation
+title: "A TODO consisting only of a ticket key is added"
+
+input:
+  patch: |
+    diff --git a/app/reports/export.py b/app/reports/export.py
+    index 1111111..2222222 100644
+    --- a/app/reports/export.py
+    +++ b/app/reports/export.py
+    @@ -1,2 +1,3 @@
+     def export_rows(rows):
+    +    # TODO(PROJ-456)
+         return [row.as_dict() for row in rows]
+  base:
+    app/reports/export.py: |
+      def export_rows(rows):
+          return [row.as_dict() for row in rows]
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    `TODO(PROJ-456)` states nothing a reader can act on and marks no defect.
+    The default tier is a severity-less observation, which is outside the
+    finding set, so a correct review keeps `decision: clean` with no findings.
+    The matcher cannot see observations; the empty exhaustive expectation
+    proves hygiene alone never becomes a finding of any severity.
+  taxonomy:
+    capability: [code-hygiene]
+    policy_contract: [code-hygiene]
+    risk_mode: [quality]
+    affected_surface: [unclassified]
