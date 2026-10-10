@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Any, Callable, Mapping, NoReturn, Sequence
 
-from runtime_platform.benchmark.publisher import github_api
+from runtime_platform.benchmark.publisher import activity_probe, github_api
 from runtime_platform.benchmark.publisher.memory import dry_run_overlay
 from runtime_platform.benchmark.publisher.ports import FatalPublicationError
 from runtime_platform.benchmark.publisher.public_log import PublicLog
@@ -52,6 +52,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     resolve = sub.add_parser("resolve-evidence", help="Print `name=<evidence repository name>` for the workflow's token minting.")
     resolve.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
     resolve.add_argument("--owner", required=True, help="The workflow's repository owner; the evidence repository must belong to it.")
+    probe = sub.add_parser("probe-activity", help="Read-only X3 probe of origin attestation on the private evidence repository.")
+    probe.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
     for command in (sweep, watchdog):
         command.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
         command.add_argument("--app-slug", help="The publication App's slug (default: BENCHMARK_APP_SLUG).")
@@ -160,6 +162,7 @@ def main(
     env: Mapping[str, str] | None = None,
     ports_factory: PortsFactory | None = None,
     clock: Clock | None = None,
+    probe_reader: activity_probe.ReaderFactory | None = None,
 ) -> int:
     args = build_arg_parser().parse_args(argv)
     env = os.environ if env is None else env
@@ -174,7 +177,7 @@ def main(
     if errors:
         return _fail(f"invalid evidence destination: {errors[0]}", "invalid-evidence-destination", log)
     try:
-        return _run(args, env, manifest, log, ports_factory, clock)
+        return _run(args, env, manifest, log, ports_factory, clock, probe_reader)
     except Exception:  # noqa: BLE001 - in `private` an uncaught exception reaches the public log only as a fixed code (F13)
         if not log.private:
             raise
@@ -182,9 +185,21 @@ def main(
         return 1
 
 
+def _probe(env: Mapping[str, str], manifest: Mapping[str, Any], log: PublicLog, reader_factory: activity_probe.ReaderFactory | None) -> int:
+    """Only the read token is consulted; the manifest supplies the allowlist and nothing else."""
+    try:
+        token = github_api.require_installation_token("BENCHMARK_READ_TOKEN", env.get("BENCHMARK_READ_TOKEN"))
+    except FatalPublicationError as exc:
+        return _fail(str(exc), "evidence-unavailable", log)
+    reader = (reader_factory or activity_probe.GitHubProbeReader)(token)
+    result = activity_probe.run_probe(reader, manifest["publication"]["pusher_allowlist"])
+    log.probe(result)
+    return 0 if result.passed else 1
+
+
 def _run(
     args: argparse.Namespace, env: Mapping[str, str], manifest: Mapping[str, Any], log: PublicLog,
-    ports_factory: PortsFactory | None, clock: Clock | None,
+    ports_factory: PortsFactory | None, clock: Clock | None, probe_reader: activity_probe.ReaderFactory | None = None,
 ) -> int:
     if args.command == "resolve-evidence":
         owner, name = evidence_repository(manifest).split("/")
@@ -192,6 +207,8 @@ def _run(
             return _fail("the evidence repository must belong to the workflow's owner", "usage", log)
         print(f"name={name}")
         return 0
+    if args.command == "probe-activity":
+        return _probe(env, manifest, log, probe_reader)
     slug = args.app_slug or env.get("BENCHMARK_APP_SLUG")
     if not slug:
         return _fail("the App slug is required (--app-slug or BENCHMARK_APP_SLUG): the acting identity must be known", "app-slug-required", log)
