@@ -3,15 +3,87 @@
   "temporary": true,
   "issue": 681,
   "campaign_issue": 683,
+  "measurement_issue": 682,
   "repository": "amirbena/code-review-skill",
   "entrypoint": "runtime_platform/benchmark/scripts/run_concurrency_experiment.py",
   "allowed_workers": [1, 2, 4],
   "subset": {
-    "method": "seeded-rank",
-    "seed": "concurrency-experiment-v1",
-    "size": 16,
-    "case_ids": null,
-    "note": "Placeholder selection so the entrypoint is runnable. #682 commits the sized, stratified subset (case_ids) before activation."
+    "method": "explicit-stratified",
+    "seed": "concurrency-campaign-682-v1",
+    "size": 24,
+    "corpus_fixture_count_at_selection": 144,
+    "selection_doc": "runtime_platform/benchmark/concurrency-campaign.md",
+    "strata": {
+      "large-patch": ["risk-depth-diffsize-elevated-refactor"],
+      "wide-context": [
+        "external-pinned-contract-proves-incompatibility",
+        "three-repo-coordinated-correct",
+        "wsib-gh-api-only-grant-unavailable",
+        "wsib-unrelated-sibling-no-pollution"
+      ],
+      "security": [
+        "isolation-unadmitted-sibling",
+        "security-deepening-single-caller-check-enforced-clean",
+        "semantic-implication-multi-dimension-webhook-xss"
+      ],
+      "concurrency": [
+        "cfv-no-jira-toctou-still-blocking",
+        "distributed-systems-deepening-concurrent-interleaving-inventory-race",
+        "distributed-systems-deepening-filename-signal-suppressed-clean"
+      ],
+      "performance": [
+        "performance-deepening-batched-fix-bounded-clean",
+        "performance-deepening-blocking-io-request-hot-path"
+      ],
+      "architectural": [
+        "semantic-implication-no-signal-clean-extraction",
+        "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type",
+        "specialist-depth-composition-case-f-cascading-activation-bounded"
+      ],
+      "multi-file": [
+        "consolidation-shared-cause-low-confidence-fallback",
+        "finding-placement-test-reveals-production-defect"
+      ],
+      "no-finding": [
+        "cfv-unproven-regression-not-asserted",
+        "code-hygiene-control-external-contract-and-compat-reference",
+        "code-hygiene-control-known-limitation-reference",
+        "relrecall-analogue-pattern-source-outside-repository-unresolvable"
+      ],
+      "fast-single-file": [
+        "correctness-off-by-one-pagination",
+        "finding-placement-preexisting-callee-bug-exposed"
+      ]
+    },
+    "case_ids": [
+      "cfv-no-jira-toctou-still-blocking",
+      "cfv-unproven-regression-not-asserted",
+      "code-hygiene-control-external-contract-and-compat-reference",
+      "code-hygiene-control-known-limitation-reference",
+      "consolidation-shared-cause-low-confidence-fallback",
+      "correctness-off-by-one-pagination",
+      "distributed-systems-deepening-concurrent-interleaving-inventory-race",
+      "distributed-systems-deepening-filename-signal-suppressed-clean",
+      "external-pinned-contract-proves-incompatibility",
+      "finding-placement-preexisting-callee-bug-exposed",
+      "finding-placement-test-reveals-production-defect",
+      "isolation-unadmitted-sibling",
+      "performance-deepening-batched-fix-bounded-clean",
+      "performance-deepening-blocking-io-request-hot-path",
+      "relrecall-analogue-pattern-source-outside-repository-unresolvable",
+      "risk-depth-diffsize-elevated-refactor",
+      "security-deepening-single-caller-check-enforced-clean",
+      "semantic-implication-multi-dimension-webhook-xss",
+      "semantic-implication-no-signal-clean-extraction",
+      "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type",
+      "specialist-depth-composition-case-f-cascading-activation-bounded",
+      "three-repo-coordinated-correct",
+      "wsib-gh-api-only-grant-unavailable",
+      "wsib-unrelated-sibling-no-pollution"
+    ],
+    "corpus_id_at_selection": "44d3d405842998ce03fadf693aa780e1c0b12b255e6fa2c20b7469534a1a013f",
+    "subset_id": "fa240faf2beb71b3fb72e2f333eb6b6e5156f4fa6a5c0e28f507c72d83310c45",
+    "note": "case_ids is the sorted union of strata. subset_id (case ids plus fixture digests) is verified on every run; corpus_id_at_selection is informational, since unrelated fixtures may join the corpus before the pin."
   },
   "intended_cadence": "Tuesday and Thursday at 12:00 Israel local time, two weeks, four experiments.",
   "intended_start": {
@@ -21,9 +93,49 @@
   },
   "stop_condition": {
     "max_experiments": 4,
-    "window_end": null,
-    "experiments": [],
-    "action": "Activation (maintainer, after #682 ratifies the subset) writes the four experiment dates, each with its arms, and the window end date. A scheduled run refuses to execute before they are written, on any other date, after window_end, and once max_experiments experiment refs exist, whether or not the Routine is still enabled."
+    "window_end": "2026-10-22",
+    "experiments": [
+      {"date": "2026-10-13", "arms": [1, 2]},
+      {"date": "2026-10-15", "arms": [2, 4]},
+      {"date": "2026-10-20", "arms": [2, 1]},
+      {"date": "2026-10-22", "arms": [4, 2]}
+    ],
+    "action": "A scheduled run refuses to execute on any date not listed, after window_end, and once max_experiments experiment refs exist, whether or not the Routine is still enabled."
+  },
+  "pin": {
+    "mechanism": "cli-expected-sha",
+    "flag": "--pinned-sha",
+    "sha_format": "40 lowercase hex characters",
+    "checks": ["checkout HEAD equals the flag value", "working tree is clean"],
+    "note": "The pin is the merge commit that carries this spec, so it cannot be written into the spec itself. It is recorded in the #682 activation comment and passed on the Routine's command line; a missing or mismatching value fails the run before any fixture executes."
+  },
+  "decision": {
+    "hard_safety_gates": {
+      "max_isolation_violations": 0,
+      "min_valid_result_rate": 1.0,
+      "provenance_must_match_across_experiments": ["repo_sha", "model_id", "runtime_version", "subset_id", "corpus_id"]
+    },
+    "performance_thresholds": {
+      "min_scaling_efficiency": {"2": 0.6, "4": 0.45},
+      "no_meaningful_speedup_below": 1.15,
+      "max_same_config_wall_cv": 0.25,
+      "max_outcome_disagreement_excess": 0.0,
+      "max_rate_limited_fixture_fraction": 0.05
+    },
+    "window": {
+      "max_fraction_of_window": 0.6,
+      "evidenced_window_s": null,
+      "worst_case_confirmation_invocations": 20
+    },
+    "diagnostic_indicators": [
+      "fixture_seconds_median",
+      "fixture_seconds_max",
+      "contention.peak_load_1m",
+      "contention.children_cpu_s",
+      "rate_limit_hits",
+      "timeouts",
+      "isolation.cli_state"
+    ]
   },
   "failure_policy": "A missed or failed experiment is recorded as such and is not made up: it still counts toward max_experiments, the schedule does not shift, and no code path extends the window. Extension needs explicit maintainer authorization recorded in an issue and a new spec.",
   "storage": {
@@ -31,5 +143,5 @@
     "trial_ref_prefix": "claude/concurrency-trial-",
     "files": ["concurrency-experiment.json", "raw-output.json"]
   },
-  "removal_path": "Disable the Routine (provider side), delete this spec, run_concurrency_experiment.py, benchmark_concurrency_workers.py, concurrency-experiment.md and their tests; keep the claude/concurrency-experiment-* refs until #682 has read them."
+  "removal_path": "Disable the Routine (provider side), delete this spec, run_concurrency_experiment.py, benchmark_concurrency_workers.py, benchmark_concurrency_decision.py, concurrency-experiment.md, concurrency-campaign.md and their tests; keep the claude/concurrency-experiment-* refs until #682 has read them."
 }

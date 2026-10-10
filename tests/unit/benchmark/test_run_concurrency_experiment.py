@@ -41,7 +41,7 @@ def write_stub(directory: Path, extra: str = "") -> Path:
 
 def small_spec(directory: Path, **stop) -> Path:
     spec = exp.load_spec()
-    spec["subset"] = {**spec["subset"], "size": 4}
+    spec["subset"] = {**spec["subset"], "size": 4, "case_ids": spec["subset"]["case_ids"][:4], "strata": None, "subset_id": None}
     spec["stop_condition"] = {**spec["stop_condition"], **stop}
     path = directory / "spec.json"
     path.write_text(json.dumps(spec), encoding="utf-8")
@@ -53,7 +53,7 @@ def activated(**overrides) -> dict:
     spec["stop_condition"] = {
         **spec["stop_condition"],
         "window_end": "2026-11-05",
-        "experiments": [{"date": d, "arms": [1, 2]} for d in ("2026-10-27", "2026-10-29", "2026-11-03", "2026-11-05")],
+        "experiments": [{"date": d, "arms": a} for d, a in zip(("2026-10-27", "2026-10-29", "2026-11-03", "2026-11-05"), ([1, 2], [2, 4], [2, 1], [4, 2]))],
         **overrides,
     }
     return spec
@@ -145,13 +145,15 @@ class NamespaceTest(unittest.TestCase):
 
 class StopConditionTest(unittest.TestCase):
     def test_refuses_before_activation(self):
-        self.assertEqual(exp.skip_reason(exp.load_spec(), [], "2026-10-27", "2026-10-27"), "not-activated")
+        inactive = exp.load_spec()
+        inactive["stop_condition"] = {**inactive["stop_condition"], "window_end": None, "experiments": []}
+        self.assertEqual(exp.skip_reason(inactive, [], "2026-10-27", "2026-10-27"), "not-activated")
 
     def test_runs_only_on_a_listed_day(self):
         spec = activated()
         self.assertIsNone(exp.skip_reason(spec, [], "2026-10-27", "2026-10-27"))
         self.assertEqual(exp.skip_reason(spec, [], "2026-10-28", "2026-10-28"), "not-an-experiment-day")
-        self.assertEqual(exp.scheduled_arms(spec, "2026-10-29"), [1, 2])
+        self.assertEqual(exp.scheduled_arms(spec, "2026-10-29"), [2, 4])
 
     def test_refuses_after_the_fourth_experiment_even_on_a_listed_day(self):
         refs = [f"{exp.EXPERIMENT_REF_PREFIX}2026102{i}T090000Z-x" for i in range(4)]
@@ -184,12 +186,10 @@ class StopConditionTest(unittest.TestCase):
         with mock.patch.object(exp, "prior_experiment_refs", return_value=[]):
             self.assertEqual(exp.main(["--cli", "fake", "--trigger", "scheduled", "--arms", "4"]), 1)
 
-    def test_spec_is_temporary_inactive_and_has_a_removal_path(self):
+    def test_spec_is_temporary_and_has_a_removal_path(self):
         spec = exp.load_spec()
         self.assertTrue(spec["temporary"])
         self.assertEqual(spec["allowed_workers"], [1, 2, 4])
-        self.assertIsNone(spec["stop_condition"]["window_end"])
-        self.assertEqual(spec["stop_condition"]["experiments"], [])
         self.assertEqual(spec["stop_condition"]["max_experiments"], 4)
         self.assertEqual(spec["intended_start"]["weekdays"], ["Tuesday", "Thursday"])
         self.assertEqual(spec["intended_start"]["timezone"], "Asia/Jerusalem")

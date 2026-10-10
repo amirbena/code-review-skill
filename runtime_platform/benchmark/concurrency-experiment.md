@@ -16,8 +16,9 @@ spec: allowed worker counts, the subset selection, the cadence, the stop conditi
 removal path. It is deliberately **not** in [`schedule/expected-run-manifest.json`](schedule/expected-run-manifest.json)
 `lanes`, so the watchdog, baseline promotion and the publisher never see it.
 
-The subset is deterministic: an explicit `subset.case_ids` list, or (the placeholder until #682 commits the
-sized, stratified list) the first `size` fixtures of the comprehensive corpus ranked by `sha256(seed:case_id)`.
+The subset is deterministic: the explicit, stratified `subset.case_ids` list committed by #682 (see
+[`concurrency-campaign.md`](concurrency-campaign.md)), verified against the committed `subset_id`, or, for trials with
+no list, the first `size` fixtures of the comprehensive corpus ranked by `sha256(seed:case_id)`.
 Every run records `corpus_id`, a `subset_id` digest and each fixture's digest, so two runs are comparable only
 when those match.
 
@@ -74,13 +75,17 @@ unavailable), `benchmark` (the child ran but a case did not execute) and `isolat
 
 Enforced in the entrypoint from the spec and the remote refs alone, independent of whether the Routine is enabled.
 A scheduled run exits 0 without executing, printing `skipped`, when: today is after `window_end` (`window-ended`);
-`max_experiments` (4) experiment refs exist (`stop-condition-reached`); the spec has no dates yet
-(`not-activated`); today, in `Asia/Jerusalem`, is not a listed experiment date (`not-an-experiment-day`); or an
+`max_experiments` (4) experiment refs exist (`stop-condition-reached`); the spec has no dates
+(`not-activated`, an inactive spec); today, in `Asia/Jerusalem`, is not a listed experiment date (`not-an-experiment-day`); or an
 experiment ref already exists for today (`already-experimented-today`).
 
 A missed or failed experiment is recorded as such and still counts. Nothing shifts the schedule, nothing makes up
 a run, and a scheduled run takes its arms from the spec (`--arms` is refused), so no code path extends the
 campaign. Extension needs explicit maintainer authorization in an issue and a new spec.
+
+Before any fixture, `validate_spec` rejects an inconsistent schedule, subset or threshold set, and a scheduled run also requires
+`--pinned-sha` to equal a clean checkout's `HEAD` ([`concurrency-campaign.md`](concurrency-campaign.md) §4). Scheduled arms are
+checked against `allowed_workers` as `--arms` is.
 
 The entrypoint never retries a child or an arm. A listing failure refuses to run (exit 1) rather than guessing.
 
@@ -93,23 +98,17 @@ Not registered or activated by this change. Tuesday and Thursday at **12:00 `Asi
   experiment before the next 01:00 window (13 hours).
 - Tuesday and Thursday never coincide with the Comprehensive lane's Friday. The publication sweep (`23 */2 * * *`)
   only publishes and runs in its own environment, so it does not contend for the Routine session.
-- Maintainer step: write the four dates (each with its arms; Tuesday `[1, 2]`, Thursday `[2, 4]`, order
-  counterbalanced across weeks per #682) and `window_end` into the spec, after #682 commits the subset and
-  thresholds, and confirm the daily run cap on the provider side.
+- The four dates (`2026-10-13` `[1,2]`, `2026-10-15` `[2,4]`, `2026-10-20` `[2,1]`, `2026-10-22` `[4,2]`), `window_end`,
+  the subset and the thresholds are committed in the spec ([`concurrency-campaign.md`](concurrency-campaign.md)).
+- Maintainer step: confirm the daily run cap on the provider side, record the merge commit SHA as the pin, and register
+  the Routine with the prompt in [`concurrency-campaign.md`](concurrency-campaign.md) §5.
 
-```text
-TEMPORARY (#681): four two-week concurrency measurement experiments, then is disabled.
-1. Check out a fresh copy of amirbena/code-review-skill at main.
-2. Run:
-   python3 runtime_platform/benchmark/scripts/run_concurrency_experiment.py \
-     --trigger scheduled \
-     --model-id <the model backend this Routine session is running as>
-3. If the command exits non-zero, stop — do not report success, do not retry, and do not
-   post or push anything else to GitHub. Keep the command's stdout and stderr in the transcript.
-```
+Registering the Routine is not part of the repository change.
+
+See [`concurrency-campaign.md`](concurrency-campaign.md) §5 for the exact prompt, which carries `--pinned-sha`.
 
 ## 7. Removal path
 
-Per the spec's `removal_path`: disable the Routine on the provider side, delete the spec, both scripts, this
-document and `tests/unit/benchmark/test_run_concurrency_experiment.py`, and keep the
+Per the spec's `removal_path`: disable the Routine on the provider side, delete the spec, the three scripts, this
+document, `concurrency-campaign.md` and `tests/unit/benchmark/test_run_concurrency_experiment.py`, and keep the
 `claude/concurrency-experiment-*` refs until #682 has read them. Closure is #683.
