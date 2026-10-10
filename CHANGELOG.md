@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.74.0 — 2026-10-10
+
+### Added
+
+- Add a shared code hygiene review policy covering issue-tracker references in comments and unclear variable names, reported as non-blocking observations by default (#679).
+
 ## v1.73.0 — 2026-10-07
 
 ### Added
