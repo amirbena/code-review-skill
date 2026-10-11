@@ -1,0 +1,83 @@
+{
+  "case_id": "correctness-off-by-one-pagination",
+  "duration_s": 21.743,
+  "evidence": {
+    "duplicate_noise": {
+      "cluster_members": [],
+      "clusters": 1,
+      "duplicate_clusters": 0,
+      "duplicate_rate": "0",
+      "id": "correctness-off-by-one-pagination",
+      "produced": 1,
+      "redundant_findings": 0,
+      "status": "executed"
+    },
+    "metrics": {
+      "absorbed_extra_match": 0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "findings_completeness": "exhaustive",
+      "id": "correctness-off-by-one-pagination",
+      "incorrect_indices": [],
+      "missed_keys": [],
+      "near_misses": 0,
+      "status": "executed",
+      "tolerated_unexpected": 0
+    },
+    "severity": {
+      "exact_rate": "0",
+      "id": "correctness-off-by-one-pagination",
+      "matched": 1,
+      "mismatches": [
+        {
+          "direction": "over",
+          "expected": [
+            "P1"
+          ],
+          "key": "page-end-off-by-one",
+          "produced": "P0",
+          "produced_index": 0
+        }
+      ],
+      "over_severity": 1,
+      "severity_exact": 0,
+      "status": "executed",
+      "under_severity": 0
+    }
+  },
+  "finished_at": "2026-10-11T02:07:56Z",
+  "provenance": {
+    "ref": "refs/heads/claude/dreamy-brahmagupta-oo48ba",
+    "repo": "amirbena/code-review-skill",
+    "repo_sha": "3d2b6b8eda40a898ec418a89ae056cbe68ccf13e"
+  },
+  "raw_file": "raw-output.json",
+  "ref": "claude/severity-observation-20261011T020734Z-3d2b6b8eda40",
+  "resolved": {
+    "expected": "P1",
+    "mismatches": [
+      {
+        "direction": "over",
+        "expected": [
+          "P1"
+        ],
+        "key": "page-end-off-by-one",
+        "produced": "P0",
+        "produced_index": 0
+      }
+    ],
+    "severity": "P0",
+    "state": "over"
+  },
+  "run_id": "20261011T020734Z-3d2b6b8eda40",
+  "runtime": {
+    "adapter_id": "production-review-adapter@3d2b6b8eda40",
+    "model_id": "claude-sonnet-5-5",
+    "runtime_name": "claude",
+    "runtime_version": "2.1.296 (Claude Code)"
+  },
+  "schema": "severity-observation/v1",
+  "started_at": "2026-10-11T02:07:34Z",
+  "temporary": true,
+  "trigger": "scheduled"
+}

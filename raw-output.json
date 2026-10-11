@@ -1,0 +1,36 @@
+{
+  "cases": [
+    {
+      "id": "correctness-off-by-one-pagination",
+      "input_kind": "patch",
+      "produced_findings": [
+        {
+          "claim": "Off-by-one in page slice returns `page_size + 1` items The diff changes the slice end from `offset + page_size` to `end = offset + page_size + 1`. For `items=[1..10]`, `page_number=1`, `page_size=3`, the offset is 0 and the end is 4. The function returns `[1, 2, 3, 4]` (4 items) instead of `[1, 2, 3]`. Page 2 then returns `[4, 5, 6, 7]`, so item 4 appears on both pages. Every non-final page has one more item than requested, and its last item is repeated as the first item of the next page. Consumers see duplicated records and results that don't match the page size. A caller that checks `len(result) == page_size` to detect the last page will behave incorrectly. Nothing in the change suggests this is intentional (for example a \"has more\" lookahead).",
+          "extra": {
+            "defect_kind": "off-by-one",
+            "evidence_quotes": [
+              "offset + page_size",
+              "end = offset + page_size + 1",
+              "items=[1..10]",
+              "page_number=1",
+              "page_size=3",
+              "[1, 2, 3, 4]",
+              "[1, 2, 3]",
+              "[4, 5, 6, 7]"
+            ]
+          },
+          "location": {
+            "lines": {
+              "end": 4,
+              "start": 3
+            },
+            "path": "app/pagination.py"
+          },
+          "severity": "P0"
+        }
+      ],
+      "status": "executed"
+    }
+  ],
+  "ok": true
+}
