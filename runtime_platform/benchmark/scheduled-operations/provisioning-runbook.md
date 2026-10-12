@@ -323,8 +323,6 @@ unset TOKEN CID
 3. PATCH returns the same `id`, the edited `body`, and the same `login`.
 4. DELETE succeeds with no output.
 
-For the private evidence repository the temporary `probe-comment-lifecycle` workflow job ([#719](https://github.com/amirbena/code-review-skill/issues/719); `publication-cli.md` §8.1) runs this lifecycle on private issue #1 inside the `benchmark-publication` environment, so the key never leaves it.
-
 Anything else is a **stop condition**: a refused POST or PATCH (any `403`), an
 `author_ok` other than `true`, a different `id` after PATCH, or a token that does
 not mint. Stop and raise it on #466 before F8; do not retry under a personal
@@ -350,8 +348,11 @@ is filled the step is *not* complete, and #484's acceptance criteria are not met
 | P5 `main` ruleset unchanged | re-observed 2026-09-19 | P5 last verify command | id `20558650`; bypass `["Integration:4763596","RepositoryRole:5"]`, no benchmark App; equals the §2 baseline | Yes |
 | P6 tracking + health issues (numbers, unlocked, pinned) | 2026-09-19, `amirbena` (locked and #488 pinned 14:42Z; unlocked 15:05:30Z under A14) | P6 verify commands; the issues' timelines | #486 sentinel, #487 comprehensive, #488 health: each open, labelled `benchmark-tracking`, `locked: false`, canonical A14 body. #488 is pinned and the pinned-issues list is exactly #488: its timeline shows `pinned` 14:42:24Z, `unpinned` 15:09:52Z, `pinned` 15:22:02Z, `unpinned` 15:22:54Z, and `pinned` 15:25:45Z (all by `amirbena`), and it remained pinned when re-observed at 15:27Z | Yes |
 | P7 App comment lifecycle (POST → author → PATCH → DELETE) | 2026-09-19, `amirbena`, on #486 | Amended P7 with an installation token narrowed to `issues: write` | Reported by the maintainer: token minted; POST returned comment id `5742925037`; stored author `benchmark-publication[bot]`, type `Bot`, `author_ok: true`; PATCH returned the same id with body `provisioning check (#484): edited`; DELETE succeeded; no personal credential used. Re-observed read-only: `GET` of that comment answers 404 and #486 has 0 comments | Yes |
+| P7 — PASS: App comment lifecycle on the private evidence repository (tracking issue #1 of `amirbena/code-review-skill-evidence`) | 2026-10-12, maintainer-dispatched temporary `p7-probe` job ([#719](https://github.com/amirbena/code-review-skill/issues/719), [PR #720](https://github.com/amirbena/code-review-skill/pull/720)) in the `benchmark-publication` environment | [Actions run 38219460171](https://github.com/amirbena/code-review-skill/actions/runs/38219460171), job `114711939486` (`workflow_dispatch` on `main` at `08250ae`); the job's fixed log codes, then an API re-check of private issue #1 | An `issues: write` installation token minted for the evidence repository only, slug check passed; POST, read-back (id, issue, `benchmark-publication[bot]` author and type, body), PATCH, read-back and DELETE all `ok`, then the comment confirmed gone: `post=ok`, `read-back=ok`, `patch=ok`, `patch-read-back=ok`, `delete=ok`, `deleted=ok`, `cleanup=not-needed`, `verdict=pass`. The `publish` job was skipped. Issue #1 afterwards: open, unlocked, 0 comments. | Yes |
 
 Rows marked *maintainer-attested* record checks made during the live provisioning session that cannot be re-observed without the App private key, which was removed after P7 and is not regenerated to re-observe P2.
+
+The private-repository P7 row proves the App's private issue-comment permissions only. It is not X1, not overall cutover readiness, and does not authorize the cutover. The temporary probe that produced it has been removed ([#719](https://github.com/amirbena/code-review-skill/issues/719)); P7 is not re-run.
 
 ### Recorded deviations
 
