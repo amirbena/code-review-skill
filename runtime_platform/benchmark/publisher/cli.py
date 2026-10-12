@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Any, Callable, Mapping, NoReturn, Sequence
 
-from runtime_platform.benchmark.publisher import comment_probe, github_api
+from runtime_platform.benchmark.publisher import github_api
 from runtime_platform.benchmark.publisher.memory import dry_run_overlay
 from runtime_platform.benchmark.publisher.ports import FatalPublicationError
 from runtime_platform.benchmark.publisher.public_log import PublicLog
@@ -21,7 +21,6 @@ from runtime_platform.benchmark.scripts.benchmark_result import parse_run_id
 from runtime_platform.benchmark.scripts.benchmark_schedule_manifest import MANIFEST_PATH, ManifestError, load_manifest
 
 PortsFactory = Callable[[Mapping[str, Any], str], Ports]
-CommentClientFactory = Callable[[str], github_api.GitHubClient]
 Clock = Callable[[], datetime]
 EXIT_USAGE = 2
 
@@ -53,8 +52,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
     resolve = sub.add_parser("resolve-evidence", help="Print `name=<evidence repository name>` for the workflow's token minting.")
     resolve.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
     resolve.add_argument("--owner", required=True, help="The workflow's repository owner; the evidence repository must belong to it.")
-    p7 = sub.add_parser("probe-comment-lifecycle", help="Temporary P7 probe: the App's comment lifecycle on private tracking issue #1.")
-    p7.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
     for command in (sweep, watchdog):
         command.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
         command.add_argument("--app-slug", help="The publication App's slug (default: BENCHMARK_APP_SLUG).")
@@ -163,7 +160,6 @@ def main(
     env: Mapping[str, str] | None = None,
     ports_factory: PortsFactory | None = None,
     clock: Clock | None = None,
-    comment_client: CommentClientFactory | None = None,
 ) -> int:
     args = build_arg_parser().parse_args(argv)
     env = os.environ if env is None else env
@@ -178,7 +174,7 @@ def main(
     if errors:
         return _fail(f"invalid evidence destination: {errors[0]}", "invalid-evidence-destination", log)
     try:
-        return _run(args, env, manifest, log, ports_factory, clock, comment_client)
+        return _run(args, env, manifest, log, ports_factory, clock)
     except Exception:  # noqa: BLE001 - in `private` an uncaught exception reaches the public log only as a fixed code (F13)
         if not log.private:
             raise
@@ -186,26 +182,10 @@ def main(
         return 1
 
 
-def _probe_comment_lifecycle(env: Mapping[str, str], log: PublicLog, client_factory: CommentClientFactory | None) -> int:
-    """Temporary P7 probe. Only the issues token and the App slug are consulted; the target is pinned in `comment_probe`."""
-    slug = env.get("BENCHMARK_APP_SLUG")
-    if not slug:
-        return _fail("the App slug is required (BENCHMARK_APP_SLUG): the acting identity must be known", "app-slug-required", log)
-    try:
-        token = github_api.require_installation_token("BENCHMARK_ISSUES_TOKEN", env.get("BENCHMARK_ISSUES_TOKEN"))
-    except FatalPublicationError as exc:
-        return _fail(str(exc), "evidence-unavailable", log)
-    result = comment_probe.run_probe((client_factory or github_api.GitHubClient)(token), slug)
-    log.comment_probe(result)
-    return 0 if result.passed else 1
-
-
 def _run(
     args: argparse.Namespace, env: Mapping[str, str], manifest: Mapping[str, Any], log: PublicLog,
-    ports_factory: PortsFactory | None, clock: Clock | None, comment_client: CommentClientFactory | None = None,
+    ports_factory: PortsFactory | None, clock: Clock | None,
 ) -> int:
-    if args.command == "probe-comment-lifecycle":
-        return _probe_comment_lifecycle(env, log, comment_client)
     if args.command == "resolve-evidence":
         owner, name = evidence_repository(manifest).split("/")
         if owner.lower() != args.owner.lower():

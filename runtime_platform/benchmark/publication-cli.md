@@ -283,24 +283,3 @@ enforces the triggers, the environment and branch guard, the token permissions, 
 secrets, no model or provider credential, pinned first-party actions, no expression inside a
 shell step, the step order, and an import closure with no benchmark execution, evaluation,
 or reference module, no drift classification, and no third-party or process-spawning import.
-
-### 8.1 The temporary P7 comment-lifecycle probe ([#719](https://github.com/amirbena/code-review-skill/issues/719))
-
-`probe-comment-lifecycle` runs [provisioning runbook](scheduled-operations/provisioning-runbook.md) P7 once against private tracking
-issue #1 in the evidence repository, because the sweep cannot reach it before the cutover and the runbook's local procedure needs the
-App key on a maintainer machine. It never runs on `schedule`: the `p7-probe` job needs a `workflow_dispatch` on `main` with
-`p7_probe` set, and that dispatch skips the `publish` job. The probe and its tests are removed after the result is recorded.
-
-- **Credentials.** One App token, `issues: write`, minted for `code-review-skill-evidence` (a literal, not the manifest's evidence
-  repository) in the `benchmark-publication` environment, and refused unless it belongs to `benchmark-publication`. The command reads
-  `BENCHMARK_ISSUES_TOKEN` and `BENCHMARK_APP_SLUG` only; a missing or non-installation token exits 2 before any request.
-- **Lifecycle.** POST one recognizable comment on issue #1; read it back and require its id, issue, `<slug>[bot]` author, `Bot` type and
-  body; PATCH the same comment; read back again; DELETE; confirm it is gone (404). Only the comment the run created is modified. If any
-  step fails after the POST, that comment is deleted (`cleanup=ok`); `cleanup=failed` means a comment starting `p7-probe (#719)` may
-  remain on issue #1 and a maintainer deletes it by hand.
-- **Output.** Fixed codes only, through `public_log.py`: `post`, `read-back`, `patch`, `patch-read-back`, `delete` and `deleted` are
-  `ok`, `fail` or `skipped`; `cleanup` is `not-needed`, `ok` or `failed`; `verdict` is `pass` only when every step is `ok` and no cleanup
-  was needed. No token, comment id, login, body, response or repository metadata is printed, and every failure is mapped to a code.
-- **Reading the result.** `pass` shows the App can create, edit and delete comments on a private evidence-repository issue under its own
-  bot identity. A `fail` at `post` is the `issues: write` stop condition of P7: raise it on #466 and do not retry under a personal credential.
-

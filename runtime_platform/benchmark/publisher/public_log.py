@@ -13,7 +13,6 @@ import re
 import sys
 from typing import Any, Mapping, TextIO
 
-from runtime_platform.benchmark.publisher import comment_probe
 from runtime_platform.benchmark.publisher.layout import STAGING_REF_PREFIX, run_id_from_ref
 from runtime_platform.benchmark.publisher.model import ALREADY_PUBLISHED, FAILED, PUBLISHED, REFUSED, SweepReport, WatchdogReport
 from runtime_platform.benchmark.publisher.validation import GATES
@@ -153,10 +152,3 @@ class PublicLog:
         if view["aborted"]:
             print(f"aborted: {view['aborted']}", file=self.err)
         print(json.dumps(view, indent=2, sort_keys=True), file=self.out)
-
-    def comment_probe(self, result: comment_probe.ProbeResult) -> None:
-        """The temporary P7 probe's fixed-code lines; identical in every phase, since nothing here is a value."""
-        for step in comment_probe.STEPS:
-            print(f"p7-probe: {step}={_code(result.steps.get(step), comment_probe.STEP_CODES)}", file=self.out)
-        print(f"p7-probe: cleanup={_code(result.cleanup, comment_probe.CLEANUP_CODES)}", file=self.out)
-        print(f"p7-probe: verdict={'pass' if result.passed else 'fail'}", file=self.out)
