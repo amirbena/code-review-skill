@@ -323,6 +323,8 @@ unset TOKEN CID
 3. PATCH returns the same `id`, the edited `body`, and the same `login`.
 4. DELETE succeeds with no output.
 
+For the private evidence repository the temporary `probe-comment-lifecycle` workflow job ([#719](https://github.com/amirbena/code-review-skill/issues/719); `publication-cli.md` §8.1) runs this lifecycle on private issue #1 inside the `benchmark-publication` environment, so the key never leaves it.
+
 Anything else is a **stop condition**: a refused POST or PATCH (any `403`), an
 `author_ok` other than `true`, a different `id` after PATCH, or a token that does
 not mint. Stop and raise it on #466 before F8; do not retry under a personal
