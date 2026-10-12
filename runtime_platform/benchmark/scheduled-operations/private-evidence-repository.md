@@ -15,8 +15,8 @@ while producing it.
 | --- | --- |
 | Architecture (Fully Private evidence, §2) | **Accepted.** The maintainer merged [PR #693](https://github.com/amirbena/code-review-skill/pull/693) (`6c82239`, 2026-10-10) and closed #687 as completed. The ADR named maintainer review as its gate. The maintainer confirmed on PR #700 that the merge and the closure are sufficient evidence of acceptance. |
 | Implementation | **Destination contract delivered under `pre_cutover`** by [#688](https://github.com/amirbena/code-review-skill/issues/688) ([PR #698](https://github.com/amirbena/code-review-skill/pull/698), `71acb33`; §14). The private-phase public-log allowlist (§5.4, F12/F13), which that PR did not implement, is delivered by [#704](https://github.com/amirbena/code-review-skill/issues/704), closing the cutover precondition G-open-1. Validation by [#689](https://github.com/amirbena/code-review-skill/issues/689) is recorded in the [validation gate](private-evidence-validation-gate.md). |
-| Q4 amendment | **Accepted risk recorded** by [#706](https://github.com/amirbena/code-review-skill/issues/706): the private repository runs without Rulesets (Q4 "Amendment"). Public-source protections are unchanged. X2 is resolved and X3 is recorded `PASS` (§12.3); X1 remains open. X4 is empirically inconclusive and recorded `INCONCLUSIVE — ACCEPTED` on the maintainer's approval of the §12.2 disposition ([approval](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734), 2026-10-10; [#710](https://github.com/amirbena/code-review-skill/issues/710)). This does not authorize the cutover. |
-| Cutover | **Pending**, owned by [#690](https://github.com/amirbena/code-review-skill/issues/690). The manifest is still `pre_cutover` and no private repository exists. |
+| Q4 amendment | **Accepted risk recorded** by [#706](https://github.com/amirbena/code-review-skill/issues/706): the private repository runs without Rulesets (Q4 "Amendment"). Public-source protections are unchanged. X2 is resolved and X3 is recorded `PASS` (§12.3); X1 is recorded `PARTIAL`, not `PASS` ([#690 comment](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6119447696); §12). X4 is empirically inconclusive and recorded `INCONCLUSIVE — ACCEPTED` on the maintainer's approval of the §12.2 disposition ([approval](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734), 2026-10-10; [#710](https://github.com/amirbena/code-review-skill/issues/710)). This does not authorize the cutover. |
+| Cutover | **Pending**, owned by [#690](https://github.com/amirbena/code-review-skill/issues/690). The manifest is still `pre_cutover`. The private repository exists (private, Actions disabled) and holds the four benchmark labels, no private tracking or health issues, and the X1 probe ref. Procedure gaps are tracked by [#717](https://github.com/amirbena/code-review-skill/issues/717). |
 
 Clarified by [#699](https://github.com/amirbena/code-review-skill/issues/699):
 the disposition of existing public automated issues (Q3, §10) and the public log
@@ -753,6 +753,19 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
 
 ## 10. Migration and rollback invariants (for #690)
 
+**Preparation (before step 0; changes nothing in the public store).** These are
+maintainer-only provider-side actions. They apply Q3/E5 and add no decision.
+
+- P1. The four labels `benchmark-regression`, `benchmark-tracking`,
+  `benchmark-missed-run` and `keep-open` exist in the evidence repository with
+  the manifest's names (the publisher cannot create labels, §3.1).
+- P2. The maintainer creates, in the **evidence repository**, one tracking issue
+  per lane in the manifest and one health issue. The publisher posts to these by
+  number, so they must exist before the cutover commit.
+- P3. The **actual** private issue numbers are recorded on #690. They are not
+  derived from the public numbers (#486–#488): a new repository numbers its
+  issues from 1, and no number is assumed before the issues exist.
+
 **Cutover order:**
 
 0. **Gate.** The [validation gate](private-evidence-validation-gate.md) (#689) passes on the commit being
@@ -767,14 +780,25 @@ stubbed or bare-repository remote (#688), or by an observed check (#689).
    by SHA (I4). Verify each copy.
 4. Merge the cutover commit, which changes `evidence.phase` from
    `pre_cutover` to `private` and `evidence.repository` to the private
-   repository together (§4.2). The workflow's token scope changes in the same
-   commit (F11). Then apply the public creation ruleset (Q4).
+   repository together (§4.2). The same commit sets each lane's
+   `tracking_issue` and the `health_issue` to the private numbers recorded in
+   preparation P3, because the publisher addresses them by number in the
+   evidence repository, and changes the workflow's token scope (F11). Then:
+   - apply the public creation ruleset (Q4);
+   - run the **negative Routine push test** (X1): a provider-side Routine
+     session attempts to create one ref with a registered, never-counted
+     prefix (for example `claude/severity-trial-…`) in the **source**
+     repository, and the ruleset must refuse it. Record the outcome on #690.
+     If the push succeeds, the required public-side protection does not hold:
+     the Routines stay paused (R-a), the gap is recorded in an issue and not
+     waived (Q4), and the stray ref is deleted only with recorded approval (R4).
 5. Update every evidence-producing Routine's prompt to supply the private
    evidence remote (V6), including a running campaign's Routine, before that
    campaign's next scheduled run. Then run one `auth-check` against the new
    store. A Routine that runs before its prompt is updated fails with exit 2
    (V6) and writes nothing. It never writes to the source repository.
-6. Re-enable the paused Routines.
+6. Re-enable the paused Routines, only after step 4's negative push test has
+   passed and step 5's `auth-check` has succeeded.
 7. Delete refs from the old store only with recorded approval (R4).
 8. Dispose of the public automated issues as Q3 lists, each one only after its
    condition holds: #486–#488 after the cutover verification of steps 4–5, and
@@ -862,7 +886,7 @@ runs (§10).
 | # | Status | What remains |
 | --- | --- | --- |
 | X2 | **Resolved by the Q4 amendment.** Rulesets are unavailable on the private repository (observed: 403), and the maintainer accepted operating without them. Environment and deployment-branch availability need not be observed, because Q1 stays closed on this plan. | Nothing. Reopened only by the Q4 reopen conditions. |
-| X1 | Open, independent. | A Routine selecting both repositories pushes one `claude/x1-*` ref to the evidence repository from the source checkout, then a non-`claude/` branch attempt. It must also show that the public creation ruleset (no bypass) blocks a Routine push to a registered evidence prefix in the **source** repository. The accepted risk does not waive any part of it. |
+| X1 | **`PARTIAL`, not `PASS`.** Observed: a provider-side push of `claude/x1-20261010T152046Z` (`2dbef54`) to the evidence repository, read back independently ([record](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6119447696)). | A Routine selecting both repositories pushes one `claude/x1-*` ref to the evidence repository from the source checkout, then a non-`claude/` branch attempt. It must also show that the public creation ruleset (no bypass) blocks a Routine push to a registered evidence prefix in the **source** repository. The accepted risk does not waive any part of it. |
 | X3 | **PASS** ([run](https://github.com/amirbena/code-review-skill/actions/runs/38066153068), job `114254101385`, 2026-10-10; §12.3). Verifies origin attestation only, not the cutover. | Nothing for the gate. |
 | X4 | **Empirically INCONCLUSIVE — ACCEPTED** ([maintainer approval](https://github.com/amirbena/code-review-skill/issues/690#issuecomment-6099209734) of §12.2, 2026-10-10; [#710](https://github.com/amirbena/code-review-skill/issues/710)). Not an empirical PASS. | Nothing for the gate. Direct observation of a provider-created checkout fetching a pre-existing non-default branch would upgrade it to `PASS`. |
 
@@ -874,7 +898,8 @@ runs (§10).
 | Q4 accepted risk is recorded in the ADR | **Added**, satisfied once #706 merges. |
 | Application-level controls pass in the validation gate (F1–F11, I1–I4, P1–P3, R1, R3) | **Kept**, now load-bearing for the evidence repository. |
 | Public creation ruleset, no bypass, over every registered prefix | **Kept, mandatory**, applied with the cutover commit. |
-| X1 and X3 observed and recorded | **Kept**, each independent. |
+| X1 and X3 observed and recorded | **Kept**, each independent. X1 is `PARTIAL` (outcomes in the runbook §6); the public-Ruleset enforcement part can only be observed after the Ruleset exists, as the §10 step 4 negative push test. |
+| Private labels exist, and private tracking and health issues exist with their numbers recorded (§10 P1–P3) | **Added** (applies Q3/E5; no new decision). |
 | X4 is `PASS`, or `INCONCLUSIVE — ACCEPTED` with the §12.2 controls and a recorded maintainer approval | **Replaced** (from "X4 observed and recorded"). `INCONCLUSIVE — BLOCKED` and `FAIL` block the cutover. Merging §12.2 is not the approval. Runbook §0 and §6 define the four states. |
 | G-open-1 (F12/F13) implemented and passing | **Kept, blocking.** |
 | Actions disabled and the App installed on the evidence repository only | **Kept** (Q1, §6). |
