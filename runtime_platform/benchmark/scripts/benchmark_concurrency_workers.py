@@ -13,8 +13,10 @@ import os
 import queue
 import re
 import resource
+import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -167,10 +169,23 @@ class LiveChildren:
 
 
 def run_fixture_child(
-    fixture: Fixture, *, worker: int, scratch: Path, executable: str, timeout: float, began: float, children: LiveChildren
+    fixture: Fixture,
+    *,
+    worker: int,
+    scratch: Path,
+    workspace_parent: Path,
+    executable: str,
+    timeout: float,
+    began: float,
+    children: LiveChildren,
 ) -> FixtureOutcome:
-    """One verified `run_benchmark.py` invocation with its temp directory redirected to `scratch`."""
+    """One verified `run_benchmark.py` invocation.
+
+    The child's temp directory is the worker's long-lived `scratch`, where the review CLI keeps its own scaffolding;
+    the fixture workspaces go to `workspace_parent`, which is fresh for this fixture and so is what the leak check reads.
+    """
     argv = [sys.executable, str(RUN_BENCHMARK), "--corpus-dir", fixture.corpus_dir, "--cli", executable]
+    argv += ["--workspace-parent", str(workspace_parent)]
     argv += ["--timeout", str(timeout), "--case-id", fixture.case_id]
     env = {**os.environ, **{name: str(scratch) for name in TEMP_ENV_VARS}}
     started = time.monotonic()
@@ -303,6 +318,9 @@ def run_arm(
 ) -> ArmResult:
     """Run `fixtures` (in their given order) on `workers` slots; each slot owns one scratch directory.
 
+    The scratch directory is the child's temp directory and holds the review CLI's own state across fixtures, so it is
+    not audited. Each fixture's workspaces are created in a fresh directory inside it, which must be empty afterwards.
+
     A caller that passes `result` keeps whatever finished even when this raises, so an abort never loses evidence.
     """
     slots: queue.Queue[int] = queue.Queue()
@@ -327,9 +345,17 @@ def run_arm(
         try:
             log(f"[w{slot}] START {fixture.case_id}")
             fixture_began = time.monotonic()
+            workspace_parent = Path(tempfile.mkdtemp(prefix="fixture-", dir=scratch))
             try:
                 outcome = run_fixture_child(
-                    fixture, worker=slot, scratch=scratch, executable=executable, timeout=timeout, began=began, children=children
+                    fixture,
+                    worker=slot,
+                    scratch=scratch,
+                    workspace_parent=workspace_parent,
+                    executable=executable,
+                    timeout=timeout,
+                    began=began,
+                    children=children,
                 )
             except BaseException as exc:
                 cancel.set()  # stop the other workers from starting fixtures the moment one faults
@@ -342,7 +368,8 @@ def run_arm(
                         )
                     )
                 raise
-            leftovers = sorted(p.name for p in scratch.iterdir())
+            leftovers = sorted(p.name for p in workspace_parent.iterdir())
+            shutil.rmtree(workspace_parent, ignore_errors=True)  # a leak is recorded once, never inherited by the next fixture
             with lock:
                 result.outcomes.append(outcome)
                 if leftovers:

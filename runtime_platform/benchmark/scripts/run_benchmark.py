@@ -101,6 +101,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=300.0,
         help="Per-case timeout in seconds for the review CLI subprocess (default: 300).",
     )
+    parser.add_argument(
+        "--workspace-parent",
+        default=None,
+        help="Directory the per-case workspaces are created in (default: the system temp directory).",
+    )
     return parser
 
 
@@ -165,10 +170,13 @@ def _run(args: argparse.Namespace, progress: ProgressLog) -> int:
         finally:
             review_s += time.monotonic() - review_began
 
+    workspace_parent = Path(args.workspace_parent) if args.workspace_parent else None
     if args.case_id:
-        run_result = br.run_selected(corpus_dir, args.case_id, timed_adapter, observer=lifecycle.observe)
+        run_result = br.run_selected(
+            corpus_dir, args.case_id, timed_adapter, workspace_parent=workspace_parent, observer=lifecycle.observe
+        )
     else:
-        run_result = br.run_corpus(corpus_dir, timed_adapter, observer=lifecycle.observe)
+        run_result = br.run_corpus(corpus_dir, timed_adapter, workspace_parent=workspace_parent, observer=lifecycle.observe)
 
     output: dict = {"run": run_result.as_dict()}
     progress.phase_name = "metrics"

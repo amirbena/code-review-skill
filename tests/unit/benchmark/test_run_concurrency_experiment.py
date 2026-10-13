@@ -276,14 +276,57 @@ class ExecutionTest(unittest.TestCase):
         slots = {f["worker"] for f in record["arms"][0]["fixtures"]}
         self.assertEqual(slots, {0, 1, 2, 3})
 
+    # Stub fragments. A fixture workspace is `benchmark-<case>-*` in the workspace parent; the review CLI's own
+    # scaffolding (`claude-<uid>`, `cc-socks`) is created in the child's temp directory.
+    SCAFFOLDING = "import os, tempfile\nfor n in ('claude-0', 'cc-socks'):\n    os.makedirs(os.path.join(tempfile.gettempdir(), n), exist_ok=True)\n"
+    # The review CLI can be called more than once per fixture and the runtime probe runs it outside any workspace, so
+    # `position` is the index of this call's workspace among the distinct workspaces seen so far (0 = the first fixture).
+    LEAK = (
+        "import os\n"
+        "ws = os.getcwd()\n"
+        "while ws != os.path.dirname(ws) and not os.path.basename(os.path.dirname(ws)).startswith('fixture-'): ws = os.path.dirname(ws)\n"
+        "in_workspace = os.path.basename(os.path.dirname(ws)).startswith('fixture-')\n"
+        "def leak():\n"
+        "    if in_workspace: open(os.path.join(os.path.dirname(ws), 'benchmark-leak-' + str(os.getpid())), 'w').close()\n"
+        "log = os.path.join(os.path.dirname(__file__), 'workspaces.txt')\n"
+        "names = open(log).read().split() if os.path.exists(log) else []\n"
+        "if in_workspace and os.path.basename(ws) not in names:\n"
+        "    names.append(os.path.basename(ws)); open(log, 'w').write(' '.join(names))\n"
+        "position = names.index(os.path.basename(ws)) if in_workspace else -1\n"
+    )
+
+    def _violations(self, record: dict) -> list[dict]:
+        return record["isolation"]["violations"]
+
+    def test_persistent_cli_scaffolding_alone_is_not_a_workspace_leak(self):
+        with tempfile.TemporaryDirectory() as t:
+            proc, record, _ = self._run(t, "1", extra=self.SCAFFOLDING)
+        self.assertEqual(self._violations(record), [])
+        self.assertTrue(record["isolation"]["passed"])
+        self.assertEqual(proc.returncode, 0)
+
     def test_a_workspace_left_behind_is_an_isolation_violation_that_fails_the_run(self):
         with tempfile.TemporaryDirectory() as t:
-            leaker = "import os, tempfile\nopen(os.path.join(tempfile.gettempdir(), 'leak-' + str(os.getpid())), 'w').close()\n"
-            proc, record, _ = self._run(t, "2", extra=leaker)
+            proc, record, _ = self._run(t, "2", extra=self.SCAFFOLDING + self.LEAK + "leak()\n")
         self.assertNotEqual(proc.returncode, 0)
         self.assertEqual(record["status"], "incomplete")
         self.assertIn("isolation", record["failure_classes"])
-        self.assertIn("workspace-not-cleaned", {v["kind"] for v in record["isolation"]["violations"]})
+        leaks = [v for v in self._violations(record) if v["kind"] == "workspace-not-cleaned"]
+        self.assertEqual(len(leaks), 4)  # one per fixture, and scaffolding never appears in them
+        self.assertTrue(all("benchmark-leak-" in v["detail"] and "claude-0" not in v["detail"] for v in leaks))
+
+    def test_a_leak_from_the_first_fixture_is_detected_and_not_inherited_by_the_next(self):
+        with tempfile.TemporaryDirectory() as t:
+            _, record, _ = self._run(t, "1", extra=self.SCAFFOLDING + self.LEAK + "if position == 0: leak()\n")
+        leaks = [v for v in self._violations(record) if v["kind"] == "workspace-not-cleaned"]
+        self.assertEqual([v["case_id"] for v in leaks], [record["arms"][0]["fixtures"][0]["case_id"]])
+
+    def test_a_leak_from_a_later_fixture_is_detected(self):
+        with tempfile.TemporaryDirectory() as t:
+            _, record, _ = self._run(t, "1", extra=self.SCAFFOLDING + self.LEAK + "if position > 0: leak()\n")
+        leaks = [v for v in self._violations(record) if v["kind"] == "workspace-not-cleaned"]
+        fixtures = [f["case_id"] for f in record["arms"][0]["fixtures"]]
+        self.assertEqual({v["case_id"] for v in leaks}, set(fixtures[1:]))
 
     def test_two_children_cannot_share_a_slot(self):
         barrier = threading.Barrier(2, timeout=5)

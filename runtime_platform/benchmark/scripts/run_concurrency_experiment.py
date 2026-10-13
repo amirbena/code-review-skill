@@ -79,7 +79,7 @@ GIT_TIMEOUT_S = 60
 SHARED_SURFACES = {
     "review_cli_state": "shared and not isolated: redirecting it would drop the Routine's authentication; recorded as a before/after fingerprint",
     "git_config": "hermetic in every child (no system or global config); the global and repository config digests are checked unchanged",
-    "temp_dirs": "one scratch directory per worker slot, set as the child's temp directory; a workspace left behind is a violation",
+    "temp_dirs": "one scratch directory per worker slot, set as the child's temp directory and holding the review CLI's own state; each fixture's workspaces go to a fresh directory inside it, and a workspace left behind there is a violation",
     "progress_and_signals": "per child process (own ProgressLog and main-thread handlers); the parent only waits, and on termination stops every child tree",
     "stderr": "captured per fixture and forwarded as worker-tagged START/DONE lines, never interleaved raw",
 }
