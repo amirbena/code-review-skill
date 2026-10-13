@@ -14,13 +14,12 @@ from tests.support.paths import REPO_ROOT
 from tests.support.policy_docs import load_normalized_text as _text
 
 POLICY = REPO_ROOT / "shared/policies/dependency-graph-regression.md"
-DOCS = REPO_ROOT / "docs/dependency-graph-regression"
-MODEL = DOCS / "dependency-graph-regression-model.md"
-ACQUISITION = DOCS / "resolution-acquisition.md"
-ROOT_CAUSE = DOCS / "root-cause-replay.md"
-METADATA = DOCS / "metadata-only-resolution.md"
-FIDELITY = DOCS / "fidelity-study.md"
-README = DOCS / "README.md"
+MODEL = REPO_ROOT / "docs/dependency-graph-regression/dependency-graph-regression-model.md"
+ACQUISITION = REPO_ROOT / "docs/dependency-graph-regression/resolution-acquisition.md"
+ROOT_CAUSE = REPO_ROOT / "docs/dependency-graph-regression/root-cause-replay.md"
+METADATA = REPO_ROOT / "docs/dependency-graph-regression/metadata-only-resolution.md"
+FIDELITY = REPO_ROOT / "docs/dependency-graph-regression/fidelity-study.md"
+README = REPO_ROOT / "docs/dependency-graph-regression/README.md"
 
 EVIDENCE_STATES = ("available", "missing", "partial", "stale", "untrusted", "mismatched")
 DELTA_RECORDS = ("added", "removed", "version-changed", "scope-changed", "newly-evicted", "newly-conflicting")
