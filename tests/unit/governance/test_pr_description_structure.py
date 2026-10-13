@@ -191,6 +191,48 @@ class ValidateStructureTests(unittest.TestCase):
         self.assertTrue(all(str(issue).startswith(f"[{issue.section}]") for issue in result.issues))
 
 
+class IssueReferenceTests(unittest.TestCase):
+    """`Fixes #N` (closing) and `Related: #N` (non-closing) are both valid; malformed ones still fail."""
+
+    def test_related_line_is_accepted_in_place_of_fixes(self) -> None:
+        body = _replace(COMPLIANT_BODY, "Fixes #135", "Related: #135")
+        self.assertTrue(pr_length.validate_structure(body).passes)
+
+    def test_fixes_line_is_still_accepted(self) -> None:
+        self.assertTrue(pr_length.validate_structure(COMPLIANT_BODY).passes)
+
+    def test_both_lines_are_accepted_together(self) -> None:
+        body = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #135\nRelated: #136")
+        self.assertTrue(pr_length.validate_structure(body).passes)
+
+    def test_related_without_a_number_fails(self) -> None:
+        body = _replace(COMPLIANT_BODY, "Fixes #135", "Related: #")
+        result = pr_length.validate_structure(body)
+        self.assertFalse(result.passes)
+        self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
+
+    def test_malformed_related_values_fail(self) -> None:
+        for value in ("Related: #N/A", "Related: #<issue-number>", "Related: #not-a-real-issue", "Related: none", "Related #135"):
+            with self.subTest(value=value):
+                body = _replace(COMPLIANT_BODY, "Fixes #135", value)
+                result = pr_length.validate_structure(body)
+                self.assertFalse(result.passes)
+                self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
+
+    def test_an_unresolved_fixes_placeholder_is_not_excused_by_a_related_line(self) -> None:
+        body = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #\nRelated: #135")
+        self.assertFalse(pr_length.validate_structure(body).passes)
+
+    def test_related_must_start_its_own_line(self) -> None:
+        body = _replace(COMPLIANT_BODY, "Fixes #135", "see Related: #135")
+        self.assertFalse(pr_length.validate_structure(body).passes)
+
+    def test_related_does_not_weaken_the_other_template_requirements(self) -> None:
+        body = _replace(COMPLIANT_BODY, "Fixes #135", "Related: #135")
+        body = _replace(body, "## Validation", "## Not Validation")
+        self.assertFalse(pr_length.validate_structure(body).passes)
+
+
 class CliStructureIntegrationTests(unittest.TestCase):
     def _event(self, body: str | None) -> Path:
         directory = tempfile.TemporaryDirectory()
