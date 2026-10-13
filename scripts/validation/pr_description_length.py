@@ -43,7 +43,16 @@ _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 _HEADING_RE = re.compile(r"^##[ \t]+(.+?)[ \t]*$", re.MULTILINE)
 _OPTIONAL_HINT_RE = re.compile(r"\boptional\b", re.IGNORECASE)
 _LABELED_FIELD_RE = re.compile(r"^-\s+\*\*(?P<label>[^*]+?):\*\*[ \t]*(?P<value>.*)$", re.MULTILINE)
-_FIXES_LINE_RE = re.compile(r"^Fixes #(?P<number>\d*)[ \t]*$", re.MULTILINE | re.IGNORECASE)
+# One reference per line: closing `Fixes #N` or non-closing `Related: #N`.
+_ISSUE_REF_LINE_RE = re.compile(
+    r"^(?:Fixes #|Related: #)(?P<number>\d+)[ \t]*$", re.MULTILINE | re.IGNORECASE
+)
+# A bare reference keyword plus at most one token that is not a valid
+# reference (`Fixes #`, `Related: #`, `Related: 123`, `Related #123`).
+# Mid-sentence prose never matches, so it is neither valid nor malformed.
+_MALFORMED_ISSUE_REF_LINE_RE = re.compile(
+    r"^(?:Fixes|Related)(?::|[ \t])[ \t]*\S*[ \t]*$", re.MULTILINE | re.IGNORECASE
+)
 _CHECKBOX_RE = re.compile(r"^-\s*\[(?P<mark>[ xX])\]\s*(?P<note>.*)$")
 # Matched only against a whole blank-required field value (fullmatch, never
 # swept across prose): a copied guidance stub reads as a bracketed phrase
@@ -176,7 +185,8 @@ def validate_structure(body: str | None, contract: TemplateContract | None = Non
     Checks required headings are present, required-but-optional headings
     (like "Review") are never falsely demanded, labeled fields the template
     leaves blank are actually filled in (and not left as a copied
-    placeholder stub), "Fixes #" references a real Issue, and the
+    placeholder stub), at least one `Fixes #N` or `Related: #N` line names
+    a real Issue (and none is malformed), and the
     "Validation" section carries real content.
     """
     contract = contract or load_template_contract()
@@ -190,11 +200,20 @@ def validate_structure(body: str | None, contract: TemplateContract | None = Non
         if heading not in sections_by_heading:
             issues.append(StructureIssue(heading, f"required section '## {heading}' is missing"))
 
-    fixes_match = _FIXES_LINE_RE.search(visible)
-    if fixes_match is None:
-        issues.append(StructureIssue("Fixes", "a 'Fixes #<issue-number>' line is required"))
-    elif not fixes_match.group("number"):
-        issues.append(StructureIssue("Fixes", "'Fixes #' must reference a real Issue number"))
+    has_valid_ref = _ISSUE_REF_LINE_RE.search(visible) is not None
+    malformed_refs = [
+        line.strip()
+        for line in _MALFORMED_ISSUE_REF_LINE_RE.findall(visible)
+        if _ISSUE_REF_LINE_RE.fullmatch(line.strip()) is None
+    ]
+    for ref in malformed_refs:
+        issues.append(
+            StructureIssue("Issue reference", f"'{ref}' is malformed; use 'Fixes #<number>' or 'Related: #<number>'")
+        )
+    if not has_valid_ref and not malformed_refs:
+        issues.append(
+            StructureIssue("Issue reference", "a 'Fixes #<number>' or 'Related: #<number>' line is required")
+        )
 
     for heading, label in contract.required_blank_fields:
         section_body = sections_by_heading.get(heading)
