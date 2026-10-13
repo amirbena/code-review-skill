@@ -162,28 +162,36 @@ there, not restated here.
 
 This is a structural contract, not a prose-matching one: the author writes
 their own sentences within each field, but the section/field structure must
-come from the template. Keep the Issue reference and link to the
+come from the template. Keep the Issue-closing reference and link to the
 smallest canonical source that owns detailed behavior or decisions rather
 than duplicating it into the field.
-
-The Issue reference is one line: `Fixes #<N>` when the PR should close the
-Issue, or `Related: #<N>` when the Issue is tracked but must stay open (for
-example a research or contract PR whose Issue closes only on maintainer
-acceptance). Either must name a real Issue; there is no issue-less form, and
-`Related:` is never a parent/dependency relationship (see "Native GitHub
-relationships"). Prefer `Related:` to a "does not close" phrase beside a
-closing keyword, which GitHub still treats as closing.
 
 This authoring rule is distinct from, but backed by, deterministic
 validation that a PR body's structure matches the template — see
 "Validate PR-template structure before opening or updating a PR" below.
+
+### Issue references: `Fixes` vs `Related`
+
+Every PR body carries at least one issue-reference line, each on its own
+line:
+
+- `Fixes #N` — the PR fully satisfies the Issue and should close it on
+  merge.
+- `Related: #N` — partial work, research contracts, epics, or Issues that
+  need follow-up. It is not a closing keyword and never closes the Issue.
+
+Both may appear, multiple times, and duplicates are tolerated. Malformed
+forms (`Fixes #`, `Related: #`, `Related: 123`, `Related #123`) fail the
+structure check, and mid-sentence prose ("fixes #12") does not count as a
+reference. Never write `Fixes` for an Issue that must stay open, even in a
+negated phrase such as "does not fix #N": GitHub still closes it.
 
 ### Validate PR-template structure before opening or updating a PR
 
 Before running `gh pr create` or `gh pr edit`, validate the drafted body
 locally and offline against the same deterministic structure checker CI
 runs — rather than waiting for CI to catch a missing section, an
-unfilled required field, an unresolved `Fixes #` / `Related: #` placeholder, or an
+unfilled required field, an unresolved or malformed `Fixes #` / `Related: #` issue-reference line, or an
 invented body shape (such as a different tool's default `## Summary` /
 `## Test plan` pattern) that never came from
 `.github/PULL_REQUEST_TEMPLATE.md`:

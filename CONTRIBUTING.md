@@ -84,9 +84,10 @@ bot replies. Maintainers can tune the three named `CLAIM_*` values in
    changed path is provably not an integration input, in which case it omits
    only `tests/integration/`
    ([routed CI tests](policies/validation-and-clean-exit.md#routed-ci-tests)).
-5. Open a pull request against this repository and use `Fixes #<issue>` when
-   the pull request should close the issue, or `Related: #<issue>` when it
-   must not (the issue stays open).
+5. Open a pull request against this repository. Use `Fixes #<issue>` when
+   the pull request fully satisfies the issue and should close it, or
+   `Related: #<issue>` for partial work that must leave the issue open. Each
+   goes on its own line; the PR structure check requires at least one.
 
 The issue form should define the problem, scope, acceptance criteria, and
 validation before work is claimed. Ask on the issue if those boundaries are
