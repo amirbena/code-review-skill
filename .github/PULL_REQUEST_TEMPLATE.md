@@ -1,5 +1,7 @@
 <!-- Concisely summarize for the reviewer. Link to the Issue or canonical
-documentation for detailed requirements, policy, and design. -->
+documentation for detailed requirements, policy, and design.
+Issue reference: keep `Fixes #<N>` when this PR should close the Issue; replace the
+line with `Related: #<N>` when it must not (the Issue is tracked but stays open). -->
 
 Fixes #
 

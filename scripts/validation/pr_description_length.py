@@ -44,6 +44,8 @@ _HEADING_RE = re.compile(r"^##[ \t]+(.+?)[ \t]*$", re.MULTILINE)
 _OPTIONAL_HINT_RE = re.compile(r"\boptional\b", re.IGNORECASE)
 _LABELED_FIELD_RE = re.compile(r"^-\s+\*\*(?P<label>[^*]+?):\*\*[ \t]*(?P<value>.*)$", re.MULTILINE)
 _FIXES_LINE_RE = re.compile(r"^Fixes #(?P<number>\d*)[ \t]*$", re.MULTILINE | re.IGNORECASE)
+# A non-closing reference to the tracked Issue: GitHub never auto-closes on "Related:".
+_RELATED_LINE_RE = re.compile(r"^Related: #(?P<number>\d*)[ \t]*$", re.MULTILINE | re.IGNORECASE)
 _CHECKBOX_RE = re.compile(r"^-\s*\[(?P<mark>[ xX])\]\s*(?P<note>.*)$")
 # Matched only against a whole blank-required field value (fullmatch, never
 # swept across prose): a copied guidance stub reads as a bracketed phrase
@@ -176,7 +178,7 @@ def validate_structure(body: str | None, contract: TemplateContract | None = Non
     Checks required headings are present, required-but-optional headings
     (like "Review") are never falsely demanded, labeled fields the template
     leaves blank are actually filled in (and not left as a copied
-    placeholder stub), "Fixes #" references a real Issue, and the
+    placeholder stub), "Fixes #" / "Related: #" references a real Issue, and the
     "Validation" section carries real content.
     """
     contract = contract or load_template_contract()
@@ -190,11 +192,12 @@ def validate_structure(body: str | None, contract: TemplateContract | None = Non
         if heading not in sections_by_heading:
             issues.append(StructureIssue(heading, f"required section '## {heading}' is missing"))
 
-    fixes_match = _FIXES_LINE_RE.search(visible)
-    if fixes_match is None:
-        issues.append(StructureIssue("Fixes", "a 'Fixes #<issue-number>' line is required"))
-    elif not fixes_match.group("number"):
-        issues.append(StructureIssue("Fixes", "'Fixes #' must reference a real Issue number"))
+    # Every PR is tracked by a real Issue: a closing `Fixes #N` or a non-closing `Related: #N`.
+    references = [*_FIXES_LINE_RE.finditer(visible), *_RELATED_LINE_RE.finditer(visible)]
+    if not references:
+        issues.append(StructureIssue("Fixes", "a 'Fixes #<issue-number>' or 'Related: #<issue-number>' line is required"))
+    elif any(not match.group("number") for match in references):
+        issues.append(StructureIssue("Fixes", "'Fixes #' / 'Related: #' must reference a real Issue number"))
 
     for heading, label in contract.required_blank_fields:
         section_body = sections_by_heading.get(heading)

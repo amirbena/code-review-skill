@@ -85,7 +85,8 @@ bot replies. Maintainers can tune the three named `CLAIM_*` values in
    only `tests/integration/`
    ([routed CI tests](policies/validation-and-clean-exit.md#routed-ci-tests)).
 5. Open a pull request against this repository and use `Fixes #<issue>` when
-   the pull request should close the issue.
+   the pull request should close the issue, or `Related: #<issue>` when it
+   must not (the issue stays open).
 
 The issue form should define the problem, scope, acceptance criteria, and
 validation before work is claimed. Ask on the issue if those boundaries are

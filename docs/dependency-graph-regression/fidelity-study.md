@@ -398,6 +398,38 @@ gates" (G1–G8). At the time of this record none is satisfied:
 | G5 Verified compatibility sources | None exist; the BouncyCastle FIPS/non-FIPS records are unwritten. |
 | G6 Security and regression tests | Threat scenarios have `#724` pointers, not tests. |
 | G7 Engine pinning | One tuple measured; no distribution digest or tool exists. |
-| G8 Incident evidence | The private `jsk-bom` evidence has not been supplied. |
+| G8 Incident evidence | The private `jsk-bom` evidence has not been supplied. §12 proposes splitting this gate; not applied. |
 
 **Maven stays in scope for Epic #722; nothing here reduces it.**
+
+## 12. Gate G8 — scope proposal (for maintainer approval)
+
+**Question.** Is private-BOM evidence necessary for *general* Maven resolver
+enablement, or only for validating the *original incident*?
+
+**Finding.** G8 currently reads as an enablement gate for the whole
+capability. Its two halves have different reasons and different evidence:
+
+| Half | What it protects | Is private evidence needed? |
+| --- | --- | --- |
+| **G8-general:** enabling the resolver for Maven graphs | That the resolver is faithful and safe on real projects, including projects whose BOMs are unreachable | **No.** General fidelity is measured by G1 and G2 on public projects, where private evidence is an n=1 sample that cannot substitute for the corpus. The *handling* of an unreachable private BOM is a fail-closed behavior already tested synthetically (S10d: missing BOM ⇒ `missing`) and under G6. |
+| **G8-incident:** any claim that the original incident was reproduced or detected | That a result is about the real incident and not an analogue | **Yes.** Only the authentic Base/Head `jsk-bom` POMs, the repository's POMs, the real resolved trees, and the real build's profile and property inputs can establish the delta, whether non-FIPS BouncyCastle was newly introduced or merely renamed, and the profile context. |
+
+**Proposed distinction (not applied).** Keep G8 verbatim in the contract until
+a maintainer approves a split into:
+
+- **G8a — private-BOM handling:** satisfied by the fail-closed tests for an
+  unreachable BOM and parent (no private evidence required).
+- **G8b — incident claim:** authentic Base/Head evidence supplied. It gates
+  the incident-detection claim, the Epic's incident criterion, and the
+  incident's end-to-end fixture, and **does not** gate enabling the resolver
+  for other Maven projects.
+
+**Consequences if approved.** Resolver enablement could proceed on G1–G7 plus
+G8a without the private evidence, while Epic #722's incident criterion and
+any statement that "the original incident is detected" would remain
+**unsatisfied** until G8b. Nothing is silently removed: the incident evidence
+stays required for the Epic, only its role as an enablement prerequisite for
+unrelated projects is questioned. **If not approved, G8 stays as written and
+blocks enablement.** Until a decision, the contract is unchanged and the
+capability remains disabled either way.
