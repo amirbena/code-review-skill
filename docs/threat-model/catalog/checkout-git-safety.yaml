@@ -207,3 +207,23 @@ scenarios:
   benchmark_reference: existing structural control with dedicated coverage
   regression_evidence: tests/integration/github/test_pr_checkout.py
   threat_severity: CRITICAL
+- id: GIT-010
+  title: A graph artifact path or lockfile symlink escapes the review target
+  category: GIT
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - symlinks, parent-directory segments, or absolute paths in a lockfile location, an artifact path, or a manifest reference
+  assumed_attacker_capabilities:
+  - authorship of arbitrary repository content, including symlinks
+  trusted_inputs: []
+  protected_asset: host filesystem outside the review target
+  required_capability_state: every path read for graph evidence is canonicalized and confined to the review target
+  enforcement_owner: '#724'
+  enforcement_point: 'shared/policies/dependency-graph-regression.md, "Accepted evidence formats and safe handling" (Path confinement)'
+  expected_safe_outcome: a path resolving outside the review target is refused and the side is missing; nothing outside the target is read
+  expected_security_event: DENIED_GIT_PATH_ESCAPE
+  benchmark_family: none
+  benchmark_reference: dependency-graph benchmark corpus is tracked by #725; deterministic regression lands with #724
+  regression_evidence: '#724'
+  threat_severity: HIGH
+  notes: Contract defined by #723; same control class as GIT-006 and the checkout path-escape check, applied to graph artifact reads.

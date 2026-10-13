@@ -1,0 +1,1091 @@
+{
+ "engine": "Maven 3.9.16 / Maven Resolver 1.9.27 (jars from the Maven distribution), JDK 17.0.19 Temurin, macOS arm64",
+ "scenarios": [
+  {
+   "id": "S1a",
+   "project": "s1-parent-from-cache",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S1b",
+   "project": "s1-parent-relpath",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S2a",
+   "project": "s2-bom",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S2b",
+   "project": "s2-bom-vs-explicit",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S3a",
+   "project": "s3-mgmt-transitive-version",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S3b",
+   "project": "s3-mgmt-transitive-scope",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S3c",
+   "project": "s3-mgmt-vs-direct-version",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S4",
+   "project": "s4-transitives",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S5a",
+   "project": "s5-exclusion-single",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S5b",
+   "project": "s5-exclusion-wildcard",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S5c",
+   "project": "s5-exclusion-mid",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S6a",
+   "project": "s6-nearest-depth",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S6b",
+   "project": "s6-tie-first-declared",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S6c",
+   "project": "s6-tie-swapped",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S7",
+   "project": "s7-scopes",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S8",
+   "project": "s8-optional",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S9a",
+   "project": "s9-profiles",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S9b",
+   "project": "s9-profiles",
+   "base_args": [
+    "-Dfeature=1"
+   ],
+   "harness_args": [
+    "-Dfeature=1"
+   ],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S9c",
+   "project": "s9-profiles",
+   "base_args": [
+    "-Dfeature=1",
+    "-Pcli-only"
+   ],
+   "harness_args": [
+    "-Dfeature=1",
+    "--profile",
+    "cli-only"
+   ],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S9d",
+   "project": "s9-profiles",
+   "base_args": [
+    "-Pmgmt"
+   ],
+   "harness_args": [
+    "--profile",
+    "mgmt"
+   ],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S9e",
+   "project": "s9-profiles-nofile",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S9f",
+   "project": "s9-parent-profile",
+   "base_args": [
+    "-Dfeature=1"
+   ],
+   "harness_args": [
+    "-Dfeature=1"
+   ],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S9g",
+   "project": "s9-profiles",
+   "base_args": [
+    "-Dfeature=1"
+   ],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": false,
+   "only_baseline": [
+    [
+     0,
+     "org.synth:pf-prop:jar:1.0",
+     "compile",
+     false
+    ]
+   ],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S9h",
+   "project": "s9-profiles",
+   "base_args": [
+    "-P",
+    "!by-jdk"
+   ],
+   "harness_args": [
+    "--profile",
+    "!by-jdk"
+   ],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S10a",
+   "project": "s10-missing-transitive-pom",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [
+    "[WARNING] The POM for org.synth:ms-gone:jar:1.0 is missing, no dependency information available"
+   ],
+   "harness_message": "",
+   "harness_events": [
+    "DESCRIPTOR-MISSING org.synth:ms-gone:jar:1.0"
+   ]
+  },
+  {
+   "id": "S10b",
+   "project": "s10-missing-direct-pom",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [
+    "[WARNING] The POM for org.synth:ms-direct-gone:jar:1.0 is missing, no dependency information available"
+   ],
+   "harness_message": "",
+   "harness_events": [
+    "DESCRIPTOR-MISSING org.synth:ms-direct-gone:jar:1.0"
+   ]
+  },
+  {
+   "id": "S10c",
+   "project": "s10-missing-parent",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "ERROR",
+   "harness": "MODEL-ERROR",
+   "equal": null,
+   "only_baseline": null,
+   "only_harness": null,
+   "baseline_message": "[ERROR] [ERROR] Some problems were encountered while processing the POMs:",
+   "baseline_warnings": [],
+   "harness_message": "1 problem was encountered while building the effective model for org.synth:s10-missing-parent:1.0 [FATAL] Non-resolvable parent POM org.synth:parent-gone:1.0 for org.synth:s10-missing-parent:1.0: not in offline cache: <scratch>",
+   "harness_events": []
+  },
+  {
+   "id": "S10d",
+   "project": "s10-missing-bom",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "ERROR",
+   "harness": "MODEL-ERROR",
+   "equal": null,
+   "only_baseline": null,
+   "only_harness": null,
+   "baseline_message": "[ERROR] [ERROR] Some problems were encountered while processing the POMs:",
+   "baseline_warnings": [],
+   "harness_message": "1 problem was encountered while building the effective model for org.synth:s10-missing-bom:1.0 [ERROR] Non-resolvable import POM org.synth:bom-gone:1.0: not in offline cache: <scratch>",
+   "harness_events": []
+  },
+  {
+   "id": "S11a",
+   "project": "s11-families-both",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S11b",
+   "project": "s11-families-excluded",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S11c",
+   "project": "s11-families-optional",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S11d",
+   "project": "s11-families-test-scope",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S12",
+   "project": "s12-relocation",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [
+    "[WARNING] The artifact org.synth:old-lib:jar:1.0 has been relocated to org.synth:new-lib:jar:2.0",
+    "[WARNING] The artifact org.synth:old-lib:jar:1.0 has been relocated to org.synth:new-lib:jar:2.0"
+   ],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S13a",
+   "project": "s13-range-no-metadata",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "ERROR",
+   "harness": "OK",
+   "equal": null,
+   "only_baseline": null,
+   "only_harness": null,
+   "baseline_message": "[ERROR] Failed to execute goal on project s13-range-no-metadata: Could not collect dependencies for project org.synth:s13-range-no-metadata:jar:1.0",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": [
+    "COLLECT-EXC VersionRangeResolutionException: No versions available for org.synth:rg2:jar:[1.0,2.0) within specified range",
+    "COLLECT-EXCEPTION Failed to collect dependencies at org.synth:rg2:jar:[1.0,2.0)"
+   ]
+  },
+  {
+   "id": "S13b",
+   "project": "s13-range-with-metadata",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": false,
+   "only_baseline": [
+    [
+     0,
+     "org.synth:rg:jar:1.5",
+     "compile",
+     false
+    ]
+   ],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": [
+    "COLLECT-EXC VersionRangeResolutionException: No versions available for org.synth:rg:jar:[1.0,2.0) within specified range",
+    "COLLECT-EXCEPTION Failed to collect dependencies at org.synth:rg:jar:[1.0,2.0)"
+   ]
+  },
+  {
+   "id": "S14",
+   "project": "s14-extensions-present",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [
+    ".mvn/extensions.xml present"
+   ],
+   "baseline": "ERROR",
+   "harness": "OK",
+   "equal": null,
+   "only_baseline": null,
+   "only_harness": null,
+   "baseline_message": "[ERROR] Error executing Maven.",
+   "baseline_warnings": [
+    "[WARNING] The POM for org.synth:ext-gone:jar:1.0 is missing, no dependency information available"
+   ],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "S15",
+   "project": "s15-declared-repository",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": [
+    "IGNORED-PROJECT-REPOSITORY evil=http://127.0.0.1:9/${env.HOME}"
+   ]
+  },
+  {
+   "id": "I3.0.0",
+   "project": "inc-3.0.0",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.0.1",
+   "project": "inc-3.0.1",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.0.2",
+   "project": "inc-3.0.2",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.0.3",
+   "project": "inc-3.0.3",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.0.4",
+   "project": "inc-3.0.4",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.0.5",
+   "project": "inc-3.0.5",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.1.0",
+   "project": "inc-3.1.0",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.1.1",
+   "project": "inc-3.1.1",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.1.2",
+   "project": "inc-3.1.2",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.1.3",
+   "project": "inc-3.1.3",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.1.4",
+   "project": "inc-3.1.4",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.1.5",
+   "project": "inc-3.1.5",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.1.6",
+   "project": "inc-3.1.6",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.1.7",
+   "project": "inc-3.1.7",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.1.8",
+   "project": "inc-3.1.8",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.1.9",
+   "project": "inc-3.1.9",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.0.6",
+   "project": "inc-3.0.6",
+   "base_args": [],
+   "harness_args": [],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.0.0-simple",
+   "project": "inc-3.0.0",
+   "base_args": [],
+   "harness_args": [
+    "--simple-lrm"
+   ],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  },
+  {
+   "id": "I3.0.1-simple",
+   "project": "inc-3.0.1",
+   "base_args": [],
+   "harness_args": [
+    "--simple-lrm"
+   ],
+   "unsupported": [],
+   "baseline": "OK",
+   "harness": "OK",
+   "equal": true,
+   "only_baseline": [],
+   "only_harness": [],
+   "baseline_message": "",
+   "baseline_warnings": [],
+   "harness_message": "",
+   "harness_events": []
+  }
+ ],
+ "security": {
+  "sec1": {
+   "harness_rc": 0,
+   "baseline_rc": 0,
+   "harness_sensitive": {
+    "/home/.m2": [],
+    "settings.xml": [],
+    "/home/.ssh": [],
+    "id_decoy": [],
+    "/.m2/": [],
+    ".mavenrc": [],
+    "/.config": [],
+    "/.netrc": [],
+    "<home>/.": []
+   },
+   "baseline_sensitive": {
+    "/home/.m2": [],
+    "settings.xml": [],
+    "/home/.ssh": [],
+    "id_decoy": [],
+    "/.m2/": [],
+    ".mavenrc": [],
+    "/.config": [],
+    "/.netrc": [],
+    "<home>/.": []
+   },
+   "harness_unique_read_paths": 0,
+   "harness_requests_to_declared_repo": [],
+   "baseline_requests_to_declared_repo": [
+    "/x/DECOY-ENV-TOKEN<home>/org/synth/not-in-cache/1.0/not-in-cache-1.0.pom"
+   ],
+   "sandbox_network_negative_control": [
+    6,
+    "curl: (6) Could not resolve host: repo.maven.apache.org\n"
+   ]
+  },
+  "sec2": {
+   "readonly_cache": {
+    "runs": [
+     [
+      "s2-bom",
+      0,
+      true
+     ],
+     [
+      "s9-profiles",
+      0,
+      true
+     ],
+     [
+      "inc-3.1.8",
+      0,
+      true
+     ],
+     [
+      "inc-3.0.0",
+      0,
+      true
+     ],
+     [
+      "s10-missing-transitive-pom",
+      0,
+      true
+     ]
+    ],
+    "before": [
+     2372,
+     "e2fcbac98f4da20c"
+    ],
+    "after": [
+     2372,
+     "e2fcbac98f4da20c"
+    ],
+    "unchanged": true
+   },
+   "pathological": {
+    "dos-parent-cycle": {
+     "harness": "rc=0 nodes=0 #ERROR\tmodel\t1 problem was encountered while building the effective model for org.dos:app:1 [FATAL] The parents form a cycle: org.dos:app:1 -> org.dos:pb:1 -> org.dos:pa:1 -> org.dos:pb:1 @ org.dos:pb",
+     "harness_s": 0.1,
+     "baseline": "rc=1 [ERROR] [ERROR] Some problems were encountered while processing the POMs:",
+     "baseline_s": 0.8
+    },
+    "dos-import-cycle": {
+     "harness": "rc=0 nodes=0 #ERROR\tmodel\t1 problem was encountered while building the effective model for org.dos:app:1 [ERROR] The dependencies of type=pom and with scope=import form a cycle: org.dos:app:1 -> org.dos:ba:1 -> or",
+     "harness_s": 0.1,
+     "baseline": "rc=1 [ERROR] [ERROR] Some problems were encountered while processing the POMs:",
+     "baseline_s": 0.7
+    },
+    "dos-deep-chain-1500": {
+     "harness": "rc=0 nodes=1500 ",
+     "harness_s": 0.6,
+     "baseline": "rc=0 ",
+     "baseline_s": 2.2
+    },
+    "dos-wide-5000": {
+     "harness": "rc=0 nodes=5000 ",
+     "harness_s": 1.3,
+     "baseline": "rc=0 ",
+     "baseline_s": 2.8
+    },
+    "dos-lattice-22": {
+     "harness": "rc=0 nodes=44 ",
+     "harness_s": 0.2,
+     "baseline": "rc=0 ",
+     "baseline_s": 1.0
+    },
+    "dos-billion-laughs": {
+     "harness": "rc=0 nodes=0 #ERROR\tmodel\t1 problem was encountered while building the effective model [FATAL] Non-parseable POM <scratch>",
+     "harness_s": 0.1,
+     "baseline": "rc=1 [ERROR] [ERROR] Some problems were encountered while processing the POMs:",
+     "baseline_s": 0.7
+    },
+    "dos-xxe-file": {
+     "harness": "rc=0 nodes=0 #ERROR\tmodel\t1 problem was encountered while building the effective model [FATAL] Non-parseable POM <scratch>",
+     "harness_s": 0.1,
+     "baseline": "rc=1 [ERROR] [ERROR] Some problems were encountered while processing the POMs:",
+     "baseline_s": 0.7
+    }
+   }
+  }
+ }
+}

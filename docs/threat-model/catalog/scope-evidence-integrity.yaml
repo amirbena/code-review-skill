@@ -139,3 +139,24 @@ scenarios:
     wired to this scenario rather than drifting independently'
   regression_evidence: tests/unit/review/stateful_review/test_review_status_enforcement.py
   threat_severity: MEDIUM
+- id: SCOPE-007
+  title: A forged, stale, or mismatched graph artifact is accepted as Base or Head finding evidence, or partial evidence escalates severity
+  category: SCOPE
+  attacker_model: malicious_contributor
+  attacker_controlled_inputs:
+  - a supplied or CI-produced graph, SBOM, or dependency-tree artifact, and its claimed commit and manifest digests
+  assumed_attacker_capabilities:
+  - ability to supply or influence a graph artifact for the reviewed change
+  trusted_inputs:
+  - the Base and Head Git objects and the digests recomputed from them
+  protected_asset: the integrity of Base and Head graph evidence and the severity contract
+  required_capability_state: every artifact is bound to the reviewed Base or Head by recomputed digests; stale, untrusted, and mismatched evidence is never finding evidence; missing evidence never escalates
+  enforcement_owner: '#724'
+  enforcement_point: 'shared/policies/dependency-graph-regression.md, "Accepted evidence formats and safe handling" (Binding), "Evidence states", and "Severity calibration"'
+  expected_safe_outcome: the artifact is classed stale, untrusted, or mismatched and used for nothing but a Context gap; no P0 or P1 rests on missing, partial, stale, untrusted, or mismatched evidence
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: dependency-graph benchmark corpus is tracked by #725; deterministic regression lands with #724
+  regression_evidence: '#724'
+  threat_severity: HIGH
+  notes: Contract defined by #723; enforcement and over-reporting controls are measured by #725.

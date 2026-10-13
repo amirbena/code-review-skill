@@ -180,3 +180,43 @@ scenarios:
     model rather than a benchmark corpus.'
   regression_evidence: tests/policy/review/presentation/test_rendered_inspection_target_sourcing.py
   threat_severity: MEDIUM
+- id: DOS-009
+  title: Oversized, deeply nested, cyclic, or malformed graph input exhausts the parser or is silently truncated into a complete-looking graph
+  category: DOS
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - a graph, SBOM, or lockfile with huge arrays, deep nesting, YAML aliases, cycles, or schema violations
+  assumed_attacker_capabilities:
+  - authorship of the reviewed change or of a supplied or CI-produced graph artifact
+  trusted_inputs: []
+  protected_asset: reviewer time and memory, and the meaning of the available evidence state
+  required_capability_state: size, node, edge, depth, and time caps are enforced before parsing completes; over-cap input is partial or rejected
+  enforcement_owner: '#724'
+  enforcement_point: 'shared/policies/dependency-graph-regression.md, "Accepted evidence formats and safe handling" (Caps before parse completes)'
+  expected_safe_outcome: parsing stops at the cap; the side is partial or the artifact is rejected, never an available graph, and the review completes within its budget
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: dependency-graph benchmark corpus is tracked by #725; deterministic regression lands with #724
+  regression_evidence: '#724'
+  threat_severity: MEDIUM
+  notes: Contract defined by #723; the initial cap values are stated in the policy and tuned only by a policy amendment.
+- id: DOS-010
+  title: Pathological POM graphs exhaust a metadata resolver (deep parent or import chains, cycles, version-range fan-out, huge or entity-laden XML)
+  category: DOS
+  attacker_model: resource_abuse
+  attacker_controlled_inputs:
+  - parent and import chains, version ranges, and POM content in the reviewed change or in a reachable POM
+  assumed_attacker_capabilities:
+  - authorship of arbitrary POM content
+  trusted_inputs: []
+  protected_asset: reviewer time, memory, and network budget
+  required_capability_state: caps on POM count, bytes, parent and import depth, collected nodes, range fan-out, wall time, and memory are enforced; cycles are detected
+  enforcement_owner: '#724'
+  enforcement_point: 'docs/dependency-graph-regression/metadata-only-resolution.md, section 3.2 (Execution limits and DoS); not enabled until every production-enablement gate in the contract passes (network D2 and credentials D3 are not authorized)D4'
+  expected_safe_outcome: collection stops at the cap and the side is partial or rejected, never an available graph
+  expected_security_event: NOT_APPLICABLE
+  benchmark_family: none
+  benchmark_reference: dependency-graph benchmark corpus is tracked by #725; deterministic regression lands with #724
+  regression_evidence: '#724'
+  threat_severity: MEDIUM
+  notes: Applies only if the candidate metadata-resolution path is approved; XML parser hardening of the pinned engine must be verified, not assumed.

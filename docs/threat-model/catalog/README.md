@@ -18,10 +18,10 @@ a `threat-scenario-catalog/v1` document:
 | [`mutation-authority.yaml`](mutation-authority.yaml) | `AUTH` | 16 | [#301](https://github.com/amirbena/code-review-skill/issues/301) |
 | [`spawn-delegation.yaml`](spawn-delegation.yaml) | `DELEG` | 11 | [#303](https://github.com/amirbena/code-review-skill/issues/303) |
 | [`sandbox-runtime-validation.yaml`](sandbox-runtime-validation.yaml) | `SBOX` | 16 | [#302](https://github.com/amirbena/code-review-skill/issues/302) |
-| [`repository-prompt-injection.yaml`](repository-prompt-injection.yaml) | `INJECT` | 20 | mixed — see each scenario's `enforcement_owner` |
-| [`checkout-git-safety.yaml`](checkout-git-safety.yaml) | `GIT` | 9 | mixed — several already `existing:` |
-| [`scope-evidence-integrity.yaml`](scope-evidence-integrity.yaml) | `SCOPE` | 6 | mixed — mostly decision-semantics correctness |
-| [`resource-abuse.yaml`](resource-abuse.yaml) | `DOS` | 8 | shared with `#302`/`#303` |
+| [`repository-prompt-injection.yaml`](repository-prompt-injection.yaml) | `INJECT` | 29 | mixed — see each scenario's `enforcement_owner` |
+| [`checkout-git-safety.yaml`](checkout-git-safety.yaml) | `GIT` | 10 | mixed — several already `existing:` |
+| [`scope-evidence-integrity.yaml`](scope-evidence-integrity.yaml) | `SCOPE` | 7 | mixed — mostly decision-semantics correctness |
+| [`resource-abuse.yaml`](resource-abuse.yaml) | `DOS` | 10 | shared with `#302`/`#303` |
 
 Validated by the single reference validator,
 [`../../../scripts/security/validate_threat_model.py`](../../../scripts/security/validate_threat_model.py)
