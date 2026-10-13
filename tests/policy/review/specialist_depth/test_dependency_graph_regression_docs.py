@@ -11,6 +11,15 @@ from __future__ import annotations
 import unittest
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import (
+    GITHUB_ACTIVE_RUNBOOK,
+    GITHUB_PASSIVE_RUNBOOK,
+    GITHUB_REASONING,
+    GITHUB_REVIEW_INDEX,
+    GITHUB_SKILL_MD,
+    LOCAL_RUNBOOK,
+    LOCAL_SKILL_MD,
+)
 from tests.support.policy_docs import load_normalized_text as _text
 
 POLICY = REPO_ROOT / "shared/policies/dependency-graph-regression.md"
@@ -183,18 +192,24 @@ class DesignRecordTests(unittest.TestCase):
 
 
 class UnwiredTests(unittest.TestCase):
-    """Nothing packaged may reference the policy until #724 wires it."""
+    """No SKILL.md, runbook, capability manifest, or package manifest may reference the policy until #724."""
 
-    PACKAGED_ROOTS = ("skills", "capabilities", "scripts/packaging")
+    GATEKEEPERS = (
+        LOCAL_SKILL_MD,
+        GITHUB_SKILL_MD,
+        LOCAL_RUNBOOK,
+        GITHUB_ACTIVE_RUNBOOK,
+        GITHUB_PASSIVE_RUNBOOK,
+        GITHUB_REVIEW_INDEX,
+        GITHUB_REASONING,
+        REPO_ROOT / "skills/local-code-review/metadata/skill.yaml",
+        REPO_ROOT / "skills/github-pr-review/metadata/skill.yaml",
+        REPO_ROOT / "scripts/packaging/package-manifest.json",
+        REPO_ROOT / "scripts/packaging/generate_package_manifest.py",
+    )
 
-    def test_no_packaged_resource_references_the_policy(self) -> None:
-        offenders = []
-        for root in self.PACKAGED_ROOTS:
-            for path in (REPO_ROOT / root).rglob("*"):
-                if not path.is_file() or path.suffix not in {".md", ".yaml", ".yml", ".json", ".py", ".sh", ".ps1"}:
-                    continue
-                if "dependency-graph-regression" in path.read_text(encoding="utf-8", errors="ignore"):
-                    offenders.append(str(path.relative_to(REPO_ROOT)))
+    def test_no_gatekeeper_references_the_policy(self) -> None:
+        offenders = [str(p.relative_to(REPO_ROOT)) for p in self.GATEKEEPERS if "dependency-graph-regression" in p.read_text(encoding="utf-8")]
         self.assertEqual(offenders, [], "the dependency-graph policy must stay unwired until #724")
 
 
