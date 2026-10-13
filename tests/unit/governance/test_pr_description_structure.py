@@ -138,7 +138,19 @@ class ValidateStructureTests(unittest.TestCase):
                 self.assertTrue(self._with_refs(refs).passes)
 
     def test_malformed_or_empty_issue_references_fail(self) -> None:
-        for refs in ("Related: #", "Related: 123", "Related #123", "Fixes #\nRelated: #12", "Fixes #135\nRelated: #"):
+        for refs in (
+            "Related: #",
+            "Related: 123",
+            "Related #123",
+            "Fixes #\nRelated: #12",
+            "Fixes #135\nRelated: #",
+            "Fixes #135\nRelated: #456 invalid",
+            "Related: #135\nFixes #456 and more",
+            "Fixes #135\nRelated: #0",
+            "Fixes #0",
+            "Fixes #135\nRelated: #12 #13",
+            "Fixes #135\nFixes 12",
+        ):
             with self.subTest(refs=refs):
                 result = self._with_refs(refs)
                 self.assertFalse(result.passes)

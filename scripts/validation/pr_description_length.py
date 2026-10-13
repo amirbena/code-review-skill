@@ -43,16 +43,11 @@ _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 _HEADING_RE = re.compile(r"^##[ \t]+(.+?)[ \t]*$", re.MULTILINE)
 _OPTIONAL_HINT_RE = re.compile(r"\boptional\b", re.IGNORECASE)
 _LABELED_FIELD_RE = re.compile(r"^-\s+\*\*(?P<label>[^*]+?):\*\*[ \t]*(?P<value>.*)$", re.MULTILINE)
-# One reference per line: closing `Fixes #N` or non-closing `Related: #N`.
-_ISSUE_REF_LINE_RE = re.compile(
-    r"^(?:Fixes #|Related: #)(?P<number>\d+)[ \t]*$", re.MULTILINE | re.IGNORECASE
-)
-# A bare reference keyword plus at most one token that is not a valid
-# reference (`Fixes #`, `Related: #`, `Related: 123`, `Related #123`).
-# Mid-sentence prose never matches, so it is neither valid nor malformed.
-_MALFORMED_ISSUE_REF_LINE_RE = re.compile(
-    r"^(?:Fixes|Related)(?::|[ \t])[ \t]*\S*[ \t]*$", re.MULTILINE | re.IGNORECASE
-)
+# An issue-reference line starts with a reference keyword followed by `:`, `#`,
+# or a number; every such line must then be exactly `Fixes #N` or
+# `Related: #N` (N >= 1). Mid-sentence prose never starts a candidate line.
+_ISSUE_REF_CANDIDATE_RE = re.compile(r"(?:Fixes|Related)(?::|\s*#|\s+\d)", re.IGNORECASE)
+_ISSUE_REF_RE = re.compile(r"(?:Fixes #|Related: #)[1-9]\d*", re.IGNORECASE)
 _CHECKBOX_RE = re.compile(r"^-\s*\[(?P<mark>[ xX])\]\s*(?P<note>.*)$")
 # Matched only against a whole blank-required field value (fullmatch, never
 # swept across prose): a copied guidance stub reads as a bracketed phrase
@@ -200,17 +195,15 @@ def validate_structure(body: str | None, contract: TemplateContract | None = Non
         if heading not in sections_by_heading:
             issues.append(StructureIssue(heading, f"required section '## {heading}' is missing"))
 
-    has_valid_ref = _ISSUE_REF_LINE_RE.search(visible) is not None
-    malformed_refs = [
-        line.strip()
-        for line in _MALFORMED_ISSUE_REF_LINE_RE.findall(visible)
-        if _ISSUE_REF_LINE_RE.fullmatch(line.strip()) is None
+    ref_lines = [
+        line.strip() for line in visible.splitlines() if _ISSUE_REF_CANDIDATE_RE.match(line.strip())
     ]
+    malformed_refs = [line for line in ref_lines if not _ISSUE_REF_RE.fullmatch(line)]
     for ref in malformed_refs:
         issues.append(
             StructureIssue("Issue reference", f"'{ref}' is malformed; use 'Fixes #<number>' or 'Related: #<number>'")
         )
-    if not has_valid_ref and not malformed_refs:
+    if not ref_lines:
         issues.append(
             StructureIssue("Issue reference", "a 'Fixes #<number>' or 'Related: #<number>' line is required")
         )
