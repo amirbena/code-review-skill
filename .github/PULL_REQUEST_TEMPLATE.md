@@ -1,7 +1,8 @@
 <!-- Concisely summarize for the reviewer. Link to the Issue or canonical
-documentation for detailed requirements, policy, and design. -->
+documentation for detailed requirements, policy, and design.
+Issue line: `Fixes #<n>` closes the Issue on merge; keep `Related: #<n>` for partial work. -->
 
-Fixes #
+Related: #
 
 ## What
 

@@ -96,13 +96,13 @@ class ValidateStructureTests(unittest.TestCase):
         body = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #")
         result = pr_length.validate_structure(body)
         self.assertFalse(result.passes)
-        self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
+        self.assertTrue(any(issue.section == "Issue reference" for issue in result.issues))
 
     def test_missing_fixes_line_fails(self) -> None:
         body = _replace(COMPLIANT_BODY, "Fixes #135\n\n", "")
         result = pr_length.validate_structure(body)
         self.assertFalse(result.passes)
-        self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
+        self.assertTrue(any(issue.section == "Issue reference" for issue in result.issues))
 
     def test_fixes_na_fails(self) -> None:
         # Every agent-authored PR is tracked by a real GitHub Issue — no
@@ -110,19 +110,56 @@ class ValidateStructureTests(unittest.TestCase):
         body = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #N/A")
         result = pr_length.validate_structure(body)
         self.assertFalse(result.passes)
-        self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
+        self.assertTrue(any(issue.section == "Issue reference" for issue in result.issues))
 
     def test_fixes_copied_placeholder_token_fails(self) -> None:
         body = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #<issue-number>")
         result = pr_length.validate_structure(body)
         self.assertFalse(result.passes)
-        self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
+        self.assertTrue(any(issue.section == "Issue reference" for issue in result.issues))
 
     def test_fixes_non_numeric_value_fails(self) -> None:
         body = _replace(COMPLIANT_BODY, "Fixes #135", "Fixes #not-a-real-issue")
         result = pr_length.validate_structure(body)
         self.assertFalse(result.passes)
-        self.assertTrue(any(issue.section == "Fixes" for issue in result.issues))
+        self.assertTrue(any(issue.section == "Issue reference" for issue in result.issues))
+
+    def _with_refs(self, refs: str):
+        return pr_length.validate_structure(_replace(COMPLIANT_BODY, "Fixes #135", refs))
+
+    def test_issue_reference_forms_pass(self) -> None:
+        for refs in (
+            "Fixes #135",
+            "Related: #135",
+            "Fixes #135\nRelated: #12",
+            "Fixes #135\nFixes #135\nRelated: #12\nRelated: #12\nRelated: #13",
+        ):
+            with self.subTest(refs=refs):
+                self.assertTrue(self._with_refs(refs).passes)
+
+    def test_malformed_or_empty_issue_references_fail(self) -> None:
+        for refs in (
+            "Related: #",
+            "Related: 123",
+            "Related #123",
+            "Fixes #\nRelated: #12",
+            "Fixes #135\nRelated: #",
+            "Fixes #135\nRelated: #456 invalid",
+            "Related: #135\nFixes #456 and more",
+            "Fixes #135\nRelated: #0",
+            "Fixes #0",
+            "Fixes #135\nRelated: #12 #13",
+            "Fixes #135\nFixes 12",
+        ):
+            with self.subTest(refs=refs):
+                result = self._with_refs(refs)
+                self.assertFalse(result.passes)
+                self.assertTrue(any(i.section == "Issue reference" for i in result.issues))
+
+    def test_prose_mentions_are_not_issue_references(self) -> None:
+        for refs in ("This is related to #12.", "Mentions that it fixes #12 mid-sentence."):
+            with self.subTest(refs=refs):
+                self.assertFalse(self._with_refs(refs).passes)
 
     def test_empty_validation_section_fails(self) -> None:
         body = _replace(
@@ -254,7 +291,7 @@ class LocalPreflightTests(unittest.TestCase):
         self.assertFalse(result.passes)
         sections = {issue.section for issue in result.issues}
         self.assertIn("What", sections)
-        self.assertIn("Fixes", sections)
+        self.assertIn("Issue reference", sections)
 
     def test_missing_required_section_fails_the_local_preflight(self) -> None:
         broken = COMPLIANT_BODY.split("## Validation")[0]
@@ -268,7 +305,7 @@ class LocalPreflightTests(unittest.TestCase):
             output = StringIO()
             with redirect_stdout(output):
                 self.assertEqual(pr_length.main(["--pr-body-env", "PR_BODY"]), 1)
-            self.assertIn("Fixes", output.getvalue())
+            self.assertIn("Issue reference", output.getvalue())
 
     def test_unresolved_placeholder_fails_the_local_preflight(self) -> None:
         broken = _replace(

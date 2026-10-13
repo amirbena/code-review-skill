@@ -144,6 +144,8 @@ class TemplateTests(unittest.TestCase):
         headings = re.findall(r"^## (.+)$", template, flags=re.MULTILINE)
         self.assertEqual(headings, ["What", "Validation", "Review"])
         self.assertIn("Fixes #", template)
+        self.assertIn("Related: #", template)
+        self.assertNotRegex(template, r"(?m)^Fixes #")
         self.assertIn("Optional when no review occurred", template)
 
     def test_template_guidance_uses_excluded_html_comments(self) -> None:
