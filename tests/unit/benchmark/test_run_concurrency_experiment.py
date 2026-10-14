@@ -285,6 +285,109 @@ class ExecutionTest(unittest.TestCase):
         self.assertIn("isolation", record["failure_classes"])
         self.assertIn("workspace-not-cleaned", {v["kind"] for v in record["isolation"]["violations"]})
 
+    def _arm(self, t, behaviour, count=2):
+        def fake(fixture, *, worker, scratch, **kwargs):
+            behaviour(fixture, scratch)
+            return workers.FixtureOutcome(fixture.case_id, worker, 0.0, 0.0, 0, "ok")
+
+        with mock.patch.object(workers, "run_fixture_child", side_effect=fake):
+            return workers.run_arm(
+                1, [workers.Fixture(f"c{i}", t) for i in range(count)], executable="x", timeout=1, scratch_root=Path(t),
+                log=lambda m: None, cancel=threading.Event(), children=workers.LiveChildren(),
+            )
+
+    def test_cli_scaffolding_beside_the_workspace_parent_is_not_a_leak(self):
+        def behaviour(fixture, scratch):
+            cli = scratch.parent / workers.CLI_STATE_DIR
+            cli.mkdir(exist_ok=True)
+            (cli / "claude-0").mkdir(exist_ok=True)
+            (cli / "cc-socks").mkdir(exist_ok=True)
+
+        with tempfile.TemporaryDirectory() as t:
+            arm = self._arm(t, behaviour)
+        self.assertEqual(arm.violations, [])
+
+    def test_a_workspace_left_by_the_first_execution_is_a_leak(self):
+        def behaviour(fixture, scratch):
+            if fixture.case_id == "c0":
+                (scratch / "benchmark-c0-x").mkdir()
+
+        with tempfile.TemporaryDirectory() as t:
+            arm = self._arm(t, behaviour)
+        self.assertEqual([(v.kind, v.case_id) for v in arm.violations], [("workspace-not-cleaned", "c0")])
+
+    def test_a_workspace_left_by_a_later_execution_is_a_leak(self):
+        def behaviour(fixture, scratch):
+            if fixture.case_id == "c1":
+                (scratch / "benchmark-c1-x").mkdir()
+
+        with tempfile.TemporaryDirectory() as t:
+            arm = self._arm(t, behaviour)
+        self.assertEqual([(v.kind, v.case_id) for v in arm.violations], [("workspace-not-cleaned", "c1")])
+
+    def test_a_fixture_never_sees_a_previous_fixtures_leftovers(self):
+        seen = []
+
+        def behaviour(fixture, scratch):
+            seen.append(sorted(p.name for p in scratch.iterdir()))
+            (scratch / "benchmark-x").mkdir()
+
+        with tempfile.TemporaryDirectory() as t:
+            self._arm(t, behaviour)
+        self.assertEqual(seen, [[], []])
+
+    def test_child_environment_separates_cli_state_from_workspaces(self):
+        env = workers.child_environment(Path("/w/fixture-1"), Path("/w/cli"))
+        self.assertEqual({env[n] for n in workers.TEMP_ENV_VARS}, {"/w/fixture-1"})
+        self.assertEqual(env[workers.CLI_TMPDIR_ENV], "/w/cli")
+
+    def test_run_fixture_child_creates_cli_state_and_passes_the_split_environment(self):
+        with tempfile.TemporaryDirectory() as t:
+            scratch = Path(t) / "w1-0" / "fixture-1"
+            scratch.mkdir(parents=True)
+            proc = mock.MagicMock(returncode=0)
+            proc.communicate.return_value = ("", "")
+            with mock.patch.object(workers.subprocess, "Popen", return_value=proc) as popen:
+                workers.run_fixture_child(
+                    workers.Fixture("c0", t), worker=0, scratch=scratch, executable="x", timeout=1, began=0.0,
+                    children=workers.LiveChildren(),
+                )
+            env = popen.call_args.kwargs["env"]
+            self.assertTrue((scratch.parent / workers.CLI_STATE_DIR).is_dir())
+            self.assertEqual(env["TMPDIR"], str(scratch))
+            self.assertEqual(env[workers.CLI_TMPDIR_ENV], str(scratch.parent / workers.CLI_STATE_DIR))
+
+    def test_a_workspace_parent_that_cannot_be_created_releases_the_slot(self):
+        with tempfile.TemporaryDirectory() as t:
+            slots = []
+            real_put = workers.queue.Queue.put
+
+            def spy(self, item, *a, **k):
+                slots.append(item)
+                return real_put(self, item, *a, **k)
+
+            with mock.patch.object(workers.tempfile, "mkdtemp", side_effect=OSError("disk full")), mock.patch.object(
+                workers.queue.Queue, "put", spy
+            ):
+                with self.assertRaises(OSError):
+                    workers.run_arm(
+                        1, [workers.Fixture("c0", t)], executable="x", timeout=1, scratch_root=Path(t),
+                        log=lambda m: None, cancel=threading.Event(), children=workers.LiveChildren(),
+                    )
+        self.assertEqual(slots, [0, 0])  # initial population, then returned after the failure
+        # (the faulting fixture's own failure record is asserted in the next test)
+
+    def test_a_workspace_parent_failure_is_recorded_against_its_fixture(self):
+        with tempfile.TemporaryDirectory() as t:
+            arm = workers.ArmResult(1, 1, 0.0)
+            with mock.patch.object(workers.tempfile, "mkdtemp", side_effect=OSError("disk full")):
+                with self.assertRaises(OSError):
+                    workers.run_arm(
+                        1, [workers.Fixture("c0", t)], executable="x", timeout=1, scratch_root=Path(t),
+                        log=lambda m: None, cancel=threading.Event(), children=workers.LiveChildren(), result=arm,
+                    )
+        self.assertEqual([(o.case_id, o.status, o.failure_class) for o in arm.outcomes], [("c0", "failed", workers.INFRASTRUCTURE)])
+
     def test_two_children_cannot_share_a_slot(self):
         barrier = threading.Barrier(2, timeout=5)
 

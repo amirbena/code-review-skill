@@ -15,6 +15,7 @@ import re
 import resource
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -37,6 +38,8 @@ SAMPLE_INTERVAL_S = 5.0
 RATE_LIMIT_RE = re.compile(r"\b429\b|rate[ _-]?limit|overloaded|throttl|too many requests", re.I)
 CATEGORY_RE = re.compile(r"category=([\w-]+)")
 TEMP_ENV_VARS = ("TMPDIR", "TEMP", "TMP")
+CLI_TMPDIR_ENV = "CLAUDE_CODE_TMPDIR"  # where the CLI keeps its own `claude-<uid>` and `cc-socks` state
+CLI_STATE_DIR = "cli"
 
 INFRASTRUCTURE = "infrastructure"
 BENCHMARK = "benchmark"
@@ -166,13 +169,20 @@ class LiveChildren:
             stop_process_tree(proc, PARENT_GRACE_S)
 
 
+def child_environment(workspace_parent: Path, cli_state: Path) -> dict[str, str]:
+    """Fixture workspaces go under `workspace_parent`; the CLI's own persistent temp state goes to `cli_state`."""
+    return {**os.environ, **{name: str(workspace_parent) for name in TEMP_ENV_VARS}, CLI_TMPDIR_ENV: str(cli_state)}
+
+
 def run_fixture_child(
     fixture: Fixture, *, worker: int, scratch: Path, executable: str, timeout: float, began: float, children: LiveChildren
 ) -> FixtureOutcome:
-    """One verified `run_benchmark.py` invocation with its temp directory redirected to `scratch`."""
+    """One verified `run_benchmark.py` invocation; `scratch` is a fresh fixture workspace parent."""
     argv = [sys.executable, str(RUN_BENCHMARK), "--corpus-dir", fixture.corpus_dir, "--cli", executable]
     argv += ["--timeout", str(timeout), "--case-id", fixture.case_id]
-    env = {**os.environ, **{name: str(scratch) for name in TEMP_ENV_VARS}}
+    cli_state = scratch.parent / CLI_STATE_DIR
+    cli_state.mkdir(exist_ok=True)
+    env = child_environment(scratch, cli_state)
     started = time.monotonic()
     proc = subprocess.Popen(
         argv,
@@ -303,6 +313,9 @@ def run_arm(
 ) -> ArmResult:
     """Run `fixtures` (in their given order) on `workers` slots; each slot owns one scratch directory.
 
+    A slot holds a persistent `cli/` directory for the CLI's own temp state and a fresh workspace parent per fixture;
+    only that parent is audited for leaks.
+
     A caller that passes `result` keeps whatever finished even when this raises, so an abort never loses evidence.
     """
     slots: queue.Queue[int] = queue.Queue()
@@ -319,7 +332,7 @@ def run_arm(
             result.cancelled = True
             return
         slot = slots.get()
-        scratch = scratch_root / f"w{workers}-{slot}"
+        slot_dir = scratch_root / f"w{workers}-{slot}"
         with lock:
             if slot in active:  # a slot handed out twice would let two children share a workspace parent
                 result.violations.append(Violation("slot-shared", f"slot {slot} held by two fixtures", slot, fixture.case_id))
@@ -328,6 +341,7 @@ def run_arm(
             log(f"[w{slot}] START {fixture.case_id}")
             fixture_began = time.monotonic()
             try:
+                scratch = Path(tempfile.mkdtemp(prefix="fixture-", dir=slot_dir))
                 outcome = run_fixture_child(
                     fixture, worker=slot, scratch=scratch, executable=executable, timeout=timeout, began=began, children=children
                 )
@@ -347,7 +361,7 @@ def run_arm(
                 result.outcomes.append(outcome)
                 if leftovers:
                     result.violations.append(
-                        Violation("workspace-not-cleaned", f"left in {scratch.name}: {leftovers[:5]}", slot, fixture.case_id)
+                        Violation("workspace-not-cleaned", f"left in {slot_dir.name}/{scratch.name}: {leftovers[:5]}", slot, fixture.case_id)
                     )
             if outcome.failure_class == ISOLATION:
                 with lock:
