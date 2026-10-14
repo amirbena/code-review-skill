@@ -241,13 +241,13 @@ def evaluate_adapter(runs: Sequence[RunObservation], case_ids: Sequence[str]) ->
     c["fail_closed_exact"] = {"status": _status(all(r.exact for r in fc) if fc else None),
                               "inexact_runs": [r.case_id for r in fc if not r.exact],
                               "baseline_exact": _rate([r.exact for r in _runs(runs, BASELINE, FAIL_CLOSED)])}
-    wrong_c = sum(r.wrong for r in _runs(runs, CANDIDATE, CONTROL))
-    wrong_b = sum(r.wrong for r in _runs(runs, BASELINE, CONTROL))
-    c["control_false_positives"] = {"status": _status(wrong_c <= wrong_b + MAX_FP_GROWTH),
+    ctrl_c, ctrl_b = _runs(runs, CANDIDATE, CONTROL), _runs(runs, BASELINE, CONTROL)
+    has_controls = bool(ctrl_c and ctrl_b)  # no control run is not a pass
+    wrong_c, wrong_b = sum(r.wrong for r in ctrl_c), sum(r.wrong for r in ctrl_b)
+    c["control_false_positives"] = {"status": _status(wrong_c <= wrong_b + MAX_FP_GROWTH if has_controls else None),
                                     "candidate_wrong": wrong_c, "baseline_wrong": wrong_b}
-    over_c = sum(r.over_report for r in runs if r.arm == CANDIDATE and r.executed and CASE_ROLES.get(r.case_id) == CONTROL)
-    over_b = sum(r.over_report for r in runs if r.arm == BASELINE and r.executed and CASE_ROLES.get(r.case_id) == CONTROL)
-    c["severity_over_report"] = {"status": _status(over_c <= over_b + MAX_FP_GROWTH),
+    over_c, over_b = sum(r.over_report for r in ctrl_c), sum(r.over_report for r in ctrl_b)
+    c["severity_over_report"] = {"status": _status(over_c <= over_b + MAX_FP_GROWTH if has_controls else None),
                                  "candidate_p0_p1_on_controls": over_c, "baseline_p0_p1_on_controls": over_b}
     found_c = [r for r in pos_c if r.found]
     for name, attr in (("severity_accuracy", "severity_ok"), ("evidence_quality", "evidence_ok"), ("wording", "wording_ok")):
@@ -314,7 +314,7 @@ def build_preregistration(cases: Sequence[bf.BenchmarkCase], corpus_dir: Any) ->
         "format": "dependency-tree-inspection-preregistration/v1",
         "issue": 732,
         "baseline_sha": BASELINE_SHA,
-        "candidate": "a checkout containing #730 that descends from the commit introducing this file",
+        "candidate": "a checkout containing #730 that descends from the last commit that changes this file",
         "fixture_set_digest": fixture_set_digest(corpus_dir),
         "runs_per_arm": 3,
         "min_runs_per_arm": MIN_RUNS_PER_ARM,

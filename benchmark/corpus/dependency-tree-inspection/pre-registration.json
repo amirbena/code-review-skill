@@ -1,6 +1,6 @@
 {
   "baseline_sha": "95c7c607d00959e0172fadbfacb09aacd6817a0b",
-  "candidate": "a checkout containing #730 that descends from the commit introducing this file",
+  "candidate": "a checkout containing #730 that descends from the last commit that changes this file",
   "cases": {
     "dti-base-only-no-comparison": {
       "adapters": [

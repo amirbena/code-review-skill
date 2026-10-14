@@ -20,7 +20,9 @@ The script refuses to run unless the pre-registration is committed, its fixture
 digest matches the sub-corpus, the baseline checkout is at the registered SHA, and
 this checkout descends from the pre-registration commit and is clean. Local runs use
 the production adapter with verified isolation. The two GitHub adapters are
-caller-supplied ``module:factory`` callables (no arguments, returning a reviewer
+caller-supplied ``module:factory`` callables (no arguments, taking a ``skill_root`` keyword
+(the skill checkout the arm must run: the registered baseline for the baseline arm, this checkout
+for the candidate; a factory that cannot accept it is refused) and returning a reviewer
 accepting the optional ``dependency_trees`` keyword, exposing ``last_report`` and,
 optionally, ``last_usage``); an adapter that is not supplied is recorded ``not-run``.
 
@@ -33,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import inspect
 import json
 import subprocess
 import sys
@@ -131,11 +134,21 @@ def measure_adapter(
     return observations
 
 
-def _load_factory(spec: str) -> Callable[[], Callable[..., Any]]:
+def _load_factory(spec: str) -> Callable[..., Callable[..., Any]]:
+    """A supplied reviewer factory takes ``skill_root`` (the skill checkout an arm must run), so a
+    baseline arm cannot silently run the candidate skill. One that cannot accept it is refused."""
     module_name, _, attr = spec.partition(":")
     if not module_name or not attr:
         raise ValueError("reviewer must be module:factory")
-    return getattr(importlib.import_module(module_name), attr)
+    factory = getattr(importlib.import_module(module_name), attr)
+    params = inspect.signature(factory).parameters
+    if "skill_root" not in params and not any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+        raise ValueError(f"{spec} must accept a skill_root keyword so each arm runs its registered skill checkout")
+    return factory
+
+
+def skill_root_for(arm: str, baseline_root: Path) -> Path:
+    return baseline_root if arm == bdt.BASELINE else REPO_ROOT
 
 
 def _git(root: Path, *args: str) -> str | None:
@@ -160,6 +173,8 @@ def check_protocol(baseline_root: Path, *, smoke: bool, allow_dirty: bool) -> li
     prereg = json.loads(PREREGISTRATION.read_text(encoding="utf-8"))
     if bdt.fixture_set_digest(CORPUS_DIR) != prereg.get("fixture_set_digest"):
         problems.append("the fixture set differs from the pre-registered digest: a changed set is a new pre-registration")
+    elif bdt.build_preregistration(load_cases(), CORPUS_DIR) != prereg:
+        problems.append("the thresholds, expectations or configuration in code differ from pre-registration.json: a changed protocol is a new pre-registration")
     commit = _registration_commit()
     if not commit:
         problems.append("pre-registration.json is not committed")
@@ -227,19 +242,28 @@ def main(argv: list[str] | None = None) -> int:
     selected = [c for c in cases if not args.case or c.id in args.case]
 
     def local_reviewers(arm: str) -> Callable[..., Any]:
-        root = baseline_root if arm == bdt.BASELINE else REPO_ROOT
-        return ProductionReviewerAdapter(executable=executable, timeout=args.timeout, verified_isolation=True, plugin_dir=root)
+        return ProductionReviewerAdapter(
+            executable=executable, timeout=args.timeout, verified_isolation=True,
+            plugin_dir=skill_root_for(arm, baseline_root),
+        )
 
     def supplied(spec: str) -> Callable[[str], Callable[..., Any]]:
         factory = _load_factory(spec)
-        return lambda arm: factory()
+        return lambda arm: factory(skill_root=skill_root_for(arm, baseline_root))
+
+    try:  # refuse an unusable factory before any run is spent
+        repo_reviewers = supplied(args.github_repo_reviewer) if args.github_repo_reviewer else None
+        api_reviewers = supplied(args.github_api_reviewer) if args.github_api_reviewer else None
+    except (ValueError, AttributeError, ImportError) as exc:
+        print(f"unusable reviewer factory: {exc}", file=sys.stderr)
+        return 2
 
     started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     try:
         runs: dict[str, list[bdt.RunObservation] | None] = {
             bdt.LOCAL: measure_adapter(bdt.LOCAL, selected, args.runs, local_reviewers, evidence_dir),
-            bdt.GITHUB_REPO: measure_adapter(bdt.GITHUB_REPO, selected, args.runs, supplied(args.github_repo_reviewer), evidence_dir) if args.github_repo_reviewer else None,
-            bdt.GITHUB_API_ONLY: measure_adapter(bdt.GITHUB_API_ONLY, selected, args.runs, supplied(args.github_api_reviewer), evidence_dir) if args.github_api_reviewer else None,
+            bdt.GITHUB_REPO: measure_adapter(bdt.GITHUB_REPO, selected, args.runs, repo_reviewers, evidence_dir) if repo_reviewers else None,
+            bdt.GITHUB_API_ONLY: measure_adapter(bdt.GITHUB_API_ONLY, selected, args.runs, api_reviewers, evidence_dir) if api_reviewers else None,
         }
     except HarnessInvalid as exc:
         print(f"harness invalid, stopping: {exc}\nevidence kept in {evidence_dir}", file=sys.stderr)

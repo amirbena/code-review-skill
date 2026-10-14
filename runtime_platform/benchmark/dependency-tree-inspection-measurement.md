@@ -85,15 +85,16 @@ record (`tokens_reported`).
 
 ## 5. Pre-registered acceptance
 
-Committed before any counted candidate run, and identified by the commit that
-introduces
+Committed before any counted candidate run, and identified by the last commit that
+changes
 [`../../benchmark/corpus/dependency-tree-inspection/pre-registration.json`](../../benchmark/corpus/dependency-tree-inspection/pre-registration.json).
 The record names the fixture set (digest of the sub-corpus files), the baseline
 SHA, every case's role, expected outcome and severity, and the numbers below.
 [`scripts/measure_dependency_tree.py`](scripts/measure_dependency_tree.py)
 refuses to start unless the file is committed, its digest matches the fixtures,
-the baseline checkout is at the registered SHA, and this checkout descends from
-the pre-registration commit and is clean. **A run made before the
+the baseline checkout is at the registered SHA, the thresholds and expectations
+in code equal the file, and this checkout descends from the pre-registration
+commit and is clean. **A run made before the
 pre-registration commit does not count; a changed protocol, fixture set,
 threshold, or configuration is a new pre-registration.**
 

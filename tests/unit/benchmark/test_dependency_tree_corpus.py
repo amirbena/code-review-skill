@@ -9,9 +9,12 @@ from __future__ import annotations
 import copy
 import json
 import subprocess
+import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -318,6 +321,14 @@ class DispositionTests(unittest.TestCase):
         runs.append(_obs(bdt.INJECTION_CASE, bdt.CANDIDATE, required=1, found=1, sev=True, ev=True, word=True, followed=True))
         self.assertIn("instructions_not_followed", bdt.evaluate_adapter(runs, cases)["failed"])
 
+    def test_no_control_runs_is_not_evaluated_never_a_vacuous_pass(self) -> None:
+        runs, cases = _good_runs()
+        no_ctrl = [c for c in cases if bdt.CASE_ROLES[c] != bdt.CONTROL]
+        kept = [r for r in runs if r.case_id in no_ctrl]
+        result = bdt.evaluate_adapter(kept, no_ctrl)
+        self.assertEqual(result["outcome"], bdt.NOT_EVALUATED)
+        self.assertEqual(result["not_evaluated"], ["control_false_positives", "severity_over_report"])
+
     def test_a_missing_adapter_is_not_run_and_never_inferred(self) -> None:
         runs, cases = _good_runs()
         ids = {a: cases for a in bdt.ADAPTERS}
@@ -394,6 +405,14 @@ class PreRegistrationTests(unittest.TestCase):
         self.assertTrue(any("digest" in p for p in problems))
         self.assertTrue(any("baseline checkout" in p for p in problems))
 
+    def test_protocol_check_refuses_code_that_drifted_from_the_registered_protocol(self) -> None:
+        self.assertEqual(
+            [p for p in mdt.check_protocol(REPO_ROOT, smoke=False, allow_dirty=True) if "pre-registration.json" in p], []
+        )
+        with mock.patch.object(bdt, "MIN_RATE", 0.5):
+            problems = mdt.check_protocol(REPO_ROOT, smoke=False, allow_dirty=True)
+        self.assertTrue(any("differ from pre-registration.json" in p for p in problems))
+
     def test_measurement_refuses_without_a_preregistration(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             original = mdt.PREREGISTRATION
@@ -402,6 +421,35 @@ class PreRegistrationTests(unittest.TestCase):
                 self.assertEqual(mdt.check_protocol(Path(tmp), smoke=False, allow_dirty=True), ["pre-registration.json is missing"])
             finally:
                 mdt.PREREGISTRATION = original
+
+
+class ArmSkillRootTests(unittest.TestCase):
+    def _module(self, factory) -> str:
+        name = "dti_test_factory_module"
+        module = types.ModuleType(name)
+        module.make = factory
+        sys.modules[name] = module
+        self.addCleanup(sys.modules.pop, name, None)
+        return f"{name}:make"
+
+    def test_each_arm_gets_its_registered_skill_root(self) -> None:
+        baseline = Path("/registered/baseline")
+        self.assertEqual(mdt.skill_root_for(bdt.BASELINE, baseline), baseline)
+        self.assertEqual(mdt.skill_root_for(bdt.CANDIDATE, baseline), mdt.REPO_ROOT)
+
+    def test_a_factory_without_skill_root_is_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            mdt._load_factory(self._module(lambda: None))
+
+    def test_a_factory_taking_skill_root_or_kwargs_is_accepted_and_receives_it(self) -> None:
+        seen: list[Path] = []
+        for factory in (lambda skill_root: seen.append(skill_root), lambda **kw: seen.append(kw["skill_root"])):
+            mdt._load_factory(self._module(factory))(skill_root=Path("/x"))
+        self.assertEqual(seen, [Path("/x"), Path("/x")])
+
+    def test_a_malformed_factory_spec_is_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            mdt._load_factory("no-colon")
 
 
 class IndexAndDocsTests(unittest.TestCase):
