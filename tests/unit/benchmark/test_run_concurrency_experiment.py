@@ -285,6 +285,62 @@ class ExecutionTest(unittest.TestCase):
         self.assertIn("isolation", record["failure_classes"])
         self.assertIn("workspace-not-cleaned", {v["kind"] for v in record["isolation"]["violations"]})
 
+    def _arm(self, t, behaviour, count=2):
+        def fake(fixture, *, worker, scratch, **kwargs):
+            behaviour(fixture, scratch)
+            return workers.FixtureOutcome(fixture.case_id, worker, 0.0, 0.0, 0, "ok")
+
+        with mock.patch.object(workers, "run_fixture_child", side_effect=fake):
+            return workers.run_arm(
+                1, [workers.Fixture(f"c{i}", t) for i in range(count)], executable="x", timeout=1, scratch_root=Path(t),
+                log=lambda m: None, cancel=threading.Event(), children=workers.LiveChildren(),
+            )
+
+    def test_cli_scaffolding_beside_the_workspace_parent_is_not_a_leak(self):
+        def behaviour(fixture, scratch):
+            cli = scratch.parent / workers.CLI_STATE_DIR
+            cli.mkdir(exist_ok=True)
+            (cli / "claude-0").mkdir(exist_ok=True)
+            (cli / "cc-socks").mkdir(exist_ok=True)
+
+        with tempfile.TemporaryDirectory() as t:
+            arm = self._arm(t, behaviour)
+        self.assertEqual(arm.violations, [])
+
+    def test_a_workspace_left_by_the_first_execution_is_a_leak(self):
+        def behaviour(fixture, scratch):
+            if fixture.case_id == "c0":
+                (scratch / "benchmark-c0-x").mkdir()
+
+        with tempfile.TemporaryDirectory() as t:
+            arm = self._arm(t, behaviour)
+        self.assertEqual([(v.kind, v.case_id) for v in arm.violations], [("workspace-not-cleaned", "c0")])
+
+    def test_a_workspace_left_by_a_later_execution_is_a_leak(self):
+        def behaviour(fixture, scratch):
+            if fixture.case_id == "c1":
+                (scratch / "benchmark-c1-x").mkdir()
+
+        with tempfile.TemporaryDirectory() as t:
+            arm = self._arm(t, behaviour)
+        self.assertEqual([(v.kind, v.case_id) for v in arm.violations], [("workspace-not-cleaned", "c1")])
+
+    def test_a_fixture_never_sees_a_previous_fixtures_leftovers(self):
+        seen = []
+
+        def behaviour(fixture, scratch):
+            seen.append(sorted(p.name for p in scratch.iterdir()))
+            (scratch / "benchmark-x").mkdir()
+
+        with tempfile.TemporaryDirectory() as t:
+            self._arm(t, behaviour)
+        self.assertEqual(seen, [[], []])
+
+    def test_child_environment_separates_cli_state_from_workspaces(self):
+        env = workers.child_environment(Path("/w/fixture-1"), Path("/w/cli"))
+        self.assertEqual({env[n] for n in workers.TEMP_ENV_VARS}, {"/w/fixture-1"})
+        self.assertEqual(env[workers.CLI_TMPDIR_ENV], "/w/cli")
+
     def test_two_children_cannot_share_a_slot(self):
         barrier = threading.Barrier(2, timeout=5)
 
