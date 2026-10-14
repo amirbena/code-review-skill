@@ -15,6 +15,7 @@ from itertools import combinations
 from typing import Any, Mapping
 
 SHA_RE = re.compile(r"[0-9a-f]{40}")
+EXPERIMENT_REF_PREFIX = "claude/concurrency-experiment-"  # same value as run_concurrency_experiment.py, which imports this module
 PROVENANCE_KEYS = ("repo_sha", "model_id", "runtime_version", "subset_id", "corpus_id")
 MAX_WINDOW_FRACTION = 0.6
 WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
@@ -62,6 +63,11 @@ def validate_thresholds(decision: Mapping[str, Any], allowed_workers: list[int])
 def validate_campaign(spec: Mapping[str, Any]) -> None:
     """Dates, weekdays, arms, counterbalancing and window_end must agree; an inactive spec (no dates, no window) is allowed."""
     stop = spec["stop_condition"]
+    superseded = stop.get("superseded_refs", [])
+    _require(
+        isinstance(superseded, list) and all(isinstance(r, str) and r.startswith(EXPERIMENT_REF_PREFIX) for r in superseded),
+        f"superseded_refs must be a list of refs starting with {EXPERIMENT_REF_PREFIX!r}",
+    )
     experiments, end = stop.get("experiments") or [], stop.get("window_end")
     if not experiments and end is None:
         return
@@ -145,11 +151,21 @@ def _provenance(experiment: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def evaluate_campaign(
-    experiments: list[Mapping[str, Any]], decision: Mapping[str, Any], *, corpus_size: int, pinned_sha: str | None, max_experiments: int = 4
+    experiments: list[Mapping[str, Any]],
+    decision: Mapping[str, Any],
+    *,
+    corpus_size: int,
+    pinned_sha: str | None,
+    max_experiments: int = 4,
+    superseded_refs: tuple[str, ...] | list[str] = (),
 ) -> dict[str, Any]:
+    """`superseded_refs` is the spec's `stop_condition.superseded_refs`: those records are dropped before any check and reported."""
+    superseded = {r.removeprefix("refs/heads/") for r in superseded_refs}
+    excluded = sorted(str(e["ref"]) for e in experiments if str(e.get("ref", "")).removeprefix("refs/heads/") in superseded)
+    experiments = [e for e in experiments if str(e.get("ref", "")).removeprefix("refs/heads/") not in superseded]
     gates, perf, window = decision["hard_safety_gates"], decision["performance_thresholds"], decision["window"]
     if not experiments:
-        return {"decision": "INCONCLUSIVE", "checks": [], "eligible_worker_counts": [], "reason": "no experiment has run"}
+        return {"decision": "INCONCLUSIVE", "checks": [], "eligible_worker_counts": [], "reason": "no experiment has run", "excluded_superseded_refs": excluded}
     arms = _arms(experiments)
     checks: list[dict[str, Any]] = []
 
@@ -224,6 +240,7 @@ def evaluate_campaign(
         "decision": verdict,
         "checks": checks,
         "eligible_worker_counts": sorted(w for w, ok in eligible.items() if ok),
+        "excluded_superseded_refs": excluded,
         "projection_basis": f"per-fixture wall mean of the measured subset, extrapolated to {invocations} invocations",
         "projection_is_not_a_seal": "a projection is not a sealed Comprehensive run; GO only authorizes a separate production issue",
     }
