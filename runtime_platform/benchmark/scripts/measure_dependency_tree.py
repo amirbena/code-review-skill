@@ -20,10 +20,9 @@ The script refuses to run unless the pre-registration is committed, its fixture
 digest matches the sub-corpus, the baseline checkout is at the registered SHA, and
 this checkout descends from the pre-registration commit and is clean. Local runs use
 the production adapter with verified isolation. The two GitHub adapters are
-caller-supplied ``module:factory`` callables (no arguments, taking a ``skill_root`` keyword
-(the skill checkout the arm must run: the registered baseline for the baseline arm, this checkout
-for the candidate; a factory that cannot accept it is refused) and returning a reviewer
-accepting the optional ``dependency_trees`` keyword, exposing ``last_report`` and,
+caller-supplied ``module:factory`` callables taking a ``skill_root`` keyword (the skill
+checkout the arm must run: the registered baseline for the baseline arm, this checkout for the
+candidate; a factory that cannot accept it is refused) and returning a reviewer accepting the optional ``dependency_trees`` keyword, exposing ``last_report`` and,
 optionally, ``last_usage``); an adapter that is not supplied is recorded ``not-run``.
 
 Exit code reflects execution health only: 0 when every run executed, 1 when any
@@ -151,6 +150,11 @@ def skill_root_for(arm: str, baseline_root: Path) -> Path:
     return baseline_root if arm == bdt.BASELINE else REPO_ROOT
 
 
+def skill_roots(baseline_root: Path) -> dict[str, str]:
+    """The root each arm was handed, recorded because a supplied adapter's use of it is not verified."""
+    return {arm: str(skill_root_for(arm, baseline_root)) for arm in bdt.ARMS}
+
+
 def _git(root: Path, *args: str) -> str | None:
     done = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, check=False)
     return done.stdout.strip() if done.returncode == 0 else None
@@ -183,6 +187,8 @@ def check_protocol(baseline_root: Path, *, smoke: bool, allow_dirty: bool) -> li
     head = _git(baseline_root, "rev-parse", "HEAD")
     if head != prereg.get("baseline_sha"):
         problems.append(f"the baseline checkout is at {head}, the pre-registration names {prereg.get('baseline_sha')}")
+    if not (smoke or allow_dirty) and _git(baseline_root, "status", "--porcelain", "--untracked-files=no") != "":
+        problems.append("the baseline checkout has uncommitted changes (or git cannot tell)")
     if not (smoke or allow_dirty) and _git(REPO_ROOT, "status", "--porcelain", "--untracked-files=no") != "":
         problems.append("the skill checkout has uncommitted changes (or git cannot tell)")
     return problems
@@ -276,6 +282,8 @@ def main(argv: list[str] | None = None) -> int:
         metadata={
             "candidate_sha": _git(REPO_ROOT, "rev-parse", "HEAD"),
             "baseline_sha": _git(baseline_root, "rev-parse", "HEAD"),
+            "skill_roots": skill_roots(baseline_root),
+            "skill_root_verified": {bdt.LOCAL: True, bdt.GITHUB_REPO: False, bdt.GITHUB_API_ONLY: False},
             "skill_tree_dirty": bool(_git(REPO_ROOT, "status", "--porcelain", "--untracked-files=no")),
             "preregistration_commit": _registration_commit(),
             "protocol_problems": problems,

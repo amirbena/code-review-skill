@@ -447,6 +447,24 @@ class ArmSkillRootTests(unittest.TestCase):
             mdt._load_factory(self._module(factory))(skill_root=Path("/x"))
         self.assertEqual(seen, [Path("/x"), Path("/x")])
 
+    def test_skill_roots_record_what_each_arm_was_handed(self) -> None:
+        self.assertEqual(
+            mdt.skill_roots(Path("/b")), {bdt.BASELINE: "/b", bdt.CANDIDATE: str(mdt.REPO_ROOT)}
+        )
+
+    def test_a_dirty_baseline_checkout_is_a_protocol_problem(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            for args in (("init", "-q", "-b", "main"), ("config", "commit.gpgsign", "false")):
+                subprocess.run(["git", "-C", tmp, *args], check=True)
+            (repo / "f.txt").write_text("a", encoding="utf-8")
+            subprocess.run(["git", "-C", tmp, "add", "-A"], check=True)
+            subprocess.run(["git", "-C", tmp, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x"], check=True)
+            self.assertFalse(any("baseline checkout has uncommitted" in p for p in mdt.check_protocol(repo, smoke=False, allow_dirty=False)))
+            (repo / "f.txt").write_text("b", encoding="utf-8")
+            self.assertTrue(any("baseline checkout has uncommitted" in p for p in mdt.check_protocol(repo, smoke=False, allow_dirty=False)))
+            self.assertFalse(any("baseline checkout has uncommitted" in p for p in mdt.check_protocol(repo, smoke=False, allow_dirty=True)))
+
     def test_a_malformed_factory_spec_is_refused(self) -> None:
         with self.assertRaises(ValueError):
             mdt._load_factory("no-colon")
