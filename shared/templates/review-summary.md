@@ -49,13 +49,18 @@ important concern or attention point; include scope only when useful>
 
 ### Context gaps
 <only when at least one repository relationship is `unresolved` or a
-  dependency-tree evidence gap exists; relationships per
+  dependency-tree evidence gap exists, or a deployment validation evidence
+  gap exists; relationships per
   [`../policies/repository-expansion.md`](../policies/repository-expansion.md),
   "Relationship outcomes and unresolved relationships": one bullet per
   unresolved relationship — class, subject, reason, ring reached where one applies; and
   one bullet per dependency-tree evidence gap per
   [`../policies/dependency-tree-inspection.md`](../policies/dependency-tree-inspection.md)
-  — subject, reason, and the command that obtains valid evidence; never a
+  — subject, reason, and the command that obtains valid evidence; and one
+  bullet per deployment validation evidence gap per
+  [`../policies/deployment-infrastructure-deepening.md`](../policies/deployment-infrastructure-deepening.md)
+  — subject (concern and artifact), reason, and the user-runnable command or
+  evidence that would resolve it; never a
   finding, never affecting coverage or the decision; omitted entirely
   otherwise>
 
@@ -167,7 +172,7 @@ additive documentation and changes no Skill's rendered output by itself.
   "What changed." Omit the section completely on a clean review; the opening
   assessment and Decision already communicate that result.
 - **Context gaps** — makes an `unresolved` relationship (or a
-  dependency-tree evidence gap) visible so the
+  dependency-tree or deployment validation evidence gap) visible so the
   review never reads as full-context. Rendered only when one exists; a
   `resolved_none` relationship is not a gap and is not listed. It never
   changes severity, the Decision, or coverage, and it uses no wording that

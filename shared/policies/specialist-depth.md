@@ -88,7 +88,7 @@ Worked contrast:
 
 ## Conditional loading: fail-closed
 
-This capability — this file and the four domain deepening policies it
+This capability — this file and the five domain deepening policies it
 composes — loads only once the activation predicate above has already
 been decided; it is never opened as a precondition to deciding it. The
 predicate is decidable entirely from material
@@ -97,7 +97,7 @@ resident — a dimension "Semantic change-implication reasoning" has
 materially implicated, plus that dimension's own base-pass evidence
 indicating deeper reasoning is warranted, per that dimension's stated
 depth-owner trigger — so evaluating it never requires opening this file
-or any of the four deepening policies.
+or any of the five deepening policies.
 
 Loading is fail-closed: if evaluating the predicate is unclear,
 incomplete, or fails for any reason, this capability (and the applicable
