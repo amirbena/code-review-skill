@@ -16,7 +16,7 @@ and documentation children follow, so none of them re-decides semantics.
 
 | Document | Owns | Issue |
 | --- | --- | --- |
-| [`deployment-infrastructure-review-contract.md`](deployment-infrastructure-review-contract.md) | Gap analysis against existing coverage, the proposed canonical home, activation signals, the per-technology concern × evidence-tier matrix with unsupported checks, validation of user-provided output, execution boundaries under existing policy, local vs GitHub API-only behavior, non-goals, and the minimal implementation proposal with adjustments to the downstream children. | [#741](https://github.com/amirbena/code-review-skill/issues/741) |
+| [`deployment-infrastructure-review-contract.md`](deployment-infrastructure-review-contract.md) | Gap analysis against existing coverage, the proposed canonical home, activation signals, the per-technology concern × evidence-tier matrix with unsupported checks, validation of user-provided output, the execution model (execution when available and authorized, evaluated per command under existing policy), local vs GitHub API-only behavior (separating policy-required limits from proposed boundaries), non-goals, open maintainer questions, and the minimal implementation proposal with adjustments to the downstream children. | [#741](https://github.com/amirbena/code-review-skill/issues/741) |
 
 ## Epic and delivery
 

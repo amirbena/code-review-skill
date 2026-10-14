@@ -22,21 +22,33 @@ owns it; this record restates none of them as a new rule.
 2. Activation is the existing two-condition specialist-depth predicate.
    The second condition is a closed list of **semantic** signals (§4),
    never a file type or path.
-3. Static diff (A) and repository context (B) are the main evidence
-   tiers. User-provided output (C) is accepted only after the
+3. **Execution when available and authorized.** Evidence from actually
+   running a validation tool is preferred over static reasoning alone
+   whenever execution is available, authorized, and safe (§6). Execution
+   comes from three sources, all through existing mechanisms: tools
+   already available in the review environment, execution access the
+   maintainer provides or authorizes (preferred when available), and
+   validation output the user provides when execution is unavailable.
+   No command is excluded by name. Each candidate command, including
+   `terraform validate`/`plan`, `helm template`, `docker build`,
+   `kubectl --dry-run`, and `argocd app diff`, is evaluated against
+   [`runtime-validation.md`](../../shared/policies/runtime-validation.md),
+   [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md),
+   its credential and network needs, its side effects, and its isolation
+   requirements. Maintainer authorization never overrides those safety
+   constraints. When a command cannot run safely, the review continues
+   with static reasoning (A/B) and discloses the verification gap.
+   User-provided output (C) is accepted only after the
    validate-before-trust checks that
    [`dependency-tree-inspection.md`](../../shared/policies/dependency-tree-inspection.md)
-   already uses. Authorized local execution (D) is limited to commands
-   that [`runtime-validation.md`](../../shared/policies/runtime-validation.md)
-   already admits. Under the safety gate, most well-known validators
-   cannot run (§6).
+   already uses.
 4. When a materially implicated concern needs evidence that is
    unavailable, the review records a **Context gap**. That gap never
    creates a finding and never raises severity. This requires extending
    the Context-gaps section of `review-summary.md` by one gap kind (§9).
-5. No new execution permission, approval workflow, finding field,
-   confidence value, severity, review gate, benchmark input key, or
-   runner.
+5. No new execution permission, approval framework, permission system,
+   finding field, confidence value, severity, review gate, benchmark
+   input key, or runner.
 
 ## 2. Evidence inspected
 
@@ -49,8 +61,9 @@ owns it; this record restates none of them as a new rule.
 | Activation and composition | [`specialist-depth.md`](../../shared/policies/specialist-depth.md), "Activation", "Conditional loading: fail-closed", "Composition", "Capability-contributed findings are labeled" | Defines the two-condition predicate, fail-closed loading, one review with 0..N capabilities, and the optional `capability` provenance field. |
 | Capability manifest | [`capabilities/specialist-depth/capability.yaml`](../../capabilities/specialist-depth/capability.yaml) | The four current domain policies, loaded `on-activation` for adapters `[local, github]`. |
 | Depth level | [`change-risk-signals.md`](../../shared/policies/change-risk-signals.md), "Infra / config change" | An infra/config change already raises the depth level to `elevated`. That is a depth level, not a capability. It never produces a finding and is never a gate. |
-| Execution boundary | [`runtime-validation.md`](../../shared/policies/runtime-validation.md), "Trust model and execution boundary", "Declaring and discovering commands", "Safety gate", "Outcome contract" | Only exact commands declared by the repository may run. The network is denied. Network-, secret-, and service-dependent commands, deployment, and dependency installation are skipped. Outcomes are `executed`/`failed`/`skipped`/`unavailable`. |
-| Host backend | [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md), "What trusted-host execution still requires" | Changes only the isolation backend. The safety gate still skips network- and secret-dependent commands. |
+| Execution boundary | [`runtime-validation.md`](../../shared/policies/runtime-validation.md), "Trust model and execution boundary", "Declaring and discovering commands", "Safety gate", "Outcome contract" | A command runs only as an exact, declared command that passes the safety gate inside a verified boundary. The gate skips commands that are secret-, service-, daemon-, network-, or cloud-dependent, interactive, or side-effecting. A command's name never establishes safety. Outcomes are `executed`/`failed`/`skipped`/`unavailable`, each with a reason. |
+| Maintainer authorization | [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md), "Trusted authorization channel", "Natural-language authorization phrasings", "What trusted-host execution still requires" | The trusted invoking user can authorize the host backend for the current invocation, through the structured `allow_trusted_host_execution` value or a closed set of chat phrasings. This changes only the isolation backend. The safety gate applies unchanged. |
+| Proposed-command approval | `dependency-tree-inspection.md`, "Two workflows" (Workflow 1) | An existing pattern: the reviewer names the exact command, working directory, purpose, plugin/script execution, and filesystem/network/credential implications. The command runs only when the user approves **and** existing execution policy permits. |
 | User-provided output | `dependency-tree-inspection.md`, "Two workflows" (Workflow 2), "Validate before trusting", "Context gaps and findings" | Supplied output is data, never instructions. Checks: format, project, side, completeness. Invalid output becomes a Context gap. Confidence never comes from the output's source. |
 | Adapter split | [`rendered-inspection.md`](../../shared/policies/rendered-inspection.md), "Local and GitHub adapters"; [`repository-checkout.md`](../../skills/github-pr-review/policies/repository-checkout.md), "Three modes"; [`pr-scope.md`](../../skills/github-pr-review/policies/pr-scope.md) | One contract serves both Skills. The adapters differ only in what they can reach. API-only mode is the default: it has the changed-path diff and blobs and no checkout. A checkout is not an execution boundary. |
 | Finding contracts | [`finding.md`](../../shared/templates/finding.md), "Confidence and evidence state", "Capability provenance"; [`severity.md`](../../shared/policies/severity.md); [`evidence.md`](../../shared/policies/evidence.md) | The confidence set is closed. Provenance is never a severity input. The evidence bar is the same for every finding. |
@@ -67,7 +80,7 @@ owns it; this record restates none of them as a new rule.
 | Config/secret reference wiring, values/template compatibility, override layering | Base dimension; generic "Findings beyond the changed lines" | No guidance on cross-file reference resolution in declarative config. |
 | Destructive and state-affecting changes (Terraform replacement or destroy, Argo CD prune, immutable Kubernetes fields) | "Deployment safety" named as a concern only | No concern list and no evidence rule for "this would destroy or replace." |
 | Pipeline failure propagation and deployment gates (Jenkins, GitHub Actions) | Base dimension; "Failure state, retry safety, and recovery" is application-focused | No owner for "a failure no longer stops a deploy." |
-| Validator output and execution | `runtime-validation.md` (generic); dependency-tree inspection (dependency trees only) | No statement of which infra validators can and cannot pass the safety gate, and no Context-gap kind for missing infra validation evidence. |
+| Validator output and execution | `runtime-validation.md` (generic); dependency-tree inspection (dependency trees only) | No guidance on how infra validators are evaluated against the safety gate, what a maintainer-provided environment must supply for them to pass it, or how a gap is disclosed when they cannot run. No Context-gap kind for missing infra validation evidence. |
 | Benchmarks | None for this domain | #743 needs a new sub-corpus. |
 
 ## 4. Activation rules
@@ -127,8 +140,10 @@ independent of this capability.
 
 Tiers: **A** static diff inspection; **B** repository context (unchanged
 files at Base or Head); **C** user-provided validation output validated
-per §7; **D** authorized local execution per §6. "Unsupported" means no
-tier available to either Skill can establish the check. When such a check
+per §7; **D** execution through existing mechanisms when available,
+authorized, and safe, per §6. A D cell names candidate commands only.
+Whether one actually runs is decided per review by §6. "Unsupported"
+means no tier available to either Skill can establish the check. When such a check
 is material to a specific concern, it is disclosed as a Context gap
 (§9). It is never guessed and never reported as passed.
 
@@ -140,7 +155,7 @@ a concern. Their absence never creates one.
 
 | Concern | A | B | C | D | Unsupported |
 | --- | --- | --- | --- | --- | --- |
-| Deployment/Service config: selector and label match, `targetPort` vs container port, namespace consistency | ✓ | ✓ manifests elsewhere in the repository | rendered or `kubectl` output | schema check only (`kubeconform`-class, offline schemas, repository-declared) | live cluster objects, admission or mutating webhooks |
+| Deployment/Service config: selector and label match, `targetPort` vs container port, namespace consistency | ✓ | ✓ manifests elsewhere in the repository | rendered or `kubectl` output | `kubeconform`-class schema check; `kubectl --dry-run=client`/`=server` (§6.4) | live cluster state beyond what an executed server dry-run reports |
 | Readiness/liveness/startup probes: path and port match the application's listener; liveness depending on a downstream dependency; thresholds vs known startup work | ✓ | ✓ application listener/config | events or describe output | — | real startup latency, real probe behavior |
 | Resource requests/limits: limit removed, request > limit, runtime heap vs memory limit | ✓ | ✓ runtime flags in image or config | metrics supplied by the user | — | actual utilization, node capacity |
 | Rolling update/availability: `maxUnavailable` vs replicas, `Recreate` on a single replica, PDB vs replicas, HPA vs fixed replicas | ✓ | ✓ PDB/HPA elsewhere | — | — | cluster scheduling, real disruption |
@@ -154,7 +169,7 @@ a concern. Their absence never creates one.
 | Values/template compatibility: a `.Values` path renamed or removed on one side only, type changes (quoting, int vs string), `required`/`default` changes | ✓ | ✓ unchanged templates or values | `helm template` output | `helm template` / `helm lint` when repository-declared, dependencies vendored, no network | charts fetched from remote repositories |
 | Rendered manifest behavior | partial (reasoning over templates) | ✓ | ✓ main path to a settled conclusion | as above | rendering with values that exist only outside the repository |
 | Override behavior: per-environment values files, `--set` in pipeline or Argo CD source, precedence | ✓ | ✓ values and pipeline files in the repository | rendered output per environment | as above | overrides held in external systems |
-| Deployment safety: immutable fields (selectors, `volumeClaimTemplates`), hooks and their delete policy, `helm.sh/resource-policy` removed | ✓ | ✓ | `helm diff`-class output | — | `helm upgrade --dry-run` against a cluster |
+| Deployment safety: immutable fields (selectors, `volumeClaimTemplates`), hooks and their delete policy, `helm.sh/resource-policy` removed | ✓ | ✓ | `helm diff`-class output | `helm template`; cluster-backed `helm upgrade --dry-run` or `helm diff` (§6.4) | — |
 
 ### 5.3 Argo CD
 
@@ -162,14 +177,14 @@ a concern. Their absence never creates one.
 | --- | --- | --- | --- | --- | --- |
 | Application config: source repo, path, `targetRevision`, destination; the path exists; revision is mutable vs pinned | ✓ | ✓ path at Head | — | — | the Argo CD server's view of the repository |
 | Sync policy: `automated` enabled, `allowEmpty`, sync options (`Replace`, `ServerSideApply`) | ✓ | — | — | — | — |
-| Prune and self-heal: enabling prune together with removal or renaming of tracked resources; self-heal vs intentional manual drift | ✓ | ✓ resources tracked under that path | `argocd app diff` output | — | live drift, live resource ownership |
+| Prune and self-heal: enabling prune together with removal or renaming of tracked resources; self-heal vs intentional manual drift | ✓ | ✓ resources tracked under that path | `argocd app diff` output | `argocd app diff` (§6.4) | live drift beyond what an executed diff reports |
 | Ordering and dependencies: sync waves, hooks, app-of-apps dependencies, CRD before CR | ✓ | ✓ | — | — | live sync outcome |
 
 ### 5.4 Docker
 
 | Concern | A | B | C | D | Unsupported |
 | --- | --- | --- | --- | --- | --- |
-| Dockerfile correctness: `COPY` sources exist and are not excluded by `.dockerignore`, stage references, `WORKDIR` | ✓ | ✓ | build log | `hadolint`-class lint when repository-declared | an actual build (needs a daemon and usually the network) |
+| Dockerfile correctness: `COPY` sources exist and are not excluded by `.dockerignore`, stage references, `WORKDIR` | ✓ | ✓ | build log | `hadolint`-class lint; `docker build` (§6.4) | — |
 | Runtime config: `EXPOSE`/`ENV` vs application port and config, `HEALTHCHECK` | ✓ | ✓ | — | — | — |
 | Image/tag behavior in deployment manifests: mutable deployed tag combined with `imagePullPolicy`, which affects rollback determinism | ✓ | ✓ repository convention | — | — | registry contents. Base-image `FROM` belongs to #181 |
 | Startup and security: shell vs exec form (signal delivery), `USER` removed or set to root, secrets in `ARG`/`ENV`/layers | ✓ | ✓ | — | — | — |
@@ -178,10 +193,10 @@ a concern. Their absence never creates one.
 
 | Concern | A | B | C | D | Unsupported |
 | --- | --- | --- | --- | --- | --- |
-| Resource changes and dependencies: references, `depends_on`, `count`/`for_each` key changes that re-address resources | ✓ | ✓ modules in the repository | `terraform plan` output | `terraform fmt -check` only | — |
-| Destructive changes: replacement-forcing attribute changed, resource or module removed, `prevent_destroy` removed, a rename without a `moved` block | ✓ (credible) | ✓ | ✓ plan's replace/destroy lines can settle it | — | knowing replacement without a plan when provider semantics are not evident from the diff |
-| State-related operational risk: backend, workspace, `moved`/`import`/`removed` blocks, `terraform_remote_state` consumers | ✓ | ✓ consumers in the repository | plan output | — | actual state contents, other root modules outside the repository |
-| Provider/module compatibility: attribute or argument renamed or deprecated in **configuration** | ✓ | ✓ | `terraform validate` output | — | `init`/`validate`/`plan` execution (providers, network, credentials). Version-constraint compatibility belongs to #181 |
+| Resource changes and dependencies: references, `depends_on`, `count`/`for_each` key changes that re-address resources | ✓ | ✓ modules in the repository | `terraform plan` output | `terraform validate`, `terraform plan` (§6.4) | — |
+| Destructive changes: replacement-forcing attribute changed, resource or module removed, `prevent_destroy` removed, a rename without a `moved` block | ✓ (credible) | ✓ | ✓ plan's replace/destroy lines can settle it | `terraform plan` (§6.4) | — |
+| State-related operational risk: backend, workspace, `moved`/`import`/`removed` blocks, `terraform_remote_state` consumers | ✓ | ✓ consumers in the repository | plan output | `terraform plan` (§6.4) | other root modules outside the repository |
+| Provider/module compatibility: attribute or argument renamed or deprecated in **configuration** | ✓ | ✓ | `terraform validate` output | `terraform validate` (§6.4) | — (version-constraint compatibility belongs to #181) |
 
 ### 5.6 Jenkins
 
@@ -217,53 +232,127 @@ into one review. Their findings deduplicate per
 and only the capability whose reasoning actually contributed the finding
 is attributed.
 
-## 6. Execution boundaries (tier D)
+## 6. Execution model (tier D)
 
-This contract adds no execution path. Tier D is
-[`runtime-validation.md`](../../shared/policies/runtime-validation.md)
-unchanged:
+### 6.1 Principle: execution when available and authorized
 
-- The exact command must be declared by an applicable target-repository
-  source ("Declaring and discovering commands"). The reviewer does not
-  find validators in CI workflows or by convention.
-- The command must pass the "Safety gate." Network-, secret-,
-  service-, cluster-, and daemon-dependent commands are skipped with a
-  reason. So are install, deploy, and write-capable commands. A command
-  is never trusted because of its name. A command named `validate`,
-  `plan`, `dry-run`, `lint`, `template`, or `build` is screened like any
-  other.
-- None of these validators is a "repository test command," so each takes
-  the sandbox-required path. Under
-  [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md), "What
-  trusted-host execution still requires," the backend is the only thing
-  that can change. Commands that need the network or secrets stay skipped
-  under trusted-host.
-- No dependency-tree-style "propose a command and get chat approval"
-  workflow is added. Chat approval is not trusted-host authorization
-  (`trusted-host-execution.md`, "What can never manufacture this
-  authorization"). The repository-declared route is the only route.
+When execution is available, authorized, and safe, evidence from
+actually running a validation tool is preferred over static reasoning
+alone. Static review (A/B) always runs and never waits on execution.
+Execution adds or settles evidence. It is never a gate, and the review
+continues when execution is not possible.
 
-Admissibility by command class, assuming the command is
-repository-declared:
+This contract adds no execution path, approval framework, or permission
+system. Every source below is an existing mechanism.
 
-| Class | Example | Expected outcome under the safety gate |
-| --- | --- | --- |
-| Offline static lint or schema check | `actionlint`, `hadolint`, `kubeconform` with local schemas, `terraform fmt -check`, `helm lint` (dependencies vendored) | May be admitted when it is provably read-only and offline |
-| Offline render | `helm template` (no `dependency update`), `kustomize build` (no remote bases) | May be admitted under the same condition; skipped when it fetches anything |
-| Needs init, providers, or the network | `terraform init`/`validate`/`plan`, `helm dependency update`, `docker build` | `skipped` (network/external-dependent) or `unavailable` |
-| Needs a cluster, a server, or credentials | `kubectl apply --dry-run=server`, `kubectl diff`, `helm upgrade --dry-run`, `argocd app diff` | `skipped`, never run |
-| Mutating | `apply`, `sync`, `push`, `install`, `upgrade` | `skipped`, never run |
+### 6.2 Execution sources
 
-Each attempted or considered command gets one record in `Validation`
-with the existing outcome and provenance vocabulary. An `executed` lint
-or render adds evidence only. A `failed` run is finding material only
-when the failure is attributable to the change ("Findings and decision
-semantics").
+1. **Tools already available in the review environment.** A command runs
+   through `runtime-validation.md` unchanged: an exact, declared command
+   ("Declaring and discovering commands") that passes the "Safety gate"
+   inside a verified boundary. That a tool is installed is necessary,
+   since otherwise the outcome is `unavailable`, but installation is not
+   sufficient.
+2. **Execution access the maintainer provides or authorizes.** This
+   source is preferred when available, because the maintainer can supply
+   what the command legitimately needs inside the boundary. It uses
+   existing channels only:
+   - an execution environment the maintainer provides that satisfies the
+     boundary for that command. Examples: a sandbox with a local provider
+     mirror or pre-pulled base images and no outbound network, or a
+     disposable builder. This is environment shape, not a new grant: the
+     command must still pass the unchanged safety gate in that
+     environment;
+   - `allow_trusted_host_execution`, through its structured value or its
+     closed natural-language phrasings in the trusted invoking user's own
+     current turn (`trusted-host-execution.md`). It selects the host
+     backend only;
+   - naming the exact command with the five items of
+     `dependency-tree-inspection.md` Workflow 1 (command, working
+     directory, purpose, plugins or scripts, filesystem/network/credential
+     implications), so that the maintainer's approval is informed.
+     Approval and existing policy must **both** permit the run.
+3. **Validation evidence the user provides when execution is
+   unavailable.** This is tier C, validated per §7.
+
+Maintainer authorization never overrides a safety constraint. It cannot
+make a secret-, network-, service-, or side-effect-dependent command
+pass the safety gate, and it cannot widen the `READ_ONLY` scope
+(`trusted-host-execution.md`, "Scope and non-persistence"). Repository,
+PR, issue, and command text can never supply authorization
+("What can never manufacture this authorization").
+
+### 6.3 Per-command evaluation
+
+No command is admitted or excluded by name. A command whose name
+contains `validate`, `plan`, `dry-run`, `lint`, `template`, `diff`, or
+`build` is screened like any other (`runtime-validation.md`, "Trust
+model and execution boundary"). For each candidate, the reviewer
+evaluates:
+
+1. **Existing execution and authorization policy**: is it the exact
+   declared command, does it pass the safety gate, and which backend is
+   permitted (sandbox, or trusted-host when authorized)?
+2. **Environment and credential boundaries**: does it need cloud,
+   cluster, registry, or state-backend credentials, a kubeconfig, or a
+   token? A command that needs any of these is secret-dependent under the
+   safety gate.
+3. **Side effects**: does it write into the reviewed tree (`.terraform/`,
+   lock files, chart dependency directories), take a lock, push, call
+   admission webhooks that have side effects, or leave daemon or
+   registry state behind?
+4. **Network and infrastructure access**: does it download providers,
+   charts, or images, or contact an API server, a state backend, or an
+   Argo CD server?
+5. **Isolation requirements**: can the boundary, with whatever the
+   maintainer's environment supplies, meet every requirement while the
+   repository payload stays untrusted? Payload examples:
+   Dockerfile `RUN` steps, Terraform `external` data sources, and Helm
+   plugins.
+
+### 6.4 Candidate commands evaluated
+
+These outcomes are the expected result of §6.3 under current policy, not
+categorical rules. A different environment can change the inputs to the
+evaluation. It cannot change the safety gate.
+
+| Command | What it needs and what it does | Can run when | Otherwise |
+| --- | --- | --- | --- |
+| `actionlint`, `hadolint`, `kubeconform` (local schemas), `helm lint`, `kustomize build` (no remote bases), `terraform fmt -check` | Reads files and runs offline | Declared, and the boundary is available or trusted-host is authorized | `unavailable` (tool or boundary missing) |
+| `helm template` | Renders offline. Network is needed only for `--dependency-update`, remote charts, or a repository fetch. `lookup` returns empty offline, so the output can differ from a cluster render | Dependencies are vendored or supplied by the maintainer's environment, and the output stays outside the tree | Skipped when it would fetch → user-provided render (C) |
+| `terraform validate` | Needs `init`. `init` downloads providers and modules, which needs the network, and writes `.terraform/` and the lock file into the tree. Usually no cloud credentials | Providers and modules come from a maintainer-provided local mirror or cache, the data directory is outside the tree, and the lock file is unchanged | Skipped (network) or `unavailable` → user-provided output (C) |
+| `terraform plan` | Everything `validate` needs, plus state-backend access, provider API reads with cloud credentials, a state lock (a side effect), and possible `external` program execution | Only with no credentials and no network, for example local or no state, `-lock=false`, `-refresh=false`, and mirrored providers in a maintainer-provided environment. That kind of plan shows configuration-level changes only, not changes against real state | A plan against real state needs credentials and network, which the current safety gate skips even under trusted-host authorization → maintainer- or user-provided plan output (C) |
+| `docker build` | A daemon or builder (a service), base-image pulls (network), `RUN` steps executing repository code, and image or cache state written outside the tree | A maintainer-provided disposable builder inside the boundary, with base images pre-pulled and no network | Skipped (service/network) → user-provided build log (C) |
+| `kubectl apply --dry-run=client` | Mostly local, but it may contact the server for discovery or validation | It runs with no kubeconfig credentials and no network, for example with server validation disabled | Skipped when it would contact a server |
+| `kubectl apply --dry-run=server`, `kubectl diff`, `helm upgrade --dry-run`, `helm diff` | An API server, cluster credentials, the network, and admission webhooks, which may have side effects | Not under the current safety gate (secret-, service-, and network-dependent), even with a maintainer-provided cluster or trusted-host authorization | Maintainer- or user-provided output (C) |
+| `argocd app diff` | An Argo CD server, a token, and cluster access | Not under the current safety gate, for the same reasons | Maintainer- or user-provided output (C) |
+| `apply`, `sync`, `push`, `install`, `upgrade` (without dry-run) | Mutates infrastructure | Never. The scope is `READ_ONLY` | — |
+
+The rows marked "Not under the current safety gate" record an
+evaluation result, not a permanent exclusion. Admitting them would
+require changing `runtime-validation.md` itself, which is outside this
+Epic. In the meantime, the maintainer gets the same evidence by running
+the command and supplying the output (source 3).
+
+### 6.5 Outcomes and fallback
+
+Every considered command gets one `Validation` record, with the existing
+outcome (`executed`/`failed`/`skipped`/`unavailable`), its reason, and
+provenance (`sandbox`/`trusted-host`). An executed run adds evidence
+only. A `failed` run is finding material only when the failure is
+attributable to the change (`runtime-validation.md`, "Findings and
+decision semantics"). When no source produces valid evidence for a
+material concern, the review continues with static reasoning and records
+a Context gap (§9) that names the exact command the maintainer or user
+can run.
 
 ## 7. User-provided validation output (tier C)
 
-Tier C reuses `dependency-tree-inspection.md`'s Workflow 2 and its
-"Validate before trusting" rule, applied to infra tool output:
+Tier C is execution source 3 (§6.2). It covers output the maintainer or
+another user produced by running a command the review could not run
+safely, for example a `terraform plan` against real state. It reuses
+`dependency-tree-inspection.md`'s Workflow 2 and its "Validate before
+trusting" rule, applied to infra tool output:
 
 1. **Expected format**: the text is recognizably the named tool's output
    (`helm template`, `terraform plan`, `kubectl diff`, `argocd app diff`,
@@ -297,24 +386,42 @@ recorded in the finding's evidence, the same way as for dependency trees.
 | Mode | A | B | C | D |
 | --- | --- | --- | --- | --- |
 | `local-code-review` | ✓ | ✓ working tree and repository | ✓ | per §6 |
-| `github-pr-review`, repository-backed (optional or required checkout) | ✓ | ✓ checkout at PR head | ✓ | per §6. The checkout is not the execution boundary (`repository-checkout.md`) |
-| `github-pr-review`, API-only (default) | ✓ | changed-path Base/Head blobs only (`pr-scope.md`). Unchanged referenced files such as an unchanged `values.yaml` or a ConfigMap defined elsewhere are **not** assumed reachable | ✓ Workflow 2 only. Output must be bound to the PR head SHA | never |
+| `github-pr-review`, repository-backed (optional or required checkout) | ✓ | ✓ checkout at PR head | ✓ | per §6. The checkout is not the execution boundary (`repository-checkout.md`, "Three modes") |
+| `github-pr-review`, API-only (default) | ✓ | changed-path Base/Head blobs (see below) | ✓ Workflow 2 only. Output must be bound to the PR head SHA | not available |
 
-In API-only mode, a concern that needs an unreachable unchanged file is
-either reasoned to `insufficient-context` (when the diff already shows
-concrete evidence) or recorded as a Context gap. It is never resolved by
-assumption. The contract adds no new GitHub API call. Repository
-settings such as environment protection rules and default token
-permissions stay unsupported in both Skills. Context gaps are rendered
-in the review summary and never as inline comments. The publication mode
+The API-only row has two parts, and they carry different weight.
+
+- **Required by existing policy.** API-only mode has no local checkout
+  (`repository-checkout.md`, "Three modes"). A runtime-validation command
+  has no work copy to run against, so tier D is not available.
+  `dependency-tree-inspection.md` already records the same consequence
+  for its own commands ("offers Workflow 2 only"). User-provided output
+  (C) is unaffected.
+- **Proposed implementation boundary, not existing policy.** This record
+  proposes that #742 limit tier B in API-only mode to the changed-path
+  Base/Head blobs that `pr-scope.md` already retrieves, and that it add
+  no new GitHub API call. Unchanged referenced files, such as an unchanged
+  `values.yaml` or a ConfigMap defined elsewhere, would then not be
+  assumed reachable. A concern that needs such a file would be reasoned
+  to `insufficient-context` (when the diff already shows concrete
+  evidence) or recorded as a Context gap, never resolved by assumption.
+  No existing policy forbids fetching an unchanged file's blob through
+  the API. Whether to allow bounded reads of unchanged files is a
+  maintainer decision for #742 (§14).
+
+In both Skills, repository settings such as environment protection rules
+and default token permissions stay unsupported. This contract proposes
+no settings-reading API call. Context gaps are rendered in the review
+summary and never as inline comments. The publication mode
 (`PASSIVE`/`SEMI`/`ACTIVE`) changes nothing in this contract.
 
 ## 9. Context gaps and unsupported checks
 
 - Add **one** gap kind, the *deployment validation evidence gap*, to
   `review-summary.md` "Context gaps." Its fields: subject (concern and
-  artifact), reason (unsupported check, execution skipped or unavailable,
-  output declined or invalid, file unreachable in API-only mode), and
+  artifact), reason (unsupported check; execution skipped or unavailable,
+  with the §6.3 criterion that blocked it; output declined or invalid;
+  file unreachable in API-only mode), and
   the user-runnable command or evidence that would resolve it.
 - A gap is emitted only for a concern this capability has materially
   activated whose resolution actually depends on the missing evidence.
@@ -345,9 +452,12 @@ scope").
   `terraform validate`/`plan`, `actionlint`, or CI execution.
 - Guaranteeing deployment success, or reasoning about live cluster,
   cloud, registry, or Terraform state.
-- Any new execution permission, approval channel, sandbox capability,
+- Any new execution permission, approval framework, permission system,
   dependency installation, network exception, or unconditional tool
-  execution.
+  execution. A maintainer-provided environment can satisfy the existing
+  boundary, but it never relaxes it.
+- Excluding a validator by name. Every candidate command is evaluated per
+  §6.3.
 - Any new review gate, depth level, severity, finding field, confidence
   value, or schema.
 - Duplicating #181/#730 (base images, `uses:` pinning, version
@@ -387,15 +497,21 @@ Packaged changes:
    Re-capture the `local-review.md` #223 baseline if that file changes.
 6. Tests: `tests/policy/review/specialist_depth/test_deployment_infrastructure_deepening.py`.
    It asserts the activation contrasts (§4), the #181 exclusions, the
-   execution classes (§6, with no new permission wording), the
-   validate-before-trust checks (§7), the API-only row (§8), and the gap
-   kind and its non-effects (§9).
+   execution model (§6): the three sources, the five evaluation criteria,
+   no exclusion or admission by command name, authorization never
+   overriding the safety gate, and no new permission wording. It also
+   asserts the validate-before-trust checks (§7), the API-only row as
+   resolved by the maintainer (§8, §14), and the gap kind and its
+   non-effects (§9).
 
 Release intent: `Added`.
 
 ## 13. Adjustments to the downstream children
 
-- **#742**: implement §12 only. Its "accept user-provided validation
+- **#742**: implement §12 only, after the maintainer answers §14. Its
+  "use existing authorized execution mechanisms for optional validation"
+  is §6: three sources, per-command evaluation, and fallback to static
+  review with a disclosed gap. Its "accept user-provided validation
   output under existing evidence-validation rules" is satisfied by
   reusing dependency-tree Workflow 2 and validate-before-trust (§7). The
   one schema-adjacent change it needs is the Context-gap kind (§9). This
@@ -415,3 +531,17 @@ Release intent: `Added`.
   existing `docs/features/` catalog plus one feature page. Copy §5's
   "Unsupported" column and §8's API-only row as the user-facing
   limitations list, and link this record instead of restating it.
+
+## 14. Open questions for the maintainer
+
+1. **Declared vs proposed commands.** `runtime-validation.md` admits only
+   commands declared by the target repository. `dependency-tree-inspection.md`
+   Workflow 1 lets the reviewer propose an ecosystem-native command, but
+   runs it only when "existing execution policy" also permits. Existing
+   text does not settle whether an informed maintainer approval of a
+   proposed infra validator meets the declaration requirement. This
+   record does not decide it. #742 should reuse whatever reading applies
+   to Workflow 1, and must not introduce a new rule to answer it.
+2. **API-only repository context.** §8's changed-path-only limit on tier
+   B is a proposal. Decide whether #742 keeps it or allows bounded reads
+   of unchanged files' blobs through the existing GitHub integration.
