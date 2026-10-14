@@ -75,7 +75,7 @@ A directory name carrying a `-deepening` suffix (a naming convention from
 when these domains were added as *deepening* follow-ups to an existing
 capability, e.g. `database-migration-deepening`) is normalized to its bare
 capability — `database-migration`, `dependency-supply-chain`,
-`distributed-systems`, `performance`. `security-deepening` is additionally
+`deployment-infrastructure`, `distributed-systems`, `performance`. `security-deepening` is additionally
 renamed to `security-boundary` to stay vocabulary-consistent with the
 "Security / trust boundaries" system-level dimension in
 [`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md)

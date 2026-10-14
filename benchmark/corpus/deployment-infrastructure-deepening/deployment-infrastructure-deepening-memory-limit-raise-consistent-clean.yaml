@@ -1,0 +1,74 @@
+# Deployment/infrastructure-deepening corpus case (Issue #743, parent #740,
+# depends on #742). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Safe configuration change: a resource-bounds property DOES change, so the
+# capability is activated, but the related runtime setting stays consistent
+# and the change is a loosening. Nothing to report.
+
+format: benchmark-case/v2
+
+id: deployment-infrastructure-deepening-memory-limit-raise-consistent-clean
+title: "k8s/deployment.yaml raises the container memory limit 512Mi -> 1Gi while the JVM heap stays well under both"
+
+input:
+  patch: |
+    diff --git a/k8s/deployment.yaml b/k8s/deployment.yaml
+    index 1111111..2222222 100644
+    --- a/k8s/deployment.yaml
+    +++ b/k8s/deployment.yaml
+    @@ -21,5 +21,5 @@ spec:
+               resources:
+                 requests:
+    -              memory: 384Mi
+    +              memory: 512Mi
+                 limits:
+    -              memory: 512Mi
+    +              memory: 1Gi
+  base:
+    k8s/deployment.yaml: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: reports-api
+      spec:
+        replicas: 2
+        selector:
+          matchLabels:
+            app: reports-api
+        template:
+          metadata:
+            labels:
+              app: reports-api
+          spec:
+            containers:
+              - name: api
+                image: registry.example.com/reports-api:2.1.0
+                env:
+                  - name: JAVA_TOOL_OPTIONS
+                    value: "-Xmx384m"
+                resources:
+                  requests:
+                    memory: 384Mi
+                  limits:
+                    memory: 512Mi
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Safe-configuration-change negative: a resource-bounds property changes
+    and activation is plausible, but requests stay below limits, the -Xmx
+    heap stays below both, and the change only loosens the bound, so no
+    concern is evidenced and generic infrastructure advice must not be
+    reported.
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

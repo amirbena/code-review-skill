@@ -1,0 +1,77 @@
+# Deployment/infrastructure-deepening corpus case (Issue #743, parent #740,
+# depends on #742). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Privilege-scope property: a declarative widening on a workflow that runs
+# on pull_request. A `uses:` pin in the same file is the dependency/supply-
+# chain pass's, not this finding.
+
+format: benchmark-case/v2
+
+id: deployment-infrastructure-deepening-workflow-permissions-widened
+title: "ci.yml widens the workflow token to contents: write on a pull_request-triggered workflow"
+
+input:
+  patch: |
+    diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+    index 1111111..2222222 100644
+    --- a/.github/workflows/ci.yml
+    +++ b/.github/workflows/ci.yml
+    @@ -3,7 +3,7 @@ name: CI
+     on: [pull_request]
+     
+     permissions:
+    -  contents: read
+    +  contents: write
+     
+     jobs:
+       test:
+  base:
+    .github/workflows/ci.yml: |
+      name: CI
+
+      on: [pull_request]
+
+      permissions:
+        contents: read
+
+      jobs:
+        test:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@8f4b7f84864484a7bde6b71ad9e3fda11d7d17f1 # v4.1.1
+            - name: Run tests
+              run: make test
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: workflow-token-widened-to-contents-write
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: .github/workflows/ci.yml
+        anchor: 'contents: write'
+      claim: >-
+        The workflow-level token is widened from contents: read to
+        contents: write on a workflow triggered by pull_request. Every job,
+        including the test job that runs the pull request's own code via
+        make test, now holds a write-capable token, although nothing in the
+        workflow needs to write to the repository.
+      defect_kind: workflow-token-permission-widened
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    Pins the "privilege, permission, or credential scope" property: a
+    declarative widening is this capability's finding, with no
+    untrusted-to-trusted flow required (so security deepening need not
+    engage).
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [security]
+    affected_surface: [unclassified]

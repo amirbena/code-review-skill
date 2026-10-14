@@ -1,0 +1,78 @@
+# Deployment/infrastructure-deepening corpus case (Issue #743, parent #740,
+# depends on #742). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Missing evidence requiring a Context gap. The runtime effect (in-place
+# modify vs. replacement, downtime) depends on provider and state that no
+# available evidence tier can establish, and a plan needs credentials and
+# state-backend access the safety gate does not permit. The fixture format
+# has no key for an expected Context gap, so the case expects no blocking
+# finding and an optional, non-asserting observation; the gap itself is
+# checked by the policy tests and the live-run notes in ./README.md.
+
+format: benchmark-case/v2
+
+id: deployment-infrastructure-deepening-db-resize-impact-needs-plan-output
+title: "infra/db.tf resizes the database instance class and the effect on the running database depends on state and plan output not available to the review"
+
+input:
+  patch: |
+    diff --git a/infra/db.tf b/infra/db.tf
+    index 1111111..2222222 100644
+    --- a/infra/db.tf
+    +++ b/infra/db.tf
+    @@ -2,6 +2,6 @@ resource "aws_db_instance" "orders" {
+       identifier        = "orders-prod"
+       engine            = "postgres"
+    -  instance_class    = "db.t3.large"
+    +  instance_class    = "db.r6g.large"
+       allocated_storage = 200
+       apply_immediately = true
+     }
+  base:
+    infra/db.tf: |
+      resource "aws_db_instance" "orders" {
+        identifier        = "orders-prod"
+        engine            = "postgres"
+        instance_class    = "db.t3.large"
+        allocated_storage = 200
+        apply_immediately = true
+      }
+  context: >-
+    No terraform plan output was supplied and the review environment has no
+    cloud credentials or state-backend access.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: db-instance-class-change-impact-unsettled
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: line
+        path: infra/db.tf
+        anchor: 'instance_class    = "db.r6g.large"'
+      claim: >-
+        The instance class changes with apply_immediately = true on a
+        production database. Whether the apply modifies in place with a
+        brief outage or forces replacement depends on provider behavior and
+        live state that the diff does not show, so no outage or
+        data-loss claim is made and the open question is handed to the
+        engineer with the terraform plan output that would settle it.
+      defect_kind: state-dependent-change-impact-unsettled
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins Context-gap handling: the concern is materially activated
+    (destructive or state-affecting property) and its resolution depends
+    on evidence that is unavailable. The reviewer must not assert an
+    unproven outage or claim the plan was checked, and must not raise a
+    blocking finding.
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

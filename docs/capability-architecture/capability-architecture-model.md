@@ -453,7 +453,7 @@ benchmark suite.**
 | Capability | Responsibility | Inputs | Outputs | Depends on | Local/GitHub | Lazy? | Benchmarkable? | Words |
 | --- | --- | --- | --- | --- | --- | --- | --- | ---: |
 | **`specialist-depth`** | Domain deepening for an already-implicated dimension: security, performance, database/migration, distributed systems. Composition contract + four domain capabilities. | implicated dimension + its base evidence; repo context within the authorized ring | additional findings with `capability` provenance; applicability status | `review-kernel`, `finding-contract`, `scale` (for ring bounds) | both | **Yes** | **Yes** — 5 corpora, 34 cases | 8,977 |
-| **`conditional-passes`** | The signal-triggered passes: null-like absence risk, API/contract compatibility, failure/retry/recovery, affected-test analysis, architectural placement, root-cause consolidation. | change set, base-pass evidence | additional/consolidated findings | `review-kernel`, `finding-contract` | both | **Yes** (per pass) | **Yes** — `null-absence-risk/`, `api-compatibility/`, `analogue-placement-pattern/`, `consolidation/` (20 cases) | ~6,900 |
+| **`conditional-passes`** | The signal-triggered passes: null-like absence risk, API/contract compatibility, failure/retry/recovery, affected-test analysis, architectural placement, root-cause consolidation. | change set, base-pass evidence | additional/consolidated findings | `review-kernel`, `finding-contract` | both | **Yes** (per pass) | **Yes** — `null-absence-risk/`, `api-compatibility/`, `deployment-infrastructure-deepening/`, `analogue-placement-pattern/`, `consolidation/` (20 cases) | ~6,900 |
 | **`scale`** | Bounded ring expansion and large-change partitioning: how far a trigger is followed and how an oversized diff becomes coherent review units. | change set, depth level | expanded context set; partitions; expansion report | `review-router` | both | **Yes** (partitioning is already threshold-gated) | Yes — `corpus/risk-depth/`, `corpus/repository-intelligence/` | 3,300 |
 | **`runtime-execution`** | Repository-declared validation commands and targeted reproduction, inside a verified isolation boundary; the trusted-host fallback and its provenance. | declared command or suspected finding; capability probe | validation outcome + execution provenance | `capability-posture` | both | **Yes** — resolves `unavailable` when absent | **Yes** — `corpus/sandbox-adversarial/` (26 integration tests), `corpus/trusted-host-nl-authorization/` (13 cases) | 4,862 |
 | **`parallel-execution`** | The execution-policy decision, worker input/output shape, spawn budgets, and centralized aggregation. Includes the *grant* half of `agent-delegation.md`. | capability probe; independent dimensions | execution plan; aggregated candidate findings | `capability-posture`, `review-router` | both (wired to GitHub today) | **Yes** — sequential is always the fallback | **Yes** — `corpus/delegation-spawn/` (23 cases) | 2,819 |
@@ -1309,7 +1309,7 @@ says it is ready:
 
 | Tier | Owns | Assets today |
 | --- | --- | --- |
-| **Capability benchmarks** | Does one capability reason correctly in isolation? | `corpus/{security,performance,database-migration,distributed-systems}-deepening/`, `null-absence-risk/`, `api-compatibility/`, `analogue-placement-pattern/`, `consolidation/`, `candidate-finding-validation/`, `repository-intelligence/`, `semantic-implication/`, `dependency-supply-chain-deepening/` |
+| **Capability benchmarks** | Does one capability reason correctly in isolation? | `corpus/{security,performance,database-migration,distributed-systems}-deepening/`, `null-absence-risk/`, `api-compatibility/`, `deployment-infrastructure-deepening/`, `analogue-placement-pattern/`, `consolidation/`, `candidate-finding-validation/`, `repository-intelligence/`, `semantic-implication/`, `dependency-supply-chain-deepening/` |
 | **Orchestration benchmarks** | Does the router activate the right set, and is coverage honest? | `corpus/risk-depth/`, `corpus/specialist-depth-composition/`, `corpus/delegation-spawn/` |
 | **Integration / E2E benchmarks** | Does an adapter deliver correctly end to end? | `corpus/publication-mode/`, `corpus/verdict-consistency/`, `corpus/reviewer-brief/`, `corpus/mutation-boundary/`, `corpus/sandbox-adversarial/`, `corpus/trusted-host-nl-authorization/`, `corpus/security-events/`, the root 4 |
 
@@ -1328,6 +1328,7 @@ says it is ready:
 | `performance-deepening/` | 6 | `specialist-depth` | |
 | `database-migration-deepening/` | 9 | `specialist-depth` | |
 | `distributed-systems-deepening/` | 6 | `specialist-depth` | |
+| `deployment-infrastructure-deepening/` | 8 | `specialist-depth` | |
 | `dependency-supply-chain-deepening/` | 6 | `specialist-depth` | no matching `shared/policies/` file — see §H.5 |
 | `specialist-depth-composition/` | 7 | **`review-router`** | cases A–G test activation and composition |
 | `risk-depth/` | 5 | **`review-router`** | |

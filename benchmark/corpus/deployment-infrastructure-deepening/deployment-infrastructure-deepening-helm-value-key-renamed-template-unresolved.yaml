@@ -1,0 +1,84 @@
+# Deployment/infrastructure-deepening corpus case (Issue #743, parent #740,
+# depends on #742). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Configuration-compatibility problem: one artifact defines a value key,
+# another consumes it, and only the defining side is renamed.
+
+format: benchmark-case/v2
+
+id: deployment-infrastructure-deepening-helm-value-key-renamed-template-unresolved
+title: "values.yaml renames image.tag to image.version while templates/deployment.yaml still reads .Values.image.tag"
+
+input:
+  patch: |
+    diff --git a/charts/orders/values.yaml b/charts/orders/values.yaml
+    index 1111111..2222222 100644
+    --- a/charts/orders/values.yaml
+    +++ b/charts/orders/values.yaml
+    @@ -1,5 +1,5 @@
+     replicaCount: 2
+     image:
+       repository: registry.example.com/orders-api
+    -  tag: "1.8.0"
+    +  version: "1.8.0"
+       pullPolicy: IfNotPresent
+  base:
+    charts/orders/values.yaml: |
+      replicaCount: 2
+      image:
+        repository: registry.example.com/orders-api
+        tag: "1.8.0"
+        pullPolicy: IfNotPresent
+    charts/orders/templates/deployment.yaml: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: {{ .Release.Name }}
+      spec:
+        replicas: {{ .Values.replicaCount }}
+        selector:
+          matchLabels:
+            app: {{ .Release.Name }}
+        template:
+          metadata:
+            labels:
+              app: {{ .Release.Name }}
+          spec:
+            containers:
+              - name: api
+                image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+                imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: image-tag-value-key-renamed-template-still-reads-old-key
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: charts/orders/values.yaml
+        anchor: 'version: "1.8.0"'
+      claim: >-
+        The values key image.tag is renamed to image.version, but
+        charts/orders/templates/deployment.yaml still renders the image
+        from .Values.image.tag. The key no longer resolves, so the
+        container image becomes "registry.example.com/orders-api:" with an
+        empty tag and the release fails to pull or resolves an unintended
+        default.
+      defect_kind: value-key-no-longer-resolves
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins the "configuration and secret reference wiring" property: the
+    defect is a name defined in one file and consumed in an unchanged
+    file, visible only through repository context (evidence tier B).
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]
