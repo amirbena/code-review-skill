@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.75.0 — 2026-10-14
+
+### Added
+
+- Opt-in dependency tree inspection for Base and Head during dependency review, using user-approved execution or user-provided output (#737).
+
 ## v1.74.0 — 2026-10-10
 
 ### Added
