@@ -468,23 +468,37 @@ by adding text.
 | --- | --- | --- | --- | --- |
 | `local-code-review` | Every repository-state category: committed, staged, unstaged, untracked | The local working tree and the pre-image | A1.1 pre-image status; A1.2 supplied context; A1.3 only through an optional associated PR (`pr-context.md`) | None needed or added |
 | `github-pr-review`, repository-backed (optional or required) | PR delta | The checkout at the PR head, plus the pre-image via the merge base | A1.1–A1.3, including this PR's own threads (`github-pr-review/policies/review-evidence.md`) | None needed or added. The checkout is not an execution boundary (`repository-checkout.md`) |
-| `github-pr-review`, API-only (default) | PR delta, with full base and head blobs of changed paths (`pr-scope.md`) | **Changed-path blobs only** (proposed boundary, see below). A claim about an unchanged file is `unverified` | A1.1 when the ADR is itself a changed path (its base blob gives pre-image status), otherwise not reachable; A1.2; A1.3 from this PR's threads | None |
+| `github-pr-review`, API-only (default) | PR delta from per-file API patches. `pr-scope.md` falls back to exact base and HEAD blobs only when a patch is absent or truncated | Changed paths only (**proposed** boundary, see below). Under that boundary, a claim about an unchanged file is `unverified` | A1.1 needs the ADR's base-revision content (see below); A1.2; A1.3 from this PR's threads | None |
 
 The API-only row has two parts, and they carry different weight.
 
-- **Required by existing policy.** API-only mode has no checkout
-  (`repository-checkout.md`, "Three modes"). Design review needs no
-  execution in any mode, so nothing about it is lost there. An
-  unreachable claim never becomes a finding (§9.3), and that follows from
-  existing evidence rules.
+- **Existing API behavior.** API-only mode has no checkout
+  (`repository-checkout.md`, "Three modes"). Per-file API patches are
+  the normal input. `pr-scope.md` ("Complete PR scope and pagination")
+  retrieves exact file blobs or diffs individually only as a fallback,
+  when a patch is absent or truncated. So base and HEAD blobs of changed
+  paths are **not** always in hand. Design review needs no execution in
+  any mode, so nothing about it is lost there. An unreachable claim
+  never becomes a finding (§9.3), and that follows from existing
+  evidence rules.
+- **A1.1 needs base-revision content.** Checking whether a design
+  statement was accepted before the change (§7.1 A1.1) requires the
+  design file's **base-revision content**, at least its status metadata
+  and the statement itself. A patch is enough only when its hunks
+  include both. Otherwise #749 must obtain the file's base blob. If the
+  base content is unavailable, A1.1 is not established and the
+  statement is a proposal (P2, §7.1). It is never assumed accepted.
 - **Proposed boundary, not existing policy.** This record proposes that
-  #749 limit API-only reads to the changed-path blobs that `pr-scope.md`
-  already retrieves, and that it add no new GitHub API call. No existing
-  policy forbids reading an unchanged file through the API
-  (`repository-instructions.md` already reads instruction files through
-  "the permitted file-access mechanism"). This is the same open question
-  as #741 §14 for #742. One answer should serve both capabilities (§18
-  Q2).
+  #749 limit API-only reads to **changed paths**: their patches, plus
+  their exact base or HEAD blobs where a patch is insufficient, as
+  above. It also proposes adding no read of an unchanged file. Under
+  that boundary, an accepted ADR that the PR does not change is not
+  reachable in API-only mode. That limit comes from the proposal, not
+  from existing policy: no existing policy forbids reading an unchanged
+  file through the API (`repository-instructions.md` already reads
+  instruction files through "the permitted file-access mechanism"). This
+  is the same open question as #741 §14 for #742. One answer should
+  serve both capabilities (§18 Q2).
 
 In every mode: design findings anchor on the design document's changed
 lines like any other finding (`github-pr-review`:
@@ -508,9 +522,17 @@ load-bearing claim the reviewer could not verify. It is not adopted:
 - **Re-open condition:** #750 shows design fixtures where an unverified
   load-bearing claim leads readers or reviewers astray, for example the
   review summary implying the design was checked. Then the minimal
-  extension would be one relationship class (a `design_claim`) in
-  `repository-expansion.md`, which renders in Context gaps with no
-  template change. That would be a separate maintainer-led issue.
+  extension would need **both**:
+  - a new expansion trigger in `repository-expansion.md`'s fixed catalog,
+    so that a load-bearing design claim raises a relationship question at
+    all. Relationship questions come only from fired triggers;
+  - a new relationship class for that question (for example
+    `design_claim`).
+
+  An `unresolved` outcome would then render in Context gaps through the
+  existing rule, with no template change. This record implements
+  neither. That would be a separate maintainer-led issue, and the Context
+  gaps contract stays unchanged.
 
 **Reasoning check: no change.** The design facet anchors on an
 `architectural-placement.md` result, and it is "always inert" for a
@@ -581,9 +603,12 @@ observation about this is accurate, but it is not a defect.
 4. **`specialist-depth.md`**: the domain-policy count.
 5. **Wiring**: `capability.yaml`, `shared/policies/README.md`, both
    `metadata/skill.yaml`, and both packaging manifest files. Follow the
-   `*-deepening.md` precedent
-   ([editing guardrails](../../policies/skill-development-policy.md)
-   apply).
+   existing `*-deepening.md` wiring precedent: the same file set
+   `distributed-systems-deepening.md` is wired through (§5).
+   Packaged-resource independence is owned by
+   [`skill-development-policy.md`](../../policies/skill-development-policy.md),
+   "Packaged Skills Are Independent of Repository-Level Development
+   Instructions".
 6. **Policy tests** under `tests/policy/review/specialist_depth/`,
    modeled on `test_distributed_systems_deepening_84.py`. They assert:
    - semantic activation, with the file-type-only negative;
