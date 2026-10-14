@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.76.0 — 2026-10-14
+
+### Added
+
+- Deployment & infrastructure review depth for Kubernetes, Helm, Argo CD, Docker, Terraform, Jenkins, and GitHub Actions changes (#752).
+
 ## v1.75.0 — 2026-10-14
 
 ### Added
