@@ -195,6 +195,17 @@ deliberately not an eight-dimension checklist run on every diff.
   affords, [`performance-deepening.md`](performance-deepening.md) per the
   "Domain-specific deepening pass" below.
 
+### Proposed behavior in design content
+
+When the review target contains design content (an HLD, ADR, RFC, or design
+section the change adds or modifies), the dimension signals above are also
+evaluated over the behavior that content **proposes**, and that implication
+is tagged *proposed*, never established: it is not evidence that the system
+already behaves that way, and it never changes the base obligation for the
+actual code in a mixed change. Without this, a design-only change — which
+does nothing at runtime — would implicate no dimension. Design content is
+identified by what the text decides, never by its path, extension, or title.
+
 ### Worked example — one change implicating several dimensions
 
 A change that adds a new webhook endpoint which persists the received
@@ -276,6 +287,18 @@ stays with the base pass above, unconditionally — and it introduces no
 new finding/severity/evidence schema; every finding it contributes still
 passes through [`severity.md`](severity.md), [`evidence.md`](evidence.md),
 and the remediation-scope-boundary pass exactly like any other finding.
+
+## Engineering design review
+
+Design content in the review target (see "Proposed behavior in design
+content" above) is reviewed through the "Domain-specific deepening pass"
+above, with
+[`engineering-design-deepening.md`](engineering-design-deepening.md) as its
+depth owner: what evidence a design finding needs, proposal versus accepted
+decision, verification of load-bearing claims about existing code, and
+implementation-versus-design comparison in a mixed change. That capability
+never gates the base obligation, adds no severity model, evidence label, or
+gate, and a change with no decision-bearing design content is unaffected.
 
 ## Null-like absence-risk review
 

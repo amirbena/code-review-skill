@@ -372,4 +372,7 @@ source would — see [`severity.md`](severity.md), "Decision derivation
   work (`skills/github-pr-review/policies/review-authority.md`).
 - **Target unchanged.** Context never converts a Jira ticket, an Issue, an
   ADR, or a PR description into an additional review target. The review target
-  stays the local delta / the PR.
+  stays the local delta / the PR. This governs *supplied* context only: design
+  content (an ADR, HLD, or design doc) that the delta itself changes is part of
+  the review target as a changed file, and is reviewed per
+  [`engineering-design-deepening.md`](engineering-design-deepening.md).
