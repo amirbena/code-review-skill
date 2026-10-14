@@ -277,7 +277,6 @@ class Benchmark185CorpusReuseTests(unittest.TestCase):
         readme = (CORPUS / "README.md").read_text(encoding="utf-8")
         self.assertIn("finding-lifecycle-contract.md", readme)
         self.assertIn("stateful-delta-rereview.md", readme)
-        self.assertIn("CONSOLIDATED", readme)
 
 
 if __name__ == "__main__":

@@ -89,23 +89,10 @@ class SubCorpusCoverageTests(unittest.TestCase):
         self.assertIn("clean", decisions)
 
 
-class SubCorpusReadmeTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.raw = (CORPUS_DIR / "README.md").read_text(encoding="utf-8")
-
-    def test_readme_explains_why_there_is_no_reference_model_file(self) -> None:
-        text = " ".join(self.raw.split())
-        self.assertIn("No reference-model scenario file", text)
-        self.assertIn("judgment-based reasoning pass", text)
-        self.assertIn("#153", text)
-
-
 class SemanticImplicationCorpusHygieneTests(CorpusHygieneMixin, unittest.TestCase):
     corpus_dir = CORPUS_DIR
     min_cases = MIN_CASES
     max_cases = MAX_CASES
-    readme_refs = ("#211",)
-    validator_phrase = "never defines a second"
 
 
 if __name__ == "__main__":

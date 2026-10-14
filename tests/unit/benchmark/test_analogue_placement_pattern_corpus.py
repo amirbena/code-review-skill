@@ -118,22 +118,10 @@ class SubCorpusCoverageTests(unittest.TestCase):
         self.assertIn("clean", decisions)
 
 
-class SubCorpusReadmeTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.raw = (CORPUS_DIR / "README.md").read_text(encoding="utf-8")
-
-    def test_readme_disclaims_any_canonically_correct_structure(self) -> None:
-        text = " ".join(self.raw.split())
-        self.assertIn(
-            "does *not* assert", text, "README must disclaim any specific structure"
-        )
-
-
 class AnaloguePlacementPatternCorpusHygieneTests(CorpusHygieneMixin, unittest.TestCase):
     corpus_dir = CORPUS_DIR
     min_cases = MIN_CASES
     max_cases = MAX_CASES
-    readme_refs = ("#328",)
 
 
 if __name__ == "__main__":

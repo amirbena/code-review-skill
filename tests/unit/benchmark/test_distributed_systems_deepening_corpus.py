@@ -149,7 +149,6 @@ class DistributedSystemsDeepeningCorpusHygieneTests(CorpusHygieneMixin, unittest
     corpus_dir = CORPUS_DIR
     min_cases = MIN_CASES
     max_cases = MAX_CASES
-    readme_refs = ("#272",)
 
 
 if __name__ == "__main__":

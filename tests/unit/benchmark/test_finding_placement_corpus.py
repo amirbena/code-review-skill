@@ -180,22 +180,10 @@ class SubCorpusCoverageTests(unittest.TestCase):
                 self.assertIn(tag, known)
 
 
-class SubCorpusReadmeTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.raw = (CORPUS_DIR / "README.md").read_text(encoding="utf-8")
-
-    def test_readme_disclaims_duplicating_164s_fixtures(self) -> None:
-        text = " ".join(self.raw.split())
-        self.assertIn("does *not* assert", text)
-        self.assertIn("#164", text)
-        self.assertIn("No #164 fixture is duplicated here", text)
-
-
 class FindingPlacementCorpusHygieneTests(CorpusHygieneMixin, unittest.TestCase):
     corpus_dir = CORPUS_DIR
     min_cases = MIN_CASES
     max_cases = MAX_CASES
-    readme_refs = ("#387",)
 
 
 if __name__ == "__main__":

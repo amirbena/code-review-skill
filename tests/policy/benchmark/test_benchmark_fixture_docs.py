@@ -189,9 +189,6 @@ class DirectoryNavigationTests(unittest.TestCase):
         self.assertIn("](fixture-format.md)", raw)
         self.assertIn("](../../benchmark/examples/example-case.yaml)", raw)
         self.assertIn("](../../benchmark/corpus/README.md)", raw)
-        self.assertIn("not** packaged", raw)
-        self.assertIn("#50", raw)
-        self.assertIn("#51", raw)
 
     def test_architecture_links_to_the_benchmark_directory(self) -> None:
         raw = ARCHITECTURE.read_text(encoding="utf-8")

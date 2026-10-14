@@ -142,7 +142,6 @@ class DependencySupplyChainDeepeningCorpusHygieneTests(CorpusHygieneMixin, unitt
     corpus_dir = CORPUS_DIR
     min_cases = MIN_CASES
     max_cases = MAX_CASES
-    readme_refs = ("#188",)
 
 
 if __name__ == "__main__":

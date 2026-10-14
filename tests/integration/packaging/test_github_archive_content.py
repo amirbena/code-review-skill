@@ -62,6 +62,12 @@ class GitHubArchiveContentTests(unittest.TestCase):
         }
         self.assertEqual(required - self.names, set())
 
+    def test_archive_excludes_repository_development_trees(self) -> None:
+        leaked = sorted(
+            n for n in self.names if n.startswith(("benchmark/", "runtime_platform/"))
+        )
+        self.assertEqual(leaked, [], f"repository-development trees packaged: {leaked}")
+
     def test_archive_contains_license(self) -> None:
         self.assertIn("LICENSE", self.names)
 

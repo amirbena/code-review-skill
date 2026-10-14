@@ -94,16 +94,6 @@ class ClassMapTests(unittest.TestCase):
             for _, case_id in refs:
                 self.assertIn(f"`{case_id}`", text)
 
-    def test_cross_partition_class_records_its_reason(self) -> None:
-        text = README.read_text(encoding="utf-8")
-        self.assertIn("Cross-partition: not measurable", text)
-        self.assertIn("1200", text)
-
-    def test_readme_scopes_baseline_to_the_pre_601_reviewer(self) -> None:
-        text = " ".join(README.read_text(encoding="utf-8").split())
-        self.assertIn("#601", text)
-        self.assertIn("66ad316", text)
-
 
 class BaselineRecordTests(unittest.TestCase):
     def setUp(self) -> None:

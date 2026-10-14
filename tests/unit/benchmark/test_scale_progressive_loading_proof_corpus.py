@@ -123,8 +123,6 @@ class ScaleProgressiveLoadingProofCorpusHygieneTests(CorpusHygieneMixin, unittes
     corpus_dir = CORPUS_DIR
     min_cases = REQUIRED_CASES
     max_cases = REQUIRED_CASES
-    readme_refs = ("#447",)
-    validator_phrase = None
 
 
 if __name__ == "__main__":

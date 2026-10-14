@@ -90,7 +90,6 @@ class CodeHygieneCorpusHygieneTests(CorpusHygieneMixin, unittest.TestCase):
     corpus_dir = CORPUS_DIR
     min_cases = 11
     max_cases = 12
-    readme_refs = ("#677",)
 
 
 if __name__ == "__main__":

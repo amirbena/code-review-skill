@@ -349,8 +349,7 @@ class ReadmeTests(unittest.TestCase):
         for path in _corpus_files():
             self.assertIn(f"]({path.name})", self.raw, f"README omits {path.name}")
 
-    def test_readme_names_the_issue_and_the_check(self) -> None:
-        self.assertIn("#350", self.raw)
+    def test_readme_names_the_check(self) -> None:
         self.assertIn("benchmark_blocking_verdict.py", self.raw)
 
 

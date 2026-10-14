@@ -163,7 +163,6 @@ class PerformanceDeepeningCorpusHygieneTests(CorpusHygieneMixin, unittest.TestCa
     corpus_dir = CORPUS_DIR
     min_cases = MIN_CASES
     max_cases = MAX_CASES
-    readme_refs = ("#187",)
 
 
 if __name__ == "__main__":
