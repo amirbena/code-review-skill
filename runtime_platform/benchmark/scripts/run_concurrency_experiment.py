@@ -156,6 +156,8 @@ def local_today(spec: Mapping[str, Any], now: datetime | None = None) -> str:
 def skip_reason(spec: Mapping[str, Any], refs: list[str], local_date: str, utc_date: str) -> str | None:
     """Why a scheduled run must not execute; evaluated from the spec and the refs alone, so the Routine's state is irrelevant."""
     stop = spec["stop_condition"]
+    superseded = set(stop.get("superseded_refs", []))
+    refs = [r for r in refs if r.removeprefix("refs/heads/") not in superseded]  # kept on the store, never counted
     end = stop.get("window_end")
     if end is not None and local_date > end:
         return "window-ended"

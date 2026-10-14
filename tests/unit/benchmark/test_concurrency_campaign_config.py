@@ -36,7 +36,8 @@ def tearDownModule() -> None:
 
 
 SHA = "a" * 40
-DATES = ("2026-10-13", "2026-10-15", "2026-10-20", "2026-10-22")
+DATES = ("2026-10-20", "2026-10-22", "2026-10-27", "2026-10-29")
+SUPERSEDED = "claude/concurrency-experiment-20261013T090348Z-6dee089614ec"
 ARMS = ([1, 2], [2, 4], [2, 1], [4, 2])
 WIDE_KEYS = {"workspace_siblings", "repositories", "external_contexts", "unadmitted_repositories"}
 
@@ -119,12 +120,21 @@ class ScheduleAuthorizationTest(unittest.TestCase):
         for date, arms in zip(DATES, ARMS):
             self.assertIsNone(exp.skip_reason(spec, [], date, date))
             self.assertEqual(exp.scheduled_arms(spec, date), arms)
-        for other in ("2026-10-12", "2026-10-14", "2026-10-16", "2026-10-21"):
+        for other in ("2026-10-19", "2026-10-21", "2026-10-23", "2026-10-28"):
             self.assertEqual(exp.skip_reason(spec, [], other, other), "not-an-experiment-day")
 
     def test_nothing_starts_after_the_window(self):
-        for late in ("2026-10-23", "2026-10-27", "2027-01-01"):
+        for late in ("2026-10-30", "2026-11-03", "2027-01-01"):
             self.assertEqual(exp.skip_reason(committed(), [], late, late), "window-ended")
+
+    def test_the_superseded_first_experiment_is_not_counted(self):
+        spec = committed()
+        self.assertEqual(spec["stop_condition"]["superseded_refs"], [SUPERSEDED])
+        for refs in ([SUPERSEDED], [f"refs/heads/{SUPERSEDED}"]):
+            self.assertIsNone(exp.skip_reason(spec, refs, DATES[0], DATES[0]))
+        spent = [f"{exp.EXPERIMENT_REF_PREFIX}2026102{i}T090000Z-x" for i in range(4)]
+        self.assertEqual(exp.skip_reason(spec, [SUPERSEDED, *spent], "2026-10-29", "2026-10-29"), "stop-condition-reached")
+        self.assertIsNone(exp.skip_reason(spec, [SUPERSEDED, *spent[:3]], "2026-10-29", "2026-10-29"))
 
     def test_noon_in_jerusalem_is_the_listed_local_date(self):
         from datetime import datetime, timezone

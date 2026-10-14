@@ -98,7 +98,7 @@ Not registered or activated by this change. Tuesday and Thursday at **12:00 `Asi
   experiment before the next 01:00 window (13 hours).
 - Tuesday and Thursday never coincide with the Comprehensive lane's Friday. The publication sweep (`23 */2 * * *`)
   only publishes and runs in its own environment, so it does not contend for the Routine session.
-- The four dates (`2026-10-13` `[1,2]`, `2026-10-15` `[2,4]`, `2026-10-20` `[2,1]`, `2026-10-22` `[4,2]`), `window_end`,
+- The four dates (`2026-10-20` `[1,2]`, `2026-10-22` `[2,4]`, `2026-10-27` `[2,1]`, `2026-10-29` `[4,2]`), `window_end`,
   the subset and the thresholds are committed in the spec ([`concurrency-campaign.md`](concurrency-campaign.md)).
 - Maintainer step: confirm the daily run cap on the provider side, record the merge commit SHA as the pin, and register
   the Routine with the prompt in [`concurrency-campaign.md`](concurrency-campaign.md) §5.
