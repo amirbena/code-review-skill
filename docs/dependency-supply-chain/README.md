@@ -24,6 +24,8 @@ document by name (not by link, since this is not a packaged resource).
 
 ## Related
 
+- Opt-in Base/Head dependency tree inspection (execution or user-supplied output, validate-before-trust, Context gaps; Issue [#730](https://github.com/amirbena/code-review-skill/issues/730)):
+  [`../../shared/policies/dependency-tree-inspection.md`](../../shared/policies/dependency-tree-inspection.md).
 - The packaged, operative rule a reviewer actually applies:
   [`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md),
   "Dependency / supply-chain deepening review."

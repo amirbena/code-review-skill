@@ -239,7 +239,9 @@ subordinate metadata (see
 "Machine metadata is subordinate") — never in the primary human-facing
 body, never as a finding, and never in a way that implies a verdict. The
 one human-visible exception is the **Context gaps** disclosure above, which
-carries only `unresolved` relationships. A
+carries only `unresolved` relationships and, per
+[`dependency-tree-inspection.md`](dependency-tree-inspection.md),
+dependency-tree evidence gaps. A
 review with no fired trigger still emits the classification, as "none";
 it is not silently dropped.
 
