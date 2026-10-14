@@ -1329,6 +1329,7 @@ says it is ready:
 | `database-migration-deepening/` | 9 | `specialist-depth` | |
 | `distributed-systems-deepening/` | 6 | `specialist-depth` | |
 | `deployment-infrastructure-deepening/` | 8 | `specialist-depth` | |
+| `engineering-design-deepening/` | 9 | `specialist-depth` | |
 | `dependency-supply-chain-deepening/` | 6 | `specialist-depth` | no matching `shared/policies/` file — see §H.5 |
 | `specialist-depth-composition/` | 7 | **`review-router`** | cases A–G test activation and composition |
 | `risk-depth/` | 5 | **`review-router`** | |

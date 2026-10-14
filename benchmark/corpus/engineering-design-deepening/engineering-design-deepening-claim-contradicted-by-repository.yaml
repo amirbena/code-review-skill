@@ -1,0 +1,67 @@
+# Engineering-design-deepening corpus case (Issue #750, parent #747,
+# depends on #749). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Positive: a load-bearing claim about existing code that the repository
+# contradicts. The evidence sits in the pre-image (base).
+
+format: benchmark-case/v2
+
+id: engineering-design-deepening-claim-contradicted-by-repository
+title: "A design relies on the payment handler already deduplicating, and the handler has no deduplication"
+
+input:
+  patch: |
+    diff --git a/docs/design/payment-retries.md b/docs/design/payment-retries.md
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/docs/design/payment-retries.md
+    @@ -0,0 +1,9 @@
+    +# Payment retries
+    +
+    +Status: Draft
+    +
+    +## Approach
+    +
+    +The queue redelivers a payment message until it is acknowledged (at-least-once).
+    +The payment handler already deduplicates by idempotency key, so redelivery is safe.
+    +No change to the handler is planned.
+  base:
+    src/payments/handler.py: |
+      def handle_payment(message):
+          charge(message["account_id"], message["amount"])
+          record_payment(message["id"])
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: dedup-claim-contradicted-by-handler
+      match: required
+      severity: P2
+      location:
+        location_intent: line
+        path: docs/design/payment-retries.md
+        anchor: 'The payment handler already deduplicates by idempotency key'
+      claim: >-
+        The design depends on the handler already deduplicating by
+        idempotency key, but src/payments/handler.py charges the account on
+        every call and never checks an idempotency key. Under the specified
+        at-least-once redelivery the design would charge a payment twice, and
+        it plans no handler change. The claim is load-bearing and contradicted
+        by repository evidence.
+      defect_kind: load-bearing-claim-contradicted
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins the architectural-assumptions area and the contradicted outcome of
+    claim verification: the claim is evidence-checked at the pre-image, not
+    taken as true.
+  taxonomy:
+    capability: [engineering-design]
+    policy_contract: [engineering-design-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

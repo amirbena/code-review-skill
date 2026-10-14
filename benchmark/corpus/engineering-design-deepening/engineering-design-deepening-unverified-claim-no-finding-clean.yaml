@@ -1,0 +1,48 @@
+# Engineering-design-deepening corpus case (Issue #750, parent #747,
+# depends on #749). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Negative: a load-bearing claim about a file the review cannot reach (an
+# unchanged path absent from the patch and base, the API-only reach) is
+# unverified: no finding is grounded on it and it is not treated as true.
+
+format: benchmark-case/v2
+
+id: engineering-design-deepening-unverified-claim-no-finding-clean
+title: "A design relies on a rate limit that already applies in an unchanged file the review cannot reach"
+
+input:
+  patch: |
+    diff --git a/docs/design/bulk-import.md b/docs/design/bulk-import.md
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/docs/design/bulk-import.md
+    @@ -0,0 +1,9 @@
+    +# Bulk import
+    +
+    +Status: Draft
+    +
+    +## Approach
+    +
+    +Clients upload up to 10,000 rows per request. The API gateway rate limit
+    +(configured in gateway/limits.yaml) already caps each client at 5 requests
+    +per minute, so the import service needs no throttling of its own.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    Pins the unverified outcome and the API-only reach: gateway/limits.yaml
+    is neither changed nor supplied, so the claim is unverified. No finding
+    rests on it, and the review must not state or imply it checked the limit.
+  taxonomy:
+    capability: [engineering-design]
+    policy_contract: [engineering-design-deepening]
+    risk_mode: [no-op]
+    affected_surface: [unclassified]

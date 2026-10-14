@@ -1,0 +1,66 @@
+# Engineering-design-deepening corpus case (Issue #750, parent #747,
+# depends on #749). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Positive: a mechanism that cannot meet the document's own stated goal
+# (problem/solution fit). Design-only change; severity stays P2 because
+# nothing is built yet.
+
+format: benchmark-case/v2
+
+id: engineering-design-deepening-ack-before-persist-loses-events
+title: "A new design states a no-lost-events goal but specifies acknowledging the broker message before persisting it"
+
+input:
+  patch: |
+    diff --git a/docs/design/event-ingest.md b/docs/design/event-ingest.md
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/docs/design/event-ingest.md
+    @@ -0,0 +1,13 @@
+    +# Event ingest
+    +
+    +Status: Draft
+    +
+    +## Goal
+    +
+    +No accepted event may be lost, including across a worker crash.
+    +
+    +## Flow
+    +
+    +1. The worker receives a message from the broker.
+    +2. The worker acknowledges the message to the broker.
+    +3. The worker writes the event to the database.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: ack-before-persist-contradicts-no-loss-goal
+      match: required
+      severity: P2
+      location:
+        location_intent: line
+        path: docs/design/event-ingest.md
+        anchor: 'The worker acknowledges the message to the broker.'
+      claim: >-
+        The stated goal is that no accepted event is lost across a worker
+        crash, but the specified order acknowledges the message before the
+        database write. A crash between steps 2 and 3 drops the event with
+        no redelivery, so the mechanism as written cannot meet the
+        document's own goal. The finding is design-only and non-blocking.
+      defect_kind: mechanism-cannot-meet-stated-goal
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins the credible architectural risk: the evidence is the document's own
+    goal plus a technical invariant, so the finding is real but a design-only
+    change stays at P2.
+  taxonomy:
+    capability: [engineering-design]
+    policy_contract: [engineering-design-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

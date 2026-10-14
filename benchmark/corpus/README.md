@@ -212,6 +212,14 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   format and reference validator; its own README, cases, and unit test
   ([`../../tests/unit/benchmark/test_deployment_infrastructure_deepening_corpus.py`](../../tests/unit/benchmark/test_deployment_infrastructure_deepening_corpus.py)).
 
+- [`engineering-design-deepening/`](engineering-design-deepening/README.md) —
+  a focused `benchmark-case/v2` sub-corpus pinning representative
+  outcomes for the Engineering Design Review specialist-depth capability
+  (Issue [#750](https://github.com/amirbena/code-review-skill/issues/750),
+  parent [#747](https://github.com/amirbena/code-review-skill/issues/747)).
+  Same format and reference validator; its own README, cases, and unit test
+  ([`../../tests/unit/benchmark/test_engineering_design_deepening_corpus.py`](../../tests/unit/benchmark/test_engineering_design_deepening_corpus.py)).
+
 - [`analogue-placement-pattern/`](analogue-placement-pattern/README.md) —
   a focused `benchmark-case/v2` sub-corpus proving recall and
   false-positive resistance for the analogue-based responsibility/
