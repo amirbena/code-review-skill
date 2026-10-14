@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Route a change set to the DOCS, PARTIAL, FAST, or FULL validation tier (CI and local).
 
-FULL is the default and the fallback. FAST omits only `tests.integration.*`;
+FULL is the default and the fallback. FAST omits `tests.integration.*` and the benchmark
+tests (except the registered docs scanners);
 DOCS runs only the static documentation validations; PARTIAL runs an explicit
 set of test modules derived from a static test-impact graph. Unknown or
 ambiguous impact always fails upward. See policies/validation-and-clean-exit.md.
@@ -52,6 +53,10 @@ FAST_FILES = frozenset(
 FAST_DIRS = ("policies/", ".github/ISSUE_TEMPLATE/")
 
 INTEGRATION_PREFIX = "tests.integration."
+BENCHMARK_PREFIXES = ("tests.unit.benchmark.", "tests.policy.benchmark.")
+FAST_DROPPED_PREFIXES = (INTEGRATION_PREFIX, *BENCHMARK_PREFIXES)
+# Anything under these roots, Markdown included, is benchmark-related: benchmark tests read it, and FAST drops them.
+BENCHMARK_ROOTS = ("benchmark/", "runtime_platform/benchmark/")
 
 # A docs path is pure only when no file under these roots can read it.
 CONSUMER_ROOTS = ("tests", "scripts", "runtime_platform", "benchmark", "capabilities", "distribution", ".github")
@@ -694,6 +699,13 @@ def surface_of_test_path(path: str, graph: ImpactGraph) -> tuple[set[str] | None
     return modules, "test modules that import or read the changed test path"
 
 
+def is_fast_dropped(test_id: str) -> bool:
+    """Whether FAST omits this test ID or module: integration and benchmark tests, minus the registered docs scanners."""
+    if any(test_id == m or test_id.startswith(m + ".") for m in DOCS_SCANNER_MODULES):
+        return False
+    return test_id.startswith(FAST_DROPPED_PREFIXES)
+
+
 def is_fast_path(path: str) -> bool:
     return path in FAST_FILES or any(path.startswith(d) and len(path) > len(d) for d in FAST_DIRS)
 
@@ -965,6 +977,8 @@ def _index_problem(index: ConsumerIndex | None) -> str | None:
 
 def _path_tier(path: str, index: ConsumerIndex | None) -> tuple[str, str]:
     """Return (kind, tier) for one changed path."""
+    if path.startswith(BENCHMARK_ROOTS):
+        return "other", FULL
     if is_doc_candidate(path):
         if _index_problem(index) is not None:
             return "unverified", FULL
@@ -1036,7 +1050,7 @@ def classify(paths: Sequence[str], index: ConsumerIndex | None = None, graph: Im
         if has_docs:
             reason = "test paths with a derived affected set, plus documentation validation"
         return Route(PARTIAL, reason, None, change_class, modules, docs_links=has_docs)
-    extras = tuple(sorted(m for m in surface if m.startswith(INTEGRATION_PREFIX)))
+    extras = tuple(sorted(m for m in surface if is_fast_dropped(m)))
     if "tests" in present:
         reason = "test changes are mixed with FAST paths; FAST plus the affected integration modules"
         return Route(FAST, reason, worst, MIXED, extras)
@@ -1149,9 +1163,9 @@ def _iter_tests(suite: unittest.TestSuite) -> Iterator[unittest.TestCase]:
 
 
 def fast_suite(start_dir: str | Path = "tests", top_level_dir: str | Path = ".") -> unittest.TestSuite:
-    # Same discovery as FULL, minus exactly the integration tests.
+    # Same discovery as FULL, minus the integration and benchmark tests.
     discovered = unittest.defaultTestLoader.discover(str(start_dir), top_level_dir=str(top_level_dir))
-    return unittest.TestSuite(t for t in _iter_tests(discovered) if not t.id().startswith(INTEGRATION_PREFIX))
+    return unittest.TestSuite(t for t in _iter_tests(discovered) if not is_fast_dropped(t.id()))
 
 
 def validate_module_ids(modules: Sequence[str]) -> str | None:
@@ -1194,7 +1208,7 @@ def _cmd_classify(args: argparse.Namespace) -> int:
 def _cmd_run_fast(args: argparse.Namespace) -> int:
     suite = fast_suite()
     if args.modules:
-        # Integration modules a change affects: FAST alone would drop them.
+        # Integration or benchmark modules a change affects: FAST alone would drop them.
         problem = validate_module_ids(args.modules)
         if problem is not None:
             print(f"run-fast: {problem}", file=sys.stderr)

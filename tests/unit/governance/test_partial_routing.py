@@ -366,8 +366,8 @@ class MonotonicityTests(unittest.TestCase):
         if big.tier == small.tier:
             return set(big.modules) >= set(small.modules)
         if big.tier == router.FAST and small.tier == router.PARTIAL:
-            # FAST already runs every non-integration module; it must also carry the integration ones.
-            return {m for m in small.modules if m.startswith(router.INTEGRATION_PREFIX)} <= set(big.modules)
+            # FAST already runs every module it does not drop; it must also carry the dropped ones.
+            return {m for m in small.modules if router.is_fast_dropped(m)} <= set(big.modules)
         return True
 
     def assert_monotone(self, graph: router.ImpactGraph, pool: tuple[str, ...], seed: int, rounds: int) -> None:
@@ -639,6 +639,12 @@ class RunPartialTests(unittest.TestCase):
 
         self.assertNotIn("tests.integration.test_int.T.test_a", listed())
         self.assertIn("tests.integration.test_int.T.test_a", listed("--modules", "tests.integration.test_int"))
+
+        (self.root / "tests/unit/benchmark").mkdir(parents=True)
+        (self.root / "tests/unit/benchmark/__init__.py").write_text("", encoding="utf-8")
+        (self.root / "tests/unit/benchmark/test_bm.py").write_text(TEST_BODY, encoding="utf-8")
+        self.assertNotIn("tests.unit.benchmark.test_bm.T.test_a", listed())
+        self.assertIn("tests.unit.benchmark.test_bm.T.test_a", listed("--modules", "tests.unit.benchmark.test_bm"))
         bad = subprocess.run(
             [sys.executable, str(ROUTER), "run-fast", "--modules", "bad id"], cwd=self.root, capture_output=True, text=True
         )

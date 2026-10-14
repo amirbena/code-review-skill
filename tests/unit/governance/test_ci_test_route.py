@@ -216,7 +216,21 @@ class FastSuiteTests(unittest.TestCase):
         full = {t.id() for t in router._iter_tests(unittest.defaultTestLoader.discover(str(REPO_ROOT / "tests"), top_level_dir=str(REPO_ROOT)))}
         fast = {t.id() for t in router._iter_tests(router.fast_suite(REPO_ROOT / "tests", REPO_ROOT))}
         self.assertTrue(any(i.startswith(router.INTEGRATION_PREFIX) for i in full))
-        self.assertEqual(fast, {i for i in full if not i.startswith(router.INTEGRATION_PREFIX)})
+        self.assertEqual(fast, {i for i in full if not router.is_fast_dropped(i)})
+
+    def test_fast_drops_benchmark_tests_but_keeps_the_docs_scanners(self) -> None:
+        fast = {t.id() for t in router._iter_tests(router.fast_suite(REPO_ROOT / "tests", REPO_ROOT))}
+        self.assertFalse([i for i in fast if i.startswith(router.BENCHMARK_PREFIXES) and router.is_fast_dropped(i)])
+        self.assertFalse([i for i in fast if i.startswith(router.BENCHMARK_PREFIXES) and not any(i.startswith(m + ".") for m in router.DOCS_SCANNER_MODULES)])
+        self.assertTrue(any(i.startswith("tests.policy.benchmark.test_benchmark_root_migration.") for i in fast))
+
+    def test_dropped_predicate(self) -> None:
+        self.assertTrue(router.is_fast_dropped("tests.unit.benchmark.test_run_concurrency_experiment"))
+        self.assertTrue(router.is_fast_dropped("tests.policy.benchmark.test_other.T.test_a"))
+        self.assertTrue(router.is_fast_dropped("tests.integration.packaging.test_x"))
+        self.assertFalse(router.is_fast_dropped("tests.policy.benchmark.test_benchmark_root_migration"))
+        self.assertFalse(router.is_fast_dropped("tests.policy.benchmark.test_benchmark_root_migration.T.test_a"))
+        self.assertFalse(router.is_fast_dropped("tests.unit.review.test_x"))
 
     def test_a_new_test_directory_is_not_skipped(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
