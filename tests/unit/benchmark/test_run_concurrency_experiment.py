@@ -374,7 +374,19 @@ class ExecutionTest(unittest.TestCase):
                         1, [workers.Fixture("c0", t)], executable="x", timeout=1, scratch_root=Path(t),
                         log=lambda m: None, cancel=threading.Event(), children=workers.LiveChildren(),
                     )
-        self.assertEqual(slots, [0, 0])  # handed out at start, returned after the failure
+        self.assertEqual(slots, [0, 0])  # initial population, then returned after the failure
+        # (the faulting fixture's own failure record is asserted in the next test)
+
+    def test_a_workspace_parent_failure_is_recorded_against_its_fixture(self):
+        with tempfile.TemporaryDirectory() as t:
+            arm = workers.ArmResult(1, 1, 0.0)
+            with mock.patch.object(workers.tempfile, "mkdtemp", side_effect=OSError("disk full")):
+                with self.assertRaises(OSError):
+                    workers.run_arm(
+                        1, [workers.Fixture("c0", t)], executable="x", timeout=1, scratch_root=Path(t),
+                        log=lambda m: None, cancel=threading.Event(), children=workers.LiveChildren(), result=arm,
+                    )
+        self.assertEqual([(o.case_id, o.status, o.failure_class) for o in arm.outcomes], [("c0", "failed", workers.INFRASTRUCTURE)])
 
     def test_two_children_cannot_share_a_slot(self):
         barrier = threading.Barrier(2, timeout=5)

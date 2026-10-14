@@ -338,10 +338,10 @@ def run_arm(
                 result.violations.append(Violation("slot-shared", f"slot {slot} held by two fixtures", slot, fixture.case_id))
             active.add(slot)
         try:
-            scratch = Path(tempfile.mkdtemp(prefix="fixture-", dir=slot_dir))
             log(f"[w{slot}] START {fixture.case_id}")
             fixture_began = time.monotonic()
             try:
+                scratch = Path(tempfile.mkdtemp(prefix="fixture-", dir=slot_dir))
                 outcome = run_fixture_child(
                     fixture, worker=slot, scratch=scratch, executable=executable, timeout=timeout, began=began, children=children
                 )
