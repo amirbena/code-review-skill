@@ -93,14 +93,17 @@
   },
   "stop_condition": {
     "max_experiments": 4,
-    "window_end": "2026-10-22",
+    "window_end": "2026-10-29",
     "experiments": [
-      {"date": "2026-10-13", "arms": [1, 2]},
-      {"date": "2026-10-15", "arms": [2, 4]},
-      {"date": "2026-10-20", "arms": [2, 1]},
-      {"date": "2026-10-22", "arms": [4, 2]}
+      {"date": "2026-10-20", "arms": [1, 2]},
+      {"date": "2026-10-22", "arms": [2, 4]},
+      {"date": "2026-10-27", "arms": [2, 1]},
+      {"date": "2026-10-29", "arms": [4, 2]}
     ],
-    "action": "A scheduled run refuses to execute on any date not listed, after window_end, and once max_experiments experiment refs exist, whether or not the Routine is still enabled."
+    "superseded_refs": [
+      "claude/concurrency-experiment-20261013T090348Z-6dee089614ec"
+    ],
+    "action": "A scheduled run refuses to execute on any date not listed, after window_end, and once max_experiments experiment refs exist (refs listed in superseded_refs are not counted), whether or not the Routine is still enabled."
   },
   "pin": {
     "mechanism": "cli-expected-sha",
