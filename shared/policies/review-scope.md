@@ -164,7 +164,11 @@ deliberately not an eight-dimension checklist run on every diff.
   actually run in, and does it fail safely if a dependency it now assumes
   is unavailable. Depth owner: "Dependency / supply-chain deepening
   review" below, for materially implicated dependency/build/supply-chain
-  semantics specifically.
+  semantics specifically, and, when the evidence gathered by this
+  dimension's base reasoning warrants deeper review of deployment
+  behavior than that bounded pass affords,
+  [`deployment-infrastructure-deepening.md`](deployment-infrastructure-deepening.md)
+  per the "Domain-specific deepening pass" below.
 - **Security / trust boundaries** — signal: a value crosses from a less
   trusted context into a more trusted one, or the change touches
   authentication, authorization, or a policy-enforcement decision. Base

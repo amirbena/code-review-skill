@@ -17,6 +17,7 @@ files:
   - shared/policies/performance-deepening.md
   - shared/policies/database-migration-deepening.md
   - shared/policies/distributed-systems-deepening.md
+  - shared/policies/deployment-infrastructure-deepening.md
 requires: [review-kernel, finding-contract, scale]
 never:
   - producing an independent verdict or severity scale
