@@ -497,6 +497,13 @@ contract compatibility review" and "Architectural placement and
 execution-lifecycle fidelity" above already apply to insufficient
 evidence, not a new evidence standard invented for this section alone.
 
+When a changed declaration alters what resolves and the diff alone shows
+no resolved-dependency evidence (for example a Maven BOM bump), the
+opt-in Base/Head dependency tree inspection in
+[`dependency-tree-inspection.md`](dependency-tree-inspection.md) owns how
+that evidence is obtained, validated, and compared; missing or invalid
+evidence is a Context gap, never a finding.
+
 This section adds no new severity, finding category, or score: a
 dependency/supply-chain finding is labeled confirmed defect / credible
 engineering risk per [`evidence.md`](evidence.md) like any other finding,

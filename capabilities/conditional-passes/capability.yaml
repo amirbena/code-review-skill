@@ -18,6 +18,7 @@ files:
   - shared/policies/failure-retry-recovery.md
   - shared/policies/architectural-placement.md
   - shared/policies/api-contract-compatibility.md
+  - shared/policies/dependency-tree-inspection.md
   - shared/policies/code-hygiene.md
 requires: [review-kernel, finding-contract]
 never:
