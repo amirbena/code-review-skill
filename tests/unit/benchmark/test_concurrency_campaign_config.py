@@ -375,10 +375,10 @@ def good_campaign() -> list[dict]:
     ]
 
 
-def evaluate(experiments: list[dict], *, window: float | None = 10000.0, pinned: str | None = SHA) -> dict:
+def evaluate(experiments: list[dict], *, window: float | None = 10000.0, pinned: str | None = SHA, superseded: tuple[str, ...] = ()) -> dict:
     thresholds = copy.deepcopy(committed()["decision"])
     thresholds["window"]["evidenced_window_s"] = window
-    return decision.evaluate_campaign(experiments, thresholds, corpus_size=144, pinned_sha=pinned)
+    return decision.evaluate_campaign(experiments, thresholds, corpus_size=144, pinned_sha=pinned, superseded_refs=superseded)
 
 
 def outcome(result: dict, check_id: str) -> dict:
@@ -390,6 +390,17 @@ class DecisionEvaluationTest(unittest.TestCase):
         result = evaluate(good_campaign())
         self.assertEqual(result["decision"], "GO", [c for c in result["checks"] if c["passed"] is not True])
         self.assertIn(2, result["eligible_worker_counts"])
+
+    def test_the_superseded_incomplete_experiment_cannot_enter_the_decision(self):
+        old = experiment([arm(1, 640.7), arm(2, 316.7)], sha="6" * 40, violations=48, status="incomplete")
+        old["ref"] = SUPERSEDED
+        listed = tuple(committed()["stop_condition"]["superseded_refs"])
+        self.assertEqual(evaluate([old, *good_campaign()], superseded=listed)["decision"], "GO")
+        self.assertEqual(evaluate([old, *good_campaign()], superseded=listed)["excluded_superseded_refs"], [SUPERSEDED])
+        self.assertEqual(evaluate([old, *good_campaign()])["decision"], "NO-GO")  # unlisted, its failures would decide
+        old["ref"] = f"refs/heads/{SUPERSEDED}"
+        self.assertEqual(evaluate([old, *good_campaign()], superseded=listed)["decision"], "GO")
+        self.assertEqual(evaluate([old], superseded=listed)["decision"], "INCONCLUSIVE")
 
     def test_an_unevidenced_window_can_never_be_go(self):
         result = evaluate(good_campaign(), window=None)

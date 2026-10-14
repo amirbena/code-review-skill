@@ -145,11 +145,21 @@ def _provenance(experiment: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def evaluate_campaign(
-    experiments: list[Mapping[str, Any]], decision: Mapping[str, Any], *, corpus_size: int, pinned_sha: str | None, max_experiments: int = 4
+    experiments: list[Mapping[str, Any]],
+    decision: Mapping[str, Any],
+    *,
+    corpus_size: int,
+    pinned_sha: str | None,
+    max_experiments: int = 4,
+    superseded_refs: tuple[str, ...] | list[str] = (),
 ) -> dict[str, Any]:
+    """`superseded_refs` is the spec's `stop_condition.superseded_refs`: those records are dropped before any check and reported."""
+    superseded = {r.removeprefix("refs/heads/") for r in superseded_refs}
+    excluded = sorted(str(e["ref"]) for e in experiments if str(e.get("ref", "")).removeprefix("refs/heads/") in superseded)
+    experiments = [e for e in experiments if str(e.get("ref", "")).removeprefix("refs/heads/") not in superseded]
     gates, perf, window = decision["hard_safety_gates"], decision["performance_thresholds"], decision["window"]
     if not experiments:
-        return {"decision": "INCONCLUSIVE", "checks": [], "eligible_worker_counts": [], "reason": "no experiment has run"}
+        return {"decision": "INCONCLUSIVE", "checks": [], "eligible_worker_counts": [], "reason": "no experiment has run", "excluded_superseded_refs": excluded}
     arms = _arms(experiments)
     checks: list[dict[str, Any]] = []
 
@@ -224,6 +234,7 @@ def evaluate_campaign(
         "decision": verdict,
         "checks": checks,
         "eligible_worker_counts": sorted(w for w, ok in eligible.items() if ok),
+        "excluded_superseded_refs": excluded,
         "projection_basis": f"per-fixture wall mean of the measured subset, extrapolated to {invocations} invocations",
         "projection_is_not_a_seal": "a projection is not a sealed Comprehensive run; GO only authorizes a separate production issue",
     }

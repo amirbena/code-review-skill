@@ -104,7 +104,7 @@ The first campaign was restarted before its second experiment, for one reason: e
 
 - **What changed:** the four dates move one week (Tuesday/Thursday, same arm order and reversal) and `window_end` becomes 2026-10-29; the pin becomes the merge commit of this change, which contains #736; `stop_condition.superseded_refs` lists the first experiment's ref.
 - **What did not change:** the subset, every threshold, the hard gates, the window evidence, the four-experiment requirement (`max_experiments` 4) and the counterbalancing. Four experiments are still needed: the same-configuration variance baseline needs 2-worker arms in both weeks, and `evaluate_campaign` reports INCONCLUSIVE below four valid experiments.
-- **The superseded ref stays on the store, `incomplete`.** It is not deleted or reclassified. It does not count toward `max_experiments`, and it must be left out of the records passed to `evaluate_campaign` (it would fail the isolation, completeness and provenance gates, because its `repo_sha` is the old pin). Its timings (640.7 s at 1 worker, 316.7 s at 2) are descriptive only and are not decision evidence.
+- **The superseded ref stays on the store, `incomplete`.** It is not deleted or reclassified. It does not count toward `max_experiments`, and `evaluate_campaign(..., superseded_refs=<the spec list>)` drops its record by `ref` before any gate and names it under `excluded_superseded_refs` (left in, it would fail the isolation, completeness and provenance gates, because its `repo_sha` is the old pin). Its timings (640.7 s at 1 worker, 316.7 s at 2) are descriptive only and are not decision evidence.
 
 ## 4. Pinned source
 
