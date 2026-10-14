@@ -87,6 +87,7 @@ _INPUT_KEYS: frozenset[str] = frozenset(
         "unadmitted_repositories",
         "external_contexts",
         "workspace_siblings",
+        "dependency_trees",
     }
 )
 _REPO_REF_KEYS: frozenset[str] = frozenset({"repo", "pr", "commit", "base"})
@@ -103,6 +104,15 @@ _EXTERNAL_CONTEXT_KEYS: frozenset[str] = frozenset(
 # Issue #664: one entry of `input.workspace_siblings` — an immediate-child
 # repository of a caller-granted workspace root.
 _WORKSPACE_SIBLING_KEYS: frozenset[str] = frozenset({"files", "mirrors_review_target"})
+# Issue #732: `input.dependency_trees` — synthetic Base/Head dependency-tree text.
+DEPENDENCY_TREE_WORKFLOWS: frozenset[str] = frozenset(
+    {"authorized-execution", "user-provided", "blocked-then-provided", "declined", "blocked-then-declined"}
+)
+_DEPENDENCY_TREE_KEYS: frozenset[str] = frozenset(
+    {"workflow", "ecosystem", "imitates", "synthetic", "base", "head", "unlabeled"}
+)
+_DEPENDENCY_TREE_SIDES: tuple[str, ...] = ("base", "head", "unlabeled")
+_DEPENDENCY_TREE_SIDE_KEYS: frozenset[str] = frozenset({"command", "text"})
 EXTERNAL_REVISION_VALUES: frozenset[str] = frozenset({"pinned", "absent"})
 _EXPECTED_KEYS: frozenset[str] = frozenset(
     {"decision", "findings", "findings_completeness"}
@@ -454,9 +464,57 @@ def _parse_workspace_siblings(raw: Any) -> None:
         )
 
 
+def _parse_dependency_trees(raw: Any) -> None:
+    """Issue #732: `input.dependency_trees` — the tree text a workflow supplies or
+    a fixture-local command emits. Always synthetic; `imitates` records the tool
+    format the text stands in for. Nothing here is executed by the validator."""
+    where = "input.dependency_trees"
+    _require(isinstance(raw, dict), f"{where}: must be a mapping")
+    _no_unknown_keys(raw, _DEPENDENCY_TREE_KEYS, where)
+    _require(
+        raw.get("workflow") in DEPENDENCY_TREE_WORKFLOWS,
+        f"{where}.workflow: must be one of {sorted(DEPENDENCY_TREE_WORKFLOWS)}",
+    )
+    for key in ("ecosystem", "imitates"):
+        _require(
+            isinstance(raw.get(key), str) and raw[key].strip() != "",
+            f"{where}.{key}: must be a non-empty string",
+        )
+    _require(raw.get("synthetic") is True, f"{where}.synthetic: must be true (fixtures are never real tool output)")
+    present = [side for side in _DEPENDENCY_TREE_SIDES if side in raw]
+    for side in present:
+        entry = raw[side]
+        _require(isinstance(entry, dict), f"{where}.{side}: must be a mapping")
+        _no_unknown_keys(entry, _DEPENDENCY_TREE_SIDE_KEYS, f"{where}.{side}")
+        _require(
+            isinstance(entry.get("text"), str) and entry["text"].strip() != "",
+            f"{where}.{side}.text: must be a non-empty string",
+        )
+        _require(
+            "command" not in entry or (isinstance(entry["command"], str) and entry["command"].strip() != ""),
+            f"{where}.{side}.command: must be a non-empty string when present",
+        )
+    _require(
+        not ("unlabeled" in raw and ("base" in raw or "head" in raw)),
+        f"{where}.unlabeled: cannot be combined with 'base' or 'head'",
+    )
+    if raw["workflow"] in ("declined", "blocked-then-declined"):
+        _require(not present, f"{where}: a declined workflow supplies no tree text")
+        return
+    _require(bool(present), f"{where}: a workflow that supplies output needs at least one of base/head/unlabeled")
+    if raw["workflow"] == "authorized-execution":
+        _require(
+            all("command" in raw[side] for side in present),
+            f"{where}: authorized-execution needs the command on every supplied side",
+        )
+
+
 def _parse_input(raw: Any) -> dict[str, Any]:
     _require(isinstance(raw, dict), "input: must be a mapping")
     _no_unknown_keys(raw, _INPUT_KEYS, "input")
+    if "dependency_trees" in raw:
+        _require("patch" in raw, "input.dependency_trees: only valid alongside 'patch'")
+        _parse_dependency_trees(raw["dependency_trees"])
     if "workspace_siblings" in raw:
         _require("patch" in raw, "input.workspace_siblings: only valid alongside 'patch'")
         _parse_workspace_siblings(raw["workspace_siblings"])

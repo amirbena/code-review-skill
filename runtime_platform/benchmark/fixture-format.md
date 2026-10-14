@@ -267,6 +267,31 @@ capability-off arm see identical disk state. See
 and
 [`../../shared/policies/workspace-sibling-context.md`](../../shared/policies/workspace-sibling-context.md).
 
+### 6.7 Dependency trees (`dependency_trees`) — Issue #732
+
+Optional, valid only alongside `patch`. Synthetic dependency-tree text for
+Base and Head, carried so the opt-in inspection in
+[`../../shared/policies/dependency-tree-inspection.md`](../../shared/policies/dependency-tree-inspection.md)
+can be benchmarked with no build, plugin, or network:
+
+| Field | Required | Meaning |
+|---|---|---|
+| `workflow` | yes | `authorized-execution`, `user-provided`, `blocked-then-provided`, `declined`, or `blocked-then-declined`. |
+| `ecosystem` | yes | Free-text ecosystem label (for example `maven`). |
+| `imitates` | yes | The tool and output format the text stands in for, so drift from real output is auditable. |
+| `synthetic` | yes | Must be `true`. A fixture is never real tool output. |
+| `base`, `head` | no | `{text, command?}` for that side. `text` is the tree output; `command` is the command that produced or would produce it (required on every supplied side for `authorized-execution`). |
+| `unlabeled` | no | `{text, command?}` supplied without saying which side it is. Cannot be combined with `base`/`head`. |
+
+A declined workflow supplies no text; every other workflow supplies at least
+one side. A runner passes the materialized value to the reviewer adapter as
+the `dependency_trees` keyword, only for a case that declares the input. In
+`authorized-execution` the runner writes each side's text to a file outside the
+workspace and states a fixture-local `cat` command as the approved command, so
+the benchmark runs through the existing execution mechanism but never a real
+build. The validator never executes anything. See
+[`dependency-tree-inspection-measurement.md`](dependency-tree-inspection-measurement.md).
+
 ## 7. Expected outcome (`expected`)
 
 `expected` is a mapping with:

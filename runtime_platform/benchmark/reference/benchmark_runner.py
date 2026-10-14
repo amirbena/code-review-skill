@@ -388,6 +388,37 @@ def materialize_external_contexts(
     return refs
 
 
+@dataclass(frozen=True)
+class DependencyTreeRef:
+    """What the reviewer is handed for ``input.dependency_trees`` (Issue #732).
+    ``sides`` maps a side label to ``(declared_command, text, run_command)``;
+    ``run_command`` is a fixture-local ``cat`` of a file outside the workspace,
+    set only for ``authorized-execution`` (no real tool ever runs)."""
+
+    workflow: str
+    ecosystem: str
+    imitates: str
+    sides: Mapping[str, tuple[str | None, str, str | None]]
+
+
+def materialize_dependency_trees(case: bf.BenchmarkCase, tree_root: Path) -> DependencyTreeRef | None:
+    spec = case.input.get("dependency_trees")
+    if not spec:
+        return None
+    sides: dict[str, tuple[str | None, str, str | None]] = {}
+    for side in ("base", "head", "unlabeled"):
+        entry = spec.get(side)
+        if not entry:
+            continue
+        run_command = None
+        if spec["workflow"] == "authorized-execution":
+            path = tree_root / f"{side}-tree.txt"
+            path.write_text(entry["text"], encoding="utf-8")
+            run_command = f"cat {path}"
+        sides[side] = (entry.get("command"), entry["text"], run_command)
+    return DependencyTreeRef(spec["workflow"], spec["ecosystem"], spec["imitates"], sides)
+
+
 def materialize_workspace_siblings(
     case: bf.BenchmarkCase, workspace_root: Path, review_target: Path
 ) -> Path | None:
@@ -563,6 +594,8 @@ def _run_case(
     result: CaseResult
     external_root: Path | None = None
     workspace_grant: Path | None = None
+    tree_root: Path | None = None
+    dependency_trees: DependencyTreeRef | None = None
     try:
         multi_repo: MultiRepoWorkspaces | None = None
         external: dict[str, ExternalContextRef] = {}
@@ -583,6 +616,11 @@ def _run_case(
                     tempfile.mkdtemp(prefix=f"benchmark-{case.id}-workspace-", dir=str(workspace.parent))
                 )
                 materialize_workspace_siblings(case, workspace_grant, workspace)
+            if case.input.get("dependency_trees"):
+                tree_root = Path(
+                    tempfile.mkdtemp(prefix=f"benchmark-{case.id}-trees-", dir=str(workspace.parent))
+                )
+                dependency_trees = materialize_dependency_trees(case, tree_root)
         except PatchDidNotApply:
             return CaseResult(case.id, kind, _ERROR, error="patch-did-not-apply")
         except _WorkspaceSetupFailed:
@@ -605,6 +643,8 @@ def _run_case(
                 extras["external_contexts"] = external
             if workspace_grant is not None:
                 extras["workspace_root"] = workspace_grant
+            if dependency_trees is not None:
+                extras["dependency_trees"] = dependency_trees
             produced = tuple(reviewer(target, **extras))
         except Exception:  # noqa: BLE001 - adapter failure is a per-case error, not a crash
             return CaseResult(case.id, kind, _ERROR, error="reviewer-adapter-raised")
@@ -629,7 +669,7 @@ def _run_case(
         return result
     finally:
         failure: Exception | None = None
-        for directory in (workspace, external_root, workspace_grant):
+        for directory in (workspace, external_root, workspace_grant, tree_root):
             if directory is None:
                 continue
             try:

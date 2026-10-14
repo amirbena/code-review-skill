@@ -1,0 +1,94 @@
+# Dependency tree inspection corpus case (Issue #732, parent #731, evaluates #730).
+# SYNTHETIC: the tree text is crafted, never real tool output. Format imitated:
+# mvn dependency:tree text output (maven-dependency-plugin 3.6.x, verbose off). See ./README.md.
+
+format: benchmark-case/v2
+
+id: dti-base-only-no-comparison
+title: "Synthetic: only a valid Base tree is supplied; no comparison"
+
+input:
+  patch: |
+    diff --git a/pom.xml b/pom.xml
+    --- a/pom.xml
+    +++ b/pom.xml
+    @@ -8,7 +8,7 @@
+           <dependency>
+             <groupId>com.acme.platform</groupId>
+             <artifactId>acme-platform-bom</artifactId>
+    -        <version>2.3.0</version>
+    +        <version>2.4.0</version>
+             <type>pom</type>
+             <scope>import</scope>
+           </dependency>
+
+  base:
+    pom.xml: |
+      <project xmlns="http://maven.apache.org/POM/4.0.0">
+        <modelVersion>4.0.0</modelVersion>
+        <groupId>com.acme.orders</groupId>
+        <artifactId>orders-service</artifactId>
+        <version>1.8.0</version>
+        <dependencyManagement>
+          <dependencies>
+            <dependency>
+              <groupId>com.acme.platform</groupId>
+              <artifactId>acme-platform-bom</artifactId>
+              <version>2.3.0</version>
+              <type>pom</type>
+              <scope>import</scope>
+            </dependency>
+          </dependencies>
+        </dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>com.acme.platform</groupId>
+            <artifactId>acme-security</artifactId>
+          </dependency>
+          <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>6.1.2</version>
+          </dependency>
+        </dependencies>
+      </project>
+
+    docs/security-policy.md: |
+      # Security policy
+
+      Runtime cryptography in this service must come from FIPS 140-validated
+      modules only. The approved family is the Bouncy Castle FIPS distribution
+      (bc-fips, bcpkix-fips). Non-FIPS Bouncy Castle artifacts (bcprov-*, bcpkix-*)
+      are not permitted on the runtime classpath; test-only use is allowed.
+
+  dependency_trees:
+    workflow: user-provided
+    ecosystem: maven
+    imitates: "mvn dependency:tree text output (maven-dependency-plugin 3.6.x, verbose off)"
+    synthetic: true
+    base:
+      command: mvn dependency:tree
+      text: |
+        [INFO] --- maven-dependency-plugin:3.6.1:tree (default-cli) @ orders-service ---
+        [INFO] com.acme.orders:orders-service:jar:1.8.0
+        [INFO] +- com.acme.platform:acme-security:jar:2.3.0:compile
+        [INFO] |  +- org.bouncycastle:bc-fips:jar:1.0.2.4:compile
+        [INFO] |  \- org.bouncycastle:bcpkix-fips:jar:1.0.7:compile
+        [INFO] \- org.springframework:spring-core:jar:6.1.2:compile
+        [INFO] ------------------------------------------------------------------------
+        [INFO] BUILD SUCCESS
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Fail-closed case: the evidence is unusable or absent, so the review states a Context gap or bounded statement and raises no finding.
+  taxonomy:
+    capability: [dependency-tree-inspection]
+    policy_contract: [dependency-tree-inspection]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

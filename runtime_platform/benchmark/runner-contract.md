@@ -128,6 +128,12 @@ For every case, before the reviewer adapter is invoked:
      directory beside the workspace, removed with it. The root is handed
      to the adapter as `workspace_root`; an arm that withholds the grant
      simply does not forward it.
+   - **`dependency_trees` input** (Issue #732, `fixture-format.md` §6.7) —
+     the synthetic Base/Head tree text is handed to the adapter as the
+     `dependency_trees` keyword, only for a case that declares it. For
+     `authorized-execution` each side is also written to a file in a
+     separate disposable directory beside the workspace and a fixture-local
+     `cat` command is offered as the approved command; nothing real runs.
 3. The reviewer adapter receives **only the workspace path** as its
    review target — or, for a `repositories` case, only the mapping of
    admitted member alias → that member's own workspace path (never the
