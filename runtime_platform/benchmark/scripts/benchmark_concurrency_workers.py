@@ -333,12 +333,12 @@ def run_arm(
             return
         slot = slots.get()
         slot_dir = scratch_root / f"w{workers}-{slot}"
-        scratch = Path(tempfile.mkdtemp(prefix="fixture-", dir=slot_dir))
         with lock:
             if slot in active:  # a slot handed out twice would let two children share a workspace parent
                 result.violations.append(Violation("slot-shared", f"slot {slot} held by two fixtures", slot, fixture.case_id))
             active.add(slot)
         try:
+            scratch = Path(tempfile.mkdtemp(prefix="fixture-", dir=slot_dir))
             log(f"[w{slot}] START {fixture.case_id}")
             fixture_began = time.monotonic()
             try:

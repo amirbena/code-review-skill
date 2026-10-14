@@ -341,6 +341,41 @@ class ExecutionTest(unittest.TestCase):
         self.assertEqual({env[n] for n in workers.TEMP_ENV_VARS}, {"/w/fixture-1"})
         self.assertEqual(env[workers.CLI_TMPDIR_ENV], "/w/cli")
 
+    def test_run_fixture_child_creates_cli_state_and_passes_the_split_environment(self):
+        with tempfile.TemporaryDirectory() as t:
+            scratch = Path(t) / "w1-0" / "fixture-1"
+            scratch.mkdir(parents=True)
+            proc = mock.MagicMock(returncode=0)
+            proc.communicate.return_value = ("", "")
+            with mock.patch.object(workers.subprocess, "Popen", return_value=proc) as popen:
+                workers.run_fixture_child(
+                    workers.Fixture("c0", t), worker=0, scratch=scratch, executable="x", timeout=1, began=0.0,
+                    children=workers.LiveChildren(),
+                )
+            env = popen.call_args.kwargs["env"]
+            self.assertTrue((scratch.parent / workers.CLI_STATE_DIR).is_dir())
+            self.assertEqual(env["TMPDIR"], str(scratch))
+            self.assertEqual(env[workers.CLI_TMPDIR_ENV], str(scratch.parent / workers.CLI_STATE_DIR))
+
+    def test_a_workspace_parent_that_cannot_be_created_releases_the_slot(self):
+        with tempfile.TemporaryDirectory() as t:
+            slots = []
+            real_put = workers.queue.Queue.put
+
+            def spy(self, item, *a, **k):
+                slots.append(item)
+                return real_put(self, item, *a, **k)
+
+            with mock.patch.object(workers.tempfile, "mkdtemp", side_effect=OSError("disk full")), mock.patch.object(
+                workers.queue.Queue, "put", spy
+            ):
+                with self.assertRaises(OSError):
+                    workers.run_arm(
+                        1, [workers.Fixture("c0", t)], executable="x", timeout=1, scratch_root=Path(t),
+                        log=lambda m: None, cancel=threading.Event(), children=workers.LiveChildren(),
+                    )
+        self.assertEqual(slots, [0, 0])  # handed out at start, returned after the failure
+
     def test_two_children_cannot_share_a_slot(self):
         barrier = threading.Barrier(2, timeout=5)
 
