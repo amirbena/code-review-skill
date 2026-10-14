@@ -1,8 +1,8 @@
 capability: specialist-depth
 summary: >-
   Domain deepening for an already-implicated dimension (security,
-  performance, database/migration, distributed systems, engineering design), under one
-  composition contract.
+  performance, database/migration, distributed systems, engineering design), under
+  one composition contract.
 loads: on-activation
 activation:
   - a review dimension is already materially implicated by base reasoning
@@ -17,6 +17,7 @@ files:
   - shared/policies/performance-deepening.md
   - shared/policies/database-migration-deepening.md
   - shared/policies/distributed-systems-deepening.md
+  - shared/policies/deployment-infrastructure-deepening.md
   - shared/policies/engineering-design-deepening.md
 requires: [review-kernel, finding-contract, scale]
 never:

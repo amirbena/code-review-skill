@@ -72,7 +72,7 @@ class ConditionalLoadingSectionTests(unittest.TestCase):
     def test_predicate_decidable_without_opening_this_file(self) -> None:
         self.assertIn(
             "so evaluating it never requires opening this file or any of "
-            "the five deepening policies",
+            "the six deepening policies",
             self.text,
         )
 

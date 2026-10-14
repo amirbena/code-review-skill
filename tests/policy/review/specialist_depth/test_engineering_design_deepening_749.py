@@ -121,7 +121,7 @@ class EngineeringDesignDeepeningContractTests(unittest.TestCase):
 
     def test_domain_policy_count_updated(self) -> None:
         t = _norm(REPO_ROOT / "shared/policies/specialist-depth.md")
-        self.assertIn("the five domain deepening policies", t)
+        self.assertIn("the six domain deepening policies", t)
         self.assertNotIn("four domain deepening policies", t)
 
 
