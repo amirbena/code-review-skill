@@ -46,6 +46,7 @@
     { "source": "shared/policies/deployment-infrastructure-deepening.md", "destination": "shared/policies/deployment-infrastructure-deepening.md" },
     { "source": "shared/policies/database-migration-deepening.md", "destination": "shared/policies/database-migration-deepening.md" },
     { "source": "shared/policies/performance-deepening.md", "destination": "shared/policies/performance-deepening.md" },
+    { "source": "shared/policies/engineering-design-deepening.md", "destination": "shared/policies/engineering-design-deepening.md" },
     { "source": "shared/templates/finding.md", "destination": "shared/templates/finding.md" },
     { "source": "shared/templates/finding-rendering.md", "destination": "shared/templates/finding-rendering.md" },
     { "source": "shared/templates/review-summary.md", "destination": "shared/templates/review-summary.md" },

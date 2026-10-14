@@ -114,6 +114,7 @@ _SHARED_ORDER: tuple[Entry, ...] = (
     Entry("shared/policies/deployment-infrastructure-deepening.md", "specialist-depth"),
     Entry("shared/policies/database-migration-deepening.md", "specialist-depth"),
     Entry("shared/policies/performance-deepening.md", "specialist-depth"),
+    Entry("shared/policies/engineering-design-deepening.md", "specialist-depth"),
     Entry("shared/templates/finding.md", "finding-placement-derivation"),
     Entry("shared/templates/finding-rendering.md", None),
     Entry("shared/templates/review-summary.md", None),
