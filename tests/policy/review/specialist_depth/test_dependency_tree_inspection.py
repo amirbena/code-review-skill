@@ -48,6 +48,16 @@ class DependencyTreeInspectionTests(unittest.TestCase):
         self.assertIn("API-only mode", self.text)
         self.assertIn("offers Workflow 2 only", self.text)
 
+    def test_confidence_follows_existing_mapping(self) -> None:
+        self.assertIn("follows the existing mapping, never the tree's source", self.text)
+        self.assertIn("provenance", self.text)
+
+    def test_summary_template_renders_tree_evidence_gaps(self) -> None:
+        summary = _text(REPO_ROOT / "shared/templates/review-summary.md")
+        self.assertIn("dependency-tree evidence gap", summary)
+        self.assertIn("the command that obtains valid evidence", summary)
+        self.assertIn("one bullet per unresolved relationship", summary)
+
 
 if __name__ == "__main__":
     unittest.main()

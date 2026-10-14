@@ -98,10 +98,11 @@ compared. Do not claim the change introduced a dependency or regression.
 If the user declines or cannot provide results, report a Context gap naming
 the command and how to obtain the output. Missing, invalid, or incomplete
 evidence never creates a finding and never raises severity. A finding that
-does result uses the existing contracts; its `confidence` reflects that the
-tree is user-sourced or reviewer-executed, and a supplied tree can be stale,
-from the wrong commit, or altered, so trust is bounded by its identified
-source.
+does result uses the existing contracts; its `confidence` follows the
+existing mapping, never the tree's source. Record the tree's provenance
+(user-supplied or reviewer-executed, command, side) in the finding's
+evidence. A supplied tree can be stale, from the wrong commit, or altered,
+so trust is bounded by its identified source.
 
 ## Non-goals
 
