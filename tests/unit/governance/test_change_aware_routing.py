@@ -196,6 +196,21 @@ class ClassifyTests(FixtureRepo):
         result = router.classify(["docs/pure/x.md", "docs/pure/y.md"], self.index())
         self.assertEqual((result.tier, result.change_class, result.first_full_path), (router.DOCS, router.PURE_DOCS, None))
 
+    def test_benchmark_roots_route_full_even_for_unconsumed_markdown(self) -> None:
+        benchmark_docs = ("benchmark/corpus/c/README.md", "runtime_platform/benchmark/note.md")
+        for rel in (*benchmark_docs, "benchmarks/unrelated.md"):
+            self.write(rel, "d\n")
+        self.commit("benchmark docs")
+        index = self.index()
+        for path in benchmark_docs:
+            with self.subTest(path=path):
+                for idx in (index, None):
+                    self.assertEqual(router.classify([path], idx).tier, router.FULL)
+                self.assertEqual(router.classify([path, "docs/pure/x.md"], index).tier, router.FULL)
+        # Near misses and ordinary pure docs keep their routes.
+        self.assertEqual(router.classify(["benchmarks/unrelated.md"], index).tier, router.DOCS)
+        self.assertEqual(router.classify(["docs/pure/x.md"], index).tier, router.DOCS)
+
     def test_mixed_changes_follow_the_non_doc_paths(self) -> None:
         index = self.index()
         cases = (

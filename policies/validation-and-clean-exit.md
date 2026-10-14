@@ -90,8 +90,11 @@ tier. **FULL is the default**:
 
 - **FULL** runs the full suite exactly as above
   (`python -m unittest discover -s tests -t .`).
-- **FAST** runs the same discovery minus exactly the tests whose ID starts
-  with `tests.integration.`. Every unit, policy, and repository test — and
+- **FAST** runs the same discovery minus the tests whose ID starts with
+  `tests.integration.`, `tests.unit.benchmark.`, or `tests.policy.benchmark.`
+  (the registered `DOCS_SCANNER_MODULES` stay, because they scan every tracked
+  file). Benchmark tests therefore run only on FULL, or when a change touches
+  benchmark files. Every other unit, policy, and repository test — and
   any new top-level test directory — still runs, as do metadata
   validation, the canonical build, Agent Skills spec validation, and the
   shell/PowerShell parity jobs. FAST never removes a contract or
@@ -118,8 +121,10 @@ its paths (renames counted as both paths):
 | `CONSUMED_DOCS` | such a documentation file that one of those roots references (literal, joined, basename, or directory path) | FAST |
 | `FAST_ALLOWLIST` | every path is on the allowlist in [`ci_test_route.py`](../scripts/validation/ci_test_route.py) | FAST |
 | `PARTIAL_TESTS` | every path is a tracked file under `tests/` with a derived, non-empty affected set (alone or with pure docs) | PARTIAL |
-| `MIXED` | docs plus other paths: tiered by the non-doc paths; docs never lower the tier. Test paths with a FAST path give FAST plus the affected `tests.integration.*` modules | PARTIAL, FAST or FULL |
+| `MIXED` | docs plus other paths: tiered by the non-doc paths; docs never lower the tier. Test paths with a FAST path give FAST plus the affected `tests.integration.*` and benchmark modules | PARTIAL, FAST or FULL |
 | `UNKNOWN` | anything else: any other path, non-`.md` or unnormalized `docs/` path, empty change set | FULL |
+
+Markdown files under `benchmark/` and `runtime_platform/benchmark/` always route FULL.
 
 Consumers are derived from the tracked files under the checkout, not listed
 by hand, so a new `docs/<dir>/` needs no edit and a new consumer reclassifies
@@ -184,8 +189,8 @@ unknown or ambiguous impact fails upward, never downward.
   `tests/`) are added to every PARTIAL set. A change that also touches
   documentation adds `DOCS_SCANNER_MODULES` and the Markdown link validator.
   An allowlisted FAST path or consumed docs with a test change is FAST plus
-  the affected `tests.integration.*` modules (`run-fast --modules …`), since
-  FAST alone would drop them.
+  the affected `tests.integration.*` and benchmark modules
+  (`run-fast --modules …`), since FAST alone would drop them.
 - **Fail upward to FULL** on: a path outside the known `tests/` kinds
   (including a new top-level `tests/` directory); a file in the graph that
   fails to parse or read; a closure that includes a module that loads code

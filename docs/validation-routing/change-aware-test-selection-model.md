@@ -69,7 +69,7 @@ it only narrows the candidate set (§2.1).
 | # | Class | Definition | Outcome |
 | --- | --- | --- | --- |
 | 1 | **Pure documentation** | Every changed path is a tracked Markdown file under `docs/` that the consumer index (§3) shows has **no** consumer other than the registered static scanners | Tier **DOCS**: static documentation validation only (§2.2); zero unit, integration, benchmark, or live suites |
-| 2 | **Consumed / behaviorally significant documentation** | A docs path (or a root/`policies/` doc) with at least one consumer, or a non-Markdown file under `docs/` (JSON/YAML are data) | Only the validation its consumers require. **Phase 1: FAST** (all non-integration tests run); **phase 2: PARTIAL** (#634; named TARGETED in this record's original design) = the affected test modules + static scanners |
+| 2 | **Consumed / behaviorally significant documentation** | A docs path (or a root/`policies/` doc) with at least one consumer, or a non-Markdown file under `docs/` (JSON/YAML are data) | Only the validation its consumers require. **Phase 1: FAST** (all tests except integration and benchmark run); **phase 2: PARTIAL** (#634; named TARGETED in this record's original design) = the affected test modules + static scanners |
 | 3 | **Mixed docs + code/infrastructure** | Any non-doc path is present | Classified from the non-doc paths alone; docs contribute at most "at least FAST", never a lower tier |
 | 4 | **Unknown / high-risk** | Empty, renamed-to/from an unindexed path, router/index error, unrecognized path, or a high-risk path (§2.3) | **FULL** |
 
@@ -92,7 +92,7 @@ most likely hidden inputs.
 | --- | --- | --- |
 | **DOCS** | `validate-markdown-links.py`; the registered static scanners (§3.3: forbidden-terms and benchmark-root-migration reference scans) (first iteration: no other validation step; see the table at the top) | `tests.unit.*`, `tests.policy.*` (other than registered scanners), `tests.repository.*`, `tests.integration.*`, benchmark, live-model |
 | **PARTIAL** (#634) | An explicit module set: the affected test surface + registered companions (and, with docs, the registered scanners and link validation) + non-test steps | Everything else |
-| **FAST** | Unchanged from #533: full discovery minus `tests.integration.*` | `tests.integration.*` |
+| **FAST** | Full discovery minus `tests.integration.*` (#533) and the benchmark tests `tests.unit.benchmark.*` / `tests.policy.benchmark.*` (#759), keeping the registered static scanners | `tests.integration.*`, benchmark |
 | **FULL** | Unchanged: `python -m unittest discover -s tests -t .` | nothing |
 
 The `test` job and its required-check name are unchanged; tiers only change
