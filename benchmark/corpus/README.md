@@ -203,6 +203,15 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   format and reference validator; its own README, cases, and unit test
   ([`../../tests/unit/benchmark/test_dependency_supply_chain_deepening_corpus.py`](../../tests/unit/benchmark/test_dependency_supply_chain_deepening_corpus.py)).
 
+- [`deployment-infrastructure-deepening/`](deployment-infrastructure-deepening/README.md) —
+  a focused `benchmark-case/v2` sub-corpus pinning representative
+  outcomes for the Deployment & Infrastructure deepening specialist-depth
+  capability (Issue
+  [#743](https://github.com/amirbena/code-review-skill/issues/743), parent
+  [#740](https://github.com/amirbena/code-review-skill/issues/740)). Same
+  format and reference validator; its own README, cases, and unit test
+  ([`../../tests/unit/benchmark/test_deployment_infrastructure_deepening_corpus.py`](../../tests/unit/benchmark/test_deployment_infrastructure_deepening_corpus.py)).
+
 - [`analogue-placement-pattern/`](analogue-placement-pattern/README.md) —
   a focused `benchmark-case/v2` sub-corpus proving recall and
   false-positive resistance for the analogue-based responsibility/

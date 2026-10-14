@@ -1,0 +1,103 @@
+# Deployment/infrastructure-deepening corpus case (Issue #743, parent #740,
+# depends on #742). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Activation by reference wiring, not file type: only application config
+# changes (no manifest touched), yet the Deployment's probes and Service
+# still target the old port. Startup/runtime-contract property.
+
+format: benchmark-case/v2
+
+id: deployment-infrastructure-deepening-probe-port-no-longer-matches-listener
+title: "config/app.yaml moves the listen port 8080 -> 9090 while the Deployment probes and Service still target 8080"
+
+input:
+  patch: |
+    diff --git a/config/app.yaml b/config/app.yaml
+    index 1111111..2222222 100644
+    --- a/config/app.yaml
+    +++ b/config/app.yaml
+    @@ -1,4 +1,4 @@
+     server:
+       host: 0.0.0.0
+    -  port: 8080
+    +  port: 9090
+       shutdownTimeoutSeconds: 30
+  base:
+    config/app.yaml: |
+      server:
+        host: 0.0.0.0
+        port: 8080
+        shutdownTimeoutSeconds: 30
+    k8s/deployment.yaml: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: orders-api
+      spec:
+        replicas: 3
+        selector:
+          matchLabels:
+            app: orders-api
+        template:
+          metadata:
+            labels:
+              app: orders-api
+          spec:
+            containers:
+              - name: api
+                image: registry.example.com/orders-api:1.8.0
+                ports:
+                  - containerPort: 8080
+                readinessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8080
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8080
+    k8s/service.yaml: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: orders-api
+      spec:
+        selector:
+          app: orders-api
+        ports:
+          - port: 80
+            targetPort: 8080
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: listen-port-changed-probes-still-target-old-port
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: config/app.yaml
+        anchor: 'port: 9090'
+      claim: >-
+        The application now listens on 9090, but k8s/deployment.yaml still
+        points the readiness and liveness probes and containerPort at 8080,
+        and k8s/service.yaml still routes targetPort 8080. The new pods
+        never become ready and the rollout stalls, or the liveness probe
+        restarts them in a loop; no manifest in the diff was updated.
+      defect_kind: probe-and-route-port-no-longer-matches-listener
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins the "startup and runtime contract" property and the contract's
+    reference-wiring activation contrast: the deployment concern is
+    triggered by what consumes the changed value, not by the file type of
+    the diff.
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]
