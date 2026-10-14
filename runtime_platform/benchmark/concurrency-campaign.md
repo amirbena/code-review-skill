@@ -91,12 +91,20 @@ Limits: one observation, taken by someone else and not reproducible from stored 
 
 | Date | Weekday | Arms |
 | --- | --- | --- |
-| 2026-10-13 | Tuesday | `1`, then `2` |
-| 2026-10-15 | Thursday | `2`, then `4` |
-| 2026-10-20 | Tuesday | `2`, then `1` |
-| 2026-10-22 | Thursday | `4`, then `2` |
+| 2026-10-20 | Tuesday | `1`, then `2` |
+| 2026-10-22 | Thursday | `2`, then `4` |
+| 2026-10-27 | Tuesday | `2`, then `1` |
+| 2026-10-29 | Thursday | `4`, then `2` |
 
-12:00 `Asia/Jerusalem`, `max_experiments` 4, `window_end` 2026-10-22 (the last experiment). Week two reverses every arm order so order, cache warmth and time of day do not favour one count; the validator enforces that. The entrypoint refuses any other date, any date after `window_end`, a fifth experiment ref and a second run on one day, whether or not the Routine is still enabled.
+12:00 `Asia/Jerusalem`, `max_experiments` 4, `window_end` 2026-10-29 (the last experiment). Week two reverses every arm order so order, cache warmth and time of day do not favour one count; the validator enforces that. The entrypoint refuses any other date, any date after `window_end`, a fifth experiment ref and a second run on one day, whether or not the Routine is still enabled.
+
+### Restart (2026-10-14)
+
+The first campaign was restarted before its second experiment, for one reason: experiment `20261013T090348Z-6dee089614ec` (ref `claude/concurrency-experiment-20261013T090348Z-6dee089614ec`) finished `incomplete` with 48 `workspace-not-cleaned` violations, all the Claude CLI's own `claude-0` and `cc-socks` state ([#734](https://github.com/amirbena/code-review-skill/issues/734)). The fix (#736, `95c7c60`) merged after the campaign's pin `6dee089`, so every remaining experiment on that pin would have failed isolation the same way and no valid comparison could exist.
+
+- **What changed:** the four dates move one week (Tuesday/Thursday, same arm order and reversal) and `window_end` becomes 2026-10-29; the pin becomes the merge commit of this change, which contains #736; `stop_condition.superseded_refs` lists the first experiment's ref.
+- **What did not change:** the subset, every threshold, the hard gates, the window evidence, the four-experiment requirement (`max_experiments` 4) and the counterbalancing. Four experiments are still needed: the same-configuration variance baseline needs 2-worker arms in both weeks, and `evaluate_campaign` reports INCONCLUSIVE below four valid experiments.
+- **The superseded ref stays on the store, `incomplete`.** It is not deleted or reclassified. It does not count toward `max_experiments`, and `evaluate_campaign(..., superseded_refs=<the spec list>)` drops its record by `ref` before any gate and names it under `excluded_superseded_refs` (left in, it would fail the isolation, completeness and provenance gates, because its `repo_sha` is the old pin). Its timings (640.7 s at 1 worker, 316.7 s at 2) are descriptive only and are not decision evidence.
 
 ## 4. Pinned source
 
@@ -124,4 +132,4 @@ TEMPORARY (#681): four two-week concurrency measurement experiments, then is dis
 
 The evidence destination is the manifest's `evidence` block ([`private-evidence-repository.md`](scheduled-operations/private-evidence-repository.md) §4, §14). Under `pre_cutover` the prompt above is unchanged; once the phase is `private` the prompt must also pass `--evidence-remote <evidence-repository-remote>` (a credential-free remote), and a run without it exits 2 and writes nothing. An unreachable store exits 3, and the stop condition counts only that store.
 
-Routine: Tuesday and Thursday 12:00 `Asia/Jerusalem`, ending after 2026-10-22; cron `0 12 * * 2,4`. Registering it is a maintainer-only provider-side step, not part of this change.
+Routine: Tuesday and Thursday 12:00 `Asia/Jerusalem`, ending after 2026-10-29; cron `0 12 * * 2,4`. Registering it is a maintainer-only provider-side step, not part of this change.

@@ -36,7 +36,8 @@ def tearDownModule() -> None:
 
 
 SHA = "a" * 40
-DATES = ("2026-10-13", "2026-10-15", "2026-10-20", "2026-10-22")
+DATES = ("2026-10-20", "2026-10-22", "2026-10-27", "2026-10-29")
+SUPERSEDED = "claude/concurrency-experiment-20261013T090348Z-6dee089614ec"
 ARMS = ([1, 2], [2, 4], [2, 1], [4, 2])
 WIDE_KEYS = {"workspace_siblings", "repositories", "external_contexts", "unadmitted_repositories"}
 
@@ -119,12 +120,21 @@ class ScheduleAuthorizationTest(unittest.TestCase):
         for date, arms in zip(DATES, ARMS):
             self.assertIsNone(exp.skip_reason(spec, [], date, date))
             self.assertEqual(exp.scheduled_arms(spec, date), arms)
-        for other in ("2026-10-12", "2026-10-14", "2026-10-16", "2026-10-21"):
+        for other in ("2026-10-19", "2026-10-21", "2026-10-23", "2026-10-28"):
             self.assertEqual(exp.skip_reason(spec, [], other, other), "not-an-experiment-day")
 
     def test_nothing_starts_after_the_window(self):
-        for late in ("2026-10-23", "2026-10-27", "2027-01-01"):
+        for late in ("2026-10-30", "2026-11-03", "2027-01-01"):
             self.assertEqual(exp.skip_reason(committed(), [], late, late), "window-ended")
+
+    def test_the_superseded_first_experiment_is_not_counted(self):
+        spec = committed()
+        self.assertEqual(spec["stop_condition"]["superseded_refs"], [SUPERSEDED])
+        for refs in ([SUPERSEDED], [f"refs/heads/{SUPERSEDED}"]):
+            self.assertIsNone(exp.skip_reason(spec, refs, DATES[0], DATES[0]))
+        spent = [f"{exp.EXPERIMENT_REF_PREFIX}2026102{i}T090000Z-x" for i in range(4)]
+        self.assertEqual(exp.skip_reason(spec, [SUPERSEDED, *spent], "2026-10-29", "2026-10-29"), "stop-condition-reached")
+        self.assertIsNone(exp.skip_reason(spec, [SUPERSEDED, *spent[:3]], "2026-10-29", "2026-10-29"))
 
     def test_noon_in_jerusalem_is_the_listed_local_date(self):
         from datetime import datetime, timezone
@@ -143,6 +153,9 @@ class ScheduleAuthorizationTest(unittest.TestCase):
             "unsupported": lambda s: s["stop_condition"]["experiments"][0].update(arms=[1, 3]),
             "single arm": lambda s: s["stop_condition"]["experiments"][0].update(arms=[2]),
             "bad date": lambda s: s["stop_condition"]["experiments"][0].update(date="soon"),
+            "superseded not a list": lambda s: s["stop_condition"].update(superseded_refs=SUPERSEDED),
+            "superseded not strings": lambda s: s["stop_condition"].update(superseded_refs=[SUPERSEDED, 13]),
+            "superseded wrong prefix": lambda s: s["stop_condition"].update(superseded_refs=["claude/concurrency-trial-20261013T090348Z-x"]),
         }
         for name, mutate in cases.items():
             spec = committed()
@@ -365,10 +378,10 @@ def good_campaign() -> list[dict]:
     ]
 
 
-def evaluate(experiments: list[dict], *, window: float | None = 10000.0, pinned: str | None = SHA) -> dict:
+def evaluate(experiments: list[dict], *, window: float | None = 10000.0, pinned: str | None = SHA, superseded: tuple[str, ...] = ()) -> dict:
     thresholds = copy.deepcopy(committed()["decision"])
     thresholds["window"]["evidenced_window_s"] = window
-    return decision.evaluate_campaign(experiments, thresholds, corpus_size=144, pinned_sha=pinned)
+    return decision.evaluate_campaign(experiments, thresholds, corpus_size=144, pinned_sha=pinned, superseded_refs=superseded)
 
 
 def outcome(result: dict, check_id: str) -> dict:
@@ -380,6 +393,17 @@ class DecisionEvaluationTest(unittest.TestCase):
         result = evaluate(good_campaign())
         self.assertEqual(result["decision"], "GO", [c for c in result["checks"] if c["passed"] is not True])
         self.assertIn(2, result["eligible_worker_counts"])
+
+    def test_the_superseded_incomplete_experiment_cannot_enter_the_decision(self):
+        old = experiment([arm(1, 640.7), arm(2, 316.7)], sha="6" * 40, violations=48, status="incomplete")
+        old["ref"] = SUPERSEDED
+        listed = tuple(committed()["stop_condition"]["superseded_refs"])
+        self.assertEqual(evaluate([old, *good_campaign()], superseded=listed)["decision"], "GO")
+        self.assertEqual(evaluate([old, *good_campaign()], superseded=listed)["excluded_superseded_refs"], [SUPERSEDED])
+        self.assertEqual(evaluate([old, *good_campaign()])["decision"], "NO-GO")  # unlisted, its failures would decide
+        old["ref"] = f"refs/heads/{SUPERSEDED}"
+        self.assertEqual(evaluate([old, *good_campaign()], superseded=listed)["decision"], "GO")
+        self.assertEqual(evaluate([old], superseded=listed)["decision"], "INCONCLUSIVE")
 
     def test_an_unevidenced_window_can_never_be_go(self):
         result = evaluate(good_campaign(), window=None)
