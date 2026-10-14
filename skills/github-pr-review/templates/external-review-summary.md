@@ -103,7 +103,7 @@ When active, include every requirement before Validation. Its completeness
 signal never changes finding severity or the mechanically derived Decision.
 
 Include a `Context gaps` section before Validation only when a repository
-relationship is `unresolved` per
+relationship is `unresolved` or a dependency-tree evidence gap exists; relationships per
 [`../../../shared/policies/repository-expansion.md`](../../../shared/policies/repository-expansion.md),
 "Relationship outcomes and unresolved relationships"; omit it otherwise. It
 never changes finding severity, coverage, or the Decision.

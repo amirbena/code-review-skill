@@ -57,6 +57,17 @@ class DependencyTreeInspectionTests(unittest.TestCase):
         self.assertIn("dependency-tree evidence gap", summary)
         self.assertIn("the command that obtains valid evidence", summary)
         self.assertIn("one bullet per unresolved relationship", summary)
+        self.assertIn("unresolved or a dependency-tree evidence gap exists", summary)
+
+    def test_adapter_templates_admit_tree_evidence_gaps(self) -> None:
+        for path in (
+            "skills/local-code-review/templates/local-review-report.md",
+            "skills/github-pr-review/templates/external-review-summary.md",
+        ):
+            self.assertIn(
+                "unresolved or a dependency-tree evidence gap exists",
+                _text(REPO_ROOT / path),
+            )
 
 
 if __name__ == "__main__":

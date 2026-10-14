@@ -48,7 +48,8 @@ important concern or attention point; include scope only when useful>
   status, source citation, concrete evidence, and explanation>
 
 ### Context gaps
-<only when at least one repository relationship is `unresolved` per
+<only when at least one repository relationship is `unresolved` or a
+  dependency-tree evidence gap exists; relationships per
   [`../policies/repository-expansion.md`](../policies/repository-expansion.md),
   "Relationship outcomes and unresolved relationships": one bullet per
   unresolved relationship — class, subject, reason, ring reached where one applies; and

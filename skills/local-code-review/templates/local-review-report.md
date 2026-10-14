@@ -191,7 +191,8 @@ Safe to proceed: no blocking or non-blocking findings were identified.
 <optional concise What changed and Validation sections; omit Findings when
 empty. When requirement coverage was active, include the full conditional
 Requirement coverage section before Validation; omit it only when inert.
-When any repository relationship is `unresolved`, include the Context gaps
+When any repository relationship is `unresolved` or a dependency-tree
+evidence gap exists, include the Context gaps
 section per [`review-summary.md`](../../../shared/templates/review-summary.md)
 before Validation; omit it otherwise.>
 

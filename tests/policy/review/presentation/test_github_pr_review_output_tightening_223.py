@@ -156,8 +156,10 @@ SEVERITY_LEGEND = {
 # LOCAL_RUNBOOK was re-captured after Issue #676 (the "Code hygiene review"
 # step-9 enumeration entry) and LOCAL_REPORT (the conditional "Code hygiene
 # observations" bullet) -- likewise deliberate.
+# LOCAL_REPORT was re-captured after Issue #730 (the Context gaps inclusion
+# condition admits a dependency-tree evidence gap) -- likewise deliberate.
 LOCAL_BASELINE_HASHES = {
-    LOCAL_REPORT: "c3e3e07b0368c861a4a34b110c9a7305425ea679",
+    LOCAL_REPORT: "105260b2b95eb2f742c579fb1a61d3e78164597b",
     LOCAL_RUNBOOK: "061bdabdfad78deda77424ef15a2cbf00eff8168",
     LOCAL_SKILL: "1b74e41a642970a8ca0dbbb7678da4205574a221",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
