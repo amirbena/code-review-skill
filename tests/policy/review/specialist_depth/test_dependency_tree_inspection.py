@@ -59,6 +59,12 @@ class DependencyTreeInspectionTests(unittest.TestCase):
         self.assertIn("one bullet per unresolved relationship", summary)
         self.assertIn("unresolved or a dependency-tree evidence gap exists", summary)
 
+    def test_repository_expansion_does_not_contradict_tree_gaps(self) -> None:
+        expansion = _text(REPO_ROOT / "shared/policies/repository-expansion.md")
+        self.assertIn("carries only unresolved relationships and, per", expansion)
+        self.assertIn("dependency-tree evidence gaps", expansion)
+        self.assertNotIn("carries only unresolved relationships. A", expansion)
+
     def test_adapter_templates_admit_tree_evidence_gaps(self) -> None:
         for path in (
             "skills/local-code-review/templates/local-review-report.md",
