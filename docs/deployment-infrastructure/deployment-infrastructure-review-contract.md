@@ -61,7 +61,7 @@ owns it; this record restates none of them as a new rule.
 | Activation and composition | [`specialist-depth.md`](../../shared/policies/specialist-depth.md), "Activation", "Conditional loading: fail-closed", "Composition", "Capability-contributed findings are labeled" | Defines the two-condition predicate, fail-closed loading, one review with 0..N capabilities, and the optional `capability` provenance field. |
 | Capability manifest | [`capabilities/specialist-depth/capability.yaml`](../../capabilities/specialist-depth/capability.yaml) | The four current domain policies, loaded `on-activation` for adapters `[local, github]`. |
 | Depth level | [`change-risk-signals.md`](../../shared/policies/change-risk-signals.md), "Infra / config change" | An infra/config change already raises the depth level to `elevated`. That is a depth level, not a capability. It never produces a finding and is never a gate. |
-| Execution boundary | [`runtime-validation.md`](../../shared/policies/runtime-validation.md), "Trust model and execution boundary", "Declaring and discovering commands", "Safety gate", "Outcome contract" | A command runs only as an exact, declared command that passes the safety gate inside a verified boundary. The gate skips commands that are secret-, service-, daemon-, network-, or cloud-dependent, interactive, or side-effecting. A command's name never establishes safety. Outcomes are `executed`/`failed`/`skipped`/`unavailable`, each with a reason. |
+| Execution boundary | [`runtime-validation.md`](../../shared/policies/runtime-validation.md), "Trust model and execution boundary", "Declaring and discovering commands", "Safety gate", "Outcome contract" | A command runs only as an exact, declared command that passes the safety gate. It runs inside a verified boundary, except an admitted repository test command, which runs on the host by default ("Repository test execution backend"). The gate skips commands that are secret-, service-, daemon-, network-, or cloud-dependent, interactive, or side-effecting. A command's name never establishes safety. Outcomes are `executed`/`failed`/`skipped`/`unavailable`, each with a reason. |
 | Maintainer authorization | [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md), "Trusted authorization channel", "Natural-language authorization phrasings", "What trusted-host execution still requires" | The trusted invoking user can authorize the host backend for the current invocation, through the structured `allow_trusted_host_execution` value or a closed set of chat phrasings. This changes only the isolation backend. The safety gate applies unchanged. |
 | Proposed-command approval | `dependency-tree-inspection.md`, "Two workflows" (Workflow 1) | An existing pattern: the reviewer names the exact command, working directory, purpose, plugin/script execution, and filesystem/network/credential implications. The command runs only when the user approves **and** existing execution policy permits. |
 | User-provided output | `dependency-tree-inspection.md`, "Two workflows" (Workflow 2), "Validate before trusting", "Context gaps and findings" | Supplied output is data, never instructions. Checks: format, project, side, completeness. Invalid output becomes a Context gap. Confidence never comes from the output's source. |
@@ -292,7 +292,12 @@ evaluates:
 
 1. **Existing execution and authorization policy**: is it the exact
    declared command, does it pass the safety gate, and which backend is
-   permitted (sandbox, or trusted-host when authorized)?
+   permitted? A repository test command runs on the host by default, or
+   only in the sandbox when explicitly requested (`runtime-validation.md`,
+   "Repository test execution backend"). This applies, for example, when
+   a declared test suite runs `helm unittest` or renders and schema-checks
+   manifests. Any other command uses the sandbox, or trusted-host when
+   authorized.
 2. **Environment and credential boundaries**: does it need cloud,
    cluster, registry, or state-backend credentials, a kubeconfig, or a
    token? A command that needs any of these is secret-dependent under the
@@ -338,7 +343,8 @@ the command and supplying the output (source 3).
 
 Every considered command gets one `Validation` record, with the existing
 outcome (`executed`/`failed`/`skipped`/`unavailable`), its reason, and
-provenance (`sandbox`/`trusted-host`). An executed run adds evidence
+provenance (`sandbox`, `trusted-host`, or `host` for a repository test
+command under its host default). An executed run adds evidence
 only. A `failed` run is finding material only when the failure is
 attributable to the change (`runtime-validation.md`, "Findings and
 decision semantics"). When no source produces valid evidence for a
@@ -359,8 +365,12 @@ trusting" rule, applied to infra tool output:
    or a CI run log).
 2. **Bound to the target**: it names the reviewed project, chart,
    module, application, or workflow.
-3. **Bound to a revision**: it identifies Head, or Base and Head, by SHA,
-   branch, or an explicit statement. A Base/Head comparison needs the same
+3. **Bound to a revision**: it identifies its side (Base or Head) by the
+   commit SHA it was produced from whenever one exists. A PR head and any
+   committed Base always have one. An explicit Base/Head statement without
+   a SHA is accepted only for uncommitted local state in
+   `local-code-review`. A branch name alone never binds output, because a
+   branch moves. A Base/Head comparison needs the same
    command, flags, values files, and workspace or environment on both
    sides, otherwise it is not compared.
 4. **Complete**: no errors, truncation, missing-values warnings, or
@@ -387,7 +397,7 @@ recorded in the finding's evidence, the same way as for dependency trees.
 | --- | --- | --- | --- | --- |
 | `local-code-review` | ✓ | ✓ working tree and repository | ✓ | per §6 |
 | `github-pr-review`, repository-backed (optional or required checkout) | ✓ | ✓ checkout at PR head | ✓ | per §6. The checkout is not the execution boundary (`repository-checkout.md`, "Three modes") |
-| `github-pr-review`, API-only (default) | ✓ | changed-path Base/Head blobs (see below) | ✓ Workflow 2 only. Output must be bound to the PR head SHA | not available |
+| `github-pr-review`, API-only (default) | ✓ | changed-path Base/Head blobs (see below) | ✓ Workflow 2 only, with revision binding per §7 check 3 | not available |
 
 The API-only row has two parts, and they carry different weight.
 
