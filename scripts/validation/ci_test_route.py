@@ -93,6 +93,7 @@ REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
         "runtime_platform/benchmark/scripts/build_benchmark_index.py",
         "runtime_platform/benchmark/scripts/benchmark_run_evidence.py",
         "runtime_platform/benchmark/scripts/measure_workspace_sibling.py",
+        "runtime_platform/benchmark/scripts/measure_dependency_tree.py",
         "runtime_platform/benchmark/scripts/benchmark_concurrency_workers.py",
         "runtime_platform/benchmark/scripts/run_concurrency_experiment.py",
         "tests/unit/benchmark/test_run_concurrency_experiment.py",
