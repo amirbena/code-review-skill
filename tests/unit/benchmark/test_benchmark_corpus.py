@@ -166,13 +166,6 @@ class ReadmeTests(unittest.TestCase):
         for path in _corpus_files():
             self.assertIn(f"]({path.name})", self.raw, f"README omits {path.name}")
 
-    def test_readme_states_the_selection_principle_and_non_goals(self) -> None:
-        text = " ".join(self.raw.split())
-        self.assertIn("Selection principle", text)
-        self.assertIn("Intentionally small", text)
-        self.assertIn("#51", text)
-        self.assertIn("not** packaged", text)
-
 
 if __name__ == "__main__":
     unittest.main()

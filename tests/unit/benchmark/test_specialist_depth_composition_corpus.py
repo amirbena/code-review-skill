@@ -172,7 +172,6 @@ class SpecialistDepthCompositionCorpusHygieneTests(CorpusHygieneMixin, unittest.
     corpus_dir = CORPUS_DIR
     min_cases = REQUIRED_CASES
     max_cases = REQUIRED_CASES
-    readme_refs = ("#85",)
 
 
 if __name__ == "__main__":

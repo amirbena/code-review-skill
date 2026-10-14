@@ -5,7 +5,9 @@ directory and README exist, the corpus stays small, every fixture parses and
 validates through the single reference validator, ids match filenames and are
 unique, each case records a rationale and tags and pins a consistent
 decision, patch anchors occur in the diff/base, severities stay in P0/P1/P2,
-and the README links every fixture and states its selection principle.
+and the README links every fixture and the single reference validator.
+README wording is documentation, not contract: only those navigation links
+are asserted here.
 
 A corpus test module subclasses ``CorpusHygieneMixin`` alongside
 ``unittest.TestCase`` and sets the class attributes below. Each module keeps
@@ -41,18 +43,13 @@ def _finding_specs(case):
 class CorpusHygieneMixin:
     """Generic-shape checks parametrized by class attributes.
 
-    Required: ``corpus_dir``, ``min_cases``, ``max_cases``, ``readme_refs``.
-    Optional: ``readme_phrases`` (extra README substrings),
-    ``validator_phrase`` (README disclaimer; ``None`` checks only the link),
-    ``size_hint`` (appended to the size-ceiling failure message).
+    Required: ``corpus_dir``, ``min_cases``, ``max_cases``.
+    Optional: ``size_hint`` (appended to the size-ceiling failure message).
     """
 
     corpus_dir: Path
     min_cases: int
     max_cases: int
-    readme_refs: tuple[str, ...]
-    readme_phrases: tuple[str, ...] = ()
-    validator_phrase: str | None = "never a second one"
     size_hint: str = ""
 
     def _files(self) -> list[Path]:
@@ -142,13 +139,5 @@ class CorpusHygieneMixin:
         for path in self._files():
             self.assertIn(f"]({path.name})", raw, f"README omits {path.name}")
 
-    def test_readme_states_the_selection_principle_and_scope(self) -> None:
-        text = " ".join(self._readme().split())
-        for needle in ("Selection principle", *self.readme_refs, *self.readme_phrases, "not** packaged"):
-            self.assertIn(needle, text)
-
     def test_readme_uses_the_single_reference_validator(self) -> None:
-        raw = self._readme()
-        self.assertIn(_VALIDATOR_LINK, raw)
-        if self.validator_phrase:
-            self.assertIn(self.validator_phrase, " ".join(raw.split()))
+        self.assertIn(_VALIDATOR_LINK, self._readme())

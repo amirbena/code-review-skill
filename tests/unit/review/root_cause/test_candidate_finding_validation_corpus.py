@@ -246,22 +246,10 @@ class SubCorpusCoverageTests(unittest.TestCase):
         )
 
 
-class SubCorpusReadmeTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.raw = (CORPUS_DIR / "README.md").read_text(encoding="utf-8")
-
-    def test_readme_records_pr_390_provenance(self) -> None:
-        self.assertIn("PR #390", self.raw)
-        self.assertIn("3d08fcb", self.raw)
-
-
 class CandidateFindingValidationCorpusHygieneTests(CorpusHygieneMixin, unittest.TestCase):
     corpus_dir = CORPUS_DIR
     min_cases = MIN_CASES
     max_cases = MAX_CASES
-    readme_refs = ("#383", "#382")
-    readme_phrases = ("Intentionally small",)
-    validator_phrase = "never defines a second"
     size_hint = "(#383 non-goal)"
 
 

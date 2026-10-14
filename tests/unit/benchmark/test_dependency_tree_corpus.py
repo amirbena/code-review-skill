@@ -476,14 +476,11 @@ class IndexAndDocsTests(unittest.TestCase):
         indexed = set(index["capability"]["dependency-tree-inspection"])
         self.assertEqual(indexed, set(bdt.CASE_ROLES))
 
-    def test_docs_state_that_the_incident_is_not_claimed_as_reproduced(self) -> None:
-        for path in (
-            REPO_ROOT / "runtime_platform/benchmark/dependency-tree-inspection-measurement.md",
-            CORPUS_DIR / "README.md",
-        ):
-            text = path.read_text(encoding="utf-8").lower()
-            self.assertIn("synthetic", text)
-            self.assertRegex(text, r"not\*{0,2} (claimed as reproduced|reproduced)|is \*\*not\*\* reproduced|never claimed")
+    def test_measurement_doc_states_that_the_incident_is_not_claimed_as_reproduced(self) -> None:
+        path = REPO_ROOT / "runtime_platform/benchmark/dependency-tree-inspection-measurement.md"
+        text = path.read_text(encoding="utf-8").lower()
+        self.assertIn("synthetic", text)
+        self.assertRegex(text, r"not\*{0,2} (claimed as reproduced|reproduced)|is \*\*not\*\* reproduced|never claimed")
 
 
 if __name__ == "__main__":

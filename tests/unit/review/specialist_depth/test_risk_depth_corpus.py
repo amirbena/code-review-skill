@@ -149,9 +149,6 @@ class RiskDepthCorpusHygieneTests(CorpusHygieneMixin, unittest.TestCase):
     corpus_dir = CORPUS_DIR
     min_cases = MIN_CASES
     max_cases = MAX_CASES
-    readme_refs = ("#90",)
-    readme_phrases = ("Intentionally small",)
-    validator_phrase = "never defines a second"
 
 
 if __name__ == "__main__":

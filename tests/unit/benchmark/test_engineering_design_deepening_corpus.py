@@ -105,7 +105,6 @@ class EngineeringDesignDeepeningCorpusHygieneTests(CorpusHygieneMixin, unittest.
     corpus_dir = CORPUS_DIR
     min_cases = 8
     max_cases = 10
-    readme_refs = ("#750",)
 
 
 if __name__ == "__main__":

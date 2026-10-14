@@ -86,7 +86,6 @@ class SpecialistDepthProgressiveLoadingProofCorpusHygieneTests(CorpusHygieneMixi
     corpus_dir = CORPUS_DIR
     min_cases = REQUIRED_CASES
     max_cases = REQUIRED_CASES
-    readme_refs = ("#411",)
 
 
 if __name__ == "__main__":

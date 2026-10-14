@@ -208,13 +208,6 @@ class SubCorpusReadmeTests(unittest.TestCase):
         for path in _corpus_files():
             self.assertIn(f"]({path.name})", self.raw, f"README omits {path.name}")
 
-    def test_readme_states_the_selection_principle_and_cross_references(self) -> None:
-        text = " ".join(self.raw.split())
-        self.assertIn("Selection principle", text)
-        self.assertIn("#450", text)
-        self.assertIn("#350", text)
-        self.assertIn("#449", text)
-
     def test_readme_uses_the_single_reference_validator(self) -> None:
         self.assertIn(
             "](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)", self.raw

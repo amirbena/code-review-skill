@@ -108,7 +108,6 @@ class DeploymentInfrastructureDeepeningCorpusHygieneTests(CorpusHygieneMixin, un
     corpus_dir = CORPUS_DIR
     min_cases = 8
     max_cases = 10
-    readme_refs = ("#743",)
 
 
 if __name__ == "__main__":

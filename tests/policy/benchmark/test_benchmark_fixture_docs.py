@@ -189,9 +189,6 @@ class DirectoryNavigationTests(unittest.TestCase):
         self.assertIn("](fixture-format.md)", raw)
         self.assertIn("](../../benchmark/examples/example-case.yaml)", raw)
         self.assertIn("](../../benchmark/corpus/README.md)", raw)
-        self.assertIn("not** packaged", raw)
-        self.assertIn("#50", raw)
-        self.assertIn("#51", raw)
 
     def test_architecture_links_to_the_benchmark_directory(self) -> None:
         raw = ARCHITECTURE.read_text(encoding="utf-8")
@@ -226,7 +223,6 @@ class CorpusDirectoryTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.fixtures = sorted(CORPUS_DIR.glob("*.yaml"))
         cls.readme_raw = CORPUS_README.read_text(encoding="utf-8")
-        cls.readme_text = " ".join(cls.readme_raw.split())
 
     def test_corpus_has_a_small_set_of_v2_fixtures(self) -> None:
         self.assertTrue(CORPUS_DIR.is_dir())
@@ -238,14 +234,6 @@ class CorpusDirectoryTests(unittest.TestCase):
                 path.read_text(encoding="utf-8"),
                 f"{path.name} does not declare the v2 format",
             )
-
-    def test_readme_records_the_selection_rationale_and_non_goals(self) -> None:
-        self.assertIn("Selection principle", self.readme_raw)
-        self.assertIn("one per review category", self.readme_text)
-        self.assertIn("Intentionally small", self.readme_raw)
-        for token in ("#51", "#40", "#52", "#53"):
-            self.assertIn(token, self.readme_raw)
-        self.assertIn("not** packaged", self.readme_text)
 
     def test_readme_links_every_fixture_and_the_validator(self) -> None:
         for path in self.fixtures:

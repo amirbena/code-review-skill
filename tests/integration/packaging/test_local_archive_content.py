@@ -60,6 +60,12 @@ class BuiltArchiveContentTests(unittest.TestCase):
     def test_archive_contains_the_review_context_policy(self) -> None:
         self.assertIn("policies/review-context.md", self.archive_names)
 
+    def test_archive_excludes_repository_development_trees(self) -> None:
+        leaked = sorted(
+            n for n in self.archive_names if n.startswith(("benchmark/", "runtime_platform/"))
+        )
+        self.assertEqual(leaked, [], f"repository-development trees packaged: {leaked}")
+
     def test_archive_contains_license(self) -> None:
         self.assertIn("LICENSE", self.archive_names)
         with zipfile.ZipFile(DIST_DIR / "local-code-review-skill.zip") as zf:
