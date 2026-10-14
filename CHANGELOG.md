@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.77.0 — 2026-10-14
+
+### Added
+
+- Review design documents (ADRs, HLDs, RFCs) as first-class review targets, including design-only PRs, under the existing finding, evidence, and severity contracts (#754).
+
 ## v1.76.0 — 2026-10-14
 
 ### Added
