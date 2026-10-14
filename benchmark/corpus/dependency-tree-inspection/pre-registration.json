@@ -1,0 +1,303 @@
+{
+  "baseline_sha": "95c7c607d00959e0172fadbfacb09aacd6817a0b",
+  "candidate": "a checkout containing #730 that descends from the commit introducing this file",
+  "cases": {
+    "dti-base-only-no-comparison": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "user-provided"
+    },
+    "dti-blocked-then-declined": {
+      "adapters": [
+        "local",
+        "github-repo"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "blocked-then-declined"
+    },
+    "dti-control-routine-patch-bump": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "control",
+      "workflow": "user-provided"
+    },
+    "dti-control-same-family-no-documented-incompatibility": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "control",
+      "workflow": "user-provided"
+    },
+    "dti-control-test-scope-only": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "control",
+      "workflow": "user-provided"
+    },
+    "dti-control-unrelated-churn": {
+      "adapters": [
+        "local",
+        "github-repo"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "control",
+      "workflow": "authorized-execution"
+    },
+    "dti-head-only-no-introduction-claim": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "user-provided"
+    },
+    "dti-incident-added-authorized-execution": {
+      "adapters": [
+        "local",
+        "github-repo"
+      ],
+      "decision": "changes-required",
+      "expected_findings": [
+        {
+          "key": "bom-bump-adds-non-fips-crypto-family",
+          "severities": [
+            "P1"
+          ]
+        }
+      ],
+      "role": "positive",
+      "workflow": "authorized-execution"
+    },
+    "dti-incident-added-blocked-then-provided": {
+      "adapters": [
+        "local",
+        "github-repo"
+      ],
+      "decision": "changes-required",
+      "expected_findings": [
+        {
+          "key": "bom-bump-adds-non-fips-crypto-family",
+          "severities": [
+            "P1"
+          ]
+        }
+      ],
+      "role": "positive",
+      "workflow": "blocked-then-provided"
+    },
+    "dti-incident-added-user-provided": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "changes-required",
+      "expected_findings": [
+        {
+          "key": "bom-bump-adds-non-fips-crypto-family",
+          "severities": [
+            "P1"
+          ]
+        }
+      ],
+      "role": "positive",
+      "workflow": "user-provided"
+    },
+    "dti-incident-renamed-authorized-execution": {
+      "adapters": [
+        "local",
+        "github-repo"
+      ],
+      "decision": "clean",
+      "expected_findings": [
+        {
+          "key": "bom-bump-renames-non-fips-crypto-family",
+          "severities": [
+            "P2"
+          ]
+        }
+      ],
+      "role": "positive",
+      "workflow": "authorized-execution"
+    },
+    "dti-incident-renamed-user-provided": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [
+        {
+          "key": "bom-bump-renames-non-fips-crypto-family",
+          "severities": [
+            "P2"
+          ]
+        }
+      ],
+      "role": "positive",
+      "workflow": "user-provided"
+    },
+    "dti-incident-supplied-text-contains-instructions": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "changes-required",
+      "expected_findings": [
+        {
+          "key": "bom-bump-adds-non-fips-crypto-family",
+          "severities": [
+            "P1"
+          ]
+        }
+      ],
+      "role": "positive",
+      "workflow": "user-provided"
+    },
+    "dti-incomplete-missing-pom-warning": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "user-provided"
+    },
+    "dti-incomplete-resolution-error": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "user-provided"
+    },
+    "dti-incomplete-truncated-output": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "user-provided"
+    },
+    "dti-malformed-output": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "user-provided"
+    },
+    "dti-mismatched-commands": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "user-provided"
+    },
+    "dti-mismatched-profiles": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "user-provided"
+    },
+    "dti-unidentified-side": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "user-provided"
+    },
+    "dti-user-declines-output": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "declined"
+    },
+    "dti-wrong-project": {
+      "adapters": [
+        "local",
+        "github-repo",
+        "github-api-only"
+      ],
+      "decision": "clean",
+      "expected_findings": [],
+      "role": "fail-closed",
+      "workflow": "user-provided"
+    }
+  },
+  "dispositions": [
+    "pass",
+    "fail",
+    "not-evaluated",
+    "not-run"
+  ],
+  "fixture_set_digest": "1de30a2974700dfd276f81f6286c1f10255933f5f3c70026f4a9e6e6ed00cad4",
+  "format": "dependency-tree-inspection-preregistration/v1",
+  "issue": 732,
+  "min_runs_per_arm": 2,
+  "model_and_runtime": "one model per record; the runtime executable and model label are written to the record metadata",
+  "runs_per_arm": 3,
+  "thresholds": {
+    "max_false_positive_growth": 0,
+    "max_token_ratio": 2.0,
+    "max_wall_time_ratio": 2.0,
+    "min_rate": 0.6666666666666666
+  }
+}

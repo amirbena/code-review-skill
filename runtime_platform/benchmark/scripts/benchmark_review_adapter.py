@@ -540,6 +540,46 @@ def _workspace_grant_block(workspace_root: object) -> str:
     )
 
 
+def _tree_permissions(trees: object | None) -> tuple[list[Path], str]:
+    """Issue #732: only an ``authorized-execution`` case grants anything, and only the
+    exact fixture-local ``cat`` commands the user approved, on their own directory."""
+    if trees is None or trees.workflow != "authorized-execution":  # type: ignore[attr-defined]
+        return [], ""
+    commands = [run for _, _, run in trees.sides.values() if run]  # type: ignore[attr-defined]
+    dirs = sorted({Path(c.split(" ", 1)[1]).parent.resolve() for c in commands})
+    return dirs, " ".join(f"Bash({c})" for c in commands)
+
+
+def _dependency_trees_block(trees: object) -> str:
+    """Issue #732: the user-side half of the dependency tree inspection exchange,
+    worded as the user would say it, for shared/policies/dependency-tree-inspection.md.
+    Supplied text is quoted as data; nothing in it is an instruction."""
+    workflow = trees.workflow  # type: ignore[attr-defined]
+    sides = trees.sides  # type: ignore[attr-defined]
+    out = [f"\n\nDependency tree inspection ({trees.ecosystem}) was requested for this review."]  # type: ignore[attr-defined]
+    if workflow == "declined":
+        return out[0] + " The user declines to run the command or to supply its output."
+    if workflow == "blocked-then-declined":
+        return out[0] + (
+            " Executing the inspection command is blocked in this environment, and the user declines to "
+            "run it themselves or supply its output."
+        )
+    if workflow == "authorized-execution":
+        out.append(" The user explicitly approves running exactly these commands, in the repository root, to read recorded output; no plugin or script is to run beyond them and there is no network or credential use:")
+        for side, (_, _, run) in sides.items():
+            out.append(f"\n- {side}: `{run}`")
+        return "".join(out)
+    if workflow == "blocked-then-provided":
+        out.append(" Executing the inspection command is blocked in this environment, so the user ran it locally and supplies the output below.")
+    else:
+        out.append(" Execution was not used; the user ran the command locally and supplies the output below.")
+    for side, (command, text, _) in sides.items():
+        label = "side not stated" if side == "unlabeled" else f"{side} side"
+        cmd = f" (command: `{command}`)" if command else ""
+        out.append(f"\n\nUser-supplied output, {label}{cmd}:\n```text\n{text.rstrip()}\n```")
+    return "".join(out)
+
+
 @dataclass(frozen=True)
 class RenderedOutcome:
     """The verdict labels a report actually rendered, verbatim — ``None``
@@ -606,7 +646,10 @@ class ProductionReviewerAdapter:
         structured_review_result: bool = False,
         allowed_tools: str = DEFAULT_ALLOWED_TOOLS,
         verified_isolation: bool = False,
+        plugin_dir: Path | None = None,
     ) -> None:
+        # Issue #732: a baseline arm runs the skill from another checkout.
+        self.plugin_dir = Path(plugin_dir) if plugin_dir is not None else SKILL_PLUGIN_DIR
         self.executable = executable or resolve_cli_executable(env)
         self.structured_review_result = structured_review_result
         self.allowed_tools = allowed_tools
@@ -629,6 +672,8 @@ class ProductionReviewerAdapter:
         self.last_evidence: bre.RunEvidence | None = None
         self.last_usage: dict[str, int] | None = None
         self._grant_root: Path | None = None
+        self._tree_dirs: list[Path] = []
+        self._tree_tools: str = ""
 
     def _stage(self, name: str) -> None:
         if self.stage_hook is not None:
@@ -642,9 +687,13 @@ class ProductionReviewerAdapter:
         workspace: Path | Mapping[str, Path],
         external_contexts: Mapping[str, object] | None = None,
         workspace_root: Path | None = None,
+        dependency_trees: object | None = None,
     ) -> list[ProducedFinding]:
         suffix = _external_context_block(external_contexts) if external_contexts else ""
+        if dependency_trees is not None:
+            suffix += _dependency_trees_block(dependency_trees)
         self._grant_root = workspace_root
+        self._tree_dirs, self._tree_tools = _tree_permissions(dependency_trees)
         self.last_evidence = None
         if workspace_root is not None:
             suffix += _workspace_grant_block(workspace_root)
@@ -665,13 +714,14 @@ class ProductionReviewerAdapter:
             "stream-json" if isolated else "text",
             *(["--verbose"] if isolated else []),
             "--plugin-dir",
-            str(SKILL_PLUGIN_DIR),
+            str(self.plugin_dir),
             # No user-level settings means no user-installed plugin can shadow the skill under test.
             *(["--setting-sources", "project,local"] if isolated else []),
             # The grant is a permission as well as a path: without it the CLI blocks reads outside the workspace.
             *(["--add-dir", str(Path(grant).resolve())] if isolated and grant is not None else []),
+            *(arg for d in self._tree_dirs for arg in ("--add-dir", str(d))),
             "--allowedTools",
-            self.allowed_tools,
+            f"{self.allowed_tools} {self._tree_tools}".strip(),
             *self.extra_args,
         ]
         argv, digest = bre.redact_argv(command, full_prompt)
@@ -725,7 +775,7 @@ class ProductionReviewerAdapter:
         summary = self._absorb_stream(stdout, evidence)
         if summary is None:
             raise bre.StreamParseError("no stream-json events in the review CLI output")
-        identity = bre.verify_isolation(summary, expected_root=SKILL_PLUGIN_DIR)  # fails closed
+        identity = bre.verify_isolation(summary, expected_root=self.plugin_dir)  # fails closed
         evidence.skill = asdict(identity)
         result = summary.result
         if result is None:

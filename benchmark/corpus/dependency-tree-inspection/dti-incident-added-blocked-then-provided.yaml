@@ -1,0 +1,122 @@
+# Dependency tree inspection corpus case (Issue #732, parent #731, evaluates #730).
+# SYNTHETIC: the tree text is crafted, never real tool output. Format imitated:
+# mvn dependency:tree text output (maven-dependency-plugin 3.6.x, verbose off). See ./README.md.
+
+format: benchmark-case/v2
+
+id: dti-incident-added-blocked-then-provided
+title: "Synthetic: execution blocked, then the user supplies Base/Head trees showing an added non-FIPS family"
+
+input:
+  patch: |
+    diff --git a/pom.xml b/pom.xml
+    --- a/pom.xml
+    +++ b/pom.xml
+    @@ -8,7 +8,7 @@
+           <dependency>
+             <groupId>com.acme.platform</groupId>
+             <artifactId>acme-platform-bom</artifactId>
+    -        <version>2.3.0</version>
+    +        <version>2.4.0</version>
+             <type>pom</type>
+             <scope>import</scope>
+           </dependency>
+
+  base:
+    pom.xml: |
+      <project xmlns="http://maven.apache.org/POM/4.0.0">
+        <modelVersion>4.0.0</modelVersion>
+        <groupId>com.acme.orders</groupId>
+        <artifactId>orders-service</artifactId>
+        <version>1.8.0</version>
+        <dependencyManagement>
+          <dependencies>
+            <dependency>
+              <groupId>com.acme.platform</groupId>
+              <artifactId>acme-platform-bom</artifactId>
+              <version>2.3.0</version>
+              <type>pom</type>
+              <scope>import</scope>
+            </dependency>
+          </dependencies>
+        </dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>com.acme.platform</groupId>
+            <artifactId>acme-security</artifactId>
+          </dependency>
+          <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>6.1.2</version>
+          </dependency>
+        </dependencies>
+      </project>
+
+    docs/security-policy.md: |
+      # Security policy
+
+      Runtime cryptography in this service must come from FIPS 140-validated
+      modules only. The approved family is the Bouncy Castle FIPS distribution
+      (bc-fips, bcpkix-fips). Non-FIPS Bouncy Castle artifacts (bcprov-*, bcpkix-*)
+      are not permitted on the runtime classpath; test-only use is allowed.
+
+  dependency_trees:
+    workflow: blocked-then-provided
+    ecosystem: maven
+    imitates: "mvn dependency:tree text output (maven-dependency-plugin 3.6.x, verbose off)"
+    synthetic: true
+    base:
+      command: mvn dependency:tree
+      text: |
+        [INFO] --- maven-dependency-plugin:3.6.1:tree (default-cli) @ orders-service ---
+        [INFO] com.acme.orders:orders-service:jar:1.8.0
+        [INFO] +- com.acme.platform:acme-security:jar:2.3.0:compile
+        [INFO] |  +- org.bouncycastle:bc-fips:jar:1.0.2.4:compile
+        [INFO] |  \- org.bouncycastle:bcpkix-fips:jar:1.0.7:compile
+        [INFO] \- org.springframework:spring-core:jar:6.1.2:compile
+        [INFO] ------------------------------------------------------------------------
+        [INFO] BUILD SUCCESS
+
+    head:
+      command: mvn dependency:tree
+      text: |
+        [INFO] --- maven-dependency-plugin:3.6.1:tree (default-cli) @ orders-service ---
+        [INFO] com.acme.orders:orders-service:jar:1.8.0
+        [INFO] +- com.acme.platform:acme-security:jar:2.3.0:compile
+        [INFO] |  +- org.bouncycastle:bc-fips:jar:1.0.2.4:compile
+        [INFO] |  +- org.bouncycastle:bcpkix-fips:jar:1.0.7:compile
+        [INFO] |  \- org.bouncycastle:bcprov-jdk18on:jar:1.77:compile
+        [INFO] \- org.springframework:spring-core:jar:6.1.2:compile
+        [INFO] ------------------------------------------------------------------------
+        [INFO] BUILD SUCCESS
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: bom-bump-adds-non-fips-crypto-family
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: pom.xml
+        anchor: "<version>2.4.0</version>"
+      claim: >-
+        The one-line acme-platform-bom bump from 2.3.0 to 2.4.0 adds
+        org.bouncycastle:bcprov-jdk18on:1.77 under acme-security (path:
+        acme-security -> bcprov-jdk18on), a non-FIPS crypto family absent from
+        the Base tree and beside the existing bc-fips and bcpkix-fips
+        artifacts, which docs/security-policy.md forbids on the runtime
+        classpath. Base and Head trees are both cited.
+      defect_kind: bom-bump-adds-non-fips-crypto-family
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Incident-shaped synthetic pair: a one-line BOM bump whose Head tree carries a non-FIPS crypto family beside existing FIPS artifacts; the real private BOM evidence is unavailable and is not claimed as reproduced. Execution is blocked, so the working path is the supplied output.
+  taxonomy:
+    capability: [dependency-tree-inspection]
+    policy_contract: [dependency-tree-inspection]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

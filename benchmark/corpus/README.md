@@ -91,6 +91,12 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
 
 ## Related sub-corpora
 
+- [`dependency-tree-inspection/`](dependency-tree-inspection/README.md) — a
+  network-free `benchmark-case/v2` sub-corpus of **synthetic** Base/Head
+  dependency trees (Issue
+  [#732](https://github.com/amirbena/code-review-skill/issues/732), parent
+  [#731](https://github.com/amirbena/code-review-skill/issues/731)) measuring
+  the opt-in tree inspection of #730, with a committed pre-registration.
 - [`consolidation/`](consolidation/README.md) — a focused
   `benchmark-case/v2` sub-corpus for root-cause / duplicate finding
   consolidation (Issue
