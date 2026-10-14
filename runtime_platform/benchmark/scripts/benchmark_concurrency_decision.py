@@ -15,6 +15,7 @@ from itertools import combinations
 from typing import Any, Mapping
 
 SHA_RE = re.compile(r"[0-9a-f]{40}")
+EXPERIMENT_REF_PREFIX = "claude/concurrency-experiment-"  # same value as run_concurrency_experiment.py, which imports this module
 PROVENANCE_KEYS = ("repo_sha", "model_id", "runtime_version", "subset_id", "corpus_id")
 MAX_WINDOW_FRACTION = 0.6
 WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
@@ -62,6 +63,11 @@ def validate_thresholds(decision: Mapping[str, Any], allowed_workers: list[int])
 def validate_campaign(spec: Mapping[str, Any]) -> None:
     """Dates, weekdays, arms, counterbalancing and window_end must agree; an inactive spec (no dates, no window) is allowed."""
     stop = spec["stop_condition"]
+    superseded = stop.get("superseded_refs", [])
+    _require(
+        isinstance(superseded, list) and all(isinstance(r, str) and r.startswith(EXPERIMENT_REF_PREFIX) for r in superseded),
+        f"superseded_refs must be a list of refs starting with {EXPERIMENT_REF_PREFIX!r}",
+    )
     experiments, end = stop.get("experiments") or [], stop.get("window_end")
     if not experiments and end is None:
         return

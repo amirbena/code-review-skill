@@ -153,6 +153,9 @@ class ScheduleAuthorizationTest(unittest.TestCase):
             "unsupported": lambda s: s["stop_condition"]["experiments"][0].update(arms=[1, 3]),
             "single arm": lambda s: s["stop_condition"]["experiments"][0].update(arms=[2]),
             "bad date": lambda s: s["stop_condition"]["experiments"][0].update(date="soon"),
+            "superseded not a list": lambda s: s["stop_condition"].update(superseded_refs=SUPERSEDED),
+            "superseded not strings": lambda s: s["stop_condition"].update(superseded_refs=[SUPERSEDED, 13]),
+            "superseded wrong prefix": lambda s: s["stop_condition"].update(superseded_refs=["claude/concurrency-trial-20261013T090348Z-x"]),
         }
         for name, mutate in cases.items():
             spec = committed()
