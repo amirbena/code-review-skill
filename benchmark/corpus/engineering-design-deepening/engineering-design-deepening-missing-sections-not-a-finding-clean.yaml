@@ -1,0 +1,45 @@
+# Engineering-design-deepening corpus case (Issue #750, parent #747,
+# depends on #749). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Negative: missing information is not a finding and not a Context gap.
+
+format: benchmark-case/v2
+
+id: engineering-design-deepening-missing-sections-not-a-finding-clean
+title: "A short design omits failure modes, rollout, metrics, alternatives, and verification, and nothing it states is wrong"
+
+input:
+  patch: |
+    diff --git a/docs/design/export-job.md b/docs/design/export-job.md
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/docs/design/export-job.md
+    @@ -0,0 +1,8 @@
+    +# Nightly export
+    +
+    +Status: Draft
+    +
+    +## Approach
+    +
+    +A nightly job reads the previous day's invoices and writes one CSV file to the
+    +export bucket.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    Pins the missing-information rule: no requirement or repository policy
+    demands the absent sections and nothing the document claims is false, so
+    there is no finding and no Context gap.
+  taxonomy:
+    capability: [engineering-design]
+    policy_contract: [engineering-design-deepening]
+    risk_mode: [no-op]
+    affected_surface: [unclassified]

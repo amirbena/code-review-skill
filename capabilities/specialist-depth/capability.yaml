@@ -27,4 +27,4 @@ never:
   - contributing a finding merely to prove it ran
   - treating ambiguous or failed predicate evaluation as a reason to skip
     activation
-benchmark: benchmark/corpus/security-deepening, benchmark/corpus/performance-deepening, benchmark/corpus/database-migration-deepening, benchmark/corpus/distributed-systems-deepening, benchmark/corpus/deployment-infrastructure-deepening
+benchmark: benchmark/corpus/security-deepening, benchmark/corpus/performance-deepening, benchmark/corpus/database-migration-deepening, benchmark/corpus/distributed-systems-deepening, benchmark/corpus/deployment-infrastructure-deepening, benchmark/corpus/engineering-design-deepening
