@@ -210,6 +210,23 @@ class GithubSummaryTemplateConciseOptIn(unittest.TestCase):
             self.t,
         )
 
+    def test_example_summary_is_one_outcome_sentence_without_recap_or_praise(
+        self,
+    ) -> None:
+        block = re.search(
+            r"## Concise human-style body \(opt-in\).*?```markdown\n(.*?)\n```",
+            self.raw,
+            re.S,
+        ).group(1)
+        opening = block.split("## Review Summary", 1)[1].strip().split("\n\n", 1)[0]
+        self.assertEqual(1, len(re.findall(r"[.!?](?:\s|$)", opening)), opening)
+        self.assertNotIn("src/review", opening)
+        self.assertNotIn("is clean", block)
+        self.assertNotIn("what's good", block.lower())
+        # findings are carried once, as pointer lines, with their labels
+        self.assertEqual(3, len(re.findall(r"^- `P[012] \(", block, re.M)))
+        self.assertIn("**Requirement coverage:**", block)
+
     def test_semantic_equivalence_with_mode_off(self) -> None:
         # findings/identity/anchors/decision identical; inline comments are the
         # same findings — byte-identical with the sub-option off, re-voiced
