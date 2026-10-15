@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.77.1 — 2026-10-15
+
+### Fixed
+
+- Align the Senior Voice length rule and concise summary shape with the Senior voice contract (no fixed paragraph default, no praise slot, one outcome sentence) (#768).
+
 ## v1.77.0 — 2026-10-14
 
 ### Added
