@@ -290,11 +290,11 @@ natural language per
 `--human-review-output`) — this review body is rendered in the concise
 senior-engineer voice defined in
 [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
-"Concise human-style summary (opt-in)": a short opening on merge safety
-and the top concern, then what's good / what's concerning / what to
-change in prose, each referenced finding keeping its `P0` / `P1` / `P2`
-label, an intentional trade-off optionally raised as a question, and no
-review-process or machine metadata. Inline comments still own each
+"Concise human-style summary (opt-in)": one concise outcome sentence on merge
+safety that names the key concern or required action without recapping
+individual findings, no named praise section, an intentional trade-off
+optionally raised as a question, and no review-process or machine
+metadata. Inline comments still own each
 finding's full detail; the concise body still carries one summary-pointer
 line per inline finding so every finding appears exactly once.
 

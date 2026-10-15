@@ -108,13 +108,14 @@ class SharedSummaryTemplateCarriesTheConciseShape(unittest.TestCase):
     def test_concise_shape_content_rules(self) -> None:
         for token in (
             "safe to merge / proceed",
-            "what's good",
-            "what's concerning",
-            "what to change",
-            "P0 / P1 / P2 label when it is referenced",
+            "one concise sentence",
+            "does not repeat individual findings",
+            "no named praise section",
             "raised as a question",
         ):
             self.assertIn(token, self.t)
+        for token in ("what's good", "what's concerning", "what to change"):
+            self.assertNotIn(token, self.t)
 
     def test_excludes_process_and_machine_language(self) -> None:
         self.assertIn("excludes internal review-process language", self.t)
@@ -208,6 +209,23 @@ class GithubSummaryTemplateConciseOptIn(unittest.TestCase):
             "line keeping its P0 / P1 / P2 label",
             self.t,
         )
+
+    def test_example_summary_is_one_outcome_sentence_without_recap_or_praise(
+        self,
+    ) -> None:
+        block = re.search(
+            r"## Concise human-style body \(opt-in\).*?```markdown\n(.*?)\n```",
+            self.raw,
+            re.S,
+        ).group(1)
+        opening = block.split("## Review Summary", 1)[1].strip().split("\n\n", 1)[0]
+        self.assertEqual(1, len(re.findall(r"[.!?](?:\s|$)", opening)), opening)
+        self.assertNotIn("src/review", opening)
+        self.assertNotIn("is clean", block)
+        self.assertNotIn("what's good", block.lower())
+        # findings are carried once, as pointer lines, with their labels
+        self.assertEqual(3, len(re.findall(r"^- `P[012] \(", block, re.M)))
+        self.assertIn("**Requirement coverage:**", block)
 
     def test_semantic_equivalence_with_mode_off(self) -> None:
         # findings/identity/anchors/decision identical; inline comments are the

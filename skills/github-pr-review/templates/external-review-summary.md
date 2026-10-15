@@ -473,19 +473,18 @@ concise senior-engineer voice from
 ```markdown
 ## Review Summary
 
-Not safe to merge at `<short-sha>` yet. Two blockers: authorization
-provenance can be forged through the trusted boundary
-(`P1 (Blocking)`, `src/review/authz.py:142`), and a stale HEAD can still
-receive a formal review action (`P1 (Blocking)`, `src/review/output.py:88`).
-The validation output hiding which check failed
-(`P2 (Non-Blocking)`, `scripts/validate.py:117`) is worth fixing but
-doesn't block.
+Not safe to merge at `<short-sha>` yet: the two blocking findings must
+be fixed first.
+
+- `P1 (Blocking)` `src/review/authz.py:142` — authorization provenance
+  can be forged through the trusted boundary
+- `P1 (Blocking)` `src/review/output.py:88` — a stale HEAD can still
+  receive a formal review action
+- `P2 (Non-Blocking)` `scripts/validate.py:117` — validation output hides
+  which check failed
 
 Was routing the settled-tradeoff case straight to the caller here
 deliberate?
-
-The retry handling is clean, and the new tests exercise the failure path
-that was previously untested.
 
 **Requirement coverage:** `incomplete` — R1 `implemented` (`<source>`;
 `<evidence>`); R2 `not_evidenced` (`<source>`; `<evidence/explanation>`).

@@ -7,7 +7,8 @@ A documented reference set for Issue
 findings, each rendered as the structured field-oriented block and as the
 senior/human voice from
 [`../shared/templates/finding-rendering.md`](../shared/templates/finding-rendering.md),
-"Senior voice contract", side by side.
+"Senior voice contract", side by side, plus one findings-present review
+summary example.
 
 This is a **documented reference set, not a CI gate** — unlike
 [`corpus/`](corpus/README.md) (the #40/#41 benchmark machinery, driven by
@@ -309,6 +310,33 @@ Demonstrates: the one line of praise is specific and evidence-backed (it
 names what is actually consistent, not a generic compliment), appears
 only because it is materially useful context for the reader, and is never
 a required slot on a review that also has a blocking finding.
+
+## 9 — Review summary with findings (one outcome sentence, no praise section, no recap)
+
+The summary for a review that carries F2 and F4 above. The findings stay
+in their inline comments or body findings with the same IDs, severities,
+and locations; the summary does not repeat them.
+
+**Structured**
+
+```markdown
+**Result: ❌ Changes Required**
+
+Two blocking findings (F2, F4) must be resolved before merge.
+```
+
+**Senior**
+
+```markdown
+Not safe to merge yet: pagination and stale-HEAD handling both need fixes
+first.
+```
+
+Demonstrates: with findings present the overall outcome is a single
+concise sentence naming the key concern and required action; there is no
+`what's good` section, no findings recap, and no boilerplate. The
+`Result` / `Decision` and review-state fields stay outside the prose and
+are identical in both renderings.
 
 ## Related
 

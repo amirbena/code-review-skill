@@ -358,9 +358,12 @@ off.
 5. **Tone follows severity.** `P0`/`P1` findings are decisive — no
    hedging, no question unless the uncertainty is genuine. `P2` findings
    are proportional, never artificially urgent.
-6. **Length follows complexity.** A simple finding is 1–3 sentences.
-   Extra explanation only for the existing "longer explanation" exception
-   each rendering below defines.
+6. **Short and direct by default; add context only when the finding needs
+   it.** Length follows the finding's complexity — no fixed sentence or
+   paragraph count is a default or a limit. A simple finding says what is
+   wrong, why it matters, and what must change, and stops; extra
+   explanation is added only where the finding needs it (the existing
+   "longer explanation" exception each rendering below defines).
 7. **No boilerplate.** Never "The evidence shows…", "The impact of this
    is…", "Consider changing…", or generic praise. Evidence, impact, and
    fix are carried in the prose, never announced by a sentence about
@@ -374,8 +377,8 @@ off.
 
 Senior/human output has **no dedicated praise slot**. Positive feedback
 appears only when it is specific and materially useful; it is never
-manufactured to fill a shape (a "what's good" line, a required opening
-compliment, or similar). This matches the structured shape, where "What
+manufactured to fill a shape (a named praise section or line, a required
+opening compliment, or similar). This matches the structured shape, where "What
 was done well" is itself optional and evidence-only — senior voice does
 not introduce a senior-only obligation the structured shape doesn't have.
 
@@ -457,11 +460,11 @@ this section states only the inline-surface shape:
 ```text
 <severity>: <short, concrete finding — what is actually wrong>
 
-<one to three short paragraphs that carry the concrete problem and the
-evidence for it, the engineering consequence when it is material or
-non-obvious, and an actionable correction direction when one is useful.
-A genuine open question or trade-off is phrased as a question, not
-asserted as a defect.>
+<short, direct prose that carries the concrete problem and the evidence
+for it, the engineering consequence when it is material or non-obvious,
+and an actionable correction direction when one is useful; more context
+only when the finding needs it. A genuine open question or trade-off is
+phrased as a question, not asserted as a defect.>
 ```
 
 Examples:
@@ -548,11 +551,11 @@ block:
 
 `<path>:<line-or-range>`
 
-<one to three short paragraphs that carry the concrete problem and the
-evidence for it, the engineering consequence when it is material or
-non-obvious, and an actionable correction direction when one is useful.
-A genuine open question or trade-off is phrased as a question, not
-asserted as a defect.>
+<short, direct prose that carries the concrete problem and the evidence
+for it, the engineering consequence when it is material or non-obvious,
+and an actionable correction direction when one is useful; more context
+only when the finding needs it. A genuine open question or trade-off is
+phrased as a question, not asserted as a defect.>
 ```
 
 Examples:
