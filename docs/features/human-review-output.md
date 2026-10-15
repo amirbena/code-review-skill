@@ -3,11 +3,11 @@
 ## What it does
 
 Renders the **final human-facing summary** in a concise senior-engineer
-voice instead of the default structured shape: a short opening on merge
-safety and the top concern, then *what's good / what's concerning / what
-to change* in prose, each referenced finding keeping its `P0` / `P1` /
-`P2` label, an intentional trade-off optionally raised as a question, and
-no review-process or machine metadata. The voice itself — leading with the
+voice instead of the default structured shape: one concise outcome sentence
+on merge safety that names the key concern or required action (without
+recapping individual findings), no named praise section, an intentional
+trade-off optionally raised as a question, and no review-process or
+machine metadata. The voice itself — leading with the
 defect, no dedicated praise slot, no first-person/hedging on a required
 fix, and the rest of the shared voice rules — is owned by one place:
 [`shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),

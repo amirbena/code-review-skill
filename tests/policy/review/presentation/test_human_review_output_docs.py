@@ -108,13 +108,14 @@ class SharedSummaryTemplateCarriesTheConciseShape(unittest.TestCase):
     def test_concise_shape_content_rules(self) -> None:
         for token in (
             "safe to merge / proceed",
-            "what's good",
-            "what's concerning",
-            "what to change",
-            "P0 / P1 / P2 label when it is referenced",
+            "one concise sentence",
+            "does not repeat individual findings",
+            "no named praise section",
             "raised as a question",
         ):
             self.assertIn(token, self.t)
+        for token in ("what's good", "what's concerning", "what to change"):
+            self.assertNotIn(token, self.t)
 
     def test_excludes_process_and_machine_language(self) -> None:
         self.assertIn("excludes internal review-process language", self.t)

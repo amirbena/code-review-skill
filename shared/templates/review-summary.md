@@ -320,16 +320,18 @@ states each fact once — is owned by
 [`finding-rendering.md`](finding-rendering.md), "Senior voice contract";
 this section states only the summary's own shape:
 
-- a one- or two-sentence opening that says whether the change is safe to
-  merge / proceed and names the single biggest concern;
-- **what's good** — specific, evidence-backed praise only, never a
-  required slot (see "Senior voice contract", "No dedicated praise
-  slot" — omit entirely if nothing specific stands out);
-- **what's concerning** / **what to change** — the findings that need
-  action, in prose, each still carrying its `P0` / `P1` / `P2` label when
-  it is referenced, with any required correction stated directly per
+- an opening that says whether the change is safe to merge / proceed and
+  names the single biggest concern. **When findings exist, the overall
+  outcome is one concise sentence** that states the key concern or
+  required action; it does not repeat individual findings (each is
+  already carried once by its inline comment or body finding, which owns
+  its `P0` / `P1` / `P2` label and any required correction stated per
   "Senior voice contract", "Required fixes are stated directly, not as
-  first-person suggestions";
+  first-person suggestions") and carries no generic praise, recap, or
+  boilerplate. With no findings, the clean-review summary is unchanged;
+- no named praise section — praise appears only when specific,
+  evidence-backed, and materially useful, never as a slot (see "Senior
+  voice contract", "No dedicated praise slot");
 - **requirement coverage** — when analysis was active, the overall signal and
   every requirement/status remain visible in concise prose; omit it when
   coverage was inert;
@@ -356,7 +358,10 @@ metadata entirely — review mode, base/head SHAs, file or finding counts,
 action mode, parallel-worker / aggregation wording, and the subordinate
 machine-metadata block are all left out of this comment. It does not
 restate a finding's full `Evidence` / `Impact` / `Fix` block when that
-detail is already published elsewhere (e.g. a GitHub inline comment).
+detail is already published elsewhere (e.g. a GitHub inline comment), and
+it does not recap findings in the outcome sentence. The `Result` /
+`Decision`, review-state, and machine-metadata fields stay outside this
+prose, unchanged.
 
 This is presentation only. It never changes finding detection, severity
 classification, finding identity or deduplication, re-review semantics,

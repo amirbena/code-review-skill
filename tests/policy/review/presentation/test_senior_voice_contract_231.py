@@ -79,7 +79,7 @@ class SingleOwnerExists(unittest.TestCase):
         self.assertIn("State each fact once", t)
         self.assertIn("Separate required from optional", t)
         self.assertIn("Tone follows severity", t)
-        self.assertIn("Length follows complexity", t)
+        self.assertIn("Short and direct by default", t)
         self.assertIn("No boilerplate", t)
         self.assertIn("Same rigor as structured mode", t)
         self.assertIn("No dedicated praise slot", raw)
@@ -190,6 +190,27 @@ class BannedBoilerplateAbsent(unittest.TestCase):
         raw = GH_SUMMARY.read_text(encoding="utf-8")
         self.assertNotIn("**What's good:**", raw)
         self.assertNotIn("**What's concerning:**", raw)
+
+
+class LengthPraiseAndSummaryShapeAlignment(unittest.TestCase):
+    """Length is short-by-default with no fixed count, there is no named
+    praise slot, and a findings-present summary is one outcome sentence."""
+
+    def test_no_fixed_paragraph_default_in_skeletons_or_principle(self) -> None:
+        raw = " ".join(FINDING_RENDERING.read_text(encoding="utf-8").split())
+        self.assertNotIn("one to three short paragraphs", raw)
+        self.assertNotIn("A simple finding is 1–3 sentences", raw)
+        self.assertIn("Short and direct by default; add context only when the finding needs it", raw)
+
+    def test_summary_shape_has_no_named_praise_slot(self) -> None:
+        for path in (REVIEW_SUMMARY, GH_OUTPUT, FEATURE_DOC):
+            text = " ".join(path.read_text(encoding="utf-8").split()).lower()
+            self.assertNotIn("what's good", text, str(path))
+
+    def test_findings_case_summary_is_a_single_outcome_sentence(self) -> None:
+        text = " ".join(REVIEW_SUMMARY.read_text(encoding="utf-8").split())
+        self.assertIn("When findings exist, the overall outcome is one concise sentence", text)
+        self.assertIn("does not repeat individual findings", text)
 
 
 class P0P1ExamplesHaveNoHedgingOnTheRequiredFix(unittest.TestCase):
