@@ -111,7 +111,10 @@ and design review, and more — are catalogued in
 
 **Limits:** neither Skill merges or auto-merges, and neither runs the reviewed
 repository's code except through the gated, opt-in
-[runtime validation](docs/features/runtime-validation.md) capability. See
+[runtime validation](docs/features/runtime-validation.md) capability.
+Branch protection is never changed beyond adding or removing the single
+required check, only on explicit request
+([details](docs/features/github-merge-enforcement.md)). See
 [`docs/CODE_REVIEW_COMPARISON.md`](docs/CODE_REVIEW_COMPARISON.md) §3 and §10.
 
 ## Contributing
