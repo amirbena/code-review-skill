@@ -22,7 +22,7 @@ what exists.
 
 What exists on `main` today, split by where it takes effect:
 
-- **Declarative and build-time (CI-checked).** 17 manifests,
+- **Declarative and build-time (CI-checked).** 19 manifests,
   `capabilities/*/capability.yaml`, declare each capability's files,
   activation, adapters, `requires:` and `never:` clauses. They drive the
   generated `scripts/packaging/package-manifest.json` and each Skill's

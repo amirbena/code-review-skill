@@ -129,14 +129,20 @@ Rules that bound the check:
   "Thin README discipline" above.
 - **A capability change is incomplete while a known-affected documentation
   surface is left stale.** The check is part of finishing the change, not
-  a follow-up.
+  a follow-up. When a known-affected surface cannot reasonably be updated
+  in the same pull request — including the GitHub Wiki, which lives in a
+  separate repository — the pull request description identifies the
+  affected surface and the correction it needs.
 
 **Wiki feature-page consideration.** When a capability change above lands,
 also consider whether the repository Wiki's feature-page pattern (the
 `Feature-Pages` index and its per-feature pages, one layer further out
 than `docs/features/`) needs a new or updated page — a feature earns one
 once it becomes a meaningful user-visible capability with stable
-behavior. This is a *consideration*, not a mandatory checklist item or a
+behavior. Also consider whether an existing Wiki page describes
+documented behavior, commands, or paths the change alters; a Wiki update
+need not be published before the change is merged or released. This is a
+*consideration*, not a mandatory checklist item or a
 merge blocker: it never applies to internal refactors or
 implementation-only changes with no user-visible effect, and routine
 capability edits do not require a Wiki update on every PR.

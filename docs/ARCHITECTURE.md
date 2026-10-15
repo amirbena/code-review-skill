@@ -681,10 +681,18 @@ or runbook implements them today:
   It never changes approval-count rules,
   `dismiss_stale_reviews_on_push`, `require_last_push_approval`, or bypass
   actors, and never merges.
-- **Automatic execution of PR code** — neither Skill runs the target
-  repository's tests, linters, build, hooks, or arbitrary commands, even
-  in repository-backed mode. Cloning untrusted PR code is not permission
-  to execute it.
+- **Automatic execution of PR code** — neither Skill executes the code
+  under review automatically, even in repository-backed mode: checking out
+  a PR is never permission to run it. Running a repository-declared test,
+  lint, or validation command, or a targeted reproduction of one suspected
+  finding, is the separate, conditional runtime-validation capability
+  ([`runtime-validation.md`](../shared/policies/runtime-validation.md),
+  [usage guide](features/runtime-validation.md)). It needs a trustworthy
+  declared command and runs in a verified isolation boundary — except the
+  repository's own test command, which runs on the host by default
+  (sandbox-only on request) — with trusted-host execution only on an
+  explicit per-invocation authorization when no sandbox exists. Its result
+  is evidence only.
 - **Runtime attachment of the cross-review stable finding identifier** —
   the requirements, the matching strategy, the deterministic
   descriptor/identity derivation, and the two-state lifecycle are all
@@ -813,10 +821,10 @@ Maximum automated positive action: **Approve**. No merge occurs — see
 Source layout and distribution layout are intentionally different:
 
 ```text
-source repository layout            standalone Skill archive
-(skills/<name>/, shared/)                (dist/*.zip)
+source repository layout            built Skill tree and standalone archive
+(skills/<name>/, shared/)           (dist/skills/<name>/, dist/*.zip)
     ↓                                        ↓
-skills/<name>/SKILL.md              →   SKILL.md            (archive root)
+skills/<name>/SKILL.md              →   SKILL.md            (tree and archive root)
 skills/<name>/runbooks/…            →   runbooks/…
 skills/<name>/templates/…           →   templates/…
 skills/<name>/policies/…            →   policies/…

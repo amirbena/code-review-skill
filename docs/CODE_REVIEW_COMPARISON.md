@@ -45,7 +45,7 @@ products evolve.
 **What each mode intentionally does *not* do**
 
 - Neither edits, commits, pushes, merges, or manages branches.
-- Neither runs the target repository's tests, linters, build, hooks, or any of its code.
+- Neither executes the target repository's code automatically. Running a repository-declared test, lint, or validation command, or a targeted reproduction, is the separate, conditional [runtime validation](features/runtime-validation.md) capability: it runs in a verified isolation boundary (the repository's own test command runs on the host by default, sandbox-only on request) and its result is evidence only.
 - `github-pr-review` may publish one optional, exact-HEAD, machine-readable status/check for the reviewed SHA (a blocking status even on a self-review; a `success` status only under APPROVE-level positive authorization, never on a self-review) and, as a separate opt-in action, add that one context to a base branch's required checks — but it never merges, never enables auto-merge, and never changes approval-count rules, stale-review settings, or bypass actors.
 - `local-code-review` never creates any GitHub status, check, ruleset, or branch-protection state.
 - `github-pr-review` never merges; its strongest action is **Approve** / a `success` status.
@@ -326,7 +326,7 @@ consumed identically by both.
 | — temporary checkout | n/a | `mkdtemp` → blobless clone (`--no-checkout --no-tags --filter=blob:none`) → fetch base/head (SHA fallback) → detached checkout at `head_sha`; one clone shared by all workers, not one per worker |
 | — base/head fidelity | committed/staged/unstaged/untracked vs. resolved base | resolves repo identity + base ref/SHA + head ref/SHA + merge-base from a `NormalizedPrSource`; prefers immutable SHAs; PR delta = `merge-base(base,head)..head`, correct even when base advanced after branch-off; verifies the fetched head matches `head_sha` |
 | — cleanup | n/a | one lifecycle, guarded delete (inside scratch parent, not the parent, ownership marker present) on **every** exit path — success, failure, interruption |
-| — read-only repository inspection | inherent | reads files and safe Git commands only; target-repo tests/builds/linters/hooks/scripts are **never** run; surrounding files never become independent review targets |
+| — read-only repository inspection | inherent | reads files and safe Git commands only; target-repo code is never executed automatically — the only execution path is the conditional [runtime validation](features/runtime-validation.md) capability; surrounding files never become independent review targets |
 | — private-repo auth | runtime Git identity | runtime's existing Git/GitHub credentials; no token in generated files, no secret in logs/output, no credential persisted; auth failure degrades only in optional mode and is incomplete in required mode |
 | **Parallel review capability** | not wired (would apply equally) | execution optimization selected only with reliable runtime capability plus at least two materially independent dimensions and expected latency benefit; never by file count alone ([`parallel-review.md`](../shared/policies/parallel-review.md)) |
 | — sequential default | always sequential today | default and fast path for simple, dependent, mechanically broad, uncertain, or unsupported reviews |
@@ -352,9 +352,11 @@ implements them today, and this document does not claim they are supported:
   `require_last_push_approval`, or bypass actors, and any GitHub-side
   merge itself, are not implemented; the maximum positive action stays
   **Approve** / a `success` status.
-- **Automatic execution of PR code** — running the target repository's tests,
-  linters, build, hooks, or arbitrary commands, in any mode including
-  repository-backed. Cloning untrusted PR code is not permission to run it.
+- **Automatic execution of PR code** — executing the code under review
+  without a gated, declared command, in any mode including repository-backed.
+  Cloning untrusted PR code is not permission to run it; the conditional
+  [runtime validation](features/runtime-validation.md) capability is the
+  only execution path.
 
 ## See also
 
