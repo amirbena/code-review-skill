@@ -1,0 +1,63 @@
+{
+  "case_id": "correctness-off-by-one-pagination",
+  "duration_s": 19.65,
+  "evidence": {
+    "duplicate_noise": {
+      "cluster_members": [],
+      "clusters": 1,
+      "duplicate_clusters": 0,
+      "duplicate_rate": "0",
+      "id": "correctness-off-by-one-pagination",
+      "produced": 1,
+      "redundant_findings": 0,
+      "status": "executed"
+    },
+    "metrics": {
+      "absorbed_extra_match": 0,
+      "false_negatives": 0,
+      "false_positives": 0,
+      "findings_completeness": "exhaustive",
+      "id": "correctness-off-by-one-pagination",
+      "incorrect_indices": [],
+      "missed_keys": [],
+      "near_misses": 0,
+      "status": "executed",
+      "tolerated_unexpected": 0
+    },
+    "severity": {
+      "exact_rate": "1",
+      "id": "correctness-off-by-one-pagination",
+      "matched": 1,
+      "mismatches": [],
+      "over_severity": 0,
+      "severity_exact": 1,
+      "status": "executed",
+      "under_severity": 0
+    }
+  },
+  "finished_at": "2026-10-16T02:07:56Z",
+  "provenance": {
+    "ref": "refs/heads/claude/dreamy-brahmagupta-vbg5m0",
+    "repo": "amirbena/code-review-skill",
+    "repo_sha": "bcda862e19f4c63abb2f9a021e8e399bddd8de24"
+  },
+  "raw_file": "raw-output.json",
+  "ref": "claude/severity-observation-20261016T020736Z-bcda862e19f4",
+  "resolved": {
+    "expected": "P1",
+    "mismatches": [],
+    "severity": "P1",
+    "state": "exact"
+  },
+  "run_id": "20261016T020736Z-bcda862e19f4",
+  "runtime": {
+    "adapter_id": "production-review-adapter@bcda862e19f4",
+    "model_id": "claude-sonnet-5-5",
+    "runtime_name": "claude",
+    "runtime_version": "2.1.301 (Claude Code)"
+  },
+  "schema": "severity-observation/v1",
+  "started_at": "2026-10-16T02:07:36Z",
+  "temporary": true,
+  "trigger": "scheduled"
+}

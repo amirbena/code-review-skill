@@ -1,0 +1,36 @@
+{
+  "cases": [
+    {
+      "id": "correctness-off-by-one-pagination",
+      "input_kind": "patch",
+      "produced_findings": [
+        {
+          "claim": "Off-by-one in `page()` returns an extra item on every page The line `end = offset + page_size + 1` gives a slice of `offset` up to `offset + page_size + 1`, which is `page_size + 1` elements. For `items=[1..10]`, `page_number=1`, `page_size=3`, the offset is 0 and the result is `[1, 2, 3, 4]` instead of `[1, 2, 3]`. Page 2 returns `[4, 5, 6, 7]`, so item 4 appears on both pages. The committed version used `offset + page_size`, which was correct. Every page overlaps the next by one item, and callers get more rows than `page_size`. Consumers will see duplicated items across pages and may break contracts that assume at most `page_size` items. Any caller that detects the last page by comparing the result length to `page_size` will behave wrongly.",
+          "extra": {
+            "defect_kind": "off-by-one",
+            "evidence_quotes": [
+              "end = offset + page_size + 1",
+              "offset",
+              "offset + page_size + 1",
+              "page_size + 1",
+              "items=[1..10]",
+              "page_number=1",
+              "page_size=3",
+              "[1, 2, 3, 4]",
+              "[1, 2, 3]",
+              "[4, 5, 6, 7]",
+              "offset + page_size"
+            ]
+          },
+          "location": {
+            "line": 3,
+            "path": "app/pagination.py"
+          },
+          "severity": "P1"
+        }
+      ],
+      "status": "executed"
+    }
+  ],
+  "ok": true
+}
