@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.78.0 — 2026-10-17
+
+### Changed
+
+- Rendered-UI inspection now requires session-scoped consent and uses only an already-installed Playwright; it never installs anything (#776).
+
 ## v1.77.1 — 2026-10-15
 
 ### Fixed
