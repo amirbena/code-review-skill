@@ -472,5 +472,5 @@ scenarios:
   benchmark_family: none
   benchmark_reference: reasoning-discipline scenario with no capability crossing of its own; the contract is
     exercised by the rendered-inspection consent reference model, not a benchmark corpus (docs/rendered-inspection/session-consent-contract.md, section 11)
-  regression_evidence: tests/unit/review/rendered_inspection/test_rendered_inspection_consent.py
+  regression_evidence: tests/unit/review/rendered_inspection/test_rendered_verification.py
   threat_severity: MEDIUM

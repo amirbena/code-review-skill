@@ -95,8 +95,9 @@ exists to observe, so a capture is never taken without a question it answers.
 
 ## Verification plan
 
-Once consent is `granted`, the plan is built **statically from the diff**: no
-render and no tool call beyond what the review already performs. Each plan item
+The plan is built **statically from the diff** before any offer, so the offer can
+name its classes: no render and no tool call beyond what the review already
+performs. Consent gates only the availability check and the render. Each plan item
 names a *change class*, the *property* to verify, the *evidence kind* that can
 settle it, and the target and viewport. The classes are closed; there is no
 eighth class.
