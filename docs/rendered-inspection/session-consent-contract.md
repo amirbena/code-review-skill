@@ -40,6 +40,10 @@ capability detection -> install question -> target sourcing -> render   (unchang
   `skipped`, with distinct recorded reasons (§5).
 - Render consent never authorizes install, download, repository change, or
   trusted-host execution (§7).
+- After consent, the plan is derived statically from the diff, is proportional,
+  and fits the unchanged budget (§10, §11). Real input is added as a bounded
+  capability (§12.1), the baseline render is rejected for v1 (§12.2), and
+  evidence and per-check status are recorded by kind (§13).
 
 ## 2. Ratification table
 
@@ -55,6 +59,11 @@ capability detection -> install question -> target sourcing -> render   (unchang
 | 8 | Evidence and severity | ratified | No change to evidence, `confidence`, severity, or the Decision (§9). |
 | 9 | New outcome state | rejected | The four existing outcomes are sufficient (§5). |
 | 10 | Host support | open | Cannot be asserted from this repository; verification is assigned to #771 with a safe default (§6). |
+| 11 | Verification planning | ratified | Static, diff-derived, proportional; classes and properties in §10. Evidence: the plan already "names, for each target, the changed element or state it exists to observe" (`rendered-inspection.md`, "Inspection plan and default budget"). |
+| 12 | Viewport selection | ratified | Chosen from the diff inside the unchanged cap of 2 viewports and 6 captures; unchecked risk is recorded (§11). |
+| 13 | Interaction capability | amended | Capability definition gains real keyboard and pointer input, bounded (§12.1). |
+| 14 | Before/after | rejected | v1 is after-only (§12.2). |
+| 15 | Evidence and outcomes | amended | Three kinds and per-check status inside `inspected`; one new `checks` slot (§13). No new outcome. |
 
 ## 3. Relevance and prompt fatigue
 
@@ -89,6 +98,9 @@ not install anything, and how to refuse or revoke:
 
 > This review includes frontend changes that may benefit from browser-rendered
 > verification. Would you like me to run Playwright?
+
+A third line names the planned change classes (§10) and discloses that keyboard
+or pointer interaction may occur (§12.1).
 
 ### 4.2 Authorization sources (closed list)
 
@@ -248,6 +260,9 @@ applies unchanged once consent is granted.
 | Same file, "Durable opt-out": "It silences the *question* only" | Silences the question and the render offer; not a grant or revocation. |
 | Same file, "Surface": install question goes to the Reviewer Brief or final-report note, never published | Unchanged for install. The consent offer is asked inline where the host is interactive; where it is not, there is no offer. It is never published to GitHub. |
 | `rendered-inspection.md`, "Evidence record" field list | Add the `consent <…>` slot of §5. |
+| `rendered-inspection.md`, "Runtime neutrality": isolated context that can navigate, set a viewport, capture, and read structure, accessibility, and console | Add dispatching keyboard and pointer input to the page under test (§12.1). |
+| Same file, "Inspection plan and default budget": the plan names the changed element or state per target | Plan items also name the property, the evidence kind, and the viewport, derived from the diff (§10, §11). Bounds unchanged. |
+| Same file, "Evidence record" | Add the `checks` slot and per-check status (§13), alongside `consent`. |
 | `capabilities/rendered-inspection/capability.yaml` | `never:` gains rendering without a `granted` consent state and treating a repository source as consent. |
 | [`docs/features/rendered-inspection.md`](../features/rendered-inspection.md), "Default, conditional, or requested" | State the consent gate and its fallbacks. |
 
@@ -271,7 +286,141 @@ Static inference, browser-observed evidence, and each verification state
 remain distinguishable in the `Validation` record. No finding may say a defect was
 reproduced unless a page was rendered and observed.
 
-## 10. Threat model
+## 10. Verification planning
+
+Once consent is `granted`, the existing "Inspection plan and default budget" of
+[`rendered-inspection.md`](../../shared/policies/rendered-inspection.md) is
+built from the diff. Planning is **static**: no render, no tool call beyond what
+the review already performs. Each plan item names a *change class*, the
+*property* to verify, the *evidence kind* (§13) that can settle it, and the
+target and viewport.
+
+| Change class (what the diff touches) | Properties planned | Kinds |
+| --- | --- | --- |
+| CSS Grid | track count and sizes, container and item dimensions, available width, alignment and gap, behavior at the changed breakpoint | `dom`, `visual` |
+| Overflow and clipping | clipped or hidden content, scrollability, focus-outline visibility at the container edge, reachability of children | `dom`, `visual`, `interaction` |
+| Typography and text | wrapping, truncation, overlap, layout shift on content or font change | `dom`, `visual` |
+| Interaction and state | keyboard navigation, focus order and visibility, click-target accessibility, state transitions | `interaction`, `dom` |
+
+**Proportionality.** Only classes the diff actually touches are planned. There
+is no generic browser checklist and no check without a stated question it
+answers (the existing "never a capture without a question" rule). A diff that
+touches none of the classes has no plan, so the gate stays silent (§3). Inside
+a touched class, only the properties the diff can affect are planned: a
+`gap` change does not plan focus order.
+
+**Specific offer.** The plan exists before the offer, so the offer can name what
+would be checked. The two sentences of §4.1 stay verbatim; one line is appended
+(for example "It would check grid column sizing and focus-outline visibility
+under the new overflow"). The line names classes only; it makes no claim about
+outcomes. If the plan is empty, there is no offer.
+
+## 11. Viewport selection
+
+The budget is unchanged: at most 2 viewports, 6 captures, 3 targets, one attempt
+per target and viewport, 120 seconds in total. This record does **not** widen it.
+
+- **Non-responsive change** (for example focus-outline or overflow with no media
+  or container query): one viewport, the default desktop width. The unused
+  second viewport is not spent.
+- **Responsive change** (the diff adds or edits a breakpoint, media query,
+  container query, or responsive utility): the two viewports sit on both sides
+  of the relevant breakpoint, taken from the diff: the nearest representative
+  width below it and at-or-above it. Examples, not requirements: 320, 375, 390,
+  430 (mobile) and 768, 1440 (desktop).
+- **More risk than budget** (several breakpoints, or more targets × viewports
+  than 6 captures): keep the highest-risk breakpoint first, and record each
+  uncovered one as `not-checked(budget)` with its width.
+- **Theming** adds light/dark only when theming changed, as today, and counts
+  against the same cap.
+
+Anything the budget cannot cover is reported as unchecked (§13), never silently
+dropped and never presented as covered.
+
+## 12. Interaction capability and baseline
+
+### 12.1 Input
+
+The current capability definition (`rendered-inspection.md`, "Runtime
+neutrality": navigate, viewport, capture, structure, accessibility, console)
+cannot produce real keyboard or pointer input, so focus order, keyboard reach,
+and state transitions cannot be settled today. **Decision: extend it by one
+runtime-neutral clause**: dispatch keyboard (focus traversal and key presses)
+and pointer (hover, click) input to the page under test. Still no named
+automation product.
+
+Bounds, all inside the existing isolation and budget rules:
+
+- input goes only to the chosen target's origin, in the throwaway context;
+- only actions the plan names; no form submission, no credential entry, no
+  controls whose purpose is destructive or irreversible (delete, purchase,
+  send), and no input that needs a signed-in state (v1 stays unauthenticated);
+- the input steps of a target and viewport belong to its one attempt and count
+  against the 120 s bound; the input-event cap is open (§15);
+- the offer discloses that interaction may occur, and the consent it receives
+  covers it (§4.1).
+
+**When input is unavailable** the interaction checks are `not-checked(input
+unavailable)`. The inspection still runs its other checks. A `dom` read that
+reports a style or focusability **never** counts as an interaction result.
+
+### 12.2 Before/after
+
+**Decision: after only.** A baseline render needs the base revision served,
+which is a second target and a second attempt against a budget that has neither,
+and it must be bound to the base SHA while the existing contract forbids
+carrying evidence between SHAs. v1 therefore renders the reviewed revision only.
+The reviewer may say what the diff intended to change (static, from the diff) and
+what the rendered revision shows. It never states that something "changed from"
+or "regressed" on render evidence alone. Revisiting this needs a separate
+amendment that spends target budget explicitly.
+
+## 13. Evidence and outcome semantics
+
+Every plan item records the three evidence kinds separately:
+
+| Kind | What it is | Never proves |
+| --- | --- | --- |
+| `dom` | measurement or computed state read from the page (tracks, sizes, overflow, computed focus style, console) | visual correctness |
+| `visual` | an observation of a captured rendering | keyboard or state behavior |
+| `interaction` | the result of real input (focus moved, element reachable, state changed) | layout appearance |
+
+A passing structural assertion (for example "four grid tracks") is a `dom`
+result. It is never reported as visual correctness; a visual claim needs a
+`visual` check. Screenshots are taken only where they materially help (a `visual`
+item that DOM cannot settle), are never required per PR, and stay ephemeral and
+outside the working tree, per the existing evidence record.
+
+**Per-check status**, inside the existing `inspected` outcome (no new outcome):
+`confirmed` (the concern was observed), `refuted` (checked at the stated
+viewport and not observed), or `not-checked(<reason>)` with reasons such as
+`budget`, `input unavailable`, `target`, `timeout`. A `refuted` result is scoped
+to the viewports and states checked; it never generalizes.
+
+The `Validation` entry of
+[`rendered-inspection.md`](../../shared/policies/rendered-inspection.md),
+"Evidence record", gains a compact `checks` slot beside the `consent` slot of §5:
+
+`checks <property>:<kind>@<viewport>=<confirmed|refuted|not-checked(reason)>; …`
+
+The entry therefore states what was inspected, viewports, interactions
+exercised, observations, concerns confirmed or refuted, and checks not
+completed. Mapping to the existing outcomes: at least one planned target
+rendered and observed is `inspected` even when some checks are `not-checked`;
+nothing rendered is `skipped`, `unavailable`, or `attempted-inconclusive` exactly
+as before. The wording "visually verified" is allowed only for a property with a
+`visual` check that ran.
+
+**Findings.** A `confirmed` concern that a bounded observation on a SHA-matched
+target directly demonstrates takes `confirmed` confidence (§7 of the Epic #614
+record). A static suspicion that a `refuted` check addresses at the checked
+viewports is not reported as a defect, because the evidence contradicts it; it
+may remain a note that names the scope of the refutation. A suspicion with
+`not-checked` status keeps its static severity and its `credible` confidence, and
+the unchecked status is stated once. Severity is never raised because
+verification was declined, unavailable, or incomplete.
+
+## 14. Threat model
 
 New exposure, to be catalogued by #771 in `docs/threat-model/catalog/` using the
 existing categories:
@@ -284,9 +433,12 @@ existing categories:
 | Prompt fatigue pressuring blanket approval | one offer per review; opt-out for lasting silence; consent stays separate from install |
 | Context truncation resurrects or loses a grant | can only lose; fail closed |
 | Approval to render smuggles install or host execution | separate authorities; no implication (§7) |
+| Input actions mutate state of the target or trigger a destructive control | only plan-named actions; no form submission, credentials, or destructive controls; throwaway context and origin-confined (§12.1) |
+| A DOM-only pass is reported as visual or interaction verification | kinds recorded separately; "visually verified" needs a `visual` check (§13) |
+| An uncovered viewport or check is presented as covered | recorded `not-checked(reason)`; never dropped (§11, §13) |
 | Revoked inspection leaves a process or partial evidence | teardown and discard; `attempted-inconclusive` |
 
-## 11. Open questions for #771 and the maintainer
+## 15. Open questions for #771 and the maintainer
 
 1. **Interactivity signal.** How does a runtime tell the reviewer that a human
    can answer in-invocation? The default here is non-interactive when unknown.
@@ -295,14 +447,15 @@ existing categories:
 3. **Phrase sets.** Confirm the closed affirmative and negative sets for the
    §4.1 reply and for revocation, mirroring the structural pattern of
    `trusted-host-execution.md`. This record fixes the pattern, not the strings.
-4. **Offer surface in `github-pr-review`.** Passive/active GitHub runs have no
+4. **Input-event cap.** The per-target/viewport cap on input events (this record sets the principle, not the number) and the exact control-name heuristics for "destructive".
+5. **Offer surface in `github-pr-review`.** Passive/active GitHub runs have no
    interactive turn by default; confirm that the offer exists only for an
    operator-driven interactive review and never in a published surface.
 
 These do not block approval of the semantics above; they are implementation
 verification items. They must be settled before #771 is marked ready.
 
-## 12. Checklist against #770 acceptance criteria
+## 16. Checklist against #770 acceptance criteria
 
 - Consent semantics and the lifecycle states are unambiguous, with decline,
   revocation, and unavailable consent distinct: §5.
@@ -312,5 +465,6 @@ verification items. They must be settled before #771 is marked ready.
 - Installation permission separate; trusted-host rules unchanged: §7.
 - Every amended canonical sentence listed with its replacement: §8.
 - Existing rendered-inspection guarantees preserved: §9.
+- Verification planning, proportionality, viewport selection, interaction capability, before/after decision, and evidence and outcome semantics specified within the unchanged budget: §10–§13.
 - Docs-only; maintainer approval required before #771 starts: this record changes
   no packaged resource.
