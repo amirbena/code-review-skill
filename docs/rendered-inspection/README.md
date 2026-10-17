@@ -19,6 +19,8 @@ re-decide semantics inside code PRs.
 | Document | Owns | Issue |
 | --- | --- | --- |
 | [`rendered-inspection-contract.md`](rendered-inspection-contract.md) | The position-by-position ratification table with repository evidence, the conflict resolutions against each existing contract, the shared-policy amendments C2–C5 make, the locked contracts stated verbatim, the single-owner assignment of every design-reference decision, and the no-benchmark decision. | [#615](https://github.com/amirbena/code-review-skill/issues/615) |
+| [`session-consent-contract.md`](session-consent-contract.md) | The render-consent gate: session-scoped authorization, decline/revocation/unavailable states mapped onto existing outcomes, non-interactive and per-host fallbacks, separation from install and trusted-host permissions, the canonical statements it amends, and its threat model. | [#770](https://github.com/amirbena/code-review-skill/issues/770) |
+| [`verification-contract.md`](verification-contract.md) | What a granted render inspects: diff-derived planning and the change classes, viewport selection, bounded input with its request guard, the after-only baseline decision, and evidence kinds, per-check status, and outcome mapping. | [#770](https://github.com/amirbena/code-review-skill/issues/770) |
 
 ## Epic and delivery
 
