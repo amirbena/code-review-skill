@@ -89,6 +89,27 @@ change classes of VC §1 (grid, overflow, typography, interaction and state,
 responsive layout, positioning and stacking, visibility and appearance). If none
 applies, the review stays silent and records nothing, exactly as today.
 
+**Activation boundaries** (clarification, #771; no new signal and no new trigger).
+Rendered inspection activates only when the actual diff materially affects a
+user-facing frontend interface:
+
+- Repository language, framework (React, Next.js, and the like), dependencies, an
+  installed Playwright, PR title, labels, and repository type are never activation
+  signals, alone or combined.
+- Backend-only, database-only, infrastructure-only, documentation-only, and
+  configuration-only changes do not activate it. A change to Playwright
+  configuration alone (and likewise test-runner, CI, or dependency configuration)
+  does not materially alter rendered output and does not activate it.
+- In a mixed diff only the relevant frontend changes contribute to the
+  verification plan; backend hunks contribute nothing.
+- An earlier approval in the session never bypasses frontend relevance or the
+  non-empty-plan requirement. A review whose diff is irrelevant or whose plan is
+  empty has no plan, no offer, no availability probe, and no browser execution,
+  whatever the consent state, and its normal review continues unchanged.
+- Loading the rendered-inspection policy (which is fail-closed and may load on an
+  ambiguous trigger) does not itself activate the consent gate; the gate runs only
+  after the trigger holds and the plan is non-empty.
+
 Fatigue limits, all mechanical:
 
 - at most **one offer per review**;
@@ -233,6 +254,12 @@ the reviewer merely cannot tell. Unknown is non-interactive.
 | Non-interactive, structured grant present | no | §4.2.1 | renders, invocation-scoped |
 | Non-interactive, no structured grant | no | none | `consent-unavailable`; static review only |
 | Automated GitHub review (CI/bot) | no | §4.2.1 only | as above; a workflow file or PR text can never grant |
+
+For `github-pr-review`, the offer exists only in an explicitly operator-driven
+interactive session; passive and automated reviews never request interactive
+consent (resolves open question 5). Revocation takes precedence over approval: a
+visible revocation voids every earlier approval until a new offer is answered
+affirmatively, and unknown or ambiguous phrases never approve.
 
 A non-interactive run never blocks, never waits, and never introduces
 persistent consent.

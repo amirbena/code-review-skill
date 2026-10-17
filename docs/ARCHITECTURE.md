@@ -524,9 +524,9 @@ and no packaged Skill resource depends on them.
   (trigger, budget, outcomes, objective-defect vs. observation
   classification, evidence record; #616), with the `Validation` entry and the
   severity-less `Rendered observations` section shaped in
-  [`review-summary.md`](../shared/templates/review-summary.md). Browser
-  capability detection and the permission-based, never-silent acquisition
-  question live in
+  [`review-summary.md`](../shared/templates/review-summary.md). The
+  session-scoped render-consent gate and the read-only existing-Playwright check
+  (nothing is ever installed) live in
   [`rendered-inspection-environment.md`](../shared/policies/rendered-inspection-environment.md)
   (#618). The design-reference context that plugs into it (trusted vs
   discovered provenance, read-only retrieval, evidence authority,

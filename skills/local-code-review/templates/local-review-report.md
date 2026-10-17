@@ -326,7 +326,11 @@ serve are owned by the linked policies and are not restated here.
   the same shared shape. Both are omitted completely when the capability is
   inert — no heading, no placeholder — and neither is a finding or changes a
   severity, coverage, or the Decision. The semantics live only in the shared
-  policy.
+  policy. The inspection runs only after the shared render-consent gate
+  ([`rendered-inspection-environment.md`](../../../shared/policies/rendered-inspection-environment.md))
+  is `granted`; this Skill may offer it in an interactive session and records a
+  declined, revoked, or unavailable consent as `skipped` in that entry. The
+  `checks` slot is a `Validation` field only, never a finding.
 - **Code hygiene observations** is an optional, conditional section rendered
   before Validation (after Rendered observations when both are present),
   exactly as
@@ -337,13 +341,6 @@ serve are owned by the linked policies and are not restated here.
   no heading, no placeholder — and is never a finding or an input to a
   severity, coverage, or the Decision. The semantics live only in the shared
   policy.
-- **Browser setup note** — when
-  [`../../../shared/policies/rendered-inspection-environment.md`](../../../shared/policies/rendered-inspection-environment.md)
-  requires its browser-setup question, it is one note line in this returned
-  report, outside the finding set, never a finding, severity, or Decision input.
-  That policy owns when it is asked and what it states; this template owns only
-  that it is one line, placed directly after Decision (after any Reasoning
-  check) and before Review Metadata.
 - **Reasoning check** is an optional, conditional section rendered in the
   returned report directly after Decision and before "Review Metadata",
   exactly as

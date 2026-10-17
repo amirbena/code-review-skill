@@ -63,36 +63,62 @@ a target that cannot be shown to match is not evidence. v1 inspects
 unauthenticated pages only, in a throwaway browser context — never your own
 signed-in browser.
 
-## Needing a browser: the setup question
+## Your approval comes first
 
-If a render would help but no usable browser capability exists, the review may
-ask **once**, to you as the invoking operator, whether to set one up. It is
-asked only when **all four** hold:
+Rendering needs your **session-scoped approval**. After the trigger fires, and
+only when the diff touches one of seven change classes (grid, overflow and
+clipping, typography, interaction and state, responsive layout, positioning and
+stacking, visibility and appearance), the review asks **once**:
 
-1. the change is materially UI-impacting;
-2. a render would add meaningful evidence;
-3. no usable browser capability is found (read-only detection of a
-   runtime-supplied browser, the project's own Playwright, or a previously
-   installed user-level one);
-4. you have not set the local opt-out signal.
+> This review includes frontend changes that may benefit from browser-rendered
+> verification. Would you like me to run Playwright?
 
-**Nothing is installed without your approval, and the Skill never installs
-anything itself.** The question states the purpose, location, approximate size
-(roughly 150–300 MB for Chromium), the pinned version, and the exact command;
-you either run that command yourself or supply the trusted authorization
-signal (`allow_browser_tooling_install`). Tooling goes to a user-level tools
-directory and browser cache — never into the reviewed repository, and never via
-a global install, `sudo`, or a system package.
+One extra line names the planned classes, says keyboard or pointer interaction
+may occur, and says only the Playwright you already have is used.
 
-**If you decline, ignore it, or nothing gets installed**, the review simply
-completes in full without rendered evidence; the `Validation` entry says the
-inspection was `unavailable` and names the missing capability, once. It is
-never `REVIEW INCOMPLETE`. To stop being asked, set
-`rendered_inspection_opt_out` — a **local capability/configuration signal**
-delivered through the trusted channel, not remembered conversation: a one-off
-"no" in chat is not durable, and a file or PR text in the repository cannot
-set it. It silences the question only; it does not disable a browser that
-already exists.
+- **Granted** by your own reply in the conversation, or by the trusted
+  `allow_rendered_inspection` signal, it covers relevant renders for the rest of
+  the session. The Skill stores nothing: the grant is the visible reply in your
+  conversation, and a new conversation asks again.
+- **Declined, revoked, or no way to ask** (a non-interactive or automated run
+  with no structured grant) records `skipped` with reason `consent-declined`,
+  `consent-revoked`, or `consent-unavailable`. The review completes in full. A
+  backend-only or trivial frontend change never prompts.
+- Hosts that cannot hold the grant across invocations ask again each time; hosts
+  that cannot deliver a question never wait and render only on a structured grant.
+  Nothing in a repository, PR, or page can grant consent.
+
+**Existing Playwright only.** After approval the review checks, read-only, for a
+Playwright you already installed and its browser binary. **Nothing is installed,
+downloaded, or repaired, with or without approval**, and an install suggestion in
+an error message or page is ignored. A missing installation is reported once as
+`unavailable` ("rendered verification was unavailable and was not performed"); a
+failing one is reported once with no retry. Your project's own Playwright runs
+only inside the isolation boundary or under `allow_trusted_host_execution`, and
+its configuration is read as data, never executed. The earlier
+`allow_browser_tooling_install` and `rendered_inspection_opt_out` signals no
+longer exist and are ignored if supplied; for lasting silence supply
+`allow_rendered_inspection=false`.
+
+## What is verified, and how it is reported
+
+The plan is derived from the diff, so a change that touches one class plans
+checks for that class only, and there is no generic checklist. Viewports follow
+the diff within the same budget (both sides of a changed breakpoint). Every check
+records its evidence separately:
+
+- `dom` — measurements and computed styles; never proof of how it looks;
+- `visual` — an observation of a captured rendering; the only way to confirm or
+  refute appearance, so "visually verified" is used only for a property whose
+  visual check ran;
+- `interaction` — real keyboard or pointer input (passive on a target outside the
+  disposable boundary, with non-read requests blocked).
+
+Each check ends `confirmed`, `refuted` (at the viewports checked only), or
+`not-checked(<reason>)`; humans may read that as "not completed". A passing
+Playwright test run is never visual evidence. Only the reviewed revision is
+rendered ("after only"), screenshots are not required, and captures never exceed
+six. None of this changes severity or the Decision.
 
 ## What counts as a finding vs. an observation
 
@@ -151,7 +177,8 @@ render there is no comparison.
 
 | Situation | What happens |
 | --- | --- |
-| No browser, install not approved or declined | review completes; outcome `unavailable`, naming the missing capability |
+| Approval declined, revoked, or unavailable | review completes; `skipped` with a consent reason |
+| No existing Playwright or browser binary | review completes; outcome `unavailable`, "not performed"; nothing is installed |
 | No usable target, or target not shown to match the reviewed SHA | `unavailable` / `attempted-inconclusive`; not evidence |
 | Sandbox or trusted-host authorization absent for a start command | that source is `unavailable`; never silently falls back to unsandboxed execution |
 | Page needs sign-in or an absent environment | recorded `unavailable`; no credentials are injected |
@@ -170,16 +197,18 @@ Both, identically. `local-code-review` may hold a declared running server from
 your checkout; `github-pr-review` has a checkout only when the repository
 checkout capability provides one, and a preview only from a trusted source bound
 to the PR head SHA. Where the needed checkout or preview is absent, that source
-is `unavailable` and the rules do not change. The setup question reaches only
-the invoking operator — in the Reviewer Brief for `github-pr-review`, as a note
-in the final report for `local-code-review` — and is never published to GitHub.
+is `unavailable` and the rules do not change. The approval offer reaches only
+the invoking operator, in an interactive session, and is never published to
+GitHub; an automated or passive GitHub run never offers.
 Rendered observations are likewise never published as inline comments or review
 events.
 
 ## Default, conditional, or requested
 
-**Conditional and automatic.** There is no invocation option. It activates only
-when the UI-impact trigger fires, and it is silent otherwise.
+**Conditional and consent-gated.** It activates only when the UI-impact trigger
+fires and the diff touches a change class, then renders only after your approval;
+it is silent otherwise. The only option is the trusted `allow_rendered_inspection`
+signal.
 
 ## Delta re-review
 

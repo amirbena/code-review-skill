@@ -61,9 +61,9 @@ request" below.
 ## Trusted authorization channel
 
 `allow_trusted_host_execution` never covers installing a browser or any other
-tooling; that is a separate authority owned by
-[`rendered-inspection-environment.md`](rendered-inspection-environment.md),
-"Authorization".
+tooling, because the Skill never installs anything. It likewise does not imply
+render consent, which is a separate authority owned by
+[`rendered-inspection-environment.md`](rendered-inspection-environment.md).
 
 Trusted-host execution can be authorized only by a genuine, out-of-band,
 principal-originated signal delivered through a runtime/invocation/
