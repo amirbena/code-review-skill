@@ -61,8 +61,8 @@ per target and viewport, 120 seconds in total. This record does **not** widen it
   of the relevant breakpoint, taken from the diff: the nearest representative
   width below it and at-or-above it. Examples, not requirements: 320, 375, 390,
   430 (mobile) and 768, 1440 (desktop).
-- **More risk than budget** (several breakpoints, or more targets × viewports
-  than 6 captures): keep the highest-risk breakpoint first, and record each
+- **More risk than budget** (several breakpoints, or planned `visual` checks
+  needing more than 6 captures): keep the highest-risk breakpoint first, and record each
   uncovered one as `not-checked(budget)` with its width.
 - **Theming** adds light/dark only when theming changed, as today, and counts
   against the same cap.
@@ -137,8 +137,9 @@ outside the working tree, per the existing evidence record.
 
 **Per-check status**, inside the existing `inspected` outcome (no new outcome):
 `confirmed` (the concern was observed), `refuted` (checked at the stated
-viewport and not observed), or `not-checked(<reason>)` with reasons such as
-`budget`, `input unavailable`, `target`, `timeout`. A `refuted` result is scoped
+viewport and not observed), or `not-checked(<reason>)`. The reason set is
+closed: `budget`, `input unavailable`, `mutation blocked`, `target not
+disposable`, `timeout`. A `refuted` result is scoped
 to the viewports and states checked; it never generalizes.
 
 The `Validation` entry of
@@ -157,8 +158,9 @@ as before. The wording "visually verified" is allowed only for a property with a
 
 **Findings.** A `confirmed` concern that a bounded observation on a SHA-matched
 target directly demonstrates takes `confirmed` confidence (§7 of the [Epic #614 record](rendered-inspection-contract.md)). A static suspicion that a `refuted` check addresses at the checked
-viewports is not reported as a defect, because the evidence contradicts it; it
-may remain a note that names the scope of the refutation. A suspicion with
+viewports is not reported as a defect, because the evidence contradicts it; the
+refutation is recorded only in the `checks` slot, with its viewport scope; it
+is never a finding, an observation, or a free-standing note. A suspicion with
 `not-checked` status keeps its static severity and its `credible` confidence, and
 the unchecked status is stated once. Severity is never raised because
 verification was declined, unavailable, or incomplete.

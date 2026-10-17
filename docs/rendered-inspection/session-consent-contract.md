@@ -50,7 +50,7 @@ capability detection -> install question -> target sourcing -> render   (unchang
 | # | Topic | Status | Decision and repository evidence |
 | --- | --- | --- | --- |
 | 1 | Placement | ratified | After the UI-impact trigger, before detection. If consent is absent or refused, no detection, install question, or target work happens, so no install noise is produced for a render that will not run. Evidence: [`rendered-inspection-environment.md`](../../shared/policies/rendered-inspection-environment.md), "Detection", is already "evaluated once, only after the UI-impact trigger fired". |
-| 2 | Relevance | amended | Same trigger as today (§3 adds a *materially-beneficial* test; no new signal source). Silent otherwise. Evidence: [`rendered-inspection.md`](../../shared/policies/rendered-inspection.md), "Inert and silent otherwise". |
+| 2 | Relevance | amended | Same trigger as today (§3 adds the seven-class test of VC §1; no new signal source). Silent otherwise. Evidence: [`rendered-inspection.md`](../../shared/policies/rendered-inspection.md), "Inert and silent otherwise". |
 | 3 | First-use approval | ratified | The gate must be satisfied before the first inspection in an interactive session. §4. |
 | 4 | Session scope | amended | The Skill never stores consent. The session is the host's; authorization is a trusted signal visible to the reviewer (§4). Amends the "no state across invocations" sentences for *render* consent only (§8). |
 | 5 | Decline, revocation, unavailable | ratified | Three distinct states, one outcome (`skipped`), three reasons (§5). |
@@ -92,15 +92,15 @@ Fatigue limits, all mechanical:
 
 ### 4.1 Offer text
 
-The offer is the operator-facing question below, and it states the purpose,
-that approval covers relevant renders for the rest of the session, that it does
-not install anything, and how to refuse or revoke:
+The offer is the operator-facing question below, two verbatim sentences:
 
 > This review includes frontend changes that may benefit from browser-rendered
 > verification. Would you like me to run Playwright?
 
-A third line names the planned change classes (VC §1) and discloses that keyboard
-or pointer interaction may occur (VC §3.1).
+One appended line must state: the planned change classes (VC §1); that keyboard
+or pointer interaction may occur (VC §3.1); that approval covers relevant renders
+for the rest of the session; that it installs nothing; and how to refuse or
+revoke. It makes no claim about outcomes.
 
 ### 4.2 Authorization sources (closed list)
 
