@@ -78,9 +78,9 @@ The current capability definition (`rendered-inspection.md`, "Runtime
 neutrality": navigate, viewport, capture, structure, accessibility, console)
 cannot produce real keyboard or pointer input, so focus order, keyboard reach,
 and state transitions cannot be settled today. **Decision: extend it by one
-runtime-neutral clause**: dispatch keyboard (focus traversal and key presses)
-and pointer (hover, click) input to the page under test. Still no named
-automation product.
+clause**: dispatch keyboard (focus traversal and key presses) and pointer (hover,
+click) input to the page under test, through the existing Playwright installation
+only (consent contract §7).
 
 Bounds, all inside the existing isolation and budget rules:
 
