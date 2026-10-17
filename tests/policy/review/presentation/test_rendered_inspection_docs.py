@@ -296,7 +296,8 @@ class UntrustedContentAndNeutralityTests(unittest.TestCase):
     def test_canonical_files_are_runtime_neutral(self) -> None:
         for path in (POLICY, CAPABILITY):
             text = path.read_text(encoding="utf-8").lower()
-            for token in ("playwright", "puppeteer", "selenium", "claude", "anthropic"):
+            # Playwright is the one named runtime since Issue #771 (user-installed only).
+            for token in ("puppeteer", "selenium", "claude", "anthropic"):
                 with self.subTest(path=path.name, token=token):
                     self.assertNotIn(token, text)
 
@@ -315,7 +316,7 @@ class ManifestAndPackagingTests(unittest.TestCase):
     def test_manifest_forbids_coverage_effect_and_installation(self) -> None:
         text = _plain(self.manifest)
         self.assertIn("REVIEW INCOMPLETE", text)
-        self.assertIn("installing a browser", text)
+        self.assertIn("installing, downloading, or repairing playwright", text.lower())
 
     def test_policy_links_only_into_shared(self) -> None:
         raw = POLICY.read_text(encoding="utf-8")

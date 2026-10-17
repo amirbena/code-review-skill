@@ -295,7 +295,13 @@ only, never an inline comment or a review event, identically in every
 publication mode. A rendered-inspection `Validation` entry follows the same
 shared shape. Both are omitted completely when the capability is inert. The
 section has no severity, ID, or blocking meaning and changes no finding,
-decision, or GitHub review state.
+decision, or GitHub review state. The inspection runs only after the shared
+render-consent gate
+([`rendered-inspection-environment.md`](../../../shared/policies/rendered-inspection-environment.md))
+is `granted`: the offer is made only to an operator-driven interactive review,
+never in a published surface, and an automated or passive run records
+`skipped` · `consent-unavailable` unless a structured grant is supplied. The
+`checks` slot is a `Validation` field only, never a finding.
 
 ## Code hygiene observations (conditional)
 

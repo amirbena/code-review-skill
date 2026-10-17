@@ -10,6 +10,8 @@ resource.
 Status vocabulary used below: **ratified** (position stands as recommended),
 **amended** (stands with a stated change), **rejected** (does not stand).
 
+> **Superseded by [`session-consent-contract.md`](session-consent-contract.md) (#770, implemented by #771):** the acquisition question, `allow_browser_tooling_install`, the Skill-owned tools directory and pin, and the durable opt-out `rendered_inspection_opt_out` no longer exist. Rendering needs session-scoped render consent and uses only an already-installed Playwright; nothing is installed, downloaded, or repaired.
+
 ## 1. Problem and decision summary
 
 Rendered-UI inspection touches several existing contracts at once. The
@@ -36,8 +38,8 @@ them.
 | 10 | Evidence record | ratified | Compact text record in `Validation`; screenshots ephemeral, outside the working tree, never uploaded or published. Evidence: runtime-validation's "Generated artifacts never enter the working tree". See §5. |
 | 11 | Confidence | **amended** | Reuse existing values; **no new closed-set value**. One amendment to the `confirmed` entry criteria. See §7. |
 | 12 | Failure | ratified | Any failure/timeout → recorded outcome; review completes; coverage is **not** downgraded. Evidence: [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md) coverage requires only passes "the owning policy already activates"; rendered inspection is supplementary and is declared outside that set (§4). |
-| 13 | Acquisition question | ratified (**locked**) | See §6.2. One amendment: the surface differs per Skill. |
-| 14 | Durable opt-out | ratified (**locked**) | See §6.2. Form and provenance decided there. |
+| 13 | Acquisition question | superseded (#770) | Removed; see the note above. See §6.2 for history. One amendment: the surface differs per Skill. |
+| 14 | Durable opt-out | superseded (#770) | Removed; see the note above. See §6.2 for history. Form and provenance decided there. |
 | 15 | Delta / SHA | ratified | Inspection evidence is bound to one reviewed SHA/tree; never carried forward; a delta re-review inspects only targets the delta affects. Evidence: [`review-evidence.md`](../../shared/policies/review-evidence.md), "Interpret prior evidence against the current target" — a changed HEAD resets which prior evidence is authoritative. |
 | 16 | Design reference — modes | ratified (**locked**) | See §6.3. |
 | 17 | Design reference — provenance | ratified (**locked**) | See §6.3. Out-of-band signal form decided in §6.4. |
@@ -72,7 +74,7 @@ them.
 | [`finding-confidence-model.md`](../finding-confidence/finding-confidence-model.md) §2 `confirmed` | Add one entry criterion (§7). | C2 |
 | [`shared/templates/review-summary.md`](../../shared/templates/review-summary.md) | Add the rendered-inspection `Validation` record and the severity-less *Rendered observations* section. | C2 |
 | [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md) | One cross-reference that the flag also selects the backend for the rendered-inspection start command/browser. | C3 |
-| `reviewer-brief` policy/template and the local final report | Acquisition-question surface (§6.2). | C4 |
+| `reviewer-brief` policy/template and the local final report | Acquisition-question surface (§6.2); superseded: the browser-setup line is removed (#771). | C4 |
 
 ## 5. Evidence record
 
@@ -124,6 +126,8 @@ normal finding with evidence.
   none can be named, it is subjective.
 
 ### 6.2 Acquisition question and durable opt-out
+
+> **Superseded (historical text below) by [`session-consent-contract.md`](session-consent-contract.md) (#770, implemented by #771):** the acquisition question, `allow_browser_tooling_install`, the Skill-owned tools directory and pin, and the durable opt-out `rendered_inspection_opt_out` no longer exist. Rendering needs session-scoped render consent and uses only an already-installed Playwright; nothing is installed, downloaded, or repaired.
 
 The browser-setup question is asked only when **all four** hold: the PR is
 materially UI-impacting; a render would add meaningful evidence; no usable

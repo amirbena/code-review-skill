@@ -131,7 +131,8 @@ class CrossReferenceAndNonRelaxationTests(unittest.TestCase):
 
     def test_policy_stays_runtime_neutral(self) -> None:
         text = POLICY.read_text(encoding="utf-8").lower()
-        for token in ("playwright", "puppeteer", "selenium", "claude", "anthropic"):
+        # Playwright is the one named runtime since Issue #771 (user-installed only).
+        for token in ("puppeteer", "selenium", "claude", "anthropic"):
             self.assertNotIn(token, text)
 
 

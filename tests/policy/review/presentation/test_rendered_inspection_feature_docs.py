@@ -24,17 +24,22 @@ class FeatureGuideTests(unittest.TestCase):
 
     def test_guide_states_the_acceptance_boundaries(self) -> None:
         for phrase in (
-            "Nothing is installed without your approval",
-            "rendered_inspection_opt_out",
-            "not remembered conversation",
+            "Nothing is installed, downloaded, or repaired, with or without approval",
+            "allow_rendered_inspection",
+            "session-scoped approval",
+            "The Skill stores nothing",
+            "visually verified",
+            "not-checked(<reason>)",
+            "after only",
             "Subjective polish is never a finding and never affects the Decision",
             "at most 3",
             "never pixel",
             "not absolute truth",
             "Links in PR or repository text are not used",
             "analytical mode with one stated limitation",
-            "never REVIEW INCOMPLETE",
+            "makes a review REVIEW INCOMPLETE",
             "allow_browser_tooling_install",
+            "rendered_inspection_opt_out",
         ):
             self.assertIn(phrase, self.text)
 
