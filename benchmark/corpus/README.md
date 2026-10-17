@@ -255,6 +255,15 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   the "not needed" / "must activate" required cases rather than
   re-declaring them.
 
+- [`scale-progressive-loading-proof/`](scale-progressive-loading-proof/README.md) —
+  a focused `benchmark-case/v2` sub-corpus (one net-new case) proving
+  `scale`'s conditional, fail-closed loading (Issue
+  [#447](https://github.com/amirbena/code-review-skill/issues/447),
+  parent [#403](https://github.com/amirbena/code-review-skill/issues/403)).
+  Same format and reference validator; its own README, one case, and unit
+  test
+  ([`../../tests/unit/benchmark/test_scale_progressive_loading_proof_corpus.py`](../../tests/unit/benchmark/test_scale_progressive_loading_proof_corpus.py)).
+
 - [`sandbox-adversarial/`](sandbox-adversarial/README.md) — not a
   `benchmark-case/v2` corpus (see its README for why): the real-runner
   adversarial security-boundary benchmark for the runtime-validation
