@@ -25,12 +25,17 @@ target and viewport.
 | Change class (what the diff touches) | Properties planned | Kinds |
 | --- | --- | --- |
 | CSS Grid | track count and sizes, container and item dimensions, available width, alignment and gap, behavior at the changed breakpoint | `dom`, `visual` |
-| Overflow and clipping | clipped or hidden content, scrollability, focus-outline visibility at the container edge, reachability of children | `dom`, `visual`, `interaction` |
+| Overflow and clipping | clipped or hidden content, scrollability, scroll-cue and horizontal-overflow-indicator visibility, focus-outline clipping and visibility at the container edge, reachability of children | `dom`, `visual`, `interaction` |
 | Typography and text | wrapping, truncation, overlap, layout shift on content or font change | `dom`, `visual` |
 | Interaction and state | keyboard navigation, focus order and visibility, click-target accessibility, state transitions | `interaction`, `dom` |
 | Responsive layout | reflow and element order on each side of the changed breakpoint, overflow at narrow widths, hidden or reordered content | `dom`, `visual` |
 | Positioning and stacking | overlap, occlusion, and off-screen or clipped placement from position, offset, `z-index`, or stacking-context changes | `dom`, `visual` |
 | Visibility and appearance | `display`, `visibility`, `opacity`, size, or colour changes that hide, reveal, or alter content a user needs | `dom`, `visual` |
+
+Scroll cues, horizontal-overflow indicators, and focus-outline clipping are
+properties of the existing Overflow and clipping class; no class is added. A
+diff that changes only a decorative treatment (for example a shadow with no
+overflow, scroll, or focus effect) plans nothing in that class.
 
 These seven classes are the closed set of offer triggers: the consent gate
 never offers for a property outside them, and a diff touching none has no plan.
@@ -131,15 +136,30 @@ Every plan item records the three evidence kinds separately:
 
 A passing structural assertion (for example "four grid tracks") is a `dom`
 result. It is never reported as visual correctness; a visual claim needs a
-`visual` check. Screenshots are taken only where they materially help (a `visual`
-item that DOM cannot settle), are never required per PR, and stay ephemeral and
-outside the working tree, per the existing evidence record.
+`visual` check.
+
+**A `visual` check completes only through a rendered visual observation.** DOM
+measurements, computed styles, structural assertions, and passing Playwright
+tests (the project's own, or any supplied result) may *support* a `visual` check
+by narrowing what to look at, but none can confirm or refute it, and none is
+recorded as `visual`. When sufficient visual evidence cannot be obtained, the
+check is `not-checked(visual evidence insufficient)`.
+
+Screenshots are taken only where a planned `visual` check asks a question the
+capture answers; one capture may serve several checks of the same target,
+viewport, and state. A screenshot is never required per PR or per `visual`
+check, stays within the 6-capture cap, and stays ephemeral and outside the
+working tree, per the existing evidence record.
 
 **Per-check status**, inside the existing `inspected` outcome (no new outcome):
 `confirmed` (the concern was observed), `refuted` (checked at the stated
 viewport and not observed), or `not-checked(<reason>)`. The reason set is
 closed: `budget`, `input unavailable`, `mutation blocked`, `target not
-disposable`, `timeout`. A `refuted` result is scoped
+disposable`, `timeout`, `visual evidence insufficient`. The last applies to a
+`visual` check only, when no capture could be made or read, the host cannot
+observe one, or the observation does not settle the question. It is the same
+token in this record, the reference model, both adapters, and reports. It is a
+reason inside `inspected`, never an outcome. A `refuted` result is scoped
 to the viewports and states checked; it never generalizes.
 
 The `Validation` entry of
@@ -156,6 +176,10 @@ nothing rendered is `skipped`, `unavailable`, or `attempted-inconclusive` exactl
 as before. The wording "visually verified" is allowed only for a property with a
 `visual` check that ran.
 
+**Terminology.** The canonical record state is `not-checked(<reason>)`. A
+human-facing report may say "not completed", but it denotes the same state and
+never replaces the token in the `checks` slot.
+
 **Findings.** A `confirmed` concern that a bounded observation on a SHA-matched
 target directly demonstrates takes `confirmed` confidence (§7 of the [Epic #614 record](rendered-inspection-contract.md)). A static suspicion that a `refuted` check addresses at the checked
 viewports is not reported as a defect, because the evidence contradicts it; the
@@ -164,3 +188,16 @@ is never a finding, an observation, or a free-standing note. A suspicion with
 `not-checked` status keeps its static severity and its `credible` confidence, and
 the unchecked status is stated once. Severity is never raised because
 verification was declined, unavailable, or incomplete.
+
+**Functional affordance versus styling preference.** The objective/subjective
+boundary test of `rendered-inspection.md`, "Subjective polish", is unchanged.
+A functional visual affordance that is missing, obscured, or not discernible
+(a focus indicator, a scroll cue that signals hidden content, an overflow
+indicator) is objective when the test names a user outcome (blocked, misled,
+excluded). It becomes a finding only when a completed `visual` check supplies
+rendered evidence specific enough to name the target, viewport, state, and what
+was observed. Measured values such as contrast are `dom` support, not the
+decision, and no universal numeric threshold applies, least of all to
+decorative shadows or cues. Evidence that is inconclusive yields
+`not-checked(visual evidence insufficient)` and no finding; a preference about
+styling stays a severity-less rendered observation.

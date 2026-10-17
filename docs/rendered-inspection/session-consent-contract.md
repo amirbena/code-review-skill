@@ -394,7 +394,7 @@ What a granted render inspects, and how it is recorded, is owned by
 | Viewport selection inside the unchanged budget | VC §2 |
 | Bounded keyboard and pointer input, request guard, non-disposable targets | VC §3.1 |
 | After-only rendering (no baseline in v1) | VC §3.2 |
-| Evidence kinds, per-check status, `checks` slot, outcome mapping | VC §4 |
+| Evidence kinds, the visual-completion rule, per-check status and the closed reason set, `checks` slot, outcome mapping, functional-affordance findings | VC §4 |
 
 ## 11. Threat model
 
