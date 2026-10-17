@@ -1,0 +1,35 @@
+{
+  "cases": [
+    {
+      "id": "correctness-off-by-one-pagination",
+      "input_kind": "patch",
+      "produced_findings": [
+        {
+          "claim": "Off-by-one in page slice returns `page_size + 1` items Line 3 sets `end = offset + page_size + 1`, and line 4 slices `items[offset:end]`. The slice length is `page_size + 1` whenever enough items remain. For `items=[1..10]`, `page_number=1`, `page_size=3`, the result is `[1, 2, 3, 4]`. Page 2 starts at offset 3 and returns `[4, 5, 6, 7]`. Item 4 appears on both pages. The pre-image `items[offset : offset + page_size]` returned exactly `page_size` items. Every page returns one more item than requested and duplicates the first item of the following page. Consumers get duplicated records and violate the page-size contract. A caller that checks `len(result) == page_size` to detect a full page or the last page will misbehave. The defect affects every caller of `page()`.",
+          "extra": {
+            "defect_kind": "off-by-one",
+            "evidence_quotes": [
+              "end = offset + page_size + 1",
+              "items[offset:end]",
+              "page_size + 1",
+              "items=[1..10]",
+              "page_number=1",
+              "page_size=3",
+              "[1, 2, 3, 4]",
+              "[4, 5, 6, 7]",
+              "items[offset : offset + page_size]",
+              "page_size"
+            ]
+          },
+          "location": {
+            "line": 3,
+            "path": "app/pagination.py"
+          },
+          "severity": "P0"
+        }
+      ],
+      "status": "executed"
+    }
+  ],
+  "ok": true
+}
