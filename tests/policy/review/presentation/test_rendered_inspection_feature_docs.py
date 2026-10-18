@@ -43,6 +43,20 @@ class FeatureGuideTests(unittest.TestCase):
         ):
             self.assertIn(phrase, self.text)
 
+    def test_guide_has_provenance_examples_and_troubleshooting(self) -> None:
+        for phrase in (
+            "Evidence provenance and gaps",
+            "Focus-outline clip",
+            "Grid change with a passing test",
+            "static suspicion",
+            "DOM measurement",
+            "No screenshots are required",
+            "never raises the severity",
+            "installing one is your own action, outside the Skill",
+            "Troubleshooting",
+        ):
+            self.assertIn(phrase, self.text)
+
     def test_guide_agrees_with_canonical_bounds(self) -> None:
         policy = normalized((POLICIES / "rendered-inspection.md").read_text(encoding="utf-8"))
         for fact in ("120 seconds", "at most 3", "at most 6", "30 seconds", "15 seconds"):
