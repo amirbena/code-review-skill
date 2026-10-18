@@ -120,6 +120,94 @@ Playwright test run is never visual evidence. Only the reviewed revision is
 rendered ("after only"), screenshots are not required, and captures never exceed
 six. None of this changes severity or the Decision.
 
+## Evidence provenance and gaps
+
+Every statement in the report says where it came from, and the three sources are
+never blended:
+
+| Source | Example wording | Counts as |
+| --- | --- | --- |
+| static suspicion | "the diff adds `overflow: hidden` to a container that holds focusable children" | a `credible` concern from reading the diff |
+| DOM measurement (`dom`) | "the outline box extends 2 px past the container's clip box at 390 px" | structural support; never proof of how the page looks |
+| browser observation (`visual`, `interaction`) | "at 390 px the focus ring on the last button is cut off after keyboard focus" | the only way to `confirm` or `refute` appearance |
+
+A passing structural assertion, test run, or CI result is not visual evidence, so
+"visually verified" appears only for a property whose visual check ran.
+
+- **Plan from the diff, kept proportional.** Only the change classes the diff
+  touches are planned (grid, overflow and clipping, typography, interaction and
+  state, responsive layout, positioning and stacking, visibility and appearance),
+  and inside a class only the properties the diff can affect. A generic checklist
+  is never run, and a diff that touches no class plans nothing and stays silent.
+- **Viewports follow the diff within the budget.** A non-responsive change uses
+  one viewport; a changed breakpoint uses one viewport on each side of it. When
+  there is more risk than budget the highest-risk breakpoint goes first and the
+  rest are reported as `not-checked(budget)` with their width.
+- **What is reported.** The `Rendered inspection:` line names the inspected
+  targets, viewports, interactions, and observed facts, and each concern is
+  `confirmed`, `refuted` (only at the viewports checked), or `not-checked(<reason>)`
+  — the checks not completed. Reasons are `budget`, `input unavailable`,
+  `mutation blocked`, `target not disposable`, `timeout`, and
+  `visual evidence insufficient`.
+- **Gaps stay gaps.** These limits are recorded as one `Validation` limitation,
+  not a separate Context-gaps section or a finding. Declined, unavailable, or
+  incomplete verification is stated once, never raises the severity of a static suspicion, and never changes the
+  Decision. A suspicion that was `not-checked` keeps its static severity and its
+  `credible` confidence; one that a check `refuted` is recorded only in the
+  `checks` slot, scoped to the viewports checked. No screenshots are required, and
+  none are published.
+
+## Worked examples
+
+### Focus-outline clip from `overflow`
+
+1. **Static suspicion.** The diff adds `overflow: hidden` to a card list whose
+   items are keyboard-focusable. Reading the code, the review suspects the focus
+   outline of an edge item is clipped. At this point it is a `credible` concern,
+   not a defect.
+2. **Offer and approval.** The change touches the overflow-and-clipping class, so
+   the review asks once whether to run Playwright, naming the class and saying
+   keyboard input may occur. You reply "yes, run playwright".
+3. **Browser check.** With your existing Playwright it renders the declared target
+   at one viewport, tabs to the last item, and records both the measured outline
+   box (`dom`) and an observation of the capture (`visual`) plus the focus
+   traversal (`interaction`).
+4. **Report.** Either the clip is observed and reported as a finding that names
+   the target, viewport, and state (`confirmed` confidence), or it is not observed
+   and the review records `focus-outline-clip:visual@desktop=refuted` for that
+   viewport only, with no finding.
+5. **Reuse.** A later review in the same conversation that touches a relevant
+   class reuses the approval without asking. A new conversation asks again, and
+   "stop rendering" revokes it.
+
+### Grid change with a passing test
+
+A diff changes a layout to four grid tracks and a unit test asserts there are four
+tracks. That is a structural fact, not evidence about appearance. The review plans
+checks for the grid class only and, because a breakpoint changed, uses one
+viewport on each side of it:
+
+- `track-count:dom@wide=confirmed`, `track-count:dom@narrow=confirmed`;
+- `track-widths:visual@wide=confirmed` (even), `track-widths:visual@narrow=refuted`
+  (no overflow seen at that width);
+- `track-widths:visual@tablet=not-checked(budget)` — a third width between the
+  two viewports was planned, but the 2-viewport budget did not cover it.
+
+The report says which concerns were confirmed, refuted, or not checked, and does
+not say the layout is "visually verified" beyond the properties whose visual check
+ran.
+
+## Troubleshooting
+
+| Symptom | Likely cause and what to do |
+| --- | --- |
+| No offer appeared | the diff touched no listed change class, or the host is non-interactive; supply `allow_rendered_inspection` through the trusted channel if you want a render |
+| `skipped · consent-unavailable` | non-interactive run with no structured grant |
+| "rendered verification was unavailable and was not performed" | no usable Playwright or browser binary is installed; installing one is your own action, outside the Skill, and the next review will find it |
+| `attempted-inconclusive` | the existing Playwright launched but timed out or crashed; nothing is retried or repaired |
+| `project-playwright-gated` | only the project's Playwright exists and neither the isolation boundary nor `allow_trusted_host_execution` is present |
+| asked again in the same chat | context was compacted and the grant turn is no longer visible; the Skill fails closed |
+
 ## What counts as a finding vs. an observation
 
 - **Objective defects are normal findings** under the usual P0/P1/P2 model: a
