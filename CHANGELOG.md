@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.78.1 — 2026-10-18
+
+### Fixed
+
+- Skill entrypoints now require reading the review runbook, so conditional rendered-inspection evaluation can no longer be skipped silently (#779).
+
 ## v1.78.0 — 2026-10-17
 
 ### Changed
