@@ -90,8 +90,11 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # Issue #663 (the operator-granted workspace root input for
 # workspace-sibling-context) added one thin pointer paragraph to each
 # SKILL.md, raising local 301 -> 307 and github 407 -> 408.
-LOCAL_MAX_LINES = 307
-GITHUB_MAX_LINES = 408
+# Issue #778 (required runbook read and conditional rendered-inspection
+# evaluation in each entrypoint flow) added one thin paragraph to each
+# SKILL.md, raising local 307 -> 313 and github 408 -> 413.
+LOCAL_MAX_LINES = 313
+GITHUB_MAX_LINES = 413
 
 
 def _norm(path) -> str:

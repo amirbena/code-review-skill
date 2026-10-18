@@ -61,14 +61,20 @@ staged-delta fingerprint → [optional] resolve a Jira reference (read-only;
 else JIRA CONTEXT UNRESOLVED) / map review context / reconcile a PR
 reference's prior findings — all onto the delta, never widening it →
 resolve the shared runtime-validation policy and record any safe validation
-outcome → inspect surrounding code → review against code + conventions,
+outcome → evaluate rendered inspection (conditional) → inspect surrounding code → review against code + conventions,
 focused by context → classify by severity (source never changes it) → derive the
 decision mechanically from blocking (P0/P1) severities → return, stop
 ```
 
 The optional Jira and PR inputs never widen scope: the local delta stays
-the Review Target. Full procedure:
-[`runbooks/local-review.md`](runbooks/local-review.md). Output contract:
+the Review Target. **Read
+[`runbooks/local-review.md`](runbooks/local-review.md) in full before starting
+any review** — it is the required procedure, not optional background, and
+sequences runtime validation and rendered inspection. Rendered inspection is
+conditional: per
+[`rendered-inspection.md`](../../shared/policies/rendered-inspection.md) it stays
+silent (no prompt, no availability check, no browser) unless the change's
+UI-impact trigger fires. Output contract:
 [`templates/local-review-report.md`](templates/local-review-report.md).
 
 ## 1. Inputs
