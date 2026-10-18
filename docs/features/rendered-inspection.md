@@ -149,8 +149,9 @@ A passing structural assertion, test run, or CI result is not visual evidence, s
   — the checks not completed. Reasons are `budget`, `input unavailable`,
   `mutation blocked`, `target not disposable`, `timeout`, and
   `visual evidence insufficient`.
-- **Gaps stay gaps.** These limits are recorded as one `Validation` limitation, not a separate Context-gaps section or a finding. Declined, unavailable, or incomplete verification is stated
-  once, never raises the severity of a static suspicion, and never changes the
+- **Gaps stay gaps.** These limits are recorded as one `Validation` limitation,
+  not a separate Context-gaps section or a finding. Declined, unavailable, or
+  incomplete verification is stated once, never raises the severity of a static suspicion, and never changes the
   Decision. A suspicion that was `not-checked` keeps its static severity and its
   `credible` confidence; one that a check `refuted` is recorded only in the
   `checks` slot, scoped to the viewports checked. No screenshots are required, and
@@ -189,8 +190,8 @@ viewport on each side of it:
 - `track-count:dom@wide=confirmed`, `track-count:dom@narrow=confirmed`;
 - `track-widths:visual@wide=confirmed` (even), `track-widths:visual@narrow=refuted`
   (no overflow seen at that width);
-- `last-row-alignment:visual@narrow=not-checked(budget)` — planned, but the
-  budget left no capture for it.
+- `track-widths:visual@tablet=not-checked(budget)` — a third width between the
+  two viewports was planned, but the 2-viewport budget did not cover it.
 
 The report says which concerns were confirmed, refuted, or not checked, and does
 not say the layout is "visually verified" beyond the properties whose visual check
