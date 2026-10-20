@@ -287,7 +287,7 @@ finally: remove the temporary checkout (success, any failure, interruption)
    site, interface/contract, migration/schema, config consumer) through the
    bounded, ring-based procedure whose ceiling is scaled by the change-risk
    depth from step 5a. Record every fired trigger with the ring reached and
-   the locations inspected — or "none" when nothing fired — for the
+   the locations inspected — or "none" when nothing fired, recorded without opening the policy — for the
    subordinate metadata block (step 8), per "Expansion decisions are
    reported" and "Non-goals and ownership boundary" — not restated here.
 5c. **Partition large changes** per
@@ -447,7 +447,7 @@ finally: remove the temporary checkout (success, any failure, interruption)
    its reason(s) in the report's subordinate metadata, per "Labeling —
    incomplete must never present as clean" and "Non-goals and ownership
    boundary" — not restated here. Required material from `SKILL.md` section 2
-   that was knowingly not loaded is an incomplete trigger too, per that
+   that was not loaded before the decision it governs is an incomplete trigger too, per that
    policy's "Incomplete triggers" — never `complete`.
 8c. **Derive the decision.** When step 8b's coverage is `incomplete`, the
    decision is the incomplete/ungraded outcome per

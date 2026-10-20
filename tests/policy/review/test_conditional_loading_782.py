@@ -1,8 +1,10 @@
 """Entrypoint loading contract for #782.
 
 Conditional policies are opened only when their predicate fires, each before
-the first decision it governs and fail-closed, and knowingly unloaded required
-material can never end in a clean or approving outcome. Prose assertions only.
+the first decision it governs and fail-closed; required material that is not
+loaded in time can never end in a clean or approving outcome; and the
+always-emitted repository-expansion metadata survives not opening its policy.
+Prose assertions only; policy membership is matched on exact link targets.
 """
 
 from __future__ import annotations
@@ -43,21 +45,29 @@ STILL_ALWAYS = (
     "finding-rendering.md",
     "review-summary.md",
 )
+NONE_FIELD = {LOCAL: "Repository expansion: metadata line", GITHUB: "repository_expansion_triggers metadata field"}
+
+_SHARED_LINK = re.compile(r"\]\((?:\.\./)+shared/(?:policies|templates)/([\w-]+\.md)\)")
 
 
-def _section(path, start: str, end: str) -> str:
-    text = _text(path)
-    begin = text.index(start)
-    return text[begin : text.index(end, begin)]
+def _raw_section(path, start: str, end: str) -> str:
+    raw = path.read_text(encoding="utf-8")
+    begin = raw.index(start)
+    return raw[begin : raw.index(end, begin)]
 
 
-def _always(path) -> str:
+def _linked(path, start: str, end: str) -> set[str]:
+    """Exact shared-file names linked inside one section (never substrings)."""
+    return set(_SHARED_LINK.findall(_raw_section(path, start, end)))
+
+
+def _always(path) -> set[str]:
     start = "Always, as one batched operation:" if path == LOCAL else "Shared, always"
-    return _section(path, start, "Conditionally")
+    return _linked(path, start, "Conditionally")
 
 
-def _conditional_by_evidence(path) -> str:
-    return _section(path, "Conditionally, by review evidence", "Knowingly unloaded")
+def _conditional_block(path) -> str:
+    return _raw_section(path, "Conditionally, by review evidence", "Required material,")
 
 
 class ConditionalLoadingTests(unittest.TestCase):
@@ -67,13 +77,15 @@ class ConditionalLoadingTests(unittest.TestCase):
             for name in names:
                 self.assertNotIn(name, always, (path.name, name))
 
-    def test_conditional_files_are_named_with_fail_closed_before_decision(self) -> None:
+    def test_conditional_files_are_linked_with_fail_closed_before_decision(self) -> None:
         for path, names in CONDITIONAL.items():
-            block = _conditional_by_evidence(path)
+            block = _conditional_block(path)
+            linked = set(_SHARED_LINK.findall(block))
             for name in names:
-                self.assertIn(name, block, (path.name, name))
-            self.assertIn("before the first decision it governs", block, path)
-            self.assertIn("fail-closed", block, path)
+                self.assertIn(name, linked, (path.name, name))
+            flat = re.sub(r"\s+", " ", block)
+            self.assertIn("before the first decision it governs", flat, path)
+            self.assertIn("fail-closed", flat, path)
 
     def test_review_wide_policies_stay_unconditional(self) -> None:
         for path in (LOCAL, GITHUB):
@@ -82,34 +94,47 @@ class ConditionalLoadingTests(unittest.TestCase):
                 self.assertIn(name, always, (path.name, name))
 
     def test_local_review_context_loads_only_with_its_input(self) -> None:
-        text = _text(LOCAL)
-        self.assertNotIn("shared/policies/review-context.md`](../../shared/policies/review-context.md) (its", text)
         self.assertNotIn("review-context.md", _always(LOCAL))
-        self.assertRegex(text, r"review context or a Jira/GitHub Issue reference; also loaded with a PR reference")
+        own_input = _linked(LOCAL, "Conditionally, only when its own input", "Conditionally, by review evidence")
+        self.assertIn("review-context.md", own_input)
 
 
-class KnownIncompleteLoadingTests(unittest.TestCase):
-    def test_stopping_criteria_names_knowingly_unloaded_material(self) -> None:
+class ExpansionNoneStaysEmittedTests(unittest.TestCase):
+    """Not opening repository-expansion.md must not drop its always-on `none`."""
+
+    def test_entrypoints_keep_the_none_clause(self) -> None:
+        for path, field in NONE_FIELD.items():
+            flat = re.sub(r"\s+", " ", _conditional_block(path).replace("`", ""))
+            self.assertIn(f"the {field} still reads none when nothing fires", flat, path)
+            self.assertIn("without opening either file", flat, path)
+
+    def test_runbooks_record_none_without_opening_the_policy(self) -> None:
+        for path in RUNBOOKS:
+            flat = _text(path)
+            self.assertRegex(flat, r"none\"? (?:when nothing fired, )?(?:recorded )?without opening the policy", path)
+
+
+class IncompleteLoadingTests(unittest.TestCase):
+    def test_trigger_one_distinguishes_timely_late_and_missing_loads(self) -> None:
         text = _text(STOPPING)
-        self.assertIn("Knowingly unloaded required material is the same case", text)
-        self.assertIn("a conditionally loaded file whose predicate fired included", text)
+        self.assertIn("must be loaded before the first decision it governs", text)
+        self.assertIn("Loaded before that decision, it is the ordinary case", text)
+        self.assertIn("Loaded only after that decision, or still unloaded when coverage is evaluated", text)
         self.assertIn("coverage is incomplete, never complete", text)
-        self.assertIn("names the missing material", text)
+        self.assertIn("names the material", text)
+        self.assertIn("re-made after loading, which counts as loaded before it", text)
         self.assertIn("gaps only: a self-reported load is not proof", text)
 
     def test_incomplete_trigger_set_stays_closed(self) -> None:
         text = STOPPING.read_text(encoding="utf-8")
         self.assertIn("## Incomplete triggers (closed set, evaluated per-pass)", text)
-        triggers = re.findall(r"^\d\. \*\*", text, re.M)
-        self.assertEqual(len(triggers), 4)
-        self.assertIn(
-            "trigger: required-pass-not-produced | partition-not-completed |", text
-        )
+        self.assertEqual(len(re.findall(r"^\d\. \*\*", text, re.M)), 4)
+        self.assertIn("trigger: required-pass-not-produced | partition-not-completed |", text)
 
-    def test_entrypoints_route_to_the_canonical_trigger(self) -> None:
+    def test_entrypoints_route_late_or_missing_loads_to_the_canonical_trigger(self) -> None:
         for path, outcome in ((LOCAL, "never REVIEW CLEAN"), (GITHUB, "never an approving outcome")):
             text = _text(path)
-            self.assertIn("Knowingly unloaded required material", text, path)
+            self.assertIn("never loaded or was loaded only after the decision it governs", text, path)
             self.assertIn("REVIEW INCOMPLETE", text, path)
             self.assertIn(outcome, text, path)
             self.assertIn("review-stopping-criteria.md", text, path)
@@ -121,8 +146,8 @@ class KnownIncompleteLoadingTests(unittest.TestCase):
             self.assertIn("fail-closed", text, path)
             self.assertIn("section 2", text, path)
             self.assertIn(
-                "Required material from SKILL.md section 2 that was knowingly not loaded is an incomplete",
-                text.replace("`", ""),
+                "Required material from SKILL.md section 2 that was not loaded before the decision it governs is an incomplete",
+                text,
                 path,
             )
 

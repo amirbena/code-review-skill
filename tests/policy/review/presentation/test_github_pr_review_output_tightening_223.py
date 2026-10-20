@@ -171,8 +171,8 @@ SEVERITY_LEGEND = {
 # incomplete rule) -- likewise deliberate and unrelated to #223.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "4475ab39a0fce4201b4bc972c47fb564ed173156",
-    LOCAL_RUNBOOK: "75cb2560ef81c6eb2696d3b9a3662e0f706c238e",
-    LOCAL_SKILL: "a8f90a1db299949b104ab6a81aaaffaa90be584d",
+    LOCAL_RUNBOOK: "d8602e844ef4650394724b3f44598318727ebb21",
+    LOCAL_SKILL: "97b929745dcdf2b7c2fe61801927651a61143f96",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",

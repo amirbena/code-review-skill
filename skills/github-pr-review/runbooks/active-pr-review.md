@@ -419,7 +419,7 @@ stop
    site, interface/contract, migration/schema, config consumer) through the
    bounded, ring-based procedure whose ceiling is scaled by the change-risk
    depth from step 8a. Record every fired trigger with the ring reached and
-   the locations inspected — or "none" when nothing fired — for the
+   the locations inspected — or "none" when nothing fired, recorded without opening the policy — for the
    subordinate metadata block (step 13), per "Expansion decisions are
    reported" and "Non-goals and ownership boundary" — not restated here.
 8c. **Partition large changes** per
@@ -580,7 +580,7 @@ stop
     Record `coverage: complete` or `incomplete` with its reason(s) for the
     subordinate metadata, per "Labeling — incomplete must never present as
     clean" and "Non-goals and ownership boundary" — not restated here. Required
-    material from `SKILL.md` section 2 that was knowingly not loaded is an
+    material from `SKILL.md` section 2 that was not loaded before the decision it governs is an
     incomplete trigger too, per that policy's "Incomplete triggers" — never
     `complete`. When `incomplete`, the reasoning result for step 13 onward is
     `REVIEW INCOMPLETE` per

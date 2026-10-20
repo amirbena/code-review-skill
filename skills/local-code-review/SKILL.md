@@ -235,9 +235,9 @@ authoritative task-contract context; the shared
 loads independently. **This policy is never loaded or applied when no PR
 reference is supplied**, and likewise for review context.
 
-Conditionally, by review evidence — each opened before the first decision it governs, fail-closed (ambiguity or a failed predicate loads it): [`repository-expansion.md`](../../shared/policies/repository-expansion.md) and [`large-pr-partitioning.md`](../../shared/policies/large-pr-partitioning.md) per each file's "Conditional loading: fail-closed" (decidable from `review-scope.md`'s resident summaries); [`invocation-options.md`](../../shared/policies/invocation-options.md) when the invocation carries any presentation, remediation, or output-format option or request, explicit or natural-language (else the section 1 defaults hold).
+Conditionally, by review evidence — each opened before the first decision it governs, fail-closed (ambiguity or a failed predicate loads it): [`repository-expansion.md`](../../shared/policies/repository-expansion.md) and [`large-pr-partitioning.md`](../../shared/policies/large-pr-partitioning.md) per each file's "Conditional loading: fail-closed" (decidable from `review-scope.md`'s resident summaries; the `Repository expansion:` metadata line still reads `none` when nothing fires, without opening either file); [`invocation-options.md`](../../shared/policies/invocation-options.md) when the invocation carries any presentation, remediation, or output-format option or request, explicit or natural-language (else the section 1 defaults hold).
 
-Knowingly unloaded required material, a fired conditional file included, makes coverage `incomplete` — `REVIEW INCOMPLETE`, never `REVIEW CLEAN` — per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Incomplete triggers."
+Required material, a fired conditional file included, that was never loaded or was loaded only after the decision it governs makes coverage `incomplete` — `REVIEW INCOMPLETE`, never `REVIEW CLEAN` — per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Incomplete triggers."
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one standard. None of the

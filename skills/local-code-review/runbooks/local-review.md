@@ -378,7 +378,7 @@ which a value must be resolved before it is used, or what is reported.
    whose ceiling is scaled by the change-risk depth from step 8b, and
    record every fired trigger with the ring reached and the locations
    inspected for the report's subordinate metadata (step 13). A change
-   with no fired trigger still records that outcome as "none," per that
+   with no fired trigger still records that outcome as "none" without opening the policy, per that
    policy's "Expansion decisions are reported" and "Non-goals and
    ownership boundary" — not restated here. When the API/contract
    compatibility pass left its consumer or producer surface unresolved
@@ -505,7 +505,7 @@ which a value must be resolved before it is used, or what is reported.
     `incomplete` with its concrete reason(s) for the report's subordinate
     metadata (step 13), per that policy's "Labeling — incomplete must
     never present as clean" and "Non-goals and ownership boundary" — not
-    restated here. Required material from `SKILL.md` section 2 that was knowingly not loaded is an incomplete
+    restated here. Required material from `SKILL.md` section 2 that was not loaded before the decision it governs is an incomplete
     trigger too, per that policy's "Incomplete triggers" — never `complete`. **With more than one member (step 0):** if narrowing
     (step 0's validation, or steps 1–8e's per-member resolution) left zero
     resolved members, coverage is `incomplete` per
