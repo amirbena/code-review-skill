@@ -1,0 +1,1716 @@
+{
+  "1": {
+    "cfv-no-jira-toctou-still-blocking": {
+      "run": {
+        "cases": [
+          {
+            "id": "cfv-no-jira-toctou-still-blocking",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Non-atomic check-then-set in `decrement_stock` oversells stock under concurrency (TOCTOU) The function reads `stock = get_stock(sku)` on line 13, checks `stock < qty` on line 14, and writes `set_stock(sku, stock - qty)` on line 16. It takes no lock, transaction, or compare-and-set, and `set_stock` writes an absolute value computed from the earlier read. The docstring says this runs on the checkout hot path for every confirmed order, so overlapping calls for the same SKU are expected. Two concurrent orders for the same SKU can both read the same stock, for example 5, and both pass the check. Each then writes `5 - qty`, so one decrement is lost and stock is overstated. Alternatively, two orders that together exceed stock can both succeed, which is overselling. Inventory then drifts from reality, and the drift grows with checkout traffic. `reserve_stock` has the same check-then-act shape, but this diff did not change it. This finding covers only the newly added function.",
+                "extra": {
+                  "defect_kind": "toctou-race-condition",
+                  "evidence_quotes": [
+                    "stock = get_stock(sku)",
+                    "stock < qty",
+                    "set_stock(sku, stock - qty)",
+                    "set_stock"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 16,
+                    "start": 13
+                  },
+                  "path": "inventory/reservations.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:08] [run] stage=probe DONE 8.0s [+00:08] [case 1/1] START cfv-no-jira-toctou-still-blocking [+00:08] [case 1/1] stage=review START cfv-no-jira-toctou-still-blocking [+00:36] [case 1/1] stage=parse START cfv-no-jira-toctou-still-blocking [+00:36] [case 1/1] DONE cfv-no-jira-toctou-still-blocking 28.0s findings=1 [+00:36] [run] stage=metrics START [+00:36] [run] stage=metrics DONE [child-timing] probe=8.0s review=28.0s total=36.2s"
+    },
+    "cfv-unproven-regression-not-asserted": {
+      "run": {
+        "cases": [
+          {
+            "id": "cfv-unproven-regression-not-asserted",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "New default-on flag has no consumer or test behind its idempotency claim The flag defaults to `True`, and its comment says the queue is idempotent and retried at-least-once. No code in the repo references `SEND_WELCOME_EMAIL_ASYNC`, and the repo has no tests. The comment's claim rests on `handle_welcome_email_job` in `notifications/queue_consumer.py:7-9`. That function checks `already_sent(...)` and then calls `send_welcome_email(...)`, with no visible step that records the send between the two calls. Whether a duplicate delivery is suppressed depends on `notifications.dedupe` and `notifications.email`. Neither module is in this repository, so I could not check them. Nothing changes today because the flag is unused. When the flag is wired in with `True` as the default, welcome emails move onto the retried queue. If `send_welcome_email` doesn't record the send atomically, a retry or redelivery could email the same customer twice. No test asserts that this cannot happen, so such a regression would go unnoticed.",
+                "extra": {
+                  "defect_kind": "unverified-behavior-claim",
+                  "evidence_quotes": [
+                    "True",
+                    "SEND_WELCOME_EMAIL_ASYNC",
+                    "handle_welcome_email_job",
+                    "notifications/queue_consumer.py:7-9",
+                    "already_sent(...)",
+                    "send_welcome_email(...)",
+                    "notifications.dedupe",
+                    "notifications.email"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 6,
+                    "start": 3
+                  },
+                  "path": "config/flags.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.9s [+00:02] [case 1/1] START cfv-unproven-regression-not-asserted [+00:03] [case 1/1] stage=review START cfv-unproven-regression-not-asserted [+00:29] [case 1/1] stage=parse START cfv-unproven-regression-not-asserted [+00:29] [case 1/1] DONE cfv-unproven-regression-not-asserted 26.0s findings=1 [+00:29] [run] stage=metrics START [+00:29] [run] stage=metrics DONE [child-timing] probe=2.9s review=26.0s total=29.0s"
+    },
+    "code-hygiene-control-external-contract-and-compat-reference": {
+      "run": {
+        "cases": [
+          {
+            "id": "code-hygiene-control-external-contract-and-compat-reference",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.3s [+00:03] [case 1/1] START code-hygiene-control-external-contract-and-compat-reference [+00:03] [case 1/1] stage=review START code-hygiene-control-external-contract-and-compat-reference [+00:27] [case 1/1] stage=parse START code-hygiene-control-external-contract-and-compat-reference [+00:27] [case 1/1] DONE code-hygiene-control-external-contract-and-compat-reference 24.4s findings=0 [+00:27] [run] stage=metrics START [+00:27] [run] stage=metrics DONE [child-timing] probe=3.3s review=24.4s total=27.8s"
+    },
+    "code-hygiene-control-known-limitation-reference": {
+      "run": {
+        "cases": [
+          {
+            "id": "code-hygiene-control-known-limitation-reference",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.4s [+00:03] [case 1/1] START code-hygiene-control-known-limitation-reference [+00:03] [case 1/1] stage=review START code-hygiene-control-known-limitation-reference [+00:21] [case 1/1] stage=parse START code-hygiene-control-known-limitation-reference [+00:21] [case 1/1] DONE code-hygiene-control-known-limitation-reference 18.0s findings=0 [+00:21] [run] stage=metrics START [+00:21] [run] stage=metrics DONE [child-timing] probe=3.4s review=17.9s total=21.5s"
+    },
+    "consolidation-shared-cause-low-confidence-fallback": {
+      "run": {
+        "cases": [
+          {
+            "id": "consolidation-shared-cause-low-confidence-fallback",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Order timestamps lose UTC awareness `stamp_order` used `datetime.now(tz=timezone.utc)` and now uses `datetime.now()`. This produces a naive timestamp in the host's local timezone. The `timezone` import on line 1 is now unused. `created_at` depends on the host's timezone and DST, so stored values differ between hosts and become ambiguous. Any consumer that compares it with timezone-aware datetimes raises `TypeError`. Consumers that assumed UTC read the wrong instant.",
+                "extra": {
+                  "defect_kind": "naive-datetime-regression",
+                  "evidence_quotes": [
+                    "stamp_order",
+                    "datetime.now(tz=timezone.utc)",
+                    "datetime.now()",
+                    "timezone"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "app/orders.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "Report cutoff parser rejects ISO-8601 inputs it used to accept `datetime.fromisoformat(cutoff_text)` became `datetime.strptime(cutoff_text, \"%Y-%m-%d\")`. The new call accepts only a bare date. Cutoffs with a time or offset, such as `2024-01-01T12:00:00+00:00`, now raise `ValueError` where they used to parse. The result is always naive, so comparing it with an aware `timestamp` raises `TypeError`. Offset-bearing cutoffs can no longer be expressed.",
+                "extra": {
+                  "defect_kind": "input-format-regression",
+                  "evidence_quotes": [
+                    "datetime.fromisoformat(cutoff_text)",
+                    "datetime.strptime(cutoff_text, \"%Y-%m-%d\")"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "app/reports.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.9s [+00:02] [case 1/1] START consolidation-shared-cause-low-confidence-fallback [+00:02] [case 1/1] stage=review START consolidation-shared-cause-low-confidence-fallback [+00:33] [case 1/1] stage=parse START consolidation-shared-cause-low-confidence-fallback [+00:33] [case 1/1] DONE consolidation-shared-cause-low-confidence-fallback 30.9s findings=2 [+00:33] [run] stage=metrics START [+00:33] [run] stage=metrics DONE [child-timing] probe=2.9s review=30.9s total=33.9s"
+    },
+    "correctness-off-by-one-pagination": {
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Off-by-one in page slice returns an extra item per page The diff changes the slice end from `offset + page_size` to `offset + page_size + 1`. Python slices exclude the end index, so `offset + page_size` was already correct. With `items=[0..9]`, `page_number=1`, `page_size=3`, the old code returned `[0,1,2]` and the new code returns `[0,1,2,3]`. Every page except possibly the last returns `page_size + 1` items. Item `n*page_size` shows up on both page `n` and page `n+1`, so consumers see duplicates. Any caller that relies on page length also breaks.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "offset + page_size",
+                    "offset + page_size + 1",
+                    "offset + page_size",
+                    "items=[0..9]",
+                    "page_number=1",
+                    "page_size=3",
+                    "[0,1,2]",
+                    "[0,1,2,3]"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "app/pagination.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.7s [+00:02] [case 1/1] START correctness-off-by-one-pagination [+00:02] [case 1/1] stage=review START correctness-off-by-one-pagination [+00:35] [case 1/1] stage=parse START correctness-off-by-one-pagination [+00:35] [case 1/1] DONE correctness-off-by-one-pagination 32.4s findings=1 [+00:35] [run] stage=metrics START [+00:35] [run] stage=metrics DONE [child-timing] probe=2.7s review=32.4s total=35.2s"
+    },
+    "distributed-systems-deepening-concurrent-interleaving-inventory-race": {
+      "run": {
+        "cases": [
+          {
+            "id": "distributed-systems-deepening-concurrent-interleaving-inventory-race",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Reservation check-then-update is not atomic and can oversell stock `reserve_item` reads `count = get_count(sku)`, checks `count < quantity`, then writes `_inventory[sku] = count - quantity` from the stale local `count`. No lock or atomic operation covers the read, check and write, and the app runs with `app.run(threaded=True)`. Two concurrent requests for `widget` (stock 5, quantity 5 each) can both read 5, both pass the check, and both write 0. Both get 200, so 10 units are sold from 5. A concurrent reservation can also be lost (lost update), leaving the stored count wrong. In-memory state is per-process, so the lock fixes the threaded case but not several workers. Each worker would hold its own `_inventory`, which is a separate problem to resolve before real deployment.",
+                "extra": {
+                  "defect_kind": "race-condition",
+                  "evidence_quotes": [
+                    "reserve_item",
+                    "count = get_count(sku)",
+                    "count < quantity",
+                    "_inventory[sku] = count - quantity",
+                    "count",
+                    "app.run(threaded=True)"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 27,
+                    "start": 24
+                  },
+                  "path": "app/inventory.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "Negative or zero `quantity` is not rejected, so a reservation can add stock `quantity = int(request.json[\"quantity\"])` is used with no bounds check. For `quantity = -100`, `count < quantity` is false, so `_inventory[sku] = count - (-100)` increases stock. For an unknown `sku`, `get_count` returns 0, and `0 < -5` is false, so a new SKU is created with positive stock. Any caller can inflate inventory or create phantom SKUs with a single request, which corrupts stock data and defeats the oversell guard.",
+                "extra": {
+                  "defect_kind": "missing-input-validation",
+                  "evidence_quotes": [
+                    "quantity = int(request.json[\"quantity\"])",
+                    "quantity = -100",
+                    "count < quantity",
+                    "_inventory[sku] = count - (-100)",
+                    "sku",
+                    "get_count",
+                    "0 < -5"
+                  ]
+                },
+                "location": {
+                  "line": 23,
+                  "path": "app/inventory.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "Malformed or missing request body and out-of-stock both surface as 500 `request.json[\"quantity\"]` raises on a missing key or a non-JSON body, `int(...)` raises `ValueError` on a non-numeric value, and `raise OutOfStock(sku)` has no `errorhandler` registered anywhere in the module. Flask turns each of these into a generic 500 or 400/415 response. A normal business outcome (insufficient stock) and bad client input are indistinguishable from server faults. This produces error-log noise and gives clients no usable status or message, but it does not corrupt state.",
+                "extra": {
+                  "defect_kind": "unhandled-exception-in-handler",
+                  "evidence_quotes": [
+                    "request.json[\"quantity\"]",
+                    "int(...)",
+                    "ValueError",
+                    "raise OutOfStock(sku)",
+                    "errorhandler"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 26,
+                    "start": 23
+                  },
+                  "path": "app/inventory.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.8s [+00:02] [case 1/1] START distributed-systems-deepening-concurrent-interleaving-inventory-race [+00:02] [case 1/1] stage=review START distributed-systems-deepening-concurrent-interleaving-inventory-race [+00:33] [case 1/1] stage=parse START distributed-systems-deepening-concurrent-interleaving-inventory-race [+00:33] [case 1/1] DONE distributed-systems-deepening-concurrent-interleaving-inventory-race 30.2s findings=3 [+00:33] [run] stage=metrics START [+00:33] [run] stage=metrics DONE [child-timing] probe=2.8s review=30.2s total=33.1s"
+    },
+    "distributed-systems-deepening-filename-signal-suppressed-clean": {
+      "run": {
+        "cases": [
+          {
+            "id": "distributed-systems-deepening-filename-signal-suppressed-clean",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.8s [+00:02] [case 1/1] START distributed-systems-deepening-filename-signal-suppressed-clean [+00:02] [case 1/1] stage=review START distributed-systems-deepening-filename-signal-suppressed-clean [+00:25] [case 1/1] stage=parse START distributed-systems-deepening-filename-signal-suppressed-clean [+00:25] [case 1/1] DONE distributed-systems-deepening-filename-signal-suppressed-clean 22.3s findings=0 [+00:25] [run] stage=metrics START [+00:25] [run] stage=metrics DONE [child-timing] probe=2.8s review=22.2s total=25.1s"
+    },
+    "external-pinned-contract-proves-incompatibility": {
+      "run": {
+        "cases": [
+          {
+            "id": "external-pinned-contract-proves-incompatibility",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "New `refunded` status is rejected by the pinned ledger consumer The schema now allows `\"refunded\"`. In the pinned external consumer (`ledger-consumer` at `0e2053b06c7a42b11b90bb4fc47c08fb5b360998`), `ledger/apply_status.py` handles only `pending`, `completed` and `failed`. Any other value goes to the `else` branch, which raises `ValueError(\"unknown payment status: ...\")`. That repository has no other files. A producer can now emit a schema-valid `refunded` payment status. The ledger consumer at the pinned revision raises on it and never applies it to the entry. Refund events would fail ledger processing.",
+                "extra": {
+                  "defect_kind": "breaking-enum-extension",
+                  "evidence_quotes": [
+                    "\"refunded\"",
+                    "ledger-consumer",
+                    "0e2053b06c7a42b11b90bb4fc47c08fb5b360998",
+                    "ledger/apply_status.py",
+                    "pending",
+                    "completed",
+                    "failed",
+                    "else",
+                    "ValueError(\"unknown payment status: ...\")"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "schemas/payment_status.schema.json"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.8s [+00:02] [case 1/1] START external-pinned-contract-proves-incompatibility [+00:02] [case 1/1] stage=review START external-pinned-contract-proves-incompatibility [+00:38] [case 1/1] stage=parse START external-pinned-contract-proves-incompatibility [+00:38] [case 1/1] DONE external-pinned-contract-proves-incompatibility 35.2s findings=1 [+00:38] [run] stage=metrics START [+00:38] [run] stage=metrics DONE [child-timing] probe=2.8s review=35.2s total=38.1s"
+    },
+    "finding-placement-preexisting-callee-bug-exposed": {
+      "run": {
+        "cases": [
+          {
+            "id": "finding-placement-preexisting-callee-bug-exposed",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`cancel_order` always raises \"insufficient stock\" Line 5 calls `apply_adjustment(order[\"qty\"], order[\"qty\"])`, so `qty == delta`. In `inventory/adjust.py:7-9`, `remaining = qty - delta` is always `0`. The guard `if remaining <= 0` at `inventory/adjust.py:8` then raises `ValueError(\"insufficient stock\")` unconditionally. The new call site is what triggers this. The callee's `<=` boundary is existing code that no earlier caller hit. Every call to `cancel_order`, for any `order[\"qty\"]`, raises, so order cancellation is unusable. The error also says \"insufficient stock\", which misdescribes a cancellation. Even if the guard were fixed, subtracting the order's quantity from `qty` would remove stock on cancel. A cancel normally returns stock. `inventory/adjust.py` is unchanged and its `<= 0` guard is not part of this delta. It is cited only as the cause this new caller exposes, so the finding is anchored at the changed call site.",
+                "extra": {
+                  "defect_kind": "off-by-one-boundary-exposed-by-new-caller",
+                  "evidence_quotes": [
+                    "apply_adjustment(order[\"qty\"], order[\"qty\"])",
+                    "qty == delta",
+                    "inventory/adjust.py:7-9",
+                    "remaining = qty - delta",
+                    "0",
+                    "if remaining <= 0",
+                    "inventory/adjust.py:8",
+                    "ValueError(\"insufficient stock\")",
+                    "<="
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "orders/cancel.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.9s [+00:02] [case 1/1] START finding-placement-preexisting-callee-bug-exposed [+00:03] [case 1/1] stage=review START finding-placement-preexisting-callee-bug-exposed [+00:31] [case 1/1] stage=parse START finding-placement-preexisting-callee-bug-exposed [+00:31] [case 1/1] DONE finding-placement-preexisting-callee-bug-exposed 28.5s findings=1 [+00:31] [run] stage=metrics START [+00:31] [run] stage=metrics DONE [child-timing] probe=2.9s review=28.4s total=31.5s"
+    },
+    "finding-placement-test-reveals-production-defect": {
+      "run": {
+        "cases": [
+          {
+            "id": "finding-placement-test-reveals-production-defect",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`median` returns the upper middle element for even-length input For `[1, 2, 3, 4]`, `mid = 2` and the `len % 2 == 0` branch returns `ordered[2]`, which is `3`. Both branches return the identical expression `ordered[mid]`, so the even-length case is never handled separately. `tests/test_stats.py:5` asserts `median([1, 2, 3, 4]) == 2.5`, which this code does not satisfy. Every even-length input yields a wrong median, always biased toward the upper value. Callers get silently incorrect statistics with no error.",
+                "extra": {
+                  "defect_kind": "incorrect-algorithm",
+                  "evidence_quotes": [
+                    "[1, 2, 3, 4]",
+                    "mid = 2",
+                    "len % 2 == 0",
+                    "ordered[2]",
+                    "3",
+                    "ordered[mid]",
+                    "tests/test_stats.py:5",
+                    "median([1, 2, 3, 4]) == 2.5"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "math/stats.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "Package name `math` shadows the standard-library module The new top-level directory is named `math`, and `tests/test_stats.py:1` imports `from math.stats import median`. `math` is a standard-library module, and CPython resolves a builtin module before any directory on `sys.path`, so `math.stats` is unlikely to import. The directory also has no `__init__.py`. I did not execute the import, so this is reasoned from how Python resolves modules rather than observed. The test may fail with `ModuleNotFoundError` before it reaches the assertion. Any code that needs the real `math` module, such as `math.sqrt`, can also break once this directory is on the path.",
+                "extra": {
+                  "defect_kind": "stdlib-module-shadowing",
+                  "evidence_quotes": [
+                    "math",
+                    "tests/test_stats.py:1",
+                    "from math.stats import median",
+                    "math",
+                    "sys.path",
+                    "math.stats",
+                    "__init__.py"
+                  ]
+                },
+                "location": {
+                  "line": 1,
+                  "path": "math/stats.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 3.0s [+00:03] [case 1/1] START finding-placement-test-reveals-production-defect [+00:03] [case 1/1] stage=review START finding-placement-test-reveals-production-defect [+00:39] [case 1/1] stage=parse START finding-placement-test-reveals-production-defect [+00:39] [case 1/1] DONE finding-placement-test-reveals-production-defect 36.0s findings=2 [+00:39] [run] stage=metrics START [+00:39] [run] stage=metrics DONE [child-timing] probe=3.0s review=36.0s total=39.1s"
+    },
+    "isolation-unadmitted-sibling": {
+      "run": {
+        "cases": [
+          {
+            "id": "isolation-unadmitted-sibling",
+            "input_kind": "multi_repo",
+            "produced_findings": [
+              {
+                "claim": "Quantity check assumes a numeric value `require_fields` appears to check only that `quantity` is present. The new line `body[\"quantity\"] <= 0` then compares the raw value. A string, `None`, or list raises `TypeError`, not the `ValueError` the new check uses for invalid input. I did not trace callers, so I can't confirm how an escaping `TypeError` is handled. A malformed request such as `{\"quantity\": \"5\"}` can fail with an unhandled `TypeError`. Callers that translate `ValueError` into a 4xx response may return a 5xx instead.",
+                "extra": {
+                  "defect_kind": "missing-input-type-validation",
+                  "evidence_quotes": [
+                    "require_fields",
+                    "quantity",
+                    "body[\"quantity\"] <= 0",
+                    "None",
+                    "TypeError",
+                    "ValueError",
+                    "TypeError"
+                  ]
+                },
+                "location": {
+                  "line": 4,
+                  "path": "orders/validation.py",
+                  "repo_alias": "orders-service"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.8s [+00:02] [case 1/1] START isolation-unadmitted-sibling [+00:02] [case 1/1] stage=review START isolation-unadmitted-sibling [+00:46] [case 1/1] stage=parse START isolation-unadmitted-sibling [+00:46] [case 1/1] DONE isolation-unadmitted-sibling 44.2s findings=1 [+00:46] [run] stage=metrics START [+00:47] [run] stage=metrics DONE [child-timing] probe=2.8s review=44.1s total=47.0s"
+    },
+    "performance-deepening-batched-fix-bounded-clean": {
+      "run": {
+        "cases": [
+          {
+            "id": "performance-deepening-batched-fix-bounded-clean",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.4s [+00:03] [case 1/1] START performance-deepening-batched-fix-bounded-clean [+00:03] [case 1/1] stage=review START performance-deepening-batched-fix-bounded-clean [+00:49] [case 1/1] stage=parse START performance-deepening-batched-fix-bounded-clean [+00:49] [case 1/1] DONE performance-deepening-batched-fix-bounded-clean 45.9s findings=0 [+00:49] [run] stage=metrics START [+00:49] [run] stage=metrics DONE [child-timing] probe=3.4s review=45.9s total=49.4s"
+    },
+    "performance-deepening-blocking-io-request-hot-path": {
+      "run": {
+        "cases": [
+          {
+            "id": "performance-deepening-blocking-io-request-hot-path",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Blocking disk read added to the per-request hot path The removed comment said the flags were \"Loaded once at process startup; handle_request is invoked on every incoming HTTP request\". The new code calls `feature_flags.read_flags_from_disk()` inside `handle_request`. Every request now does a synchronous file read and parse before rendering. Nothing in the diff caches the result, bounds the cost, or makes the call asynchronous. Every request pays disk-read latency, and a slow or contended disk stalls the worker. Throughput falls under load, and tail latency rises with disk contention. The diff gives no reason for the change, such as a need for live flag reloads, and states no requirement that justifies the cost.",
+                "extra": {
+                  "defect_kind": "blocking-io-in-hot-path",
+                  "evidence_quotes": [
+                    "feature_flags.read_flags_from_disk()",
+                    "handle_request"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 6,
+                    "start": 5
+                  },
+                  "path": "app/web/handlers.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.1s [+00:03] [case 1/1] START performance-deepening-blocking-io-request-hot-path [+00:03] [case 1/1] stage=review START performance-deepening-blocking-io-request-hot-path [+00:28] [case 1/1] stage=parse START performance-deepening-blocking-io-request-hot-path [+00:28] [case 1/1] DONE performance-deepening-blocking-io-request-hot-path 25.3s findings=1 [+00:28] [run] stage=metrics START [+00:28] [run] stage=metrics DONE [child-timing] probe=3.1s review=25.2s total=28.5s"
+    },
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": {
+      "run": {
+        "cases": [
+          {
+            "id": "relrecall-analogue-pattern-source-outside-repository-unresolvable",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:04] [run] stage=probe DONE 4.7s [+00:04] [case 1/1] START relrecall-analogue-pattern-source-outside-repository-unresolvable [+00:04] [case 1/1] stage=review START relrecall-analogue-pattern-source-outside-repository-unresolvable [+00:28] [case 1/1] stage=parse START relrecall-analogue-pattern-source-outside-repository-unresolvable [+00:28] [case 1/1] DONE relrecall-analogue-pattern-source-outside-repository-unresolvable 23.4s findings=0 [+00:28] [run] stage=metrics START [+00:28] [run] stage=metrics DONE [child-timing] probe=4.7s review=23.4s total=28.2s"
+    },
+    "risk-depth-diffsize-elevated-refactor": {
+      "run": {
+        "cases": [
+          {
+            "id": "risk-depth-diffsize-elevated-refactor",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`render_payout_total` still calls `format_currency` with the old argument order The unstaged change makes the signature `format_currency(currency, amount)` and the body `f\"{currency} {amount:,.2f}\"`. `app/billing/payout.py:5` still calls `format_currency(amount, currency)`. A repository-wide search finds `payout.py` as the only caller still using the old order. The other ten callers were migrated in this delta. In `render_payout_total`, `currency` receives the numeric amount and `amount` receives the currency string such as `\"USD\"`. The format spec `:,.2f` is then applied to a string, which raises `ValueError`. Payout total rendering breaks for every call. A typed amount that happens to pass could also produce a swapped, wrong output without an error.",
+                "extra": {
+                  "defect_kind": "incomplete-signature-migration",
+                  "evidence_quotes": [
+                    "format_currency(currency, amount)",
+                    "f\"{currency} {amount:,.2f}\"",
+                    "app/billing/payout.py:5",
+                    "format_currency(amount, currency)",
+                    "payout.py"
+                  ]
+                },
+                "location": {
+                  "line": 1,
+                  "path": "app/utils/currency.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.7s [+00:02] [case 1/1] START risk-depth-diffsize-elevated-refactor [+00:02] [case 1/1] stage=review START risk-depth-diffsize-elevated-refactor [+00:34] [case 1/1] stage=parse START risk-depth-diffsize-elevated-refactor [+00:34] [case 1/1] DONE risk-depth-diffsize-elevated-refactor 31.8s findings=1 [+00:34] [run] stage=metrics START [+00:34] [run] stage=metrics DONE [child-timing] probe=2.7s review=31.8s total=34.6s"
+    },
+    "security-deepening-single-caller-check-enforced-clean": {
+      "run": {
+        "cases": [
+          {
+            "id": "security-deepening-single-caller-check-enforced-clean",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`db` is undefined, so the delete endpoint raises `NameError` `_delete_record` calls `db.records.delete(record_id)`. The only imports are `from flask import Blueprint, request, abort`, and no `db` is defined anywhere in `app/records.py`. `app/records.py` is the only file in the repository, so nothing else supplies one. A request that passes the permission check reaches `_delete_record` and raises `NameError`, which Flask turns into a 500. The delete never happens, and the endpoint cannot work.",
+                "extra": {
+                  "defect_kind": "undefined-name",
+                  "evidence_quotes": [
+                    "_delete_record",
+                    "db.records.delete(record_id)",
+                    "from flask import Blueprint, request, abort",
+                    "db",
+                    "app/records.py",
+                    "app/records.py"
+                  ]
+                },
+                "location": {
+                  "line": 7,
+                  "path": "app/records.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "No tests cover the new route's allow and deny paths The delta adds a destructive, permission-gated route and no test files. The repository contains only `app/records.py`. F1 shows the success path was never exercised. A regression in the 403 gate could also ship unnoticed.",
+                "extra": {
+                  "defect_kind": "missing-test-coverage",
+                  "evidence_quotes": [
+                    "app/records.py"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 16,
+                    "start": 11
+                  },
+                  "path": "app/records.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.1s [+00:03] [case 1/1] START security-deepening-single-caller-check-enforced-clean [+00:03] [case 1/1] stage=review START security-deepening-single-caller-check-enforced-clean [+00:31] [case 1/1] stage=parse START security-deepening-single-caller-check-enforced-clean [+00:31] [case 1/1] DONE security-deepening-single-caller-check-enforced-clean 28.2s findings=2 [+00:31] [run] stage=metrics START [+00:31] [run] stage=metrics DONE [child-timing] probe=3.1s review=28.2s total=31.4s"
+    },
+    "semantic-implication-multi-dimension-webhook-xss": {
+      "run": {
+        "cases": [
+          {
+            "id": "semantic-implication-multi-dimension-webhook-xss",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Stored XSS: webhook `sender` is interpolated into admin HTML unescaped `receive_webhook` (line 7-8) stores whatever JSON it receives, and `render_admin_summary` (line 13) puts `e['sender']` straight into an f-string `<td>{...}</td>`. There is no `html.escape`, no template auto-escaping, and no validation of the type or content of `sender`. A body like `{\"sender\": \"<script>...</script>\"}` is returned verbatim in the admin markup. Any party that can POST to the webhook can run script in an administrator's browser when they open the summary. That allows session theft and actions performed as the admin. The attacker controls the payload and the victim is a privileged user.",
+                "extra": {
+                  "defect_kind": "stored-xss",
+                  "evidence_quotes": [
+                    "receive_webhook",
+                    "render_admin_summary",
+                    "e['sender']",
+                    "<td>{...}</td>",
+                    "html.escape",
+                    "sender",
+                    "{\"sender\": \"<script>...</script>\"}"
+                  ]
+                },
+                "location": {
+                  "line": 13,
+                  "path": "app/webhooks/handler.py"
+                },
+                "severity": "P0"
+              },
+              {
+                "claim": "Webhook accepts unauthenticated, unvalidated input, so one bad event breaks the admin view `receive_webhook` does no signature or secret check on the sender. It does no schema check either, so any valid JSON is stored: a list, a number, or a dict without `sender`. Malformed JSON raises an uncaught `json.JSONDecodeError`. `render_admin_summary` then indexes `e['sender']` for every stored event. Anyone who can reach the endpoint can inject events, which makes F1 exploitable remotely. A single stored payload that is not a dict with a `sender` key (for example `{}` or `[]`) makes `render_admin_summary` raise `KeyError` or `TypeError` on every later call. The admin view stays down until the process restarts, because events are never removed.",
+                "extra": {
+                  "defect_kind": "missing-input-validation",
+                  "evidence_quotes": [
+                    "receive_webhook",
+                    "sender",
+                    "json.JSONDecodeError",
+                    "render_admin_summary",
+                    "e['sender']"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 9,
+                    "start": 6
+                  },
+                  "path": "app/webhooks/handler.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "Unbounded in-memory event store `_events` is a module-level list that only grows, and no size cap is applied to the body or the list. Sustained or large posts grow process memory without limit. Events are also lost on restart and are not shared across workers. This is a robustness concern and does not block.",
+                "extra": {
+                  "defect_kind": "unbounded-resource-growth",
+                  "evidence_quotes": [
+                    "_events"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "app/webhooks/handler.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.6s [+00:02] [case 1/1] START semantic-implication-multi-dimension-webhook-xss [+00:02] [case 1/1] stage=review START semantic-implication-multi-dimension-webhook-xss [+00:36] [case 1/1] stage=parse START semantic-implication-multi-dimension-webhook-xss [+00:36] [case 1/1] DONE semantic-implication-multi-dimension-webhook-xss 33.7s findings=3 [+00:36] [run] stage=metrics START [+00:36] [run] stage=metrics DONE [child-timing] probe=2.6s review=33.7s total=36.4s"
+    },
+    "semantic-implication-no-signal-clean-extraction": {
+      "run": {
+        "cases": [
+          {
+            "id": "semantic-implication-no-signal-clean-extraction",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.2s [+00:03] [case 1/1] START semantic-implication-no-signal-clean-extraction [+00:03] [case 1/1] stage=review START semantic-implication-no-signal-clean-extraction [+00:24] [case 1/1] stage=parse START semantic-implication-no-signal-clean-extraction [+00:24] [case 1/1] DONE semantic-implication-no-signal-clean-extraction 21.7s findings=0 [+00:24] [run] stage=metrics START [+00:24] [run] stage=metrics DONE [child-timing] probe=3.2s review=21.7s total=25.0s"
+    },
+    "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type": {
+      "run": {
+        "cases": [
+          {
+            "id": "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Dropping `email` from cached session entries breaks readers on the previous version The removed docstring said the session TTL is 24h, so \"entries written by a previous deploy are routinely still live and read back by a newer one\". The cache is shared Redis: `remember` calls `hset` and `expire(session_id, 24*60*60)`. The previous `read_profile` reads `entry[\"email\"]` unconditionally. The new `remember` writes only `id` and `display_name`. The diff removes both the `email` write and the comment that justified keeping the format stable. While old and new versions run side by side (rolling deploy, canary, or rollback), an old instance reading an entry written by a new instance hits `KeyError: 'email'`. Sessions fail to load for up to 24h, because entries written by the new version stay in Redis after a rollback. Any new-version code that still needs the email would also silently lose it for sessions written after the change. The definition of `Profile` is not in this repository, so I could not confirm whether `email` is required. If it is, the new `read_profile` also raises `TypeError` on any existing entry that is missing `email`, or on callers that read `profile.email`. Nothing in this repository references `email` outside this file. Callers outside this repo were not visible to this review.",
+                "extra": {
+                  "defect_kind": "cache-schema-incompatibility",
+                  "evidence_quotes": [
+                    "remember",
+                    "hset",
+                    "expire(session_id, 24*60*60)",
+                    "read_profile",
+                    "entry[\"email\"]",
+                    "remember",
+                    "id",
+                    "display_name",
+                    "email"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 18,
+                    "start": 9
+                  },
+                  "path": "app/sessions/cache.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.9s [+00:02] [case 1/1] START specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type [+00:02] [case 1/1] stage=review START specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type [+00:32] [case 1/1] stage=parse START specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type [+00:32] [case 1/1] DONE specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type 30.0s findings=1 [+00:32] [run] stage=metrics START [+00:33] [run] stage=metrics DONE [child-timing] probe=2.9s review=30.0s total=33.0s"
+    },
+    "specialist-depth-composition-case-f-cascading-activation-bounded": {
+      "run": {
+        "cases": [
+          {
+            "id": "specialist-depth-composition-case-f-cascading-activation-bounded",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Migration drops the index the order-history query depends on The migration removes `orders_customer_id_idx` from `order`. `app/orders/lookup.py:5-8` documents that `get_orders_for_customer` reads via that index. It is \"called on every order-history page view\", and a long-tenured customer \"can have tens of thousands of orders\". The query at `lookup.py:10` filters only on `customer_id`. No replacement index appears in the delta. No other migration in the repo adds one, and only 0012 is present locally. The delta also has no change to `lookup.py` that would remove the dependency. After the migration runs, each order-history view does a sequential scan of the whole `orders_order` table. Latency and database load grow with total table size on a hot path, and this is likely to cause a production slowdown or outage under traffic.",
+                "extra": {
+                  "defect_kind": "missing-index-regression",
+                  "evidence_quotes": [
+                    "orders_customer_id_idx",
+                    "order",
+                    "app/orders/lookup.py:5-8",
+                    "get_orders_for_customer",
+                    "lookup.py:10",
+                    "customer_id",
+                    "lookup.py"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 13,
+                    "start": 11
+                  },
+                  "path": "app/db/migrations/0012_drop_customer_id_index.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "Migration file is truncated and will not load The file ends after `name=\"orders_customer_id_idx\",`. The `migrations.RemoveIndex(` call, the `operations = [` list and the class body are never closed. Python cannot parse it. I could not run a parser here, so this comes from reading the file. Django raises a `SyntaxError` when it loads the migration graph. `manage.py migrate`, `makemigrations` and the test runner's database setup then fail for the whole project, not only this app.",
+                "extra": {
+                  "defect_kind": "syntax-error-truncated-file",
+                  "evidence_quotes": [
+                    "name=\"orders_customer_id_idx\",",
+                    "migrations.RemoveIndex(",
+                    "operations = ["
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 14,
+                    "start": 11
+                  },
+                  "path": "app/db/migrations/0012_drop_customer_id_index.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.7s [+00:02] [case 1/1] START specialist-depth-composition-case-f-cascading-activation-bounded [+00:02] [case 1/1] stage=review START specialist-depth-composition-case-f-cascading-activation-bounded [+00:49] [case 1/1] stage=parse START specialist-depth-composition-case-f-cascading-activation-bounded [+00:49] [case 1/1] DONE specialist-depth-composition-case-f-cascading-activation-bounded 47.0s findings=2 [+00:49] [run] stage=metrics START [+00:49] [run] stage=metrics DONE [child-timing] probe=2.7s review=46.9s total=49.8s"
+    },
+    "three-repo-coordinated-correct": {
+      "run": {
+        "cases": [
+          {
+            "id": "three-repo-coordinated-correct",
+            "input_kind": "multi_repo",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.8s [+00:02] [case 1/1] START three-repo-coordinated-correct [+00:02] [case 1/1] stage=review START three-repo-coordinated-correct [+00:49] [case 1/1] stage=parse START three-repo-coordinated-correct [+00:49] [case 1/1] DONE three-repo-coordinated-correct 46.2s findings=0 [+00:49] [run] stage=metrics START [+00:49] [run] stage=metrics DONE [child-timing] probe=2.8s review=46.1s total=49.1s"
+    },
+    "wsib-gh-api-only-grant-unavailable": {
+      "run": {
+        "cases": [
+          {
+            "id": "wsib-gh-api-only-grant-unavailable",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "New `refunded` status is unverified against the `ledger-consumer` The enum gains a fourth value, `refunded`. `docs/consumers.md:3` names `ledger-consumer` as applying payment statuses to ledger entries. The granted workspace root `.../benchmark-wsib-gh-api-only-grant-unavailable-workspace-r3d_qio3` is not a Git repository, so `git ls-tree HEAD` failed with \"not a git repository\". The sibling's committed `HEAD` therefore could not be read. The diff contains no change to the consumer, no test, and no note on how it handles `refunded`. If `ledger-consumer` switches on the three known statuses and rejects or ignores unknown ones, producers that emit `refunded` could cause dropped or failed ledger updates. This is unconfirmed, so it is not reported as blocking.",
+                "extra": {
+                  "defect_kind": "unverified-consumer-compatibility",
+                  "evidence_quotes": [
+                    "refunded",
+                    "docs/consumers.md:3",
+                    "ledger-consumer",
+                    ".../benchmark-wsib-gh-api-only-grant-unavailable-workspace-r3d_qio3",
+                    "git ls-tree HEAD",
+                    "HEAD",
+                    "refunded"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "schemas/payment_status.schema.json"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:05] [run] stage=probe DONE 5.1s [+00:05] [case 1/1] START wsib-gh-api-only-grant-unavailable [+00:05] [case 1/1] stage=review START wsib-gh-api-only-grant-unavailable [+00:38] [case 1/1] stage=parse START wsib-gh-api-only-grant-unavailable [+00:38] [case 1/1] DONE wsib-gh-api-only-grant-unavailable 33.1s findings=1 [+00:38] [run] stage=metrics START [+00:38] [run] stage=metrics DONE [child-timing] probe=5.1s review=33.0s total=38.3s"
+    },
+    "wsib-unrelated-sibling-no-pollution": {
+      "run": {
+        "cases": [
+          {
+            "id": "wsib-unrelated-sibling-no-pollution",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "README links to a `docs/consumers.md` that does not exist The changed line says `see docs/consumers.md`. The repository contains only `README.md` and `.git`. `git status --untracked-files=all` shows no untracked files, and no `docs/` directory exists in the working tree or in HEAD. The target is missing from both the delta and the repository. Readers who follow the pointer to find the schema's consumers land on nothing. The README now promises documentation that isn't there.",
+                "extra": {
+                  "defect_kind": "dangling-reference",
+                  "evidence_quotes": [
+                    "see docs/consumers.md",
+                    "README.md",
+                    ".git",
+                    "git status --untracked-files=all",
+                    "docs/"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "README.md"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.6s [+00:02] [case 1/1] START wsib-unrelated-sibling-no-pollution [+00:02] [case 1/1] stage=review START wsib-unrelated-sibling-no-pollution [+00:23] [case 1/1] stage=parse START wsib-unrelated-sibling-no-pollution [+00:23] [case 1/1] DONE wsib-unrelated-sibling-no-pollution 20.7s findings=1 [+00:23] [run] stage=metrics START [+00:23] [run] stage=metrics DONE [child-timing] probe=2.6s review=20.6s total=23.4s"
+    }
+  },
+  "2": {
+    "cfv-no-jira-toctou-still-blocking": {
+      "run": {
+        "cases": [
+          {
+            "id": "cfv-no-jira-toctou-still-blocking",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`decrement_stock` check-then-write is not atomic, so concurrent orders oversell stock `get_stock` (line 13), the `stock < qty` guard (line 14) and `set_stock(sku, stock - qty)` (line 16) are separate calls. There is no lock, transaction, row-level `SELECT ... FOR UPDATE`, compare-and-swap or atomic decrement around them. The docstring says the function runs on the checkout hot path for every confirmed order, so overlapping calls for the same `sku` are expected. Suppose two orders each read stock = 5 and each request 5. Both pass the guard, and both write 0. Ten units are sold from five. A different interleaving gives a lost update: A reads 10, B reads 10, A writes 7, B writes 8, and the stock is wrong. The result is overselling and a corrupted inventory count. The check does not protect against the very concurrency it is guarding, and the failure is silent because nothing raises. `reserve_stock` has the same read-then-act shape, but it is outside this delta, so it is not reported here. It is still worth fixing consistently when this is corrected. The difference is that `decrement_stock` also writes back a value computed from the stale read, so it can both oversell and lose updates.",
+                "extra": {
+                  "defect_kind": "toctou-race-condition",
+                  "evidence_quotes": [
+                    "get_stock",
+                    "stock < qty",
+                    "set_stock(sku, stock - qty)",
+                    "SELECT ... FOR UPDATE",
+                    "sku"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 16,
+                    "start": 11
+                  },
+                  "path": "inventory/reservations.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:04] [run] stage=probe DONE 4.1s [+00:04] [case 1/1] START cfv-no-jira-toctou-still-blocking [+00:04] [case 1/1] stage=review START cfv-no-jira-toctou-still-blocking [+00:39] [case 1/1] stage=parse START cfv-no-jira-toctou-still-blocking [+00:39] [case 1/1] DONE cfv-no-jira-toctou-still-blocking 35.5s findings=1 [+00:39] [run] stage=metrics START [+00:39] [run] stage=metrics DONE [child-timing] probe=4.1s review=35.5s total=39.7s"
+    },
+    "cfv-unproven-regression-not-asserted": {
+      "run": {
+        "cases": [
+          {
+            "id": "cfv-unproven-regression-not-asserted",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.6s [+00:03] [case 1/1] START cfv-unproven-regression-not-asserted [+00:03] [case 1/1] stage=review START cfv-unproven-regression-not-asserted [+00:37] [case 1/1] stage=parse START cfv-unproven-regression-not-asserted [+00:37] [case 1/1] DONE cfv-unproven-regression-not-asserted 33.5s findings=0 [+00:37] [run] stage=metrics START [+00:37] [run] stage=metrics DONE [child-timing] probe=3.6s review=33.4s total=37.2s"
+    },
+    "code-hygiene-control-external-contract-and-compat-reference": {
+      "run": {
+        "cases": [
+          {
+            "id": "code-hygiene-control-external-contract-and-compat-reference",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.7s [+00:02] [case 1/1] START code-hygiene-control-external-contract-and-compat-reference [+00:02] [case 1/1] stage=review START code-hygiene-control-external-contract-and-compat-reference [+00:26] [case 1/1] stage=parse START code-hygiene-control-external-contract-and-compat-reference [+00:26] [case 1/1] DONE code-hygiene-control-external-contract-and-compat-reference 23.3s findings=0 [+00:26] [run] stage=metrics START [+00:26] [run] stage=metrics DONE [child-timing] probe=2.7s review=23.3s total=26.1s"
+    },
+    "code-hygiene-control-known-limitation-reference": {
+      "run": {
+        "cases": [
+          {
+            "id": "code-hygiene-control-known-limitation-reference",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.1s [+00:03] [case 1/1] START code-hygiene-control-known-limitation-reference [+00:03] [case 1/1] stage=review START code-hygiene-control-known-limitation-reference [+00:35] [case 1/1] stage=parse START code-hygiene-control-known-limitation-reference [+00:35] [case 1/1] DONE code-hygiene-control-known-limitation-reference 32.6s findings=0 [+00:35] [run] stage=metrics START [+00:35] [run] stage=metrics DONE [child-timing] probe=3.1s review=32.6s total=35.8s"
+    },
+    "consolidation-shared-cause-low-confidence-fallback": {
+      "run": {
+        "cases": [
+          {
+            "id": "consolidation-shared-cause-low-confidence-fallback",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`stamp_order` stores naive local time instead of UTC-aware time The line changed from `datetime.now(tz=timezone.utc)` to `datetime.now()`. The `timezone` import on line 1 is now unused, which suggests the change was not deliberate. `created_at` now depends on the host's local timezone and carries no tzinfo. Values differ across hosts and DST changes. Comparing or subtracting them against aware datetimes raises `TypeError: can't compare offset-naive and offset-aware datetimes`. Stored values written before and after this change are also inconsistent.",
+                "extra": {
+                  "defect_kind": "naive-datetime",
+                  "evidence_quotes": [
+                    "datetime.now(tz=timezone.utc)",
+                    "datetime.now()",
+                    "timezone"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "app/orders.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "`in_window` cutoff parsing rejects full ISO-8601 strings `datetime.fromisoformat(cutoff_text)` accepts `2024-01-01T12:00:00` and `2024-01-01T12:00:00+00:00`. `strptime(cutoff_text, \"%Y-%m-%d\")` accepts only a bare date and raises `ValueError` for anything else. The result is always naive, so an aware cutoff can no longer be expressed. The repository contains no callers or tests, so which cutoff formats are in use is unknown. Any caller passing a timestamp or offset cutoff will fail with `ValueError`. A caller that relied on an aware cutoff to compare against aware timestamps loses that ability. Together with F1, the module pair mixes naive and aware values.",
+                "extra": {
+                  "defect_kind": "input-format-regression",
+                  "evidence_quotes": [
+                    "datetime.fromisoformat(cutoff_text)",
+                    "2024-01-01T12:00:00",
+                    "2024-01-01T12:00:00+00:00",
+                    "strptime(cutoff_text, \"%Y-%m-%d\")",
+                    "ValueError"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "app/reports.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.6s [+00:02] [case 1/1] START consolidation-shared-cause-low-confidence-fallback [+00:02] [case 1/1] stage=review START consolidation-shared-cause-low-confidence-fallback [+00:32] [case 1/1] stage=parse START consolidation-shared-cause-low-confidence-fallback [+00:32] [case 1/1] DONE consolidation-shared-cause-low-confidence-fallback 29.7s findings=2 [+00:32] [run] stage=metrics START [+00:32] [run] stage=metrics DONE [child-timing] probe=2.6s review=29.6s total=32.4s"
+    },
+    "correctness-off-by-one-pagination": {
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`page()` returns one extra item per page `end = offset + page_size + 1` makes the slice `items[offset : offset + page_size + 1]`, which is `page_size + 1` items. For `items=[0..9]`, `page_number=1`, `page_size=3`, it returns `[0, 1, 2, 3]` instead of `[0, 1, 2]`. Page 2 then starts at index 3, so item 3 appears on both pages. Every page except possibly the last has `page_size + 1` entries. Callers see duplicated items across page boundaries and break any fixed-size-page contract, such as a UI grid or a \"has next page\" check based on `len == page_size`.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "end = offset + page_size + 1",
+                    "items[offset : offset + page_size + 1]",
+                    "page_size + 1",
+                    "items=[0..9]",
+                    "page_number=1",
+                    "page_size=3",
+                    "[0, 1, 2, 3]",
+                    "[0, 1, 2]"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "app/pagination.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:06] [run] stage=probe DONE 6.1s [+00:06] [case 1/1] START correctness-off-by-one-pagination [+00:06] [case 1/1] stage=review START correctness-off-by-one-pagination [+00:29] [case 1/1] stage=parse START correctness-off-by-one-pagination [+00:29] [case 1/1] DONE correctness-off-by-one-pagination 23.3s findings=1 [+00:29] [run] stage=metrics START [+00:29] [run] stage=metrics DONE [child-timing] probe=6.1s review=23.3s total=29.4s"
+    },
+    "distributed-systems-deepening-concurrent-interleaving-inventory-race": {
+      "run": {
+        "cases": [
+          {
+            "id": "distributed-systems-deepening-concurrent-interleaving-inventory-race",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Reserve is a non-atomic read-check-write; concurrent requests oversell stock `count = get_count(sku)` reads the shared module-level `_inventory`. The check `count < quantity` runs on that stale local value, and `_inventory[sku] = count - quantity` writes back a value computed from it. No lock or atomic operation covers the sequence. The app is started with `app.run(threaded=True)`, so requests run on concurrent threads. Two requests for 5 widgets, both with `count == 5`, can both pass the check, and both then write `0`. Both get a 200 while 10 widgets were reserved against a stock of 5. Interleavings where one request's write overwrites another's (lost update) have the same effect. Inventory is oversold and the stored count no longer matches the units reserved. Under load the stock figure can't be trusted.",
+                "extra": {
+                  "defect_kind": "check-then-act-race",
+                  "evidence_quotes": [
+                    "count = get_count(sku)",
+                    "_inventory",
+                    "count < quantity",
+                    "_inventory[sku] = count - quantity",
+                    "app.run(threaded=True)",
+                    "count == 5",
+                    "0"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 27,
+                    "start": 24
+                  },
+                  "path": "app/inventory.py"
+                },
+                "severity": "P0"
+              },
+              {
+                "claim": "Negative or zero `quantity` is accepted and inflates stock `quantity = int(request.json[\"quantity\"])` is not range-checked. For `quantity = -3` the guard `count < quantity` is never true, and `_inventory[sku] = count - (-3)` increases the count. The `reserve` route has no authorization or sign check. Any caller can create stock by posting a negative quantity, which corrupts inventory. A quantity of 0 is a meaningless no-op reservation that returns 200.",
+                "extra": {
+                  "defect_kind": "missing-input-validation",
+                  "evidence_quotes": [
+                    "quantity = int(request.json[\"quantity\"])",
+                    "quantity = -3",
+                    "count < quantity",
+                    "_inventory[sku] = count - (-3)",
+                    "reserve"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 27,
+                    "start": 23
+                  },
+                  "path": "app/inventory.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "`OutOfStock` is raised but never handled, so an expected business outcome becomes HTTP 500 `raise OutOfStock(sku)` has no `@app.errorhandler(OutOfStock)` and no try/except in the view. Flask turns the uncaught exception into a generic 500 and logs a stack trace. Nothing else in the diff references `OutOfStock`. Clients can't tell \"insufficient stock\" from a server fault, so they may retry or alert on it. Normal sold-out traffic floods the error logs with traces.",
+                "extra": {
+                  "defect_kind": "unhandled-expected-error",
+                  "evidence_quotes": [
+                    "raise OutOfStock(sku)",
+                    "@app.errorhandler(OutOfStock)",
+                    "OutOfStock"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 26,
+                    "start": 25
+                  },
+                  "path": "app/inventory.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "Malformed bodies and unknown SKUs are not handled `request.json[\"quantity\"]` raises a 400/415 or `KeyError` (500) when the body is missing, not JSON, or lacks `quantity`. `int(...)` raises `ValueError` (500) on non-numeric input. For an unknown `sku`, `get_count` returns 0 and the request is reported as out of stock rather than not found. On a 0-quantity request, an unknown SKU would be inserted into `_inventory` with a count of 0. Client input errors surface as 500s. Unknown SKUs can be added to the inventory map as a side effect.",
+                "extra": {
+                  "defect_kind": "missing-input-validation",
+                  "evidence_quotes": [
+                    "request.json[\"quantity\"]",
+                    "KeyError",
+                    "quantity",
+                    "int(...)",
+                    "ValueError",
+                    "sku",
+                    "get_count",
+                    "_inventory"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 24,
+                    "start": 23
+                  },
+                  "path": "app/inventory.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.0s [+00:03] [case 1/1] START distributed-systems-deepening-concurrent-interleaving-inventory-race [+00:03] [case 1/1] stage=review START distributed-systems-deepening-concurrent-interleaving-inventory-race [+00:48] [case 1/1] stage=parse START distributed-systems-deepening-concurrent-interleaving-inventory-race [+00:48] [case 1/1] DONE distributed-systems-deepening-concurrent-interleaving-inventory-race 45.0s findings=4 [+00:48] [run] stage=metrics START [+00:48] [run] stage=metrics DONE [child-timing] probe=3.0s review=45.0s total=48.1s"
+    },
+    "distributed-systems-deepening-filename-signal-suppressed-clean": {
+      "run": {
+        "cases": [
+          {
+            "id": "distributed-systems-deepening-filename-signal-suppressed-clean",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.7s [+00:02] [case 1/1] START distributed-systems-deepening-filename-signal-suppressed-clean [+00:02] [case 1/1] stage=review START distributed-systems-deepening-filename-signal-suppressed-clean [+00:28] [case 1/1] stage=parse START distributed-systems-deepening-filename-signal-suppressed-clean [+00:28] [case 1/1] DONE distributed-systems-deepening-filename-signal-suppressed-clean 25.8s findings=0 [+00:28] [run] stage=metrics START [+00:28] [run] stage=metrics DONE [child-timing] probe=2.7s review=25.8s total=28.6s"
+    },
+    "external-pinned-contract-proves-incompatibility": {
+      "run": {
+        "cases": [
+          {
+            "id": "external-pinned-contract-proves-incompatibility",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "New `refunded` status is rejected by the pinned ledger consumer The diff widens the enum to `[\"pending\", \"completed\", \"failed\", \"refunded\"]`. In the caller-pinned `ledger-consumer@37719e0:ledger/apply_status.py`, `apply_status` handles only `pending`, `completed` and `failed`. Every other value reaches `raise ValueError(f\"unknown payment status: {status}\")`, so a `refunded` payment now fails there. Nothing in this delta changes that consumer. Once any producer emits `refunded`, the ledger consumer throws instead of updating the entry, so refund events are not applied. The widened schema also lets producers emit values the consumer cannot process.",
+                "extra": {
+                  "defect_kind": "enum-widening-breaks-consumer",
+                  "evidence_quotes": [
+                    "[\"pending\", \"completed\", \"failed\", \"refunded\"]",
+                    "ledger-consumer@37719e0:ledger/apply_status.py",
+                    "apply_status",
+                    "pending",
+                    "completed",
+                    "failed",
+                    "raise ValueError(f\"unknown payment status: {status}\")",
+                    "refunded"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "schemas/payment_status.schema.json"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.0s [+00:03] [case 1/1] START external-pinned-contract-proves-incompatibility [+00:03] [case 1/1] stage=review START external-pinned-contract-proves-incompatibility [+00:54] [case 1/1] stage=parse START external-pinned-contract-proves-incompatibility [+00:54] [case 1/1] DONE external-pinned-contract-proves-incompatibility 51.6s findings=1 [+00:54] [run] stage=metrics START [+00:54] [run] stage=metrics DONE [child-timing] probe=3.0s review=51.5s total=54.7s"
+    },
+    "finding-placement-preexisting-callee-bug-exposed": {
+      "run": {
+        "cases": [
+          {
+            "id": "finding-placement-preexisting-callee-bug-exposed",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`cancel_order` always raises `ValueError(\"insufficient stock\")` `cancel_order` calls `apply_adjustment(order[\"qty\"], order[\"qty\"])`, so `qty` and `delta` are the same value. In `inventory/adjust.py:2-4`, `remaining = qty - delta` is therefore always `0`. The guard `if remaining <= 0: raise ValueError(\"insufficient stock\")` then fires for every order. The call never returns a value, and the function's `-> int` return is unreachable. I traced this statically; I did not execute it. Every order cancellation fails with a misleading \"insufficient stock\" error. The new caller is the only place the failure shows up. The `<= 0` check in the unchanged callee is what rejects a zero balance, but only this caller passes arguments that guarantee `remaining == 0`.",
+                "extra": {
+                  "defect_kind": "always-failing-call-contract-mismatch",
+                  "evidence_quotes": [
+                    "cancel_order",
+                    "apply_adjustment(order[\"qty\"], order[\"qty\"])",
+                    "qty",
+                    "delta",
+                    "inventory/adjust.py:2-4",
+                    "remaining = qty - delta",
+                    "0",
+                    "if remaining <= 0: raise ValueError(\"insufficient stock\")",
+                    "-> int"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "orders/cancel.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.7s [+00:02] [case 1/1] START finding-placement-preexisting-callee-bug-exposed [+00:02] [case 1/1] stage=review START finding-placement-preexisting-callee-bug-exposed [+00:26] [case 1/1] stage=parse START finding-placement-preexisting-callee-bug-exposed [+00:26] [case 1/1] DONE finding-placement-preexisting-callee-bug-exposed 23.8s findings=1 [+00:26] [run] stage=metrics START [+00:26] [run] stage=metrics DONE [child-timing] probe=2.7s review=23.7s total=26.6s"
+    },
+    "finding-placement-test-reveals-production-defect": {
+      "run": {
+        "cases": [
+          {
+            "id": "finding-placement-test-reveals-production-defect",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`median` returns the upper-middle element for even-length input The `len(ordered) % 2 == 0` branch returns `ordered[mid]`, the same expression as the odd-length branch. For `[1, 2, 3, 4]`, `mid` is 2, so it returns `3`. The test at `tests/test_stats.py:5` expects `2.5`. Every even-length input yields a wrong statistic, biased toward the upper half, with no error raised. The new test fails against this code.",
+                "extra": {
+                  "defect_kind": "incorrect-algorithm",
+                  "evidence_quotes": [
+                    "len(ordered) % 2 == 0",
+                    "ordered[mid]",
+                    "[1, 2, 3, 4]",
+                    "mid",
+                    "3",
+                    "tests/test_stats.py:5",
+                    "2.5"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 5,
+                    "start": 4
+                  },
+                  "path": "math/stats.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "Top-level `math` package shadows the standard-library `math` module The new directory `math/` has no `__init__.py` and is imported as `from math.stats import median` (`tests/test_stats.py:1`). The standard-library `math` is a built-in module and is found first, so it normally wins over a same-named local directory. Because `math` has no `stats` submodule, the import should fail with `ModuleNotFoundError`. If the local package does win, it hides stdlib `math` for every other importer. I could not run this to confirm (see Validation). The test module probably cannot be collected, so F1 is hidden behind an import error. Any code that needs stdlib `math` is at risk of breaking.",
+                "extra": {
+                  "defect_kind": "module-name-shadowing",
+                  "evidence_quotes": [
+                    "math/",
+                    "__init__.py",
+                    "from math.stats import median",
+                    "tests/test_stats.py:1",
+                    "math",
+                    "math",
+                    "stats",
+                    "ModuleNotFoundError",
+                    "math"
+                  ]
+                },
+                "location": {
+                  "line": 1,
+                  "path": "math/stats.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:04] [run] stage=probe DONE 4.3s [+00:04] [case 1/1] START finding-placement-test-reveals-production-defect [+00:04] [case 1/1] stage=review START finding-placement-test-reveals-production-defect [+00:57] [case 1/1] stage=parse START finding-placement-test-reveals-production-defect [+00:57] [case 1/1] DONE finding-placement-test-reveals-production-defect 53.3s findings=2 [+00:57] [run] stage=metrics START [+00:57] [run] stage=metrics DONE [child-timing] probe=4.3s review=53.3s total=57.7s"
+    },
+    "isolation-unadmitted-sibling": {
+      "run": {
+        "cases": [
+          {
+            "id": "isolation-unadmitted-sibling",
+            "input_kind": "multi_repo",
+            "produced_findings": [
+              {
+                "claim": "Quantity check assumes a numeric value and raises `TypeError` on other types `body[\"quantity\"] <= 0` compares the raw request value with an int. `require_fields` only checks that the key is present. A JSON body such as `{\"sku\": \"A\", \"quantity\": \"5\"}` or `{\"quantity\": null}` therefore raises `TypeError` instead of the `ValueError` the new check is meant to raise. Fractional values (`0.5`) and booleans (`True`) pass the check. A malformed `quantity` surfaces as an unhandled `TypeError`, likely a 500, instead of a client validation error. Non-integer quantities are accepted as valid orders.",
+                "extra": {
+                  "defect_kind": "missing-input-validation",
+                  "evidence_quotes": [
+                    "body[\"quantity\"] <= 0",
+                    "require_fields",
+                    "{\"sku\": \"A\", \"quantity\": \"5\"}",
+                    "{\"quantity\": null}",
+                    "TypeError",
+                    "ValueError",
+                    "0.5",
+                    "True"
+                  ]
+                },
+                "location": {
+                  "line": 4,
+                  "path": "orders/validation.py",
+                  "repo_alias": "orders-service"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.9s [+00:03] [case 1/1] START isolation-unadmitted-sibling [+00:04] [case 1/1] stage=review START isolation-unadmitted-sibling [+00:44] [case 1/1] stage=parse START isolation-unadmitted-sibling [+00:44] [case 1/1] DONE isolation-unadmitted-sibling 40.3s findings=1 [+00:44] [run] stage=metrics START [+00:44] [run] stage=metrics DONE [child-timing] probe=3.9s review=40.2s total=44.3s"
+    },
+    "performance-deepening-batched-fix-bounded-clean": {
+      "run": {
+        "cases": [
+          {
+            "id": "performance-deepening-batched-fix-bounded-clean",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Batch call is unbounded for thousands of invoice IDs The docstring says `invoice_ids` is unbounded and \"can run into the thousands\". The new code sends the whole list in a single `get_totals_batch` call. This repository does not contain `ledger_client`, so any limit on batch size, payload or query parameters, or on timeout, can't be checked. For high-volume accounts, one very large request could exceed a backend limit or timeout, or use a lot of memory. The old code never had this risk. Whether it happens depends on `ledger_client`, which I couldn't inspect.",
+                "extra": {
+                  "defect_kind": "unbounded-batch-size",
+                  "evidence_quotes": [
+                    "invoice_ids",
+                    "get_totals_batch",
+                    "ledger_client"
+                  ]
+                },
+                "location": {
+                  "line": 11,
+                  "path": "app/billing/invoices.py"
+                },
+                "severity": "P2"
+              },
+              {
+                "claim": "Missing IDs now raise `KeyError`, and the batch API is unverified `totals_by_invoice[iid]` indexes the batch result for every requested ID. `ledger_client.get_totals_batch` isn't in the repository, so I can't confirm that it exists, that it returns a dict keyed by invoice ID, or that it returns an entry for every ID. Duplicate IDs in the input are also unchecked. If the batch call leaves out an ID, such as one that is unknown or has no ledger entry, the whole call fails with `KeyError`. The old per-ID call may have handled that case differently. That would be a behavior change.",
+                "extra": {
+                  "defect_kind": "unchecked-api-contract",
+                  "evidence_quotes": [
+                    "totals_by_invoice[iid]",
+                    "ledger_client.get_totals_batch"
+                  ]
+                },
+                "location": {
+                  "line": 12,
+                  "path": "app/billing/invoices.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:03] [run] stage=probe DONE 3.9s [+00:03] [case 1/1] START performance-deepening-batched-fix-bounded-clean [+00:03] [case 1/1] stage=review START performance-deepening-batched-fix-bounded-clean [+00:37] [case 1/1] stage=parse START performance-deepening-batched-fix-bounded-clean [+00:37] [case 1/1] DONE performance-deepening-batched-fix-bounded-clean 33.8s findings=2 [+00:37] [run] stage=metrics START [+00:37] [run] stage=metrics DONE [child-timing] probe=3.9s review=33.7s total=37.7s"
+    },
+    "performance-deepening-blocking-io-request-hot-path": {
+      "run": {
+        "cases": [
+          {
+            "id": "performance-deepening-blocking-io-request-hot-path",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Feature flags are re-read from disk on every request The removed comment said the flags were \"Loaded once at process startup; handle_request is invoked on every incoming HTTP request served by this worker process.\" The new code calls `feature_flags.read_flags_from_disk()` inside `handle_request`, so each request runs a synchronous disk read and parse. Nothing in the diff caches the result, so the work repeats on every call. Every request pays file-system latency. Under concurrency this serializes workers on I/O and adds tail latency, and it makes throughput depend on disk speed. A slow or failing read now also fails individual requests, where before it could only fail at startup.",
+                "extra": {
+                  "defect_kind": "blocking-io-on-hot-path",
+                  "evidence_quotes": [
+                    "feature_flags.read_flags_from_disk()",
+                    "handle_request"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "app/web/handlers.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 3.0s [+00:03] [case 1/1] START performance-deepening-blocking-io-request-hot-path [+00:03] [case 1/1] stage=review START performance-deepening-blocking-io-request-hot-path [+00:29] [case 1/1] stage=parse START performance-deepening-blocking-io-request-hot-path [+00:29] [case 1/1] DONE performance-deepening-blocking-io-request-hot-path 26.2s findings=1 [+00:29] [run] stage=metrics START [+00:29] [run] stage=metrics DONE [child-timing] probe=3.0s review=26.2s total=29.3s"
+    },
+    "relrecall-analogue-pattern-source-outside-repository-unresolvable": {
+      "run": {
+        "cases": [
+          {
+            "id": "relrecall-analogue-pattern-source-outside-repository-unresolvable",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:09] [run] stage=probe DONE 9.2s [+00:09] [case 1/1] START relrecall-analogue-pattern-source-outside-repository-unresolvable [+00:09] [case 1/1] stage=review START relrecall-analogue-pattern-source-outside-repository-unresolvable [+00:37] [case 1/1] stage=parse START relrecall-analogue-pattern-source-outside-repository-unresolvable [+00:37] [case 1/1] DONE relrecall-analogue-pattern-source-outside-repository-unresolvable 28.2s findings=0 [+00:37] [run] stage=metrics START [+00:37] [run] stage=metrics DONE [child-timing] probe=9.2s review=28.1s total=37.4s"
+    },
+    "risk-depth-diffsize-elevated-refactor": {
+      "run": {
+        "cases": [
+          {
+            "id": "risk-depth-diffsize-elevated-refactor",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`payout.py` still calls `format_currency` with the old argument order `app/utils/currency.py:1` now defines `format_currency(currency, amount)`. `app/billing/payout.py:5` still calls `format_currency(amount, currency)`, and the file is not part of the delta. It is the only remaining caller; a repository-wide search finds no other callers outside the ten updated files. Inside `format_currency`, `amount` now receives the currency string, so `f\"{amount:,.2f}\"` raises `ValueError: Unknown format code 'f' for object of type 'str'`. Every payout total render fails. Payouts are money-facing, so this is a hard failure on a billing path. It is also a silent partial migration: the signature change is breaking and the call sites were updated by hand.",
+                "extra": {
+                  "defect_kind": "incomplete-signature-migration",
+                  "evidence_quotes": [
+                    "app/utils/currency.py:1",
+                    "format_currency(currency, amount)",
+                    "app/billing/payout.py:5",
+                    "format_currency(amount, currency)"
+                  ]
+                },
+                "location": {
+                  "line": 5,
+                  "path": "app/billing/payout.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.8s [+00:02] [case 1/1] START risk-depth-diffsize-elevated-refactor [+00:02] [case 1/1] stage=review START risk-depth-diffsize-elevated-refactor [+00:38] [case 1/1] stage=parse START risk-depth-diffsize-elevated-refactor [+00:38] [case 1/1] DONE risk-depth-diffsize-elevated-refactor 35.8s findings=1 [+00:38] [run] stage=metrics START [+00:38] [run] stage=metrics DONE [child-timing] probe=2.8s review=35.7s total=38.6s"
+    },
+    "security-deepening-single-caller-check-enforced-clean": {
+      "run": {
+        "cases": [
+          {
+            "id": "security-deepening-single-caller-check-enforced-clean",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`db` is undefined in `_delete_record` `_delete_record` calls `db.records.delete(record_id)`. The module imports only `Blueprint`, `request` and `abort` from `flask`, and defines no `db`. No other file in the repository could supply it. The repository contains only `app/records.py`. For any user who passes the permission check, `NameError: name 'db' is not defined` is raised at request time. The endpoint returns a 500 instead of deleting the record and returning 204, so the feature does not work.",
+                "extra": {
+                  "defect_kind": "undefined-name",
+                  "evidence_quotes": [
+                    "_delete_record",
+                    "db.records.delete(record_id)",
+                    "Blueprint",
+                    "request",
+                    "abort",
+                    "flask",
+                    "db",
+                    "app/records.py"
+                  ]
+                },
+                "location": {
+                  "line": 7,
+                  "path": "app/records.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:08] [run] stage=probe DONE 9.0s [+00:08] [case 1/1] START security-deepening-single-caller-check-enforced-clean [+00:09] [case 1/1] stage=review START security-deepening-single-caller-check-enforced-clean [+00:34] [case 1/1] stage=parse START security-deepening-single-caller-check-enforced-clean [+00:34] [case 1/1] DONE security-deepening-single-caller-check-enforced-clean 25.7s findings=1 [+00:34] [run] stage=metrics START [+00:34] [run] stage=metrics DONE [child-timing] probe=9.0s review=25.7s total=34.7s"
+    },
+    "semantic-implication-multi-dimension-webhook-xss": {
+      "run": {
+        "cases": [
+          {
+            "id": "semantic-implication-multi-dimension-webhook-xss",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Stored XSS: webhook `sender` is rendered into admin HTML unescaped `receive_webhook` stores the parsed payload as-is (line 8). `render_admin_summary` then puts `e['sender']` into an f-string `<td>` with no HTML escaping (line 13). Nothing in the file validates or sanitizes `sender`. A webhook with `{\"sender\": \"<script>\u2026</script>\"}` runs in the browser of any admin who views the summary. The attacker can steal the session, perform admin actions, or pivot. The write path has no authentication (see F2), so any internet caller can plant the payload.",
+                "extra": {
+                  "defect_kind": "stored-xss",
+                  "evidence_quotes": [
+                    "receive_webhook",
+                    "render_admin_summary",
+                    "e['sender']",
+                    "<td>",
+                    "sender"
+                  ]
+                },
+                "location": {
+                  "line": 13,
+                  "path": "app/webhooks/handler.py"
+                },
+                "severity": "P0"
+              },
+              {
+                "claim": "Webhook endpoint accepts events without authenticating the caller `receive_webhook` parses and stores whatever body it is given. It does no signature or HMAC check, shared-secret check, or timestamp check, and it takes no headers. Anyone who can reach the endpoint can forge events, which also reaches the F1 injection and the F4 growth. Receivers of third-party webhooks are normally expected to verify a signature over the raw body.",
+                "extra": {
+                  "defect_kind": "missing-authentication",
+                  "evidence_quotes": [
+                    "receive_webhook"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 9,
+                    "start": 6
+                  },
+                  "path": "app/webhooks/handler.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "One malformed event permanently breaks the admin summary `json.loads` output is stored without checking its type or shape. It is not guaranteed to be a dict with a `sender` key. Invalid JSON raises `JSONDecodeError` out of `receive_webhook` with no handling. `render_admin_summary` indexes `e['sender']` for every stored event (line 13). A body such as `{}`, `[]`, or `{\"x\":1}` is stored and returns `ok`. Every later call to `render_admin_summary` then raises `KeyError` or `TypeError`, and the summary stays broken until the process restarts. Any single sender can disable the admin view for everyone.",
+                "extra": {
+                  "defect_kind": "missing-input-validation",
+                  "evidence_quotes": [
+                    "json.loads",
+                    "sender",
+                    "JSONDecodeError",
+                    "receive_webhook",
+                    "render_admin_summary",
+                    "e['sender']"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 8,
+                    "start": 7
+                  },
+                  "path": "app/webhooks/handler.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "Unbounded, unsynchronized in-memory event store `_events` is a module-level list that grows on every request. It has no size cap, eviction, or persistence, and no lock guards it. Memory grows without bound, which is a DoS vector when combined with F2. Events are lost on restart, and the store is not shared across worker processes. Appends are safe under the GIL, but iterating while another thread appends is racy for future changes.",
+                "extra": {
+                  "defect_kind": "unbounded-resource-growth",
+                  "evidence_quotes": [
+                    "_events"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "app/webhooks/handler.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.8s [+00:02] [case 1/1] START semantic-implication-multi-dimension-webhook-xss [+00:02] [case 1/1] stage=review START semantic-implication-multi-dimension-webhook-xss [+00:37] [case 1/1] stage=parse START semantic-implication-multi-dimension-webhook-xss [+00:37] [case 1/1] DONE semantic-implication-multi-dimension-webhook-xss 34.8s findings=4 [+00:37] [run] stage=metrics START [+00:37] [run] stage=metrics DONE [child-timing] probe=2.8s review=34.7s total=37.6s"
+    },
+    "semantic-implication-no-signal-clean-extraction": {
+      "run": {
+        "cases": [
+          {
+            "id": "semantic-implication-no-signal-clean-extraction",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:09] [run] stage=probe DONE 9.5s [+00:09] [case 1/1] START semantic-implication-no-signal-clean-extraction [+00:09] [case 1/1] stage=review START semantic-implication-no-signal-clean-extraction [+00:36] [case 1/1] stage=parse START semantic-implication-no-signal-clean-extraction [+00:36] [case 1/1] DONE semantic-implication-no-signal-clean-extraction 26.5s findings=0 [+00:36] [run] stage=metrics START [+00:36] [run] stage=metrics DONE [child-timing] probe=9.5s review=26.5s total=36.1s"
+    },
+    "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type": {
+      "run": {
+        "cases": [
+          {
+            "id": "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Dropping `email` from cached session hashes breaks readers that still expect it The `HEAD` version of the docstring says \"session TTL is 24h, so entries written by a previous deploy are routinely still live and read back by a newer one\". The delta removes that warning and the `email` field together. `HEAD`'s `read_profile` does `entry[\"email\"]` unconditionally. The new `remember` writes hashes with no `email` key, under the same `session_id` key and with the same 24h TTL. During a rolling deploy, canary or rollback, instances still running the previous code read entries written by the new code and raise `KeyError: 'email'`. This affects every session created or refreshed after the new code starts writing, for up to 24h, and it also hits any other consumer of these hashes. The change also removes the documentation of this constraint, which makes the failure more likely to recur.",
+                "extra": {
+                  "defect_kind": "cache-schema-incompatibility",
+                  "evidence_quotes": [
+                    "HEAD",
+                    "email",
+                    "HEAD",
+                    "read_profile",
+                    "entry[\"email\"]",
+                    "remember",
+                    "email",
+                    "session_id"
+                  ]
+                },
+                "location": {
+                  "line": 11,
+                  "path": "app/sessions/cache.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:08] [run] stage=probe DONE 8.5s [+00:08] [case 1/1] START specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type [+00:08] [case 1/1] stage=review START specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type [+00:30] [case 1/1] stage=parse START specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type [+00:30] [case 1/1] DONE specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type 22.3s findings=1 [+00:30] [run] stage=metrics START [+00:30] [run] stage=metrics DONE [child-timing] probe=8.5s review=22.3s total=30.9s"
+    },
+    "specialist-depth-composition-case-f-cascading-activation-bounded": {
+      "run": {
+        "cases": [
+          {
+            "id": "specialist-depth-composition-case-f-cascading-activation-bounded",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Migration drops the index the order-history query depends on The migration calls `RemoveIndex(model_name=\"order\", name=\"orders_customer_id_idx\")`. The unchanged `app/orders/lookup.py:5-11` says `get_orders_for_customer` reads via `orders_customer_id_idx` and runs on every order-history page view. It queries `WHERE customer_id = %s`, and the docstring says one customer can have tens of thousands of orders. The delta adds no replacement index and no change to the query. It also gives no sign that the index is redundant, for example a composite index that covers `customer_id`. Once the migration is applied, the hot-path lookup falls back to a sequential scan of `orders_order`, because no index serves `customer_id`. Every order-history view then scans the whole table. Latency and database load grow with table size, which can degrade or take down the page under production traffic.",
+                "extra": {
+                  "defect_kind": "dropped-index-hot-path-regression",
+                  "evidence_quotes": [
+                    "RemoveIndex(model_name=\"order\", name=\"orders_customer_id_idx\")",
+                    "app/orders/lookup.py:5-11",
+                    "get_orders_for_customer",
+                    "orders_customer_id_idx",
+                    "WHERE customer_id = %s",
+                    "customer_id"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 13,
+                    "start": 11
+                  },
+                  "path": "app/db/migrations/0012_drop_customer_id_index.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "Migration file is truncated and fails to parse The file ends right after `name=\"orders_customer_id_idx\",`, at line 13. The `RemoveIndex(` call, the `operations = [` list and the `Migration` class are never closed. The file is 13 lines long and has no closing `),`, `]`, or `)`. I read the file but did not run a parser, because the compile check was not approved. Python raises a `SyntaxError` when the module is imported. Django's migration loader imports every file in the migrations package, so `migrate`, `makemigrations`, `showmigrations` and `manage.py check` can all fail, not only this migration. If this file is committed or deployed as-is, it blocks deploys that run migrations.",
+                "extra": {
+                  "defect_kind": "truncated-file-syntax-error",
+                  "evidence_quotes": [
+                    "name=\"orders_customer_id_idx\",",
+                    "RemoveIndex(",
+                    "operations = [",
+                    "Migration",
+                    "),",
+                    "]",
+                    ")"
+                  ]
+                },
+                "location": {
+                  "line": 13,
+                  "path": "app/db/migrations/0012_drop_customer_id_index.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:06] [run] stage=probe DONE 6.4s [+00:06] [case 1/1] START specialist-depth-composition-case-f-cascading-activation-bounded [+00:06] [case 1/1] stage=review START specialist-depth-composition-case-f-cascading-activation-bounded [+00:41] [case 1/1] stage=parse START specialist-depth-composition-case-f-cascading-activation-bounded [+00:41] [case 1/1] DONE specialist-depth-composition-case-f-cascading-activation-bounded 35.0s findings=2 [+00:41] [run] stage=metrics START [+00:41] [run] stage=metrics DONE [child-timing] probe=6.4s review=35.0s total=41.5s"
+    },
+    "three-repo-coordinated-correct": {
+      "run": {
+        "cases": [
+          {
+            "id": "three-repo-coordinated-correct",
+            "input_kind": "multi_repo",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.8s [+00:02] [case 1/1] START three-repo-coordinated-correct [+00:02] [case 1/1] stage=review START three-repo-coordinated-correct [+00:59] [case 1/1] stage=parse START three-repo-coordinated-correct [+00:59] [case 1/1] DONE three-repo-coordinated-correct 56.9s findings=0 [+00:59] [run] stage=metrics START [+00:59] [run] stage=metrics DONE [child-timing] probe=2.8s review=56.8s total=59.7s"
+    },
+    "wsib-gh-api-only-grant-unavailable": {
+      "run": {
+        "cases": [
+          {
+            "id": "wsib-gh-api-only-grant-unavailable",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 3.0s [+00:02] [case 1/1] START wsib-gh-api-only-grant-unavailable [+00:03] [case 1/1] stage=review START wsib-gh-api-only-grant-unavailable [+00:45] [case 1/1] stage=parse START wsib-gh-api-only-grant-unavailable [+00:45] [case 1/1] DONE wsib-gh-api-only-grant-unavailable 42.4s findings=0 [+00:45] [run] stage=metrics START [+00:45] [run] stage=metrics DONE [child-timing] probe=3.0s review=42.3s total=45.4s"
+    },
+    "wsib-unrelated-sibling-no-pollution": {
+      "run": {
+        "cases": [
+          {
+            "id": "wsib-unrelated-sibling-no-pollution",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "README links to a `docs/consumers.md` that does not exist The unstaged edit adds the pointer \"see docs/consumers.md\". `git ls-files` lists only `README.md`, the working tree has no `docs/` directory, and nothing untracked supplies the file. Readers who follow the pointer to find the consumers of the `PaymentStatus` schema hit a missing file. This is a documentation-accuracy problem, not a correctness or safety defect.",
+                "extra": {
+                  "defect_kind": "dangling-documentation-reference",
+                  "evidence_quotes": [
+                    "git ls-files",
+                    "README.md",
+                    "docs/"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "README.md"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      },
+      "stderr_tail": "[+00:00] [run] stage=probe START [+00:02] [run] stage=probe DONE 2.8s [+00:02] [case 1/1] START wsib-unrelated-sibling-no-pollution [+00:02] [case 1/1] stage=review START wsib-unrelated-sibling-no-pollution [+00:45] [case 1/1] stage=parse START wsib-unrelated-sibling-no-pollution [+00:45] [case 1/1] DONE wsib-unrelated-sibling-no-pollution 43.1s findings=1 [+00:45] [run] stage=metrics START [+00:45] [run] stage=metrics DONE [child-timing] probe=2.8s review=43.0s total=46.0s"
+    }
+  }
+}
