@@ -8,7 +8,8 @@ when that policy is invoked and how its output feeds the next phase. Where
 prose here appears to restate a rule, the linked policy governs in case of
 any apparent difference.
 
-Applies shared policies:
+Applies shared policies (the load set, and which of these open only when their predicate fires
+— fail-closed — is owned by [`../SKILL.md`](../SKILL.md) section 2):
 [`review-scope.md`](../../../shared/policies/review-scope.md),
 [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
 [`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
@@ -368,7 +369,9 @@ which a value must be resolved before it is used, or what is reported.
    that policy's "Rationale emission" and "Non-goals and ownership
    boundary" — not restated here.
 8c. **Resolve repository expansion** per
-   [`repository-expansion.md`](../../../shared/policies/repository-expansion.md).
+   [`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
+   opened only when a trigger fires or the determination is ambiguous (fail-closed, per its
+   "Conditional loading: fail-closed").
    Using the complete local delta established above, detect any fired
    expansion trigger (call site, interface/contract, migration/schema,
    config consumer), follow it through the bounded, ring-based procedure
@@ -388,7 +391,9 @@ which a value must be resolved before it is used, or what is reported.
    [`workspace-sibling-context.md`](../policies/workspace-sibling-context.md);
    a review without a grant skips it.
 8d. **Partition large changes** per
-   [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md).
+   [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
+   opened only when the diff-size count from `change-risk-signals.md` reaches its threshold or is
+   ambiguous (fail-closed, per its "Conditional loading: fail-closed").
    When the complete local delta's diff-size measurement (the same
    exclusion of non-reviewable files as step 8b) reaches that policy's
    partitioning threshold, build coherent review units by its
@@ -485,7 +490,7 @@ which a value must be resolved before it is used, or what is reported.
     before composing the report; do not report findings piecemeal as they
     are discovered.
 10a. If step 7 produced at least one authoritative requirement or acceptance
-    criterion, apply
+    criterion, load and apply
     [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md)
     to the inspected target now: retain every decomposed requirement, assign
     its evidence-backed status, and derive the separate task-relative
@@ -500,7 +505,8 @@ which a value must be resolved before it is used, or what is reported.
     `incomplete` with its concrete reason(s) for the report's subordinate
     metadata (step 13), per that policy's "Labeling — incomplete must
     never present as clean" and "Non-goals and ownership boundary" — not
-    restated here. **With more than one member (step 0):** if narrowing
+    restated here. Required material from `SKILL.md` section 2 that was knowingly not loaded is an incomplete
+    trigger too, per that policy's "Incomplete triggers" — never `complete`. **With more than one member (step 0):** if narrowing
     (step 0's validation, or steps 1–8e's per-member resolution) left zero
     resolved members, coverage is `incomplete` per
     [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),

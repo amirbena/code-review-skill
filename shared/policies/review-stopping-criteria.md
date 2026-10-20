@@ -84,6 +84,14 @@ counts as incomplete:
    that fails to prepare — are owned and enumerated by that Skill's own
    policies; this policy states the general rule they are instances of,
    not a replacement for their own triggers or wording.)
+   **Knowingly unloaded required material is the same case.** If the
+   reviewer knows a policy, runbook, or template its Skill's loading
+   section requires — a conditionally loaded file whose predicate fired
+   included — was not loaded, the pass it governs was not produced and
+   cannot be performed without it, so coverage is `incomplete`, never
+   `complete`, and `detail` names the missing material. This covers
+   *known* gaps only: a self-reported load is not proof every required
+   file was read, and this rule does not claim to prevent unknown skips.
 2. **A partition could not be completed**, per
    [`large-pr-partitioning.md`](large-pr-partitioning.md), "Aggregation
    and cross-partition de-duplication."

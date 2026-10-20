@@ -190,8 +190,6 @@ current invocation only per
 Always, as one batched operation:
 [`review-scope.md`](../../shared/policies/review-scope.md),
 [`change-risk-signals.md`](../../shared/policies/change-risk-signals.md) (deterministic `standard`/`elevated`/`deep` review-depth classification, emitted with every review),
-[`repository-expansion.md`](../../shared/policies/repository-expansion.md) (fixed expansion-trigger catalog, bounded ring-based expansion scaled by change-risk depth, emitted with every review),
-[`large-pr-partitioning.md`](../../shared/policies/large-pr-partitioning.md) (deterministic partitioning of an unusually large diff into coherent review units, each fully reviewed, with cross-partition aggregation/de-duplication; conditional on a diff-size threshold),
 [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md) (coverage and exit conditions scaled by change-risk depth and partitions, the closed set of incomplete triggers, and the rule that an incomplete review never renders as clean; emitted with every review),
 [`severity.md`](../../shared/policies/severity.md),
 [`evidence.md`](../../shared/policies/evidence.md),
@@ -200,14 +198,9 @@ Always, as one batched operation:
 (repository-relative review-base compliance; fail-closed when the
 required base cannot be reliably resolved),
 [`runtime-validation.md`](../../shared/policies/runtime-validation.md),
-[`review-context.md`](../../shared/policies/review-context.md) (its
-requirement-context and scope-boundary sections bind only when context is
-supplied),
-[`requirement-coverage.md`](../../shared/policies/requirement-coverage.md) (conditional),
 [`git-safety.md`](../../shared/policies/git-safety.md),
 [`file-reviewability.md`](../../shared/policies/file-reviewability.md)
 (every changed-file category, including generated/opaque content),
-[`invocation-options.md`](../../shared/policies/invocation-options.md),
 [`remediation-guidance.md`](../../shared/policies/remediation-guidance.md),
 [`finding.md`](../../shared/templates/finding.md) (the finding schema and
 quality/conciseness contract every finding in the report must satisfy),
@@ -232,14 +225,19 @@ sibling-member ring expansion, instruction isolation, and
 repository-qualified finding location) — never loaded otherwise.
 
 Conditionally, only when its own input is supplied per section 1: the
-shared `review-context.md` requirement-context / scope-boundary sections
-plus [`policies/review-context.md`](policies/review-context.md) (review
-context), plus shared `requirement-coverage.md` for authoritative task-contract
-context; the shared
+shared [`review-context.md`](../../shared/policies/review-context.md) plus
+[`policies/review-context.md`](policies/review-context.md) (review context
+or a Jira/GitHub Issue reference; also loaded with a PR reference), shared
+[`requirement-coverage.md`](../../shared/policies/requirement-coverage.md) for
+authoritative task-contract context; the shared
 [`review-evidence.md`](../../shared/policies/review-evidence.md) plus
 [`policies/pr-context.md`](policies/pr-context.md) (PR reference). Each
 loads independently. **This policy is never loaded or applied when no PR
 reference is supplied**, and likewise for review context.
+
+Conditionally, by review evidence — each opened before the first decision it governs, fail-closed (ambiguity or a failed predicate loads it): [`repository-expansion.md`](../../shared/policies/repository-expansion.md) and [`large-pr-partitioning.md`](../../shared/policies/large-pr-partitioning.md) per each file's "Conditional loading: fail-closed" (decidable from `review-scope.md`'s resident summaries); [`invocation-options.md`](../../shared/policies/invocation-options.md) when the invocation carries any presentation, remediation, or output-format option or request, explicit or natural-language (else the section 1 defaults hold).
+
+Knowingly unloaded required material, a fired conditional file included, makes coverage `incomplete` — `REVIEW INCOMPLETE`, never `REVIEW CLEAN` — per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Incomplete triggers."
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one standard. None of the
