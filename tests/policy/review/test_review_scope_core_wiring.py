@@ -232,6 +232,19 @@ class CrossSkillConsistencyTests(unittest.TestCase):
             text = _text(runbook)
             self.assertIn("review-scope.md", text)
 
+    def test_github_runbooks_name_existing_behavior_ownership(self) -> None:
+        # Parity with the local runbook (step 9): the GitHub review steps
+        # name the section explicitly, and the gating language stays in
+        # review-scope.md rather than being restated in the runbook.
+        gating_phrase = (
+            "perform a targeted search, scoped to the current delta's "
+            "realistic blast radius, for an existing canonical owner"
+        )
+        for runbook in (GITHUB_ACTIVE_RUNBOOK, GITHUB_PASSIVE_RUNBOOK):
+            text = _text(runbook)
+            self.assertIn("Existing behavior ownership", text)
+            self.assertNotIn(gating_phrase, text)
+
     def test_no_skill_specific_policy_forks_the_shared_section_text(self) -> None:
         # Every Skill-specific policy file, in either Skill, must not
         # contain a private copy of any shared heading — each lives in

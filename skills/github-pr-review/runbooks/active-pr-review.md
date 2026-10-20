@@ -488,7 +488,11 @@ stop
    reference, also apply "Dependency / Supply-Chain Deepening Review" in
    the same file. When the invocation adds an issue-tracker reference in a
    comment or introduces a possibly unclear variable name, also apply "Code
-   Hygiene Review" in the same file. Those
+   Hygiene Review" in the same file. When the invocation introduces or
+   reimplements validation, business-rule, or other shared-semantics logic,
+   also apply
+   [`review-scope.md`](../../../shared/policies/review-scope.md),
+   "Existing behavior ownership." Those
    instructions refine evaluation but never override this Skill's own
    safety boundaries (see
    [`repository-instructions.md`](../../../shared/policies/repository-instructions.md),
