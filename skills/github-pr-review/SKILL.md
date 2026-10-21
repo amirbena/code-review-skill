@@ -1,6 +1,6 @@
 ---
 name: github-pr-review
-version: 1.78.1
+version: 1.79.0
 description: Review an existing GitHub pull request and return or publish evidence-backed P0/P1/P2 findings.
 ---
 
@@ -199,8 +199,6 @@ produced passive review."
 Shared, always (as one batched operation):
 [`review-scope.md`](../../shared/policies/review-scope.md),
 [`change-risk-signals.md`](../../shared/policies/change-risk-signals.md) (deterministic `standard`/`elevated`/`deep` review-depth classification, emitted with every review),
-[`repository-expansion.md`](../../shared/policies/repository-expansion.md) (fixed expansion-trigger catalog, bounded ring-based expansion scaled by change-risk depth, emitted with every review),
-[`large-pr-partitioning.md`](../../shared/policies/large-pr-partitioning.md) (deterministic partitioning of an unusually large diff into coherent review units, each fully reviewed, with cross-partition aggregation/de-duplication; conditional on a diff-size threshold),
 [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md) (coverage and exit conditions scaled by change-risk depth and partitions, the closed set of incomplete triggers, and the rule that an incomplete review never renders as clean; emitted with every review),
 [`severity.md`](../../shared/policies/severity.md),
 [`evidence.md`](../../shared/policies/evidence.md),
@@ -210,15 +208,11 @@ Shared, always (as one batched operation):
 required base cannot be reliably resolved),
 [`review-context.md`](../../shared/policies/review-context.md)
 (requirement-context sections bind only when context is supplied),
-[`requirement-coverage.md`](../../shared/policies/requirement-coverage.md)
-(binds only when authoritative requirements or acceptance criteria are
-supplied),
 [`review-evidence.md`](../../shared/policies/review-evidence.md),
 [`runtime-validation.md`](../../shared/policies/runtime-validation.md),
 [`git-safety.md`](../../shared/policies/git-safety.md),
 [`review-ownership.md`](../../shared/policies/review-ownership.md),
 [`file-reviewability.md`](../../shared/policies/file-reviewability.md),
-[`invocation-options.md`](../../shared/policies/invocation-options.md),
 [`remediation-guidance.md`](../../shared/policies/remediation-guidance.md)
 (a concise recommended direction, never the local Skill's full
 implementation prompt; never affects severity, decision, or mutation
@@ -233,6 +227,10 @@ this Skill's own inline-vs-body placement rule),
 with parallel workers —
 [`parallel-review.md`](../../shared/policies/parallel-review.md) and
 [`agent-delegation.md`](../../shared/policies/agent-delegation.md).
+
+Conditionally, by review evidence — each opened before the first decision it governs, fail-closed (ambiguity or a failed predicate loads it): [`repository-expansion.md`](../../shared/policies/repository-expansion.md) and [`large-pr-partitioning.md`](../../shared/policies/large-pr-partitioning.md) per each file's "Conditional loading: fail-closed" (decidable from `review-scope.md`'s resident summaries; the `repository_expansion_triggers` metadata field still reads `none` when nothing fires, without opening either file); [`requirement-coverage.md`](../../shared/policies/requirement-coverage.md) when requirements or acceptance criteria are supplied or the PR description or linked context may carry them; [`invocation-options.md`](../../shared/policies/invocation-options.md) when the invocation or a publish flow carries any presentation, remediation, or output-format option or request, explicit or natural-language (else the section 1 defaults hold).
+
+Required material, a fired conditional file included, that was never loaded or was loaded only after the decision it governs makes coverage `incomplete` — `REVIEW INCOMPLETE`, never an approving outcome — per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Incomplete triggers."
 
 This Skill's own: the canonical index
 [`policies/github-review.md`](policies/github-review.md), which owns the

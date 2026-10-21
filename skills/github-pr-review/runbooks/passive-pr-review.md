@@ -1,7 +1,8 @@
 # Runbook — Passive PR Review
 
 Reviews an existing GitHub Pull Request **without publishing anything**.
-Applies shared policies:
+Applies shared policies (the load set, and which of these open only when their predicate fires
+— fail-closed — is owned by [`../SKILL.md`](../SKILL.md) section 2):
 [`review-scope.md`](../../../shared/policies/review-scope.md),
 [`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md),
 [`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
@@ -279,16 +280,20 @@ finally: remove the temporary checkout (success, any failure, interruption)
    metadata block (step 8) per "Rationale emission" and "Non-goals and
    ownership boundary" — not restated here.
 5b. **Resolve repository expansion** per
-   [`repository-expansion.md`](../../../shared/policies/repository-expansion.md):
+   [`repository-expansion.md`](../../../shared/policies/repository-expansion.md),
+   opened only when a trigger fires or the determination is ambiguous (fail-closed, per its
+   "Conditional loading: fail-closed"):
    from the established PR delta, follow any fired expansion trigger (call
    site, interface/contract, migration/schema, config consumer) through the
    bounded, ring-based procedure whose ceiling is scaled by the change-risk
    depth from step 5a. Record every fired trigger with the ring reached and
-   the locations inspected — or "none" when nothing fired — for the
+   the locations inspected — or "none" when nothing fired, recorded without opening the policy — for the
    subordinate metadata block (step 8), per "Expansion decisions are
    reported" and "Non-goals and ownership boundary" — not restated here.
 5c. **Partition large changes** per
-   [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md):
+   [`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md),
+   opened only when the diff-size count from `change-risk-signals.md` reaches its threshold or is
+   ambiguous (fail-closed, per its "Conditional loading: fail-closed"):
    when the scope this invocation reviews — the full PR change, or in
    delta re-review only the bounded delta, per that policy's "Activation"
    (same exclusion of non-reviewable files as step 5a) — reaches that
@@ -356,7 +361,10 @@ finally: remove the temporary checkout (success, any failure, interruption)
    "Dependency / Supply-Chain Deepening Review" in the same file. When the
    PR adds an issue-tracker reference in a comment or introduces a possibly
    unclear variable name, also apply "Code Hygiene Review" in the same
-   file.
+   file. When the PR introduces or reimplements validation, business-rule,
+   or other shared-semantics logic, also apply
+   [`review-scope.md`](../../../shared/policies/review-scope.md),
+   "Existing behavior ownership."
    Target-repository
    instructions refine how the code is evaluated; they never override this
    Skill's own safety boundaries (see
@@ -426,7 +434,7 @@ finally: remove the temporary checkout (success, any failure, interruption)
    option normalized alongside it) has no distinct surface to act on here;
    the report is a single returned document either way.
 8a. When resolved external context contains authoritative requirements or
-   acceptance criteria, apply
+   acceptance criteria, load and apply
    [`requirement-coverage.md`](../../../shared/policies/requirement-coverage.md)
    to the inspected PR and include its separate completeness signal in the
    report. With no activating contract, emit no coverage section or signal.
@@ -438,7 +446,9 @@ finally: remove the temporary checkout (success, any failure, interruption)
    its own stop condition. Record `coverage: complete` or `incomplete` with
    its reason(s) in the report's subordinate metadata, per "Labeling —
    incomplete must never present as clean" and "Non-goals and ownership
-   boundary" — not restated here.
+   boundary" — not restated here. Required material from `SKILL.md` section 2
+   that was not loaded before the decision it governs is an incomplete trigger too, per that
+   policy's "Incomplete triggers" — never `complete`.
 8c. **Derive the decision.** When step 8b's coverage is `incomplete`, the
    decision is the incomplete/ungraded outcome per
    [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),

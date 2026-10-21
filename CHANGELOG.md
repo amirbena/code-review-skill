@@ -18,6 +18,18 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.79.0 — 2026-10-21
+
+### Changed
+
+- Review Skills now load conditional policies only when needed, and a review whose required policies were not loaded in time reports `REVIEW INCOMPLETE` instead of clean (#783).
+
+## v1.78.2 — 2026-10-20
+
+### Fixed
+
+- GitHub PR review now explicitly applies the existing-behavior-ownership check to new validation and business-rule logic, matching local review (#781).
+
 ## v1.78.1 — 2026-10-18
 
 ### Fixed
