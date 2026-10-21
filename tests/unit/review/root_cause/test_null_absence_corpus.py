@@ -3,13 +3,14 @@
 (Issue #121).
 
 The sub-corpus is ``benchmark/corpus/null-absence-risk/*.yaml``: a
-small, focused set of ``benchmark-case/v2`` fixtures demonstrating
-shared/policies/review-scope.md's "Null-like absence-risk review"
-requirement — a real null/undefined/nil dereference risk surfaced, its
-directly guarded counterpart correctly not reported, an optional/lookup-
-result path with unchecked absence surfaced, JavaScript/TypeScript
-undefined/null property access, and a null-safe-language interoperability
-edge case (a Kotlin platform type from Java interop).
+small, focused set of ``benchmark-case/v2`` fixtures demonstrating the
+requirement owned by shared/policies/null-absence-risk.md ("Null-like
+absence-risk review", routed from shared/policies/review-scope.md) — a
+real null/undefined/nil dereference risk surfaced, its directly guarded
+counterpart correctly not reported, an optional/lookup-result path with
+unchecked absence surfaced, JavaScript/TypeScript undefined/null property
+access, and a null-safe-language interoperability edge case (a Kotlin
+platform type from Java interop).
 
 Like ``test_semantic_implication_corpus.py``, every fixture decodes and
 validates through the *same* single reference validator
