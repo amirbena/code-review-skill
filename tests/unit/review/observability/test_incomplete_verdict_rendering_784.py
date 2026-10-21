@@ -7,8 +7,9 @@ Canonical behavior: ``shared/policies/review-stopping-criteria.md``,
 
 Every check runs over shipped text — the packaged report templates and the
 per-mode structured-output samples (local, GitHub passive, GitHub active) —
-or over mutations of that text. The reference model only supplies the expected
-label; no report is composed by the test itself.
+or over mutations of that text (the only test-authored text is the one-sentence
+reason a mutation inserts). The reference model only supplies the expected
+label.
 """
 
 from __future__ import annotations
@@ -38,7 +39,8 @@ _DECISION = re.compile(
 CANONICAL = {"APPROVE": "REVIEW CLEAN", "REQUEST CHANGES": "CHANGES REQUIRED"}
 _COVERAGE = re.compile(r"^(\s*-?\s*[Cc]overage:\s*`?)(complete|incomplete)([^\n]*)$", re.M)
 _BLOCK = re.compile(r"```markdown\n(.*?)```", re.S)
-_REASON = re.compile(r"^Not (?:fully )?reviewed:[ \t]*\S", re.M)
+_SAFETY = re.compile(r"Do\s+not\s+treat\s+this\s+as\s+safe\s+to\s+proceed\.?", re.I)
+_LEAD_IN = re.compile(r"^(?:Not\s+(?:fully\s+)?reviewed|Review\s+incomplete|Incomplete)\b[\s:—-]*", re.I)
 _OPENING = re.compile(r"(^\*\*Result:[^\n]*\*\*\n\n)([^\n]+(?:\n[^\n]+)*)", re.M)
 
 INCOMPLETE_RESULT = "**Result: ⚠️ Review Incomplete**"
@@ -70,9 +72,19 @@ def report_violations(text: str) -> list[str]:
             problems.append("Decision is not REVIEW INCOMPLETE with incomplete coverage")
     elif outcome == "REVIEW INCOMPLETE" or "incomplete" in result_text:
         problems.append("incomplete outcome without incomplete coverage")
-    if outcome == "REVIEW INCOMPLETE" and not _REASON.search(text):
+    if outcome == "REVIEW INCOMPLETE" and not has_reason(text):
         problems.append("incomplete Result names no unmet requirement")
     return problems
+
+
+def has_reason(text: str) -> bool:
+    """The paragraph under the Result line states a reason: what remains after
+    the lead-in label and the fixed safety sentence is substantive prose."""
+    opening = _OPENING.search(text)
+    if not opening:
+        return False
+    remaining = _LEAD_IN.sub("", _SAFETY.sub("", opening.group(2)).strip())
+    return len(remaining.split()) >= 3
 
 
 def with_result(text: str, result: str) -> str:
@@ -99,8 +111,9 @@ def as_incomplete(text: str, reason: str = " — evidence.md was not loaded") ->
 
 
 def without_reason(text: str) -> str:
-    """The same incomplete report with its reason line removed."""
-    return _REASON.sub("Review stopped.", text)
+    """The same incomplete report with the whole reason sentence deleted, leaving
+    only the fixed safety sentence under the Result line."""
+    return _OPENING.sub(lambda m: m.group(1) + "Do not treat this as safe to proceed.", text, count=1)
 
 
 def label_of(text: str) -> str:
@@ -185,7 +198,7 @@ class HybridRejectionTests(unittest.TestCase):
 
     def test_template_incomplete_example_rejects_a_missing_reason(self) -> None:
         block = next(b for b in template_reports(LOCAL_TEMPLATE) if "REVIEW INCOMPLETE" in b)
-        self.assertRegex(block, _REASON)
+        self.assertTrue(has_reason(block))
         self.assertIn(
             "incomplete Result names no unmet requirement", report_violations(without_reason(block))
         )
@@ -202,7 +215,7 @@ class UnmetRequirementTests(unittest.TestCase):
         for path in shipped_samples():
             text = path.read_text(encoding="utf-8")
             with self.subTest(sample=path.name, case="reason present"):
-                self.assertRegex(as_incomplete(text), _REASON)
+                self.assertTrue(has_reason(as_incomplete(text)))
             with self.subTest(sample=path.name, case="reason removed"):
                 self.assertIn(
                     "incomplete Result names no unmet requirement",
@@ -214,11 +227,27 @@ class UnmetRequirementTests(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             if label_of(text) == "REVIEW INCOMPLETE":
                 with self.subTest(sample=path.name):
-                    self.assertRegex(text, _REASON)
+                    self.assertTrue(has_reason(text))
                     self.assertIn(
                         "incomplete Result names no unmet requirement",
                         report_violations(without_reason(text)),
                     )
+
+
+class ReasonIsContentBasedTests(unittest.TestCase):
+    def test_any_wording_of_a_real_reason_is_accepted(self) -> None:
+        base = as_incomplete((SAMPLES / "local-code-review/clean-p2-uncommitted.md").read_text(encoding="utf-8"))
+        for lead_in in ("Not fully reviewed:", "Review incomplete —", "Incomplete:"):
+            with self.subTest(lead_in=lead_in):
+                self.assertEqual(report_violations(base.replace("Not fully reviewed:", lead_in)), [])
+
+    def test_a_bare_label_or_missing_sentence_is_rejected(self) -> None:
+        base = as_incomplete((SAMPLES / "github-pr-review/blocking.md").read_text(encoding="utf-8"))
+        bare = re.sub(r"(?<=Not fully reviewed:).*?(?= Do not treat)", "", base, count=1, flags=re.S)
+        self.assertNotEqual(bare, base)
+        for text in (bare, without_reason(base)):
+            self.assertIn("incomplete Result names no unmet requirement", report_violations(text))
+        self.assertNotIn("evidence.md was not loaded", without_reason(base).split("### Decision")[0])
 
 
 class ConsistencyAcrossModesTests(unittest.TestCase):
