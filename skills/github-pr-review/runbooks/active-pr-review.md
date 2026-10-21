@@ -152,9 +152,9 @@ stop
 
 ## Steps
 
-**Mandatory-loading checkpoint (before any step below).** Confirm every file `SKILL.md` section 2 lists as always loaded is open; load any that is not, and record an unloadable one as an incomplete trigger naming it, per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck". Conditional files stay fail-closed and are opened when their predicate fires.
+**Mandatory-loading checkpoint (runs before step 1).** Confirm every unconditional file `SKILL.md` section 2 lists is open; a member introduced there by a context phrase counts only when that context holds. Load any that is not, and record an unloadable one as an incomplete trigger naming it, per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck". Conditional files stay fail-closed and are opened when their predicate fires; an unfired one is never required.
 
-1. **Before any other step**, resolve the repository and PR, then resolve
+1. **Before any other step** (after the checkpoint above), resolve the repository and PR, then resolve
    the authenticated GitHub identity, the PR author, and whether the two
    share a controlling authority, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
@@ -593,10 +593,13 @@ stop
     revalidation"), immediately before constructing the review. If it
     changed, do not construct or submit a review for the stale SHA —
     review the new delta first (re-evaluating escalation per step 9 if
-    this was a delta re-review) and re-finalize findings against it.
-12a. **Derive the decision.** When step 11b's coverage is `incomplete`,
-    the decision is the incomplete/ungraded outcome already set at that
-    step, per
+    this was a delta re-review) and re-finalize findings against it,
+    then re-run step 11b over the new state: a coverage value from before
+    the HEAD change, the new delta, or the re-finalization is never reused.
+12a. **Derive the decision.** Step 11b's coverage must be the one just
+    recomputed, with no review, delta change, or re-finalization after it.
+    When that coverage is `incomplete`, the decision is the
+    incomplete/ungraded outcome already set at that step, per
     [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
     "Labeling" — never `Approve`, regardless of what the finding set
     alone would otherwise produce. Otherwise, derive the decision

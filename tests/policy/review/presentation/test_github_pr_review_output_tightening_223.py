@@ -175,8 +175,8 @@ SEVERITY_LEGEND = {
 # rendering rule) -- likewise deliberate and unrelated to #223.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "2a478671d9e57137482c7db942ac27c22aa924e8",
-    LOCAL_RUNBOOK: "cac9e19f143b999c2d222ba8a243dc156f101f9e",
-    LOCAL_SKILL: "712f4fd41cf167a3ae752d00d4033433f2ba8dc7",
+    LOCAL_RUNBOOK: "f5431fd5c43ccc1bcfb4660813d6ee816472b9c0",
+    LOCAL_SKILL: "80e3ff5fcbe0598269d56e0e1f9579f0372b135e",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",

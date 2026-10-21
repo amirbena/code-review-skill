@@ -105,11 +105,11 @@ finally: remove the temporary checkout (success, any failure, interruption)
 
 ## Steps
 
-**Mandatory-loading checkpoint (before any step below).** Confirm every file `SKILL.md` section 2 lists as always loaded is open; load any that is not, and record an unloadable one as an incomplete trigger naming it, per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck". Conditional files stay fail-closed and are opened when their predicate fires.
+**Mandatory-loading checkpoint (runs before step 1).** Confirm every unconditional file `SKILL.md` section 2 lists is open; a member introduced there by a context phrase counts only when that context holds. Load any that is not, and record an unloadable one as an incomplete trigger naming it, per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck". Conditional files stay fail-closed and are opened when their predicate fires; an unfired one is never required.
 
 1. Resolve the repository and PR from the given input (PR URL, PR number
    + repository context, or repository + PR number).
-2. **Before any other step**, resolve the authenticated GitHub identity,
+2. **Before any other step** (after the checkpoint above), resolve the authenticated GitHub identity,
    the PR author, and whether the two share a controlling authority, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
    "Self-review capability" and "Authority separation, not just identity

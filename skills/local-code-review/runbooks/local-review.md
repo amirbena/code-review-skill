@@ -200,7 +200,7 @@ which a value must be resolved before it is used, or what is reported.
 
 ## Steps
 
-**Mandatory-loading checkpoint (before any step below).** Confirm every file `SKILL.md` section 2 lists as always loaded is open; load any that is not, and record an unloadable one as an incomplete trigger naming it, per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck". Conditional files stay fail-closed and are opened when their predicate fires.
+**Mandatory-loading checkpoint (runs before step 1).** Confirm every unconditional file `SKILL.md` section 2 lists is open; a member introduced there by a context phrase counts only when that context holds. Load any that is not, and record an unloadable one as an incomplete trigger naming it, per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck". Conditional files stay fail-closed and are opened when their predicate fires; an unfired one is never required.
 
 0. **If, and only if, the caller supplied a repository-roots list of 2 or
    more roots:** validate and normalize each supplied root, and reject

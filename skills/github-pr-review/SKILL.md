@@ -234,7 +234,7 @@ with parallel workers —
 
 Conditionally, by review evidence — each opened before the first decision it governs, fail-closed (ambiguity or a failed predicate loads it): [`repository-expansion.md`](../../shared/policies/repository-expansion.md) and [`large-pr-partitioning.md`](../../shared/policies/large-pr-partitioning.md) per each file's "Conditional loading: fail-closed" (decidable from `review-scope.md`'s resident summaries; the `repository_expansion_triggers` metadata field still reads `none` when nothing fires, without opening either file); [`requirement-coverage.md`](../../shared/policies/requirement-coverage.md) when requirements or acceptance criteria are supplied or the PR description or linked context may carry them; [`invocation-options.md`](../../shared/policies/invocation-options.md) when the invocation or a publish flow carries any presentation, remediation, or output-format option or request, explicit or natural-language (else the section 1 defaults hold).
 
-Before the first review step, confirm every always-loaded file above is open, and recheck coverage immediately before deriving the verdict, per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck."
+Before step 1 of the runbook, confirm every unconditional file above is open (a member introduced by a context phrase, such as "with parallel workers", counts only when that context holds), and recheck coverage immediately before deriving the verdict, per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck."
 
 Required material, a fired conditional file included, that was never loaded or was loaded only after the decision it governs makes coverage `incomplete` — `REVIEW INCOMPLETE`, never an approving outcome — per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Incomplete triggers."
 
@@ -294,7 +294,7 @@ If unavailable, do not fake success — fall back to passive review.
   ordering"); `human_review_output` only renders that summary, and any
   body/fallback finding, concisely.
 
-The reasoning result is `REVIEW CLEAN`, `CHANGES REQUIRED`, or `REVIEW INCOMPLETE` — never a hybrid such as a clean result with a coverage qualifier.
+The reasoning result is ranked `REVIEW INCOMPLETE` (overrides a blocking finding, still reported) > `CHANGES REQUIRED` > `REVIEW CLEAN` — never a hybrid such as a clean result with a coverage qualifier.
 The reasoning result and the GitHub mutation are reported **separately**:
 an active or semi invocation states its `Publication mode` (`PASSIVE` /
 `SEMI` / `ACTIVE`) and `Mutation` outcome (`SUBMITTED (<event>)` /
