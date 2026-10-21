@@ -92,11 +92,35 @@ def run_once(repo: Path, start_dir: str) -> dict:
     }
 
 
+OUTCOME_RANK = {"ok": 0, "skip": 1, "fail": 2, "error": 3}
+
+
+def merge_samples(samples: Sequence[Mapping]) -> dict[str, dict]:
+    """Per-test entries over all runs: worst outcome wins; fixture errors, which have no duration, are kept."""
+    ids = sorted({tid for s in samples for tid in (*s["seconds"], *s["outcome"])})
+    tests: dict[str, dict] = {}
+    for tid in ids:
+        worst, detail = "ok", None
+        for s in samples:
+            outcome = s["outcome"].get(tid, "ok")
+            if OUTCOME_RANK[outcome] > OUTCOME_RANK[worst]:
+                worst, detail = outcome, s["detail"].get(tid)
+        tests[tid] = {
+            "seconds": [round(s["seconds"].get(tid, 0.0), 4) for s in samples],
+            "outcome": worst,
+            **({"detail": detail} if detail else {}),
+        }
+    return tests
+
+
 def collect(repo: Path, runs: int, start_dir: str = "tests") -> dict:
     if str(repo) not in sys.path:
         sys.path.insert(0, str(repo))
-    samples = [run_once(repo, start_dir) for _ in range(runs)]
-    ids = sorted(samples[0]["seconds"])
+    origin = Path.cwd()
+    try:
+        samples = [run_once(repo, start_dir) for _ in range(runs)]
+    finally:
+        os.chdir(origin)
     return {
         "schema": SCHEMA,
         "environment": {
@@ -107,14 +131,7 @@ def collect(repo: Path, runs: int, start_dir: str = "tests") -> dict:
         "runs": runs,
         "discovery_seconds": [round(s["discovery_seconds"], 3) for s in samples],
         "wall_seconds": [round(s["wall_seconds"], 3) for s in samples],
-        "tests": {
-            tid: {
-                "seconds": [round(s["seconds"].get(tid, 0.0), 4) for s in samples],
-                "outcome": samples[0]["outcome"].get(tid, "ok"),
-                **({"detail": samples[0]["detail"][tid]} if tid in samples[0]["detail"] else {}),
-            }
-            for tid in ids
-        },
+        "tests": merge_samples(samples),
     }
 
 
@@ -215,9 +232,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.runs < 1:
         parser.error("--runs must be at least 1")
+    out = args.out.resolve() if args.out else None
     data = collect(REPO_ROOT, args.runs, args.start_dir)
-    if args.out:
-        args.out.write_text(json.dumps(data, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    if out:
+        out.write_text(json.dumps(data, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     print(render_markdown(data, args.top))
     return 0 if all(e["outcome"] in ("ok", "skip") for e in data["tests"].values()) else 1
 

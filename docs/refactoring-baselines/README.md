@@ -17,7 +17,7 @@ python3 scripts/validation/context_size_report.py
 ```
 
 ```bash
-python3 scripts/validation/suite_timing_report.py --runs 2 --out timing.json
+python3 scripts/validation/suite_timing_report.py --runs 2 --out /tmp/timing.json
 ```
 
 ```bash
@@ -25,7 +25,7 @@ python3 runtime_platform/benchmark/scripts/benchmark_baseline_summary.py
 ```
 
 The first reads only repository files and is deterministic. The second runs
-the whole suite (several minutes) and `--from-json timing.json` re-renders a
+the whole suite (several minutes; keep `--out` outside the repository) and `--from-json /tmp/timing.json` re-renders a
 stored result. The third reads `origin/benchmark-history` (`git fetch origin
 benchmark-history` first) or a checkout via `--history-dir`, and never writes.
 

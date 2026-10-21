@@ -5,9 +5,11 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from scripts.validation import suite_timing_report as timing
 
@@ -73,6 +75,99 @@ class RenderTests(unittest.TestCase):
             with contextlib.redirect_stdout(out):
                 self.assertEqual(timing.main(["--from-json", str(path)]), 0)
         self.assertIn("Tests discovered | 4 |", out.getvalue())
+
+
+def run_sample(seconds, outcome=None, detail=None):
+    return {"seconds": seconds, "outcome": outcome or {}, "detail": detail or {}}
+
+
+class MergeTests(unittest.TestCase):
+    def test_a_failure_in_a_later_run_is_not_hidden_by_a_passing_first_run(self):
+        first = run_sample({"t.A.test_x": 1.0}, {"t.A.test_x": "ok"})
+        second = run_sample({"t.A.test_x": 2.0}, {"t.A.test_x": "error"}, {"t.A.test_x": "TimeoutExpired: 60"})
+        entry = timing.merge_samples([first, second])["t.A.test_x"]
+        self.assertEqual((entry["outcome"], entry["detail"]), ("error", "TimeoutExpired: 60"))
+        self.assertEqual(entry["seconds"], [1.0, 2.0])
+
+    def test_worst_outcome_wins_in_either_run_order(self):
+        for order in ((("fail", "error")), (("error", "fail"))):
+            runs = [run_sample({"t": 1.0}, {"t": o}) for o in order]
+            self.assertEqual(timing.merge_samples(runs)["t"]["outcome"], "error")
+
+    def test_fixture_error_without_a_duration_is_kept(self):
+        fixture = "setUpClass (t.Broken)"
+        merged = timing.merge_samples([run_sample({}, {fixture: "error"}, {fixture: "RuntimeError: boom"})])
+        self.assertEqual(merged[fixture]["outcome"], "error")
+        self.assertEqual(merged[fixture]["seconds"], [0.0])
+
+    def test_result_records_a_class_fixture_error_through_the_unittest_path(self):
+        class Broken(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                raise RuntimeError("boom")
+
+            def test_never_runs(self):
+                pass
+
+        result = timing.TimingResult()
+        unittest.defaultTestLoader.loadTestsFromTestCase(Broken).run(result)
+        (fixture_id,) = result.outcome
+        self.assertIn("setUpClass", fixture_id)
+        self.assertEqual(result.outcome[fixture_id], "error")
+        merged = timing.merge_samples([run_sample(result.seconds, result.outcome, result.detail)])
+        self.assertEqual(merged[fixture_id]["outcome"], "error")
+
+    def test_exit_status_is_failure_when_only_a_fixture_errored(self):
+        data = {
+            "schema": timing.SCHEMA,
+            "environment": {"python": "3", "platform": "p", "cpu_count": 1},
+            "runs": 1,
+            "discovery_seconds": [0.1],
+            "wall_seconds": [1.0],
+            "tests": timing.merge_samples([run_sample({"t.ok": 1.0}, {"t.ok": "ok", "setUpClass (t.B)": "error"})]),
+        }
+        with mock.patch.object(timing, "collect", return_value=data), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(timing.main([]), 1)
+
+
+class OutputPathTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.cwd = Path(self._tmp.name).resolve()
+        self._origin = Path.cwd()
+        self.addCleanup(os.chdir, self._origin)
+
+    def data(self):
+        return {
+            "schema": timing.SCHEMA,
+            "environment": {"python": "3", "platform": "p", "cpu_count": 1},
+            "runs": 1,
+            "discovery_seconds": [0.1],
+            "wall_seconds": [1.0],
+            "tests": timing.merge_samples([run_sample({"t.ok": 1.0}, {"t.ok": "ok"})]),
+        }
+
+    def test_relative_out_is_written_where_the_caller_ran_not_the_repo_root(self):
+        def chdir_like_run_once(*_args):
+            os.chdir(timing.REPO_ROOT)
+            return self.data()
+
+        os.chdir(self.cwd)
+        with mock.patch.object(timing, "collect", side_effect=chdir_like_run_once), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(timing.main(["--out", "timing.json"]), 0)
+        self.assertTrue((self.cwd / "timing.json").is_file())
+        self.assertFalse((timing.REPO_ROOT / "timing.json").exists())
+
+    def test_collect_restores_the_callers_working_directory(self):
+        def chdir_like_run_once(repo, start_dir):
+            os.chdir(repo)
+            return run_sample({"t.ok": 0.1}, {"t.ok": "ok"}) | {"discovery_seconds": 0.0, "wall_seconds": 0.1}
+
+        os.chdir(self.cwd)
+        with mock.patch.object(timing, "run_once", side_effect=chdir_like_run_once):
+            timing.collect(timing.REPO_ROOT, 1)
+        self.assertEqual(Path.cwd().resolve(), self.cwd)
 
 
 class ResultTests(unittest.TestCase):
