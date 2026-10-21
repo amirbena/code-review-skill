@@ -97,8 +97,9 @@ link structure.
 ### A.2 Evidence 1 — the always-loaded surface is nearly the whole system
 
 Both `SKILL.md` files carry a **"Required Policy Loading"** section that
-mandates a fixed batch. For `github-pr-review` that batch is 17 shared
-policies:
+mandated a fixed batch when this was measured; since #782 it also has a
+conditional, fail-closed block (see A.9). For `github-pr-review` that
+batch was 17 shared policies:
 
 | Policy | Words |
 | --- | ---: |
@@ -305,7 +306,7 @@ this Skill needs," and **no two agree**:
 
 | Surface | Declares | Count |
 | --- | --- | ---: |
-| `SKILL.md` §2 "Required Policy Loading" | prose batch, no activation predicate | 17 (github) / 18 (local) shared policies |
+| `SKILL.md` §2 "Required Policy Loading" | prose batch plus, since #782, a prose conditional fail-closed block (`repository-expansion`, `large-pr-partitioning`, `invocation-options`; `requirement-coverage` by input; local `review-context` by input); no machine-readable predicate | 17 (github) / 18 (local) shared policies |
 | `metadata/skill.yaml` `shared:` | machine-readable list | 18 (local) / 19 (github) policies, **2** templates |
 | `package-manifest.json` `shared_files` | flat list, identical for both archives | **35** policies, **3** templates |
 

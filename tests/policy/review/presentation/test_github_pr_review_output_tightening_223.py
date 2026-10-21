@@ -166,10 +166,13 @@ SEVERITY_LEGEND = {
 # LOCAL_SKILL was re-captured after Issue #778 (the entrypoint now requires
 # reading the runbook and names conditional rendered-inspection evaluation in
 # its review flow) -- likewise deliberate and unrelated to #223.
+# LOCAL_RUNBOOK and LOCAL_SKILL were re-captured after Issue #782 (conditional,
+# fail-closed loading of scale/invocation-options and the knowingly-unloaded
+# incomplete rule) -- likewise deliberate and unrelated to #223.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "4475ab39a0fce4201b4bc972c47fb564ed173156",
-    LOCAL_RUNBOOK: "061bdabdfad78deda77424ef15a2cbf00eff8168",
-    LOCAL_SKILL: "4a68139d7bf2b86475d6ff114aada9f683001ce2",
+    LOCAL_RUNBOOK: "d8602e844ef4650394724b3f44598318727ebb21",
+    LOCAL_SKILL: "97b929745dcdf2b7c2fe61801927651a61143f96",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",
