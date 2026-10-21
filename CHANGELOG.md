@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.79.1 — 2026-10-21
+
+### Fixed
+
+- A review with incomplete coverage can no longer render a clean verdict; a mandatory-loading checkpoint and a no-hybrid rule now apply to local, passive and active review (#785).
+
 ## v1.79.0 — 2026-10-21
 
 ### Changed
