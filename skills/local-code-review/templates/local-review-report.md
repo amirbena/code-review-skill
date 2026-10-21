@@ -365,7 +365,11 @@ serve are owned by the linked policies and are not restated here.
   leading with `**Result: ⚠️ Review Incomplete**` — this overrides the
   mechanical derivation above so an incomplete review is never rendered
   as `REVIEW CLEAN`; findings already gathered are still reported in
-  full.
+  full. No hybrid: `✅`, `Review Clean`, or `REVIEW CLEAN` never appears
+  in the Result or Decision of an incomplete review (for example
+  `✅ Review Clean (coverage incomplete, see Metadata)`), and the
+  Result names the unmet requirements; the Metadata `Coverage` line
+  never excuses it.
 - Every finding uses the compact full rendering in
   [`../../../shared/templates/finding.md`](../../../shared/templates/finding.md)
   (stable `F<n>` id + `[severity]` heading, then

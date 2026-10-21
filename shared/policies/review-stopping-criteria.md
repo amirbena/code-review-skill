@@ -125,6 +125,24 @@ reviewer, or a dimension whose absence does not change what depth
 requires (for example a `standard`-depth change with no `elevated`/`deep`
 sub-passes to begin with), never makes coverage `incomplete`.
 
+## Mandatory-loading checkpoint and pre-verdict recheck
+
+Trigger 1's loading rule is enforced at two fixed points, not left to a
+late self-report. Neither adds a trigger, a field, or a state model; both
+only decide *when* the existing trigger is evaluated:
+
+1. *Before review execution.* Before its first review step, the
+   reviewer confirms that every file its Skill's `SKILL.md` section 2
+   lists as always loaded is actually open. A file not yet open is
+   loaded now; one that cannot be loaded is a trigger-1 incomplete
+   reason whose `detail` names that file. The checkpoint never makes a
+   required file optional and never substitutes for loading it.
+2. *Immediately before the Decision is derived.* Coverage is
+   recomputed once over the final state — the always-loaded set plus
+   every conditionally loaded file whose predicate fired at any point
+   during the review. A coverage value reached earlier is never carried
+   over to the verdict.
+
 ## Labeling — incomplete must never present as clean
 
 Coverage is always emitted with the review, complete or not, the same way
@@ -145,6 +163,17 @@ coverage == complete    → severity.md, "Decision derivation (mechanical)"
                             runs unchanged and its result is the primary
                             outcome, exactly as before this policy existed
 ```
+
+The three outcomes are exclusive: `REVIEW CLEAN` requires complete
+coverage and no blocking (P0/P1) finding; `CHANGES REQUIRED` represents
+a blocking finding; `REVIEW INCOMPLETE` represents incomplete coverage.
+P0 = 0 and P1 = 0 alone never imply `REVIEW CLEAN`. There is no hybrid
+rendering: a success marker, `Review Clean`, `REVIEW CLEAN`, or an
+approving outcome never appears in the Result or Decision of a review
+whose coverage is `incomplete`, with or without a qualifier such as
+"coverage incomplete, see Metadata". The Metadata `Coverage` line cannot
+excuse or replace the Result, and the incomplete Result names the unmet
+requirements from `incomplete_reasons`.
 
 An incomplete review still reports every finding it actually produced
 before coverage was interrupted — this policy never discards or hides a

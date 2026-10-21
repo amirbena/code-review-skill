@@ -40,11 +40,14 @@ restated here because hiding them behind a link would be dangerous.
   see [`review-ownership.md`](../../shared/policies/review-ownership.md).
 - **Severity → verdict is mechanical.** Findings are P0/P1/P2. **P0** and
   **P1** block; **P2** never blocks, however strongly recommended or
-  wherever it originated. The `REVIEW CLEAN` / `CHANGES REQUIRED` decision
-  is derived once, mechanically, from whether any P0/P1 is present — never
-  a separate judgment call. Canonical owner:
+  wherever it originated. `CHANGES REQUIRED` is derived once, mechanically,
+  from whether any P0/P1 is present — never a separate judgment call — and
+  `REVIEW CLEAN` additionally requires complete coverage (else `REVIEW
+  INCOMPLETE`): P0 = 0 and P1 = 0 alone never imply it. Canonical owners:
   [`severity.md`](../../shared/policies/severity.md), "Decision
-  derivation (mechanical)."
+  derivation (mechanical)," and
+  [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md),
+  "Labeling."
 - **Read-only.** This Skill never edits files, applies patches, commits,
   pushes, rebases, creates branches, opens PRs, or mutates GitHub (see
   section 6). Repository-state safety — including reviewing directly on a
@@ -237,6 +240,8 @@ reference is supplied**, and likewise for review context.
 
 Conditionally, by review evidence — each opened before the first decision it governs, fail-closed (ambiguity or a failed predicate loads it): [`repository-expansion.md`](../../shared/policies/repository-expansion.md) and [`large-pr-partitioning.md`](../../shared/policies/large-pr-partitioning.md) per each file's "Conditional loading: fail-closed" (decidable from `review-scope.md`'s resident summaries; the `Repository expansion:` metadata line still reads `none` when nothing fires, without opening either file); [`invocation-options.md`](../../shared/policies/invocation-options.md) when the invocation carries any presentation, remediation, or output-format option or request, explicit or natural-language (else the section 1 defaults hold).
 
+Before the first review step, confirm every always-loaded file above is open, and recheck coverage immediately before deriving the Decision, per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck."
+
 Required material, a fired conditional file included, that was never loaded or was loaded only after the decision it governs makes coverage `incomplete` — `REVIEW INCOMPLETE`, never `REVIEW CLEAN` — per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Incomplete triggers."
 
 This Skill defines no severity, evidence, or scope policy of its own — it
@@ -255,8 +260,7 @@ Result, What changed, optional What was done well, an optional Context
 section (only when review context materially shaped the review), an
 optional PR Context section (only when a PR reference materially shaped
 it), Findings (omitted when empty), conditional Requirement coverage, conditional [`Rendered observations`](../../shared/policies/rendered-inspection.md), Validation,
-a Decision of `REVIEW CLEAN` or `CHANGES REQUIRED` derived mechanically from blocking
-(P0/P1) severities, and a conditional [`Reasoning check`](../../shared/policies/reasoning-checkpoint.md).
+a Decision of `CHANGES REQUIRED` (any blocking P0/P1), `REVIEW INCOMPLETE` (coverage incomplete), or else `REVIEW CLEAN` — never a hybrid such as a clean Result with a coverage qualifier — and a conditional [`Reasoning check`](../../shared/policies/reasoning-checkpoint.md).
 
 Machine detail (base/HEAD SHAs, synchronization status, raw counts,
 per-category inclusion/exclusion, staged-delta fingerprint) is

@@ -152,6 +152,8 @@ stop
 
 ## Steps
 
+**Mandatory-loading checkpoint (before any step below).** Confirm every file `SKILL.md` section 2 lists as always loaded is open; load any that is not, and record an unloadable one as an incomplete trigger naming it, per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck". Conditional files stay fail-closed and are opened when their predicate fires.
+
 1. **Before any other step**, resolve the repository and PR, then resolve
    the authenticated GitHub identity, the PR author, and whether the two
    share a controlling authority, per
@@ -582,7 +584,7 @@ stop
     clean" and "Non-goals and ownership boundary" — not restated here. Required
     material from `SKILL.md` section 2 that was not loaded before the decision it governs is an
     incomplete trigger too, per that policy's "Incomplete triggers" — never
-    `complete`. When `incomplete`, the reasoning result for step 13 onward is
+    `complete`. This step runs after every review pass, so it is also the pre-verdict recheck per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck": recompute coverage over the final state, including every conditional file whose predicate fired during the review, and carry no earlier value forward. When `incomplete`, the reasoning result for step 13 onward is
     `REVIEW INCOMPLETE` per
     [`../policies/review-output.md`](../policies/review-output.md), "Final
     decision."
