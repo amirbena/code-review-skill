@@ -2,8 +2,8 @@
 
 Review the code you have **right now** — committed, staged, unstaged, and
 untracked — before it becomes a push or a PR. You get back evidence-backed
-`P0` / `P1` / `P2` findings and one `REVIEW CLEAN` / `CHANGES REQUIRED`
-verdict. The Skill is read-only: it never edits, commits, pushes, or
+`P0` / `P1` / `P2` findings and one `REVIEW CLEAN` / `CHANGES REQUIRED` /
+`REVIEW INCOMPLETE` verdict. The Skill is read-only: it never edits, commits, pushes, or
 touches GitHub.
 
 For an existing GitHub Pull Request, use the sibling
@@ -93,8 +93,10 @@ Not safe to proceed: the retry path can double-process a payment.
 ```
 
 A clean review is just the result line, an optional one-line change
-summary, validation, and `REVIEW CLEAN`. Machine detail (SHAs,
-per-category scope, counts) sits in a trailing metadata block.
+summary, validation, and `REVIEW CLEAN`. Incomplete coverage always renders
+`REVIEW INCOMPLETE` instead, with the reason, even when no P0/P1 was found.
+Machine detail (SHAs, per-category scope, counts) sits in a trailing metadata
+block.
 
 ## Boundaries worth knowing
 

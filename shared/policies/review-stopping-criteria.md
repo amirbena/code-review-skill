@@ -208,8 +208,8 @@ triggers (incomplete PR-scope enumeration, a required repository checkout
 that fails, a required parallel-review dimension that cannot be
 produced). This policy gives that existing outcome **one shared,
 risk/partition-scaled definition of when it applies in general**,
-consumed identically by `local-code-review`, which does not yet have an
-equivalent labeled outcome of its own.
+consumed identically by `local-code-review`, whose report template
+renders the same `REVIEW INCOMPLETE` outcome.
 
 ## Machine-readable model
 

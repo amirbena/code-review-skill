@@ -102,6 +102,18 @@ class GithubRunbookOrderingTests(unittest.TestCase):
         self.assertIn("no review, delta change, or re-finalization after it", text)
 
 
+class StaleStatementAndReadmeTests(unittest.TestCase):
+    def test_stopping_criteria_no_longer_says_local_lacks_the_outcome(self) -> None:
+        text = _text(STOPPING)
+        self.assertNotIn("does not yet have an equivalent labeled outcome", text)
+        self.assertIn("whose report template renders the same REVIEW INCOMPLETE outcome", text)
+
+    def test_local_readme_names_all_three_outcomes(self) -> None:
+        text = _text(REPO_ROOT / "skills/local-code-review/README.md")
+        self.assertIn("REVIEW CLEAN / CHANGES REQUIRED / REVIEW INCOMPLETE verdict", text)
+        self.assertIn("Incomplete coverage always renders REVIEW INCOMPLETE instead", text)
+
+
 class TemplateTests(unittest.TestCase):
     def test_templates_forbid_hybrid_success_renderings(self) -> None:
         for path in TEMPLATES:

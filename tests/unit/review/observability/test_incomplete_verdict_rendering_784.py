@@ -13,6 +13,7 @@ label; no report is composed by the test itself.
 
 from __future__ import annotations
 
+import json
 import re
 import unittest
 
@@ -37,6 +38,8 @@ _DECISION = re.compile(
 CANONICAL = {"APPROVE": "REVIEW CLEAN", "REQUEST CHANGES": "CHANGES REQUIRED"}
 _COVERAGE = re.compile(r"^(\s*-?\s*[Cc]overage:\s*`?)(complete|incomplete)([^\n]*)$", re.M)
 _BLOCK = re.compile(r"```markdown\n(.*?)```", re.S)
+_REASON = re.compile(r"^Not (?:fully )?reviewed:[ \t]*\S", re.M)
+_OPENING = re.compile(r"(^\*\*Result:[^\n]*\*\*\n\n)([^\n]+(?:\n[^\n]+)*)", re.M)
 
 INCOMPLETE_RESULT = "**Result: ⚠️ Review Incomplete**"
 HYBRIDS = (
@@ -67,6 +70,8 @@ def report_violations(text: str) -> list[str]:
             problems.append("Decision is not REVIEW INCOMPLETE with incomplete coverage")
     elif outcome == "REVIEW INCOMPLETE" or "incomplete" in result_text:
         problems.append("incomplete outcome without incomplete coverage")
+    if outcome == "REVIEW INCOMPLETE" and not _REASON.search(text):
+        problems.append("incomplete Result names no unmet requirement")
     return problems
 
 
@@ -85,8 +90,17 @@ def with_coverage(text: str, value: str, reason: str = "") -> str:
 
 
 def as_incomplete(text: str, reason: str = " — evidence.md was not loaded") -> str:
-    """The correct rendering of the same review under incomplete coverage."""
-    return with_decision(with_result(with_coverage(text, "incomplete", reason), INCOMPLETE_RESULT), "REVIEW INCOMPLETE")
+    """The correct rendering of the same review under incomplete coverage: the
+    Result and Decision flip, and the opening paragraph names what was not
+    reviewed."""
+    opening = f"{INCOMPLETE_RESULT}\n\nNot fully reviewed:{reason}. Do not treat this as safe to proceed."
+    flipped = _OPENING.sub(lambda m: opening, text, count=1)
+    return with_decision(with_coverage(flipped, "incomplete", reason), "REVIEW INCOMPLETE")
+
+
+def without_reason(text: str) -> str:
+    """The same incomplete report with its reason line removed."""
+    return _REASON.sub("Review stopped.", text)
 
 
 def label_of(text: str) -> str:
@@ -95,7 +109,8 @@ def label_of(text: str) -> str:
 
 
 def shipped_samples() -> list:
-    return sorted(SAMPLES.glob("*/*.md"))
+    manifest = json.loads((SAMPLES / "manifest.json").read_text(encoding="utf-8"))
+    return [SAMPLES / sample["file"] for sample in manifest["samples"]]
 
 
 def template_reports(path) -> list[str]:
@@ -114,13 +129,16 @@ class ShippedSampleTests(unittest.TestCase):
     def test_samples_cover_local_and_both_github_publication_modes(self) -> None:
         modes = {p.parent.name for p in shipped_samples()}
         self.assertEqual(modes, {"local-code-review", "github-pr-review"})
-        github = "".join(p.read_text(encoding="utf-8") for p in (SAMPLES / "github-pr-review").glob("*.md"))
+        github = "".join(
+            p.read_text(encoding="utf-8") for p in shipped_samples() if p.parent.name == "github-pr-review"
+        )
         self.assertIn("publication_mode: `passive`", github)
         self.assertIn("publication_mode: `active`", github)
 
     def test_both_skills_ship_an_incomplete_sample(self) -> None:
         for skill in ("local-code-review", "github-pr-review"):
-            self.assertTrue(list((SAMPLES / skill).glob("incomplete*.md")), skill)
+            incomplete = [p for p in shipped_samples() if p.parent.name == skill and p.name.startswith("incomplete")]
+            self.assertTrue(incomplete, skill)
 
 
 class ShippedTemplateTests(unittest.TestCase):
@@ -165,11 +183,42 @@ class HybridRejectionTests(unittest.TestCase):
         self.assertIn("hybrid success rendering", problems)
         self.assertIn("Decision is not REVIEW INCOMPLETE with incomplete coverage", problems)
 
+    def test_template_incomplete_example_rejects_a_missing_reason(self) -> None:
+        block = next(b for b in template_reports(LOCAL_TEMPLATE) if "REVIEW INCOMPLETE" in b)
+        self.assertRegex(block, _REASON)
+        self.assertIn(
+            "incomplete Result names no unmet requirement", report_violations(without_reason(block))
+        )
+
     def test_template_incomplete_example_rejects_a_hybrid_rewrite(self) -> None:
         block = next(b for b in template_reports(LOCAL_TEMPLATE) if "REVIEW INCOMPLETE" in b)
         self.assertEqual(report_violations(block), [])
         self.assertTrue(report_violations(with_result(block, HYBRIDS[0])))
         self.assertTrue(report_violations(with_decision(block, "REVIEW CLEAN")))
+
+
+class UnmetRequirementTests(unittest.TestCase):
+    def test_every_incomplete_rendering_names_what_was_not_reviewed(self) -> None:
+        for path in shipped_samples():
+            text = path.read_text(encoding="utf-8")
+            with self.subTest(sample=path.name, case="reason present"):
+                self.assertRegex(as_incomplete(text), _REASON)
+            with self.subTest(sample=path.name, case="reason removed"):
+                self.assertIn(
+                    "incomplete Result names no unmet requirement",
+                    report_violations(without_reason(as_incomplete(text))),
+                )
+
+    def test_shipped_incomplete_samples_carry_a_reason(self) -> None:
+        for path in shipped_samples():
+            text = path.read_text(encoding="utf-8")
+            if label_of(text) == "REVIEW INCOMPLETE":
+                with self.subTest(sample=path.name):
+                    self.assertRegex(text, _REASON)
+                    self.assertIn(
+                        "incomplete Result names no unmet requirement",
+                        report_violations(without_reason(text)),
+                    )
 
 
 class ConsistencyAcrossModesTests(unittest.TestCase):
