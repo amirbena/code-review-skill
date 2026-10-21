@@ -169,10 +169,14 @@ SEVERITY_LEGEND = {
 # LOCAL_RUNBOOK and LOCAL_SKILL were re-captured after Issue #782 (conditional,
 # fail-closed loading of scale/invocation-options and the knowingly-unloaded
 # incomplete rule) -- likewise deliberate and unrelated to #223.
+# LOCAL_REPORT, LOCAL_RUNBOOK, and LOCAL_SKILL were re-captured after Issue #784
+# (a clean verdict requires complete coverage: the entrypoint Output Contract,
+# the mandatory-loading checkpoint and pre-verdict recheck, and the no-hybrid
+# rendering rule) -- likewise deliberate and unrelated to #223.
 LOCAL_BASELINE_HASHES = {
-    LOCAL_REPORT: "4475ab39a0fce4201b4bc972c47fb564ed173156",
-    LOCAL_RUNBOOK: "d8602e844ef4650394724b3f44598318727ebb21",
-    LOCAL_SKILL: "97b929745dcdf2b7c2fe61801927651a61143f96",
+    LOCAL_REPORT: "2a478671d9e57137482c7db942ac27c22aa924e8",
+    LOCAL_RUNBOOK: "f5431fd5c43ccc1bcfb4660813d6ee816472b9c0",
+    LOCAL_SKILL: "80e3ff5fcbe0598269d56e0e1f9579f0372b135e",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",

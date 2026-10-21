@@ -125,6 +125,31 @@ reviewer, or a dimension whose absence does not change what depth
 requires (for example a `standard`-depth change with no `elevated`/`deep`
 sub-passes to begin with), never makes coverage `incomplete`.
 
+## Mandatory-loading checkpoint and pre-verdict recheck
+
+Trigger 1's loading rule is enforced at two fixed points, not left to a
+late self-report. Neither adds a trigger, a field, or a state model; both
+only decide *when* the existing trigger is evaluated:
+
+1. *Before review execution.* Before step 1 of the Skill's runbook, the
+   reviewer confirms that every **unconditional** mandatory file is
+   actually open: each file its Skill's `SKILL.md` section 2 lists as
+   always loaded, except a member that section introduces with a context
+   phrase (for example "with parallel workers" or "in orchestrated/
+   multi-Agent contexts"), which joins the set only when that context
+   holds for this review. A file not yet open is loaded now; one that
+   cannot be loaded is a trigger-1 incomplete reason whose `detail`
+   names that file. The checkpoint never makes a required file optional,
+   never requires a context-conditional file whose predicate has not
+   fired, and never substitutes for loading it.
+2. *Immediately before the Decision is derived.* Coverage is
+   recomputed once over the final state — the unconditional set, every
+   context-conditional file whose context held, and every conditionally
+   loaded file whose predicate fired at any point during the review —
+   after any re-review, finding re-finalization, or change of the
+   reviewed HEAD or delta. A coverage value reached earlier is never
+   carried over to the verdict.
+
 ## Labeling — incomplete must never present as clean
 
 Coverage is always emitted with the review, complete or not, the same way
@@ -145,6 +170,20 @@ coverage == complete    → severity.md, "Decision derivation (mechanical)"
                             runs unchanged and its result is the primary
                             outcome, exactly as before this policy existed
 ```
+
+The three outcomes are exclusive and ranked `REVIEW INCOMPLETE` >
+`CHANGES REQUIRED` > `REVIEW CLEAN`: `REVIEW INCOMPLETE` represents
+incomplete coverage and overrides a blocking finding, which is still
+reported in full; `CHANGES REQUIRED` represents a blocking finding under
+complete coverage; `REVIEW CLEAN` requires complete coverage and no
+blocking (P0/P1) finding. P0 = 0 and P1 = 0 alone never imply
+`REVIEW CLEAN`. There is no hybrid
+rendering: a success marker, `Review Clean`, `REVIEW CLEAN`, or an
+approving outcome never appears in the Result or Decision of a review
+whose coverage is `incomplete`, with or without a qualifier such as
+"coverage incomplete, see Metadata". The Metadata `Coverage` line cannot
+excuse or replace the Result, and the incomplete Result names the unmet
+requirements from `incomplete_reasons`.
 
 An incomplete review still reports every finding it actually produced
 before coverage was interrupted — this policy never discards or hides a
@@ -169,8 +208,8 @@ triggers (incomplete PR-scope enumeration, a required repository checkout
 that fails, a required parallel-review dimension that cannot be
 produced). This policy gives that existing outcome **one shared,
 risk/partition-scaled definition of when it applies in general**,
-consumed identically by `local-code-review`, which does not yet have an
-equivalent labeled outcome of its own.
+consumed identically by `local-code-review`, whose report template
+renders the same `REVIEW INCOMPLETE` outcome.
 
 ## Machine-readable model
 

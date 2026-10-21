@@ -93,8 +93,11 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # Issue #778 (required runbook read and conditional rendered-inspection
 # evaluation in each entrypoint flow) added one thin paragraph to each
 # SKILL.md, raising local 307 -> 313 and github 408 -> 413.
-LOCAL_MAX_LINES = 313
-GITHUB_MAX_LINES = 413
+# Issue #784 (a clean verdict requires complete coverage: the resident
+# Output Contract names all three outcomes, and a thin checkpoint pointer
+# in section 2) raised local 313 -> 315 and github 413 -> 418.
+LOCAL_MAX_LINES = 315
+GITHUB_MAX_LINES = 418
 
 
 def _norm(path) -> str:

@@ -614,8 +614,10 @@ are owned by the linked policies and are not restated here.
   is `incomplete`, `Result` and `Decision` render `REVIEW INCOMPLETE`
   instead of `REVIEW CLEAN` / `CHANGES REQUIRED`, with a one-sentence
   reason tied to the metadata block's `coverage` value — never `Approve`,
-  never a clean-reading `Result`. Findings actually gathered before
-  coverage was interrupted still render in full.
+  never a clean-reading `Result`. No hybrid: `REVIEW CLEAN` or a success
+  marker never appears with a coverage qualifier, and the unmet
+  requirements are named. Findings actually gathered before coverage was
+  interrupted still render in full.
 - **Findings own their detail inline; the body owns the list.** An
   inline-published finding gets exactly one summary-pointer line
   (severity — title, then `` `path:line` ``) and nothing else — no
