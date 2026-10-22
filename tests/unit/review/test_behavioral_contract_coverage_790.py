@@ -169,6 +169,7 @@ RUNBOOKS = (
     "skills/github-pr-review/runbooks/passive-pr-review.md",
 )
 _FIRST_STEP = re.compile(r"^[01]\. ", re.M)
+_DERIVE_DECISION = re.compile(r"^\s*\d+[a-z]?\. (?:\*\*)?Derive the [Dd]ecision", re.M)
 
 
 def runbook_text(rel: str) -> str:
@@ -184,7 +185,10 @@ def checkpoint_wiring_gaps(runbook: str, policy: str) -> list[str]:
         gaps.append("policy section missing")
     if CHECKPOINT not in body or not step or body.index(CHECKPOINT) > step.start():
         gaps.append("checkpoint does not precede step 1")
-    if not step or RECHECK not in body[step.end() :]:
+    derive = _DERIVE_DECISION.search(body)
+    if not derive:
+        gaps.append("decision step missing")
+    elif not step or RECHECK not in body[step.end() : derive.start()]:
         gaps.append("pre-verdict recheck missing from the steps")
     return gaps
 
@@ -212,6 +216,14 @@ class CheckpointWiringTests(unittest.TestCase):
             mutated = text.replace(para, "", 1) + "\n" + para
             with self.subTest(runbook=rel):
                 self.assertIn("checkpoint does not precede step 1", checkpoint_wiring_gaps(mutated, self.policy))
+
+    def test_mutation_moving_the_recheck_past_the_decision_step_is_detected(self) -> None:
+        for rel in RUNBOOKS:
+            head, tail = runbook_text(rel).split("\n## Steps", 1)
+            derive = _DERIVE_DECISION.search(tail)
+            mutated = head + "\n## Steps" + tail[: derive.start()].replace(RECHECK, "recheck") + tail[derive.start() :] + f"\n{RECHECK}\n"
+            with self.subTest(runbook=rel):
+                self.assertIn("pre-verdict recheck missing from the steps", checkpoint_wiring_gaps(mutated, self.policy))
 
     def test_mutation_dropping_the_recheck_or_policy_section_is_detected(self) -> None:
         for rel in RUNBOOKS:
