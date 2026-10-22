@@ -50,3 +50,8 @@ module with, e.g., `python3 -m unittest tests.unit.review.test_decision_semantic
 Individual test files are not meant to be executed as scripts
 (`python3 tests/unit/…`) — they rely on `tests` being importable as a
 package, which `python3 -m unittest` provides.
+
+To re-check that git-using tests do not depend on the host's git configuration,
+run them with `HOME` pointed at an empty directory and `GIT_CONFIG_GLOBAL` set to
+a config enabling `commit.gpgsign` with a failing `gpg.program`, a failing
+`core.hooksPath` hook, and a non-`main` `init.defaultBranch`; none should fail.

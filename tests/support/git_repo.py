@@ -1,11 +1,4 @@
-"""Host-independent Git for tests that build throwaway repositories.
-
-A developer's or runner's global Git configuration (commit signing, hooks,
-default branch, identity) must not decide whether a fixture repository can
-commit. ``isolate_git_config`` points Git at an empty configuration for a
-whole test module, so code under test that spawns ``git`` itself is covered
-too; ``git`` is the shared stripped-stdout runner for fixture setup.
-"""
+"""Host-independent Git for tests that build throwaway repositories."""
 
 from __future__ import annotations
 
