@@ -184,27 +184,15 @@ stop
      [`passive-pr-review.md`](passive-pr-review.md) and clearly state
      that GitHub publication was unavailable.
 3a. **If this invocation asks to publish/post a review already produced
-   passively earlier in this same interaction**, and the current
-   invocation does not itself resolve a presentation (no explicit
-   `human_review_output` / `human_inline_findings` value or recognized
-   phrasing, per
+   passively earlier in this same interaction** and does not itself resolve
+   a presentation (per
    [`../../../shared/policies/invocation-options.md`](../../../shared/policies/invocation-options.md)),
-   ask the user once, before proceeding to step 4, which presentation to
-   publish — **Senior/human** or **Structured** — per
+   ask the user once, before step 4, which presentation to publish, per
    [`../policies/review-output.md`](../policies/review-output.md),
-   "Publishing a previously produced passive review." Offer the
-   presentation that passive result was actually shown in as the
-   recommended choice, but do not apply it without an answer; normalize
-   the answer as ordinary current-invocation text. If no answer can be
-   resolved (a non-interactive or mediated caller with no way to surface
-   the question), withhold publication and report
-   `Mutation: WITHHELD (publication format unresolved)` rather than
-   defaulting to structured. Skip this step entirely whenever the
-   invocation already establishes its presentation — directly, or through
-   senior intent stated in the same request (e.g. "senior review this PR
-   and publish it," "review #123 and post it in structured format") — or
-   whenever this is an ordinary fresh active review with no preceding
-   passive result to republish.
+   "Publishing a previously produced passive review" — which owns the
+   recommend-but-never-apply rule, the unresolved-answer withhold
+   (`Mutation: WITHHELD (publication format unresolved)`), and every case
+   that skips this step. Skip it for an ordinary fresh active review.
 4. **Resolve review mode** per
    [`../policies/reviewer-delta-review.md`](../policies/reviewer-delta-review.md).
    Retrieve the immediately preceding completed review of this PR, if any,
@@ -309,20 +297,12 @@ stop
    restated here.) Do not treat authentication or repository access as
    proof that a formal review event is permitted.
 
-   **Resolve the publication mode** per
-   [`../policies/review-action-authorization.md`](../policies/review-action-authorization.md).
-   There are exactly three: **`PASSIVE`** (default; full review and
-   reasoning result, no GitHub mutation), **`SEMI`** (same decision path,
-   reports what would publish, submits nothing), and **`ACTIVE`** (may
-   submit). An explicit `ACTIVE` request is, by itself, sufficient
-   authorization to publish — no second activation phrase or out-of-band
-   signal is required — but it still requires reviewer independence
-   (authority separation per
-   [`../policies/review-authority.md`](../policies/review-authority.md),
-   "Authority separation, not just identity separation") and event
-   permission for the desired action. Anything ambiguous **fails closed**
-   to `PASSIVE` (or to a withheld mutation for an `ACTIVE` request whose
-   independence/permission/HEAD facts are unfavorable). Record the
+   **Resolve the publication mode** (`PASSIVE` default, `SEMI`, `ACTIVE`)
+   per
+   [`../policies/review-action-authorization.md`](../policies/review-action-authorization.md),
+   including its fail-closed rule and the reviewer-independence requirement
+   ([`../policies/review-authority.md`](../policies/review-authority.md),
+   "Authority separation, not just identity separation"). Record the
    resolved mode; the gate is enforced in step 14.
 7. Retrieve all pages of relevant prior reviews, review comments, and issue
    comments needed for review state and same-HEAD duplicate detection —
@@ -722,28 +702,18 @@ stop
     per
     [`../policies/review-status-enforcement.md`](../policies/review-status-enforcement.md),
     **before** the final summary comment. First re-confirm the live PR HEAD
-    still equals the reviewed SHA — the status is published between HEAD
-    revalidation (step 12) and the submission (step 16), so this is the
-    HEAD check immediately before the submission per
-    [`../policies/review-output.md`](../policies/review-output.md), "HEAD
-    revalidation." **If HEAD has advanced, withhold the status
+    still equals the reviewed SHA, per
+    [`../policies/review-output.md`](../policies/review-output.md),
+    "Submission ordering": if HEAD has advanced, withhold the status
     (`STATUS WITHHELD (HEAD advanced)`) AND do not submit the review in
-    step 16**: the review is stale — review the new delta, re-finalize
-    findings against the current HEAD (re-evaluating escalation per step 9
-    if this was a delta re-review), and only then re-run steps 13–16. The
-    status is never withheld for a HEAD advance while the review is still
-    submitted for that same stale SHA. When HEAD still matches, map the
-    canonical verdict:
-    `CHANGES REQUIRED` / `REVIEW INCOMPLETE` / any unresolved or ungraded
-    state → a **blocking** (non-`success`) status, which is blocking-only
-    enforcement and may be published even for a self-review; `REVIEW CLEAN`
-    → a **`success`** status only when this external review holds the same
-    `ACTIVE` publication mode and reviewer independence a native `APPROVE`
-    requires — a self-review, or any ambiguity, never publishes `success`.
-    Only the authoritative aggregator
-    publishes it; parallel workers never do. Never merge. Adding the
-    context to the base branch's required checks is a separate, explicitly
-    requested setup action per that policy, never performed here.
+    step 16 — review the new delta, re-finalize findings against the
+    current HEAD (re-evaluating escalation per step 9 if this was a delta
+    re-review), and only then re-run steps 13–16. Otherwise map the
+    verdict to a status state and authorization per that status policy
+    (blocking-only enforcement may be published even for a self-review;
+    `success` never for a self-review or on ambiguity). Only the
+    authoritative aggregator publishes it; parallel workers never do.
+    Never merge.
 15a. **Re-check verdict consistency against the literal event about to be
     submitted**, per
     [`../../../shared/policies/verdict-consistency.md`](../../../shared/policies/verdict-consistency.md) —
