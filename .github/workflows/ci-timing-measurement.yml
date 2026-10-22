@@ -1,0 +1,75 @@
+name: CI timing measurement (non-required)
+
+# Read-only measurement for #798; not a required check and not wired to the
+# release or benchmark workflows. A draft PR touching this file triggers it.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/ci-timing-measurement.yml
+
+permissions:
+  contents: read
+
+jobs:
+  full-suite-timing:
+    name: FULL suite timing (sample ${{ matrix.sample }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sample: [1, 2, 3]
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Validate Skill metadata
+        run: |
+          python scripts/validation/validate-skill-metadata.py skills/local-code-review --containment-root .
+          python scripts/validation/validate-skill-metadata.py skills/github-pr-review --containment-root .
+
+      - name: Build the canonical Skill trees
+        run: ./scripts/packaging/package-skills.sh all
+
+      - name: Validate the built Skill trees against the Agent Skills spec
+        run: |
+          python -m pip install "skills-ref==0.1.1"
+          for tree in dist/skills/*/; do agentskills validate "$tree"; done
+
+      - name: Record per-test timing (one cold run per job)
+        env:
+          DISTRIBUTION_INSTALL_CHECK: "1"
+          CI_TIER: full
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/timing"
+          # A failing run is recorded, not retried; the report is still uploaded.
+          python scripts/validation/suite_timing_report.py --runs 1 \
+            --provenance "nproc=$(nproc)" --provenance "bash=${BASH_VERSION}" \
+            --provenance "sample=${{ matrix.sample }}" \
+            --out "$RUNNER_TEMP/timing/timing-${{ matrix.sample }}.json" > "$RUNNER_TEMP/timing/summary-${{ matrix.sample }}.md" || echo "suite_exit=$?" >> "$RUNNER_TEMP/timing/status-${{ matrix.sample }}.txt"
+          sha256sum "$RUNNER_TEMP"/timing/*.json | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload timing data
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: suite-timing-${{ matrix.sample }}
+          path: ${{ runner.temp }}/timing/
+          retention-days: 30
