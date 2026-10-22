@@ -274,22 +274,16 @@ stop
    Resolve the requested repository-access mode. For optional or required
    repository-backed inspection, prepare the checkout per
    [`../policies/repository-checkout.md`](../policies/repository-checkout.md)
-   — its lifecycle (mkdtemp → blobless clone → fetch → detached checkout of
-   the immutable `head_sha`), safety flags, and failure classification apply
-   exactly as specified there; this runbook only sequences it and carries the
-   outcome forward. Resolve the `NormalizedPrSource` (repo identity, base
-   ref/SHA, head ref/SHA, pull ref if any) from the PR metadata already
-   retrieved — do not assume the current checkout is the target repo, that
-   local `main` is the PR base, or that the head exists locally. For a stack
-   layer, the `NormalizedPrSource`'s base ref/SHA are the **effective review
-   base** resolved above (the immediate parent PR's branch/head), not the
-   repository's default/target branch. The checkout is **read-only** context
-   only — the PR delta remains `merge-base(base_sha, head_sha)..head_sha`,
-   never an arbitrary repo diff, and never a run outside the exact
-   declared-command exception in the shared runtime-validation policy.
-   On failure, clean up. Optional mode records a visible API-only degradation;
-   required mode returns `REVIEW INCOMPLETE` / `REPOSITORY CONTEXT
-   UNAVAILABLE` and starts no workers. See step 18 for mandatory cleanup.
+   — its lifecycle, safety flags, failure classification, and read-only
+   guarantee apply exactly as specified there; this runbook only sequences
+   it and carries the outcome forward. Resolve the `NormalizedPrSource`
+   from the PR metadata already retrieved; for a stack layer its base
+   ref/SHA are the **effective review base** resolved above, not the
+   repository's default/target branch. The PR delta remains
+   `merge-base(base_sha, head_sha)..head_sha`. On failure, clean up:
+   optional mode records a visible API-only degradation; required mode
+   returns `REVIEW INCOMPLETE` / `REPOSITORY CONTEXT UNAVAILABLE` and
+   starts no workers. See step 18 for mandatory cleanup.
 6. Determine event-specific capability, including draft, fork,
    comment-only, and permission-limited states, per
    [`../policies/review-authority.md`](../policies/review-authority.md),
@@ -741,20 +735,15 @@ stop
     closing disclosure line, with the same reported statuses. If GitHub
     rejects a specific resolved inline location, apply the
     [`../policies/finding-placement.md`](../policies/finding-placement.md)
-    "Rejected inline location fallback" (move that finding's full form into
-    the body) and complete the submission — do not drop the finding and do
-    not abandon the rest of the review. This mirrors the proactive
-    "Fix/action location resolved but not inline-commentable" case handled
-    in step 11; either way the finding's canonical location and identity
-    are unchanged. If GitHub otherwise disallows the
-    formal event, preserve the clean/blocking reasoning result and report
-    why no final formal review was submitted. Never claim a GitHub mutation
-    that did not succeed, and never submit more than one review for this
-    finalized finding set. **This one review submission carries the final
-    human-facing summary and is the last review-owned publication of the
-    run** (`final review comment == last publication event`): after it,
-    publish nothing further for this review and edit nothing already
-    published — no comment, no inline comment, no status, no check.
+    "Rejected inline location fallback" and complete the submission. If
+    GitHub otherwise disallows the formal event, preserve the clean/blocking
+    reasoning result and report why no final formal review was submitted.
+    Never claim a GitHub mutation that did not succeed, and never submit
+    more than one review for this finalized finding set. **This one review
+    submission carries the final human-facing summary and is the last
+    review-owned publication of the run** (`final review comment == last
+    publication event`): after it, publish nothing further and edit nothing
+    already published — no comment, no inline comment, no status, no check.
 17. Return separate reasoning, publication-mode, comments-publication, and
     decision-publication statuses per
     [`../policies/review-output.md`](../policies/review-output.md),
