@@ -8,14 +8,11 @@ import re
 import unittest
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import normalize_text as _norm
 
 GUIDE = REPO_ROOT / "docs" / "features" / "github-merge-enforcement.md"
 CATALOG = REPO_ROOT / "docs" / "features" / "README.md"
 PUBLICATION = REPO_ROOT / "docs" / "features" / "github-review-publication.md"
-
-
-def _norm(text: str) -> str:
-    return re.sub(r"\s+", " ", text.replace("**", "").replace("`", ""))
 
 
 class GuideTests(unittest.TestCase):

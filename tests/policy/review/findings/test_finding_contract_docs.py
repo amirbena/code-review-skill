@@ -16,6 +16,7 @@ import unittest
 
 from tests.reference.review import finding_contract as fc
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import normalize_text as _norm
 
 SHARED_FINDING = REPO_ROOT / "shared/templates/finding.md"
 # Issue #198 split the canonical rendering exemplars out of finding.md into a
@@ -34,10 +35,6 @@ FINDING_PLACEMENT = REPO_ROOT / "skills/github-pr-review/policies/finding-placem
 
 COMPACT_FULL_LABELS = ("**Location:**", "**Evidence:**", "**Impact:**", "**Fix:**")
 OLD_BLOCK_HEADERS = ("\n**Evidence**\n", "\n**Impact**\n", "\n**Recommended direction**\n")
-
-
-def _norm(text: str) -> str:
-    return re.sub(r"\s+", " ", text.replace("**", "").replace("`", ""))
 
 
 def _md_blocks(text: str) -> list[str]:

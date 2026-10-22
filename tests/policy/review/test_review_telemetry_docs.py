@@ -16,11 +16,10 @@ Run with:
 from __future__ import annotations
 
 import json
-import re
 import unittest
-from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 DOCDIR = REPO_ROOT / "docs" / "review-telemetry"
 MODEL = DOCDIR / "review-execution-telemetry-model.md"
@@ -41,11 +40,6 @@ METRICS = (
     "Partitions used",
     "Deterministic stage timing",
 )
-
-
-def _norm(path: Path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class DesignRecordExistsTests(unittest.TestCase):

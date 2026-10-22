@@ -24,6 +24,7 @@ from runtime_platform.benchmark.reference import benchmark_runner as br
 from runtime_platform.benchmark.scripts import measure_dependency_tree as mdt
 from runtime_platform.benchmark.scripts.benchmark_review_adapter import _dependency_trees_block, _tree_permissions
 from tests.support.paths import REPO_ROOT
+from tests.support.git_repo import isolate_git_config
 
 CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "dependency-tree-inspection"
 ADDED = "dti-incident-added-user-provided"
@@ -40,6 +41,10 @@ def _load(case_id: str) -> bf.BenchmarkCase:
 
 def _all() -> list[bf.BenchmarkCase]:
     return [_load(c) for c in sorted(bdt.CASE_ROLES)]
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class CorpusShapeTests(unittest.TestCase):

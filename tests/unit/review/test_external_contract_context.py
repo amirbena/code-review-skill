@@ -5,29 +5,13 @@ for skills/local-code-review/policies/external-contract-context.md (Issue #133).
 
 from __future__ import annotations
 
-import os
-import subprocess
 import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
 from tests.reference.review import external_contract_context as ecc
-
-_ENV = {
-    **os.environ,
-    "GIT_AUTHOR_NAME": "t",
-    "GIT_AUTHOR_EMAIL": "t@example.invalid",
-    "GIT_COMMITTER_NAME": "t",
-    "GIT_COMMITTER_EMAIL": "t@example.invalid",
-}
-
-
-def git(repo: Path, *args: str) -> str:
-    done = subprocess.run(
-        ["git", "-C", str(repo), *args], capture_output=True, text=True, env=_ENV, check=True
-    )
-    return done.stdout.strip()
+from tests.support.git_repo import git, isolate_git_config
 
 
 def commit(repo: Path, files: dict[str, str], message: str) -> str:
@@ -38,6 +22,10 @@ def commit(repo: Path, files: dict[str, str], message: str) -> str:
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", message)
     return git(repo, "rev-parse", "HEAD")
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class _RepoCase(unittest.TestCase):

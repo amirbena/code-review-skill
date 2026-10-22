@@ -22,10 +22,10 @@ model:
 
 from __future__ import annotations
 
-import re
 import unittest
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 FINDING_RENDERING = REPO_ROOT / "shared/templates/finding-rendering-human.md"
 FINDING = REPO_ROOT / "shared/templates/finding.md"
@@ -41,11 +41,6 @@ GH_METADATA = REPO_ROOT / "skills/github-pr-review/metadata/skill.yaml"
 LOCAL_REPORT = REPO_ROOT / "skills/local-code-review/templates/local-review-report.md"
 LOCAL_RUNBOOK = REPO_ROOT / "skills/local-code-review/runbooks/local-review.md"
 LOCAL_METADATA = REPO_ROOT / "skills/local-code-review/metadata/skill.yaml"
-
-
-def _norm(path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class SeniorPhraseVocabulary(unittest.TestCase):

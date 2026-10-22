@@ -49,13 +49,12 @@ file mentions the word "fail-closed":
 
 from __future__ import annotations
 
-import re
 import unittest
-from pathlib import Path
 
 import yaml
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 REPOSITORY_EXPANSION = REPO_ROOT / "shared/policies/repository-expansion.md"
 LARGE_PR_PARTITIONING = REPO_ROOT / "shared/policies/large-pr-partitioning.md"
@@ -64,11 +63,6 @@ SCALE_MANIFEST = REPO_ROOT / "capabilities/scale/capability.yaml"
 SPECIALIST_DEPTH_MANIFEST = REPO_ROOT / "capabilities/specialist-depth/capability.yaml"
 MANIFEST_SCHEMA_DOC = REPO_ROOT / "docs/capability-architecture/capability-manifest-schema.md"
 CAPABILITIES_DIR = REPO_ROOT / "capabilities"
-
-
-def _norm(path: Path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class RepositoryExpansionConditionalLoadingTests(unittest.TestCase):

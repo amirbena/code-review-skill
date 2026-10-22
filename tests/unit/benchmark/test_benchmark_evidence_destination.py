@@ -19,13 +19,14 @@ from runtime_platform.benchmark.scripts import benchmark_seal as seal
 from runtime_platform.benchmark.scripts import run_benchmark_routine as routine
 from runtime_platform.benchmark.scripts import run_severity_observation as obs
 from tests.support.evidence_destination import EVIDENCE, NAMESPACES, SOURCE, manifest_with
+from tests.support.git_repo import git, isolate_git_config
 
 HANDOFF = "claude/benchmark-handoff-check-20261010T000000Z-aaaaaaaaaaaa"
 FILES = {seal.HANDOFF_CHECK_FILE: b'{"x": 1}\n'}
 
 
-def _git(cwd: Path, *args: str) -> str:
-    return subprocess.run(["git", *args], cwd=str(cwd), capture_output=True, text=True, check=True).stdout.strip()
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class Stores(unittest.TestCase):
@@ -40,16 +41,16 @@ class Stores(unittest.TestCase):
         self.work = base / "work"
         for bare in (self.public, self.private):
             bare.parent.mkdir(parents=True, exist_ok=True)
-            _git(base, "init", "--bare", "-q", str(bare))
-        _git(base, "init", "-q", str(self.work))
-        _git(self.work, "remote", "add", "origin", str(self.public))
-        _git(self.work, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "--allow-empty", "-q", "-m", "init")
+            git(base, "init", "--bare", "-q", str(bare))
+        git(base, "init", "-q", str(self.work))
+        git(self.work, "remote", "add", "origin", str(self.public))
+        git(self.work, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "--allow-empty", "-q", "-m", "init")
         env = mock.patch.dict("os.environ", {ed.TEST_LOCAL_REMOTES_ENV: "1"})
         env.start()
         self.addCleanup(env.stop)
 
     def refs(self, bare: Path) -> list[str]:
-        return _git(bare, "for-each-ref", "--format=%(refname)").splitlines()
+        return git(bare, "for-each-ref", "--format=%(refname)").splitlines()
 
     def resolve(self, phase: str = "pre_cutover", remote: str | None = None, **kw) -> ed.Destination:
         manifest = manifest_with(phase, kw.pop("repository", None))
@@ -62,7 +63,7 @@ class PhaseMatrixTests(Stores):
         self.assertEqual((dest.repository, dest.phase, dest.remote), (SOURCE, "pre_cutover", "origin"))
 
     def test_v1_pre_cutover_checkout_remote_must_still_prove_the_source(self) -> None:
-        _git(self.work, "remote", "set-url", "origin", str(self.private))
+        git(self.work, "remote", "set-url", "origin", str(self.private))
         with self.assertRaisesRegex(ed.DestinationMisconfigured, "not the declared evidence repository"):
             self.resolve("pre_cutover")
 
@@ -147,7 +148,7 @@ class PrivateRoutingTests(Stores):
         commit = dest.seal(HANDOFF, FILES, "check")
         self.assertEqual(self.refs(self.private), [f"refs/heads/{HANDOFF}"])
         self.assertEqual(self.refs(self.public), [])  # nothing is pushed to the source repository
-        self.assertEqual(_git(self.private, "rev-parse", f"refs/heads/{HANDOFF}"), commit)
+        self.assertEqual(git(self.private, "rev-parse", f"refs/heads/{HANDOFF}"), commit)
 
     def test_sealed_content_hash_is_the_same_in_either_store(self) -> None:
         public = self.resolve("pre_cutover", remote=str(self.public))
@@ -155,7 +156,7 @@ class PrivateRoutingTests(Stores):
         a = public.seal(HANDOFF, FILES, "check")
         b = private.seal(HANDOFF, FILES, "check")
         self.assertEqual(
-            _git(self.public, "rev-parse", f"{a}^{{tree}}"), _git(self.private, "rev-parse", f"{b}^{{tree}}")
+            git(self.public, "rev-parse", f"{a}^{{tree}}"), git(self.private, "rev-parse", f"{b}^{{tree}}")
         )  # I3: no storage-location field is sealed
 
     def test_an_existing_ref_is_a_refusal_and_the_run_unsealed(self) -> None:
@@ -195,7 +196,7 @@ class PrivateRoutingTests(Stores):
 class FailureTests(Stores):
     def test_v10_unreachable_store_fails_the_preflight_and_writes_nothing(self) -> None:
         dest = self.resolve("private", remote=str(self.private))
-        _git(self.work, "config", "advice.detachedHead", "false")
+        git(self.work, "config", "advice.detachedHead", "false")
         self.private.rename(self.private.with_name("moved.git"))
         with self.assertRaises(ed.StoreUnavailable) as ctx:
             dest.preflight()

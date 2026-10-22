@@ -15,9 +15,10 @@ from __future__ import annotations
 
 import re
 import unittest
-from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
+from tests.support.policy_docs import normalize_text
 
 DOCDIR = REPO_ROOT / "docs" / "review-context"
 MODEL = DOCDIR / "contextual-evidence-model.md"
@@ -49,11 +50,6 @@ RESOLUTION_OUTCOMES = (
     "TREAT_AS_INFORMATIONAL_ONLY",
     "DISREGARD_STALE",
 )
-
-
-def _norm(path: Path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class DesignRecordExistsAndIsTypedTests(unittest.TestCase):
@@ -170,14 +166,14 @@ class FindingProvenanceFieldTests(unittest.TestCase):
             r"## Optional and surface-specific fields\n(.*?)\n## ", self.text, re.S
         )
         self.assertIsNotNone(opt)
-        self.assertIn("contextual evidence", _norm_str(opt.group(1)))
+        self.assertIn("contextual evidence", normalize_text(opt.group(1)))
 
     def test_provenance_never_moves_severity_or_identity(self) -> None:
         section = re.search(
             r"## Contextual evidence and provenance\n(.*?)\n## ", self.text, re.S
         )
         self.assertIsNotNone(section)
-        body = _norm_str(section.group(1))
+        body = normalize_text(section.group(1))
         self.assertIn("never calculates, raises, lowers, or overrides severity", body)
         self.assertIn("never changes the finding's identity", body)
         self.assertIn("on the GitHub inline surface it folds into evidence prose", body)
@@ -242,10 +238,6 @@ class LinksResolveTests(unittest.TestCase):
                 if not (base / path_part).resolve().exists():
                     broken.append(f"{md.name} -> {target}")
         self.assertEqual(broken, [])
-
-
-def _norm_str(raw: str) -> str:
-    return re.sub(r"\s+", " ", raw.replace("**", "").replace("`", ""))
 
 
 if __name__ == "__main__":

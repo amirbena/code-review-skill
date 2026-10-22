@@ -23,11 +23,10 @@ that each file mentions the feature:
 
 from __future__ import annotations
 
-import re
 import unittest
-from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 POLICY = REPO_ROOT / "shared/policies/remediation-scope-boundary.md"
 REVIEW_SCOPE = REPO_ROOT / "shared/policies/review-scope.md"
@@ -45,11 +44,6 @@ GH_PASSIVE = REPO_ROOT / "skills/github-pr-review/runbooks/passive-pr-review.md"
 GH_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 LOCAL_RUNBOOK = REPO_ROOT / "skills/local-code-review/runbooks/local-review.md"
 LOCAL_SKILL = REPO_ROOT / "skills/local-code-review/SKILL.md"
-
-
-def _norm(path: Path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class CanonicalOwnerTests(unittest.TestCase):

@@ -10,9 +10,9 @@ from __future__ import annotations
 import json
 import re
 import unittest
-from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 SKILL_DIR = REPO_ROOT / "skills" / "github-pr-review"
 POLICY = SKILL_DIR / "policies" / "reviewer-brief.md"
@@ -28,12 +28,6 @@ MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
 FEATURE_GUIDE = REPO_ROOT / "docs" / "features" / "reviewer-brief.md"
 FEATURES_README = REPO_ROOT / "docs" / "features" / "README.md"
 LOCAL_SKILL_MD = REPO_ROOT / "skills" / "local-code-review" / "SKILL.md"
-
-
-def _norm(path: Path) -> str:
-    return re.sub(
-        r"\s+", " ", path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    )
 
 
 class PolicyFileExistsAndDeclaresBoundaryTests(unittest.TestCase):

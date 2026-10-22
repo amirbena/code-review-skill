@@ -27,6 +27,7 @@ from pathlib import Path
 from unittest import mock
 
 from tests.support.paths import REPO_ROOT
+from tests.support.git_repo import git, isolate_git_config
 
 sys.path.insert(0, str(REPO_ROOT / "scripts" / "release"))
 
@@ -58,24 +59,16 @@ _VALID_INTENT = "## What\n\n- **Release category:** Added\n- **Release entry:** 
 _TOKEN_VARS = ("GH_TOKEN", "GITHUB_TOKEN", "GH_REPO", "GH_ENTERPRISE_TOKEN", "RELEASE_APP_ID", "RELEASE_APP_PRIVATE_KEY")
 
 
-def _git(cwd: Path, *args: str) -> str:
-    proc = subprocess.run(
-        ["git", *args],
-        cwd=str(cwd),
-        capture_output=True,
-        text=True,
-        env={**os.environ, **_GIT_ENV},
-        check=True,
-    )
-    return proc.stdout.strip()
-
-
 def _commit(work: Path, rel: str, content: str, message: str) -> str:
     (work / rel).parent.mkdir(parents=True, exist_ok=True)
     (work / rel).write_text(content, encoding="utf-8")
-    _git(work, "add", "-A")
-    _git(work, "commit", "-m", message)
-    return _git(work, "rev-parse", "HEAD")
+    git(work, "add", "-A")
+    git(work, "commit", "-m", message)
+    return git(work, "rev-parse", "HEAD")
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class PrSyncedWithMainBoundaryTests(unittest.TestCase):
@@ -89,31 +82,31 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
         root = Path(self._tmp.name)
 
         origin = root / "origin.git"
-        _git(root, "init", "--bare", "-b", "main", str(origin))
+        git(root, "init", "--bare", "-b", "main", str(origin))
         self.work = root / "work"
-        _git(root, "clone", str(origin), str(self.work))
-        _git(self.work, "config", "commit.gpgsign", "false")
+        git(root, "clone", str(origin), str(self.work))
+        git(self.work, "config", "commit.gpgsign", "false")
 
         _commit(self.work, "README.md", "start\n", "A: init")
         self.fork_point = _commit(self.work, "docs/x.md", "docs\n", "B: base")
-        _git(self.work, "push", "origin", "main")
+        git(self.work, "push", "origin", "main")
 
         # PR branch forks here; base.sha in the event payload is this commit.
         self.stale_base_sha = self.fork_point
-        _git(self.work, "checkout", "-b", "feature")
+        git(self.work, "checkout", "-b", "feature")
 
         # main advances with a release-worthy Skill change and a rolled
         # CHANGELOG, then the PR branch synchronizes with it.
-        _git(self.work, "checkout", "main")
+        git(self.work, "checkout", "main")
         _commit(
             self.work,
             "skills/github-pr-review/runbooks/other.md",
             "unrelated skill work merged on main\n",
             "C: release-worthy change on main",
         )
-        _git(self.work, "push", "origin", "main")
-        self.current_main = _git(self.work, "rev-parse", "main")
-        _git(self.work, "checkout", "feature")
+        git(self.work, "push", "origin", "main")
+        self.current_main = git(self.work, "rev-parse", "main")
+        git(self.work, "checkout", "feature")
 
     def _resolve_pr_base(self) -> str:
         out = Path(self._tmp.name) / "gh-out.txt"
@@ -151,7 +144,7 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
 
     def test_docs_only_pr_is_not_dragged_release_worthy_by_synced_main(self) -> None:
         _commit(self.work, "docs/feature.md", "just docs\n", "D: docs-only PR change")
-        _git(self.work, "merge", "--no-edit", "origin/main")
+        git(self.work, "merge", "--no-edit", "origin/main")
 
         # The stale payload base.sha still sees the Skill file that only
         # entered through the sync — the bug.
@@ -175,7 +168,7 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
             "this PR's own release-worthy change\n",
             "D: release-worthy PR change",
         )
-        _git(self.work, "merge", "--no-edit", "origin/main")
+        git(self.work, "merge", "--no-edit", "origin/main")
 
         base = self._resolve_pr_base()
         self.assertEqual(base, self.current_main)
@@ -194,7 +187,7 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
             "this PR's own release-worthy change\n",
             "D: release-worthy PR change",
         )
-        _git(self.work, "merge", "--no-edit", "origin/main")
+        git(self.work, "merge", "--no-edit", "origin/main")
 
         self.assertEqual(self._assess(self._resolve_pr_base(), _VALID_INTENT), 0)
 
@@ -207,15 +200,15 @@ class PrSyncedWithMainBoundaryTests(unittest.TestCase):
             "this PR's own release-worthy change, with no changelog entry\n",
             "D: uncovered release-worthy PR change",
         )
-        _git(self.work, "merge", "--no-edit", "origin/main")
+        git(self.work, "merge", "--no-edit", "origin/main")
 
         self.assertEqual(self._assess(self._resolve_pr_base(), "Just a description."), 1)
 
     def test_push_boundary_still_uses_the_previous_release_tag(self) -> None:
         # The accumulated-set boundary for main is unchanged: no PR base
         # branch is consulted, the previous v* tag is.
-        _git(self.work, "checkout", "main")
-        _git(self.work, "tag", "v9.9.9")
+        git(self.work, "checkout", "main")
+        git(self.work, "tag", "v9.9.9")
         _commit(self.work, "skills/local-code-review/policies/z.md", "later\n", "E: post-tag")
         out = Path(self._tmp.name) / "push-out.txt"
         with contextlib.redirect_stdout(io.StringIO()):
@@ -247,10 +240,10 @@ class ForkPullRequestSimulationTests(unittest.TestCase):
         root = Path(self._tmp.name)
         self.work = root / "work"
         self.work.mkdir()
-        _git(self.work, "init", "-b", "main")
-        _git(self.work, "config", "commit.gpgsign", "false")
+        git(self.work, "init", "-b", "main")
+        git(self.work, "config", "commit.gpgsign", "false")
         self.fork_point = _commit(self.work, "CHANGELOG.md", _CHANGELOG, "A: init")
-        _git(self.work, "checkout", "-b", "fork-feature")
+        git(self.work, "checkout", "-b", "fork-feature")
         _commit(self.work, "skills/local-code-review/policies/new-rule.md", "rule\n", "B: fork PR change")
         self.summary = root / "summary.md"
 
@@ -296,10 +289,10 @@ class GenerationFromRealHistoryTests(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
         self.work = Path(self._tmp.name) / "work"
         self.work.mkdir()
-        _git(self.work, "init", "-b", "main")
-        _git(self.work, "config", "commit.gpgsign", "false")
+        git(self.work, "init", "-b", "main")
+        git(self.work, "config", "commit.gpgsign", "false")
         _commit(self.work, "CHANGELOG.md", _CHANGELOG, "A: init")
-        _git(self.work, "tag", "v1.0.0")
+        git(self.work, "tag", "v1.0.0")
         sha11 = _commit(self.work, "skills/local-code-review/policies/a.md", "a\n", "Tighten a rule (#11)")
         _commit(self.work, "docs/y.md", "y\n", "Docs only (#12)")
         sha13 = _commit(self.work, "skills/github-pr-review/runbooks/b.md", "b\n", "Add a review mode (#13)")

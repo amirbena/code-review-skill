@@ -9,8 +9,13 @@ from tests.reference.review import external_contract_context as ecc
 from tests.reference.review import workspace_sibling_context as wsc
 from tests.unit.review.test_external_contract_context import commit, git
 from tests.unit.review.test_workspace_sibling_context import REF, WorkspaceCase
+from tests.support.git_repo import isolate_git_config
 
 S = wsc.SignalKind
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class _Both:

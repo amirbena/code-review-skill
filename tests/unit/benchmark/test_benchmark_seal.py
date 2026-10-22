@@ -10,14 +10,14 @@ from pathlib import Path
 from unittest import mock
 
 from runtime_platform.benchmark.scripts import benchmark_seal as seal
+from tests.support.git_repo import git, isolate_git_config
 
 REF = "claude/benchmark-result-sentinel-20260920T010000Z-aaaaaaaaaaaa"
 FILES = {seal.RAW_FILE: b'{"raw": true}\n', seal.RECORD_FILE: b'{"record": true}\n'}
 
 
-def _git(cwd: Path, *args: str) -> str:
-    proc = subprocess.run(["git", *args], cwd=str(cwd), capture_output=True, text=True, check=True)
-    return proc.stdout.strip()
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class SealToRefTests(unittest.TestCase):
@@ -26,33 +26,33 @@ class SealToRefTests(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
         base = Path(self._tmp.name)
         self.remote, self.work = base / "remote.git", base / "work"
-        _git(base, "init", "--bare", "-q", str(self.remote))
-        _git(base, "init", "-q", str(self.work))
-        _git(self.work, "remote", "add", "origin", str(self.remote))
+        git(base, "init", "--bare", "-q", str(self.remote))
+        git(base, "init", "-q", str(self.work))
+        git(self.work, "remote", "add", "origin", str(self.remote))
 
     def test_creates_an_orphan_ref_holding_exactly_the_files(self) -> None:
         commit = seal.seal_to_ref(self.work, "origin", REF, FILES, "seal")
-        self.assertEqual(_git(self.remote, "rev-parse", f"refs/heads/{REF}"), commit)
-        self.assertEqual(_git(self.remote, "rev-list", "--parents", "-n1", commit), commit)  # no parent
-        self.assertEqual(sorted(_git(self.remote, "ls-tree", "--name-only", commit).split()), sorted(FILES))
-        self.assertEqual(_git(self.remote, "show", f"{commit}:{seal.RECORD_FILE}"), '{"record": true}')
+        self.assertEqual(git(self.remote, "rev-parse", f"refs/heads/{REF}"), commit)
+        self.assertEqual(git(self.remote, "rev-list", "--parents", "-n1", commit), commit)  # no parent
+        self.assertEqual(sorted(git(self.remote, "ls-tree", "--name-only", commit).split()), sorted(FILES))
+        self.assertEqual(git(self.remote, "show", f"{commit}:{seal.RECORD_FILE}"), '{"record": true}')
 
     def test_leaves_the_working_tree_and_local_refs_untouched(self) -> None:
         seal.seal_to_ref(self.work, "origin", REF, FILES, "seal")
-        self.assertEqual(_git(self.work, "status", "--porcelain"), "")
-        self.assertEqual(_git(self.work, "for-each-ref", "refs/heads", "refs/tags"), "")
+        self.assertEqual(git(self.work, "status", "--porcelain"), "")
+        self.assertEqual(git(self.work, "for-each-ref", "refs/heads", "refs/tags"), "")
 
     def test_an_existing_ref_is_never_overwritten(self) -> None:
         first = seal.seal_to_ref(self.work, "origin", REF, FILES, "seal")
         with self.assertRaises(seal.SealError):
             seal.seal_to_ref(self.work, "origin", REF, {seal.RECORD_FILE: b"different\n"}, "seal again")
-        self.assertEqual(_git(self.remote, "rev-parse", f"refs/heads/{REF}"), first)
+        self.assertEqual(git(self.remote, "rev-parse", f"refs/heads/{REF}"), first)
 
     def test_a_ref_outside_claude_is_refused_before_any_push(self) -> None:
         for ref in ("main", "benchmark-history", "benchmark-result-x", "refs/tags/v1"):
             with self.assertRaises(seal.SealError):
                 seal.seal_to_ref(self.work, "origin", ref, FILES, "seal")
-        self.assertEqual(_git(self.remote, "for-each-ref"), "")
+        self.assertEqual(git(self.remote, "for-each-ref"), "")
 
     def test_a_stalled_git_call_times_out_as_a_seal_error(self) -> None:
         with mock.patch.object(seal.subprocess, "run", side_effect=subprocess.TimeoutExpired("git", 1)):

@@ -3,26 +3,20 @@
 
 from __future__ import annotations
 
-import re
 import unittest
-from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
 from tests.support.shared_policy_wiring import (
-    ChangelogRecordsPolicyMixin,
     SharedPolicyWiring,
     SharedPolicyWiringMixin,
 )
+from tests.support.policy_docs import load_normalized_text as _norm
 
 POLICY = REPO_ROOT / "shared" / "policies" / "review-stopping-criteria.md"
 REVIEW_SCOPE = REPO_ROOT / "shared" / "policies" / "review-scope.md"
 EVIDENCE = REPO_ROOT / "shared" / "policies" / "evidence.md"
 SEVERITY = REPO_ROOT / "shared" / "policies" / "severity.md"
 REVIEW_SUMMARY = REPO_ROOT / "shared" / "templates" / "review-summary.md"
-
-
-def _norm(path: Path) -> str:
-    return re.sub(r"\s+", " ", path.read_text(encoding="utf-8").replace("**", "").replace("`", ""))
 
 
 class ReviewStoppingCriteriaPolicyContentTests(unittest.TestCase):

@@ -14,6 +14,7 @@ from pathlib import Path
 
 from scripts.governance.canonical_homes import anchors_in_group, load_registry
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 AGENTS = REPO_ROOT / "AGENTS.md"
 CLAUDE = REPO_ROOT / "CLAUDE.md"
@@ -48,11 +49,6 @@ ROUTED_POLICIES = {
     Path(a["owner"]).name: a["text"]
     for a in anchors_in_group(load_registry(), "routed-policy")
 }
-
-
-def _norm(path: Path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class RoutingTableTests(unittest.TestCase):

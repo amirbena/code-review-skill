@@ -8,8 +8,8 @@ implementation to diverge from.
 
 This module holds two things:
 
-- ``load_normalized_text`` / ``extract_section``: generic text-loading
-  helpers, not coupled to any one policy.
+- ``normalize_text`` / ``load_normalized_text`` / ``extract_section``:
+  generic text-loading helpers, not coupled to any one policy.
 - the small set of hub document paths (the shared review-scope/evidence
   contract, both Skills' entrypoints, and their always-loaded runbooks)
   that most policy-document tests need regardless of which extracted pass
@@ -41,11 +41,15 @@ GITHUB_REVIEW_INDEX = GITHUB_SKILL_DIR / "policies/github-review.md"
 PARALLEL_REVIEW = SHARED_DIR / "policies/parallel-review.md"
 
 
+def normalize_text(raw: str) -> str:
+    """Collapse Markdown emphasis/code markup and whitespace in ``raw`` so
+    substring assertions are robust to reflow and styling."""
+    return re.sub(r"\s+", " ", raw.replace("**", "").replace("`", ""))
+
+
 def load_normalized_text(path: Path) -> str:
-    """Read ``path`` and collapse Markdown emphasis/code markup and
-    whitespace so substring assertions are robust to reflow and styling."""
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
+    """Read ``path`` and return it through :func:`normalize_text`."""
+    return normalize_text(path.read_text(encoding="utf-8"))
 
 
 def extract_section(text: str, heading: str, next_heading: str | None = None) -> str:

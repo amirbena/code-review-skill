@@ -24,6 +24,7 @@ from typing import Iterator, Optional
 from tests.reference.review.pr_checkout import NormalizedPrSource
 
 _GIT_ENV = {
+    "GIT_CONFIG_GLOBAL": os.devnull,
     "GIT_CONFIG_NOSYSTEM": "1",
     "GIT_AUTHOR_NAME": "Sim Author",
     "GIT_AUTHOR_EMAIL": "author@example.invalid",
