@@ -330,5 +330,45 @@ class ResultTests(unittest.TestCase):
         self.assertEqual(detail, "ValueError: boom detail")
 
 
+class ProvenanceTests(unittest.TestCase):
+    def test_provenance_reads_ci_environment_and_omits_unset_values(self):
+        env = {"GITHUB_SHA": "m" * 40, "GITHUB_RUN_ID": "7", "DISTRIBUTION_INSTALL_CHECK": "1"}
+        with mock.patch.dict(os.environ, env, clear=True):
+            found = timing.provenance({"head_sha": "h", "empty": ""})
+        self.assertEqual(
+            found,
+            {"distribution_install_check": "1", "head_sha": "h", "merge_sha": "m" * 40, "run_id": "7"},
+        )
+
+    def test_collect_adds_counts_cpu_and_provenance_without_changing_schema(self):
+        class Case(unittest.TestCase):
+            def test_ok(self):
+                pass
+
+            @unittest.skip("s")
+            def test_skip(self):
+                pass
+
+        result = timing.TimingResult()
+        unittest.defaultTestLoader.loadTestsFromTestCase(Case).run(result)
+        sample = {
+            "cpu_seconds": 1.5,
+            "counts": {"ran": result.testsRun, "skipped": len(result.skipped), "failed": 0, "errored": 0},
+            "discovery_seconds": 0.0,
+            "wall_seconds": 1.0,
+            "seconds": result.seconds,
+            "outcome": result.outcome,
+            "detail": {},
+            "fixtures": {},
+        }
+        with mock.patch.object(timing, "run_once", return_value=sample):
+            data = timing.collect(timing.REPO_ROOT, 1, extra_provenance={"tier": "full"})
+        self.assertEqual(data["schema"], "test-timing/v1")
+        self.assertEqual(data["counts"], [{"ran": 2, "skipped": 1, "failed": 0, "errored": 0}])
+        self.assertEqual(data["cpu_seconds"], [1.5])
+        self.assertEqual(data["provenance"]["tier"], "full")
+        self.assertIn("ran 2, skipped 1", timing.render_markdown(data))
+
+
 if __name__ == "__main__":
     unittest.main()

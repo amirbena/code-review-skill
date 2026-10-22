@@ -12,6 +12,8 @@ import argparse
 import json
 import os
 import platform
+import shutil
+import subprocess
 import statistics
 import sys
 import time
@@ -98,8 +100,35 @@ def flatten(suite: unittest.TestSuite) -> Iterable[unittest.TestCase]:
             yield item
 
 
+PROVENANCE_ENV = {
+    "head_sha": "CI_HEAD_SHA",
+    "merge_sha": "GITHUB_SHA",
+    "base_sha": "CI_BASE_SHA",
+    "run_id": "GITHUB_RUN_ID",
+    "run_attempt": "GITHUB_RUN_ATTEMPT",
+    "runner_image_version": "ImageVersion",
+    "runner_os": "RUNNER_OS",
+    "tier": "CI_TIER",
+    "distribution_install_check": "DISTRIBUTION_INSTALL_CHECK",
+}
+
+
+def provenance(extra: Mapping[str, str] | None = None) -> dict[str, str]:
+    """Additive CI provenance read from the environment; unset values are omitted."""
+    found = {key: os.environ[var] for key, var in PROVENANCE_ENV.items() if os.environ.get(var)}
+    found.update({k: v for k, v in (extra or {}).items() if v})
+    return dict(sorted(found.items()))
+
+
+def cpu_seconds() -> float:
+    """User plus system CPU of this process and its waited-for children."""
+    t = os.times()
+    return t.user + t.system + t.children_user + t.children_system
+
+
 def run_once(repo: Path, start_dir: str) -> dict:
     os.chdir(repo)
+    cpu_started = cpu_seconds()
     started = time.perf_counter()
     suite = unittest.defaultTestLoader.discover(start_dir, top_level_dir=str(repo))
     discovery = time.perf_counter() - started
@@ -108,6 +137,13 @@ def run_once(repo: Path, start_dir: str) -> dict:
     suite.run(result)
     wall = time.perf_counter() - wall_started
     return {
+        "cpu_seconds": cpu_seconds() - cpu_started,
+        "counts": {
+            "ran": result.testsRun,
+            "skipped": len(result.skipped),
+            "failed": len(result.failures) + len(result.unexpectedSuccesses),
+            "errored": len(result.errors),
+        },
         "discovery_seconds": discovery,
         "wall_seconds": wall,
         "seconds": result.seconds,
@@ -152,7 +188,7 @@ def passed(data: Mapping) -> bool:
     return tests_ok and fixtures_ok
 
 
-def collect(repo: Path, runs: int, start_dir: str = "tests") -> dict:
+def collect(repo: Path, runs: int, start_dir: str = "tests", extra_provenance: Mapping[str, str] | None = None) -> dict:
     if str(repo) not in sys.path:
         sys.path.insert(0, str(repo))
     origin = Path.cwd()
@@ -166,7 +202,11 @@ def collect(repo: Path, runs: int, start_dir: str = "tests") -> dict:
             "python": platform.python_version(),
             "platform": platform.platform(),
             "cpu_count": os.cpu_count(),
+            "node": shutil.which("node") and subprocess.run(["node", "--version"], capture_output=True, text=True).stdout.strip(),
         },
+        "provenance": provenance(extra_provenance),
+        "counts": [s["counts"] for s in samples if "counts" in s],
+        "cpu_seconds": [round(s["cpu_seconds"], 3) for s in samples if "cpu_seconds" in s],
         "runs": runs,
         "discovery_seconds": [round(s["discovery_seconds"], 3) for s in samples],
         "wall_seconds": [round(s["wall_seconds"], 3) for s in samples],
@@ -240,6 +280,10 @@ def render_markdown(data: Mapping, top_n: int = 15) -> str:
         for f in fixtures.values():
             counts[f["outcome"]] += 1
         out.append(f"| Fixture outcomes (not tests) | {', '.join(f'{k} {v}' for k, v in sorted(counts.items()))} |")
+    if data.get("cpu_seconds"):
+        out.append(f"| Process CPU time incl. children (median of runs) | {statistics.median(data['cpu_seconds']):,.1f} |")
+    for i, c in enumerate(data.get("counts", []), 1):
+        out.append(f"| Run {i} counts | ran {c['ran']}, skipped {c['skipped']}, failed {c['failed']}, errored {c['errored']} |")
     if data["runs"] > 1:
         out.append(f"| Wall time per run | {', '.join(f'{w:,.1f}' for w in data['wall_seconds'])} |")
 
@@ -274,6 +318,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--start-dir", default="tests", help="discovery directory relative to the repo (default tests)")
     parser.add_argument("--out", type=Path, help="write the raw timing JSON here")
     parser.add_argument("--from-json", type=Path, help="render a summary from stored JSON instead of running")
+    parser.add_argument("--provenance", action="append", default=[], metavar="KEY=VALUE", help="extra provenance field (repeatable)")
     parser.add_argument("--top", type=int, default=15, help="rows in the slowest-N tables")
     args = parser.parse_args(argv)
     if args.from_json:
@@ -282,7 +327,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.runs < 1:
         parser.error("--runs must be at least 1")
     out = args.out.resolve() if args.out else None
-    data = collect(REPO_ROOT, args.runs, args.start_dir)
+    extra = dict(item.split("=", 1) for item in args.provenance if "=" in item)
+    data = collect(REPO_ROOT, args.runs, args.start_dir, extra)
     if out:
         out.write_text(json.dumps(data, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     print(render_markdown(data, args.top))
