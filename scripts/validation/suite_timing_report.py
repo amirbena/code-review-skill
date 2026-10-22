@@ -26,14 +26,18 @@ if str(REPO_ROOT) not in sys.path:
 SCHEMA = "test-timing/v1"
 
 
+OUTCOME_RANK = {"ok": 0, "skip": 1, "fail": 2, "error": 3}
+
+
 class TimingResult(unittest.TestResult):
-    """Collects duration and outcome per test; fixtures outside a test are not attributed."""
+    """Collects duration and outcome per test; class/module fixture outcomes are kept apart from tests."""
 
     def __init__(self) -> None:
         super().__init__()
         self.seconds: dict[str, float] = {}
         self.outcome: dict[str, str] = {}
         self.detail: dict[str, str] = {}
+        self.fixtures: dict[str, dict] = {}
         self._started: dict[str, float] = {}
 
     def startTest(self, test: unittest.TestCase) -> None:
@@ -46,15 +50,35 @@ class TimingResult(unittest.TestResult):
         self.seconds[test_id] = time.perf_counter() - self._started.pop(test_id)
         self.outcome.setdefault(test_id, "ok")
 
+    def _record(self, test, outcome: str, detail: str = "") -> None:
+        """Keep the worst outcome per test; a holder that never started is a fixture, recorded apart from tests."""
+        test_id = test.id()
+        if test_id in self._started:
+            if OUTCOME_RANK[outcome] > OUTCOME_RANK[self.outcome.get(test_id, "ok")]:
+                self.outcome[test_id] = outcome
+                self.detail[test_id] = detail
+            return
+        if OUTCOME_RANK[outcome] > OUTCOME_RANK[self.fixtures.get(test_id, {"outcome": "ok"})["outcome"]]:
+            self.fixtures[test_id] = {"outcome": outcome, **({"detail": detail} if detail else {})}
+
     def addFailure(self, test, err) -> None:  # noqa: N802
         super().addFailure(test, err)
-        self.outcome[test.id()] = "fail"
-        self.detail[test.id()] = self._last_line(self.failures[-1][1])
+        self._record(test, "fail", self._last_line(self.failures[-1][1]))
 
     def addError(self, test, err) -> None:  # noqa: N802
         super().addError(test, err)
-        self.outcome[test.id()] = "error"
-        self.detail[test.id()] = self._last_line(self.errors[-1][1])
+        self._record(test, "error", self._last_line(self.errors[-1][1]))
+
+    def addSubTest(self, test, subtest, err) -> None:  # noqa: N802
+        super().addSubTest(test, subtest, err)
+        if err is not None:
+            failed = issubclass(err[0], test.failureException)
+            entry = self.failures[-1] if failed else self.errors[-1]
+            self._record(test, "fail" if failed else "error", self._last_line(entry[1]))
+
+    def addUnexpectedSuccess(self, test) -> None:  # noqa: N802
+        super().addUnexpectedSuccess(test)
+        self._record(test, "fail", "unexpected success")
 
     @staticmethod
     def _last_line(traceback_text: str) -> str:
@@ -63,7 +87,7 @@ class TimingResult(unittest.TestResult):
 
     def addSkip(self, test, reason) -> None:  # noqa: N802
         super().addSkip(test, reason)
-        self.outcome[test.id()] = "skip"
+        self._record(test, "skip")
 
 
 def flatten(suite: unittest.TestSuite) -> Iterable[unittest.TestCase]:
@@ -89,10 +113,8 @@ def run_once(repo: Path, start_dir: str) -> dict:
         "seconds": result.seconds,
         "outcome": result.outcome,
         "detail": result.detail,
+        "fixtures": result.fixtures,
     }
-
-
-OUTCOME_RANK = {"ok": 0, "skip": 1, "fail": 2, "error": 3}
 
 
 def merge_samples(samples: Sequence[Mapping]) -> dict[str, dict]:
@@ -111,6 +133,23 @@ def merge_samples(samples: Sequence[Mapping]) -> dict[str, dict]:
             **({"detail": detail} if detail else {}),
         }
     return tests
+
+
+def merge_fixtures(samples: Sequence[Mapping]) -> dict[str, dict]:
+    """Class/module fixture outcomes over all runs, worst first; kept out of the per-test entries."""
+    merged: dict[str, dict] = {}
+    for s in samples:
+        for name, entry in s.get("fixtures", {}).items():
+            if OUTCOME_RANK[entry["outcome"]] > OUTCOME_RANK[merged.get(name, {"outcome": "ok"})["outcome"]]:
+                merged[name] = dict(entry)
+    return dict(sorted(merged.items()))
+
+
+def passed(data: Mapping) -> bool:
+    """True when no test failed or errored and no fixture errored; skips never fail a run."""
+    tests_ok = all(e["outcome"] in ("ok", "skip") for e in data["tests"].values())
+    fixtures_ok = all(f["outcome"] == "skip" for f in data.get("fixtures", {}).values())
+    return tests_ok and fixtures_ok
 
 
 def collect(repo: Path, runs: int, start_dir: str = "tests") -> dict:
@@ -132,6 +171,7 @@ def collect(repo: Path, runs: int, start_dir: str = "tests") -> dict:
         "discovery_seconds": [round(s["discovery_seconds"], 3) for s in samples],
         "wall_seconds": [round(s["wall_seconds"], 3) for s in samples],
         "tests": merge_samples(samples),
+        "fixtures": merge_fixtures(samples),
     }
 
 
@@ -194,6 +234,12 @@ def render_markdown(data: Mapping, top_n: int = 15) -> str:
     if fast_total is not None:
         out.append(f"| Sum of per-test durations the FAST tier still runs | {fast_total:,.1f} |")
     out.append(f"| Outcomes | {', '.join(f'{k} {v}' for k, v in sorted(outcomes.items()))} |")
+    fixtures = data.get("fixtures", {})
+    if fixtures:
+        counts = defaultdict(int)
+        for f in fixtures.values():
+            counts[f["outcome"]] += 1
+        out.append(f"| Fixture outcomes (not tests) | {', '.join(f'{k} {v}' for k, v in sorted(counts.items()))} |")
     if data["runs"] > 1:
         out.append(f"| Wall time per run | {', '.join(f'{w:,.1f}' for w in data['wall_seconds'])} |")
 
@@ -215,6 +261,9 @@ def render_markdown(data: Mapping, top_n: int = 15) -> str:
         table(f"**{label}**", top(sums, top_n if depth == 3 else len(sums)), counts)
     table(f"**Slowest modules (top {top_n})**", top(sum_by(tests, module_of), top_n))
     table(f"**Slowest tests (top {top_n})**", top(per_test, top_n))
+    if fixtures:
+        out.extend(["", "**Fixture outcomes**", "", "| Fixture | Outcome | Detail |", "| --- | --- | --- |"])
+        out.extend(f"| `{name}` | {f['outcome']} | {f.get('detail', '')} |" for name, f in fixtures.items())
     out.append("")
     return "\n".join(out)
 
@@ -237,7 +286,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if out:
         out.write_text(json.dumps(data, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     print(render_markdown(data, args.top))
-    return 0 if all(e["outcome"] in ("ok", "skip") for e in data["tests"].values()) else 1
+    return 0 if passed(data) else 1
 
 
 if __name__ == "__main__":

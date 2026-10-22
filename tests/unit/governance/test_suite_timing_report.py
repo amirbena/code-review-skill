@@ -94,13 +94,33 @@ class MergeTests(unittest.TestCase):
             runs = [run_sample({"t": 1.0}, {"t": o}) for o in order]
             self.assertEqual(timing.merge_samples(runs)["t"]["outcome"], "error")
 
-    def test_fixture_error_without_a_duration_is_kept(self):
-        fixture = "setUpClass (t.Broken)"
-        merged = timing.merge_samples([run_sample({}, {fixture: "error"}, {fixture: "RuntimeError: boom"})])
-        self.assertEqual(merged[fixture]["outcome"], "error")
-        self.assertEqual(merged[fixture]["seconds"], [0.0])
+    def test_fixture_outcomes_merge_worst_first_across_runs(self):
+        name = "setUpClass (t.Broken)"
+        runs = [
+            {"fixtures": {name: {"outcome": "skip"}}},
+            {"fixtures": {name: {"outcome": "error", "detail": "RuntimeError: boom"}}},
+            {"fixtures": {}},
+        ]
+        self.assertEqual(timing.merge_fixtures(runs), {name: {"outcome": "error", "detail": "RuntimeError: boom"}})
 
-    def test_result_records_a_class_fixture_error_through_the_unittest_path(self):
+    def test_collect_keeps_a_fixture_error_that_only_a_later_run_produced(self):
+        def one_run(fixtures):
+            return {
+                "discovery_seconds": 0.1,
+                "wall_seconds": 1.0,
+                "seconds": {"t.ok": 0.5},
+                "outcome": {"t.ok": "ok"},
+                "detail": {},
+                "fixtures": fixtures,
+            }
+
+        runs = iter([one_run({}), one_run({"setUpClass (t.B)": {"outcome": "error", "detail": "RuntimeError: boom"}})])
+        with mock.patch.object(timing, "run_once", side_effect=lambda *_: next(runs)):
+            data = timing.collect(timing.REPO_ROOT, 2)
+        self.assertEqual(data["fixtures"], {"setUpClass (t.B)": {"outcome": "error", "detail": "RuntimeError: boom"}})
+        self.assertFalse(timing.passed(data))
+
+    def test_a_class_fixture_error_is_kept_apart_from_tests(self):
         class Broken(unittest.TestCase):
             @classmethod
             def setUpClass(cls):
@@ -111,11 +131,30 @@ class MergeTests(unittest.TestCase):
 
         result = timing.TimingResult()
         unittest.defaultTestLoader.loadTestsFromTestCase(Broken).run(result)
-        (fixture_id,) = result.outcome
-        self.assertIn("setUpClass", fixture_id)
-        self.assertEqual(result.outcome[fixture_id], "error")
-        merged = timing.merge_samples([run_sample(result.seconds, result.outcome, result.detail)])
-        self.assertEqual(merged[fixture_id]["outcome"], "error")
+        self.assertEqual(result.outcome, {})
+        ((name, entry),) = result.fixtures.items()
+        self.assertIn("setUpClass", name)
+        self.assertEqual(entry, {"outcome": "error", "detail": "RuntimeError: boom"})
+
+    def test_a_class_fixture_skip_is_recorded_and_does_not_fail_the_run(self):
+        class Skipped(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                raise unittest.SkipTest("not here")
+
+            def test_x(self):
+                pass
+
+        result = timing.TimingResult()
+        unittest.defaultTestLoader.loadTestsFromTestCase(Skipped).run(result)
+        self.assertEqual(result.outcome, {})
+        self.assertEqual([f["outcome"] for f in result.fixtures.values()], ["skip"])
+        data = {"tests": timing.merge_samples([run_sample(result.seconds, result.outcome)]), "fixtures": result.fixtures}
+        self.assertTrue(timing.passed(data))
+
+    def test_passed_is_false_when_only_a_fixture_errored(self):
+        data = {"tests": timing.merge_samples([run_sample({"t.ok": 1.0}, {"t.ok": "ok"})]), "fixtures": {"setUpClass (t.B)": {"outcome": "error"}}}
+        self.assertFalse(timing.passed(data))
 
     def test_exit_status_is_failure_when_only_a_fixture_errored(self):
         data = {
@@ -124,10 +163,101 @@ class MergeTests(unittest.TestCase):
             "runs": 1,
             "discovery_seconds": [0.1],
             "wall_seconds": [1.0],
-            "tests": timing.merge_samples([run_sample({"t.ok": 1.0}, {"t.ok": "ok", "setUpClass (t.B)": "error"})]),
+            "tests": timing.merge_samples([run_sample({"t.ok": 1.0}, {"t.ok": "ok"})]),
+            "fixtures": {"setUpClass (tests.unit.x.Broken)": {"outcome": "error", "detail": "RuntimeError: boom"}},
         }
         with mock.patch.object(timing, "collect", return_value=data), contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(timing.main([]), 1)
+
+    def test_fixture_errors_do_not_enter_the_test_count_or_the_group_tables(self):
+        data = {
+            "schema": timing.SCHEMA,
+            "environment": {"python": "3", "platform": "p", "cpu_count": 1},
+            "runs": 1,
+            "discovery_seconds": [0.1],
+            "wall_seconds": [1.0],
+            "tests": timing.merge_samples([run_sample({"tests.unit.a.test_x.C.test_ok": 1.0}, {"tests.unit.a.test_x.C.test_ok": "ok"})]),
+            "fixtures": {"setUpClass (tests.unit.x.Broken)": {"outcome": "error", "detail": "RuntimeError: boom"}},
+        }
+        text = timing.render_markdown(data)
+        self.assertIn("Tests discovered | 1 |", text)
+        self.assertNotIn("| `setUpClass (tests.unit` |", text)
+        self.assertIn("| Fixture outcomes (not tests) | error 1 |", text)
+        self.assertIn("| `setUpClass (tests.unit.x.Broken)` | error | RuntimeError: boom |", text)
+
+    def test_a_report_without_fixtures_renders_no_fixture_section(self):
+        self.assertNotIn("Fixture outcomes", timing.render_markdown(sample()))
+
+
+class OutcomeRecordingTests(unittest.TestCase):
+    def run_case(self, case):
+        result = timing.TimingResult()
+        unittest.defaultTestLoader.loadTestsFromTestCase(case).run(result)
+        return result
+
+    def test_a_failing_subtest_marks_the_parent_test_failed(self):
+        class Case(unittest.TestCase):
+            def test_parts(self):
+                for n in (1, 2):
+                    with self.subTest(n=n):
+                        self.assertEqual(n, 1)
+
+        result = self.run_case(Case)
+        ((test_id, outcome),) = result.outcome.items()
+        self.assertTrue(test_id.endswith("test_parts"))
+        self.assertEqual(outcome, "fail")
+        self.assertIn("AssertionError", result.detail[test_id])
+
+    def test_an_erroring_subtest_marks_the_parent_test_errored(self):
+        class Case(unittest.TestCase):
+            def test_parts(self):
+                with self.subTest(n=1):
+                    raise ValueError("bad part")
+
+        result = self.run_case(Case)
+        ((_, outcome),) = result.outcome.items()
+        self.assertEqual(outcome, "error")
+        self.assertEqual(list(result.detail.values()), ["ValueError: bad part"])
+
+    def test_a_later_failure_never_downgrades_an_earlier_error(self):
+        class Case(unittest.TestCase):
+            def test_parts(self):
+                with self.subTest(n=1):
+                    raise ValueError("first")
+                self.fail("later")
+
+        result = self.run_case(Case)
+        self.assertEqual(list(result.outcome.values()), ["error"])
+        self.assertEqual(list(result.detail.values()), ["ValueError: first"])
+
+    def test_passing_subtests_leave_the_test_ok(self):
+        class Case(unittest.TestCase):
+            def test_parts(self):
+                for n in (1, 2):
+                    with self.subTest(n=n):
+                        self.assertTrue(n)
+
+        self.assertEqual(list(self.run_case(Case).outcome.values()), ["ok"])
+
+    def test_an_unexpected_success_is_a_failure(self):
+        class Case(unittest.TestCase):
+            @unittest.expectedFailure
+            def test_surprise(self):
+                pass
+
+        result = self.run_case(Case)
+        self.assertEqual(list(result.outcome.values()), ["fail"])
+        self.assertEqual(list(result.detail.values()), ["unexpected success"])
+
+    def test_subtest_failures_reach_the_merged_entry_and_the_run_status(self):
+        class Case(unittest.TestCase):
+            def test_parts(self):
+                with self.subTest(n=1):
+                    self.fail("part")
+
+        result = self.run_case(Case)
+        tests = timing.merge_samples([run_sample(result.seconds, result.outcome, result.detail)])
+        self.assertFalse(timing.passed({"tests": tests, "fixtures": result.fixtures}))
 
 
 class OutputPathTests(unittest.TestCase):
