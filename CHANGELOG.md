@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.80.1 — 2026-10-22
+
+### Fixed
+
+- Active PR review runbook defers restated policy to its canonical policies without changing behavior (#796).
+
 ## v1.80.0 — 2026-10-22
 
 ### Changed
