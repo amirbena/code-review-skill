@@ -30,9 +30,8 @@ from release_lib.release_intent import (
     parse_release_intent,
     render_bullet,
 )
-from release_lib.semver_policy import AmbiguousReleaseImpact
+from release_lib.semver_policy import _SUBSECTION_RE, AmbiguousReleaseImpact
 
-_SUBSECTION_RE = re.compile(r"^###\s+(.+?)\s*$")
 # Trailing punctuation (a maintainer's edit to the squash-merge title box,
 # e.g. adding a period) must not defeat detection.
 _SQUASH_REF_RE = re.compile(r"\(#(\d+)\)[.!?:;,]*\s*$")
