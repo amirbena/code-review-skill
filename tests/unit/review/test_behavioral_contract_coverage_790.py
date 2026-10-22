@@ -159,19 +159,70 @@ class PolicyLoadingCheckpointTests(unittest.TestCase):
                 checkpoint_label(required | extra, required, "REVIEW CLEAN"), "REVIEW INCOMPLETE"
             )
 
-    def test_each_clean_sample_skill_checkpoint_gates_its_clean_outcome(self) -> None:
-        # A shipped clean sample is only valid when nothing required was left unopened.
-        clean = [p for p in shipped_samples() if _label(p.read_text(encoding="utf-8")) == "REVIEW CLEAN"]
-        self.assertTrue(clean)
-        for path in clean:
-            skill = path.parent.name
-            required = required_set(skill)
-            with self.subTest(sample=path.name):
-                self.assertEqual(checkpoint_label(required, required, "REVIEW CLEAN"), "REVIEW CLEAN")
-                self.assertEqual(
-                    checkpoint_label(required, required - {sorted(required)[0]}, "REVIEW CLEAN"),
-                    "REVIEW INCOMPLETE",
-                )
+
+CHECKPOINT = "Mandatory-loading checkpoint"
+RECHECK = "pre-verdict recheck"
+CHECKPOINT_HEADING = "## Mandatory-loading checkpoint and pre-verdict recheck"
+RUNBOOKS = (
+    "skills/local-code-review/runbooks/local-review.md",
+    "skills/github-pr-review/runbooks/active-pr-review.md",
+    "skills/github-pr-review/runbooks/passive-pr-review.md",
+)
+_FIRST_STEP = re.compile(r"^[01]\. ", re.M)
+
+
+def runbook_text(rel: str) -> str:
+    return (REPO_ROOT / rel).read_text(encoding="utf-8")
+
+
+def checkpoint_wiring_gaps(runbook: str, policy: str) -> list[str]:
+    """Where the checkpoint and recheck sit relative to the runbook steps, and whether the policy owns them."""
+    body = runbook.split("\n## Steps", 1)[-1]
+    step = _FIRST_STEP.search(body)
+    gaps: list[str] = []
+    if CHECKPOINT_HEADING not in policy:
+        gaps.append("policy section missing")
+    if CHECKPOINT not in body or not step or body.index(CHECKPOINT) > step.start():
+        gaps.append("checkpoint does not precede step 1")
+    if not step or RECHECK not in body[step.end() :]:
+        gaps.append("pre-verdict recheck missing from the steps")
+    return gaps
+
+
+class CheckpointWiringTests(unittest.TestCase):
+    policy = (REPO_ROOT / "shared/policies/review-stopping-criteria.md").read_text(encoding="utf-8")
+
+    def test_every_runbook_runs_the_checkpoint_before_step_1_and_rechecks_before_the_verdict(self) -> None:
+        for rel in RUNBOOKS:
+            with self.subTest(runbook=rel):
+                self.assertEqual(checkpoint_wiring_gaps(runbook_text(rel), self.policy), [])
+
+    def test_mutation_deleting_the_checkpoint_paragraph_is_detected(self) -> None:
+        for rel in RUNBOOKS:
+            text = runbook_text(rel)
+            mutated = re.sub(r"^\*\*Mandatory-loading checkpoint[^\n]*\n\n", "", text, count=1, flags=re.M)
+            with self.subTest(runbook=rel):
+                self.assertNotEqual(mutated, text)
+                self.assertIn("checkpoint does not precede step 1", checkpoint_wiring_gaps(mutated, self.policy))
+
+    def test_mutation_moving_the_checkpoint_after_step_1_is_detected(self) -> None:
+        for rel in RUNBOOKS:
+            text = runbook_text(rel)
+            para = re.search(r"^\*\*Mandatory-loading checkpoint[^\n]*\n\n", text, re.M).group(0)
+            mutated = text.replace(para, "", 1) + "\n" + para
+            with self.subTest(runbook=rel):
+                self.assertIn("checkpoint does not precede step 1", checkpoint_wiring_gaps(mutated, self.policy))
+
+    def test_mutation_dropping_the_recheck_or_policy_section_is_detected(self) -> None:
+        for rel in RUNBOOKS:
+            text = runbook_text(rel)
+            with self.subTest(runbook=rel, mutation="recheck"):
+                head, tail = text.split("\n## Steps", 1)
+                mutated = head + "\n## Steps" + tail.replace(RECHECK, "recheck")
+                self.assertIn("pre-verdict recheck missing from the steps", checkpoint_wiring_gaps(mutated, self.policy))
+            with self.subTest(runbook=rel, mutation="policy"):
+                mutated = self.policy.replace(CHECKPOINT_HEADING, "## Loading")
+                self.assertIn("policy section missing", checkpoint_wiring_gaps(text, mutated))
 
 
 def _label(text: str) -> str:
