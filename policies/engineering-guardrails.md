@@ -83,9 +83,11 @@ samples, with variance noted, and must not shrink required coverage.
 
 - Required checks stay as named, and `scripts/validation/ci_test_route.py`
   keeps its standalone fail-to-FULL behavior.
-- Evidence: the FULL-tier cause was unidentified until #798 profiled it; the
-  dominant phase was not the one inferred, and #802 was justified by
-  before/after samples (suite wall median 302 s to 252 s).
+- Evidence: #798 profiled FULL and packaging cost and ranked hotspots rather
+  than naming a single cause; within the packaging build, `adapt-shared-links`
+  was about 63% of wall time, not the interpreter-spawn cost the issue had
+  judged unlikely. #802 was justified by before/after samples (suite wall
+  median 302 s to 252 s).
 - Use the same method as the baseline; compare shares, not seconds, across
   different machines or Python versions. Keep CI-workflow, release-helper, and
   packaging-helper changes in separate PRs (#793).
@@ -101,8 +103,12 @@ behavior unless the task explicitly authorizes an output change.
 - Bash and PowerShell packaging must keep tree-hash parity (the
   `skill-tree-parity` jobs). Add no time-, host-, or order-dependent input.
 - Evidence: #802 cut Python spawns from 161 to 29 with `dist/` byte-identical.
-- Canonical: [`validation-and-clean-exit.md`](validation-and-clean-exit.md),
-  [`skill-development-policy.md`](skill-development-policy.md).
+- Canonical: [`docs/RELEASE.md`](../docs/RELEASE.md) (archives are
+  byte-reproducible: sorted entries, fixed timestamps),
+  [`validation-and-clean-exit.md`](validation-and-clean-exit.md) (shell/PowerShell
+  parity), [`skill-development-policy.md`](skill-development-policy.md).
+  The no time-, host-, or order-dependent input rule follows #793's
+  byte-identical acceptance criteria.
 
 ## 7. Keep benchmark evaluation independent
 
