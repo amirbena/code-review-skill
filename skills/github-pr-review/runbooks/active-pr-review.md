@@ -703,9 +703,8 @@ stop
     step 16 — review the new delta, re-finalize findings against the
     current HEAD (re-evaluating escalation per step 9 if this was a delta
     re-review), and only then re-run steps 13–16. Otherwise map the
-    verdict to a status state and authorization per that status policy
-    (blocking-only enforcement may be published even for a self-review;
-    `success` never for a self-review or on ambiguity). Only the
+    verdict to a status state and publish it only as that status policy's
+    "Authorization: blocking authority vs. positive authority" permits. Only the
     authoritative aggregator publishes it; parallel workers never do.
     Never merge.
 15a. **Re-check verdict consistency against the literal event about to be
