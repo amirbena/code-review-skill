@@ -224,7 +224,7 @@ record [#229](https://github.com/amirbena/code-review-skill/issues/229))
 is a **documented reference set, not a CI gate**, unlike everything above:
 eight findings paired as their structured and senior-voice renderings,
 demonstrating the voice principles owned by
-[`../../shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),
+[`../../shared/templates/finding-rendering-human.md`](../../shared/templates/finding-rendering-human.md),
 "Senior voice contract". It measures presentation quality, which the
 #40/#41 corpus and metrics above do not.
 

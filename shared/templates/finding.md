@@ -28,7 +28,7 @@ those fields, defined in
 the compact, field-oriented block in "Canonical full rendering" — highly
 scannable for a human, and predictable enough for a coding agent to parse
 and act on. The opt-in concise **human inline rendering** ("Canonical
-human inline rendering" there — `github-pr-review` inline surface only,
+human inline rendering" in [`finding-rendering-human.md`](finding-rendering-human.md) — `github-pr-review` inline surface only,
 selected by `human_inline_findings`) is another such projection: it
 re-voices an inline finding the way a senior engineer would write the
 comment by hand. The opt-in **human full rendering** ("Canonical human
@@ -875,9 +875,11 @@ correction (`Fix`) → optional supporting technical detail (`Details`).
 ## Canonical renderings
 
 The concrete rendering exemplars — the compact full rendering, the GitHub
-inline rendering, the opt-in human inline re-voicing, and the
-summary-pointer form — live in
-[`finding-rendering.md`](finding-rendering.md). They are projections of the
+inline rendering, and the summary-pointer form — live in
+[`finding-rendering.md`](finding-rendering.md); the opt-in human inline and
+full re-voicings live in
+[`finding-rendering-human.md`](finding-rendering-human.md), loaded only
+when `human_review_output` / `human_inline_findings` is in effect. They are projections of the
 fields and quality contract above; they never change the finding's
 identity, severity, evidence bar, canonical location, or the decision
 derivation.

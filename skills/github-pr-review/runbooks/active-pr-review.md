@@ -651,7 +651,7 @@ stop
     still renders in full in the body (per
     [`../policies/finding-placement.md`](../policies/finding-placement.md)),
     but as the human full rendering per
-    [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+    [`../../../shared/templates/finding-rendering-human.md`](../../../shared/templates/finding-rendering-human.md),
     "Canonical human full rendering," not the structured block — the same
     finding, identity, severity, and location, only its wording changes.
     **If the invocation also normalized `human_inline_findings`**

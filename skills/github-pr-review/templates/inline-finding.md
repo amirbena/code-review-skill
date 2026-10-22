@@ -169,13 +169,13 @@ When the invocation normalizes `human_inline_findings` (see
 derived from `human_review_output`, so senior-mode reviews get this by
 default), this comment is rendered in the concise senior-engineer voice
 from
-[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+[`../../../shared/templates/finding-rendering-human.md`](../../../shared/templates/finding-rendering-human.md),
 "Canonical human inline rendering" instead of the
 `[<severity>] / Evidence / Impact / Fix` block above — a short heading
 that keeps the severity (and its optional legend description, when
 `include_severity_description` is on) and names the finding, then
 compact prose. The voice itself is owned by the shared
-[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+[`../../../shared/templates/finding-rendering-human.md`](../../../shared/templates/finding-rendering-human.md),
 "Senior voice contract" — including no dedicated praise slot and no
 first-person/hedging on a required fix:
 

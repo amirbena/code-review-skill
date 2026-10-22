@@ -22,7 +22,7 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-FINDING_RENDERING = REPO_ROOT / "shared/templates/finding-rendering.md"
+FINDING_RENDERING = REPO_ROOT / "shared/templates/finding-rendering-human.md"
 REVIEW_SUMMARY = REPO_ROOT / "shared/templates/review-summary.md"
 INVOCATION = REPO_ROOT / "shared/policies/invocation-options.md"
 GH_OUTPUT = REPO_ROOT / "skills/github-pr-review/policies/review-output.md"
@@ -34,6 +34,7 @@ FEATURE_DOC = REPO_ROOT / "docs/features/human-review-output.md"
 # example, scanned for banned boilerplate/first-person phrasing.
 ALL_SENIOR_VOICE_DOCS = (
     FINDING_RENDERING,
+    REPO_ROOT / "shared/templates/finding-rendering.md",
     REVIEW_SUMMARY,
     GH_OUTPUT,
     GH_SUMMARY,
@@ -116,7 +117,7 @@ class OtherSitesLinkInsteadOfRestate(unittest.TestCase):
         opt_in = raw.split("## Concise human-style summary (opt-in)", 1)[1]
         opt_in = opt_in.split("## Machine metadata is subordinate", 1)[0]
         self.assertIn(
-            "[`finding-rendering.md`](finding-rendering.md), \"Senior voice contract\"",
+            "[`finding-rendering-human.md`](finding-rendering-human.md), \"Senior voice contract\"",
             opt_in,
         )
         # The density/de-dup/voice-tightening rules are no longer

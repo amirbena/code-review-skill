@@ -10,7 +10,7 @@ trade-off optionally raised as a question, and no review-process or
 machine metadata. The voice itself — leading with the
 defect, no dedicated praise slot, no first-person/hedging on a required
 fix, and the rest of the shared voice rules — is owned by one place:
-[`shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),
+[`shared/templates/finding-rendering-human.md`](../../shared/templates/finding-rendering-human.md),
 "Senior voice contract".
 
 It is normalized internally to the `human_review_output` option (default
@@ -37,7 +37,7 @@ inline — every finding in a passive review (passive has no inline
 surface), and an active-review finding with no valid inline anchor. This
 keeps a senior-mode review coherent across passive and active alike: a
 finding never reads structured on one surface and senior on another. See
-[`shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),
+[`shared/templates/finding-rendering-human.md`](../../shared/templates/finding-rendering-human.md),
 "Canonical human full rendering."
 
 ## Companion option: `human_inline_findings`
@@ -142,7 +142,7 @@ engineer`, or `... in structured format`) to skip the question. See
 "`human_review_output` phrasings" ·
 [`shared/templates/review-summary.md`](../../shared/templates/review-summary.md),
 "Concise human-style summary (opt-in)" ·
-[`shared/templates/finding-rendering.md`](../../shared/templates/finding-rendering.md),
+[`shared/templates/finding-rendering-human.md`](../../shared/templates/finding-rendering-human.md),
 "Senior voice contract" (the single owner of the voice rules themselves) ·
 [`skills/github-pr-review/policies/review-output.md`](../../skills/github-pr-review/policies/review-output.md),
 "Concise human-style summary (opt-in)".

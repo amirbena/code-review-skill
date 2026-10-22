@@ -36,7 +36,7 @@ language interpretation.
   full **in the review body** rather than as an inline comment — passive
   review findings (passive has no inline surface), and an active-review
   finding with no valid inline anchor — via the **human full rendering** in
-  [`../templates/finding-rendering.md`](../templates/finding-rendering.md),
+  [`../templates/finding-rendering-human.md`](../templates/finding-rendering-human.md),
   "Canonical human full rendering"; see that Skill's own
   `policies/review-output.md` for the exact wiring. This is a
   `github-pr-review`-specific extension of the option's effect, stated there,
@@ -50,7 +50,7 @@ language interpretation.
   short heading that keeps the `P0` / `P1` / `P2` severity and names the
   finding, then compact prose in place of the `Evidence:` / `Impact:` /
   `Fix:` labelled block (see
-  [`../templates/finding-rendering.md`](../templates/finding-rendering.md),
+  [`../templates/finding-rendering-human.md`](../templates/finding-rendering-human.md),
   "Canonical human inline rendering"). It acts only where a Skill publishes inline review
   comments — `github-pr-review`; `local-code-review` normalizes it for
   direct/mediated parity but has no inline-comment surface, so it has no
@@ -98,7 +98,7 @@ current task/PR boundary must absorb versus defer as a `Follow-up`, is
 mandatory base reasoning applied identically regardless of
 `human_review_output` / `senior_mode` or any other option. `senior_mode`
 may add narrative depth to how a finding and its `Follow-up` are worded
-(per [`../templates/finding-rendering.md`](../templates/finding-rendering.md),
+(per [`../templates/finding-rendering-human.md`](../templates/finding-rendering-human.md),
 "Senior voice contract" and its human renderings), but it owns none of
 this behavior: on vs. off produces the same finding set, severities, and
 remediation-scope-boundary outcomes — only wording differs.

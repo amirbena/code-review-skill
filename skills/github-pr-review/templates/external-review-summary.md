@@ -158,7 +158,7 @@ finding (see
 
 When `human_review_output` is on, each of these body findings uses the
 **human full rendering** instead, per
-[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+[`../../../shared/templates/finding-rendering-human.md`](../../../shared/templates/finding-rendering-human.md),
 "Canonical human full rendering" — the same `id` and `Location` line, the
 `Evidence` / `Impact` / `Fix` block re-voiced as senior-engineer prose:
 
@@ -473,7 +473,7 @@ engineer", "use concise review comments"; per
 concise senior-engineer voice from
 [`../../../shared/templates/review-summary.md`](../../../shared/templates/review-summary.md),
 "Concise human-style summary (opt-in)" — whose voice is owned by
-[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+[`../../../shared/templates/finding-rendering-human.md`](../../../shared/templates/finding-rendering-human.md),
 "Senior voice contract" — instead of the structured shape above:
 
 ```markdown
@@ -552,7 +552,7 @@ inline comments even when this body is structured.
 The inline re-voicing is presentation only and is governed by
 [`inline-finding.md`](inline-finding.md), "Human-rendered inline finding
 (opt-in)" and
-[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+[`../../../shared/templates/finding-rendering-human.md`](../../../shared/templates/finding-rendering-human.md),
 "Canonical human inline rendering" and "Senior voice contract". It
 changes no finding's severity,
 identity, deduplication, evidence, remediation, decision, or

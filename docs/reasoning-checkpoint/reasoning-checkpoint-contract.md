@@ -366,7 +366,7 @@ Questions for you — not findings; they do not change the decision.
 Under `human_review_output` the same 1–4 questions render as a short
 senior-voice paragraph (a single lead-in sentence and the questions in prose);
 count, anchors, and provenance are identical, voice follows
-[`finding-rendering.md`](../../shared/templates/finding-rendering.md) "Senior
+[`finding-rendering-human.md`](../../shared/templates/finding-rendering-human.md) "Senior
 voice contract". `human_inline_findings` is irrelevant — there is no inline
 form, ever.
 

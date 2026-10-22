@@ -131,7 +131,7 @@ inline finding as concise senior-engineer prose instead of the
 similarly re-voices a finding rendered in full **in the body** (per
 "Fallback: a finding with no valid inline anchor" above, and passive
 review's own always-in-body findings) via the human full rendering in
-[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+[`../../../shared/templates/finding-rendering-human.md`](../../../shared/templates/finding-rendering-human.md),
 "Canonical human full rendering." Both are **presentation-only and
 orthogonal to this policy**: rendering voice never changes inline-comment
 eligibility, the anchor-selection order above, the deterministic tie-break, the

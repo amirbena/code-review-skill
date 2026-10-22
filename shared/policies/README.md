@@ -71,7 +71,9 @@ packaged Skill is installed; they do not depend on this repository.
 
 Templates shared by both Skills live in
 [`../templates/`](../templates/) (`finding.md` — the finding-field contract,
-`finding-rendering.md` — its canonical rendering exemplars, and
+`finding-rendering.md` — its canonical structured rendering exemplars,
+`finding-rendering-human.md` — the opt-in human renderings, loaded only
+when `human_review_output` / `human_inline_findings` is in effect, and
 `review-summary.md`).
 
 ## Shared vs. Skill-specific vs. repository policy

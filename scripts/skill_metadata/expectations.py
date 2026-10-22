@@ -51,9 +51,15 @@ SHARED_FINDING_MARKERS = (
 # quality contract above.
 SHARED_FINDING_RENDERING_MARKERS = (
     "## Canonical full rendering",
-    "## Canonical human inline rendering",
     "## Canonical summary-pointer rendering",
     "one authoritative full representation",
+)
+# Issue #788: the opt-in human renderings moved to the conditionally loaded
+# shared/templates/finding-rendering-human.md.
+SHARED_FINDING_RENDERING_HUMAN_MARKERS = (
+    "## Senior voice contract",
+    "## Canonical human inline rendering",
+    "## Canonical human full rendering",
 )
 SHARED_REVIEW_SUMMARY_MARKERS = (
     "**Result:",

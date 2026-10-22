@@ -63,6 +63,7 @@ _CORE_SHARED = (
     "shared/policies/review-context.md",
     "shared/policies/invocation-options.md",
     "shared/templates/finding-rendering.md",
+    "shared/templates/finding-rendering-human.md",
     "shared/templates/review-summary.md",
     "LICENSE",
 )
@@ -117,6 +118,7 @@ _SHARED_ORDER: tuple[Entry, ...] = (
     Entry("shared/policies/engineering-design-deepening.md", "specialist-depth"),
     Entry("shared/templates/finding.md", "finding-placement-derivation"),
     Entry("shared/templates/finding-rendering.md", None),
+    Entry("shared/templates/finding-rendering-human.md", None),
     Entry("shared/templates/review-summary.md", None),
     Entry("LICENSE", None),
 )

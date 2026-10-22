@@ -225,7 +225,7 @@ title, location) and its evidence/impact/reasoning/fix are **not**
 repeated there; only a finding with no valid inline anchor carries its
 full field block in the body — the structured full rendering by default,
 or, when `human_review_output` is on, the human full rendering per the
-shared [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+shared [`../../../shared/templates/finding-rendering-human.md`](../../../shared/templates/finding-rendering-human.md),
 "Canonical human full rendering" (see "Concise human-style summary
 (opt-in)" below). Process and machine state (review mode,
 SHAs, counts, publication mode, mutation outcome) are subordinate — a short
@@ -256,7 +256,7 @@ them — is published after it.
 Both rendering modes (structured and `human_review_output`) follow the
 explicit, testable density/de-duplication guidance owned once, for both
 Skills, by
-[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+[`../../../shared/templates/finding-rendering-human.md`](../../../shared/templates/finding-rendering-human.md),
 "Senior voice contract", "Density, de-duplication, and voice tightening":
 omit empty/low-value sections, never restate the diff, never narrate
 file-by-file inspection or reproduction mechanics beyond the
@@ -303,7 +303,7 @@ that has no inline comment and is instead rendered in full in the body
 (a passive review's findings, or an active-review finding with no valid
 inline anchor per [`finding-placement.md`](finding-placement.md)), it
 re-words that finding too — via the shared
-[`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+[`../../../shared/templates/finding-rendering-human.md`](../../../shared/templates/finding-rendering-human.md),
 "Canonical human full rendering" — so a senior-mode review never leaves a
 body finding in the structured block while everything around it reads in
 senior voice. This holds identically in passive review (where every
