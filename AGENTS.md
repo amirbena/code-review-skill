@@ -198,6 +198,13 @@ canonical, detailed rule lives in the policy named after it.
   contributor child Issues from larger Epics, and preserves maintainer
   ownership of semantic and architectural contracts. Canonical:
   [`policies/contribution-ownership-policy.md`](policies/contribution-ownership-policy.md).
+- **Engineering guardrails.** Respect documented dependency direction and
+  ownership, consolidate only provably equivalent behavior, keep tests
+  isolated, establish a check's purpose before removing it, measure before
+  optimizing, keep packaged output deterministic and byte-identical, keep
+  benchmark evaluation independent, and review the exact change — an
+  incomplete review is never clean. Canonical:
+  [`policies/engineering-guardrails.md`](policies/engineering-guardrails.md).
 - **Native GitHub relationships for declared Issue dependencies.** An
   agent that creates or materially restructures an Issue's declared
   `Parent:`/`Children:`/`Depends on:`/`Blocks:` fields also creates the
@@ -260,6 +267,7 @@ normative).
 | Task-branch creation, base synchronization, dirty-tree / stash handling, branch naming, resuming a task branch | [`policies/repository-workflow.md`](policies/repository-workflow.md) |
 | Commit, push, PR creation and assignment, merge strategy, merge safety, squash cleanup, destructive-Git prohibitions | [`policies/git-pr-merge-policy.md`](policies/git-pr-merge-policy.md) |
 | Clean task end state, Python cache/bytecode cleanup, shell/PowerShell script parity, running repository validation & packaging | [`policies/validation-and-clean-exit.md`](policies/validation-and-clean-exit.md) |
+| Engineering habits for any code, test, CI, packaging, benchmark, or review-process change — dependency direction and ownership, equivalent-only consolidation, test isolation, purpose-before-removal, measure-before-optimizing, deterministic distribution, benchmark independence, exact-change review | [`policies/engineering-guardrails.md`](policies/engineering-guardrails.md) |
 | Repository documentation (`README.md`, `docs/`, Skill `README.md`) — structure and reading experience | [`policies/documentation-policy.md`](policies/documentation-policy.md) |
 | Content of agent-authored GitHub Issues and Pull Requests — how much detail belongs in the body, per-field size guidance, PR summary shape, summarized validation, linking canonical docs instead of duplicating them, the local release-intent pre-flight check before `gh pr create` / `gh pr edit`, creating and verifying native GitHub parent/sub-issue and dependency relationships for declared `Parent`/`Children`/`Depends on`/`Blocks` fields | [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md) |
 | Filing a maintainer-identified engineering defect (`.github/ISSUE_TEMPLATE/engineering-bug.yml`) — contract/invariant mismatches, incorrect execution semantics, security-boundary violations, and similar defects a maintainer has already diagnosed, as distinct from the general-purpose `bug-report.yml` chooser entry | [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md) |

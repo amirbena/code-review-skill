@@ -36,6 +36,16 @@
       "allow": []
     },
     {
+      "id": "routed:engineering-guardrails",
+      "group": "routed-policy",
+      "text": "Respect ownership and dependency direction",
+      "owner": "policies/engineering-guardrails.md",
+      "scope": [
+        "AGENTS.md"
+      ],
+      "allow": []
+    },
+    {
       "id": "routed:documentation-policy",
       "group": "routed-policy",
       "text": "User journey first.",
