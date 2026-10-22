@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.80.2 — 2026-10-22
+
+### Fixed
+
+- Skill packaging is faster: shared-link adaptation runs once per staged tree, with byte-identical archives (#802).
+
 ## v1.80.1 — 2026-10-22
 
 ### Fixed
