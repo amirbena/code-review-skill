@@ -30,13 +30,18 @@ from tests.support.benchmark_publisher_fakes import SLUG, World, make_record
 from tests.support.benchmark_records import make_case, run_output
 from tests.support.evidence_destination import EVIDENCE, NAMESPACES, SOURCE, evidence_block, manifest_with
 from tests.support.paths import REPO_ROOT
-from tests.unit.benchmark.test_benchmark_evidence_destination import FILES, HANDOFF, Stores, _git
+from tests.unit.benchmark.test_benchmark_evidence_destination import FILES, HANDOFF, Stores
 from tests.unit.benchmark.test_benchmark_publisher_github_api import ScriptedOpener
 from tests.unit.benchmark.test_run_concurrency_experiment import small_spec, write_stub
+from tests.support.git_repo import git, isolate_git_config
 
 SNAPSHOT = REPO_ROOT / "tests" / "support" / "pre_688_sentinel_record.json"
 TOKENS = {"BENCHMARK_CONTENTS_TOKEN": "ghs_c", "BENCHMARK_ISSUES_TOKEN": "ghs_i", "BENCHMARK_READ_TOKEN": "ghs_r"}
 NOW = "2026-09-20T01:00:00Z"
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class GateStores(Stores):
@@ -117,7 +122,7 @@ class PrivatePublicationTests(GateStores):
         with self.assertRaises(ed.StoreUnavailable) as ctx:
             dest.seal(HANDOFF, {seal.HANDOFF_CHECK_FILE: b'{"x": 2}\n'}, "retry")
         self.assertEqual(ctx.exception.error_class, "rejected")
-        self.assertEqual(_git(self.private, "rev-parse", f"refs/heads/{HANDOFF}"), first)
+        self.assertEqual(git(self.private, "rev-parse", f"refs/heads/{HANDOFF}"), first)
         self.assertEqual(self.refs(self.public), [])
 
     def test_f4a_an_unconfirmed_push_leaves_one_ref_in_the_private_store_and_a_retry_cannot_double_it(self) -> None:
@@ -144,8 +149,8 @@ class PrivatePublicationTests(GateStores):
         source = ed.Destination(**{**self.private_dest().__dict__, "remote": str(self.public), "repository": SOURCE, "phase": "pre_cutover"})
         ref = f"{seal.STAGING_REF_PREFIX}sentinel-20261010T010000Z-aaaaaaaaaaaa"
         sha = source.seal(ref, {seal.RECORD_FILE: b'{"k": 1}\n'}, "record")
-        _git(self.work, "push", "-q", str(self.private), f"{sha}:refs/heads/{ref}")
-        self.assertEqual(_git(self.private, "rev-parse", f"refs/heads/{ref}"), sha)
+        git(self.work, "push", "-q", str(self.private), f"{sha}:refs/heads/{ref}")
+        self.assertEqual(git(self.private, "rev-parse", f"refs/heads/{ref}"), sha)
         shown = lambda bare: subprocess.run(["git", "show", f"{sha}:{seal.RECORD_FILE}"], cwd=str(bare), capture_output=True).stdout  # noqa: E731
         self.assertEqual(res.sha256_hex(shown(self.public).decode()), res.sha256_hex(shown(self.private).decode()))
 
@@ -200,8 +205,8 @@ class FailureModeTests(GateStores):
     def test_wrong_remote_configuration_exits_2_for_every_entrypoint_and_writes_nothing(self) -> None:
         other = self.tmp / "amirbena" / "unrelated-evidence.git"
         other.parent.mkdir(exist_ok=True)
-        _git(self.tmp, "init", "--bare", "-q", str(other))
-        _git(self.work, "remote", "add", "evidence", str(other))
+        git(self.tmp, "init", "--bare", "-q", str(other))
+        git(self.work, "remote", "add", "evidence", str(other))
         manifest = self.manifest_path()
         for remote in (str(other), "evidence", "origin", str(self.public)):
             for module, extra in (
@@ -263,7 +268,7 @@ class FailureModeTests(GateStores):
         self.assertEqual(self.refs(self.public), [])
         (ref,) = self.refs(self.private)
         self.assertTrue(ref.startswith(f"refs/heads/{exp.TRIAL_REF_PREFIX}"))
-        record = json.loads(_git(self.private, "show", f"{ref}:{exp.EXPERIMENT_FILE}"))
+        record = json.loads(git(self.private, "show", f"{ref}:{exp.EXPERIMENT_FILE}"))
         self.assertEqual(record["status"], "terminated")
 
 

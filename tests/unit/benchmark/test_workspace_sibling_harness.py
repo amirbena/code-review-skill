@@ -27,6 +27,7 @@ from runtime_platform.benchmark.scripts.benchmark_review_adapter import (
     ReviewCliExitError,
     failure_category,
 )
+from tests.support.git_repo import isolate_git_config
 
 QUALIFIED = "tree-under-test:local-code-review"
 REPORT = "## Code Review\n\n**Result: ✅ Review Clean**\n\n### Decision\n**REVIEW CLEAN**\n"
@@ -71,6 +72,10 @@ def result_event(text: str = REPORT, *, is_error: bool = False, usage: dict | No
 
 def stream(*events: dict) -> str:
     return "\n".join(json.dumps(e) for e in events) + "\n"
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class AbsenceClassificationTests(unittest.TestCase):

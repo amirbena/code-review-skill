@@ -11,9 +11,14 @@ from pathlib import Path
 
 from tests.reference.review import workspace_sibling_context as wsc
 from tests.unit.review.test_external_contract_context import commit, git
+from tests.support.git_repo import isolate_git_config
 
 S = wsc.SignalKind
 REF = [wsc.Signal(S.API_REF, "billing-service")]
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class WorkspaceCase(unittest.TestCase):

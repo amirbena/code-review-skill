@@ -8,19 +8,15 @@ that links back to the canonical policy.
 
 from __future__ import annotations
 
-import re
 import unittest
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import normalize_text as _norm
 
 AGENTS = REPO_ROOT / "AGENTS.md"
 CONTRIBUTING = REPO_ROOT / "CONTRIBUTING.md"
 POLICY = REPO_ROOT / "policies" / "contribution-ownership-policy.md"
 POLICIES_README = REPO_ROOT / "policies" / "README.md"
-
-
-def _norm(text: str) -> str:
-    return re.sub(r"\s+", " ", text.replace("**", "").replace("`", ""))
 
 
 class CanonicalPolicyTests(unittest.TestCase):

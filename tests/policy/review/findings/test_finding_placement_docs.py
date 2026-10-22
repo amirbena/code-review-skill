@@ -19,6 +19,7 @@ import unittest
 
 from tests.reference.review import finding_contract as fc
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import normalize_text as _norm
 
 PLACEMENT = REPO_ROOT / "skills/github-pr-review/policies/finding-placement.md"
 PR_SCOPE = REPO_ROOT / "skills/github-pr-review/policies/pr-scope.md"
@@ -28,10 +29,6 @@ RUNBOOK = REPO_ROOT / "skills/github-pr-review/runbooks/active-pr-review.md"
 SHARED_FINDING = REPO_ROOT / "shared/templates/finding.md"
 SHARED_EVIDENCE = REPO_ROOT / "shared/policies/evidence.md"
 SHARED_REMEDIATION = REPO_ROOT / "shared/policies/remediation-guidance.md"
-
-
-def _norm(text: str) -> str:
-    return re.sub(r"\s+", " ", text.replace("**", "").replace("`", ""))
 
 
 class AnchorAtFixLocationSectionTests(unittest.TestCase):

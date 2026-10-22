@@ -10,6 +10,7 @@ import unittest
 from pathlib import Path
 
 from runtime_platform.benchmark.scripts import benchmark_evidence_migration as mig
+from tests.support.git_repo import isolate_git_config
 
 NS = ["claude/benchmark-result-"]
 HIST = "benchmark-history"
@@ -19,6 +20,10 @@ def _git(cwd: Path, *args: str) -> str:
     env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
     return subprocess.run(["git", *args], cwd=cwd, env={**env, "PATH": "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin"},
                           capture_output=True, text=True, check=True).stdout
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class MigrationTest(unittest.TestCase):

@@ -12,6 +12,7 @@ from unittest import mock
 
 from scripts.validation import ci_test_route as router
 from tests.support.paths import REPO_ROOT
+from tests.support.git_repo import git, isolate_git_config
 
 ROUTER = REPO_ROOT / "scripts" / "validation" / "ci_test_route.py"
 ISSUE_623 = ("docs/rendered-inspection/README.md", "docs/rendered-inspection/rendered-inspection-contract.md")
@@ -27,8 +28,8 @@ CONSUMERS = {
 }
 
 
-def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, check=True).stdout.strip()
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class FixtureRepo(unittest.TestCase):
@@ -36,9 +37,9 @@ class FixtureRepo(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.repo = Path(tmp.name)
-        _git(self.repo, "init", "-q", "-b", "main")
-        _git(self.repo, "config", "user.email", "t@example.com")
-        _git(self.repo, "config", "user.name", "t")
+        git(self.repo, "init", "-q", "-b", "main")
+        git(self.repo, "config", "user.email", "t@example.com")
+        git(self.repo, "config", "user.name", "t")
         for rel, text in CONSUMERS.items():
             self.write(rel, text)
         for rel in ("docs/pure/x.md", "docs/literal/a.md", "docs/literal/other.md", "docs/dyn/y.md", "docs/data/catalog/c.yaml"):
@@ -51,9 +52,9 @@ class FixtureRepo(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
 
     def commit(self, message: str) -> str:
-        _git(self.repo, "add", "-A")
-        _git(self.repo, "commit", "-q", "--allow-empty", "-m", message)
-        return _git(self.repo, "rev-parse", "HEAD")
+        git(self.repo, "add", "-A")
+        git(self.repo, "commit", "-q", "--allow-empty", "-m", message)
+        return git(self.repo, "rev-parse", "HEAD")
 
     def index(self) -> router.ConsumerIndex:
         return router.consumer_index(self.repo)
@@ -284,8 +285,8 @@ class RouteTests(FixtureRepo):
         self.assertEqual(self.route(head, None).tier, router.FULL)
         with tempfile.TemporaryDirectory() as empty:
             self.assertEqual(self.route(head, Path(empty)).tier, router.FULL)
-        _git(self.repo, "checkout", "-q", "--detach", self.base)
-        _git(self.repo, "mv", "docs/pure/x.md", "scripts/x.md")
+        git(self.repo, "checkout", "-q", "--detach", self.base)
+        git(self.repo, "mv", "docs/pure/x.md", "scripts/x.md")
         self.assertEqual(self.route(self.commit("rename out of docs"), self.repo).tier, router.FULL)
 
     def test_other_events_never_route_docs(self) -> None:
@@ -355,20 +356,20 @@ class SharedSurfaceTests(unittest.TestCase):
     def test_local_classify_matches_the_ci_route_for_the_same_change_set(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
-            _git(repo, "init", "-q", "-b", "main")
-            _git(repo, "config", "user.email", "t@example.com")
-            _git(repo, "config", "user.name", "t")
+            git(repo, "init", "-q", "-b", "main")
+            git(repo, "config", "user.email", "t@example.com")
+            git(repo, "config", "user.name", "t")
             (repo / "tests").mkdir()
             (repo / "tests/test_a.py").write_text("x = 1\n", encoding="utf-8")
             (repo / "docs/area").mkdir(parents=True)
             (repo / "docs/area/a.md").write_text("a\n", encoding="utf-8")
-            _git(repo, "add", "-A")
-            _git(repo, "commit", "-q", "-m", "base")
-            base = _git(repo, "rev-parse", "HEAD")
+            git(repo, "add", "-A")
+            git(repo, "commit", "-q", "-m", "base")
+            base = git(repo, "rev-parse", "HEAD")
             (repo / "docs/area/a.md").write_text("b\n", encoding="utf-8")
-            _git(repo, "add", "-A")
-            _git(repo, "commit", "-q", "-m", "docs")
-            head = _git(repo, "rev-parse", "HEAD")
+            git(repo, "add", "-A")
+            git(repo, "commit", "-q", "-m", "docs")
+            head = git(repo, "rev-parse", "HEAD")
             out = Path(tmp) / "gh-output"
             with redirect_stdout(StringIO()) as ci:
                 router.main(["route", "--event-name", "pull_request", "--base", base, "--head", head, "--repo", str(repo),

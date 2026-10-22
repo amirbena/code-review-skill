@@ -11,11 +11,10 @@ the capability boundary or widen the default topology.
 
 from __future__ import annotations
 
-import re
 import unittest
-from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 SHARED = REPO_ROOT / "shared" / "policies"
 POLICY = SHARED / "agent-delegation.md"
@@ -30,11 +29,6 @@ PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
 CATALOG = REPO_ROOT / "docs" / "threat-model" / "catalog" / "spawn-delegation.yaml"
 REFERENCE_MODEL = REPO_ROOT / "tests" / "reference" / "review" / "agent_delegation.py"
 REGRESSION_TESTS = REPO_ROOT / "tests" / "unit" / "review" / "delegation" / "test_agent_delegation_authorization.py"
-
-
-def _norm(path: Path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class CanonicalPolicyExists(unittest.TestCase):

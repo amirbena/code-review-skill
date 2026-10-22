@@ -12,11 +12,10 @@ prohibition, or the "no false green" rule.
 
 from __future__ import annotations
 
-import re
 import unittest
-from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 GITHUB = REPO_ROOT / "skills" / "github-pr-review"
 POLICY = GITHUB / "policies" / "review-status-enforcement.md"
@@ -35,11 +34,6 @@ PACKAGE_MANIFEST = REPO_ROOT / "scripts" / "packaging" / "package-manifest.json"
 VALIDATOR = REPO_ROOT / "scripts" / "skill_metadata" / "expectations.py"
 ARCHITECTURE = REPO_ROOT / "docs" / "ARCHITECTURE.md"
 COMPARISON = REPO_ROOT / "docs" / "CODE_REVIEW_COMPARISON.md"
-
-
-def _norm(path: Path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class CanonicalPolicyExists(unittest.TestCase):

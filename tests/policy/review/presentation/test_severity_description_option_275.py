@@ -27,6 +27,7 @@ import re
 import unittest
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 SHARED_INVOCATION_OPTIONS = REPO_ROOT / "shared/policies/invocation-options.md"
 SHARED_FINDING = REPO_ROOT / "shared/templates/finding.md"
@@ -51,11 +52,6 @@ SEVERITY_LEGEND = {
     "P1": "P1 (Blocking)",
     "P2": "P2 (Non-Blocking)",
 }
-
-
-def _norm(path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class OptionDefinedInSharedInvocationOptions(unittest.TestCase):

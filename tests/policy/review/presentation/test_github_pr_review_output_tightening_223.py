@@ -25,6 +25,7 @@ import re
 import unittest
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 SHARED_SUMMARY = REPO_ROOT / "shared/templates/review-summary.md"
 SHARED_FINDING = REPO_ROOT / "shared/templates/finding.md"
@@ -221,11 +222,6 @@ def _git_blob_sha1(path) -> str:
     if path.name == "SKILL.md":
         data = _with_baseline_version(data)
     return _git_blob_sha1_of(data)
-
-
-def _norm(path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 def _md_or_text_blocks(path) -> list[str]:

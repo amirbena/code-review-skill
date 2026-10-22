@@ -16,6 +16,7 @@ from unittest import mock
 
 from scripts.validation import ci_test_route as router
 from tests.support.paths import REPO_ROOT
+from tests.support.git_repo import isolate_git_config
 
 ROUTER = REPO_ROOT / "scripts" / "validation" / "ci_test_route.py"
 NO_DOCS_CONSUMERS = router.ConsumerIndex(frozenset(), (), 5)
@@ -69,6 +70,10 @@ def modules_of(*paths: str) -> set[str]:
 
 
 COMPANIONS = set(router.TREE_GUARD_MODULES)
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class ScanTests(unittest.TestCase):

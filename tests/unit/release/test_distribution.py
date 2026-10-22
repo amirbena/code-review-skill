@@ -13,6 +13,7 @@ import zipfile
 from pathlib import Path
 
 from tests.unit.release._shared import rw
+from tests.support.git_repo import isolate_git_config
 
 SRC = "amirbena/code-review-skill"
 SHA = "a" * 40
@@ -21,6 +22,10 @@ IDENT = ["--git-name", "bot", "--git-email", "bot@example.com"]
 
 def _git(cwd: Path, *args: str) -> str:
     return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, check=True).stdout
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class DistributionTests(unittest.TestCase):

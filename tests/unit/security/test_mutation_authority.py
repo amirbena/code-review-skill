@@ -30,6 +30,7 @@ from enum import Enum
 from pathlib import Path
 
 from tests.reference.review import mutation_authority as ma
+from tests.support.git_repo import isolate_git_config
 
 _GIT_ENV = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.com",
             "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.com"}
@@ -43,6 +44,10 @@ def _run(cwd: Path, *args: str) -> str:
         env={**os.environ, **_GIT_ENV}, check=True,
     )
     return proc.stdout
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class _RepoCase(unittest.TestCase):

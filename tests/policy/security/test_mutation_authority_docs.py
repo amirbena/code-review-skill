@@ -13,12 +13,12 @@ the catalog drift from what is actually implemented.
 
 from __future__ import annotations
 
-import re
 import unittest
 
 import yaml
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 POLICY = REPO_ROOT / "shared" / "policies" / "mutation-authority.md"
 GIT_SAFETY = REPO_ROOT / "shared" / "policies" / "git-safety.md"
@@ -34,11 +34,6 @@ GAP = "COVERAGE_GAP"
 # AUTH-014 is a different, already-covered authority domain (GitHub formal
 # review-action mutation); #301 does not own or re-touch it.
 AUTH_301_OWNED_IDS = [f"AUTH-{n:03d}" for n in range(1, 17) if n != 14]
-
-
-def _norm(path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 def _load_catalog(path) -> dict:

@@ -18,9 +18,9 @@ from __future__ import annotations
 
 import re
 import unittest
-from pathlib import Path
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 DOCDIR = REPO_ROOT / "docs" / "candidate-finding-validation"
 MODEL = DOCDIR / "candidate-finding-validation-model.md"
@@ -51,11 +51,6 @@ CLASSIFICATIONS = (
     "maintainability concern",
 )
 DISCONFIRMATION_OUTCOMES = ("SURVIVES", "DROPPED", "DOWNGRADED", "RECLASSIFIED")
-
-
-def _norm(path: Path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class DesignRecordExistsAndCoversScopeTests(unittest.TestCase):

@@ -25,6 +25,7 @@ import re
 import unittest
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 LOCAL_SKILL = REPO_ROOT / "skills/local-code-review/SKILL.md"
 GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
@@ -98,11 +99,6 @@ GITHUB_SKILL = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 # in section 2) raised local 313 -> 315 and github 413 -> 418.
 LOCAL_MAX_LINES = 315
 GITHUB_MAX_LINES = 418
-
-
-def _norm(path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class SoftLineCeilings(unittest.TestCase):

@@ -20,6 +20,7 @@ from tests.reference.review.staged_fingerprint import (
     compute_staged_fingerprint,
     run_staged_fingerprint,
 )
+from tests.support.git_repo import isolate_git_config
 
 
 def _git(cwd: Path, *args: str) -> subprocess.CompletedProcess:
@@ -41,6 +42,10 @@ def _init_repo() -> Path:
 
 def _staged_raw_bytes(repo: Path) -> bytes:
     return _git(repo, "diff", "--cached", "--raw", "-M", "-z").stdout
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class StagedFingerprintTests(unittest.TestCase):

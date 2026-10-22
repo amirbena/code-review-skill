@@ -24,6 +24,7 @@ import re
 import unittest
 
 from tests.support.paths import REPO_ROOT
+from tests.support.policy_docs import load_normalized_text as _norm
 
 INVOCATION = REPO_ROOT / "shared/policies/invocation-options.md"
 SHARED_SUMMARY = REPO_ROOT / "shared/templates/review-summary.md"
@@ -43,11 +44,6 @@ COMPARISON = REPO_ROOT / "docs/CODE_REVIEW_COMPARISON.md"
 ARCHITECTURE = REPO_ROOT / "docs/ARCHITECTURE.md"
 
 INVARIANT = "final review comment == last publication event"
-
-
-def _norm(path) -> str:
-    raw = path.read_text(encoding="utf-8").replace("**", "").replace("`", "")
-    return re.sub(r"\s+", " ", raw)
 
 
 class OptionDefinedOnceInSharedPolicy(unittest.TestCase):

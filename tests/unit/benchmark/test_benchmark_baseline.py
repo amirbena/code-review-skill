@@ -16,6 +16,11 @@ from runtime_platform.benchmark.scripts.benchmark_baseline import (
     load_baseline,
 )
 from tests.support.benchmark_records import make_case, sealed_record, write_history
+from tests.support.git_repo import git, isolate_git_config
+
+
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class DirectoryBaselineTests(unittest.TestCase):
@@ -86,28 +91,23 @@ class DirectoryBaselineTests(unittest.TestCase):
         self.assertEqual(self.lookup().state, "compared")
 
 
-def _git(cwd: Path, *args: str) -> str:
-    proc = subprocess.run(["git", *args], cwd=str(cwd), capture_output=True, text=True, check=True)
-    return proc.stdout.strip()
-
-
 class GitRefBaselineTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         base = Path(self._tmp.name)
         self.remote, self.work, self.publisher = base / "remote.git", base / "work", base / "publisher"
-        _git(base, "init", "--bare", "-q", str(self.remote))
+        git(base, "init", "--bare", "-q", str(self.remote))
         for path in (self.work, self.publisher):
-            _git(base, "init", "-q", str(path))
-            _git(path, "remote", "add", "origin", str(self.remote))
+            git(base, "init", "-q", str(path))
+            git(path, "remote", "add", "origin", str(self.remote))
 
     def publish(self, record: dict) -> None:
         write_history(self.publisher, record)
-        _git(self.publisher, "checkout", "-q", "-B", "benchmark-history")
-        _git(self.publisher, "add", "-A")
-        _git(self.publisher, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "publish")
-        _git(self.publisher, "push", "-q", "origin", "benchmark-history")
+        git(self.publisher, "checkout", "-q", "-B", "benchmark-history")
+        git(self.publisher, "add", "-A")
+        git(self.publisher, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "publish")
+        git(self.publisher, "push", "-q", "origin", "benchmark-history")
 
     def test_absent_branch_is_bootstrap(self) -> None:
         self.assertEqual(load_baseline(GitRefHistory(self.work, "origin"), "sentinel").state, "bootstrap")

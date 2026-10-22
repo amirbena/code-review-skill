@@ -13,6 +13,7 @@ from unittest import mock
 
 from scripts.validation import ci_test_route as router
 from tests.support.paths import REPO_ROOT
+from tests.support.git_repo import git, isolate_git_config
 
 ROUTER = REPO_ROOT / "scripts" / "validation" / "ci_test_route.py"
 
@@ -67,8 +68,8 @@ NEAR_MISSES = (
 )
 
 
-def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, check=True).stdout.strip()
+def setUpModule() -> None:
+    isolate_git_config()
 
 
 class ClassifyTests(unittest.TestCase):
@@ -108,9 +109,9 @@ class RouteTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.repo = Path(tmp.name)
-        _git(self.repo, "init", "-q", "-b", "main")
-        _git(self.repo, "config", "user.email", "t@example.com")
-        _git(self.repo, "config", "user.name", "t")
+        git(self.repo, "init", "-q", "-b", "main")
+        git(self.repo, "config", "user.email", "t@example.com")
+        git(self.repo, "config", "user.name", "t")
         self._write("policies/x.md", "p\n")
         self._write("skills/y.md", "s\n")
         self._write("shared/z.md", "z\n")
@@ -122,9 +123,9 @@ class RouteTests(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
 
     def _commit(self, message: str) -> str:
-        _git(self.repo, "add", "-A")
-        _git(self.repo, "commit", "-q", "--allow-empty", "-m", message)
-        return _git(self.repo, "rev-parse", "HEAD")
+        git(self.repo, "add", "-A")
+        git(self.repo, "commit", "-q", "--allow-empty", "-m", message)
+        return git(self.repo, "rev-parse", "HEAD")
 
     def _route(self, head: str) -> router.Route:
         return router.safe_route("pull_request", self.repo, self.base, head)
@@ -136,24 +137,24 @@ class RouteTests(unittest.TestCase):
     def test_renames_across_the_boundary_are_full(self) -> None:
         for old, new in (("policies/x.md", "skills/x.md"), ("skills/y.md", "policies/y.md")):
             with self.subTest(old=old, new=new):
-                _git(self.repo, "checkout", "-q", "--detach", self.base)
-                _git(self.repo, "mv", old, new)
+                git(self.repo, "checkout", "-q", "--detach", self.base)
+                git(self.repo, "mv", old, new)
                 head = self._commit("rename")
                 self.assertEqual(set(router.changed_paths(self.repo, self.base, head)), {old, new})
                 self.assertEqual(self._route(head).tier, router.FULL)
 
     def test_deletions(self) -> None:
-        _git(self.repo, "rm", "-q", "policies/x.md")
+        git(self.repo, "rm", "-q", "policies/x.md")
         self.assertEqual(self._route(self._commit("delete policy")).tier, router.FAST)
-        _git(self.repo, "rm", "-q", "shared/z.md")
-        self.base = _git(self.repo, "rev-parse", "HEAD")
+        git(self.repo, "rm", "-q", "shared/z.md")
+        self.base = git(self.repo, "rev-parse", "HEAD")
         self.assertEqual(self._route(self._commit("delete shared")).tier, router.FULL)
 
     def test_three_dot_diff_ignores_base_commits_merged_after_the_fork(self) -> None:
-        _git(self.repo, "checkout", "-q", "-b", "pr")
+        git(self.repo, "checkout", "-q", "-b", "pr")
         self._write("README.md", "r\n")
         head = self._commit("pr")
-        _git(self.repo, "checkout", "-q", "main")
+        git(self.repo, "checkout", "-q", "main")
         self._write("shared/z.md", "moved on\n")
         self.base = self._commit("main moves")
         self.assertEqual(self._route(head).tier, router.FAST)
