@@ -20,6 +20,8 @@ packaging profile. Findings are evidence for #793, not conclusions about safe sa
 
 ## Rerun
 
+After-change FULL samples: dispatch `ci-timing-measurement.yml`. It is temporary; [#793](https://github.com/amirbena/code-review-skill/issues/793) removes it once its optimizations are measured.
+
 ```bash
 python3 scripts/validation/packaging_profile.py --out /tmp/pkg.json
 ```
