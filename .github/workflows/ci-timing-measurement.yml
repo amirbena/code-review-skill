@@ -64,7 +64,12 @@ jobs:
             --provenance "nproc=$(nproc)" --provenance "bash=${BASH_VERSION}" \
             --provenance "sample=${{ matrix.sample }}" \
             --out "$RUNNER_TEMP/timing/timing-${{ matrix.sample }}.json" > "$RUNNER_TEMP/timing/summary-${{ matrix.sample }}.md" || echo "suite_exit=$?" >> "$RUNNER_TEMP/timing/status-${{ matrix.sample }}.txt"
-          sha256sum "$RUNNER_TEMP"/timing/*.json | tee -a "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### Sample ${{ matrix.sample }}"
+            grep -h "Tests discovered\|Outcomes\|counts" "$RUNNER_TEMP/timing/summary-${{ matrix.sample }}.md" || true
+            cat "$RUNNER_TEMP"/timing/status-*.txt 2>/dev/null || true
+            sha256sum "$RUNNER_TEMP"/timing/*.json
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Upload timing data
         if: ${{ always() }}
@@ -73,3 +78,7 @@ jobs:
           name: suite-timing-${{ matrix.sample }}
           path: ${{ runner.temp }}/timing/
           retention-days: 30
+
+      - name: Fail the job if the suite failed
+        if: ${{ always() }}
+        run: "! ls \"$RUNNER_TEMP\"/timing/status-*.txt"

@@ -14,7 +14,7 @@ they need the measurement workflow to run on GitHub. Nothing below is a CI numbe
 
 | Tool | Purpose |
 | --- | --- |
-| `scripts/validation/suite_timing_report.py` | Additive fields on `test-timing/v1`: `provenance`, per-run `counts` (ran/skipped/failed/errored), `cpu_seconds`, `environment.node`/`bash`; `--provenance KEY=VALUE`. Existing readers are unaffected. |
+| `scripts/validation/suite_timing_report.py` | Additive fields on `test-timing/v1`: `provenance`, per-run `counts` (ran/skipped/failed/errored), `cpu_seconds`, `environment.node`; `--provenance KEY=VALUE`. Existing readers are unaffected. |
 | `.github/workflows/ci-timing-measurement.yml` | Non-required, `contents: read`, no secrets. Three independent fresh jobs, CI-order setup, `DISTRIBUTION_INSTALL_CHECK=1`, one cold run each, 30-day artifact. Triggered by `workflow_dispatch` or a draft PR touching the file. |
 | `scripts/validation/packaging_profile.py` | Profiles `package-skills.sh` on a scratch copy via an interposed `python3` shim; the production script is untouched. |
 
@@ -53,10 +53,10 @@ phase 0.06–0.20 s. Manifest hashes were identical between cold and warm runs p
 
 Findings and limits:
 
-- The per-Markdown-file `adapt-shared-links` loop dominates; this contradicts the
-  issue's expectation that spawn cost alone is unlikely to matter. Per-spawn cost
-  (~58 ms) is above a bare start (21 ms), so the work inside each call, plus the
-  timing shim's own `perl` timestamps, also counts; the split is not separated here.
+- The per-Markdown-file `adapt-shared-links` loop dominates wall time. Interpreter
+  start-up alone (21 ms x 134 spawns, about 2.8 s) is roughly a third of that phase's
+  7.8 s; the rest is work inside each call plus the timing shim's own `perl`
+  timestamps, and the split is not measured here.
 - The `github` warm run (11.58 s) is an outlier against its cold run; variance was
   not characterised (one sample). Treat as noise until repeated.
 - Shim overhead inflates every spawn; phase sums are within wall time by construction

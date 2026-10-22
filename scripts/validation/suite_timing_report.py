@@ -203,7 +203,6 @@ def collect(repo: Path, runs: int, start_dir: str = "tests", extra_provenance: M
             "platform": platform.platform(),
             "cpu_count": os.cpu_count(),
             "node": shutil.which("node") and subprocess.run(["node", "--version"], capture_output=True, text=True).stdout.strip(),
-            "bash": os.environ.get("BASH_VERSION") or None,
         },
         "provenance": provenance(extra_provenance),
         "counts": [s["counts"] for s in samples if "counts" in s],
