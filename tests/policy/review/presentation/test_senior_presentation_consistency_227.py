@@ -27,7 +27,7 @@ import unittest
 
 from tests.support.paths import REPO_ROOT
 
-FINDING_RENDERING = REPO_ROOT / "shared/templates/finding-rendering.md"
+FINDING_RENDERING = REPO_ROOT / "shared/templates/finding-rendering-human.md"
 FINDING = REPO_ROOT / "shared/templates/finding.md"
 REVIEW_SUMMARY = REPO_ROOT / "shared/templates/review-summary.md"
 INVOCATION = REPO_ROOT / "shared/policies/invocation-options.md"
@@ -122,8 +122,9 @@ class HumanFullRenderingContract(unittest.TestCase):
         self.assertIn("summary-pointer rendering is never affected by either presentation", self.t)
 
     def test_rules_section_lists_the_new_projection(self) -> None:
-        self.assertIn("the opt-in human full rendering", self.t)
-        self.assertIn("github-pr-review body/fallback surface only", self.t)
+        rules = _norm(REPO_ROOT / "shared/templates/finding-rendering.md")
+        self.assertIn("the opt-in human full rendering", rules)
+        self.assertIn("github-pr-review body/fallback surface only", rules)
 
 
 class FindingTemplatePointsAtBothProjections(unittest.TestCase):

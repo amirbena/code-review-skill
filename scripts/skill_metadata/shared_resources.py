@@ -11,6 +11,7 @@ from ._support import check_markers
 from .expectations import (
     FILE_REVIEWABILITY_MARKERS,
     SHARED_FINDING_MARKERS,
+    SHARED_FINDING_RENDERING_HUMAN_MARKERS,
     SHARED_FINDING_RENDERING_MARKERS,
     SHARED_REVIEW_SUMMARY_MARKERS,
 )
@@ -27,6 +28,13 @@ def check_shared_resources(skill_root: Path, containment_root: Path) -> None:
         raise SystemExit(
             "error: Skill package missing shared finding-rendering template"
         )
+    finding_rendering_human_template = (
+        containment_root / "shared" / "templates" / "finding-rendering-human.md"
+    )
+    if not finding_rendering_human_template.is_file():
+        raise SystemExit(
+            "error: Skill package missing shared finding-rendering-human template"
+        )
     review_summary_template = containment_root / "shared" / "templates" / "review-summary.md"
     if not review_summary_template.is_file():
         raise SystemExit("error: Skill package missing shared review-summary template")
@@ -39,6 +47,11 @@ def check_shared_resources(skill_root: Path, containment_root: Path) -> None:
         finding_rendering_template.read_text(encoding="utf-8"),
         SHARED_FINDING_RENDERING_MARKERS,
         "shared finding-rendering template",
+    )
+    check_markers(
+        finding_rendering_human_template.read_text(encoding="utf-8"),
+        SHARED_FINDING_RENDERING_HUMAN_MARKERS,
+        "shared finding-rendering-human template",
     )
     check_markers(
         review_summary_template.read_text(encoding="utf-8"),

@@ -153,3 +153,16 @@ reference models and are not scored on real Skill output.
 - Per-test CI durations (only local; CI step totals come from `gh run view`).
 - Run-to-run variance beyond two local runs and twelve sentinel records.
 - PARTIAL and DOCS tier cost.
+
+## 6. Reductions landed
+
+Each row cites `context_size_report.py` before and after. **Genuine** means the
+content is not loaded on the common path; **deferred** means it is still
+loaded before its first governed decision (reported as moved, not saved).
+
+| Issue / change | Activation predicate | Genuine saving (default set) | Deferred |
+| --- | --- | --- | --- |
+| #788: human renderings split from `finding-rendering.md` into conditional `finding-rendering-human.md` | `human_review_output` / `human_inline_findings` resolves `true` or is ambiguous after reading the invocation; fail-closed | Local 303,109 → 289,028 bytes (−14,081, ~3.5k tokens); GitHub 338,329 → 324,303 (−14,026) | none; the 14.4 KB file loads only when the predicate fires |
+
+Still open under #788: the `finding.md` split and the `runtime-validation.md`
+unconditional-vs-`on-activation` reconciliation, each in its own PR.

@@ -426,7 +426,7 @@ finally: remove the temporary checkout (success, any failure, interruption)
    verdict; only the summary wording differs. Passive review has no inline
    surface, so every finding is a body finding: render each one using the
    human full rendering in
-   [`../../../shared/templates/finding-rendering.md`](../../../shared/templates/finding-rendering.md),
+   [`../../../shared/templates/finding-rendering-human.md`](../../../shared/templates/finding-rendering-human.md),
    "Canonical human full rendering" instead of the structured full
    rendering, per this Skill's own
    [`../policies/review-output.md`](../policies/review-output.md), "Concise

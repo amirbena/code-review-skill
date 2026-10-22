@@ -87,4 +87,5 @@ shared:
   templates:
     - ../../../shared/templates/finding.md
     - ../../../shared/templates/finding-rendering.md
+    - ../../../shared/templates/finding-rendering-human.md
     - ../../../shared/templates/review-summary.md

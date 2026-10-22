@@ -29,6 +29,7 @@ from tests.support.paths import REPO_ROOT
 SHARED_SUMMARY = REPO_ROOT / "shared/templates/review-summary.md"
 SHARED_FINDING = REPO_ROOT / "shared/templates/finding.md"
 SHARED_FINDING_RENDERING = REPO_ROOT / "shared/templates/finding-rendering.md"
+SHARED_FINDING_RENDERING_HUMAN = REPO_ROOT / "shared/templates/finding-rendering-human.md"
 SHARED_SEVERITY = REPO_ROOT / "shared/policies/severity.md"
 
 GH_OUTPUT = REPO_ROOT / "skills/github-pr-review/policies/review-output.md"
@@ -173,10 +174,12 @@ SEVERITY_LEGEND = {
 # (a clean verdict requires complete coverage: the entrypoint Output Contract,
 # the mandatory-loading checkpoint and pre-verdict recheck, and the no-hybrid
 # rendering rule) -- likewise deliberate and unrelated to #223.
+# LOCAL_SKILL re-captured for #788: its conditional-loading paragraph gained
+# finding-rendering-human.md (no change to report format/voice/heading).
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "2a478671d9e57137482c7db942ac27c22aa924e8",
     LOCAL_RUNBOOK: "f5431fd5c43ccc1bcfb4660813d6ee816472b9c0",
-    LOCAL_SKILL: "80e3ff5fcbe0598269d56e0e1f9579f0372b135e",
+    LOCAL_SKILL: "b76322ad4ea032b24a14a60e78c129b9c5960149",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",
@@ -429,8 +432,8 @@ class DensityAndDeduplicationGuidance(unittest.TestCase):
         self.assertIn("Senior voice contract", t)
         self.assertIn("local-code-review inherits it", t)
 
-        rendering_t = _norm(SHARED_FINDING_RENDERING)
-        self.assertIn("## Senior voice contract", SHARED_FINDING_RENDERING.read_text(encoding="utf-8"))
+        rendering_t = _norm(SHARED_FINDING_RENDERING_HUMAN)
+        self.assertIn("## Senior voice contract", SHARED_FINDING_RENDERING_HUMAN.read_text(encoding="utf-8"))
         for rule in (
             "never restate the diff",
             "never repeat the same evidence",
@@ -466,7 +469,7 @@ class SeniorModeVoiceTightening(unittest.TestCase):
         # Issue #231: these voice rules now live once, in the shared
         # "Senior voice contract" in finding-rendering.md, rather than
         # restated in review-summary.md's own subsection.
-        t = _norm(SHARED_FINDING_RENDERING)
+        t = _norm(SHARED_FINDING_RENDERING_HUMAN)
         self.assertIn("natural short paragraphs, minimal", t.replace("\n", " "))
         self.assertIn("no meta-commentary", t)
 
@@ -478,7 +481,7 @@ class SeniorModeVoiceTightening(unittest.TestCase):
         self.assertIn("never reduced to hit a length target", finding_t)
 
     def test_human_inline_rendering_gets_the_no_meta_commentary_rule(self) -> None:
-        t = _norm(SHARED_FINDING_RENDERING)
+        t = _norm(SHARED_FINDING_RENDERING_HUMAN)
         self.assertIn("no meta-commentary about the review process", t)
 
 

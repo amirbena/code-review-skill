@@ -317,7 +317,7 @@ The concise form reads like a short review note a strong engineer would
 leave by hand. Its **voice** — how it leads with the defect, separates
 required from optional, avoids boilerplate and manufactured praise, and
 states each fact once — is owned by
-[`finding-rendering.md`](finding-rendering.md), "Senior voice contract";
+[`finding-rendering-human.md`](finding-rendering-human.md), "Senior voice contract";
 this section states only the summary's own shape:
 
 - an opening that says whether the change is safe to merge / proceed and
@@ -349,7 +349,7 @@ this section states only the summary's own shape:
   senior-voice lead-in sentence followed by the questions in prose (or a
   short list). Count, anchors, and provenance tags are identical to the
   structured form; only the voice differs, per
-  [`finding-rendering.md`](finding-rendering.md), "Senior voice contract".
+  [`finding-rendering-human.md`](finding-rendering-human.md), "Senior voice contract".
   Omit it entirely when the checkpoint was inert. `human_inline_findings` is
   irrelevant: the section has no inline form.
 
@@ -382,7 +382,7 @@ structured canonical shape above is used unchanged.
 `human_inline_findings` re-voices those to match — a short heading that
 keeps the `P0` / `P1` / `P2` severity and names the finding, then compact
 prose in place of the `Evidence:` / `Impact:` / `Fix:` labelled block
-(see [`finding-rendering.md`](finding-rendering.md), "Canonical human
+(see [`finding-rendering-human.md`](finding-rendering-human.md), "Canonical human
 inline rendering") — so
 a senior-mode review is coherent end to end. Its default is derived:
 `explicit_value ?? human_review_output`, so enabling senior mode enables
@@ -403,7 +403,7 @@ packaging reason as the heading override above). `human_review_output`
 selects the human-voiced rendering of the final summary above; for
 `github-pr-review` specifically it *also* selects the **human full
 rendering** in
-[`finding-rendering.md`](finding-rendering.md), "Canonical human full
+[`finding-rendering-human.md`](finding-rendering-human.md), "Canonical human full
 rendering" for any finding that is rendered in full **in the review
 body** rather than as a GitHub inline comment — a passive review's
 findings (passive has no inline surface at all), and an active-review
@@ -436,7 +436,7 @@ off — only the wording of the body finding's `Evidence` / `Impact` /
 
 This density/de-duplication/no-boilerplate guidance describes the voice
 itself, not a GitHub-specific mechanism, so it is owned once, for both
-Skills, by [`finding-rendering.md`](finding-rendering.md), "Senior voice
+Skills, by [`finding-rendering-human.md`](finding-rendering-human.md), "Senior voice
 contract", "Density, de-duplication, and voice tightening" — applying to
 every senior-voice rendering (inline, full-body, and this summary prose)
 for both Skills alike. `local-code-review` inherits it through the same
