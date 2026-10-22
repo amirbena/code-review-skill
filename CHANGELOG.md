@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.80.0 — 2026-10-22
+
+### Changed
+
+- Load the human-voice finding renderings only when human review output is requested, reducing default review context by about 14 KB (#795).
+
 ## v1.79.1 — 2026-10-21
 
 ### Fixed
