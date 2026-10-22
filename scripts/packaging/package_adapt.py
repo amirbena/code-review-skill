@@ -8,7 +8,7 @@ this file only wires ``sys.argv`` to it. Called identically by
 ``scripts/packaging/package-skills.sh`` and ``scripts/packaging/package-skills.ps1``.
 
 Usage:
-    python3 scripts/packaging/package_adapt.py adapt-shared-links <file>
+    python3 scripts/packaging/package_adapt.py adapt-shared-links <file>...
     python3 scripts/packaging/package_adapt.py adapt-metadata-paths <file>
     python3 scripts/packaging/package_adapt.py validate-frontmatter <file> <expected_name>
     python3 scripts/packaging/package_adapt.py stamp-release-version <file> <changelog>

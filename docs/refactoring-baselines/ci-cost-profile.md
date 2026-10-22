@@ -15,12 +15,12 @@ packaging profile. Findings are evidence for #793, not conclusions about safe sa
 | Tool | Purpose |
 | --- | --- |
 | `scripts/validation/suite_timing_report.py` | Additive fields on `test-timing/v1`: `provenance`, per-run `counts` (ran/skipped/failed/errored), `cpu_seconds`, `environment.node`; `--provenance KEY=VALUE`. Existing readers are unaffected. |
-| `.github/workflows/ci-timing-measurement.yml` | Non-required, `contents: read`, no secrets. Three independent fresh jobs, CI-order setup, `DISTRIBUTION_INSTALL_CHECK=1`, one cold run each, 30-day artifact. Triggered by `workflow_dispatch` or a draft PR touching the file. |
+| `ci-timing-measurement.yml` (removed by #793) | Non-required, `contents: read`, no secrets. Three independent fresh jobs, CI-order setup, `DISTRIBUTION_INSTALL_CHECK=1`, one cold run each, 30-day artifact. Removed once the #793 after-change samples were recorded; recover it from git history to rerun. |
 | `scripts/validation/packaging_profile.py` | Profiles `package-skills.sh` on a scratch copy via an interposed `python3` shim; the production script is untouched. |
 
 ## Rerun
 
-After-change FULL samples: dispatch `ci-timing-measurement.yml`. It is temporary; [#793](https://github.com/amirbena/code-review-skill/issues/793) removes it once its optimizations are measured.
+After-change FULL samples came from `ci-timing-measurement.yml`, now removed (see "After-change FULL samples (#793)"). To repeat the method, restore that workflow from git history and dispatch it.
 
 ```bash
 python3 scripts/validation/packaging_profile.py --out /tmp/pkg.json
@@ -176,3 +176,36 @@ files so a copy can be verified after expiry.
 | `timing-1.json` | `69cc8e12c29dc144441af1c619475b0687b2980d35c5aea904961b5e3e6cc209` |
 | `timing-2.json` | `cf9ae3f0f5f9c23a8aa9e971e326e8b998b7b70a3e619a9c84c00b3e5d389cd3` |
 | `timing-3.json` | `744e81675f0ac0249f28f0f68f67421c4fb71a7201ad5aceb78949ba679f852b` |
+
+## After-change FULL samples (#793)
+
+Run [39794529649](https://github.com/amirbena/code-review-skill/actions/runs/39794529649)
+of `ci-timing-measurement.yml` on head `be44c29` (the batched shared-link adaptation from
+[#802](https://github.com/amirbena/code-review-skill/pull/802), base `cdb297b`); the same
+method as the baseline above: 3 cold jobs, 6,743 ran, 0 failed, 0 errored. Samples 1 and 3
+ran on the same runner images as baseline samples 1 and 3; sample 2 used `20261018.339.1`
+against `20261021.345.10`. Each side is three cold jobs on shared runners, so variance is
+large and ranges are shown beside medians.
+
+| Metric | Before median (range) s | After median (range) s |
+| --- | ---: | ---: |
+| Suite wall | 302.2 (274.5-330.2) | 251.6 (217.4-256.8) |
+| Sum of per-test | 257.8 (234.8-281.2) | 232.3 (202.6-237.7) |
+| `tests.integration` | 114.6 (102.5-119.7) | 68.5 (62.5-69.1) |
+| `tests.integration.packaging` | 45.9 (40.5-52.7) | 17.0 (14.6-17.2) |
+| `tests.integration.release` | 23.8 (21.4-25.9) | 9.6 (7.3-9.7) |
+| `tests.unit` (not changed by #802) | 136.0 (125.8-152.8) | 154.7 (133.0-160.3) |
+
+Reading the numbers:
+
+- The six packaging/release build modules summed 67.1 s (59.6-75.7) before and 23.5 s
+  (19.4-23.9) after, a median saving of 43.6 s. The unit group has no change that should
+  move it and its ranges overlap, so its rise is run-to-run variance, not a regression
+  attributed to #802.
+- Suite wall fell 50.6 s (17%); the two ranges do not overlap, but the sample is three jobs
+  per side on different runner images, so treat the size of the saving as approximate.
+- The packaging `all` build measured locally (macOS, unprofiled, 6 runs) fell from a 9.04 s
+  median (8.35-12.09) to 2.85 s (2.59-2.93); `dist/` was byte-identical and python3 spawns
+  fell from 161 to 29.
+- Limits: no PARTIAL or FAST tier sample; the baseline head (`fb6538a`) predates the after
+  head's base, so unrelated main changes are included in both sides.

@@ -64,8 +64,8 @@ function Test-SkillFrontmatter {
 }
 
 function Adapt-SharedLinks {
-  param([string]$FilePath)
-  & $pythonCommand $packageAdapt adapt-shared-links $FilePath
+  param([string[]]$FilePaths)
+  & $pythonCommand $packageAdapt adapt-shared-links @FilePaths
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
@@ -135,8 +135,9 @@ function Package-Skill {
   # Adapt relative links into shared/ across every packaged Markdown
   # file (skill-local links like ../SKILL.md or runbooks/... need no
   # change, since skill-internal relative depth is unchanged).
-  Get-ChildItem -Path $stageDir -Filter "*.md" -Recurse | ForEach-Object {
-    Adapt-SharedLinks -FilePath $_.FullName
+  $mdFiles = @(Get-ChildItem -Path $stageDir -Filter "*.md" -Recurse | ForEach-Object { $_.FullName })
+  if ($mdFiles.Count -gt 0) {
+    Adapt-SharedLinks -FilePaths $mdFiles
   }
   Adapt-MetadataPaths -MetadataPath (Join-Path $stageDir "metadata/skill.yaml")
   Set-ReleaseVersion -SkillMdPath (Join-Path $stageDir "SKILL.md")

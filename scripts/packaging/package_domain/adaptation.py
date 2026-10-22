@@ -24,6 +24,7 @@ import os
 import re
 import tempfile
 from pathlib import Path
+from typing import Sequence
 
 _METADATA_SHARED_PREFIX = re.compile(r"^([ \t]*- [ \t]*)\.\./\.\./\.\./shared/", re.MULTILINE)
 
@@ -51,8 +52,12 @@ def _write_atomic(path: Path, content: str) -> None:
         raise
 
 
-def adapt_shared_links_file(path: Path) -> None:
-    _write_atomic(path, adapt_shared_links(path.read_text(encoding="utf-8")))
+def adapt_shared_links_files(paths: Sequence[Path]) -> None:
+    """Adapt every file, reading all of them before writing any so a read or
+    decode failure leaves the whole set unmodified."""
+    adapted = [(path, adapt_shared_links(path.read_text(encoding="utf-8"))) for path in paths]
+    for path, text in adapted:
+        _write_atomic(path, text)
 
 
 def adapt_metadata_paths_file(path: Path) -> None:
