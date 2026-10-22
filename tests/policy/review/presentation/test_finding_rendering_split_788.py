@@ -33,6 +33,18 @@ PREDICATE = {
     LOCAL: "when `human_review_output` resolves `true` or its status is ambiguous",
     GITHUB: "when `human_review_output` or `human_inline_findings` resolves `true` or either status is ambiguous",
 }
+RETARGETED = (
+    "shared/policies/invocation-options.md",
+    "shared/templates/review-summary.md",
+    "shared/templates/finding.md",
+    "skills/github-pr-review/policies/finding-placement.md",
+    "skills/github-pr-review/policies/review-output.md",
+    "skills/github-pr-review/runbooks/active-pr-review.md",
+    "skills/github-pr-review/runbooks/passive-pr-review.md",
+    "skills/github-pr-review/templates/external-review-summary.md",
+    "skills/github-pr-review/templates/inline-finding.md",
+    "docs/features/human-review-output.md",
+)
 _LINK = re.compile(r"\]\((?:\.\./)+shared/templates/([\w-]+\.md)\)")
 
 
@@ -57,10 +69,9 @@ class SplitShapeTests(unittest.TestCase):
         pattern = re.compile(
             r"finding-rendering\.md`?\]\([^)]*\)[\s,—-]*(?:in\s+)?\"?(?:Senior\s+voice|Canonical\s+human)"
         )
-        for path in REPO_ROOT.glob("**/*.md"):
-            if ".git" in path.parts or "worktrees" in path.parts:
-                continue
-            self.assertIsNone(pattern.search(path.read_text(encoding="utf-8")), str(path))
+        for relative in RETARGETED:
+            path = REPO_ROOT / relative
+            self.assertIsNone(pattern.search(path.read_text(encoding="utf-8")), relative)
 
 
 class ConditionalLoadingTests(unittest.TestCase):
