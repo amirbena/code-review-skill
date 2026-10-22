@@ -45,9 +45,8 @@ the library are not.
 ## Known limitations
 
 The scan is static. It does not see dynamic imports (`importlib`,
-`__import__`), `sys.path` manipulation, or imports in non-Python files. Both
-imports under a `TYPE_CHECKING` guard and imports inside functions are
-treated as real dependencies.
+`__import__`), `sys.path` manipulation, or imports in non-Python files. Imports under a
+`TYPE_CHECKING` guard and inside functions count as real dependencies.
 
 ## Stale `tests/reference/benchmark` references
 
