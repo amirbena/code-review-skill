@@ -568,7 +568,9 @@ and no packaged Skill resource depends on them.
   #349) reports fabricated file/line/symbol/snippet citations as its own
   category beside those metrics, never inside them. Every benchmark reference metric under
   `runtime_platform/benchmark/reference/` is test-only; nothing benchmark is
-  packaged. PR-time benchmark relevance is
+  packaged. Of the `tests` package, those models may import only the sanctioned
+  `tests.reference.review` library, a direction enforced by a test
+  ([`benchmark-reference-dependency/README.md`](benchmark-reference-dependency/README.md), #792). PR-time benchmark relevance is
   determined deterministically by the canonical taxonomy/inverted index
   ([`runtime_platform/benchmark/taxonomy.md`](../runtime_platform/benchmark/taxonomy.md), #333) and the Top-K
   selector ([`runtime_platform/benchmark/selection.md`](../runtime_platform/benchmark/selection.md), #334);

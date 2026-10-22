@@ -51,6 +51,8 @@ checkpoint existing, which it now does.
 **Both blocking conditions are satisfied. #425's boundary work may proceed;
 per §8 below, its child implementation issue may also now be opened.**
 
+> **Historical note (#792):** every `tests/reference/benchmark/` mention in this record describes the pre-#457 layout; that directory now lives at `runtime_platform/benchmark/reference/`. They are kept as written. See [`docs/benchmark-reference-dependency/`](../benchmark-reference-dependency/README.md).
+
 ## 2. What #425 is actually inventorying
 
 Everything under `docs/benchmark/` today (per
