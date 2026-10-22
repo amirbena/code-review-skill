@@ -60,8 +60,7 @@ validate_skill_frontmatter() {
 }
 
 adapt_shared_links() {
-  local file="$1"
-  python3 "${package_adapt}" adapt-shared-links "${file}"
+  python3 "${package_adapt}" adapt-shared-links "$@"
 }
 
 adapt_metadata_paths() {
@@ -121,9 +120,13 @@ package_skill() {
   # Adapt relative links into shared/ across every packaged Markdown
   # file (skill-local links like ../SKILL.md or runbooks/... need no
   # change, since skill-internal relative depth is unchanged).
+  md_files=()
   while IFS= read -r -d '' md_file; do
-    adapt_shared_links "${md_file}"
+    md_files+=("${md_file}")
   done < <(find "${stage_dir}" -name '*.md' -print0)
+  if [[ ${#md_files[@]} -gt 0 ]]; then
+    adapt_shared_links "${md_files[@]}"
+  fi
   adapt_metadata_paths "${stage_dir}/metadata/skill.yaml"
   stamp_release_version "${stage_dir}/SKILL.md"
 

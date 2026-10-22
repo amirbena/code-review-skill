@@ -13,7 +13,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .adaptation import adapt_metadata_paths_file, adapt_shared_links_file
+from .adaptation import adapt_metadata_paths_file, adapt_shared_links_files
 from .tree import (
     build_archive,
     check_tree_self_contained,
@@ -34,7 +34,7 @@ def main(argv: list[str] | None = None) -> int:
     adapt_links = subparsers.add_parser(
         "adapt-shared-links", help="rewrite ../../shared/ and ../../../shared/ links in place"
     )
-    adapt_links.add_argument("file", type=Path)
+    adapt_links.add_argument("files", nargs="+", type=Path)
 
     adapt_metadata = subparsers.add_parser(
         "adapt-metadata-paths", help="rewrite metadata/skill.yaml's shared-resource prefix in place"
@@ -84,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.command == "adapt-shared-links":
-            adapt_shared_links_file(args.file)
+            adapt_shared_links_files(args.files)
         elif args.command == "adapt-metadata-paths":
             adapt_metadata_paths_file(args.file)
         elif args.command == "validate-frontmatter":
