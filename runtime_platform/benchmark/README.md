@@ -461,6 +461,15 @@ re-test #377's own comparator unit suite, which already proves the raw
 functions mechanically in isolation, and it does not redesign or
 re-derive `severity.md`'s decision semantics.
 
+[#806](https://github.com/amirbena/code-review-skill/issues/806) adds the
+mandatory-policy-read check
+(`check_policy_reads` in
+[`reference/benchmark_blocking_verdict.py`](reference/benchmark_blocking_verdict.py),
+fixtures in [`../../benchmark/corpus/policy-loading/`](../../benchmark/corpus/policy-loading/README.md)):
+a review trace is compared with the required `SKILL.md` section 2 set, and
+anything short of fully `confirmed` reads must render `REVIEW INCOMPLETE`.
+It runs offline over recorded traces; its limits are in that README.
+
 ## Claim-correspondence matcher adequacy
 
 [`claim-correspondence-adequacy.md`](claim-correspondence-adequacy.md)

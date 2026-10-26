@@ -1,0 +1,73 @@
+{
+  "id": "complete-review-confirmed-reads",
+  "skill": "local-code-review",
+  "skill_version": "1.80.2",
+  "description": "Synthetic complete review: every unconditional section 2 file read in full (eight Read calls and one unbounded cat loop) plus one fired conditional file.",
+  "tool_calls": [
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/review-scope.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/change-risk-signals.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/review-stopping-criteria.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/severity.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/evidence.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/repository-instructions.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/review-base-policy.md"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/runtime-validation.md"
+      }
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cd $SKILL_DIR && for f in shared/policies/git-safety.md shared/policies/file-reviewability.md shared/policies/remediation-guidance.md shared/templates/finding.md shared/templates/finding-rendering.md shared/templates/review-summary.md policies/invocation-approval.md policies/repository-state.md; do echo \"=== $f\"; cat $f; done"
+      }
+    },
+    {
+      "name": "Read",
+      "input": {
+        "file_path": "$SKILL_DIR/shared/policies/repository-expansion.md"
+      }
+    }
+  ],
+  "rendered": {
+    "result_label": "✅ Review Clean",
+    "decision_label": "REVIEW CLEAN",
+    "coverage": "complete"
+  }
+}
