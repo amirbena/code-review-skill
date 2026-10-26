@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.80.3 — 2026-10-26
+
+### Fixed
+
+- A review that skipped required policies, or read only part of them, can no longer render a complete verdict; the loading checkpoint and the coverage line now require files opened in full (#807).
+
 ## v1.80.2 — 2026-10-22
 
 ### Fixed
