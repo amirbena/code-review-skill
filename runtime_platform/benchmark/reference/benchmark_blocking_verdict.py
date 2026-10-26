@@ -78,3 +78,124 @@ def check_blocking_verdict(
                 f"{surface} rendered {kind.value} ({label!r}) although a P0/P1 finding was produced"
             )
     return BlockingVerdictCheck(blocking_produced=True, violations=tuple(violations))
+
+
+class ReadState(str, Enum):
+    CONFIRMED = "confirmed"
+    UNVERIFIABLE = "unverifiable"
+    MISSING = "missing"
+
+
+_SECTION_RE = re.compile(r"^## \d+\. Required Policy Loading\s*$(.*?)(?=^## |\Z)", re.M | re.S)
+_CONTEXT_MARKER_RE = re.compile(r"In\s+orchestrated/|with parallel workers")
+_SEE_LINK_RE = re.compile(r"\bsee\s+\[[^\]]+\]\([^)]+\)")
+_LINK_RE = re.compile(r"\]\(([^)#\s]+\.md)\)")
+_READ_VERB_RE = re.compile(r"^\s*(?:(?:do|then)\s+)?(?:cat|head|tail|sed|awk|less|more|bat)\b|^\s*for\b.*\bcat\b", re.S)
+_CAT_RE = re.compile(r"\bcat\b")
+# Anything that can drop output or keep it out of the reviewer's context.
+_BOUNDING_RE = re.compile(
+    r"\|\s*(?:head|tail|sed|awk|grep|wc|less|more)\b|\b(?:head|tail|awk)\s|\bsed\s+-n\b|\bgrep\b"
+    r"|(?<![\d&])>(?!&|\s*/dev/null)"
+)
+
+
+def required_policy_files(skill_md: str) -> tuple[str, ...]:
+    """Unconditional `SKILL.md` section 2 files, relative to the skill directory.
+
+    Stops at the first `Conditionally` paragraph and drops context-phrase members
+    (for example `with parallel workers`) and "see ..." cross-references.
+    """
+    match = _SECTION_RE.search(skill_md)
+    if match is None:
+        raise ValueError("SKILL.md has no `Required Policy Loading` section")
+    files: list[str] = []
+    for paragraph in re.split(r"\n\s*\n", match.group(1)):
+        if paragraph.lstrip().startswith("Conditionally"):
+            break
+        marker = _CONTEXT_MARKER_RE.search(paragraph)
+        text = _SEE_LINK_RE.sub("", paragraph[: marker.start()] if marker else paragraph)
+        for target in _LINK_RE.findall(text):
+            path = re.sub(r"^(?:\.\./)+", "", target)
+            if path.endswith(".md") and path not in files:
+                files.append(path)
+    return tuple(files)
+
+
+def _statements(command: str) -> list[str]:
+    statements: list[str] = []
+    for piece in command.split("&&"):
+        # A for-loop spans several `;` pieces, so it is judged as one unit.
+        statements.extend([piece] if piece.lstrip().startswith("for ") else re.split(r";|\n", piece))
+    return statements
+
+
+def _read_state(path: str, name: str, tool_input: dict) -> ReadState:
+    if name == "Read":
+        if not str(tool_input.get("file_path", "")).endswith("/" + path):
+            return ReadState.MISSING
+        bounded = "limit" in tool_input or "offset" in tool_input
+        return ReadState.UNVERIFIABLE if bounded else ReadState.CONFIRMED
+    if name != "Bash":
+        return ReadState.MISSING
+    directory, _, basename = path.rpartition("/")
+    best = ReadState.MISSING
+    for statement in _statements(str(tool_input.get("command", ""))):
+        if not _READ_VERB_RE.search(statement):
+            continue
+        if path in statement:
+            if _CAT_RE.search(statement) and not _BOUNDING_RE.search(statement):
+                return ReadState.CONFIRMED
+            best = ReadState.UNVERIFIABLE
+        elif basename in statement or (directory and f"{directory}/*" in statement):
+            best = ReadState.UNVERIFIABLE
+    return best
+
+
+def classify_policy_reads(
+    required: Sequence[str], tool_calls: Sequence[tuple[str, dict]]
+) -> dict[str, ReadState]:
+    """Best state per required file across the trace; `confirmed` needs an unbounded
+    literal read, anything the trace cannot show is `unverifiable`, never `confirmed`."""
+    order = (ReadState.CONFIRMED, ReadState.UNVERIFIABLE, ReadState.MISSING)
+    states: dict[str, ReadState] = {}
+    for path in required:
+        found = [_read_state(path, name, tool_input) for name, tool_input in tool_calls]
+        states[path] = next((s for s in order if s in found), ReadState.MISSING)
+    return states
+
+
+@dataclass(frozen=True)
+class PolicyReadCheck:
+    states: dict[str, ReadState]
+    violations: tuple[str, ...]
+
+    @property
+    def ok(self) -> bool:
+        return not self.violations
+
+    def files(self, state: ReadState) -> tuple[str, ...]:
+        return tuple(path for path, value in self.states.items() if value is state)
+
+
+def check_policy_reads(
+    skill_md: str,
+    tool_calls: Sequence[tuple[str, dict]],
+    *,
+    result_label: str | None,
+    decision_label: str | None,
+    coverage: str | None = None,
+) -> PolicyReadCheck:
+    """Unless every required file is confirmed, Result and Decision must both render
+    incomplete and a `Coverage:` value must not read complete."""
+    states = classify_policy_reads(required_policy_files(skill_md), tool_calls)
+    unmet = [f"{path} ({state.value})" for path, state in states.items() if state is not ReadState.CONFIRMED]
+    if not unmet:
+        return PolicyReadCheck(states, ())
+    violations = []
+    for surface, label in (("Result", result_label), ("Decision", decision_label)):
+        kind = classify_rendered_label(label)
+        if kind is not RenderedKind.INCOMPLETE:
+            violations.append(f"{surface} rendered {kind.value} ({label!r}) with unconfirmed policy reads: {', '.join(unmet)}")
+    if coverage is not None and re.search(r"\bcomplete\b", coverage.lower()) and "incomplete" not in coverage.lower():
+        violations.append(f"Coverage rendered complete ({coverage!r}) with unconfirmed policy reads")
+    return PolicyReadCheck(states, tuple(violations))

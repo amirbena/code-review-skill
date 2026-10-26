@@ -1,0 +1,31 @@
+{
+  "id": "v1.80.2-skipped-policies",
+  "skill": "local-code-review",
+  "skill_version": "1.80.2",
+  "description": "A v1.80.2 local review that opened only the first 60 lines of severity.md from the required policy set, then rendered CHANGES REQUIRED. Skill-touching calls only, with the skill directory replaced by $SKILL_DIR; the report is reduced to its labels.",
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cd $SKILL_DIR && wc -c runbooks/local-review.md policies/*.md shared/policies/*.md | tail -40; cat runbooks/local-review.md"
+      }
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cd $SKILL_DIR && cat runbooks/local-review.md | head -250; cat templates/local-review-report.md"
+      }
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cd $SKILL_DIR && cat templates/local-review-report.md | head -120; sed -n 1,60p shared/policies/severity.md"
+      }
+    }
+  ],
+  "rendered": {
+    "result_label": "⚠️ Changes Requested",
+    "decision_label": "CHANGES REQUIRED.",
+    "coverage": null
+  }
+}

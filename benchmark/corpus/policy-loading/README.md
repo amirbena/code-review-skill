@@ -1,0 +1,47 @@
+# Policy-Loading Benchmark
+
+Issue [#806](https://github.com/amirbena/code-review-skill/issues/806). A
+review that did not open the required policies must not render a complete
+verdict. These fixtures hold recorded tool traces plus the labels the
+report rendered; `check_policy_reads` in
+[`benchmark_blocking_verdict.py`](../../../runtime_platform/benchmark/reference/benchmark_blocking_verdict.py)
+compares them. Tests:
+[`test_policy_read_verification.py`](../../../tests/unit/benchmark/test_policy_read_verification.py).
+They are not `benchmark-case/v2` fixtures: there is no patch or finding.
+
+| Fixture | Shows |
+| --- | --- |
+| `v1.80.2-skipped-policies.json` | A v1.80.2 review that read only the first 60 lines of `severity.md` and rendered `CHANGES REQUIRED`. Detected. |
+| `complete-review-confirmed-reads.json` | Synthetic complete review: every unconditional file read in full. Passes. |
+
+The first fixture keeps only the skill-touching calls (skill directory
+replaced by `$SKILL_DIR`) and the report's labels. The source session was
+deleted afterwards, so its commands were restored from the earlier replay
+of that session rather than re-extracted.
+
+## Read states
+
+- `confirmed`: a `Read` without `limit`/`offset`, or a `cat` naming the
+  file with no truncating pipe or redirect.
+- `unverifiable`: the file is named but the trace cannot show it was read
+  in full (`head`, `sed -n`, `| head -c`, a redirect, a limited `Read`), or
+  it is only reachable through a glob or a bare name after `cd`.
+- `missing`: no read-style call names the file. `wc`, `ls` and `grep` are
+  not reads.
+
+Unless every required file is `confirmed`, Result and Decision must both
+render `REVIEW INCOMPLETE` and a `Coverage:` value must not read
+complete. Required files are derived from the unconditional part of
+`SKILL.md` section 2, so a conditional file that did not fire is never
+required and a new unconditional file is picked up automatically.
+
+## Limitations
+
+- A trace shows reads, not that a policy was applied.
+- Detection works on command text. A read built indirectly (a variable, a
+  script, reading a redirected dump) is `unverifiable`, so a valid review
+  that loaded policies that way is flagged rather than passed.
+- It runs in tests and over recorded traces. It cannot stop a live user
+  run; the runbooks' checkpoint and step 10b remain prompt-level there.
+- Live-run use is optional, behind the existing `BENCHMARK_REQUIRE_RUNTIME`
+  gate, and is not required for every PR.

@@ -200,7 +200,7 @@ which a value must be resolved before it is used, or what is reported.
 
 ## Steps
 
-**Mandatory-loading checkpoint (runs before step 1).** Confirm every unconditional file `SKILL.md` section 2 lists is open; a member introduced there by a context phrase counts only when that context holds. Load any that is not, and record an unloadable one as an incomplete trigger naming it, per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck". Conditional files stay fail-closed and are opened when their predicate fires; an unfired one is never required.
+**Mandatory-loading checkpoint (runs before step 1).** Confirm every unconditional file `SKILL.md` section 2 lists is open; a member introduced there by a context phrase counts only when that context holds. Load any that is not, and record an unloadable one as an incomplete trigger naming it, per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck". Conditional files stay fail-closed and are opened when their predicate fires; an unfired one is never required. Skipping a file, or reading only an excerpt of it (`head`, `sed -n`, a limited read), is not "unloadable": load it in full.
 
 0. **If, and only if, the caller supplied a repository-roots list of 2 or
    more roots:** validate and normalize each supplied root, and reject
@@ -508,7 +508,7 @@ which a value must be resolved before it is used, or what is reported.
     metadata (step 13), per that policy's "Labeling — incomplete must
     never present as clean" and "Non-goals and ownership boundary" — not
     restated here. Required material from `SKILL.md` section 2 that was not loaded before the decision it governs is an incomplete
-    trigger too, per that policy's "Incomplete triggers" — never `complete`. This step runs after every review pass, so it is also the pre-verdict recheck per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck": recompute coverage over the final state, including every conditional file whose predicate fired during the review, and carry no earlier value forward. **With more than one member (step 0):** if narrowing
+    trigger too, per that policy's "Incomplete triggers" — never `complete`. This step runs after every review pass, so it is also the pre-verdict recheck per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck": recompute coverage over the final state, including every conditional file whose predicate fired during the review, and carry no earlier value forward. Set the report's `Coverage:` line by checking each unconditional file against what was actually opened, never from memory; a missing `Coverage:` line, or a report that states unloaded required policies or incomplete coverage anywhere, is `incomplete` and renders `REVIEW INCOMPLETE` in Result and Decision. **With more than one member (step 0):** if narrowing
     (step 0's validation, or steps 1–8e's per-member resolution) left zero
     resolved members, coverage is `incomplete` per
     [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
