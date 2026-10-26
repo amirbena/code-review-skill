@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.80.6 — 2026-10-26
+
+### Fixed
+
+- Load mandatory review policies in bounded, resumable groups with per-file completeness checks, so a truncated read is resumed instead of forcing REVIEW INCOMPLETE (#813).
+
 ## v1.80.5 — 2026-10-26
 
 ### Fixed
