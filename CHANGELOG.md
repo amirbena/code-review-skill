@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.80.4 — 2026-10-26
+
+### Fixed
+
+- Reviews now treat incomplete mandatory policy coverage as `REVIEW INCOMPLETE` for both definitive verdicts, and require `verdict-consistency.md` in mandatory loading (#809).
+
 ## v1.80.3 — 2026-10-26
 
 ### Fixed

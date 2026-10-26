@@ -1,6 +1,6 @@
 ---
 name: github-pr-review
-version: 1.80.3
+version: 1.80.4
 description: Review an existing GitHub pull request and return or publish evidence-backed P0/P1/P2 findings.
 ---
 
