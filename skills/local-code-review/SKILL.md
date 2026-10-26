@@ -42,8 +42,8 @@ restated here because hiding them behind a link would be dangerous.
   **P1** block; **P2** never blocks, however strongly recommended or
   wherever it originated. `CHANGES REQUIRED` is derived once, mechanically,
   from whether any P0/P1 is present — never a separate judgment call — and
-  `REVIEW CLEAN` additionally requires complete coverage (else `REVIEW
-  INCOMPLETE`): P0 = 0 and P1 = 0 alone never imply it. Canonical owners:
+  either verdict additionally requires complete coverage (else `REVIEW
+  INCOMPLETE`): P0 = 0 and P1 = 0 alone never imply `REVIEW CLEAN`. Canonical owners:
   [`severity.md`](../../shared/policies/severity.md), "Decision
   derivation (mechanical)," and
   [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md),
@@ -194,7 +194,7 @@ Always, as one batched operation:
 [`review-scope.md`](../../shared/policies/review-scope.md),
 [`change-risk-signals.md`](../../shared/policies/change-risk-signals.md) (deterministic `standard`/`elevated`/`deep` review-depth classification, emitted with every review),
 [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md) (coverage and exit conditions scaled by change-risk depth and partitions, the closed set of incomplete triggers, and the rule that an incomplete review never renders as clean; emitted with every review),
-[`severity.md`](../../shared/policies/severity.md),
+[`severity.md`](../../shared/policies/severity.md), [`verdict-consistency.md`](../../shared/policies/verdict-consistency.md) (the pre-render check that the rendered label matches the derived Decision),
 [`evidence.md`](../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),
 [`review-base-policy.md`](../../shared/policies/review-base-policy.md)
@@ -242,7 +242,7 @@ Conditionally, by review evidence — each opened before the first decision it g
 
 Before step 1 of the runbook, confirm every unconditional file above is open (a member introduced by a context phrase, such as "orchestrated/ multi-Agent contexts", counts only when that context holds), and recheck coverage immediately before deriving the Decision, per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck."
 
-Required material, a fired conditional file included, that was never loaded or was loaded only after the decision it governs makes coverage `incomplete` — `REVIEW INCOMPLETE`, never `REVIEW CLEAN` — per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Incomplete triggers."
+Required material, a fired conditional file included, that was never loaded or was loaded only after the decision it governs makes coverage `incomplete` — `REVIEW INCOMPLETE`, never `REVIEW CLEAN` — per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Incomplete triggers." **Coverage invariant (mandatory).** Neither `REVIEW CLEAN` nor `CHANGES REQUIRED` is valid unless every required policy was loaded in full before the decision it governs and coverage was verified at the pre-verdict recheck. A required read that is missing, late, or cannot be shown complete (an excerpt, truncated output) makes coverage `incomplete`: render `REVIEW INCOMPLETE`, never a definitive verdict beside a statement of incomplete loading, per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Labeling." This is an obligation on the reviewer, not a technical guarantee.
 
 This Skill defines no severity, evidence, or scope policy of its own — it
 consumes the shared ones so both Skills apply one standard. None of the

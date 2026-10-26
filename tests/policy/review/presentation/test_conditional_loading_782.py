@@ -1,4 +1,4 @@
-"""Entrypoint loading contract for #782.
+"""Entrypoint loading contract for #782 and the coverage invariant of #808.
 
 Conditional policies are opened only when their predicate fires, each before
 the first decision it governs and fail-closed; required material that is not
@@ -150,6 +150,54 @@ class IncompleteLoadingTests(unittest.TestCase):
                 text,
                 path,
             )
+
+
+class CoverageInvariantTests(unittest.TestCase):
+    """#808: one canonical invariant, restated as a pointer only."""
+
+    def test_policy_owns_the_invariant_for_both_definitive_verdicts(self) -> None:
+        text = _text(STOPPING)
+        self.assertIn("Coverage invariant. Neither definitive verdict (REVIEW CLEAN, CHANGES REQUIRED)", text)
+        self.assertIn("Coverage is derived from the files actually opened, never from memory", text)
+        self.assertIn("A missing Coverage field, or a report that states unloaded required policies", text)
+        self.assertIn("a definitive verdict never coexists with such a statement", text)
+        self.assertIn("an obligation on the reviewer, not a technical guarantee", text)
+
+    def test_policy_counts_an_unprovable_read_as_not_loaded(self) -> None:
+        text = _text(STOPPING)
+        self.assertIn("A file counts as loaded only when its complete content was read", text)
+        self.assertIn("a read the reviewer cannot show to have been complete counts as not loaded", text)
+
+    def test_entrypoints_state_the_invariant_without_claiming_enforcement(self) -> None:
+        for path in (LOCAL, GITHUB):
+            text = _text(path)
+            self.assertIn("Coverage invariant (mandatory)", text, path)
+            self.assertIn("Neither REVIEW CLEAN nor CHANGES REQUIRED is valid unless every required policy was loaded in full", text, path)
+            self.assertIn("never a definitive verdict beside a statement of incomplete loading", text, path)
+            self.assertIn("an obligation on the reviewer, not a technical guarantee", text, path)
+            self.assertIn("review-stopping-criteria.md", text, path)
+
+    def test_safety_bullets_cover_both_verdicts(self) -> None:
+        self.assertIn("either verdict additionally requires complete coverage", _text(LOCAL))
+        self.assertIn("Either verdict also requires complete coverage", _text(GITHUB))
+        for path in (LOCAL, GITHUB):
+            self.assertNotIn("REVIEW CLEAN additionally requires complete coverage", _text(path), path)
+
+    def test_runbooks_point_at_the_invariant_instead_of_restating_it(self) -> None:
+        fields = {RUNBOOKS[0]: "Coverage: line", RUNBOOKS[1]: "metadata block's coverage field", RUNBOOKS[2]: "metadata block's coverage field"}
+        for path in RUNBOOKS:
+            text = _text(path)
+            self.assertIn(f"Set the Coverage field (the {fields[path]}) from the files actually opened, never from memory", text, path)
+            self.assertIn('(../../../shared/policies/review-stopping-criteria.md), "Labeling") to the rendered report', text, path)
+            self.assertNotIn("states unloaded required policies", text, path)
+
+    def test_conditional_set_and_ranking_are_untouched(self) -> None:
+        text = _text(STOPPING)
+        self.assertIn("ranked REVIEW INCOMPLETE > CHANGES REQUIRED > REVIEW CLEAN", text)
+        for path, names in CONDITIONAL.items():
+            always = _always(path)
+            for name in names:
+                self.assertNotIn(name, always, path)
 
 
 if __name__ == "__main__":

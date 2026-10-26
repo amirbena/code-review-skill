@@ -1,6 +1,7 @@
 # Policy-Loading Benchmark
 
-Issue [#806](https://github.com/amirbena/code-review-skill/issues/806). A
+Issues [#806](https://github.com/amirbena/code-review-skill/issues/806) and
+[#808](https://github.com/amirbena/code-review-skill/issues/808). A
 review that did not open the required policies must not render a complete
 verdict. These fixtures hold recorded tool traces plus the labels the
 report rendered; `check_policy_reads` in
@@ -35,6 +36,13 @@ complete. Required files are derived from the unconditional part of
 `SKILL.md` section 2, so a conditional file that did not fire is never
 required and a new unconditional file is picked up automatically.
 
+A definitive verdict (`REVIEW CLEAN` or `CHANGES REQUIRED`) with no
+`Coverage:` value is also a violation, because the runbooks treat a missing
+line as incomplete. A test also requires every shared policy a runbook
+applies to be named in its Skill's section 2, so the inventory the
+checkpoint and this checker read cannot silently omit one (#808 found
+`verdict-consistency.md` missing).
+
 ## Limitations
 
 - A trace shows reads, not that a policy was applied.
@@ -43,5 +51,11 @@ required and a new unconditional file is picked up automatically.
   that loaded policies that way is flagged rather than passed.
 - It runs in tests and over recorded traces. It cannot stop a live user
   run; the runbooks' checkpoint and step 10b remain prompt-level there.
+- **Live runtime enforcement is not achieved.** Nothing in this repository
+  can block a live review from rendering a definitive verdict after skipping
+  policies: that would need a runtime hook or interception, which is out of
+  scope. In a normal run the invariant stays prompt-level (the
+  mandatory-loading checkpoint and step 10b). The checker and the inventory
+  test detect failures in tests, over recorded traces and in benchmarks only.
 - Live-run use is optional, behind the existing `BENCHMARK_REQUIRE_RUNTIME`
   gate, and is not required for every PR.
