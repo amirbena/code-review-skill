@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.80.5 — 2026-10-26
+
+### Fixed
+
+- Consolidate review execution order and policy loading inventory into single owners and declare previously undeclared conditional policies (#811).
+
 ## v1.80.4 — 2026-10-26
 
 ### Fixed
