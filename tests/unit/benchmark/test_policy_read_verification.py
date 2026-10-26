@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Mandatory policy reads versus the rendered coverage and verdict (Issue #806)."""
+"""Mandatory policy reads versus the rendered coverage and verdict (Issues #806, #808)."""
 
 from __future__ import annotations
 
 import json
+import re
 import unittest
 
 from runtime_platform.benchmark.reference import benchmark_blocking_verdict as bbv
@@ -14,9 +15,19 @@ from tests.support.paths import REPO_ROOT
 CORPUS = REPO_ROOT / "benchmark" / "corpus" / "policy-loading"
 LOCAL_SKILL = (REPO_ROOT / "skills/local-code-review/SKILL.md").read_text(encoding="utf-8")
 GITHUB_SKILL = (REPO_ROOT / "skills/github-pr-review/SKILL.md").read_text(encoding="utf-8")
+BLOCKING = {"result_label": "⚠️ Changes Requested", "decision_label": "CHANGES REQUIRED", "coverage": "complete"}
 INCOMPLETE = {"result_label": "⚠️ Review Incomplete", "decision_label": "REVIEW INCOMPLETE", "coverage": "incomplete"}
 CLEAN = {"result_label": "✅ Review Clean", "decision_label": "REVIEW CLEAN", "coverage": "complete"}
 SEVERITY = "shared/policies/severity.md"
+VERDICT_CONSISTENCY = "shared/policies/verdict-consistency.md"
+SKILLS = {
+    "local-code-review": LOCAL_SKILL,
+    "github-pr-review": GITHUB_SKILL,
+}
+RUNBOOKS = {
+    "local-code-review": ("local-review",),
+    "github-pr-review": ("passive-pr-review", "active-pr-review"),
+}
 
 
 def _replayed(fixture: dict) -> list[tuple[str, dict]]:
@@ -43,7 +54,8 @@ def _bash(command: str) -> tuple[str, dict]:
 class RequiredSetTests(unittest.TestCase):
     def test_local_set_is_the_unconditional_section_2_files(self) -> None:
         required = bbv.required_policy_files(LOCAL_SKILL)
-        self.assertEqual(len(required), 16)
+        self.assertEqual(len(required), 17)
+        self.assertIn(VERDICT_CONSISTENCY, required)
         self.assertIn("policies/repository-state.md", required)
         self.assertNotIn("shared/policies/review-ownership.md", required)
         self.assertNotIn("shared/policies/repository-expansion.md", required)
@@ -51,6 +63,7 @@ class RequiredSetTests(unittest.TestCase):
     def test_github_set_keeps_ownership_and_drops_context_members(self) -> None:
         required = bbv.required_policy_files(GITHUB_SKILL)
         self.assertIn("shared/policies/review-ownership.md", required)
+        self.assertIn(VERDICT_CONSISTENCY, required)
         for dropped in ("parallel-review", "agent-delegation", "finding-placement", "repository-expansion"):
             self.assertFalse([p for p in required if dropped in p], dropped)
 
@@ -70,9 +83,11 @@ class RegressionFixtureTests(unittest.TestCase):
         self.assertFalse(result.ok)
         self.assertEqual(result.files(ReadState.CONFIRMED), ())
         self.assertEqual(result.files(ReadState.UNVERIFIABLE), (SEVERITY,))
-        self.assertEqual(len(result.files(ReadState.MISSING)), 15)
-        self.assertEqual(len(result.violations), 2)
-        self.assertTrue(all("blocking" in v for v in result.violations))
+        self.assertEqual(len(result.files(ReadState.MISSING)), 16)
+        self.assertIn(VERDICT_CONSISTENCY, result.files(ReadState.MISSING))
+        self.assertEqual(len(result.violations), 3)
+        self.assertEqual(sum("blocking" in v for v in result.violations), 2)
+        self.assertIn("Coverage line missing", result.violations[-1])
 
     def test_same_trace_rendered_incomplete_is_consistent(self) -> None:
         self.assertTrue(_check(self.calls, INCOMPLETE).ok)
@@ -163,6 +178,87 @@ class MutationTests(unittest.TestCase):
         self.assertNotEqual(grown, LOCAL_SKILL)
         result = _check(self.valid, CLEAN, skill=grown)
         self.assertEqual(result.files(ReadState.MISSING), ("shared/policies/new-policy.md",))
+
+
+class InventoryAlignmentTests(unittest.TestCase):
+    """Issue #808: `SKILL.md` section 2 owns the load set, so a shared policy a runbook
+    applies must be named there, or the checkpoint and the checker cannot see it."""
+
+    def test_every_shared_policy_a_runbook_applies_is_named_in_section_2(self) -> None:
+        for skill, skill_md in SKILLS.items():
+            section = bbv._SECTION_RE.search(skill_md).group(1)
+            named = set(re.findall(r"\]\(\.\./\.\./(shared/[^)#\s]+\.md)\)", section))
+            for runbook in RUNBOOKS[skill]:
+                text = (REPO_ROOT / "skills" / skill / "runbooks" / f"{runbook}.md").read_text(encoding="utf-8")
+                applied = set(re.findall(r"\]\(\.\./\.\./\.\./(shared/[^)#\s]+\.md)\)", text.split("\n## Flow")[0]))
+                with self.subTest(skill=skill, runbook=runbook):
+                    self.assertGreater(len(applied), 10)
+                    self.assertEqual(sorted(applied - named), [])
+
+    def test_removing_a_policy_from_section_2_is_detected_by_the_alignment_rule(self) -> None:
+        stripped = LOCAL_SKILL.replace(
+            " [`verdict-consistency.md`](../../shared/policies/verdict-consistency.md)", "", 1
+        )
+        self.assertNotEqual(stripped, LOCAL_SKILL)
+        self.assertNotIn(VERDICT_CONSISTENCY, bbv.required_policy_files(stripped))
+
+    def test_conditional_policies_stay_out_of_the_required_set(self) -> None:
+        for skill, skill_md in SKILLS.items():
+            required = bbv.required_policy_files(skill_md)
+            for conditional in ("repository-expansion", "large-pr-partitioning", "invocation-options", "finding-rendering-human"):
+                with self.subTest(skill=skill, conditional=conditional):
+                    self.assertEqual([p for p in required if p.endswith(f"/{conditional}.md")], [])
+
+
+class DefinitiveVerdictTests(unittest.TestCase):
+    """Issue #808: no definitive verdict survives a missing or unverifiable mandatory read."""
+
+    @staticmethod
+    def _full(skill_md: str) -> list[tuple[str, dict]]:
+        return [("Read", {"file_path": f"$SKILL_DIR/{p}"}) for p in bbv.required_policy_files(skill_md)]
+
+    def test_complete_trace_passes_a_definitive_verdict_in_both_skills(self) -> None:
+        for skill, skill_md in SKILLS.items():
+            for label, rendered in (("clean", CLEAN), ("blocking", BLOCKING)):
+                with self.subTest(skill=skill, verdict=label):
+                    self.assertTrue(_check(self._full(skill_md), rendered, skill=skill_md).ok)
+
+    def test_dropping_any_required_file_blocks_every_definitive_verdict(self) -> None:
+        for skill, skill_md in SKILLS.items():
+            full = self._full(skill_md)
+            for index, (_, tool_input) in enumerate(full):
+                path = tool_input["file_path"].removeprefix("$SKILL_DIR/")
+                calls = full[:index] + full[index + 1 :]
+                for label, rendered in (("clean", CLEAN), ("blocking", BLOCKING)):
+                    with self.subTest(skill=skill, dropped=path, verdict=label):
+                        result = _check(calls, rendered, skill=skill_md)
+                        self.assertFalse(result.ok)
+                        self.assertEqual(result.files(ReadState.MISSING), (path,))
+                with self.subTest(skill=skill, dropped=path, verdict="incomplete"):
+                    self.assertTrue(_check(calls, INCOMPLETE, skill=skill_md).ok)
+
+    def test_a_missing_verdict_consistency_read_is_named_in_both_skills(self) -> None:
+        for skill, skill_md in SKILLS.items():
+            calls = [c for c in self._full(skill_md) if not c[1]["file_path"].endswith(VERDICT_CONSISTENCY)]
+            with self.subTest(skill=skill):
+                result = _check(calls, CLEAN, skill=skill_md)
+                self.assertEqual(result.files(ReadState.MISSING), (VERDICT_CONSISTENCY,))
+                self.assertTrue(any(VERDICT_CONSISTENCY in v for v in result.violations))
+
+    def test_a_bounded_verdict_consistency_read_is_unverifiable_and_blocks(self) -> None:
+        calls = [c for c in self._full(LOCAL_SKILL) if not c[1]["file_path"].endswith(VERDICT_CONSISTENCY)]
+        calls.append(("Read", {"file_path": f"$SKILL_DIR/{VERDICT_CONSISTENCY}", "limit": 40}))
+        result = _check(calls, BLOCKING)
+        self.assertEqual(result.files(ReadState.UNVERIFIABLE), (VERDICT_CONSISTENCY,))
+        self.assertFalse(result.ok)
+
+    def test_a_definitive_verdict_without_a_coverage_line_is_a_violation(self) -> None:
+        full = self._full(LOCAL_SKILL)
+        for label, rendered in (("clean", CLEAN), ("blocking", BLOCKING)):
+            with self.subTest(verdict=label):
+                result = _check(full, {**rendered, "coverage": None})
+                self.assertEqual(result.violations, ("Coverage line missing although a definitive verdict was rendered",))
+        self.assertTrue(_check(full, {**INCOMPLETE, "coverage": None}).ok)
 
 
 if __name__ == "__main__":

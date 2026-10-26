@@ -180,10 +180,12 @@ SEVERITY_LEGEND = {
 # LOCAL_RUNBOOK was re-captured after Issue #806 (the checkpoint rejects skipped or
 # excerpt-only reads and step 10b derives the Coverage line from what was opened)
 # -- likewise deliberate and unrelated to #223.
+# LOCAL_SKILL re-captured for #808: section 2 names verdict-consistency.md as
+# unconditional (no change to report format/voice/heading).
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "2a478671d9e57137482c7db942ac27c22aa924e8",
     LOCAL_RUNBOOK: "06f93d7ee88aa9a9190aacff3b6a4d5108d16c72",
-    LOCAL_SKILL: "b76322ad4ea032b24a14a60e78c129b9c5960149",
+    LOCAL_SKILL: "cc7b15fce96ad1bb40db7dc5c6113afc6a9538cb",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",

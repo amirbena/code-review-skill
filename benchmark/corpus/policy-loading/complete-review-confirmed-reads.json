@@ -55,7 +55,7 @@
     {
       "name": "Bash",
       "input": {
-        "command": "cd $SKILL_DIR && for f in shared/policies/git-safety.md shared/policies/file-reviewability.md shared/policies/remediation-guidance.md shared/templates/finding.md shared/templates/finding-rendering.md shared/templates/review-summary.md policies/invocation-approval.md policies/repository-state.md; do echo \"=== $f\"; cat $f; done"
+        "command": "cd $SKILL_DIR && for f in shared/policies/git-safety.md shared/policies/verdict-consistency.md shared/policies/file-reviewability.md shared/policies/remediation-guidance.md shared/templates/finding.md shared/templates/finding-rendering.md shared/templates/review-summary.md policies/invocation-approval.md policies/repository-state.md; do echo \"=== $f\"; cat $f; done"
       }
     },
     {

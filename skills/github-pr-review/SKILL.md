@@ -204,7 +204,7 @@ Shared, always (as one batched operation):
 [`review-scope.md`](../../shared/policies/review-scope.md),
 [`change-risk-signals.md`](../../shared/policies/change-risk-signals.md) (deterministic `standard`/`elevated`/`deep` review-depth classification, emitted with every review),
 [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md) (coverage and exit conditions scaled by change-risk depth and partitions, the closed set of incomplete triggers, and the rule that an incomplete review never renders as clean; emitted with every review),
-[`severity.md`](../../shared/policies/severity.md),
+[`severity.md`](../../shared/policies/severity.md), [`verdict-consistency.md`](../../shared/policies/verdict-consistency.md) (the pre-render check that the rendered label matches the derived Decision),
 [`evidence.md`](../../shared/policies/evidence.md),
 [`repository-instructions.md`](../../shared/policies/repository-instructions.md),
 [`review-base-policy.md`](../../shared/policies/review-base-policy.md)

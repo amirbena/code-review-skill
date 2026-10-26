@@ -186,16 +186,23 @@ def check_policy_reads(
     coverage: str | None = None,
 ) -> PolicyReadCheck:
     """Unless every required file is confirmed, Result and Decision must both render
-    incomplete and a `Coverage:` value must not read complete."""
+    incomplete and a `Coverage:` value must not read complete. A definitive verdict
+    without any `Coverage:` value is a violation, as a missing line is incomplete."""
     states = classify_policy_reads(required_policy_files(skill_md), tool_calls)
     unmet = [f"{path} ({state.value})" for path, state in states.items() if state is not ReadState.CONFIRMED]
-    if not unmet:
-        return PolicyReadCheck(states, ())
     violations = []
-    for surface, label in (("Result", result_label), ("Decision", decision_label)):
-        kind = classify_rendered_label(label)
-        if kind is not RenderedKind.INCOMPLETE:
-            violations.append(f"{surface} rendered {kind.value} ({label!r}) with unconfirmed policy reads: {', '.join(unmet)}")
-    if coverage is not None and re.search(r"\bcomplete\b", coverage.lower()) and "incomplete" not in coverage.lower():
+    kinds = {
+        surface: classify_rendered_label(label)
+        for surface, label in (("Result", result_label), ("Decision", decision_label))
+    }
+    if unmet:
+        for surface, kind in kinds.items():
+            if kind is not RenderedKind.INCOMPLETE:
+                label = result_label if surface == "Result" else decision_label
+                violations.append(f"{surface} rendered {kind.value} ({label!r}) with unconfirmed policy reads: {', '.join(unmet)}")
+    # The runbook's step 10b treats a missing `Coverage:` line as incomplete.
+    if coverage is None and any(k in (RenderedKind.CLEAN, RenderedKind.BLOCKING) for k in kinds.values()):
+        violations.append("Coverage line missing although a definitive verdict was rendered")
+    elif coverage is not None and unmet and re.search(r"\bcomplete\b", coverage.lower()) and "incomplete" not in coverage.lower():
         violations.append(f"Coverage rendered complete ({coverage!r}) with unconfirmed policy reads")
     return PolicyReadCheck(states, tuple(violations))
