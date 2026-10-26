@@ -342,9 +342,12 @@ class SkillWiringTests(unittest.TestCase):
         for path in (GH_ACTIVE, GH_PASSIVE, LOCAL_RUNBOOK):
             raw = path.read_text(encoding="utf-8")
             self.assertIn("specialist-depth.md", raw)
+        # Since #810 each SKILL.md section 2 is the single loading inventory, so
+        # it declares this policy once, as a conditional fail-closed entry.
         for path in (GH_SKILL, LOCAL_SKILL):
             raw = path.read_text(encoding="utf-8")
-            self.assertNotIn("specialist-depth.md", raw)
+            section = raw.split("## 2. Required Policy Loading", 1)[1].split("\n## 3.", 1)[0]
+            self.assertIn("specialist-depth.md", section, path)
 
 
 class NoLexicalDriftTests(unittest.TestCase):

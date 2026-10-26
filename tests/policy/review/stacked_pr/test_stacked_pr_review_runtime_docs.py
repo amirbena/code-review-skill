@@ -233,8 +233,8 @@ class WiringTests(unittest.TestCase):
     def test_active_runbook_resolves_topology_before_scope_retrieval(self) -> None:
         raw = ACTIVE_RUNBOOK.read_text(encoding="utf-8")
         self.assertIn("stacked-pr-review.md", raw)
-        pos_topology = raw.index("resolve stack topology")
-        pos_scope = raw.index("retrieve complete paginated PR scope")
+        pos_topology = raw.index("Before computing\n   any delta, resolve stack topology")
+        pos_scope = raw.index("retrieve the complete paginated changed-file set")
         self.assertLess(pos_topology, pos_scope)
         self.assertIn(
             "Before computing\n   any delta, resolve stack topology",
@@ -244,8 +244,8 @@ class WiringTests(unittest.TestCase):
     def test_passive_runbook_resolves_topology_before_scope_retrieval(self) -> None:
         raw = PASSIVE_RUNBOOK.read_text(encoding="utf-8")
         self.assertIn("stacked-pr-review.md", raw)
-        pos_topology = raw.index("resolve stack topology")
-        pos_resolve_files = raw.index("resolve changed files")
+        pos_topology = raw.index("Before computing any delta, resolve stack\n   topology")
+        pos_resolve_files = raw.index("using the stack topology resolved in step 4")
         self.assertLess(pos_topology, pos_resolve_files)
 
     def test_skill_md_references_the_policy(self) -> None:

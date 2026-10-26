@@ -62,39 +62,17 @@ for review-action authority; the canonical policies own the rest.
   tree-wide budgets on agent count/spawn depth — see
   [`agent-delegation.md`](../../shared/policies/agent-delegation.md).
 
-## Review flow (high level)
+## Review procedure
 
-```text
-resolve PR + authenticated identity, PR author, controlling authority
-  → self-review? full analysis still runs; no formal event on own work
-  → resolve review mode (delta re-review vs. normal review)
-  → resolve stack topology: base is the default branch (no-op), or another
-    open PR — a stack layer whose effective base is that PR's head
-  → [optional] resolve a Jira reference (read-only; else JIRA CONTEXT UNRESOLVED)
-  → retrieve the complete required PR scope for that mode (against the
-    effective review base), paginated to exhaustion (incl. prior
-    reviews/comments as Existing Review Evidence)
-  → repository access mode (API-only | optional | required checkout);
-    determine formal-review capability; resolve publication mode
-    (PASSIVE | SEMI | ACTIVE; default PASSIVE; ambiguity fails closed)
-  → discover per-file AGENTS.md/CLAUDE.md; apply runtime-validation policy;
-    evaluate rendered inspection (conditional); plan execution (sequential or
-    read-only parallel workers per dimension — same findings and decision)
-  → inspect diff + surrounding code as logical cohorts within the PR's
-    realistic blast radius; apply repository conventions
-  → aggregate → dedupe → reconcile (missing required dimension →
-    REVIEW INCOMPLETE, never REVIEW CLEAN)
-  → finalize findings; classify severity; resolve inline eligibility
-  → revalidate HEAD → construct ONE review (body + inline comments)
-  → apply the review-action authorization gate → submit in ACTIVE, report
-    WOULD PUBLISH in SEMI, or report formal-review unavailability
-  → finally: remove any temporary checkout → stop
-```
-
+A review resolves the PR, identity, and review mode, retrieves the complete
+required scope, reviews it, and constructs ONE review (body + inline
+comments) whose mutation is bounded by the review-action authorization gate.
 Findings accumulate silently and are published only as a single batched
 GitHub review once analysis is complete — never finding-by-finding.
 **Read the runbook for the resolved mode in full before starting any review**
-— required, not optional background:
+— required, not optional background, and its numbered Steps are the only
+authoritative execution sequence, including the coverage and
+verdict-consistency gates:
 [`runbooks/passive-pr-review.md`](runbooks/passive-pr-review.md) /
 [`runbooks/active-pr-review.md`](runbooks/active-pr-review.md). Rendered
 inspection is conditional: per
@@ -233,6 +211,8 @@ with parallel workers —
 [`agent-delegation.md`](../../shared/policies/agent-delegation.md).
 
 Conditionally, by review evidence — each opened before the first decision it governs, fail-closed (ambiguity or a failed predicate loads it): [`repository-expansion.md`](../../shared/policies/repository-expansion.md) and [`large-pr-partitioning.md`](../../shared/policies/large-pr-partitioning.md) per each file's "Conditional loading: fail-closed" (decidable from `review-scope.md`'s resident summaries; the `repository_expansion_triggers` metadata field still reads `none` when nothing fires, without opening either file); [`requirement-coverage.md`](../../shared/policies/requirement-coverage.md) when requirements or acceptance criteria are supplied or the PR description or linked context may carry them; [`invocation-options.md`](../../shared/policies/invocation-options.md) when the invocation or a publish flow carries any presentation, remediation, or output-format option or request, explicit or natural-language (else the section 1 defaults hold); [`finding-rendering-human.md`](../../shared/templates/finding-rendering-human.md) (the Senior voice contract and human inline/full renderings) when `human_review_output` or `human_inline_findings` resolves `true` or either status is ambiguous after reading the invocation, explicit or natural-language per `invocation-options.md` (no such request means both defaults `false` hold and it stays unopened).
+
+Conditionally, by the review's own pass predicates — the signal-triggered passes that `review-scope.md` routes to and the runbook steps apply, each opened before the first decision it governs and fail-closed (an unclear, incomplete, or failed predicate loads it; none is ever skipped on unknown applicability): [`specialist-depth.md`](../../shared/policies/specialist-depth.md) (a dimension the base pass implicated warrants deeper reasoning; its own "Conditional loading: fail-closed"); [`root-cause-consolidation.md`](../../shared/policies/root-cause-consolidation.md) (two or more findings or failures may share one mechanism, partitioned units are aggregated, or prior findings are reconciled); [`affected-test-analysis.md`](../../shared/policies/affected-test-analysis.md) (the change alters observable production behavior an existing test could encode); [`code-hygiene.md`](../../shared/policies/code-hygiene.md) (a changed comment cites an issue-tracker reference, or a new or renamed variable may hide intent); [`remediation-scope-boundary.md`](../../shared/policies/remediation-scope-boundary.md) (at least one material finding exists — it then applies to every one); [`reasoning-checkpoint.md`](../../shared/policies/reasoning-checkpoint.md) (one of its "Activation" signals plausibly holds); [`rendered-inspection.md`](../../shared/policies/rendered-inspection.md) (the UI-impact trigger fires) and [`design-reference.md`](../../shared/policies/design-reference.md) (additionally, a design reference is operator-supplied or must be accounted for); [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md) (runtime validation reaches execution selection, or the invocation text carries a trusted-host or repository-test-sandbox request); [`structured-output.md`](../../shared/policies/structured-output.md) (`structured_review_result` resolves `true`); [`policies/workspace-sibling-context.md`](policies/workspace-sibling-context.md) (a workspace root is granted per section 1).
 
 Before step 1 of the runbook, confirm every unconditional file above is open (a member introduced by a context phrase, such as "with parallel workers", counts only when that context holds), and recheck coverage immediately before deriving the verdict, per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck."
 

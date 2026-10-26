@@ -265,8 +265,9 @@ class RunbooksWireTheContract(unittest.TestCase):
         raw = GH_ACTIVE.read_text(encoding="utf-8")
         self.assertIn("3a. **If this invocation asks to publish/post a review", raw)
         t = _norm(GH_ACTIVE)
-        self.assertIn("Senior/human", t)
-        self.assertIn("Structured", t)
+        owner = _norm(GH_OUTPUT)
+        self.assertIn("Senior/human", owner)
+        self.assertIn("Structured", owner)
         self.assertIn(
             "Mutation: WITHHELD (publication format unresolved)", t
         )

@@ -6,12 +6,10 @@ list (issue #406).
 `metadata/skill.yaml`'s `shared:` block is a generated projection of
 `capabilities/*/capability.yaml` (see
 `scripts/packaging/generate_skill_metadata.py`,
-`test_generated_skill_metadata.py`). Shared *policies* are legitimately
-dispatched only through `shared/policies/review-scope.md`'s own routing
-without being re-listed flatly in `SKILL.md` — restating all of them
-here would duplicate the router
-(`docs/capability-architecture/capability-architecture-model.md` §C.3's
-"router becomes the next monolith" risk). Shared *templates* are
+`test_generated_skill_metadata.py`). Shared *policies* are declared in the same §2 inventory, checked by
+`test_skill_policy_inventory_810.py`; depth policies routed from
+`shared/policies/review-scope.md` appear there only as one conditional,
+fail-closed line each, never with their rules restated. Shared *templates* are
 different: they define this Skill's own output contract, so `SKILL.md`
 §2 names each one explicitly. This is the concrete, narrow check that
 would have caught `shared/templates/finding-rendering.md` shipping with

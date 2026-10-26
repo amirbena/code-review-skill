@@ -43,33 +43,31 @@ def validate_github_policy_family(skill_root: Path) -> None:
         )
     summary_template = summary_template_path.read_text(encoding="utf-8")
 
-    author_step = runbook.find("resolve authenticated identity, PR author, and controlling authority")
-    self_review_step = runbook.find("self-review: analysis runs in full")
-    ownership_step = runbook.find("check review ownership")
-    access_step = runbook.find("verify repository/review access")
-    scope_step = runbook.find("retrieve complete paginated PR scope")
-    capability_step = runbook.find("determine event-specific review capability")
-    dedupe_step = runbook.find("deduplicate same-HEAD findings")
-    finalize_step = runbook.find("finalize findings and resolve inline eligibility")
-    construct_step = runbook.find("construct one review: body + inline comments")
-    decision_step = runbook.find("submit permitted Approve/Request Changes")
-    if not (
-        0 <= author_step < self_review_step < ownership_step < access_step < scope_step
-        < capability_step < dedupe_step < finalize_step < construct_step < decision_step
-    ):
+    # The numbered Steps are the only execution order; the markers below are
+    # phrases inside those Steps (the removed Flow diagrams are not consulted).
+    active_steps = runbook.split("\n## Steps", 1)[-1]
+    passive_steps = passive_runbook.split("\n## Steps", 1)[-1]
+    markers = [
+        active_steps.find("this invocation is a **self-review**"),
+        active_steps.find("Check for an existing Code Review Agent owner"),
+        active_steps.find("**Verify repository/review access**"),
+        active_steps.find("retrieve the complete paginated changed-file set"),
+        active_steps.find("Determine event-specific capability"),
+        active_steps.find("**Finalize findings**"),
+        active_steps.find("**Submit the one review**"),
+    ]
+    if not (0 <= markers[0] and markers == sorted(markers) and len(set(markers)) == len(markers)):
         raise SystemExit(
-            "error: active review flow must resolve the self-review mutation "
+            "error: active review steps must resolve the self-review mutation "
             "boundary (analysis still runs) before ownership, access, or scope; "
-            "then establish complete scope and capability, then deduplicate and "
-            "finalize findings, then construct one review before submitting a "
-            "formal review decision"
+            "then establish complete scope and capability, then finalize "
+            "findings before submitting a formal review decision"
         )
-    passive_author_step = passive_runbook.find("resolve authenticated identity, PR author, and controlling authority")
-    passive_self_review_step = passive_runbook.find("self-review: run the full analysis")
-    passive_scope_step = passive_runbook.find("resolve changed files")
-    if not (0 <= passive_author_step < passive_self_review_step < passive_scope_step):
+    passive_self_review = passive_steps.find("this is a **self-review**")
+    passive_scope = passive_steps.find("retrieve PR")
+    if not (0 <= passive_self_review < passive_scope):
         raise SystemExit(
-            "error: passive review flow must resolve the self-review mutation "
+            "error: passive review steps must resolve the self-review mutation "
             "boundary (analysis still runs) before retrieving PR scope"
         )
 

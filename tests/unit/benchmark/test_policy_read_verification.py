@@ -181,8 +181,9 @@ class MutationTests(unittest.TestCase):
 
 
 class InventoryAlignmentTests(unittest.TestCase):
-    """Issue #808: `SKILL.md` section 2 owns the load set, so a shared policy a runbook
-    applies must be named there, or the checkpoint and the checker cannot see it."""
+    """Issues #808/#810: `SKILL.md` section 2 owns the load set, so a shared policy a runbook
+    step applies must be named there (unconditionally or with an activation rule), or the
+    checkpoint and the checker cannot see it."""
 
     def test_every_shared_policy_a_runbook_applies_is_named_in_section_2(self) -> None:
         for skill, skill_md in SKILLS.items():
@@ -190,7 +191,7 @@ class InventoryAlignmentTests(unittest.TestCase):
             named = set(re.findall(r"\]\(\.\./\.\./(shared/[^)#\s]+\.md)\)", section))
             for runbook in RUNBOOKS[skill]:
                 text = (REPO_ROOT / "skills" / skill / "runbooks" / f"{runbook}.md").read_text(encoding="utf-8")
-                applied = set(re.findall(r"\]\(\.\./\.\./\.\./(shared/[^)#\s]+\.md)\)", text.split("\n## Flow")[0]))
+                applied = set(re.findall(r"\]\(\.\./\.\./\.\./(shared/[^)#\s]+\.md)\)", text.split("\n## Steps", 1)[1]))
                 with self.subTest(skill=skill, runbook=runbook):
                     self.assertGreater(len(applied), 10)
                     self.assertEqual(sorted(applied - named), [])

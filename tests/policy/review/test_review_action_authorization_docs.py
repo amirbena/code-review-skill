@@ -538,12 +538,12 @@ class WiredIntoRunbooks(unittest.TestCase):
         self.assertIn("Resolve the publication mode", t)
         self.assertIn("Apply the review-action authorization gate", t)
         self.assertLess(
-            raw.index("resolve publication mode: PASSIVE | SEMI | ACTIVE"),
-            raw.index("apply the review-action authorization gate"),
+            raw.index("Resolve the publication mode"),
+            raw.index("Apply the review-action authorization gate"),
         )
         self.assertLess(
-            raw.index("apply the review-action authorization gate"),
-            raw.index("submit permitted Approve/Request Changes"),
+            raw.index("Apply the review-action authorization gate"),
+            raw.index("Submit the one review"),
         )
 
     def test_passive_runbook_is_inherently_passive(self) -> None:

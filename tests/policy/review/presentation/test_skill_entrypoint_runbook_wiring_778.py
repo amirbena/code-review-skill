@@ -1,6 +1,6 @@
 """Entrypoint wiring tests for #778: each Skill's SKILL.md must require
-reading its runbook and must place conditional rendered-inspection
-evaluation in its review flow. Prose assertions only; models no browser."""
+reading its runbook and each runbook's Steps must place conditional
+rendered-inspection evaluation after runtime validation. Prose assertions only; models no browser."""
 
 from __future__ import annotations
 
@@ -15,11 +15,16 @@ GITHUB = REPO_ROOT / "skills/github-pr-review/SKILL.md"
 POLICY_LINK = "shared/policies/rendered-inspection.md"
 
 
-def _flow(path) -> str:
-    raw = path.read_text(encoding="utf-8")
-    match = re.search(r"## Review flow.*?```text\n(.*?)```", raw, re.S)
-    assert match, f"no review-flow block in {path}"
-    return re.sub(r"\s+", " ", match.group(1))
+def _steps(rel: str) -> str:
+    text = (REPO_ROOT / rel).read_text(encoding="utf-8")
+    return re.sub(r"\s+", " ", text.split("\n## Steps", 1)[1])
+
+
+RUNBOOKS = (
+    "skills/local-code-review/runbooks/local-review.md",
+    "skills/github-pr-review/runbooks/active-pr-review.md",
+    "skills/github-pr-review/runbooks/passive-pr-review.md",
+)
 
 
 class EntrypointWiringTests(unittest.TestCase):
@@ -33,15 +38,11 @@ class EntrypointWiringTests(unittest.TestCase):
         self.assertIn("Read the runbook for the resolved mode in full before starting any review", text)
         self.assertIn("required, not optional background", text)
 
-    def test_flows_evaluate_rendered_inspection_after_runtime_validation(self) -> None:
-        for path in (LOCAL, GITHUB):
-            flow = _flow(path)
-            self.assertIn("evaluate rendered inspection (conditional)", flow, path)
-            self.assertLess(
-                flow.index("runtime-validation"),
-                flow.index("evaluate rendered inspection"),
-                path,
-            )
+    def test_steps_evaluate_rendered_inspection_after_runtime_validation(self) -> None:
+        for rel in RUNBOOKS:
+            steps = _steps(rel)
+            self.assertIn(POLICY_LINK, steps, rel)
+            self.assertLess(steps.index("runtime-validation.md"), steps.index("rendered-inspection.md"), rel)
 
     def test_rendered_inspection_stays_conditional_and_linked(self) -> None:
         for path in (LOCAL, GITHUB):

@@ -287,9 +287,10 @@ class RunbookConditionalStepTests(unittest.TestCase):
             self.text,
         )
 
-    def test_flow_diagram_shows_pr_branch_never_expanding_scope(self) -> None:
-        self.assertIn("PR reference supplied?", self.text)
-        self.assertIn("scope never expands to the PR", self.text)
+    def test_steps_gate_pr_context_on_a_supplied_reference_without_expanding_scope(self) -> None:
+        self.assertIn("If, and only if, the caller supplied a PR reference", self.text)
+        self.assertIn("If no PR reference was supplied, skip this step", self.text)
+        self.assertIn("never expand review scope beyond the current local delta", self.text)
 
     def test_dedup_guidance_appears_in_finding_classification_step(self) -> None:
         # The runbook no longer restates the full dedup rule inline — it
