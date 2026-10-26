@@ -43,6 +43,22 @@ applies to be named in its Skill's section 2, so the inventory the
 checkpoint and this checker read cannot silently omit one (#808 found
 `verdict-consistency.md` missing).
 
+## Resumed reads
+
+Issue [#812](https://github.com/amirbena/code-review-skill/issues/812).
+[`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
+"Bounded, resumable policy loading", owns the procedure: bounded groups, a
+per-file extent compared with the lines received, resumption from the last
+verified line, and `REVIEW INCOMPLETE` only when recovery fails.
+[`benchmark_policy_loading.py`](../../../runtime_platform/benchmark/reference/benchmark_policy_loading.py)
+models it and
+[`test_policy_loading_resumption.py`](../../../tests/unit/benchmark/test_policy_loading_resumption.py)
+covers truncation, partial reads, recovery and unrecoverable failure with
+simulated readers. A recorded trace holds tool inputs but not delivered
+lengths, so `check_policy_reads` still classes a ranged read as
+`unverifiable`; a resumed review replayed through it is flagged rather than
+passed.
+
 ## Limitations
 
 - A trace shows reads, not that a policy was applied.

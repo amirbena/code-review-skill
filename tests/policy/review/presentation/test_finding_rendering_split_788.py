@@ -76,7 +76,7 @@ class SplitShapeTests(unittest.TestCase):
 
 class ConditionalLoadingTests(unittest.TestCase):
     def test_human_file_is_not_in_the_unconditional_set(self) -> None:
-        for path, start in ((LOCAL, "Always, as one batched operation:"), (GITHUB, "Shared, always")):
+        for path, start in ((LOCAL, "Always, in bounded resumable groups:"), (GITHUB, "Shared, always")):
             always = set(_LINK.findall(_section(path, start, "Conditionally")))
             self.assertIn("finding-rendering.md", always, path)
             self.assertNotIn("finding-rendering-human.md", always, path)

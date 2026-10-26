@@ -360,8 +360,9 @@ class SkillMdBatchingTests(unittest.TestCase):
     def test_parallel_load_note_present(self) -> None:
         self.assertIn(
             "None of the files above depend on another's content to be "
-            "read — load them together in a single batched/parallel "
-            "operation rather than one at a time in sequence",
+            "read, so they load in any order, in groups sized to what the "
+            "runtime delivers whole and never as one call over the whole "
+            "set",
             self.text,
         )
 
