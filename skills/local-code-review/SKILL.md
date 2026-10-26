@@ -55,25 +55,16 @@ restated here because hiding them behind a link would be dangerous.
   [`policies/repository-state.md`](policies/repository-state.md) and
   [`git-safety.md`](../../shared/policies/git-safety.md).
 
-## Review flow (high level)
+## Review procedure
 
-```text
-resolve scope → discover per-file AGENTS.md/CLAUDE.md → inspect the Git
-delta by category (committed, staged, unstaged, untracked) → compute the
-staged-delta fingerprint → [optional] resolve a Jira reference (read-only;
-else JIRA CONTEXT UNRESOLVED) / map review context / reconcile a PR
-reference's prior findings — all onto the delta, never widening it →
-resolve the shared runtime-validation policy and record any safe validation
-outcome → evaluate rendered inspection (conditional) → inspect surrounding code → review against code + conventions,
-focused by context → classify by severity (source never changes it) → derive the
-decision mechanically from blocking (P0/P1) severities → return, stop
-```
-
-The optional Jira and PR inputs never widen scope: the local delta stays
-the Review Target. **Read
+The review resolves the local scope, inspects the Git delta by category,
+applies the shared review rules, derives the decision mechanically, and
+returns one report. The optional Jira and PR inputs never widen scope: the
+local delta stays the Review Target. **Read
 [`runbooks/local-review.md`](runbooks/local-review.md) in full before starting
-any review** — it is the required procedure, not optional background, and
-sequences runtime validation and rendered inspection. Rendered inspection is
+any review** — it is the required procedure, not optional background, and its
+numbered Steps are the only authoritative execution sequence, including the
+coverage and verdict-consistency gates. Rendered inspection is
 conditional: per
 [`rendered-inspection.md`](../../shared/policies/rendered-inspection.md) it stays
 silent (no prompt, no availability check, no browser) unless the change's
@@ -239,6 +230,8 @@ loads independently. **This policy is never loaded or applied when no PR
 reference is supplied**, and likewise for review context.
 
 Conditionally, by review evidence — each opened before the first decision it governs, fail-closed (ambiguity or a failed predicate loads it): [`repository-expansion.md`](../../shared/policies/repository-expansion.md) and [`large-pr-partitioning.md`](../../shared/policies/large-pr-partitioning.md) per each file's "Conditional loading: fail-closed" (decidable from `review-scope.md`'s resident summaries; the `Repository expansion:` metadata line still reads `none` when nothing fires, without opening either file); [`invocation-options.md`](../../shared/policies/invocation-options.md) when the invocation carries any presentation, remediation, or output-format option or request, explicit or natural-language (else the section 1 defaults hold); [`finding-rendering-human.md`](../../shared/templates/finding-rendering-human.md) (the Senior voice contract and human renderings) when `human_review_output` resolves `true` or its status is ambiguous after reading the invocation, explicit or natural-language per `invocation-options.md` (no such request means the default `false` holds and it stays unopened).
+
+Conditionally, by the review's own pass predicates — the signal-triggered passes that `review-scope.md` routes to and the runbook steps apply, each opened before the first decision it governs and fail-closed (an unclear, incomplete, or failed predicate loads it; none is ever skipped on unknown applicability): [`specialist-depth.md`](../../shared/policies/specialist-depth.md) (a dimension the base pass implicated warrants deeper reasoning; its own "Conditional loading: fail-closed"); [`root-cause-consolidation.md`](../../shared/policies/root-cause-consolidation.md) (two or more findings or failures may share one mechanism, partitioned units are aggregated, or prior findings are reconciled); [`affected-test-analysis.md`](../../shared/policies/affected-test-analysis.md) (the change alters observable production behavior an existing test could encode); [`code-hygiene.md`](../../shared/policies/code-hygiene.md) (a changed comment cites an issue-tracker reference, or a new or renamed variable may hide intent); [`remediation-scope-boundary.md`](../../shared/policies/remediation-scope-boundary.md) (at least one material finding exists — it then applies to every one); [`reasoning-checkpoint.md`](../../shared/policies/reasoning-checkpoint.md) (one of its "Activation" signals plausibly holds); [`rendered-inspection.md`](../../shared/policies/rendered-inspection.md) (the UI-impact trigger fires) and [`design-reference.md`](../../shared/policies/design-reference.md) (additionally, a design reference is operator-supplied or must be accounted for); [`trusted-host-execution.md`](../../shared/policies/trusted-host-execution.md) (runtime validation reaches execution selection, or the invocation text carries a trusted-host or repository-test-sandbox request); [`structured-output.md`](../../shared/policies/structured-output.md) (`structured_review_result` resolves `true`); [`external-contract-context.md`](policies/external-contract-context.md) and [`workspace-sibling-context.md`](policies/workspace-sibling-context.md) (their section 1 inputs are supplied).
 
 Before step 1 of the runbook, confirm every unconditional file above is open (a member introduced by a context phrase, such as "orchestrated/ multi-Agent contexts", counts only when that context holds), and recheck coverage immediately before deriving the Decision, per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck."
 

@@ -131,6 +131,30 @@ canonical, detailed rule lives in the policy named after it.
 - **One canonical home per rule.** A normative rule has exactly one
   canonical location. Other files (this one included) summarize and link;
   they do not restate a rule in a way that can drift independently.
+- **Skill instruction ownership.** Every normative review rule has exactly
+  one canonical owner; other files reference it and never redefine it. Each
+  layer owns one thing: `SKILL.md` the entry contract, safety boundaries, and
+  the policy loading inventory (its §2); runbook Steps the execution
+  sequence, prerequisites, transitions, and completion/failure conditions;
+  policies the normative rules and decision criteria; templates the output
+  shape; tests and benchmarks verification. The numbered Steps are the only
+  authoritative execution order — flow diagrams and summaries are
+  explanatory and must never contradict them, and a second copy of the
+  order is not kept. Do not copy policy definitions into runbooks or entry
+  points; repeat a safety-critical invariant at an execution boundary only
+  when that serves a clear enforcement purpose, minimally and consistent
+  with its owner. Every policy a step applies must have a declared loading
+  obligation in that Skill's §2 — unconditional, or conditional with an
+  auditable fail-closed activation rule; unknown applicability never means
+  "skip", and mandatory loading is never weakened to save context. When
+  changing review architecture: identify the canonical owner, update it
+  first, then dependent references, then contract tests, then verify
+  behavioral equivalence, and introduce no new source of truth. Prefer
+  simplifying an existing contract over adding a checkpoint, manifest,
+  abstraction, or layer; a new layer needs a responsibility no existing one
+  can fulfil. This bullet is the canonical statement; packaging and
+  runbook/policy/template ownership detail stays in
+  [`policies/skill-development-policy.md`](policies/skill-development-policy.md).
 - **File size is a review trigger, not a limit.** When a production file
   (a Skill resource, policy, runbook, template, script, workflow, or
   reference doc) grows past roughly 300 lines, treat that as a prompt to

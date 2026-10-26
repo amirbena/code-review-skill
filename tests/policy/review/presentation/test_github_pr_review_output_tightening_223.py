@@ -15,7 +15,7 @@ word-count checks, and not an execution of a live reviewer.
 
 Cross-Skill boundary (also under test): none of this tightening may leak
 into `local-code-review`'s own report format, heading, or voice — its
-templates/runbook/policies are pinned by content hash captured before this
+report template and policies are pinned by content hash captured before this
 change.
 """
 
@@ -39,8 +39,6 @@ GH_INLINE = REPO_ROOT / "skills/github-pr-review/templates/inline-finding.md"
 GH_DIR = REPO_ROOT / "skills/github-pr-review"
 
 LOCAL_REPORT = REPO_ROOT / "skills/local-code-review/templates/local-review-report.md"
-LOCAL_RUNBOOK = REPO_ROOT / "skills/local-code-review/runbooks/local-review.md"
-LOCAL_SKILL = REPO_ROOT / "skills/local-code-review/SKILL.md"
 LOCAL_POLICY_DIR = REPO_ROOT / "skills/local-code-review/policies"
 
 SEVERITY_LEGEND = {
@@ -49,168 +47,20 @@ SEVERITY_LEGEND = {
     "P2": "P2 (Non-Blocking)",
 }
 
-# Content hashes captured from the working tree *before* Issue #223 touched
-# anything, via `git hash-object`. Issue #223 must not modify any of these
-# files — this is the "local-code-review is provably unaffected" guard the
-# Issue's cross-Skill boundary and acceptance criteria require.
-#
-# LOCAL_REPORT's, LOCAL_RUNBOOK's, and LOCAL_SKILL's hashes were re-captured
-# after Issue #89 (review-stopping-criteria.md) made deliberate,
-# separately-owned changes to local-review-report.md (the always-on Coverage
-# metadata field and the REVIEW INCOMPLETE decision variant),
-# local-review.md (the new "Evaluate review coverage" step), and SKILL.md
-# (the required-policy link) — unrelated to #223's github-pr-review
-# tightening, which this guard exists to catch. LOCAL_REPORT and
-# LOCAL_RUNBOOK were re-captured again after Issue #237 (thin-pointer trim
-# of the family-of-four subordinate-metadata prose in the "Rules" section
-# and steps 8b-8d/10b) — also deliberate and unrelated to #223.
-# LOCAL_RUNBOOK was re-captured again after Issue #211 (step 9 now names the
-# new "Semantic change-implication reasoning" shared section) — also
-# deliberate and unrelated to #223. LOCAL_RUNBOOK was re-captured again
-# after Issue #121 (step 9 now also names the new "Null-like absence-risk
-# review" shared section) — also deliberate and unrelated to #223.
-# LOCAL_RUNBOOK was re-captured again after Issue #175 (step 9 now also
-# names the new "API / contract compatibility review" shared section) —
-# also deliberate and unrelated to #223. LOCAL_RUNBOOK was re-captured
-# again after Issue #258 (step 10 now also applies the new
-# "remediation-scope-boundary.md" reasoning to each material finding) —
-# also deliberate and unrelated to #223. LOCAL_RUNBOOK was re-captured
-# again after Issue #82 (step 9 now also names the new "Domain-specific
-# deepening pass" shared section, canonical home specialist-depth.md) —
-# also deliberate and unrelated to #223. LOCAL_SKILL was re-captured again
-# after Issue #303 (the agent-spawn / delegation capability boundary: a
-# one-line statement in section 4 that this Skill holds no `spawn_agent`
-# capability of its own, linking to the new
-# shared/policies/agent-delegation.md) — also deliberate and unrelated to
-# #223. LOCAL_RUNBOOK was re-captured again after Issue #369 (step 8a now
-# also resolves `allow_trusted_host_execution`'s natural-language
-# authorization phrasings, per the new shared/policies/
-# trusted-host-execution.md section, before runtime-validation.md's
-# execution-selection runs) — also deliberate and unrelated to #223.
-# LOCAL_RUNBOOK was re-captured again after Issue #377 (a new step 11b,
-# "Check verdict consistency," between decision derivation and composing
-# the report body, per the new shared/policies/verdict-consistency.md,
-# plus a matching Flow-diagram line) — also deliberate and unrelated to
-# #223. LOCAL_SKILL was re-captured again after Issue #406 (section 2 now
-# names the shared `finding.md`/`finding-rendering.md` templates
-# explicitly, closing the reconciliation gap where both were packaged but
-# named in neither SKILL.md) — also deliberate and unrelated to #223.
-# LOCAL_SKILL was re-captured again after Issue #439 (published Skill
-# frontmatter cleanup: a single `version: 1.50.2` line added to the
-# frontmatter block), and again by #439's follow-up (the frontmatter
-# `description` collapsed from a multi-line folded scalar to a single
-# physical YAML line) — also deliberate and unrelated to #223. LOCAL_SKILL
-# was re-captured again after Issue #134 (section 2 now also names the
-# new shared/policies/review-base-policy.md) — also deliberate and
-# unrelated to #223.
-# LOCAL_RUNBOOK was re-captured again after Issue #449 (step 11's
-# "Derive the Decision" now states the explicit P0/P1 tally
-# `severity.md`'s "Decision derivation (mechanical)" requires, closing the
-# gap where a P2-only finding set could render `CHANGES REQUIRED`, plus a
-# matching Flow-diagram wording tweak) — also deliberate and unrelated to
-# #223. LOCAL_RUNBOOK was re-captured again after Issue #134 (a new step
-# 2a, "Check review-base policy compliance," right after base resolution,
-# per the new shared/policies/review-base-policy.md) — also deliberate and
-# unrelated to #223. pr-context.md was re-captured after Issue #74 (a new
-# "Reviewed-state identity" subsection giving existing-finding
-# reconciliation the local counterpart of the github side's reviewed-HEAD
-# comparison) — also deliberate and unrelated to #223. The other files in
-# this map are untouched by
-# #89/#237/#211/#121/#175/#258/#82/#303/#369/#377/#406/#449/#134/#74 and keep
-# their original #223-era hashes. The local report template, runbook, and
-# SKILL.md were re-captured after Issue #69 (the opt-in structured review
-# result option) — deliberate and unrelated to #223. LOCAL_RUNBOOK was
-# re-captured again on 2026-09-24 after Issue #535 (step 8a also resolves the
-# repository test sandbox request; the in-place-working-tree paragraph carves
-# out admitted repository test commands) — also deliberate and unrelated to #223.
-# LOCAL_REPORT, LOCAL_RUNBOOK, LOCAL_SKILL, and repository-state.md were
-# re-captured again after Issue #556 (epic #555: the optional, explicit
-# multi-repository Review Target input -- a new step 0 and per-member
-# annotations in the runbook, a new section 1 input/section 2 conditional
-# policy load in SKILL.md, and a new "Multi-repository Review Target"
-# cross-reference section in repository-state.md) -- also deliberate and
-# unrelated to #223. LOCAL_REPORT, LOCAL_RUNBOOK, and LOCAL_SKILL were re-captured again
-# after Issue #566 (epic #564: the optional human reasoning checkpoint -- a
-# conditional `Reasoning check` section after Decision in the report template,
-# a runbook step-12 pointer and flow-diagram line, and a SKILL.md output-contract
-# pointer to the shared reasoning-checkpoint.md) --
-# also deliberate and unrelated to #223. LOCAL_REPORT was re-captured again
-# after Issue #601 (a subordinate `Relationship outcomes` metadata line and a
-# conditional Context gaps note, per repository-expansion.md) -- also
-# deliberate and unrelated to #223. LOCAL_REPORT was re-captured again
-# after Issue #604 (the `Relationship outcomes` line now marks answers a host
-# relationship capability supplied) -- also deliberate and unrelated to #223.
-# LOCAL_REPORT, LOCAL_RUNBOOK, and LOCAL_SKILL were re-captured again after Issue #616 (the
-# optional rendered-UI inspection capability -- a conditional `Rendered
-# observations` rule in the report template and a rendered-inspection pointer
-# beside runtime validation in the runbook) -- also deliberate and unrelated
-# to #223. LOCAL_REPORT was re-captured once more after Issue #618 (one
-# conditional `Browser setup note` line for the rendered-inspection
-# acquisition question) -- likewise deliberate and unrelated to #223.
-# LOCAL_RUNBOOK was re-captured after Issue #620 (one sentence pointing the
-# design-reference context at its shared policy) and LOCAL_SKILL for #620's
-# design-reference input pointer in SKILL.md -- likewise deliberate.
-# LOCAL_RUNBOOK and LOCAL_SKILL were re-captured again after Issue #133 (the
-# external contract context pointers in the runbook and SKILL.md) -- likewise
-# deliberate.
-# LOCAL_RUNBOOK and LOCAL_SKILL were re-captured again after Issue #663 (the
-# workspace-sibling-context pointers) -- likewise deliberate.
-# LOCAL_RUNBOOK was re-captured after Issue #676 (the "Code hygiene review"
-# step-9 enumeration entry) and LOCAL_REPORT (the conditional "Code hygiene
-# observations" bullet) -- likewise deliberate.
-# LOCAL_REPORT was re-captured after Issue #730 (the Context gaps inclusion
-# condition admits a dependency-tree evidence gap) -- likewise deliberate.
-# LOCAL_REPORT was re-captured after Issue #742 (the Context gaps inclusion
-# condition admits a deployment validation evidence gap) -- likewise deliberate.
-# LOCAL_REPORT was re-captured after Issue #771 (the `Browser setup note` line
-# is removed with the install flow and the rendered-observations bullet names
-# the render-consent gate) -- likewise deliberate and unrelated to #223.
-# LOCAL_SKILL was re-captured after Issue #778 (the entrypoint now requires
-# reading the runbook and names conditional rendered-inspection evaluation in
-# its review flow) -- likewise deliberate and unrelated to #223.
-# LOCAL_RUNBOOK and LOCAL_SKILL were re-captured after Issue #782 (conditional,
-# fail-closed loading of scale/invocation-options and the knowingly-unloaded
-# incomplete rule) -- likewise deliberate and unrelated to #223.
-# LOCAL_REPORT, LOCAL_RUNBOOK, and LOCAL_SKILL were re-captured after Issue #784
-# (a clean verdict requires complete coverage: the entrypoint Output Contract,
-# the mandatory-loading checkpoint and pre-verdict recheck, and the no-hybrid
-# rendering rule) -- likewise deliberate and unrelated to #223.
-# LOCAL_SKILL re-captured for #788: its conditional-loading paragraph gained
-# finding-rendering-human.md (no change to report format/voice/heading).
-# LOCAL_RUNBOOK was re-captured after Issue #806 (the checkpoint rejects skipped or
-# excerpt-only reads and step 10b derives the Coverage line from what was opened)
-# -- likewise deliberate and unrelated to #223.
-# LOCAL_SKILL and LOCAL_RUNBOOK re-captured for #808: section 2 names
-# verdict-consistency.md as unconditional and states the coverage invariant, and
-# step 10b points at its canonical home (no change to report format/voice/heading).
+# Content hashes of local-code-review's own report template and local policies,
+# so #223's GitHub-only output tightening provably cannot leak into the local
+# report surface. Re-capture with `git hash-object` after a deliberate,
+# separately-owned change to one of these files. `SKILL.md` and the runbook are
+# deliberately not byte-pinned: they change with every contract edit, so a
+# hash only forced a refresh. Their contracts are checked structurally by
+# test_skill_policy_inventory_810.py and the heading/legend tests below.
 LOCAL_BASELINE_HASHES = {
     LOCAL_REPORT: "2a478671d9e57137482c7db942ac27c22aa924e8",
-    LOCAL_RUNBOOK: "9d3636f10156d6448c1d77fd02cc45d7e07980e9",
-    LOCAL_SKILL: "b600e8701ff92da5c0314ba306578bc1ebba689c",
     LOCAL_POLICY_DIR / "invocation-approval.md": "3fad248e86f655af57a06a99624a226d56238e0d",
     LOCAL_POLICY_DIR / "pr-context.md": "5698bb668ec44b7cf588b26b037bda7220811809",
     LOCAL_POLICY_DIR / "repository-state.md": "c0ffbb0b8ab98e977c387c9632d9fbe261712b19",
     LOCAL_POLICY_DIR / "review-context.md": "ea16e2e8425e8c85f83ba5588d0e8aee94bd495e",
 }
-
-
-# The release flow stamps SKILL.md's frontmatter `version:` line (issue #496),
-# so the pin hashes that one line as its baseline value, everything else exact.
-# Re-capture a deliberate SKILL.md change by hashing these normalized bytes,
-# not the raw file: `git hash-object` on the stamped file will not match.
-_BASELINE_VERSION_LINE = b"version: 1.50.2"
-
-
-def _with_baseline_version(data: bytes) -> bytes:
-    lines = data.split(b"\n")
-    if lines[0] != b"---" or b"---" not in lines[1:]:
-        return data
-    closing = lines.index(b"---", 1)
-    for index in range(1, closing):
-        if re.match(rb"version:[ \t]*\S+[ \t]*$", lines[index]):
-            lines[index] = _BASELINE_VERSION_LINE
-            break
-    return b"\n".join(lines)
 
 
 def _git_blob_sha1_of(data: bytes) -> str:
@@ -224,10 +74,7 @@ def _git_blob_sha1_of(data: bytes) -> str:
 
 
 def _git_blob_sha1(path) -> str:
-    data = path.read_bytes()
-    if path.name == "SKILL.md":
-        data = _with_baseline_version(data)
-    return _git_blob_sha1_of(data)
+    return _git_blob_sha1_of(path.read_bytes())
 
 
 def _md_or_text_blocks(path) -> list[str]:
@@ -235,62 +82,20 @@ def _md_or_text_blocks(path) -> list[str]:
     return re.findall(r"```(?:markdown|text)\n(.*?)\n```", text, re.S)
 
 
-class BaselineVersionNormalizationTests(unittest.TestCase):
-    """The #223 pin ignores only the frontmatter version, never the body."""
-
-    SKILL = b"---\nname: x\nversion: 1.50.2\ndescription: d\n---\nBody.\n"
-
-    def test_a_different_frontmatter_version_hashes_identically(self) -> None:
-        bumped = self.SKILL.replace(b"1.50.2", b"9.9.9")
-        self.assertEqual(
-            _git_blob_sha1_of(_with_baseline_version(bumped)),
-            _git_blob_sha1_of(_with_baseline_version(self.SKILL)),
-        )
-
-    def test_a_body_change_still_changes_the_hash(self) -> None:
-        edited = self.SKILL.replace(b"Body.", b"Body!")
-        self.assertNotEqual(
-            _git_blob_sha1_of(_with_baseline_version(edited)),
-            _git_blob_sha1_of(_with_baseline_version(self.SKILL)),
-        )
-
-    def test_a_frontmatter_change_other_than_version_still_changes_the_hash(self) -> None:
-        edited = self.SKILL.replace(b"description: d", b"description: e")
-        self.assertNotEqual(
-            _git_blob_sha1_of(_with_baseline_version(edited)),
-            _git_blob_sha1_of(_with_baseline_version(self.SKILL)),
-        )
-
-    def test_a_version_line_outside_the_frontmatter_is_not_normalized(self) -> None:
-        body_version = b"---\nname: x\ndescription: d\n---\nversion: 1.50.2\n"
-        bumped = body_version.replace(b"1.50.2", b"9.9.9")
-        self.assertNotEqual(
-            _git_blob_sha1_of(_with_baseline_version(bumped)),
-            _git_blob_sha1_of(_with_baseline_version(body_version)),
-        )
-
-
 class LocalCodeReviewIsProvablyUnaffected(unittest.TestCase):
     """Acceptance criterion: a regression test asserts local-code-review's
-    own report template/policy/runbook is unchanged by this work."""
+    own report template and policies are unchanged by this work."""
 
     def test_local_resources_match_pre_223_content_hash(self) -> None:
         for path, expected_hash in LOCAL_BASELINE_HASHES.items():
             self.assertTrue(path.is_file(), f"missing: {path}")
             actual = _git_blob_sha1(path)
-            note = (
-                f" (SKILL.md is hashed with its frontmatter version line "
-                f"normalized to {_BASELINE_VERSION_LINE.decode()!r}; re-capture "
-                "a deliberate change the same way, not with git hash-object)"
-                if path.name == "SKILL.md"
-                else ""
-            )
             self.assertEqual(
                 actual,
                 expected_hash,
                 f"{path.relative_to(REPO_ROOT)} changed during Issue #223 "
                 "work — local-code-review's own report format/voice/heading "
-                f"must stay byte-for-byte unchanged{note}",
+                "must stay byte-for-byte unchanged",
             )
 
     def test_local_report_heading_is_unchanged(self) -> None:
