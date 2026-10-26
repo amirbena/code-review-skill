@@ -53,6 +53,11 @@ class LoadReport:
         return "complete" if not self.incomplete_reasons else "incomplete"
 
 
+def count_lines(text: str) -> int:
+    """Policy line count: a final unterminated line counts, the empty segment after the last newline does not."""
+    return text.count("\n") + (1 if text and not text.endswith("\n") else 0)
+
+
 def load_file(read: Reader, path: str, extent: int | None, bound: int | None = None) -> FileLoad:
     """Load one file, resuming from the verified line after any shortfall.
 
@@ -69,7 +74,7 @@ def load_file(read: Reader, path: str, extent: int | None, bound: int | None = N
         outstanding = None if extent is None else extent - verified
         if outstanding == 0:
             return FileLoad(path, LoadState.LOADED, verified, extent, tuple(reads), learned_bound=learned)
-        asked = request if outstanding is None else (outstanding if request is None else min(request, outstanding))
+        asked = request if outstanding is None or request is None else min(request, outstanding)
         lines = read(path, verified + 1, asked)
         delivered = len(lines)
         reads.append(Read(verified + 1, asked, delivered))
@@ -80,9 +85,10 @@ def load_file(read: Reader, path: str, extent: int | None, bound: int | None = N
         if extent is None and delivered == 0:
             return FileLoad(path, LoadState.LOADED, verified, extent, tuple(reads), learned_bound=learned)
         if delivered == 0:
-            if asked == 1:
+            size = asked if asked is not None else outstanding
+            if size == 1:
                 return fail("a single-line read from the verified position returned nothing")
-            request = max(1, (asked or 2) // 2)
+            request = max(1, (size or 2) // 2)
             continue
         verified += delivered
         if asked is None or delivered < asked:

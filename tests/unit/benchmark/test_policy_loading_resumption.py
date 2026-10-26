@@ -66,6 +66,42 @@ class TruncationTests(unittest.TestCase):
                 self.assertEqual(load.verified_through, 500)
 
 
+def text_reader(text: str, cap: int | None = None):
+    rows = text.split("\n")
+    if text == "" or text.endswith("\n"):
+        rows.pop()
+
+    def read(path, first, max_lines):
+        n = len(rows) if max_lines is None else max_lines
+        return rows[first - 1 : first - 1 + (n if cap is None else min(n, cap))]
+
+    return read
+
+
+class LineCountTests(unittest.TestCase):
+    def test_a_final_unterminated_line_counts_and_the_trailing_segment_does_not(self) -> None:
+        for text, lines in (("", 0), ("\n", 1), ("a", 1), ("a\n", 1), ("a\nb", 2), ("a\nb\n", 2), ("a\n\nb", 3)):
+            with self.subTest(text=text):
+                self.assertEqual(pl.count_lines(text), lines)
+
+    def test_a_file_without_a_trailing_newline_loads_with_the_policy_extent(self) -> None:
+        text = "a\nb\nc"
+        for cap in (None, 1, 2):
+            load = pl.load_file(text_reader(text, cap), "a.md", pl.count_lines(text))
+            self.assertEqual((load.loaded, load.verified_through), (True, 3))
+
+    def test_the_naive_newline_count_would_reject_the_same_file(self) -> None:
+        text = "a\nb\nc"
+        load = pl.load_file(text_reader(text), "a.md", text.count("\n"))
+        self.assertFalse(load.loaded)
+        self.assertIn("disagree", load.reason)
+
+    def test_a_terminated_file_loads_with_both_counts(self) -> None:
+        text = "a\nb\nc\n"
+        self.assertEqual(pl.count_lines(text), text.count("\n"))
+        self.assertTrue(pl.load_file(text_reader(text, 2), "a.md", pl.count_lines(text)).loaded)
+
+
 class ResumptionTests(unittest.TestCase):
     def test_resume_continues_from_the_last_verified_line_without_rereading(self) -> None:
         load = pl.load_file(runtime(500, cap=120), "a.md", 500)
@@ -207,6 +243,17 @@ class ContractWiringTests(unittest.TestCase):
                     self.assertIn(HEADING, checkpoint)
                     self.assertIn("without restarting the review", checkpoint)
                     self.assertIn("only a failed recovery is unloadable", checkpoint)
+
+    def test_both_skills_open_the_pre_runbook_sentence_identically(self) -> None:
+        sentences = set()
+        for root in SKILLS.values():
+            section = bbv._SECTION_RE.search((root / "SKILL.md").read_text(encoding="utf-8")).group(1)
+            sentences.add(re.search(r"Before step 1 of the runbook, load the unconditional files above in bounded resumable groups per \[`review-stopping-criteria.md`\]\([^)]+\), \"Bounded, resumable policy loading,\" and confirm each is open in full", section).group(0).split("](")[0])
+        self.assertEqual(len(sentences), 1)
+
+    def test_policy_defines_a_line_for_the_extent(self) -> None:
+        text = re.sub(r"\s+", " ", self.section.group(1))
+        self.assertIn("a file without a trailing newline has one more line than `wc -l` reports", text)
 
     def test_fail_closed_wording_is_unchanged(self) -> None:
         for skill, root in SKILLS.items():

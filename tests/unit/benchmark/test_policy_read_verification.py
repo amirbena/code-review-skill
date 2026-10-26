@@ -158,6 +158,11 @@ class MutationTests(unittest.TestCase):
         ):
             self.assertEqual(bbv.classify_policy_reads([SEVERITY], [("Read", tool_input)])[SEVERITY], expected)
 
+    def test_a_resumed_ranged_chain_stays_unverifiable_because_traces_hold_no_lengths(self) -> None:
+        chain = [("Read", {"file_path": f"$SKILL_DIR/{SEVERITY}", "offset": o, "limit": 60}) for o in (1, 61, 121)]
+        self.assertEqual(bbv.classify_policy_reads([SEVERITY], chain)[SEVERITY], ReadState.UNVERIFIABLE)
+        self.assertFalse(_check(chain, CLEAN).ok)
+
     def test_listing_or_sizing_a_file_is_not_a_read(self) -> None:
         for command in (f"wc -c $SKILL_DIR/{SEVERITY}", "ls $SKILL_DIR/shared/policies", f"grep -c P0 {SEVERITY}"):
             with self.subTest(command):

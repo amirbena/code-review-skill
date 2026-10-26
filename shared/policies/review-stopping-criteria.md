@@ -172,10 +172,14 @@ no trigger, field, or state.
    a file arrived whole. Before reading a file, obtain its extent in lines
    from a source other than that read (the runtime's file query or a
    line-count command; one small call can return the extents of many
-   files). The file is loaded only when the lines received are contiguous
-   from line 1 and equal that extent. When no extent can be obtained, it is
-   complete only when, after at least one line was received, a read starting
-   after the last line received returns nothing (an end-of-file probe).
+   files). A line is newline-terminated or the final unterminated one, so
+   a file without a trailing newline has one more line than `wc -l`
+   reports, and the empty row some viewers number after the last newline
+   is not a line. The file is loaded only when the lines received are
+   contiguous from line 1 and equal that extent. When no extent can be
+   obtained, it is complete only when, after at least one line was
+   received, a read starting after the last line received returns nothing
+   (an end-of-file probe).
 3. *Resume from the verified position.* The verified position is the last
    line of the contiguous prefix received and checked. A shortfall (fewer
    lines than the extent, output marked or cut short, a read that fails
