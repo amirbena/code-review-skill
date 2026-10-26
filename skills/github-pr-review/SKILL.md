@@ -49,9 +49,9 @@ for review-action authority; the canonical policies own the rest.
   [`review-ownership.md`](../../shared/policies/review-ownership.md).
 - **Severity → verdict is mechanical.** P0/P1 block; P2 never does; the
   blocking verdict is derived once from whether any P0/P1 is present — see
-  [`severity.md`](../../shared/policies/severity.md). `REVIEW CLEAN` also
+  [`severity.md`](../../shared/policies/severity.md). Either verdict also
   requires complete coverage (else `REVIEW INCOMPLETE`); P0 = 0 and P1 = 0
-  alone never imply it — see
+  alone never imply `REVIEW CLEAN` — see
   [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md),
   "Labeling."
 - **Reviewer Brief is private and never published**, structurally
@@ -236,7 +236,7 @@ Conditionally, by review evidence — each opened before the first decision it g
 
 Before step 1 of the runbook, confirm every unconditional file above is open (a member introduced by a context phrase, such as "with parallel workers", counts only when that context holds), and recheck coverage immediately before deriving the verdict, per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck."
 
-Required material, a fired conditional file included, that was never loaded or was loaded only after the decision it governs makes coverage `incomplete` — `REVIEW INCOMPLETE`, never an approving outcome — per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Incomplete triggers."
+Required material, a fired conditional file included, that was never loaded or was loaded only after the decision it governs makes coverage `incomplete` — `REVIEW INCOMPLETE`, never an approving outcome — per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Incomplete triggers." **Coverage invariant (mandatory).** Neither `REVIEW CLEAN` nor `CHANGES REQUIRED` is valid unless every required policy was loaded in full before the decision it governs and coverage was verified at the pre-verdict recheck. A required read that is missing, late, or cannot be shown complete (an excerpt, truncated output) makes coverage `incomplete`: render `REVIEW INCOMPLETE`, never a definitive verdict beside a statement of incomplete loading, per [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md), "Labeling." This is an obligation on the reviewer, not a technical guarantee.
 
 This Skill's own: the canonical index
 [`policies/github-review.md`](policies/github-review.md), which owns the

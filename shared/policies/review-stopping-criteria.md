@@ -92,7 +92,9 @@ counts as incomplete:
    still unloaded when coverage is evaluated, the governed pass was not
    produced as required, so coverage is `incomplete`, never `complete`,
    and `detail` names the material — unless the governed decision was
-   re-made after loading, which counts as loaded before it. This covers
+   re-made after loading, which counts as loaded before it. A file counts as loaded only when its
+   complete content was read: an excerpt, truncated output, or a read the
+   reviewer cannot show to have been complete counts as not loaded. This covers
    *known* gaps only: a self-reported load is not proof every required
    file was read, and this rule does not claim to prevent unknown skips.
 2. **A partition could not be completed**, per
@@ -184,6 +186,16 @@ whose coverage is `incomplete`, with or without a qualifier such as
 "coverage incomplete, see Metadata". The Metadata `Coverage` line cannot
 excuse or replace the Result, and the incomplete Result names the unmet
 requirements from `incomplete_reasons`.
+
+**Coverage invariant.** Neither definitive verdict (`REVIEW CLEAN`,
+`CHANGES REQUIRED`) is valid unless coverage is `complete`, which includes
+every required policy loaded in full before the decision it governs.
+Coverage is derived from the files actually opened, never from memory. A
+missing Coverage field, or a report that states unloaded required policies
+or incomplete coverage anywhere in its text, is `incomplete` and renders
+`REVIEW INCOMPLETE` in Result and Decision; a definitive verdict never
+coexists with such a statement. This is an obligation on the reviewer, not a
+technical guarantee.
 
 An incomplete review still reports every finding it actually produced
 before coverage was interrupted — this policy never discards or hides a
