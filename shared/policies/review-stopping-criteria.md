@@ -94,7 +94,9 @@ counts as incomplete:
    and `detail` names the material — unless the governed decision was
    re-made after loading, which counts as loaded before it. A file counts as loaded only when its
    complete content was read: an excerpt, truncated output, or a read the
-   reviewer cannot show to have been complete counts as not loaded. This covers
+   reviewer cannot show to have been complete counts as not loaded unless
+   it is resumed to a verified-complete read under "Bounded, resumable
+   policy loading" below. This covers
    *known* gaps only: a self-reported load is not proof every required
    file was read, and this rule does not claim to prevent unknown skips.
 2. **A partition could not be completed**, per
@@ -151,6 +153,49 @@ only decide *when* the existing trigger is evaluated:
    after any re-review, finding re-finalization, or change of the
    reviewed HEAD or delta. A coverage value reached earlier is never
    carried over to the verdict.
+
+## Bounded, resumable policy loading
+
+"Open in full" is met by the procedure below, so a runtime that delivers
+less than it was asked for is neither missed nor a reason to restart. It
+decides how required files are read, never which are required, and adds
+no trigger, field, or state.
+
+1. *Bounded groups, in sequence.* Read the required files in groups, one
+   group per call, in any order. Size a group to what this runtime has
+   actually delivered whole during this review, not to a fixed limit: with
+   no evidence yet read one file per call, widen only after a group arrived
+   whole, and narrow after any shortfall. One call over the whole set is
+   not a loading method.
+2. *Completeness is verified per file, independently of the read.* A
+   successful call, a clean exit status, or a plausible ending does not show
+   a file arrived whole. Before reading a file, obtain its extent in lines
+   from a source other than that read (the runtime's file query or a
+   line-count command; one small call can return the extents of many
+   files). A line is newline-terminated or the final unterminated one, so
+   a file without a trailing newline has one more line than `wc -l`
+   reports, and the empty row some viewers number after the last newline
+   is not a line. The file is loaded only when the lines received are
+   contiguous from line 1 and equal that extent. When no extent can be
+   obtained, it is complete only when, after at least one line was
+   received, a read starting after the last line received returns nothing
+   (an end-of-file probe).
+3. *Resume from the verified position.* The verified position is the last
+   line of the contiguous prefix received and checked. A shortfall (fewer
+   lines than the extent, output marked or cut short, a read that fails
+   partway) is continued with a ranged read from the next line, no longer
+   than the longest span the runtime has delivered in one read, and
+   narrowed after each further shortfall. Verified content is not read again, and the review
+   is neither restarted nor its earlier steps repeated.
+4. *Only a failed recovery is a trigger-1 reason.* Recovery has failed for
+   a file when, with lines still outstanding, a single-line read from the
+   verified position returns nothing, when the lines received disagree with the extent (the file
+   changed or the delivery is inconsistent), or when the runtime cannot read
+   from a given line and the whole-file read stays short. Then, and only
+   then, the file is an incomplete reason, and `detail` names it with its
+   verified position (for example `severity.md verified through line 120 of
+   154`). A read that needed several attempts and ended verified is loaded,
+   and is not a gap or a finding.
 
 ## Labeling — incomplete must never present as clean
 

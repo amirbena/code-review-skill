@@ -62,7 +62,7 @@ def _linked(path, start: str, end: str) -> set[str]:
 
 
 def _always(path) -> set[str]:
-    start = "Always, as one batched operation:" if path == LOCAL else "Shared, always"
+    start = "Always, in bounded resumable groups:" if path == LOCAL else "Shared, always"
     return _linked(path, start, "Conditionally")
 
 

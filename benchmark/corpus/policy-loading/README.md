@@ -43,6 +43,41 @@ applies to be named in its Skill's section 2, so the inventory the
 checkpoint and this checker read cannot silently omit one (#808 found
 `verdict-consistency.md` missing).
 
+## Resumed reads
+
+Issue [#812](https://github.com/amirbena/code-review-skill/issues/812).
+[`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),
+"Bounded, resumable policy loading", owns the procedure: bounded groups, a
+per-file line count compared with the lines received, resumption from the last
+verified line, and `REVIEW INCOMPLETE` only when recovery fails.
+[`benchmark_policy_loading.py`](../../../runtime_platform/benchmark/reference/benchmark_policy_loading.py)
+models it and
+[`test_policy_loading_resumption.py`](../../../tests/unit/benchmark/test_policy_loading_resumption.py)
+covers truncation, partial reads, recovery, unrecoverable failure and files
+without a trailing newline.
+
+`check_policy_reads` is called only by the fixture tests; nothing in the live
+benchmark path uses it. It still classes a ranged read as `unverifiable`
+because a recorded trace holds tool inputs, not delivered lengths, so a
+resumed review replayed through it is flagged rather than passed (pinned by
+a test). Confirming one needs delivered-length evidence in the trace, which
+no consumer needs yet.
+
+### Evidence status
+
+- **Simulated:** every recovery path above runs against a fake reader that
+  truncates, cuts off or over-delivers. This proves the procedure, not any
+  runtime's behavior.
+- **Observed once, 2026-10-26, Claude Code desktop:** a 39 KB `Bash` result
+  was not delivered inline; the harness replaced it with a "persisted-output"
+  notice, the first 2 KB and a file path. A `Read` of a 2,500-line file
+  returned every line, and numbered an empty row after the last newline
+  (hence the line definition in the policy).
+- **Not observed:** a silent truncation. No runtime has yet been seen to cut a
+  `Read` short without saying so, and no complete review has been run through
+  a runtime that does. Recovery on a truncating runtime therefore rests on
+  the simulation and on the per-file comparison, not on a recorded run.
+
 ## Limitations
 
 - A trace shows reads, not that a policy was applied.
