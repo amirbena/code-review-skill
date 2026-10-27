@@ -24,6 +24,13 @@ SKILLS = {
     "local-code-review": ("local-review",),
     "github-pr-review": ("active-pr-review", "passive-pr-review"),
 }
+GITHUB_ONLY_POLICIES = {
+    "github-review.md", "review-authority.md", "review-action-authorization.md", "reviewer-delta-review.md",
+    "pr-scope.md", "review-context.md", "review-evidence.md", "review-reasoning.md", "finding-placement.md",
+    "review-output.md", "reviewer-brief.md", "stacked-pr-review.md", "stateful-delta-rereview.md",
+    "repository-checkout.md", "parallel-review.md", "structured-output.md", "review-status-enforcement.md",
+    "workspace-sibling-context.md",
+}
 _LINK = re.compile(r"\]\(([^)\s#]+\.md)")
 _SECTION = re.compile(r"^## 2\.[^\n]*\n(.*?)(?=^## \d+\.)", re.M | re.S)
 _STAGES = (
@@ -152,8 +159,9 @@ class LoadingInventoryTests(unittest.TestCase):
     def test_every_github_only_policy_has_exactly_one_tier(self) -> None:
         skill = "github-pr-review"
         unconditional, conditional = declared((_skill_dir(skill) / "SKILL.md").read_text(encoding="utf-8"), skill)
-        local = {p.resolve() for p in (_skill_dir(skill) / "policies").glob("*.md")}
-        self.assertEqual(local - unconditional - conditional, set())
+        local = {p for p in unconditional | conditional if p.parent == (_skill_dir(skill) / "policies").resolve()}
+        # Every GitHub-only policy the review text names is declared; the set is also pinned by name.
+        self.assertEqual({p.name for p in local}, GITHUB_ONLY_POLICIES)
         self.assertEqual(local & unconditional & conditional, set())
 
     def test_checker_size_report_and_inventory_derive_the_same_set(self) -> None:
