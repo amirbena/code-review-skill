@@ -162,6 +162,9 @@ class WorkerResult:
     status: WorkerStatus
     findings: tuple[WorkerFinding, ...] = ()
     required: bool = True  # a required dimension cannot be silently skipped
+    # False when the worker skipped, partially read, or cannot confirm the required
+    # policy loading (agent-delegation.md, "Delegated reviewers inherit ...").
+    loading_confirmed: bool = True
 
 
 def _normalize(text: str) -> str:
@@ -195,7 +198,7 @@ def aggregate(
     recovered: list[ReviewDimension] = []
     usable: list[WorkerResult] = []
     for r in ordered:
-        if r.status is WorkerStatus.OK:
+        if r.status is WorkerStatus.OK and r.loading_confirmed:
             usable.append(r)
             continue
         if not r.required and parent_can_recover:

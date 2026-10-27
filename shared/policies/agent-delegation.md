@@ -217,6 +217,34 @@ An out-of-grant action attempted by a worker is refused; the worker's
 in-grant analysis output is still collected normally — a denied action on
 one capability does not discard the worker's otherwise-valid findings.
 
+## Delegated reviewers inherit the policy-loading contract
+
+Delegation narrows authority (above); it never narrows review obligations.
+A delegated reviewer — a read-only worker, or a sub-agent that runs the
+Skill and renders its own Decision — inherits the owning Skill's `SKILL.md`
+section 2 ("Required Policy Loading") and
+[`review-stopping-criteria.md`](review-stopping-criteria.md), "Mandatory-loading
+checkpoint and pre-verdict recheck," by reference. This policy does not
+restate the inventory; that section remains its one home.
+
+- **The delegating parent carries the obligation.** The instruction a
+  delegate receives names the Skill's section 2 and the checkpoint, and
+  asks for a load confirmation. A brief that omits them does not remove the
+  obligation; the delegate treats the Skill's section 2 as applicable
+  anyway.
+- **A worker that skipped, partially read, or cannot confirm required
+  loading makes the aggregating reviewer's coverage `incomplete`** (trigger 1
+  in [`review-stopping-criteria.md`](review-stopping-criteria.md)); the
+  worker never derives a Decision itself. **A sub-agent that runs the Skill
+  and renders its own Decision renders `REVIEW INCOMPLETE`** in that case,
+  per "Coverage invariant" there. Full diff coverage, P0 = 0, and P1 = 0
+  never override it, and the precedence `REVIEW INCOMPLETE` > `CHANGES
+  REQUIRED` > `REVIEW CLEAN` is unchanged.
+- **A parent never launders a delegate's gap.** An aggregating reviewer
+  treats a required file its delegate did not confirm as not loaded when it
+  computes coverage ([`parallel-review.md`](parallel-review.md), "Failure
+  handling").
+
 ## Reporting an event
 
 A refused spawn or delegation attempt is reported, not swallowed. The
