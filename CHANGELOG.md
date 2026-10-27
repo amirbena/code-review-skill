@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.82.1 — 2026-10-27
+
+### Fixed
+
+- Consolidate duplicated loading-checkpoint and coverage-invariant wording into its single owner policy (#824).
+
 ## v1.82.0 — 2026-10-27
 
 ### Changed
