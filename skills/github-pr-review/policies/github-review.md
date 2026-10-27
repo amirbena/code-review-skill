@@ -8,12 +8,12 @@ Builds on the shared
 [`review-scope.md`](../../../shared/policies/review-scope.md),
 [`severity.md`](../../../shared/policies/severity.md), and
 [`evidence.md`](../../../shared/policies/evidence.md) policies. This file
-owns the top-level review lifecycle, the ordering of major policy gates,
+owns the top-level review lifecycle, the dependency semantics of major policy gates,
 and cross-cutting invariants; each concern's normative rule lives in
 exactly one canonical sub-policy, referenced below — this file does not
 duplicate that prose.
 
-## Canonical sub-policies, in authoritative order
+## Canonical sub-policies, in explanatory dependency order
 
 ```text
 review-authority.md         identity, self-review mutation boundary, publication capability
@@ -79,7 +79,10 @@ review-status-enforcement.md  optional exact-HEAD machine-readable status;
                             detection; explicit opt-in required-check setup
 ```
 
-This order is the authoritative dependency order: a later file's rules
+This block explains how the sub-policies depend on one another. It is
+neither a loading list nor an execution order: `SKILL.md` section 2 is the
+one load inventory, and the numbered runbook Steps are the only execution
+sequence. Read as dependencies, a later file's rules
 assume every earlier file's gates have already resolved for this
 invocation. [`review-authority.md`](review-authority.md) resolves first
 and is never bypassed by anything downstream;

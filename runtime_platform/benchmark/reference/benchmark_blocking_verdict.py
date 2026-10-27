@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Sequence
 
+from scripts.validation.context_size_report import section_targets
 from tests.reference.review import decision_semantics as ds
 
 
@@ -87,9 +88,6 @@ class ReadState(str, Enum):
 
 
 _SECTION_RE = re.compile(r"^## \d+\. Required Policy Loading\s*$(.*?)(?=^## |\Z)", re.M | re.S)
-_CONTEXT_MARKER_RE = re.compile(r"In\s+orchestrated/|with parallel workers")
-_SEE_LINK_RE = re.compile(r"\bsee\s+\[[^\]]+\]\([^)]+\)")
-_LINK_RE = re.compile(r"\]\(([^)#\s]+\.md)\)")
 _READ_VERB_RE = re.compile(r"^\s*(?:(?:do|then)\s+)?(?:cat|head|tail|sed|awk|less|more|bat)\b|^\s*for\b.*\bcat\b", re.S)
 _CAT_RE = re.compile(r"\bcat\b")
 # Anything that can drop output or keep it out of the reviewer's context.
@@ -102,22 +100,18 @@ _BOUNDING_RE = re.compile(
 def required_policy_files(skill_md: str) -> tuple[str, ...]:
     """Unconditional `SKILL.md` section 2 files, relative to the skill directory.
 
-    Stops at the first `Conditionally` paragraph and drops context-phrase members
-    (for example `with parallel workers`) and "see ..." cross-references.
+    Derived by the same `section_targets` parser the size report and the inventory test
+    use; context-phrase members and "see ..." cross-references are not part of the set.
     """
     match = _SECTION_RE.search(skill_md)
     if match is None:
         raise ValueError("SKILL.md has no `Required Policy Loading` section")
+    unconditional, _, _ = section_targets(match.group(1))
     files: list[str] = []
-    for paragraph in re.split(r"\n\s*\n", match.group(1)):
-        if paragraph.lstrip().startswith("Conditionally"):
-            break
-        marker = _CONTEXT_MARKER_RE.search(paragraph)
-        text = _SEE_LINK_RE.sub("", paragraph[: marker.start()] if marker else paragraph)
-        for target in _LINK_RE.findall(text):
-            path = re.sub(r"^(?:\.\./)+", "", target)
-            if path.endswith(".md") and path not in files:
-                files.append(path)
+    for target in unconditional:
+        path = re.sub(r"^(?:\.\./)+", "", target.split("#", 1)[0])
+        if path.endswith(".md") and path not in files:
+            files.append(path)
     return tuple(files)
 
 
@@ -129,9 +123,21 @@ def _statements(command: str) -> list[str]:
     return statements
 
 
+def _names(text: str, path: str) -> bool:
+    """Whether `text` names `path` itself. A skill-local `policies/x.md` is not the shared
+    `shared/policies/x.md` that merely ends the same way."""
+    start = text.find(path)
+    while start != -1:
+        if path.startswith("shared/") or not text[:start].endswith("shared/"):
+            return True
+        start = text.find(path, start + 1)
+    return False
+
+
 def _read_state(path: str, name: str, tool_input: dict) -> ReadState:
     if name == "Read":
-        if not str(tool_input.get("file_path", "")).endswith("/" + path):
+        target = str(tool_input.get("file_path", ""))
+        if not target.endswith("/" + path) or not _names(target, path):
             return ReadState.MISSING
         bounded = "limit" in tool_input or "offset" in tool_input
         return ReadState.UNVERIFIABLE if bounded else ReadState.CONFIRMED
@@ -142,7 +148,7 @@ def _read_state(path: str, name: str, tool_input: dict) -> ReadState:
     for statement in _statements(str(tool_input.get("command", ""))):
         if not _READ_VERB_RE.search(statement):
             continue
-        if path in statement:
+        if _names(statement, path):
             if _CAT_RE.search(statement) and not _BOUNDING_RE.search(statement):
                 return ReadState.CONFIRMED
             best = ReadState.UNVERIFIABLE
