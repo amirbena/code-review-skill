@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.82.0 — 2026-10-27
+
+### Changed
+
+- Load `runtime-validation.md` only when a command, reproduction, or trusted-host/sandbox request activates it, reducing initial review context (#823).
+
 ## v1.81.0 — 2026-10-27
 
 ### Changed
