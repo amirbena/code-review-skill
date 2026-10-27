@@ -91,6 +91,11 @@ Worker input
 - Existing Review Evidence         (identical for all workers in a run)
 - Assigned review dimension        (differs per worker)
 - Applicable policies              (the shared policies for that dimension)
+- Policy-loading contract          (the Skill's SKILL.md section 2 and
+                                    review-stopping-criteria.md, "Mandatory-loading
+                                    checkpoint and pre-verdict recheck," by reference;
+                                    see agent-delegation.md, "Delegated reviewers
+                                    inherit the policy-loading contract")
 ```
 
 The identical fields are the run's semantic snapshot:
@@ -140,6 +145,11 @@ candidate finding can represent:
 - review dimension / source worker;
 - optional related prior finding or context.
 
+Each worker also returns one **policy-loading confirmation**, even with zero
+findings: that every file the Skill's section 2 requires of that worker, as
+named in the parent's instruction, was read in full, or the files not
+confirmed. A missing confirmation counts as unconfirmed.
+
 Prefer the existing finding shape
 ([`../templates/finding.md`](../templates/finding.md)) rendered as structured
 Markdown; do not invent JSON infrastructure. "Candidate" severity is a
@@ -169,6 +179,7 @@ severity is carried and the finding is reported once.
 | Parallel capability unavailable | Fall back to sequential analysis of every dimension. |
 | An **optional** worker failed / timed out / returned malformed output / was cancelled | The parent reviewer performs that dimension itself where feasible; the review is still graded. |
 | A **required** analysis dimension could not be produced (by a worker or the parent) | Return an incomplete / ungraded state per the consuming Skill's own runbook — **never** a clean/approved result. |
+| A **required** worker skipped, partially read, or could not confirm required policy loading | The dimension was not produced as required: same incomplete / ungraded state. Findings it did produce are still reported. |
 
 Missing coverage is reported as missing, not as absence of findings.
 

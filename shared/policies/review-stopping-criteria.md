@@ -154,6 +154,11 @@ only decide *when* the existing trigger is evaluated:
    in time, however early it is opened relative to the verdict. A phase
    may be earlier than the coverage step, never later, so the `Coverage:`
    line is still derived from files actually opened.
+   Delegation does not move this checkpoint. It binds every reviewer that
+   renders a verdict or contributes a dimension, delegated or not
+   ([`agent-delegation.md`](agent-delegation.md), "Delegated reviewers
+   inherit the policy-loading contract"); a required file a delegate did not
+   confirm in full counts as not loaded here.
 2. *Immediately before the Decision is derived.* Coverage is
    recomputed once over the final state — the unconditional set, the
    by-phase group, every
