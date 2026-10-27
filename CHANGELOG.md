@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.83.1 — 2026-10-27
+
+### Fixed
+
+- Deepening policies now link to `specialist-depth.md` for the shared cascading and finding-labeling rules instead of restating them (#829).
+
 ## v1.83.0 — 2026-10-27
 
 ### Changed
