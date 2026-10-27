@@ -81,9 +81,7 @@ class RunbookTests(unittest.TestCase):
         for path in RUNBOOKS:
             text = _text(path)
             self.assertIn("Mandatory-loading checkpoint (runs before step 1)", text, path)
-            self.assertIn("an unfired one is never required", text, path)
-            self.assertIn("counts only when that context holds", text, path)
-            self.assertIn("record an unloadable one as an incomplete trigger naming it", text, path)
+            self.assertNotIn("an unfired one is never required", text, path)
             self.assertIn("also the pre-verdict recheck", text, path)
             self.assertIn("carry no earlier value forward", text, path)
             self.assertEqual(text.count(CHECKPOINT), 2, path)

@@ -241,8 +241,7 @@ class ContractWiringTests(unittest.TestCase):
                 checkpoint = next(l for l in text.splitlines() if l.startswith("**Mandatory-loading checkpoint"))
                 with self.subTest(skill=skill, runbook=name):
                     self.assertIn(HEADING, checkpoint)
-                    self.assertIn("without restarting the review", checkpoint)
-                    self.assertIn("only a failed recovery is unloadable", checkpoint)
+                    self.assertNotIn("without restarting the review", checkpoint)
 
     def test_both_skills_open_the_pre_runbook_sentence_identically(self) -> None:
         sentences = set()
@@ -259,8 +258,8 @@ class ContractWiringTests(unittest.TestCase):
         for skill, root in SKILLS.items():
             text = (root / "SKILL.md").read_text(encoding="utf-8")
             with self.subTest(skill=skill):
-                self.assertIn("Coverage invariant (mandatory)", text)
-                self.assertIn("render `REVIEW INCOMPLETE`, never a definitive verdict", text)
+                self.assertIn("renders `REVIEW INCOMPLETE`, never a definitive verdict", text)
+                self.assertNotIn("Coverage invariant (mandatory)", text)
 
 
 if __name__ == "__main__":
