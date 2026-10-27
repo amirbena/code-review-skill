@@ -190,11 +190,17 @@ def check_policy_reads(
     result_label: str | None,
     decision_label: str | None,
     coverage: str | None = None,
+    fired_conditional: Sequence[str] = (),
 ) -> PolicyReadCheck:
-    """Unless every required file is confirmed, Result and Decision must both render
+    """`fired_conditional` names conditional files whose activation predicate fired in the
+    recorded review; they are required like unconditional files (#816). The caller or
+    fixture asserts them; the checker does not verify the predicate should have fired. Unless every
+    required file is confirmed, Result and Decision must both render
     incomplete and a `Coverage:` value must not read complete. A definitive verdict
     without any `Coverage:` value is a violation, as a missing line is incomplete."""
-    states = classify_policy_reads(required_policy_files(skill_md), tool_calls)
+    unconditional = required_policy_files(skill_md)
+    required = (*unconditional, *(p for p in fired_conditional if p not in unconditional))
+    states = classify_policy_reads(required, tool_calls)
     unmet = [f"{path} ({state.value})" for path, state in states.items() if state is not ReadState.CONFIRMED]
     violations = []
     kinds = {

@@ -20,6 +20,7 @@ INCOMPLETE = {"result_label": "⚠️ Review Incomplete", "decision_label": "REV
 CLEAN = {"result_label": "✅ Review Clean", "decision_label": "REVIEW CLEAN", "coverage": "complete"}
 SEVERITY = "shared/policies/severity.md"
 VERDICT_CONSISTENCY = "shared/policies/verdict-consistency.md"
+RUNTIME_VALIDATION = "shared/policies/runtime-validation.md"
 SKILLS = {
     "local-code-review": LOCAL_SKILL,
     "github-pr-review": GITHUB_SKILL,
@@ -43,8 +44,8 @@ def _fixture(name: str) -> dict:
     return json.loads((CORPUS / name).read_text(encoding="utf-8"))
 
 
-def _check(calls, rendered, skill=LOCAL_SKILL) -> bbv.PolicyReadCheck:
-    return bbv.check_policy_reads(skill, calls, **rendered)
+def _check(calls, rendered, skill=LOCAL_SKILL, fired_conditional=()) -> bbv.PolicyReadCheck:
+    return bbv.check_policy_reads(skill, calls, fired_conditional=fired_conditional, **rendered)
 
 
 def _bash(command: str) -> tuple[str, dict]:
@@ -54,7 +55,8 @@ def _bash(command: str) -> tuple[str, dict]:
 class RequiredSetTests(unittest.TestCase):
     def test_local_set_is_the_unconditional_section_2_files(self) -> None:
         required = bbv.required_policy_files(LOCAL_SKILL)
-        self.assertEqual(len(required), 17)
+        self.assertEqual(len(required), 16)
+        self.assertNotIn(RUNTIME_VALIDATION, required)
         self.assertIn(VERDICT_CONSISTENCY, required)
         self.assertIn("policies/repository-state.md", required)
         self.assertNotIn("shared/policies/review-ownership.md", required)
@@ -69,7 +71,7 @@ class RequiredSetTests(unittest.TestCase):
 
     def test_github_set_includes_the_unconditional_github_only_policies(self) -> None:
         required = bbv.required_policy_files(GITHUB_SKILL)
-        self.assertEqual(len(required), 29)
+        self.assertEqual(len(required), 28)
         for name in ("review-action-authorization", "review-authority", "review-output", "github-review", "finding-placement"):
             self.assertIn(f"policies/{name}.md", required)
 
@@ -95,7 +97,7 @@ class RegressionFixtureTests(unittest.TestCase):
         self.assertFalse(result.ok)
         self.assertEqual(result.files(ReadState.CONFIRMED), ())
         self.assertEqual(result.files(ReadState.UNVERIFIABLE), (SEVERITY,))
-        self.assertEqual(len(result.files(ReadState.MISSING)), 16)
+        self.assertEqual(len(result.files(ReadState.MISSING)), 15)
         self.assertIn(VERDICT_CONSISTENCY, result.files(ReadState.MISSING))
         self.assertEqual(len(result.violations), 3)
         self.assertEqual(sum("blocking" in v for v in result.violations), 2)
@@ -277,6 +279,47 @@ class DefinitiveVerdictTests(unittest.TestCase):
                 result = _check(full, {**rendered, "coverage": None})
                 self.assertEqual(result.violations, ("Coverage line missing although a definitive verdict was rendered",))
         self.assertTrue(_check(full, {**INCOMPLETE, "coverage": None}).ok)
+
+
+class FiredConditionalTests(unittest.TestCase):
+    """Issue #816: `runtime-validation.md` loads on activation; a fixture declares when it fired."""
+
+    def setUp(self) -> None:
+        self.fired = _fixture("declared-command-runtime-validation-fired.json")
+        self.quiet = _fixture("no-command-runtime-validation-not-fired.json")
+
+    def _check_fixture(self, fixture: dict, rendered: dict | None = None, calls=None) -> bbv.PolicyReadCheck:
+        return _check(
+            calls if calls is not None else _replayed(fixture),
+            rendered or fixture["rendered"],
+            fired_conditional=fixture["fired_conditional"],
+        )
+
+    def test_both_skills_declare_the_file_conditional_with_the_predicate(self) -> None:
+        for skill, skill_md in SKILLS.items():
+            with self.subTest(skill=skill):
+                self.assertNotIn(RUNTIME_VALIDATION, bbv.required_policy_files(skill_md))
+                self.assertIn("(a command is named in the instruction sources resolved at repository-instruction discovery", skill_md)
+                # The explicit no-command Validation entry and the default `reasoned` state stay unconditional.
+                for owner in ("shared/templates/review-summary.md", "shared/templates/finding.md"):
+                    self.assertIn(owner, bbv.required_policy_files(skill_md))
+
+    def test_fired_read_before_a_definitive_verdict_is_consistent(self) -> None:
+        self.assertTrue(self._check_fixture(self.fired).ok)
+
+    def test_no_command_review_is_consistent_without_the_read(self) -> None:
+        self.assertEqual(self.quiet["fired_conditional"], [])
+        self.assertIn("No repository command", self.quiet["validation_entry"])
+        self.assertNotIn(RUNTIME_VALIDATION, json.dumps(self.quiet["tool_calls"]))
+        self.assertTrue(self._check_fixture(self.quiet).ok)
+
+    def test_fired_predicate_without_the_read_and_a_definitive_verdict_is_a_violation(self) -> None:
+        calls = [c for c in _replayed(self.fired) if RUNTIME_VALIDATION not in json.dumps(c[1])]
+        result = self._check_fixture(self.fired, calls=calls)
+        self.assertFalse(result.ok)
+        self.assertEqual(result.files(ReadState.MISSING), (RUNTIME_VALIDATION,))
+        self.assertTrue(any(RUNTIME_VALIDATION in v for v in result.violations))
+        self.assertTrue(self._check_fixture(self.fired, INCOMPLETE, calls).ok)
 
 
 if __name__ == "__main__":

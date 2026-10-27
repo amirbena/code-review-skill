@@ -40,7 +40,6 @@ STILL_ALWAYS = (
     "review-stopping-criteria.md",
     "severity.md",
     "evidence.md",
-    "runtime-validation.md",
     "finding.md",
     "finding-rendering.md",
     "review-summary.md",
