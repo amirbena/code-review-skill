@@ -158,7 +158,11 @@ canonical, detailed rule lives in the policy named after it.
   behavioral equivalence, and introduce no new source of truth. Prefer
   simplifying an existing contract over adding a checkpoint, manifest,
   abstraction, or layer; a new layer needs a responsibility no existing one
-  can fulfil. This bullet is the canonical statement; packaging and
+  can fulfil. Context efficiency never outranks effectiveness, correctness, or
+  safety: preserve fail-closed behavior, policy coverage, evidence
+  requirements, and mandatory checkpoints, keep instructions clear,
+  actionable, and available when needed, and judge a reduction by verified
+  behavior, not token savings alone. This bullet is the canonical statement; packaging and
   runbook/policy/template ownership detail stays in
   [`policies/skill-development-policy.md`](policies/skill-development-policy.md).
 - **File size is a review trigger, not a limit.** When a production file

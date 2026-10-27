@@ -66,7 +66,7 @@ def _always(path) -> set[str]:
 
 
 def _conditional_block(path) -> str:
-    return _raw_section(path, "Conditionally, by review evidence", "Required material,")
+    return _raw_section(path, "Conditionally, by review evidence", "Conditionally, by the review")
 
 
 class ConditionalLoadingTests(unittest.TestCase):
@@ -130,14 +130,12 @@ class IncompleteLoadingTests(unittest.TestCase):
         self.assertEqual(len(re.findall(r"^\d\. \*\*", text, re.M)), 4)
         self.assertIn("trigger: required-pass-not-produced | partition-not-completed |", text)
 
-    def test_entrypoints_route_late_or_missing_loads_to_the_canonical_trigger(self) -> None:
-        for path, outcome in ((LOCAL, "never REVIEW CLEAN"), (GITHUB, "never an approving outcome")):
+    def test_entrypoints_route_incomplete_loading_to_the_canonical_owner(self) -> None:
+        for path in (LOCAL, GITHUB):
             text = _text(path)
-            self.assertIn("never loaded or was loaded only after the decision it governs", text, path)
-            self.assertIn("REVIEW INCOMPLETE", text, path)
-            self.assertIn(outcome, text, path)
-            self.assertIn("review-stopping-criteria.md", text, path)
-            self.assertIn("Incomplete triggers", text, path)
+            self.assertIn("REVIEW INCOMPLETE, never a definitive verdict", text, path)
+            self.assertIn('"Coverage invariant" and "Labeling."', text, path)
+            self.assertNotIn("was loaded only after the decision it governs", text, path)
 
     def test_runbooks_open_conditional_policies_fail_closed(self) -> None:
         for path in RUNBOOKS:
@@ -170,11 +168,10 @@ class CoverageInvariantTests(unittest.TestCase):
     def test_entrypoints_state_the_invariant_without_claiming_enforcement(self) -> None:
         for path in (LOCAL, GITHUB):
             text = _text(path)
-            self.assertIn("Coverage invariant (mandatory)", text, path)
-            self.assertIn("Neither REVIEW CLEAN nor CHANGES REQUIRED is valid unless every required policy was loaded in full", text, path)
-            self.assertIn("never a definitive verdict beside a statement of incomplete loading", text, path)
-            self.assertIn("an obligation on the reviewer, not a technical guarantee", text, path)
+            self.assertIn('"Coverage invariant" and "Labeling."', text, path)
             self.assertIn("review-stopping-criteria.md", text, path)
+            self.assertNotIn("Coverage invariant (mandatory)", text, path)
+            self.assertNotIn("is valid unless every required policy was loaded in full", text, path)
 
     def test_safety_bullets_cover_both_verdicts(self) -> None:
         self.assertIn("either verdict additionally requires complete coverage", _text(LOCAL))

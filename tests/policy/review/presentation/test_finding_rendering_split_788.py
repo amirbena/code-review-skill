@@ -83,7 +83,7 @@ class ConditionalLoadingTests(unittest.TestCase):
 
     def test_predicate_fires_stays_off_and_fails_closed(self) -> None:
         for path, predicate in PREDICATE.items():
-            block = _section(path, "Conditionally, by review evidence", "Required material,")
+            block = _section(path, "Conditionally, by review evidence", "Conditionally, by the review")
             self.assertIn("finding-rendering-human.md", set(_LINK.findall(block)), path)
             self.assertIn(predicate, block, path)  # fires (true) and ambiguous
             flat = re.sub(r"\s+", " ", block)
@@ -92,10 +92,9 @@ class ConditionalLoadingTests(unittest.TestCase):
             self.assertIn("before the first decision it governs", flat, path)
 
     def test_a_fired_but_unloaded_file_is_incomplete(self) -> None:
+        self.assertIn("every conditionally loaded file whose predicate fired", _text(REPO_ROOT / "shared/policies/review-stopping-criteria.md"))
         for path in (LOCAL, GITHUB):
-            text = _text(path)
-            self.assertIn("a fired conditional file included", text, path)
-            self.assertIn("REVIEW INCOMPLETE", text, path)
+            self.assertIn("REVIEW INCOMPLETE", _text(path), path)
 
     def test_structured_file_points_at_the_conditional_one(self) -> None:
         text = _text(STRUCTURED)
