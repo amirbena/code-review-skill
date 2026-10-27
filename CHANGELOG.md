@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.81.0 — 2026-10-27
+
+### Changed
+
+- `github-pr-review` now declares every GitHub-only policy in its Required Policy Loading section, so authorization-critical policies are covered by the mandatory-loading checkpoint (#820).
+
 ## v1.80.6 — 2026-10-26
 
 ### Fixed
