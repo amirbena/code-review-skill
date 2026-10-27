@@ -101,6 +101,35 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(report.total(self.build().unconditional)["bytes"], before + 45)
 
 
+PHASED_SECTION_TWO = SECTION_TWO.replace(
+    "This Skill's own, always:",
+    "Always, by phase — opened where first used: [`b.md`](../../shared/b.md).\n\nThis Skill's own, always:",
+)
+
+
+class PhaseReportTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.repo = build_repo(Path(self._tmp.name), PHASED_SECTION_TWO)
+
+    def test_phased_file_is_reported_apart_from_before_step_1(self):
+        r = report.build_skill_report(self.repo, "local-code-review")
+        self.assertEqual([f.path for f in r.phased], ["shared/b.md"])
+        self.assertNotIn("shared/b.md", [f.path for f in r.unconditional])
+
+    def test_before_step_1_and_whole_review_are_separate_totals(self):
+        d = report.report_dict(report.build_skill_report(self.repo, "local-code-review"))
+        self.assertEqual(d["whole_review_default"]["bytes"] - d["before_step_1"]["bytes"], 3)
+
+    def test_savings_separate_genuine_from_deferral(self):
+        before = {"before_step_1": {"bytes": 100}, "whole_review_default": {"bytes": 100}}
+        after = {"before_step_1": {"bytes": 60}, "whole_review_default": {"bytes": 90}}
+        self.assertEqual(
+            report.savings(before, after), {"before_step_1_bytes": 40, "genuine_bytes": 10, "deferral_bytes": 30}
+        )
+
+
 class RepositoryReportTests(unittest.TestCase):
     def test_output_is_deterministic(self):
         first = json.dumps(report.build(REPO_ROOT), sort_keys=True)

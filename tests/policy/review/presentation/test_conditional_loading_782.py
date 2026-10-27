@@ -40,10 +40,9 @@ STILL_ALWAYS = (
     "review-stopping-criteria.md",
     "severity.md",
     "evidence.md",
-    "finding.md",
-    "finding-rendering.md",
-    "review-summary.md",
 )
+# Required for coverage, opened at their phase (#818); see test_phase_loading_818.py.
+STILL_REQUIRED_BY_PHASE = ("finding.md", "finding-rendering.md", "review-summary.md", "remediation-guidance.md")
 NONE_FIELD = {LOCAL: "Repository expansion: metadata line", GITHUB: "repository_expansion_triggers metadata field"}
 
 _SHARED_LINK = re.compile(r"\]\((?:\.\./)+shared/(?:policies|templates)/([\w-]+\.md)\)")
@@ -91,6 +90,12 @@ class ConditionalLoadingTests(unittest.TestCase):
             always = _always(path)
             for name in STILL_ALWAYS:
                 self.assertIn(name, always, (path.name, name))
+
+    def test_phase_loaded_files_stay_required(self) -> None:
+        for path in (LOCAL, GITHUB):
+            phased = _linked(path, "Always, by phase", "\n\n")
+            for name in STILL_REQUIRED_BY_PHASE:
+                self.assertIn(name, phased, (path.name, name))
 
     def test_local_review_context_loads_only_with_its_input(self) -> None:
         self.assertNotIn("review-context.md", _always(LOCAL))
