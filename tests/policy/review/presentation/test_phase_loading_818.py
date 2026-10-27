@@ -81,6 +81,21 @@ class PhaseLoadingTests(unittest.TestCase):
                 self.assertIn(f"{named}.", order, (skill, named))
                 self.assertLess(order.index(f"{named}."), order.index(coverage_key), (skill, named))
 
+    def test_fix_direction_loads_with_the_finding_schema_not_with_rendering(self) -> None:
+        for skill in PHASED:
+            finding_phase, coverage_phase = _phased_paragraph(skill).split("and, before the coverage step,", 1)
+            self.assertIn("remediation-guidance.md", finding_phase, skill)
+            self.assertIn("finding.md", finding_phase, skill)
+            self.assertNotIn("remediation-guidance.md", coverage_phase, skill)
+
+    def test_runbooks_open_the_finding_group_at_the_first_finding_step(self) -> None:
+        for skill, step in (("local-code-review", "9."), ("github-pr-review", "6.")):
+            runbook = (REPO_ROOT / RUNBOOK[skill]).read_text(encoding="utf-8")
+            start = runbook.index(f"\n{step} Review the ")
+            body = re.sub(r"\s+", " ", runbook[start : runbook.index("\n10. " if step == "9." else "\n7. ", start)])
+            self.assertIn('Before the first candidate finding is formed here', body)
+            self.assertIn('"Always, by phase" finding group', body)
+
     def test_stopping_criteria_states_phase_without_a_new_trigger(self):
         text = _text(REPO_ROOT / "shared/policies/review-stopping-criteria.md")
         self.assertIn('"Always, by phase"', text)

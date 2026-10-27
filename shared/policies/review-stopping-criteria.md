@@ -148,8 +148,10 @@ only decide *when* the existing trigger is evaluated:
    fired, and never substitutes for loading it. A file `SKILL.md` section 2
    lists under "Always, by phase" is required like the rest but is checked
    at its named phase instead: confirmed open before the first candidate
-   finding is formed or reconciled for the finding schema, and before the
-   coverage step for the rendering, summary and remediation files. A phase
+   finding is formed or reconciled for the finding schema and `Fix`
+   direction, and before the coverage step for the rendering and summary
+   files. A file first opened after the decision it governs is not loaded
+   in time, however early it is opened relative to the verdict. A phase
    may be earlier than the coverage step, never later, so the `Coverage:`
    line is still derived from files actually opened.
 2. *Immediately before the Decision is derived.* Coverage is

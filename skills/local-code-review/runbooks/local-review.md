@@ -293,7 +293,7 @@ which a value must be resolved before it is used, or what is reported.
    repository instructions (step 6), the review-focus mapping from
    supplied review context (step 7, if applicable), and reconciled
    PR-context findings/decisions (step 8, if applicable) — and inspecting
-   relevant surrounding repository code and tests. Review context and PR
+   relevant surrounding repository code and tests. Before the first candidate finding is formed here (step 8 when it reconciles prior findings), open the `SKILL.md` section 2 "Always, by phase" finding group; it is not loaded in time if opened after. Review context and PR
    context still only ever *focus* this step, per their own policies'
    scope-discipline rules — they never expand review scope beyond the
    current local delta and never substitute for the evidence this step
@@ -368,7 +368,7 @@ which a value must be resolved before it is used, or what is reported.
     metadata (step 13), per that policy's "Labeling — incomplete must
     never present as clean" and "Non-goals and ownership boundary" — not
     restated here. Required material from `SKILL.md` section 2 that was not loaded before the decision it governs is an incomplete
-    trigger too, per that policy's "Incomplete triggers" — never `complete`. This step runs after every review pass, so it is also the pre-verdict recheck per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck": recompute coverage over the final state, including every conditional file whose predicate fired during the review, and carry no earlier value forward. Set the Coverage field (the `Coverage:` line) from the files actually opened, never from memory, and apply the coverage invariant ([`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Labeling") to the rendered report. **With more than one member (step 0):** if narrowing
+    trigger too, per that policy's "Incomplete triggers" — never `complete`. This step runs after every review pass, so it is also the pre-verdict recheck per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck": recompute coverage over the final state, including every conditional file whose predicate fired during the review and the by-phase group (each counts only if opened by its phase), and carry no earlier value forward. Set the Coverage field (the `Coverage:` line) from the files actually opened, never from memory, and apply the coverage invariant ([`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Labeling") to the rendered report. **With more than one member (step 0):** if narrowing
     (step 0's validation, or steps 1–8e's per-member resolution) left zero
     resolved members, coverage is `incomplete` per
     [`../policies/multi-repository-review-target.md`](../policies/multi-repository-review-target.md),
