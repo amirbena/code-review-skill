@@ -12,6 +12,7 @@ Proves:
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import unittest
 from fractions import Fraction
@@ -177,3 +178,37 @@ class ClassifyDriftNoiseTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ErroredCaseIsNotQualityDriftTests(unittest.TestCase):
+    """Issue #819: a case that did not execute is execution reliability, never quality drift."""
+
+    @staticmethod
+    def _errored(case_id: str, missed: tuple[str, ...]) -> bmet.CaseMetrics:
+        return dataclasses.replace(_metrics(case_id, missed=missed), status="errored")
+
+    def test_errored_candidate_case_emits_no_quality_drift(self) -> None:
+        base = {"c": _metrics("c")}
+        cand = {"c": self._errored("c", ("k",))}
+        self.assertEqual(bd.classify_drift(base, cand, {}, {}), [])
+
+    def test_errored_baseline_case_emits_no_quality_drift(self) -> None:
+        base = {"c": self._errored("c", ("k",))}
+        cand = {"c": _metrics("c", missed=("k",))}
+        self.assertEqual(bd.classify_drift(base, cand, {}, {}), [])
+
+    def test_errored_case_severity_is_not_compared(self) -> None:
+        sev_bad = bsev.CaseSeverityAccuracy("c", "errored", 4, 0, 0, 0, ())
+        records = bd.classify_drift({}, {}, {"c": _severity("c", matched=4, exact=4)}, {"c": sev_bad})
+        self.assertEqual(records, [])
+
+    def test_executed_cases_still_drift(self) -> None:
+        records = bd.classify_drift({"c": _metrics("c")}, {"c": _metrics("c", missed=("k",))}, {}, {})
+        self.assertEqual({r.drift_type for r in records}, {bd.DRIFT_MISSED_REQUIRED_FINDING, bd.DRIFT_DECISION_FLIP})
+
+    def test_errored_cases_are_reported_as_execution_reliability(self) -> None:
+        base = {"a": _metrics("a"), "b": _metrics("b")}
+        cand = {"a": self._errored("a", ()), "b": _metrics("b")}
+        self.assertEqual(
+            bd.execution_reliability(base, cand), {"baseline_errored": [], "candidate_errored": ["a"]}
+        )

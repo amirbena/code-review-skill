@@ -281,6 +281,7 @@ class RunEvidence:
     skill: dict[str, Any] | None = None
     usage: dict[str, int] | None = None
     activation: dict[str, Any] | None = None
+    review_signals: dict[str, Any] | None = None
     tool_trace: list[dict[str, str]] = field(default_factory=list)
     result_is_error: bool | None = None
     session_id: str | None = None

@@ -172,10 +172,23 @@ class MutationTests(unittest.TestCase):
         ):
             self.assertEqual(bbv.classify_policy_reads([SEVERITY], [("Read", tool_input)])[SEVERITY], expected)
 
-    def test_a_resumed_ranged_chain_stays_unverifiable_because_traces_hold_no_lengths(self) -> None:
+    def test_a_contiguous_resumed_chain_is_resumed_never_confirmed(self) -> None:
         chain = [("Read", {"file_path": f"$SKILL_DIR/{SEVERITY}", "offset": o, "limit": 60}) for o in (1, 61, 121)]
-        self.assertEqual(bbv.classify_policy_reads([SEVERITY], chain)[SEVERITY], ReadState.UNVERIFIABLE)
-        self.assertFalse(_check(chain, CLEAN).ok)
+        self.assertEqual(bbv.classify_policy_reads([SEVERITY], chain)[SEVERITY], ReadState.RESUMED)
+        self.assertFalse(_check(chain, CLEAN).ok)  # the other required files are still missing
+
+    def test_a_resumed_file_is_not_a_violation_on_its_own(self) -> None:
+        chain = [("Read", {"file_path": f"$SKILL_DIR/{SEVERITY}", "offset": o, "limit": 60}) for o in (1, 61, 121)]
+        calls = [c for c in _replayed(_fixture("complete-review-confirmed-reads.json")) if SEVERITY not in json.dumps(c[1])]
+        result = _check([*calls, *chain], CLEAN)
+        self.assertEqual(result.states[SEVERITY], ReadState.RESUMED)
+        self.assertTrue(result.ok, result.violations)
+
+    def test_gapped_overlapping_or_late_starting_chains_stay_unverifiable(self) -> None:
+        for offsets in ((1, 71), (1, 31), (61, 121), (1,)):
+            chain = [("Read", {"file_path": f"$SKILL_DIR/{SEVERITY}", "offset": o, "limit": 60}) for o in offsets]
+            with self.subTest(offsets=offsets):
+                self.assertEqual(bbv.classify_policy_reads([SEVERITY], chain)[SEVERITY], ReadState.UNVERIFIABLE)
 
     def test_listing_or_sizing_a_file_is_not_a_read(self) -> None:
         for command in (f"wc -c $SKILL_DIR/{SEVERITY}", "ls $SKILL_DIR/shared/policies", f"grep -c P0 {SEVERITY}"):
@@ -361,3 +374,36 @@ class LateLoadingTests(unittest.TestCase):
             full_deadline = {self.FINDING: len(calls)}
             with self.subTest(skill=skill):
                 self.assertTrue(bbv.check_policy_reads(skill_md, calls, read_before=full_deadline, **CLEAN).ok)
+
+
+class ReviewSignalsTests(unittest.TestCase):
+    def _signals(self, name: str) -> dict:
+        from runtime_platform.benchmark.scripts import benchmark_review_signals as brs
+
+        fixture = _fixture(name)
+        report = "\n".join(
+            [f"**Result: {fixture['rendered']['result_label']}**", f"Decision: {fixture['rendered']['decision_label']}"]
+            + ([f"Coverage: {fixture['rendered']['coverage']}"] if fixture["rendered"]["coverage"] else [])
+        )
+        return brs.review_signals(LOCAL_SKILL, _replayed(fixture), report)
+
+    def test_v1_80_2_replay_is_a_compliance_violation(self) -> None:
+        signals = self._signals("v1.80.2-skipped-policies.json")
+        self.assertFalse(signals["compliant"])
+        self.assertEqual(signals["decision"], "CHANGES REQUIRED.")
+
+    def test_complete_review_fixture_is_clean(self) -> None:
+        signals = self._signals("complete-review-confirmed-reads.json")
+        self.assertTrue(signals["compliant"], signals["violations"])
+        self.assertEqual(signals["coverage"], "complete")
+
+    def test_resumed_reads_are_reported_as_resumed_and_compliant(self) -> None:
+        from runtime_platform.benchmark.scripts import benchmark_review_signals as brs
+
+        fixture = _fixture("complete-review-confirmed-reads.json")
+        calls = [c for c in _replayed(fixture) if SEVERITY not in json.dumps(c[1])]
+        calls += [("Read", {"file_path": f"$SKILL_DIR/{SEVERITY}", "offset": o, "limit": 60}) for o in (1, 61, 121)]
+        report = "**Result: ✅ Review Clean**\nDecision: REVIEW CLEAN\nCoverage: complete"
+        signals = brs.review_signals(LOCAL_SKILL, calls, report)
+        self.assertEqual(signals["read_states"][SEVERITY], "resumed")
+        self.assertTrue(signals["compliant"], signals["violations"])

@@ -125,6 +125,21 @@ def summary_dict(source: Source, lanes: Sequence[str]) -> dict:
     }
 
 
+def execution_reliability(record: Mapping[str, Any]) -> dict[str, Any]:
+    """Errored cases, and false-negative/positive totals over executed cases only (#819).
+
+    The sealed `aggregate` counts every required finding of an errored case as missed; the
+    per-case rows let the report separate that without touching the record."""
+    cases = record["cases"]
+    executed = [c for c in cases if c["status"] == "executed"]
+    return {
+        "errored_case_ids": sorted(c["id"] for c in cases if c["status"] != "executed"),
+        "executed_cases": len(executed),
+        "executed_false_negatives": sum(c["metrics"]["false_negatives"] for c in executed),
+        "executed_false_positives": sum(c["metrics"]["false_positives"] for c in executed),
+    }
+
+
 def _row(record: Mapping[str, Any]) -> str:
     agg = record["aggregate"]
     m, s = agg["metrics"], agg["severity"]
@@ -156,6 +171,14 @@ def render_markdown(data: Mapping[str, Any]) -> str:
             *(_row(r) for r in records),
             "",
         ]
+        newest = execution_reliability(records[-1])
+        out.append(
+            f"Execution reliability (newest record): {newest['executed_cases']} of {len(records[-1]['cases'])} "
+            f"case(s) executed; FN {newest['executed_false_negatives']} / FP {newest['executed_false_positives']} "
+            "over executed cases. Errored: "
+            + (", ".join(f"`{c}`" for c in newest["errored_case_ids"]) or "none")
+            + "."
+        )
         ptr = entry["baseline_pointer"]
         out.append(
             f"Pinned baseline: `{ptr['run_id']}` (source `{ptr['source']}`)." if ptr else "No pinned baseline pointer."
