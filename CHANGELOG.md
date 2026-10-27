@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.83.0 — 2026-10-27
+
+### Changed
+
+- Load the finding schema, remediation, rendering and summary templates at the phase that first uses them instead of before step 1 (#825).
+
 ## v1.82.1 — 2026-10-27
 
 ### Fixed

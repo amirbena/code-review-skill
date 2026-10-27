@@ -120,7 +120,7 @@ its paths (renames counted as both paths):
 | `PURE_DOCS` | every path is non-executable documentation (a normalized `docs/**/*.md` file, or a regular tracked `.md` file elsewhere that is not a protected surface) that no file under `tests/`, `scripts/`, `runtime_platform/`, `benchmark/`, `capabilities/`, `distribution/`, `.github/`, or the repository root can read | DOCS |
 | `CONSUMED_DOCS` | such a documentation file that one of those roots references (literal, joined, basename, or directory path) | FAST |
 | `FAST_ALLOWLIST` | every path is on the allowlist in [`ci_test_route.py`](../scripts/validation/ci_test_route.py) | FAST |
-| `PARTIAL_TESTS` | every path is a tracked file under `tests/` with a derived, non-empty affected set (alone or with pure docs) | PARTIAL |
+| `PARTIAL_TESTS` | every path is a tracked file under `tests/`, or a `.github/workflows/*.yml` file other than `validate.yml`, with a derived, non-empty affected set (alone or with pure docs) | PARTIAL |
 | `MIXED` | docs plus other paths: tiered by the non-doc paths; docs never lower the tier. Test paths with a FAST path give FAST plus the affected `tests.integration.*` and benchmark modules | PARTIAL, FAST or FULL |
 | `UNKNOWN` | anything else: any other path, non-`.md` or unnormalized `docs/` path, empty change set | FULL |
 
@@ -202,12 +202,15 @@ unknown or ambiguous impact fails upward, never downward.
   fails if zero tests ran). Any unrecognized access form is reported with
   its file and line.
 - **FULL by rule.** The router, classifier, graph builder, the scanner and
-  enumerator registries, `.github/workflows/**`, and their tests are always
-  FULL: the router is trusted from the base commit, so it cannot vouch for a
+  enumerator registries, `.github/workflows/validate.yml`, and their tests are
+  always FULL: the router is trusted from the base commit, so it cannot vouch for a
   head version of itself, and FULL is the only run that exercises a new
   router independently of its own routing decision. Their tests are always
   companions of a PARTIAL set but never replace FULL for such a change.
-  Production and shared semantic paths stay FULL; mapping production source
+  Any other `.github/workflows/*.yml` is PARTIAL: its affected set is every test
+  module that names the workflow file or mentions a `workflows` directory (raw
+  text, so over-approximate), plus their importers. No such test, no graph, or an
+  unresolved consumer is FULL. Production and shared semantic paths stay FULL; mapping production source
   to tests is out of scope.
 - **Invariants.** One module owns classification, the graph, tier ordering,
   and summaries; the workflow only invokes it and runs the tier it names,
