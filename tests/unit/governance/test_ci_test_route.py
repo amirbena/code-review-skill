@@ -47,7 +47,7 @@ INTEGRATION_SENSITIVE = (
     "runtime_platform/benchmark/x.py",
     "docs/ARCHITECTURE.md",
     "tests/unit/test_x.py",
-    ".github/workflows/release-publish.yml",
+    ".github/workflows/validate.yml",
     ".github/CODEOWNERS",
     "requirements-dev.txt",
 )

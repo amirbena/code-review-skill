@@ -296,6 +296,34 @@ class PartialRouteTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(self.route(path).tier, router.FULL)
 
+    def workflow_graph(self) -> router.ImpactGraph:
+        return graph_of(
+            synthetic_tree(
+                {
+                    "tests/policy/test_wf.py": "NAME = 'release-publish.yml'\n" + TEST_BODY,
+                    "tests/policy/test_wf_user.py": "from tests.policy.test_wf import NAME\n" + TEST_BODY,
+                    "tests/policy/test_dir.py": "WF = '.github/workflows'\n" + TEST_BODY,
+                }
+            )
+        )
+
+    def test_a_workflow_routes_partial_to_tests_that_name_it_or_read_the_directory(self) -> None:
+        result = self.route(".github/workflows/release-publish.yml", graph=self.workflow_graph())
+        self.assertEqual((result.tier, result.change_class), (router.PARTIAL, router.PARTIAL_TESTS))
+        self.assertTrue({"tests.policy.test_wf", "tests.policy.test_wf_user", "tests.policy.test_dir"} <= set(result.modules))
+        other = self.route(".github/workflows/other.yml", graph=self.workflow_graph())
+        self.assertNotIn("tests.policy.test_wf", other.modules)
+        self.assertIn("tests.policy.test_dir", other.modules)
+
+    def test_a_workflow_nothing_reads_or_without_a_graph_is_full(self) -> None:
+        self.assertEqual(self.route(".github/workflows/other.yml").tier, router.FULL)
+        self.assertEqual(router.classify([".github/workflows/other.yml"], NO_DOCS_CONSUMERS, None).tier, router.FULL)
+
+    def test_validate_and_non_workflow_paths_under_github_stay_full(self) -> None:
+        for path in (".github/workflows/validate.yml", ".github/workflows/sub/x.yml", ".github/workflows/x.txt", ".github/CODEOWNERS"):
+            with self.subTest(path=path):
+                self.assertEqual(self.route(path, graph=self.workflow_graph()).tier, router.FULL)
+
     def test_a_router_test_is_a_companion_but_never_replaces_full(self) -> None:
         self.assertTrue(set(router.ROUTER_FILES[1:]) <= {_module_path(m) for m in router.TREE_GUARD_MODULES})
         result = self.route("tests/unit/test_a.py", "scripts/validation/ci_test_route.py")
@@ -419,7 +447,7 @@ class ExhaustivenessTests(unittest.TestCase):
             self.assertIn(first.tier, router.TIER_ORDER, path)
             self.assertEqual(first, router.classify([path], index, graph), path)
             if first.tier == router.PARTIAL:
-                self.assertTrue(path.startswith("tests/") or first.docs_links, path)
+                self.assertTrue(path.startswith("tests/") or router.is_workflow_path(path) or first.docs_links, path)
                 self.assertTrue(first.modules, path)
 
     def test_a_synthetic_path_with_no_rule_is_full(self) -> None:
