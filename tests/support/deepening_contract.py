@@ -34,7 +34,6 @@ class DeepeningDomain:
     never_decides: str
     implication_without_file: str
     concern_areas: tuple[str, ...]
-    no_unbounded_audit: str
     no_second_schema: str
     generic_advice_rejected: str
     review_scope_absent: tuple[str, ...]
@@ -127,17 +126,17 @@ class DeepeningContractMixin:
             self.text,
         )
 
-    def test_reuses_specialist_depth_and_repository_expansion(self) -> None:
+    def test_cascading_bound_owned_by_specialist_depth(self) -> None:
         self.assertIn(
-            "reuses [specialist-depth.md](specialist-depth.md)'s "
-            "cascading-activation model, which in turn reuses "
-            "[repository-expansion.md](repository-expansion.md)'s fixed "
-            "trigger/ring/ ceiling procedure",
+            "[specialist-depth.md](specialist-depth.md)'s "
+            "cascading-activation model, which owns the bound",
             self.text,
         )
-
-    def test_no_unbounded_audit(self) -> None:
-        self.assertIn(self.domain.no_unbounded_audit, self.text)
+        self.assertIn(
+            "introduces no new ceiling, no new trigger catalog, and no way "
+            "to bypass",
+            _norm(SPECIALIST_DEPTH),
+        )
 
     def test_insufficient_evidence_remains_valid_terminal_outcome(self) -> None:
         self.assertIn(

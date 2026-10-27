@@ -59,10 +59,6 @@ DOMAIN = DeepeningDomain(
         "Large data movement",
         "Transactional boundaries",
     ),
-    no_unbounded_audit=(
-        "never a separate, unbounded audit of every migration or "
-        "table in the repository"
-    ),
     no_second_schema="No new finding/severity/evidence schema",
     generic_advice_rejected=(
         "generic database style advice with no traced schema-"
