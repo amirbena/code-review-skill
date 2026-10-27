@@ -52,6 +52,9 @@ FAST_FILES = frozenset(
 )
 FAST_DIRS = ("policies/", ".github/ISSUE_TEMPLATE/")
 
+WORKFLOW_DIR = ".github/workflows"
+VALIDATE_WORKFLOW = f"{WORKFLOW_DIR}/validate.yml"
+
 INTEGRATION_PREFIX = "tests.integration."
 BENCHMARK_PREFIXES = ("tests.unit.benchmark.", "tests.policy.benchmark.")
 FAST_DROPPED_PREFIXES = (INTEGRATION_PREFIX, *BENCHMARK_PREFIXES)
@@ -209,6 +212,7 @@ NON_TEST_ROOTS = frozenset(
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
 _MODULE_ID = re.compile(r"tests(\.[A-Za-z_][A-Za-z0-9_]*)+$")
 _STR_REF = re.compile(r"(?<![A-Za-z0-9_])tests/([^\s\"'`)\]>,;:|]*)")
+_WORKFLOW_NAME = re.compile(r"[\w.\-]+\.ya?ml")
 _DOTTED_REF = re.compile(r"(?<![\w.])tests((?:\.[A-Za-z_]\w*)+)")
 _GLOB_CHARS = re.compile(r"[*?\[\]{}$<>]")
 _PATH_CALLS = frozenset({"Path", "PurePath", "PosixPath", "PurePosixPath", "WindowsPath"})
@@ -228,6 +232,8 @@ class TreeScan:
     deps: Mapping[str, frozenset[str]]
     dynamic: Mapping[str, str] = field(default_factory=dict)  # file -> "line N: why" for unresolvable loads/reads
     problems: tuple[str, ...] = ()
+    workflow_names: Mapping[str, frozenset[str]] = field(default_factory=dict)  # file -> `*.yml`/`*.yaml` names it mentions
+    workflow_readers: frozenset[str] = frozenset()  # files that mention a `workflows` directory: consumers of every workflow
 
 
 @dataclass(frozen=True)
@@ -241,6 +247,8 @@ class ImpactGraph:
     dynamic: Mapping[str, str]
     problems: tuple[str, ...]
     consumers: Mapping[str, frozenset[str]]  # file -> the files that import or read it
+    workflow_names: Mapping[str, frozenset[str]] = field(default_factory=dict)
+    workflow_readers: frozenset[str] = frozenset()
 
 
 def module_id(path: str) -> str | None:
@@ -559,6 +567,8 @@ def scan_tests(texts: Mapping[str, str | None]) -> TreeScan:
     deps: dict[str, frozenset[str]] = {}
     dynamic: dict[str, str] = {}
     problems: list[str] = []
+    names: dict[str, frozenset[str]] = {}
+    readers: set[str] = set()
     for rel in sorted(files):
         if not rel.endswith(".py"):
             continue
@@ -572,9 +582,13 @@ def scan_tests(texts: Mapping[str, str | None]) -> TreeScan:
             problems.append(f"{rel}: could not be parsed ({type(exc).__name__})")
             continue
         deps[rel] = frozenset(found)
+        # Over-approximate on raw text (comments and docstrings included): a spurious consumer only adds tests.
+        names[rel] = frozenset(_WORKFLOW_NAME.findall(text))
+        if "workflows" in text:
+            readers.add(rel)
         if why_dynamic is not None:
             dynamic[rel] = why_dynamic
-    return TreeScan(files, deps, dynamic, tuple(problems))
+    return TreeScan(files, deps, dynamic, tuple(problems), names, frozenset(readers))
 
 
 def merge_scans(base: TreeScan, head: TreeScan) -> ImpactGraph:
@@ -586,6 +600,10 @@ def merge_scans(base: TreeScan, head: TreeScan) -> ImpactGraph:
     for consumer, found in deps.items():
         for dep in found:
             consumers[dep].add(consumer)
+    names: dict[str, frozenset[str]] = {}
+    for scan in (base, head):
+        for consumer, found in scan.workflow_names.items():
+            names[consumer] = names.get(consumer, frozenset()) | found
     return ImpactGraph(
         files=base.files | head.files,
         head_files=head.files,
@@ -594,6 +612,8 @@ def merge_scans(base: TreeScan, head: TreeScan) -> ImpactGraph:
         dynamic={**base.dynamic, **head.dynamic},
         problems=tuple(sorted({*base.problems, *head.problems})),
         consumers={dep: frozenset(found) for dep, found in consumers.items()},
+        workflow_names=names,
+        workflow_readers=base.workflow_readers | head.workflow_readers,
     )
 
 
@@ -699,6 +719,28 @@ def surface_of_test_path(path: str, graph: ImpactGraph) -> tuple[set[str] | None
     if not modules:
         return None, "no test module imports or reads it"
     return modules, "test modules that import or read the changed test path"
+
+
+def is_workflow_path(path: str) -> bool:
+    """A workflow file other than `validate.yml`, which runs the router and so stays FULL."""
+    parent, _, name = path.rpartition("/")
+    return parent == WORKFLOW_DIR and name.endswith((".yml", ".yaml")) and path != VALIDATE_WORKFLOW and _normalized(path)
+
+
+def surface_of_workflow_path(path: str, graph: ImpactGraph) -> tuple[set[str] | None, str]:
+    """Return (affected test modules, reason) for a workflow file; None modules means this path forces FULL."""
+    name = path.rsplit("/", 1)[-1]
+    seeds = {f for f, found in graph.workflow_names.items() if name in found} | set(graph.workflow_readers)
+    if not seeds:
+        return None, "no test names the workflow or reads the workflows directory"
+    closure = affected_closure(graph, seeds)
+    unresolved = sorted(closure & set(graph.dynamic))
+    if unresolved:
+        return None, f"a consumer loads code or reads tests/ in a form the scan cannot resolve ({unresolved[0]}, {graph.dynamic[unresolved[0]]})"
+    modules = {module_id(f) or "" for f in closure if f in graph.head_files and is_test_module(f)}
+    if not modules:
+        return None, "no test module names the workflow"
+    return modules, "test modules that name the changed workflow or read the workflows directory"
 
 
 def is_fast_dropped(test_id: str) -> bool:
@@ -1014,8 +1056,12 @@ def classify(paths: Sequence[str], index: ConsumerIndex | None = None, graph: Im
     surface: set[str] = set()
     full_reasons: dict[str, str] = {}
     for path in paths:
-        if path.startswith("tests/"):
-            modules, reason = _tests_path(path, graph)
+        if path.startswith("tests/") or is_workflow_path(path):
+            if path.startswith("tests/"):
+                modules, reason = _tests_path(path, graph)
+            else:
+                problem = _graph_problem(graph)
+                modules, reason = (None, problem) if problem is not None or graph is None else surface_of_workflow_path(path, graph)
             if modules is None:
                 kinds.append((path, "tests", FULL))
                 full_reasons[path] = reason
@@ -1048,9 +1094,9 @@ def classify(paths: Sequence[str], index: ConsumerIndex | None = None, graph: Im
     if worst is None:
         modules = tuple(sorted(covered))
         change_class = PARTIAL_TESTS if present == {"tests"} else MIXED
-        reason = "every changed path is a test path with a derived affected set"
+        reason = "every changed path is a test or workflow path with a derived affected set"
         if has_docs:
-            reason = "test paths with a derived affected set, plus documentation validation"
+            reason = "test and workflow paths with a derived affected set, plus documentation validation"
         return Route(PARTIAL, reason, None, change_class, modules, docs_links=has_docs)
     extras = tuple(sorted(m for m in surface if is_fast_dropped(m)))
     if "tests" in present:
@@ -1095,8 +1141,8 @@ def _index_or_none(tree: Path | None) -> ConsumerIndex | None:
 
 
 def _graph_or_none(paths: Sequence[str], repo: Path, base: str, head: str, tree: Path | None) -> ImpactGraph | None:
-    # Built only when a test path changed; any failure leaves None, which routes those paths FULL.
-    if tree is None or not any(p.startswith("tests/") for p in paths):
+    # Built only when a test or workflow path changed; any failure leaves None, which routes those paths FULL.
+    if tree is None or not any(p.startswith("tests/") or is_workflow_path(p) for p in paths):
         return None
     try:
         return build_impact_graph(repo, base, head, tree)

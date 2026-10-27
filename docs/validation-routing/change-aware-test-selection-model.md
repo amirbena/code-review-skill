@@ -104,7 +104,7 @@ Shared test infrastructure (`tests/support/**`, `tests/reference/**`, any
 `tests/**` change), manifests (`package-manifest.json`, `capability.yaml`),
 schemas, `benchmark/`, `runtime_platform/`, `scripts/packaging|release|sandbox|skill_metadata/**`,
 `skills/**`, `shared/**`, `capabilities/**`, `distribution/**`, `CHANGELOG.md`,
-`LICENSE`, `.github/workflows/**`, `requirements-dev.txt`, and the router,
+`LICENSE`, `.github/workflows/validate.yml` (other workflows are PARTIAL, see [`partial-tier-model.md`](partial-tier-model.md)), `requirements-dev.txt`, and the router,
 classifier, or consumer-index code itself. This list is the default-deny
 complement of "everything not positively proven small"; it exists so a bug in
 the index cannot lower these paths. Today's FAST allowlist (root docs,
