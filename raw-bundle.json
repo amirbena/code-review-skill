@@ -1,0 +1,114 @@
+{
+  "confirmation_reruns": [],
+  "invocations": [
+    {
+      "case_id": null,
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`page()` returns one extra item per page (off-by-one slice end) `end = offset + page_size + 1` makes the slice `items[offset:offset + page_size + 1]`, which is `page_size + 1` elements whenever enough items remain. For `items=[1..10]`, `page_size=3`: page 1 returns `[1,2,3,4]` and page 2 returns `[4,5,6,7]`. The committed version, `items[offset : offset + page_size]`, returns exactly `page_size` items. The repository has no caller, test, or documentation that justifies the extra element. Every full page is larger than requested, and the last item of page N is repeated as the first item of page N+1. Consumers see duplicate records and wrong page sizes. Any client that treats a page of exactly `page_size` items as \"more pages remain\" is also misled.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "end = offset + page_size + 1",
+                    "items[offset:offset + page_size + 1]",
+                    "page_size + 1",
+                    "items=[1..10]",
+                    "page_size=3",
+                    "[1,2,3,4]",
+                    "[4,5,6,7]",
+                    "items[offset : offset + page_size]",
+                    "page_size"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 4,
+                    "start": 3
+                  },
+                  "path": "app/pagination.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "no-op-comment-and-rename",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          },
+          {
+            "id": "quality-duplicated-branch-logic",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Message-building step is duplicated across the email and sms branches The `sms` branch repeats `msg = format_message(user)` from the `email` branch at `app/notify.py:3`. The two branches differ only in the recipient (`user.email` vs `user.phone`) and the sender (`send_email` vs `send_sms`). Message construction now has two copies. If a channel needs different formatting, or `format_message` gains a parameter such as the channel, someone must change every branch. A missed branch would make the channels diverge. Each new channel adds another copy.",
+                "extra": {
+                  "defect_kind": "duplicated-logic",
+                  "evidence_quotes": [
+                    "sms",
+                    "msg = format_message(user)",
+                    "email",
+                    "app/notify.py:3",
+                    "user.email",
+                    "user.phone",
+                    "send_email",
+                    "send_sms"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 7,
+                    "start": 5
+                  },
+                  "path": "app/notify.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "security-command-injection",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Shell command injection via `name` in `make_archive` `name` is interpolated directly into `cmd` (line 5) and executed with `shell=True` (line 6), so the shell interprets any metacharacters in it. For example, `make_archive(\"x; id #\")` runs `tar -czf x; id #.tar.gz data/` and so also runs `id`. The previous list-form call passed `name` as a single argv element and never reached a shell. A repository search found no in-repo callers of `make_archive`, so where `name` comes from is not established here. Any caller that passes externally influenced input as `name` gives an attacker arbitrary command execution as the process user. A name containing a space, quote or `$` also breaks or changes the archive command even without malicious intent. The change adds this risk and has no functional benefit. `shell=True` with a single string hands the whole string to `/bin/sh -c`. Every `;`, `&&`, `|`, backtick, `$()` or newline in `name` therefore starts a new command. Quoting with `shlex.quote` would reduce the risk, but a list-form call avoids the shell entirely.",
+                "extra": {
+                  "defect_kind": "command-injection",
+                  "evidence_quotes": [
+                    "name",
+                    "cmd",
+                    "shell=True",
+                    "make_archive(\"x; id #\")",
+                    "tar -czf x; id #.tar.gz data/",
+                    "id",
+                    "name",
+                    "make_archive",
+                    "name"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 6,
+                    "start": 5
+                  },
+                  "path": "app/backup.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    }
+  ]
+}
