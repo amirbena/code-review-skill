@@ -167,7 +167,9 @@ class LoadingInventoryTests(unittest.TestCase):
     def test_checker_size_report_and_inventory_derive_the_same_set(self) -> None:
         for skill in SKILLS:
             text = (_skill_dir(skill) / "SKILL.md").read_text(encoding="utf-8")
-            from_report = {(REPO_ROOT / f.path).resolve() for f in size_report.build_skill_report(REPO_ROOT, skill).unconditional}
+            built = size_report.build_skill_report(REPO_ROOT, skill)
+            # The by-phase group is required for coverage, so it belongs to the inventory (#818).
+            from_report = {(REPO_ROOT / f.path).resolve() for f in (*built.unconditional, *built.phased)}
             # The checker's paths drop the leading `../` hops, so `shared/...` is repo-relative.
             from_checker = {
                 ((_skill_dir(skill) if p.startswith("policies/") else REPO_ROOT) / p).resolve()

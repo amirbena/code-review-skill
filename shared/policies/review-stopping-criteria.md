@@ -145,9 +145,18 @@ only decide *when* the existing trigger is evaluated:
    cannot be loaded is a trigger-1 incomplete reason whose `detail`
    names that file. The checkpoint never makes a required file optional,
    never requires a context-conditional file whose predicate has not
-   fired, and never substitutes for loading it.
+   fired, and never substitutes for loading it. A file `SKILL.md` section 2
+   lists under "Always, by phase" is required like the rest but is checked
+   at its named phase instead: confirmed open before the first candidate
+   finding is formed or reconciled for the finding schema and `Fix`
+   direction, and before the coverage step for the rendering and summary
+   files. A file first opened after the decision it governs is not loaded
+   in time, however early it is opened relative to the verdict. A phase
+   may be earlier than the coverage step, never later, so the `Coverage:`
+   line is still derived from files actually opened.
 2. *Immediately before the Decision is derived.* Coverage is
-   recomputed once over the final state — the unconditional set, every
+   recomputed once over the final state — the unconditional set, the
+   by-phase group, every
    context-conditional file whose context held, and every conditionally
    loaded file whose predicate fired at any point during the review —
    after any re-review, finding re-finalization, or change of the

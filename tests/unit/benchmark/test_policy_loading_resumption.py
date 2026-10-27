@@ -247,7 +247,7 @@ class ContractWiringTests(unittest.TestCase):
         sentences = set()
         for root in SKILLS.values():
             section = bbv._SECTION_RE.search((root / "SKILL.md").read_text(encoding="utf-8")).group(1)
-            sentences.add(re.search(r"Before step 1 of the runbook, load the unconditional files above in bounded resumable groups per \[`review-stopping-criteria.md`\]\([^)]+\), \"Bounded, resumable policy loading,\" and confirm each is open in full", section).group(0).split("](")[0])
+            sentences.add(re.search(r"Before step 1 of the runbook, load the unconditional files above, except the phase-loaded group, in bounded resumable groups per \[`review-stopping-criteria.md`\]\([^)]+\), \"Bounded, resumable policy loading,\" and confirm each is open in full", section).group(0).split("](")[0])
         self.assertEqual(len(sentences), 1)
 
     def test_policy_defines_a_line_for_the_extent(self) -> None:

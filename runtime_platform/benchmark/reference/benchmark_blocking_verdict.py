@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Sequence
+from typing import Mapping, Sequence
 
 from scripts.validation.context_size_report import section_targets
 from tests.reference.review import decision_semantics as ds
@@ -191,16 +191,24 @@ def check_policy_reads(
     decision_label: str | None,
     coverage: str | None = None,
     fired_conditional: Sequence[str] = (),
+    read_before: Mapping[str, int] | None = None,
 ) -> PolicyReadCheck:
     """`fired_conditional` names conditional files whose activation predicate fired in the
     recorded review; they are required like unconditional files (#816). The caller or
     fixture asserts them; the checker does not verify the predicate should have fired. Unless every
     required file is confirmed, Result and Decision must both render
     incomplete and a `Coverage:` value must not read complete. A definitive verdict
-    without any `Coverage:` value is a violation, as a missing line is incomplete."""
+    without any `Coverage:` value is a violation, as a missing line is incomplete.
+
+    `read_before` maps a required file to the number of leading trace calls that precede the decision
+    it governs (#818). A read at or after that index does not count: opening a file after the decision
+    it governs is not loading it in time, however early it is opened relative to the verdict."""
     unconditional = required_policy_files(skill_md)
     required = (*unconditional, *(p for p in fired_conditional if p not in unconditional))
     states = classify_policy_reads(required, tool_calls)
+    for path, deadline in (read_before or {}).items():
+        if path in states:
+            states[path] = classify_policy_reads([path], tool_calls[:deadline])[path]
     unmet = [f"{path} ({state.value})" for path, state in states.items() if state is not ReadState.CONFIRMED]
     violations = []
     kinds = {

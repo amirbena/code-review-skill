@@ -324,3 +324,40 @@ class FiredConditionalTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LateLoadingTests(unittest.TestCase):
+    """Issue #818: a file read only after the decision it governs is not loaded in time."""
+
+    FINDING = "shared/templates/finding.md"
+
+    def _trace(self, skill_md: str, finding_late: bool) -> tuple[list[tuple[str, dict]], int]:
+        full = DefinitiveVerdictTests._full(skill_md)
+        finding = [c for c in full if c[1]["file_path"].endswith(self.FINDING)]
+        rest = [c for c in full if c not in finding]
+        first_candidate = len(rest) if finding_late else len(full)
+        return (rest + finding, first_candidate) if finding_late else (full, first_candidate)
+
+    def test_eventual_read_does_not_satisfy_a_phase_deadline(self) -> None:
+        for skill, skill_md in SKILLS.items():
+            calls, deadline = self._trace(skill_md, finding_late=True)
+            for label, rendered in (("clean", CLEAN), ("blocking", BLOCKING)):
+                with self.subTest(skill=skill, verdict=label):
+                    on_time = bbv.check_policy_reads(skill_md, calls, **rendered)
+                    self.assertTrue(on_time.ok)  # eventual read alone is order-blind
+                    late = bbv.check_policy_reads(skill_md, calls, read_before={self.FINDING: deadline}, **rendered)
+                    self.assertFalse(late.ok)
+                    self.assertEqual(late.files(ReadState.MISSING), (self.FINDING,))
+
+    def test_late_read_may_only_render_incomplete(self) -> None:
+        for skill, skill_md in SKILLS.items():
+            calls, deadline = self._trace(skill_md, finding_late=True)
+            with self.subTest(skill=skill):
+                self.assertTrue(bbv.check_policy_reads(skill_md, calls, read_before={self.FINDING: deadline}, **INCOMPLETE).ok)
+
+    def test_read_before_the_deadline_passes(self) -> None:
+        for skill, skill_md in SKILLS.items():
+            calls, deadline = self._trace(skill_md, finding_late=False)
+            full_deadline = {self.FINDING: len(calls)}
+            with self.subTest(skill=skill):
+                self.assertTrue(bbv.check_policy_reads(skill_md, calls, read_before=full_deadline, **CLEAN).ok)

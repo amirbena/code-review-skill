@@ -235,7 +235,7 @@ The numbered Steps below are the only authoritative execution sequence. The poli
    [`review-scope.md`](../../../shared/policies/review-scope.md) and the
    file-treatment rules in
    [`file-reviewability.md`](../../../shared/policies/file-reviewability.md),
-   applying the instructions discovered in step 5. First apply
+   applying the instructions discovered in step 5. Before the first candidate finding is formed here, open the `SKILL.md` section 2 "Always, by phase" finding group; it is not loaded in time if opened after. First apply
    [`../policies/review-reasoning.md`](../policies/review-reasoning.md),
    "Semantic Implication Review," to detect and reason about the
    system-level dimensions this invocation's scope materially implicates,
@@ -350,7 +350,7 @@ The numbered Steps below are the only authoritative execution sequence. The poli
    incomplete must never present as clean" and "Non-goals and ownership
    boundary" — not restated here. Required material from `SKILL.md` section 2
    that was not loaded before the decision it governs is an incomplete trigger too, per that
-   policy's "Incomplete triggers" — never `complete`. This step runs after every review pass, so it is also the pre-verdict recheck per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck": recompute coverage over the final state, including every conditional file whose predicate fired during the review, and carry no earlier value forward. Set the Coverage field (the metadata block's `coverage` field) from the files actually opened, never from memory, and apply the coverage invariant ([`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Labeling") to the rendered report.
+   policy's "Incomplete triggers" — never `complete`. This step runs after every review pass, so it is also the pre-verdict recheck per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck": recompute coverage over the final state, including every conditional file whose predicate fired during the review and the by-phase group (each counts only if opened by its phase), and carry no earlier value forward. Set the Coverage field (the metadata block's `coverage` field) from the files actually opened, never from memory, and apply the coverage invariant ([`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Labeling") to the rendered report.
 8c. **Derive the decision.** When step 8b's coverage is `incomplete`, the
    decision is the incomplete/ungraded outcome per
    [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md),

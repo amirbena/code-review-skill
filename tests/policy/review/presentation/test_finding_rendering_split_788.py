@@ -78,7 +78,8 @@ class ConditionalLoadingTests(unittest.TestCase):
     def test_human_file_is_not_in_the_unconditional_set(self) -> None:
         for path, start in ((LOCAL, "Always, in bounded resumable groups:"), (GITHUB, "Shared, always")):
             always = set(_LINK.findall(_section(path, start, "Conditionally")))
-            self.assertIn("finding-rendering.md", always, path)
+            phased = set(_LINK.findall(_section(path, "Always, by phase", "\n\n")))
+            self.assertIn("finding-rendering.md", always | phased, path)  # required, loaded by phase (#818)
             self.assertNotIn("finding-rendering-human.md", always, path)
 
     def test_predicate_fires_stays_off_and_fails_closed(self) -> None:
