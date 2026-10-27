@@ -32,6 +32,8 @@ DRIFT_MISSED_REQUIRED_FINDING = "missed-required-finding"
 DRIFT_DECISION_FLIP = "decision-flip"
 DRIFT_SEVERITY_ACCURACY_DROP = "severity-accuracy-drop"
 
+_EXECUTED = "executed"
+
 # Sentinel `expected_finding_key` for a case-level (not per-finding) drift_type.
 CASE_LEVEL_FINDING_KEY = "-"
 
@@ -61,6 +63,19 @@ class DriftRecord:
         }
 
 
+def execution_reliability(
+    baseline_metrics: Mapping[str, bmet.CaseMetrics],
+    candidate_metrics: Mapping[str, bmet.CaseMetrics],
+) -> dict[str, list[str]]:
+    """Case ids that did not execute, per run, among the cases both runs share.
+    Reported beside drift, never as drift (contract §2.2)."""
+    shared = sorted(set(baseline_metrics) & set(candidate_metrics))
+    return {
+        "baseline_errored": [c for c in shared if baseline_metrics[c].status != _EXECUTED],
+        "candidate_errored": [c for c in shared if candidate_metrics[c].status != _EXECUTED],
+    }
+
+
 def classify_drift(
     baseline_metrics: Mapping[str, bmet.CaseMetrics],
     candidate_metrics: Mapping[str, bmet.CaseMetrics],
@@ -70,11 +85,14 @@ def classify_drift(
     severity_exact_rate_tolerance: Fraction = DEFAULT_SEVERITY_EXACT_RATE_TOLERANCE,
 ) -> list[DriftRecord]:
     """The §2 policy, applied per case. Cases present in only one run, and
-    every noise example the contract lists, never reach a `DriftRecord`."""
+    every noise example the contract lists, never reach a `DriftRecord`. A
+    case that did not execute in both runs is execution reliability, not quality."""
     records: list[DriftRecord] = []
 
     for case_id in sorted(set(baseline_metrics) & set(candidate_metrics)):
         base, cand = baseline_metrics[case_id], candidate_metrics[case_id]
+        if base.status != _EXECUTED or cand.status != _EXECUTED:
+            continue
 
         newly_missed = sorted(set(cand.missed_keys) - set(base.missed_keys))
         for key in newly_missed:
@@ -99,6 +117,8 @@ def classify_drift(
 
     for case_id in sorted(set(baseline_severity) & set(candidate_severity)):
         base_sev, cand_sev = baseline_severity[case_id], candidate_severity[case_id]
+        if base_sev.status != _EXECUTED or cand_sev.status != _EXECUTED:
+            continue
         base_rate, cand_rate = base_sev.exact_rate, cand_sev.exact_rate
         if base_rate is None or cand_rate is None:
             continue  # undefined rate (nothing matched) is not comparable.

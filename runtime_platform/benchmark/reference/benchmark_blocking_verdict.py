@@ -83,6 +83,7 @@ def check_blocking_verdict(
 
 class ReadState(str, Enum):
     CONFIRMED = "confirmed"
+    RESUMED = "resumed"
     UNVERIFIABLE = "unverifiable"
     MISSING = "missing"
 
@@ -157,16 +158,37 @@ def _read_state(path: str, name: str, tool_input: dict) -> ReadState:
     return best
 
 
+def _is_resumed_chain(path: str, tool_calls: Sequence[tuple[str, dict]]) -> bool:
+    """Ranged `Read`s of `path` that start at line 1 and each resume at the line after
+    the previous range ends (#812). The trace holds no file length, so the chain can
+    show contiguity but never that it reached the end."""
+    ranges = []
+    for name, tool_input in tool_calls:
+        target = str(tool_input.get("file_path", ""))
+        if name == "Read" and target.endswith("/" + path) and _names(target, path):
+            offset, limit = tool_input.get("offset"), tool_input.get("limit")
+            if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1:
+                continue
+            ranges.append((max(offset, 1) if isinstance(offset, int) else 1, limit))
+    if len(ranges) < 2 or ranges[0][0] != 1:
+        return False
+    return all(start == prev + length for (prev, length), (start, _) in zip(ranges, ranges[1:]))
+
+
 def classify_policy_reads(
     required: Sequence[str], tool_calls: Sequence[tuple[str, dict]]
 ) -> dict[str, ReadState]:
     """Best state per required file across the trace; `confirmed` needs an unbounded
-    literal read, anything the trace cannot show is `unverifiable`, never `confirmed`."""
+    literal read, a contiguous resumed chain is `resumed` (never `confirmed`), anything
+    else the trace cannot show is `unverifiable`."""
     order = (ReadState.CONFIRMED, ReadState.UNVERIFIABLE, ReadState.MISSING)
     states: dict[str, ReadState] = {}
     for path in required:
         found = [_read_state(path, name, tool_input) for name, tool_input in tool_calls]
-        states[path] = next((s for s in order if s in found), ReadState.MISSING)
+        state = next((s for s in order if s in found), ReadState.MISSING)
+        if state is ReadState.UNVERIFIABLE and _is_resumed_chain(path, tool_calls):
+            state = ReadState.RESUMED
+        states[path] = state
     return states
 
 
@@ -209,7 +231,12 @@ def check_policy_reads(
     for path, deadline in (read_before or {}).items():
         if path in states:
             states[path] = classify_policy_reads([path], tool_calls[:deadline])[path]
-    unmet = [f"{path} ({state.value})" for path, state in states.items() if state is not ReadState.CONFIRMED]
+    # A resumed chain is not confirmed, but is not a violation on its own (#819).
+    unmet = [
+        f"{path} ({state.value})"
+        for path, state in states.items()
+        if state not in (ReadState.CONFIRMED, ReadState.RESUMED)
+    ]
     violations = []
     kinds = {
         surface: classify_rendered_label(label)

@@ -81,10 +81,11 @@ import subprocess
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Callable, Collection, Mapping, Sequence
+from typing import Any, Callable, Collection, Mapping, Sequence
 
 from runtime_platform.benchmark.reference.benchmark_runner import ProducedFinding
 from runtime_platform.benchmark.scripts import benchmark_run_evidence as bre
+from runtime_platform.benchmark.scripts.benchmark_review_signals import review_signals
 from runtime_platform.benchmark.scripts.benchmark_termination import run_in_own_group
 
 # --------------------------------------------------------------------------
@@ -769,7 +770,17 @@ class ProductionReviewerAdapter:
             workspace_root=grant,
             sibling_names=bre.sibling_names_of(grant) if grant is not None else [],
         )
+        evidence.review_signals = self._review_signals(summary)
         return summary
+
+    def _review_signals(self, summary: bre.StreamSummary) -> dict[str, Any] | None:
+        """Rendered Result/Decision/Coverage and policy-read compliance; report-only, never fails a run."""
+        skill_md = self.plugin_dir / "skills" / bre.SKILL_NAME / "SKILL.md"
+        try:
+            report = str((summary.result or {}).get("result") or "")
+            return review_signals(skill_md.read_text(encoding="utf-8"), summary.tool_calls, report)
+        except (OSError, ValueError):
+            return None
 
     def _verify_stream(self, stdout: str, evidence: bre.RunEvidence) -> str:
         summary = self._absorb_stream(stdout, evidence)

@@ -147,6 +147,24 @@ signal, and **never published as an issue**. Confirmation adds a
 pre-publication gate to §2–§4; it does not change the drift types, the
 fingerprint, or the tolerance.
 
+### 2.2 Execution reliability is not quality (#819)
+
+Quality drift types are evaluated only for a case whose `status` is `executed`
+in **both** runs. A case that `errored` in either run emits no
+`missed-required-finding`, `decision-flip` or `severity-accuracy-drop`; it is
+reported separately (`benchmark_drift.execution_reliability`, and the
+baseline summary's execution-reliability section).
+
+Effect on existing data: sealed records and their stored metrics are
+unchanged and still validate and render. Re-classifying an old pair can
+now yield fewer drift records, because an errored candidate case used to
+count every required finding as missed. Fingerprints are unchanged for the
+records that remain (the fingerprint inputs did not change), but an open
+lifecycle issue whose only evidence was an errored case no longer has a
+matching record and resolves through the §4 auto-resolution path. Drift
+evaluated before this rule is not comparable with drift after it for cases
+that errored.
+
 ## 3. Stable regression fingerprinting
 
 ```text

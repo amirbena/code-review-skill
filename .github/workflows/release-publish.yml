@@ -175,49 +175,6 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: true
 
-      # TEMPORARY diagnostic for the 403 on `git push` to main (run
-      # 40467181683). Read-only; remove once the cause is found. Prints only
-      # non-sensitive metadata. Installation permissions need an App JWT (the
-      # installation token cannot read them), signed in memory from the key.
-      - name: Diagnose release App token write access
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
-          INSTALLATION_ID: ${{ steps.app-token.outputs.installation-id }}
-          APP_ID: ${{ secrets.RELEASE_APP_ID }}
-          APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-        run: |
-          set -euo pipefail
-          b64() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
-          now="$(date +%s)"
-          head="$(printf '{"alg":"RS256","typ":"JWT"}' | b64)"
-          body="$(printf '{"iat":%d,"exp":%d,"iss":"%s"}' $((now - 60)) $((now + 300)) "${APP_ID}" | b64)"
-          sig="$(printf '%s.%s' "${head}" "${body}" | openssl dgst -sha256 -sign <(printf '%s' "${APP_PRIVATE_KEY}") -binary | b64)"
-          jwt="${head}.${body}.${sig}"
-          echo "::add-mask::${jwt}"
-          api() { curl -fsS -H "Authorization: Bearer $1" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" "https://api.github.com/$2"; }
-
-          echo "app-slug=${APP_SLUG} installation-id=${INSTALLATION_ID}; permission-* inputs requested at mint: none"
-          if ! inst="$(api "${jwt}" "app/installations/${INSTALLATION_ID}")" || ! app="$(api "${jwt}" app)"; then
-            echo "::warning::Could not read installation metadata with the App JWT; Contents permission is UNKNOWN (not proven denied)."
-          else
-            echo "${inst}" | jq -r '"installation: app_slug=\(.app_slug) repository_selection=\(.repository_selection) suspended_at=\(.suspended_at) updated_at=\(.updated_at)"'
-            [ "$(echo "${inst}" | jq -r .app_id)" = "${APP_ID}" ] && echo "app_id matches RELEASE_APP_ID" || echo "::error::installation app_id differs from RELEASE_APP_ID"
-            inst_c="$(echo "${inst}" | jq -r '.permissions.contents // "absent"')"
-            app_c="$(echo "${app}" | jq -r '.permissions.contents // "absent"')"
-            echo "contents: installation=${inst_c} app-configured=${app_c}"
-            [ "${inst_c}" = "${app_c}" ] || echo "::warning::App-configured and granted Contents differ: a permission change may be pending acceptance on the installation."
-            if [ "${inst_c}" != "write" ]; then
-              echo "::error::Installation Contents permission is '${inst_c}' (explicit 'read' = read-only; 'absent' = not granted); a push to main needs 'write'."
-              exit 1
-            fi
-          fi
-
-          # Supplementary only; neither proves a real push will succeed.
-          gh api installation/repositories --jq '"token scope: \([.repositories[].full_name] | join(", "))"'
-          gh api "repos/${{ github.repository }}" --jq '"repo-level permissions seen by token (not authoritative): \(.permissions | tojson)"'
-          git push --dry-run origin HEAD:main && echo "dry-run push authenticated (does not evaluate rulesets)"
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

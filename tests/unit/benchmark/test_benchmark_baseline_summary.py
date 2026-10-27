@@ -49,6 +49,16 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual([r["path"] for r in data["rejected"]], ["records/sentinel/2026/bad.json"])
         self.assertIn("### Rejected records", summary.render_markdown(data))
 
+    def test_errored_cases_are_listed_apart_from_executed_totals(self):
+        errored = make_case("b", missed=("k1", "k2"))
+        errored["status"] = "errored"
+        record = sealed_record("sentinel", [make_case("a", missed=("k0",)), errored])
+        stats = summary.execution_reliability(record)
+        self.assertEqual(stats["errored_case_ids"], ["b"])
+        self.assertEqual((stats["executed_cases"], stats["executed_false_negatives"]), (1, 1))
+        text = summary.render_markdown(summary.summary_dict(self.history(record), ["sentinel"]))
+        self.assertIn("1 of 2 case(s) executed; FN 1 / FP 0 over executed cases. Errored: `b`.", text)
+
     def test_missing_provenance_field_is_named(self):
         record = sealed_record("sentinel", [make_case("a", matched=1, exact=1)])
         record["runtime"]["model_id"] = ""
