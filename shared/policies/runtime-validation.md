@@ -39,6 +39,25 @@ execution boundary", admits only inside this policy's isolation boundary or
 under trusted-host authorization, with no dependency install and no additional
 services. It changes nothing for any declared command or generated reproduction.
 
+## Activation
+
+`SKILL.md` section 2 loads this policy on activation, fail-closed, before the
+first decision it governs. It is required when any of these holds, or when it
+is in doubt whether one does:
+
+- a command is named in the instruction sources resolved at
+  repository-instruction discovery;
+- any pass considers selecting, running or recording a command or
+  reproduction;
+- the invocation carries a trusted-host or repository-test-sandbox request;
+- a suspected finding's correctness hinges on runtime behavior.
+
+No repository command is executed, and no reproduction is generated, unless
+this policy is loaded. A review where none holds needs nothing else from this
+file: the explicit no-command `Validation` entry is required by
+`review-summary.md`, and `reasoned` is the default validation state in
+`finding.md`.
+
 ## Trust model and execution boundary
 
 Runtime validation executes target-repository-controlled code. A command is

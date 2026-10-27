@@ -14,6 +14,8 @@ They are not `benchmark-case/v2` fixtures: there is no patch or finding.
 | --- | --- |
 | `v1.80.2-skipped-policies.json` | A v1.80.2 review that read only the first 60 lines of `severity.md` and rendered `CHANGES REQUIRED`. Detected. |
 | `complete-review-confirmed-reads.json` | Synthetic complete review: every unconditional file read in full. Passes. |
+| `declared-command-runtime-validation-fired.json` | #816: repository declares a test command, the `runtime-validation.md` predicate fires, the file is read in full before command selection. Passes. |
+| `no-command-runtime-validation-not-fired.json` | #816: no declared command, nothing fires, the file is never opened and the explicit no-command `Validation` entry still renders. Passes. |
 
 The first fixture keeps only the skill-touching calls (skill directory
 replaced by `$SKILL_DIR`) and the report's labels. The source session was
@@ -34,7 +36,14 @@ Unless every required file is `confirmed`, Result and Decision must both
 render `REVIEW INCOMPLETE` and a `Coverage:` value must not read
 complete. Required files are derived from the unconditional part of
 `SKILL.md` section 2, so a conditional file that did not fire is never
-required and a new unconditional file is picked up automatically.
+required and a new unconditional file is picked up automatically. A fixture
+may declare `fired_conditional` (Issue
+[#816](https://github.com/amirbena/code-review-skill/issues/816)); those
+files are required like unconditional ones. The fixture author asserts the list; it is not derived from the trace, so the check covers the read given the claim, not whether the claim is right. A fired predicate with no full read before a definitive verdict is a violation. Fire rate of the
+`runtime-validation.md` predicate over the two #816 fixtures: 1 of 2. The four
+sentinel cases carry a patch and no repository instruction sources, so the
+predicate does not fire on them by the instruction-source clause (0 of 4, by
+inspection, not a live-run measurement).
 
 A definitive verdict (`REVIEW CLEAN` or `CHANGES REQUIRED`) with no
 `Coverage:` value is also a violation, because the runbooks treat a missing

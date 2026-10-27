@@ -325,12 +325,15 @@ class DetectorMutationTests(unittest.TestCase):
     def test_single_conditional_activation_predicate_removed(self) -> None:
         for skill in SKILLS:
             skill_md = self._md(skill)
-            predicate = "(at least one material finding exists — it then applies to every one)"
-            self.assertIn(predicate, skill_md)
-            mutated = skill_md.replace(" " + predicate, "", 1)
-            with self.subTest(skill=skill):
-                self.assertEqual(len(predicate_gaps(mutated)), 1)
-                self.assertIn("remediation-scope-boundary.md", predicate_gaps(mutated)[0])
+            for predicate, name in (
+                ("(at least one material finding exists — it then applies to every one)", "remediation-scope-boundary.md"),
+                (re.search(r"\(a command is named in[^)]*\)", skill_md).group(0), "runtime-validation.md"),
+            ):
+                self.assertIn(predicate, skill_md)
+                mutated = skill_md.replace(" " + predicate, "", 1)
+                with self.subTest(skill=skill, policy=name):
+                    self.assertEqual(len(predicate_gaps(mutated)), 1)
+                    self.assertIn(name, predicate_gaps(mutated)[0])
 
     def test_nonexistent_policy_reference_in_a_step(self) -> None:
         steps = steps_text("local-code-review", "local-review") + "\n[x](../../../shared/policies/ghost-policy.md)\n"
