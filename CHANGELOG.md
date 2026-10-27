@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.83.2 — 2026-10-27
+
+### Fixed
+
+- Delegated reviewers now inherit the policy-loading contract; an unconfirmed or partial load yields `REVIEW INCOMPLETE`, never `REVIEW CLEAN` (#831).
+
 ## v1.83.1 — 2026-10-27
 
 ### Fixed
