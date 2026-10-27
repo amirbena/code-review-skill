@@ -57,10 +57,6 @@ DOMAIN = DeepeningDomain(
         "Ownership/coordination assumptions",
         "Partial failure",
     ),
-    no_unbounded_audit=(
-        "never a separate, unbounded audit of every caller in the "
-        "repository"
-    ),
     no_second_schema="No new finding/severity/evidence schema",
     generic_advice_rejected=(
         "generic distributed-systems advice with no traced flow in "

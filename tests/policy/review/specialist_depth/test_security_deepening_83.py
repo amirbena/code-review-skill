@@ -60,10 +60,6 @@ DOMAIN = DeepeningDomain(
         "Validation/sanitization assumptions",
         "Privilege propagation",
     ),
-    no_unbounded_audit=(
-        "never a separate, unbounded audit of every caller in the "
-        "repository"
-    ),
     no_second_schema="No new finding/severity/evidence schema",
     generic_advice_rejected=(
         "generic vulnerability-class advice with no traced flow in "

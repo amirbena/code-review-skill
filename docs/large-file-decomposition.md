@@ -102,6 +102,51 @@ section), `runtime_platform/benchmark/match-criteria.md` (289),
 `skills/local-code-review/policies/pr-context.md` (284),
 `runtime_platform/benchmark/regression-report.md` (283).
 
+## `shared/policies/` single-owner audit (Issue #822)
+
+Measured on `main` before this change: 47 flat files (46 packaged + README),
+608,228 bytes; mandatory default set unchanged by this work. Method: every
+file's responsibility, loader (`SKILL.md` §2, manifest, tests) and a
+12-word-shingle overlap scan across the 46 policies.
+
+**Verified duplicate rules.** Only one cluster: the four bounded-trace
+deepening policies (`security-`, `distributed-systems-`, `database-migration-`,
+`performance-deepening.md`) each restated `specialist-depth.md`'s cascading-
+activation bound and its capability-finding labeling rule (~2.5–4 KB of shared
+prose per pair). Matrix: 2 rules x 4 files = 8 restatements.
+
+**Decision per file.**
+
+- *Trim (4):* the four deepening policies above — both sections now link to
+  `specialist-depth.md`, keeping only the domain-specific trace subject, the
+  `capability` value, the "insufficient evidence" outcome, and the
+  generic-advice rejection. Total -1,826 bytes; these load conditionally, so
+  the mandatory set is unchanged. Duplicated rules: 8 -> 0.
+- *Keep (all other 42):* flat layout is already the simplest answer. The
+  pairs the issue flagged are distinct responsibilities, not overlaps:
+  `rendered-inspection` (what is inspected) / `-environment` (consent gate
+  and Playwright check); `runtime-validation` (command selection and
+  outcomes) / `trusted-host-execution` (the authorization to use the host
+  backend); `remediation-guidance` (advisory `Fix` direction) /
+  `remediation-scope-boundary` (how much remediation the task absorbs);
+  `evidence` (what counts as evidence) / `review-evidence` (reuse of prior
+  review comments); `review-base-policy` (base compliance P0) /
+  `review-ownership` (one owner per scope). None shares more than incidental
+  phrasing in the scan, and merging any of them would touch 20-80
+  referencing files and tests for no rule-count gain.
+- *Rename/move: none.* Existing names are referenced by manifest, `SKILL.md`
+  §2, tests and the benchmark taxonomy; the suffix variety (`-deepening`,
+  `-analysis`, `-criteria`) already encodes policy role and is stated in the
+  `shared/policies/README.md` convention.
+
+**Deliberate boundary reminders retained.** Each deepening policy still names
+its own `capability` value, its domain trace subject and its non-goals; these
+are scope statements, not restated rules.
+
+**Not done (out of scope or unjustified):** splitting the eight >20 KB files
+(no measured conditional-loading benefit identified); changing any load
+condition (#816, #818) or the loading procedure (#812/#815).
+
 ## Execution sequence
 
 Each numbered item is an independently reviewable, independently closable

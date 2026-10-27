@@ -62,10 +62,6 @@ DOMAIN = DeepeningDomain(
         "Query/network amplification",
         "Memory/concurrency implications",
     ),
-    no_unbounded_audit=(
-        "never a separate, unbounded audit of every call site or loop "
-        "in the repository"
-    ),
     no_second_schema="never a second schema",
     generic_advice_rejected=(
         'generic "this could be slow" advice with no traced cost '

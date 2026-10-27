@@ -175,31 +175,21 @@ remaining a valid terminal outcome under "Cascading activation" below.
 
 ## Cascading activation: bounded by the existing expansion contract
 
-Tracing a rollout stage, a coexistence assumption, or a large data
-movement's downstream effect reuses
-[`specialist-depth.md`](specialist-depth.md)'s cascading-activation model,
-which in turn reuses
-[`repository-expansion.md`](repository-expansion.md)'s fixed trigger/ring/
-ceiling procedure and
-[`review-stopping-criteria.md`](review-stopping-criteria.md)'s stop
-conditions — never a separate, unbounded audit of every migration or table
-in the repository. "Insufficient evidence" remains a valid terminal outcome
-for a traced path, exactly as it is for base reasoning.
+A traced rollout stage, coexistence assumption, or data movement follows
+[`specialist-depth.md`](specialist-depth.md)'s cascading-activation
+model, which owns the bound and adds no ceiling, trigger, or stop
+condition of its own. "Insufficient evidence" remains a valid terminal
+outcome for a traced path, exactly as it is for base reasoning.
 
 ## Findings: ordinary findings, labeled
 
-A finding this capability contributes is an ordinary finding: the same
-severity derivation ([`severity.md`](severity.md)), the same evidence bar
-([`evidence.md`](evidence.md)), the same identity/deduplication rules, and
-the same remediation-scope-boundary reasoning
-([`remediation-scope-boundary.md`](remediation-scope-boundary.md)) as any
-other finding. It additionally carries the optional `capability` provenance
-field, valued `database-migration-deepening`, per
-[`finding.md`](../templates/finding.md), "Capability provenance" — never a
-severity input, never a second schema. Concrete evidence must be tied to
-the actual migration, rollout stage, or data movement the capability
-traced; generic database style advice with no traced schema-evolution risk
-in this change does not meet the evidence bar and is not reported.
+A finding this capability contributes is an ordinary finding. It carries
+the optional `capability` provenance field, valued `database-migration-deepening`, per
+[`specialist-depth.md`](specialist-depth.md), "Capability-contributed
+findings are labeled, not re-schemed" — never a severity input, never a
+second schema. Concrete evidence must be tied to the actual migration, rollout stage, or data movement the capability traced;
+generic database style advice with no traced schema-evolution risk in this change does not meet the evidence bar
+([`evidence.md`](evidence.md)) and is not reported.
 
 ## Worked examples
 

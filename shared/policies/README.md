@@ -76,6 +76,15 @@ Templates shared by both Skills live in
 when `human_review_output` / `human_inline_findings` is in effect, and
 `review-summary.md`).
 
+## Naming and placement convention
+
+Policies stay flat in this directory, named for the one concern they own.
+A suffix states the role: `-deepening` for a domain capability composed per
+[`specialist-depth.md`](specialist-depth.md), `-criteria`/`-analysis` for a
+bounded pass or exit condition, `-environment` for a gate or prerequisite of
+the policy it is named after. A rule lives in one owner file; other policies
+link to it. The Policy map above is the single discovery point.
+
 ## Shared vs. Skill-specific vs. repository policy
 
 ```text
