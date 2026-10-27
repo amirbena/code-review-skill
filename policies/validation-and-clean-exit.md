@@ -75,13 +75,13 @@ relevant to the change — see
 [`../README.md`](../README.md#local-validation-before-opening-a-pr) for the
 targeted mapping from change type to command. The full suite
 (`python3 -m unittest discover -s tests -t .` plus both metadata
-validations, link validation, and packaging) is not a local precondition;
-CI runs it through `.github/workflows/validate.yml`, which is the
-authoritative regression gate before merge
-([`git-pr-merge-policy.md`](git-pr-merge-policy.md)), routed as described
-under [Routed CI tests](#routed-ci-tests). Running the full sequence
-locally beforehand is optional, never required, and appropriate when a
-change genuinely spans multiple areas or a shared cross-cutting contract.
+validations, link validation, and packaging) and any other full
+verification run **only in GitHub Actions**, never locally: an Agent does
+not run them before a push or PR, even when a change spans multiple areas
+or a shared cross-cutting contract. CI runs them through
+`.github/workflows/validate.yml`, which is the authoritative regression
+gate before merge ([`git-pr-merge-policy.md`](git-pr-merge-policy.md)),
+routed as described under [Routed CI tests](#routed-ci-tests).
 
 ### Routed CI tests
 

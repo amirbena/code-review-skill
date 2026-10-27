@@ -118,7 +118,7 @@ GITHUB_POLICY_ORDER = (
 # marker only in the tuple of the file that owns the rule.
 GITHUB_POLICY_MARKERS: dict[str, tuple[str, ...]] = {
     "github-review.md": (
-        "## Canonical sub-policies, in authoritative order",
+        "## Canonical sub-policies, in explanatory dependency order",
         "review-authority.md",
         "reviewer-delta-review.md",
         "pr-scope.md",

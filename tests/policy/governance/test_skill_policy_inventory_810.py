@@ -16,11 +16,20 @@ import re
 import unittest
 from pathlib import Path
 
+from scripts.validation import context_size_report as size_report
+from runtime_platform.benchmark.reference import benchmark_blocking_verdict as bbv
 from tests.support.paths import REPO_ROOT
 
 SKILLS = {
     "local-code-review": ("local-review",),
     "github-pr-review": ("active-pr-review", "passive-pr-review"),
+}
+GITHUB_ONLY_POLICIES = {
+    "github-review.md", "review-authority.md", "review-action-authorization.md", "reviewer-delta-review.md",
+    "pr-scope.md", "review-context.md", "review-evidence.md", "review-reasoning.md", "finding-placement.md",
+    "review-output.md", "reviewer-brief.md", "stacked-pr-review.md", "stateful-delta-rereview.md",
+    "repository-checkout.md", "parallel-review.md", "structured-output.md", "review-status-enforcement.md",
+    "workspace-sibling-context.md",
 }
 _LINK = re.compile(r"\]\(([^)\s#]+\.md)")
 _SECTION = re.compile(r"^## 2\.[^\n]*\n(.*?)(?=^## \d+\.)", re.M | re.S)
@@ -40,18 +49,10 @@ def _resolve(base: Path, link: str) -> Path:
 
 
 def declared(skill_md: str, skill: str) -> tuple[set[Path], set[Path]]:
-    """(unconditional, conditional) files declared by section 2."""
-    section = _SECTION.search(skill_md).group(1)
-    unconditional: set[Path] = set()
-    conditional: set[Path] = set()
-    for paragraph in re.split(r"\n\s*\n", section):
-        bucket = conditional if paragraph.lstrip().startswith("Conditionally") else unconditional
-        bucket.update(_resolve(_skill_dir(skill), link) for link in _LINK.findall(paragraph))
-    return unconditional, conditional
-
-
-def _github_index() -> str:
-    return (_skill_dir("github-pr-review") / "policies" / "github-review.md").read_text(encoding="utf-8")
+    """(unconditional, conditional) files declared by section 2, from the one shared derivation."""
+    unconditional, context, conditional = size_report.section_targets(_SECTION.search(skill_md).group(1))
+    resolve = lambda links: {_resolve(_skill_dir(skill), link) for link in links if link.endswith(".md")}  # noqa: E731
+    return resolve([*unconditional, *context]), resolve(conditional)
 
 
 def steps_text(skill: str, runbook: str) -> str:
@@ -59,37 +60,15 @@ def steps_text(skill: str, runbook: str) -> str:
     return text.split("\n## Steps", 1)[1]
 
 
-_INDEX_ENTRY = re.compile(r"^([a-z0-9][a-z0-9-]*\.md)[ \t]{2,}(\S.*)$", re.M)
 _ENTRY_JOIN = re.compile(r"^\s*(?:and|plus|,)?\s*$")
 _PREDICATE_CUE = re.compile(r"\(|\b(?:when|per|only|if|for)\b")
 _STEP_START = re.compile(r"\n\d+[a-z]?\. ")
 
 
-def indexed_policies(skill: str, index_text: str) -> set[Path]:
-    """Skill-local sub-policies listed as structured entries of the `github-review.md` index.
-
-    Only the entry list of the first fenced block counts; prose mentions and
-    entries marked `(shared)` never do, and identity is the resolved path.
-    """
-    if skill != "github-pr-review":
-        return set()
-    block = re.search(r"## Canonical sub-policies[^\n]*\n+```[a-z]*\n(.*?)```", index_text, re.S)
-    if block is None:
-        return set()
-    local = _skill_dir(skill) / "policies"
-    return {
-        (local / name).resolve()
-        for name, description in _INDEX_ENTRY.findall(block.group(1))
-        if not description.startswith("(shared)")
-    }
-
-
-def undeclared(
-    skill: str, runbook: str, skill_md: str, index_text: str = "", steps: str | None = None
-) -> list[str]:
-    """Policies/templates a step applies that section 2 (or an indexed local sub-policy) does not declare."""
+def undeclared(skill: str, runbook: str, skill_md: str, steps: str | None = None) -> list[str]:
+    """Policies/templates a step applies that section 2 does not declare."""
     unconditional, conditional = declared(skill_md, skill)
-    known = unconditional | conditional | indexed_policies(skill, index_text)
+    known = unconditional | conditional
     runbook_dir = _skill_dir(skill) / "runbooks"
     missing = []
     for link in sorted(set(_LINK.findall(steps if steps is not None else steps_text(skill, runbook)))):
@@ -152,12 +131,9 @@ class LoadingInventoryTests(unittest.TestCase):
     def test_every_policy_a_step_applies_is_declared_in_section_2(self) -> None:
         for skill, runbooks in SKILLS.items():
             skill_md = (_skill_dir(skill) / "SKILL.md").read_text(encoding="utf-8")
-            index = ""
-            if skill == "github-pr-review":
-                index = (_skill_dir(skill) / "policies" / "github-review.md").read_text(encoding="utf-8")
             for runbook in runbooks:
                 with self.subTest(skill=skill, runbook=runbook):
-                    self.assertEqual(undeclared(skill, runbook, skill_md, index), [])
+                    self.assertEqual(undeclared(skill, runbook, skill_md), [])
 
     def test_mutation_dropping_a_conditional_declaration_is_detected(self) -> None:
         skill_md = (_skill_dir("local-code-review") / "SKILL.md").read_text(encoding="utf-8")
@@ -180,20 +156,30 @@ class LoadingInventoryTests(unittest.TestCase):
                     with self.subTest(skill=skill, start=paragraph[:60]):
                         self.assertRegex(paragraph, r"fail-closed|fails? closed|treated as not supplied|only when")
 
-    def test_github_index_exception_is_exercised_and_limited_to_local_entries(self) -> None:
+    def test_every_github_only_policy_has_exactly_one_tier(self) -> None:
         skill = "github-pr-review"
-        skill_md = (_skill_dir(skill) / "SKILL.md").read_text(encoding="utf-8")
-        index = _github_index()
-        indexed = indexed_policies(skill, index)
-        local_dir = (_skill_dir(skill) / "policies").resolve()
-        self.assertTrue(indexed)
-        for path in indexed:
-            with self.subTest(path=path.name):
-                self.assertEqual(path.parent, local_dir)
-                self.assertTrue(path.is_file())
-        # Without the index the local sub-policies are undeclared, so the exception is really used.
-        self.assertTrue(undeclared(skill, "active-pr-review", skill_md, ""))
-        self.assertEqual(undeclared(skill, "active-pr-review", skill_md, index), [])
+        unconditional, conditional = declared((_skill_dir(skill) / "SKILL.md").read_text(encoding="utf-8"), skill)
+        local = {p for p in unconditional | conditional if p.parent == (_skill_dir(skill) / "policies").resolve()}
+        # Every GitHub-only policy the review text names is declared; the set is also pinned by name.
+        self.assertEqual({p.name for p in local}, GITHUB_ONLY_POLICIES)
+        self.assertEqual(local & unconditional & conditional, set())
+
+    def test_checker_size_report_and_inventory_derive_the_same_set(self) -> None:
+        for skill in SKILLS:
+            text = (_skill_dir(skill) / "SKILL.md").read_text(encoding="utf-8")
+            from_report = {(REPO_ROOT / f.path).resolve() for f in size_report.build_skill_report(REPO_ROOT, skill).unconditional}
+            # The checker's paths drop the leading `../` hops, so `shared/...` is repo-relative.
+            from_checker = {
+                ((_skill_dir(skill) if p.startswith("policies/") else REPO_ROOT) / p).resolve()
+                for p in bbv.required_policy_files(text)
+            }
+            unconditional, context, _ = size_report.section_targets(_SECTION.search(text).group(1))
+            from_inventory = {_resolve(_skill_dir(skill), link) for link in unconditional if link.endswith(".md")}
+            with self.subTest(skill=skill):
+                self.assertEqual(from_checker, from_report)
+                self.assertEqual(from_checker, from_inventory)
+                # Context-phrase members are declared but are not part of the default set.
+                self.assertTrue(from_checker.isdisjoint(_resolve(_skill_dir(skill), link) for link in context))
 
     def test_mandatory_pipeline_policies_are_declared_unconditionally(self) -> None:
         for skill, runbooks in SKILLS.items():
@@ -291,32 +277,36 @@ class DetectorMutationTests(unittest.TestCase):
     def test_github_mandatory_severity_declaration_removed(self) -> None:
         mutated = self._unlink("github-pr-review", "shared/policies/severity.md")
         for runbook in SKILLS["github-pr-review"]:
-            self.assertIn("shared/policies/severity.md", undeclared("github-pr-review", runbook, mutated, _github_index()))
+            self.assertIn("shared/policies/severity.md", undeclared("github-pr-review", runbook, mutated))
 
-    def test_shared_policy_whose_basename_is_also_a_github_index_entry(self) -> None:
-        # parallel-review.md and structured-output.md exist as shared and as indexed local policies.
+    def test_removing_review_action_authorization_from_section_2_is_detected(self) -> None:
+        mutated = self._unlink("github-pr-review", "policies/review-action-authorization.md")
+        for runbook in SKILLS["github-pr-review"]:
+            self.assertIn(
+                "skills/github-pr-review/policies/review-action-authorization.md",
+                undeclared("github-pr-review", runbook, mutated),
+            )
+        self.assertNotIn("policies/review-action-authorization.md", bbv.required_policy_files(mutated))
+
+    def test_definitive_verdict_without_reading_review_action_authorization_is_a_violation(self) -> None:
+        required = bbv.required_policy_files(self._md("github-pr-review"))
+        calls = [("Read", {"file_path": f"/repo/skills/github-pr-review/{p}"}) for p in required if "review-action-authorization" not in p]
+        check = bbv.check_policy_reads(
+            self._md("github-pr-review"),
+            calls,
+            result_label="✅ Review Clean",
+            decision_label="REVIEW CLEAN",
+            coverage="complete",
+        )
+        self.assertFalse(check.ok)
+        self.assertTrue(any("review-action-authorization.md" in v for v in check.violations))
+
+    def test_shared_policy_whose_basename_is_also_a_local_policy_is_declared_separately(self) -> None:
+        # parallel-review.md and structured-output.md exist as shared and as local policies.
         mutated = self._unlink("github-pr-review", "shared/policies/parallel-review.md")
-        found = undeclared("github-pr-review", "active-pr-review", mutated, _github_index())
+        found = undeclared("github-pr-review", "active-pr-review", mutated)
         self.assertIn("shared/policies/parallel-review.md", found)
-        steps = steps_text("github-pr-review", "active-pr-review") + "\n[x](../../../shared/policies/structured-output.md)\n"
-        mutated = self._unlink("github-pr-review", "shared/policies/structured-output.md")
-        found = undeclared("github-pr-review", "active-pr-review", mutated, _github_index(), steps=steps)
-        self.assertIn("shared/policies/structured-output.md", found)
-
-    def test_incidental_filename_mention_in_index_prose_is_not_a_declaration(self) -> None:
-        skill_md = self._md("github-pr-review")
-        steps = steps_text("github-pr-review", "active-pr-review") + "\n[x](../../../shared/policies/null-absence-risk.md)\n"
-        prose = _github_index() + "\nUnrelated prose that names null-absence-risk.md in passing.\n"
-        self.assertEqual(undeclared("github-pr-review", "active-pr-review", skill_md, prose, steps=steps), ["shared/policies/null-absence-risk.md"])
-
-    def test_removed_index_entry_no_longer_excuses_a_local_policy(self) -> None:
-        index = re.sub(r"(?m)^review-output\.md .*\n", "", _github_index(), count=1)
-        self.assertNotEqual(index, _github_index())
-        found = undeclared("github-pr-review", "active-pr-review", self._md("github-pr-review"), index)
-        self.assertIn("skills/github-pr-review/policies/review-output.md", found)
-
-    def test_shared_entry_in_the_index_never_establishes_a_declaration(self) -> None:
-        self.assertNotIn("review-base-policy.md", {p.name for p in indexed_policies("github-pr-review", _github_index())})
+        self.assertNotIn("skills/github-pr-review/policies/parallel-review.md", found)
 
     def test_mandatory_policy_demoted_to_conditional(self) -> None:
         for skill, runbook in (("local-code-review", "local-review"), ("github-pr-review", "active-pr-review")):
@@ -329,7 +319,7 @@ class DetectorMutationTests(unittest.TestCase):
             mutated = self._in_section_2(self._md(skill), demote)
             self.assertNotEqual(mutated, self._md(skill))
             with self.subTest(skill=skill):
-                self.assertEqual(undeclared(skill, runbook, mutated, _github_index()), [])  # still "declared"
+                self.assertEqual(undeclared(skill, runbook, mutated), [])  # still "declared"
                 self.assertEqual(pipeline_misclassified(skill, runbook, mutated), ["shared/policies/severity.md"])
 
     def test_single_conditional_activation_predicate_removed(self) -> None:
@@ -354,7 +344,7 @@ class DetectorMutationTests(unittest.TestCase):
             steps = steps_text(skill, runbook) + "\n[x](../../../shared/policies/null-absence-risk.md)\n"
             with self.subTest(skill=skill):
                 self.assertEqual(
-                    undeclared(skill, runbook, self._md(skill), _github_index(), steps=steps),
+                    undeclared(skill, runbook, self._md(skill), steps=steps),
                     ["shared/policies/null-absence-risk.md"],
                 )
 

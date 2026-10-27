@@ -26,6 +26,8 @@ UNCONDITIONAL_CUE_RE = re.compile(r"^(?:shared,\s*)?always\b|^this skill's own\b
 CONDITIONAL_CUE_RE = re.compile(r"^conditionally\b", re.I)
 # Links after this phrase belong to a context-specific member, not the default set.
 CONTEXT_MEMBER_RE = re.compile(r"\bin\s+[^.]*?contexts?,\s*also\b|—\s*with [a-z ]+ workers\s*—", re.I)
+# A "see [x](y)" cross-reference points at a file; it never declares it.
+SEE_LINK_RE = re.compile(r"\bsee\s+\[[^\]]+\]\([^)]+\)", re.I)
 
 
 class ReportError(Exception):
@@ -82,8 +84,12 @@ def resolve_link(repo: Path, skill_md: Path, target: str) -> str | None:
     return rel
 
 
-def classify_section(repo: Path, skill_md: Path, section: str) -> tuple[list[str], list[str], list[str]]:
-    """Return (unconditional, context-conditional, conditional) repo-relative paths in document order."""
+def section_targets(section: str) -> tuple[list[str], list[str], list[str]]:
+    """The one derivation of a Skill's load inventory: raw (unconditional, context-conditional, conditional)
+    link targets of a section 2 body, in document order.
+
+    Shared by this report, the policy-read checker and the inventory test, so none keeps its own list.
+    """
     unconditional: list[str] = []
     context: list[str] = []
     conditional: list[str] = []
@@ -97,10 +103,23 @@ def classify_section(repo: Path, skill_md: Path, section: str) -> tuple[list[str
         else:
             continue
         for chunk, bucket in targets:
-            for link in LINK_RE.findall(chunk):
-                rel = resolve_link(repo, skill_md, link)
-                if rel and rel not in bucket:
-                    bucket.append(rel)
+            for link in LINK_RE.findall(SEE_LINK_RE.sub("", chunk)):
+                if link not in bucket:
+                    bucket.append(link)
+    return unconditional, context, conditional
+
+
+def classify_section(repo: Path, skill_md: Path, section: str) -> tuple[list[str], list[str], list[str]]:
+    """Return (unconditional, context-conditional, conditional) repo-relative paths in document order."""
+    buckets: list[list[str]] = []
+    for raw in section_targets(section):
+        bucket: list[str] = []
+        for link in raw:
+            rel = resolve_link(repo, skill_md, link)
+            if rel and rel not in bucket:
+                bucket.append(rel)
+        buckets.append(bucket)
+    unconditional, context, conditional = buckets
     context = [p for p in context if p not in unconditional]
     conditional = [p for p in conditional if p not in unconditional and p not in context]
     return unconditional, context, conditional
@@ -129,12 +148,6 @@ def build_skill_report(repo: Path, skill: str) -> SkillReport:
     report.conditional = [measure(repo, p) for p in conditional]
     report.procedure = [measure(repo, p) for p in skill_links(repo, skill_md, text, "runbooks")]
     report.output_templates = [measure(repo, p) for p in skill_links(repo, skill_md, text, "templates")]
-    own_policies = [f.path for f in report.unconditional if f.path.startswith(f"skills/{skill}/policies/")]
-    index = [p for p in own_policies if p.endswith("github-review.md")]
-    if index:
-        report.unmeasured.append(
-            f"{index[0]} is a loading index; the policies it loads are not summed into the default set"
-        )
     return report
 
 

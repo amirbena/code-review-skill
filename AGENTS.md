@@ -112,6 +112,12 @@ canonical, detailed rule lives in the policy named after it.
   stray generated artifacts or Python cache, no destructive cleanup used
   to manufacture that state. Canonical:
   [`policies/validation-and-clean-exit.md`](policies/validation-and-clean-exit.md).
+- **Full tests and full verification run only in GitHub Actions.** An
+  Agent never runs the full test suite or the full verification sequence
+  locally; it runs only the targeted subset relevant to the change, and
+  `.github/workflows/validate.yml` is the sole place the full run happens.
+  Canonical:
+  [`policies/validation-and-clean-exit.md`](policies/validation-and-clean-exit.md).
 - **Packaged Skills are independent of repository-level instructions.**
   No packaged Skill resource (`SKILL.md`, a packaged policy, runbook,
   template, or `shared/`-packaged resource) may depend on this

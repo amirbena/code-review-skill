@@ -64,8 +64,20 @@ class RequiredSetTests(unittest.TestCase):
         required = bbv.required_policy_files(GITHUB_SKILL)
         self.assertIn("shared/policies/review-ownership.md", required)
         self.assertIn(VERDICT_CONSISTENCY, required)
-        for dropped in ("parallel-review", "agent-delegation", "finding-placement", "repository-expansion"):
+        for dropped in ("parallel-review", "agent-delegation", "repository-expansion", "stacked-pr-review"):
             self.assertFalse([p for p in required if dropped in p], dropped)
+
+    def test_github_set_includes_the_unconditional_github_only_policies(self) -> None:
+        required = bbv.required_policy_files(GITHUB_SKILL)
+        self.assertEqual(len(required), 29)
+        for name in ("review-action-authorization", "review-authority", "review-output", "github-review", "finding-placement"):
+            self.assertIn(f"policies/{name}.md", required)
+
+    def test_a_shared_read_does_not_confirm_the_same_named_local_policy(self) -> None:
+        calls = [("Read", {"file_path": "/repo/skills/github-pr-review/../../shared/policies/review-context.md"})]
+        states = bbv.classify_policy_reads(["policies/review-context.md", "shared/policies/review-context.md"], calls)
+        self.assertEqual(states["policies/review-context.md"], ReadState.MISSING)
+        self.assertEqual(states["shared/policies/review-context.md"], ReadState.CONFIRMED)
 
     def test_valid_fixture_confirms_exactly_the_current_required_set(self) -> None:
         calls = _replayed(_fixture("complete-review-confirmed-reads.json"))
