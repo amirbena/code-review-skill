@@ -57,6 +57,16 @@ restated here because hiding them behind a link would be dangerous.
 
 ## Review procedure
 
+**Load first.** Before inspecting any diff, open every file in section 2
+(the only policy inventory) in full and confirm each; the phase-loaded group
+opens at its phase. Prefer the runtime's file-read facility, a file or small
+group per call, over shell output that can be cut off silently, and check
+each file's line count against its extent. On a short or truncated read,
+resume from the last verified line; only a failed recovery is
+`REVIEW INCOMPLETE`, per
+[`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md),
+"Bounded, resumable policy loading."
+
 The review resolves the local scope, inspects the Git delta by category,
 applies the shared review rules, derives the decision mechanically, and
 returns one report. The optional Jira and PR inputs never widen scope: the

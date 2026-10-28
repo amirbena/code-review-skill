@@ -5,7 +5,7 @@ decision. The numbered Steps below are the only authoritative execution sequence
 
 ## Steps
 
-**Mandatory-loading checkpoint (runs before step 1).** Run it per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck" and "Bounded, resumable policy loading".
+**Mandatory-loading checkpoint (runs before step 1).** Run it per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck" and "Bounded, resumable policy loading". Open the section 2 inventory now, before any diff inspection, reading each file in full; recover a short or truncated read by resuming from the verified line before treating any file as unloaded.
 
 1. **Before any other step** (after the checkpoint above), resolve the repository and PR, then resolve
    the authenticated GitHub identity, the PR author, and whether the two
