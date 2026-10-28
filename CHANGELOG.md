@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v1.83.3 — 2026-10-28
+
+### Fixed
+
+- Review entry points and runbooks now tell reviewers to load the section 2 policies in full before inspecting the diff and to recover truncated reads before returning `REVIEW INCOMPLETE` (#834).
+
 ## v1.83.2 — 2026-10-27
 
 ### Fixed
