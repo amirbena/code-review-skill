@@ -5,7 +5,7 @@ The numbered Steps below are the only authoritative execution sequence. The poli
 
 ## Steps
 
-**Mandatory-loading checkpoint (runs before step 1).** Run it per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck" and "Bounded, resumable policy loading".
+**Mandatory-loading checkpoint (runs before step 1).** Run it per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck" and "Bounded, resumable policy loading". Open the section 2 inventory now, before any diff inspection, reading each file in full; recover a short or truncated read by resuming from the verified line before treating any file as unloaded.
 
 1. Resolve the repository and PR from the given input (PR URL, PR number
    + repository context, or repository + PR number).

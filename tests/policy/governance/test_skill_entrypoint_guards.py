@@ -140,6 +140,42 @@ class SoftLineCeilings(unittest.TestCase):
             )
 
 
+class LoadFirstSurfacedAtEntryPoints(unittest.TestCase):
+    """Issue #833: the loading procedure is actionable at first use.
+
+    The rules stay owned by ``review-stopping-criteria.md``; this only
+    pins that each entry point and runbook checkpoint tells the reviewer to
+    load section 2 first and to recover short reads before ``INCOMPLETE``.
+    """
+
+    RUNBOOKS = (
+        "skills/local-code-review/runbooks/local-review.md",
+        "skills/github-pr-review/runbooks/passive-pr-review.md",
+        "skills/github-pr-review/runbooks/active-pr-review.md",
+    )
+
+    def test_skill_entrypoints_carry_load_first_in_review_procedure(self) -> None:
+        for path in (LOCAL_SKILL, GITHUB_SKILL):
+            t = _norm(path)
+            start = t.index("## Review procedure")
+            block = t[start : start + 900]
+            self.assertIn("Load first", block, path.name)
+            self.assertIn("section 2", block, path.name)
+            self.assertIn("Before inspecting any diff", block, path.name)
+            self.assertIn("resume from the last verified line", block, path.name)
+            self.assertIn("only a failed recovery", block, path.name)
+            self.assertIn("Bounded, resumable policy loading", block, path.name)
+
+    def test_runbook_checkpoints_state_the_procedure(self) -> None:
+        for rel in self.RUNBOOKS:
+            t = _norm(REPO_ROOT / rel)
+            start = t.index("Mandatory-loading checkpoint (runs before step 1)")
+            line = t[start : start + 900]
+            self.assertIn("Open the section 2 inventory now", line, rel)
+            self.assertIn("before any diff inspection", line, rel)
+            self.assertIn("resuming from the verified line", line, rel)
+
+
 class LocalEntrypointStillLinksItsCanonicalPolicies(unittest.TestCase):
     def setUp(self) -> None:
         self.t = _norm(LOCAL_SKILL)

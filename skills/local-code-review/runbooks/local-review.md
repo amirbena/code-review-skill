@@ -60,7 +60,7 @@ which a value must be resolved before it is used, or what is reported.
 
 ## Steps
 
-**Mandatory-loading checkpoint (runs before step 1).** Run it per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck" and "Bounded, resumable policy loading".
+**Mandatory-loading checkpoint (runs before step 1).** Run it per [`review-stopping-criteria.md`](../../../shared/policies/review-stopping-criteria.md), "Mandatory-loading checkpoint and pre-verdict recheck" and "Bounded, resumable policy loading". Open the section 2 inventory now, before any diff inspection, reading each file in full; recover a short or truncated read by resuming from the verified line before treating any file as unloaded.
 
 0. **If, and only if, the caller supplied a repository-roots list of 2 or
    more roots:** validate and normalize each supplied root, and reject
