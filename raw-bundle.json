@@ -1,0 +1,117 @@
+{
+  "confirmation_reruns": [],
+  "invocations": [
+    {
+      "case_id": null,
+      "run": {
+        "cases": [
+          {
+            "id": "correctness-off-by-one-pagination",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "`page()` returns one extra item per page `offset` is the zero-based start of the page, so `items[offset : offset + page_size]` is exactly `page_size` items. The new `end = offset + page_size + 1` makes the slice one element too long. For `items=range(10)`, `page_number=1`, `page_size=3`, it returns `[0, 1, 2, 3]` instead of `[0, 1, 2]`. The last item of each page is then also the first item of the next page, which starts at `offset + page_size`. The old code was correct, and nothing else in the diff explains the `+ 1`. Every full page has `page_size + 1` entries and repeats the next page's first entry. Callers that render, count, or iterate pages get duplicated records and page sizes that break the function's contract.",
+                "extra": {
+                  "defect_kind": "off-by-one",
+                  "evidence_quotes": [
+                    "offset",
+                    "items[offset : offset + page_size]",
+                    "page_size",
+                    "end = offset + page_size + 1",
+                    "items=range(10)",
+                    "page_number=1",
+                    "page_size=3",
+                    "[0, 1, 2, 3]",
+                    "[0, 1, 2]",
+                    "offset + page_size",
+                    "+ 1"
+                  ]
+                },
+                "location": {
+                  "line": 3,
+                  "path": "app/pagination.py"
+                },
+                "severity": "P1"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "no-op-comment-and-rename",
+            "input_kind": "patch",
+            "produced_findings": [],
+            "status": "executed"
+          },
+          {
+            "id": "quality-duplicated-branch-logic",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Message formatting duplicated in each channel branch The new `sms` branch repeats `msg = format_message(user)` from the `email` branch at line 3. The two branches differ only in the sender function and the address attribute (`send_email(user.email, \u2026)` vs `send_sms(user.phone, \u2026)`). Message construction now lives in two places. Each further channel adds another copy. If formatting changes, for example per-channel formatting or a changed `format_message` signature, every branch must be edited in step or the channels drift apart. This is a maintainability cost, not a correctness defect today.",
+                "extra": {
+                  "defect_kind": "duplicated-logic",
+                  "evidence_quotes": [
+                    "sms",
+                    "msg = format_message(user)",
+                    "email",
+                    "send_email(user.email, \u2026)",
+                    "send_sms(user.phone, \u2026)"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 7,
+                    "start": 5
+                  },
+                  "path": "app/notify.py"
+                },
+                "severity": "P2"
+              }
+            ],
+            "status": "executed"
+          },
+          {
+            "id": "security-command-injection",
+            "input_kind": "patch",
+            "produced_findings": [
+              {
+                "claim": "Shell command injection through `name` in `make_archive` `name` is interpolated unquoted into `cmd` (line 5), and `cmd` is passed to `subprocess.run(..., shell=True)` (line 6). The shell therefore parses `name`. For example, `name = \"x; rm -rf ~ #\"` runs `tar -czf x`, then `rm -rf ~`, with the rest commented out. `$(...)`, backticks, `&&`, `|` and newlines work the same way. Nothing in the function validates or quotes `name`. The previous list-argument form passed `name` to `tar` as a single argv element, so it was never shell-parsed. The edit introduces the injection. The repository has no in-repo caller of `make_archive` (grep found only the definition), so I could not trace where `name` comes from. It is a public function parameter, though, and the sink is unconditional. Any caller that passes an externally influenced value, such as a request parameter, tenant name, or uploaded filename, gives the attacker arbitrary command execution with the privileges of the backup process. A `name` containing spaces or glob characters also silently changes the `tar` arguments, so the archive can be wrong even without malicious input.",
+                "extra": {
+                  "defect_kind": "command-injection",
+                  "evidence_quotes": [
+                    "name",
+                    "cmd",
+                    "cmd",
+                    "subprocess.run(..., shell=True)",
+                    "name",
+                    "name = \"x; rm -rf ~ #\"",
+                    "tar -czf x",
+                    "rm -rf ~",
+                    "$(...)",
+                    "&&",
+                    "|",
+                    "name",
+                    "name",
+                    "tar",
+                    "make_archive",
+                    "name"
+                  ]
+                },
+                "location": {
+                  "lines": {
+                    "end": 6,
+                    "start": 5
+                  },
+                  "path": "app/backup.py"
+                },
+                "severity": "P0"
+              }
+            ],
+            "status": "executed"
+          }
+        ],
+        "ok": true
+      }
+    }
+  ]
+}
