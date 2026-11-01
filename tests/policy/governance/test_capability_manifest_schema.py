@@ -25,6 +25,34 @@ REQUIRED_STRING_FIELDS = ("capability", "summary", "loads", "benchmark")
 REQUIRED_LIST_FIELDS = ("adapters", "files", "requires", "never")
 VALID_LOADS = {"always", "on-activation"}
 VALID_ADAPTERS = {"local", "github"}
+EXPECTED_MANIFESTS = {
+    "authorization-github",
+    "conditional-passes",
+    "context-resolution",
+    "design-reference",
+    "external-contract-context",
+    "finding-placement-derivation",
+    "parallel-execution",
+    "publication-github",
+    "reasoning-checkpoint",
+    "remediation",
+    "rendered-inspection",
+    "repository-checkout",
+    "reviewer-assist",
+    "runtime-execution",
+    "scale",
+    "specialist-depth",
+    "stateful-review",
+    "structured-output",
+    "workspace-sibling-context",
+}
+UNMANIFESTED_REQUIRES_TARGETS = {
+    "capability-posture",
+    "review-router",
+    "review-kernel",
+    "finding-contract",
+    "review-context-core",
+}
 
 
 def _manifest_paths() -> list[Path]:
@@ -38,25 +66,38 @@ class TestCapabilityManifestSchema(unittest.TestCase):
             f"expected at least one capabilities/*/capability.yaml under {CAPABILITIES_DIR}",
         )
 
-    def test_every_manifest_declares_the_thirteen_m4_capabilities(self) -> None:
-        expected = {
-            "specialist-depth",
-            "conditional-passes",
-            "scale",
-            "runtime-execution",
-            "parallel-execution",
-            "context-resolution",
-            "remediation",
-            "finding-placement-derivation",
-            "stateful-review",
-            "reviewer-assist",
-            "publication-github",
-            "authorization-github",
-            "repository-checkout",
-        }
+    def test_manifest_directory_set_is_exact(self) -> None:
         found = {path.parent.name for path in _manifest_paths()}
-        missing = expected - found
-        self.assertFalse(missing, f"missing capability.yaml for: {sorted(missing)}")
+        self.assertEqual(
+            found,
+            EXPECTED_MANIFESTS,
+            f"manifest set drifted; missing: {sorted(EXPECTED_MANIFESTS - found)}, "
+            f"unexpected: {sorted(found - EXPECTED_MANIFESTS)}",
+        )
+
+    def test_requires_targets_resolve_to_manifests_or_documented_unmanifested_names(
+        self,
+    ) -> None:
+        for name in UNMANIFESTED_REQUIRES_TARGETS:
+            manifest_path = CAPABILITIES_DIR / name / "capability.yaml"
+            self.assertFalse(
+                manifest_path.exists(),
+                f"{name!r} has a manifest; remove it from UNMANIFESTED_REQUIRES_TARGETS",
+            )
+
+        valid_targets = EXPECTED_MANIFESTS | UNMANIFESTED_REQUIRES_TARGETS
+        for path in _manifest_paths():
+            manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+            for dependency in manifest["requires"]:
+                with self.subTest(
+                    manifest=path.parent.name,
+                    dependency=dependency,
+                ):
+                    self.assertIn(
+                        dependency,
+                        valid_targets,
+                        f"unresolved requires target {dependency!r} in {path}",
+                    )
 
     def test_each_manifest_is_well_formed(self) -> None:
         manifests = _manifest_paths()
