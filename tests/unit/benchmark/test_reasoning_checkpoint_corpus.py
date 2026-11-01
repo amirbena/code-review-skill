@@ -15,6 +15,8 @@ import re
 import unittest
 from pathlib import Path
 
+from tests.support.paths import REPO_ROOT
+
 from runtime_platform.benchmark.reference import reasoning_checkpoint_fixtures as fx
 from runtime_platform.benchmark.reference.reasoning_checkpoint_fixtures import (
     ALL_CASES,
@@ -406,7 +408,7 @@ class PackagedContractPinTests(unittest.TestCase):
     (#566), so a change to the contract cannot leave the corpus green against
     a stale copy."""
 
-    ROOT = Path(__file__).resolve().parents[3]
+    ROOT = REPO_ROOT
 
     def _read(self, relative: str) -> str:
         return " ".join((self.ROOT / relative).read_text(encoding="utf-8").split())

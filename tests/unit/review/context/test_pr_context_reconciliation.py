@@ -15,6 +15,8 @@ import sys
 import textwrap
 import unittest
 
+from tests.support.paths import REPO_ROOT
+
 from tests.reference.review import pr_context_reconciliation as prc
 from tests.reference.review import current_evidence as ce
 
@@ -731,7 +733,7 @@ class CurrentEvidenceValidationOrderingTests(unittest.TestCase):
                 raise SystemExit("malformed evidence was not rejected")
             """
         )
-        repo_root = pathlib.Path(__file__).resolve().parents[4]
+        repo_root = REPO_ROOT
         for seed in ("0", "1", "42", "12345"):
             with self.subTest(seed=seed):
                 env = dict(os.environ, PYTHONHASHSEED=seed)

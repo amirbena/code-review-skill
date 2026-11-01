@@ -12,6 +12,8 @@ import unittest
 import zipfile
 from pathlib import Path
 
+from tests.support.paths import REPO_ROOT
+
 from tests.unit.release._shared import rw
 from tests.support.git_repo import isolate_git_config
 
@@ -48,7 +50,7 @@ class DistributionTests(unittest.TestCase):
     def _make_repo(self) -> None:
         (self.repo / "scripts" / "packaging").mkdir(parents=True)
         (self.repo / "LICENSE").write_text("MIT\n")
-        shutil.copytree(Path(__file__).resolve().parents[3] / "distribution", self.repo / "distribution")
+        shutil.copytree(REPO_ROOT / "distribution", self.repo / "distribution")
         (self.repo / "scripts" / "packaging" / "package-manifest.json").write_text(
             json.dumps({"skills": {"a": {"name": "a", "archive": "a-skill.zip"}}})
         )

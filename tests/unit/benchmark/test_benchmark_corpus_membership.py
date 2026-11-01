@@ -14,6 +14,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tests.support.paths import REPO_ROOT
+
 from runtime_platform.benchmark.scripts import benchmark_corpus_membership as membership
 
 
@@ -105,7 +107,7 @@ class DiscoverComprehensiveFixturesTest(unittest.TestCase):
     def test_real_corpus_tree_matches_the_issues_documented_approximate_count(self) -> None:
         # Sanity check against the real repository corpus tree (Issue #431
         # states "~89" fixtures) — proves this is a live scan, not a stub.
-        repo_root = Path(__file__).resolve().parents[3]
+        repo_root = REPO_ROOT
         corpus_root = repo_root / "benchmark" / "corpus"
         if not corpus_root.exists():
             self.skipTest("real corpus tree not present in this checkout")
