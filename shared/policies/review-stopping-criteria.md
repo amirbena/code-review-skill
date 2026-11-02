@@ -129,6 +129,16 @@ reviewer, or a dimension whose absence does not change what depth
 requires (for example a `standard`-depth change with no `elevated`/`deep`
 sub-passes to begin with), never makes coverage `incomplete`.
 
+**Recover before labeling.** `incomplete` records a pass that could not be
+produced, not one that has merely not been performed yet. Before coverage is
+labeled `incomplete`, each missing required pass or load that the available
+tools and context still allow is performed, once, and coverage is
+re-evaluated over the final state; a pass already at its stop condition and
+content already verified are not repeated. A pass that cannot be performed
+leaves coverage `incomplete`, and `detail` names that specific blocker. Once
+every required pass has reached its stop condition, the review stops and the
+Decision is derived.
+
 ## Mandatory-loading checkpoint and pre-verdict recheck
 
 Trigger 1's loading rule is enforced at two fixed points, not left to a
