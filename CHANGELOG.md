@@ -18,6 +18,12 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v2.0.0 — 2026-11-03
+
+### Breaking
+
+- Reviews verify every requirement thoroughly but bound defect investigation to concrete, evidence-driven scope, with simpler review-scope guidance and leaner GitHub policy loading (v2.0.0) (#840).
+
 ## v1.83.4 — 2026-11-02
 
 ### Fixed
