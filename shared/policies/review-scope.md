@@ -695,3 +695,35 @@ reviewer reasons from code and context.
 
 Do not manufacture findings merely to appear thorough. A clean review
 with zero findings is a valid, complete outcome.
+
+### Bounded defect investigation
+
+The review is a task-completion verifier first: **verify all requirements,
+investigate only what warrants investigation, stop when sufficient evidence
+exists.** The two activities have different depth rules.
+
+- **Requirement verification is thorough.** Every applicable requirement is
+  checked per [`requirement-coverage.md`](requirement-coverage.md).
+- **Defect investigation is bounded.** An observation that looks suspicious
+  is investigated as one named potential defect:
+  1. State the specific suspected defect and the contract it would violate.
+  2. Read the changed code and the execution path that reaches it; widen to
+     a direct dependency, caller, or test only when a concrete fact already
+     read points there.
+  3. Stop as soon as the concern is confirmed (it clears
+     [`evidence.md`](evidence.md)) or dismissed (the evidence read shows the
+     path is guarded, unreachable, or intended). Further reads that cannot
+     change that outcome are not made.
+  4. A localized suspicion never becomes a repository-wide investigation; a
+     concern that cannot be settled within the change and its relevant
+     dependencies is reported with the label its evidence supports
+     ([`evidence.md`](evidence.md)) or dropped, and is not chased further.
+
+Effort is proportional to demonstrated risk — a fact in the change or in
+what was read — not to a theoretical possibility. A file or fact already read
+for one requirement, dimension, or candidate is reused, not re-read or
+re-derived for the next; a tool call whose result cannot change a conclusion
+is not made. This sets no new scope, evidence, or severity model and never
+relaxes a mandatory pass, policy-loading obligation, or coverage condition:
+those are owned elsewhere, and a pass the change's risk activates still runs
+to its own stop condition.

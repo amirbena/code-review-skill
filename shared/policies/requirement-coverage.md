@@ -79,6 +79,17 @@ Every status needs a non-empty explanation. `implemented`,
 test, configuration, or validation evidence. Context proves what was requested;
 it never proves that implementation exists.
 
+## Thorough verification, reused evidence
+
+Every applicable requirement is verified against concrete implementation
+evidence; none is skipped or marked on a keyword match to save effort. Verify
+by establishing each behavior once: inspect a code path, test, or validation
+result a single time, and cite it for every requirement it evidences instead of
+re-inspecting the same behavior per requirement. Read further only for the
+portion of a requirement the evidence already gathered leaves uncovered. A
+missing or partially implemented requirement is reported with its status and
+the uncovered portion, per the table above.
+
 ## Coverage, findings, and decision are distinct
 
 Coverage is an assessment, not a fourth severity. A missing or partial

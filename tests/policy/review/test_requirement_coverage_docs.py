@@ -37,6 +37,19 @@ class RequirementCoverageDocumentationTests(unittest.TestCase):
         self.assertIn("that modifier makes\naggregate coverage incomplete", text)
         self.assertIn("affirmative evidence that it does not apply", text)
 
+    def test_policy_reuses_evidence_across_requirements(self) -> None:
+        text = POLICY.read_text(encoding="utf-8")
+        self.assertIn("Thorough verification, reused evidence", text)
+        self.assertIn("a single time", text)
+
+    def test_review_scope_bounds_defect_investigation(self) -> None:
+        text = (ROOT / "shared" / "policies" / "review-scope.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("### Bounded defect investigation", text)
+        self.assertIn("never becomes a repository-wide investigation", text)
+        self.assertIn("proportional to demonstrated risk", text)
+
     def test_both_skills_and_report_templates_are_wired(self) -> None:
         paths = (
             ROOT / "skills" / "local-code-review" / "SKILL.md",
