@@ -71,7 +71,8 @@ class RequiredSetTests(unittest.TestCase):
 
     def test_github_set_includes_the_unconditional_github_only_policies(self) -> None:
         required = bbv.required_policy_files(GITHUB_SKILL)
-        self.assertEqual(len(required), 28)
+        self.assertEqual(len(required), 27)
+        self.assertNotIn("shared/policies/review-context.md", required)
         for name in ("review-action-authorization", "review-authority", "review-output", "github-review", "finding-placement"):
             self.assertIn(f"policies/{name}.md", required)
 

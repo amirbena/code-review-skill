@@ -37,6 +37,39 @@ class RequirementCoverageDocumentationTests(unittest.TestCase):
         self.assertIn("that modifier makes\naggregate coverage incomplete", text)
         self.assertIn("affirmative evidence that it does not apply", text)
 
+    def test_policy_reuses_evidence_across_requirements(self) -> None:
+        text = POLICY.read_text(encoding="utf-8")
+        self.assertIn("Thorough verification, reused evidence", text)
+        self.assertIn("a single time", text)
+
+    def test_activated_coverage_is_a_required_pass(self) -> None:
+        text = " ".join(POLICY.read_text(encoding="utf-8").split())
+        self.assertIn("producing the model is a required pass", text)
+        self.assertIn("trigger 1", text)
+
+    def test_github_skill_loads_review_context_conditionally_and_fail_closed(
+        self,
+    ) -> None:
+        text = (ROOT / "skills" / "github-pr-review" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        text = text.split("## 2. Required Policy Loading", 1)[1]
+        always = text.split("Conditionally, by review evidence", 1)[0]
+        self.assertNotIn("shared/policies/review-context.md", always)
+        cond = text.split("Conditionally, by review evidence", 1)[1].split(
+            "Conditionally, by the review's own pass predicates", 1
+        )[0]
+        self.assertIn("shared/policies/review-context.md", cond)
+        self.assertIn("ambiguity loads them", cond)
+
+    def test_review_scope_bounds_defect_investigation(self) -> None:
+        text = (ROOT / "shared" / "policies" / "review-scope.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("### Bounded defect investigation", text)
+        self.assertIn("never becomes a repository-wide investigation", text)
+        self.assertIn("proportional to demonstrated risk", text)
+
     def test_both_skills_and_report_templates_are_wired(self) -> None:
         paths = (
             ROOT / "skills" / "local-code-review" / "SKILL.md",

@@ -20,6 +20,11 @@ authoritative `requirement` or `acceptance_criteria` entry. An accepted
 decision or repository policy may constrain interpretation, but does not by
 itself activate task-completion coverage.
 
+Once activated, producing the model is a required pass: an activated review
+that emits no coverage model or omits a requirement did not produce a required
+pass, which [`review-stopping-criteria.md`](review-stopping-criteria.md),
+trigger 1, treats as `incomplete` coverage, never a clean result.
+
 When no activating contract is supplied, emit no coverage model, no
 completeness signal, and no coverage-derived finding. Do not ask for a
 contract and do not infer one from a branch name, PR title, commit message,
@@ -78,6 +83,17 @@ Every status needs a non-empty explanation. `implemented`,
 `partially_evidenced`, and `not_evidenced` need concrete current-target code,
 test, configuration, or validation evidence. Context proves what was requested;
 it never proves that implementation exists.
+
+## Thorough verification, reused evidence
+
+Every applicable requirement is verified against concrete implementation
+evidence; none is skipped or marked on a keyword match to save effort. Verify
+by establishing each behavior once: inspect a code path, test, or validation
+result a single time, and cite it for every requirement it evidences instead of
+re-inspecting the same behavior per requirement. Read further only for the
+portion of a requirement the evidence already gathered leaves uncovered. A
+missing or partially implemented requirement is reported with its status and
+the uncovered portion, per the table above.
 
 ## Coverage, findings, and decision are distinct
 

@@ -177,6 +177,40 @@ review target and prior-evidence source
 `skills/github-pr-review/policies/review-context.md` and `review-evidence.md`).
 Do not re-document the shared semantics in a Skill's own policy.
 
+## Authoring and Maintaining Skill Policies
+
+Applies to every policy, runbook, and template under `shared/` and
+`skills/`. It guides contributors and coding agents developing this
+repository; it is a development policy only, is never packaged or loaded by
+either Skill, and adds no review rule.
+
+- **One responsibility.** A policy owns one responsibility, and every rule
+  has one canonical owner. Reference an owner instead of restating its rule;
+  do not leave two policies with overlapping ownership.
+- **Simplify before adding.** Prefer tightening, consolidating, or removing
+  existing text over adding a policy, checkpoint, or layer. Add a new policy
+  only when no existing canonical policy can reasonably own the
+  responsibility.
+- **Mandatory vs. conditional.** Mandatory is for safety-critical,
+  fail-closed invariants and rules every review applies. Everything
+  specialized is conditional, with a declared loading obligation in each
+  consuming Skill's `SKILL.md` section 2.
+- **Evidence-based activation.** A conditional policy states an observable
+  condition in the change, the supplied context, or the invocation that
+  activates it — never a file type, path, or guess — and fails closed:
+  unknown or ambiguous applicability loads it, never skips it. An activated
+  policy must be loaded before the first decision it governs.
+- **Defined completion.** An activated policy states when its responsibility
+  is complete, including that "insufficient evidence" is a valid terminal
+  outcome, and a required pass that was activated but not produced is a
+  coverage gap, never a clean result.
+- **Proportionate instructions.** Avoid exhaustive procedures, extra
+  checkpoints, and speculative investigations; investigate only what the
+  evidence warrants and stop when it suffices. Keep text concise without
+  sacrificing correctness, safety, or clarity.
+- **No size limits.** Do not set line-count or file-size limits; file size
+  stays a review trigger per `AGENTS.md`, never a rule.
+
 ## Python Authoring
 
 Repository-owned Python — the developer scripts under `scripts/**/*.py` and
