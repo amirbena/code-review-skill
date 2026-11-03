@@ -294,32 +294,22 @@ and the remediation-scope-boundary pass exactly like any other finding.
 
 ## Engineering design review
 
-Design content in the review target (see "Proposed behavior in design
-content" above) is reviewed through the "Domain-specific deepening pass"
-above, with
+Design content (see "Proposed behavior in design content") is reviewed
+through the "Domain-specific deepening pass" with
 [`engineering-design-deepening.md`](engineering-design-deepening.md) as its
-depth owner: what evidence a design finding needs, proposal versus accepted
-decision, verification of load-bearing claims about existing code, and
-implementation-versus-design comparison in a mixed change. That capability
-never gates the base obligation, adds no severity model, evidence label, or
-gate, and a change with no decision-bearing design content is unaffected.
+depth owner. It never gates the base obligation, adds no severity model or
+evidence label, and leaves a change with no decision-bearing design content
+unaffected.
 
 ## Null-like absence-risk review
 
 Inspect changed data-flow and control-flow for credible **null-like
-absence** risk whenever the reviewed language admits that failure mode at
-all — a **semantic rule keyed to the reviewed language's nullability
-model, never a regex or keyword match**. The credible-absence-path
-patterns, the interoperability and escape-hatch boundaries that weaken a
-language's normal null-safety guarantees, and the suppression rule for a
-value already made safe by a guard, the type system, a framework/contract
-guarantee, or upstream validation are owned by
-[`null-absence-risk.md`](null-absence-risk.md) and are not restated here.
-
-This section adds no new finding category: a surfaced risk is classified
-under [`severity.md`](severity.md) and evidenced per
-[`evidence.md`](evidence.md) exactly like any other finding, and carries
-no dedicated severity merely because a nullable value is present.
+absence** risk whenever the reviewed language admits that failure mode — a
+**semantic rule keyed to the language's nullability model, never a regex or
+keyword match**. Patterns, escape-hatch boundaries, and the suppression rule
+for an already-safe value are owned by
+[`null-absence-risk.md`](null-absence-risk.md). It adds no finding category
+or dedicated severity.
 
 ## Existing behavior ownership
 
@@ -344,127 +334,68 @@ own shape suggests already has an owner.
 
 ## Root-cause and model-completeness pass
 
-When several observed failures may be manifestations of one underlying
-mechanism, this pass participates instead of enumerating symptom
-permutations. The trigger signals, the consolidate-vs-keep-separate
-evidence bar, the affected-locations requirement on a consolidated
-finding, the canonical-owner / external-dependency rules, and re-review
-reconciliation are owned by
-[`root-cause-consolidation.md`](root-cause-consolidation.md) and are not
-restated here.
-
-This is not a second scope model: findings, labels, severity, and the
-mechanical decision derivation are unchanged; it only determines whether
-related manifestations are consolidated into one authoritative finding or
-kept separate.
+When several observed failures may share one underlying mechanism, consolidate
+them instead of enumerating symptoms. Triggers, the consolidate-vs-separate
+bar, and re-review reconciliation are owned by
+[`root-cause-consolidation.md`](root-cause-consolidation.md). Findings,
+labels, severity, and the decision derivation are unchanged.
 
 ## Remediation-scope boundary pass
 
-For every material finding, after severity is derived, reason
-independently about how much of its remediation the current task/PR
-boundary must absorb versus what belongs to separate follow-up work. The
-three-part reasoning sequence (validity/severity → remediation-required →
-remediation-scope-boundary), the never-widens/never-shrinks-severity rule,
-and the worked examples are owned by
-[`remediation-scope-boundary.md`](remediation-scope-boundary.md) and are
-not restated here.
-
-This is not a second scope model: severity, finding identity, and the
-mechanical decision derivation are unchanged. Review depth — how much a
-reviewer reasons about a finding's broader implications — must never, by
-itself, expand what the current change is required to implement; nor may
-the current change's size discourage reporting or reduce the severity of
-a valid finding whose full remediation is legitimately out of scope.
+For every material finding, after severity is derived, reason separately
+about how much remediation the current task boundary must absorb versus what
+belongs to follow-up work, as owned by
+[`remediation-scope-boundary.md`](remediation-scope-boundary.md). Severity,
+finding identity, and the decision are unchanged: review depth never expands
+what the change must implement, and change size never reduces the severity of
+a valid finding.
 
 ## Failure state, retry safety, and recovery
 
-Treat this as one reasoning move, not three separate checklist items,
-signal-triggered by a concrete diff shape — more than one side-effecting
-step, an entry point that can plausibly run again for the same logical
-operation, or an external call combined with a state mutation. The trigger
-conditions, the reasoning sequence once triggered (stranded state,
-already-happened side effects, safe re-execution, and evidenced-not-assumed
-recovery/reconciliation), and the applicability-gated observability
-hierarchy (an established metrics/alerts mechanism, then logs, then a
-fail-closed high-impact-undiagnosable-failure bar) are owned by
-[`failure-retry-recovery.md`](failure-retry-recovery.md) and are not
-restated here.
-
-This is not a second scope model: absent a triggering signal this pass
-does not apply and requires no action; findings, evidence, and severity
-are governed by [`evidence.md`](evidence.md) and
-[`severity.md`](severity.md) exactly like any other finding.
+One reasoning move, signal-triggered by a concrete diff shape: more than one
+side-effecting step, an entry point that can plausibly run again for the same
+logical operation, or an external call combined with a state mutation.
+Triggers, the reasoning sequence, and the applicability-gated observability
+hierarchy are owned by [`failure-retry-recovery.md`](failure-retry-recovery.md).
+Absent a trigger this pass requires no action; findings follow
+[`evidence.md`](evidence.md) and [`severity.md`](severity.md).
 
 ## Architectural placement and execution-lifecycle fidelity
 
-Local functional correctness is often insufficient to determine whether a
-change is correctly *placed*. A changed method or file can be internally
-correct while sitting at the wrong point in the surrounding execution
-flow: a decision made after the lifecycle phase that owns it, a check
-duplicated below the layer that already performs it, a mutation done
-before the precondition that should gate it. The semantic-risk trigger
-vocabulary (control flow, side effects, retry/error propagation,
-transaction boundaries, authorization, routing/dispatch, idempotency,
-state-mutation ordering, lifecycle bookkeeping, resource ownership,
-concurrency, and caller/callee contracts), the bounded ring-by-ring context
-expansion, the stop conditions — including that **"insufficient evidence"
-is a valid terminal outcome** — the ineligible-versus-must-execute-and-fail
-distinction, the guardrails, and the evidence requirement for a placement
-finding are owned by
-[`architectural-placement.md`](architectural-placement.md) and are not
-restated here.
-
-This is one concrete application of the proportional-scope and
-evidence-labeling rules this repository already defines — "Related changes
-as one unit" and "Existing behavior ownership" above, and
-[`evidence.md`](evidence.md), "Findings beyond the changed lines." It does
-**not** introduce a second scope model or a second evidence standard:
-blast radius, evidence labeling (confirmed defect / credible engineering
-risk / optional improvement), and the no-repository-wide-audit boundary are
-unchanged.
+A change can be locally correct yet wrongly *placed* in the surrounding
+execution flow: a decision after the phase that owns it, a check duplicated
+below the layer that performs it, a mutation before the precondition that
+should gate it. The semantic-risk trigger vocabulary, the bounded
+ring-by-ring expansion, the stop conditions (**"insufficient evidence" is a
+valid terminal outcome**), the guardrails, and the placement-finding evidence
+requirement are owned by [`architectural-placement.md`](architectural-placement.md).
+It introduces no second scope model or evidence standard; blast radius and
+labeling follow "Related changes as one unit", "Existing behavior ownership",
+and [`evidence.md`](evidence.md), "Findings beyond the changed lines."
 
 ## Affected-test / test-impact analysis
 
-When a change alters observable production behavior, this pass traces the
-change into existing tests that encode or depend on that behavior —
-frequently tests not in the diff — rather than only checking whether the
-changed code itself has tests. The signal-triggered scope (which changes
-qualify and which do not), the location/re-validation/coverage procedure,
-the finding bar, and the read-only boundaries are owned by
-[`affected-test-analysis.md`](affected-test-analysis.md) and are not
-restated here.
-
-This is not a second scope model: it is bounded to the change's realistic
-blast radius per [`evidence.md`](evidence.md), "Findings beyond the
-changed lines," and is never a "did the PR add tests?" check or a
+When a change alters observable production behavior, trace it into existing
+tests that encode that behavior — often not in the diff — rather than only
+checking whether the changed code has tests. Scope, procedure, and the
+finding bar are owned by [`affected-test-analysis.md`](affected-test-analysis.md).
+This is not a second scope model: it is bounded to the realistic blast radius
+per [`evidence.md`](evidence.md), never a "did the PR add tests?" check or a
 repository-wide test audit.
 
 ## API / contract compatibility review
 
-Signal: the change modifies a repository contract another component
-consumes across a boundary that need not be visible as a call site in the
-diff — an OpenAPI or JSON Schema document, a protobuf/IDL definition, a
-public API request/response model or DTO, an event/message schema, or a
-configuration contract read by another service or job. Recognizing the
-contract type is a diff-level signal; it is never itself the finding. The
-compatible/breaking/context-dependent classification for each recognized
-change shape, the fail-closed rule for an unresolvable consumer surface,
-and its relationship to the other API/integration-contract depth owners
-are owned by
-[`api-contract-compatibility.md`](api-contract-compatibility.md) and are
-not restated here.
+Signal: the change modifies a contract another component consumes across a
+boundary that need not be visible as a call site — an OpenAPI/JSON Schema
+document, protobuf/IDL definition, public request/response model or DTO,
+event/message schema, or a configuration contract read by another service or
+job. Recognizing the contract type is a signal, never itself the finding. The
+compatible/breaking/context-dependent classification and the fail-closed rule
+for an unresolvable consumer surface are owned by
+[`api-contract-compatibility.md`](api-contract-compatibility.md).
 
-This section adds no new severity, finding category, or probability
-score: a breaking-shape finding is labeled confirmed defect / credible
-engineering risk per [`evidence.md`](evidence.md) like any other finding,
-and classified per [`severity.md`](severity.md) — a consumer-facing
-contract break is typically P1. It is not a second scope model, and it
-duplicates neither a schema linter nor a SAST tool: it is one concrete
-depth owner, for schema/contract backward compatibility specifically, of
-the "API / integration contracts" dimension in "Semantic
-change-implication reasoning" above — alongside, not replacing,
-"Affected-test / test-impact analysis" above and "Architectural placement
-and execution-lifecycle fidelity"'s caller/callee-contract trigger.
+This adds no severity, category, or score (a consumer-facing break is
+typically P1) and is not a second scope model or a schema linter.
 
 ## Dependency / supply-chain deepening review
 
@@ -558,38 +489,23 @@ a packaged resource).
 
 ## Code hygiene review
 
-Signal: the change adds or modifies a comment that cites an issue-tracker
-reference, or introduces or renames a variable whose name may hide its
-intent. A matching pattern is only a candidate for this pass, never a
-finding. The trigger, how each category is evaluated, the evidence bar,
-the severity representation (severity-less observations by default; P2
-only with causal maintainability evidence; never P0/P1), and the
-false-positive exclusions are owned by
-[`code-hygiene.md`](code-hygiene.md) and are not restated here.
-
-This section adds no finding category and no new severity. It is not a
-second scope model, performs no issue-tracker lookup, and is not a
-linter-like pass: it covers exactly two categories, only on the changed
-delta, and changes no correctness or security behavior.
+Signal: the change adds or modifies a comment citing an issue-tracker
+reference, or introduces or renames a variable whose name may hide its intent.
+A match is only a candidate, never a finding. Trigger, evaluation, evidence
+bar, severity representation, and exclusions are owned by
+[`code-hygiene.md`](code-hygiene.md). It adds no finding category or severity,
+does no tracker lookup, and covers only the changed delta.
 
 ## Change-risk signals and review depth
 
-Every review classifies its change into a deterministic review-depth
-level — `standard`, `elevated`, or `deep` — from a fixed catalog of
-change-risk signals (auth/access-control, migration/schema, concurrency,
-public API contract, sensitive path, infra/config, and diff size). The
-signal catalog, the exact classification ordering, the authoritative
-diff-size thresholds, and the requirement that the level and its
-activating signals are emitted with the review are owned by
-[`change-risk-signals.md`](change-risk-signals.md) and are not restated
-here.
-
-This is not a second scope model. Blast radius is still scoped per
-[`evidence.md`](evidence.md), "Findings beyond the changed lines";
-findings, labels, severity, and the mechanical decision are unchanged;
-the depth level never becomes a finding and is never a merge gate. It
-only makes the "scale the review to the change" guidance already in this
-policy and [`evidence.md`](evidence.md) explicit and inspectable.
+Every review classifies its change into a deterministic depth level —
+`standard`, `elevated`, or `deep` — from a fixed catalog of change-risk
+signals (auth/access-control, migration/schema, concurrency, public API
+contract, sensitive path, infra/config, and diff size). The catalog, ordering,
+thresholds, and the requirement to emit the level and activating signals are
+owned by [`change-risk-signals.md`](change-risk-signals.md). This is not a
+second scope model: blast radius is scoped per [`evidence.md`](evidence.md),
+and the level never becomes a finding or a merge gate.
 
 ## Repository expansion
 
