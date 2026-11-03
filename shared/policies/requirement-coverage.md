@@ -20,6 +20,11 @@ authoritative `requirement` or `acceptance_criteria` entry. An accepted
 decision or repository policy may constrain interpretation, but does not by
 itself activate task-completion coverage.
 
+Once activated, producing the model is a required pass: an activated review
+that emits no coverage model or omits a requirement did not produce a required
+pass, which [`review-stopping-criteria.md`](review-stopping-criteria.md),
+trigger 1, treats as `incomplete` coverage, never a clean result.
+
 When no activating contract is supplied, emit no coverage model, no
 completeness signal, and no coverage-derived finding. Do not ask for a
 contract and do not infer one from a branch name, PR title, commit message,
