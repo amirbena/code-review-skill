@@ -5,8 +5,10 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from tests.support.paths import REPO_ROOT
 
-ROOT = Path(__file__).resolve().parents[3]
+
+ROOT = REPO_ROOT
 POLICY = ROOT / "shared" / "policies" / "requirement-coverage.md"
 
 
