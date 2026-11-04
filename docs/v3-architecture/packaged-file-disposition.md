@@ -76,7 +76,7 @@ choose the exact file layout within the ADR §4 target shape.
 | `runtime-validation.md` | `review-runtime-check` | Sandboxed execution to confirm a finding (S8). |
 | `security-deepening.md` | `review-security` | Security deepening. |
 | `severity.md` | Core | P0/P1/P2 semantics. |
-| `specialist-depth.md` | Removed | Specialist-depth activation predicates are removed; activation is explicit. |
+| `specialist-depth.md` | Removed | Specialist-depth activation predicates are removed; mini-skills are selected by model judgment (ADR §5.1). |
 | `structured-output.md` | Core | JSON result kept for the benchmark adapter. |
 | `trusted-host-execution.md` | `review-runtime-check` | Host execution only with explicit per-invocation authorization (S8). |
 | `verdict-consistency.md` | Core | Folded into the mechanical decision rule (S3); the separate comparator pass is removed. |
