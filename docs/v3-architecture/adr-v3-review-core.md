@@ -139,13 +139,30 @@ Every mini-skill follows these rules:
 
 ### 5.1 Activation modes
 
-The mode is set only by the user's request for this run. If the request
-does not set one, the mode is `intent`.
+The mode is set only by the user's request for this run. `intent` and
+`auto` are internal names: the user never needs to know them or any
+mini-skill name.
 
 | Mode | Who selects | What may be selected |
 | --- | --- | --- |
 | `intent` (default) | The model, from the user's request | Only the mini-skills the request's intent justifies. "Is this auth change safe?" justifies `review-security`; "does this meet PROJ-123?" justifies `review-requirements`; "post the review" justifies `review-publish-github`. A plain "review this" selects none. |
-| `auto` (opt-in) | The model, during the review | Everything `intent` selects, plus analysis mini-skills the model adds when concrete evidence in the reviewed change justifies deeper investigation. It does not ask before each addition. The user opts in by asking for it, for example "review in auto mode" or "go as deep as the change needs". |
+| `auto` (opt-in) | The model, during the review | Everything `intent` selects, plus analysis mini-skills the model adds when concrete evidence in the reviewed change justifies deeper investigation. It does not ask before each addition. |
+
+**Recognizing the mode.** The model reads the meaning of the request; there
+is no mode parser, keyword list or flag. The request is `auto` only when it
+clearly hands the reviewer the choice of *which additional expertise* to
+apply. Asking for thoroughness, depth or care in a named area is not that
+hand-off: it stays `intent`, and only the mini-skills that area justifies
+run. When it is unclear, the mode is `intent`.
+
+| Request | Mode | Selected up front |
+| --- | --- | --- |
+| "Review this code." | `intent` | none (Core only) |
+| "Review the backend thoroughly." | `intent` | `review-backend` |
+| "Do a really thorough review of this PR." | `intent` | none: thoroughness alone names no area. The Core may still ask before adding depth. |
+| "Check the migration and post the review." | `intent` | `review-backend`, `review-publish-github` |
+| "Go as deep as necessary and use whatever expertise you think is relevant." | `auto` | none up front; the model adds analysis depth as evidence appears |
+| "Decide which specialized reviews are needed as you go." | `auto` | same as above |
 
 **Going beyond the requested scope in `intent`.** When the Core finds a
 concrete reason for depth that the request did not cover, it may ask the
