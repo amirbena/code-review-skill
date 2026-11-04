@@ -59,7 +59,7 @@ choose the exact file layout within the ADR §4 target shape.
 | `parallel-review.md` | Removed | Parallel review is removed. |
 | `performance-deepening.md` | `review-backend` | Performance is backend domain depth. |
 | `reasoning-checkpoint.md` | Removed | The reasoning checkpoint is removed. |
-| `remediation-guidance.md` | Core | Becomes the finding's `fix` field; option-gated guidance is removed. |
+| `remediation-guidance.md` | Core | Becomes the finding's `fix` field: focused, actionable guidance in every finding; the option-gated guidance is removed. |
 | `remediation-scope-boundary.md` | `review-suggestions` | Its P2 side becomes suggestions; the mandatory Core step is removed (ADR §6). |
 | `rendered-inspection-environment.md` | `review-frontend` | Render-consent gate and Playwright check for rendered inspection. |
 | `rendered-inspection.md` | `review-frontend` | Rendered-UI inspection. |

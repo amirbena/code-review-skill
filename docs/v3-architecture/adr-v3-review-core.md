@@ -1,6 +1,6 @@
 # ADR: v3 Review Core and mini-skill boundaries
 
-- **Status:** Accepted
+- **Status:** Proposed
 - **Issue:** [#842](https://github.com/amirbena/code-review-skill/issues/842)
 - **Epic:** [#841](https://github.com/amirbena/code-review-skill/issues/841)
 - **Supersedes:** the v2 architecture described in
@@ -94,7 +94,8 @@ owns exactly these six things:
    dismiss.
 3. **Findings and verdict.** P0/P1/P2 semantics; the evidence rule; a
    minimal finding shape of severity, title, location, evidence, impact and
-   fix; the mechanical decision: any P0/P1 → `CHANGES REQUIRED`, else
+   fix, where `fix` is focused, actionable guidance for that finding; the
+   mechanical decision: any P0/P1 → `CHANGES REQUIRED`, else
    `REVIEW CLEAN`, with `REVIEW INCOMPLETE` overriding both.
 4. **`REVIEW INCOMPLETE` triggers** — a closed set of four:
    - the target or diff cannot be fully read;
@@ -169,7 +170,8 @@ named in #842's original list):
   Reconciliation with existing PR comments survives only in
   `review-publish-github`, where it decides what gets published.
 - **The mandatory remediation-scope boundary step.** Its P2 side moves to
-  `review-suggestions`; the Core keeps only the finding's `fix` field.
+  `review-suggestions`. Every Core finding still carries focused,
+  actionable fix guidance in its `fix` field.
 - **The verdict-consistency comparator** as a separate pass. With one
   delivery mode in the Core, the mechanical decision rule is the check.
 
