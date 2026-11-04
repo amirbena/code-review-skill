@@ -1,6 +1,6 @@
 # ADR: v3 Review Core and mini-skill boundaries
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Issue:** [#842](https://github.com/amirbena/code-review-skill/issues/842)
 - **Epic:** [#841](https://github.com/amirbena/code-review-skill/issues/841)
 - **Supersedes:** the v2 architecture described in
