@@ -199,7 +199,8 @@ $script:builtSkills = @()
 Write-Host "Repository root: $repoRoot"
 New-Item -ItemType Directory -Path $distDir, $treesRoot -Force | Out-Null
 
-$manifestTargets = @($packageManifest.skills.PSObject.Properties.Name)
+# Enumerating Properties is StrictMode-safe when the manifest declares no Skill.
+$manifestTargets = @($packageManifest.skills.PSObject.Properties | ForEach-Object { $_.Name })
 if ($Skill -ne "all") {
   if ($manifestTargets -notcontains $Skill) {
     Write-Error "unknown target '$Skill' (not in package-manifest.json)"
