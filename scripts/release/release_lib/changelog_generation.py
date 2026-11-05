@@ -1,6 +1,9 @@
 """Compose ``## Unreleased`` from the release intent of merged pull requests.
 
-Runs only in the trusted ``plan`` / ``publish`` jobs on ``main``. Each
+Runs only in the trusted ``plan`` / ``publish`` jobs on ``main``. A merged
+pull request from an integration branch (``release/v3``) is a cutover: its
+squash commit hides the child pull requests that landed on that branch, so
+their release intent is expanded into the same ``## Unreleased``. Each
 first-parent commit since the baseline tag that is release-worthy on its
 own must be a merged PR — squash subject ``… (#N)`` whose GitHub merge
 commit is that exact commit — carrying valid release intent; anything else
@@ -36,6 +39,12 @@ from release_lib.semver_policy import _SUBSECTION_RE, AmbiguousReleaseImpact
 # e.g. adding a period) must not defeat detection.
 _SQUASH_REF_RE = re.compile(r"\(#(\d+)\)[.!?:;,]*\s*$")
 _MERGE_REF_RE = re.compile(r"^Merge pull request #(\d+)\b")
+
+# Long-lived integration branches whose squash-merged child PRs are folded
+# into the cutover PR's release (docs/RELEASE.md, "Integration branches").
+INTEGRATION_BRANCHES = ("release/v3",)
+# GitHub's per-pull-request commit listing cap; a full page may be truncated.
+_PR_COMMIT_LIST_CAP = 250
 
 
 class ChangelogGenerationError(ValueError):
@@ -91,9 +100,70 @@ def collect_entries(repo_root: Path, baseline: str) -> list[GeneratedEntry]:
             problems.append(f"PR #{number}: is release-worthy but declares 'Release category: none'")
             continue
         entries.append(GeneratedEntry(number, intent.category, render_bullet(intent, number)))
+        head = pr.get("head") or {}
+        repo_name = (head.get("repo") or {}).get("full_name")
+        base_repo = ((pr.get("base") or {}).get("repo") or {}).get("full_name")
+        if head.get("ref") in INTEGRATION_BRANCHES and repo_name and repo_name == base_repo:
+            _expand_cutover(repo_root, baseline, number, head["ref"], entries, problems)
     if problems:
         raise ChangelogGenerationError(problems)
     return entries
+
+
+def _expand_cutover(
+    repo_root: Path,
+    baseline: str,
+    cutover: int,
+    branch: str,
+    entries: list[GeneratedEntry],
+    problems: list[str],
+) -> None:
+    """Add the release intent of the child PRs squash-merged into `branch`.
+
+    Commits already reachable from `baseline` (a main -> branch sync) and
+    PRs based on anything but `branch` are released or counted elsewhere and
+    are skipped; a `none` or non-release-worthy child ships nothing.
+    """
+    try:
+        commits = gitgh.pull_request_commits(repo_root, cutover)
+    except (subprocess.CalledProcessError, ValueError):
+        problems.append(f"PR #{cutover}: its commits could not be read from the GitHub API")
+        return
+    if len(commits) >= _PR_COMMIT_LIST_CAP:
+        problems.append(f"PR #{cutover}: carries {len(commits)}+ commits, more than GitHub lists; child entries could be missed")
+        return
+    seen = {entry.pr_number for entry in entries}
+    for sha, subject in commits:
+        number = pr_number_from_subject(subject)
+        if number is None or number in seen or gitgh.is_ancestor(repo_root, sha, baseline):
+            continue
+        try:
+            pr = gitgh.pull_request(repo_root, number)
+        except (subprocess.CalledProcessError, ValueError):
+            problems.append(f"PR #{number}: could not be read from the GitHub API")
+            continue
+        if (pr.get("base") or {}).get("ref") != branch:
+            continue
+        if not pr.get("merged_at") or pr.get("merge_commit_sha") != sha:
+            problems.append(f"PR #{number}: is not the merged pull request behind commit {sha[:12]} on {branch}")
+            continue
+        try:
+            paths = gitgh.pull_request_paths(repo_root, number)
+        except (subprocess.CalledProcessError, ValueError):
+            problems.append(f"PR #{number}: its changed files could not be read from the GitHub API")
+            continue
+        if not classify_paths(paths).release_worthy:
+            continue
+        try:
+            intent = parse_release_intent(pr.get("body"))
+        except ReleaseIntentError as exc:
+            problems.append(f"PR #{number}: {exc}")
+            continue
+        if not intent.ships_entry:
+            problems.append(f"PR #{number}: is release-worthy but declares 'Release category: none'")
+            continue
+        seen.add(number)
+        entries.append(GeneratedEntry(number, intent.category, render_bullet(intent, number)))
 
 
 def _curated_items(body: list[str]) -> dict[str, list[list[str]]]:
