@@ -99,6 +99,7 @@ REVIEWED_NON_DOCS_ENUMERATORS = frozenset(
         "scripts/release/release_lib/gitgh.py",
         "scripts/validation/context_size_report.py",
         "tests/unit/review/core/test_review_core_contract.py",
+        "tests/unit/review/core/test_depth_skills_contract.py",
         "tests/unit/review/core/test_review_publish_github_contract.py",
         "tests/unit/review/core/test_domain_mini_skills_contract.py",
         "runtime_platform/benchmark/reference/benchmark_runner.py",
