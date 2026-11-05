@@ -39,6 +39,11 @@ def skill_dir(name: str):
     return REPO_ROOT / "skills" / name
 
 
+def corpus_cases(corpus: str) -> list[dict]:
+    root = REPO_ROOT / "benchmark" / "corpus" / corpus
+    return [yaml.safe_load(n.read_text(encoding="utf-8")) for n in sorted(root.glob("*.yaml"))]
+
+
 def read(name: str, rel: str) -> str:
     return (skill_dir(name) / rel).read_text(encoding="utf-8")
 
@@ -129,15 +134,13 @@ class BenchmarkRemapTests(unittest.TestCase):
         expected = set()
         for corpora in REMAP_CORPORA.values():
             for corpus in corpora:
-                for path in (REPO_ROOT / "benchmark" / "corpus" / corpus).glob("*.yaml"):
-                    expected.add(yaml.safe_load(path.read_text(encoding="utf-8"))["id"])
+                expected.update(case["id"] for case in corpus_cases(corpus))
         self.assertEqual(set(ids), expected)
 
     def test_classes_follow_the_expected_decision(self) -> None:
         text = REMAP.read_text(encoding="utf-8")
         for case_id, corpus, cls in re.findall(r"^\| `([^`]+)` \| `([^`]+)` \| (\S+) \| .+ \|$", text, re.M):
-            for candidate in (REPO_ROOT / "benchmark" / "corpus" / corpus).glob("*.yaml"):
-                data = yaml.safe_load(candidate.read_text(encoding="utf-8"))
+            for data in corpus_cases(corpus):
                 if data["id"] == case_id:
                     with self.subTest(case=case_id):
                         blocking = data["expected"]["decision"] == "changes-required"
