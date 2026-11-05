@@ -21,7 +21,7 @@ from typing import Sequence
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SKILLS = ("local-code-review", "github-pr-review")
 # Reported only when present, so a checkout without them still measures.
-READ_IN_FULL_SKILLS = ("review-core",)
+READ_IN_FULL_SKILLS = ("review-core", "review-publish-github")
 BYTES_PER_TOKEN = 4
 
 SECTION_RE = re.compile(r"^## 2\.[^\n]*\n(.*?)(?=^## \d+\.)", re.M | re.S)
