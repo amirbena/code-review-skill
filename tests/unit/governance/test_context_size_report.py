@@ -158,7 +158,7 @@ class ReadInFullReportTests(unittest.TestCase):
 class RepositoryReportTests(unittest.TestCase):
     def test_review_core_is_measured_read_in_full(self):
         data = report.build(REPO_ROOT)
-        self.assertEqual([s["skill"] for s in data["read_in_full_skills"]], ["review-core"])
+        self.assertEqual([s["skill"] for s in data["read_in_full_skills"]], ["review-core", "review-publish-github"])
 
 
     def test_output_is_deterministic(self):
