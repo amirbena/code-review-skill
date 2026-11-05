@@ -10,6 +10,8 @@ runs after the Core, on the Core's target and findings, and reports in the
 Core's finding shape and severity scale. It adds depth; the Core still
 catches diff-visible serious defects on its own.
 
+**Requires `review-core`.** Install it alongside this Skill; without it, stop and ask the user to install it.
+
 ## Contract with the Core
 
 - Use the Core's finding shape (`severity`, `title`, `location`,

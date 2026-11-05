@@ -10,6 +10,8 @@ does what a reference the user supplied asks for. It adds findings and one
 report section. It never changes severity, the decision rule, the
 `REVIEW INCOMPLETE` triggers or S1–S5 and S10; those are `review-core`'s.
 
+**Requires `review-core`.** Install it alongside this Skill; without it, stop and ask the user to install it.
+
 ## Entry contract
 
 - Runs only after `review-core` has run on the same target in this run, and

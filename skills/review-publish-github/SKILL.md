@@ -10,6 +10,8 @@ batched GitHub review made of inline comments, a summary and a review event.
 It adds delivery only. It never changes a finding, a severity or the
 decision.
 
+**Requires `review-core`.** Install it alongside this Skill; without it, stop and ask the user to install it.
+
 ## Entry contract
 
 - **S7** — Publishing happens only through this Skill, and only when the

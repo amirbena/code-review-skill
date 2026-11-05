@@ -171,11 +171,22 @@ class StampFromAuthorityTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("no '## vX.Y.Z' release heading", err)
 
-    def test_cli_fails_when_the_skill_md_has_no_version_line(self) -> None:
-        self.skill.write_text("---\nname: x\n---\nBody\n", encoding="utf-8")
-        code, _, err = self._run()
-        self.assertEqual(code, 1)
-        self.assertIn("version", err)
+    def test_a_skill_md_without_a_version_line_is_packaged_without_a_version(self) -> None:
+        # ADR §11: a never-released v3 Skill must not borrow the newest v2.x heading.
+        source = "---\nname: x\n---\nBody\n"
+        self.skill.write_text(source, encoding="utf-8")
+        code, out, _ = self._run()
+        self.assertEqual(code, 0)
+        self.assertIn("never released", out)
+        self.assertEqual(self.skill.read_text(encoding="utf-8"), source)
+
+    def test_a_missing_version_line_is_only_inserted_when_asked(self) -> None:
+        source = "---\nname: x\ndescription: y\n---\nBody\n"
+        with self.assertRaises(ValueError):
+            stamp_frontmatter_version(source, "3.0.0")
+        stamped = stamp_frontmatter_version(source, "3.0.0", insert_missing=True)
+        self.assertEqual(stamped, "---\nname: x\nversion: 3.0.0\ndescription: y\n---\nBody\n")
+        self.assertEqual(stamp_frontmatter_version(stamped, "3.0.1", insert_missing=True).count("version:"), 1)
 
 
 if __name__ == "__main__":

@@ -68,21 +68,49 @@ def frontmatter_version(text: str) -> str | None:
     return None
 
 
-def stamp_frontmatter_version(text: str, version: str) -> str:
+def stamp_frontmatter_version(text: str, version: str, *, insert_missing: bool = False) -> str:
+    """Write `version` into the frontmatter's top-level `version:` line.
+
+    A v3 Skill carries no `version:` line before its first release (ADR §11).
+    Only the release run's stamp step passes ``insert_missing=True``, which
+    adds the line after ``description:``; any other caller fails on a missing line.
+    """
     if not VERSION_RE.match(version):
         raise ValueError(f"version must be strict x.y.z (no 'v' prefix, no leading zeros): got {version!r}")
     lines = text.split("\n")
     index = _frontmatter_version_index(lines)
     if index is None:
-        raise ValueError("SKILL.md frontmatter has no 'version:' line to stamp")
+        if not insert_missing:
+            raise ValueError("SKILL.md frontmatter has no 'version:' line to stamp")
+        return _insert_version_line(lines, version)
     lines[index] = f"version: {version}" + ("\r" if lines[index].endswith("\r") else "")
     return "\n".join(lines)
 
 
-def stamp_skill_md_from_authority(skill_md: Path, changelog: Path) -> tuple[str, str | None]:
-    """Stamp `skill_md` with the authority's version; return (version, previous value if it changed)."""
-    version = resolve_release_version(changelog)
+def _insert_version_line(lines: list[str], version: str) -> str:
+    plain = [line.rstrip("\r") for line in lines]
+    if not plain or plain[0] != "---" or "---" not in plain[1:]:
+        raise ValueError("SKILL.md has no frontmatter to insert a 'version:' line into")
+    closing = plain.index("---", 1)
+    # `description:` must stay the last frontmatter line (packaging validation), so the
+    # version goes before it, as in v2.
+    at = next((i for i in range(1, closing) if plain[i].startswith("description:")), closing)
+    eol = "\r" if lines[0].endswith("\r") else ""
+    lines.insert(at, f"version: {version}{eol}")
+    return "\n".join(lines)
+
+
+def stamp_skill_md_from_authority(skill_md: Path, changelog: Path) -> tuple[str | None, str | None]:
+    """Stamp `skill_md` with the authority's version; return (version, previous value if it changed).
+
+    A Skill with no `version:` line has never been released (ADR §11): it is
+    left unstamped and ``(None, None)`` is returned, so a non-release build
+    never labels it with an older release's version.
+    """
     text = Path(skill_md).read_bytes().decode("utf-8")
+    if frontmatter_version(text) is None:
+        return None, None
+    version = resolve_release_version(changelog)
     previous = frontmatter_version(text)
     stamped = stamp_frontmatter_version(text, version)
     if stamped == text:

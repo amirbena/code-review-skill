@@ -48,9 +48,11 @@ class DistributionFrontmatterTests(unittest.TestCase):
         with self.assertRaises(SkillTreeError):
             distribution_frontmatter("---\nname: x\nmetadata:\n  a: b\nversion: 1.0.0\n---\n")
 
-    def test_refuses_a_skill_md_without_a_version(self) -> None:
-        with self.assertRaises(SkillTreeError):
-            distribution_frontmatter("---\nname: x\n---\n")
+    def test_a_skill_md_without_a_version_gets_no_metadata_version(self) -> None:
+        # A never-released v3 Skill is built without any version (ADR §11).
+        source = "---\nname: x\ndescription: y\n---\nBody\n"
+        self.assertEqual(distribution_frontmatter(source), source)
+        self.assertIsNone(frontmatter_version(distribution_frontmatter(source)))
 
 
 class ValidateAgentSkillTests(unittest.TestCase):

@@ -41,28 +41,20 @@ require_archive_entry() {
   fi
 }
 
-# Shared-link adaptation, metadata-path adaptation, and SKILL.md
-# frontmatter structural validation are packaging-domain rules shared
-# with scripts/packaging/package-skills.ps1; both platform scripts delegate to the
+# Release-version stamping and SKILL.md frontmatter structural validation
+# are packaging-domain rules shared with scripts/packaging/package-skills.ps1; both platform scripts delegate to the
 # single canonical Python implementation in scripts/packaging/package_domain/ (see
 # scripts/packaging/package_adapt.py) instead of restating the rules here.
+# A v3 Skill packages self-contained: no shared/ link adaptation exists.
 validate_skill_frontmatter() {
   local skill_md="$1"
   local expected_name="$2"
   python3 "${package_adapt}" validate-frontmatter "${skill_md}" "${expected_name}"
 }
 
-adapt_shared_links() {
-  python3 "${package_adapt}" adapt-shared-links "$@"
-}
-
-adapt_metadata_paths() {
-  local metadata_file="$1"
-  python3 "${package_adapt}" adapt-metadata-paths "${metadata_file}"
-}
-
 # Stamps the staged SKILL.md with the release authority's version (the newest
-# `## vX.Y.Z` heading in CHANGELOG.md); fails closed when there is none.
+# `## vX.Y.Z` heading in CHANGELOG.md). A Skill with no `version:` line has
+# never been released (ADR §11) and is packaged without a version.
 stamp_release_version() {
   local skill_md="$1"
   python3 "${package_adapt}" stamp-release-version "${skill_md}" "${repo_root}/CHANGELOG.md"
@@ -110,17 +102,6 @@ package_skill() {
   # autocrlf) validates and stamps identically to an LF one.
   python3 "${package_adapt}" normalize-tree "${stage_dir}"
 
-  # Adapt relative links into shared/ across every packaged Markdown
-  # file (skill-local links like ../SKILL.md or runbooks/... need no
-  # change, since skill-internal relative depth is unchanged).
-  md_files=()
-  while IFS= read -r -d '' md_file; do
-    md_files+=("${md_file}")
-  done < <(find "${stage_dir}" -name '*.md' -print0)
-  if [[ ${#md_files[@]} -gt 0 ]]; then
-    adapt_shared_links "${md_files[@]}"
-  fi
-  adapt_metadata_paths "${stage_dir}/metadata/skill.yaml"
   stamp_release_version "${stage_dir}/SKILL.md"
 
   # --- Validate staged package structure before archiving ---

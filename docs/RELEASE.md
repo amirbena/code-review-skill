@@ -347,8 +347,8 @@ ordered flow fails closed before anything is pushed if any step fails:
    `## Unreleased` has notes, `vX.Y.Z` is a valid, not-yet-existing tag.
 3. Rolls `## Unreleased` into `## vX.Y.Z — <date>`.
 4. **Stamps** `vX.Y.Z` (as `X.Y.Z`) into the `version:` frontmatter line of
-   both Skills' `SKILL.md`, so the committed files match the release.
-5. Builds **and verifies** both Skill archives (`package-skills.sh all`,
+   every packaged Skill's `SKILL.md` (inserting the `version:` line where a never-released v3 Skill has none, ADR §11), so the committed files match the release.
+5. Builds **and verifies** every Skill archive (`package-skills.sh all`,
    which also leaves the validated `dist/skills/<name>/` trees the zips are
    built from, `unzip -t`, presence checks, and that each archive's
    `SKILL.md` version is exactly `X.Y.Z` — a mismatch fails the run before anything is
@@ -637,8 +637,8 @@ idempotency/drift checks. `skills/<name>/` is never touched by the adapter.
 ### Claude marketplace decisions (#510)
 
 - Marketplace and plugin are both named `code-review-skills`; one plugin
-  exposes both Skills, giving `/code-review-skills:local-code-review` and
-  `/code-review-skills:github-pr-review`. Install with
+  exposes all Skills, giving `/code-review-skills:review-core`,
+  `/code-review-skills:local-code-review` and the rest. Install with
   `/plugin marketplace add amirbena/code-review-skills`, then
   `/plugin install code-review-skills@code-review-skills`.
 - `disable-model-invocation` is **not** applied: neither Skill needs it, and

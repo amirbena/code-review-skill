@@ -105,11 +105,15 @@ class StampSkillVersionsTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("::error::", out)
 
-    def test_cli_fails_when_a_skill_has_no_version_line(self) -> None:
-        (self.root / "skills" / "local-code-review" / "SKILL.md").write_text("---\nname: x\n---\n", encoding="utf-8")
-        code, out = _run(self.root, "stamp-skill-version", "--version", "1.54.0")
-        self.assertEqual(code, 1)
-        self.assertIn("::error::", out)
+    def test_cli_inserts_the_version_line_where_a_v3_skill_has_none(self) -> None:
+        path = self.root / "skills" / "local-code-review" / "SKILL.md"
+        path.write_text("---\nname: local-code-review\ndescription: x\n---\nBody\n", encoding="utf-8")
+        code, _ = _run(self.root, "stamp-skill-version", "--version", "3.0.0")
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            path.read_text(encoding="utf-8"),
+            "---\nname: local-code-review\nversion: 3.0.0\ndescription: x\n---\nBody\n",
+        )
 
 
 class VerifyArchiveVersionsTests(unittest.TestCase):

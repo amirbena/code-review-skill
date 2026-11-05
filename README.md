@@ -23,12 +23,14 @@ Skills are installed from the generated distribution repository
 ([`docs/distribution.md`](docs/distribution.md) lists every tool and update
 path).
 
+- **v3.0.0 (packaged; install evidence is recorded in
+  [`docs/distribution.md`](docs/distribution.md) once released):**
+  `npx skills add amirbena/code-review-skills --skill review-core`, and one
+  `--skill review-<name>` per mini-skill, for example `--skill review-security`.
+  A mini-skill requires `review-core`. The v2 names `local-code-review` and
+  `github-pr-review` ship as thin wrappers that delegate to `review-core`.
 - **Verified today (v2.x):** `npx skills add amirbena/code-review-skills --skill local-code-review`
   (or `github-pr-review`), exercised in [#511](https://github.com/amirbena/code-review-skill/issues/511).
-- **Planned for v3.0.0, not yet published or tested:** the same command with
-  `--skill review-core`, and one more run per mini-skill, for example
-  `--skill review-security`. The v2 names `local-code-review` and
-  `github-pr-review` are planned to remain as wrappers over `review-core`.
 
 Then ask in plain words: "review this", "review PR 123", "is this auth change
 safe?", "review PR 123 and post the review". Once v3 is published, a mini-skill that is not
