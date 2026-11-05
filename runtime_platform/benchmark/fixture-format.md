@@ -95,11 +95,11 @@ worked example need.
 Every fixture carries an explicit format identifier:
 
 ```yaml
-format: benchmark-case/v2
+format: benchmark-case/v3
 ```
 
 - `format` is `benchmark-case/v<major>`. This document currently defines
-  `v2` (see "Version history" below for `v1`).
+  `v3` (see "Version history" below for `v1` and `v2`).
 - A reader implements a **fixed set** of major versions. Encountering any
   other value — absent, malformed, or a version it does not implement — is
   a hard rejection (§11). A reader MUST NOT parse an unrecognized version
@@ -119,13 +119,25 @@ format: benchmark-case/v2
 | Version | Status | What changed |
 |---|---|---|
 | `v1` | Superseded | The original schema (#50). `metadata` was optional; no taxonomy classification existed. |
-| `v2` | Current | [#333](https://github.com/amirbena/code-review-skill/issues/333): `metadata` became **required**, and `metadata.taxonomy` became a **required** field within it (§10.1) — a breaking change to a field's requiredness under the rule above, hence the major-version increment. Every corpus fixture and the worked example were migrated to `v2` in the same change that introduced the requirement, so no `v1` fixture was left behind. [#558](https://github.com/amirbena/code-review-skill/issues/558) later added `input.repositories` / `input.unadmitted_repositories` (§6.4) and `location.repo_alias` (§8.3) as a purely additive extension within `v2`: every fixture valid before #558 stays valid and unchanged, since the new input kind and location field are both optional and mutually exclusive with the pre-existing shapes. |
+| `v2` | Superseded, frozen | [#333](https://github.com/amirbena/code-review-skill/issues/333): `metadata` became **required**, and `metadata.taxonomy` became a **required** field within it (§10.1) — a breaking change to a field's requiredness under the rule above, hence the major-version increment. Every corpus fixture and the worked example were migrated to `v2` in the same change that introduced the requirement, so no `v1` fixture was left behind. [#558](https://github.com/amirbena/code-review-skill/issues/558) later added `input.repositories` / `input.unadmitted_repositories` (§6.4) and `location.repo_alias` (§8.3) as a purely additive extension within `v2`: every fixture valid before #558 stays valid and unchanged, since the new input kind and location field are both optional and mutually exclusive with the pre-existing shapes. Superseded by `v3`; its fixtures are kept byte-identical in the frozen epoch `benchmark/corpus-v2/` (see "The frozen v2 epoch" below). |
+| `v3` | Current | [#848](https://github.com/amirbena/code-review-skill/issues/848): `metadata.skill_set` became **required** (§10.2), and `metadata.skill_set_reason` is required exactly when the set includes a mini-skill — a breaking change to a field's requiredness, hence the major-version increment. The active corpus and the worked example were migrated to `v3` in the same change. No other field changed. |
 
 The reference validator
 ([`reference/benchmark_fixture.py`](reference/benchmark_fixture.py))
-implements `v2` only — per "Fail closed" above, a `v1` fixture is rejected
-under §11 rule 1, never reinterpreted under `v2`'s rules. `v1` is recorded
+implements `v3` only by default — per "Fail closed" above, a `v1` or `v2`
+fixture is rejected under §11 rule 1, never reinterpreted under `v3`'s rules. `v1` is recorded
 here as history, not as a version a current reader accepts.
+
+### The frozen v2 epoch
+
+Historical experiments and sealed records pin `v2` fixtures by byte digest
+(the concurrency-campaign subset, the dependency-tree pre-registration and the
+pre-#688 sentinel snapshot). Those bytes are immutable evidence, so
+[`../../benchmark/corpus-v2/`](../../benchmark/corpus-v2/README.md) keeps the
+original `v2` corpus unchanged and the active corpus (`benchmark/corpus/`) is
+migrated to `v3`. The epoch is read only by an explicit
+`parse_case(..., legacy=True)` or by pointing `--corpus-dir` at it; it is never
+part of an active lane, and the `v2` reader does not require `skill_set`.
 
 ## 4. Top-level fields
 
@@ -428,6 +440,8 @@ downstream purpose. Unknown keys are rejected (§11).
 | `tags` | no | list | Subset of `correctness` / `security` / `quality` / `no-op` / `regression` / `concurrency` / `performance`, no duplicates. Category slices for #41 and profile/risky fixtures (#47/#48). |
 | `rationale` | no | string | 1–3 sentences on why this case earns a corpus slot. Feeds #51's case-selection rationale record. |
 | `taxonomy` | **yes** | mapping | Canonical candidate-taxonomy classification (§10.1). Issue #333. |
+| `skill_set` | **yes** | list | The v3 skill set the case runs with (§10.2). Issue #848. |
+| `skill_set_reason` | iff `skill_set` has a mini-skill | string | Why the Core alone is not enough for this case (§10.2). |
 
 No field for scoring weights, pass/fail thresholds, retrieval cutoffs,
 runner configuration, timing, or model identity — those are out of scope
@@ -465,6 +479,25 @@ dimensions, their canonical values, and the deterministic inverted index
 built from them are specified in full in
 [`taxonomy.md`](taxonomy.md) — this document only pins the metadata shape
 and its fail-closed validation (§11 rule 10).
+
+### 10.2 `metadata.skill_set` — the skills a case runs with
+
+Issue [#848](https://github.com/amirbena/code-review-skill/issues/848). A
+non-empty list of unique skill names that **starts with `review-core`**. The
+other values are the mini-skills `review-backend`, `review-deep-investigation`,
+`review-frontend`, `review-publish-github`, `review-requirements`,
+`review-runtime-check`, `review-security` and `review-suggestions`.
+
+- `[review-core]` is a **Core-only** case: the Core alone must produce the
+  expected outcome. A P0/P1 case whose defect is visible in the diff is
+  Core-only.
+- A set with a mini-skill is a **mini-skill case**. `skill_set_reason` is
+  required and states why the Core alone is not enough (for example, "the
+  missing check is on a route the diff does not touch"). Core-only cases must
+  not carry one.
+
+The fixture only declares the set; how a runner provisions the skills and how
+Core-only versus mini-skill results are scored are downstream concerns (§13).
 
 ## 11. Fail-closed validation
 
@@ -518,15 +551,18 @@ authoritative; this list is not exhaustive.
     and a finding's `location` carries no `repo_alias` at all; or
     `input.repositories` is absent and a finding's `location` carries a
     `repo_alias` (§8.3).
+13. `metadata.skill_set` is missing, empty, not a list, carries an unknown or
+    duplicate skill, does not start with `review-core`; or a mini-skill set
+    has no `skill_set_reason`, or a Core-only set carries one (§10.2).
 
-A validator that implements `v2` and is handed a `v1` fixture rejects it
+A validator that implements `v3` and is handed a `v2` fixture rejects it
 under rule 1 — it never falls back to `v1` parsing (see "Version history"
 in §3).
 
 ## 12. Worked example
 
 [`../../benchmark/examples/example-case.yaml`](../../benchmark/examples/example-case.yaml) is a complete,
-validated `benchmark-case/v2` fixture. It is a crafted single-file Python
+validated `benchmark-case/v3` fixture. It is a crafted single-file Python
 patch that introduces a SQL-injection sink and a user-controlled
 filesystem path and adds no tests. It exercises every §9 construct:
 

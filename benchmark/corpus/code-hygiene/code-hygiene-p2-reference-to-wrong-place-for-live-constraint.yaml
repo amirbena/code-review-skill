@@ -5,7 +5,7 @@
 # the wrong place for a still-live constraint, with the correct reference
 # visible in the same file. Required finding is P2 only, never P0/P1.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: code-hygiene-p2-reference-to-wrong-place-for-live-constraint
 title: "A new comment cites a closed duplicate for a constraint that is still live"
@@ -59,6 +59,7 @@ expected:
       defect_kind: tracker-reference-wrong-place-live-constraint
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

@@ -16,7 +16,7 @@ here is consumed by a test or a runner. The properties that must hold
 `User-provided focus`, bullet count, no severity label without a
 finalized finding, zero GitHub leakage) are instead pinned deterministically
 by
-[`corpus/reviewer-brief/README.md`](corpus/reviewer-brief/README.md)'s
+`corpus-v2/reviewer-brief/README.md`'s
 test suite. What lives here is the part that suite deliberately does not
 score: whether the independently derived focus item is genuinely useful
 to a human reviewer, and whether the case reads as a believable review
@@ -325,9 +325,9 @@ other? (Here: yes — three items, same substance, either voice.)
 
 The deterministic structural and publication-isolation assertions these
 examples' underlying field values satisfy live in
-[`../tests/unit/benchmark/test_reviewer_brief_structural.py`](../tests/unit/benchmark/test_reviewer_brief_structural.py)
+`../tests/unit/benchmark/test_reviewer_brief_structural.py`
 and
-[`../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py`](../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py).
+`../tests/unit/benchmark/test_reviewer_brief_publication_isolation.py`.
 The corpus-level rationale for why this is a reference set rather than
-`benchmark-case/v2` fixtures is
-[`corpus/reviewer-brief/README.md`](corpus/reviewer-brief/README.md).
+`benchmark-case/v3` fixtures is
+`corpus-v2/reviewer-brief/README.md`.

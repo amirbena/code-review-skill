@@ -22,13 +22,13 @@ mismatched artifact and reports an internal-consistency failure — never
 silently skipping the check and never self-correcting the drifted signal.
 This corpus does not re-prove #350's normal-path derivation and does not
 duplicate #377's own unit suite (see "Why this isn't a
-`benchmark-case/v2` corpus" below).
+`benchmark-case/v3` corpus" below).
 
-## Why this isn't a `benchmark-case/v2` corpus
+## Why this isn't a `benchmark-case/v3` corpus
 
 Every corpus under [`../`](../README.md) that reviews a code change (each
 a self-contained inline patch plus expected review *findings*) uses the
-`benchmark-case/v2` fixture format
+`benchmark-case/v3` fixture format
 ([`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)). This domain has no
 patch and no finding: its input is an already-finalized mechanical
 decision plus a deliberately drifted rendered/submitted signal, and its

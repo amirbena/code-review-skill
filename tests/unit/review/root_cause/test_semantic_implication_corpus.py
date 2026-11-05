@@ -3,7 +3,7 @@
 (Issue #211).
 
 The sub-corpus is ``benchmark/corpus/semantic-implication/*.yaml``: a
-small, focused set of ``benchmark-case/v2`` fixtures demonstrating
+small, focused set of ``benchmark-case/v3`` fixtures demonstrating
 shared/policies/review-scope.md's "Semantic change-implication reasoning"
 base pass — a single dimension activating alone, one change materially
 implicating several dimensions at once, a change with no material signal

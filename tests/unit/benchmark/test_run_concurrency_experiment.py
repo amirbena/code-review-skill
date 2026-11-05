@@ -19,8 +19,10 @@ from runtime_platform.benchmark.scripts import benchmark_concurrency_workers as 
 from runtime_platform.benchmark.scripts import benchmark_schedule_manifest as manifest_mod
 from runtime_platform.benchmark.scripts import benchmark_seal as seal
 from runtime_platform.benchmark.scripts import run_concurrency_experiment as exp
+from runtime_platform.benchmark.scripts.benchmark_corpus_membership import discover_comprehensive_fixtures
 from runtime_platform.benchmark.scripts.benchmark_lane_run import RoutineExecutionError
 from tests.support.evidence_destination import offline_destination, real_destination
+from tests.support.paths import V2_EPOCH_CORPUS_DIR
 
 _RESOLUTION = mock.patch.object(exp, "resolve_destination", side_effect=lambda *_a, **_k: offline_destination())
 
@@ -53,7 +55,9 @@ def write_stub(directory: Path, extra: str = "") -> Path:
 
 def small_spec(directory: Path, **stop) -> Path:
     spec = exp.load_spec()
-    spec["subset"] = {**spec["subset"], "size": 4, "case_ids": spec["subset"]["case_ids"][:4], "strata": None, "subset_id": None}
+    # Harness mechanics run against the active v3 corpus; the committed v2 subset is verified separately against the frozen epoch.
+    active = sorted(f.case_id for f in discover_comprehensive_fixtures(Path(exp.rb.DEFAULT_CORPUS_DIR)))[:4]
+    spec["subset"] = {**spec["subset"], "size": 4, "case_ids": active, "strata": None, "subset_id": None}
     spec["stop_condition"] = {**spec["stop_condition"], **stop}
     path = directory / "spec.json"
     path.write_text(json.dumps(spec), encoding="utf-8")
@@ -214,8 +218,8 @@ class StopConditionTest(unittest.TestCase):
 class SubsetTest(unittest.TestCase):
     def test_selection_is_deterministic_and_records_identity(self):
         spec = exp.load_spec()
-        first, manifest = exp.select_subset(spec, str(exp.rb.DEFAULT_CORPUS_DIR))
-        second, again = exp.select_subset(spec, str(exp.rb.DEFAULT_CORPUS_DIR))
+        first, manifest = exp.select_subset(spec, str(V2_EPOCH_CORPUS_DIR))
+        second, again = exp.select_subset(spec, str(V2_EPOCH_CORPUS_DIR))
         self.assertEqual([f.case_id for f in first], [f.case_id for f in second])
         self.assertEqual(manifest, again)
         self.assertEqual(len(first), spec["subset"]["size"])
@@ -227,7 +231,7 @@ class SubsetTest(unittest.TestCase):
         spec = exp.load_spec()
         spec["subset"] = {**spec["subset"], "case_ids": ["no-such-case"]}
         with self.assertRaises(RoutineExecutionError):
-            exp.select_subset(spec, str(exp.rb.DEFAULT_CORPUS_DIR))
+            exp.select_subset(spec, str(V2_EPOCH_CORPUS_DIR))
 
     def test_arms_are_bounded_to_the_allowed_worker_counts(self):
         self.assertEqual(exp.parse_arms("1,2,4", [1, 2, 4]), [1, 2, 4])

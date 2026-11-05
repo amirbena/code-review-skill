@@ -15,7 +15,7 @@ This corpus does **not** redesign #314's publication semantics — see that
 policy's own "Migration from the pre-#314 model" section for the product
 decision this benchmark only *proves*, never re-derives.
 
-## Why this is not a `benchmark-case/v2` corpus
+## Why this is not a `benchmark-case/v3` corpus
 
 Unlike the corpora under [`../`](../README.md) (each a self-contained
 inline patch plus expected review findings), this boundary's inputs and
@@ -26,8 +26,8 @@ preview, and the GitHub-bound artifact — or its absence).
 [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)'s `expected` block has
 no field for any of that. Rather than stretch that closed schema, this
 corpus follows the same test-only, data-driven reference-fixture pattern
-[`../delegation-spawn/README.md`](../delegation-spawn/README.md) and
-[`../reviewer-brief/README.md`](../reviewer-brief/README.md) already
+`../delegation-spawn/README.md` and
+`../reviewer-brief/README.md` already
 established for domains the schema does not fit:
 
 - [`../../../runtime_platform/benchmark/reference/publication_mode_fixtures.py`](../../../runtime_platform/benchmark/reference/publication_mode_fixtures.py) —

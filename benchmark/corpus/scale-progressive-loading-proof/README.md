@@ -16,7 +16,7 @@ reference validator
 
 ## Selection principle
 
-`scale`'s existing corpora — [`../risk-depth/`](../risk-depth/README.md)
+`scale`'s existing corpora — `../risk-depth/`
 (#90) and [`../repository-intelligence/`](../repository-intelligence/README.md)
 (#129) — already cover confident non-activation (no trigger fires),
 confident activation (a positive, evidence-resolved trigger), and a

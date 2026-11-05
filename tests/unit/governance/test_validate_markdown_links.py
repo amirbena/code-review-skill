@@ -95,7 +95,9 @@ class ValidateMarkdownLinksTests(unittest.TestCase):
             self.assertIn("escapes root", str(ctx.exception))
 
     def test_repository_passes_validation(self) -> None:
-        links.check_repository_markdown_links(REPO_ROOT, links.tracked_markdown_files(REPO_ROOT))
+        archive = REPO_ROOT / "benchmark" / "corpus-v2"  # frozen v2 archive (Issue #848)
+        files = [p for p in links.tracked_markdown_files(REPO_ROOT) if archive not in p.parents]
+        links.check_repository_markdown_links(REPO_ROOT, files)
 
     def test_cli_passes_on_repository(self) -> None:
         subprocess.run(

@@ -82,7 +82,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v2")
+                self.assertEqual(case.format, "benchmark-case/v3")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:
@@ -253,7 +253,7 @@ class FixtureFormatExtensionTests(unittest.TestCase):
 
     def _base_case(self, **overrides) -> dict:
         case = {
-            "format": "benchmark-case/v2",
+            "format": "benchmark-case/v3",
             "id": "x",
             "title": "t",
             "input": {
@@ -264,6 +264,7 @@ class FixtureFormatExtensionTests(unittest.TestCase):
             },
             "expected": {"decision": "clean", "findings": []},
             "metadata": {
+                "skill_set": ["review-core"],
                 "taxonomy": {
                     "capability": ["unclassified"],
                     "policy_contract": ["unclassified"],
@@ -387,7 +388,7 @@ class FixtureFormatExtensionTests(unittest.TestCase):
 
     def test_repo_alias_on_a_single_repository_case_finding_is_rejected(self) -> None:
         data = {
-            "format": "benchmark-case/v2",
+            "format": "benchmark-case/v3",
             "id": "x",
             "title": "t",
             "input": {"patch": "diff --git a/f b/f\n--- a/f\n+++ b/f\n@@ -1 +1 @@\n-a\n+b\n"},
@@ -403,6 +404,7 @@ class FixtureFormatExtensionTests(unittest.TestCase):
                 ]
             },
             "metadata": {
+                "skill_set": ["review-core"],
                 "taxonomy": {
                     "capability": ["unclassified"],
                     "policy_contract": ["unclassified"],

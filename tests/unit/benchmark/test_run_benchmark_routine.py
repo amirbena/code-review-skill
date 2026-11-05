@@ -53,7 +53,7 @@ def _corpus(root: Path, ids: list[str], *, v2: bool = False) -> Path:
     for cid in ids:
         directory = root / cid if v2 else root
         directory.mkdir(parents=True, exist_ok=True)
-        header = "format: benchmark-case/v2\n" if v2 else ""
+        header = "format: benchmark-case/v3\n" if v2 else ""
         (directory / f"{cid}.yaml").write_text(f"{header}id: {cid}\n", encoding="utf-8")
     return root
 

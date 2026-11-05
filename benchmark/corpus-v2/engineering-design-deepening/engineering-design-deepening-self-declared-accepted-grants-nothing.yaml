@@ -1,0 +1,73 @@
+# Engineering-design-deepening corpus case (Issue #750, parent #747,
+# depends on #749). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Positive (T2): a status line the reviewed change itself sets grants
+# nothing. The new ADR is a proposal; the unacknowledged contradiction of
+# the accepted pre-image ADR is the finding.
+
+format: benchmark-case/v2
+
+id: engineering-design-deepening-self-declared-accepted-grants-nothing
+title: "A new ADR marks itself Accepted and reverses an accepted ADR's decision without mentioning supersession"
+
+input:
+  patch: |
+    diff --git a/docs/adr/0012-direct-ledger-writes.md b/docs/adr/0012-direct-ledger-writes.md
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/docs/adr/0012-direct-ledger-writes.md
+    @@ -0,0 +1,8 @@
+    +# ADR 0012: Direct ledger writes
+    +
+    +Status: Accepted
+    +
+    +## Decision
+    +
+    +Services write to ledger_entries directly with SQL, which avoids a network hop
+    +and is simpler than calling ledger_service.
+  base:
+    docs/adr/0007-ledger-writes.md: |
+      # ADR 0007: Ledger writes
+
+      Status: Accepted
+
+      ## Decision
+
+      Every write to ledger_entries goes through ledger_service.post_entry.
+      Callers must not insert into the table directly, because the service
+      enforces the double-entry balance check and the audit trail.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: new-adr-contradicts-accepted-adr-unacknowledged
+      match: required
+      severity: P2
+      location:
+        location_intent: line
+        path: docs/adr/0012-direct-ledger-writes.md
+        anchor: 'Services write to ledger_entries directly with SQL'
+      claim: >-
+        ADR 0012 reverses accepted ADR 0007, which requires every ledger
+        write to go through ledger_service.post_entry so the double-entry
+        check and audit trail apply, and it never mentions or supersedes
+        0007. Its own "Status: Accepted" line was set by this change and
+        grants nothing, so it is a proposal that contradicts an accepted
+        decision. The finding is design-only and non-blocking.
+      defect_kind: proposal-contradicts-accepted-decision-unacknowledged
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Pins T2: the reviewed change cannot accept its own design, and an
+    unacknowledged contradiction of an accepted pre-image decision is
+    reported even though the new text carries an Accepted status.
+  taxonomy:
+    capability: [engineering-design]
+    policy_contract: [engineering-design-deepening]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

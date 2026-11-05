@@ -25,7 +25,7 @@
 # `SubCorpusCoverageTests` for the executable half (asserting the
 # *produced* review never does either, when run against the real adapter).
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: isolation-unadmitted-sibling
 title: "An unadmitted local sibling repository with an obvious credential defect never influences the combined review"
@@ -90,6 +90,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [security, correctness]
   rationale: >-

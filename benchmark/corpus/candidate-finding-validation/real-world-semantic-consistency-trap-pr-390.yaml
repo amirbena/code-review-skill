@@ -42,7 +42,7 @@
 # semantic invariant the docs state, not merely check the artifacts
 # against each other.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: real-world-semantic-consistency-trap-pr-390
 title: "classify() collapses classification into blocking justification by branching on material_impact; docs/tests consistency masks the semantic defect"
@@ -149,6 +149,7 @@ expected:
       defect_kind: classification-blocking-conflation
 
 metadata:
+  skill_set: [review-core]
   source: "https://github.com/amirbena/code-review-skill/pull/390 (reviewed at 3d08fcb); issue #382"
   tags: [correctness, quality]
   rationale: >-

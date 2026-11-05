@@ -1,0 +1,50 @@
+# Code-hygiene benchmark corpus case (Issue #677, parent #675, policy #676).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Control: short names with clear local meaning and standard domain
+# abbreviations are never reported, including names matching an existing
+# file convention.
+
+format: benchmark-case/v2
+
+id: code-hygiene-control-legitimate-short-and-domain-names
+title: "Short names with clear local meaning and domain abbreviations are introduced"
+
+input:
+  patch: |
+    diff --git a/app/geo/distance.py b/app/geo/distance.py
+    index 1111111..2222222 100644
+    --- a/app/geo/distance.py
+    +++ b/app/geo/distance.py
+    @@ -1,2 +1,9 @@
+    +import math
+    +
+    +
+     def haversine_km(a, b):
+    -    return 0.0
+    +    lat1, lon1 = math.radians(a.lat), math.radians(a.lon)
+    +    lat2, lon2 = math.radians(b.lat), math.radians(b.lon)
+    +    dlat, dlon = lat2 - lat1, lon2 - lon1
+    +    n = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    +    return 2 * 6371.0 * math.asin(math.sqrt(n))
+  base:
+    app/geo/distance.py: |
+      def haversine_km(a, b):
+          return 0.0
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    `lat`, `lon`, `dlat`, `dlon`, and `n` are standard geodesy names with
+    clear local meaning. Any finding is a false positive.
+  taxonomy:
+    capability: [code-hygiene]
+    policy_contract: [code-hygiene]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

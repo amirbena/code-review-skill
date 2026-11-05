@@ -1,0 +1,77 @@
+# Multi-repository Review Target corpus case (Issue #558, epic #555,
+# impl #556). Format: ../../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# Scope scenario 5 (single-repository regression, N=1): an ordinary
+# single-repository `patch` case — no `input.repositories` at all — kept
+# in this same corpus so the "multi-repository Review Target activates
+# only when 2+ roots are supplied; N=1 is entirely unchanged" claim
+# (skills/local-code-review/policies/multi-repository-review-target.md,
+# "Default, unchanged behavior") is recorded as a benchmark case in the
+# same cluster that proves the multi-repository behavior, not merely
+# asserted in prose.
+
+format: benchmark-case/v2
+
+id: single-repository-regression
+title: "A single-repository review (no repository list supplied) is unaffected by the multi-repository policy"
+
+input:
+  patch: |
+    diff --git a/app/pagination.py b/app/pagination.py
+    --- a/app/pagination.py
+    +++ b/app/pagination.py
+    @@ -1,4 +1,7 @@
+    -def paginate(items, page, page_size):
+    +def paginate(items, page, page_size, sort_key=None):
+         start = page * page_size
+         end = start + page_size
+    -    return items[start:end]
+    +    page_items = items[start:end]
+    +    if sort_key is not None:
+    +        page_items = sorted(page_items, key=sort_key)
+    +    return page_items
+  base:
+    app/pagination.py: |
+      def paginate(items, page, page_size):
+          start = page * page_size
+          end = start + page_size
+          return items[start:end]
+
+expected:
+  decision: changes-required
+  findings_completeness: at-least
+  findings:
+    - key: sort-key-applied-after-pagination-not-before
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: app/pagination.py
+        symbol: paginate
+        anchor: "page_items = sorted(page_items, key=sort_key)"
+      claim: >-
+        The new sort_key parameter sorts only the already-sliced page,
+        after start/end have been applied, instead of sorting the full
+        item list before slicing. Each page is internally ordered by
+        sort_key, but items are not consistently ordered across pages —
+        the same logical ordering request produces a different overall
+        sequence than sorting first and paginating second.
+      defect_kind: sort-applied-after-pagination
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Issue #558 scenario 5: the multi-repository activation gate
+    (`activates_multi_repository_policy`, tests/reference/review/
+    multi_repository_review_target.py) only fires at 2+ supplied roots;
+    this plain single-repository case has no `input.repositories` at all
+    and must review exactly as it would have before #556, with no
+    repo-qualified location prefix and no reference to the multi-repository
+    policy anywhere in its expectations.
+  taxonomy:
+    capability: [multi-repository-review-target]
+    policy_contract: [multi-repository-review-target]
+    risk_mode: [correctness]
+    affected_surface: [benchmark-corpus-or-tooling]

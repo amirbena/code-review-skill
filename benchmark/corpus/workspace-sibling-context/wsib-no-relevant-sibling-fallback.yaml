@@ -7,7 +7,7 @@
 # candidate is nominated, so the question falls through to the existing
 # Context gaps / Reasoning check behaviour.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: wsib-no-relevant-sibling-fallback
 title: "PaymentStatus gains refunded; no workspace sibling bears on the question"
@@ -72,6 +72,7 @@ expected:
       defect_kind: enum-member-added-context-dependent
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

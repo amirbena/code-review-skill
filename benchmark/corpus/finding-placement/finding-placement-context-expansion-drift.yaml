@@ -16,7 +16,7 @@
 # utils/money.py, notifications/sms.py, and tests/test_email.py never
 # become anchors despite being read for evidence.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-context-expansion-drift
 title: "Reading a sibling and an existing test for evidence must not relocate the finding away from email.py"
@@ -80,6 +80,7 @@ expected:
       defect_kind: precondition-violation
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

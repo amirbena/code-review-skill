@@ -13,7 +13,7 @@ allowed.
 Like `mutation_fixtures.py` (#305), this boundary's inputs and
 expectations -- an instruction's *channel*, an authorization decision, the
 recorded GitHub calls and the resulting governance state -- have no
-representation in `benchmark-case/v2`, so this module follows the same
+representation in `benchmark-case/v3`, so this module follows the same
 test-only, data-driven reference-fixture pattern, documented in
 `benchmark/corpus/github-enforcement-authorization/README.md`.
 

@@ -4,7 +4,7 @@ sub-corpus (Issue #272, parent #84, grandparent #82).
 
 The sub-corpus is
 ``benchmark/corpus/distributed-systems-deepening/*.yaml``: a small,
-focused set of ``benchmark-case/v2`` fixtures pinning representative
+focused set of ``benchmark-case/v3`` fixtures pinning representative
 Distributed Systems deepening outcomes as follow-up quality hardening for
 the capability #84 already defines — it validates domain correctness
 after the capability exists and never redesigns it.

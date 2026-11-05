@@ -24,7 +24,7 @@
 # resolves a real caller, app/checkout/cart.py, whose rounding assumption
 # the changed rounding direction now breaks.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion
 title: "apply_discount's rounding direction flips; whether it has an external caller is not resolvable from the diff alone"
@@ -96,6 +96,7 @@ expected:
         - defect_kind: incorrect-rounding-direction
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

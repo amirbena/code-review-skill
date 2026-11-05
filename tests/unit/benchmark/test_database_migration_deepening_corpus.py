@@ -5,7 +5,7 @@ sub-corpus (Issue #186, extended by Issue #279, parent #179, grandparent
 
 The sub-corpus is
 ``benchmark/corpus/database-migration-deepening/*.yaml``: a small,
-focused set of ``benchmark-case/v2`` fixtures pinning representative
+focused set of ``benchmark-case/v3`` fixtures pinning representative
 Database / Migration deepening outcomes as follow-up quality hardening for
 the capability #179 already defines — it validates domain correctness
 after the capability exists and never redesigns it. Issue #279 extended

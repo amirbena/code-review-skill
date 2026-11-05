@@ -17,7 +17,7 @@ The mutation-boundary
 #305), sandbox-adversarial
 ([`../sandbox-adversarial/README.md`](../sandbox-adversarial/README.md),
 #306), and delegation-spawn
-([`../delegation-spawn/README.md`](../delegation-spawn/README.md), #307)
+(`../delegation-spawn/README.md`, #307)
 corpora already prove **whether** a capability boundary denies a given
 attempt. This corpus assumes that denial already happened and asks a
 narrower, orthogonal question: given a real enforced denial, does the
@@ -33,7 +33,7 @@ deterministic structural assertion — event-type/classification equality,
 correlation-field presence, and a redaction pattern check — never an
 LLM/rubric score, exactly like the three corpora above.
 
-## Why this isn't a `benchmark-case/v2` corpus
+## Why this isn't a `benchmark-case/v3` corpus
 
 Like the three corpora above, this domain has no representation in
 [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md): that schema's

@@ -11,7 +11,7 @@
 # API response. The mismatch is only visible when both repositories'
 # deltas are reasoned about together as one combined Review Target.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: cross-repo-contract-mismatch
 title: "api-service renames order_id owner field; billing-worker's new reconciliation code still reads the old name"
@@ -119,6 +119,7 @@ expected:
       defect_kind: cross-repository-contract-mismatch
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, regression]
   rationale: >-

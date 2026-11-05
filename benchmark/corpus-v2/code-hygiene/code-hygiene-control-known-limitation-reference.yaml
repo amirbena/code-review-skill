@@ -1,0 +1,43 @@
+# Code-hygiene benchmark corpus case (Issue #677, parent #675, policy #676).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Control: the reference documents a known limitation and the code enforces
+# it. Nothing may be reported.
+
+format: benchmark-case/v2
+
+id: code-hygiene-control-known-limitation-reference
+title: "A reference documents a known limitation that the code enforces"
+
+input:
+  patch: |
+    diff --git a/app/search/query.py b/app/search/query.py
+    index 1111111..2222222 100644
+    --- a/app/search/query.py
+    +++ b/app/search/query.py
+    @@ -1,2 +1,4 @@
+     def run(index, text):
+    +    # Known limitation (#771): the index silently drops terms past 256 characters,
+    +    # so longer queries are truncated here instead of returning partial matches.
+         return index.search(text[:256])
+  base:
+    app/search/query.py: |
+      def run(index, text):
+          return index.search(text[:256])
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    The reference states a live limitation that explains the truncation. Any
+    finding is a false positive.
+  taxonomy:
+    capability: [code-hygiene]
+    policy_contract: [code-hygiene]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

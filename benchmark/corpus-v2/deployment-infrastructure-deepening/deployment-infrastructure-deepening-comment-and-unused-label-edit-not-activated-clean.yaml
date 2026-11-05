@@ -1,0 +1,69 @@
+# Deployment/infrastructure-deepening corpus case (Issue #743, parent #740,
+# depends on #742). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Non-activation: a manifest file changes but no deployment-behavior
+# property does. File type and path are signals, never the trigger.
+
+format: benchmark-case/v2
+
+id: deployment-infrastructure-deepening-comment-and-unused-label-edit-not-activated-clean
+title: "k8s/deployment.yaml changes only a comment and a label that no selector uses"
+
+input:
+  patch: |
+    diff --git a/k8s/deployment.yaml b/k8s/deployment.yaml
+    index 1111111..2222222 100644
+    --- a/k8s/deployment.yaml
+    +++ b/k8s/deployment.yaml
+    @@ -1,8 +1,9 @@
+    +# Owned by the payments team; contact them before changing replicas.
+     apiVersion: apps/v1
+     kind: Deployment
+     metadata:
+       name: payments-api
+       labels:
+    -    team: payments
+    +    team: payments-platform
+     spec:
+       replicas: 3
+  base:
+    k8s/deployment.yaml: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: payments-api
+        labels:
+          team: payments
+      spec:
+        replicas: 3
+        selector:
+          matchLabels:
+            app: payments-api
+        template:
+          metadata:
+            labels:
+              app: payments-api
+          spec:
+            containers:
+              - name: api
+                image: registry.example.com/payments-api:3.2.0
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    Fails the activation evidence bar while the file type matches: the
+    edit is a comment and a metadata label that no selector, service, or
+    policy consumes, so no deployment-behavior property changes and the
+    capability must stay quiet.
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [no-op]
+    affected_surface: [unclassified]

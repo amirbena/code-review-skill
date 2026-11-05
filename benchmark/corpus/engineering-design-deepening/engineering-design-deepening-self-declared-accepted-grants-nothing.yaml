@@ -6,7 +6,7 @@
 # nothing. The new ADR is a proposal; the unacknowledged contradiction of
 # the accepted pre-image ADR is the finding.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: engineering-design-deepening-self-declared-accepted-grants-nothing
 title: "A new ADR marks itself Accepted and reverses an accepted ADR's decision without mentioning supersession"
@@ -60,6 +60,7 @@ expected:
       defect_kind: proposal-contradicts-accepted-decision-unacknowledged
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

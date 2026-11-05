@@ -9,7 +9,7 @@
 # other action to an immutable commit SHA -- an inconsistency with the
 # repository's own established convention.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: dependency-supply-chain-deepening-unpinned-github-actions-reference
 title: "ci.yml adds a deploy step pinned to a floating tag while every existing step is pinned to a commit SHA"
@@ -68,6 +68,8 @@ expected:
       defect_kind: unpinned-automation-reference-inconsistent-with-convention
 
 metadata:
+  skill_set: [review-core, review-security]
+  skill_set_reason: "Mutable-tag risk is supply-chain knowledge, not a behavior change a functional read flags."
   source: crafted
   tags: [correctness]
   rationale: >-

@@ -14,7 +14,7 @@
 # Expected: ONE required finding anchored in inventory/adjust.py, which
 # the diff never touches; orders/cancel.py never becomes an anchor.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-preexisting-callee-bug-exposed
 title: "A new caller reaches apply_adjustment's pre-existing off-by-one; the bug is the callee's, not the new caller's"
@@ -63,6 +63,7 @@ expected:
       defect_kind: off-by-one-boundary-condition
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

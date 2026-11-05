@@ -8,7 +8,7 @@ built cannot regress unnoticed: code mutation never occurs without the
 exact required user authorization, and authority never widens across the
 `APPLY_PATCH` / `COMMIT` / `PUSH` transitions.
 
-## Why this is not a `benchmark-case/v2` corpus
+## Why this is not a `benchmark-case/v3` corpus
 
 Unlike the corpora under [`../`](../README.md) (each a self-contained
 inline patch plus expected findings), this boundary's inputs and
@@ -18,9 +18,9 @@ allow/deny result, and an expected repository/Git state after the action.
 [`fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)'s `expected` block has no
 field for any of that. This corpus follows the same test-only,
 data-driven reference-fixture pattern
-[`../delegation-spawn/README.md`](../delegation-spawn/README.md)
+`../delegation-spawn/README.md`
 (issue [#307](https://github.com/amirbena/code-review-skill/issues/307))
-and [`../reviewer-brief/README.md`](../reviewer-brief/README.md) already
+and `../reviewer-brief/README.md` already
 established for domains the schema does not fit:
 
 - [`../../../runtime_platform/benchmark/reference/mutation_fixtures.py`](../../../runtime_platform/benchmark/reference/mutation_fixtures.py) —
@@ -58,12 +58,12 @@ same single implementation; neither ever forks it.
 Like the delegation-spawn corpus, every case here yields a **capability-
 boundary pass/fail outcome**, never a P0/P1/P2 finding match. This module
 lives entirely outside `benchmark/corpus/*.yaml`
-(`benchmark-case/v2` fixtures) and `runtime_platform/benchmark/reference/
+(`benchmark-case/v3` fixtures) and `runtime_platform/benchmark/reference/
 benchmark_metrics.py`/`benchmark_match.py` (finding precision/recall/
 severity scoring): it is executed by its own dedicated test module,
 selectable independently, and never contributes a row to the ordinary
 review-quality metrics pipeline. This is a deliberate mirror of how
-[`../delegation-spawn/README.md`](../delegation-spawn/README.md) (#307)
+`../delegation-spawn/README.md` (#307)
 kept its capability-boundary corpus disjoint from #40/#41's
 finding-quality corpus.
 

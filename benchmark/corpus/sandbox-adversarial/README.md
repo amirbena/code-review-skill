@@ -7,10 +7,10 @@ depends on [#302](https://github.com/amirbena/code-review-skill/issues/302)
 [`../../../docs/threat-model/catalog/sandbox-runtime-validation.yaml`](../../../docs/threat-model/catalog/sandbox-runtime-validation.yaml)
 (Issue [#300](https://github.com/amirbena/code-review-skill/issues/300)).
 
-## Why this isn't a `benchmark-case/v2` corpus
+## Why this isn't a `benchmark-case/v3` corpus
 
 Every other sub-corpus under [`../`](../README.md) uses the
-`benchmark-case/v2` fixture format
+`benchmark-case/v3` fixture format
 ([`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)): a code patch plus
 an expected set of review *findings*, scored for finding
 precision/recall. That schema has no field for a capability boundary, a

@@ -4,7 +4,7 @@
 # Control: the reference documents an active workaround with its reason and
 # removal condition. Nothing may be reported, not even an observation.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: code-hygiene-control-active-workaround-reference
 title: "A reference documents a still-needed workaround and says when to remove it"
@@ -32,6 +32,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

@@ -4,7 +4,7 @@
 
 The sub-corpus is
 ``benchmark/corpus/decision-derivation/*.yaml``: a small,
-focused set of ``benchmark-case/v2`` fixtures pinning the *reverse*
+focused set of ``benchmark-case/v3`` fixtures pinning the *reverse*
 direction of ``shared/policies/severity.md``'s mechanical severity →
 decision derivation — a P2-only, or empty, finding set must always render
 `clean`, never `changes-required`. The `dd-blocking-*` fixtures in the same
@@ -81,7 +81,7 @@ class SubCorpusCaseTests(unittest.TestCase):
         for path in self.files:
             with self.subTest(case=path.name):
                 case = bf.parse_case(_load(path))
-                self.assertEqual(case.format, "benchmark-case/v2")
+                self.assertEqual(case.format, "benchmark-case/v3")
 
     def test_filename_stem_matches_case_id(self) -> None:
         for path in self.files:

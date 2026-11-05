@@ -5,7 +5,7 @@
 # Negative: a trade-off the document already acknowledges, with its
 # consequence stated accurately, is not a defect.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: engineering-design-deepening-acknowledged-tradeoff-clean
 title: "A design accepts a stale read model, names the staleness window, and the window matches the stated requirement"
@@ -40,6 +40,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [no-op]
   rationale: >-

@@ -11,7 +11,7 @@
 # same cluster that proves the multi-repository behavior, not merely
 # asserted in prose.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: single-repository-regression
 title: "A single-repository review (no repository list supplied) is unaffected by the multi-repository policy"
@@ -60,6 +60,7 @@ expected:
       defect_kind: sort-applied-after-pagination
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

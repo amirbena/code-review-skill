@@ -37,7 +37,7 @@ def _write_case(
     (directory / f"{case_id}.yaml").write_text(
         textwrap.dedent(
             f"""\
-            format: benchmark-case/v2
+            format: benchmark-case/v3
             id: {case_id}
             title: "synthetic case {case_id}"
             input:
@@ -51,6 +51,7 @@ def _write_case(
             expected:
               findings: []
             metadata:
+              skill_set: [review-core]
               taxonomy:
                 capability: [{capability}]
                 policy_contract: [{policy_contract}]
@@ -92,7 +93,7 @@ class BuildIndexShapeTests(unittest.TestCase):
         (directory / "multi.yaml").write_text(
             textwrap.dedent(
                 """\
-                format: benchmark-case/v2
+                format: benchmark-case/v3
                 id: multi-capability-case
                 title: "multi"
                 input:
@@ -106,6 +107,7 @@ class BuildIndexShapeTests(unittest.TestCase):
                 expected:
                   findings: []
                 metadata:
+                  skill_set: [review-core]
                   taxonomy:
                     capability: [core, performance]
                     policy_contract: [unclassified]
@@ -132,7 +134,7 @@ class BuildIndexShapeTests(unittest.TestCase):
         (directory / "bad.yaml").write_text(
             textwrap.dedent(
                 """\
-                format: benchmark-case/v2
+                format: benchmark-case/v3
                 id: bad-case
                 title: "bad"
                 input:
@@ -146,6 +148,7 @@ class BuildIndexShapeTests(unittest.TestCase):
                 expected:
                   findings: []
                 metadata:
+                  skill_set: [review-core]
                   taxonomy:
                     capability: [not-a-real-value]
                     policy_contract: [unclassified]

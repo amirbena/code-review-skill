@@ -4,7 +4,7 @@
 # Control: one comment cites an external partner contract and another a
 # compatibility constraint, each with its reason. Nothing may be reported.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: code-hygiene-control-external-contract-and-compat-reference
 title: "References document an external contract and a compatibility constraint"
@@ -31,6 +31,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

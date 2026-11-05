@@ -12,7 +12,7 @@
 # Expected: ONE required finding anchored in pricing/tax.py;
 # billing/checkout.py never becomes an anchor.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-callee-contract-violation
 title: "apply_tax breaks its own documented rounding contract regardless of a conforming caller"
@@ -62,6 +62,7 @@ expected:
       defect_kind: missing-documented-rounding
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

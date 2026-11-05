@@ -1,0 +1,46 @@
+# Code-hygiene benchmark corpus case (Issue #677, parent #675, policy #676).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Control: conventional loop indices and comprehension variables are never
+# reported.
+
+format: benchmark-case/v2
+
+id: code-hygiene-control-conventional-loop-and-comprehension-names
+title: "Conventional loop indices and comprehension variables are introduced"
+
+input:
+  patch: |
+    diff --git a/app/grid/layout.py b/app/grid/layout.py
+    index 1111111..2222222 100644
+    --- a/app/grid/layout.py
+    +++ b/app/grid/layout.py
+    @@ -1,2 +1,6 @@
+     def cells(rows, cols):
+    -    return []
+    +    grid = []
+    +    for i in range(rows):
+    +        for j in range(cols):
+    +            grid.append((i, j))
+    +    return [(x, y) for x, y in grid if x != y]
+  base:
+    app/grid/layout.py: |
+      def cells(rows, cols):
+          return []
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    `i`, `j`, `x`, and `y` follow the conventional loop and comprehension
+    idiom. Any finding is a false positive.
+  taxonomy:
+    capability: [code-hygiene]
+    policy_contract: [code-hygiene]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

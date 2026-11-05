@@ -4,7 +4,7 @@
 shared/policies/reasoning-checkpoint.md, the `Reasoning check` section of
 shared/templates/review-summary.md, and both delivery templates).
 
-The checkpoint is not representable in `benchmark-case/v2`
+The checkpoint is not representable in `benchmark-case/v3`
 (runtime_platform/benchmark/fixture-format.md): that schema's `expected`
 block is a patch plus expected review findings, and the checkpoint is by
 contract *not* a finding and carries no severity, ID, or Decision effect.
@@ -12,7 +12,7 @@ Per the #565 design record (section 11) this module therefore follows the
 existing test-only reference-fixture pattern of
 `verdict_consistency_fixtures.py` / `reviewer_brief_fixtures.py`: declarative,
 metadata-bearing cases over a rendered review, documented in
-benchmark/corpus/reasoning-checkpoint/README.md. No second fixture
+benchmark/corpus-v2/reasoning-checkpoint/README.md. No second fixture
 framework, no new benchmark mechanism.
 
 Each `ReasoningCheckpointCase` carries the *activation evidence* the review

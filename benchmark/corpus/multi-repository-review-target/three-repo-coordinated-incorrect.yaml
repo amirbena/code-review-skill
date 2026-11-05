@@ -12,7 +12,7 @@
 # other two repositories now actually send) is only visible against the
 # other two members' deltas.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: three-repo-coordinated-incorrect
 title: "downstream-consumer reads the wrong field name for the idempotency_key api-gateway and orchestration-service now send"
@@ -139,6 +139,7 @@ expected:
       defect_kind: cross-repository-contract-mismatch
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, regression]
   rationale: >-

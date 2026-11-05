@@ -24,7 +24,7 @@
 # locations, per #177's root-cause consolidation model — not three
 # separate near-duplicate findings for the same underlying cause.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: analogue-placement-status-label-duplication-consolidated
 title: "New connector duplicates the status-label table at three call sites for one reason; expect one consolidated finding"
@@ -130,6 +130,7 @@ expected:
       defect_kind: analogue-placement-pattern-deviation
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality, correctness]
   rationale: >-

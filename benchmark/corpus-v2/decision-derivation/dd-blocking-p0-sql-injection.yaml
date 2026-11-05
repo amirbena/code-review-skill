@@ -1,0 +1,84 @@
+# Decision-derivation corpus case (Issue #350). Format:
+# docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# Forward-direction proof (the opposite polarity of #450's P2-only/empty
+# cases): an unambiguous, unarguable P0 defect. A correct review reports
+# it and the rendered Result/Decision must be the blocking value
+# (`CHANGES REQUIRED` local / `Request Changes` GitHub) — never the
+# clean/approved value (severity.md, "Decision derivation (mechanical)").
+# The defect is a textbook SQL injection: an untrusted `customer_id` is
+# interpolated straight into the query text instead of being bound as a
+# parameter, so there is no reasonable reading under which it does not
+# block.
+
+format: benchmark-case/v2
+
+id: dd-blocking-p0-sql-injection
+title: "fetch_orders interpolates an untrusted customer_id into its SQL string"
+
+input:
+  patch: |
+    diff --git a/reports/orders.py b/reports/orders.py
+    index 1111111..2222222 100644
+    --- a/reports/orders.py
+    +++ b/reports/orders.py
+    @@ -1,3 +1,3 @@
+     def fetch_orders(conn, customer_id):
+    -    query = "SELECT * FROM orders WHERE customer_id = ?"
+    -    return conn.execute(query, (customer_id,)).fetchall()
+    +    query = f"SELECT * FROM orders WHERE customer_id = '{customer_id}'"
+    +    return conn.execute(query).fetchall()
+  base:
+    reports/orders.py: |
+      def fetch_orders(conn, customer_id):
+          query = "SELECT * FROM orders WHERE customer_id = ?"
+          return conn.execute(query, (customer_id,)).fetchall()
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: fetch-orders-sql-injection
+      match: required
+      severity: P0
+      location:
+        location_intent: line
+        path: reports/orders.py
+        symbol: fetch_orders
+        anchor: "query = f\"SELECT * FROM orders WHERE customer_id = '{customer_id}'\""
+      claim: >-
+        customer_id is interpolated directly into the SQL string instead of
+        being passed as a bound parameter, so a crafted customer_id
+        rewrites the query (SQL injection).
+      defect_kind: sql-injection
+
+    # Optional (severity may be P1 or P2): the change removes parameter
+    # binding and adds no test. Present so a review that (correctly) asks
+    # for a test covering hostile input is not scored as an unexpected
+    # finding under `findings_completeness: exhaustive`.
+    - key: missing-injection-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: reports/orders.py
+      claim: >-
+        the change alters how untrusted input reaches the query and adds no
+        test covering a hostile customer_id.
+      defect_kind: missing-test
+
+metadata:
+  source: crafted
+  tags: [security]
+  rationale: >-
+    The forward-direction (#350) proof for the P0 side of the mechanical
+    severity -> decision derivation: one unambiguous, unarguable critical
+    defect that must render a blocking Result and Decision, never
+    `REVIEW CLEAN` / `Approve`. Deliberately the most textbook injection
+    shape so a missing blocking verdict cannot be excused as a debatable
+    severity call.
+  taxonomy:
+    capability: [decision-derivation]
+    policy_contract: [severity]
+    risk_mode: [security]
+    affected_surface: [unclassified]

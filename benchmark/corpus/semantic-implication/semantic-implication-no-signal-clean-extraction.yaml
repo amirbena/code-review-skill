@@ -8,7 +8,7 @@
 # no per-dimension analysis and reports no output for this pass — the
 # "no signal, no analysis, no not-applicable record" rule.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: semantic-implication-no-signal-clean-extraction
 title: "Pure currency-formatting helper extracted with identical behavior"
@@ -39,6 +39,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality, no-op]
   rationale: >-

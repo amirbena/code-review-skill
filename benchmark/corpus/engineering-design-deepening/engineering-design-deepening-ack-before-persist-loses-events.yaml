@@ -6,7 +6,7 @@
 # (problem/solution fit). Design-only change; severity stays P2 because
 # nothing is built yet.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: engineering-design-deepening-ack-before-persist-loses-events
 title: "A new design states a no-lost-events goal but specifies acknowledging the broker message before persisting it"
@@ -53,6 +53,7 @@ expected:
       defect_kind: mechanism-cannot-meet-stated-goal
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

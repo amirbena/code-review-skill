@@ -5,7 +5,7 @@
 # Positive (T1): implementation contradicts an accepted decision present at
 # the pre-image. The ADR is unchanged by the change, so it is accepted.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: engineering-design-deepening-code-contradicts-accepted-adr
 title: "A code change writes directly to the shared ledger table that an accepted ADR routes through the ledger service"
@@ -58,6 +58,7 @@ expected:
       defect_kind: code-contradicts-accepted-decision
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

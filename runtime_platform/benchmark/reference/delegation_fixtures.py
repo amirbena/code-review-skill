@@ -4,7 +4,7 @@ benchmark corpus (Issue #307, depends on #303:
 shared/policies/agent-delegation.md).
 
 Unlike the domain corpora under benchmark/corpus/, this boundary has
-no representation in the `benchmark-case/v2` schema
+no representation in the `benchmark-case/v3` schema
 (runtime_platform/benchmark/fixture-format.md): that schema's `expected` block is
 findings/decision-shaped (a patch, a set of expected review findings) and
 has no field for a capability grant, a spawn-depth budget, or an
@@ -12,7 +12,7 @@ allow/deny structural outcome. Rather than stretch that closed schema to
 fit a security-boundary domain, this module follows the same pattern
 `reviewer_brief_fixtures.py` already established for a domain the schema
 does not fit: a test-only, hand-authored, *data-driven* fixture corpus,
-documented in benchmark/corpus/delegation-spawn/README.md.
+documented in benchmark/corpus-v2/delegation-spawn/README.md.
 
 This is deliberately **not** a duplicate of
 tests/unit/review/delegation/test_agent_delegation_authorization.py, which

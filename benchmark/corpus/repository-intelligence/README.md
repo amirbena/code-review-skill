@@ -2,7 +2,7 @@
 
 Repository-development artifact for GitHub Issue
 [#129](https://github.com/amirbena/code-review-skill/issues/129). This is a
-**focused sub-corpus** of [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md)
+**focused sub-corpus** of [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md)
 fixtures demonstrating the acceptance criterion "benchmark fixtures
 demonstrate measurable gains over diff-only review without unacceptable
 false-positive growth" for the
@@ -75,7 +75,7 @@ header comment.
 
 ## Relationship-influence attribution and staleness are reference-model concerns
 
-`benchmark-case/v2` has no field for `influential_relationships` or a
+`benchmark-case/v3` has no field for `influential_relationships` or a
 snapshot-identity/staleness state — the format's schema is closed and this
 corpus does not extend it (see
 [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §2, "an unknown key

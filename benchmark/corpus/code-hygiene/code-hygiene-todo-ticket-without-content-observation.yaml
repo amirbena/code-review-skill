@@ -5,7 +5,7 @@
 # content. It names no defect and no follow-up, so it is not a real-defect
 # TODO reviewed under the normal rules.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: code-hygiene-todo-ticket-without-content-observation
 title: "A TODO consisting only of a ticket key is added"
@@ -31,6 +31,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

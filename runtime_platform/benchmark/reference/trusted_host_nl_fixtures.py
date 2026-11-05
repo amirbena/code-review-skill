@@ -6,7 +6,7 @@ phrasings").
 
 Like `delegation_fixtures.py` (Issue #307) and `reviewer_brief_fixtures.py`,
 this security-boundary domain has no representation in the
-`benchmark-case/v2` schema (runtime_platform/benchmark/fixture-format.md): that schema's
+`benchmark-case/v3` schema (runtime_platform/benchmark/fixture-format.md): that schema's
 `expected` block is findings/decision-shaped and has no field for a
 resolved authorization state or an execution-backend provenance value.
 Rather than stretch that closed schema, this module follows the same

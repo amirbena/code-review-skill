@@ -56,12 +56,12 @@ def _multi_repo_case(
     *, repositories: dict, unadmitted: dict | None = None, case_id: str = "mr-case"
 ) -> bf.BenchmarkCase:
     data = {
-        "format": "benchmark-case/v2",
+        "format": "benchmark-case/v3",
         "id": case_id,
         "title": "t",
         "input": {"repositories": repositories},
         "expected": {"decision": "clean", "findings": []},
-        "metadata": {"taxonomy": _TAXONOMY},
+        "metadata": {"taxonomy": _TAXONOMY, "skill_set": ["review-core"]},
     }
     if unadmitted:
         data["input"]["unadmitted_repositories"] = unadmitted
@@ -221,12 +221,12 @@ class SingleRepoRegressionTests(unittest.TestCase):
 
     def test_patch_case_still_receives_a_single_path(self) -> None:
         data = {
-            "format": "benchmark-case/v2",
+            "format": "benchmark-case/v3",
             "id": "single",
             "title": "t",
             "input": {"patch": _patch("a.txt", "1\n", "2\n"), "base": {"a.txt": "1\n"}},
             "expected": {"decision": "clean", "findings": []},
-            "metadata": {"taxonomy": _TAXONOMY},
+            "metadata": {"taxonomy": _TAXONOMY, "skill_set": ["review-core"]},
         }
         case = bf.parse_case(data)
         seen = {}

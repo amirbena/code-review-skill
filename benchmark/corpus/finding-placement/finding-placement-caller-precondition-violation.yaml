@@ -14,7 +14,7 @@
 # Expected: ONE required finding anchored in orders/api.py;
 # orders/repository.py never becomes an anchor.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-caller-precondition-violation
 title: "orders/api.py passes an unvalidated total to save_order, violating its documented precondition"
@@ -69,6 +69,7 @@ expected:
       defect_kind: missing-precondition-check
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-
