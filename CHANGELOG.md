@@ -18,6 +18,28 @@ automatically when the change reaches `main`. See
 _Nothing yet. New entries land here and move under a version heading at
 release time._
 
+## v3.0.0 — 2026-11-05
+
+### Breaking
+
+- Code Review v3: a minimal read-only `review-core` with explicit `review-*` mini-skills replaces the v2 policy-routed Skills; `local-code-review` and `github-pr-review` remain as wrappers that delegate to `review-core` (#868).
+
+### Removed
+
+- Removed the v2 two-Skill, `shared/` and capability-manifest architecture and its structural tests (#865).
+
+### Added
+
+- Add `review-core`, a read-only Skill that reviews a local change or a GitHub PR and returns P0/P1/P2 findings with one mechanical decision (#855).
+- Add the review-security, review-backend and review-frontend domain mini-skills for the v3 Review Core (#861).
+- Add the v3 `review-publish-github` mini-skill, which publishes a Core review to a PR as one batched review only when asked (#859).
+- Add the v3 `review-requirements`, `review-deep-investigation` and `review-suggestions` depth mini-skills, selected from the user's request on top of `review-core` (#860).
+- Add the review-runtime-check mini-skill for sandboxed, explicitly authorized confirmation of review findings in the v3 Review Core (#863).
+
+### Changed
+
+- Package the v3 Skill set, including `local-code-review` and `github-pr-review` wrappers over `review-core` (#867).
+
 ## v2.0.0 — 2026-11-03
 
 ### Breaking

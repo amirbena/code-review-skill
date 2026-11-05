@@ -1,5 +1,6 @@
 ---
 name: review-suggestions
+version: 3.0.0
 description: Adds a few non-blocking P2 suggestions on maintainability, design and hygiene. Never P0 or P1. Use when you want improvement ideas beyond blocking defects.
 ---
 
