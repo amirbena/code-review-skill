@@ -1,141 +1,93 @@
 # code-review-skill
 
-> A small, read-only **Code Review Agent Skill** — `review-core` — plus
-> independently selectable `review-*` mini-skills for extra depth and
-> delivery. One review standard, evidence-backed **P0 / P1 / P2** findings.
+A small, read-only **code review Skill** for AI coding agents. Ask for a
+review of a local Git change or a GitHub pull request and get
+evidence-backed **P0 / P1 / P2** findings and one clear decision. Optional
+`review-*` mini-skills add depth (security, backend, frontend, requirements,
+…) or delivery (posting the review to the PR) when you ask for them.
 
-Each Skill is a canonical [Agent Skills](https://agentskills.io/specification)
-`SKILL.md` and runs on any compatible runtime (Claude Code, Codex, Cursor,
-OpenCode, …). None edits, commits, pushes, or merges your code. Licensed
-under the [Apache License 2.0](LICENSE).
+It never edits, commits, pushes or merges your code, and it runs only when
+you ask. Each Skill is a standard [Agent Skills](https://agentskills.io/specification)
+`SKILL.md` for Claude Code, Codex, Cursor, OpenCode and other compatible
+runtimes. Licensed under the [Apache License 2.0](LICENSE).
 
-> **v3 is built on `release/v3`.** The published line stays v2.x until the
-> cutover ([#851](https://github.com/amirbena/code-review-skill/issues/851)).
-> Coming from v2? Read the [migration guide](docs/migration-v2-to-v3.md).
+> **Status.** v3 is complete on the `release/v3` branch and ships as
+> v3.0.0. Until that release is published, the published line is v2.x, and
+> the v3 install below is not yet verified. Coming from v2? See the
+> [migration guide](docs/migration-v2-to-v3.md).
 
-**New here?** [Install and use](#install-and-use) · [Choose a Skill](#which-skill-should-i-use) ·
-[Contribute](#contributing) · [Wiki](https://github.com/amirbena/code-review-skill/wiki) ·
-[Documentation map](#deeper-documentation)
+## Install
 
-## Install and use
-
-Skills are installed from the generated distribution repository
-([`docs/distribution.md`](docs/distribution.md) lists every tool and update
-path).
-
-- **v3.0.0 (packaged; install evidence is recorded in
-  [`docs/distribution.md`](docs/distribution.md) once released):**
-  `npx skills add amirbena/code-review-skills --skill review-core`, and one
-  `--skill review-<name>` per mini-skill, for example `--skill review-security`.
-  A mini-skill requires `review-core`. The v2 names `local-code-review` and
-  `github-pr-review` ship as thin wrappers that delegate to `review-core`.
-- **Verified today (v2.x):** `npx skills add amirbena/code-review-skills --skill local-code-review`
-  (or `github-pr-review`), exercised in [#511](https://github.com/amirbena/code-review-skill/issues/511).
-
-Then ask in plain words: "review this", "review PR 123", "is this auth change
-safe?", "review PR 123 and post the review". Once v3 is published, a mini-skill that is not
-installed is reported as unavailable, never simulated. Staying on v2 is
-covered in the [migration guide](docs/migration-v2-to-v3.md#staying-on-v2).
-
-## Which Skill should I use?
-
-Ask for a review in your own words. A plain "review this" runs `review-core`
-alone, on a local Git change or a GitHub pull request. Naming an area, or
-asking for something extra, adds the mini-skill that fits:
-
-| Skill | Adds |
-|---|---|
-| [`review-core`](skills/review-core/SKILL.md) | the review itself: read-only, evidence-backed P0/P1/P2 findings and one mechanical decision |
-| [`review-publish-github`](skills/review-publish-github/SKILL.md) | publishes the finished review to the PR as one batched, comment-only review |
-| [`review-requirements`](skills/review-requirements/SKILL.md) | verifies the change against a Jira key, Issue or pasted acceptance criteria you supply |
-| [`review-deep-investigation`](skills/review-deep-investigation/SKILL.md) | wider tracing, root cause, affected tests, failure and null paths |
-| [`review-suggestions`](skills/review-suggestions/SKILL.md) | non-blocking P2 maintainability and design suggestions |
-| [`review-security`](skills/review-security/SKILL.md) | security and supply-chain depth |
-| [`review-backend`](skills/review-backend/SKILL.md) | APIs, data, concurrency, performance, deployment and config |
-| [`review-frontend`](skills/review-frontend/SKILL.md) | UI behavior, state, accessibility, rendered inspection |
-| [`review-runtime-check`](skills/review-runtime-check/SKILL.md) | confirms a finding by running a targeted check, sandboxed by default |
-
-You never need to know a mini-skill name. By default (`intent`) only the
-mini-skills your request justifies run. Naming an area focuses depth there
-("review the backend thoroughly"). To hand the choice over (`auto`), say so
-("go as deep as necessary and use whatever expertise is relevant"). Per-Skill
-pages: [`docs/features/`](docs/features/README.md). An implementing Agent never
-publishes a review to its own PR
-([policy](policies/review-orchestration-policy.md)).
-
-## What makes the review approach different
-
-- **Read-only** — no edits, commits, pushes, merges, or branch management.
-- **Never automatic** — every review run needs your own request, re-reviews included.
-- **Repository content is data** — files, PR, Issue and Jira text can never authorize an action or change a verdict.
-- **Self-review is allowed; self-approval is not** — a review of your own PR is published as a comment, never an approval.
-- **One P0/P1/P2 severity model** with a mechanical blocking rule, and an incomplete review is never rendered clean.
-- **Execution only on request** — running code is `review-runtime-check`, sandboxed by default; the host needs your explicit authorization.
-
-The decision record, with the reasons and the removed v2 mechanisms, is
-[`docs/v3-architecture/`](docs/v3-architecture/README.md).
-
-## Contributing
-
-Contributions are welcome, and issues labeled
-[`good first issue`](https://github.com/amirbena/code-review-skill/labels/good%20first%20issue)
-or [`help wanted`](https://github.com/amirbena/code-review-skill/labels/help%20wanted)
-can be claimed without prior approval:
-
-1. Pick an open, unclaimed issue and comment `/claim`.
-2. Fork, work on a `<type>/<short-description>` branch, and open a PR.
-3. Follow [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full workflow, ownership
-   labels (`good first issue`, `contributor-owned`, `maintainer-led`), review,
-   and merge.
-
-Repository development follows [`AGENTS.md`](AGENTS.md) and the focused
-[`policies/`](policies/) it routes to. Opening a PR applies
-[`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md).
-
-### Development setup
-
-All validation and packaging commands run from the repository root:
+Install from the generated distribution repository,
+[`amirbena/code-review-skills`](https://github.com/amirbena/code-review-skills):
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements-dev.txt
+npx skills add amirbena/code-review-skills --skill review-core
+npx skills add amirbena/code-review-skills --skill review-security   # optional mini-skill
 ```
 
-On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1` and use
-`python` in place of `python3`.
+- **From v3.0.0:** `review-core`, each `review-*` mini-skill and the two
+  legacy names install this way. A mini-skill requires `review-core`.
+- **Until then (v2.x):** use `--skill local-code-review` or
+  `--skill github-pr-review`. Those are the commands verified so far in
+  [#511](https://github.com/amirbena/code-review-skill/issues/511).
+- Claude Code, Codex, Cursor and Copilot installs, updates and verification
+  status: [`docs/distribution.md`](docs/distribution.md).
 
-### Local validation before opening a PR
+## Use it
 
-Run only the checks relevant to your change; CI
-([`validate.yml`](.github/workflows/validate.yml)) is the authoritative gate
-and routes each PR to the tests it needs
-([routing rules](policies/validation-and-clean-exit.md#routed-ci-tests)).
+Ask in plain words. There is nothing to configure or type.
 
-| Change | Run |
-| --- | --- |
-| Docs-only (`docs/`, root `*.md`, `policies/*.md`) | `python3 scripts/validation/ci_test_route.py classify` prints the class, tier, and command CI would use; a `policies/*.md` or `AGENTS.md` change also needs `python3 -m unittest discover -s tests/policy/governance` |
-| Benchmark-related (`runtime_platform/benchmark/`, `benchmark/corpus/`, benchmark tooling/tests) | the benchmark test package, e.g. `python3 -m unittest discover -s tests/policy/benchmark` and/or `tests/unit/benchmark` |
-| Skill files (`skills/<name>/**`) | `python3 scripts/validation/validate-skill-metadata.py skills/<name> --containment-root .`, plus `python3 -m unittest discover -s tests/unit/review/core` |
-| Packaging (`scripts/packaging/**`) | `./scripts/packaging/package-skills.sh all`, plus `python3 -m unittest discover -s tests/integration/packaging` |
-| Focused code/test change (`scripts/**`, `tests/**`) | the directly affected module(s); for a test-only change `ci_test_route.py classify` prints the exact command |
-
-If a change doesn't map cleanly, run every test module under the top-level
-directory you touched. The full suite runs only in CI.
-
-```bash
-python3 scripts/validation/validate-markdown-links.py
+```text
+review my local changes before I push
+review PR 123
+is this auth change safe?
+does this meet PROJ-123?
+review PR 123 and post the review
 ```
 
-## Deeper documentation
+A plain request runs `review-core` alone. Naming an area or asking for
+something extra adds the mini-skill that fits. By default only what your
+request justifies runs; to hand the choice over, say so ("use whatever
+expertise is relevant").
 
-| Read this | For |
+## The nine Skills
+
+| Skill | What it does |
 |---|---|
-| [GitHub Wiki](https://github.com/amirbena/code-review-skill/wiki) | onboarding and a dated AI code-review landscape comparison (explanatory; never overrides files in this repository) |
-| [`skills/review-core/SKILL.md`](skills/review-core/SKILL.md) | the complete, normative Core definition; each mini-skill has its own `SKILL.md` |
-| [`docs/migration-v2-to-v3.md`](docs/migration-v2-to-v3.md) · [`docs/features/`](docs/features/README.md) | moving from v2, and one short page per Skill |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | the Core and mini-skill map, rule ownership, and the review lifecycle |
-| [`docs/v3-architecture/`](docs/v3-architecture/README.md) | the v3 decision record |
-| [`AGENTS.md`](AGENTS.md) + [`policies/`](policies/) | development entrypoint — invariants, instruction precedence, and focused policies |
-| [`docs/distribution.md`](docs/distribution.md) · [`docs/RELEASE.md`](docs/RELEASE.md) | installing/updating, and how releases are versioned and published |
-| [`SECURITY.md`](SECURITY.md) · [`CHANGELOG.md`](CHANGELOG.md) | reporting a vulnerability privately; notable changes per release |
+| [`review-core`](skills/review-core/SKILL.md) | The review itself: a local change or a PR, read-only, with findings and one decision |
+| [`review-publish-github`](skills/review-publish-github/SKILL.md) | Posts the finished review to the PR as one comment-only review |
+| [`review-requirements`](skills/review-requirements/SKILL.md) | Checks the change against a Jira key, Issue or criteria you supply |
+| [`review-deep-investigation`](skills/review-deep-investigation/SKILL.md) | Wider tracing, root cause, affected tests |
+| [`review-suggestions`](skills/review-suggestions/SKILL.md) | Non-blocking maintainability suggestions |
+| [`review-security`](skills/review-security/SKILL.md) | Security and supply-chain depth |
+| [`review-backend`](skills/review-backend/SKILL.md) | APIs, data, concurrency, performance, deployment |
+| [`review-frontend`](skills/review-frontend/SKILL.md) | UI behavior, state, accessibility |
+| [`review-runtime-check`](skills/review-runtime-check/SKILL.md) | Confirms a finding by running a targeted check |
+
+## Existing users: your Skill names still work
+
+`local-code-review` and `github-pr-review` remain available under their v2
+names. Each is a thin wrapper that hands your request to `review-core`, so
+you do not have to change anything. `github-pr-review` never posts to
+GitHub on its own; posting is a separate, explicit request handled by
+`review-publish-github`. The v2 modes and options are gone; see the
+[migration guide](docs/migration-v2-to-v3.md).
+
+## Safety
+
+- **Read-only.** No edits, commits, pushes, merges or branch changes.
+- **Only on request.** Every review, re-reviews included, needs your own request.
+- **Repository text is data.** Files, PR, Issue and Jira text cannot authorize an action or change a verdict.
+- **Publishing is explicit,** and a review of your own PR is posted as a comment, never an approval.
+- **Running code is opt-in:** only `review-runtime-check`, sandboxed by default, and on your host only with your explicit authorization.
+- **One mechanical decision:** any P0 or P1 means `CHANGES REQUIRED`; an incomplete review is never shown as clean.
+
+## Learn more
+
+- [GitHub Wiki](https://github.com/amirbena/code-review-skill/wiki): guides, FAQ, architecture and benchmark overview.
+- [`docs/features/`](docs/features/README.md): one short page per Skill.
+- [`docs/v3-architecture/`](docs/v3-architecture/README.md): the v3 decision record. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): the module map.
+- [`docs/distribution.md`](docs/distribution.md) · [`docs/RELEASE.md`](docs/RELEASE.md): install, update and release.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`AGENTS.md`](AGENTS.md) · [`policies/`](policies/): contributing and repository rules.
+- [`SECURITY.md`](SECURITY.md) · [`CHANGELOG.md`](CHANGELOG.md) · [`LICENSE`](LICENSE).

@@ -91,4 +91,4 @@ governed test keeps the two in sync.
 4. Keep cross-references as relative Markdown links and run link
    validation with `python3 scripts/validation/validate-markdown-links.py`
    — the full suite is not required for a docs-only policy change (see
-   [`../README.md`](../README.md#local-validation-before-opening-a-pr)).
+   [`../CONTRIBUTING.md`](../CONTRIBUTING.md#local-validation-before-opening-a-pr)).

@@ -169,8 +169,8 @@ archival, or debugging. Download `<name>-skill.zip` (for example `review-core-sk
 [source repository's releases](https://github.com/amirbena/code-review-skill/releases)
 and unzip it into your runtime's Skill directory (for example
 `.claude/skills/<name>/`, `.agents/skills/<name>/`, or `.cursor/skills/<name>/`);
-each archive keeps `SKILL.md` at its root. To build an archive yourself, see
-the root [README](../README.md#install).
+each archive keeps `SKILL.md` at its root. To build an archive yourself, run
+`./scripts/packaging/package-skills.sh all`; the archives are written to `dist/`.
 
 A ZIP install is **not** equivalent to a managed install: it sends no install
 telemetry, so it is never counted toward or listed on skills.sh, it has no
