@@ -4,12 +4,7 @@ from __future__ import annotations
 
 import unittest
 
-from tests.integration.packaging._shared import (
-    PS1,
-    SH,
-    _shared_destinations,
-    _skill_destinations,
-)
+from tests.integration.packaging._shared import PS1, SH
 
 
 class PackagingScriptParityTests(unittest.TestCase):
@@ -59,28 +54,6 @@ class PackagingScriptParityTests(unittest.TestCase):
         ):
             self.assertNotIn(obsolete_name, self.sh)
             self.assertNotIn(obsolete_name, self.ps1)
-
-    def test_new_shared_policies_are_in_both(self) -> None:
-        for name in (
-            "review-context.md",
-            "review-evidence.md",
-            "parallel-review.md",
-            "runtime-validation.md",
-            "change-risk-signals.md",
-            "repository-expansion.md",
-            "large-pr-partitioning.md",
-            "review-stopping-criteria.md",
-        ):
-            self.assertIn(f"shared/policies/{name}", _shared_destinations())
-
-    def test_new_github_policies_are_in_both(self) -> None:
-        for name in (
-            "policies/review-context.md",
-            "policies/review-evidence.md",
-            "policies/repository-checkout.md",
-            "policies/parallel-review.md",
-        ):
-            self.assertIn(name, _skill_destinations("github"))
 
     def test_powershell_resolves_a_windows_compatible_python_launcher(self) -> None:
         self.assertIn('Get-Command "python"', self.ps1)

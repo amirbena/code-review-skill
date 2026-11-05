@@ -3,7 +3,7 @@
 Repository-development artifact for GitHub Issue
 [#211](https://github.com/amirbena/code-review-skill/issues/211), a base
 signal-triggered pass in
-[`shared/policies/review-scope.md`](../../../shared/policies/review-scope.md),
+`shared/policies/review-scope.md`,
 "Semantic change-implication reasoning." This is a **focused sub-corpus**
 of [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md) fixtures exercising that
 section's vocabulary: the eight canonical dimensions, their semantic
@@ -58,13 +58,13 @@ mechanical reference model or benchmark corpus of its own. There is no
 closed-form function from a diff's shape to "which dimensions are
 implicated," so this corpus is validated only by prose-contract tests
 against the policy text (see
-[`../../../tests/policy/review/root_cause/test_semantic_implication_and_null_absence.py`](../../../tests/policy/review/root_cause/test_semantic_implication_and_null_absence.py))
+`../../../tests/policy/review/root_cause/test_semantic_implication_and_null_absence.py`)
 and by the structural fixture checks below — never by a second,
 hand-maintained implementation of the dimension taxonomy.
 
 ## Validation
 
-[`../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py`](../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py)
+`../../../tests/unit/review/root_cause/test_semantic_implication_corpus.py`
 loads every `*.yaml` here through the same single reference validator
 [`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second

@@ -65,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
         "write-tree-manifest", help="write dist/skills-manifest.json for every built dist/skills/<name>/ tree"
     )
     manifest.add_argument("dist_dir", type=Path)
-    manifest.add_argument("names", nargs="+", help="the Skills built in this run")
+    manifest.add_argument("names", nargs="*", help="the Skills built in this run (none is valid)")
 
     normalize = subparsers.add_parser(
         "normalize-tree", help="normalize line endings, BOM and modes of a staged tree in place"

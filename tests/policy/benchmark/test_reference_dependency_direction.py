@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Benchmark reference-model dependency direction guard (Issue #792)."""
+"""Benchmark dependency direction guard (Issues #792, #849): the platform
+(`runtime_platform/`) is repository tooling and must not import from `tests/`."""
 
 from __future__ import annotations
 
@@ -10,9 +11,6 @@ from pathlib import Path
 from tests.support.paths import REPO_ROOT
 
 PLATFORM_ROOT = REPO_ROOT / "runtime_platform"
-LIBRARY_ROOT = REPO_ROOT / "tests" / "reference" / "review"
-SANCTIONED = "tests.reference.review"
-PLATFORM = "runtime_platform"
 
 
 def package_of(path: Path) -> str:
@@ -20,8 +18,7 @@ def package_of(path: Path) -> str:
 
 
 def imported_targets(source: str, package: str) -> list[tuple[int, str]]:
-    """Absolute dotted import targets; `from M import n` yields `M.n` so that
-    `from tests.reference import review` equals `import tests.reference.review`."""
+    """Absolute dotted import targets; `from M import n` yields `M.n`."""
     found = []
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.Import):
@@ -40,118 +37,42 @@ def is_under(module: str, package: str) -> bool:
     return module == package or module.startswith(package + ".")
 
 
-def platform_violations(path: Path, targets):
-    """Platform imports of `tests` must stay inside the sanctioned library."""
-    return [
-        f"{path}:{line} imports {module}"
-        for line, module in targets
-        if is_under(module, "tests") and not is_under(module, SANCTIONED)
-    ]
+def platform_violations(path: Path, targets) -> list[str]:
+    return [f"{path}:{line} imports {module}" for line, module in targets if is_under(module, "tests")]
 
 
-def library_violations(path: Path, targets):
-    """The reference-model library must not depend on the platform."""
-    return [
-        f"{path}:{line} imports {module}"
-        for line, module in targets
-        if is_under(module, PLATFORM)
-    ]
-
-
-def scan(root: Path, check) -> list[str]:
-    violations = []
-    for path in sorted(root.rglob("*.py")):
-        targets = imported_targets(path.read_text(encoding="utf-8"), package_of(path))
-        violations.extend(check(path.relative_to(REPO_ROOT), targets))
-    return violations
-
-
-class ReferenceDependencyDirectionTests(unittest.TestCase):
-    def test_platform_imports_only_the_sanctioned_library(self):
-        self.assertEqual(scan(PLATFORM_ROOT, platform_violations), [])
-
-    def test_library_does_not_import_the_platform(self):
-        self.assertEqual(scan(LIBRARY_ROOT, library_violations), [])
-
-    def test_scan_sees_the_known_dependency(self):
-        seen = [
-            m
-            for p in PLATFORM_ROOT.rglob("*.py")
-            for _, m in imported_targets(p.read_text(encoding="utf-8"), package_of(p))
-        ]
-        self.assertTrue(any(is_under(m, SANCTIONED) for m in seen))
+class DependencyDirectionTests(unittest.TestCase):
+    def test_platform_imports_nothing_from_tests(self) -> None:
+        violations = []
+        for path in sorted(PLATFORM_ROOT.rglob("*.py")):
+            targets = imported_targets(path.read_text(encoding="utf-8"), package_of(path))
+            violations.extend(platform_violations(path.relative_to(REPO_ROOT), targets))
+        self.assertEqual(violations, [])
 
 
 class ImportClassificationTests(unittest.TestCase):
     PKG = "runtime_platform.benchmark.reference"
 
-    def platform(self, source, package=PKG):
+    def platform(self, source: str, package: str = PKG) -> list[str]:
         return platform_violations(Path("x.py"), imported_targets(source, package))
 
-    def library(self, source, package="tests.reference.review"):
-        return library_violations(Path("x.py"), imported_targets(source, package))
-
-    def test_equivalent_sanctioned_forms_are_accepted(self):
-        for source in (
-            "import tests.reference.review",
-            "import tests.reference.review as review",
-            "import tests.reference.review.decision_semantics as ds",
-            "from tests.reference import review",
-            "from tests.reference.review import decision_semantics",
-            "from tests.reference.review import *",
-            "def f():\n    from tests.reference.review import x",
-        ):
-            with self.subTest(source=source):
-                self.assertEqual(self.platform(source), [])
-
-    def test_forbidden_platform_imports_are_rejected(self):
+    def test_every_tests_import_form_is_rejected(self) -> None:
         for source in (
             "import tests",
             "import tests.support.paths",
-            "from tests import reference",
+            "from tests import support",
             "from tests.support import paths",
-            "from tests.unit.review import test_x",
-            "from tests.reference import benchmark",
-            "from tests.reference.benchmark import x",
-            "import tests.reference.benchmark.x as x",
             "def f():\n    from tests.policy import y",
         ):
             with self.subTest(source=source):
                 self.assertEqual(len(self.platform(source)), 1)
 
-    def test_non_tests_imports_are_ignored(self):
+    def test_non_tests_imports_are_ignored(self) -> None:
         self.assertEqual(self.platform("import os\nfrom testsuite import x"), [])
 
-    def test_library_rejects_platform_imports_in_every_form(self):
-        for source in (
-            "import runtime_platform",
-            "import runtime_platform.benchmark.reference as r",
-            "from runtime_platform import benchmark",
-            "from runtime_platform.benchmark.reference import x",
-        ):
-            with self.subTest(source=source):
-                self.assertEqual(len(self.library(source)), 1)
-
-    def test_library_accepts_itself_and_unrelated_modules(self):
-        self.assertEqual(
-            self.library("import json\nfrom tests.reference.review import a\nfrom . import b"),
-            [],
-        )
-
-    def test_relative_imports_resolve_to_absolute_targets(self):
-        self.assertEqual(
-            self.library("from ... import runtime_platform", "tests.reference.review"),
-            [],  # resolves to `tests.runtime_platform`, not the platform package
-        )
-        self.assertEqual(
-            len(self.platform("from ... import support", "tests.reference.review")), 1
-        )
-        self.assertEqual(
-            len(self.library("from . import x", "runtime_platform.benchmark")), 1
-        )
-        self.assertEqual(
-            len(self.platform("from tests import x", "runtime_platform.benchmark")), 1
-        )
+    def test_relative_imports_resolve_to_absolute_targets(self) -> None:
+        self.assertEqual(len(self.platform("from tests import x", "runtime_platform.benchmark")), 1)
+        self.assertEqual(self.platform("from . import x", "runtime_platform.benchmark"), [])
 
 
 if __name__ == "__main__":

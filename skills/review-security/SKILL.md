@@ -1,6 +1,6 @@
 ---
 name: review-security
-description: Adds security depth to a code review: auth, injection, secrets, crypto, trust boundaries, dependencies. Use when a change touches those.
+description: "Adds security depth to a code review: auth, injection, secrets, crypto, trust boundaries, dependencies. Use when a change touches those."
 ---
 
 # review-security

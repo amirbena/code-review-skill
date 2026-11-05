@@ -10,8 +10,8 @@ fixtures pinning the expected `compatible` / `breaking` /
 `context-dependent` classification for the common change shapes #175's
 scope lists. It landed before the reviewer capability itself did; the
 capability is now designed and packaged in
-[`../../../docs/api-compatibility/README.md`](../../../docs/api-compatibility/README.md)
-and [`../../../shared/policies/review-scope.md`](../../../shared/policies/review-scope.md),
+`../../../docs/api-compatibility/README.md`
+and `../../../shared/policies/review-scope.md`,
 "API / contract compatibility review," which this corpus's expectations
 must stay consistent with.
 

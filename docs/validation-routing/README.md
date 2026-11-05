@@ -4,7 +4,7 @@ Repository-development design record for a **safe, shared, change-aware
 rule** that avoids unnecessarily broad validation for small and docs-only
 changes ([#624](https://github.com/amirbena/code-review-skill/issues/624)).
 
-Like [`../rendered-inspection/README.md`](../rendered-inspection/README.md),
+Like `../rendered-inspection/README.md`,
 this is a repository-development doc: **not** packaged into either Skill
 archive, and no packaged Skill resource depends on it. It records the
 research and design, and the first iteration of it is implemented in the same

@@ -12,9 +12,9 @@ fixtures pinning representative Dependency / Supply-Chain deepening
 outcomes as follow-up quality hardening — it validates domain correctness
 after the capability exists and does not define, gate, or redesign it.
 The capability itself is designed and packaged in
-[`../../../docs/dependency-supply-chain/dependency-supply-chain-model.md`](../../../docs/dependency-supply-chain/dependency-supply-chain-model.md)
+`../../../docs/dependency-supply-chain/dependency-supply-chain-model.md`
 and
-[`../../../shared/policies/review-scope.md`](../../../shared/policies/review-scope.md),
+`../../../shared/policies/review-scope.md`,
 "Dependency / supply-chain deepening review," which this corpus's
 expectations must stay consistent with.
 
@@ -74,7 +74,7 @@ other corpora under [`../`](../README.md). Per Issue #188's non-goals, this
 corpus is deliberately small, adds no new severity/evidence semantics, and
 does not redefine the capability's concern areas — every case mirrors a
 concern area already documented in
-[`dependency-supply-chain-model.md`](../../../docs/dependency-supply-chain/dependency-supply-chain-model.md).
+`dependency-supply-chain-model.md`.
 It also contains no cross-domain composition fixture; that is
 [#85](https://github.com/amirbena/code-review-skill/issues/85)'s job,
 reusing this corpus.

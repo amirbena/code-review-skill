@@ -21,7 +21,7 @@ body:
     id: area
     attributes:
       label: Affected Skill/area
-      description: e.g. local-code-review, github-pr-review, both, repository tooling.
+      description: e.g. review-core, a review-* mini-skill, more than one, repository tooling.
     validations:
       required: false
 

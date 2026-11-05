@@ -4,7 +4,7 @@ Canonical repository-development rules for **who is expected to own a
 GitHub Issue** and **how an agent classifies contributor suitability**
 when authoring or restructuring Issues for this repository.
 
-This policy is **not packaged into either Skill archive**, and no packaged
+This policy is **not packaged into any Skill archive**, and no packaged
 Skill resource may depend on it. It governs backlog organization and
 Issue authoring here; it does not change review semantics, the Issue Form
 in [`../.github/ISSUE_TEMPLATE/engineering-task.yml`](../.github/ISSUE_TEMPLATE/engineering-task.yml),

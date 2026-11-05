@@ -123,7 +123,7 @@ reference for unlanded `#301`/`#302`/`#303` work.
 `DENIED_MUTATION_UNAUTHORIZED`, `DENIED_SANDBOX_NETWORK_ACCESS`,
 `DENIED_SPAWN_BUDGET_EXCEEDED`. `#299` is the real, authoritative source
 of this vocabulary — see
-[`../../security-events/security-event-model.md`](../../security-events/security-event-model.md)
+`../../security-events/security-event-model.md`
 for the full taxonomy, the event field schema, and the deterministic
 `expected_denial` / `boundary_violation_attempt` classification. The
 Python constant's name is kept as-is (not renamed) since `#299` chose not
@@ -151,7 +151,7 @@ For any scenario id, the schema alone answers:
 
 This is the structural contract
 [#310](https://github.com/amirbena/code-review-skill/issues/310)'s
-[`../../../scripts/security/validate_threat_model_traceability.py`](../../../scripts/security/validate_threat_model_traceability.py)
+`../../../scripts/security/validate_threat_model_traceability.py`
 queries mechanically: it cross-references every scenario's
 `benchmark_family`/`benchmark_reference` claim against the real corpus
 that family's benchmark issue owns

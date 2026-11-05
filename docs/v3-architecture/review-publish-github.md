@@ -21,20 +21,21 @@ packaged, and v2 behavior is unchanged until the cutover
 
 | Corpus | Disposition |
 | --- | --- |
-| `publication-mode` | Re-mapped to this Skill. The self-review, stale-HEAD, permission-denied and batching shapes are covered by [`test_review_publish_github.py`](../../tests/integration/github/test_review_publish_github.py). The `semi` and `mode_invariant` shapes are removed: SEMI no longer exists. The v2 corpus stays until the cutover. |
+| `publication-mode` | Re-mapped to this Skill. The self-review, stale-HEAD, permission-denied and batching shapes are covered by [`test_review_publish_github.py`](../../tests/integration/github/test_review_publish_github.py). The `semi` and `mode_invariant` shapes are removed: SEMI no longer exists. The v2 corpus was deleted in #849. |
 | `github-enforcement-authorization` | Removed with the status check and required-check setup it guards (ADR §6). v3 has no governance mutation to authorize. |
 | `finding-placement` | Re-mapped to this Skill for the inline-vs-summary decision ([`rules/placement.md`](../../skills/review-publish-github/rules/placement.md)). The fix-location derivation cases belong to `review-core`. |
 
-The corpora and the v2 policies they exercise are deleted at the cutover,
-not here.
+The corpora and the v2 policies they exercise were deleted with the v2
+architecture ([`v2-retirement.md`](v2-retirement.md)); the cases are rebuilt for
+v3 by #848.
 
 ## `scripts/github_integration/`
 
 Kept only where it implements S7: `boundary.py` (the authenticated call
 boundary and the write allow-list, which admits review and review-comment
 POSTs and nothing else). `enforcement.py`, `status_publisher.py`,
-`required_check_setup.py` and `lifecycle_proof.py` implement the removed
-status and required-check machinery and are deleted at the cutover.
+`required_check_setup.py` and `lifecycle_proof.py` implemented the removed
+status and required-check machinery and were deleted in #849.
 
 ## Tests
 
@@ -42,7 +43,7 @@ status and required-check machinery and are deleted at the cutover.
 is a minimal in-memory PR that enforces only what GitHub enforces (permission,
 no self-approval, anchors on changed lines, atomic submission). The Skill's
 rules are checked as text by the contract test. No shadow model of the
-policy is kept, since `tests/reference/review/` is removed in #849.
+policy is kept, since `tests/reference/review/` was removed in #849.
 
 ## Manual publish
 

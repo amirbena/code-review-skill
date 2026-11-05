@@ -5,7 +5,7 @@ Repository-development artifact for GitHub Issue
 a focused [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md) sub-corpus that
 proves both directions of the mechanical severity → decision path defined
 in
-[`../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
+`../../../shared/policies/severity.md`,
 "Decision derivation (mechanical)":
 
 - **reverse direction (#450):** a P2-only, or empty, finding set must
@@ -26,7 +26,7 @@ by the review-reliability audit in
 [`../../../docs/benchmark-measurement-architecture/benchmark-measurement-architecture-model.md`](../../../docs/benchmark-measurement-architecture/benchmark-measurement-architecture-model.md)
 §12.4 ("Benchmark proof"). It is proof only: it builds no enforcement
 mechanism and changes nothing in a live review (the runtime boundary is
-[`../verdict-consistency/`](../verdict-consistency/README.md)'s concern).
+`../verdict-consistency/`'s concern).
 
 [#449](https://github.com/amirbena/code-review-skill/issues/449) (closed,
 fixed by PR #452, "Require an explicit P0/P1 tally before rendering the
@@ -41,14 +41,14 @@ pure-function level.
 
 Both directions live in this one directory because they share one domain
 (mechanical decision *derivation*, as opposed to
-[`../verdict-consistency/`](../verdict-consistency/README.md)'s downstream
+`../verdict-consistency/`'s downstream
 *rendering-consistency* domain — see "Distinguishing this corpus" below).
 Fixture-name prefixes tell them apart: `dd-blocking-*` is #350's, every
 other `dd-*` fixture is #450's.
 
 ## Why this *is* a `benchmark-case/v3` corpus
 
-Unlike [`../verdict-consistency/`](../verdict-consistency/README.md) (which
+Unlike `../verdict-consistency/` (which
 starts from an already-finalized decision and a downstream signal, with no
 patch and no finding — a data-driven reference-fixture corpus), this
 corpus is about **derivation correctness**: does reviewing a *real code
@@ -116,7 +116,7 @@ block (`source`, `tags`, `rationale`).
   never render blocking. A regression in #350's cases means a real defect
   got waved through; a regression in #450's means a non-blocking or absent
   finding got blocked anyway — the exact #449 failure mode.
-- **From [`../verdict-consistency/`](../verdict-consistency/README.md)
+- **From `../verdict-consistency/`
   (#377/#378, downstream-consistency enforcement).** That corpus takes an
   **already-finalized, correct** mechanical decision as ground truth and
   asks whether a *downstream* rendered/submitted artifact is deliberately
@@ -150,7 +150,7 @@ Skill-neutral (`clean` / `changes-required` — see
 [`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §1): `clean` is
 `local-code-review`'s `REVIEW CLEAN` **and** `github-pr-review`'s
 `Approve` event, per
-[`../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
+`../../../shared/policies/severity.md`,
 "Decision derivation (mechanical)". Every fixture here is written against
 that shared vocabulary, not against either Skill's surface wording, so it
 states the same expectation for both Skills by construction.
@@ -181,7 +181,7 @@ paired with an `Approve`/`APPROVE` signal is a violation. A live
 
 ## Validation
 
-[`../../../tests/unit/benchmark/test_decision_derivation_corpus.py`](../../../tests/unit/benchmark/test_decision_derivation_corpus.py)
+`../../../tests/unit/benchmark/test_decision_derivation_corpus.py`
 loads every fixture here through the single reference validator
 [`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 — it never defines a second one — and asserts, for the `dd-*` fixtures

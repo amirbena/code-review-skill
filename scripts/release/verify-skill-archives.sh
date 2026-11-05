@@ -43,12 +43,19 @@ cd "${repo_root}"
 
 manifest="scripts/packaging/package-manifest.json"
 expected_archives=()
-for target in local github; do
+while IFS= read -r target; do
+  [[ -n "${target}" ]] || continue
   expected_archives+=("$(python3 scripts/packaging/package_manifest.py "${manifest}" "${target}" archive)")
-done
+done < <(python3 scripts/packaging/package_manifest.py "${manifest}" - targets)
 
 if [[ "${build}" -eq 1 ]]; then
   ./scripts/packaging/package-skills.sh all
+fi
+
+if [[ "${#expected_archives[@]}" -eq 0 ]]; then
+  # release/v3 only, until #851 registers the v3 Skills in the manifest.
+  echo "::notice::package-manifest.json declares no Skill; nothing to verify"
+  exit 0
 fi
 
 shopt -s nullglob

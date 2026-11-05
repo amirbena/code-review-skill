@@ -78,30 +78,6 @@
       "dependency-supply-chain-deepening-transitive-dependency-expansion",
       "dependency-supply-chain-deepening-unpinned-github-actions-reference"
     ],
-    "dependency-tree-inspection": [
-      "dti-base-only-no-comparison",
-      "dti-blocked-then-declined",
-      "dti-control-routine-patch-bump",
-      "dti-control-same-family-no-documented-incompatibility",
-      "dti-control-test-scope-only",
-      "dti-control-unrelated-churn",
-      "dti-head-only-no-introduction-claim",
-      "dti-incident-added-authorized-execution",
-      "dti-incident-added-blocked-then-provided",
-      "dti-incident-added-user-provided",
-      "dti-incident-renamed-authorized-execution",
-      "dti-incident-renamed-user-provided",
-      "dti-incident-supplied-text-contains-instructions",
-      "dti-incomplete-missing-pom-warning",
-      "dti-incomplete-resolution-error",
-      "dti-incomplete-truncated-output",
-      "dti-malformed-output",
-      "dti-mismatched-commands",
-      "dti-mismatched-profiles",
-      "dti-unidentified-side",
-      "dti-user-declines-output",
-      "dti-wrong-project"
-    ],
     "deployment-infrastructure": [
       "deployment-infrastructure-deepening-comment-and-unused-label-edit-not-activated-clean",
       "deployment-infrastructure-deepening-db-resize-impact-needs-plan-output",
@@ -188,8 +164,7 @@
       "repo-intel-python-config-consumer-stale-import",
       "repo-intel-python-control-compatible-caller-no-finding",
       "repo-intel-python-dynamic-dispatch-safe-failure",
-      "repo-intel-typescript-interface-contract-implementer-break",
-      "scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion"
+      "repo-intel-typescript-interface-contract-implementer-break"
     ],
     "security-boundary": [
       "security-deepening-alternate-path-missing-check",
@@ -212,8 +187,7 @@
       "specialist-depth-composition-case-d-superficial-signal-suppressed-clean",
       "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type",
       "specialist-depth-composition-case-f-cascading-activation-bounded",
-      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth",
-      "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load"
+      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth"
     ],
     "workspace-sibling-context": [
       "wsib-absence-in-inspected-sibling-no-claim",
@@ -278,30 +252,6 @@
       "database-migration-deepening-mongodb-document-shape-rename",
       "database-migration-deepening-nullable-to-non-null-no-backfill",
       "database-migration-deepening-unsafe-online-blocking-lock"
-    ],
-    "dependency-tree-inspection": [
-      "dti-base-only-no-comparison",
-      "dti-blocked-then-declined",
-      "dti-control-routine-patch-bump",
-      "dti-control-same-family-no-documented-incompatibility",
-      "dti-control-test-scope-only",
-      "dti-control-unrelated-churn",
-      "dti-head-only-no-introduction-claim",
-      "dti-incident-added-authorized-execution",
-      "dti-incident-added-blocked-then-provided",
-      "dti-incident-added-user-provided",
-      "dti-incident-renamed-authorized-execution",
-      "dti-incident-renamed-user-provided",
-      "dti-incident-supplied-text-contains-instructions",
-      "dti-incomplete-missing-pom-warning",
-      "dti-incomplete-resolution-error",
-      "dti-incomplete-truncated-output",
-      "dti-malformed-output",
-      "dti-mismatched-commands",
-      "dti-mismatched-profiles",
-      "dti-unidentified-side",
-      "dti-user-declines-output",
-      "dti-wrong-project"
     ],
     "deployment-infrastructure-deepening": [
       "deployment-infrastructure-deepening-comment-and-unused-label-edit-not-activated-clean",
@@ -373,8 +323,7 @@
       "repo-intel-python-config-consumer-stale-import",
       "repo-intel-python-control-compatible-caller-no-finding",
       "repo-intel-python-dynamic-dispatch-safe-failure",
-      "repo-intel-typescript-interface-contract-implementer-break",
-      "scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion"
+      "repo-intel-typescript-interface-contract-implementer-break"
     ],
     "review-scope": [
       "semantic-implication-insufficient-evidence-stop",
@@ -407,8 +356,7 @@
       "specialist-depth-composition-case-d-superficial-signal-suppressed-clean",
       "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type",
       "specialist-depth-composition-case-f-cascading-activation-bounded",
-      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth",
-      "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load"
+      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth"
     ],
     "unclassified": [
       "analogue-placement-distinct-boundaries-not-consolidated",
@@ -504,28 +452,6 @@
       "deployment-infrastructure-deepening-helm-value-key-renamed-template-unresolved",
       "deployment-infrastructure-deepening-memory-limit-raise-consistent-clean",
       "deployment-infrastructure-deepening-probe-port-no-longer-matches-listener",
-      "dti-base-only-no-comparison",
-      "dti-blocked-then-declined",
-      "dti-control-routine-patch-bump",
-      "dti-control-same-family-no-documented-incompatibility",
-      "dti-control-test-scope-only",
-      "dti-control-unrelated-churn",
-      "dti-head-only-no-introduction-claim",
-      "dti-incident-added-authorized-execution",
-      "dti-incident-added-blocked-then-provided",
-      "dti-incident-added-user-provided",
-      "dti-incident-renamed-authorized-execution",
-      "dti-incident-renamed-user-provided",
-      "dti-incident-supplied-text-contains-instructions",
-      "dti-incomplete-missing-pom-warning",
-      "dti-incomplete-resolution-error",
-      "dti-incomplete-truncated-output",
-      "dti-malformed-output",
-      "dti-mismatched-commands",
-      "dti-mismatched-profiles",
-      "dti-unidentified-side",
-      "dti-user-declines-output",
-      "dti-wrong-project",
       "engineering-design-deepening-ack-before-persist-loses-events",
       "engineering-design-deepening-claim-contradicted-by-repository",
       "engineering-design-deepening-code-contradicts-accepted-adr",
@@ -567,7 +493,6 @@
       "repo-intel-python-dynamic-dispatch-safe-failure",
       "repo-intel-typescript-interface-contract-implementer-break",
       "repository-local-correct-combined-defect",
-      "scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion",
       "semantic-implication-insufficient-evidence-stop",
       "semantic-implication-multi-dimension-webhook-xss",
       "semantic-implication-single-dimension-persistence",
@@ -611,8 +536,7 @@
       "performance-deepening-nested-unbounded-scan-quadratic",
       "performance-deepening-non-executed-config-constant-not-implicated-clean",
       "specialist-depth-composition-case-c-multiple-capabilities-database-and-performance",
-      "specialist-depth-composition-case-f-cascading-activation-bounded",
-      "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load"
+      "specialist-depth-composition-case-f-cascading-activation-bounded"
     ],
     "quality": [
       "analogue-placement-distinct-boundaries-not-consolidated",
@@ -774,28 +698,6 @@
       "distributed-systems-deepening-ownership-assumption-violated",
       "distributed-systems-deepening-retry-idempotency-guarded-clean",
       "distributed-systems-deepening-retry-interaction-missing-idempotency",
-      "dti-base-only-no-comparison",
-      "dti-blocked-then-declined",
-      "dti-control-routine-patch-bump",
-      "dti-control-same-family-no-documented-incompatibility",
-      "dti-control-test-scope-only",
-      "dti-control-unrelated-churn",
-      "dti-head-only-no-introduction-claim",
-      "dti-incident-added-authorized-execution",
-      "dti-incident-added-blocked-then-provided",
-      "dti-incident-added-user-provided",
-      "dti-incident-renamed-authorized-execution",
-      "dti-incident-renamed-user-provided",
-      "dti-incident-supplied-text-contains-instructions",
-      "dti-incomplete-missing-pom-warning",
-      "dti-incomplete-resolution-error",
-      "dti-incomplete-truncated-output",
-      "dti-malformed-output",
-      "dti-mismatched-commands",
-      "dti-mismatched-profiles",
-      "dti-unidentified-side",
-      "dti-user-declines-output",
-      "dti-wrong-project",
       "engineering-design-deepening-ack-before-persist-loses-events",
       "engineering-design-deepening-acknowledged-tradeoff-clean",
       "engineering-design-deepening-claim-contradicted-by-repository",
@@ -843,7 +745,6 @@
       "repo-intel-python-control-compatible-caller-no-finding",
       "repo-intel-python-dynamic-dispatch-safe-failure",
       "repo-intel-typescript-interface-contract-implementer-break",
-      "scale-progressive-loading-proof-ambiguous-public-export-forces-fail-closed-expansion",
       "security-command-injection",
       "security-deepening-alternate-path-missing-check",
       "security-deepening-auth-module-no-trust-boundary-clean",
@@ -861,8 +762,7 @@
       "specialist-depth-composition-case-d-superficial-signal-suppressed-clean",
       "specialist-depth-composition-case-e-semantic-evidence-without-expected-file-type",
       "specialist-depth-composition-case-f-cascading-activation-bounded",
-      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth",
-      "specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load"
+      "specialist-depth-composition-case-g-remediation-scope-unaffected-by-depth"
     ]
   }
 }

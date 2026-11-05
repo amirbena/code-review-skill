@@ -15,7 +15,7 @@ from tests.support.paths import REPO_ROOT
 from tests.support.git_repo import git, isolate_git_config
 
 ROUTER = REPO_ROOT / "scripts" / "validation" / "ci_test_route.py"
-ISSUE_623 = ("docs/rendered-inspection/README.md", "docs/rendered-inspection/rendered-inspection-contract.md")
+ISSUE_623 = ("docs/refactoring-baselines/README.md", "docs/refactoring-baselines/ci-cost-profile.md")
 
 CONSUMERS = {
     "tests/test_literal.py": 'P = REPO_ROOT / "docs/literal/a.md"\n',
@@ -227,12 +227,12 @@ class ClassifyTests(FixtureRepo):
                 self.assertEqual((result.tier, result.change_class), (tier, change_class))
 
     def test_the_forcing_path_is_the_first_non_doc_full_path(self) -> None:
-        result = router.classify(["docs/pure/x.md", "shared/a.md", "skills/b.md"], self.index())
-        self.assertEqual(result.first_full_path, "shared/a.md")
+        result = router.classify(["docs/pure/x.md", "distribution/a.md", "skills/b.md"], self.index())
+        self.assertEqual(result.first_full_path, "distribution/a.md")
 
     def test_docs_never_lower_a_tier(self) -> None:
         index = self.index()
-        for other in ("shared/a.md", "CHANGELOG.md", ".github/workflows/validate.yml", "requirements-dev.txt"):
+        for other in ("distribution/a.md", "CHANGELOG.md", ".github/workflows/validate.yml", "requirements-dev.txt"):
             with self.subTest(other=other):
                 self.assertEqual(router.classify(["docs/pure/x.md", other], index).tier, router.FULL)
 
@@ -307,7 +307,7 @@ class RealRepositoryTests(unittest.TestCase):
         self.assertEqual((result.tier, result.change_class), (router.DOCS, router.PURE_DOCS))
 
     def test_consumed_docs_are_not_treated_as_pure(self) -> None:
-        for path in ("docs/features/rendered-inspection.md", "docs/ARCHITECTURE.md", "docs/RELEASE.md", "docs/findings/README.md"):
+        for path in ("docs/ARCHITECTURE.md", "docs/RELEASE.md", "docs/threat-model/threat-model.md", "docs/benchmark-measurement-architecture/README.md"):
             with self.subTest(path=path):
                 self.assertEqual(router.classify([path], self.index).change_class, router.CONSUMED_DOCS)
 
@@ -334,12 +334,10 @@ class RealRepositoryTests(unittest.TestCase):
         for path in (
             "tests/support/paths.py",
             "scripts/packaging/package-manifest.json",
-            "capabilities/x/capability.yaml",
             "runtime_platform/benchmark/x.py",
             "benchmark/corpus-index.json",
             ".github/workflows/validate.yml",
             "requirements-dev.txt",
-            "docs/capability-architecture/capability-loading-baseline.json",
         ):
             with self.subTest(path=path):
                 self.assertEqual(router.classify([path], self.index).tier, router.FULL)
@@ -466,7 +464,7 @@ class GeneralDocumentationTests(FixtureRepo):
                 self.assertEqual(self.tier(path).tier, router.FAST)
 
     def test_protected_and_format_failures_never_qualify(self) -> None:
-        for path in ("ops/SKILL.md", "ops/AGENTS.md", "ops/CLAUDE.md", "skills/x/a.md", "shared/a.md", "distribution/a.md", "ops/x.txt"):
+        for path in ("ops/SKILL.md", "ops/AGENTS.md", "ops/CLAUDE.md", "skills/x/a.md", "distribution/a.md", "ops/x.txt"):
             with self.subTest(path=path):
                 self.assertNotEqual(self.tier(path).tier, router.DOCS)
 

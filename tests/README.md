@@ -1,38 +1,32 @@
 # tests/
 
-The repository's own Python test suite and the **test-only** reference
-models it exercises. None of this is packaged into either Skill archive or
-loaded at Skill runtime — the packaged Skills are Markdown/YAML only. The
-packaging boundary is enforced by the guard tests under
-[`integration/packaging/`](integration/packaging/) (see its
-[package docstring](integration/packaging/__init__.py)).
+The repository's own Python test suite. None of it is packaged into a Skill
+archive or loaded at Skill runtime — the packaged Skills are Markdown and
+JSON only.
+
+The v2 prose-pinning policy tests and the test-only shadow models of v2
+review policy were retired with the v2 architecture (#849); a test here
+either runs real code or guards a structural contract of the repository.
 
 ## Layout
 
-Each of `unit/`, `policy/`, and `reference/` is split into capability
-sub-packages so a contributor can find "the benchmark tests" or "the
-release tests" without scanning dozens of flat filenames. A sub-package
-exists only where the repository actually has that many modules for it —
-none of the four top-level kinds (`unit`, `policy`, `reference`,
-`integration`) is itself renamed.
-
 | Directory | Contents |
 |---|---|
-| `reference/benchmark/` (relocated to [`runtime_platform/benchmark/reference/`](../runtime_platform/benchmark/README.md) by #457; of `tests`, it may import only `reference/review/`, enforced by `policy/benchmark/test_reference_dependency_direction.py`, #792) | Test-only reference implementations of the benchmark pipeline: fixture validation, the run-to-run report, the expected-vs-produced matcher, and the missed/incorrect, severity-accuracy, and duplicate-noise metrics built on it. |
-| `reference/review/` | Test-only reference implementations mirroring packaged review policy decision tables (`decision_semantics.py`, `review_context.py`, `jira_context.py`, `parallel_review.py`, `repository_instructions.py`, `runtime_validation.py`, `pr_checkout.py`, …). Imported by tests; never run directly. |
-| `support/` | Shared test infrastructure: `pr_simulation.py` (local bare-repo PR harness), `paths.py` (the one canonical `REPO_ROOT`), and `benchmark_runtime.py` (the shared gate for tests that need the real benchmark review runtime; `BENCHMARK_REQUIRE_RUNTIME=1`/`true`/`yes` makes a missing runtime an error instead of a skip); `corpus_hygiene.py` (#398) holds `CorpusHygieneMixin`, the shared generic-shape checks (README, size bounds, parse/validate, id/stem, rationale/tags, decision, patch anchors, severities) each `benchmark/corpus/*` sub-corpus test module subclasses with its own `corpus_dir` and README expectations, keeping its semantic assertions local; `git_repo.py` (#791) holds `isolate_git_config()` (call from `setUpModule` in any module that builds throwaway Git repositories, so a host's signing, hook, default-branch or identity config cannot change the result) and the shared stripped-stdout `git()` runner; `policy_docs.normalize_text`/`load_normalized_text` are the shared Markdown-prose normalizers; `benchmark_publisher_fakes.py` holds the sealed-record builders and in-memory GitHub world the publication-CLI tests (#471) run against. |
-| `unit/benchmark/` | Unit coverage for the `runtime_platform/benchmark/reference/` models: `test_benchmark_corpus.py` validates the `benchmark/corpus/` fixtures (#51) through the `benchmark_fixture.py` reference validator; `test_benchmark_runner.py` drives the reference runner (#52) over the corpus and asserts per-case isolation, cleanup, and byte-for-byte preservation of a deliberately dirty source repository; `test_benchmark_report.py` drives the reference report (#53) and asserts a seeded regression is classified distinctly from an improvement and that output is byte-identical for identical inputs; `test_benchmark_match.py` drives the reference matcher (#54) and asserts every `match-criteria.md` §8 worked example classifies as documented; `test_benchmark_metrics.py` drives the reference metric (#55) and asserts every `missed-and-incorrect-findings.md` §8 worked example counts as documented; `test_benchmark_severity.py` drives the reference metric (#56) and asserts every `severity-accuracy.md` §7 worked example classifies as documented; `test_benchmark_dupes.py` drives the reference metric (#57) and asserts every `duplicate-noise.md` §7 worked example clusters as documented; `test_benchmark_citation.py` drives the reference citation-existence check (#349) and asserts every `citation-fidelity.md` §7 worked example is classified as documented.  `test_benchmark_corpus_patch_applies.py` asserts every patch-bearing comprehensive fixture applies to its own `input.base` via the runner's `materialize_patch` (#541). |
-| `unit/governance/` | Repository automation and hygiene: issue-claim reconciliation, issue-label sync, PR-description length, the repository-wide Markdown-link validator, and the CI test router (`test_ci_test_route.py`, `test_change_aware_routing.py` for DOCS/FAST, `test_partial_routing.py` for the PARTIAL tier's derived test-impact graph, #634). |
-| `unit/release/` | Coverage for `scripts/release/release_worthiness.py`, split along its path-classification, CHANGELOG coverage, Unreleased roll, main()/`$GITHUB_OUTPUT` contract, pure SemVer/ref helpers, and preflight/verify responsibilities (`_shared.py` holds the fake Git/GitHub runner and CHANGELOG fixtures they share), plus `test_changelog_generation.py` and `test_release_intent.py`. |
-| `unit/review/` | Unit coverage for the `reference/review/` models. Sub-packages give the specific policy/capability each module protects a predictable home (#293): `findings/` (finding confidence/contract/identity, the machine-readable review result schema #67, `test_structured_output_contract.py` — cross-Skill contract tests over the paired sample outputs in `structured_output_samples/`, #71, plus `test_finding_identity_regression.py` — the data-driven finding-identity regression corpus, #61), `stateful_review/` (delta re-review, review-status enforcement, and `test_rereview_regression_fixtures.py` — the data-driven stateful delta re-review regression corpus of paired before/after review histories, #66), `specialist_depth/` (risk-based review depth corpus and scenarios, #90), `root_cause/` (root-cause consolidation, semantic-implication and null-absence corpora, `test_architectural_placement_fixtures.py` — paired local-only vs. bounded context-expansion outcomes for architecturally misplaced behavior, #153 — `test_candidate_finding_validation.py` — the observation → candidate claim → validated finding → severity reasoning-gate corpus, #382 — and `test_candidate_finding_validation_corpus.py` — the `benchmark/corpus/candidate-finding-validation/` precision sub-corpus pinning that contract's false-escalation and non-suppression outcomes, plus a PR-#390-derived real-world scenario, #383), `repository_intelligence/` (repository expansion, instructions, and the repository-intelligence model plus its corpus), `rendered_inspection/` (session-scoped render consent, existing-Playwright-only behavior, and change-aware verification evidence, #771), and `stacked_pr/` (stacked-PR topology and end-to-end checkout). Everything else — decision semantics, invocation options, PR/Jira context, parallel review, and other modules with no second clustering member — stays directly under `unit/review/`. |
-| `integration/github/` | Coverage that shells out to real Git for the GitHub PR checkout lifecycle. |
-| `integration/packaging/` | End-to-end packaging-boundary guard: manifest/path-safety, script parity, hidden-runtime-dependency + disclaimer prose, and the built local/GitHub archive contents (`_shared.py` holds the shared paths, manifest helpers, and the reference-module list). `test_distribution_consumer_install.py` (#511) checks that the published distribution tree is discoverable and installable through the `skills` CLI with self-contained copies; its `npx` tests run only with `DISTRIBUTION_INSTALL_CHECK=1`. |
-| `integration/release/` | Coverage that builds the packaged archives to exercise the release-worthiness PR boundary. |
-| `policy/benchmark/` | Prose / documentation-contract checks for the benchmark contract docs (`runtime_platform/benchmark/**`) and the corpus data that stays under `benchmark/corpus/`. `test_benchmark_root_migration.py` (#579) is the root-`benchmark/` migration guard: permanent structural assertions, plus a separate one-off byte-identity mode that runs only with `BENCHMARK_MIGRATION_BASE=<pre-move sha>`; run `python3 -m tests.policy.benchmark.test_benchmark_root_migration` (prints `benchmark root migration: OK`). |
-| `policy/governance/` | Prose / documentation-contract checks over `AGENTS.md`, `policies/`, entrypoint guards, forbidden terms, and PR-description enforcement. |
-| `policy/release/` | Prose / documentation-contract checks for CHANGELOG/SemVer guidance and the two release workflows (`release-worthiness.yml` PR lifecycle, `release-publish.yml` main lifecycle) and the boundary between them. |
-| `policy/review/` | Prose / documentation-contract checks over `shared/policies/`, `shared/templates/`, and each Skill's review-related files. Sub-packages mirror `unit/review/`'s ownership clusters where the same boundary applies (#293): `findings/`, `stateful_review/`, `specialist_depth/`, `root_cause/`, `repository_intelligence/`, `stacked_pr/`, plus `presentation/` (human-first/senior-voice output, output-format separation, and the #223/#275 output-tightening options — a policy-only cluster with no `unit/review/` counterpart). Everything else — core `review-scope.md` wiring, context/evidence, PR context, requirement coverage, and other modules with no second clustering member — stays directly under `policy/review/`. |
-| `repository/` | Repository-hygiene checks (e.g. `.gitignore`, and `scripts/` staying subsystem-owned per #292). Unchanged by the #217 reorganization. |
+| `unit/benchmark/` | Unit coverage for the benchmark harness in [`runtime_platform/benchmark/`](../runtime_platform/benchmark/README.md): corpus validation, runner, matcher and metrics, history/baseline, the publication CLI, the production adapter, and the blocking-verdict corpus check. |
+| `unit/governance/` | Repository automation and hygiene: issue-claim reconciliation, issue-label sync, PR-description length and structure, the Markdown-link validator, and the CI test router (`test_ci_test_route.py`, `test_change_aware_routing.py`, `test_partial_routing.py`). |
+| `unit/release/` | Coverage for `scripts/release/`: path classification, CHANGELOG coverage and generation, release intent, preflight and finalization. |
+| `unit/review/core/` | Contract tests over the v3 Skills under `skills/`: that each `SKILL.md`, its rule files and its templates exist, link correctly and keep the structural contract the ADR sets. |
+| `unit/package_domain/` | The packaging-domain rules in `scripts/packaging/package_domain/`: tree building, adaptation, validation, version stamping. |
+| `unit/skill_metadata/` | The Skill frontmatter and link validator in `scripts/skill_metadata/`. |
+| `unit/sandbox/`, `integration/sandbox/` | The sandbox backend in `scripts/sandbox/` and its adversarial-containment suite. |
+| `unit/github_integration/` | The authenticated GitHub call boundary and write allow-list in `scripts/github_integration/`. |
+| `unit/security/` | The threat-model validator in `scripts/security/`. |
+| `integration/github/` | `review-publish-github` against an in-memory PR that enforces what GitHub enforces. |
+| `integration/packaging/` | The package manifest's path safety and the parity of the shell and PowerShell packaging scripts. |
+| `integration/release/` | Coverage that exercises the release-worthiness PR boundary against real Git. |
+| `policy/benchmark/`, `policy/governance/`, `policy/release/` | Structural guards over workflows, routing and benchmark wiring (not prose): the CI test routing contract, the PR-description and release workflows, the benchmark publish workflow and its no-write guarantee, the benchmark root layout, and the instruction-routing structure. |
+| `repository/` | Repository-hygiene checks (`.gitignore`, `scripts/` staying subsystem-owned). |
+| `support/` | Shared test infrastructure: `paths.py` (the one canonical `REPO_ROOT`), `git_repo.py` (`isolate_git_config()` for modules that build throwaway Git repositories), `pr_publication_fake.py`, `benchmark_runtime.py` (the shared gate for tests that need the real benchmark review runtime; `BENCHMARK_REQUIRE_RUNTIME=1` makes a missing runtime an error instead of a skip), `corpus_hygiene.py`, and the benchmark publisher fakes. |
 
 Genuine developer scripts (packaging, metadata validation) live in
 [`../scripts/`](../scripts/), not here.
@@ -46,7 +40,7 @@ python3 -m unittest discover -s tests -t .
 ```
 
 `python3 -m unittest discover` from the repository root also works. Run one
-module with, e.g., `python3 -m unittest tests.unit.review.test_decision_semantics`.
+module with, e.g., `python3 -m unittest tests.unit.review.core.test_review_core_contract`.
 Individual test files are not meant to be executed as scripts
 (`python3 tests/unit/…`) — they rely on `tests` being importable as a
 package, which `python3 -m unittest` provides.

@@ -41,7 +41,7 @@ of the class map.
 ### Cross-partition: not measurable
 
 A change is partitioned only at **≥ 1200 changed lines or ≥ 60 changed
-files** ([`large-pr-partitioning.md`](../../../shared/policies/large-pr-partitioning.md)).
+files** (`large-pr-partitioning.md`).
 A hand-authored inline fixture cannot reach that threshold without becoming a
 synthetic bulk patch, which the corpus
 [selection principle](../README.md#selection-principle) rejects. The
@@ -73,7 +73,7 @@ statistical sample, and one case is explicitly **not observed**.
 The baseline reviewer was run at `66ad316`, **before**
 [#601](https://github.com/amirbena/code-review-skill/issues/601) (#607) added
 the `unresolved` relationship outcome and its Context gaps disclosure to
-[`repository-expansion.md`](../../../shared/policies/repository-expansion.md).
+`repository-expansion.md`.
 At that commit a case had three terminal outcomes: a finding, no finding, or
 an error. The reviewer **had no representation for an unresolved
 relationship**, so a relationship that was checked and found absent and one

@@ -11,8 +11,8 @@ against, so review-quality results compare across runs instead of drifting
 with an ad-hoc format. Parent capability:
 [#40](https://github.com/amirbena/code-review-skill/issues/40).
 
-Like [`../../docs/findings/`](../../docs/findings/README.md) and
-[`../../docs/runtime-parallelism.md`](../../docs/runtime-parallelism.md), this is a
+Like `../../docs/findings/` and
+`../../docs/runtime-parallelism.md`, this is a
 repository-development doc: **not** packaged into either Skill archive, and
 no packaged Skill resource depends on it. It reuses the shared review
 vocabulary — it does not define a parallel review model.
@@ -30,27 +30,27 @@ concerns owned elsewhere (see §13).
 ## 1. Terminology and ownership
 
 - **Finding** — one actionable review result in the shared shape of
-  [`../../shared/templates/finding.md`](../../shared/templates/finding.md).
+  `../../shared/templates/finding.md`.
   This contract references that shape; it does not redefine a finding.
 - **Severity** — exactly one of `P0` / `P1` / `P2`, defined by
-  [`../../shared/policies/severity.md`](../../shared/policies/severity.md).
+  `../../shared/policies/severity.md`.
   A fixture states an *expected* severity per finding; it does not restate
   the P0/P1/P2 definitions.
 - **Decision** — the mechanical `clean` / `changes-required` outcome that
-  [`../../shared/policies/severity.md`](../../shared/policies/severity.md),
+  `../../shared/policies/severity.md`,
   "Decision derivation (mechanical)," derives from a finalized finding set.
   `clean` is that policy's `REVIEW CLEAN` / `Approve`; `changes-required`
   is its `CHANGES REQUIRED` / `Request Changes`. The tokens are
   Skill-neutral because a benchmark case is Skill-neutral.
 - **`location_intent`** — the closed scope enum
   `line` / `symbol` / `file` / `cross-file` / `repository`, reused verbatim
-  from [`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md)
+  from `../../docs/findings/finding-matching-strategy.md`
   §2 (the finding-matching descriptor). A fixture's expected locations are
   expressed with it so the corpus and any later benchmark
   expected-vs-produced matcher share one location model.
 - **`MATCH` / `NO MATCH` / `AMBIGUOUS` vocabulary** — the three-valued
   match result described in
-  [`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md).
+  `../../docs/findings/finding-matching-strategy.md`.
   That document is **completed stateful-re-review finding-*identity*
   research** (GitHub Issue
   [#59](https://github.com/amirbena/code-review-skill/issues/59), closed):
@@ -204,7 +204,7 @@ shape of both so the corpus is not blocked on that choice.
 
 Optional free-form string passed to the reviewer as review context
 (requirements, ticket text, an ADR excerpt), mirroring
-[`../../shared/policies/review-context.md`](../../shared/policies/review-context.md).
+`../../shared/policies/review-context.md`.
 Present only for cases that deliberately test context-aware review.
 
 ### 6.4 Multi-repository Review Target (`repositories`) — Issue #558
@@ -226,7 +226,7 @@ A mapping of `<alias>` (kebab-case, like `id`) to that member's own entry:
   `repo_ref` keys, and with a top-level `base` (a member's own `base`
   belongs inside its own entry, never beside `repositories`).
 - Mirrors
-  [`../../skills/local-code-review/policies/multi-repository-review-target.md`](../../skills/local-code-review/policies/multi-repository-review-target.md)'s
+  `../../skills/local-code-review/policies/multi-repository-review-target.md`'s
   explicit-root-list input contract: each alias materializes as its own
   independent Git repository (a runner never invents a synthetic shared
   base/SHA across members — see [`runner-contract.md`](runner-contract.md)),
@@ -257,7 +257,7 @@ is read-only compatibility evidence, never a Review Target member:
 A runner materializes each entry as its own Git repository outside the
 Review Target workspace and passes only designated entries to the reviewer
 adapter, as `(path, revision)` and nothing else. See
-[`../../skills/local-code-review/policies/external-contract-context.md`](../../skills/local-code-review/policies/external-contract-context.md).
+`../../skills/local-code-review/policies/external-contract-context.md`.
 
 ### 6.6 Workspace siblings (`workspace_siblings`) — Issue #664
 
@@ -275,15 +275,15 @@ workspace root, outside the Review Target, and passes that root to the
 reviewer adapter as `workspace_root`. Whether the adapter *forwards* the
 root is the caller's choice, never the fixture's, so a capability-on and a
 capability-off arm see identical disk state. See
-[`workspace-sibling-context-measurement.md`](workspace-sibling-context-measurement.md)
+`workspace-sibling-context-measurement.md`
 and
-[`../../shared/policies/workspace-sibling-context.md`](../../shared/policies/workspace-sibling-context.md).
+`../../shared/policies/workspace-sibling-context.md`.
 
 ### 6.7 Dependency trees (`dependency_trees`) — Issue #732
 
 Optional, valid only alongside `patch`. Synthetic dependency-tree text for
 Base and Head, carried so the opt-in inspection in
-[`../../shared/policies/dependency-tree-inspection.md`](../../shared/policies/dependency-tree-inspection.md)
+`../../shared/policies/dependency-tree-inspection.md`
 can be benchmarked with no build, plugin, or network:
 
 | Field | Required | Meaning |
@@ -302,7 +302,7 @@ the `dependency_trees` keyword, only for a case that declares the input. In
 workspace and states a fixture-local `cat` command as the approved command, so
 the benchmark runs through the existing execution mechanism but never a real
 build. The validator never executes anything. See
-[`dependency-tree-inspection-measurement.md`](dependency-tree-inspection-measurement.md).
+`dependency-tree-inspection-measurement.md`.
 
 ## 7. Expected outcome (`expected`)
 
@@ -317,7 +317,7 @@ build. The validator never executes anything. See
 `decision` is **derivable** from the required findings' severities and is
 therefore optional. When present it is an explicit cross-check and MUST be
 consistent with the mechanical derivation in
-[`../../shared/policies/severity.md`](../../shared/policies/severity.md): a
+`../../shared/policies/severity.md`: a
 case has `changes-required` exactly when at least one **required** finding
 (§8) can only be satisfied at `P0`/`P1`; otherwise `clean`. Optional
 findings never affect it. An inconsistent `decision` is a rejection (§11).
@@ -340,7 +340,7 @@ Additional fields:
 |---|---|---|
 | `severity` | yes | `P0`/`P1`/`P2`, **or** a list of ≥ 2 distinct such values to permit severity variance (§9). |
 | `location` | yes | Structured expected location (§8.3). |
-| `claim` | yes | A short normalized cause → faulty-behavior sentence (the `behavioral_claim` shape of [`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md) §2). Documentation and a future-matcher target; **not** string-equality matched. |
+| `claim` | yes | A short normalized cause → faulty-behavior sentence (the `behavioral_claim` shape of `../../docs/findings/finding-matching-strategy.md` §2). Documentation and a future-matcher target; **not** string-equality matched. |
 | `defect_kind` | no | Narrow defect-class slug (e.g. `sql-injection`). Concrete purpose: category-level slicing for #41 / profile fixtures #47. |
 | `alternatives` | no | Non-empty list of acceptable **restatements of this same defect** (§8.2). |
 
@@ -364,7 +364,7 @@ carries its own `match` (§8.4).
 | `path` | yes unless `location_intent` is `repository` | Repo-relative POSIX path. |
 | `symbol` | no | Enclosing qualified symbol, when known. |
 | `anchor` | no | A short verbatim substring of the post-image at/near the defect site. This is the measurable hook: the benchmark expected-vs-produced matcher ([`match-criteria.md`](match-criteria.md), #54) checks that a reviewer's reported location resolves to code containing `anchor` within the proximity window, **without** this contract implementing matching. |
-| `lines` | no | `{ start, end }` (1-based, `start ≤ end`) in the **post-image**. **Advisory only** — never the binding identity, because line numbers move (see [`../../docs/findings/finding-identity-requirements.md`](../../docs/findings/finding-identity-requirements.md) §4.3). |
+| `lines` | no | `{ start, end }` (1-based, `start ≤ end`) in the **post-image**. **Advisory only** — never the binding identity, because line numbers move (see `../../docs/findings/finding-identity-requirements.md` §4.3). |
 | `repo_alias` | required iff `input.repositories` is present, forbidden otherwise | Which `input.repositories` member this finding belongs to (Issue #558). Cross-checked against the case's own `repositories` aliases — a `repo_alias` naming an unadmitted or nonexistent alias is a rejection (§11), which is itself part of the isolation/authorization negative case's structural proof: an unadmitted sibling's alias can never even be written into an expected finding. |
 
 ### 8.4 `any_of` group — genuinely alternative acceptable findings
@@ -598,8 +598,8 @@ exercising the test-only reference validator
 | Profile-specific and risky-change fixture selection | [#47](https://github.com/amirbena/code-review-skill/issues/47) / [#48](https://github.com/amirbena/code-review-skill/issues/48) |
 | The canonical taxonomy's dimensions/values, PR-diff classification, and the inverted index built from `metadata.taxonomy` | [#333](https://github.com/amirbena/code-review-skill/issues/333) — [`taxonomy.md`](taxonomy.md) |
 | Case relevance scoring, weighting, and Top-K/coverage selection over the taxonomy/index | [#334](https://github.com/amirbena/code-review-skill/issues/334) |
-| The P0/P1/P2 definitions and the decision derivation | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
-| The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
+| The P0/P1/P2 definitions and the decision derivation | `../../shared/policies/severity.md` |
+| The finding field shape | `../../shared/templates/finding.md` |
 
 **On the benchmark matcher.** The benchmark *expected-vs-produced* match
 relation — deciding when a produced finding satisfies an expected spec, an
@@ -614,7 +614,7 @@ benchmark surface those sit on. GitHub Issue
 [#59](https://github.com/amirbena/code-review-skill/issues/59) is **closed
 stateful-re-review finding-*identity* research** and is **not** the owner
 of benchmark *expected-vs-produced* matching;
-[`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md)
+`../../docs/findings/finding-matching-strategy.md`
 is referenced by this contract and by `match-criteria.md` only as reusable
 prior-art vocabulary (`MATCH` / `NO MATCH` / `AMBIGUOUS`) and matching
 discipline (defect-continuity + site-continuity), never as benchmark
@@ -627,7 +627,7 @@ format until a later issue installs an equivalent schema alongside the
 runner (#52) or in another canonical home. At that point this document
 becomes the design record: it MUST link to the canonical schema and MUST
 NOT keep evolving the format independently — exactly as
-[`../../docs/findings/finding-identity-requirements.md`](../../docs/findings/finding-identity-requirements.md)
+`../../docs/findings/finding-identity-requirements.md`
 describes for its own eventual installation.
 
 The test-only reference validator

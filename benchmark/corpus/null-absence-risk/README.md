@@ -3,8 +3,8 @@
 Repository-development artifact for GitHub Issue
 [#121](https://github.com/amirbena/code-review-skill/issues/121), the
 cross-language review requirement owned by
-[`shared/policies/null-absence-risk.md`](../../../shared/policies/null-absence-risk.md)
-(routed from [`shared/policies/review-scope.md`](../../../shared/policies/review-scope.md)),
+`shared/policies/null-absence-risk.md`
+(routed from `shared/policies/review-scope.md`),
 "Null-like absence-risk review." This is a **focused sub-corpus** of
 [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md) fixtures exercising that
 section's vocabulary: the cross-language semantic rule (never a regex or
@@ -60,7 +60,7 @@ header comment.
 
 ## Validation
 
-[`../../../tests/unit/review/root_cause/test_null_absence_corpus.py`](../../../tests/unit/review/root_cause/test_null_absence_corpus.py)
+`../../../tests/unit/review/root_cause/test_null_absence_corpus.py`
 loads every `*.yaml` here through the same single reference validator
 [`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and every other corpus. It never defines a second

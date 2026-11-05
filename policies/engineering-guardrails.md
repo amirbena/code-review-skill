@@ -6,10 +6,10 @@ Epic [#786](https://github.com/amirbena/code-review-skill/issues/786)
 (children #787–#793 and #798) and tracked in
 [#804](https://github.com/amirbena/code-review-skill/issues/804).
 
-This is a repository-development policy. It is **not** packaged into either
+This is a repository-development policy. It is **not** packaged into any
 Skill archive, and no packaged Skill resource may depend on it. It adds no
 review semantics: severity, verdict derivation, and stopping criteria stay
-owned by [`shared/policies/`](../shared/policies/). See
+owned by the Skills under [`skills/`](../skills/). See
 [`AGENTS.md`](../AGENTS.md) for global invariants and routing.
 
 Each guardrail states the rule, the failure it prevents (with the evidence
@@ -30,7 +30,7 @@ authoritative implementation of something that already has an owner.
 - Evidence: #792 found 15 implicit imports from benchmark code into the test
   package with no stated direction.
 - Canonical:
-  [`docs/benchmark-reference-dependency/README.md`](../docs/benchmark-reference-dependency/README.md),
+  `docs/benchmark-reference-dependency/README.md`,
   [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md).
 - Extending a boundary (for example to `scripts/`) is a new architectural
   decision that needs its own Issue, not a drive-by edit.
@@ -134,10 +134,7 @@ clean result.
   (#784: a report rendered "Review Clean" while its own metadata said
   `Coverage: incomplete`).
 - Do not bypass an approval gate or a stopping criterion to reach a clean
-  result. Every `local-code-review` run still needs fresh explicit user
-  approval.
+  result. Every review run still needs the user's own request.
 - Canonical:
-  [`shared/policies/review-stopping-criteria.md`](../shared/policies/review-stopping-criteria.md),
-  [`shared/policies/verdict-consistency.md`](../shared/policies/verdict-consistency.md),
-  [`skills/local-code-review/policies/repository-state.md`](../skills/local-code-review/policies/repository-state.md),
+  [`skills/review-core/rules/findings.md`](../skills/review-core/rules/findings.md),
   [`review-orchestration-policy.md`](review-orchestration-policy.md).

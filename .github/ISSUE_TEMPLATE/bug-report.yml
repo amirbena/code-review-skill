@@ -22,9 +22,9 @@ body:
     attributes:
       label: Affected Skill
       options:
-        - local-code-review
-        - github-pr-review
-        - Both
+        - review-core
+        - A review-* mini-skill
+        - More than one
         - Repository tooling
         - Not sure
     validations:

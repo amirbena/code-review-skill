@@ -6,14 +6,13 @@ plus its test-only reference/decision-table modules under `tests/**/*.py`,
 along with any other repository-owned Python.
 
 This is **not** a universal Python style guide, and it is **not** packaged
-into either Skill archive. Its purpose is narrow: keep repository Python
+into any Skill archive. Its purpose is narrow: keep repository Python
 scripts readable by preventing long narrative comments and module docstrings
 from becoming a second documentation layer.
 
 Durable explanation about repository architecture, Skill packaging, runtime
 boundaries, historical reasoning, policy ownership, or cross-Skill
-relationships belongs in [`docs/`](../docs/), [`policies/`](.), or
-[`shared/policies/`](../shared/policies/) — not repeated inside Python
+relationships belongs in [`docs/`](../docs/), or [`policies/`](.) — not repeated inside Python
 implementation files. If it is already documented there, remove the
 duplication rather than moving it to a new file.
 
@@ -118,7 +117,7 @@ assertions. Do not restate, in comments, a contract that already lives in a
 policy file. A concise pointer is enough where useful:
 
 ```python
-# Contract: shared/policies/severity.md
+# Contract: skills/review-core/rules/findings.md
 ```
 
 ## Applying this policy
