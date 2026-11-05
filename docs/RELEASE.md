@@ -526,6 +526,26 @@ tag's own packaging, so the rebuild is the tag's build);
 `distribution-verify` must prove that rebuild equals the published
 distribution tag, and `finalize` then attaches exactly those zips.
 
+## Integration branches (`release/v3`)
+
+v3 work flows `feature → release/v3 → main → v3.0.0` (#852). PR checks
+(`test`, `validate`, `release-gate`) already run on any base branch.
+
+- **No release from `release/v3`.** Every job in `release-publish.yml` is
+  gated on `github.ref == 'refs/heads/main'`, so a push or dispatch on
+  `release/v3` runs nothing. Only the cutover PR (`release/v3 → main`,
+  squash, `Release category: Breaking`) publishes.
+- **Child entries stay Unreleased.** Child PRs keep declaring `Release
+  category:` / `Release entry:`; nothing is generated on `release/v3`. When
+  the cutover commit lands on `main`, the generator reads the PR's commits
+  and adds each release-worthy child PR (merged, based on `release/v3`, not
+  already in the baseline tag) to `## Unreleased` beside the cutover's own
+  entry, giving one v3.0.0. Missing or invalid child intent, or 250+ commits
+  (GitHub's listing cap), fails closed.
+- **Syncing `main → release/v3`** uses a merge commit. Its commits are
+  excluded from the notes (already released). The sync PR's `release-gate`
+  may report missing intent; no required check blocks it on `release/v3`.
+
 ## Repository configuration
 
 Direct pushes to `main` stay **blocked for every human and for the

@@ -182,6 +182,22 @@ class PermissionsTests(unittest.TestCase):
         self.assertNotIn("--force", yaml.safe_dump(job))
 
 
+class IntegrationBranchIsolationTests(unittest.TestCase):
+    """#852: a push or dispatch on `release/v3` must run no job at all."""
+
+    def test_every_job_is_gated_to_main(self) -> None:
+        jobs = _load()["jobs"]
+        self.assertTrue(jobs)
+        for name, job in jobs.items():
+            with self.subTest(job=name):
+                self.assertIn("github.ref == 'refs/heads/main'", str(job.get("if", "")))
+
+    def test_integration_flow_is_documented(self) -> None:
+        text = RELEASE_DOC.read_text(encoding="utf-8")
+        self.assertIn("## Integration branches", text)
+        self.assertIn("release/v3", text)
+
+
 class PlanJobTests(unittest.TestCase):
     def setUp(self) -> None:
         self.plan = _load()["jobs"]["plan"]
@@ -228,10 +244,9 @@ class PublishJobGovernanceTests(unittest.TestCase):
 
     def test_runs_only_after_plan_says_release(self) -> None:
         self.assertEqual(self.publish["needs"], "plan")
-        self.assertEqual(
-            str(self.publish["if"]).strip(),
-            "needs.plan.outputs.should_release == 'true'",
-        )
+        cond = str(self.publish["if"])
+        self.assertIn("needs.plan.outputs.should_release == 'true'", cond)
+        self.assertNotIn("||", cond)
 
     def test_requires_app_credentials_before_doing_anything(self) -> None:
         steps = self.publish["steps"]
