@@ -19,19 +19,19 @@ under the [Apache License 2.0](LICENSE).
 
 ## Install and use
 
-Install from the generated distribution repository
-([`docs/distribution.md`](docs/distribution.md) has every tool and the update
-paths). With the skills CLI, from v3.0.0:
+Skills are installed from the generated distribution repository
+([`docs/distribution.md`](docs/distribution.md) lists every tool and update
+path).
 
-```bash
-# Core only
-npx skills add amirbena/code-review-skills --skill review-core
-# Core plus a mini-skill: run it again with that Skill's name
-npx skills add amirbena/code-review-skills --skill review-security
-```
+- **Verified today (v2.x):** `npx skills add amirbena/code-review-skills --skill local-code-review`
+  (or `github-pr-review`), exercised in [#511](https://github.com/amirbena/code-review-skill/issues/511).
+- **Planned for v3.0.0, not yet published or tested:** the same command with
+  `--skill review-core`, and one more run per mini-skill, for example
+  `--skill review-security`. The v2 names `local-code-review` and
+  `github-pr-review` are planned to remain as wrappers over `review-core`.
 
 Then ask in plain words: "review this", "review PR 123", "is this auth change
-safe?", "review PR 123 and post the review". A mini-skill that is not
+safe?", "review PR 123 and post the review". Once v3 is published, a mini-skill that is not
 installed is reported as unavailable, never simulated. Staying on v2 is
 covered in the [migration guide](docs/migration-v2-to-v3.md#staying-on-v2).
 

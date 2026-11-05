@@ -15,17 +15,24 @@ removals, §12 compatibility names).
 - Publishing a review to GitHub is its own mini-skill and runs only when you
   ask for it.
 - The published line stays v2.x until the v3 cutover
-  ([#851](https://github.com/amirbena/code-review-skill/issues/851)). The v2
-  names `local-code-review` and `github-pr-review` are kept as thin wrappers
-  over `review-core` (ADR §12); backward compatibility covers the names, not
-  v2 behavior or machinery.
+  ([#851](https://github.com/amirbena/code-review-skill/issues/851)).
+- **Migrating is optional.** The approved #851 decision (ADR §12) keeps
+  `local-code-review` and `github-pr-review` available under their v2.0.0
+  names as thin wrappers over `review-core`. They are planned for the
+  cutover and are not published yet. Backward compatibility covers the
+  invocation names, not v2 behavior or machinery: the options and modes
+  listed below are gone either way.
+- **Publishing still needs explicit authorization.** The `github-pr-review`
+  wrapper reviews a PR through `review-core` and never publishes on its own.
+  Posting to GitHub happens only when you ask for it, through
+  `review-publish-github`.
 
 ## Skills
 
 | v2 | v3 |
 |---|---|
-| `local-code-review` | [`review-core`](../skills/review-core/SKILL.md) on a local change |
-| `github-pr-review`, `PASSIVE` (the default) | `review-core` on a PR: "review PR 123" |
+| `local-code-review` | [`review-core`](../skills/review-core/SKILL.md) on a local change; the old name keeps working as a wrapper |
+| `github-pr-review`, `PASSIVE` (the default) | `review-core` on a PR: "review PR 123"; the old name keeps working as a wrapper that never publishes |
 | `github-pr-review`, `ACTIVE` | `review-core` on the PR, then [`review-publish-github`](../skills/review-publish-github/SKILL.md): "review PR 123 and post the review" |
 | `github-pr-review`, `SEMI` (preview of what would publish) | removed. Review without asking to publish; the report is the preview |
 | `shared/` policies and `capabilities/` deepening | split between `review-core` and the mini-skills below |
@@ -73,7 +80,9 @@ overrides both), read-only operation, and "never invoked automatically".
 
 ## Staying on v2
 
-v2.x keeps working as published. To stay on it after v3 ships, install from a
+Because the old names stay available, staying on v2 is only needed to keep
+the full v2 behavior. v2.x keeps working as published. To stay on it after
+v3 ships, install from a
 v2 tag of the distribution repository,
 [`amirbena/code-review-skills`](https://github.com/amirbena/code-review-skills),
 instead of its default branch. Tags there are `vX.Y.Z` and match the source
@@ -83,5 +92,5 @@ repository's releases (for example `v2.0.0`).
 - Otherwise, clone the tag and copy the Skill folders into your runtime's
   Skill directory.
 
-Updates to v3 are deliberate: moving off the tag is the upgrade. See
+Moving off the tag is the upgrade. See
 [`distribution.md`](distribution.md) for the install paths.
