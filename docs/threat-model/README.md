@@ -12,9 +12,9 @@ runner), and
 [#303](https://github.com/amirbena/code-review-skill/issues/303)
 (agent-spawn / delegation).
 
-Like [`../dependency-supply-chain/README.md`](../dependency-supply-chain/README.md),
-[`../api-compatibility/README.md`](../api-compatibility/README.md), and
-[`../finding-confidence/README.md`](../finding-confidence/README.md), this
+Like `../dependency-supply-chain/README.md`,
+`../api-compatibility/README.md`, and
+`../finding-confidence/README.md`, this
 is a repository-development doc: **not** packaged into either Skill
 archive, and no packaged Skill resource depends on it. Unlike those three,
 this design record does not feed a review-time reasoning capability in
@@ -37,7 +37,7 @@ security architecture* issues instead
 | [`threat-model.md`](threat-model.md) | Trust domains, the six adversary/failure models, security assumptions, capability-boundary architecture, and how the canonical catalog is used by dependent issues. | [#300](https://github.com/amirbena/code-review-skill/issues/300) |
 | [`catalog/README.md`](catalog/README.md) | The `threat-scenario-catalog/v1` schema, the one-file-per-category catalog layout, and the `COVERAGE_GAP` / `NOT_APPLICABLE` machine-detectable gap convention. | [#300](https://github.com/amirbena/code-review-skill/issues/300) |
 | [`catalog/*.yaml`](catalog/) | The 70 canonical threat scenarios themselves, one file per threat domain (`AUTH`, `SBOX`, `DELEG`, `INJECT`, `GIT`, `SCOPE`, `DOS`). | [#300](https://github.com/amirbena/code-review-skill/issues/300) |
-| [`../../scripts/security/validate_threat_model_traceability.py`](../../scripts/security/validate_threat_model_traceability.py) | Cross-references the catalog against the `#305`/`#306`/`#307`/`#308` benchmark corpora, derives a per-scenario `covered`/`partial`/`not-applicable-to-benchmark`/`gap` rollup, and detects drift (stale scenario ids, claimed-but-missing benchmark cases, unrationalized high-severity gaps). | [#310](https://github.com/amirbena/code-review-skill/issues/310) |
+| `../../scripts/security/validate_threat_model_traceability.py` | Cross-references the catalog against the `#305`/`#306`/`#307`/`#308` benchmark corpora, derives a per-scenario `covered`/`partial`/`not-applicable-to-benchmark`/`gap` rollup, and detects drift (stale scenario ids, claimed-but-missing benchmark cases, unrationalized high-severity gaps). | [#310](https://github.com/amirbena/code-review-skill/issues/310) |
 
 ## Related
 
@@ -51,7 +51,7 @@ security architecture* issues instead
 - The denied-capability security-event taxonomy that makes this catalog's
   `expected_security_event` field authoritative:
   [#299](https://github.com/amirbena/code-review-skill/issues/299)
-  ([`../security-events/security-event-model.md`](../security-events/security-event-model.md)).
+  (`../security-events/security-event-model.md`).
 - The three benchmark-fixture issues that select their category's
   scenarios from this catalog:
   [#305](https://github.com/amirbena/code-review-skill/issues/305)
@@ -63,12 +63,12 @@ security architecture* issues instead
 - The end-to-end traceability engine this catalog is designed to be
   mechanically queryable by:
   [#310](https://github.com/amirbena/code-review-skill/issues/310)
-  ([`../../scripts/security/validate_threat_model_traceability.py`](../../scripts/security/validate_threat_model_traceability.py)).
+  (`../../scripts/security/validate_threat_model_traceability.py`).
 - The structural validator every scenario record is checked against:
   [`../../scripts/security/validate_threat_model.py`](../../scripts/security/validate_threat_model.py).
 - Review-finding severity, which threat-scenario severity is a
   deliberately distinct scale from:
-  [`../../shared/policies/severity.md`](../../shared/policies/severity.md).
+  `../../shared/policies/severity.md`.
 
 ## Non-goals
 

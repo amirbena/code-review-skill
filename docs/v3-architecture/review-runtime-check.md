@@ -32,10 +32,10 @@ exercise it directly and are unchanged.
 | Corpus | Disposition |
 | --- | --- |
 | `sandbox-adversarial` | Kept as is. It runs the real `scripts/sandbox/` runner, which this Skill uses, so it guards the S8 sandbox default. |
-| `trusted-host-nl-authorization` | Re-mapped by [#848](https://github.com/amirbena/code-review-skill/issues/848) as v3 S8 safety cases (below). Its behavioral coverage is kept; the v2 phrasing vocabulary, `allow_trusted_host_execution` option and provenance values are not. |
+| `trusted-host-nl-authorization` | Deleted in #849; re-mapped by [#848](https://github.com/amirbena/code-review-skill/issues/848) as v3 S8 safety cases (below). Its behavioral coverage is kept; the v2 phrasing vocabulary, `allow_trusted_host_execution` option and provenance values are not. |
 
-The corpora and the v2 policies they exercise are deleted at the cutover,
-not here.
+The corpora and the v2 policies they exercise were deleted with the v2
+architecture ([`v2-retirement.md`](v2-retirement.md)).
 
 ## Scenarios #848 carries into v3 safety cases
 

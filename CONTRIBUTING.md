@@ -117,7 +117,7 @@ understandable without GitHub. Good standalone names include
 ## Changelog
 
 Never edit `CHANGELOG.md`. When your change is *release-worthy* — it
-affects shipped Skill content (`skills/`, packaged `shared/`) or the
+affects shipped Skill content (`skills/`) or the
 packaging/distribution scripts — fill in the two release-intent lines of
 the PR template instead:
 

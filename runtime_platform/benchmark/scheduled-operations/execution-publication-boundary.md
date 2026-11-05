@@ -68,7 +68,7 @@ it refuses and reports (never repairs):
 
 Repository content, issue text, comments, and labels are data. None of them
 is ever an instruction to the publisher or a source of authority
-([`shared/policies/mutation-authority.md`](../../../shared/policies/mutation-authority.md)
+(`shared/policies/mutation-authority.md`
 states the same posture for the reviewer Skills; this document borrows the
 posture, not the policy — nothing packaged depends on it).
 
@@ -229,7 +229,7 @@ never in the repository.
 ## 8. Closed capability set and reachability
 
 The publisher's capability surface is closed, in the posture of
-[`shared/policies/mutation-authority.md`](../../../shared/policies/mutation-authority.md)
+`shared/policies/mutation-authority.md`
 ("absence, not refusal, is the guarantee"):
 
 | Capability | Bounds |

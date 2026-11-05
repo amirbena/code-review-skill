@@ -38,14 +38,11 @@ baselines. Full scheduling/baseline contract:
 [`../cloud-routine-integration.md`](../cloud-routine-integration.md) §2.1.
 
 A sub-corpus directory that holds only a `README.md` and no `benchmark-
-case/v2` fixture YAML (e.g. `mutation-boundary/`, `reviewer-brief/`,
-`delegation-spawn/`, `sandbox-adversarial/`,
-`trusted-host-nl-authorization/`, `security-events/`,
-`publication-mode/`, `github-enforcement-authorization/`, `verdict-consistency/`, `reasoning-checkpoint/`, `policy-loading/`) is a specialized test-only or
-real-runner suite consumed directly by `tests/` rather than through
-`ProductionReviewerAdapter` — it is excluded from the comprehensive lane
-by construction (the membership scan finds no fixture to include), never
-by a maintained denylist.
+case/v2` fixture YAML (e.g. `sandbox-adversarial/`) is a specialized
+test-only or real-runner suite consumed directly by `tests/` rather than
+through `ProductionReviewerAdapter` — it is excluded from the comprehensive
+lane by construction (the membership scan finds no fixture to include),
+never by a maintained denylist.
 
 ## Selection principle
 
@@ -91,7 +88,7 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
 
 ## Related sub-corpora
 
-- [`dependency-tree-inspection/`](dependency-tree-inspection/README.md) — a
+- `dependency-tree-inspection/` — a
   network-free `benchmark-case/v2` sub-corpus of **synthetic** Base/Head
   dependency trees (Issue
   [#732](https://github.com/amirbena/code-review-skill/issues/732), parent
@@ -103,14 +100,14 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   [#185](https://github.com/amirbena/code-review-skill/issues/185), parent
   [#177](https://github.com/amirbena/code-review-skill/issues/177)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../tests/unit/review/root_cause/test_consolidation_corpus.py`](../../tests/unit/review/root_cause/test_consolidation_corpus.py)).
+  (`../../tests/unit/review/root_cause/test_consolidation_corpus.py`).
   The four category cases above are unaffected by it.
 - [`repository-intelligence/`](repository-intelligence/README.md) — a
   focused `benchmark-case/v2` sub-corpus demonstrating
   `repository-expansion.md`'s (#87) triggers (Issue
   [#129](https://github.com/amirbena/code-review-skill/issues/129)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py`](../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py)).
+  (`../../tests/unit/review/repository_intelligence/test_repository_intelligence_corpus.py`).
 - [`relationship-recall/`](relationship-recall/README.md) — a focused
   `benchmark-case/v2` sub-corpus and recorded pre-enrichment baseline for
   relationship-dependent review conclusions of the current search-only
@@ -124,29 +121,29 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   [#90](https://github.com/amirbena/code-review-skill/issues/90), parent
   [#48](https://github.com/amirbena/code-review-skill/issues/48)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py`](../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py)).
+  (`../../tests/unit/review/specialist_depth/test_risk_depth_corpus.py`).
   Deep depth/expansion/partitioning/coverage assertions are pinned against
   the reference models directly in
-  [`../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py`](../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py).
+  `../../tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py`.
 - [`semantic-implication/`](semantic-implication/README.md) — a focused
   `benchmark-case/v2` sub-corpus for the base semantic change-implication
   reasoning pass (Issue
   [#211](https://github.com/amirbena/code-review-skill/issues/211)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../tests/unit/review/root_cause/test_semantic_implication_corpus.py`](../../tests/unit/review/root_cause/test_semantic_implication_corpus.py)).
+  (`../../tests/unit/review/root_cause/test_semantic_implication_corpus.py`).
 - [`null-absence-risk/`](null-absence-risk/README.md) — a focused
   `benchmark-case/v2` sub-corpus for the cross-language null-like
   absence-risk review requirement (Issue
   [#121](https://github.com/amirbena/code-review-skill/issues/121)). Same
   format and reference validator; its own README, cases, and unit test
-  ([`../../tests/unit/review/root_cause/test_null_absence_corpus.py`](../../tests/unit/review/root_cause/test_null_absence_corpus.py)).
+  (`../../tests/unit/review/root_cause/test_null_absence_corpus.py`).
 - [`external-contract-context/`](external-contract-context/README.md) — a
   focused `benchmark-case/v2` sub-corpus for the bounded external contract
   context `local-code-review` reads at a caller-pinned revision (Issue
   [#133](https://github.com/amirbena/code-review-skill/issues/133)). Same
   format and reference validator, extended by the additive
   `input.external_contexts`; its own README, cases, and unit test
-  ([`../../tests/unit/benchmark/test_external_contract_context_corpus.py`](../../tests/unit/benchmark/test_external_contract_context_corpus.py)).
+  (`../../tests/unit/benchmark/test_external_contract_context_corpus.py`).
 - [`workspace-sibling-context/`](workspace-sibling-context/README.md) — a
   focused `benchmark-case/v2` sub-corpus for the caller-granted workspace
   sibling evidence both review adapters may use before escalating an
@@ -155,7 +152,7 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   [#661](https://github.com/amirbena/code-review-skill/issues/661)). Same
   format and reference validator, extended by the additive
   `input.workspace_siblings`; its own README, cases, and unit test
-  ([`../../tests/unit/benchmark/test_workspace_sibling_corpus.py`](../../tests/unit/benchmark/test_workspace_sibling_corpus.py)).
+  (`../../tests/unit/benchmark/test_workspace_sibling_corpus.py`).
 - [`api-compatibility/`](api-compatibility/README.md) — a focused
   `benchmark-case/v2` sub-corpus pinning the expected compatible /
   breaking / context-dependent classification for the API / contract
@@ -232,7 +229,7 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
 - [`specialist-depth-composition/`](specialist-depth-composition/README.md) —
   a focused `benchmark-case/v2` sub-corpus pinning the architecture-level
   activation/composition/boundedness contract
-  [`specialist-depth.md`](../../shared/policies/specialist-depth.md)
+  `specialist-depth.md`
   (#82) defines across 0..N domain-specific deepening capabilities (Issue
   [#85](https://github.com/amirbena/code-review-skill/issues/85), parent
   [#47](https://github.com/amirbena/code-review-skill/issues/47)). Same
@@ -242,7 +239,7 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   and Performance (#187) sub-corpora above as integration inputs rather
   than re-deriving their domain correctness.
 
-- [`specialist-depth-progressive-loading-proof/`](specialist-depth-progressive-loading-proof/README.md) —
+- `specialist-depth-progressive-loading-proof/` —
   a focused `benchmark-case/v2` sub-corpus (one net-new case) proving
   `specialist-depth`'s conditional, fail-closed loading (Issue
   [#411](https://github.com/amirbena/code-review-skill/issues/411),
@@ -250,19 +247,19 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   behaviorally, not just at the text/manifest level #410 already pins.
   Same format and reference validator; its own README, one case, and unit
   test
-  ([`../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py`](../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py)).
+  (`../../tests/unit/benchmark/test_specialist_depth_progressive_loading_proof_corpus.py`).
   Reuses `specialist-depth-composition/`'s Case A and Case B by id for
   the "not needed" / "must activate" required cases rather than
   re-declaring them.
 
-- [`scale-progressive-loading-proof/`](scale-progressive-loading-proof/README.md) —
+- `scale-progressive-loading-proof/` —
   a focused `benchmark-case/v2` sub-corpus (one net-new case) proving
   `scale`'s conditional, fail-closed loading (Issue
   [#447](https://github.com/amirbena/code-review-skill/issues/447),
   parent [#403](https://github.com/amirbena/code-review-skill/issues/403)).
   Same format and reference validator; its own README, one case, and unit
   test
-  ([`../../tests/unit/benchmark/test_scale_progressive_loading_proof_corpus.py`](../../tests/unit/benchmark/test_scale_progressive_loading_proof_corpus.py)).
+  (`../../tests/unit/benchmark/test_scale_progressive_loading_proof_corpus.py`).
 
 - [`sandbox-adversarial/`](sandbox-adversarial/README.md) — not a
   `benchmark-case/v2` corpus (see its README for why): the real-runner
@@ -276,12 +273,12 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
 - [`candidate-finding-validation/`](candidate-finding-validation/README.md) —
   a focused `benchmark-case/v2` sub-corpus pinning the precision of the
   candidate-finding-validation reasoning contract
-  [`candidate-finding-validation-model.md`](../../docs/candidate-finding-validation/candidate-finding-validation-model.md)
+  `candidate-finding-validation-model.md`
   defines (Issue [#383](https://github.com/amirbena/code-review-skill/issues/383),
   parent [#382](https://github.com/amirbena/code-review-skill/issues/382)).
   Same format and reference validator; its own README, cases, and unit
   test
-  ([`../../tests/unit/review/root_cause/test_candidate_finding_validation_corpus.py`](../../tests/unit/review/root_cause/test_candidate_finding_validation_corpus.py)).
+  (`../../tests/unit/review/root_cause/test_candidate_finding_validation_corpus.py`).
   Includes a real-world-derived scenario sourced from PR
   [#390](https://github.com/amirbena/code-review-skill/pull/390).
 
@@ -299,14 +296,14 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   [#350](https://github.com/amirbena/code-review-skill/issues/350), the
   `dd-blocking-*` fixtures). Same format and reference validator; its own
   README, cases, and unit tests
-  ([`../../tests/unit/benchmark/test_decision_derivation_corpus.py`](../../tests/unit/benchmark/test_decision_derivation_corpus.py),
+  (`../../tests/unit/benchmark/test_decision_derivation_corpus.py`,
   [`../../tests/unit/benchmark/test_blocking_verdict_corpus.py`](../../tests/unit/benchmark/test_blocking_verdict_corpus.py)).
 
 - [`finding-placement/`](finding-placement/README.md) — a focused
   `benchmark-case/v2` sub-corpus proving correct primary fix/action
   location selection for the "Deriving the fix/action location" reasoning
   in
-  [`../../shared/templates/finding.md`](../../shared/templates/finding.md)
+  `../../shared/templates/finding.md`
   (Issue [#387](https://github.com/amirbena/code-review-skill/issues/387),
   parent [#385](https://github.com/amirbena/code-review-skill/issues/385),
   implementation contract
@@ -314,7 +311,7 @@ see [`../../runtime_platform/benchmark/taxonomy.md`](../../runtime_platform/benc
   format and reference validator; its own README, cases, and unit test
   ([`../../tests/unit/benchmark/test_finding_placement_corpus.py`](../../tests/unit/benchmark/test_finding_placement_corpus.py)).
   Consumes, never duplicates,
-  [`../../skills/github-pr-review/policies/finding-placement.md`](../../skills/github-pr-review/policies/finding-placement.md)'s
+  `../../skills/github-pr-review/policies/finding-placement.md`'s
   (#164) existing anchor-selection/transport fixtures.
 
 - [`multi-repository-review-target/`](multi-repository-review-target/README.md) —

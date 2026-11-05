@@ -78,7 +78,7 @@ capability — `database-migration`, `dependency-supply-chain`,
 `deployment-infrastructure`, `distributed-systems`, `engineering-design`, `performance`. `security-deepening` is additionally
 renamed to `security-boundary` to stay vocabulary-consistent with the
 "Security / trust boundaries" system-level dimension in
-[`../../shared/policies/review-scope.md`](../../shared/policies/review-scope.md)
+`../../shared/policies/review-scope.md`
 (#211) — naming consistency only; `review-scope.md`'s dimension list is not
 a shared artifact this taxonomy imports or forks.
 

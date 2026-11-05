@@ -15,7 +15,7 @@ This document is a research record, like
 [`../../runtime_platform/benchmark/claim-correspondence-adequacy.md`](../../runtime_platform/benchmark/claim-correspondence-adequacy.md)
 (#343). It recommends, **without implementing**, the smallest deterministic
 check that would close the gap §12.4 identifies. It does not redesign
-[`shared/policies/severity.md`](../../shared/policies/severity.md)'s
+`shared/policies/severity.md`'s
 derivation: every recommendation below only ever *checks* that
 derivation's output against what was actually rendered and published, and
 never recomputes severity or the decision by a second, independent path.
@@ -86,7 +86,7 @@ Two cases are **not** mismatches, and the check must special-case them
 rather than error on them:
 
 - **Coverage-incomplete outcomes.** Per `severity.md`'s own carve-out
-  (via [`review-stopping-criteria.md`](../../shared/policies/review-stopping-criteria.md)),
+  (via `review-stopping-criteria.md`),
   an incomplete-coverage top-level outcome (`REVIEW INCOMPLETE`) legitimately
   overrides the clean/blocking value the mechanical derivation would
   otherwise produce. This is the one place `severity.md` already
@@ -102,7 +102,7 @@ rather than error on them:
 
 Both Skills already finalize findings and derive the decision once,
 before any rendering step —
-[`shared/policies/severity.md`](../../shared/policies/severity.md),
+`shared/policies/severity.md`,
 "Decision derivation (mechanical)," states plainly that this derivation
 "runs exactly once per invocation... and produces exactly one decision
 value," and that every later rendering "presents that same single value;
@@ -112,21 +112,21 @@ own output — it is inserted immediately after the derivation and
 immediately before each place that value gets rendered or transmitted:
 
 - **`local-code-review`**
-  ([`skills/local-code-review/runbooks/local-review.md`](../../skills/local-code-review/runbooks/local-review.md),
+  (`skills/local-code-review/runbooks/local-review.md`,
   step 11, "Derive the Decision"): one pre-render check, between Decision
   derivation and the render step. The runbook already states this output
   step "must not alter the finalized findings or Decision" — the check
   enforces that as a precondition of the render actually running, rather
   than trusting it.
 - **`github-pr-review`, PASSIVE and SEMI modes**
-  ([`skills/github-pr-review/runbooks/passive-pr-review.md`](../../skills/github-pr-review/runbooks/passive-pr-review.md)):
+  (`skills/github-pr-review/runbooks/passive-pr-review.md`):
   one pre-render check, after decision derivation and before "construct
   one review: body + inline comments." No live GitHub event exists yet in
   either mode; SEMI's declared `WOULD PUBLISH Approve`/`WOULD PUBLISH
   Request Changes` line is checked as signal (a)'s value, standing in for
   the event that would be submitted if the mode were ACTIVE.
 - **`github-pr-review`, ACTIVE mode**
-  ([`skills/github-pr-review/runbooks/active-pr-review.md`](../../skills/github-pr-review/runbooks/active-pr-review.md)):
+  (`skills/github-pr-review/runbooks/active-pr-review.md`):
   **two** check points, not one, because the flow's own "HEAD
   revalidation" step already acknowledges a race between rendering and
   submission:
@@ -156,7 +156,7 @@ entirely before the one irreversible action it protects, never after it.
   preference.** A check that found a mismatch and then silently
   substituted the "right" value before rendering or submitting would
   itself be a second, independent decision path — precisely what
-  [`tests/reference/review/decision_semantics.py`](../../tests/reference/review/decision_semantics.py)'s
+  `tests/reference/review/decision_semantics.py`'s
   `PROHIBITED_CORRECTION_FRAGMENTS` (`correction`, `correct_decision`,
   `provisional`, `supersede`, `resubmit_decision`, `revise_decision`)
   already names as disallowed. Any implementation that "fixes" a mismatch

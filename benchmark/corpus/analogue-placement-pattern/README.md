@@ -4,7 +4,7 @@ Repository-development artifact for GitHub Issue
 [#328](https://github.com/amirbena/code-review-skill/issues/328). Parent
 capability: [#327](https://github.com/amirbena/code-review-skill/issues/327),
 which extends
-[`../../../shared/policies/architectural-placement.md`](../../../shared/policies/architectural-placement.md),
+`../../../shared/policies/architectural-placement.md`,
 "Analogue-based responsibility/placement pattern inference," so a review
 can infer an established but undocumented local responsibility/placement
 pattern from analogous implementations and flag a materially consequential
@@ -64,7 +64,7 @@ never whether a specific decomposition or test-organization style wins.
   real disagreement between two duplicated copies) rather than a
   hypothetical "could drift later" — satisfying the concrete-consequence
   bar in `architectural-placement.md` and the severity discipline in
-  [`../../../shared/policies/severity.md`](../../../shared/policies/severity.md),
+  `../../../shared/policies/severity.md`,
   "Repository conventions and severity": severity tracks the consequence
   (a real crash, a real auth failure), never the mere fact that an implicit
   convention was violated.

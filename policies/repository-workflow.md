@@ -9,9 +9,9 @@ Canonical rules for **task branches** in development of *this* repository:
 which branch a task runs on, how the base is synchronized, how unrelated
 local work is preserved, and how a task branch is named.
 
-This is a repository-development policy. It is **not** packaged into either
+This is a repository-development policy. It is **not** packaged into any
 Skill archive, and no packaged Skill resource may depend on it. It is
-distinct from how `local-code-review` or `github-pr-review` reviews an
+distinct from how `review-core` and its mini-skills review an
 external repository — that behavior is defined in each Skill's own
 `SKILL.md`. See [`AGENTS.md`](../AGENTS.md) for global invariants,
 instruction precedence, and task routing, and
@@ -165,7 +165,7 @@ clean final state
 ```
 
 These rules govern development of *this* repository. They are distinct from
-how `local-code-review` or `github-pr-review` reviews external repositories
+how `review-core` and its mini-skills review external repositories
 (see each Skill's own `SKILL.md`). The commit/push/PR/merge steps are
 governed by [`git-pr-merge-policy.md`](git-pr-merge-policy.md); the
 clean-exit end state is governed by

@@ -5,7 +5,7 @@ reviewer -> runtime-validation request -> SandboxRunner.run() -> bounded evidenc
 Never falls back to unsandboxed host execution: if no isolation primitive is
 available, or the run cannot be verified safe, the result is `unavailable`.
 A payload the launcher could not exec is `unavailable`, never `failed`.
-Contract: shared/policies/runtime-validation.md.
+Contract: skills/review-runtime-check/rules/execution.md.
 """
 
 from __future__ import annotations

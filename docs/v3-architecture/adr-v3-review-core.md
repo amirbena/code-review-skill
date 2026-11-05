@@ -18,7 +18,7 @@ all of it. The measurements below were taken for #842 on v2.0.0
 (`0369f40`):
 
 - **Load cost before the diff is read.**
-  [`context_size_report.py`](../../scripts/validation/context_size_report.py)
+  `context_size_report.py`
   reports that Local loads 13 files (~42k est. tokens) before step 1 and
   GitHub loads 24 files (~76k). About 23k lines of packaged instructions sit
   across 2 Skills, 51 `shared/` files and 19 `capabilities/` manifests.
@@ -377,3 +377,21 @@ This reuses the existing release flow ([`../RELEASE.md`](../RELEASE.md),
   implements the packaging and release changes (manifest, the
   pre-release no-version rule, insert-on-stamp) and their tests. The other
   children add no `version:` line and no version field of their own.
+
+## 12. Compatibility entrypoints
+
+v2 users invoke `local-code-review` and `github-pr-review`. v3 keeps those
+two names, exactly as published in v2.0.0, as thin wrappers over
+`review-core`, and still ships `review-core` and the eight mini-skills under
+their own names. Backward compatibility is for the invocation names, not for
+v2 behavior or machinery.
+
+- A wrapper is one short `SKILL.md` that delegates to `review-core`. It
+  restates no Core policy, severity rule or review logic, and carries no v2
+  loading inventory.
+- `github-pr-review` never publishes on its own: publication stays an
+  explicit request handled by `review-publish-github` (S7).
+- There is no router, dispatcher or orchestration layer. The wrappers are
+  ordinary Skills.
+- [#851](https://github.com/amirbena/code-review-skill/issues/851) packages,
+  distributes and validates them. #849 only removes the v2 implementation.

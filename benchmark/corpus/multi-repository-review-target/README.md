@@ -50,8 +50,8 @@ alongside the two that already existed.
 
 ## Why the corpus needed the extension instead of the reference-fixture pattern
 
-Unlike [`../mutation-boundary/README.md`](../mutation-boundary/README.md)
-or [`../delegation-spawn/README.md`](../delegation-spawn/README.md) — whose
+Unlike `../mutation-boundary/README.md`
+or `../delegation-spawn/README.md` — whose
 outcomes are a structural allow/deny, not a diff and a set of findings —
 scenarios 1–3 below are genuine finding-quality claims ("the combined
 review correctly identifies this cross-repository defect"), exactly what

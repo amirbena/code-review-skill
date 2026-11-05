@@ -12,7 +12,7 @@ fixtures pinning representative Database / Migration deepening outcomes
 as follow-up quality hardening — it validates domain correctness after
 the capability exists and does not define, gate, or redesign it. The
 capability itself is designed and packaged in
-[`../../../shared/policies/database-migration-deepening.md`](../../../shared/policies/database-migration-deepening.md),
+`../../../shared/policies/database-migration-deepening.md`,
 which this corpus's expectations must stay consistent with.
 
 GitHub Issue [#279](https://github.com/amirbena/code-review-skill/issues/279)
@@ -40,7 +40,7 @@ matching the storage model each case's own worked example pins.
 **One case per outcome shape** #186's (and #279's) scope requires, each
 isolating that shape so a regression in any one is unambiguous. The nine
 cases mirror
-[`database-migration-deepening.md`](../../../shared/policies/database-migration-deepening.md)'s
+`database-migration-deepening.md`'s
 own worked examples, concern areas, and Activation section, and split
 between "the capability engages and finds a real defect" and "the
 capability correctly stays quiet":

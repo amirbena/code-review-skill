@@ -843,7 +843,7 @@ implemented:
   #255, was retired by #420). This document adds the
   runtime/selection/nightly/measurement architecture on top; it does not
   redefine any of those contracts.
-- [`../finding-confidence/README.md`](../finding-confidence/finding-confidence-model.md)
+- `../finding-confidence/README.md`
   owns the finding `confidence` field that runtime-validated and
   benchmark-derived evidence roll into; unrelated to this document's
   scope beyond both ultimately informing review-quality signal.

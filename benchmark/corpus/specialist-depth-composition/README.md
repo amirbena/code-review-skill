@@ -5,7 +5,7 @@ Repository-development artifact for GitHub Issue
 epic [#47](https://github.com/amirbena/code-review-skill/issues/47). This
 is a **focused sub-corpus** of [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md)
 fixtures pinning the **architecture-level** activation/composition
-contract [`specialist-depth.md`](../../../shared/policies/specialist-depth.md)
+contract `specialist-depth.md`
 (#82) already defines — not the correctness of any single domain
 capability's reasoning, which the domain fixture corpora below already
 own.
@@ -23,14 +23,14 @@ the single reference validator
 ## Selection principle
 
 - **One case per way #82's composition contract can play out**, mirroring
-  [`specialist-depth.md`](../../../shared/policies/specialist-depth.md)'s
+  `specialist-depth.md`'s
   own worked examples Case A through Case G verbatim: zero capabilities
   engaging, exactly one, several composing, a superficial signal that
   must not force activation, semantic evidence triggering activation with
   no expected file type, cascading activation bounded by
-  [`repository-expansion.md`](../../../shared/policies/repository-expansion.md)
+  `repository-expansion.md`
   (#87), and review depth never by itself expanding required remediation
-  ([`remediation-scope-boundary.md`](../../../shared/policies/remediation-scope-boundary.md),
+  (`remediation-scope-boundary.md`,
   #258).
 - **Reuse over re-derivation.** Cases B, C (in part), D, F (in part), and
   G reuse the shape of an existing single-domain corpus's own fixture
@@ -57,7 +57,7 @@ is closed (see [`../../../runtime_platform/benchmark/fixture-format.md`](../../.
 and has no field for "which capabilities engaged" — only
 `expected.findings` and `expected.decision`. Unlike risk-based review
 depth (a deterministic catalog computed from concrete signals, see
-[`change-risk-signals.md`](../../../shared/policies/change-risk-signals.md)),
+`change-risk-signals.md`),
 specialist-depth activation is an evidence-driven reasoning judgment with
 no equivalent computable reference model — the same reason the five
 domain-deepening sub-corpora below have no reference-model scenario file

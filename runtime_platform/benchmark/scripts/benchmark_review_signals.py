@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rendered Result, Decision and Coverage of a review, plus its policy-read compliance (Issue #819).
+"""Rendered Result, Decision and Coverage of a review (Issue #819).
 
 Report-level only: nothing here changes a sealed record, a fixture or a quality metric.
 """
@@ -7,9 +7,7 @@ Report-level only: nothing here changes a sealed record, a fixture or a quality 
 from __future__ import annotations
 
 import re
-from typing import Any, Mapping, Sequence
-
-from runtime_platform.benchmark.reference import benchmark_blocking_verdict as bbv
+from typing import Any
 
 _RESULT_RE = re.compile(r"\*\*Result:\s*(.+?)\*\*")
 _DECISION_RE = re.compile(r"^[\s>*_-]*Decision\b[\s*_]*:[\s*_]*(.+?)[\s*_]*$", re.I | re.M)
@@ -27,26 +25,6 @@ def rendered_surfaces(report: str | None) -> dict[str, str | None]:
     return {key: match.group(1).strip() if match else None for key, match in found.items()}
 
 
-def review_signals(
-    skill_md: str,
-    tool_calls: Sequence[tuple[str, Mapping[str, Any]]],
-    report: str | None,
-    *,
-    fired_conditional: Sequence[str] = (),
-) -> dict[str, Any]:
-    """Rendered surfaces and policy-read compliance for one review."""
-    surfaces = rendered_surfaces(report)
-    check = bbv.check_policy_reads(
-        skill_md,
-        [(name, dict(tool_input)) for name, tool_input in tool_calls],
-        result_label=surfaces["result"],
-        decision_label=surfaces["decision"],
-        coverage=surfaces["coverage"],
-        fired_conditional=fired_conditional,
-    )
-    return {
-        **surfaces,
-        "compliant": check.ok,
-        "violations": list(check.violations),
-        "read_states": {path: state.value for path, state in check.states.items()},
-    }
+def review_signals(report: str | None) -> dict[str, Any]:
+    """Rendered surfaces for one review."""
+    return dict(rendered_surfaces(report))

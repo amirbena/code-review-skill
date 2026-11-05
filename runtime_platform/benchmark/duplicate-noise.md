@@ -18,7 +18,7 @@ Like [`severity-accuracy.md`](severity-accuracy.md) and the rest of
 [`./`](README.md), this is a **repository-development doc: not packaged
 into either Skill archive**, and no packaged Skill resource depends on it.
 It reuses the shared finding shape, the P0/P1/P2 severity vocabulary of
-[`../../shared/policies/severity.md`](../../shared/policies/severity.md),
+`../../shared/policies/severity.md`,
 and the `MATCH` / `NEAR_MISS` / `NO_MATCH` pairwise result and its two axes
 (location correspondence, defect correspondence) of
 [`match-criteria.md`](match-criteria.md); it does **not** redefine the
@@ -71,7 +71,7 @@ false-negative / false-positive counts (#55); severity-accuracy
 measurement (#56); the fixture format or the corpus (#50 / #51); how
 produced findings are captured (#52); the run-to-run diff (#53); the
 P0/P1/P2 definitions
-([`../../shared/policies/severity.md`](../../shared/policies/severity.md));
+(`../../shared/policies/severity.md`);
 any de-duplication logic the reviewer might run; or any single blended
 quality score.
 
@@ -260,8 +260,8 @@ looser rule would over-cluster.
 | Capturing produced findings; the per-case result shape | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
 | The cross-revision stable finding identity mechanism (produced-vs-earlier-produced) | [#42](https://github.com/amirbena/code-review-skill/issues/42) / [#59](https://github.com/amirbena/code-review-skill/issues/59) |
 | CI wiring / a merge gate acting on the metric deltas | [#40](https://github.com/amirbena/code-review-skill/issues/40) |
-| The P0/P1/P2 definitions and the decision derivation | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
-| The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
+| The P0/P1/P2 definitions and the decision derivation | `../../shared/policies/severity.md` |
+| The finding field shape | `../../shared/templates/finding.md` |
 
 ## Status and canonical home
 

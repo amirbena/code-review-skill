@@ -5,7 +5,7 @@ Canonical rules for how an implementation task on *this* repository
 around commits, and the cross-platform shell/PowerShell script parity
 obligation.
 
-This is a repository-development policy. It is **not** packaged into either
+This is a repository-development policy. It is **not** packaged into any
 Skill archive, and no packaged Skill resource may depend on it. See
 [`AGENTS.md`](../AGENTS.md) for global invariants and routing,
 [`repository-workflow.md`](repository-workflow.md) for task-branch
@@ -141,8 +141,8 @@ Documentation outside `docs/` (an ADR or runbook under `runtime_platform/`, a
 new directory, ...) qualifies by the same evidence, including in the PR that
 introduces it, because CI runs the base-SHA router against the head tree. It
 must be a regular, non-executable `.md` file without a shebang, outside the
-protected surfaces (`skills/`, `shared/`, `policies/`, `.github/`,
-`distribution/`, `capabilities/`, `scripts/`, `tests/`, `SKILL.md`, `AGENTS.md`,
+protected surfaces (`skills/`, `policies/`, `.github/`,
+`distribution/`, `scripts/`, `tests/`, `SKILL.md`, `AGENTS.md`,
 `CLAUDE.md`, `CHANGELOG.md`). A consumer is any non-comment, non-docstring
 string literal naming its file name or stem, a computed tail joined onto its
 directory, a glob or enumeration of its directory or an ancestor, or a mention

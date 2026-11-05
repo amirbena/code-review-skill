@@ -195,7 +195,7 @@ flagged; rows 7–10 and 13–15 are the deliberate non-flags a looser rule woul
 | Duplicate noise | [#57](https://github.com/amirbena/code-review-skill/issues/57) — [`duplicate-noise.md`](duplicate-noise.md) |
 | Carrying claim / location into the harness | [#342](https://github.com/amirbena/code-review-skill/issues/342) |
 | A runtime gate on live reviews, or a merge gate on this metric | not defined; benchmark signal only (design §12.1) |
-| The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
+| The finding field shape | `../../shared/templates/finding.md` |
 
 ## Status and canonical home
 

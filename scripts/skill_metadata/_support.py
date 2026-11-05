@@ -24,29 +24,7 @@ def normalize_prose(text: str) -> str:
     return WHITESPACE_RE.sub(" ", text).strip()
 
 
-def check_markers(text: str, markers: tuple[str, ...], label: str) -> None:
-    normalized = normalize_prose(text)
-    for marker in markers:
-        if normalize_prose(marker) not in normalized:
-            raise SystemExit(f"error: {label} missing marker: {marker!r}")
 
-
-def check_order(text: str, headers: tuple[str, ...], label: str) -> None:
-    """Assert each header in `headers` appears, strictly in that order."""
-    positions = [text.find(h) for h in headers]
-    if any(p < 0 for p in positions) or positions != sorted(positions):
-        raise SystemExit(
-            f"error: {label} must present {list(headers)} in that exact order"
-        )
-
-
-def check_absent(text: str, phrases: tuple[str, ...], label: str) -> None:
-    for phrase in phrases:
-        if phrase in text:
-            raise SystemExit(
-                f"error: {label} must not restate owned section {phrase!r} — "
-                "reference the canonical sub-policy file instead of duplicating it"
-            )
 
 
 def load_yaml(path: Path) -> dict:
@@ -96,24 +74,13 @@ def require_single_line_scalar(skill_md: Path, field: str) -> None:
             f"error: {skill_md} {field!r} must be a plain scalar on one "
             "physical YAML line, not a block/folded scalar"
         )
-    if field_idx != len(body_lines) - 1:
+    following = body_lines[field_idx + 1] if field_idx + 1 < len(body_lines) else ""
+    if following[:1].isspace():
         raise SystemExit(
             f"error: {skill_md} {field!r} must be a single physical line "
             "with no continuation line"
         )
 
-
-def iter_paths(value: object, field: str):
-    if isinstance(value, str):
-        yield field, value
-    elif isinstance(value, list):
-        for item in value:
-            yield from iter_paths(item, field)
-    elif isinstance(value, dict):
-        for key, item in value.items():
-            yield from iter_paths(item, f"{field}.{key}")
-    elif value is not None:
-        raise SystemExit(f"error: metadata resource field {field} must contain paths")
 
 
 def require_inside(path: Path, root: Path, label: str) -> Path:

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Package one or both Code Review Agent Skills into self-contained,
+# Package the Code Review Agent Skills declared in package-manifest.json into self-contained,
 # standalone distributable archives, using explicit allowlists (never the
 # whole repository). Each archive has its own SKILL.md at the archive
 # ROOT (not nested under skills/<name>/), so a consumer never needs to
@@ -11,7 +11,7 @@
 # this repository.
 #
 # Usage:
-#   scripts/packaging/package-skills.sh [local|github|all]
+#   scripts/packaging/package-skills.sh [<manifest target>|all]
 # Defaults to "all" when no argument is given.
 set -euo pipefail
 
@@ -25,13 +25,6 @@ package_manifest_helper="${script_dir}/package_manifest.py"
 package_adapt="${script_dir}/package_adapt.py"
 
 target="${1:-all}"
-case "${target}" in
-  local|github|all) ;;
-  *)
-    echo "error: unknown target '${target}' (expected local|github|all)" >&2
-    exit 1
-    ;;
-esac
 
 manifest_query() {
   local package_target="$1"
@@ -180,12 +173,25 @@ built_skills=()
 echo "Repository root: ${repo_root}"
 mkdir -p "${dist_dir}" "${trees_root}"
 
-if [[ "${target}" == "local" || "${target}" == "all" ]]; then
-  package_skill "local"
+manifest_targets=()
+while IFS= read -r manifest_target; do
+  [[ -n "${manifest_target}" ]] && manifest_targets+=("${manifest_target}")
+done < <(python3 "${package_manifest_helper}" "${package_manifest}" - targets)
+
+if [[ "${target}" != "all" ]]; then
+  found=0
+  for manifest_target in "${manifest_targets[@]+"${manifest_targets[@]}"}"; do
+    [[ "${manifest_target}" == "${target}" ]] && found=1
+  done
+  if [[ ${found} -eq 0 ]]; then
+    echo "error: unknown target '${target}' (not in package-manifest.json)" >&2
+    exit 1
+  fi
+  manifest_targets=("${target}")
 fi
 
-if [[ "${target}" == "github" || "${target}" == "all" ]]; then
-  package_skill "github"
-fi
+for manifest_target in "${manifest_targets[@]+"${manifest_targets[@]}"}"; do
+  package_skill "${manifest_target}"
+done
 
-python3 "${package_adapt}" write-tree-manifest "${dist_dir}" "${built_skills[@]}"
+python3 "${package_adapt}" write-tree-manifest "${dist_dir}" "${built_skills[@]+"${built_skills[@]}"}"

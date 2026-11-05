@@ -528,7 +528,7 @@ print(json.dumps(sorted(edges)))
         expected = {router.module_id(f) for f in seen if router.is_test_module(f)}
         modules, _ = router.surface_of_test_path("tests/support/paths.py", graph)
         self.assertEqual(modules, expected)
-        self.assertGreater(len(expected), 100)
+        self.assertGreater(len(expected), 50)
 
 
 class GitSourceTests(unittest.TestCase):

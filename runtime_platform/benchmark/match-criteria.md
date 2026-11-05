@@ -20,7 +20,7 @@ Like [`fixture-format.md`](fixture-format.md) and the rest of
 into either Skill archive**, and no packaged Skill resource depends on it.
 It reuses the shared finding shape and the `MATCH` / near-miss / `NO
 MATCH` vocabulary and the two-axis matching discipline of
-[`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md)
+`../../docs/findings/finding-matching-strategy.md`
 (the closed research of GitHub Issue
 [#59](https://github.com/amirbena/code-review-skill/issues/59)); it does
 **not** redefine that cross-revision identity relation and it does not
@@ -51,7 +51,7 @@ findings into a noise measure (#57).
 - **Match axes** — the two independent correspondences a MATCH requires:
   **defect correspondence** (§4) and **location correspondence** (§3).
   Borrowed, not re-derived, from
-  [`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md)'s
+  `../../docs/findings/finding-matching-strategy.md`'s
   "defect continuity + site continuity" discipline; neither axis can
   substitute for the other.
 - **Pairwise result** — the three-valued outcome of comparing one
@@ -81,7 +81,7 @@ or how the runner captures produced findings
 A pairwise comparison evaluates **defect correspondence** (§4) and
 **location correspondence** (§3) independently, then combines them (§5).
 The axes are deliberately separate because the asymmetric error budget of
-[`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md)
+`../../docs/findings/finding-matching-strategy.md`
 §1 applies here too: a false *split* (calling a real match a miss) is
 visible and recoverable in a benchmark report; a false *merge* (crediting
 the reviewer for a finding it did not make) silently inflates quality. So
@@ -186,7 +186,7 @@ Evaluated from the expected `defect_kind` / `claim` against the produced
    stay **UNRELATED** whatever the claims say; no synonym table, fixture
    id, or slug is special-cased.
 2. **`claim` comparison** uses the `behavioral_claim` shape of
-   [`../../docs/findings/finding-matching-strategy.md`](../../docs/findings/finding-matching-strategy.md)
+   `../../docs/findings/finding-matching-strategy.md`
    §2: a cause → faulty-behavior sentence. Each claim is reduced to a
    normalized content-token set — lower-cased, punctuation-split,
    stop-words and one/two-character tokens removed, identifiers, numbers,
@@ -316,8 +316,8 @@ the **entry outcome** is `MATCH`.
 | The cross-revision stable finding identity mechanism (produced-vs-earlier-produced) | [#42](https://github.com/amirbena/code-review-skill/issues/42) / [#59](https://github.com/amirbena/code-review-skill/issues/59) |
 | The fixture format (`location`, `claim`, `defect_kind`, variance constructs) and the corpus | [#50](https://github.com/amirbena/code-review-skill/issues/50) / [#51](https://github.com/amirbena/code-review-skill/issues/51) |
 | Capturing produced findings; the per-case result shape | [#52](https://github.com/amirbena/code-review-skill/issues/52) |
-| The P0/P1/P2 definitions | [`../../shared/policies/severity.md`](../../shared/policies/severity.md) |
-| The finding field shape | [`../../shared/templates/finding.md`](../../shared/templates/finding.md) |
+| The P0/P1/P2 definitions | `../../shared/policies/severity.md` |
+| The finding field shape | `../../shared/templates/finding.md` |
 
 ## 10. Contract revisions and metric comparability
 

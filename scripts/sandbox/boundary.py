@@ -1,8 +1,8 @@
 """Request/result types for a sandboxed run.
 
-Outcome vocabulary matches shared/policies/runtime-validation.md exactly
-(executed / failed / skipped / unavailable) so a caller can carry a
-SandboxResult straight into a Validation-section entry.
+Run outcomes are executed / failed / skipped / unavailable; the caller maps
+them to a finding's confirmed / dismissed / inconclusive outcome per
+skills/review-runtime-check/rules/execution.md.
 """
 
 from __future__ import annotations

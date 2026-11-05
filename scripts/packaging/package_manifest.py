@@ -49,11 +49,11 @@ def load_target(manifest_path: Path, target: str) -> tuple[dict[str, Any], list[
 
     shared_entries = manifest["shared_files"]
     skill_entries = skill["files"]
-    allowed_shared_roots = ("shared/policies/", "shared/templates/")
+    # v3 has no shared/ tree: the only file a package takes from outside its Skill folder is LICENSE.
     for entry in shared_entries:
         source = entry["source"]
         _relative_path(source, "package source")
-        if source != "LICENSE" and not source.startswith(allowed_shared_roots):
+        if source != "LICENSE":
             raise ValueError(f"shared package source escapes approved roots: {source}")
     skill_root = f"skills/{skill_name}/"
     for entry in skill_entries:
@@ -81,8 +81,12 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest", type=Path)
     parser.add_argument("target")
-    parser.add_argument("query", choices=("validate", "name", "archive", "files", "required_entries"))
+    parser.add_argument("query", choices=("validate", "name", "archive", "files", "required_entries", "targets"))
     args = parser.parse_args()
+    if args.query == "targets":
+        # Lists the manifest's package targets, one per line (none yet on release/v3).
+        print("\n".join(json.loads(args.manifest.read_text(encoding="utf-8"))["skills"]))
+        return 0
     try:
         skill, entries = load_target(args.manifest, args.target)
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:

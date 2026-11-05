@@ -4,10 +4,10 @@ Canonical rules for **commits, pushes, Pull Requests, merges, post-merge
 cleanup, and destructive-Git prohibitions** in development of *this*
 repository.
 
-This is a repository-development policy. It is **not** packaged into either
+This is a repository-development policy. It is **not** packaged into any
 Skill archive, and no packaged Skill resource may depend on it. It governs
 development of *this* repository only — it is distinct from how
-`local-code-review` or `github-pr-review` reviews an external repository
+`review-core` and its mini-skills review an external repository
 (see each Skill's own `SKILL.md`). See
 [`repository-workflow.md`](repository-workflow.md) for task-branch
 creation and base synchronization,

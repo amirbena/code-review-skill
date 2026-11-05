@@ -18,8 +18,8 @@ See the model document's "Product-layer boundary decision" addendum for
 the full rationale.
 
 Like [`../../runtime_platform/benchmark/README.md`](../../runtime_platform/benchmark/README.md),
-[`../finding-confidence/README.md`](../finding-confidence/README.md), and
-[`../review-context/README.md`](../review-context/README.md), this is a
+`../finding-confidence/README.md`, and
+`../review-context/README.md`, this is a
 repository-development doc: **not** packaged into either Skill archive, and
 no packaged Skill resource depends on it. It is the single place that
 defines how #329's runtime/selection/nightly work and #182's measurement
@@ -40,5 +40,5 @@ document owns only the boundaries and the dependency order between them.
   match criteria, quality metrics, existing CI wiring):
   [`../../runtime_platform/benchmark/README.md`](../../runtime_platform/benchmark/README.md).
 - The finding `confidence` field that benchmark-derived and runtime-validated
-  evidence roll up into: [`../finding-confidence/README.md`](../finding-confidence/README.md).
+  evidence roll up into: `../finding-confidence/README.md`.
 - The architecture map: [`../ARCHITECTURE.md`](../ARCHITECTURE.md).

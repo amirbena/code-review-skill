@@ -10,12 +10,10 @@ for your task, before performing any work.
 
 When operating through one of this repository's Code Review Agent
 Skills, also read that Skill's own `SKILL.md` and its applicable
-policies, runbooks, templates, and metadata:
+rules and templates:
 
-- [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md)
-- [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md)
-
-Both Skills also depend on [`shared/`](shared/) for common review rules.
+- [`skills/review-core/SKILL.md`](skills/review-core/SKILL.md)
+- the `skills/review-*/SKILL.md` mini-skill the task selects
 
 Do not duplicate repository-wide rules or Skill-selection logic here.
 

@@ -7,10 +7,10 @@ capability: [#177](https://github.com/amirbena/code-review-skill/issues/177)
 [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md) fixtures that pin the
 expected consolidation classifications for the #177 reviewer behavior —
 now defined in
-[`../../../shared/policies/review-scope.md`](../../../shared/policies/review-scope.md)
+`../../../shared/policies/review-scope.md`
 ("Shared root cause versus independent findings", "The authoritative
 consolidated finding", "Fail open toward separate findings") and
-[`../../../shared/templates/finding.md`](../../../shared/templates/finding.md)
+`../../../shared/templates/finding.md`
 ("Affected locations on a consolidated finding") — and keep it from
 regressing.
 
@@ -64,20 +64,20 @@ header comment.
 supplies the earlier review's two findings through `input.context`
 ([`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md) §6.3), treated as
 prior review evidence per
-[`../../../shared/policies/review-evidence.md`](../../../shared/policies/review-evidence.md).
+`../../../shared/policies/review-evidence.md`.
 The lifecycle disposition the case pins — `CONSOLIDATED`: the prior
 per-site identities fold into the fresh consolidated identity, stay
 `OPEN`, and resolve nothing; ordinary ambiguous many-to-one stays
 `UNCERTAIN` — is defined in
-[`../../../docs/findings/finding-lifecycle-contract.md`](../../../docs/findings/finding-lifecycle-contract.md)
+`../../../docs/findings/finding-lifecycle-contract.md`
 §4 and installed in
-[`../../../skills/github-pr-review/policies/stateful-delta-rereview.md`](../../../skills/github-pr-review/policies/stateful-delta-rereview.md)
+`../../../skills/github-pr-review/policies/stateful-delta-rereview.md`
 §3. A dedicated re-review fixture shape is left to a later `format`
 revision under #177, not this corpus.
 
 ## Validation
 
-[`../../../tests/unit/review/root_cause/test_consolidation_corpus.py`](../../../tests/unit/review/root_cause/test_consolidation_corpus.py)
+`../../../tests/unit/review/root_cause/test_consolidation_corpus.py`
 loads every `*.yaml` here through the same single reference validator
 [`../../../runtime_platform/benchmark/reference/benchmark_fixture.py`](../../../runtime_platform/benchmark/reference/benchmark_fixture.py)
 used for the worked example and the #51 corpus (it never defines a second

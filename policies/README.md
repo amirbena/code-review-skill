@@ -2,7 +2,7 @@
 
 These policies govern **development and maintenance of `code-review-skill`
 itself** — branching, commits, PRs, merges, validation, packaging,
-documentation, and how the two review Skills are orchestrated. They are
+documentation, and how the review Skills are orchestrated. They are
 explanatory/navigational targets of the routing table in
 [`../AGENTS.md`](../AGENTS.md); the normative rules live in the individual
 policy files, not in this README.
@@ -25,8 +25,8 @@ its **Task routing** table to the one policy below that owns your task.
 | [`github-issue-pr-authoring.md`](github-issue-pr-authoring.md) | Content of agent-authored GitHub Issues and PRs: human-scannable bodies, per-field Issue size guidance, parent/Epic brevity, creating and verifying native GitHub parent/sub-issue and dependency relationships for declared `Parent`/`Children`/`Depends on`/`Blocks` fields, the PR What/Why/Validation/Review-notes shape, summarized validation, and linking canonical docs instead of duplicating them. |
 | [`contribution-ownership-policy.md`](contribution-ownership-policy.md) | Ownership and contributor-suitability classification of GitHub Issues: the maintainer-led / good first issue / automation good first issue / contributor-owned classes, blast-radius (not patch-size) criteria, assignment behavior, Epic decomposition, sensitive areas kept out of first issues, and how an agent classifies a new or restructured Issue. |
 | [`release-changelog-policy.md`](release-changelog-policy.md) | CHANGELOG category selection by SemVer intent, including the boundary between compatible corrections (`Fixed`) and intentional backward-compatible behavior or capability changes (`Changed`/`Added`). |
-| [`skill-development-policy.md`](skill-development-policy.md) | Developing and packaging the Skills: the portable-core / runtime-adapter split, independence of packaged Skills from repository-level instructions, adapter/`AGENTS.md`/`shared/`/Skill layering, runbook design, the shared review-context model, and Python-authoring routing. |
-| [`review-orchestration-policy.md`](review-orchestration-policy.md) | Orchestrating the review Skills around this repository: the orchestration boundary, Skill-consumer branch discipline, review ownership, implementer/reviewer separation, the `local-code-review` approval gate, and human-facing review publication. Each runtime-relevant rule routes to a packaged canonical under `shared/` or `skills/`. |
+| [`skill-development-policy.md`](skill-development-policy.md) | Developing and packaging the Skills: the portable-core / runtime-adapter split, independence of packaged Skills from repository-level instructions, the adapter/`AGENTS.md`/Skill layering, one owner per rule, the `SKILL.md` + rules + templates shape, the ADR §5.1 activation modes, and Python-authoring routing. |
+| [`review-orchestration-policy.md`](review-orchestration-policy.md) | Orchestrating the review Skills around this repository: the orchestration boundary, Skill-consumer branch discipline, implementer/reviewer separation, the explicit per-run request, and human-facing review publication. Each runtime-relevant rule routes to its packaged owner under `skills/`. |
 | [`python_scripts_coding_policy.md`](python_scripts_coding_policy.md) | Authoring policy for this repository's own Python (`scripts/**/*.py`, `tests/**/*.py`): concise, intent-focused comments and docstrings. |
 
 ## Repository policy vs. Skill runtime policy
@@ -38,18 +38,13 @@ This distinction is deliberate and must stay explicit.
   repository* is built, reviewed, packaged, and documented. They are
   **never shipped**: no packaged Skill archive contains them, and no
   packaged Skill resource may depend on them.
-- **Runtime-portable Skill policy** — [`../shared/policies/`](../shared/policies/),
-  [`../shared/templates/`](../shared/templates/),
-  [`../skills/local-code-review/`](../skills/local-code-review/), and
-  [`../skills/github-pr-review/`](../skills/github-pr-review/). Any rule a
-  packaged Skill needs while it runs **outside** this repository lives
-  here, in its portable canonical form, and is included in the Skill's
-  package allowlist.
+- **Runtime-portable Skill rules** — [`../skills/`](../skills/): each
+  Skill's `SKILL.md` and the `rules/`, `templates/` and checklist files it
+  lists. Any rule a packaged Skill needs while it runs **outside** this
+  repository lives here, in its portable canonical form.
 
 If a Skill needs a rule at runtime, that rule's canonical home is under
-`shared/` or `skills/` — not a file in this directory. Adding a
-`policies/*.md` file to a package allowlist is the wrong fix and is not
-permitted.
+`skills/` — not a file in this directory.
 
 ## Ownership rule
 
@@ -91,9 +86,8 @@ governed test keeps the two in sync.
    table. Prefer a small number of meaningful domains over many tiny
    files.
 3. If the rule is needed by a packaged Skill at runtime, put its portable
-   canonical form under `../shared/` or the relevant `../skills/<skill>/`
-   directory and reference it from that Skill's `SKILL.md`/runbook —
-   never here.
+   canonical form in the relevant `../skills/<skill>/` folder and
+   reference it from that Skill's `SKILL.md` — never here.
 4. Keep cross-references as relative Markdown links and run link
    validation with `python3 scripts/validation/validate-markdown-links.py`
    — the full suite is not required for a docs-only policy change (see

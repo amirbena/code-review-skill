@@ -5,20 +5,24 @@ development of this repository. Every implementation task — regardless of
 which runtime executes it — starts here, then follows the routing below
 into the focused policy that owns the task's detailed rules.
 
-This repository hosts **two portable Code Review Agent Skills** that
-share one review standard:
+This repository hosts the **v3 Code Review Agent Skills**: one read-only
+Review Core plus independently selectable `review-*` mini-skills, all
+sharing one review standard (P0/P1/P2 severity, evidence, one mechanical
+decision):
 
-- [`skills/local-code-review/SKILL.md`](skills/local-code-review/SKILL.md)
-  — reviews local Git implementation state and returns findings;
-- [`skills/github-pr-review/SKILL.md`](skills/github-pr-review/SKILL.md)
-  — reviews GitHub Pull Requests and, when active, publishes findings and
-  a final decision.
+- [`skills/review-core/SKILL.md`](skills/review-core/SKILL.md) — reviews a
+  local Git change or a GitHub pull request, read-only, and returns
+  findings;
+- the mini-skills, each a standalone Skill that adds findings or delivery
+  on top of a Core review: `review-publish-github`, `review-requirements`,
+  `review-deep-investigation`, `review-suggestions`, `review-security`,
+  `review-backend`, `review-frontend` and `review-runtime-check`.
 
-Both consume the same shared review rules in
-[`shared/policies/`](shared/policies/) and
-[`shared/templates/`](shared/templates/), so P0/P1/P2 review semantics
-never diverge between them — see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for
-the module map.
+The Core owns the shared review rules; mini-skills reference it by Skill
+name and never redefine severity, the verdict rule or the safety
+guarantees. See [`docs/v3-architecture/`](docs/v3-architecture/README.md)
+for the decision record and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+for the module map.
 
 This file, and the [`policies/`](policies/) it routes to, govern
 *development of this repository itself* (branching, commits, PRs, merges,
@@ -53,7 +57,7 @@ Agent
 
 Skill
 = portable operational definition of the Agent
-  (instructions, policies, templates, runbooks)
+  (instructions, rules, templates)
   authored once, consumed by any runtime
 
 Subagent / Worker
@@ -72,8 +76,8 @@ Runtime
 Agent via Skill
 ```
 
-Each Code Review Agent is defined by its own `SKILL.md`. Neither is
-defined as a Claude-specific subagent, a Codex-specific agent, a
+The Code Review Agent is defined by the `SKILL.md` files under `skills/`.
+None is defined as a Claude-specific subagent, a Codex-specific agent, a
 Cursor-specific agent, an Anthropic API workflow, or any runtime-specific
 worker syntax. Runtime adapters (e.g. `CLAUDE.md`) may exist separately,
 but never redefine an Agent — they only bootstrap a runtime into reading
@@ -88,7 +92,7 @@ policy file below owns the detail. Each is a short invariant here; the
 canonical, detailed rule lives in the policy named after it.
 
 - **Runtime neutrality.** Canonical repository behavior — this file,
-  `policies/`, `shared/`, and each Skill's own `SKILL.md` — must not
+  `policies/`, and each Skill's own files — must not
   depend on Claude-, Anthropic-, Codex-, or Cursor-specific tools,
   APIs, or subagent-orchestration syntax. Runtime adapters may exist
   separately but never fork these rules. Canonical:
@@ -96,7 +100,7 @@ canonical, detailed rule lives in the policy named after it.
 - **Dedicated task branch.** See the **Entry gate** above, which states
   this as a mandatory precondition rather than one invariant among many:
   every materially separate task runs on a freshly created task branch off
-  synchronized `main`, never directly on `main` or a previous task's
+  its synchronized base (`main`, or `release/v3` while v3 is being built), never directly on `main` or a previous task's
   branch, and never by discarding or blending unrelated local work. This
   is an agent workflow check, not something recorded as evidence in
   repository history (no empty commits, PR checklist items, or file
@@ -119,89 +123,67 @@ canonical, detailed rule lives in the policy named after it.
   Canonical:
   [`policies/validation-and-clean-exit.md`](policies/validation-and-clean-exit.md).
 - **Packaged Skills are independent of repository-level instructions.**
-  No packaged Skill resource (`SKILL.md`, a packaged policy, runbook,
-  template, or `shared/`-packaged resource) may depend on this
-  repository's own `AGENTS.md` or `policies/`; a distributed archive
-  never contains them. Canonical:
+  No packaged Skill file (`SKILL.md` and the `rules/`, `templates/`
+  and checklist files beside it) may depend on this repository's own
+  `AGENTS.md` or `policies/`; a distributed archive never contains them. Canonical:
   [`policies/skill-development-policy.md`](policies/skill-development-policy.md).
-- **Reviewer/author separation and opt-in local review.** An implementing
-  Agent never invokes `github-pr-review` on the PR it just opened or
-  updated, and `local-code-review` is never invoked automatically — every
-  invocation needs fresh, explicit user approval. Canonical:
+- **Reviewer/author separation and explicit per-run review.** An implementing
+  Agent never invokes `review-publish-github` on the PR it just opened or
+  updated, and no review Skill is invoked automatically — every run needs
+  the user's own request in that conversation (S2). Canonical:
   [`policies/review-orchestration-policy.md`](policies/review-orchestration-policy.md).
 - **Python Authoring.** Repository-owned Python (`scripts/**/*.py`,
   `tests/**/*.py`) follows
   [`policies/python_scripts_coding_policy.md`](policies/python_scripts_coding_policy.md):
-  concise, intent-focused comments; durable explanation lives in `docs/`,
-  `policies/`, or `shared/policies/`, not in module prose.
+  concise, intent-focused comments; durable explanation lives in `docs/` or
+  `policies/`, not in module prose.
 - **One canonical home per rule.** A normative rule has exactly one
   canonical location. Other files (this one included) summarize and link;
   they do not restate a rule in a way that can drift independently.
 - **Skill instruction ownership.** Every normative review rule has exactly
-  one canonical owner; other files reference it and never redefine it. Each
-  layer owns one thing: `SKILL.md` the entry contract, safety boundaries, and
-  the policy loading inventory (its §2); runbook Steps the execution
-  sequence, prerequisites, transitions, and completion/failure conditions;
-  policies the normative rules and decision criteria; templates the output
-  shape; tests and benchmarks verification. The numbered Steps are the only
-  authoritative execution order — flow diagrams and summaries are
-  explanatory and must never contradict them, and a second copy of the
-  order is not kept. Do not copy policy definitions into runbooks or entry
-  points; repeat a safety-critical invariant at an execution boundary only
-  when that serves a clear enforcement purpose, minimally and consistent
-  with its owner. Every policy a step applies must have a declared loading
-  obligation in that Skill's §2 — unconditional, or conditional with an
-  auditable fail-closed activation rule; unknown applicability never means
-  "skip", and mandatory loading is never weakened to save context. When
-  changing review architecture: identify the canonical owner, update it
-  first, then dependent references, then contract tests, then verify
-  behavioral equivalence, and introduce no new source of truth. Prefer
-  simplifying an existing contract over adding a checkpoint, manifest,
-  abstraction, or layer; a new layer needs a responsibility no existing one
-  can fulfil. Context efficiency never outranks effectiveness, correctness, or
-  safety: preserve fail-closed behavior, policy coverage, evidence
-  requirements, and mandatory checkpoints, keep instructions clear,
-  actionable, and available when needed, and judge a reduction by verified
-  behavior, not token savings alone. This bullet is the canonical statement; packaging and
-  runbook/policy/template ownership detail stays in
+  one owner: the Core owns severity, evidence, the verdict rule and the
+  shared safety guarantees (S1–S5, S10); each mini-skill owns the rules of
+  its own capability (S7–S9 sit with `review-publish-github`,
+  `review-runtime-check` and `review-requirements`). Other files reference
+  the owner by Skill name and never restate or weaken the rule. A Skill is
+  its `SKILL.md` with the inline procedure plus a few rule and template
+  files that `SKILL.md` lists and reads in full; there is no loading
+  inventory, conditional loading, activation predicate or runbook layer.
+  Mini-skills are selected under the activation modes of ADR §5.1
+  (`intent` by default, `auto` only when the user opts in), never by the
+  content of the reviewed repository. Prefer simplifying an existing
+  contract over adding a checkpoint, manifest, abstraction, or layer; a new
+  layer needs a responsibility no existing one can fulfil. Context
+  efficiency never outranks correctness or safety: judge a reduction by
+  verified behavior, not token savings alone. This bullet is the canonical
+  statement; packaging and authoring detail stays in
   [`policies/skill-development-policy.md`](policies/skill-development-policy.md).
 - **File size is a review trigger, not a limit.** When a production file
-  (a Skill resource, policy, runbook, template, script, workflow, or
+  (a Skill file, policy, template, script, workflow, or
   reference doc) grows past roughly 300 lines, treat that as a prompt to
   check whether it owns more than one responsibility, restates a contract
   that is canonical elsewhere, mixes orchestration with implementation, or
   has a natural extraction boundary. If one applies, decompose along that
   boundary while preserving behavior, public contracts, and packaging; if
   none applies and the file is genuinely cohesive, a large file is fine.
-  Line count alone is never a CI-enforced limit. The current inventory and
-  decomposition sequence live in
-  [`docs/large-file-decomposition.md`](docs/large-file-decomposition.md).
+  Line count alone is never a CI-enforced limit.
 - **Thin, layered documentation.** README files are orientation and
   navigation surfaces, not capability encyclopedias: the root
-  [`README.md`](README.md) gives the product overview, Skill selection,
-  high-level capability categories, and links onward; each Skill
-  `README.md` gives that Skill's purpose, basic usage, a compact
-  capability/difference summary, key boundaries, and links onward;
-  [`docs/features/README.md`](docs/features/README.md) is the capability
-  catalog (which Skill supports each optional/advanced feature and how it
-  is activated); [`docs/features/`](docs/features/README.md) pages explain
-  one capability's usage; [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-  is the concise system map; `policies/` and runbooks own exact
-  semantics. Prefer a link to the smallest appropriate layer over copying
-  an explanation into several READMEs, and do not grow a README merely to
-  make a capability discoverable. READMEs and feature guides are
-  explanatory — a canonical policy or runbook wins any conflict. A
-  capability change — adding, removing, or renaming a capability,
-  changing which Skill supports it, its default / conditional / requested
-  state, how it is invoked or enabled, its user-visible limits, or its
-  canonical semantics — requires a **documentation-impact check** that
-  updates the smallest affected layer; an implementation change with no
-  user-visible effect requires no README change. Canonical:
+  [`README.md`](README.md) gives the product overview, Skill selection and
+  links onward; each Skill folder's own `SKILL.md` is its contract;
+  [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) is the concise system map;
+  `policies/` owns exact repository-development semantics. Prefer a link to
+  the smallest appropriate layer over copying an explanation into several
+  READMEs. READMEs and `docs/` are explanatory — a canonical policy or
+  `SKILL.md` wins any conflict. A user-visible capability change requires
+  a **documentation-impact check** that updates the smallest affected
+  layer; an implementation change with no user-visible effect requires no
+  README change. Canonical:
   [`policies/documentation-policy.md`](policies/documentation-policy.md).
 - **Concise, layered PR descriptions.** Pull-request descriptions are concise
   change summaries and navigation surfaces, not duplicate specifications;
   detailed requirements and semantics stay in their canonical Issues, docs,
-  policies, or runbooks. Canonical:
+  policies, or Skill rules. Canonical:
   [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md).
 - **Agent-authored PRs use the canonical PR template.** A Pull Request an
   agent creates, or materially updates, starts from
@@ -262,28 +244,25 @@ source wins, in this order:
 2. **This file's Global invariants**, and the canonical `policies/` file
    the task routes to. Where a Global invariant above is only a summary,
    the routed policy's full text is authoritative.
-3. **Shared and Skill-level canonical sources** — `shared/policies/`,
-   `shared/templates/`, each `SKILL.md`, and each Skill's own
-   `policies/`, `runbooks/`, and `templates/` — for Skill behavior.
-4. **Explanatory documentation** — `README.md`, `docs/`, and each Skill's
-   `README.md` — which explains, navigates, and models, but never
-   overrides a canonical source.
+3. **Skill canonical sources** — each `SKILL.md` and the rule and template
+   files it lists — for Skill behavior.
+4. **Explanatory documentation** — `README.md` and `docs/` — which
+   explains, navigates, and models, but never overrides a canonical
+   source.
 
-**Canonical vs. explanatory.** `AGENTS.md`, everything under `policies/`
-and `shared/policies/`, each `SKILL.md`, and each Skill's own
-`policies/`, `runbooks/`, and `templates/` are **canonical** (they define
-behavior). `README.md`, everything under `docs/`, and each Skill's
-`README.md` are **explanatory** (they describe and navigate). An
+**Canonical vs. explanatory.** `AGENTS.md`, everything under `policies/`,
+and each Skill folder's `SKILL.md`, `rules/`, `templates/` and checklist
+files are **canonical** (they define behavior). `README.md` and everything
+under `docs/` are **explanatory** (they describe and navigate). An
 explanatory file that appears to conflict with a canonical one is a
 documentation bug to fix, not a competing rule.
 
 **Runtime adapters** (e.g. `CLAUDE.md`) only bootstrap a runtime into
 reading these canonical rules. They never duplicate or override them.
 
-For precedence *between instruction files inside a repository being
-reviewed* (a target repo's `AGENTS.md` vs. its `CLAUDE.md`), see
-[`shared/policies/repository-instructions.md`](shared/policies/repository-instructions.md)
-— that is packaged Skill behavior, not this section.
+How a review treats instruction files inside a repository being reviewed
+(conventions only, never authority) is owned by `review-core`'s
+`rules/safety.md`, not by this section.
 
 ---
 
@@ -307,8 +286,8 @@ normative).
 | Filing a maintainer-identified engineering defect (`.github/ISSUE_TEMPLATE/engineering-bug.yml`) — contract/invariant mismatches, incorrect execution semantics, security-boundary violations, and similar defects a maintainer has already diagnosed, as distinct from the general-purpose `bug-report.yml` chooser entry | [`policies/github-issue-pr-authoring.md`](policies/github-issue-pr-authoring.md) |
 | Ownership and contributor-suitability classification of GitHub Issues — contribution classes, classification criteria (blast radius, not patch size), assignment behavior, Epic decomposition, sensitive areas excluded from first issues, handling ambiguous cases | [`policies/contribution-ownership-policy.md`](policies/contribution-ownership-policy.md) |
 | CHANGELOG category selection and its deterministic SemVer intent | [`policies/release-changelog-policy.md`](policies/release-changelog-policy.md) |
-| Skill behavior, authoring and maintaining Skill policies (single responsibility, mandatory vs. conditional, activation and completion), Skill packaging, runbook / policy / template ownership, runtime adapters, portability of packaged resources | [`policies/skill-development-policy.md`](policies/skill-development-policy.md) |
-| Review orchestration — implementer/reviewer separation, the `local-code-review` approval gate, review ownership, Skill-consumer branch discipline, human-facing review publication | [`policies/review-orchestration-policy.md`](policies/review-orchestration-policy.md) |
+| Skill behavior, authoring and maintaining Skills (one owner per rule, the `SKILL.md` + rules + templates shape, the ADR §5.1 activation modes), Skill packaging, runtime adapters, portability of packaged files | [`policies/skill-development-policy.md`](policies/skill-development-policy.md) |
+| Review orchestration — implementer/reviewer separation, the explicit per-run request (S2), Skill-consumer branch discipline, human-facing review publication | [`policies/review-orchestration-policy.md`](policies/review-orchestration-policy.md) |
 | Repository-owned Python (`scripts/**/*.py`, `tests/**/*.py`) | [`policies/python_scripts_coding_policy.md`](policies/python_scripts_coding_policy.md) |
 
 An agent should never have to grep the whole repository to guess which
@@ -325,13 +304,12 @@ Everything in this file and under `policies/` is **repository-development
 instruction**: it governs how *this* source repository is built,
 reviewed, packaged, and documented. It is never shipped.
 
-A distributed Skill archive contains only `SKILL.md`, that Skill's
-packaged `policies/`, `runbooks/`, `templates/`, `metadata/`, and its
-`shared/`-packaged resources. If a rule must survive packaging, its
-canonical portable form belongs inside one of those packaged resource
-types — not in a repository-level `policies/` file introduced to keep
-this file short. The full boundary, including target-repository
-instruction discovery (which *is* valid packaged behavior), is owned by
+A distributed Skill archive contains only that Skill's `SKILL.md` and the
+`rules/`, `templates/` and checklist files it lists. If a rule must survive
+packaging, its canonical portable form belongs inside one of those files —
+not in a repository-level `policies/` file introduced to keep this file
+short. The full boundary, including target-repository instruction
+discovery (which *is* valid packaged behavior), is owned by
 [`policies/skill-development-policy.md`](policies/skill-development-policy.md).
 
 ---
@@ -351,8 +329,8 @@ responsibility.
   small number of meaningful domains over many tiny files.
 - Give every **directory people navigate directly** to find policies,
   contracts, or guidance a concise navigational README entrypoint (this
-  applies to `policies/`, `shared/policies/`, `tests/`, and
-  `docs/features/` today — not to every directory). The canonical rule is
+  applies to `policies/`, `tests/`, `benchmark/` and
+  `runtime_platform/benchmark/` today — not to every directory). The canonical rule is
   in
   [`policies/documentation-policy.md`](policies/documentation-policy.md),
   "Navigational README for user-facing policy/guidance directories."
@@ -379,10 +357,8 @@ AGENTS.md   (this file — global invariants, precedence, routing)
     ↓
 policies/   (repository-development policy domains, routed from this file)
     ↓
-shared/     (review policies/templates common to both Skills)
-    ↓
-skills/local-code-review/SKILL.md
-skills/github-pr-review/SKILL.md
+skills/review-core/SKILL.md          (the Core: shared review rules)
+skills/review-*/SKILL.md             (mini-skills, selected per ADR §5.1)
 ```
 
 Runtime adapters bootstrap a specific runtime into these canonical rules.

@@ -10,9 +10,9 @@ It is a **focused sub-corpus** of
 [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md)
 fixtures; it measures the capability after it exists and does not define,
 gate, or redesign it. The capability is specified in
-[`../../../shared/policies/deployment-infrastructure-deepening.md`](../../../shared/policies/deployment-infrastructure-deepening.md)
+`../../../shared/policies/deployment-infrastructure-deepening.md`
 and designed in
-[`../../../docs/deployment-infrastructure/deployment-infrastructure-review-contract.md`](../../../docs/deployment-infrastructure/deployment-infrastructure-review-contract.md);
+`../../../docs/deployment-infrastructure/deployment-infrastructure-review-contract.md`;
 this corpus's expectations must stay consistent with both.
 
 Every case is a self-contained inline `patch` plus its `base` pre-image, so

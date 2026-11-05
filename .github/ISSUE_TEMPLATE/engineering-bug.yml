@@ -102,9 +102,9 @@ body:
       label: Affected Skill
       description: Which capability/subsystem is affected?
       options:
-        - local-code-review
-        - github-pr-review
-        - Both
+        - review-core
+        - A review-* mini-skill
+        - More than one
         - Repository tooling
         - Not sure
     validations:

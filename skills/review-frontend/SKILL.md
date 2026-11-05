@@ -1,6 +1,6 @@
 ---
 name: review-frontend
-description: Adds frontend depth to a code review: UI behavior, state, accessibility, and optional rendered inspection after render consent.
+description: "Adds frontend depth to a code review: UI behavior, state, accessibility, and optional rendered inspection after render consent."
 ---
 
 # review-frontend
