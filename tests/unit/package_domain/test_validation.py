@@ -44,10 +44,9 @@ class ValidateSkillFrontmatterTests(unittest.TestCase):
         with self.assertRaises(SkillFrontmatterError):
             validate_skill_frontmatter(self.skill_md, "local-code-review")
 
-    def test_missing_version_is_rejected(self) -> None:
+    def test_missing_version_is_accepted_for_a_never_released_skill(self) -> None:
         self._write("---\nname: local-code-review\ndescription: x\n---\nBody.\n")
-        with self.assertRaises(SkillFrontmatterError):
-            validate_skill_frontmatter(self.skill_md, "local-code-review")
+        validate_skill_frontmatter(self.skill_md, "local-code-review")
 
     def test_version_with_v_prefix_is_rejected(self) -> None:
         self._write(

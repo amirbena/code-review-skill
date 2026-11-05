@@ -49,7 +49,8 @@ while IFS= read -r target; do
 done < <(python3 scripts/packaging/package_manifest.py "${manifest}" - targets)
 
 if [[ "${build}" -eq 1 ]]; then
-  ./scripts/packaging/package-skills.sh all
+  # The packaged copies take the release tag's version; the source files are not touched.
+  SKILL_RELEASE_VERSION="${expect_version}" ./scripts/packaging/package-skills.sh all
 fi
 
 if [[ "${#expected_archives[@]}" -eq 0 ]]; then

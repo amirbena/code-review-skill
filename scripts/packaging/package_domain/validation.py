@@ -3,8 +3,9 @@
 Guards against a regression stripping/corrupting the Agent Skills YAML
 frontmatter of a packaged root ``SKILL.md``. This is a narrow structural
 check (line 1 is the opening delimiter, a closing delimiter exists, and
-the required ``name``/``version``/``description`` fields are present,
-with the expected ``name``, a strict ``x.y.z`` ``version``, and a
+the required ``name``/``description`` fields are present, with the
+expected ``name``, an optional strict ``x.y.z`` ``version`` (absent until a
+Skill's first release, ADR §11), and a
 ``description`` written as a plain scalar on one physical line rather
 than a YAML block/folded scalar) — not a full YAML validator, and it
 does not replace
@@ -82,9 +83,7 @@ def validate_skill_frontmatter(skill_md_path: Path, expected_name: str) -> None:
         description = data.get("description")
         if not name:
             raise SkillFrontmatterError(f"{skill_md_path} frontmatter missing required 'name'")
-        if not version:
-            raise SkillFrontmatterError(f"{skill_md_path} frontmatter missing required 'version'")
-        if not isinstance(version, str) or not _VERSION_RE.match(version):
+        if version is not None and (not isinstance(version, str) or not _VERSION_RE.match(version)):
             raise SkillFrontmatterError(
                 f"{skill_md_path} frontmatter 'version' must be strict x.y.z "
                 f"(no 'v' prefix, no leading zeros): got {version!r}"
@@ -102,10 +101,6 @@ def validate_skill_frontmatter(skill_md_path: Path, expected_name: str) -> None:
 
     if not re.search(rf"^name:[ \t]*{re.escape(expected_name)}[ \t]*$", fm_body, re.MULTILINE):
         raise SkillFrontmatterError(f"{skill_md_path} frontmatter missing 'name: {expected_name}'")
-    if not re.search(r"^version:[ \t]*\S+[ \t]*$", fm_body, re.MULTILINE):
-        raise SkillFrontmatterError(
-            f"{skill_md_path} frontmatter missing required 'version'"
-        )
     if not re.search(r"^description:", fm_body, re.MULTILINE):
         raise SkillFrontmatterError(
             f"{skill_md_path} frontmatter missing required 'description'"

@@ -25,13 +25,14 @@ def skill_targets(repo_root: Path) -> list[tuple[str, str]]:
 
 
 def stamp_skill_versions(repo_root: Path, version: str) -> list[Path]:
-    """Write `version` into every packaged Skill's SKILL.md; return the files that changed."""
+    """Write `version` into every packaged Skill's SKILL.md (inserting the line where a never-released
+    v3 Skill has none, ADR §11); return the files that changed."""
     validate_semver(version)
     changed: list[Path] = []
     for name, _archive in skill_targets(repo_root):
         path = repo_root / "skills" / name / "SKILL.md"
         text = path.read_text(encoding="utf-8")
-        stamped = stamp_frontmatter_version(text, version)
+        stamped = stamp_frontmatter_version(text, version, insert_missing=True)
         if stamped != text:
             path.write_text(stamped, encoding="utf-8")
             changed.append(path)

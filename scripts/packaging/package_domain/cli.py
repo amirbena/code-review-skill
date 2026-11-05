@@ -13,7 +13,6 @@ import argparse
 import sys
 from pathlib import Path
 
-from .adaptation import adapt_metadata_paths_file, adapt_shared_links_files
 from .tree import (
     build_archive,
     check_tree_self_contained,
@@ -24,22 +23,12 @@ from .tree import (
     write_tree_manifest,
 )
 from .validation import SkillFrontmatterError, validate_skill_frontmatter
-from .version import stamp_skill_md_from_authority
+from .version import stamp_skill_md
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="package_adapt")
     subparsers = parser.add_subparsers(dest="command", required=True)
-
-    adapt_links = subparsers.add_parser(
-        "adapt-shared-links", help="rewrite ../../shared/ and ../../../shared/ links in place"
-    )
-    adapt_links.add_argument("files", nargs="+", type=Path)
-
-    adapt_metadata = subparsers.add_parser(
-        "adapt-metadata-paths", help="rewrite metadata/skill.yaml's shared-resource prefix in place"
-    )
-    adapt_metadata.add_argument("file", type=Path)
 
     validate_frontmatter = subparsers.add_parser(
         "validate-frontmatter", help="validate a staged root SKILL.md's frontmatter structure"
@@ -49,10 +38,10 @@ def main(argv: list[str] | None = None) -> int:
 
     stamp_version = subparsers.add_parser(
         "stamp-release-version",
-        help="stamp a staged root SKILL.md with the version from CHANGELOG.md's newest release heading",
+        help="stamp a staged root SKILL.md with the release tag's version (none: leave it as committed)",
     )
     stamp_version.add_argument("file", type=Path)
-    stamp_version.add_argument("changelog", type=Path)
+    stamp_version.add_argument("--version", default=None, help="X.Y.Z of the release tag vX.Y.Z")
 
     finalize = subparsers.add_parser(
         "finalize-tree",
@@ -83,21 +72,16 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        if args.command == "adapt-shared-links":
-            adapt_shared_links_files(args.files)
-        elif args.command == "adapt-metadata-paths":
-            adapt_metadata_paths_file(args.file)
-        elif args.command == "validate-frontmatter":
+        if args.command == "validate-frontmatter":
             validate_skill_frontmatter(args.file, args.expected_name)
         elif args.command == "stamp-release-version":
-            version, previous = stamp_skill_md_from_authority(args.file, args.changelog)
-            if previous is None:
-                print(f"packaged Skill version {version} (release authority: {args.changelog})")
+            version, previous = stamp_skill_md(args.file, args.version)
+            if version is None:
+                print(f"{args.file}: no release version given; left as committed (a Skill without 'version:' stays unversioned)")
+            elif previous is None:
+                print(f"packaged Skill version {version} (release tag)")
             else:
-                print(
-                    f"note: committed SKILL.md version {previous} differs from the release "
-                    f"authority {version}; packaged with {version}"
-                )
+                print(f"note: committed SKILL.md version {previous} differs from the release tag {version}; packaged with {version}")
         elif args.command == "finalize-tree":
             normalize_tree(args.tree)
             distribute_skill_md(args.tree / "SKILL.md")

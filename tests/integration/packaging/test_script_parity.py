@@ -24,7 +24,8 @@ class PackagingScriptParityTests(unittest.TestCase):
             (self.ps1, "Set-ReleaseVersion -SkillMdPath", "Test-SkillFrontmatter -SkillMdPath"),
         ):
             self.assertIn("stamp-release-version", script)
-            self.assertIn("CHANGELOG.md", script)
+            self.assertIn("SKILL_RELEASE_VERSION", script)
+            self.assertNotIn("CHANGELOG.md", script)
             self.assertLess(script.index(stamp), script.index(validate))
 
     def test_both_scripts_build_the_canonical_tree_and_derive_the_zip_from_it(self) -> None:

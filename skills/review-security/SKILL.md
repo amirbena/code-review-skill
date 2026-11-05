@@ -11,6 +11,8 @@ Core's finding shape and severity scale. It adds depth; the Core still
 catches diff-visible serious security defects on its own and this Skill
 never replaces that.
 
+**Requires `review-core`.** Install it alongside this Skill; without it, stop and ask the user to install it.
+
 ## Contract with the Core
 
 - Use the Core's finding shape (`severity`, `title`, `location`,

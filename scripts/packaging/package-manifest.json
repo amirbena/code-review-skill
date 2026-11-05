@@ -1,5 +1,221 @@
 {
   "schema_version": 1,
-  "shared_files": [],
-  "skills": {}
+  "shared_files": [
+    {
+      "source": "LICENSE",
+      "destination": "LICENSE"
+    }
+  ],
+  "skills": {
+    "github-pr-review": {
+      "name": "github-pr-review",
+      "archive": "github-pr-review-skill.zip",
+      "files": [
+        {
+          "source": "skills/github-pr-review/SKILL.md",
+          "destination": "SKILL.md"
+        }
+      ],
+      "required_entries": [
+        "SKILL.md",
+        "LICENSE"
+      ]
+    },
+    "local-code-review": {
+      "name": "local-code-review",
+      "archive": "local-code-review-skill.zip",
+      "files": [
+        {
+          "source": "skills/local-code-review/SKILL.md",
+          "destination": "SKILL.md"
+        }
+      ],
+      "required_entries": [
+        "SKILL.md",
+        "LICENSE"
+      ]
+    },
+    "review-backend": {
+      "name": "review-backend",
+      "archive": "review-backend-skill.zip",
+      "files": [
+        {
+          "source": "skills/review-backend/SKILL.md",
+          "destination": "SKILL.md"
+        },
+        {
+          "source": "skills/review-backend/checklist.md",
+          "destination": "checklist.md"
+        }
+      ],
+      "required_entries": [
+        "SKILL.md",
+        "LICENSE"
+      ]
+    },
+    "review-core": {
+      "name": "review-core",
+      "archive": "review-core-skill.zip",
+      "files": [
+        {
+          "source": "skills/review-core/SKILL.md",
+          "destination": "SKILL.md"
+        },
+        {
+          "source": "skills/review-core/rules/findings.md",
+          "destination": "rules/findings.md"
+        },
+        {
+          "source": "skills/review-core/rules/reasoning.md",
+          "destination": "rules/reasoning.md"
+        },
+        {
+          "source": "skills/review-core/rules/safety.md",
+          "destination": "rules/safety.md"
+        },
+        {
+          "source": "skills/review-core/templates/report.md",
+          "destination": "templates/report.md"
+        },
+        {
+          "source": "skills/review-core/templates/result.schema.json",
+          "destination": "templates/result.schema.json"
+        }
+      ],
+      "required_entries": [
+        "SKILL.md",
+        "LICENSE"
+      ]
+    },
+    "review-deep-investigation": {
+      "name": "review-deep-investigation",
+      "archive": "review-deep-investigation-skill.zip",
+      "files": [
+        {
+          "source": "skills/review-deep-investigation/SKILL.md",
+          "destination": "SKILL.md"
+        },
+        {
+          "source": "skills/review-deep-investigation/rules/investigation.md",
+          "destination": "rules/investigation.md"
+        }
+      ],
+      "required_entries": [
+        "SKILL.md",
+        "LICENSE"
+      ]
+    },
+    "review-frontend": {
+      "name": "review-frontend",
+      "archive": "review-frontend-skill.zip",
+      "files": [
+        {
+          "source": "skills/review-frontend/SKILL.md",
+          "destination": "SKILL.md"
+        },
+        {
+          "source": "skills/review-frontend/checklist.md",
+          "destination": "checklist.md"
+        }
+      ],
+      "required_entries": [
+        "SKILL.md",
+        "LICENSE"
+      ]
+    },
+    "review-publish-github": {
+      "name": "review-publish-github",
+      "archive": "review-publish-github-skill.zip",
+      "files": [
+        {
+          "source": "skills/review-publish-github/SKILL.md",
+          "destination": "SKILL.md"
+        },
+        {
+          "source": "skills/review-publish-github/rules/authority.md",
+          "destination": "rules/authority.md"
+        },
+        {
+          "source": "skills/review-publish-github/rules/placement.md",
+          "destination": "rules/placement.md"
+        },
+        {
+          "source": "skills/review-publish-github/templates/review.md",
+          "destination": "templates/review.md"
+        }
+      ],
+      "required_entries": [
+        "SKILL.md",
+        "LICENSE"
+      ]
+    },
+    "review-requirements": {
+      "name": "review-requirements",
+      "archive": "review-requirements-skill.zip",
+      "files": [
+        {
+          "source": "skills/review-requirements/SKILL.md",
+          "destination": "SKILL.md"
+        },
+        {
+          "source": "skills/review-requirements/rules/requirements.md",
+          "destination": "rules/requirements.md"
+        }
+      ],
+      "required_entries": [
+        "SKILL.md",
+        "LICENSE"
+      ]
+    },
+    "review-runtime-check": {
+      "name": "review-runtime-check",
+      "archive": "review-runtime-check-skill.zip",
+      "files": [
+        {
+          "source": "skills/review-runtime-check/SKILL.md",
+          "destination": "SKILL.md"
+        },
+        {
+          "source": "skills/review-runtime-check/rules/execution.md",
+          "destination": "rules/execution.md"
+        }
+      ],
+      "required_entries": [
+        "SKILL.md",
+        "LICENSE"
+      ]
+    },
+    "review-security": {
+      "name": "review-security",
+      "archive": "review-security-skill.zip",
+      "files": [
+        {
+          "source": "skills/review-security/SKILL.md",
+          "destination": "SKILL.md"
+        },
+        {
+          "source": "skills/review-security/checklist.md",
+          "destination": "checklist.md"
+        }
+      ],
+      "required_entries": [
+        "SKILL.md",
+        "LICENSE"
+      ]
+    },
+    "review-suggestions": {
+      "name": "review-suggestions",
+      "archive": "review-suggestions-skill.zip",
+      "files": [
+        {
+          "source": "skills/review-suggestions/SKILL.md",
+          "destination": "SKILL.md"
+        }
+      ],
+      "required_entries": [
+        "SKILL.md",
+        "LICENSE"
+      ]
+    }
+  }
 }

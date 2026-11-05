@@ -4,13 +4,14 @@ This is the consumer-facing guide for installing and updating the
 distributed Skills, and for seeing which install paths have actually been
 exercised.
 
-> **v2 → v3.** Everything verified below is the v2.x line
-> (`local-code-review`, `github-pr-review`). v3 is **not published yet**:
-> the same commands are planned to work with `review-core` and the
-> `review-*` mini-skills from v3.0.0
-> ([#851](https://github.com/amirbena/code-review-skill/issues/851)), but
-> none of that has been run. Nothing about v3 in this guide is
-> verified. See the [migration guide](migration-v2-to-v3.md).
+> **v2 → v3.** v3.0.0 ships eleven Skills: `review-core`, the eight
+> `review-*` mini-skills, and the two v2 names `local-code-review` and
+> `github-pr-review` as thin wrappers over `review-core`
+> ([#851](https://github.com/amirbena/code-review-skill/issues/851)). All
+> of them are one plugin and each is installable on its own. Every
+> verification below was run against v2.x; **nothing about v3 is verified
+> until the v3.0.0 install evidence is recorded here.** See the
+> [migration guide](migration-v2-to-v3.md).
 
 **Recommended:** install from the generated distribution repository,
 [`amirbena/code-review-skills`](https://github.com/amirbena/code-review-skills),
@@ -31,8 +32,9 @@ skills.sh / Claude Code / Codex / Cursor / GitHub Copilot
 ```
 
 - The source repository stays canonical for development, issues, PRs and
-  releases. Its `skills/<name>/` folders are not standalone (they depend on
-  `shared/`), so do not install from a checkout of it.
+  releases. Install from the distribution repository rather than a checkout of it:
+  the build, not the checkout, is what is verified, and it stamps the release
+  version.
 - Each release builds deterministic, self-contained Skill trees. The
   distribution repository is the consumer-facing publication surface for
   those trees.
@@ -47,14 +49,17 @@ repository".
 
 ## Install by consumer
 
-Use `<name>` = `local-code-review` or `github-pr-review` (verified). For v3 (planned, not yet published) it will also be `review-core` or a `review-*` mini-skill. Every command below
+Use `<name>` = any v3 Skill: `review-core`, a `review-*` mini-skill, or the
+compatibility names `local-code-review` / `github-pr-review`. A mini-skill
+states that it requires `review-core`, so install `review-core` with it.
+The verified rows are v2.x runs. Every command below
 was run during [#511](https://github.com/amirbena/code-review-skill/issues/511)
 (client versions in the matrix).
 
 | Consumer | Install |
 | --- | --- |
 | skills CLI / skills.sh | `npx skills add amirbena/code-review-skills --skill <name>` (`--list` shows what is available) |
-| Claude Code | `/plugin marketplace add amirbena/code-review-skills`, then `/plugin install code-review-skills@code-review-skills` (one plugin, both Skills) |
+| Claude Code | `/plugin marketplace add amirbena/code-review-skills`, then `/plugin install code-review-skills@code-review-skills` (one plugin, all Skills) |
 | Codex | `codex plugin marketplace add amirbena/code-review-skills`, then `codex plugin add code-review-skills@code-review-skills` (reads the same `.claude-plugin/marketplace.json`) |
 | Cursor | install from `amirbena/code-review-skills` in the Cursor app; the exact UI steps were not recorded, so "Import from Repo" is not claimed as the tested path |
 | GitHub Copilot CLI | `copilot plugin marketplace add amirbena/code-review-skills`, then `copilot plugin install code-review-skills@code-review-skills`; a direct `copilot plugin install amirbena/code-review-skills` also worked, but the CLI warns direct installs are deprecated |
@@ -160,8 +165,7 @@ and benchmark system.
 ## Manual / offline installation
 
 Use this only when managed installation is unavailable: offline machines,
-archival, or debugging. Download `local-code-review-skill.zip` or
-`github-pr-review-skill.zip` from the
+archival, or debugging. Download `<name>-skill.zip` (for example `review-core-skill.zip`) from the
 [source repository's releases](https://github.com/amirbena/code-review-skill/releases)
 and unzip it into your runtime's Skill directory (for example
 `.claude/skills/<name>/`, `.agents/skills/<name>/`, or `.cursor/skills/<name>/`);
