@@ -11,7 +11,9 @@ mini-skills. It is decoupled from any specific runtime — see
 This document is a **map, not a contract**. Exact behavior lives in each
 Skill's `SKILL.md` and rule files; the decision record, with the reasons and
 the removed v2 mechanisms, is the
-[v3 ADR](v3-architecture/adr-v3-review-core.md).
+[v3 ADR](v3-architecture/adr-v3-review-core.md). Moving from v2:
+[`migration-v2-to-v3.md`](migration-v2-to-v3.md); per-Skill pages:
+[`features/`](features/README.md).
 
 ## The mental model in one picture
 

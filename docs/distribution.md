@@ -1,8 +1,15 @@
 # Installing, updating, and verifying the distributed Skills
 
-This is the consumer-facing guide for installing and updating
-`local-code-review` and `github-pr-review`, and for seeing which install
-paths have actually been exercised. It is explanatory; the publication
+This is the consumer-facing guide for installing and updating the
+distributed Skills, and for seeing which install paths have actually been
+exercised.
+
+> **v2 → v3.** The install commands below are the same for v3: replace
+> `<name>` with `review-core` or any `review-*` mini-skill once v3.0.0 is
+> published ([#851](https://github.com/amirbena/code-review-skill/issues/851)).
+> The verification evidence further down was gathered on the v2.x line
+> (`local-code-review`, `github-pr-review`) and is not yet repeated for v3.
+> See the [migration guide](migration-v2-to-v3.md) to move or to stay on v2. It is explanatory; the publication
 mechanics are owned by [`RELEASE.md`](RELEASE.md).
 
 **Recommended:** install from the generated distribution repository,
@@ -40,7 +47,7 @@ repository".
 
 ## Install by consumer
 
-Use `<name>` = `local-code-review` or `github-pr-review`. Every command below
+Use `<name>` = `review-core` or a mini-skill (v2.x: `local-code-review` or `github-pr-review`). Every command below
 was run during [#511](https://github.com/amirbena/code-review-skill/issues/511)
 (client versions in the matrix).
 
