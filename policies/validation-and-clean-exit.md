@@ -72,7 +72,7 @@ every push or PR.
 
 Locally, before opening a PR, run only the subset of that command set
 relevant to the change — see
-[`../README.md`](../README.md#local-validation-before-opening-a-pr) for the
+[`../CONTRIBUTING.md`](../CONTRIBUTING.md#local-validation-before-opening-a-pr) for the
 targeted mapping from change type to command. The full suite
 (`python3 -m unittest discover -s tests -t .` plus both metadata
 validations, link validation, and packaging) and any other full

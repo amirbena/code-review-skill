@@ -78,7 +78,7 @@ bot replies. Maintainers can tune the three named `CLAIM_*` values in
 2. Create a focused branch in your fork using the convention below.
 3. Implement the issue without adding unrelated changes.
 4. Run the checks relevant to your change from
-   [README § Local validation before opening a PR](README.md#local-validation-before-opening-a-pr).
+   [Local validation before opening a PR](#local-validation-before-opening-a-pr).
    The full test suite is not required locally before every push or PR — CI
    is the authoritative regression gate. It runs the full suite unless every
    changed path is provably not an integration input, in which case it omits
@@ -113,6 +113,41 @@ names, timestamps, or random identifiers. An Issue number is optional (for
 example, `fix/42-checkpoint-recovery`); the rest of the name must remain
 understandable without GitHub. Good standalone names include
 `chore/open-source-release-readiness` and `docs/contribution-workflow`.
+
+## Development setup
+
+All validation and packaging commands run from the repository root:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+```
+
+On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1` and use
+`python` in place of `python3`.
+
+## Local validation before opening a PR
+
+Run only the checks relevant to your change; CI
+([`validate.yml`](.github/workflows/validate.yml)) is the authoritative gate
+and routes each PR to the tests it needs
+([routing rules](policies/validation-and-clean-exit.md#routed-ci-tests)).
+
+| Change | Run |
+| --- | --- |
+| Docs-only (`docs/`, root `*.md`, `policies/*.md`) | `python3 scripts/validation/ci_test_route.py classify` prints the class, tier, and command CI would use; a `policies/*.md` or `AGENTS.md` change also needs `python3 -m unittest discover -s tests/policy/governance` |
+| Benchmark-related (`runtime_platform/benchmark/`, `benchmark/corpus/`, benchmark tooling/tests) | the benchmark test package, e.g. `python3 -m unittest discover -s tests/policy/benchmark` and/or `tests/unit/benchmark` |
+| Skill files (`skills/<name>/**`) | `python3 scripts/validation/validate-skill-metadata.py skills/<name> --containment-root .`, plus `python3 -m unittest discover -s tests/unit/review/core` |
+| Packaging (`scripts/packaging/**`) | `./scripts/packaging/package-skills.sh all`, plus `python3 -m unittest discover -s tests/integration/packaging` |
+| Focused code/test change (`scripts/**`, `tests/**`) | the directly affected module(s); for a test-only change `ci_test_route.py classify` prints the exact command |
+
+If a change doesn't map cleanly, run every test module under the top-level
+directory you touched. The full suite runs only in CI.
+
+```bash
+python3 scripts/validation/validate-markdown-links.py
+```
 
 ## Changelog
 
