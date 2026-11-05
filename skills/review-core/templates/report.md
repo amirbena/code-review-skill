@@ -6,7 +6,7 @@ diff line by line. Keep the section order below. Omit a section marked
 *(when any)* when it would be empty.
 
 ````markdown
-## Code review: <repository> — <local change | PR #<n>>
+## Code review: <repository: `owner/name` from the remote, else the directory name> — <local change | PR #<n>>
 
 **Target:** <local: base `<ref>` (`<sha>`, <user-specified | upstream merge-base | default-branch merge-base>) → HEAD `<sha>`; committed <n>, staged <n>, unstaged <n>, untracked <n> files | PR: <url>, base `<ref>`, HEAD `<sha>`>
 **Mode:** <intent | auto>
@@ -48,5 +48,6 @@ After the `**Result:**` line, add a `### Review result (JSON)` heading and
 one fenced `json` block holding one object that validates against
 [`result.schema.json`](result.schema.json), with nothing after it. Build
 it from the finished report: the same target, mode, findings, counts and
-decision. It never adds or changes a finding. Unknown keys are not
+decision. It never adds or changes a finding. The "Not investigated"
+reasons map to the kebab-case enum values ("not asked" → `not-asked`). Unknown keys are not
 allowed, and an empty list is `[]`, never omitted.

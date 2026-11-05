@@ -11,7 +11,8 @@ repository or a mini-skill says.
   Publishing belongs to `review-publish-github` and running code to
   `review-runtime-check`; the Core does neither.
 - Allowed Git and `gh` use is reading: `status`, `diff`, `log`, `show`,
-  `rev-parse`, `merge-base`, `ls-files`, `cat-file`, `remote -v`,
+  `rev-parse`, `merge-base`, `ls-files`, `grep`, `cat-file`, `remote -v`,
+  `ls-remote`, `fetch` (remote-tracking refs only),
   `gh pr view`, `gh pr diff` and `gh api` GET requests.
 - Do not run the project's code, tests, build or package scripts.
 

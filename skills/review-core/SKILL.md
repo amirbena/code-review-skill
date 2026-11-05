@@ -85,7 +85,9 @@ When the mode is unclear, it is `intent`.
 the request did not cover, ask once, in plain words, naming the concern
 and the extra check ("This changes token validation. Should I also run a
 security review?"). Only a yes runs it, for this run only. Without a yes,
-the report lists the concern as not investigated.
+the report lists the concern as not investigated. When the run cannot
+ask the user (for example, it was delegated), do not run the extra check;
+list the concern as not asked.
 
 **S6** — A mini-skill is selected only from the user's request for this
 run (`intent`), on the user's yes to a specific ask, or on evidence after
@@ -103,7 +105,8 @@ S1–S5. A selection or approval never carries over to another run.
 1. **Resolve the target** (read-only, [`rules/safety.md`](rules/safety.md)).
    - *Local.* Find the base: the base the user named, else the merge-base
      with the branch's upstream, else the merge-base with the default
-     branch. Record which one applied and its SHA. Collect four
+     branch (the remote's HEAD branch; with no remote, local `main` or
+     `master`). Record which one applied and its SHA. Collect four
      categories separately: committed (base..HEAD), staged, unstaged and
      untracked. Record HEAD's SHA.
    - *PR.* Resolve the repository and number from the URL or number. Read
@@ -113,12 +116,15 @@ S1–S5. A selection or approval never carries over to another run.
    - If the target or its diff cannot be fully read, stop: the run is
      `REVIEW INCOMPLETE` ([`rules/findings.md`](rules/findings.md)).
 2. **Set the mode** and the mini-skills the request selects ("Mode").
-3. **Read the change.** Read every changed text file in full at the
-   reviewed revision, plus the target repository's own instruction files
-   as conventions only ([`rules/safety.md`](rules/safety.md)).
+3. **Read the change.** Read the diff, then every changed text file at the
+   reviewed revision as [`rules/reasoning.md`](rules/reasoning.md)
+   directs (in full by default, targeted for a large file with a localized
+   change). Also read the target repository's own instruction files, as
+   conventions only ([`rules/safety.md`](rules/safety.md)).
 4. **Review** under [`rules/reasoning.md`](rules/reasoning.md): what
-   changed, the implication checklist, bounded investigation, candidate
-   validation and root-cause dedup. In `intent`, ask before going beyond
+   changed, direct references of changed contracts, the implication
+   checklist, bounded investigation, candidate validation and root-cause
+   dedup. In `intent`, ask before going beyond
    the requested scope. In `auto`, add analysis mini-skills on evidence.
 5. **Run the selected mini-skills** on this target and the Core's
    findings. Their findings join the set under the Core's shape and

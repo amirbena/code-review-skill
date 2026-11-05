@@ -27,7 +27,7 @@ Every finding has exactly one severity.
 | --- | --- |
 | `severity` | `P0`, `P1` or `P2` |
 | `title` | the defect, in one line |
-| `location` | `path:line` or `path:start-end` of the defect; `path` alone only when no line applies |
+| `location` | `path:line` or `path:start-end` where the fix belongs; `path` alone only when no line applies. When the cause and a broken site differ, cite the other place in `evidence` |
 | `evidence` | what the code does, from what you read |
 | `impact` | who or what is hurt, and when |
 | `fix` | focused, actionable guidance for this finding: what to change, not a rewrite |

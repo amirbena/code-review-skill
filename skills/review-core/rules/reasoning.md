@@ -7,9 +7,37 @@ found with evidence and nothing invented.
 
 State, for yourself first and then in the report summary, what the change
 does and **which behavior changes**: what a caller, user, operator or
-stored record sees before and after. Read each changed file in full, not
-just its hunks, so a hunk is judged in its context. Tests, configuration,
-migrations, schemas and documentation in the change are part of it.
+stored record sees before and after. Tests, configuration, migrations,
+schemas and documentation in the change are part of it.
+
+Start from the diff, then read enough of each changed file to judge every
+hunk in its context:
+
+- **By default, read the changed file in full.** This is how you see
+  state, invariants and other code in the same file that the change
+  affects.
+- **For a large file (roughly 500 lines or more) with a localized
+  change,** read the whole definitions that enclose each hunk
+  (`git diff --function-context`, or the definition itself), the file's
+  declarations (imports, types, fields, constants, signatures), and every
+  use in that file of a symbol the change adds, removes or alters. Read
+  further only when an investigation needs it.
+
+## Direct references
+
+When the change alters a contract (a public or exported signature, a
+return value, a raised error, a default, a config key, a schema or
+serialized field, a route, an event or a CLI flag), search once for its
+uses outside the diff with `git grep -n -w '<name>'`. Search for the
+name as a string too, so config, registries and routes show up. Read the
+call sites that could break, starting with the closest ones, and stop
+after about ten. This is one hop: callers of a caller are
+`review-deep-investigation` work.
+
+A text search misses dynamic dispatch, reflection, dependency-injection
+or config wiring and calls from other languages. When one of those may
+reach a changed contract and you could not check it, list it as not
+investigated.
 
 ## Implication checklist
 
