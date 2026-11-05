@@ -4,7 +4,7 @@ Contract: docs/v3-architecture/adr-v3-review-core.md, sections 5, 5.1 and 7.
 These tests check ownership and wiring, not wording.
 
 Run with:
-    python3 -m unittest tests.unit.review.domain.test_domain_mini_skills_contract
+    python3 -m unittest tests.unit.review.core.test_domain_mini_skills_contract
 """
 
 from __future__ import annotations
