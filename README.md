@@ -9,14 +9,31 @@ Each Skill is a canonical [Agent Skills](https://agentskills.io/specification)
 OpenCode, …). None edits, commits, pushes, or merges your code. Licensed
 under the [Apache License 2.0](LICENSE).
 
-> **v3 is in development on `release/v3`.** The published line is still v2.x
-> until the cutover ([#851](https://github.com/amirbena/code-review-skill/issues/851)).
-> Install instructions and the migration guide arrive with it
-> ([#850](https://github.com/amirbena/code-review-skill/issues/850)).
+> **v3 is built on `release/v3`.** The published line stays v2.x until the
+> cutover ([#851](https://github.com/amirbena/code-review-skill/issues/851)).
+> Coming from v2? Read the [migration guide](docs/migration-v2-to-v3.md).
 
-**New here?** [Choose a Skill](#which-skill-should-i-use) ·
+**New here?** [Install and use](#install-and-use) · [Choose a Skill](#which-skill-should-i-use) ·
 [Contribute](#contributing) · [Wiki](https://github.com/amirbena/code-review-skill/wiki) ·
 [Documentation map](#deeper-documentation)
+
+## Install and use
+
+Skills are installed from the generated distribution repository
+([`docs/distribution.md`](docs/distribution.md) lists every tool and update
+path).
+
+- **Verified today (v2.x):** `npx skills add amirbena/code-review-skills --skill local-code-review`
+  (or `github-pr-review`), exercised in [#511](https://github.com/amirbena/code-review-skill/issues/511).
+- **Planned for v3.0.0, not yet published or tested:** the same command with
+  `--skill review-core`, and one more run per mini-skill, for example
+  `--skill review-security`. The v2 names `local-code-review` and
+  `github-pr-review` are planned to remain as wrappers over `review-core`.
+
+Then ask in plain words: "review this", "review PR 123", "is this auth change
+safe?", "review PR 123 and post the review". Once v3 is published, a mini-skill that is not
+installed is reported as unavailable, never simulated. Staying on v2 is
+covered in the [migration guide](docs/migration-v2-to-v3.md#staying-on-v2).
 
 ## Which Skill should I use?
 
@@ -36,9 +53,11 @@ asking for something extra, adds the mini-skill that fits:
 | [`review-frontend`](skills/review-frontend/SKILL.md) | UI behavior, state, accessibility, rendered inspection |
 | [`review-runtime-check`](skills/review-runtime-check/SKILL.md) | confirms a finding by running a targeted check, sandboxed by default |
 
-You never need to know a mini-skill name. By default only the mini-skills your
-request justifies run; you can hand the choice to the reviewer by asking it to
-decide which expertise to apply as it goes. An implementing Agent never
+You never need to know a mini-skill name. By default (`intent`) only the
+mini-skills your request justifies run. Naming an area focuses depth there
+("review the backend thoroughly"). To hand the choice over (`auto`), say so
+("go as deep as necessary and use whatever expertise is relevant"). Per-Skill
+pages: [`docs/features/`](docs/features/README.md). An implementing Agent never
 publishes a review to its own PR
 ([policy](policies/review-orchestration-policy.md)).
 
@@ -112,6 +131,7 @@ python3 scripts/validation/validate-markdown-links.py
 |---|---|
 | [GitHub Wiki](https://github.com/amirbena/code-review-skill/wiki) | onboarding and a dated AI code-review landscape comparison (explanatory; never overrides files in this repository) |
 | [`skills/review-core/SKILL.md`](skills/review-core/SKILL.md) | the complete, normative Core definition; each mini-skill has its own `SKILL.md` |
+| [`docs/migration-v2-to-v3.md`](docs/migration-v2-to-v3.md) · [`docs/features/`](docs/features/README.md) | moving from v2, and one short page per Skill |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | the Core and mini-skill map, rule ownership, and the review lifecycle |
 | [`docs/v3-architecture/`](docs/v3-architecture/README.md) | the v3 decision record |
 | [`AGENTS.md`](AGENTS.md) + [`policies/`](policies/) | development entrypoint — invariants, instruction precedence, and focused policies |
