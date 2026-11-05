@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "review-core result",
+  "description": "Machine-readable form of one finished review-core report. Meanings are owned by SKILL.md and rules/findings.md.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "skill",
+    "target",
+    "mode",
+    "mini_skills",
+    "summary",
+    "findings",
+    "not_investigated",
+    "not_reviewed",
+    "incomplete",
+    "counts",
+    "decision"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "2.0.0" },
+    "skill": { "type": "string", "const": "review-core" },
+    "target": {
+      "type": "object",
+      "required": ["kind", "repository", "base_ref", "base_sha", "base_source", "head_sha", "pr_number", "categories"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["local", "pr"] },
+        "repository": { "type": "string", "minLength": 1 },
+        "base_ref": { "type": "string", "minLength": 1 },
+        "base_sha": { "$ref": "#/definitions/nullable_sha" },
+        "base_source": {
+          "type": "string",
+          "enum": ["user-specified", "upstream-merge-base", "default-branch-merge-base", "pr-base"]
+        },
+        "head_sha": { "$ref": "#/definitions/nullable_sha" },
+        "pr_number": { "type": ["integer", "null"], "minimum": 1 },
+        "categories": {
+          "$comment": "File counts per local category; null for a PR.",
+          "type": ["object", "null"],
+          "required": ["committed", "staged", "unstaged", "untracked"],
+          "additionalProperties": false,
+          "properties": {
+            "committed": { "$ref": "#/definitions/count" },
+            "staged": { "$ref": "#/definitions/count" },
+            "unstaged": { "$ref": "#/definitions/count" },
+            "untracked": { "$ref": "#/definitions/count" }
+          }
+        }
+      }
+    },
+    "mode": { "type": "string", "enum": ["intent", "auto"] },
+    "mini_skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "review-publish-github",
+              "review-requirements",
+              "review-deep-investigation",
+              "review-suggestions",
+              "review-security",
+              "review-backend",
+              "review-frontend",
+              "review-runtime-check"
+            ]
+          },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "summary": { "type": "string", "minLength": 1 },
+    "findings": { "type": "array", "items": { "$ref": "#/definitions/finding" } },
+    "not_investigated": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["concern", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "concern": { "type": "string", "minLength": 1 },
+          "reason": {
+            "type": "string",
+            "enum": ["declined", "not-asked", "mini-skill-not-installed", "beyond-investigation-bound"]
+          }
+        }
+      }
+    },
+    "not_reviewed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "incomplete": {
+      "$comment": "The closed REVIEW INCOMPLETE trigger set in rules/findings.md.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["target-unreadable", "file-unreadable", "head-moved", "mini-skill-input-missing"]
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["p0", "p1", "p2"],
+      "additionalProperties": false,
+      "properties": {
+        "p0": { "$ref": "#/definitions/count" },
+        "p1": { "$ref": "#/definitions/count" },
+        "p2": { "$ref": "#/definitions/count" }
+      }
+    },
+    "decision": { "type": "string", "enum": ["REVIEW CLEAN", "CHANGES REQUIRED", "REVIEW INCOMPLETE"] }
+  },
+  "definitions": {
+    "count": { "type": "integer", "minimum": 0 },
+    "nullable_sha": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" },
+    "finding": {
+      "type": "object",
+      "required": ["id", "severity", "title", "location", "evidence", "impact", "fix"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^F[1-9][0-9]*$" },
+        "severity": { "type": "string", "enum": ["P0", "P1", "P2"] },
+        "title": { "type": "string", "minLength": 1 },
+        "location": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 },
+        "impact": { "type": "string", "minLength": 1 },
+        "fix": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

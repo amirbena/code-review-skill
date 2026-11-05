@@ -130,7 +130,37 @@ class PhaseReportTests(unittest.TestCase):
         )
 
 
+class ReadInFullReportTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.repo = build_repo(Path(self._tmp.name))
+        for rel, text in {"SKILL.md": "core\n", "rules/a.md": "aa\n", "templates/r.json": "{}\n"}.items():
+            path = self.repo / "skills" / "review-core" / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+
+    def test_every_file_in_the_folder_is_before_the_diff(self):
+        d = report.report_dict(report.build_read_in_full_report(self.repo, "review-core"))
+        paths = [f["path"] for f in d["entry"]["files"] + d["unconditional"]["files"]]
+        self.assertEqual(
+            paths,
+            ["skills/review-core/SKILL.md", "skills/review-core/rules/a.md", "skills/review-core/templates/r.json"],
+        )
+        self.assertEqual(d["before_step_1"]["bytes"], 5 + 3 + 3)
+
+    def test_read_in_full_skill_without_skill_md_fails(self):
+        (self.repo / "skills" / "review-core" / "SKILL.md").unlink()
+        with self.assertRaises(report.ReportError):
+            report.build_read_in_full_report(self.repo, "review-core")
+
+
 class RepositoryReportTests(unittest.TestCase):
+    def test_review_core_is_measured_read_in_full(self):
+        data = report.build(REPO_ROOT)
+        self.assertEqual([s["skill"] for s in data["read_in_full_skills"]], ["review-core"])
+
+
     def test_output_is_deterministic(self):
         first = json.dumps(report.build(REPO_ROOT), sort_keys=True)
         self.assertEqual(first, json.dumps(report.build(REPO_ROOT), sort_keys=True))

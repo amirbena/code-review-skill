@@ -3,7 +3,9 @@
 
 The unconditional set is derived from each SKILL.md "Required Policy Loading"
 section, so the report cannot drift from the files the Skill tells a reviewer
-to open. Output depends only on file contents; token figures are estimates.
+to open. A read-in-full Skill (the v3 Core) has no such section: every file in
+its folder is read before the diff. Output depends only on file contents;
+token figures are estimates.
 """
 
 from __future__ import annotations
@@ -18,6 +20,8 @@ from typing import Sequence
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SKILLS = ("local-code-review", "github-pr-review")
+# Reported only when present, so a checkout without them still measures.
+READ_IN_FULL_SKILLS = ("review-core",)
 BYTES_PER_TOKEN = 4
 
 SECTION_RE = re.compile(r"^## 2\.[^\n]*\n(.*?)(?=^## \d+\.)", re.M | re.S)
@@ -168,6 +172,19 @@ def build_skill_report(repo: Path, skill: str) -> SkillReport:
     return report
 
 
+def build_read_in_full_report(repo: Path, skill: str) -> SkillReport:
+    """Every file in the Skill folder is read before the diff; there is no conditional set."""
+    repo = repo.resolve()
+    folder = repo / "skills" / skill
+    skill_md = folder / "SKILL.md"
+    if not skill_md.is_file():
+        raise ReportError(f"read-in-full Skill has no SKILL.md: {skill}")
+    report = SkillReport(skill=skill, entry=measure(repo, skill_md.relative_to(repo).as_posix()))
+    others = sorted(p.relative_to(repo).as_posix() for p in folder.rglob("*") if p.is_file() and p != skill_md)
+    report.unconditional = [measure(repo, rel) for rel in others]
+    return report
+
+
 def total(files: Sequence[FileSize]) -> dict[str, int]:
     return {
         "files": len(files),
@@ -213,10 +230,16 @@ def build(repo: Path = REPO_ROOT, baseline: Path | None = None) -> dict:
         for current in skills:
             prior = report_dict(build_skill_report(baseline, current["skill"]))
             current["savings_vs_baseline"] = savings(prior, current)
+    read_in_full = [
+        report_dict(build_read_in_full_report(repo, s))
+        for s in READ_IN_FULL_SKILLS
+        if (repo / "skills" / s).is_dir()
+    ]
     return {
         "schema": "context-size-report/v1",
         "bytes_per_token_estimate": BYTES_PER_TOKEN,
         "skills": skills,
+        "read_in_full_skills": read_in_full,
     }
 
 
@@ -261,6 +284,20 @@ def render_markdown(data: dict) -> str:
             ]
         for note in skill["unmeasured"]:
             out += ["", f"Not measured: {note}."]
+        out.append("")
+    for skill in data.get("read_in_full_skills", []):
+        out += [
+            f"### {skill['skill']} (read in full)",
+            "",
+            "| Group | Files | Lines | Bytes | Est. tokens |",
+            "| --- | ---: | ---: | ---: | ---: |",
+            _row("**Before the diff** (every file in the Skill folder)", skill["before_step_1"]),
+            "",
+            "| File | Lines | Bytes |",
+            "| --- | ---: | ---: |",
+        ]
+        for f in [*skill["entry"]["files"], *skill["unconditional"]["files"]]:
+            out.append(f"| `{f['path']}` | {f['lines']:,} | {f['bytes']:,} |")
         out.append("")
     return "\n".join(out)
 
