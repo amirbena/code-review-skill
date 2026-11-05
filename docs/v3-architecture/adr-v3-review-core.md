@@ -338,3 +338,42 @@ automatically on merge to `main`. So v3 is not built on `main`:
   `tests/reference/review/` shadow models retire with v2 (#849). Tooling
   and safety tests (packaging, release, sandbox, GitHub integration,
   benchmark harness) are kept.
+
+## 11. Skill versioning
+
+Every v3 Skill (`review-core` and every mini-skill) reports one version: the
+`X.Y.Z` of the official release tag `vX.Y.Z` it ships in. The tag `v3.0.0`
+means `review-core`, `review-backend` and every other v3 Skill are `3.0.0`.
+All Skills in a release share that version. There is no per-Skill SemVer
+and no separate counter: v2's independently maintained `version` in
+`metadata/skill.yaml` is not carried into v3.
+
+This reuses the existing release flow ([`../RELEASE.md`](../RELEASE.md),
+"Skill archive version"). No new versioning mechanism is added:
+
+- **Authority.** The release run writes the `## vX.Y.Z` CHANGELOG heading
+  and creates the annotated `vX.Y.Z` tag on the same release commit, and
+  release verification checks that the tag points at that commit.
+  Packaging reads the heading, never Git, so builds stay offline and
+  byte-reproducible. A packaged Skill carries its version as data and
+  needs no Git at runtime.
+- **Representation.** Unchanged from v2. The source `SKILL.md` keeps a
+  top-level `version:` mirror line, which the release run stamps. The
+  built tree and archive carry it as `metadata.version` (#507). The
+  `{{version}}` in `distribution/portable/plugin.json` and
+  `distribution/claude/marketplace.json` gets the same value.
+- **Before the cutover.** A v3 Skill has never been released, so it must
+  not report the current v2.x version. On `release/v3`, v3 `SKILL.md`
+  files carry **no** `version:` line, and a non-release build emits no
+  `metadata.version` for them. It does not borrow the newest v2.x heading
+  the way a v2 Skill's local or PR build does. Today, packaging fails when
+  a manifest Skill has no `version:` line.
+- **At the cutover.** The release run's stamp step writes `version: 3.0.0`
+  into every packaged Skill, inserting the line where it is missing.
+  Archive verification then requires exactly `3.0.0` in every archive, as
+  it does today for v2. After that, v3 behaves like v2: the committed line
+  is a mirror that nobody edits by hand.
+- **Owner.** [#851](https://github.com/amirbena/code-review-skill/issues/851)
+  implements the packaging and release changes (manifest, the
+  pre-release no-version rule, insert-on-stamp) and their tests. The other
+  children add no `version:` line and no version field of their own.

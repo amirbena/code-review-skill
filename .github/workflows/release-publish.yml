@@ -36,6 +36,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Release isolation (#852): every job below is gated on `github.ref ==
+# 'refs/heads/main'`, so a push or a dispatch on an integration branch such
+# as `release/v3` runs no job at all, and the `release` and
+# `release-skills-distribution` Environments admit only `main`
+# (docs/RELEASE.md, "Integration branches").
+
 # Read-only by default. Only the release App's jobs (`publish`, `recover-tag`,
 # `finalize`) are granted write, and they perform main/tag/release mutations
 # with a short-lived GitHub App token, never the Actions GITHUB_TOKEN.
@@ -58,10 +64,10 @@ jobs:
     # against the release commit (which GitHub already skips) ever
     # re-entering this workflow and recursing.
     if: >-
-      ${{ github.event_name == 'workflow_dispatch'
-      || (github.event_name == 'push'
-          && github.ref == 'refs/heads/main'
-          && !contains(github.event.head_commit.message, '[skip ci]')) }}
+      ${{ github.ref == 'refs/heads/main'
+      && (github.event_name == 'workflow_dispatch'
+          || (github.event_name == 'push'
+              && !contains(github.event.head_commit.message, '[skip ci]'))) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -137,7 +143,7 @@ jobs:
     # the flow cannot recurse. A retry after a completed release is a clean
     # no-op: `plan` reports nothing to release and this job does not run.
     needs: plan
-    if: needs.plan.outputs.should_release == 'true'
+    if: ${{ github.ref == 'refs/heads/main' && needs.plan.outputs.should_release == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -289,7 +295,8 @@ jobs:
     # an existing tag.
     needs: plan
     if: >-
-      ${{ github.event_name == 'workflow_dispatch'
+      ${{ github.ref == 'refs/heads/main'
+      && github.event_name == 'workflow_dispatch'
       && needs.plan.outputs.recover == 'tag' }}
     runs-on: ubuntu-latest
     permissions:
@@ -367,7 +374,7 @@ jobs:
     # Tooling runs from this run's revision; the source commit is content.
     needs: [plan, publish, recover-tag]
     if: >-
-      ${{ always() && (needs.publish.result == 'success'
+      ${{ always() && github.ref == 'refs/heads/main' && (needs.publish.result == 'success'
       || (github.event_name == 'workflow_dispatch'
           && needs.plan.result == 'success'
           && needs.plan.outputs.should_release != 'true'
@@ -581,7 +588,7 @@ jobs:
     # reader and directly assertable by a test, and so a future edit that
     # weakens one of them without the other still fails closed.
     needs: [plan, publish, distribute]
-    if: ${{ always() && needs.distribute.result == 'success' && needs.distribute.outputs.verified == 'true' }}
+    if: ${{ always() && github.ref == 'refs/heads/main' && needs.distribute.result == 'success' && needs.distribute.outputs.verified == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

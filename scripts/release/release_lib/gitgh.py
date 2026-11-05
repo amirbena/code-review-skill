@@ -167,3 +167,33 @@ def pull_request(repo_root: Path, number: int) -> dict:
     if not isinstance(data, dict):
         raise ValueError(f"unexpected GitHub API response for PR #{number}")
     return data
+
+
+def pull_request_commits(repo_root: Path, number: int) -> list[tuple[str, str]]:
+    """`(sha, subject)` for every commit the pull request carries, oldest first.
+
+    GitHub lists at most 250 commits per pull request; callers that need the
+    complete set must treat a result that size as possibly truncated.
+    """
+    out = _gh(
+        [
+            "api", "--paginate", f"repos/{{owner}}/{{repo}}/pulls/{number}/commits",
+            "--jq", r'.[] | .sha + "\u001f" + (.commit.message | split("\n")[0])',
+        ],
+        repo_root,
+    )
+    commits: list[tuple[str, str]] = []
+    for line in out.splitlines():
+        sha, _, subject = line.partition("\x1f")
+        if sha.strip():
+            commits.append((sha.strip(), subject.strip()))
+    return commits
+
+
+def pull_request_paths(repo_root: Path, number: int) -> list[str]:
+    """Paths a pull request changed, as GitHub reports them."""
+    out = _gh(
+        ["api", "--paginate", f"repos/{{owner}}/{{repo}}/pulls/{number}/files", "--jq", ".[].filename"],
+        repo_root,
+    )
+    return [line for line in out.splitlines() if line.strip()]
