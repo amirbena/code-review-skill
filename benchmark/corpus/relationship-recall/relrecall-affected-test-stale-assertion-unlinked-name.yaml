@@ -9,7 +9,7 @@
 # reachable by following shipping_cost_cents to its consumer build_summary
 # and then to the test that calls that consumer.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: relrecall-affected-test-stale-assertion-unlinked-name
 title: "Free-shipping threshold raised; an unrelated-named order-summary test still asserts the old threshold"
@@ -82,6 +82,7 @@ expected:
             anchor: "if subtotal_cents >= 7500:"
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [regression]
   rationale: >-

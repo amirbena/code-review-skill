@@ -54,7 +54,7 @@ class FixtureFormatContractTests(unittest.TestCase):
 
     def test_schema_versioning_is_fail_closed(self) -> None:
         self.assertIn("## 3. Schema identity and versioning", self.raw)
-        self.assertIn("benchmark-case/v2", self.raw)
+        self.assertIn("benchmark-case/v3", self.raw)
         self.assertIn("Fail closed", self.text)
         self.assertIn("before any other field is read", self.text)
         self.assertIn("MUST NOT parse an unrecognized version", self.text)
@@ -208,9 +208,9 @@ class DirectoryNavigationTests(unittest.TestCase):
 
 
 class WorkedExampleFileTests(unittest.TestCase):
-    def test_example_declares_the_v2_format_and_is_not_a_corpus_case(self) -> None:
+    def test_example_declares_the_v3_format_and_is_not_a_corpus_case(self) -> None:
         raw = EXAMPLE.read_text(encoding="utf-8")
-        self.assertIn("format: benchmark-case/v2", raw)
+        self.assertIn("format: benchmark-case/v3", raw)
         self.assertIn("NOT part of the benchmark corpus", raw)
 
 
@@ -224,15 +224,15 @@ class CorpusDirectoryTests(unittest.TestCase):
         cls.fixtures = sorted(CORPUS_DIR.glob("*.yaml"))
         cls.readme_raw = CORPUS_README.read_text(encoding="utf-8")
 
-    def test_corpus_has_a_small_set_of_v2_fixtures(self) -> None:
+    def test_corpus_has_a_small_set_of_v3_fixtures(self) -> None:
         self.assertTrue(CORPUS_DIR.is_dir())
         self.assertGreaterEqual(len(self.fixtures), 4)
         self.assertLessEqual(len(self.fixtures), 12)
         for path in self.fixtures:
             self.assertIn(
-                "format: benchmark-case/v2",
+                "format: benchmark-case/v3",
                 path.read_text(encoding="utf-8"),
-                f"{path.name} does not declare the v2 format",
+                f"{path.name} does not declare the v3 format",
             )
 
     def test_readme_links_every_fixture_and_the_validator(self) -> None:

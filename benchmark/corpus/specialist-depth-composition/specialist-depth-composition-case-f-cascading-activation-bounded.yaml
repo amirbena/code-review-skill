@@ -12,7 +12,7 @@
 # would not exist as an activation candidate without first following the
 # database finding's own evidence one hop.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: specialist-depth-composition-case-f-cascading-activation-bounded
 title: "0012_drop_customer_id_index removes the only index the unbounded customer order-history lookup relies on"
@@ -102,6 +102,7 @@ expected:
       defect_kind: missing-migration-test
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, performance]
   rationale: >-

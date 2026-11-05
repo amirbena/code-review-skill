@@ -1,0 +1,86 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# pricing/discount.py's decode_coupon_percentage never clamps a decoded
+# coupon percentage, so compute_discount can return a negative discount
+# for an over-100% coupon. billing/invoice.py (base, unchanged) renders
+# whatever discount it is given. The claim is about *cause* -- the
+# incorrect value originates in pricing/discount.py -- so the fix/action
+# location follows the claim to the causal site, not to the downstream
+# file where the bad value merely becomes visible.
+#
+# Mirrors shared/templates/finding.md's own "Causal center" worked
+# contrast, exercised here as a runnable corpus case rather than prose.
+#
+# Expected: ONE required finding anchored in pricing/discount.py;
+# billing/invoice.py never becomes an anchor.
+
+format: benchmark-case/v2
+
+id: finding-placement-causal-site-not-symptom
+title: "Coupon percentage is never clamped; the negative discount is invoice.py's evidence, not its defect"
+
+input:
+  patch: |
+    diff --git a/pricing/discount.py b/pricing/discount.py
+    new file mode 100644
+    index 0000000..1a2b3c4
+    --- /dev/null
+    +++ b/pricing/discount.py
+    @@ -0,0 +1,10 @@
+    +def decode_coupon_percentage(coupon: str) -> int:
+    +    # Coupon codes encode a percentage as their trailing digits,
+    +    # e.g. "SUPER150" -> 150.
+    +    digits = "".join(ch for ch in coupon if ch.isdigit())
+    +    return int(digits) if digits else 0
+    +
+    +
+    +def compute_discount(price: float, coupon: str) -> float:
+    +    pct = decode_coupon_percentage(coupon)
+    +    return price * (1 - pct / 100)
+  base:
+    billing/invoice.py: |
+      from pricing.discount import compute_discount
+
+
+      def render_total(price: float, coupon: str) -> str:
+          discount = compute_discount(price, coupon)
+          return f"Total: ${discount:.2f}"
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: discount-percentage-not-clamped
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: pricing/discount.py
+        symbol: compute_discount
+        anchor: "return price * (1 - pct / 100)"
+      claim: >-
+        pricing/discount.py's decode_coupon_percentage/compute_discount
+        never clamps a decoded coupon percentage to at most 100, so a
+        coupon like "SUPER150" (150%) makes compute_discount return a
+        negative discount; billing/invoice.py's render_total then
+        displays that as a negative total, but it is correctly rendering
+        whatever discount it is given -- the incorrect value originates
+        in pricing/discount.py.
+      defect_kind: missing-value-clamp
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Positive case for #386's "Causal center" rule: an already-accepted
+    claim about *cause* must anchor at the site introducing the incorrect
+    value, not at the downstream renderer where the bad value is merely
+    observed. Mirrors finding.md's own worked contrast as a runnable
+    fixture.
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [unclassified]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

@@ -5,7 +5,7 @@ Repository-development artifact for GitHub Issue
 signal-triggered pass in
 [`shared/policies/review-scope.md`](../../../shared/policies/review-scope.md),
 "Semantic change-implication reasoning." This is a **focused sub-corpus**
-of [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md) fixtures exercising that
+of [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md) fixtures exercising that
 section's vocabulary: the eight canonical dimensions, their semantic
 (never structural) activation signals, the not-mutually-exclusive
 taxonomy, the no-signal non-analysis rule, and the bounded-expansion /
@@ -48,7 +48,7 @@ header comment.
 
 ## No reference-model scenario file
 
-Unlike [`../risk-depth/`](../risk-depth/README.md) (which pairs its corpus
+Unlike `../risk-depth/` (which pairs its corpus
 with `tests/unit/review/specialist_depth/test_risk_based_review_scenarios.py`, a
 deterministic reference model of `change-risk-signals.md`'s mechanical
 classification), "Semantic change-implication reasoning" is a

@@ -6,7 +6,7 @@
 # learns nothing from it. Expected output is a code hygiene observation,
 # never a finding.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: code-hygiene-bare-issue-reference-observation
 title: "A comment that is only an issue number is added above a plain call"
@@ -36,6 +36,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

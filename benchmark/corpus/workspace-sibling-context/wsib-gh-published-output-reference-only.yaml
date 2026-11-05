@@ -7,7 +7,7 @@
 # published surface carries a conclusion plus a repository@sha:path reference,
 # never the sibling's content, so the marker must not appear in it.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: wsib-gh-published-output-reference-only
 title: "PaymentStatus gains refunded; published GitHub output must not carry sibling content"
@@ -97,6 +97,7 @@ expected:
         - defect_kind: breaking-enum-extension
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, regression]
   rationale: >-

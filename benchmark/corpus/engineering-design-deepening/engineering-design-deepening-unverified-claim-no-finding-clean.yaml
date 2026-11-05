@@ -6,7 +6,7 @@
 # unchanged path absent from the patch and base, the API-only reach) is
 # unverified: no finding is grounded on it and it is not treated as true.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: engineering-design-deepening-unverified-claim-no-finding-clean
 title: "A design relies on a rate limit that already applies in an unchanged file the review cannot reach"
@@ -35,6 +35,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [no-op]
   rationale: >-

@@ -16,7 +16,7 @@
 # Expected: ONE required finding anchored in config/schema.py;
 # config/loader.py and cli/main.py never become anchors.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-multi-file-primary-selection
 title: "Only schema.py is the causal site; the docstring-only and unrelated-flag touches in the same diff are not additional anchors"
@@ -106,6 +106,7 @@ expected:
       defect_kind: removed-required-field-regression
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

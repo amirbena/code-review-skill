@@ -3,7 +3,7 @@
 Repository-development artifact for GitHub Issue
 [#677](https://github.com/amirbena/code-review-skill/issues/677), parent
 [#675](https://github.com/amirbena/code-review-skill/issues/675). A focused
-sub-corpus of [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md)
+sub-corpus of [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md)
 fixtures proving the delivered behavior of
 [`../../../shared/policies/code-hygiene.md`](../../../shared/policies/code-hygiene.md)
 (#676): hygiene is reported when it is real, left alone when it is legitimate,

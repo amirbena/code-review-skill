@@ -9,7 +9,7 @@
 # alone must not trigger the deepening capability — a suppressed false
 # positive.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: distributed-systems-deepening-filename-signal-suppressed-clean
 title: "queue_consumer.py reformats log message argument style; the filename alone must not trigger deepening"
@@ -48,6 +48,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [concurrency]
   rationale: >-

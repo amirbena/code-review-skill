@@ -10,7 +10,7 @@
 # finding and an optional, non-asserting observation; the gap itself is
 # checked by the policy tests and the live-run notes in ./README.md.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: deployment-infrastructure-deepening-db-resize-impact-needs-plan-output
 title: "infra/db.tf resizes the database instance class and the effect on the running database depends on state and plan output not available to the review"
@@ -63,6 +63,7 @@ expected:
       defect_kind: state-dependent-change-impact-unsettled
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

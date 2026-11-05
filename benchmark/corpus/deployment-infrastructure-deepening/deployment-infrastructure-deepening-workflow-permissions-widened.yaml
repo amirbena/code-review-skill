@@ -6,7 +6,7 @@
 # on pull_request. A `uses:` pin in the same file is the dependency/supply-
 # chain pass's, not this finding.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: deployment-infrastructure-deepening-workflow-permissions-widened
 title: "ci.yml widens the workflow token to contents: write on a pull_request-triggered workflow"
@@ -63,6 +63,8 @@ expected:
       defect_kind: workflow-token-permission-widened
 
 metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs CI threat reasoning: write token plus a pull_request trigger running untrusted code."
   source: crafted
   tags: [security]
   rationale: >-

@@ -9,7 +9,7 @@
 # production-critical flow), so the rendered Result/Decision must be the
 # blocking value, never clean/approved.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: dd-blocking-p1-inverted-error-rate
 title: "error_rate divides total by errors instead of errors by total"
@@ -66,6 +66,7 @@ expected:
       defect_kind: missing-test
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

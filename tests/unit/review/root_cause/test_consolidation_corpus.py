@@ -3,7 +3,7 @@
 (Issue #185, parent #177).
 
 The sub-corpus is ``benchmark/corpus/consolidation/*.yaml``: a small,
-focused set of ``benchmark-case/v2`` fixtures that pin the consolidation
+focused set of ``benchmark-case/v3`` fixtures that pin the consolidation
 outcomes #177 names — shared cause consolidates to one authoritative
 finding; look-alike but independent defects stay separate; a shared cause
 held at low confidence falls back to separate findings; a re-review

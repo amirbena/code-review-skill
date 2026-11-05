@@ -7,7 +7,7 @@
 # that never reads the new field, and a schema validator that never
 # enforces `additionalProperties: false` against it here, is unaffected.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: api-compat-add-optional-field-compatible
 title: "User schema gains an optional email property; existing consumers are unaffected"
@@ -47,6 +47,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

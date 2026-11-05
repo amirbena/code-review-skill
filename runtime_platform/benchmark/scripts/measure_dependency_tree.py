@@ -62,6 +62,9 @@ from runtime_platform.benchmark.scripts.benchmark_review_adapter import (  # noq
 
 CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "dependency-tree-inspection"
 PREREGISTRATION = CORPUS_DIR / "pre-registration.json"
+# The pre-registration pins the v2 fixtures' bytes, so the digest and the
+# parsed cases come from the frozen v2 epoch, not the migrated active corpus.
+PREREGISTERED_FIXTURES = REPO_ROOT / "benchmark" / "corpus-v2" / "dependency-tree-inspection"
 DEFAULT_RUNS = 3
 DEFAULT_TIMEOUT_SECONDS = 600.0
 HARNESS_INVALID_CATEGORIES = ("isolation-failed", "stream-parse-failure")
@@ -97,8 +100,8 @@ class ArmAdapter:
         return int(usage.get("input_tokens", 0)) + int(usage.get("output_tokens", 0)) if usage else None
 
 
-def load_cases(corpus_dir: Path = CORPUS_DIR) -> list[bf.BenchmarkCase]:
-    return [bf.parse_case(yaml.safe_load(p.read_text(encoding="utf-8"))) for p in sorted(corpus_dir.glob("*.yaml"))]
+def load_cases(corpus_dir: Path = PREREGISTERED_FIXTURES) -> list[bf.BenchmarkCase]:
+    return [bf.parse_case(yaml.safe_load(p.read_text(encoding="utf-8")), legacy=True) for p in sorted(corpus_dir.glob("*.yaml"))]
 
 
 def measure_adapter(
@@ -175,9 +178,9 @@ def check_protocol(baseline_root: Path, *, smoke: bool, allow_dirty: bool) -> li
     if not PREREGISTRATION.is_file():
         return ["pre-registration.json is missing"]
     prereg = json.loads(PREREGISTRATION.read_text(encoding="utf-8"))
-    if bdt.fixture_set_digest(CORPUS_DIR) != prereg.get("fixture_set_digest"):
+    if bdt.fixture_set_digest(PREREGISTERED_FIXTURES) != prereg.get("fixture_set_digest"):
         problems.append("the fixture set differs from the pre-registered digest: a changed set is a new pre-registration")
-    elif bdt.build_preregistration(load_cases(), CORPUS_DIR) != prereg:
+    elif bdt.build_preregistration(load_cases(), PREREGISTERED_FIXTURES) != prereg:
         problems.append("the thresholds, expectations or configuration in code differ from pre-registration.json: a changed protocol is a new pre-registration")
     commit = _registration_commit()
     if not commit:
@@ -287,7 +290,7 @@ def main(argv: list[str] | None = None) -> int:
             "skill_tree_dirty": bool(_git(REPO_ROOT, "status", "--porcelain", "--untracked-files=no")),
             "preregistration_commit": _registration_commit(),
             "protocol_problems": problems,
-            "fixture_set_digest": bdt.fixture_set_digest(CORPUS_DIR),
+            "fixture_set_digest": bdt.fixture_set_digest(PREREGISTERED_FIXTURES),
             "runtime": executable,
             "model": args.model,
             "github_repo_reviewer": args.github_repo_reviewer,

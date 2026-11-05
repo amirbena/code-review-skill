@@ -29,7 +29,7 @@ from runtime_platform.benchmark.scripts.benchmark_termination import Terminated
 from tests.support.benchmark_publisher_fakes import SLUG, World, make_record
 from tests.support.benchmark_records import make_case, run_output
 from tests.support.evidence_destination import EVIDENCE, NAMESPACES, SOURCE, evidence_block, manifest_with
-from tests.support.paths import REPO_ROOT
+from tests.support.paths import REPO_ROOT, V2_EPOCH_CORPUS_DIR
 from tests.unit.benchmark.test_benchmark_evidence_destination import FILES, HANDOFF, Stores
 from tests.unit.benchmark.test_benchmark_publisher_github_api import ScriptedOpener
 from tests.unit.benchmark.test_run_concurrency_experiment import small_spec, write_stub
@@ -293,7 +293,7 @@ class BenchmarkCompatibilityTests(GateStores):
             contextlib.redirect_stdout(io.StringIO()),
             contextlib.redirect_stderr(io.StringIO()),
         ):
-            code = routine.main(["--cli", "stub", "--runtime-version", "cli-1", "--history-root", str(self.tmp / "no-history"), "--mode", "sentinel", "--manifest", manifest, "--seal-dir", str(seal_dir)])
+            code = routine.main(["--cli", "stub", "--runtime-version", "cli-1", "--history-root", str(self.tmp / "no-history"), "--mode", "sentinel", "--manifest", manifest, "--seal-dir", str(seal_dir), "--corpus-dir", str(V2_EPOCH_CORPUS_DIR)])
         self.assertEqual(code, 0)
         return json.loads((seal_dir / seal.RECORD_FILE).read_text(encoding="utf-8"))
 

@@ -1,0 +1,133 @@
+# Specialist-depth progressive-loading-proof corpus case (Issue #411,
+# parent #403). Format: ../../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# The one case this sub-corpus adds rather than reuses (README "Selection
+# principle"): specialist-depth.md's Case A-G (the reused
+# specialist-depth-composition corpus, #85/#409) cover confident
+# non-activation (Case D: a superficial path/file-type signal alone) and
+# confident activation (Case B/C/E/F/G: unambiguous domain evidence).
+# Neither shape exercises the #410 fail-closed clause itself: what happens
+# when the activation predicate's second condition ("that dimension's own
+# evidence shows depth is warranted") cannot be confidently resolved
+# either way from the evidence actually present. Here, a per-order loop
+# issues one additional query per order (a materially implicated
+# performance signal — semantic, not a superficial path/file-type match)
+# but, unlike the reused N+1 corpus fixture, nothing in this file
+# documents the order collection's expected cardinality as unbounded, and
+# nothing documents it as a small fixed bound either. #410's fail-closed
+# clause requires this ambiguity to resolve to *loading* performance
+# deepening rather than skipping it, and specialist-depth.md's "never"
+# list already forbids treating the resulting uncertainty as a reason to
+# manufacture unwarranted confidence — so a correct review still raises
+# the concern rather than staying silent, at a severity that may range
+# from a hedged P2 ("raised for verification") to an asserted P1
+# depending on how conservatively the undocumented cardinality is
+# treated, but never the confident P0 an evidenced-unbounded defect
+# (the reused N+1 fixture) would warrant. What the fixture pins is that a
+# finding is produced at all -- proof that fail-closed loading happened --
+# never its exact escalation level, which is genuine reviewer judgment
+# under real ambiguity, not a fact this fixture can dictate.
+
+format: benchmark-case/v2
+
+id: specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load
+title: "Order CSV export gains a per-order latest-shipment-status column, looked up via one query per order"
+
+input:
+  patch: |
+    diff --git a/app/reports/order_export.py b/app/reports/order_export.py
+    index 1111111..2222222 100644
+    --- a/app/reports/order_export.py
+    +++ b/app/reports/order_export.py
+    @@ -1,9 +1,17 @@
+     """Generates a CSV export of orders for the reporting dashboard."""
+     import csv
+
+
+     def export_orders_csv(orders, output):
+         writer = csv.writer(output)
+    -    writer.writerow(["order_id", "customer_email", "total"])
+    +    writer.writerow(
+    +        ["order_id", "customer_email", "total", "latest_shipment_status"]
+    +    )
+         for order in orders:
+    -        writer.writerow([order.id, order.customer_email, order.total])
+    +        latest_event = order.shipment_events.all().order_by("-created_at").first()
+    +        writer.writerow([
+    +            order.id,
+    +            order.customer_email,
+    +            order.total,
+    +            latest_event.status if latest_event else "",
+    +        ])
+  base:
+    app/reports/order_export.py: |
+      """Generates a CSV export of orders for the reporting dashboard."""
+      import csv
+
+
+      def export_orders_csv(orders, output):
+          writer = csv.writer(output)
+          writer.writerow(["order_id", "customer_email", "total"])
+          for order in orders:
+              writer.writerow([order.id, order.customer_email, order.total])
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: per-order-shipment-event-query
+      match: required
+      severity: [P1, P2]
+      location:
+        location_intent: line
+        path: app/reports/order_export.py
+        symbol: export_orders_csv
+        anchor: order.shipment_events.all()
+      claim: >-
+        export_orders_csv now calls order.shipment_events.all() inside the
+        per-order loop, issuing one additional query per order instead of
+        the single batched query the rest of the export already uses for
+        order fields. Neither this function nor its caller documents the
+        orders collection's expected cardinality as bounded or unbounded,
+        so whether this scales safely cannot be confirmed from the
+        evidence in this file; it is raised for verification against the
+        collection's actual size rather than asserted as a confirmed
+        unbounded-scale defect.
+      defect_kind: n-plus-one-remote-call
+      alternatives:
+        - defect_kind: n-plus-one-query
+    - key: missing-shipment-status-column-test
+      match: optional
+      severity: [P1, P2]
+      location:
+        location_intent: file
+        path: app/reports/order_export.py
+      claim: >-
+        No test exercises the new latest_shipment_status column, either
+        the populated or the no-shipment-events fallback path.
+      defect_kind: missing-test-coverage
+
+metadata:
+  source: crafted
+  tags: [performance]
+  rationale: >-
+    Exercises #410's fail-closed clause directly: the per-order
+    shipment_events.all() call is a materially implicated performance
+    signal (semantic, not file-type/path alone, so Case D's suppression
+    does not apply), but this file evidences no cardinality bound either
+    way for the orders collection -- unlike #187's own
+    n-plus-one-remote-call fixture (documented unbounded, reused as
+    specialist-depth-composition-case-c) or its constant-size-loop fixture
+    (documented small and fixed). Ambiguous predicate evaluation must
+    still load performance deepening rather than skip it; the permitted
+    severity range (P1 or P2, never the reused fixture's confident P0)
+    lets genuine reviewer judgment under real ambiguity vary, while
+    pinning what must not vary -- a finding is produced at all, proving
+    fail-closed loading is behaviorally observable rather than
+    specialist-depth silently skipping under uncertainty.
+  taxonomy:
+    capability: [specialist-depth-composition]
+    policy_contract: [specialist-depth]
+    risk_mode: [performance]
+    affected_surface: [unclassified]

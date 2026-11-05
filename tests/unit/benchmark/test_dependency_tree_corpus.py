@@ -27,6 +27,7 @@ from tests.support.paths import REPO_ROOT
 from tests.support.git_repo import isolate_git_config
 
 CORPUS_DIR = REPO_ROOT / "benchmark" / "corpus" / "dependency-tree-inspection"
+FROZEN_V2_DIR = REPO_ROOT / "benchmark" / "corpus-v2" / "dependency-tree-inspection"
 ADDED = "dti-incident-added-user-provided"
 RENAMED = "dti-incident-renamed-user-provided"
 
@@ -374,11 +375,12 @@ class PreRegistrationTests(unittest.TestCase):
         self.prereg = json.loads((CORPUS_DIR / "pre-registration.json").read_text(encoding="utf-8"))
 
     def test_committed_file_equals_the_protocol_derived_from_the_corpus(self) -> None:
-        self.assertEqual(self.prereg, bdt.build_preregistration(_all(), CORPUS_DIR))
+        frozen = [bf.parse_case(yaml.safe_load((FROZEN_V2_DIR / f"{c}.yaml").read_text(encoding="utf-8")), legacy=True) for c in sorted(bdt.CASE_ROLES)]
+        self.assertEqual(self.prereg, bdt.build_preregistration(frozen, FROZEN_V2_DIR))
 
     def test_digest_changes_when_a_fixture_changes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            for p in CORPUS_DIR.glob("*.yaml"):
+            for p in FROZEN_V2_DIR.glob("*.yaml"):
                 (Path(tmp) / p.name).write_bytes(p.read_bytes())
             same = bdt.fixture_set_digest(tmp)
             (Path(tmp) / f"{ADDED}.yaml").write_text("x: 1\n", encoding="utf-8")

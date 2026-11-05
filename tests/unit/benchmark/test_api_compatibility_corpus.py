@@ -3,7 +3,7 @@
 sub-corpus (Issue #184, parent #175).
 
 The sub-corpus is ``benchmark/corpus/api-compatibility/*.yaml``: a
-small, focused set of ``benchmark-case/v2`` fixtures pinning the expected
+small, focused set of ``benchmark-case/v3`` fixtures pinning the expected
 compatible / breaking / context-dependent classification for the change
 shapes #175's scope lists — add optional field, remove field, optional to
 required, add enum member, remove enum member, rename response property —

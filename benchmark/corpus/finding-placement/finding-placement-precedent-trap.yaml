@@ -15,7 +15,7 @@
 # integrations/webhook/client.py; integrations/slack/client.py never
 # becomes an anchor.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-precedent-trap
 title: "The new webhook client omits slack client's backoff; the correct precedent must not become the anchor"
@@ -71,6 +71,7 @@ expected:
       defect_kind: missing-backoff-on-retry
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, quality]
   rationale: >-

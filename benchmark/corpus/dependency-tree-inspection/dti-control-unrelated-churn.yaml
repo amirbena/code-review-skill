@@ -2,7 +2,7 @@
 # SYNTHETIC: the tree text is crafted, never real tool output. Format imitated:
 # mvn dependency:tree text output (maven-dependency-plugin 3.6.x, verbose off). See ./README.md.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: dti-control-unrelated-churn
 title: "Synthetic control: BOM bump with unrelated transitive churn"
@@ -98,6 +98,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

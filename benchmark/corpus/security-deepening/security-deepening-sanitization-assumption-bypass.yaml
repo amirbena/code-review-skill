@@ -10,7 +10,7 @@
 # decoded afterwards — the assumption code elsewhere relies on does not
 # actually hold on this new path.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: security-deepening-sanitization-assumption-bypass
 title: "preview_upload unquotes the filename after sanitize_filename, so an encoded traversal sequence bypasses the shared sanitizer"
@@ -90,6 +90,8 @@ expected:
       defect_kind: missing-security-test
 
 metadata:
+  skill_set: [review-core, review-security]
+  skill_set_reason: "The bypass depends on an invariant other callers rely on (the value stays sanitized); the decode-after-sanitize order only matters once that is traced."
   source: crafted
   tags: [security]
   rationale: >-

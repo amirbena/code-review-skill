@@ -14,7 +14,7 @@
 # Expected: ONE required finding anchored in billing/invoice.py;
 # pricing/discount.py never becomes an anchor.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: finding-placement-downstream-unsafe-handling
 title: "invoice.py does not guard compute_discount's documented None result for an unrecognized coupon"
@@ -71,6 +71,7 @@ expected:
       defect_kind: unguarded-documented-optional-result
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

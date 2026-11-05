@@ -8,7 +8,7 @@
 # status, so sibling evidence resolves the question before escalation. docs-
 # site is unrelated.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: wsib-resolves-from-relevant-sibling
 title: "PaymentStatus gains refunded; the one relevant workspace sibling has a strict consumer"
@@ -98,6 +98,7 @@ expected:
         - defect_kind: breaking-enum-extension
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, regression]
   rationale: >-

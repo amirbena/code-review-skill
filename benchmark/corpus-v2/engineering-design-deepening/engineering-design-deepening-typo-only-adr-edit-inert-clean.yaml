@@ -1,0 +1,53 @@
+# Engineering-design-deepening corpus case (Issue #750, parent #747,
+# depends on #749). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Negative: a typo-only edit to an accepted ADR changes no decision and
+# does not activate the capability.
+
+format: benchmark-case/v2
+
+id: engineering-design-deepening-typo-only-adr-edit-inert-clean
+title: "A change fixes a spelling error in an accepted ADR and changes no decision"
+
+input:
+  patch: |
+    diff --git a/docs/adr/0007-ledger-writes.md b/docs/adr/0007-ledger-writes.md
+    index 1111111..2222222 100644
+    --- a/docs/adr/0007-ledger-writes.md
+    +++ b/docs/adr/0007-ledger-writes.md
+    @@ -5,5 +5,5 @@ Status: Accepted
+     ## Decision
+     
+     Every write to ledger_entries goes through ledger_service.post_entry.
+    -Callers must not insert into the table direcly, because the service
+    +Callers must not insert into the table directly, because the service
+     enforces the double-entry balance check and the audit trail.
+  base:
+    docs/adr/0007-ledger-writes.md: |
+      # ADR 0007: Ledger writes
+
+      Status: Accepted
+
+      ## Decision
+
+      Every write to ledger_entries goes through ledger_service.post_entry.
+      Callers must not insert into the table direcly, because the service
+      enforces the double-entry balance check and the audit trail.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    Pins non-activation: a spelling fix is not decision-bearing, so ordinary
+    documentation-correctness review applies and design review adds nothing.
+  taxonomy:
+    capability: [engineering-design]
+    policy_contract: [engineering-design-deepening]
+    risk_mode: [no-op]
+    affected_surface: [unclassified]

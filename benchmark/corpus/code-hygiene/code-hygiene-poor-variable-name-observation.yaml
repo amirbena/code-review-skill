@@ -6,7 +6,7 @@
 # per-line price times quantity, so `line_totals` is the single concrete
 # suggestion.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: code-hygiene-poor-variable-name-observation
 title: "A new local named tmp holds per-line totals"
@@ -33,6 +33,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

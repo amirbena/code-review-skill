@@ -7,7 +7,7 @@
 # name. Required finding is P2 only, never P0/P1, and the decision follows
 # it mechanically.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: code-hygiene-p2-misleading-name-with-causal-evidence
 title: "A new delay local holds seconds while existing delay locals hold milliseconds"
@@ -58,6 +58,7 @@ expected:
       defect_kind: misleading-name-opposite-meaning
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [quality]
   rationale: >-

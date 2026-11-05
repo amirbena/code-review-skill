@@ -1,0 +1,96 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# The new notifications/email.py misuses utils/money.py's format_cents
+# contract (it expects cents, not dollars) and double-divides the
+# amount. A review investigating this would plausibly read the sibling
+# notifications/sms.py (a correct precedent, for comparison) and the
+# existing tests/test_email.py (evidence of expected behavior) per
+# repository-expansion.md/evidence.md's bounded expansion -- but
+# visiting those locations for evidence must never relocate the finding.
+# The fix/action location stays at notifications/email.py, the only
+# site the causal/contract reasoning actually establishes as the owner.
+#
+# Expected: ONE required finding anchored in notifications/email.py;
+# utils/money.py, notifications/sms.py, and tests/test_email.py never
+# become anchors despite being read for evidence.
+
+format: benchmark-case/v2
+
+id: finding-placement-context-expansion-drift
+title: "Reading a sibling and an existing test for evidence must not relocate the finding away from email.py"
+
+input:
+  patch: |
+    diff --git a/notifications/email.py b/notifications/email.py
+    new file mode 100644
+    index 0000000..6f7a8b9
+    --- /dev/null
+    +++ b/notifications/email.py
+    @@ -0,0 +1,6 @@
+    +from utils.money import format_cents
+    +
+    +
+    +def send_receipt(total_cents: int) -> str:
+    +    dollars = total_cents / 100
+    +    return f"Total: {format_cents(dollars)}"
+  base:
+    utils/money.py: |
+      def format_cents(cents: int) -> str:
+          """Formats an integer cent amount as a dollar string, e.g.
+          1050 -> "$10.50". Contract: `cents` is a whole number of cents,
+          never already-divided dollars.
+          """
+          return f"${cents / 100:.2f}"
+    notifications/sms.py: |
+      from utils.money import format_cents
+
+
+      def send_receipt_sms(total_cents: int) -> str:
+          return f"Total: {format_cents(total_cents)}"
+    tests/test_email.py: |
+      from notifications.email import send_receipt
+
+
+      def test_send_receipt_formats_a_whole_dollar_amount():
+          assert "Total:" in send_receipt(1000)
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: email-passes-dollars-to-format-cents
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: notifications/email.py
+        symbol: send_receipt
+        anchor: 'return f"Total: {format_cents(dollars)}"'
+      claim: >-
+        notifications/email.py's send_receipt divides total_cents by 100
+        before calling format_cents, which documents that it expects a
+        whole number of cents, so the amount is divided by 100 twice
+        (e.g. 1050 cents renders as "$0.10" instead of "$10.50"). This is
+        send_receipt's own misuse of format_cents's contract;
+        utils/money.py, the correct notifications/sms.py precedent, and
+        the existing test are relevant evidence but none of them owns
+        the defect.
+      defect_kind: precondition-violation
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Positive case for #386's "Locality preservation during context
+    expansion" rule: investigating a sibling implementation and an
+    existing test for evidence, per evidence.md and
+    repository-expansion.md's bounded expansion, must never by itself
+    relocate the finding away from the site the causal/contract
+    reasoning actually establishes as the owner.
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [evidence, repository-expansion]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

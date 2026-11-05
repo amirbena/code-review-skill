@@ -26,4 +26,4 @@ never:
     activation
   - requiring an optional host relationship capability, or believing one of
     its answers without checking it against the reviewed snapshot
-benchmark: benchmark/corpus/risk-depth, benchmark/corpus/repository-intelligence, benchmark/corpus/scale-progressive-loading-proof, benchmark/corpus/relationship-recall
+benchmark: benchmark/corpus-v2/risk-depth, benchmark/corpus/repository-intelligence, benchmark/corpus/scale-progressive-loading-proof, benchmark/corpus/relationship-recall

@@ -8,7 +8,7 @@
 # has no idempotency key or dedup guard on its side-effecting charge
 # call. A redelivered message therefore double-charges the customer.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: distributed-systems-deepening-retry-interaction-missing-idempotency
 title: "at-least-once queue consumer calls capture_payment with no idempotency guard on the charge"
@@ -80,6 +80,8 @@ expected:
       defect_kind: missing-concurrency-test
 
 metadata:
+  skill_set: [review-core, review-backend]
+  skill_set_reason: "Needs the queue's at-least-once guarantee combined with a non-idempotent charge."
   source: crafted
   tags: [concurrency]
   rationale: >-

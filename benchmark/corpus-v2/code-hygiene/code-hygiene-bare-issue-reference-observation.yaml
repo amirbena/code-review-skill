@@ -1,0 +1,52 @@
+# Code-hygiene benchmark corpus case (Issue #677, parent #675, policy #676).
+# Format: ../../../runtime_platform/benchmark/fixture-format.md. See ./README.md.
+#
+# Flagged shape, default tier: a bare tracker reference with no explanation.
+# The reference sits above a call that already reads clearly, so a reader
+# learns nothing from it. Expected output is a code hygiene observation,
+# never a finding.
+
+format: benchmark-case/v2
+
+id: code-hygiene-bare-issue-reference-observation
+title: "A comment that is only an issue number is added above a plain call"
+
+input:
+  patch: |
+    diff --git a/app/billing/invoices.py b/app/billing/invoices.py
+    index 1111111..2222222 100644
+    --- a/app/billing/invoices.py
+    +++ b/app/billing/invoices.py
+    @@ -1,4 +1,5 @@
+     def finalize(invoice):
+    +    # #482
+         invoice.total = sum(line.amount for line in invoice.lines)
+         invoice.status = "final"
+         return invoice
+  base:
+    app/billing/invoices.py: |
+      def finalize(invoice):
+          invoice.total = sum(line.amount for line in invoice.lines)
+          invoice.status = "final"
+          return invoice
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    A bare `#482` comment is a hygiene candidate that surrounding code
+    confirms is uninformative. The default tier is a severity-less
+    observation, which is outside the finding set, so a correct review keeps
+    `decision: clean` with no findings. The matcher cannot see observations;
+    the empty exhaustive expectation proves hygiene alone never becomes a
+    finding of any severity.
+  taxonomy:
+    capability: [code-hygiene]
+    policy_contract: [code-hygiene]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

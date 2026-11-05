@@ -10,7 +10,7 @@
 # the unresolved relationship; see ./README.md "What the baseline can and
 # cannot express".
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: relrecall-interface-config-registered-implementers-unresolvable
 title: "Internal Cache contract narrowed; other implementers are registered from a config file outside the repository"
@@ -87,6 +87,7 @@ expected:
   findings: []
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

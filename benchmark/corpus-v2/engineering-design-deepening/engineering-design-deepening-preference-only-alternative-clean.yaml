@@ -1,0 +1,48 @@
+# Engineering-design-deepening corpus case (Issue #750, parent #747,
+# depends on #749). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Negative: an alternative the reviewer might prefer is not a finding.
+
+format: benchmark-case/v2
+
+id: engineering-design-deepening-preference-only-alternative-clean
+title: "A design chooses polling over a message queue with a coherent mechanism and no stated goal it fails"
+
+input:
+  patch: |
+    diff --git a/docs/design/report-refresh.md b/docs/design/report-refresh.md
+    new file mode 100644
+    index 0000000..2222222
+    --- /dev/null
+    +++ b/docs/design/report-refresh.md
+    @@ -0,0 +1,11 @@
+    +# Report refresh
+    +
+    +Status: Draft
+    +
+    +## Goal
+    +
+    +Dashboards show data no more than five minutes old.
+    +
+    +## Approach
+    +
+    +A scheduler polls the source table every minute and rebuilds the summary rows.
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings: []
+
+metadata:
+  source: crafted
+  tags: [no-op]
+  rationale: >-
+    Pins "a different design would be cleaner is not a finding": the
+    one-minute poll meets the five-minute goal, so event-driven refresh is
+    only a preference.
+  taxonomy:
+    capability: [engineering-design]
+    policy_contract: [engineering-design-deepening]
+    risk_mode: [no-op]
+    affected_surface: [unclassified]

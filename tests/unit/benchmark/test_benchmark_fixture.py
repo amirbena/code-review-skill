@@ -39,7 +39,7 @@ class WorkedExampleTests(unittest.TestCase):
 
     def test_example_decodes_to_a_mapping(self) -> None:
         self.assertIsInstance(self.data, dict)
-        self.assertEqual(self.data["format"], "benchmark-case/v2")
+        self.assertEqual(self.data["format"], "benchmark-case/v3")
 
     def test_example_parses_and_validates(self) -> None:
         case = bf.parse_case(self.data)
@@ -107,7 +107,7 @@ class SchemaIdentityRejectionTests(unittest.TestCase):
             bf.parse_case(self.data)
 
     def test_unsupported_future_version_is_rejected_not_coerced(self) -> None:
-        self.data["format"] = "benchmark-case/v3"
+        self.data["format"] = "benchmark-case/v4"
         with self.assertRaisesRegex(bf.FixtureFormatError, "unsupported or missing 'format'"):
             bf.parse_case(self.data)
 
@@ -523,6 +523,39 @@ class MetadataTests(unittest.TestCase):
         with self.assertRaisesRegex(bf.FixtureFormatError, "taxonomy"):
             bf.parse_case(self.data)
 
+    def test_skill_set_is_required_within_metadata(self) -> None:
+        del self.data["metadata"]["skill_set"]
+        with self.assertRaisesRegex(bf.FixtureFormatError, "skill_set"):
+            bf.parse_case(self.data)
+
+    def test_skill_set_must_start_with_the_core(self) -> None:
+        self.data["metadata"]["skill_set"] = ["review-security", "review-core"]
+        self.data["metadata"]["skill_set_reason"] = "needs threat reasoning"
+        with self.assertRaisesRegex(bf.FixtureFormatError, "must start with"):
+            bf.parse_case(self.data)
+
+    def test_skill_set_rejects_unknown_empty_and_duplicate_skills(self) -> None:
+        for bad in ([], ["review-core", "review-nope"], ["review-core", "review-core"], "review-core"):
+            with self.subTest(skill_set=bad):
+                self.data["metadata"]["skill_set"] = bad
+                self.data["metadata"]["skill_set_reason"] = "reason"
+                with self.assertRaisesRegex(bf.FixtureFormatError, "skill_set"):
+                    bf.parse_case(self.data)
+
+    def test_mini_skill_case_states_why_the_core_is_not_enough(self) -> None:
+        self.data["metadata"]["skill_set"] = ["review-core", "review-security"]
+        self.data["metadata"].pop("skill_set_reason", None)
+        with self.assertRaisesRegex(bf.FixtureFormatError, "skill_set_reason"):
+            bf.parse_case(self.data)
+        self.data["metadata"]["skill_set_reason"] = "needs entry-point enumeration"
+        case = bf.parse_case(self.data)
+        self.assertEqual(case.metadata["skill_set"], ["review-core", "review-security"])
+
+    def test_core_only_case_carries_no_skill_set_reason(self) -> None:
+        self.data["metadata"]["skill_set_reason"] = "unneeded"
+        with self.assertRaisesRegex(bf.FixtureFormatError, "skill_set_reason"):
+            bf.parse_case(self.data)
+
     def test_unclassified_is_a_legal_taxonomy_value(self) -> None:
         self.data["metadata"]["taxonomy"]["affected_surface"] = ["unclassified"]
         case = bf.parse_case(self.data)
@@ -570,7 +603,7 @@ class InducedRegressionTests(unittest.TestCase):
         original = bf.SUPPORTED_FORMATS
         try:
             bf.SUPPORTED_FORMATS = frozenset(
-                {"benchmark-case/v2", "benchmark-case/v9"}
+                {"benchmark-case/v3", "benchmark-case/v9"}
             )
             # With the version gate widened, the bad-version fixture is
             # wrongly accepted — exactly what SchemaIdentityRejectionTests

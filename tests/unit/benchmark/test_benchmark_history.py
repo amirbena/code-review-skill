@@ -197,8 +197,8 @@ class KeyedBaselineLaneTest(unittest.TestCase):
         corpus_dir = self.root / "corpus"
         corpus_dir.mkdir()
         for name, content in [
-            ("s1.yaml", "format: benchmark-case/v2\nid: s1\n"),
-            ("sub/s2.yaml", "format: benchmark-case/v2\nid: s2\n"),
+            ("s1.yaml", "format: benchmark-case/v3\nid: s1\n"),
+            ("sub/s2.yaml", "format: benchmark-case/v3\nid: s2\n"),
         ]:
             path = corpus_dir / name
             path.parent.mkdir(parents=True, exist_ok=True)

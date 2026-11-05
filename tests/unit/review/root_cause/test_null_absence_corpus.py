@@ -3,7 +3,7 @@
 (Issue #121).
 
 The sub-corpus is ``benchmark/corpus/null-absence-risk/*.yaml``: a
-small, focused set of ``benchmark-case/v2`` fixtures demonstrating the
+small, focused set of ``benchmark-case/v3`` fixtures demonstrating the
 requirement owned by shared/policies/null-absence-risk.md ("Null-like
 absence-risk review", routed from shared/policies/review-scope.md) — a
 real null/undefined/nil dereference risk surfaced, its directly guarded

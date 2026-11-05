@@ -81,7 +81,7 @@ class CorpusHygieneMixin:
         for path in self._files():
             with self.subTest(case=path.name):
                 self.assertEqual(
-                    bf.parse_case(load_fixture(path)).format, "benchmark-case/v2"
+                    bf.parse_case(load_fixture(path)).format, "benchmark-case/v3"
                 )
 
     def test_filename_stem_matches_case_id(self) -> None:

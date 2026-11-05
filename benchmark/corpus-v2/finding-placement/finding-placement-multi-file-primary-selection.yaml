@@ -1,0 +1,122 @@
+# Finding-placement corpus case (Issue #387, parent #385, implementation
+# contract #386). Format: ../fixture-format.md. See ./README.md for the
+# cluster.
+#
+# One diff touches three files: config/schema.py drops "region" from
+# REQUIRED_FIELDS (a real regression -- network/connect.py, unchanged,
+# requires config["region"]), config/loader.py only gains a docstring
+# (no functional change), and cli/main.py only gains an unrelated
+# --verbose flag. Only config/schema.py is the causal/contract-owning
+# primary location; the other two touched files must not become
+# additional anchors merely for being part of the same diff. This is a
+# single-finding primary-location selection, not root-cause
+# consolidation -- there is exactly one defect-bearing element and one
+# manifestation site, not >=2 manifestation sites sharing one cause.
+#
+# Expected: ONE required finding anchored in config/schema.py;
+# config/loader.py and cli/main.py never become anchors.
+
+format: benchmark-case/v2
+
+id: finding-placement-multi-file-primary-selection
+title: "Only schema.py is the causal site; the docstring-only and unrelated-flag touches in the same diff are not additional anchors"
+
+input:
+  patch: |
+    diff --git a/config/schema.py b/config/schema.py
+    index 1111111..2222222 100644
+    --- a/config/schema.py
+    +++ b/config/schema.py
+    @@ -1 +1 @@
+    -REQUIRED_FIELDS = ("name", "endpoint", "region")
+    +REQUIRED_FIELDS = ("name", "endpoint")
+    diff --git a/config/loader.py b/config/loader.py
+    index 3333333..4444444 100644
+    --- a/config/loader.py
+    +++ b/config/loader.py
+    @@ -2,6 +2,9 @@ from config.schema import REQUIRED_FIELDS
+     
+     
+     def load_config(raw: dict) -> dict:
+    +    """Validates that every field in REQUIRED_FIELDS is present in
+    +    `raw`, then returns a shallow copy of `raw` unchanged.
+    +    """
+         missing = [f for f in REQUIRED_FIELDS if f not in raw]
+         if missing:
+             raise ValueError(f"missing required fields: {missing}")
+    diff --git a/cli/main.py b/cli/main.py
+    index 5555555..6666666 100644
+    --- a/cli/main.py
+    +++ b/cli/main.py
+    @@ -4,6 +4,7 @@ def build_parser():
+     
+     
+     def build_parser():
+         parser = argparse.ArgumentParser()
+         parser.add_argument("--config", required=True)
+    +    parser.add_argument("--verbose", action="store_true")
+         return parser
+  base:
+    config/schema.py: |
+      REQUIRED_FIELDS = ("name", "endpoint", "region")
+    config/loader.py: |
+      from config.schema import REQUIRED_FIELDS
+
+
+      def load_config(raw: dict) -> dict:
+          missing = [f for f in REQUIRED_FIELDS if f not in raw]
+          if missing:
+              raise ValueError(f"missing required fields: {missing}")
+          return dict(raw)
+    cli/main.py: |
+      import argparse
+
+      from config.loader import load_config
+
+
+      def build_parser():
+          parser = argparse.ArgumentParser()
+          parser.add_argument("--config", required=True)
+          return parser
+    network/connect.py: |
+      def connect(config: dict):
+          return f"connecting to {config['endpoint']} in {config['region']}"
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: schema-drops-required-region-field
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: config/schema.py
+        symbol: REQUIRED_FIELDS
+        anchor: 'REQUIRED_FIELDS = ("name", "endpoint")'
+      claim: >-
+        config/schema.py drops "region" from REQUIRED_FIELDS, so
+        config/loader.py's load_config no longer validates that a config
+        includes it; network/connect.py (unchanged) directly accesses
+        config["region"] and raises KeyError for a config that now
+        passes validation without one. config/loader.py's docstring-only
+        change and cli/main.py's unrelated --verbose flag are both
+        touched in the same diff but are not causally connected to this
+        regression and are not additional anchors.
+      defect_kind: removed-required-field-regression
+
+metadata:
+  source: crafted
+  tags: [correctness]
+  rationale: >-
+    Positive case for #386's "Multi-line / multi-file primary selection"
+    rule: a diff spanning several files still gets exactly one primary
+    causal/contract-owning location, chosen by the same reasoning as a
+    single-file case, not an anchor per touched file and not treated as
+    a root-cause-consolidation case (there is only one manifestation
+    site here, not >=2).
+  taxonomy:
+    capability: [finding-placement]
+    policy_contract: [root-cause-consolidation]
+    risk_mode: [correctness]
+    affected_surface: [unclassified]

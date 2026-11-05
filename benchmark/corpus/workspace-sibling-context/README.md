@@ -9,9 +9,9 @@ certainty when the evidence is thin. The design, arms, and pre-registered gate
 are in
 [`../../../runtime_platform/benchmark/workspace-sibling-context-measurement.md`](../../../runtime_platform/benchmark/workspace-sibling-context-measurement.md).
 
-## `input.workspace_siblings` — an additive `benchmark-case/v2` input
+## `input.workspace_siblings` — an additive `benchmark-case/v3` input
 
-Every case is a `benchmark-case/v2` fixture parsed by the one reference
+Every case is a `benchmark-case/v3` fixture parsed by the one reference
 validator ([`fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)
 §6.6) and indexed in [`corpus-index.json`](../../corpus-index.json). The input
 maps an alias to a sibling repository (`files` committed as HEAD, optional

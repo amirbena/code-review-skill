@@ -14,7 +14,7 @@
 # reference — locking in that Jira is sufficient, never necessary, for a
 # technically-grounded blocking finding.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: cfv-no-jira-toctou-still-blocking
 title: "Checkout-path stock decrement reads then writes without a lock: TOCTOU race, blocking with no ticket reference"
@@ -68,6 +68,7 @@ expected:
       defect_kind: toctou-race
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, concurrency]
   rationale: >-

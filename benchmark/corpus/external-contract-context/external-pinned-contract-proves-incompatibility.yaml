@@ -8,7 +8,7 @@
 # its exhaustive switch raises on any unknown status, so the incompatibility is
 # proven by the pinned external contract.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: external-pinned-contract-proves-incompatibility
 title: "PaymentStatus gains refunded; the caller-pinned ledger-consumer switch rejects unknown statuses"
@@ -72,6 +72,7 @@ expected:
       defect_kind: breaking-contract-enum-member-added-exhaustive-consumer
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness, regression]
   rationale: >-

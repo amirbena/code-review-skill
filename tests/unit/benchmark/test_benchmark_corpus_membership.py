@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Coverage for comprehensive corpus membership derivation (Issue #431).
 
-Proves membership is derived programmatically from `benchmark-case/v2`
+Proves membership is derived programmatically from `benchmark-case/v3`
 fixtures anywhere under a corpus root (never a hard-coded count or list),
 sub-corpus directories holding no v2 fixtures contribute nothing, a
 duplicate case id across two fixtures is a hard error, and the
@@ -19,7 +19,7 @@ from tests.support.paths import REPO_ROOT
 from runtime_platform.benchmark.scripts import benchmark_corpus_membership as membership
 
 
-def _write(root: Path, relative: str, *, case_id: str | None, fmt: str | None = "benchmark-case/v2") -> Path:
+def _write(root: Path, relative: str, *, case_id: str | None, fmt: str | None = "benchmark-case/v3") -> Path:
     path = root / relative
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = []
@@ -63,7 +63,7 @@ class DiscoverComprehensiveFixturesTest(unittest.TestCase):
 
     def test_a_readme_only_test_only_suite_directory_contributes_nothing(self) -> None:
         # Mirrors real sub-corpus directories that hold only a README.md
-        # and no benchmark-case/v2 fixtures (e.g. mutation-boundary,
+        # and no benchmark-case/v3 fixtures (e.g. mutation-boundary,
         # reviewer-brief) — excluded by construction, never a denylist.
         (self.root / "test-only-suite").mkdir()
         (self.root / "test-only-suite" / "README.md").write_text("# not a fixture\n", encoding="utf-8")

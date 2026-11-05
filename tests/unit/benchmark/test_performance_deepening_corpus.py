@@ -3,7 +3,7 @@
 (Issue #187, parent #180, grandparent #82).
 
 The sub-corpus is ``benchmark/corpus/performance-deepening/*.yaml``: a
-small, focused set of ``benchmark-case/v2`` fixtures pinning representative
+small, focused set of ``benchmark-case/v3`` fixtures pinning representative
 Performance deepening outcomes as follow-up quality hardening for the
 capability #180 already defines — it validates domain correctness after
 the capability exists and never redesigns it.

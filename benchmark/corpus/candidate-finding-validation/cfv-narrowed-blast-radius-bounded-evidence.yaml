@@ -23,7 +23,7 @@
 # Expected: one required finding, scoped to the one caller the evidence
 # shows is actually affected, not a blanket finding against all three.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: cfv-narrowed-blast-radius-bounded-evidence
 title: "normalize_currency rounding-mode change looks broad across three callers; bounded evidence narrows real impact to one"
@@ -96,6 +96,7 @@ expected:
       defect_kind: rounding-mode-change
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

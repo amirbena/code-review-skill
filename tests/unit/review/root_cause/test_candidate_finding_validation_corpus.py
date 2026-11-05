@@ -3,7 +3,7 @@
 sub-corpus (Issue #383, parent #382/#381).
 
 The sub-corpus is ``benchmark/corpus/candidate-finding-validation/*.yaml``:
-a small, focused set of ``benchmark-case/v2`` fixtures that pin the
+a small, focused set of ``benchmark-case/v3`` fixtures that pin the
 outcomes ``docs/candidate-finding-validation/candidate-finding-validation-model.md``
 names — semantic-role no-inference (§4), unproven-regression
 non-assertion (§7), a disconfirmed candidate dropped (§8 ``DROPPED``), a

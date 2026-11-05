@@ -90,7 +90,7 @@ def _prod(
 
 def _case(*findings: bf.ExpectedFinding, completeness: str = "exhaustive", case_id: str = "c1") -> bf.BenchmarkCase:
     return bf.BenchmarkCase(
-        format="benchmark-case/v2",
+        format="benchmark-case/v3",
         id=case_id,
         title="t",
         input={"patch": "--- a\n+++ b\n"},

@@ -1,0 +1,73 @@
+# Deployment/infrastructure-deepening corpus case (Issue #743, parent #740,
+# depends on #742). Format: ../../../runtime_platform/benchmark/fixture-format.md.
+# See ./README.md for the cluster.
+#
+# Failure-propagation property: an operational reliability regression. A
+# failing pre-deploy gate no longer stops the deploy.
+
+format: benchmark-case/v2
+
+id: deployment-infrastructure-deepening-smoke-test-failure-no-longer-gates-deploy
+title: "release.yml marks the pre-deploy smoke test continue-on-error so a failing smoke test no longer blocks the production deploy"
+
+input:
+  patch: |
+    diff --git a/.github/workflows/release.yml b/.github/workflows/release.yml
+    index 1111111..2222222 100644
+    --- a/.github/workflows/release.yml
+    +++ b/.github/workflows/release.yml
+    @@ -11,5 +11,6 @@ jobs:
+           - uses: actions/checkout@8f4b7f84864484a7bde6b71ad9e3fda11d7d17f1 # v4.1.1
+           - name: Smoke test staging
+             run: ./scripts/smoke-test.sh staging
+    +        continue-on-error: true
+           - name: Deploy to production
+             run: ./scripts/deploy.sh production
+  base:
+    .github/workflows/release.yml: |
+      name: Release
+
+      on:
+        push:
+          tags: ["v*"]
+
+      jobs:
+        deploy:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@8f4b7f84864484a7bde6b71ad9e3fda11d7d17f1 # v4.1.1
+            - name: Smoke test staging
+              run: ./scripts/smoke-test.sh staging
+            - name: Deploy to production
+              run: ./scripts/deploy.sh production
+
+expected:
+  decision: changes-required
+  findings_completeness: exhaustive
+  findings:
+    - key: smoke-test-continue-on-error-before-production-deploy
+      match: required
+      severity: P1
+      location:
+        location_intent: line
+        path: .github/workflows/release.yml
+        anchor: 'continue-on-error: true'
+      claim: >-
+        continue-on-error on the staging smoke test lets the job proceed to
+        the Deploy to production step even when the smoke test fails. The
+        only gate between a bad build and production no longer stops the
+        deploy, and the failure is no longer surfaced as a failed run.
+      defect_kind: pre-deploy-gate-failure-no-longer-blocks-deploy
+
+metadata:
+  source: crafted
+  tags: [regression]
+  rationale: >-
+    Pins the "failure propagation and gating" property as an operational
+    reliability regression: the changed line is one flag, and the
+    consequence is visible only from the next step in the same file.
+  taxonomy:
+    capability: [deployment-infrastructure]
+    policy_contract: [deployment-infrastructure-deepening]
+    risk_mode: [regression]
+    affected_surface: [unclassified]

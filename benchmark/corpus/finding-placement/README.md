@@ -10,7 +10,7 @@ implementation contract:
 canonical reasoning for **how a finding's fix/action location is derived**
 from its already-accepted claim, when review evidence, causal reasoning, or
 bounded context expansion touch more than one place. This is a **focused
-sub-corpus** of [`benchmark-case/v2`](../../../runtime_platform/benchmark/fixture-format.md) fixtures that
+sub-corpus** of [`benchmark-case/v3`](../../../runtime_platform/benchmark/fixture-format.md) fixtures that
 pin correct primary-location selection for that reasoning.
 
 ## What this corpus does *not* assert

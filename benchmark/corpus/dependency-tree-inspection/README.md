@@ -3,7 +3,7 @@
 Repository-development artifact for GitHub Issue
 [#732](https://github.com/amirbena/code-review-skill/issues/732) (parent
 [#731](https://github.com/amirbena/code-review-skill/issues/731)). A
-network-free `benchmark-case/v2` sub-corpus that measures the opt-in dependency
+network-free `benchmark-case/v3` sub-corpus that measures the opt-in dependency
 tree inspection of
 [`../../../shared/policies/dependency-tree-inspection.md`](../../../shared/policies/dependency-tree-inspection.md)
 (#730) on **synthetic** Base and Head trees. Every case is labeled synthetic:

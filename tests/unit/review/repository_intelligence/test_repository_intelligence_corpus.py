@@ -4,7 +4,7 @@
 
 The sub-corpus is
 ``benchmark/corpus/repository-intelligence/*.yaml``: a small, focused
-set of ``benchmark-case/v2`` fixtures demonstrating relationship-aware
+set of ``benchmark-case/v3`` fixtures demonstrating relationship-aware
 review catching defects a diff-only read of the same patch cannot show, a
 safe-failure (ambiguity) case, and a negative/control case proving
 retrieval breadth alone is not a finding.

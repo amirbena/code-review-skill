@@ -13,11 +13,11 @@ attempts to manufacture authorization from untrusted sources — and that
 this holds identically alongside the existing structured/sandbox
 behavior.
 
-## Why this isn't a `benchmark-case/v2` corpus
+## Why this isn't a `benchmark-case/v3` corpus
 
 Every corpus under [`../`](../README.md) that reviews a code change
 (each a self-contained inline patch plus expected review *findings*) uses
-the `benchmark-case/v2` fixture format
+the `benchmark-case/v3` fixture format
 ([`../../../runtime_platform/benchmark/fixture-format.md`](../../../runtime_platform/benchmark/fixture-format.md)). This domain has no
 patch and no finding: its input is a piece of trusted-invocation text (or
 a structured boolean) and its expectation is a resolved
@@ -25,7 +25,7 @@ a structured boolean) and its expectation is a resolved
 provenance value. Rather than stretch the finding-shaped schema to also
 carry authorization-resolution semantics, this corpus follows the same
 test-only, data-driven reference-fixture pattern
-[`../delegation-spawn/README.md`](../delegation-spawn/README.md) already
+`../delegation-spawn/README.md` already
 established for the structurally analogous agent-spawn/delegated-
 authority domain:
 

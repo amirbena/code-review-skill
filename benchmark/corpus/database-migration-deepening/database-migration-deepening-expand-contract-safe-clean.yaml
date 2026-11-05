@@ -17,7 +17,7 @@
 # backfill; it confirms both are safe, with a missing-test note as the
 # only carried finding, mirroring the precedent's guarded-clean case.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: database-migration-deepening-expand-contract-safe-clean
 title: "0010/0011 add email_normalized nullable and batch-backfill it idempotently, deferring the old column's removal"
@@ -131,6 +131,7 @@ expected:
       defect_kind: missing-migration-test
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-

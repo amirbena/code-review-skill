@@ -29,7 +29,7 @@
 # never its exact escalation level, which is genuine reviewer judgment
 # under real ambiguity, not a fact this fixture can dictate.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: specialist-depth-progressive-loading-proof-ambiguous-cardinality-forces-fail-closed-load
 title: "Order CSV export gains a per-order latest-shipment-status column, looked up via one query per order"
@@ -109,6 +109,7 @@ expected:
       defect_kind: missing-test-coverage
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [performance]
   rationale: >-

@@ -1,0 +1,70 @@
+# Decision-derivation corpus case (Issue #450). Format:
+# docs/benchmark/fixture-format.md. See ./README.md for the cluster.
+#
+# A single, mildly-worded P2 finding and nothing else. Per
+# shared/policies/severity.md, "Decision derivation (mechanical)", a P2
+# finding never contributes to the P0/P1 tally, so the mechanical decision
+# is `clean` regardless of how many P2s exist. This is the plain-wording
+# control case for the reverse-direction proof: a P2-only finding set must
+# render REVIEW CLEAN, never CHANGES REQUIRED.
+
+format: benchmark-case/v2
+
+id: dd-p2-only-mild-wording
+title: "New export_page duplicates the DEFAULT_PAGE_SIZE literal instead of reusing it"
+
+input:
+  patch: |
+    diff --git a/reports/exporter.py b/reports/exporter.py
+    new file mode 100644
+    index 0000000..7a1c2d3
+    --- /dev/null
+    +++ b/reports/exporter.py
+    @@ -0,0 +1,6 @@
+    +from reports.config import DEFAULT_PAGE_SIZE
+    +
+    +
+    +def export_page(rows, page_size=100):
+    +    """Return the first page of rows for the export download."""
+    +    return rows[:page_size]
+  base:
+    reports/config.py: |
+      DEFAULT_PAGE_SIZE = 100
+
+
+      def paginate(rows):
+          return rows[:DEFAULT_PAGE_SIZE]
+
+expected:
+  decision: clean
+  findings_completeness: exhaustive
+  findings:
+    - key: export-page-duplicates-page-size-literal
+      match: required
+      severity: P2
+      location:
+        location_intent: symbol
+        path: reports/exporter.py
+        symbol: export_page
+        anchor: "def export_page(rows, page_size=100):"
+      claim: >-
+        export_page's page_size default repeats the literal 100 instead of
+        referencing the already-imported reports.config.DEFAULT_PAGE_SIZE,
+        so the two values can silently drift apart.
+      defect_kind: duplicated-constant
+
+metadata:
+  source: crafted
+  tags: [quality]
+  rationale: >-
+    Plain-wording control for #450's reverse-direction proof: one real but
+    non-blocking P2 finding, described in ordinary review language, must
+    still mechanically derive `clean`. Pairs with
+    dd-p2-only-urgent-wording.yaml, which pins the same shape under
+    deliberately alarming wording, and dd-zero-findings-clean.yaml, which
+    pins the zero-finding edge of the same claim.
+  taxonomy:
+    capability: [decision-derivation]
+    policy_contract: [severity]
+    risk_mode: [quality]
+    affected_surface: [unclassified]

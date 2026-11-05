@@ -2,7 +2,7 @@
 # SYNTHETIC: the tree text is crafted, never real tool output. Format imitated:
 # mvn dependency:tree text output (maven-dependency-plugin 3.6.x, verbose off). See ./README.md.
 
-format: benchmark-case/v2
+format: benchmark-case/v3
 
 id: dti-incident-added-authorized-execution
 title: "Synthetic: BOM bump adds a non-FIPS crypto family (authorized fixture-local command)"
@@ -111,6 +111,7 @@ expected:
       defect_kind: bom-bump-adds-non-fips-crypto-family
 
 metadata:
+  skill_set: [review-core]
   source: crafted
   tags: [correctness]
   rationale: >-
